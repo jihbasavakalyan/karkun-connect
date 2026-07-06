@@ -1,6 +1,7 @@
 import {
   CommandCenterActiveCampaign,
   CommandCenterAssignmentMetrics,
+  CommandCenterPeopleStats,
   CommandCenterQuickActions,
   CommandCenterTodaysWork,
   RecentActivityPanel,
@@ -18,6 +19,7 @@ export function AdminHomePage() {
       </div>
 
       <CommandCenterActiveCampaign />
+      <CommandCenterPeopleStats />
       <CommandCenterAssignmentMetrics />
       <CommandCenterTodaysWork />
 

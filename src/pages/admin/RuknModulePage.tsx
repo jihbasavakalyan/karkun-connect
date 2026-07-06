@@ -1,58 +1,305 @@
-import { useMemo } from 'react'
-import { useRuknMaster } from '@/hooks/useRuknMaster'
-import { getRuknAssignmentEngineStats } from '@/lib/assignmentEngine'
+import { useMemo, useState } from 'react'
+import { useRuknManagement } from '@/hooks/useRuknManagement'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
+import { getRuknAssignmentEngineStats } from '@/lib/assignmentEngine'
+import {
+  bulkSetRuknStatus,
+  createRukn,
+  importRuknsFromRows,
+  setRuknStatus,
+  updateRukn,
+} from '@/lib/peopleStore'
+import {
+  exportRukns,
+  parsePeopleImportFile,
+  readImportFile,
+} from '@/lib/peopleImportExport'
+import type { Rukn } from '@/data/ruknMaster'
+import type { ImportSummary } from '@/types/people.types'
+import type { MobileLookupResult } from '@/lib/peopleStore'
 import { RuknAssignmentCard } from '@/components/forms/rukn'
+import {
+  BulkActionsBar,
+  ConfirmDialog,
+  ImportExportToolbar,
+  ImportSummaryModal,
+  MobileUpdateModal,
+  PeopleFiltersBar,
+  PeoplePagination,
+  PersonFormModal,
+  RuknPeopleTable,
+} from '@/components/forms/people'
+import type { PersonFormValues } from '@/components/forms/people'
+import { PrimaryButton } from '@/components/ui/PrimaryButton'
+
+type ActiveTab = 'manage' | 'assignments'
 
 export function RuknModulePage() {
-  const { query, setQuery, ruknList, totalCount } = useRuknMaster()
+  const management = useRuknManagement()
   useAssignmentEngine()
+
+  const [activeTab, setActiveTab] = useState<ActiveTab>('manage')
+  const [isFormOpen, setIsFormOpen] = useState(false)
+  const [editingRukn, setEditingRukn] = useState<Rukn | null>(null)
+  const [formError, setFormError] = useState('')
+  const [mobileTarget, setMobileTarget] = useState<Rukn | null>(null)
+  const [mobileError, setMobileError] = useState('')
+  const [pendingMobile, setPendingMobile] = useState('')
+  const [mobileOwner, setMobileOwner] = useState<MobileLookupResult | null>(null)
+  const [importSummary, setImportSummary] = useState<ImportSummary | null>(null)
 
   const statsFor = useMemo(
     () => (ruknId: string) => getRuknAssignmentEngineStats(ruknId),
     [],
   )
 
+  const openAddForm = () => {
+    setEditingRukn(null)
+    setFormError('')
+    setIsFormOpen(true)
+  }
+
+  const openEditForm = (rukn: Rukn) => {
+    setEditingRukn(rukn)
+    setFormError('')
+    setIsFormOpen(true)
+  }
+
+  const handleFormSubmit = (values: PersonFormValues) => {
+    const result = editingRukn
+      ? updateRukn(editingRukn.id, values)
+      : createRukn(values)
+
+    if (!result.success) {
+      if (result.needsMobileConfirm && result.existingOwner) {
+        setFormError(result.error ?? 'Mobile number already in use.')
+        return
+      }
+      setFormError(result.error ?? 'Unable to save Rukn.')
+      return
+    }
+
+    setIsFormOpen(false)
+    setEditingRukn(null)
+    setFormError('')
+  }
+
+  const handleMobileSubmit = (mobile: string) => {
+    if (!mobileTarget) return
+
+    const result = updateRukn(mobileTarget.id, { mobile })
+    if (!result.success && result.needsMobileConfirm && result.existingOwner) {
+      setPendingMobile(mobile)
+      setMobileOwner(result.existingOwner)
+      setMobileError('')
+      return
+    }
+
+    if (!result.success) {
+      setMobileError(result.error ?? 'Unable to update mobile.')
+      return
+    }
+
+    setMobileTarget(null)
+    setMobileError('')
+  }
+
+  const confirmMobileOverwrite = () => {
+    if (!mobileTarget || !pendingMobile) return
+    const result = updateRukn(
+      mobileTarget.id,
+      { mobile: pendingMobile },
+      'Administrator',
+      { confirmMobileOverwrite: true },
+    )
+    if (!result.success) {
+      setMobileError(result.error ?? 'Unable to update mobile.')
+      return
+    }
+    setMobileOwner(null)
+    setPendingMobile('')
+    setMobileTarget(null)
+    setMobileError('')
+  }
+
+  const handleToggleStatus = (rukn: Rukn) => {
+    setRuknStatus(rukn.id, rukn.status === 'active' ? 'inactive' : 'active')
+  }
+
+  const handleImport = async (file: File) => {
+    const content = await readImportFile(file)
+    const rows = parsePeopleImportFile(content, 'rukn')
+    const summary = importRuknsFromRows(rows)
+    setImportSummary(summary)
+  }
+
   return (
     <div className="mx-auto max-w-6xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-text-heading">Rukn</h1>
-        <p className="mt-2 text-secondary">
-          Campaign executors and their assigned Karkun — {totalCount} members
-        </p>
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <label htmlFor="rukn-module-search" className="text-sm font-medium text-text-heading">
-          Search by name
-        </label>
-        <input
-          id="rukn-module-search"
-          type="search"
-          value={query}
-          placeholder="Search Rukn by name..."
-          onChange={(event) => setQuery(event.target.value)}
-          className="w-full rounded-lg border border-border bg-surface px-4 py-3 text-base text-text-heading placeholder:text-secondary-light focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-        />
-      </div>
-
-      <p className="text-sm text-secondary">
-        Showing {ruknList.length} of {totalCount} Rukn
-      </p>
-
-      {ruknList.length === 0 ? (
-        <div className="rounded-(--radius-card) border border-border bg-surface p-8 text-center shadow-card">
-          <p className="text-secondary">No Rukn match your search.</p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-text-heading">Rukn Management</h1>
+          <p className="mt-2 text-secondary">
+            Manage Rukn contacts, status, and assignments — {management.totalCount} members
+          </p>
         </div>
+        {activeTab === 'manage' && (
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <ImportExportToolbar
+              kind="rukn"
+              onExport={(format) => exportRukns(management.allFilteredRecords, format)}
+              onImport={handleImport}
+            />
+            <PrimaryButton type="button" onClick={openAddForm}>
+              Add Rukn
+            </PrimaryButton>
+          </div>
+        )}
+      </div>
+
+      <div className="flex gap-2 border-b border-border">
+        {(['manage', 'assignments'] as const).map((tab) => (
+          <button
+            key={tab}
+            type="button"
+            className={`border-b-2 px-4 py-2 text-sm font-medium capitalize transition-colors ${
+              activeTab === tab
+                ? 'border-primary text-primary'
+                : 'border-transparent text-secondary hover:text-text-heading'
+            }`}
+            onClick={() => setActiveTab(tab)}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === 'manage' ? (
+        <>
+          <PeopleFiltersBar
+            filters={management.filters}
+            onFilterChange={management.updateFilter}
+            onClear={management.clearFilters}
+          />
+
+          <BulkActionsBar
+            selectedCount={management.selectedIds.length}
+            onActivate={() => {
+              bulkSetRuknStatus(management.selectedIds, 'active')
+              management.clearSelection()
+            }}
+            onDeactivate={() => {
+              bulkSetRuknStatus(management.selectedIds, 'inactive')
+              management.clearSelection()
+            }}
+            onClearSelection={management.clearSelection}
+          />
+
+          <p className="text-sm text-secondary">
+            Showing {management.records.length} of {management.totalRecords} filtered (
+            {management.totalCount} total)
+          </p>
+
+          <RuknPeopleTable
+            records={management.records}
+            selectedIds={management.selectedIds}
+            sortField={management.sortField}
+            sortDirection={management.sortDirection}
+            onToggleSort={management.toggleSort}
+            onToggleSelection={management.toggleSelection}
+            onToggleSelectAll={management.toggleSelectAll}
+            onEdit={openEditForm}
+            onToggleStatus={handleToggleStatus}
+            onUpdateMobile={(rukn) => {
+              setMobileTarget(rukn)
+              setMobileError('')
+            }}
+          />
+
+          <PeoplePagination
+            currentPage={management.currentPage}
+            totalPages={management.totalPages}
+            totalRecords={management.totalRecords}
+            pageSize={management.pageSize}
+            onPageChange={management.goToPage}
+          />
+        </>
       ) : (
-        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {ruknList.map((rukn) => (
-            <li key={rukn.id}>
-              <RuknAssignmentCard rukn={rukn} stats={statsFor(rukn.id)} />
-            </li>
-          ))}
-        </ul>
+        <>
+          <p className="text-sm text-secondary">
+            Assignment overview for {management.totalCount} Rukn
+          </p>
+          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {management.allFilteredRecords.map((rukn) => (
+              <li key={rukn.id}>
+                <RuknAssignmentCard rukn={rukn} stats={statsFor(rukn.id)} />
+              </li>
+            ))}
+          </ul>
+        </>
       )}
+
+      <PersonFormModal
+        isOpen={isFormOpen}
+        kind="rukn"
+        mode={editingRukn ? 'edit' : 'add'}
+        initialValues={
+          editingRukn
+            ? {
+                name: editingRukn.name,
+                gender: editingRukn.gender,
+                mobile: editingRukn.mobile,
+                whatsapp: editingRukn.whatsapp,
+                place: editingRukn.place,
+                status: editingRukn.status,
+                notes: editingRukn.notes,
+              }
+            : undefined
+        }
+        error={formError}
+        onClose={() => {
+          setIsFormOpen(false)
+          setEditingRukn(null)
+          setFormError('')
+        }}
+        onSubmit={handleFormSubmit}
+      />
+
+      <MobileUpdateModal
+        isOpen={Boolean(mobileTarget)}
+        personName={mobileTarget?.name ?? ''}
+        currentMobile={mobileTarget?.mobile ?? ''}
+        error={mobileError}
+        onClose={() => {
+          setMobileTarget(null)
+          setMobileError('')
+        }}
+        onSubmit={handleMobileSubmit}
+      />
+
+      <ConfirmDialog
+        isOpen={Boolean(mobileOwner)}
+        title="Overwrite Mobile Number?"
+        message={
+          <>
+            This mobile number is already used by{' '}
+            <strong>{mobileOwner?.name}</strong> ({mobileOwner?.kind}). Overwriting may affect
+            contact uniqueness. Continue?
+          </>
+        }
+        confirmLabel="Overwrite"
+        onConfirm={confirmMobileOverwrite}
+        onClose={() => {
+          setMobileOwner(null)
+          setPendingMobile('')
+        }}
+      />
+
+      <ImportSummaryModal
+        isOpen={Boolean(importSummary)}
+        summary={importSummary}
+        kind="rukn"
+        onClose={() => setImportSummary(null)}
+      />
     </div>
   )
 }

@@ -1,9 +1,18 @@
+import type { PersonGender, PersonStatus } from '@/types/people.types'
+import { DEFAULT_PLACE } from '@/types/people.types'
+
 export interface Rukn {
   id: string
   name: string
+  gender: PersonGender
   mobile: string
+  whatsapp?: string
   place: string
-  status: 'active' | 'inactive'
+  status: PersonStatus
+  notes?: string
+  createdAt: string
+  updatedAt: string
+  updatedBy: string
 }
 
 const RUKN_NAMES = [
@@ -58,12 +67,26 @@ const RUKN_NAMES = [
   'Mujahid Pasha Qureshi',
 ] as const
 
+const RUKN_GENDERS: PersonGender[] = [
+  'Female', 'Male', 'Male', 'Female', 'Female', 'Male', 'Female', 'Male', 'Male', 'Female',
+  'Male', 'Female', 'Male', 'Female', 'Female', 'Female', 'Female', 'Male', 'Male', 'Male',
+  'Male', 'Male', 'Female', 'Male', 'Female', 'Male', 'Male', 'Female', 'Female', 'Female',
+  'Male', 'Male', 'Female', 'Female', 'Male', 'Male', 'Female', 'Male', 'Female', 'Male',
+  'Male', 'Female', 'Female', 'Male', 'Female', 'Male', 'Female', 'Female', 'Male',
+]
+
+const SEED_DATE = '2026-01-15T08:00:00.000Z'
+
 export const ruknMaster: Rukn[] = RUKN_NAMES.map((name, index) => ({
   id: `R${String(index + 1).padStart(3, '0')}`,
   name,
+  gender: RUKN_GENDERS[index] ?? 'Male',
   mobile: '',
-  place: 'Basavakalyan',
+  place: DEFAULT_PLACE,
   status: 'active',
+  createdAt: SEED_DATE,
+  updatedAt: SEED_DATE,
+  updatedBy: 'System',
 }))
 
 export function getRuknById(id: string): Rukn | undefined {
@@ -80,9 +103,21 @@ export function searchRukn(query: string): Rukn[] {
     return ruknMaster
   }
 
-  return ruknMaster.filter((rukn) => rukn.name.toLowerCase().includes(normalized))
+  return ruknMaster.filter(
+    (rukn) =>
+      rukn.name.toLowerCase().includes(normalized) ||
+      rukn.mobile.toLowerCase().includes(normalized),
+  )
 }
 
 export function getActiveRuknNames(): string[] {
   return ruknMaster.filter((rukn) => rukn.status === 'active').map((rukn) => rukn.name)
+}
+
+export function getNextRuknId(): string {
+  const maxNum = ruknMaster.reduce((max, rukn) => {
+    const num = Number.parseInt(rukn.id.replace('R', ''), 10)
+    return Number.isNaN(num) ? max : Math.max(max, num)
+  }, 0)
+  return `R${String(maxNum + 1).padStart(3, '0')}`
 }

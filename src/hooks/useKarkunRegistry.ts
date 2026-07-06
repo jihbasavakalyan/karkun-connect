@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { MOCK_KARKUN_REGISTRY } from '@/constants/mockKarkunRegistry'
+import { usePeopleStore } from '@/hooks/usePeopleStore'
 import { KARKUN_REGISTRY_PAGE_SIZE } from '@/types/karkun-registry.types'
 import type { KarkunRegistryFilters, KarkunRegistryRecord } from '@/types/karkun-registry.types'
 
@@ -7,6 +8,9 @@ const initialFilters: KarkunRegistryFilters = {
   campaignStatus: '',
   assignedRukn: '',
   area: '',
+  gender: '',
+  status: '',
+  assignmentStatus: '',
 }
 
 function matchesSearch(karkun: KarkunRegistryRecord, query: string): boolean {
@@ -37,6 +41,7 @@ function matchesFilters(karkun: KarkunRegistryRecord, filters: KarkunRegistryFil
 }
 
 export function useKarkunRegistry() {
+  usePeopleStore()
   const [searchQuery, setSearchQuery] = useState('')
   const [filters, setFilters] = useState<KarkunRegistryFilters>(initialFilters)
   const [currentPage, setCurrentPage] = useState(1)

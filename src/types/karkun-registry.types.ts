@@ -8,10 +8,21 @@ export type JihAppRegistrationStatus = 'Not Discussed' | 'Recommended' | 'Regist
 
 export type KarkunAssignmentPoolStatus = 'Available' | 'Assigned'
 
+export type PersonGender = 'Male' | 'Female'
+
+export type PersonStatus = 'active' | 'inactive'
+
 export type KarkunRegistryRecord = {
   id: string
   name: string
+  gender: PersonGender
   mobile: string
+  whatsapp?: string
+  place: string
+  status: PersonStatus
+  createdAt: string
+  updatedAt: string
+  updatedBy: string
   address: string
   area: string
   assignedRukn: string
@@ -33,6 +44,9 @@ export type KarkunRegistryFilters = {
   campaignStatus: string
   assignedRukn: string
   area: string
+  gender: string
+  status: string
+  assignmentStatus: string
 }
 
 export const KARKUN_REGISTRY_PAGE_SIZE = 5

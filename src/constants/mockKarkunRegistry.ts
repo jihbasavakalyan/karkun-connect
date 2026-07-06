@@ -1,10 +1,31 @@
 import type {
   JihAppRegistrationStatus,
   KarkunRegistryRecord,
+  PersonGender,
 } from '@/types/karkun-registry.types'
+import { DEFAULT_PLACE } from '@/types/people.types'
 import { getActiveRuknNames, getRuknById } from '@/data/ruknMaster'
 
-export const MOCK_KARKUN_REGISTRY: KarkunRegistryRecord[] = [
+const KARKUN_SEED_DATE = '2026-01-20T08:00:00.000Z'
+
+type KarkunSeedInput = Omit<
+  KarkunRegistryRecord,
+  'gender' | 'place' | 'status' | 'createdAt' | 'updatedAt' | 'updatedBy'
+> & { gender?: PersonGender }
+
+function seedKarkun(input: KarkunSeedInput): KarkunRegistryRecord {
+  return {
+    ...input,
+    gender: input.gender ?? 'Male',
+    place: DEFAULT_PLACE,
+    status: input.campaignStatus === 'inactive' ? 'inactive' : 'active',
+    createdAt: KARKUN_SEED_DATE,
+    updatedAt: KARKUN_SEED_DATE,
+    updatedBy: 'System',
+  }
+}
+
+const KARKUN_SEED_DATA: KarkunSeedInput[] = [
   {
     id: 'kr-001',
     name: 'Mohammad Kareem',
@@ -86,26 +107,6 @@ export const MOCK_KARKUN_REGISTRY: KarkunRegistryRecord[] = [
     isArchived: false,
   },
   {
-    id: 'kr-005',
-    name: 'Usman Farooq',
-    mobile: '+92 304 5678901',
-    address: 'MNO Lane, Sector 2',
-    area: 'MNO Area',
-    assignedRukn: 'Syeda Zainab Ghazala',
-    assignedRuknId: 'R004',
-    assignmentStatus: 'Assigned',
-    assignmentDate: '2026-03-08',
-    campaignStatus: 'active',
-    jihRegistration: 'pending',
-    visitStatus: 'scheduled',
-    lastVisit: '2026-03-09',
-    commitment: 'Join upcoming campaign event',
-    currentCommitment: 'Join upcoming campaign event',
-    jihAppRegistrationStatus: 'Recommended',
-    notes: '',
-    isArchived: false,
-  },
-  {
     id: 'kr-006',
     name: 'Tariq Mahmood',
     mobile: '+92 305 6789012',
@@ -162,25 +163,6 @@ export const MOCK_KARKUN_REGISTRY: KarkunRegistryRecord[] = [
     currentCommitment: 'Follow up on JIH form',
     jihAppRegistrationStatus: 'Recommended',
     notes: 'Documents incomplete.',
-    isArchived: false,
-  },
-  {
-    id: 'kr-009',
-    name: 'Farhan Qureshi',
-    mobile: '+92 308 9012345',
-    address: 'YZ Block, House 17',
-    area: 'YZ Area',
-    assignedRukn: '',
-    assignedRuknId: '',
-    assignmentStatus: 'Available',
-    campaignStatus: 'inactive',
-    jihRegistration: 'not_started',
-    visitStatus: 'none',
-    lastVisit: null,
-    commitment: null,
-    currentCommitment: '',
-    jihAppRegistrationStatus: 'Not Discussed',
-    notes: 'Temporarily inactive this campaign.',
     isArchived: false,
   },
   {
@@ -244,6 +226,8 @@ export const MOCK_KARKUN_REGISTRY: KarkunRegistryRecord[] = [
   },
 ]
 
+export const MOCK_KARKUN_REGISTRY: KarkunRegistryRecord[] = KARKUN_SEED_DATA.map(seedKarkun)
+
 export function getKarkunById(id: string): KarkunRegistryRecord | undefined {
   return MOCK_KARKUN_REGISTRY.find((karkun) => karkun.id === id)
 }
@@ -266,6 +250,8 @@ export function updateKarkunMeetingOutcomes(
   }
 
   karkun.jihAppRegistrationStatus = outcomes.jihAppRegistrationStatus
+  karkun.updatedAt = new Date().toISOString()
+  karkun.updatedBy = 'Rukn'
 }
 
 export function getRegistryFilterOptions() {

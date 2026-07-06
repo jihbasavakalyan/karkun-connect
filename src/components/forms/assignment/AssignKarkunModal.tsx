@@ -1,24 +1,36 @@
 import { useState } from 'react'
 import { ruknMaster } from '@/data/ruknMaster'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
+import { getCompatibleRuknsForKarkun } from '@/lib/peopleStore'
 import { Modal } from '@/components/common/Modal'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
+import type { PersonGender } from '@/types/karkun-registry.types'
 
 type AssignKarkunModalProps = {
   isOpen: boolean
   onClose: () => void
+  genderFilter?: PersonGender
 }
 
 const selectClassName =
   'w-full rounded-lg border border-border bg-surface px-4 py-3 text-base text-text-heading focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20'
 
-export function AssignKarkunModal({ isOpen, onClose }: AssignKarkunModalProps) {
+export function AssignKarkunModal({ isOpen, onClose, genderFilter }: AssignKarkunModalProps) {
   const { getAvailableKarkunan, assignKarkun } = useAssignmentEngine()
-  const availableKarkunan = getAvailableKarkunan()
+  const availableKarkunan = getAvailableKarkunan().filter(
+    (k) => !genderFilter || k.gender === genderFilter,
+  )
   const [karkunId, setKarkunId] = useState('')
   const [ruknId, setRuknId] = useState('')
   const [error, setError] = useState('')
+
+  const compatibleRukns =
+    karkunId ? getCompatibleRuknsForKarkun(karkunId) : ruknMaster.filter((r) => r.status === 'active')
+
+  const ruknOptions = genderFilter
+    ? compatibleRukns.filter((r) => r.gender === genderFilter && r.status === 'active')
+    : compatibleRukns.filter((r) => r.status === 'active')
 
   const handleAssign = () => {
     if (!karkunId || !ruknId) {
@@ -53,13 +65,16 @@ export function AssignKarkunModal({ isOpen, onClose }: AssignKarkunModalProps) {
           <select
             id="assign-karkun-select"
             value={karkunId}
-            onChange={(event) => setKarkunId(event.target.value)}
+            onChange={(event) => {
+              setKarkunId(event.target.value)
+              setRuknId('')
+            }}
             className={selectClassName}
           >
             <option value="">Choose available Karkun...</option>
             {availableKarkunan.map((karkun) => (
               <option key={karkun.id} value={karkun.id}>
-                {karkun.name} · {karkun.area}
+                {karkun.name} · {karkun.area || karkun.gender}
               </option>
             ))}
           </select>
@@ -76,13 +91,19 @@ export function AssignKarkunModal({ isOpen, onClose }: AssignKarkunModalProps) {
             className={selectClassName}
           >
             <option value="">Choose Rukn...</option>
-            {ruknMaster.map((rukn) => (
+            {ruknOptions.map((rukn) => (
               <option key={rukn.id} value={rukn.id}>
-                {rukn.name}
+                {rukn.name} · {rukn.gender}
               </option>
             ))}
           </select>
         </div>
+
+        {genderFilter && (
+          <p className="text-xs text-secondary">
+            Only {genderFilter} Karkuns can be assigned to {genderFilter} Rukns.
+          </p>
+        )}
 
         {error && <p className="text-sm text-red-600">{error}</p>}
 
