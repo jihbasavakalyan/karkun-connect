@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
-import { adminKarkunProfilePath } from '@/constants/mockKarkunRegistry'
+import { adminKarkunProfilePath } from '@/constants/routes'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
+import { VISIT_STATUS_LABELS } from '@/types/karkun-registry.types'
 import { CampaignStatusBadge } from '@/components/forms/karkunan/CampaignStatusBadge'
 
 type KarkunanActionsMenuProps = {
@@ -74,7 +75,8 @@ export function KarkunanTable({ records }: KarkunanTableProps) {
               <th className="px-4 py-3 font-semibold text-text-heading">Mobile</th>
               <th className="px-4 py-3 font-semibold text-text-heading">Area</th>
               <th className="px-4 py-3 font-semibold text-text-heading">Assigned Rukn</th>
-              <th className="px-4 py-3 font-semibold text-text-heading">Campaign Status</th>
+              <th className="px-4 py-3 font-semibold text-text-heading">Current Status</th>
+              <th className="px-4 py-3 font-semibold text-text-heading">Last Meeting</th>
               <th className="px-4 py-3 font-semibold text-text-heading">Actions</th>
             </tr>
           </thead>
@@ -85,9 +87,10 @@ export function KarkunanTable({ records }: KarkunanTableProps) {
                 <td className="px-4 py-3 text-secondary">{karkun.mobile}</td>
                 <td className="px-4 py-3 text-secondary">{karkun.area}</td>
                 <td className="px-4 py-3 text-secondary">{karkun.assignedRukn}</td>
-                <td className="px-4 py-3">
-                  <CampaignStatusBadge status={karkun.campaignStatus} />
+                <td className="px-4 py-3 text-secondary">
+                  {VISIT_STATUS_LABELS[karkun.visitStatus]}
                 </td>
+                <td className="px-4 py-3 text-secondary">{karkun.lastVisit ?? '—'}</td>
                 <td className="px-4 py-3">
                   <KarkunanActionsMenu karkunId={karkun.id} />
                 </td>
@@ -114,6 +117,16 @@ export function KarkunanTable({ records }: KarkunanTableProps) {
               <div className="flex justify-between gap-3">
                 <dt className="text-secondary">Area</dt>
                 <dd className="font-medium text-text-heading">{karkun.area}</dd>
+              </div>
+              <div className="flex justify-between gap-3">
+                <dt className="text-secondary">Current Status</dt>
+                <dd className="font-medium text-text-heading">
+                  {VISIT_STATUS_LABELS[karkun.visitStatus]}
+                </dd>
+              </div>
+              <div className="flex justify-between gap-3">
+                <dt className="text-secondary">Last Meeting</dt>
+                <dd className="font-medium text-text-heading">{karkun.lastVisit ?? '—'}</dd>
               </div>
               <div className="flex justify-between gap-3">
                 <dt className="text-secondary">Assigned Rukn</dt>

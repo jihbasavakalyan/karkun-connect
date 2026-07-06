@@ -9,7 +9,7 @@ const quickActions = [
   { id: 'review-reports', label: 'Review Reports', to: ROUTES.ADMIN_REVIEW },
 ] as const
 
-export function QuickActionsPanel() {
+export function CommandCenterQuickActions() {
   return (
     <section className="rounded-(--radius-card) border border-border bg-surface p-6 shadow-card">
       <h2 className="text-lg font-semibold text-text-heading">Quick Actions</h2>

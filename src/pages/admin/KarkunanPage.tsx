@@ -17,9 +17,9 @@ export function KarkunanPage() {
     <div className="mx-auto max-w-6xl space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-text-heading">Karkunan</h1>
+          <h1 className="text-2xl font-semibold text-text-heading">Karkun</h1>
           <p className="mt-2 text-secondary">
-            Permanent master registry used across all campaigns.
+            Master registry of Karkun assigned to Rukn for campaign engagement.
           </p>
         </div>
         <PrimaryButton type="button" onClick={() => setIsAddModalOpen(true)}>

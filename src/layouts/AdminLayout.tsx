@@ -1,16 +1,7 @@
 import { NavLink, Outlet } from 'react-router-dom'
-import { ROUTES } from '@/constants/routes'
+import { ADMIN_NAV_ITEMS } from '@/constants/adminNavigation'
 import { Logo } from '@/components/common/Logo'
 import { CampaignStatusBar } from '@/components/layout/CampaignStatusBar'
-
-const navItems = [
-  { label: 'Home', to: ROUTES.ADMIN, end: true },
-  { label: 'Assignments', to: `${ROUTES.ADMIN}/assignments`, end: false },
-  { label: 'Reviews', to: `${ROUTES.ADMIN}/reviews`, end: false },
-  { label: 'Karkunan', to: ROUTES.ADMIN_KARKUNAN, end: false },
-  { label: 'Rukn Master', to: ROUTES.ADMIN_RUKN_MASTER, end: false },
-  { label: 'Campaigns', to: ROUTES.ADMIN_CAMPAIGNS, end: false },
-] as const
 
 export function AdminLayout() {
   return (
@@ -18,45 +9,69 @@ export function AdminLayout() {
       <CampaignStatusBar />
 
       <div className="flex min-h-0 flex-1">
-      <aside className="hidden w-64 shrink-0 flex-col border-r border-border bg-surface md:flex">
-        <div className="border-b border-border px-6 py-5">
-          <Logo size="sm" />
-        </div>
-        <nav className="flex flex-1 flex-col gap-1 p-4" aria-label="Admin navigation">
-          {navItems.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.end}
-              className={({ isActive }) =>
-                [
-                  'rounded-lg px-4 py-3 text-sm font-medium transition-colors',
-                  isActive
-                    ? 'bg-primary-muted text-primary'
-                    : 'text-secondary hover:bg-surface-muted hover:text-text-heading',
-                ].join(' ')
-              }
-            >
-              {item.label}
-            </NavLink>
-          ))}
-        </nav>
-      </aside>
-
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header className="border-b border-border bg-surface px-6 py-4">
-          <div className="flex items-center justify-between gap-4">
-            <div className="md:hidden">
-              <Logo size="sm" />
-            </div>
-            <p className="text-sm font-medium text-secondary">Administrator Portal</p>
+        <aside className="hidden w-64 shrink-0 flex-col border-r border-border bg-surface lg:flex">
+          <div className="border-b border-border px-6 py-5">
+            <Logo size="sm" />
           </div>
-        </header>
+          <nav className="flex flex-1 flex-col gap-1 overflow-y-auto p-4" aria-label="Admin navigation">
+            {ADMIN_NAV_ITEMS.map((item) => (
+              <NavLink
+                key={item.id}
+                to={item.to}
+                end={item.end}
+                className={({ isActive }) =>
+                  [
+                    'flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-colors',
+                    isActive
+                      ? 'bg-primary-muted text-primary'
+                      : 'text-secondary hover:bg-surface-muted hover:text-text-heading',
+                  ].join(' ')
+                }
+              >
+                <span aria-hidden="true">{item.icon}</span>
+                <span>{item.label}</span>
+              </NavLink>
+            ))}
+          </nav>
+        </aside>
 
-        <main className="flex-1 p-6">
-          <Outlet />
-        </main>
-      </div>
+        <div className="flex min-w-0 flex-1 flex-col">
+          <header className="border-b border-border bg-surface px-4 py-4 lg:px-6">
+            <div className="flex items-center justify-between gap-4">
+              <div className="lg:hidden">
+                <Logo size="sm" />
+              </div>
+              <p className="text-sm font-medium text-secondary">Administrator Portal</p>
+            </div>
+
+            <nav
+              className="mt-4 flex gap-2 overflow-x-auto pb-1 lg:hidden"
+              aria-label="Admin mobile navigation"
+            >
+              {ADMIN_NAV_ITEMS.map((item) => (
+                <NavLink
+                  key={item.id}
+                  to={item.to}
+                  end={item.end}
+                  className={({ isActive }) =>
+                    [
+                      'shrink-0 rounded-full px-3 py-2 text-xs font-medium transition-colors',
+                      isActive
+                        ? 'bg-primary-muted text-primary'
+                        : 'bg-surface-muted text-secondary',
+                    ].join(' ')
+                  }
+                >
+                  {item.icon} {item.label}
+                </NavLink>
+              ))}
+            </nav>
+          </header>
+
+          <main className="flex-1 p-4 lg:p-6">
+            <Outlet />
+          </main>
+        </div>
       </div>
     </div>
   )

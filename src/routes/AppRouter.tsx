@@ -1,13 +1,19 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes, useParams } from 'react-router-dom'
 import { ROUTES } from '@/constants/routes'
 import { AdminLayout } from '@/layouts/AdminLayout'
 import { RuknLayout } from '@/layouts/RuknLayout'
 import { AdminHomePage } from '@/pages/admin/AdminHomePage'
 import { CampaignSetupPage } from '@/pages/admin/CampaignSetupPage'
 import { CampaignsPage } from '@/pages/admin/CampaignsPage'
+import { ExecutionModulePage } from '@/pages/admin/ExecutionModulePage'
+import { FollowUpDevelopmentModulePage } from '@/pages/admin/FollowUpDevelopmentModulePage'
+import { HelpPage } from '@/pages/admin/HelpPage'
 import { KarkunanPage } from '@/pages/admin/KarkunanPage'
 import { KarkunProfilePage } from '@/pages/admin/KarkunProfilePage'
-import { RuknMasterPage } from '@/pages/admin/RuknMasterPage'
+import { ReviewReportsModulePage } from '@/pages/admin/ReviewReportsModulePage'
+import { RuknDetailPage } from '@/pages/admin/RuknDetailPage'
+import { RuknModulePage } from '@/pages/admin/RuknModulePage'
+import { SettingsPage } from '@/pages/admin/SettingsPage'
 import { LoginPage } from '@/pages/auth/LoginPage'
 import { CampaignRecordPage } from '@/pages/rukn/CampaignRecordPage'
 import { RuknHomePage } from '@/pages/rukn/RuknHomePage'
@@ -22,6 +28,11 @@ function PlaceholderPage({ title }: { title: string }) {
       <p className="mt-2 text-secondary">Coming in a future sprint.</p>
     </div>
   )
+}
+
+function LegacyKarkunProfileRedirect() {
+  const { karkunId } = useParams<{ karkunId: string }>()
+  return <Navigate to={`${ROUTES.ADMIN_KARKUN}/${karkunId ?? ''}`} replace />
 }
 
 export function AppRouter() {
@@ -47,13 +58,25 @@ export function AppRouter() {
           }
         >
           <Route index element={<AdminHomePage />} />
-          <Route path="assignments" element={<PlaceholderPage title="Assignments" />} />
-          <Route path="reviews" element={<PlaceholderPage title="Reviews" />} />
-          <Route path="campaigns" element={<CampaignsPage />} />
+          <Route path="campaign" element={<CampaignsPage />} />
           <Route path="campaign/setup" element={<CampaignSetupPage />} />
-          <Route path="karkunan" element={<KarkunanPage />} />
-          <Route path="karkunan/:karkunId" element={<KarkunProfilePage />} />
-          <Route path="rukn-master" element={<RuknMasterPage />} />
+          <Route path="rukn" element={<RuknModulePage />} />
+          <Route path="rukn/:ruknId" element={<RuknDetailPage />} />
+          <Route path="karkun" element={<KarkunanPage />} />
+          <Route path="karkun/:karkunId" element={<KarkunProfilePage />} />
+          <Route path="execution" element={<ExecutionModulePage />} />
+          <Route path="review" element={<ReviewReportsModulePage />} />
+          <Route path="follow-up" element={<FollowUpDevelopmentModulePage />} />
+          <Route path="settings" element={<SettingsPage />} />
+          <Route path="help" element={<HelpPage />} />
+
+          {/* Legacy route redirects */}
+          <Route path="campaigns" element={<Navigate to={ROUTES.ADMIN_CAMPAIGN} replace />} />
+          <Route path="assignments" element={<Navigate to={ROUTES.ADMIN_RUKN} replace />} />
+          <Route path="reviews" element={<Navigate to={ROUTES.ADMIN_REVIEW} replace />} />
+          <Route path="karkunan" element={<Navigate to={ROUTES.ADMIN_KARKUN} replace />} />
+          <Route path="karkunan/:karkunId" element={<LegacyKarkunProfileRedirect />} />
+          <Route path="rukn-master" element={<Navigate to={ROUTES.ADMIN_RUKN} replace />} />
         </Route>
 
         <Route

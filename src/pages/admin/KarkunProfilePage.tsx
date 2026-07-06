@@ -27,8 +27,8 @@ export function KarkunProfilePage() {
       <div className="mx-auto max-w-3xl rounded-(--radius-card) border border-border bg-surface p-8 text-center shadow-card">
         <h1 className="text-xl font-semibold text-text-heading">Karkun Not Found</h1>
         <p className="mt-2 text-secondary">This profile does not exist in the registry.</p>
-        <Link to={ROUTES.ADMIN_KARKUNAN} className="mt-6 inline-block">
-          <SecondaryButton type="button">Back to Karkunan</SecondaryButton>
+        <Link to={ROUTES.ADMIN_KARKUN} className="mt-6 inline-block">
+          <SecondaryButton type="button">Back to Karkun</SecondaryButton>
         </Link>
       </div>
     )
@@ -39,10 +39,10 @@ export function KarkunProfilePage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <Link
-            to={ROUTES.ADMIN_KARKUNAN}
+            to={ROUTES.ADMIN_KARKUN}
             className="text-sm font-medium text-primary hover:underline"
           >
-            ← Back to Karkunan
+            ← Back to Karkun
           </Link>
           <h1 className="mt-2 text-2xl font-semibold text-text-heading">{karkun.name}</h1>
           <div className="mt-3">

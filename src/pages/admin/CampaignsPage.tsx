@@ -14,9 +14,9 @@ export function CampaignsPage() {
     <div className="mx-auto max-w-3xl space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-text-heading">Campaigns</h1>
+          <h1 className="text-2xl font-semibold text-text-heading">Campaign</h1>
           <p className="mt-2 text-secondary">
-            Manage active and archived campaigns for your local Jamaat.
+            Campaign planning and monitoring for your local Jamaat.
           </p>
         </div>
         <CreateCampaignButton />

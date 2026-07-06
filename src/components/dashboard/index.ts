@@ -5,6 +5,10 @@ export { MissionHeroCard } from './MissionHeroCard'
 export { ActiveCampaignPanel } from './ActiveCampaignPanel'
 export { NeedsAttentionPanel } from './NeedsAttentionPanel'
 export { QuickActionsPanel } from './QuickActionsPanel'
+export { CommandCenterActiveCampaign } from './CommandCenterActiveCampaign'
+export { CommandCenterTodaysWork } from './CommandCenterTodaysWork'
+export { CommandCenterQuickActions } from './CommandCenterQuickActions'
+export { RecentActivityPanel } from './RecentActivityPanel'
 export {
   CurrentVisitPanel,
   NextMissionPanel,

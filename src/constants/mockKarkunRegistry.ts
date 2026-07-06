@@ -211,6 +211,4 @@ export function resolveAssignedRuknName(ruknId: string): string {
   return getRuknById(ruknId)?.name ?? 'Unassigned'
 }
 
-export function adminKarkunProfilePath(karkunId: string): string {
-  return `/admin/karkunan/${karkunId}`
-}
+export { adminKarkunProfilePath } from '@/constants/routes'
