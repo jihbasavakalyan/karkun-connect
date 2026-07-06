@@ -4,6 +4,7 @@ import { SecondaryButton } from '@/components/ui/SecondaryButton'
 
 const quickActions = [
   { id: 'add-karkun', label: 'Add Karkun', to: ROUTES.ADMIN_KARKUNAN },
+  { id: 'rukn-master', label: 'Rukn Master', to: ROUTES.ADMIN_RUKN_MASTER },
   { id: 'assign-karkunan', label: 'Assign Karkunan', to: `${ROUTES.ADMIN}/assignments` },
   { id: 'campaign-workspace', label: 'Campaign Workspace', to: ROUTES.ADMIN_CAMPAIGNS },
   { id: 'view-reports', label: 'View Reports', to: `${ROUTES.ADMIN}/reviews` },

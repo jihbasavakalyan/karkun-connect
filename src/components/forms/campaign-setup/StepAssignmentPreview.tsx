@@ -1,4 +1,5 @@
-import { MOCK_KARKUN_LIST, MOCK_RUKN_LIST } from '@/constants/mockCampaignSetup'
+import { MOCK_KARKUN_LIST } from '@/constants/mockCampaignSetup'
+import { ruknMaster } from '@/data/ruknMaster'
 import type { CampaignSetupState } from '@/types/campaign-setup.types'
 
 type StepAssignmentPreviewProps = {
@@ -10,7 +11,7 @@ function getKarkunName(karkunId: string): string {
 }
 
 export function StepAssignmentPreview({ state }: StepAssignmentPreviewProps) {
-  const selectedRukns = MOCK_RUKN_LIST.filter((rukn) =>
+  const selectedRukns = ruknMaster.filter((rukn) =>
     state.selectedRuknIds.includes(rukn.id),
   )
 
@@ -48,7 +49,7 @@ export function StepAssignmentPreview({ state }: StepAssignmentPreviewProps) {
                   </span>
                   <div>
                     <p className="font-semibold text-text-heading">{rukn.name}</p>
-                    <p className="text-sm text-secondary">{rukn.area}</p>
+                    <p className="text-sm text-secondary">{rukn.place}</p>
                   </div>
                 </div>
 

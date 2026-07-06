@@ -1,5 +1,5 @@
-import type { Dispatch } from 'react'
-import { MOCK_RUKN_LIST } from '@/constants/mockCampaignSetup'
+import { useMemo, useState, type Dispatch } from 'react'
+import { ruknMaster, searchRukn } from '@/data/ruknMaster'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import type { CampaignSetupAction, CampaignSetupState } from '@/types/campaign-setup.types'
 
@@ -9,9 +9,11 @@ type StepRuknProps = {
 }
 
 export function StepRukn({ state, dispatch }: StepRuknProps) {
-  const selectedRukns = MOCK_RUKN_LIST.filter((rukn) =>
-    state.selectedRuknIds.includes(rukn.id),
-  )
+  const [query, setQuery] = useState('')
+
+  const filteredRukn = useMemo(() => searchRukn(query), [query])
+
+  const selectedRukns = ruknMaster.filter((rukn) => state.selectedRuknIds.includes(rukn.id))
 
   return (
     <div className="space-y-5">
@@ -27,13 +29,27 @@ export function StepRukn({ state, dispatch }: StepRuknProps) {
         </SecondaryButton>
       </div>
 
+      <div className="flex flex-col gap-2">
+        <label htmlFor="campaign-team-search" className="text-sm font-medium text-text-heading">
+          Search Rukn
+        </label>
+        <input
+          id="campaign-team-search"
+          type="search"
+          value={query}
+          placeholder="Search by name..."
+          onChange={(event) => setQuery(event.target.value)}
+          className="w-full rounded-lg border border-border bg-surface px-4 py-3 text-base text-text-heading placeholder:text-secondary-light focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+        />
+      </div>
+
       {selectedRukns.length > 0 && (
         <section className="rounded-(--radius-card) border border-primary/30 bg-primary-muted/30 p-4">
           <h3 className="text-sm font-semibold text-text-heading">Selected Rukn</h3>
           <ul className="mt-2 space-y-1">
             {selectedRukns.map((rukn) => (
               <li key={rukn.id} className="text-sm text-text-heading">
-                {rukn.name} · {rukn.area}
+                {rukn.name} · {rukn.place}
               </li>
             ))}
           </ul>
@@ -41,7 +57,7 @@ export function StepRukn({ state, dispatch }: StepRuknProps) {
       )}
 
       <ul className="space-y-3">
-        {MOCK_RUKN_LIST.map((rukn) => {
+        {filteredRukn.map((rukn) => {
           const isSelected = state.selectedRuknIds.includes(rukn.id)
 
           return (
@@ -62,7 +78,7 @@ export function StepRukn({ state, dispatch }: StepRuknProps) {
                 />
                 <span className="flex-1">
                   <span className="block font-medium text-text-heading">{rukn.name}</span>
-                  <span className="text-sm text-secondary">{rukn.area}</span>
+                  <span className="text-sm text-secondary">{rukn.place}</span>
                 </span>
               </label>
             </li>
@@ -71,7 +87,7 @@ export function StepRukn({ state, dispatch }: StepRuknProps) {
       </ul>
 
       <p className="text-sm text-secondary">
-        {state.selectedRuknIds.length} Rukn selected
+        {state.selectedRuknIds.length} Rukn selected · {ruknMaster.length} total in master
       </p>
     </div>
   )

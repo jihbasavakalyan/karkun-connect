@@ -5,6 +5,7 @@ export const ROUTES = {
   ADMIN_CAMPAIGNS: '/admin/campaigns',
   ADMIN_CAMPAIGN_SETUP: '/admin/campaign/setup',
   ADMIN_KARKUNAN: '/admin/karkunan',
+  ADMIN_RUKN_MASTER: '/admin/rukn-master',
   RUKN: '/rukn',
   RUKN_CAMPAIGN_RECORD: '/rukn/campaign-record',
 } as const

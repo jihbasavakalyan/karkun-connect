@@ -8,6 +8,7 @@ const navItems = [
   { label: 'Assignments', to: `${ROUTES.ADMIN}/assignments`, end: false },
   { label: 'Reviews', to: `${ROUTES.ADMIN}/reviews`, end: false },
   { label: 'Karkunan', to: ROUTES.ADMIN_KARKUNAN, end: false },
+  { label: 'Rukn Master', to: ROUTES.ADMIN_RUKN_MASTER, end: false },
   { label: 'Campaigns', to: ROUTES.ADMIN_CAMPAIGNS, end: false },
 ] as const
 

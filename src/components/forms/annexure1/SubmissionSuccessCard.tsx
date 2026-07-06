@@ -34,7 +34,7 @@ export function SubmissionSuccessCard({ submission, nextMission }: SubmissionSuc
 
       <dl className="space-y-3 rounded-(--radius-card) border border-border bg-surface p-6 text-left shadow-card">
         <div>
-          <dt className="text-sm text-secondary">Worker Name</dt>
+          <dt className="text-sm text-secondary">Karkun Name</dt>
           <dd className="font-semibold text-text-heading">{submission.workerName}</dd>
         </div>
         <div>

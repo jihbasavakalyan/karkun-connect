@@ -1,4 +1,4 @@
-import { MOCK_RUKN_LIST } from '@/constants/mockCampaignSetup'
+import { ruknMaster } from '@/data/ruknMaster'
 import {
   formatCampaignDuration,
   getTotalAssignments,
@@ -12,7 +12,7 @@ type StepLaunchCampaignProps = {
 }
 
 export function StepLaunchCampaign({ state, onLaunch }: StepLaunchCampaignProps) {
-  const selectedRukns = MOCK_RUKN_LIST.filter((rukn) =>
+  const selectedRukns = ruknMaster.filter((rukn) =>
     state.selectedRuknIds.includes(rukn.id),
   )
   const totalAssignments = getTotalAssignments(state)

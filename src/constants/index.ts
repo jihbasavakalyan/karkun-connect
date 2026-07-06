@@ -17,13 +17,11 @@ export {
 } from './mockDashboard'
 export {
   APPROVED_CAMPAIGN_OBJECTIVES,
-  MOCK_RUKN_LIST,
   MOCK_KARKUN_LIST,
   WIZARD_STEPS,
   CAMPAIGN_CHECKLIST_ITEMS,
   TOTAL_WIZARD_STEPS,
   type CampaignObjective,
-  type MockRukn,
   type MockKarkun,
 } from './mockCampaignSetup'
 export {

@@ -2,8 +2,8 @@ import type { ReactNode } from 'react'
 import {
   APPROVED_CAMPAIGN_OBJECTIVES,
   MOCK_KARKUN_LIST,
-  MOCK_RUKN_LIST,
 } from '@/constants/mockCampaignSetup'
+import { ruknMaster } from '@/data/ruknMaster'
 import type { CampaignSetupState } from '@/types/campaign-setup.types'
 
 type StepCampaignReviewProps = {
@@ -30,7 +30,7 @@ export function StepCampaignReview({ state }: StepCampaignReviewProps) {
     (objective) => state.enabledObjectives[objective.id],
   )
 
-  const selectedRukns = MOCK_RUKN_LIST.filter((rukn) =>
+  const selectedRukns = ruknMaster.filter((rukn) =>
     state.selectedRuknIds.includes(rukn.id),
   )
 
@@ -91,7 +91,7 @@ export function StepCampaignReview({ state }: StepCampaignReviewProps) {
             <ul className="list-inside list-disc space-y-1">
               {selectedRukns.map((rukn) => (
                 <li key={rukn.id}>
-                  {rukn.name} ({rukn.area})
+                  {rukn.name} ({rukn.place})
                 </li>
               ))}
             </ul>

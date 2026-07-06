@@ -9,7 +9,7 @@ type VisitFormHeaderProps = {
 export function VisitFormHeader({ karkun }: VisitFormHeaderProps) {
   return (
     <header className="rounded-(--radius-card) border border-border bg-surface p-5 shadow-card">
-      <p className="text-sm font-medium text-primary">Annexure-1 · Worker Information & Meeting Form</p>
+      <p className="text-sm font-medium text-primary">Annexure-1 · Karkun Information & Meeting Form</p>
       <h1 className="mt-2 text-2xl font-semibold text-text-heading">{karkun.name}</h1>
 
       <dl className="mt-4 grid gap-3 sm:grid-cols-2">

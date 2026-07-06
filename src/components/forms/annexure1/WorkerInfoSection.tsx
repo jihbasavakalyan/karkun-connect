@@ -18,7 +18,7 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 
 export function WorkerInfoSection({ name, mobile, area, address }: WorkerInfoSectionProps) {
   return (
-    <FormSectionCard title="Worker Information">
+    <FormSectionCard title="Karkun Information">
       <dl className="space-y-3">
         <InfoRow label="Name" value={name} />
         <InfoRow label="Mobile" value={mobile} />

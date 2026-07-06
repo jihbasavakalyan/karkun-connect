@@ -7,6 +7,7 @@ import { CampaignSetupPage } from '@/pages/admin/CampaignSetupPage'
 import { CampaignsPage } from '@/pages/admin/CampaignsPage'
 import { KarkunanPage } from '@/pages/admin/KarkunanPage'
 import { KarkunProfilePage } from '@/pages/admin/KarkunProfilePage'
+import { RuknMasterPage } from '@/pages/admin/RuknMasterPage'
 import { LoginPage } from '@/pages/auth/LoginPage'
 import { CampaignRecordPage } from '@/pages/rukn/CampaignRecordPage'
 import { RuknHomePage } from '@/pages/rukn/RuknHomePage'
@@ -52,6 +53,7 @@ export function AppRouter() {
           <Route path="campaign/setup" element={<CampaignSetupPage />} />
           <Route path="karkunan" element={<KarkunanPage />} />
           <Route path="karkunan/:karkunId" element={<KarkunProfilePage />} />
+          <Route path="rukn-master" element={<RuknMasterPage />} />
         </Route>
 
         <Route

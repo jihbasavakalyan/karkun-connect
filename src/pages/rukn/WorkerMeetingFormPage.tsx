@@ -33,7 +33,7 @@ export function WorkerMeetingFormPage() {
   if (!karkun) {
     return (
       <div className="rounded-(--radius-card) border border-border bg-surface p-8 text-center shadow-card">
-        <h1 className="text-xl font-semibold text-text-heading">Worker Not Found</h1>
+        <h1 className="text-xl font-semibold text-text-heading">Karkun Not Found</h1>
         <p className="mt-2 text-secondary">This Karkun is not in the registry.</p>
         <Link to={ROUTES.RUKN} className="mt-6 inline-block">
           <SecondaryButton type="button">Return Home</SecondaryButton>

@@ -1,3 +1,5 @@
+import { ruknMaster } from '@/data/ruknMaster'
+
 export type DashboardStat = {
   id: string
   label: string
@@ -5,12 +7,17 @@ export type DashboardStat = {
   unit?: string
 }
 
-export const adminDashboardStats: DashboardStat[] = [
-  { id: 'campaign-progress', label: 'Campaign Progress', value: 68, unit: '%' },
-  { id: 'assigned-karkunan', label: 'Assigned Karkunan', value: 142 },
-  { id: 'reports-awaiting-review', label: 'Reports Awaiting Review', value: 8 },
-  { id: 'pending-jih', label: 'Pending JIH Registrations', value: 5 },
-]
+export function getAdminDashboardStats(): DashboardStat[] {
+  return [
+    { id: 'total-rukn', label: 'Total Rukn', value: ruknMaster.length },
+    { id: 'campaign-progress', label: 'Campaign Progress', value: 68, unit: '%' },
+    { id: 'assigned-karkunan', label: 'Assigned Karkunan', value: 142 },
+    { id: 'reports-awaiting-review', label: 'Reports Awaiting Review', value: 8 },
+    { id: 'pending-jih', label: 'Pending JIH Registrations', value: 5 },
+  ]
+}
+
+export const adminDashboardStats: DashboardStat[] = getAdminDashboardStats()
 
 export const ruknDashboardStats: DashboardStat[] = [
   { id: 'todays-tasks', label: "Today's Tasks", value: 6 },

@@ -1,4 +1,5 @@
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
+import { getActiveRuknNames, getRuknById } from '@/data/ruknMaster'
 
 export const MOCK_KARKUN_REGISTRY: KarkunRegistryRecord[] = [
   {
@@ -7,8 +8,8 @@ export const MOCK_KARKUN_REGISTRY: KarkunRegistryRecord[] = [
     mobile: '+92 300 1234567',
     address: 'House 12, Street 4, ABC Colony',
     area: 'ABC Area',
-    assignedRukn: 'Abdul Rahman',
-    assignedRuknId: 'rukn-1',
+    assignedRukn: 'Ruqia Tahaniyat',
+    assignedRuknId: 'R001',
     campaignStatus: 'active',
     jihRegistration: 'pending',
     visitStatus: 'scheduled',
@@ -23,8 +24,8 @@ export const MOCK_KARKUN_REGISTRY: KarkunRegistryRecord[] = [
     mobile: '+92 301 2345678',
     address: 'Flat 3B, DEF Apartments',
     area: 'DEF Area',
-    assignedRukn: 'Muhammad Hassan',
-    assignedRuknId: 'rukn-2',
+    assignedRukn: 'Amir Khan',
+    assignedRuknId: 'R002',
     campaignStatus: 'active',
     jihRegistration: 'approved',
     visitStatus: 'completed',
@@ -39,8 +40,8 @@ export const MOCK_KARKUN_REGISTRY: KarkunRegistryRecord[] = [
     mobile: '+92 302 3456789',
     address: 'Plot 45, GHI Block',
     area: 'GHI Area',
-    assignedRukn: 'Abdul Rahman',
-    assignedRuknId: 'rukn-1',
+    assignedRukn: 'Ruqia Tahaniyat',
+    assignedRuknId: 'R001',
     campaignStatus: 'active',
     jihRegistration: 'not_started',
     visitStatus: 'pending',
@@ -55,8 +56,8 @@ export const MOCK_KARKUN_REGISTRY: KarkunRegistryRecord[] = [
     mobile: '+92 303 4567890',
     address: 'House 8, JKL Street',
     area: 'JKL Area',
-    assignedRukn: 'Ibrahim Khan',
-    assignedRuknId: 'rukn-3',
+    assignedRukn: 'Mohd Minhajuddin',
+    assignedRuknId: 'R003',
     campaignStatus: 'inactive',
     jihRegistration: 'rejected',
     visitStatus: 'overdue',
@@ -71,8 +72,8 @@ export const MOCK_KARKUN_REGISTRY: KarkunRegistryRecord[] = [
     mobile: '+92 304 5678901',
     address: 'MNO Lane, Sector 2',
     area: 'MNO Area',
-    assignedRukn: 'Yusuf Ahmed',
-    assignedRuknId: 'rukn-4',
+    assignedRukn: 'Syeda Zainab Ghazala',
+    assignedRuknId: 'R004',
     campaignStatus: 'active',
     jihRegistration: 'pending',
     visitStatus: 'scheduled',
@@ -87,8 +88,8 @@ export const MOCK_KARKUN_REGISTRY: KarkunRegistryRecord[] = [
     mobile: '+92 305 6789012',
     address: 'PQR Housing Society, Block C',
     area: 'PQR Area',
-    assignedRukn: 'Muhammad Hassan',
-    assignedRuknId: 'rukn-2',
+    assignedRukn: 'Amir Khan',
+    assignedRuknId: 'R002',
     campaignStatus: 'active',
     jihRegistration: 'approved',
     visitStatus: 'completed',
@@ -103,8 +104,8 @@ export const MOCK_KARKUN_REGISTRY: KarkunRegistryRecord[] = [
     mobile: '+92 306 7890123',
     address: 'STU Road, House 22',
     area: 'STU Area',
-    assignedRukn: 'Ibrahim Khan',
-    assignedRuknId: 'rukn-3',
+    assignedRukn: 'Mohd Minhajuddin',
+    assignedRuknId: 'R003',
     campaignStatus: 'not_assigned',
     jihRegistration: 'not_started',
     visitStatus: 'none',
@@ -119,8 +120,8 @@ export const MOCK_KARKUN_REGISTRY: KarkunRegistryRecord[] = [
     mobile: '+92 307 8901234',
     address: 'VWX Colony, Street 9',
     area: 'VWX Area',
-    assignedRukn: 'Abdul Rahman',
-    assignedRuknId: 'rukn-1',
+    assignedRukn: 'Ruqia Tahaniyat',
+    assignedRuknId: 'R001',
     campaignStatus: 'active',
     jihRegistration: 'pending',
     visitStatus: 'pending',
@@ -135,8 +136,8 @@ export const MOCK_KARKUN_REGISTRY: KarkunRegistryRecord[] = [
     mobile: '+92 308 9012345',
     address: 'YZ Block, House 17',
     area: 'YZ Area',
-    assignedRukn: 'Yusuf Ahmed',
-    assignedRuknId: 'rukn-4',
+    assignedRukn: 'Syeda Zainab Ghazala',
+    assignedRuknId: 'R004',
     campaignStatus: 'inactive',
     jihRegistration: 'not_started',
     visitStatus: 'none',
@@ -151,8 +152,8 @@ export const MOCK_KARKUN_REGISTRY: KarkunRegistryRecord[] = [
     mobile: '+92 309 0123456',
     address: 'Central Plaza, Unit 5',
     area: 'Central Area',
-    assignedRukn: 'Muhammad Hassan',
-    assignedRuknId: 'rukn-2',
+    assignedRukn: 'Amir Khan',
+    assignedRuknId: 'R002',
     campaignStatus: 'active',
     jihRegistration: 'approved',
     visitStatus: 'completed',
@@ -167,8 +168,8 @@ export const MOCK_KARKUN_REGISTRY: KarkunRegistryRecord[] = [
     mobile: '+92 310 1234560',
     address: 'North Zone, Street 11',
     area: 'North Zone',
-    assignedRukn: 'Abdul Rahman',
-    assignedRuknId: 'rukn-1',
+    assignedRukn: 'Ruqia Tahaniyat',
+    assignedRuknId: 'R001',
     campaignStatus: 'active',
     jihRegistration: 'not_started',
     visitStatus: 'scheduled',
@@ -201,13 +202,13 @@ export function getKarkunById(id: string): KarkunRegistryRecord | undefined {
 
 export function getRegistryFilterOptions() {
   const areas = [...new Set(MOCK_KARKUN_REGISTRY.map((k) => k.area))].sort()
-  const rukns = [
-    ...new Set(
-      MOCK_KARKUN_REGISTRY.filter((k) => k.assignedRuknId).map((k) => k.assignedRukn),
-    ),
-  ].sort()
+  const rukns = getActiveRuknNames()
 
   return { areas, rukns }
+}
+
+export function resolveAssignedRuknName(ruknId: string): string {
+  return getRuknById(ruknId)?.name ?? 'Unassigned'
 }
 
 export function adminKarkunProfilePath(karkunId: string): string {

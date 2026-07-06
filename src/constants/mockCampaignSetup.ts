@@ -26,12 +26,6 @@ export type CampaignObjective = {
   description: string
 }
 
-export type MockRukn = {
-  id: string
-  name: string
-  area: string
-}
-
 export type MockKarkun = {
   id: string
   name: string
@@ -64,13 +58,6 @@ export const APPROVED_CAMPAIGN_OBJECTIVES: CampaignObjective[] = [
     label: 'Follow-ups',
     description: 'Complete follow-up tasks generated from visits and commitments.',
   },
-]
-
-export const MOCK_RUKN_LIST: MockRukn[] = [
-  { id: 'rukn-1', name: 'Abdul Rahman', area: 'North Zone' },
-  { id: 'rukn-2', name: 'Muhammad Hassan', area: 'East Zone' },
-  { id: 'rukn-3', name: 'Ibrahim Khan', area: 'South Zone' },
-  { id: 'rukn-4', name: 'Yusuf Ahmed', area: 'West Zone' },
 ]
 
 export const MOCK_KARKUN_LIST: MockKarkun[] = [
