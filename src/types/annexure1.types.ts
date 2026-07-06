@@ -18,12 +18,16 @@ export type Annexure1FormState = {
 
 export type SubmittedMeetingForm = Annexure1FormState & {
   id: string
+  assignmentId: string
+  assignmentNumber: string
+  ruknId: string
   karkunId: string
   workerName: string
   area: string
   assignedRukn: string
   campaignName: string
   submittedAt: string
+  submissionDate: string
   status: 'draft' | 'submitted'
 }
 
@@ -34,6 +38,21 @@ export type CampaignFollowUpRecord = {
   followUpDate: string
   note: string
   sourceFormId: string
+  assignmentNumber: string
+  ruknId: string
+}
+
+export type Annexure1ExecutionMetrics = {
+  pendingMeetings: number
+  pendingReports: number
+  pendingFollowUps: number
+  submittedToday: number
+  submittedThisWeek: number
+  submittedThisMonth: number
+  totalSubmitted: number
+  visitCompletionRate: number
+  reportSubmissionRate: number
+  followUpCompletionRate: number
 }
 
 export const JIH_APP_REGISTRATION_FORM_OPTIONS: JihAppRegistrationStatus[] = [

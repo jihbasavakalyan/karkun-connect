@@ -1,5 +1,7 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { getCampaignRecordData } from '@/constants/mockCampaignRecord'
+import { getCampaignRecordData } from '@/services/annexure1Service'
+import { subscribeToAnnexure1Store } from '@/stores/annexure1Store'
 import { ROUTES } from '@/constants/routes'
 
 function RecordSection({
@@ -18,6 +20,12 @@ function RecordSection({
 }
 
 export function CampaignRecordPage() {
+  const [, setVersion] = useState(0)
+
+  useEffect(() => {
+    return subscribeToAnnexure1Store(() => setVersion((value) => value + 1))
+  }, [])
+
   const data = getCampaignRecordData()
 
   return (
@@ -27,32 +35,14 @@ export function CampaignRecordPage() {
           ← Back to Today&apos;s Mission
         </Link>
         <h1 className="mt-2 text-2xl font-semibold text-text-heading">Campaign Record</h1>
-        <p className="mt-2 text-secondary">Submitted visit and meeting data for the active campaign.</p>
+        <p className="mt-2 text-secondary">
+          JIH Portal — latest Annexure-1 submissions for the active campaign.
+        </p>
       </div>
 
-      <RecordSection title="Visit History">
-        {data.visitHistory.length === 0 ? (
-          <p className="text-sm text-secondary">No visits recorded.</p>
-        ) : (
-          <ul className="space-y-3">
-            {data.visitHistory.map((visit) => (
-              <li
-                key={visit.id}
-                className="rounded-lg border border-border bg-surface-muted px-4 py-3 text-sm"
-              >
-                <p className="font-semibold text-text-heading">
-                  {visit.workerName} · {visit.visitDate}
-                </p>
-                <p className="mt-1 text-secondary">{visit.summary}</p>
-              </li>
-            ))}
-          </ul>
-        )}
-      </RecordSection>
-
-      <RecordSection title="Meeting Forms">
+      <RecordSection title="Annexure-1 Submissions">
         {data.meetingForms.length === 0 ? (
-          <p className="text-sm text-secondary">No forms submitted.</p>
+          <p className="text-sm text-secondary">No Annexure-1 forms submitted yet.</p>
         ) : (
           <ul className="space-y-3">
             {data.meetingForms.map((form) => (
@@ -61,13 +51,36 @@ export function CampaignRecordPage() {
                 className="rounded-lg border border-border bg-surface-muted px-4 py-3 text-sm"
               >
                 <p className="font-semibold text-text-heading">
-                  {form.workerName} · {form.visitDate}
+                  {form.workerName} · {form.visitDate} · {form.assignmentNumber}
+                </p>
+                <p className="mt-1 text-secondary">
+                  Rukn: {form.assignedRukn} · Submitted {form.submissionDate.slice(0, 10)}
                 </p>
                 <p className="mt-1 text-secondary">
                   {form.visitConducted === 'yes'
-                    ? form.discussionSummary || 'Visit completed'
+                    ? form.discussionSummary || 'Annexure-1 submitted'
                     : `Not conducted: ${form.notConductedReason}`}
                 </p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </RecordSection>
+
+      <RecordSection title="Execution History">
+        {data.visitHistory.length === 0 ? (
+          <p className="text-sm text-secondary">No execution records yet.</p>
+        ) : (
+          <ul className="space-y-3">
+            {data.visitHistory.map((visit) => (
+              <li
+                key={visit.id}
+                className="rounded-lg border border-border bg-surface-muted px-4 py-3 text-sm"
+              >
+                <p className="font-semibold text-text-heading">
+                  {visit.workerName} · {visit.visitDate} · {visit.assignmentNumber}
+                </p>
+                <p className="mt-1 text-secondary">{visit.summary}</p>
               </li>
             ))}
           </ul>
@@ -85,7 +98,7 @@ export function CampaignRecordPage() {
                 className="rounded-lg border border-border bg-surface-muted px-4 py-3 text-sm"
               >
                 <p className="font-semibold text-text-heading">
-                  {item.workerName} · {item.visitDate}
+                  {item.workerName} · {item.visitDate} · {item.assignmentNumber}
                 </p>
                 <p className="mt-1 text-secondary">{item.details}</p>
               </li>
@@ -105,9 +118,11 @@ export function CampaignRecordPage() {
                 className="rounded-lg border border-border bg-surface-muted px-4 py-3 text-sm"
               >
                 <p className="font-semibold text-text-heading">
-                  {item.workerName} · {item.visitDate}
+                  {item.workerName} · {item.visitDate} · {item.assignmentNumber}
                 </p>
-                <p className="mt-1 text-secondary">{item.status}</p>
+                <p className="mt-1 text-secondary">
+                  {item.status} · Rukn: {item.ruknName}
+                </p>
               </li>
             ))}
           </ul>
@@ -125,7 +140,7 @@ export function CampaignRecordPage() {
                 className="rounded-lg border border-border bg-surface-muted px-4 py-3 text-sm"
               >
                 <p className="font-semibold text-text-heading">
-                  {item.workerName} · {item.followUpDate}
+                  {item.workerName} · {item.followUpDate} · {item.assignmentNumber}
                 </p>
                 <p className="mt-1 text-secondary">{item.note || 'Follow-up scheduled'}</p>
               </li>

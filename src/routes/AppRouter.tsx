@@ -68,6 +68,7 @@ export function AppRouter() {
           <Route path="karkun" element={<KarkunanPage />} />
           <Route path="karkun/:karkunId" element={<KarkunProfilePage />} />
           <Route path="assignments" element={<AssignmentManagementPage />} />
+          <Route path="annexure-1/:karkunId" element={<WorkerMeetingFormPage />} />
           <Route path="execution" element={<ExecutionModulePage />} />
           <Route path="review" element={<ReviewReportsModulePage />} />
           <Route path="follow-up" element={<FollowUpDevelopmentModulePage />} />

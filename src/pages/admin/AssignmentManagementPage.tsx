@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
-import { adminRuknDetailPath } from '@/constants/routes'
+import { adminAnnexure1Path, adminRuknDetailPath } from '@/constants/routes'
 import { getRuknById, ruknMaster } from '@/data/ruknMaster'
 import { exportAssignmentHistory } from '@/lib/assignmentExport'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
@@ -325,6 +325,12 @@ export function AssignmentManagementPage() {
             </div>
 
             <div className="flex flex-wrap gap-2">
+              {ruknSummary.assignmentStatus === 'Assigned' &&
+                ruknSummary.currentAssignment && (
+                  <Link to={adminAnnexure1Path(ruknSummary.currentAssignment.karkunId)}>
+                    <PrimaryButton type="button">Open Annexure-1</PrimaryButton>
+                  </Link>
+                )}
               {ruknSummary.assignmentStatus === 'Unassigned' ? (
                 <>
                   <PrimaryButton type="button" onClick={() => setModalMode('assign')}>

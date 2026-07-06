@@ -28,31 +28,49 @@ export function SubmissionSuccessCard({ submission, nextMission }: SubmissionSuc
       </div>
 
       <div>
-        <h2 className="text-2xl font-semibold text-text-heading">Visit Report Submitted</h2>
-        <p className="mt-2 text-secondary">Campaign record updated (mock).</p>
+        <h2 className="text-2xl font-semibold text-text-heading">Annexure-1 Submitted</h2>
+        <p className="mt-2 text-secondary">
+          Campaign record and JIH Portal updated automatically.
+        </p>
       </div>
 
       <dl className="space-y-3 rounded-(--radius-card) border border-border bg-surface p-6 text-left shadow-card">
+        <div>
+          <dt className="text-sm text-secondary">Assignment Number</dt>
+          <dd className="font-semibold text-text-heading">{submission.assignmentNumber}</dd>
+        </div>
         <div>
           <dt className="text-sm text-secondary">Karkun Name</dt>
           <dd className="font-semibold text-text-heading">{submission.workerName}</dd>
         </div>
         <div>
+          <dt className="text-sm text-secondary">Submission Date</dt>
+          <dd className="font-semibold text-text-heading">
+            {submission.submissionDate.slice(0, 10)}
+          </dd>
+        </div>
+        <div>
           <dt className="text-sm text-secondary">Visit Date</dt>
           <dd className="font-semibold text-text-heading">{submission.visitDate}</dd>
         </div>
-        <div>
-          <dt className="text-sm text-secondary">Current Commitment</dt>
-          <dd className="font-semibold text-text-heading">{commitmentLabel}</dd>
-        </div>
-        <div>
-          <dt className="text-sm text-secondary">JIH App Registration</dt>
-          <dd className="font-semibold text-text-heading">{submission.jihAppRegistrationStatus}</dd>
-        </div>
-        <div>
-          <dt className="text-sm text-secondary">Follow-up Status</dt>
-          <dd className="font-semibold text-text-heading">{followUpLabel}</dd>
-        </div>
+        {submission.visitConducted === 'yes' && (
+          <>
+            <div>
+              <dt className="text-sm text-secondary">Current Commitment</dt>
+              <dd className="font-semibold text-text-heading">{commitmentLabel}</dd>
+            </div>
+            <div>
+              <dt className="text-sm text-secondary">JIH App Registration</dt>
+              <dd className="font-semibold text-text-heading">
+                {submission.jihAppRegistrationStatus}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-sm text-secondary">Follow-up Status</dt>
+              <dd className="font-semibold text-text-heading">{followUpLabel}</dd>
+            </div>
+          </>
+        )}
       </dl>
 
       {nextMission && (

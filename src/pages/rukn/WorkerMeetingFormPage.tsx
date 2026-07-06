@@ -1,10 +1,17 @@
 import { useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
+import { DEMO_RUKN_PORTAL_ID } from '@/constants/demoRukn'
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
-import { submitMeetingForm, saveDraftMeetingForm } from '@/constants/mockCampaignRecord'
 import { ROUTES } from '@/constants/routes'
-import { completeVisitReportSubmission } from '@/lib/mockMissionEngine'
 import { useAnnexure1Form } from '@/hooks/useAnnexure1Form'
+import { useAuth } from '@/hooks/useAuth'
+import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
+import { completeVisitReportSubmission } from '@/lib/mockMissionEngine'
+import {
+  saveAnnexure1Draft,
+  submitAnnexure1,
+} from '@/services/annexure1Service'
+import { resolveActiveAssignmentForAnnexure1 } from '@/validation/annexure1Validation'
 import {
   CommitmentSection,
   FollowUpSection,
@@ -23,7 +30,19 @@ import type { RuknMission } from '@/constants/mockMissions'
 export function WorkerMeetingFormPage() {
   const { karkunId } = useParams<{ karkunId: string }>()
   const navigate = useNavigate()
+  const location = useLocation()
+  const isAdminContext = location.pathname.startsWith('/admin/annexure-1')
+  const backPath = isAdminContext ? ROUTES.ADMIN_ASSIGNMENTS : ROUTES.RUKN_MY_KARKUN
+  const { user } = useAuth()
+  useAssignmentEngine()
+
   const karkun = karkunId ? getKarkunById(karkunId) : undefined
+  const ruknId = user?.ruknId ?? DEMO_RUKN_PORTAL_ID
+  const actorRole = user?.role === 'administrator' ? 'administrator' : 'rukn'
+  const activeAssignment = karkunId
+    ? resolveActiveAssignmentForAnnexure1(karkunId, ruknId)
+    : undefined
+
   const { form, setField, visitStopped } = useAnnexure1Form(
     karkun
       ? {
@@ -31,6 +50,7 @@ export function WorkerMeetingFormPage() {
         }
       : undefined,
   )
+  const [submitError, setSubmitError] = useState('')
   const [successState, setSuccessState] = useState<{
     submission: SubmittedMeetingForm
     nextMission?: RuknMission
@@ -48,6 +68,20 @@ export function WorkerMeetingFormPage() {
     )
   }
 
+  if (!activeAssignment) {
+    return (
+      <div className="rounded-(--radius-card) border border-border bg-surface p-8 text-center shadow-card">
+        <h1 className="text-xl font-semibold text-text-heading">Annexure-1</h1>
+        <p className="mt-4 text-secondary">No active assignment found.</p>
+        <Link to={backPath} className="mt-6 inline-block">
+          <SecondaryButton type="button">
+            {isAdminContext ? 'Back to Assignments' : 'Back to My Karkun'}
+          </SecondaryButton>
+        </Link>
+      </div>
+    )
+  }
+
   if (successState) {
     return (
       <SubmissionSuccessCard
@@ -57,34 +91,40 @@ export function WorkerMeetingFormPage() {
     )
   }
 
+  const submissionContext = {
+    karkunId: karkun.id,
+    ruknId: activeAssignment.ruknId,
+    actorRole: actorRole as 'rukn' | 'administrator',
+  }
+
   const handleSubmit = () => {
-    const record = submitMeetingForm(
-      karkun.id,
-      karkun.name,
-      karkun.area,
-      karkun.assignedRukn,
-      form,
-    )
+    setSubmitError('')
+    const result = submitAnnexure1(form, submissionContext)
+    if (!result.success) {
+      setSubmitError(result.error)
+      return
+    }
+
     const { nextMission } = completeVisitReportSubmission()
-    setSuccessState({ submission: record, nextMission })
+    setSuccessState({ submission: result.submission, nextMission })
   }
 
   const handleSaveDraft = () => {
-    saveDraftMeetingForm(
-      karkun.id,
-      karkun.name,
-      karkun.area,
-      karkun.assignedRukn,
-      form,
-    )
-    navigate(ROUTES.RUKN)
+    setSubmitError('')
+    const result = saveAnnexure1Draft(form, submissionContext)
+    if (!result.success) {
+      setSubmitError(result.error)
+      return
+    }
+    navigate(isAdminContext ? ROUTES.ADMIN_ASSIGNMENTS : ROUTES.RUKN)
   }
 
   const showFullForm = form.visitConducted === 'yes'
+  const showNotConductedActions = visitStopped
 
   return (
     <div className="space-y-5 pb-8">
-      <VisitFormHeader karkun={karkun} />
+      <VisitFormHeader karkun={karkun} assignmentNumber={activeAssignment.assignmentNumber} />
 
       <VisitStatusSection form={form} setField={setField} />
 
@@ -100,21 +140,30 @@ export function WorkerMeetingFormPage() {
           <CommitmentSection form={form} setField={setField} />
           <JIHRegistrationSection form={form} setField={setField} />
           <FollowUpSection form={form} setField={setField} />
+        </>
+      )}
 
-          <div className="sticky bottom-20 z-10 space-y-3 rounded-(--radius-card) border border-border bg-surface p-4 shadow-card">
-            <PrimaryButton type="button" fullWidth onClick={handleSubmit}>
-              Submit Report
-            </PrimaryButton>
+      {(showFullForm || showNotConductedActions) && (
+        <div className="sticky bottom-20 z-10 space-y-3 rounded-(--radius-card) border border-border bg-surface p-4 shadow-card">
+          {submitError && (
+            <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+              {submitError}
+            </p>
+          )}
+          <PrimaryButton type="button" fullWidth onClick={handleSubmit}>
+            Submit Annexure-1
+          </PrimaryButton>
+          {showFullForm && (
             <SecondaryButton type="button" fullWidth onClick={handleSaveDraft}>
               Save Draft
             </SecondaryButton>
-            <Link to={ROUTES.RUKN}>
-              <SecondaryButton type="button" fullWidth>
-                Cancel
-              </SecondaryButton>
-            </Link>
-          </div>
-        </>
+          )}
+          <Link to={backPath}>
+            <SecondaryButton type="button" fullWidth>
+              Cancel
+            </SecondaryButton>
+          </Link>
+        </div>
       )}
 
       {!showFullForm && !visitStopped && (

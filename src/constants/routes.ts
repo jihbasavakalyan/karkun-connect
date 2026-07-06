@@ -27,6 +27,10 @@ export function ruknVisitPath(karkunId: string): string {
   return `${ROUTES.RUKN}/visit/${karkunId}`
 }
 
+export function adminAnnexure1Path(karkunId: string): string {
+  return `${ROUTES.ADMIN}/annexure-1/${karkunId}`
+}
+
 export function adminKarkunProfilePath(karkunId: string): string {
   return `${ROUTES.ADMIN_KARKUN}/${karkunId}`
 }

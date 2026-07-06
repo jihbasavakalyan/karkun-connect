@@ -52,7 +52,7 @@ export function MyKarkunCard({ karkun, ruknId }: MyKarkunCardProps) {
         <div className="mt-4 grid gap-2">
           <Link to={ruknVisitPath(karkun.id)}>
             <PrimaryButton type="button" fullWidth>
-              Open
+              Open Annexure-1
             </PrimaryButton>
           </Link>
           <SecondaryButton type="button" fullWidth onClick={() => setReleaseOpen(true)}>

@@ -1,8 +1,5 @@
-import { Link } from 'react-router-dom'
-import { ROUTES } from '@/constants/routes'
 import { InputField } from '@/components/forms/InputField'
 import { FormSectionCard, LargeRadioOption } from '@/components/forms/annexure1/FormSectionCard'
-import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import type { Annexure1FormState } from '@/types/annexure1.types'
 import type { Annexure1FormFieldUpdater } from '@/hooks/useAnnexure1Form'
 
@@ -42,7 +39,7 @@ export function VisitStatusSection({ form, setField }: VisitStatusSectionProps) 
         </fieldset>
 
         {form.visitConducted === 'no' && (
-          <div className="space-y-4 rounded-lg border border-border bg-surface-muted p-4">
+          <div className="rounded-lg border border-border bg-surface-muted p-4">
             <InputField
               id="not-conducted-reason"
               label="Reason"
@@ -50,11 +47,6 @@ export function VisitStatusSection({ form, setField }: VisitStatusSectionProps) 
               onValueChange={(value) => setField('notConductedReason', value)}
               placeholder="Why was the visit not conducted?"
             />
-            <Link to={ROUTES.RUKN}>
-              <PrimaryButton type="button" fullWidth>
-                Return
-              </PrimaryButton>
-            </Link>
           </div>
         )}
       </div>

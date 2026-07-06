@@ -36,6 +36,7 @@ export {
   getKarkunById,
   getRegistryFilterOptions,
   updateKarkunMeetingOutcomes,
+  updateKarkunVisitExecution,
 } from './mockKarkunRegistry'
 export {
   ADMIN_MISSION_QUEUE,

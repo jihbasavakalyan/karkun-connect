@@ -243,6 +243,7 @@ export function updateKarkunMeetingOutcomes(
   outcomes: {
     currentCommitment?: string
     jihAppRegistrationStatus: JihAppRegistrationStatus
+    syncJihPortal?: boolean
   },
 ): void {
   const karkun = getKarkunById(karkunId)
@@ -256,6 +257,30 @@ export function updateKarkunMeetingOutcomes(
   }
 
   karkun.jihAppRegistrationStatus = outcomes.jihAppRegistrationStatus
+
+  if (outcomes.syncJihPortal && outcomes.jihAppRegistrationStatus === 'Recommended') {
+    karkun.jihRegistration = 'pending'
+  }
+
+  if (outcomes.syncJihPortal && outcomes.jihAppRegistrationStatus === 'Registered') {
+    karkun.jihRegistration = 'approved'
+  }
+
+  karkun.updatedAt = new Date().toISOString()
+  karkun.updatedBy = 'Rukn'
+}
+
+export function updateKarkunVisitExecution(
+  karkunId: string,
+  execution: { visitDate: string; visitConducted: boolean },
+): void {
+  const karkun = getKarkunById(karkunId)
+  if (!karkun) {
+    return
+  }
+
+  karkun.lastVisit = execution.visitDate
+  karkun.visitStatus = execution.visitConducted ? 'completed' : 'pending'
   karkun.updatedAt = new Date().toISOString()
   karkun.updatedBy = 'Rukn'
 }

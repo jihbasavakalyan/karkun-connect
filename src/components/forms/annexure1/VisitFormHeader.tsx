@@ -4,15 +4,22 @@ import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
 
 type VisitFormHeaderProps = {
   karkun: KarkunRegistryRecord
+  assignmentNumber?: string
 }
 
-export function VisitFormHeader({ karkun }: VisitFormHeaderProps) {
+export function VisitFormHeader({ karkun, assignmentNumber }: VisitFormHeaderProps) {
   return (
     <header className="rounded-(--radius-card) border border-border bg-surface p-5 shadow-card">
       <p className="text-sm font-medium text-primary">Annexure-1 · Karkun Information & Meeting Form</p>
       <h1 className="mt-2 text-2xl font-semibold text-text-heading">{karkun.name}</h1>
 
       <dl className="mt-4 grid gap-3 sm:grid-cols-2">
+        {assignmentNumber && (
+          <div>
+            <dt className="text-sm text-secondary">Assignment Number</dt>
+            <dd className="font-medium text-text-heading">{assignmentNumber}</dd>
+          </div>
+        )}
         <div>
           <dt className="text-sm text-secondary">Assigned Area</dt>
           <dd className="font-medium text-text-heading">{karkun.area}</dd>

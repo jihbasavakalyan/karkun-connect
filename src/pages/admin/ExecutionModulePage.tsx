@@ -1,14 +1,19 @@
+import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { MOCK_KARKUN_REGISTRY } from '@/constants/mockKarkunRegistry'
-import { getCampaignRecordData } from '@/constants/mockCampaignRecord'
 import { MOCK_DAILY_PROGRESS_TIMELINE } from '@/constants/mockCommandCenter'
-import { MOCK_NEEDS_ATTENTION } from '@/constants/mockMissions'
-import { VISIT_STATUS_LABELS } from '@/types/karkun-registry.types'
+import {
+  getAnnexure1ExecutionMetrics,
+  getCampaignRecordData,
+  getPendingReportKarkuns,
+  getTodaysMeetingAssignments,
+} from '@/services/annexure1Service'
+import { subscribeToAnnexure1Store } from '@/stores/annexure1Store'
+import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 
 const sections = [
   { id: 'meetings', label: "Today's Meetings" },
-  { id: 'reports', label: 'Pending Reports' },
-  { id: 'completed', label: 'Completed Meetings' },
+  { id: 'reports', label: 'Pending Annexure-1' },
+  { id: 'completed', label: 'Completed Annexure-1' },
   { id: 'progress', label: 'Daily Progress Timeline' },
 ] as const
 
@@ -43,6 +48,8 @@ function ExecutionSectionNav({
 }
 
 export function ExecutionModulePage() {
+  useAssignmentEngine()
+  const [, setVersion] = useState(0)
   const [searchParams, setSearchParams] = useSearchParams()
   const sectionParam = searchParams.get('section')
   const activeSection: ExecutionSection =
@@ -50,12 +57,14 @@ export function ExecutionModulePage() {
       ? (sectionParam as ExecutionSection)
       : 'meetings'
 
+  useEffect(() => {
+    return subscribeToAnnexure1Store(() => setVersion((value) => value + 1))
+  }, [])
+
   const campaignRecord = getCampaignRecordData()
-  const todaysMeetings = MOCK_KARKUN_REGISTRY.filter(
-    (karkun) =>
-      !karkun.isArchived &&
-      (karkun.visitStatus === 'scheduled' || karkun.visitStatus === 'pending'),
-  )
+  const metrics = getAnnexure1ExecutionMetrics()
+  const todaysMeetings = getTodaysMeetingAssignments()
+  const pendingReports = getPendingReportKarkuns()
 
   const setSection = (section: ExecutionSection) => {
     setSearchParams({ section })
@@ -66,7 +75,7 @@ export function ExecutionModulePage() {
       <div>
         <h1 className="text-2xl font-semibold text-text-heading">Execution</h1>
         <p className="mt-2 text-secondary">
-          Operational workspace for meetings, reports, and daily progress.
+          Operational workspace driven by Annexure-1 submissions.
         </p>
       </div>
 
@@ -77,17 +86,18 @@ export function ExecutionModulePage() {
           <h2 className="text-lg font-semibold text-text-heading">Today&apos;s Meetings</h2>
           <ul className="mt-4 space-y-3">
             {todaysMeetings.length === 0 ? (
-              <li className="text-sm text-secondary">No meetings scheduled for today.</li>
+              <li className="text-sm text-secondary">
+                All active assignments have Annexure-1 submitted for today.
+              </li>
             ) : (
-              todaysMeetings.map((karkun) => (
+              todaysMeetings.map(({ assignment, karkun, rukn }) => (
                 <li
-                  key={karkun.id}
+                  key={assignment.assignmentId}
                   className="rounded-lg border border-border bg-surface-muted px-4 py-3 text-sm"
                 >
-                  <p className="font-semibold text-text-heading">{karkun.name}</p>
+                  <p className="font-semibold text-text-heading">{karkun!.name}</p>
                   <p className="mt-1 text-secondary">
-                    {karkun.area} · Rukn: {karkun.assignedRukn} ·{' '}
-                    {VISIT_STATUS_LABELS[karkun.visitStatus]}
+                    {karkun!.area} · Rukn: {rukn!.name} · {assignment.assignmentNumber}
                   </p>
                 </li>
               ))
@@ -98,46 +108,48 @@ export function ExecutionModulePage() {
 
       {activeSection === 'reports' && (
         <section className="rounded-(--radius-card) border border-border bg-surface p-6 shadow-card">
-          <h2 className="text-lg font-semibold text-text-heading">Pending Reports</h2>
-          <p className="mt-2 text-3xl font-semibold text-primary">
-            {MOCK_NEEDS_ATTENTION.pendingReports}
-          </p>
+          <h2 className="text-lg font-semibold text-text-heading">Pending Annexure-1</h2>
+          <p className="mt-2 text-3xl font-semibold text-primary">{metrics.pendingReports}</p>
           <ul className="mt-4 space-y-3">
-            {MOCK_KARKUN_REGISTRY.filter(
-              (karkun) => karkun.visitStatus === 'completed' && karkun.campaignStatus === 'active',
-            )
-              .slice(0, 5)
-              .map((karkun) => (
+            {pendingReports.length === 0 ? (
+              <li className="text-sm text-secondary">All active assignments have Annexure-1 submitted.</li>
+            ) : (
+              pendingReports.map(({ assignment, karkun, rukn }) => (
                 <li
-                  key={karkun.id}
+                  key={assignment.assignmentId}
                   className="rounded-lg border border-border bg-surface-muted px-4 py-3 text-sm"
                 >
-                  <p className="font-semibold text-text-heading">{karkun.name}</p>
+                  <p className="font-semibold text-text-heading">{karkun!.name}</p>
                   <p className="mt-1 text-secondary">
-                    Report pending · Last visit {karkun.lastVisit ?? '—'}
+                    Annexure-1 pending · Rukn: {rukn!.name} · {assignment.assignmentNumber}
                   </p>
                 </li>
-              ))}
+              ))
+            )}
           </ul>
         </section>
       )}
 
       {activeSection === 'completed' && (
         <section className="rounded-(--radius-card) border border-border bg-surface p-6 shadow-card">
-          <h2 className="text-lg font-semibold text-text-heading">Completed Meetings</h2>
+          <h2 className="text-lg font-semibold text-text-heading">Completed Annexure-1</h2>
           <ul className="mt-4 space-y-3">
-            {campaignRecord.visitHistory.length === 0 ? (
-              <li className="text-sm text-secondary">No completed meetings recorded.</li>
+            {campaignRecord.meetingForms.length === 0 ? (
+              <li className="text-sm text-secondary">No Annexure-1 submissions recorded.</li>
             ) : (
-              campaignRecord.visitHistory.map((visit) => (
+              campaignRecord.meetingForms.map((form) => (
                 <li
-                  key={visit.id}
+                  key={form.id}
                   className="rounded-lg border border-border bg-surface-muted px-4 py-3 text-sm"
                 >
                   <p className="font-semibold text-text-heading">
-                    {visit.workerName} · {visit.visitDate}
+                    {form.workerName} · {form.visitDate} · {form.assignmentNumber}
                   </p>
-                  <p className="mt-1 text-secondary">{visit.summary}</p>
+                  <p className="mt-1 text-secondary">
+                    {form.visitConducted === 'yes'
+                      ? form.discussionSummary || 'Annexure-1 submitted'
+                      : `Not conducted: ${form.notConductedReason}`}
+                  </p>
                 </li>
               ))
             )}

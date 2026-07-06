@@ -1,19 +1,29 @@
+import { useEffect, useState } from 'react'
 import {
-  MOCK_CAMPAIGN_HEALTH,
-  MOCK_PERFORMANCE_METRICS,
-} from '@/constants/mockCommandCenter'
-import { getCampaignRecordData } from '@/constants/mockCampaignRecord'
+  getCampaignHealthFromAnnexure1,
+  getCampaignRecordData,
+  getPerformanceMetricsFromAnnexure1,
+} from '@/services/annexure1Service'
+import { subscribeToAnnexure1Store } from '@/stores/annexure1Store'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 
 export function ReviewReportsModulePage() {
+  const [, setVersion] = useState(0)
+
+  useEffect(() => {
+    return subscribeToAnnexure1Store(() => setVersion((value) => value + 1))
+  }, [])
+
   const campaignRecord = getCampaignRecordData()
+  const campaignHealth = getCampaignHealthFromAnnexure1()
+  const performanceMetrics = getPerformanceMetricsFromAnnexure1()
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <div>
         <h1 className="text-2xl font-semibold text-text-heading">Review & Reports</h1>
         <p className="mt-2 text-secondary">
-          Campaign health, performance review, and exports. No operational actions here.
+          Campaign health and performance derived from Annexure-1 submissions.
         </p>
       </div>
 
@@ -23,25 +33,25 @@ export function ReviewReportsModulePage() {
           <div className="rounded-lg border border-border bg-surface-muted p-4">
             <p className="text-sm text-secondary">Overall Score</p>
             <p className="mt-1 text-3xl font-semibold text-primary">
-              {MOCK_CAMPAIGN_HEALTH.overallScore}%
+              {campaignHealth.overallScore}%
             </p>
           </div>
           <div className="rounded-lg border border-border bg-surface-muted p-4">
-            <p className="text-sm text-secondary">Visit Completion</p>
+            <p className="text-sm text-secondary">Annexure-1 Completion</p>
             <p className="mt-1 text-2xl font-semibold text-text-heading">
-              {MOCK_CAMPAIGN_HEALTH.visitCompletionRate}%
+              {campaignHealth.visitCompletionRate}%
             </p>
           </div>
           <div className="rounded-lg border border-border bg-surface-muted p-4">
             <p className="text-sm text-secondary">Report Submission</p>
             <p className="mt-1 text-2xl font-semibold text-text-heading">
-              {MOCK_CAMPAIGN_HEALTH.reportSubmissionRate}%
+              {campaignHealth.reportSubmissionRate}%
             </p>
           </div>
           <div className="rounded-lg border border-border bg-surface-muted p-4">
             <p className="text-sm text-secondary">Follow-up Completion</p>
             <p className="mt-1 text-2xl font-semibold text-text-heading">
-              {MOCK_CAMPAIGN_HEALTH.followUpCompletionRate}%
+              {campaignHealth.followUpCompletionRate}%
             </p>
           </div>
         </div>
@@ -50,7 +60,7 @@ export function ReviewReportsModulePage() {
       <section className="rounded-(--radius-card) border border-border bg-surface p-6 shadow-card">
         <h2 className="text-lg font-semibold text-text-heading">Performance</h2>
         <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {MOCK_PERFORMANCE_METRICS.map((metric) => (
+          {performanceMetrics.map((metric) => (
             <li
               key={metric.id}
               className="rounded-lg border border-border bg-surface-muted px-4 py-3"
@@ -64,31 +74,10 @@ export function ReviewReportsModulePage() {
       </section>
 
       <section className="rounded-(--radius-card) border border-border bg-surface p-6 shadow-card">
-        <h2 className="text-lg font-semibold text-text-heading">Charts</h2>
-        <div className="mt-4 space-y-3">
-          {[
-            { label: 'Meetings', value: 68 },
-            { label: 'Reports', value: 74 },
-            { label: 'Follow-ups', value: 61 },
-          ].map((chart) => (
-            <div key={chart.label}>
-              <div className="mb-1 flex justify-between text-sm">
-                <span className="text-secondary">{chart.label}</span>
-                <span className="font-medium text-text-heading">{chart.value}%</span>
-              </div>
-              <div className="h-3 rounded-full bg-surface-muted">
-                <div
-                  className="h-3 rounded-full bg-primary"
-                  style={{ width: `${chart.value}%` }}
-                />
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="rounded-(--radius-card) border border-border bg-surface p-6 shadow-card">
-        <h2 className="text-lg font-semibold text-text-heading">Submitted Reports</h2>
+        <h2 className="text-lg font-semibold text-text-heading">Annexure-1 Reports</h2>
+        <p className="mt-1 text-sm text-secondary">
+          Submitted Annexure-1 forms are the report source. No duplicate reporting required.
+        </p>
         <ul className="mt-4 space-y-3">
           {campaignRecord.meetingForms.length === 0 ? (
             <li className="text-sm text-secondary">No submitted reports yet.</li>
@@ -99,11 +88,14 @@ export function ReviewReportsModulePage() {
                 className="rounded-lg border border-border bg-surface-muted px-4 py-3 text-sm"
               >
                 <p className="font-semibold text-text-heading">
-                  {form.workerName} · {form.visitDate}
+                  {form.workerName} · {form.visitDate} · {form.assignmentNumber}
+                </p>
+                <p className="mt-1 text-secondary">
+                  Rukn: {form.assignedRukn} · Submitted {form.submissionDate.slice(0, 10)}
                 </p>
                 <p className="mt-1 text-secondary">
                   {form.visitConducted === 'yes'
-                    ? form.discussionSummary || 'Visit completed'
+                    ? form.discussionSummary || 'Annexure-1 submitted'
                     : `Not conducted: ${form.notConductedReason}`}
                 </p>
               </li>
@@ -118,9 +110,6 @@ export function ReviewReportsModulePage() {
           <SecondaryButton type="button">Export PDF</SecondaryButton>
           <SecondaryButton type="button">Export Excel</SecondaryButton>
         </div>
-        <p className="mt-3 text-sm text-secondary">
-          Export functionality will be enabled in a future sprint.
-        </p>
       </section>
     </div>
   )

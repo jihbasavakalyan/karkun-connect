@@ -23,6 +23,7 @@ export type PeopleAuditAction =
   | 'assign'
   | 'unassign'
   | 'import'
+  | 'annexure1_submit'
 
 export type PeopleAuditEntry = {
   id: string

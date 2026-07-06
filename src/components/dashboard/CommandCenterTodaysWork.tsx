@@ -1,13 +1,47 @@
 import { Link } from 'react-router-dom'
-import { COMMAND_CENTER_TODAYS_WORK } from '@/constants/mockCommandCenter'
+import { ROUTES } from '@/constants/routes'
+import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
+import { getAnnexure1ExecutionMetrics } from '@/services/annexure1Service'
+import { subscribeToAnnexure1Store } from '@/stores/annexure1Store'
+import { useEffect, useState } from 'react'
 
 export function CommandCenterTodaysWork() {
+  useAssignmentEngine()
+  const [, setVersion] = useState(0)
+
+  useEffect(() => {
+    return subscribeToAnnexure1Store(() => setVersion((value) => value + 1))
+  }, [])
+
+  const metrics = getAnnexure1ExecutionMetrics()
+
+  const items = [
+    {
+      id: 'pending-meetings',
+      label: 'Pending Meetings',
+      count: metrics.pendingMeetings,
+      to: `${ROUTES.ADMIN_EXECUTION}?section=meetings`,
+    },
+    {
+      id: 'pending-reports',
+      label: 'Pending Annexure-1',
+      count: metrics.pendingReports,
+      to: `${ROUTES.ADMIN_EXECUTION}?section=reports`,
+    },
+    {
+      id: 'pending-follow-ups',
+      label: 'Pending Follow-ups',
+      count: metrics.pendingFollowUps,
+      to: `${ROUTES.ADMIN_FOLLOW_UP}?section=follow-ups`,
+    },
+  ]
+
   return (
     <section className="rounded-(--radius-card) border border-border bg-surface p-6 shadow-card">
       <h2 className="text-lg font-semibold text-text-heading">Today&apos;s Work</h2>
 
       <ul className="mt-4 grid gap-3 sm:grid-cols-3">
-        {COMMAND_CENTER_TODAYS_WORK.map((item) => (
+        {items.map((item) => (
           <li key={item.id}>
             <Link
               to={item.to}
