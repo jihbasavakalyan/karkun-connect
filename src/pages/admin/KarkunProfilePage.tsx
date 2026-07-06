@@ -87,6 +87,22 @@ export function KarkunProfilePage() {
       </section>
 
       <section className="rounded-(--radius-card) border border-border bg-surface p-6 shadow-card">
+        <h2 className="text-lg font-semibold text-text-heading">Assignment</h2>
+
+        <dl className="mt-4 grid gap-4 sm:grid-cols-2">
+          <ProfileField label="Assignment Status" value={karkun.assignmentStatus} />
+          <ProfileField
+            label="Assigned Rukn"
+            value={karkun.assignedRukn.trim() ? karkun.assignedRukn : '—'}
+          />
+          <ProfileField
+            label="Assignment Date"
+            value={karkun.assignmentDate ?? '—'}
+          />
+        </dl>
+      </section>
+
+      <section className="rounded-(--radius-card) border border-border bg-surface p-6 shadow-card">
         <h2 className="text-lg font-semibold text-text-heading">Meeting Outcomes</h2>
         <p className="mt-1 text-sm text-secondary">
           Latest commitment and JIH App registration from field meetings.

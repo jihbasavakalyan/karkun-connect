@@ -17,6 +17,8 @@ import { SettingsPage } from '@/pages/admin/SettingsPage'
 import { LoginPage } from '@/pages/auth/LoginPage'
 import { CampaignRecordPage } from '@/pages/rukn/CampaignRecordPage'
 import { RuknHomePage } from '@/pages/rukn/RuknHomePage'
+import { AvailableKarkunPage } from '@/pages/rukn/AvailableKarkunPage'
+import { MyKarkunPage } from '@/pages/rukn/MyKarkunPage'
 import { WorkerMeetingFormPage } from '@/pages/rukn/WorkerMeetingFormPage'
 import { LandingPage } from '@/pages/shared/LandingPage'
 import { GuestRoute, ProtectedRoute } from '@/routes/ProtectedRoute'
@@ -88,6 +90,8 @@ export function AppRouter() {
           }
         >
           <Route index element={<RuknHomePage />} />
+          <Route path="available-karkun" element={<AvailableKarkunPage />} />
+          <Route path="my-karkun" element={<MyKarkunPage />} />
           <Route path="visit/:karkunId" element={<WorkerMeetingFormPage />} />
           <Route path="campaign-record" element={<CampaignRecordPage />} />
           <Route path="tasks" element={<PlaceholderPage title="Tasks" />} />

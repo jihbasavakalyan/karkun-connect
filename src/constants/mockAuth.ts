@@ -1,4 +1,5 @@
 import type { AuthUser, UserRole } from '@/types/auth.types'
+import { DEMO_RUKN_PORTAL_ID } from '@/constants/demoRukn'
 
 type MockCredential = {
   email: string
@@ -25,6 +26,7 @@ export function authenticateMock(email: string, password: string): AuthUser | nu
   return {
     email: match.email,
     role: match.role,
+    ...(match.role === 'rukn' ? { ruknId: DEMO_RUKN_PORTAL_ID } : {}),
   }
 }
 

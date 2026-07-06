@@ -4,10 +4,10 @@ import { Logo } from '@/components/common/Logo'
 import { CampaignStatusBar } from '@/components/layout/CampaignStatusBar'
 
 const navItems = [
-  { label: 'Home', to: ROUTES.RUKN },
-  { label: 'Tasks', to: `${ROUTES.RUKN}/tasks` },
-  { label: 'Visits', to: `${ROUTES.RUKN}/visits` },
-  { label: 'Reports', to: `${ROUTES.RUKN}/reports` },
+  { label: 'Home', to: ROUTES.RUKN, end: true },
+  { label: 'Available Karkun', to: ROUTES.RUKN_AVAILABLE_KARKUN, end: false },
+  { label: 'My Karkun', to: ROUTES.RUKN_MY_KARKUN, end: false },
+  { label: 'Reports', to: `${ROUTES.RUKN}/reports`, end: false },
 ] as const
 
 export function RuknLayout() {
@@ -35,10 +35,10 @@ export function RuknLayout() {
             <li key={item.to} className="flex-1">
               <NavLink
                 to={item.to}
-                end={item.to === ROUTES.RUKN}
+                end={item.end}
                 className={({ isActive }) =>
                   [
-                    'flex flex-col items-center rounded-lg px-2 py-2 text-xs font-medium transition-colors',
+                    'flex flex-col items-center rounded-lg px-1 py-2 text-[10px] font-medium leading-tight transition-colors sm:text-xs',
                     isActive ? 'text-primary' : 'text-secondary hover:text-text-heading',
                   ].join(' ')
                 }

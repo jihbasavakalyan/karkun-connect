@@ -1,7 +1,8 @@
 import { useMemo } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { getRuknById } from '@/data/ruknMaster'
-import { getAssignedKarkunan } from '@/lib/ruknAssignments'
+import { getAssignedKarkunanForRukn } from '@/lib/assignmentEngine'
+import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { ROUTES } from '@/constants/routes'
 import { AssignedKarkunList } from '@/components/forms/rukn'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
@@ -9,8 +10,9 @@ import { SecondaryButton } from '@/components/ui/SecondaryButton'
 export function RuknDetailPage() {
   const { ruknId } = useParams<{ ruknId: string }>()
   const rukn = ruknId ? getRuknById(ruknId) : undefined
+  useAssignmentEngine()
   const assignedKarkunan = useMemo(
-    () => (ruknId ? getAssignedKarkunan(ruknId) : []),
+    () => (ruknId ? getAssignedKarkunanForRukn(ruknId) : []),
     [ruknId],
   )
 

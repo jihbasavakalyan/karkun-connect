@@ -1,3 +1,5 @@
 export { CampaignRecordPage } from './CampaignRecordPage'
 export { RuknHomePage } from './RuknHomePage'
+export { AvailableKarkunPage } from './AvailableKarkunPage'
+export { MyKarkunPage } from './MyKarkunPage'
 export { WorkerMeetingFormPage } from './WorkerMeetingFormPage'

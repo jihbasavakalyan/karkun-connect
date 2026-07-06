@@ -1,11 +1,17 @@
 import { useMemo } from 'react'
 import { useRuknMaster } from '@/hooks/useRuknMaster'
-import { getAllRuknAssignmentStats } from '@/lib/ruknAssignments'
+import { getRuknAssignmentEngineStats } from '@/lib/assignmentEngine'
+import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { RuknAssignmentCard } from '@/components/forms/rukn'
 
 export function RuknModulePage() {
   const { query, setQuery, ruknList, totalCount } = useRuknMaster()
-  const assignmentStats = useMemo(() => getAllRuknAssignmentStats(), [])
+  useAssignmentEngine()
+
+  const statsFor = useMemo(
+    () => (ruknId: string) => getRuknAssignmentEngineStats(ruknId),
+    [],
+  )
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
@@ -42,16 +48,7 @@ export function RuknModulePage() {
         <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {ruknList.map((rukn) => (
             <li key={rukn.id}>
-              <RuknAssignmentCard
-                rukn={rukn}
-                stats={
-                  assignmentStats[rukn.id] ?? {
-                    assignedCount: 0,
-                    pendingCount: 0,
-                    completedCount: 0,
-                  }
-                }
-              />
+              <RuknAssignmentCard rukn={rukn} stats={statsFor(rukn.id)} />
             </li>
           ))}
         </ul>

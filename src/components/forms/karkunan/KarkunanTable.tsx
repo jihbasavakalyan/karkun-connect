@@ -74,6 +74,7 @@ export function KarkunanTable({ records }: KarkunanTableProps) {
               <th className="px-4 py-3 font-semibold text-text-heading">Name</th>
               <th className="px-4 py-3 font-semibold text-text-heading">Mobile</th>
               <th className="px-4 py-3 font-semibold text-text-heading">Area</th>
+              <th className="px-4 py-3 font-semibold text-text-heading">Assignment Status</th>
               <th className="px-4 py-3 font-semibold text-text-heading">Assigned Rukn</th>
               <th className="px-4 py-3 font-semibold text-text-heading">Current Status</th>
               <th className="px-4 py-3 font-semibold text-text-heading">Last Meeting</th>
@@ -86,7 +87,10 @@ export function KarkunanTable({ records }: KarkunanTableProps) {
                 <td className="px-4 py-3 font-medium text-text-heading">{karkun.name}</td>
                 <td className="px-4 py-3 text-secondary">{karkun.mobile}</td>
                 <td className="px-4 py-3 text-secondary">{karkun.area}</td>
-                <td className="px-4 py-3 text-secondary">{karkun.assignedRukn}</td>
+                <td className="px-4 py-3 text-secondary">{karkun.assignmentStatus}</td>
+                <td className="px-4 py-3 text-secondary">
+                  {karkun.assignedRukn.trim() ? karkun.assignedRukn : '—'}
+                </td>
                 <td className="px-4 py-3 text-secondary">
                   {VISIT_STATUS_LABELS[karkun.visitStatus]}
                 </td>
@@ -129,8 +133,14 @@ export function KarkunanTable({ records }: KarkunanTableProps) {
                 <dd className="font-medium text-text-heading">{karkun.lastVisit ?? '—'}</dd>
               </div>
               <div className="flex justify-between gap-3">
+                <dt className="text-secondary">Assignment Status</dt>
+                <dd className="font-medium text-text-heading">{karkun.assignmentStatus}</dd>
+              </div>
+              <div className="flex justify-between gap-3">
                 <dt className="text-secondary">Assigned Rukn</dt>
-                <dd className="font-medium text-text-heading">{karkun.assignedRukn}</dd>
+                <dd className="font-medium text-text-heading">
+                  {karkun.assignedRukn.trim() ? karkun.assignedRukn : '—'}
+                </dd>
               </div>
             </dl>
             <div className="mt-4">

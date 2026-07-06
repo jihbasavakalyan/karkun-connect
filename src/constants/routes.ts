@@ -15,6 +15,8 @@ export const ROUTES = {
   ADMIN_SETTINGS: '/admin/settings',
   ADMIN_HELP: '/admin/help',
   RUKN: '/rukn',
+  RUKN_AVAILABLE_KARKUN: '/rukn/available-karkun',
+  RUKN_MY_KARKUN: '/rukn/my-karkun',
   RUKN_CAMPAIGN_RECORD: '/rukn/campaign-record',
 } as const
 

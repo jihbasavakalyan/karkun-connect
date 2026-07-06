@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { useKarkunRegistry } from '@/hooks/useKarkunRegistry'
+import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
+import { AssignKarkunModal } from '@/components/forms/assignment'
 import {
   AddKarkunModal,
   KarkunanFilters,
@@ -8,10 +10,13 @@ import {
   KarkunanTable,
 } from '@/components/forms/karkunan'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
+import { SecondaryButton } from '@/components/ui/SecondaryButton'
 
 export function KarkunanPage() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false)
   const registry = useKarkunRegistry()
+  useAssignmentEngine()
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
@@ -22,9 +27,14 @@ export function KarkunanPage() {
             Master registry of Karkun assigned to Rukn for campaign engagement.
           </p>
         </div>
-        <PrimaryButton type="button" onClick={() => setIsAddModalOpen(true)}>
-          Add Karkun
-        </PrimaryButton>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <SecondaryButton type="button" onClick={() => setIsAssignModalOpen(true)}>
+            Assign Karkun
+          </SecondaryButton>
+          <PrimaryButton type="button" onClick={() => setIsAddModalOpen(true)}>
+            Add Karkun
+          </PrimaryButton>
+        </div>
       </div>
 
       <KarkunanSearchBar value={registry.searchQuery} onChange={registry.updateSearch} />
@@ -43,6 +53,7 @@ export function KarkunanPage() {
       />
 
       <AddKarkunModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} />
+      <AssignKarkunModal isOpen={isAssignModalOpen} onClose={() => setIsAssignModalOpen(false)} />
     </div>
   )
 }

@@ -6,6 +6,8 @@ export type KarkunVisitStatus = 'scheduled' | 'completed' | 'pending' | 'overdue
 
 export type JihAppRegistrationStatus = 'Not Discussed' | 'Recommended' | 'Registered'
 
+export type KarkunAssignmentPoolStatus = 'Available' | 'Assigned'
+
 export type KarkunRegistryRecord = {
   id: string
   name: string
@@ -14,6 +16,8 @@ export type KarkunRegistryRecord = {
   area: string
   assignedRukn: string
   assignedRuknId: string
+  assignmentStatus: KarkunAssignmentPoolStatus
+  assignmentDate?: string
   campaignStatus: KarkunCampaignStatus
   jihRegistration: JihRegistrationStatus
   visitStatus: KarkunVisitStatus

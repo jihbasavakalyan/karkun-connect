@@ -3,6 +3,7 @@ export type UserRole = 'administrator' | 'rukn'
 export type AuthUser = {
   email: string
   role: UserRole
+  ruknId?: string
 }
 
 export type LoginResult =

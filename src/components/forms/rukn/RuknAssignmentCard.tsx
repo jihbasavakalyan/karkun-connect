@@ -27,16 +27,16 @@ export function RuknAssignmentCard({ rukn, stats }: RuknAssignmentCardProps) {
         </div>
         <div className="flex justify-between gap-3 border-t border-border pt-3">
           <div>
-            <dt className="text-secondary">Assigned Karkun</dt>
+            <dt className="text-secondary">Assigned</dt>
             <dd className="text-lg font-semibold text-text-heading">{stats.assignedCount}</dd>
-          </div>
-          <div>
-            <dt className="text-secondary">Pending</dt>
-            <dd className="text-lg font-semibold text-primary">{stats.pendingCount}</dd>
           </div>
           <div>
             <dt className="text-secondary">Completed</dt>
             <dd className="text-lg font-semibold text-text-heading">{stats.completedCount}</dd>
+          </div>
+          <div>
+            <dt className="text-secondary">Available Capacity</dt>
+            <dd className="text-lg font-semibold text-primary">{stats.availableCapacity}</dd>
           </div>
         </div>
       </dl>
