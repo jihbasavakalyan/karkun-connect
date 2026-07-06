@@ -1,10 +1,6 @@
-import type {
-  CampaignFollowUpRecord,
-  SubmittedMeetingForm,
-} from '@/types/annexure1.types'
+import type { SubmittedMeetingForm } from '@/types/annexure1.types'
 
 const submittedForms: SubmittedMeetingForm[] = []
-const followUpRecords: CampaignFollowUpRecord[] = []
 
 type Annexure1StoreListener = () => void
 const listeners = new Set<Annexure1StoreListener>()
@@ -24,22 +20,12 @@ export function appendSubmittedForm(record: SubmittedMeetingForm): SubmittedMeet
   return record
 }
 
-export function appendFollowUpRecord(record: CampaignFollowUpRecord): CampaignFollowUpRecord {
-  followUpRecords.unshift(record)
-  notifyAnnexure1StoreChange()
-  return record
-}
-
 export function getAllSubmittedForms(): SubmittedMeetingForm[] {
   return [...submittedForms]
 }
 
 export function getSubmittedMeetingForms(): SubmittedMeetingForm[] {
   return submittedForms.filter((form) => form.status === 'submitted')
-}
-
-export function getFollowUpRecords(): CampaignFollowUpRecord[] {
-  return [...followUpRecords]
 }
 
 export function getLatestSubmissionForKarkun(karkunId: string): SubmittedMeetingForm | undefined {

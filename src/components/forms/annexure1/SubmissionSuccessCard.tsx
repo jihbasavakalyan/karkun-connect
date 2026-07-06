@@ -18,7 +18,7 @@ export function SubmissionSuccessCard({ submission, nextMission }: SubmissionSuc
 
   const followUpLabel =
     submission.followUpRequired === 'yes'
-      ? `Scheduled for ${submission.followUpDate || 'TBD'}`
+      ? `${submission.followUpPurpose} · ${submission.followUpDate}`
       : 'Not required'
 
   return (
@@ -66,7 +66,7 @@ export function SubmissionSuccessCard({ submission, nextMission }: SubmissionSuc
               </dd>
             </div>
             <div>
-              <dt className="text-sm text-secondary">Follow-up Status</dt>
+              <dt className="text-sm text-secondary">Follow-up</dt>
               <dd className="font-semibold text-text-heading">{followUpLabel}</dd>
             </div>
           </>

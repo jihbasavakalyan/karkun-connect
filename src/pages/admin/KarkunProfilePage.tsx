@@ -1,6 +1,7 @@
 import { Link, useParams } from 'react-router-dom'
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { getKarkunWorkloadSummary } from '@/services/assignmentService'
+import { getNextFollowUpForKarkun } from '@/services/followUpService'
 import { getAuditLogForPerson } from '@/lib/peopleAuditLog'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { ROUTES } from '@/constants/routes'
@@ -10,6 +11,8 @@ import {
   VISIT_STATUS_LABELS,
 } from '@/types/karkun-registry.types'
 import { formatPersonStatus } from '@/types/people.types'
+import { subscribeToFollowUpStore } from '@/stores/followUpStore'
+import { useEffect, useState } from 'react'
 import { AssignmentHistoryTimeline } from '@/components/forms/assignment/AssignmentHistoryTimeline'
 import { CampaignStatusBadge } from '@/components/forms/karkunan/CampaignStatusBadge'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
@@ -25,10 +28,19 @@ function ProfileField({ label, value }: { label: string; value: string }) {
 
 export function KarkunProfilePage() {
   const { karkunId } = useParams<{ karkunId: string }>()
+  const [, setVersion] = useState(0)
   useAssignmentEngine()
+
+  useEffect(() => {
+    return subscribeToFollowUpStore(() => setVersion((value) => value + 1))
+  }, [])
+
+  void setVersion
+
   const karkun = karkunId ? getKarkunById(karkunId) : undefined
   const auditLog = karkunId ? getAuditLogForPerson('karkun', karkunId) : []
   const workload = karkunId ? getKarkunWorkloadSummary(karkunId) : null
+  const nextFollowUp = karkunId ? getNextFollowUpForKarkun(karkunId) : null
 
   if (!karkun) {
     return (
@@ -98,6 +110,18 @@ export function KarkunProfilePage() {
         <div className="mt-4">
           <ProfileField label="Notes" value={karkun.notes || '—'} />
         </div>
+      </section>
+
+      <section className="rounded-(--radius-card) border border-border bg-surface p-6 shadow-card">
+        <h2 className="text-lg font-semibold text-text-heading">Next Follow-up</h2>
+        {nextFollowUp ? (
+          <dl className="mt-4 space-y-4">
+            <ProfileField label="Date" value={nextFollowUp.formattedDate} />
+            <ProfileField label="Purpose" value={nextFollowUp.purpose} />
+          </dl>
+        ) : (
+          <p className="mt-4 text-sm text-secondary">No follow-up scheduled.</p>
+        )}
       </section>
 
       {workload && (

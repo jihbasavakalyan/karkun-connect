@@ -26,3 +26,16 @@ export {
   getCampaignHealthFromAnnexure1,
   getPerformanceMetricsFromAnnexure1,
 } from './annexure1Service'
+
+export {
+  createFollowUp,
+  completeFollowUpsForAssignment,
+  handleFollowUpOnAnnexureSubmit,
+  getFollowUpDashboardMetrics,
+  getPendingFollowUps,
+  getTodaysFollowUps,
+  getCompletedFollowUps,
+  getNextFollowUpForKarkun,
+  getFollowUpCompletionRate,
+  getFollowUpsForCampaignRecord,
+} from './followUpService'

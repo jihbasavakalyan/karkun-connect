@@ -6,6 +6,7 @@ import {
 } from '@/stores/assignmentStore'
 import type { Annexure1FormState } from '@/types/annexure1.types'
 import type { AssignmentRecord } from '@/types/assignment'
+import { validateAnnexureFollowUpFields } from '@/validation/followUpValidation'
 
 export type Annexure1ValidationResult = { valid: true } | { valid: false; error: string }
 
@@ -102,20 +103,11 @@ export function validateAnnexure1Form(form: Annexure1FormState): Annexure1Valida
     return { valid: false, error: 'Commitment details are required when a commitment was made.' }
   }
 
-  if (!form.followUpRequired) {
-    return { valid: false, error: 'Select whether follow-up is required.' }
-  }
-
-  if (form.followUpRequired === 'yes') {
-    if (!form.followUpDate.trim()) {
-      return { valid: false, error: 'Follow-up date is required.' }
-    }
-    if (!form.followUpNote.trim()) {
-      return { valid: false, error: 'Follow-up note is required.' }
-    }
-  }
-
-  return { valid: true }
+  return validateAnnexureFollowUpFields(
+    form.followUpRequired,
+    form.followUpDate,
+    form.followUpPurpose,
+  )
 }
 
 export function validateAnnexure1Submission(

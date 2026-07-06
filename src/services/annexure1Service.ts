@@ -9,17 +9,20 @@ import { logPeopleAudit } from '@/lib/peopleAuditLog'
 import { getAllAssignments } from '@/stores/assignmentStore'
 import { logActivity } from '@/stores/activityLogStore'
 import {
-  appendFollowUpRecord,
   appendSubmittedForm,
-  getFollowUpRecords,
   getSubmissionPeriodCounts,
   getSubmittedMeetingForms,
   saveDraftRecord,
 } from '@/stores/annexure1Store'
+import {
+  getFollowUpCompletionRate,
+  getFollowUpDashboardMetrics,
+  getFollowUpsForCampaignRecord,
+  handleFollowUpOnAnnexureSubmit,
+} from '@/services/followUpService'
 import type {
   Annexure1ExecutionMetrics,
   Annexure1FormState,
-  CampaignFollowUpRecord,
   SubmittedMeetingForm,
 } from '@/types/annexure1.types'
 import type { AssignmentRecord } from '@/types/assignment'
@@ -94,17 +97,35 @@ export function submitAnnexure1(
     visitConducted: form.visitConducted === 'yes',
   })
 
-  if (form.followUpRequired === 'yes' && form.followUpDate) {
-    appendFollowUpRecord({
-      id: `followup-${Date.now()}`,
-      karkunId: context.karkunId,
-      workerName: record.workerName,
-      followUpDate: form.followUpDate,
-      note: form.followUpNote,
-      sourceFormId: record.id,
-      assignmentNumber: record.assignmentNumber,
-      ruknId: record.ruknId,
-    })
+  if (form.visitConducted === 'yes') {
+    const followUpResult = handleFollowUpOnAnnexureSubmit(
+      assignment.assignmentId,
+      assignment.assignmentNumber,
+      assignment.ruknId,
+      context.karkunId,
+      record.workerName,
+      record.id,
+      form.followUpRequired,
+      form.followUpDate,
+      form.followUpPurpose,
+      form.followUpRemarks,
+    )
+
+    if (followUpResult.error) {
+      return { success: false, error: followUpResult.error }
+    }
+  } else {
+    handleFollowUpOnAnnexureSubmit(
+      assignment.assignmentId,
+      assignment.assignmentNumber,
+      assignment.ruknId,
+      context.karkunId,
+      record.workerName,
+      record.id,
+      'no',
+      '',
+      '',
+    )
   }
 
   logPeopleAudit({
@@ -185,7 +206,7 @@ export function getCampaignRecordData() {
     meetingForms,
     commitments,
     jihRegistrations,
-    followUps: getFollowUpRecords(),
+    followUps: getFollowUpsForCampaignRecord(),
   }
 }
 
@@ -215,10 +236,7 @@ export function getAnnexure1ExecutionMetrics(): Annexure1ExecutionMetrics {
     (assignment) => !submittedTodayAssignmentIds.has(assignment.assignmentId),
   ).length
 
-  const today = todayIsoDate()
-  const followUps = getFollowUpRecords()
-  const pendingFollowUps = followUps.filter((record) => record.followUpDate >= today).length
-
+  const followUpMetrics = getFollowUpDashboardMetrics()
   const periodCounts = getSubmissionPeriodCounts()
   const totalActive = activeAssignments.length || 1
   const totalSubmitted = submittedForms.length
@@ -226,7 +244,9 @@ export function getAnnexure1ExecutionMetrics(): Annexure1ExecutionMetrics {
   return {
     pendingMeetings,
     pendingReports,
-    pendingFollowUps,
+    pendingFollowUps: followUpMetrics.pendingFollowUps,
+    todaysFollowUps: followUpMetrics.todaysFollowUps,
+    completedFollowUps: followUpMetrics.completedFollowUps,
     submittedToday: periodCounts.submittedToday,
     submittedThisWeek: periodCounts.submittedThisWeek,
     submittedThisMonth: periodCounts.submittedThisMonth,
@@ -235,10 +255,7 @@ export function getAnnexure1ExecutionMetrics(): Annexure1ExecutionMetrics {
     reportSubmissionRate: Math.round(
       ((activeAssignments.length - pendingReports) / totalActive) * 100,
     ),
-    followUpCompletionRate:
-      followUps.length === 0
-        ? 100
-        : Math.round(((followUps.length - pendingFollowUps) / followUps.length) * 100),
+    followUpCompletionRate: getFollowUpCompletionRate(),
   }
 }
 
@@ -313,12 +330,18 @@ export function getPerformanceMetricsFromAnnexure1() {
       trend: 'Active assignments',
     },
     {
-      id: 'perf-followups',
-      label: 'Pending Follow-ups',
+      id: 'perf-followups-pending',
+      label: 'Follow-up Pending',
       value: metrics.pendingFollowUps,
-      trend: 'From Annexure-1',
+      trend: `${metrics.todaysFollowUps} today`,
+    },
+    {
+      id: 'perf-followups-completed',
+      label: 'Follow-up Completed',
+      value: metrics.completedFollowUps,
+      trend: `${metrics.followUpCompletionRate}% completion`,
     },
   ]
 }
 
-export type { CampaignFollowUpRecord, Annexure1SubmissionContext }
+export type { Annexure1SubmissionContext }

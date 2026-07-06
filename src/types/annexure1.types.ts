@@ -13,7 +13,8 @@ export type Annexure1FormState = {
   jihAppRegistrationStatus: JihAppRegistrationStatus
   followUpRequired: 'yes' | 'no' | ''
   followUpDate: string
-  followUpNote: string
+  followUpPurpose: string
+  followUpRemarks: string
 }
 
 export type SubmittedMeetingForm = Annexure1FormState & {
@@ -31,21 +32,12 @@ export type SubmittedMeetingForm = Annexure1FormState & {
   status: 'draft' | 'submitted'
 }
 
-export type CampaignFollowUpRecord = {
-  id: string
-  karkunId: string
-  workerName: string
-  followUpDate: string
-  note: string
-  sourceFormId: string
-  assignmentNumber: string
-  ruknId: string
-}
-
 export type Annexure1ExecutionMetrics = {
   pendingMeetings: number
   pendingReports: number
   pendingFollowUps: number
+  todaysFollowUps: number
+  completedFollowUps: number
   submittedToday: number
   submittedThisWeek: number
   submittedThisMonth: number
@@ -73,6 +65,7 @@ export function createInitialAnnexure1FormState(): Annexure1FormState {
     jihAppRegistrationStatus: 'Not Discussed',
     followUpRequired: '',
     followUpDate: '',
-    followUpNote: '',
+    followUpPurpose: '',
+    followUpRemarks: '',
   }
 }

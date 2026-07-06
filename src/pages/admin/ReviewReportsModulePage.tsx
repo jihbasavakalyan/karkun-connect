@@ -4,19 +4,27 @@ import {
   getCampaignRecordData,
   getPerformanceMetricsFromAnnexure1,
 } from '@/services/annexure1Service'
+import { getFollowUpDashboardMetrics } from '@/services/followUpService'
 import { subscribeToAnnexure1Store } from '@/stores/annexure1Store'
+import { subscribeToFollowUpStore } from '@/stores/followUpStore'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 
 export function ReviewReportsModulePage() {
   const [, setVersion] = useState(0)
 
   useEffect(() => {
-    return subscribeToAnnexure1Store(() => setVersion((value) => value + 1))
+    const unsubAnnexure = subscribeToAnnexure1Store(() => setVersion((value) => value + 1))
+    const unsubFollowUp = subscribeToFollowUpStore(() => setVersion((value) => value + 1))
+    return () => {
+      unsubAnnexure()
+      unsubFollowUp()
+    }
   }, [])
 
   const campaignRecord = getCampaignRecordData()
   const campaignHealth = getCampaignHealthFromAnnexure1()
   const performanceMetrics = getPerformanceMetricsFromAnnexure1()
+  const followUpMetrics = getFollowUpDashboardMetrics()
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
@@ -71,6 +79,24 @@ export function ReviewReportsModulePage() {
             </li>
           ))}
         </ul>
+      </section>
+
+      <section className="rounded-(--radius-card) border border-border bg-surface p-6 shadow-card">
+        <h2 className="text-lg font-semibold text-text-heading">Follow-ups</h2>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <div className="rounded-lg border border-border bg-surface-muted p-4">
+            <p className="text-sm text-secondary">Follow-up Pending</p>
+            <p className="mt-1 text-3xl font-semibold text-primary">
+              {followUpMetrics.pendingFollowUps}
+            </p>
+          </div>
+          <div className="rounded-lg border border-border bg-surface-muted p-4">
+            <p className="text-sm text-secondary">Follow-up Completed</p>
+            <p className="mt-1 text-3xl font-semibold text-text-heading">
+              {followUpMetrics.completedFollowUps}
+            </p>
+          </div>
+        </div>
       </section>
 
       <section className="rounded-(--radius-card) border border-border bg-surface p-6 shadow-card">

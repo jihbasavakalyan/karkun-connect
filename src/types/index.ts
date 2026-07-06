@@ -33,9 +33,15 @@ export {
 export type {
   Annexure1FormState,
   SubmittedMeetingForm,
-  CampaignFollowUpRecord,
   JihAppRegistrationStatus as AnnexureJihAppRegistrationStatus,
 } from './annexure1.types'
+
+export type {
+  FollowUpRecord,
+  FollowUpStatus,
+  FollowUpDashboardMetrics,
+  KarkunNextFollowUp,
+} from './followUp'
 
 export {
   JIH_APP_REGISTRATION_FORM_OPTIONS,

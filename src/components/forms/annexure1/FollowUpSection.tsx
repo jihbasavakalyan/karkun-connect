@@ -9,10 +9,18 @@ type FollowUpSectionProps = {
   setField: Annexure1FormFieldUpdater
 }
 
+function todayIsoDate(): string {
+  return new Date().toISOString().slice(0, 10)
+}
+
 export function FollowUpSection({ form, setField }: FollowUpSectionProps) {
   return (
     <FormSectionCard title="Follow-up">
       <div className="space-y-4">
+        <p className="text-sm text-secondary">
+          Most meetings need no follow-up. Create one only when another interaction is required.
+        </p>
+
         <fieldset className="space-y-3">
           <legend className="text-sm font-medium text-text-heading">Follow-up Required?</legend>
           <LargeRadioOption
@@ -37,15 +45,23 @@ export function FollowUpSection({ form, setField }: FollowUpSectionProps) {
               id="follow-up-date"
               label="Follow-up Date"
               type="date"
+              min={todayIsoDate()}
               value={form.followUpDate}
               onValueChange={(value) => setField('followUpDate', value)}
             />
+            <InputField
+              id="follow-up-purpose"
+              label="Follow-up Purpose"
+              value={form.followUpPurpose}
+              onValueChange={(value) => setField('followUpPurpose', value)}
+              placeholder="e.g. Weekly Ijtema Reminder"
+            />
             <TextAreaField
-              id="follow-up-note"
-              label="Follow-up Note"
-              value={form.followUpNote}
-              onValueChange={(value) => setField('followUpNote', value)}
-              placeholder="Follow-up instructions..."
+              id="follow-up-remarks"
+              label="Remarks (optional)"
+              value={form.followUpRemarks}
+              onValueChange={(value) => setField('followUpRemarks', value)}
+              placeholder="Additional notes..."
               rows={3}
             />
           </div>

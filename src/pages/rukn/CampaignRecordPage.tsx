@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getCampaignRecordData } from '@/services/annexure1Service'
 import { subscribeToAnnexure1Store } from '@/stores/annexure1Store'
+import { subscribeToFollowUpStore } from '@/stores/followUpStore'
 import { ROUTES } from '@/constants/routes'
 
 function RecordSection({
@@ -23,7 +24,12 @@ export function CampaignRecordPage() {
   const [, setVersion] = useState(0)
 
   useEffect(() => {
-    return subscribeToAnnexure1Store(() => setVersion((value) => value + 1))
+    const unsubAnnexure = subscribeToAnnexure1Store(() => setVersion((value) => value + 1))
+    const unsubFollowUp = subscribeToFollowUpStore(() => setVersion((value) => value + 1))
+    return () => {
+      unsubAnnexure()
+      unsubFollowUp()
+    }
   }, [])
 
   const data = getCampaignRecordData()
@@ -142,7 +148,11 @@ export function CampaignRecordPage() {
                 <p className="font-semibold text-text-heading">
                   {item.workerName} · {item.followUpDate} · {item.assignmentNumber}
                 </p>
-                <p className="mt-1 text-secondary">{item.note || 'Follow-up scheduled'}</p>
+                <p className="mt-1 text-secondary">
+                  Purpose: {item.purpose ?? item.note}
+                  {item.remarks ? ` · ${item.remarks}` : ''}
+                  {item.status ? ` · ${item.status}` : ''}
+                </p>
               </li>
             ))}
           </ul>
