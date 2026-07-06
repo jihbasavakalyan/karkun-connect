@@ -1,11 +1,8 @@
 import { Link, useParams } from 'react-router-dom'
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
-import { getRuknById } from '@/data/ruknMaster'
-import {
-  getCompletedAssignmentHistoryForKarkun,
-  getCurrentAssignmentForKarkun,
-} from '@/lib/assignmentEngine'
+import { getKarkunWorkloadSummary } from '@/services/assignmentService'
 import { getAuditLogForPerson } from '@/lib/peopleAuditLog'
+import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { ROUTES } from '@/constants/routes'
 import {
   CAMPAIGN_STATUS_LABELS,
@@ -13,6 +10,7 @@ import {
   VISIT_STATUS_LABELS,
 } from '@/types/karkun-registry.types'
 import { formatPersonStatus } from '@/types/people.types'
+import { AssignmentHistoryTimeline } from '@/components/forms/assignment/AssignmentHistoryTimeline'
 import { CampaignStatusBadge } from '@/components/forms/karkunan/CampaignStatusBadge'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 
@@ -27,10 +25,10 @@ function ProfileField({ label, value }: { label: string; value: string }) {
 
 export function KarkunProfilePage() {
   const { karkunId } = useParams<{ karkunId: string }>()
+  useAssignmentEngine()
   const karkun = karkunId ? getKarkunById(karkunId) : undefined
   const auditLog = karkunId ? getAuditLogForPerson('karkun', karkunId) : []
-  const currentAssignment = karkunId ? getCurrentAssignmentForKarkun(karkunId) : undefined
-  const assignmentHistory = karkunId ? getCompletedAssignmentHistoryForKarkun(karkunId) : []
+  const workload = karkunId ? getKarkunWorkloadSummary(karkunId) : null
 
   if (!karkun) {
     return (
@@ -47,11 +45,6 @@ export function KarkunProfilePage() {
   const commitmentDisplay = karkun.currentCommitment.trim()
     ? karkun.currentCommitment
     : 'No commitment recorded.'
-
-  const currentRuknName =
-    currentAssignment && karkun.assignmentStatus === 'Assigned'
-      ? getRuknById(currentAssignment.ruknId)?.name ?? karkun.assignedRukn
-      : 'Unassigned'
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -107,46 +100,45 @@ export function KarkunProfilePage() {
         </div>
       </section>
 
-      <section className="rounded-(--radius-card) border border-border bg-surface p-6 shadow-card">
-        <h2 className="text-lg font-semibold text-text-heading">Current Assignment</h2>
-
-        {karkun.assignmentStatus === 'Assigned' && currentAssignment ? (
+      {workload && (
+        <section className="rounded-(--radius-card) border border-border bg-surface p-6 shadow-card">
+          <h2 className="text-lg font-semibold text-text-heading">Workload</h2>
           <dl className="mt-4 grid gap-4 sm:grid-cols-2">
-            <ProfileField label="Assigned Rukn" value={currentRuknName} />
-            <ProfileField label="Assignment Status" value="Assigned" />
-            <ProfileField label="Assignment Date" value={karkun.assignmentDate ?? '—'} />
-            <ProfileField label="Assigned By" value={currentAssignment.assignedBy} />
+            <ProfileField
+              label="Assigned Rukns"
+              value={workload.assignedRukns.length ? workload.assignedRukns.join(', ') : 'None'}
+            />
+            <ProfileField
+              label="Current Active Assignments"
+              value={String(workload.activeAssignments.length)}
+            />
+            <ProfileField
+              label="Completed Assignments"
+              value={String(workload.completedAssignments.length)}
+            />
+            <ProfileField
+              label="Inactive Assignments"
+              value={String(workload.inactiveAssignments.length)}
+            />
           </dl>
-        ) : (
-          <p className="mt-4 text-sm text-secondary">This Karkun is currently unassigned.</p>
-        )}
-      </section>
+        </section>
+      )}
 
-      <section className="rounded-(--radius-card) border border-border bg-surface p-6 shadow-card">
-        <h2 className="text-lg font-semibold text-text-heading">Assignment History</h2>
-
-        {assignmentHistory.length === 0 ? (
-          <p className="mt-4 text-sm text-secondary">No previous assignments recorded.</p>
-        ) : (
-          <ul className="mt-4 space-y-3">
-            {assignmentHistory.map((record) => (
-              <li
-                key={record.id}
-                className="rounded-lg border border-border bg-surface-muted px-4 py-3 text-sm"
-              >
-                <p className="font-medium text-text-heading">
-                  {getRuknById(record.ruknId)?.name ?? record.ruknId}
-                </p>
-                <p className="mt-1 text-secondary">
-                  {record.assignmentDate}
-                  {record.releasedAt ? ` → released ${record.releasedAt.slice(0, 10)}` : ''}
-                  {record.releaseReason ? ` · ${record.releaseReason}` : ''}
-                </p>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      {workload && (
+        <section className="rounded-(--radius-card) border border-border bg-surface p-6 shadow-card">
+          <h2 className="text-lg font-semibold text-text-heading">Assignment History</h2>
+          <div className="mt-4">
+            <AssignmentHistoryTimeline
+              history={workload.activeAssignments.concat(
+                workload.inactiveAssignments,
+                workload.completedAssignments,
+              )}
+              currentAssignment={workload.activeAssignments[0] ?? null}
+              perspective="karkun"
+            />
+          </div>
+        </section>
+      )}
 
       <section className="rounded-(--radius-card) border border-border bg-surface p-6 shadow-card">
         <h2 className="text-lg font-semibold text-text-heading">Meeting Outcomes</h2>

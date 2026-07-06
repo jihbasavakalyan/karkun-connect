@@ -14,11 +14,17 @@ type KarkunSeedInput = Omit<
 > & { gender?: PersonGender }
 
 function seedKarkun(input: KarkunSeedInput): KarkunRegistryRecord {
+  const isInactive = input.campaignStatus === 'inactive'
   return {
     ...input,
     gender: input.gender ?? 'Male',
     place: DEFAULT_PLACE,
-    status: input.campaignStatus === 'inactive' ? 'inactive' : 'active',
+    status: isInactive ? 'inactive' : 'active',
+    assignedRukn: '',
+    assignedRuknId: '',
+    assignmentStatus: 'Available',
+    assignmentDate: undefined,
+    campaignStatus: isInactive ? 'inactive' : 'not_assigned',
     createdAt: KARKUN_SEED_DATE,
     updatedAt: KARKUN_SEED_DATE,
     updatedBy: 'System',

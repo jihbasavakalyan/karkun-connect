@@ -7,6 +7,7 @@ export const ROUTES = {
   ADMIN_CAMPAIGN_SETUP: '/admin/campaign/setup',
   ADMIN_RUKN: '/admin/rukn',
   ADMIN_KARKUN: '/admin/karkun',
+  ADMIN_ASSIGNMENTS: '/admin/assignments',
   ADMIN_KARKUNAN: '/admin/karkun',
   ADMIN_RUKN_MASTER: '/admin/rukn',
   ADMIN_EXECUTION: '/admin/execution',

@@ -1,115 +1,60 @@
 import { getKarkunById, MOCK_KARKUN_REGISTRY } from '@/constants/mockKarkunRegistry'
 import { getRuknById } from '@/data/ruknMaster'
-import { canAssignByGender } from '@/lib/peopleStore'
-import { logPeopleAudit } from '@/lib/peopleAuditLog'
-import type {
-  AssignKarkunResult,
-  AssignedBy,
-  Assignment,
-  AssignmentMetrics,
-  ReleaseReason,
-} from '@/types/assignment.types'
-import { ACTIVE_CAMPAIGN_ID } from '@/types/assignment.types'
+import {
+  assignRukn,
+  getAllAssignments,
+  getAssignmentHistoryForKarkun,
+  getAssignmentHistoryForRukn,
+  removeAssignment,
+  replaceAssignment,
+} from '@/services/assignmentService'
+import { subscribeToAssignmentStore } from '@/stores/assignmentStore'
+import type { RemovalReason, ReplacementReason } from '@/types/assignment'
+import type { AssignedBy, ReleaseReason } from '@/types/assignment.types'
+import type { AssignmentRecord, AssignmentResult } from '@/types/assignment'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
 
-const assignmentHistory: Assignment[] = []
-let initialized = false
-
-type AssignmentListener = () => void
-const listeners = new Set<AssignmentListener>()
-
-export function subscribeToAssignments(listener: AssignmentListener): () => void {
-  listeners.add(listener)
-  return () => listeners.delete(listener)
-}
-
-function notifyAssignmentChange(): void {
-  listeners.forEach((listener) => listener())
-}
+export type AssignKarkunResult = AssignmentResult
 
 function todayDate(): string {
   return new Date().toISOString().slice(0, 10)
 }
 
-function ensureInitialized(): void {
-  if (initialized) {
-    return
-  }
+export const subscribeToAssignments = subscribeToAssignmentStore
 
-  for (const karkun of MOCK_KARKUN_REGISTRY) {
-    if (karkun.isArchived) {
-      continue
-    }
+export function getAssignedKarkunanForRukn(ruknId: string): KarkunRegistryRecord[] {
+  const history = getAssignmentHistoryForRukn(ruknId)
+  const active = history.find((record) => record.status === 'Active')
+  if (!active) return []
 
-    if (karkun.assignedRuknId && karkun.assignmentStatus === 'Assigned') {
-      assignmentHistory.push({
-        id: `asgn-seed-${karkun.id}`,
-        campaignId: ACTIVE_CAMPAIGN_ID,
-        ruknId: karkun.assignedRuknId,
-        karkunId: karkun.id,
-        assignedBy: 'Administrator',
-        assignmentDate: karkun.assignmentDate ?? '2026-03-01',
-        assignmentStatus: 'Assigned',
-      })
-    }
-  }
-
-  initialized = true
-}
-
-function getKarkunRecord(karkunId: string): KarkunRegistryRecord | undefined {
-  return MOCK_KARKUN_REGISTRY.find((k) => k.id === karkunId && !k.isArchived)
-}
-
-function getActiveAssignment(karkunId: string): Assignment | undefined {
-  ensureInitialized()
-  return assignmentHistory.find(
-    (record) => record.karkunId === karkunId && record.assignmentStatus === 'Assigned',
-  )
+  const karkun = getKarkunById(active.karkunId)
+  return karkun && !karkun.isArchived ? [karkun] : []
 }
 
 export function getAvailableKarkunan(): KarkunRegistryRecord[] {
-  ensureInitialized()
   return MOCK_KARKUN_REGISTRY.filter(
-    (karkun) =>
-      !karkun.isArchived &&
-      karkun.status === 'active' &&
-      karkun.assignmentStatus === 'Available',
+    (karkun) => !karkun.isArchived && karkun.status === 'active' && karkun.mobile.trim(),
   )
 }
 
-export function getAssignedKarkunanForRukn(ruknId: string): KarkunRegistryRecord[] {
-  ensureInitialized()
-  return MOCK_KARKUN_REGISTRY.filter(
-    (karkun) =>
-      !karkun.isArchived &&
-      karkun.assignmentStatus === 'Assigned' &&
-      karkun.assignedRuknId === ruknId,
-  )
-}
-
-export function getAssignmentMetrics(): AssignmentMetrics {
-  ensureInitialized()
+export function getAssignmentMetrics() {
   const availableKarkun = getAvailableKarkunan().length
-  const assignedKarkun = MOCK_KARKUN_REGISTRY.filter(
-    (k) => !k.isArchived && k.assignmentStatus === 'Assigned',
-  ).length
-  const completedAssignments = assignmentHistory.filter(
-    (record) => record.assignmentStatus === 'Completed',
+  const assignedKarkun = new Set(
+    getAllAssignments()
+      .filter((record) => record.status === 'Active')
+      .map((record) => record.karkunId),
+  ).size
+  const completedAssignments = getAllAssignments().filter(
+    (record) => record.status === 'Completed' || record.status === 'Replaced',
   ).length
 
   return { availableKarkun, assignedKarkun, completedAssignments }
 }
 
-export function getRuknAssignmentEngineStats(ruknId: string): {
-  assignedCount: number
-  completedCount: number
-  availableCapacity: number
-} {
-  ensureInitialized()
+export function getRuknAssignmentEngineStats(ruknId: string) {
   const assignedCount = getAssignedKarkunanForRukn(ruknId).length
-  const completedCount = assignmentHistory.filter(
-    (record) => record.ruknId === ruknId && record.assignmentStatus === 'Completed',
+  const completedCount = getAssignmentHistoryForRukn(ruknId).filter(
+    (record) => record.status === 'Replaced' || record.status === 'Unassigned',
   ).length
 
   return {
@@ -119,27 +64,18 @@ export function getRuknAssignmentEngineStats(ruknId: string): {
   }
 }
 
-export function getAllRuknAssignmentEngineStats(): Record<
-  string,
-  ReturnType<typeof getRuknAssignmentEngineStats>
-> {
-  ensureInitialized()
+export function getAllRuknAssignmentEngineStats() {
   const stats: Record<string, ReturnType<typeof getRuknAssignmentEngineStats>> = {}
-
-  for (const karkun of MOCK_KARKUN_REGISTRY) {
-    if (karkun.assignedRuknId && karkun.assignmentStatus === 'Assigned') {
-      if (!stats[karkun.assignedRuknId]) {
-        stats[karkun.assignedRuknId] = getRuknAssignmentEngineStats(karkun.assignedRuknId)
-      }
+  for (const record of getAllAssignments()) {
+    if (record.status === 'Active' && !stats[record.ruknId]) {
+      stats[record.ruknId] = getRuknAssignmentEngineStats(record.ruknId)
     }
   }
-
   return stats
 }
 
-export function getAssignmentHistory(): Assignment[] {
-  ensureInitialized()
-  return [...assignmentHistory]
+export function getAssignmentHistory(): AssignmentRecord[] {
+  return getAllAssignments()
 }
 
 export function assignKarkun(
@@ -147,71 +83,29 @@ export function assignKarkun(
   ruknId: string,
   assignedBy: AssignedBy,
 ): AssignKarkunResult {
-  ensureInitialized()
-
-  const karkun = getKarkunRecord(karkunId)
-  if (!karkun) {
-    return { success: false, error: 'Karkun not found.' }
-  }
-
-  if (karkun.assignmentStatus !== 'Available') {
-    return { success: false, error: 'This Karkun is not available for assignment.' }
-  }
-
-  if (karkun.status === 'inactive') {
-    return { success: false, error: 'Cannot assign an inactive Karkun.' }
-  }
-
-  if (getActiveAssignment(karkunId)) {
-    return { success: false, error: 'This Karkun already has an active assignment.' }
-  }
-
-  const rukn = getRuknById(ruknId)
-  if (!rukn) {
-    return { success: false, error: 'Rukn not found.' }
-  }
-
-  if (rukn.status === 'inactive') {
-    return { success: false, error: 'Cannot assign to an inactive Rukn.' }
-  }
-
-  if (!canAssignByGender(ruknId, karkunId)) {
-    return {
-      success: false,
-      error:
-        'Gender mismatch: Male Rukn can only be assigned Male Karkuns, and Female Rukn Female Karkuns.',
-    }
-  }
-
-  const assignment: Assignment = {
-    id: `asgn-${Date.now()}`,
-    campaignId: ACTIVE_CAMPAIGN_ID,
+  return assignRukn({
     ruknId,
     karkunId,
+    effectiveFrom: todayDate(),
     assignedBy,
-    assignmentDate: todayDate(),
-    assignmentStatus: 'Assigned',
-  }
-
-  assignmentHistory.unshift(assignment)
-
-  karkun.assignmentStatus = 'Assigned'
-  karkun.assignedRuknId = ruknId
-  karkun.assignedRukn = rukn.name
-  karkun.assignmentDate = assignment.assignmentDate
-  karkun.campaignStatus = 'active'
-
-  logPeopleAudit({
-    personKind: 'karkun',
-    personId: karkunId,
-    personName: karkun.name,
-    action: 'assign',
-    newValue: rukn.name,
-    updatedBy: assignedBy,
   })
+}
 
-  notifyAssignmentChange()
-  return { success: true, assignment }
+function mapReleaseToRemoval(reason: ReleaseReason): RemovalReason {
+  if (reason === 'Shifted Area') return 'Shifted Area'
+  if (reason === 'Wrong Assignment') return 'Wrong Assignment'
+  if (reason === 'Not Available') return 'Not Available'
+  if (reason === 'Personal Reason') return 'Personal Reason'
+  return 'Other'
+}
+
+function mapReleaseToReplacement(reason: ReleaseReason): ReplacementReason {
+  if (reason === 'Shifted Area') return 'Shifted responsibility'
+  if (reason === 'Already Covered') return 'Already Covered'
+  if (reason === 'Wrong Assignment') return 'Wrong Assignment'
+  if (reason === 'Not Available') return 'Not Available'
+  if (reason === 'Personal Reason') return 'Personal Reason'
+  return 'Other'
 }
 
 export function releaseKarkun(
@@ -219,41 +113,13 @@ export function releaseKarkun(
   ruknId: string,
   releaseReason: ReleaseReason,
 ): AssignKarkunResult {
-  ensureInitialized()
-
-  const karkun = getKarkunRecord(karkunId)
-  if (!karkun) {
-    return { success: false, error: 'Karkun not found.' }
-  }
-
-  if (karkun.assignmentStatus !== 'Assigned' || karkun.assignedRuknId !== ruknId) {
-    return { success: false, error: 'This Karkun is not assigned to you.' }
-  }
-
-  const active = getActiveAssignment(karkunId)
-  if (active) {
-    active.assignmentStatus = 'Completed'
-    active.releaseReason = releaseReason
-    active.releasedAt = new Date().toISOString()
-  }
-
-  karkun.assignmentStatus = 'Available'
-  karkun.assignedRuknId = ''
-  karkun.assignedRukn = ''
-  karkun.assignmentDate = undefined
-  karkun.campaignStatus = 'not_assigned'
-
-  logPeopleAudit({
-    personKind: 'karkun',
-    personId: karkunId,
-    personName: karkun.name,
-    action: 'unassign',
-    previousValue: getRuknById(ruknId)?.name,
-    updatedBy: 'Administrator',
+  void karkunId
+  return removeAssignment({
+    ruknId,
+    effectiveFrom: todayDate(),
+    removalReason: mapReleaseToRemoval(releaseReason),
+    assignedBy: 'Rukn',
   })
-
-  notifyAssignmentChange()
-  return { success: true, assignment: active! }
 }
 
 export function replaceKarkun(
@@ -263,21 +129,29 @@ export function replaceKarkun(
   releaseReason: ReleaseReason,
   assignedBy: AssignedBy,
 ): AssignKarkunResult {
-  const releaseResult = releaseKarkun(currentKarkunId, ruknId, releaseReason)
-  if (!releaseResult.success) {
-    return releaseResult
-  }
-
-  return assignKarkun(newKarkunId, ruknId, assignedBy)
+  void currentKarkunId
+  return replaceAssignment({
+    ruknId,
+    newKarkunId,
+    effectiveFrom: todayDate(),
+    replacementReason: mapReleaseToReplacement(releaseReason),
+    assignedBy,
+  })
 }
 
 export function adminUnassignKarkun(karkunId: string): AssignKarkunResult {
-  ensureInitialized()
-  const karkun = getKarkunRecord(karkunId)
-  if (!karkun || karkun.assignmentStatus !== 'Assigned' || !karkun.assignedRuknId) {
+  const active = getAllAssignments().find(
+    (record) => record.karkunId === karkunId && record.status === 'Active',
+  )
+  if (!active) {
     return { success: false, error: 'Karkun is not currently assigned.' }
   }
-  return releaseKarkun(karkunId, karkun.assignedRuknId, 'Other')
+  return removeAssignment({
+    ruknId: active.ruknId,
+    effectiveFrom: todayDate(),
+    removalReason: 'Other',
+    assignedBy: 'Administrator',
+  })
 }
 
 export function bulkAssignKarkuns(
@@ -300,35 +174,34 @@ export function bulkAssignKarkuns(
   return { success, failed }
 }
 
-export function getAssignmentHistoryForKarkun(karkunId: string): Assignment[] {
-  ensureInitialized()
-  return assignmentHistory.filter((record) => record.karkunId === karkunId)
-}
-
-export function getCompletedAssignmentHistoryForKarkun(karkunId: string): Assignment[] {
+export function getCompletedAssignmentHistoryForKarkun(karkunId: string) {
   return getAssignmentHistoryForKarkun(karkunId).filter(
-    (record) => record.assignmentStatus === 'Completed',
+    (record) => record.status === 'Completed' || record.status === 'Replaced',
   )
 }
 
-export function getCurrentAssignmentForKarkun(karkunId: string): Assignment | undefined {
-  ensureInitialized()
-  return getActiveAssignment(karkunId)
+export function getCurrentAssignmentForKarkun(karkunId: string) {
+  return getAllAssignments().find(
+    (record) => record.karkunId === karkunId && record.status === 'Active',
+  )
 }
 
-export function getCompletedAssignmentHistoryForRukn(ruknId: string): Assignment[] {
-  ensureInitialized()
-  return assignmentHistory.filter(
-    (record) => record.ruknId === ruknId && record.assignmentStatus === 'Completed',
-  )
+export function getCompletedAssignmentHistoryForRukn(ruknId: string) {
+  return getAssignmentHistoryForRukn(ruknId).filter((record) => record.status !== 'Active')
 }
 
 export function canAssignKarkun(karkunId: string): boolean {
   const karkun = getKarkunById(karkunId)
-  return Boolean(
-    karkun &&
-      !karkun.isArchived &&
-      karkun.status === 'active' &&
-      karkun.assignmentStatus === 'Available',
-  )
+  return Boolean(karkun && !karkun.isArchived && karkun.status === 'active' && karkun.mobile.trim())
 }
+
+export {
+  assignRukn,
+  replaceAssignment,
+  removeAssignment,
+  restoreAssignment,
+  getAssignmentHistoryForRukn,
+  getAssignmentHistoryForKarkun,
+} from '@/services/assignmentService'
+
+export { getRuknById }

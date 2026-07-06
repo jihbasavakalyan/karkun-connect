@@ -1,50 +1,58 @@
-import { Link } from 'react-router-dom'
-import { COMMAND_CENTER_RECENT_ACTIVITY } from '@/constants/mockCommandCenter'
+import { useEffect, useState } from 'react'
+import { getRecentActivity, subscribeToActivityLog } from '@/stores/activityLogStore'
+import type { ActivityLogSeverity } from '@/types/assignment'
 
-const activityIcons = {
-  meeting: '📝',
-  report: '📋',
-  karkun: '👤',
-} as const
+function severityClasses(severity: ActivityLogSeverity): string {
+  if (severity === 'IMPORTANT') {
+    return 'border-amber-300 bg-amber-50'
+  }
+  if (severity === 'WARNING') {
+    return 'border-orange-300 bg-orange-50'
+  }
+  return 'border-border bg-surface-muted'
+}
+
+function severityLabel(severity: ActivityLogSeverity): string {
+  return severity
+}
 
 export function RecentActivityPanel() {
+  const [version, setVersion] = useState(0)
+
+  useEffect(() => {
+    return subscribeToActivityLog(() => setVersion((v) => v + 1))
+  }, [])
+
+  void version
+
+  const activities = getRecentActivity(8)
+
   return (
     <section className="rounded-(--radius-card) border border-border bg-surface p-6 shadow-card">
       <h2 className="text-lg font-semibold text-text-heading">Recent Activity</h2>
 
-      <ul className="mt-4 space-y-3">
-        {COMMAND_CENTER_RECENT_ACTIVITY.map((item) => {
-          const content = (
-            <>
-              <span className="mt-0.5 shrink-0 text-lg" aria-hidden="true">
-                {activityIcons[item.type]}
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="font-medium text-text-heading">{item.title}</p>
-                <p className="mt-1 text-sm text-secondary">{item.subtitle}</p>
-                <p className="mt-1 text-xs text-secondary">{item.timestamp}</p>
+      {activities.length === 0 ? (
+        <p className="mt-4 text-sm text-secondary">No assignment activity yet.</p>
+      ) : (
+        <ul className="mt-4 space-y-3">
+          {activities.map((entry) => (
+            <li
+              key={entry.id}
+              className={`rounded-lg border px-4 py-3 text-sm ${severityClasses(entry.severity)}`}
+            >
+              <div className="flex items-start justify-between gap-2">
+                <p className="font-medium text-text-heading">{entry.message}</p>
+                <span className="shrink-0 text-xs font-medium uppercase text-secondary">
+                  {severityLabel(entry.severity)}
+                </span>
               </div>
-            </>
-          )
-
-          return (
-            <li key={item.id}>
-              {item.to ? (
-                <Link
-                  to={item.to}
-                  className="flex items-start gap-3 rounded-lg border border-border bg-surface-muted px-4 py-3 transition-colors hover:bg-surface"
-                >
-                  {content}
-                </Link>
-              ) : (
-                <div className="flex items-start gap-3 rounded-lg border border-border bg-surface-muted px-4 py-3">
-                  {content}
-                </div>
-              )}
+              <p className="mt-1 text-secondary">
+                {new Date(entry.timestamp).toLocaleString()} · {entry.actor}
+              </p>
             </li>
-          )
-        })}
-      </ul>
+          ))}
+        </ul>
+      )}
     </section>
   )
 }

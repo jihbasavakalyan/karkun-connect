@@ -179,7 +179,7 @@ export function createRukn(
     id: getNextRuknId(),
     name: input.name.trim(),
     gender: input.gender,
-    mobile: input.mobile.trim(),
+    mobile: normalizeMobile(input.mobile),
     whatsapp: input.whatsapp?.trim() || undefined,
     place: input.place.trim() || DEFAULT_PLACE,
     status: input.status,
@@ -244,7 +244,7 @@ export function updateRukn(
 
   if (input.name !== undefined) rukn.name = input.name.trim()
   if (input.gender !== undefined) rukn.gender = input.gender
-  if (input.mobile !== undefined) rukn.mobile = input.mobile.trim()
+  if (input.mobile !== undefined) rukn.mobile = normalizeMobile(input.mobile)
   if (input.whatsapp !== undefined) rukn.whatsapp = input.whatsapp.trim() || undefined
   if (input.place !== undefined) rukn.place = input.place.trim() || DEFAULT_PLACE
   if (input.status !== undefined) rukn.status = input.status
@@ -304,7 +304,7 @@ export function createKarkun(
     id,
     name: input.name.trim(),
     gender: input.gender,
-    mobile: input.mobile.trim(),
+    mobile: normalizeMobile(input.mobile),
     whatsapp: input.whatsapp?.trim() || undefined,
     place: input.place.trim() || DEFAULT_PLACE,
     status: input.status,
@@ -385,7 +385,7 @@ export function updateKarkun(
 
   if (input.name !== undefined) karkun.name = input.name.trim()
   if (input.gender !== undefined) karkun.gender = input.gender
-  if (input.mobile !== undefined) karkun.mobile = input.mobile.trim()
+  if (input.mobile !== undefined) karkun.mobile = normalizeMobile(input.mobile)
   if (input.whatsapp !== undefined) karkun.whatsapp = input.whatsapp.trim() || undefined
   if (input.place !== undefined) karkun.place = input.place.trim() || DEFAULT_PLACE
   if (input.status !== undefined) karkun.status = input.status

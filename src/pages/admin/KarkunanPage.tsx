@@ -20,7 +20,6 @@ import {
 } from '@/lib/peopleImportExport'
 import {
   BulkActionsBar,
-  BulkAssignModal,
   ConfirmDialog,
   ImportExportToolbar,
   ImportSummaryModal,
@@ -43,7 +42,6 @@ function KarkunGenderSection({ gender }: { gender: PersonGender }) {
 
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false)
-  const [isBulkAssignOpen, setIsBulkAssignOpen] = useState(false)
   const [editingKarkun, setEditingKarkun] = useState<KarkunRegistryRecord | null>(null)
   const [formError, setFormError] = useState('')
   const [mobileTarget, setMobileTarget] = useState<KarkunRegistryRecord | null>(null)
@@ -164,7 +162,6 @@ function KarkunGenderSection({ gender }: { gender: PersonGender }) {
           bulkSetKarkunStatus(management.selectedIds, 'inactive')
           management.clearSelection()
         }}
-        onAssign={() => setIsBulkAssignOpen(true)}
         onUnassign={() => {
           for (const id of management.selectedIds) {
             adminUnassignKarkun(id)
@@ -273,14 +270,6 @@ function KarkunGenderSection({ gender }: { gender: PersonGender }) {
         isOpen={isAssignModalOpen}
         genderFilter={gender}
         onClose={() => setIsAssignModalOpen(false)}
-      />
-
-      <BulkAssignModal
-        isOpen={isBulkAssignOpen}
-        karkunIds={management.selectedIds}
-        sectionGender={gender}
-        onClose={() => setIsBulkAssignOpen(false)}
-        onComplete={management.clearSelection}
       />
     </div>
   )

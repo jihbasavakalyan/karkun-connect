@@ -2,6 +2,7 @@ import { BrowserRouter, Navigate, Route, Routes, useParams } from 'react-router-
 import { ROUTES } from '@/constants/routes'
 import { AdminLayout } from '@/layouts/AdminLayout'
 import { RuknLayout } from '@/layouts/RuknLayout'
+import { AssignmentManagementPage } from '@/pages/admin/AssignmentManagementPage'
 import { AdminHomePage } from '@/pages/admin/AdminHomePage'
 import { CampaignSetupPage } from '@/pages/admin/CampaignSetupPage'
 import { CampaignsPage } from '@/pages/admin/CampaignsPage'
@@ -66,6 +67,7 @@ export function AppRouter() {
           <Route path="rukn/:ruknId" element={<RuknDetailPage />} />
           <Route path="karkun" element={<KarkunanPage />} />
           <Route path="karkun/:karkunId" element={<KarkunProfilePage />} />
+          <Route path="assignments" element={<AssignmentManagementPage />} />
           <Route path="execution" element={<ExecutionModulePage />} />
           <Route path="review" element={<ReviewReportsModulePage />} />
           <Route path="follow-up" element={<FollowUpDevelopmentModulePage />} />
@@ -74,7 +76,7 @@ export function AppRouter() {
 
           {/* Legacy route redirects */}
           <Route path="campaigns" element={<Navigate to={ROUTES.ADMIN_CAMPAIGN} replace />} />
-          <Route path="assignments" element={<Navigate to={ROUTES.ADMIN_RUKN} replace />} />
+          <Route path="assignments" element={<Navigate to={ROUTES.ADMIN_ASSIGNMENTS} replace />} />
           <Route path="reviews" element={<Navigate to={ROUTES.ADMIN_REVIEW} replace />} />
           <Route path="karkunan" element={<Navigate to={ROUTES.ADMIN_KARKUN} replace />} />
           <Route path="karkunan/:karkunId" element={<LegacyKarkunProfileRedirect />} />

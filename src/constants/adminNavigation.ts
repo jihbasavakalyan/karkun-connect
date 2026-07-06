@@ -13,6 +13,7 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   { id: 'campaign', label: 'Campaign', icon: '📊', to: ROUTES.ADMIN_CAMPAIGN },
   { id: 'rukn', label: 'Rukn', icon: '👥', to: ROUTES.ADMIN_RUKN },
   { id: 'karkun', label: 'Karkun', icon: '👥', to: ROUTES.ADMIN_KARKUN },
+  { id: 'assignments', label: 'Assignments', icon: '🔗', to: ROUTES.ADMIN_ASSIGNMENTS },
   { id: 'execution', label: 'Execution', icon: '📝', to: ROUTES.ADMIN_EXECUTION },
   { id: 'review', label: 'Review & Reports', icon: '📋', to: ROUTES.ADMIN_REVIEW },
   { id: 'follow-up', label: 'Follow-up & Development', icon: '🔄', to: ROUTES.ADMIN_FOLLOW_UP },

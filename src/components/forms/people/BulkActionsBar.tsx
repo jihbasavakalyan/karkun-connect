@@ -4,7 +4,6 @@ type BulkActionsBarProps = {
   selectedCount: number
   onActivate: () => void
   onDeactivate: () => void
-  onAssign?: () => void
   onUnassign?: () => void
   onClearSelection: () => void
 }
@@ -13,7 +12,6 @@ export function BulkActionsBar({
   selectedCount,
   onActivate,
   onDeactivate,
-  onAssign,
   onUnassign,
   onClearSelection,
 }: BulkActionsBarProps) {
@@ -30,11 +28,14 @@ export function BulkActionsBar({
       <SecondaryButton type="button" className="px-3 py-2 text-sm" onClick={onDeactivate}>
         Deactivate
       </SecondaryButton>
-      {onAssign && (
-        <SecondaryButton type="button" className="px-3 py-2 text-sm" onClick={onAssign}>
-          Bulk Assign
-        </SecondaryButton>
-      )}
+      <SecondaryButton
+        type="button"
+        className="cursor-not-allowed px-3 py-2 text-sm opacity-60"
+        disabled
+        title="Coming in Version 2"
+      >
+        Bulk Assign (Coming in Version 2)
+      </SecondaryButton>
       {onUnassign && (
         <SecondaryButton type="button" className="px-3 py-2 text-sm" onClick={onUnassign}>
           Unassign

@@ -3,27 +3,63 @@ import { ROUTES } from '@/constants/routes'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 
 export function CommandCenterAssignmentMetrics() {
-  const { getAssignmentMetrics } = useAssignmentEngine()
-  const metrics = getAssignmentMetrics()
+  const { getAssignmentDashboardMetrics } = useAssignmentEngine()
+  const metrics = getAssignmentDashboardMetrics()
 
   const items = [
     {
-      id: 'available',
-      label: 'Available Karkun',
-      count: metrics.availableKarkun,
-      to: `${ROUTES.ADMIN_KARKUN}?status=Available`,
+      id: 'active',
+      label: 'Active Assignments',
+      count: metrics.activeAssignments,
+      to: ROUTES.ADMIN_ASSIGNMENTS,
     },
     {
-      id: 'assigned',
-      label: 'Assigned Karkun',
-      count: metrics.assignedKarkun,
-      to: `${ROUTES.ADMIN_RUKN}`,
+      id: 'unassigned-rukn',
+      label: 'Unassigned Rukns',
+      count: metrics.unassignedRukns,
+      to: ROUTES.ADMIN_ASSIGNMENTS,
     },
     {
-      id: 'completed',
-      label: 'Completed Assignments',
-      count: metrics.completedAssignments,
-      to: `${ROUTES.ADMIN_RUKN}`,
+      id: 'assigned-rukn',
+      label: 'Assigned Rukns',
+      count: metrics.assignedRukns,
+      to: ROUTES.ADMIN_ASSIGNMENTS,
+    },
+    {
+      id: 'today',
+      label: 'Assignments Today',
+      count: metrics.assignmentsToday,
+      to: ROUTES.ADMIN_ASSIGNMENTS,
+    },
+    {
+      id: 'week',
+      label: 'Assignments This Week',
+      count: metrics.assignmentsThisWeek,
+      to: ROUTES.ADMIN_ASSIGNMENTS,
+    },
+    {
+      id: 'month',
+      label: 'Assignments This Month',
+      count: metrics.assignmentsThisMonth,
+      to: ROUTES.ADMIN_ASSIGNMENTS,
+    },
+    {
+      id: 'male-available',
+      label: 'Available Male Karkuns',
+      count: metrics.availableMaleKarkuns,
+      to: ROUTES.ADMIN_KARKUN,
+    },
+    {
+      id: 'female-available',
+      label: 'Available Female Karkuns',
+      count: metrics.availableFemaleKarkuns,
+      to: ROUTES.ADMIN_KARKUN,
+    },
+    {
+      id: 'changes',
+      label: 'Total Assignment Changes',
+      count: metrics.totalAssignmentChanges,
+      to: ROUTES.ADMIN_ASSIGNMENTS,
     },
   ]
 
@@ -31,7 +67,7 @@ export function CommandCenterAssignmentMetrics() {
     <section className="rounded-(--radius-card) border border-border bg-surface p-6 shadow-card">
       <h2 className="text-lg font-semibold text-text-heading">Assignments</h2>
 
-      <ul className="mt-4 grid gap-3 sm:grid-cols-3">
+      <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {items.map((item) => (
           <li key={item.id}>
             <Link

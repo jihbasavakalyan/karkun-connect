@@ -1,30 +1,19 @@
-import { useMemo } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { getRuknById } from '@/data/ruknMaster'
-import {
-  getAssignedKarkunanForRukn,
-  getCompletedAssignmentHistoryForRukn,
-} from '@/lib/assignmentEngine'
+import { getRuknAssignmentSummary } from '@/services/assignmentService'
 import { getAuditLogForPerson } from '@/lib/peopleAuditLog'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
-import { formatPersonStatus } from '@/types/people.types'
 import { ROUTES } from '@/constants/routes'
-import { AssignedKarkunList } from '@/components/forms/rukn'
+import { AssignmentHistoryTimeline } from '@/components/forms/assignment/AssignmentHistoryTimeline'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
+import { formatPersonStatus } from '@/types/people.types'
 
 export function RuknDetailPage() {
   const { ruknId } = useParams<{ ruknId: string }>()
   const rukn = ruknId ? getRuknById(ruknId) : undefined
   useAssignmentEngine()
-  const assignedKarkunan = useMemo(
-    () => (ruknId ? getAssignedKarkunanForRukn(ruknId) : []),
-    [ruknId],
-  )
-  const assignmentHistory = useMemo(
-    () => (ruknId ? getCompletedAssignmentHistoryForRukn(ruknId) : []),
-    [ruknId],
-  )
+  const summary = ruknId ? getRuknAssignmentSummary(ruknId) : null
 
   if (!rukn) {
     return (
@@ -39,6 +28,9 @@ export function RuknDetailPage() {
 
   const mobileLabel = rukn.mobile.trim() ? rukn.mobile : 'Mobile Not Added'
   const auditLog = getAuditLogForPerson('rukn', rukn.id)
+  const currentKarkun = summary?.currentAssignment
+    ? getKarkunById(summary.currentAssignment.karkunId)
+    : null
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -82,45 +74,52 @@ export function RuknDetailPage() {
         )}
       </section>
 
-      <section className="rounded-(--radius-card) border border-border bg-surface p-5 shadow-card">
-        <h2 className="text-lg font-semibold text-text-heading">Current Assignment</h2>
-        <p className="mt-1 text-sm text-secondary">
-          Karkun currently assigned to this Rukn.
-        </p>
-        <div className="mt-4">
-          {assignedKarkunan.length === 0 ? (
-            <p className="text-sm text-secondary">No Karkun currently assigned.</p>
-          ) : (
-            <AssignedKarkunList karkunan={assignedKarkunan} />
-          )}
-        </div>
-      </section>
+      {summary && (
+        <section className="rounded-(--radius-card) border border-border bg-surface p-5 shadow-card">
+          <div className="flex items-start justify-between gap-3">
+            <h2 className="text-lg font-semibold text-text-heading">Assignment</h2>
+            <Link
+              to={ROUTES.ADMIN_ASSIGNMENTS}
+              className="text-sm font-medium text-primary hover:underline"
+            >
+              Manage →
+            </Link>
+          </div>
 
-      <section className="rounded-(--radius-card) border border-border bg-surface p-5 shadow-card">
-        <h2 className="text-lg font-semibold text-text-heading">Assignment History</h2>
+          <dl className="mt-4 grid gap-4 sm:grid-cols-2 text-sm">
+            <div>
+              <dt className="text-secondary">Assignment Status</dt>
+              <dd className="mt-1 font-medium text-text-heading">{summary.assignmentStatus}</dd>
+            </div>
+            <div>
+              <dt className="text-secondary">Current Assignment</dt>
+              <dd className="mt-1 font-medium text-text-heading">
+                {currentKarkun?.name ?? 'Unassigned'}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-secondary">Assignment Since</dt>
+              <dd className="mt-1 font-medium text-text-heading">
+                {summary.assignmentSince?.slice(0, 10) ?? '—'}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-secondary">Last Assignment Change</dt>
+              <dd className="mt-1 font-medium text-text-heading">
+                {summary.lastAssignmentChange?.slice(0, 10) ?? '—'}
+              </dd>
+            </div>
+          </dl>
 
-        {assignmentHistory.length === 0 ? (
-          <p className="mt-4 text-sm text-secondary">No previous assignments recorded.</p>
-        ) : (
-          <ul className="mt-4 space-y-3">
-            {assignmentHistory.map((record) => (
-              <li
-                key={record.id}
-                className="rounded-lg border border-border bg-surface-muted px-4 py-3 text-sm"
-              >
-                <p className="font-medium text-text-heading">
-                  {getKarkunById(record.karkunId)?.name ?? record.karkunId}
-                </p>
-                <p className="mt-1 text-secondary">
-                  {record.assignmentDate}
-                  {record.releasedAt ? ` → released ${record.releasedAt.slice(0, 10)}` : ''}
-                  {record.releaseReason ? ` · ${record.releaseReason}` : ''}
-                </p>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+          <div className="mt-6">
+            <AssignmentHistoryTimeline
+              history={summary.assignmentHistory}
+              currentAssignment={summary.currentAssignment}
+              perspective="rukn"
+            />
+          </div>
+        </section>
+      )}
 
       {auditLog.length > 0 && (
         <section className="rounded-(--radius-card) border border-border bg-surface p-5 shadow-card">

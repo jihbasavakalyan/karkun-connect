@@ -1,17 +1,16 @@
-const MOBILE_DIGITS_MIN = 10
-const MOBILE_DIGITS_MAX = 15
+const MOBILE_DIGITS = 10
 
 export function normalizeMobile(mobile: string): string {
-  return mobile.replace(/\D/g, '')
+  return mobile.trim().replace(/\D/g, '')
 }
 
 export function isValidMobileFormat(mobile: string): boolean {
   const digits = normalizeMobile(mobile)
-  return digits.length >= MOBILE_DIGITS_MIN && digits.length <= MOBILE_DIGITS_MAX
+  return digits.length === MOBILE_DIGITS && /^\d+$/.test(digits)
 }
 
 export function formatMobileValidationError(): string {
-  return `Mobile number must contain ${MOBILE_DIGITS_MIN}–${MOBILE_DIGITS_MAX} digits.`
+  return 'Mobile number must be exactly 10 digits (numbers only).'
 }
 
 export function mobilesMatch(a: string, b: string): boolean {
