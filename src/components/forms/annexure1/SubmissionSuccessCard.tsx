@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom'
 import { ROUTES } from '@/constants/routes'
-import { JIH_STATUS_LABELS } from '@/types/annexure1.types'
 import type { SubmittedMeetingForm } from '@/types/annexure1.types'
 import type { RuknMission } from '@/constants/mockMissions'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
@@ -12,9 +11,10 @@ type SubmissionSuccessCardProps = {
 }
 
 export function SubmissionSuccessCard({ submission, nextMission }: SubmissionSuccessCardProps) {
-  const jihLabel = submission.jihRegistration
-    ? JIH_STATUS_LABELS[submission.jihRegistration]
-    : '—'
+  const commitmentLabel =
+    submission.commitmentMade && submission.commitmentDetails.trim()
+      ? submission.commitmentDetails
+      : 'No commitment recorded'
 
   const followUpLabel =
     submission.followUpRequired === 'yes'
@@ -42,8 +42,12 @@ export function SubmissionSuccessCard({ submission, nextMission }: SubmissionSuc
           <dd className="font-semibold text-text-heading">{submission.visitDate}</dd>
         </div>
         <div>
-          <dt className="text-sm text-secondary">JIH Status</dt>
-          <dd className="font-semibold text-text-heading">{jihLabel}</dd>
+          <dt className="text-sm text-secondary">Current Commitment</dt>
+          <dd className="font-semibold text-text-heading">{commitmentLabel}</dd>
+        </div>
+        <div>
+          <dt className="text-sm text-secondary">JIH App Registration</dt>
+          <dd className="font-semibold text-text-heading">{submission.jihAppRegistrationStatus}</dd>
         </div>
         <div>
           <dt className="text-sm text-secondary">Follow-up Status</dt>

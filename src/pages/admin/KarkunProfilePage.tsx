@@ -34,6 +34,10 @@ export function KarkunProfilePage() {
     )
   }
 
+  const commitmentDisplay = karkun.currentCommitment.trim()
+    ? karkun.currentCommitment
+    : 'No commitment recorded.'
+
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -70,17 +74,31 @@ export function KarkunProfilePage() {
             value={CAMPAIGN_STATUS_LABELS[karkun.campaignStatus]}
           />
           <ProfileField
-            label="JIH Registration"
+            label="Administrator JIH Review"
             value={JIH_STATUS_LABELS[karkun.jihRegistration]}
           />
           <ProfileField label="Visit Status" value={VISIT_STATUS_LABELS[karkun.visitStatus]} />
-          <ProfileField label="Last Visit" value={karkun.lastVisit ?? '—'} />
-          <ProfileField label="Commitment" value={karkun.commitment ?? '—'} />
+          <ProfileField label="Last Meeting" value={karkun.lastVisit ?? '—'} />
         </dl>
 
         <div className="mt-4">
           <ProfileField label="Notes" value={karkun.notes || '—'} />
         </div>
+      </section>
+
+      <section className="rounded-(--radius-card) border border-border bg-surface p-6 shadow-card">
+        <h2 className="text-lg font-semibold text-text-heading">Meeting Outcomes</h2>
+        <p className="mt-1 text-sm text-secondary">
+          Latest commitment and JIH App registration from field meetings.
+        </p>
+
+        <dl className="mt-4 space-y-4">
+          <ProfileField label="Current Commitment" value={commitmentDisplay} />
+          <ProfileField
+            label="JIH App Registration"
+            value={karkun.jihAppRegistrationStatus}
+          />
+        </dl>
       </section>
     </div>
   )

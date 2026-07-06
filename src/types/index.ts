@@ -16,6 +16,7 @@ export type {
   KarkunRegistryFilters,
   KarkunCampaignStatus,
   JihRegistrationStatus,
+  JihAppRegistrationStatus,
   KarkunVisitStatus,
 } from './karkun-registry.types'
 
@@ -25,17 +26,18 @@ export {
   VISIT_STATUS_LABELS,
   CAMPAIGN_STATUS_FILTER_OPTIONS,
   KARKUN_REGISTRY_PAGE_SIZE,
+  JIH_APP_REGISTRATION_OPTIONS,
+  DEFAULT_JIH_APP_REGISTRATION_STATUS,
 } from './karkun-registry.types'
 
 export type {
   Annexure1FormState,
   SubmittedMeetingForm,
   CampaignFollowUpRecord,
-  JihRegistrationChoice,
+  JihAppRegistrationStatus as AnnexureJihAppRegistrationStatus,
 } from './annexure1.types'
 
 export {
-  JIH_REGISTRATION_OPTIONS,
-  JIH_STATUS_LABELS,
+  JIH_APP_REGISTRATION_FORM_OPTIONS,
   createInitialAnnexure1FormState,
 } from './annexure1.types'

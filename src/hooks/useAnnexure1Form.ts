@@ -2,7 +2,7 @@ import { useState } from 'react'
 import {
   createInitialAnnexure1FormState,
   type Annexure1FormState,
-  type JihRegistrationChoice,
+  type JihAppRegistrationStatus,
 } from '@/types/annexure1.types'
 
 export function useAnnexure1Form(initial?: Partial<Annexure1FormState>) {
@@ -30,4 +30,4 @@ export function useAnnexure1Form(initial?: Partial<Annexure1FormState>) {
 
 export type Annexure1FormFieldUpdater = ReturnType<typeof useAnnexure1Form>['setField']
 
-export type { Annexure1FormState, JihRegistrationChoice }
+export type { Annexure1FormState, JihAppRegistrationStatus }

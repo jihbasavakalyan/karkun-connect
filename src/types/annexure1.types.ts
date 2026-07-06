@@ -1,8 +1,7 @@
-export type JihRegistrationChoice =
-  | 'already_registered'
-  | 'registered_during_visit'
-  | 'recommended_to_administrator'
-  | 'not_applicable'
+export type JihAppRegistrationStatus =
+  | 'Not Discussed'
+  | 'Recommended'
+  | 'Registered'
 
 export type Annexure1FormState = {
   visitDate: string
@@ -11,8 +10,7 @@ export type Annexure1FormState = {
   discussionSummary: string
   commitmentMade: boolean
   commitmentDetails: string
-  jihRegistration: JihRegistrationChoice | ''
-  jihRecommendationNote: string
+  jihAppRegistrationStatus: JihAppRegistrationStatus
   followUpRequired: 'yes' | 'no' | ''
   followUpDate: string
   followUpNote: string
@@ -38,19 +36,11 @@ export type CampaignFollowUpRecord = {
   sourceFormId: string
 }
 
-export const JIH_REGISTRATION_OPTIONS = [
-  { value: 'already_registered', label: 'Already Registered' },
-  { value: 'registered_during_visit', label: 'Registered During Visit' },
-  { value: 'recommended_to_administrator', label: 'Recommended to Administrator' },
-  { value: 'not_applicable', label: 'Not Applicable' },
-] as const
-
-export const JIH_STATUS_LABELS: Record<JihRegistrationChoice, string> = {
-  already_registered: 'Already Registered',
-  registered_during_visit: 'Registered During Visit',
-  recommended_to_administrator: 'Recommended to Administrator',
-  not_applicable: 'Not Applicable',
-}
+export const JIH_APP_REGISTRATION_FORM_OPTIONS: JihAppRegistrationStatus[] = [
+  'Not Discussed',
+  'Recommended',
+  'Registered',
+]
 
 export function createInitialAnnexure1FormState(): Annexure1FormState {
   const today = new Date().toISOString().slice(0, 10)
@@ -61,8 +51,7 @@ export function createInitialAnnexure1FormState(): Annexure1FormState {
     discussionSummary: '',
     commitmentMade: false,
     commitmentDetails: '',
-    jihRegistration: '',
-    jihRecommendationNote: '',
+    jihAppRegistrationStatus: 'Not Discussed',
     followUpRequired: '',
     followUpDate: '',
     followUpNote: '',

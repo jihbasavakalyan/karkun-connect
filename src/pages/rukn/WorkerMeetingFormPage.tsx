@@ -24,7 +24,13 @@ export function WorkerMeetingFormPage() {
   const { karkunId } = useParams<{ karkunId: string }>()
   const navigate = useNavigate()
   const karkun = karkunId ? getKarkunById(karkunId) : undefined
-  const { form, setField, visitStopped } = useAnnexure1Form()
+  const { form, setField, visitStopped } = useAnnexure1Form(
+    karkun
+      ? {
+          jihAppRegistrationStatus: karkun.jihAppRegistrationStatus,
+        }
+      : undefined,
+  )
   const [successState, setSuccessState] = useState<{
     submission: SubmittedMeetingForm
     nextMission?: RuknMission

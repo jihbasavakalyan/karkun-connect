@@ -1,7 +1,6 @@
-import { TextAreaField } from '@/components/forms/TextAreaField'
-import { FormSectionCard, LargeRadioOption } from '@/components/forms/annexure1/FormSectionCard'
-import { JIH_REGISTRATION_OPTIONS } from '@/types/annexure1.types'
-import type { Annexure1FormState, JihRegistrationChoice } from '@/types/annexure1.types'
+import { FormSectionCard } from '@/components/forms/annexure1/FormSectionCard'
+import { JIH_APP_REGISTRATION_FORM_OPTIONS } from '@/types/annexure1.types'
+import type { Annexure1FormState, JihAppRegistrationStatus } from '@/types/annexure1.types'
 import type { Annexure1FormFieldUpdater } from '@/hooks/useAnnexure1Form'
 
 type JIHRegistrationSectionProps = {
@@ -9,35 +8,32 @@ type JIHRegistrationSectionProps = {
   setField: Annexure1FormFieldUpdater
 }
 
+const selectClassName =
+  'w-full rounded-lg border border-border bg-surface px-4 py-3 text-base text-text-heading focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20'
+
 export function JIHRegistrationSection({ form, setField }: JIHRegistrationSectionProps) {
   return (
-    <FormSectionCard title="JIH Registration">
+    <FormSectionCard title="JIH App Registration">
       <div className="space-y-4">
-        <p className="text-sm text-secondary">Registered in JIH Portal?</p>
-
-        <fieldset className="space-y-3">
-          {JIH_REGISTRATION_OPTIONS.map((option) => (
-            <LargeRadioOption
-              key={option.value}
-              name="jih-registration"
-              value={option.value}
-              checked={form.jihRegistration === option.value}
-              label={option.label}
-              onChange={(value) => setField('jihRegistration', value as JihRegistrationChoice)}
-            />
-          ))}
-        </fieldset>
-
-        {form.jihRegistration === 'recommended_to_administrator' && (
-          <TextAreaField
-            id="jih-recommendation-note"
-            label="Recommendation Note"
-            value={form.jihRecommendationNote}
-            onValueChange={(value) => setField('jihRecommendationNote', value)}
-            placeholder="Notes for the administrator..."
-            rows={3}
-          />
-        )}
+        <div className="flex flex-col gap-2">
+          <label htmlFor="jih-app-registration" className="text-sm font-medium text-text-heading">
+            JIH App Registration
+          </label>
+          <select
+            id="jih-app-registration"
+            value={form.jihAppRegistrationStatus}
+            onChange={(event) =>
+              setField('jihAppRegistrationStatus', event.target.value as JihAppRegistrationStatus)
+            }
+            className={selectClassName}
+          >
+            {JIH_APP_REGISTRATION_FORM_OPTIONS.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
     </FormSectionCard>
   )

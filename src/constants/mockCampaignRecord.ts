@@ -1,4 +1,5 @@
 import { ACTIVE_CAMPAIGN_NAME } from '@/constants/app'
+import { updateKarkunMeetingOutcomes } from '@/constants/mockKarkunRegistry'
 import type {
   Annexure1FormState,
   CampaignFollowUpRecord,
@@ -38,6 +39,14 @@ export function submitMeetingForm(
   }
 
   submittedForms.unshift(record)
+
+  updateKarkunMeetingOutcomes(karkunId, {
+    currentCommitment:
+      form.commitmentMade && form.commitmentDetails.trim()
+        ? form.commitmentDetails.trim()
+        : undefined,
+    jihAppRegistrationStatus: form.jihAppRegistrationStatus,
+  })
 
   if (form.followUpRequired === 'yes' && form.followUpDate) {
     followUpRecords.unshift({
@@ -87,15 +96,12 @@ export function getCampaignRecordData() {
       visitDate: form.visitDate,
     }))
 
-  const jihRegistrations = meetingForms
-    .filter((form) => form.jihRegistration)
-    .map((form) => ({
-      id: `jih-${form.id}`,
-      workerName: form.workerName,
-      status: form.jihRegistration,
-      note: form.jihRecommendationNote,
-      visitDate: form.visitDate,
-    }))
+  const jihRegistrations = meetingForms.map((form) => ({
+    id: `jih-${form.id}`,
+    workerName: form.workerName,
+    status: form.jihAppRegistrationStatus,
+    visitDate: form.visitDate,
+  }))
 
   const visitHistory = [
     ...meetingForms.map((form) => ({

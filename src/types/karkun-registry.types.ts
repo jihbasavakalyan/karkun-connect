@@ -4,6 +4,8 @@ export type JihRegistrationStatus = 'approved' | 'pending' | 'not_started' | 're
 
 export type KarkunVisitStatus = 'scheduled' | 'completed' | 'pending' | 'overdue' | 'none'
 
+export type JihAppRegistrationStatus = 'Not Discussed' | 'Recommended' | 'Registered'
+
 export type KarkunRegistryRecord = {
   id: string
   name: string
@@ -17,6 +19,8 @@ export type KarkunRegistryRecord = {
   visitStatus: KarkunVisitStatus
   lastVisit: string | null
   commitment: string | null
+  currentCommitment: string
+  jihAppRegistrationStatus: JihAppRegistrationStatus
   notes: string
   isArchived: boolean
 }
@@ -56,3 +60,11 @@ export const CAMPAIGN_STATUS_LABELS: Record<KarkunCampaignStatus, string> = {
   inactive: 'Inactive',
   not_assigned: 'Not Assigned',
 }
+
+export const JIH_APP_REGISTRATION_OPTIONS: JihAppRegistrationStatus[] = [
+  'Not Discussed',
+  'Recommended',
+  'Registered',
+]
+
+export const DEFAULT_JIH_APP_REGISTRATION_STATUS: JihAppRegistrationStatus = 'Not Discussed'

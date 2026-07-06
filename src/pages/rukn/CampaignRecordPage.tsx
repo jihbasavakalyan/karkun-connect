@@ -1,7 +1,5 @@
 import { Link } from 'react-router-dom'
 import { getCampaignRecordData } from '@/constants/mockCampaignRecord'
-import { JIH_STATUS_LABELS } from '@/types/annexure1.types'
-import type { JihRegistrationChoice } from '@/types/annexure1.types'
 import { ROUTES } from '@/constants/routes'
 
 function RecordSection({
@@ -96,7 +94,7 @@ export function CampaignRecordPage() {
         )}
       </RecordSection>
 
-      <RecordSection title="JIH Registration">
+      <RecordSection title="JIH App Registration">
         {data.jihRegistrations.length === 0 ? (
           <p className="text-sm text-secondary">No JIH records.</p>
         ) : (
@@ -109,10 +107,7 @@ export function CampaignRecordPage() {
                 <p className="font-semibold text-text-heading">
                   {item.workerName} · {item.visitDate}
                 </p>
-                <p className="mt-1 text-secondary">
-                  {JIH_STATUS_LABELS[item.status as JihRegistrationChoice]}
-                </p>
-                {item.note && <p className="mt-1 text-secondary">{item.note}</p>}
+                <p className="mt-1 text-secondary">{item.status}</p>
               </li>
             ))}
           </ul>

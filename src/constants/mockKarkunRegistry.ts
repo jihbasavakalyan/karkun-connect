@@ -1,4 +1,7 @@
-import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
+import type {
+  JihAppRegistrationStatus,
+  KarkunRegistryRecord,
+} from '@/types/karkun-registry.types'
 import { getActiveRuknNames, getRuknById } from '@/data/ruknMaster'
 
 export const MOCK_KARKUN_REGISTRY: KarkunRegistryRecord[] = [
@@ -15,6 +18,8 @@ export const MOCK_KARKUN_REGISTRY: KarkunRegistryRecord[] = [
     visitStatus: 'scheduled',
     lastVisit: '2026-03-10',
     commitment: 'Attend weekly study circle',
+    currentCommitment: 'Attend weekly study circle',
+    jihAppRegistrationStatus: 'Recommended',
     notes: 'Priority contact for JIH registration follow-up.',
     isArchived: false,
   },
@@ -31,6 +36,8 @@ export const MOCK_KARKUN_REGISTRY: KarkunRegistryRecord[] = [
     visitStatus: 'completed',
     lastVisit: '2026-03-11',
     commitment: null,
+    currentCommitment: '',
+    jihAppRegistrationStatus: 'Registered',
     notes: 'Regular participant in community programs.',
     isArchived: false,
   },
@@ -47,6 +54,8 @@ export const MOCK_KARKUN_REGISTRY: KarkunRegistryRecord[] = [
     visitStatus: 'pending',
     lastVisit: null,
     commitment: 'Complete reading assignment',
+    currentCommitment: 'Complete reading assignment',
+    jihAppRegistrationStatus: 'Not Discussed',
     notes: 'New contact — first visit pending.',
     isArchived: false,
   },
@@ -63,6 +72,8 @@ export const MOCK_KARKUN_REGISTRY: KarkunRegistryRecord[] = [
     visitStatus: 'overdue',
     lastVisit: '2026-02-28',
     commitment: null,
+    currentCommitment: '',
+    jihAppRegistrationStatus: 'Not Discussed',
     notes: 'Follow-up required for overdue visit.',
     isArchived: false,
   },
@@ -79,6 +90,8 @@ export const MOCK_KARKUN_REGISTRY: KarkunRegistryRecord[] = [
     visitStatus: 'scheduled',
     lastVisit: '2026-03-09',
     commitment: 'Join upcoming campaign event',
+    currentCommitment: 'Join upcoming campaign event',
+    jihAppRegistrationStatus: 'Recommended',
     notes: '',
     isArchived: false,
   },
@@ -95,6 +108,8 @@ export const MOCK_KARKUN_REGISTRY: KarkunRegistryRecord[] = [
     visitStatus: 'completed',
     lastVisit: '2026-03-12',
     commitment: 'Monthly contribution pledge',
+    currentCommitment: 'Monthly contribution pledge',
+    jihAppRegistrationStatus: 'Registered',
     notes: 'Reliable and responsive.',
     isArchived: false,
   },
@@ -111,6 +126,8 @@ export const MOCK_KARKUN_REGISTRY: KarkunRegistryRecord[] = [
     visitStatus: 'none',
     lastVisit: null,
     commitment: null,
+    currentCommitment: '',
+    jihAppRegistrationStatus: 'Not Discussed',
     notes: 'Awaiting Rukn assignment.',
     isArchived: false,
   },
@@ -127,6 +144,8 @@ export const MOCK_KARKUN_REGISTRY: KarkunRegistryRecord[] = [
     visitStatus: 'pending',
     lastVisit: '2026-03-05',
     commitment: 'Follow up on JIH form',
+    currentCommitment: 'Follow up on JIH form',
+    jihAppRegistrationStatus: 'Recommended',
     notes: 'Documents incomplete.',
     isArchived: false,
   },
@@ -143,6 +162,8 @@ export const MOCK_KARKUN_REGISTRY: KarkunRegistryRecord[] = [
     visitStatus: 'none',
     lastVisit: null,
     commitment: null,
+    currentCommitment: '',
+    jihAppRegistrationStatus: 'Not Discussed',
     notes: 'Temporarily inactive this campaign.',
     isArchived: false,
   },
@@ -159,6 +180,8 @@ export const MOCK_KARKUN_REGISTRY: KarkunRegistryRecord[] = [
     visitStatus: 'completed',
     lastVisit: '2026-03-12',
     commitment: 'Volunteer for next outreach',
+    currentCommitment: 'Volunteer for next outreach',
+    jihAppRegistrationStatus: 'Registered',
     notes: 'Strong engagement history.',
     isArchived: false,
   },
@@ -175,6 +198,8 @@ export const MOCK_KARKUN_REGISTRY: KarkunRegistryRecord[] = [
     visitStatus: 'scheduled',
     lastVisit: '2026-03-08',
     commitment: null,
+    currentCommitment: '',
+    jihAppRegistrationStatus: 'Not Discussed',
     notes: '',
     isArchived: false,
   },
@@ -191,6 +216,8 @@ export const MOCK_KARKUN_REGISTRY: KarkunRegistryRecord[] = [
     visitStatus: 'none',
     lastVisit: null,
     commitment: null,
+    currentCommitment: '',
+    jihAppRegistrationStatus: 'Not Discussed',
     notes: 'Recently added to registry.',
     isArchived: false,
   },
@@ -198,6 +225,26 @@ export const MOCK_KARKUN_REGISTRY: KarkunRegistryRecord[] = [
 
 export function getKarkunById(id: string): KarkunRegistryRecord | undefined {
   return MOCK_KARKUN_REGISTRY.find((karkun) => karkun.id === id)
+}
+
+export function updateKarkunMeetingOutcomes(
+  karkunId: string,
+  outcomes: {
+    currentCommitment?: string
+    jihAppRegistrationStatus: JihAppRegistrationStatus
+  },
+): void {
+  const karkun = getKarkunById(karkunId)
+  if (!karkun) {
+    return
+  }
+
+  if (outcomes.currentCommitment !== undefined) {
+    karkun.currentCommitment = outcomes.currentCommitment
+    karkun.commitment = outcomes.currentCommitment || null
+  }
+
+  karkun.jihAppRegistrationStatus = outcomes.jihAppRegistrationStatus
 }
 
 export function getRegistryFilterOptions() {
