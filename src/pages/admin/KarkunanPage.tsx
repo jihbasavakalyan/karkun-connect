@@ -150,6 +150,7 @@ function KarkunGenderSection({ gender }: { gender: PersonGender }) {
         onFilterChange={management.updateFilter}
         onClear={management.clearFilters}
         showAssignmentFilters
+        showJihPortalFilters
       />
 
       <BulkActionsBar

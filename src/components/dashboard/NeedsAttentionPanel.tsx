@@ -7,7 +7,7 @@ type NeedsAttentionPanelProps = {
 const attentionItems = [
   { key: 'pendingVisits' as const, label: 'Pending Visits' },
   { key: 'pendingReports' as const, label: 'Pending Reports' },
-  { key: 'pendingJihRegistrations' as const, label: 'Pending JIH Registrations' },
+  { key: 'pendingJihRegistrations' as const, label: 'Not Registered (JIH Web Portal)' },
 ]
 
 export function NeedsAttentionPanel({ items }: NeedsAttentionPanelProps) {

@@ -5,9 +5,13 @@ import {
   getPerformanceMetricsFromAnnexure1,
 } from '@/services/annexure1Service'
 import { getFollowUpDashboardMetrics } from '@/services/followUpService'
+import { getAllJihWebPortalSummaries } from '@/services/jihWebPortalService'
 import { subscribeToAnnexure1Store } from '@/stores/annexure1Store'
 import { subscribeToFollowUpStore } from '@/stores/followUpStore'
+import { subscribeToJihWebPortalStore } from '@/stores/jihWebPortalStore'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
+import { Link } from 'react-router-dom'
+import { adminKarkunProfilePath } from '@/constants/routes'
 
 export function ReviewReportsModulePage() {
   const [, setVersion] = useState(0)
@@ -15,9 +19,11 @@ export function ReviewReportsModulePage() {
   useEffect(() => {
     const unsubAnnexure = subscribeToAnnexure1Store(() => setVersion((value) => value + 1))
     const unsubFollowUp = subscribeToFollowUpStore(() => setVersion((value) => value + 1))
+    const unsubJih = subscribeToJihWebPortalStore(() => setVersion((value) => value + 1))
     return () => {
       unsubAnnexure()
       unsubFollowUp()
+      unsubJih()
     }
   }, [])
 
@@ -25,6 +31,7 @@ export function ReviewReportsModulePage() {
   const campaignHealth = getCampaignHealthFromAnnexure1()
   const performanceMetrics = getPerformanceMetricsFromAnnexure1()
   const followUpMetrics = getFollowUpDashboardMetrics()
+  const jihPortalSummaries = getAllJihWebPortalSummaries()
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
@@ -96,6 +103,46 @@ export function ReviewReportsModulePage() {
               {followUpMetrics.completedFollowUps}
             </p>
           </div>
+        </div>
+      </section>
+
+      <section className="rounded-(--radius-card) border border-border bg-surface p-6 shadow-card">
+        <h2 className="text-lg font-semibold text-text-heading">JIH Web Portal Compliance</h2>
+        <p className="mt-1 text-sm text-secondary">
+          Registration status and current month reporting for each Karkun.
+        </p>
+        <div className="mt-4 overflow-x-auto">
+          <table className="min-w-full text-left text-sm">
+            <thead>
+              <tr className="border-b border-border text-secondary">
+                <th className="px-3 py-2 font-medium">Karkun</th>
+                <th className="px-3 py-2 font-medium">Registration Status</th>
+                <th className="px-3 py-2 font-medium">Current Month</th>
+                <th className="px-3 py-2 font-medium">Reporting Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {jihPortalSummaries.map((summary) => (
+                <tr key={summary.karkunId} className="border-b border-border/60">
+                  <td className="px-3 py-3">
+                    <Link
+                      to={adminKarkunProfilePath(summary.karkunId)}
+                      className="font-medium text-primary hover:underline"
+                    >
+                      {summary.karkunName}
+                    </Link>
+                  </td>
+                  <td className="px-3 py-3 text-text-heading">{summary.registration.status}</td>
+                  <td className="px-3 py-3 text-text-heading">{summary.currentMonth}</td>
+                  <td className="px-3 py-3 text-text-heading">
+                    {summary.registration.status === 'Registered'
+                      ? summary.monthlyStatus
+                      : 'Not applicable'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </section>
 

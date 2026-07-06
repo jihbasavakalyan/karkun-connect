@@ -4,6 +4,10 @@ import {
   GENDER_FILTER_OPTIONS,
   STATUS_FILTER_OPTIONS,
 } from '@/types/people.types'
+import {
+  JIH_PORTAL_REGISTRATION_FILTER_OPTIONS,
+  JIH_PORTAL_REPORTING_FILTER_OPTIONS,
+} from '@/types/jihWebPortal'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 
 type PeopleFiltersBarProps = {
@@ -11,6 +15,7 @@ type PeopleFiltersBarProps = {
   onFilterChange: (key: keyof PeopleFilters, value: string) => void
   onClear: () => void
   showAssignmentFilters?: boolean
+  showJihPortalFilters?: boolean
 }
 
 const selectClassName =
@@ -21,6 +26,7 @@ export function PeopleFiltersBar({
   onFilterChange,
   onClear,
   showAssignmentFilters = false,
+  showJihPortalFilters = false,
 }: PeopleFiltersBarProps) {
   return (
     <div className="rounded-(--radius-card) border border-border bg-surface p-4 shadow-card">
@@ -100,6 +106,52 @@ export function PeopleFiltersBar({
               ))}
             </select>
           </div>
+        )}
+
+        {showJihPortalFilters && (
+          <>
+            <div className="flex flex-col gap-2">
+              <label
+                htmlFor="filter-jih-registration"
+                className="text-sm font-medium text-secondary"
+              >
+                JIH Web Portal Registration
+              </label>
+              <select
+                id="filter-jih-registration"
+                value={filters.jihPortalRegistration}
+                onChange={(event) => onFilterChange('jihPortalRegistration', event.target.value)}
+                className={selectClassName}
+              >
+                {JIH_PORTAL_REGISTRATION_FILTER_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label
+                htmlFor="filter-jih-reporting"
+                className="text-sm font-medium text-secondary"
+              >
+                Monthly Reporting
+              </label>
+              <select
+                id="filter-jih-reporting"
+                value={filters.jihPortalReporting}
+                onChange={(event) => onFilterChange('jihPortalReporting', event.target.value)}
+                className={selectClassName}
+              >
+                {JIH_PORTAL_REPORTING_FILTER_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </>
         )}
       </div>
     </div>

@@ -40,7 +40,7 @@ export const ADMIN_MISSION_QUEUE: AdminMission[] = [
   {
     id: 'admin-m3',
     type: 'approve-jih',
-    title: 'Approve JIH Registration',
+    title: 'JIH Web Portal Compliance',
     estimatedTime: '20 Minutes',
     status: 'pending',
   },

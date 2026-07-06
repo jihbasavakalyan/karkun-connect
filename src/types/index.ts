@@ -15,14 +15,12 @@ export type {
   KarkunRegistryRecord,
   KarkunRegistryFilters,
   KarkunCampaignStatus,
-  JihRegistrationStatus,
   JihAppRegistrationStatus,
   KarkunVisitStatus,
 } from './karkun-registry.types'
 
 export {
   CAMPAIGN_STATUS_LABELS,
-  JIH_STATUS_LABELS as KARKUN_JIH_STATUS_LABELS,
   VISIT_STATUS_LABELS,
   CAMPAIGN_STATUS_FILTER_OPTIONS,
   KARKUN_REGISTRY_PAGE_SIZE,
@@ -42,6 +40,15 @@ export type {
   FollowUpDashboardMetrics,
   KarkunNextFollowUp,
 } from './followUp'
+
+export type {
+  JihWebPortalRegistration,
+  JihMonthlyReport,
+  JihWebPortalDashboardMetrics,
+  JihWebPortalKarkunSummary,
+  JihWebPortalRegistrationStatus,
+  JihMonthlyReportingStatus,
+} from './jihWebPortal'
 
 export {
   JIH_APP_REGISTRATION_FORM_OPTIONS,

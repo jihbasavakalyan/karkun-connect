@@ -10,6 +10,8 @@ const initialFilters: PeopleFilters = {
   gender: '',
   status: '',
   assignmentStatus: '',
+  jihPortalRegistration: '',
+  jihPortalReporting: '',
 }
 
 function matchesRuknFilters(rukn: Rukn, filters: PeopleFilters): boolean {

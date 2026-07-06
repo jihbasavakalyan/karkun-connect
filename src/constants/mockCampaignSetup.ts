@@ -45,8 +45,8 @@ export const APPROVED_CAMPAIGN_OBJECTIVES: CampaignObjective[] = [
   },
   {
     id: 'jih-registration',
-    label: 'JIH Registration',
-    description: 'Identify and recommend eligible individuals for JIH registration.',
+    label: 'JIH Web Portal',
+    description: 'Track portal registration and monthly report compliance for eligible Karkuns.',
   },
   {
     id: 'daily-progress',

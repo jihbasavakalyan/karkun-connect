@@ -7,7 +7,6 @@ import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { ROUTES } from '@/constants/routes'
 import {
   CAMPAIGN_STATUS_LABELS,
-  JIH_STATUS_LABELS,
   VISIT_STATUS_LABELS,
 } from '@/types/karkun-registry.types'
 import { formatPersonStatus } from '@/types/people.types'
@@ -15,6 +14,7 @@ import { subscribeToFollowUpStore } from '@/stores/followUpStore'
 import { useEffect, useState } from 'react'
 import { AssignmentHistoryTimeline } from '@/components/forms/assignment/AssignmentHistoryTimeline'
 import { CampaignStatusBadge } from '@/components/forms/karkunan/CampaignStatusBadge'
+import { JihWebPortalCard } from '@/components/forms/jih/JihWebPortalCard'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 
 function ProfileField({ label, value }: { label: string; value: string }) {
@@ -99,10 +99,6 @@ export function KarkunProfilePage() {
             label="Campaign Status"
             value={CAMPAIGN_STATUS_LABELS[karkun.campaignStatus]}
           />
-          <ProfileField
-            label="Administrator JIH Review"
-            value={JIH_STATUS_LABELS[karkun.jihRegistration]}
-          />
           <ProfileField label="Visit Status" value={VISIT_STATUS_LABELS[karkun.visitStatus]} />
           <ProfileField label="Last Meeting" value={karkun.lastVisit ?? '—'} />
         </dl>
@@ -111,6 +107,8 @@ export function KarkunProfilePage() {
           <ProfileField label="Notes" value={karkun.notes || '—'} />
         </div>
       </section>
+
+      <JihWebPortalCard karkunId={karkun.id} karkunName={karkun.name} />
 
       <section className="rounded-(--radius-card) border border-border bg-surface p-6 shadow-card">
         <h2 className="text-lg font-semibold text-text-heading">Next Follow-up</h2>

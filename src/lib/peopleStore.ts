@@ -1,4 +1,5 @@
 import { MOCK_KARKUN_REGISTRY } from '@/constants/mockKarkunRegistry'
+import { ensureRegistration } from '@/services/jihWebPortalService'
 import {
   getNextRuknId,
   getRuknById,
@@ -317,7 +318,6 @@ export function createKarkun(
     assignedRuknId: '',
     assignmentStatus: 'Available',
     campaignStatus: 'not_assigned',
-    jihRegistration: 'not_started',
     visitStatus: 'none',
     lastVisit: null,
     commitment: null,
@@ -329,6 +329,7 @@ export function createKarkun(
 
   syncKarkunCampaignStatus(karkun)
   MOCK_KARKUN_REGISTRY.push(karkun)
+  ensureRegistration(id)
 
   logPeopleAudit({
     personKind: 'karkun',

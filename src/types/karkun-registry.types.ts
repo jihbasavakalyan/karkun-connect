@@ -1,7 +1,5 @@
 export type KarkunCampaignStatus = 'active' | 'inactive' | 'not_assigned'
 
-export type JihRegistrationStatus = 'approved' | 'pending' | 'not_started' | 'rejected'
-
 export type KarkunVisitStatus = 'scheduled' | 'completed' | 'pending' | 'overdue' | 'none'
 
 export type JihAppRegistrationStatus = 'Not Discussed' | 'Recommended' | 'Registered'
@@ -30,7 +28,6 @@ export type KarkunRegistryRecord = {
   assignmentStatus: KarkunAssignmentPoolStatus
   assignmentDate?: string
   campaignStatus: KarkunCampaignStatus
-  jihRegistration: JihRegistrationStatus
   visitStatus: KarkunVisitStatus
   lastVisit: string | null
   commitment: string | null
@@ -57,13 +54,6 @@ export const CAMPAIGN_STATUS_FILTER_OPTIONS = [
   { value: 'inactive', label: 'Inactive' },
   { value: 'not_assigned', label: 'Not Assigned' },
 ] as const
-
-export const JIH_STATUS_LABELS: Record<JihRegistrationStatus, string> = {
-  approved: 'Approved',
-  pending: 'Pending Review',
-  not_started: 'Not Started',
-  rejected: 'Rejected',
-}
 
 export const VISIT_STATUS_LABELS: Record<KarkunVisitStatus, string> = {
   scheduled: 'Scheduled',

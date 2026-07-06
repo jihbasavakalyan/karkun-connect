@@ -39,3 +39,16 @@ export {
   getFollowUpCompletionRate,
   getFollowUpsForCampaignRecord,
 } from './followUpService'
+
+export {
+  initializeJihWebPortalCompliance,
+  ensureRegistration,
+  getRegistrationForKarkun,
+  getCurrentMonthReportingStatus,
+  updateJihRegistration,
+  updateJihMonthlyReport,
+  getJihWebPortalDashboardMetrics,
+  getAllJihWebPortalSummaries,
+  matchesJihPortalFilters,
+  getCurrentMonthKey,
+} from './jihWebPortalService'

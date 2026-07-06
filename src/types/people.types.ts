@@ -13,6 +13,8 @@ export type PeopleFilters = {
   gender: PersonGender | ''
   status: PersonStatus | ''
   assignmentStatus: '' | 'Assigned' | 'Unassigned'
+  jihPortalRegistration: '' | 'Not Registered' | 'Registered'
+  jihPortalReporting: '' | 'Pending' | 'Submitted'
 }
 
 export type PeopleAuditAction =

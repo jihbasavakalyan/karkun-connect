@@ -13,7 +13,7 @@ export function getAdminDashboardStats(): DashboardStat[] {
     { id: 'campaign-progress', label: 'Campaign Progress', value: 68, unit: '%' },
     { id: 'assigned-karkunan', label: 'Assigned Karkunan', value: 142 },
     { id: 'reports-awaiting-review', label: 'Reports Awaiting Review', value: 8 },
-    { id: 'pending-jih', label: 'Pending JIH Registrations', value: 5 },
+    { id: 'pending-jih', label: 'Not Registered (JIH Web Portal)', value: 5 },
   ]
 }
 

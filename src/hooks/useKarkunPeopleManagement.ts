@@ -1,6 +1,8 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { getAllKarkuns } from '@/lib/peopleStore'
 import { usePeopleStore } from '@/hooks/usePeopleStore'
+import { matchesJihPortalFilters } from '@/services/jihWebPortalService'
+import { subscribeToJihWebPortalStore } from '@/stores/jihWebPortalStore'
 import type { KarkunRegistryRecord, PersonGender } from '@/types/karkun-registry.types'
 import type { PeopleFilters, PeopleSortDirection, PeopleSortField } from '@/types/people.types'
 import { PEOPLE_PAGE_SIZE } from '@/types/people.types'
@@ -10,6 +12,8 @@ const initialFilters: PeopleFilters = {
   gender: '',
   status: '',
   assignmentStatus: '',
+  jihPortalRegistration: '',
+  jihPortalReporting: '',
 }
 
 function matchesKarkunFilters(karkun: KarkunRegistryRecord, filters: PeopleFilters): boolean {
@@ -42,6 +46,16 @@ function matchesKarkunFilters(karkun: KarkunRegistryRecord, filters: PeopleFilte
     if (!haystack.includes(normalized)) {
       return false
     }
+  }
+
+  if (
+    !matchesJihPortalFilters(
+      karkun.id,
+      filters.jihPortalRegistration,
+      filters.jihPortalReporting,
+    )
+  ) {
+    return false
   }
 
   return true
@@ -81,6 +95,11 @@ function sortKarkuns(
 
 export function useKarkunPeopleManagement(sectionGender: PersonGender) {
   usePeopleStore()
+  const [jihVersion, setJihVersion] = useState(0)
+
+  useEffect(() => {
+    return subscribeToJihWebPortalStore(() => setJihVersion((value) => value + 1))
+  }, [])
 
   const [filters, setFilters] = useState<PeopleFilters>(initialFilters)
   const [currentPage, setCurrentPage] = useState(1)
@@ -91,9 +110,10 @@ export function useKarkunPeopleManagement(sectionGender: PersonGender) {
   const allKarkuns = getAllKarkuns().filter((k) => k.gender === sectionGender)
 
   const filteredRecords = useMemo(() => {
+    void jihVersion
     const filtered = allKarkuns.filter((karkun) => matchesKarkunFilters(karkun, filters))
     return sortKarkuns(filtered, sortField, sortDirection)
-  }, [allKarkuns, filters, sortField, sortDirection])
+  }, [allKarkuns, filters, sortField, sortDirection, jihVersion])
 
   const totalPages = Math.max(1, Math.ceil(filteredRecords.length / PEOPLE_PAGE_SIZE))
 

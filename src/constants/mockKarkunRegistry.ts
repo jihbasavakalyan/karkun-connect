@@ -43,7 +43,6 @@ const KARKUN_SEED_DATA: KarkunSeedInput[] = [
     assignmentStatus: 'Assigned',
     assignmentDate: '2026-03-05',
     campaignStatus: 'active',
-    jihRegistration: 'pending',
     visitStatus: 'scheduled',
     lastVisit: '2026-03-10',
     commitment: 'Attend weekly study circle',
@@ -63,7 +62,6 @@ const KARKUN_SEED_DATA: KarkunSeedInput[] = [
     assignmentStatus: 'Assigned',
     assignmentDate: '2026-03-04',
     campaignStatus: 'active',
-    jihRegistration: 'approved',
     visitStatus: 'completed',
     lastVisit: '2026-03-11',
     commitment: null,
@@ -83,7 +81,6 @@ const KARKUN_SEED_DATA: KarkunSeedInput[] = [
     assignmentStatus: 'Assigned',
     assignmentDate: '2026-03-05',
     campaignStatus: 'active',
-    jihRegistration: 'not_started',
     visitStatus: 'pending',
     lastVisit: null,
     commitment: 'Complete reading assignment',
@@ -103,7 +100,6 @@ const KARKUN_SEED_DATA: KarkunSeedInput[] = [
     assignmentStatus: 'Assigned',
     assignmentDate: '2026-02-20',
     campaignStatus: 'inactive',
-    jihRegistration: 'rejected',
     visitStatus: 'overdue',
     lastVisit: '2026-02-28',
     commitment: null,
@@ -123,7 +119,6 @@ const KARKUN_SEED_DATA: KarkunSeedInput[] = [
     assignmentStatus: 'Assigned',
     assignmentDate: '2026-03-04',
     campaignStatus: 'active',
-    jihRegistration: 'approved',
     visitStatus: 'completed',
     lastVisit: '2026-03-12',
     commitment: 'Monthly contribution pledge',
@@ -142,7 +137,6 @@ const KARKUN_SEED_DATA: KarkunSeedInput[] = [
     assignedRuknId: '',
     assignmentStatus: 'Available',
     campaignStatus: 'not_assigned',
-    jihRegistration: 'not_started',
     visitStatus: 'none',
     lastVisit: null,
     commitment: null,
@@ -162,7 +156,6 @@ const KARKUN_SEED_DATA: KarkunSeedInput[] = [
     assignmentStatus: 'Assigned',
     assignmentDate: '2026-03-05',
     campaignStatus: 'active',
-    jihRegistration: 'pending',
     visitStatus: 'pending',
     lastVisit: '2026-03-05',
     commitment: 'Follow up on JIH form',
@@ -182,7 +175,6 @@ const KARKUN_SEED_DATA: KarkunSeedInput[] = [
     assignmentStatus: 'Assigned',
     assignmentDate: '2026-03-04',
     campaignStatus: 'active',
-    jihRegistration: 'approved',
     visitStatus: 'completed',
     lastVisit: '2026-03-12',
     commitment: 'Volunteer for next outreach',
@@ -202,7 +194,6 @@ const KARKUN_SEED_DATA: KarkunSeedInput[] = [
     assignmentStatus: 'Assigned',
     assignmentDate: '2026-03-05',
     campaignStatus: 'active',
-    jihRegistration: 'not_started',
     visitStatus: 'scheduled',
     lastVisit: '2026-03-08',
     commitment: null,
@@ -221,7 +212,6 @@ const KARKUN_SEED_DATA: KarkunSeedInput[] = [
     assignedRuknId: '',
     assignmentStatus: 'Available',
     campaignStatus: 'not_assigned',
-    jihRegistration: 'not_started',
     visitStatus: 'none',
     lastVisit: null,
     commitment: null,
@@ -257,14 +247,6 @@ export function updateKarkunMeetingOutcomes(
   }
 
   karkun.jihAppRegistrationStatus = outcomes.jihAppRegistrationStatus
-
-  if (outcomes.syncJihPortal && outcomes.jihAppRegistrationStatus === 'Recommended') {
-    karkun.jihRegistration = 'pending'
-  }
-
-  if (outcomes.syncJihPortal && outcomes.jihAppRegistrationStatus === 'Registered') {
-    karkun.jihRegistration = 'approved'
-  }
 
   karkun.updatedAt = new Date().toISOString()
   karkun.updatedBy = 'Rukn'
