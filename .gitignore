@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# Local acceptance test artifacts (screenshots, scripts, results)
+acceptance-evidence
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
