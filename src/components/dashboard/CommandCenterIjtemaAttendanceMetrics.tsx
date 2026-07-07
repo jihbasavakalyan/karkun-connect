@@ -1,8 +1,9 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ROUTES, adminCompliancePath } from '@/constants/routes'
+import { getComplianceStatusStyle } from '@/lib/complianceStatusStyles'
 import { getIjtemaAttendanceDashboardMetrics } from '@/services/ijtemaAttendanceService'
 import { subscribeToIjtemaAttendanceStore } from '@/stores/ijtemaAttendanceStore'
-import { useEffect, useState } from 'react'
 
 export function CommandCenterIjtemaAttendanceMetrics() {
   const [, setVersion] = useState(0)
@@ -11,50 +12,56 @@ export function CommandCenterIjtemaAttendanceMetrics() {
     return subscribeToIjtemaAttendanceStore(() => setVersion((value) => value + 1))
   }, [])
 
+  void setVersion
+
   const metrics = getIjtemaAttendanceDashboardMetrics()
 
   const items = [
     {
       id: 'present',
       label: 'Present',
+      status: 'Present',
       count: metrics.present,
       to: adminCompliancePath('ijtema', 'Present'),
     },
     {
       id: 'absent',
       label: 'Absent',
+      status: 'Absent',
       count: metrics.absent,
       to: adminCompliancePath('ijtema', 'Absent'),
     },
     {
       id: 'informed',
       label: 'Informed',
+      status: 'Informed',
       count: metrics.informed,
       to: adminCompliancePath('ijtema', 'Informed'),
     },
   ]
 
   return (
-    <section className="rounded-(--radius-card) border border-border bg-surface p-6 shadow-card">
+    <section className="rounded-(--radius-card) border border-border bg-surface p-4 shadow-card sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-lg font-semibold text-text-heading">Weekly Ijtema</h2>
         <Link to={ROUTES.ADMIN_COMPLIANCE} className="text-sm font-medium text-primary hover:underline">
           Open Compliance
         </Link>
       </div>
-      <p className="mt-1 text-sm text-secondary">
-        Current week attendance — not an event or scheduling system.
-      </p>
 
-      <ul className="mt-4 grid gap-3 sm:grid-cols-3">
+      <ul className="mt-4 grid gap-2 sm:grid-cols-3 sm:gap-3">
         {items.map((item) => (
           <li key={item.id}>
-            <Link
-              to={item.to}
-              className="flex flex-col rounded-lg border border-border bg-surface-muted px-4 py-4 transition-shadow hover:shadow-card"
-            >
-              <span className="text-sm font-medium text-secondary">{item.label}</span>
-              <span className="mt-2 text-3xl font-semibold text-primary">{item.count}</span>
+            <Link to={item.to} className="block">
+              <div
+                className={[
+                  'flex min-h-[88px] flex-col rounded-lg border px-4 py-3 transition-shadow hover:shadow-card sm:py-4',
+                  getComplianceStatusStyle(item.status),
+                ].join(' ')}
+              >
+                <span className="text-sm font-medium">{item.label}</span>
+                <span className="mt-1 text-2xl font-semibold sm:mt-2 sm:text-3xl">{item.count}</span>
+              </div>
             </Link>
           </li>
         ))}

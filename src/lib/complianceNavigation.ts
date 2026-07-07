@@ -63,3 +63,51 @@ export function resolveComplianceViewFilter(
 export function getPendingStatusLabel(section: ComplianceSection): string {
   return COMPLIANCE_PENDING_STATUS[section]
 }
+
+export function getComplianceEmptyState(
+  section: ComplianceSection,
+  isPendingView: boolean,
+): { title: string; message: string } {
+  if (isPendingView) {
+    switch (section) {
+      case 'ijtema':
+        return { title: 'No Pending Ijtema', message: "You're all caught up." }
+      case 'jih-registration':
+        return {
+          title: 'No Pending Registrations',
+          message: 'All assigned Karkuns are registered.',
+        }
+      case 'monthly-reporting':
+        return { title: 'No Pending Reports', message: 'Everything has been submitted.' }
+      case 'baitul-maal':
+        return { title: 'No Pending Payments', message: 'All payments are up to date.' }
+      default:
+        return { title: 'Nothing Pending', message: "You're all caught up." }
+    }
+  }
+
+  switch (section) {
+    case 'ijtema':
+      return {
+        title: 'No Matching Ijtema Records',
+        message: 'No Karkuns match the selected attendance filter.',
+      }
+    case 'jih-registration':
+      return {
+        title: 'No Matching Registrations',
+        message: 'No Karkuns match the selected registration filter.',
+      }
+    case 'monthly-reporting':
+      return {
+        title: 'No Matching Reports',
+        message: 'No registered Karkuns match the selected reporting filter.',
+      }
+    case 'baitul-maal':
+      return {
+        title: 'No Matching Payments',
+        message: 'No Karkuns match the selected payment filter.',
+      }
+    default:
+      return { title: 'No Records Found', message: 'Try adjusting the current filter.' }
+  }
+}

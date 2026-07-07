@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
+import { ComplianceListRow } from '@/components/compliance/ComplianceListRow'
 import { ComplianceSummaryCards } from '@/components/compliance/ComplianceSummaryCards'
 import { ExecutionEmptyState } from '@/components/execution/ExecutionEmptyState'
 import { ActiveCampaignSubtitle } from '@/components/layout/CampaignStatusBar'
-import { ROUTES, adminKarkunProfilePath } from '@/constants/routes'
+import { adminKarkunProfilePath } from '@/constants/routes'
 import {
   COMPLIANCE_SECTIONS,
+  getComplianceEmptyState,
   getPendingStatusLabel,
   normalizeComplianceStatus,
   resolveComplianceSection,
@@ -37,6 +39,8 @@ import type { JihWebPortalKarkunSummary } from '@/types/jihWebPortal'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 
+const ACTION_BUTTON_CLASS = 'min-h-10 px-3 py-2 text-sm'
+
 function todayDate(): string {
   return new Date().toISOString().slice(0, 10)
 }
@@ -58,7 +62,7 @@ function ComplianceSectionNav({
           type="button"
           onClick={() => onChange(section.id)}
           className={[
-            'rounded-lg px-4 py-2 text-sm font-medium transition-colors',
+            'min-h-10 rounded-lg px-4 py-2 text-sm font-medium transition-colors',
             active === section.id
               ? 'bg-primary-muted text-primary'
               : 'bg-surface text-secondary hover:bg-surface-muted hover:text-text-heading',
@@ -68,19 +72,11 @@ function ComplianceSectionNav({
         </button>
       ))}
       {statusFilter && (
-        <span className="self-center rounded-full bg-surface-muted px-3 py-1 text-xs font-medium text-secondary">
-          Filter: {statusFilter}
+        <span className="self-center rounded-full border border-border bg-surface-muted px-3 py-1 text-xs font-medium text-secondary">
+          {statusFilter}
         </span>
       )}
     </nav>
-  )
-}
-
-function StatusPill({ label }: { label: string }) {
-  return (
-    <span className="rounded-full border border-border bg-surface-muted px-2 py-0.5 text-xs font-medium text-secondary">
-      {label}
-    </span>
   )
 }
 
@@ -128,23 +124,14 @@ function filterBaitulMaalItems(
   return items.filter((item) => item.status === statusFilter)
 }
 
-const EMPTY_MESSAGES: Record<ComplianceSection, { title: string; message: string }> = {
-  ijtema: {
-    title: 'No Matching Ijtema Records',
-    message: "You're all caught up for this week's attendance filter.",
-  },
-  'jih-registration': {
-    title: 'No Matching Registration Records',
-    message: 'All Karkuns match the selected registration filter.',
-  },
-  'monthly-reporting': {
-    title: 'No Matching Monthly Reports',
-    message: 'All registered Karkuns match the selected reporting filter.',
-  },
-  'baitul-maal': {
-    title: 'No Matching Bait-ul-Maal Records',
-    message: 'All Karkuns match the selected payment filter.',
-  },
+function ProfileLink({ karkunId }: { karkunId: string }) {
+  return (
+    <Link to={adminKarkunProfilePath(karkunId)} className="shrink-0">
+      <SecondaryButton type="button" className={`w-full sm:w-auto ${ACTION_BUTTON_CLASS}`}>
+        Open Profile
+      </SecondaryButton>
+    </Link>
+  )
 }
 
 function IjtemaRow({
@@ -162,58 +149,44 @@ function IjtemaRow({
   }
 
   return (
-    <li className="flex flex-col gap-3 rounded-lg border border-border bg-surface-muted px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <p className="font-semibold text-text-heading">{item.karkunName}</p>
-          <StatusPill label={item.status} />
-        </div>
-        <p className="mt-1 text-sm text-secondary">{item.weekLabel}</p>
-      </div>
-      <div className="flex flex-wrap gap-2">
-        {item.status !== 'Present' && (
-          <PrimaryButton
-            type="button"
-            className="px-3 py-2 text-sm"
-            onClick={() => markStatus('Present')}
-          >
-            Mark Present
-          </PrimaryButton>
-        )}
-        {item.status !== 'Informed' && (
-          <SecondaryButton
-            type="button"
-            className="px-3 py-2 text-sm"
-            onClick={() => markStatus('Informed')}
-          >
-            Mark Informed
-          </SecondaryButton>
-        )}
-        {item.status === 'Not recorded' && (
-          <SecondaryButton
-            type="button"
-            className="px-3 py-2 text-sm"
-            onClick={() => markStatus('Absent')}
-          >
-            Mark Absent
-          </SecondaryButton>
-        )}
-        {item.status !== 'Absent' && item.status !== 'Not recorded' && (
-          <SecondaryButton
-            type="button"
-            className="px-3 py-2 text-sm"
-            onClick={() => markStatus('Absent')}
-          >
-            Mark Absent
-          </SecondaryButton>
-        )}
-        <Link to={adminKarkunProfilePath(item.karkunId)}>
-          <SecondaryButton type="button" className="px-3 py-2 text-sm">
-            Open Profile
-          </SecondaryButton>
-        </Link>
-      </div>
-    </li>
+    <ComplianceListRow
+      karkunId={item.karkunId}
+      karkunName={item.karkunName}
+      status={item.status}
+      meta={item.weekLabel}
+      actions={
+        <>
+          {item.status !== 'Present' && (
+            <PrimaryButton
+              type="button"
+              className={`w-full sm:w-auto ${ACTION_BUTTON_CLASS}`}
+              onClick={() => markStatus('Present')}
+            >
+              Mark Present
+            </PrimaryButton>
+          )}
+          {item.status !== 'Informed' && (
+            <SecondaryButton
+              type="button"
+              className={`w-full sm:w-auto ${ACTION_BUTTON_CLASS}`}
+              onClick={() => markStatus('Informed')}
+            >
+              Mark Informed
+            </SecondaryButton>
+          )}
+          {item.status !== 'Absent' && (
+            <SecondaryButton
+              type="button"
+              className={`w-full sm:w-auto ${ACTION_BUTTON_CLASS}`}
+              onClick={() => markStatus('Absent')}
+            >
+              Mark Absent
+            </SecondaryButton>
+          )}
+          <ProfileLink karkunId={item.karkunId} />
+        </>
+      }
+    />
   )
 }
 
@@ -246,31 +219,34 @@ function JihRegistrationRow({
   }
 
   return (
-    <li className="flex flex-col gap-3 rounded-lg border border-border bg-surface-muted px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <p className="font-semibold text-text-heading">{item.karkunName}</p>
-          <StatusPill label={item.registration.status} />
-        </div>
-      </div>
-      <div className="flex flex-wrap gap-2">
-        {item.registration.status !== 'Registered' && (
-          <PrimaryButton type="button" className="px-3 py-2 text-sm" onClick={markRegistered}>
-            Mark Registered
-          </PrimaryButton>
-        )}
-        {item.registration.status === 'Registered' && (
-          <SecondaryButton type="button" className="px-3 py-2 text-sm" onClick={markNotRegistered}>
-            Mark Not Registered
-          </SecondaryButton>
-        )}
-        <Link to={adminKarkunProfilePath(item.karkunId)}>
-          <SecondaryButton type="button" className="px-3 py-2 text-sm">
-            Open Profile
-          </SecondaryButton>
-        </Link>
-      </div>
-    </li>
+    <ComplianceListRow
+      karkunId={item.karkunId}
+      karkunName={item.karkunName}
+      status={item.registration.status}
+      actions={
+        <>
+          {item.registration.status !== 'Registered' && (
+            <PrimaryButton
+              type="button"
+              className={`w-full sm:w-auto ${ACTION_BUTTON_CLASS}`}
+              onClick={markRegistered}
+            >
+              Mark Registered
+            </PrimaryButton>
+          )}
+          {item.registration.status === 'Registered' && (
+            <SecondaryButton
+              type="button"
+              className={`w-full sm:w-auto ${ACTION_BUTTON_CLASS}`}
+              onClick={markNotRegistered}
+            >
+              Mark Not Registered
+            </SecondaryButton>
+          )}
+          <ProfileLink karkunId={item.karkunId} />
+        </>
+      }
+    />
   )
 }
 
@@ -303,32 +279,35 @@ function MonthlyReportingRow({
   }
 
   return (
-    <li className="flex flex-col gap-3 rounded-lg border border-border bg-surface-muted px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <p className="font-semibold text-text-heading">{item.karkunName}</p>
-          <StatusPill label={item.monthlyStatus} />
-        </div>
-        <p className="mt-1 text-sm text-secondary">{item.currentMonth}</p>
-      </div>
-      <div className="flex flex-wrap gap-2">
-        {item.monthlyStatus !== 'Submitted' && (
-          <PrimaryButton type="button" className="px-3 py-2 text-sm" onClick={markSubmitted}>
-            Mark Submitted
-          </PrimaryButton>
-        )}
-        {item.monthlyStatus === 'Submitted' && (
-          <SecondaryButton type="button" className="px-3 py-2 text-sm" onClick={markPending}>
-            Mark Pending
-          </SecondaryButton>
-        )}
-        <Link to={adminKarkunProfilePath(item.karkunId)}>
-          <SecondaryButton type="button" className="px-3 py-2 text-sm">
-            Open Profile
-          </SecondaryButton>
-        </Link>
-      </div>
-    </li>
+    <ComplianceListRow
+      karkunId={item.karkunId}
+      karkunName={item.karkunName}
+      status={item.monthlyStatus}
+      meta={item.currentMonth}
+      actions={
+        <>
+          {item.monthlyStatus !== 'Submitted' && (
+            <PrimaryButton
+              type="button"
+              className={`w-full sm:w-auto ${ACTION_BUTTON_CLASS}`}
+              onClick={markSubmitted}
+            >
+              Mark Submitted
+            </PrimaryButton>
+          )}
+          {item.monthlyStatus === 'Submitted' && (
+            <SecondaryButton
+              type="button"
+              className={`w-full sm:w-auto ${ACTION_BUTTON_CLASS}`}
+              onClick={markPending}
+            >
+              Mark Pending
+            </SecondaryButton>
+          )}
+          <ProfileLink karkunId={item.karkunId} />
+        </>
+      }
+    />
   )
 }
 
@@ -361,32 +340,35 @@ function BaitulMaalRow({
   }
 
   return (
-    <li className="flex flex-col gap-3 rounded-lg border border-border bg-surface-muted px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <p className="font-semibold text-text-heading">{item.karkunName}</p>
-          <StatusPill label={item.status} />
-        </div>
-        <p className="mt-1 text-sm text-secondary">{item.monthLabel}</p>
-      </div>
-      <div className="flex flex-wrap gap-2">
-        {item.status !== 'Paid' && (
-          <PrimaryButton type="button" className="px-3 py-2 text-sm" onClick={markPaid}>
-            Mark Paid
-          </PrimaryButton>
-        )}
-        {item.status === 'Paid' && (
-          <SecondaryButton type="button" className="px-3 py-2 text-sm" onClick={markPending}>
-            Mark Pending
-          </SecondaryButton>
-        )}
-        <Link to={adminKarkunProfilePath(item.karkunId)}>
-          <SecondaryButton type="button" className="px-3 py-2 text-sm">
-            Open Profile
-          </SecondaryButton>
-        </Link>
-      </div>
-    </li>
+    <ComplianceListRow
+      karkunId={item.karkunId}
+      karkunName={item.karkunName}
+      status={item.status}
+      meta={item.monthLabel}
+      actions={
+        <>
+          {item.status !== 'Paid' && (
+            <PrimaryButton
+              type="button"
+              className={`w-full sm:w-auto ${ACTION_BUTTON_CLASS}`}
+              onClick={markPaid}
+            >
+              Mark Paid
+            </PrimaryButton>
+          )}
+          {item.status === 'Paid' && (
+            <SecondaryButton
+              type="button"
+              className={`w-full sm:w-auto ${ACTION_BUTTON_CLASS}`}
+              onClick={markPending}
+            >
+              Mark Pending
+            </SecondaryButton>
+          )}
+          <ProfileLink karkunId={item.karkunId} />
+        </>
+      }
+    />
   )
 }
 
@@ -436,66 +418,64 @@ export function ComplianceModulePage() {
 
   void dataVersion
 
+  const emptyState = getComplianceEmptyState(activeSection, isPendingView)
   let listContent: React.ReactNode
+
   switch (activeSection) {
     case 'ijtema': {
       const items = filterIjtemaItems(getAllIjtemaAttendanceSummaries(), effectiveStatus)
-      if (items.length === 0) {
-        listContent = <ExecutionEmptyState {...EMPTY_MESSAGES.ijtema} />
-      } else {
-        listContent = (
-          <ul className="space-y-3">
+      listContent =
+        items.length === 0 ? (
+          <ExecutionEmptyState {...emptyState} />
+        ) : (
+          <ul className="space-y-2">
             {items.map((item) => (
               <IjtemaRow key={item.karkunId} item={item} onUpdated={refresh} />
             ))}
           </ul>
         )
-      }
       break
     }
     case 'jih-registration': {
       const items = filterJihRegistrationItems(getAllJihWebPortalSummaries(), effectiveStatus)
-      if (items.length === 0) {
-        listContent = <ExecutionEmptyState {...EMPTY_MESSAGES['jih-registration']} />
-      } else {
-        listContent = (
-          <ul className="space-y-3">
+      listContent =
+        items.length === 0 ? (
+          <ExecutionEmptyState {...emptyState} />
+        ) : (
+          <ul className="space-y-2">
             {items.map((item) => (
               <JihRegistrationRow key={item.karkunId} item={item} onUpdated={refresh} />
             ))}
           </ul>
         )
-      }
       break
     }
     case 'monthly-reporting': {
       const items = filterMonthlyReportingItems(getAllJihWebPortalSummaries(), effectiveStatus)
-      if (items.length === 0) {
-        listContent = <ExecutionEmptyState {...EMPTY_MESSAGES['monthly-reporting']} />
-      } else {
-        listContent = (
-          <ul className="space-y-3">
+      listContent =
+        items.length === 0 ? (
+          <ExecutionEmptyState {...emptyState} />
+        ) : (
+          <ul className="space-y-2">
             {items.map((item) => (
               <MonthlyReportingRow key={item.karkunId} item={item} onUpdated={refresh} />
             ))}
           </ul>
         )
-      }
       break
     }
     case 'baitul-maal': {
       const items = filterBaitulMaalItems(getAllBaitulMaalSummaries(), effectiveStatus)
-      if (items.length === 0) {
-        listContent = <ExecutionEmptyState {...EMPTY_MESSAGES['baitul-maal']} />
-      } else {
-        listContent = (
-          <ul className="space-y-3">
+      listContent =
+        items.length === 0 ? (
+          <ExecutionEmptyState {...emptyState} />
+        ) : (
+          <ul className="space-y-2">
             {items.map((item) => (
               <BaitulMaalRow key={item.karkunId} item={item} onUpdated={refresh} />
             ))}
           </ul>
         )
-      }
       break
     }
     default:
@@ -509,20 +489,15 @@ export function ComplianceModulePage() {
   const filterLabel = statusFilter || (isPendingView ? getPendingStatusLabel(activeSection) : '')
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
+    <div className="mx-auto max-w-6xl space-y-4 sm:space-y-6">
       <div>
         <h1 className="text-2xl font-semibold text-text-heading">Compliance</h1>
         <ActiveCampaignSubtitle />
-        <p className="mt-2 text-secondary">What compliance work is pending today.</p>
+        <p className="mt-2 text-secondary">What compliance work needs my attention today.</p>
       </div>
 
-      <section className="rounded-(--radius-card) border border-border bg-surface p-6 shadow-card">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-text-heading">Compliance Summary</h2>
-          <Link to={ROUTES.ADMIN} className="text-sm font-medium text-primary hover:underline">
-            Back to Dashboard
-          </Link>
-        </div>
+      <section className="rounded-(--radius-card) border border-border bg-surface p-4 shadow-card sm:p-6">
+        <h2 className="text-lg font-semibold text-text-heading">Compliance Summary</h2>
         <div className="mt-4">
           <ComplianceSummaryCards />
         </div>
@@ -534,27 +509,21 @@ export function ComplianceModulePage() {
         onChange={setSection}
       />
 
-      {isPendingView && (
-        <p className="text-sm text-secondary">
-          Showing pending {getPendingStatusLabel(activeSection).toLowerCase()} items.{' '}
-          <button
-            type="button"
-            onClick={clearStatusFilter}
-            className="font-medium text-primary hover:underline"
-          >
-            View all
-          </button>
-        </p>
-      )}
-
-      <section className="rounded-(--radius-card) border border-border bg-surface p-6 shadow-card">
+      <section className="rounded-(--radius-card) border border-border bg-surface p-4 shadow-card sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-text-heading">{sectionLabel}</h2>
-          {statusFilter && (
+          <div>
+            <h2 className="text-lg font-semibold text-text-heading">{sectionLabel}</h2>
+            {isPendingView && (
+              <p className="mt-1 text-sm text-secondary">
+                Showing pending {getPendingStatusLabel(activeSection).toLowerCase()} items.
+              </p>
+            )}
+          </div>
+          {(statusFilter || isPendingView) && (
             <button
               type="button"
               onClick={clearStatusFilter}
-              className="text-sm font-medium text-primary hover:underline"
+              className="min-h-10 text-sm font-medium text-primary hover:underline"
             >
               View all
             </button>

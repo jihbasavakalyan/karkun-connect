@@ -41,7 +41,7 @@ function ComplianceToggle({ id, label, checked, onChange }: ComplianceToggleProp
   return (
     <label
       htmlFor={id}
-      className="flex cursor-pointer items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2.5 hover:border-primary/40"
+      className="flex min-h-10 cursor-pointer items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2.5 hover:border-primary/40"
     >
       <input
         id={id}
@@ -69,11 +69,14 @@ function IjtemaStatusField({
   const options: IjtemaAttendanceStatus[] = ['Present', 'Absent', 'Informed']
 
   return (
-    <fieldset className="rounded-lg border border-border bg-surface px-3 py-2.5 sm:col-span-2">
-      <legend className="text-sm font-medium text-text-heading">Weekly Ijtema</legend>
-      <div className="mt-2 flex flex-wrap gap-4">
+    <fieldset className="rounded-lg border border-border bg-surface px-3 py-3 sm:col-span-2">
+      <legend className="text-sm font-semibold text-text-heading">Weekly Ijtema</legend>
+      <div className="mt-2 flex flex-wrap gap-3">
         {options.map((option) => (
-          <label key={option} className="flex cursor-pointer items-center gap-2 text-sm font-medium">
+          <label
+            key={option}
+            className="flex min-h-10 cursor-pointer items-center gap-2 rounded-lg border border-transparent px-2 text-sm font-medium has-[:checked]:border-primary/30 has-[:checked]:bg-primary/5"
+          >
             <input
               type="radio"
               name="ijtema-status"

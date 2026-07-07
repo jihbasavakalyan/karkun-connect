@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { adminCompliancePath } from '@/constants/routes'
+import { getComplianceStatusStyle } from '@/lib/complianceStatusStyles'
 import { getBaitulMaalDashboardMetrics } from '@/services/baitulMaalService'
 import { getIjtemaAttendanceDashboardMetrics } from '@/services/ijtemaAttendanceService'
 import { getJihWebPortalDashboardMetrics } from '@/services/jihWebPortalService'
@@ -85,15 +86,19 @@ export function ComplianceSummaryCards() {
   ]
 
   return (
-    <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+    <ul className="grid gap-2 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3">
       {cards.map((card) => (
         <li key={card.key}>
-          <Link
-            to={adminCompliancePath(card.section, card.status)}
-            className="flex flex-col rounded-lg border border-border bg-surface-muted px-4 py-4 transition-shadow hover:shadow-card"
-          >
-            <span className="text-sm font-medium text-secondary">{card.label}</span>
-            <span className="mt-2 text-3xl font-semibold text-primary">{card.count}</span>
+          <Link to={adminCompliancePath(card.section, card.status)} className="block">
+            <div
+              className={[
+                'flex min-h-[88px] flex-col rounded-lg border px-4 py-3 transition-shadow hover:shadow-card sm:py-4',
+                getComplianceStatusStyle(card.status),
+              ].join(' ')}
+            >
+              <span className="text-sm font-medium">{card.label}</span>
+              <span className="mt-1 text-2xl font-semibold sm:mt-2 sm:text-3xl">{card.count}</span>
+            </div>
           </Link>
         </li>
       ))}
