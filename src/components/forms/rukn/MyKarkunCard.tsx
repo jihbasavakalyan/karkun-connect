@@ -6,7 +6,7 @@ import {
   getAnnexureActionLabel,
   getExecutionStatusForAssignment,
 } from '@/lib/executionStatus'
-import { getActiveAssignmentForRukn } from '@/stores/assignmentStore'
+import { getActiveAssignmentsForKarkun } from '@/stores/assignmentStore'
 import { getNextFollowUpForKarkun } from '@/services/followUpService'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
@@ -24,11 +24,12 @@ export function MyKarkunCard({ karkun, ruknId }: MyKarkunCardProps) {
   const [releaseOpen, setReleaseOpen] = useState(false)
   const [replaceOpen, setReplaceOpen] = useState(false)
 
-  const assignment = getActiveAssignmentForRukn(ruknId)
-  const executionStatus =
-    assignment?.karkunId === karkun.id
-      ? getExecutionStatusForAssignment(assignment.assignmentId, karkun.id)
-      : 'Pending'
+  const assignment = getActiveAssignmentsForKarkun(karkun.id).find(
+    (record) => record.ruknId === ruknId,
+  )
+  const executionStatus = assignment
+    ? getExecutionStatusForAssignment(assignment.assignmentId, karkun.id)
+    : 'Pending'
   const nextFollowUp = getNextFollowUpForKarkun(karkun.id)
   const actionLabel = getAnnexureActionLabel(executionStatus)
 

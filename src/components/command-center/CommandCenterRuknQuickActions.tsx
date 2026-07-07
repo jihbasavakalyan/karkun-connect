@@ -35,7 +35,7 @@ export function CommandCenterRuknQuickActions({
   return (
     <section className="cc-card-sm">
       <EnterpriseSectionHeader title="Quick Actions" />
-      <div className="mt-1 grid grid-cols-4 gap-1.5 sm:grid-cols-7">
+      <div className="mt-1 grid grid-cols-2 gap-1.5">
         {actions.map((action) =>
           action.isHash ? (
             <a

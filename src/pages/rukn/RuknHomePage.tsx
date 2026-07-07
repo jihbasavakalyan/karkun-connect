@@ -1,20 +1,16 @@
 import { Link } from 'react-router-dom'
 import {
-  CommandCenterAlerts,
-  CommandCenterCallQueue,
+  CommandCenterAttentionCenter,
+  CommandCenterCampaignProgress,
   CommandCenterCompletedToday,
-  CommandCenterFollowUpQueue,
   CommandCenterFooter,
   CommandCenterHero,
   CommandCenterIntelligence,
   CommandCenterKpiGrid,
-  CommandCenterNextAction,
-  CommandCenterProgressOverview,
+  CommandCenterMissionCenter,
   CommandCenterRecentActivity,
-  CommandCenterReminders,
   CommandCenterRuknQuickActions,
-  CommandCenterSchedule,
-  CommandCenterTodaysMission,
+  CommandCenterTodaysWork,
 } from '@/components/command-center'
 import { DEFAULT_DEMO_RUKN_ID } from '@/constants/demoRukn'
 import { ROUTES } from '@/constants/routes'
@@ -44,10 +40,11 @@ export function RuknHomePage() {
     <div className="cc-stack">
       <CommandCenterHero hero={snapshot.hero} />
 
-      <div className="cc-grid grid xl:grid-cols-2">
-        <CommandCenterTodaysMission kpis={snapshot.kpis} hero={snapshot.hero} />
-        <CommandCenterNextAction nextAction={snapshot.nextAction} />
-      </div>
+      <CommandCenterMissionCenter
+        kpis={snapshot.kpis}
+        hero={snapshot.hero}
+        nextAction={snapshot.nextAction}
+      />
 
       {!hasAssignments ? (
         <section className="cc-card-sm flex flex-col items-center gap-1.5 py-4 text-center">
@@ -69,25 +66,24 @@ export function RuknHomePage() {
         <CommandCenterKpiGrid kpis={snapshot.kpis} />
       )}
 
-      <div className="cc-grid grid xl:grid-cols-3">
-        <CommandCenterProgressOverview />
-        <CommandCenterSchedule schedule={snapshot.schedule} />
-        <CommandCenterAlerts alerts={snapshot.alerts} />
+      <CommandCenterCampaignProgress showTeam={false} />
+
+      <CommandCenterAttentionCenter
+        alerts={snapshot.alerts}
+        followUpQueue={snapshot.followUpQueue}
+        reminders={snapshot.reminders}
+      />
+
+      <div className="cc-grid grid xl:grid-cols-[7fr_3fr]">
+        <CommandCenterTodaysWork schedule={snapshot.schedule} callQueue={snapshot.callQueue} />
+        {hasAssignments && (
+          <CommandCenterRuknQuickActions
+            nextAction={snapshot.nextAction}
+            pendingVisitRoute={pendingVisitRoute}
+          />
+        )}
       </div>
 
-      <div className="cc-grid grid xl:grid-cols-2">
-        <CommandCenterCallQueue callQueue={snapshot.callQueue} />
-        <CommandCenterFollowUpQueue followUpQueue={snapshot.followUpQueue} />
-      </div>
-
-      {hasAssignments && (
-        <CommandCenterRuknQuickActions
-          nextAction={snapshot.nextAction}
-          pendingVisitRoute={pendingVisitRoute}
-        />
-      )}
-
-      <CommandCenterReminders reminders={snapshot.reminders} />
       <CommandCenterCompletedToday items={snapshot.completedToday} />
       <CommandCenterRecentActivity />
       <CommandCenterIntelligence />

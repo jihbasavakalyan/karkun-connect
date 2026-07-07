@@ -16,7 +16,6 @@ import {
   mobilesMatch,
   normalizeMobile,
 } from '@/lib/mobileValidation'
-import { getActiveAssignmentForRukn } from '@/stores/assignmentStore'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
 import type {
   ImportSummary,
@@ -501,19 +500,11 @@ export function getCompatibleRuknsForKarkun(karkunId: string): Rukn[] {
     return []
   }
 
-  const currentRuknId = karkun.assignedRuknId
-
-  return ruknMaster.filter((rukn) => {
-    if (rukn.status !== 'active' || rukn.gender !== karkun.gender) {
-      return false
-    }
-
-    if (rukn.id === currentRuknId) {
-      return true
-    }
-
-    return !getActiveAssignmentForRukn(rukn.id)
-  })
+  // Business rule: one Rukn may support many active Karkuns, so a Rukn stays
+  // selectable even after it already has assignments. Only gender/active are filtered.
+  return ruknMaster.filter(
+    (rukn) => rukn.status === 'active' && rukn.gender === karkun.gender,
+  )
 }
 
 export function getCompatibleKarkunsForRukn(ruknId: string): KarkunRegistryRecord[] {

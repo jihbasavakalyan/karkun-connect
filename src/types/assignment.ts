@@ -56,6 +56,8 @@ export type ReplaceInput = {
   replacementReason: ReplacementReason
   remarks?: string
   assignedBy: AssignedBy
+  /** When a Rukn has multiple active Karkuns, identifies which one is being replaced. */
+  currentKarkunId?: string
 }
 
 export type RemoveInput = {
@@ -64,6 +66,8 @@ export type RemoveInput = {
   removalReason: RemovalReason
   remarks?: string
   assignedBy: AssignedBy
+  /** When a Rukn has multiple active Karkuns, identifies which one is being removed. */
+  karkunId?: string
 }
 
 export type RestoreInput = {
@@ -99,6 +103,9 @@ export type KarkunWorkloadSummary = {
 
 export type RuknAssignmentSummary = {
   currentAssignment: AssignmentRecord | null
+  /** All currently active assignments for the Rukn (one Rukn may hold many active Karkuns). */
+  activeAssignments: AssignmentRecord[]
+  assignedKarkunCount: number
   assignmentSince: string | null
   assignmentHistory: AssignmentRecord[]
   lastAssignmentChange: string | null

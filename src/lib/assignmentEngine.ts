@@ -14,7 +14,6 @@ import {
   validateGenderMatch,
   validateKarkunActive,
   validateKarkunMobile,
-  validateNoBlockingAssignmentForRukn,
   validateRuknActive,
 } from '@/validation/assignmentValidation'
 import { subscribeToAssignmentStore } from '@/stores/assignmentStore'
@@ -32,12 +31,11 @@ function todayDate(): string {
 export const subscribeToAssignments = subscribeToAssignmentStore
 
 export function getAssignedKarkunanForRukn(ruknId: string): KarkunRegistryRecord[] {
-  const history = getAssignmentHistoryForRukn(ruknId)
-  const active = history.find((record) => record.status === 'Active')
-  if (!active) return []
-
-  const karkun = getKarkunById(active.karkunId)
-  return karkun && !karkun.isArchived ? [karkun] : []
+  // One Rukn may hold many active Karkuns — return every active assignment's Karkun.
+  return getAssignmentHistoryForRukn(ruknId)
+    .filter((record) => record.status === 'Active')
+    .map((record) => getKarkunById(record.karkunId))
+    .filter((karkun): karkun is KarkunRegistryRecord => Boolean(karkun && !karkun.isArchived))
 }
 
 export function getAvailableKarkunan(): KarkunRegistryRecord[] {
@@ -127,9 +125,9 @@ export function releaseKarkun(
   ruknId: string,
   releaseReason: ReleaseReason,
 ): AssignKarkunResult {
-  void karkunId
   return removeAssignment({
     ruknId,
+    karkunId,
     effectiveFrom: todayDate(),
     removalReason: mapReleaseToRemoval(releaseReason),
     assignedBy: 'Rukn',
@@ -162,6 +160,7 @@ export function adminUnassignKarkun(karkunId: string): AssignKarkunResult {
   }
   return removeAssignment({
     ruknId: active.ruknId,
+    karkunId,
     effectiveFrom: todayDate(),
     removalReason: 'Other',
     assignedBy: 'Administrator',
@@ -191,13 +190,14 @@ export function changeKarkunRuknAssignment(
     return assignKarkun(karkunId, targetRuknId, assignedBy)
   }
 
+  // Transferring a Karkun to a Rukn that already has other active Karkuns is allowed:
+  // the target Rukn is no longer blocked. Only this Karkun's current assignment moves.
   const transferChecks = [
     validateEffectiveDate(todayDate()),
     validateRuknActive(targetRuknId),
     validateKarkunActive(karkunId),
     validateKarkunMobile(karkunId),
     validateGenderMatch(targetRuknId, karkunId),
-    validateNoBlockingAssignmentForRukn(targetRuknId),
   ]
 
   for (const check of transferChecks) {
@@ -208,6 +208,7 @@ export function changeKarkunRuknAssignment(
 
   const removeResult = removeAssignment({
     ruknId: current.ruknId,
+    karkunId,
     effectiveFrom: todayDate(),
     removalReason: 'Other',
     assignedBy,

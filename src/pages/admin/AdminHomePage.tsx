@@ -1,19 +1,14 @@
 import {
   CommandCenterAdminQuickActions,
-  CommandCenterAlerts,
-  CommandCenterCallQueue,
-  CommandCenterFollowUpQueue,
+  CommandCenterAttentionCenter,
+  CommandCenterCampaignProgress,
   CommandCenterFooter,
   CommandCenterHero,
   CommandCenterIntelligence,
   CommandCenterKpiGrid,
-  CommandCenterNextAction,
-  CommandCenterProgressOverview,
+  CommandCenterMissionCenter,
   CommandCenterRecentActivity,
-  CommandCenterReminders,
-  CommandCenterSchedule,
-  CommandCenterTeamPerformance,
-  CommandCenterTodaysMission,
+  CommandCenterTodaysWork,
 } from '@/components/command-center'
 import { useCampaignAutomationEngine } from '@/hooks/useCampaignAutomationEngine'
 
@@ -24,27 +19,24 @@ export function AdminHomePage() {
     <div className="cc-stack mx-auto max-w-[1680px]">
       <CommandCenterHero hero={snapshot.hero} />
 
-      <div className="cc-grid grid xl:grid-cols-2">
-        <CommandCenterTodaysMission kpis={snapshot.kpis} hero={snapshot.hero} />
-        <CommandCenterNextAction nextAction={snapshot.nextAction} />
-      </div>
+      <CommandCenterMissionCenter
+        kpis={snapshot.kpis}
+        hero={snapshot.hero}
+        nextAction={snapshot.nextAction}
+      />
 
       <CommandCenterKpiGrid kpis={snapshot.kpis} />
 
-      <div className="cc-grid grid xl:grid-cols-3">
-        <CommandCenterProgressOverview />
-        <CommandCenterTeamPerformance />
-        <CommandCenterAlerts alerts={snapshot.alerts} />
-      </div>
+      <CommandCenterCampaignProgress />
 
-      <div className="cc-grid grid xl:grid-cols-3">
-        <CommandCenterSchedule schedule={snapshot.schedule} />
-        <CommandCenterCallQueue callQueue={snapshot.callQueue} />
-        <CommandCenterFollowUpQueue followUpQueue={snapshot.followUpQueue} />
-      </div>
+      <CommandCenterAttentionCenter
+        alerts={snapshot.alerts}
+        followUpQueue={snapshot.followUpQueue}
+        reminders={snapshot.reminders}
+      />
 
-      <div className="cc-grid grid xl:grid-cols-2">
-        <CommandCenterReminders reminders={snapshot.reminders} />
+      <div className="cc-grid grid xl:grid-cols-[7fr_3fr]">
+        <CommandCenterTodaysWork schedule={snapshot.schedule} callQueue={snapshot.callQueue} />
         <CommandCenterAdminQuickActions />
       </div>
 

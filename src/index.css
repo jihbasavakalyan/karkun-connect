@@ -92,11 +92,11 @@
   }
 
   .cc-list-sm {
-    @apply max-h-[140px] overflow-y-auto;
+    @apply max-h-[104px] overflow-y-auto;
   }
 
   .cc-list-md {
-    @apply max-h-[150px] overflow-y-auto;
+    @apply max-h-[120px] overflow-y-auto;
   }
 
   .cc-list-lg {

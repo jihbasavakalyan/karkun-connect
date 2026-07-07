@@ -131,6 +131,9 @@ export function validateKarkunAvailable(karkunId: string): ValidationResult {
 }
 
 export function validateAssignInput(input: AssignInput): ValidationResult {
+  // Business rule: one Rukn may hold many active Karkuns, so we do NOT block an
+  // assignment when the Rukn already has active assignments. The one-active-Rukn-
+  // per-Karkun rule is still enforced by validateKarkunAvailable above.
   const checks = [
     validateEffectiveDate(input.effectiveFrom),
     validateRuknActive(input.ruknId),
@@ -138,7 +141,6 @@ export function validateAssignInput(input: AssignInput): ValidationResult {
     validateKarkunAvailable(input.karkunId),
     validateKarkunMobile(input.karkunId),
     validateGenderMatch(input.ruknId, input.karkunId),
-    validateNoBlockingAssignmentForRukn(input.ruknId),
   ]
 
   for (const check of checks) {
@@ -148,7 +150,11 @@ export function validateAssignInput(input: AssignInput): ValidationResult {
 }
 
 export function validateReplaceInput(input: ReplaceInput): ValidationResult {
-  const active = getActiveAssignmentForRukn(input.ruknId)
+  const active = input.currentKarkunId
+    ? getActiveAssignmentsForKarkun(input.currentKarkunId).find(
+        (record) => record.ruknId === input.ruknId,
+      )
+    : getActiveAssignmentForRukn(input.ruknId)
   if (!active) {
     return { valid: false, error: 'This Rukn has no active assignment to replace.' }
   }
@@ -177,7 +183,11 @@ export function validateReplaceInput(input: ReplaceInput): ValidationResult {
 }
 
 export function validateRemoveInput(input: RemoveInput): ValidationResult {
-  const active = getActiveAssignmentForRukn(input.ruknId)
+  const active = input.karkunId
+    ? getActiveAssignmentsForKarkun(input.karkunId).find(
+        (record) => record.ruknId === input.ruknId,
+      )
+    : getActiveAssignmentForRukn(input.ruknId)
   if (!active) {
     return { valid: false, error: 'This Rukn has no active assignment to remove.' }
   }
@@ -193,15 +203,8 @@ export function validateRemoveInput(input: RemoveInput): ValidationResult {
 }
 
 export function validateRestoreInput(input: RestoreInput): ValidationResult {
-  const blocking = getBlockingAssignmentForRukn(input.ruknId)
-  if (blocking) {
-    return {
-      valid: false,
-      error:
-        'Cannot restore: another active assignment is already present for this Rukn. Remove or replace it first.',
-    }
-  }
-
+  // A Rukn may hold many active Karkuns, so an existing assignment on the Rukn no
+  // longer blocks restoring another. Karkun-level availability is still enforced below.
   const checks = [
     validateEffectiveDate(input.effectiveFrom),
     validateRuknActive(input.ruknId),

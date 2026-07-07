@@ -90,8 +90,8 @@ function verifyInlineGenderFlow(gender: PersonGender): void {
     `${gender} Karkun must only see ${gender} Rukns`,
   )
   assert(
-    compatible.every((rukn) => !getRuknAssignmentSummary(rukn.id).currentAssignment),
-    `${gender} inline picker must only list unassigned Rukns`,
+    compatible.length === activeRukns(gender).length,
+    `${gender} inline picker must list all active ${gender} Rukns regardless of existing assignments`,
   )
 
   const assignResult = changeKarkunRuknAssignment(karkun.id, ruknA!.id)
@@ -125,6 +125,56 @@ function verifyInlineGenderFlow(gender: PersonGender): void {
   const activity = getRecentActivity(10)
   assert(activity.some((entry) => entry.type === 'assign'), 'Activity log should record assign')
   assert(activity.some((entry) => entry.type === 'remove'), 'Activity log should record removal')
+}
+
+function verifyMultipleKarkunsPerRukn(gender: PersonGender): void {
+  const rukn = activeRukns(gender)[0]
+  assert(Boolean(rukn), `Need at least one active ${gender} Rukn for multi-Karkun flow`)
+
+  const karkuns = Array.from({ length: 5 }, (_, index) => {
+    const karkun = createKarkun(`verify-multi-${gender.toLowerCase()}-${index}`, gender)
+    MOCK_KARKUN_REGISTRY.push(karkun)
+    return karkun
+  })
+
+  for (const karkun of karkuns) {
+    const result = changeKarkunRuknAssignment(karkun.id, rukn!.id)
+    assert(result.success, `Multi assign failed: ${result.success ? '' : result.error}`)
+    assert(
+      karkun.assignmentStatus === 'Assigned' && karkun.assignedRuknId === rukn!.id,
+      'Each assigned Karkun must point to the shared Rukn',
+    )
+  }
+
+  const assigned = getAssignedKarkunanForRukn(rukn!.id)
+  assert(
+    assigned.length === 5,
+    `Rukn must hold 5 active Karkuns, got ${assigned.length}`,
+  )
+
+  const summary = getRuknAssignmentSummary(rukn!.id)
+  assert(summary.assignedKarkunCount === 5, 'Summary must report 5 active Karkuns')
+  assert(summary.activeAssignments.length === 5, 'Summary must list 5 active assignments')
+  assert(summary.assignmentStatus === 'Assigned', 'Rukn with active Karkuns must be Assigned')
+
+  // The Rukn must remain selectable (not hidden) for a further Karkun.
+  const extra = createKarkun(`verify-multi-${gender.toLowerCase()}-extra`, gender)
+  MOCK_KARKUN_REGISTRY.push(extra)
+  assert(
+    getCompatibleRuknsForKarkun(extra.id).some((option) => option.id === rukn!.id),
+    'Rukn must remain selectable after multiple assignments',
+  )
+
+  // No previous assignment was removed or replaced.
+  const history = getAssignmentHistoryForRukn(rukn!.id)
+  assert(
+    history.filter((record) => record.status === 'Active').length === 5,
+    'All five assignments must remain Active with no removal or replacement',
+  )
+  assert(
+    history.every((record) => record.status === 'Active'),
+    'No assignment should have been ended when assigning multiple Karkuns',
+  )
 }
 
 function verifyAdminModalFlow(gender: PersonGender): void {
@@ -244,6 +294,10 @@ reset()
 verifyInlineGenderFlow('Male')
 reset()
 verifyInlineGenderFlow('Female')
+reset()
+verifyMultipleKarkunsPerRukn('Male')
+reset()
+verifyMultipleKarkunsPerRukn('Female')
 reset()
 verifyAdminModalFlow('Male')
 reset()

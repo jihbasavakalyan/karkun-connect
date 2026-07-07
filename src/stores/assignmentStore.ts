@@ -39,6 +39,14 @@ export function getActiveAssignmentForRukn(ruknId: string): AssignmentRecord | u
   return assignments.find((record) => record.ruknId === ruknId && record.status === 'Active')
 }
 
+/**
+ * All active assignments for a Rukn. A single Rukn may support many active Karkuns,
+ * so this returns every Active record rather than just the first match.
+ */
+export function getActiveAssignmentsForRukn(ruknId: string): AssignmentRecord[] {
+  return assignments.filter((record) => record.ruknId === ruknId && record.status === 'Active')
+}
+
 export function getSuspendedAssignmentForRukn(ruknId: string): AssignmentRecord | undefined {
   return assignments.find((record) => record.ruknId === ruknId && record.status === 'Suspended')
 }

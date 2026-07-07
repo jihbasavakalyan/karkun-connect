@@ -14,7 +14,6 @@ import { getAssignmentHistoryForKarkun } from '@/stores/assignmentStore'
 import { AssignmentHistoryTimeline } from '@/components/forms/assignment/AssignmentHistoryTimeline'
 import { AssignRuknModal } from '@/components/forms/assignment/AssignRuknModal'
 import { RemoveAssignmentModal } from '@/components/forms/assignment/RemoveAssignmentModal'
-import { ReplaceAssignmentModal } from '@/components/forms/assignment/ReplaceAssignmentModal'
 import { RestoreAssignmentModal } from '@/components/forms/assignment/RestoreAssignmentModal'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
@@ -29,7 +28,6 @@ export function AssignmentManagementPage() {
     getRuknAssignmentSummary,
     getKarkunWithWorkload,
     assignRukn,
-    replaceAssignment,
     removeAssignment,
     restoreAssignment,
   } = useAssignmentEngine()
@@ -44,6 +42,7 @@ export function AssignmentManagementPage() {
   const [modalMode, setModalMode] = useState<ModalMode>(null)
   const [actionError, setActionError] = useState('')
   const [lastAssignmentNumber, setLastAssignmentNumber] = useState<string | null>(null)
+  const [removingKarkun, setRemovingKarkun] = useState<{ id: string; name: string } | null>(null)
 
   const selectRukn = (ruknId: string) => {
     setSelectedRuknId(ruknId)
@@ -112,10 +111,6 @@ export function AssignmentManagementPage() {
     getKarkunWithWorkload,
   ])
 
-  const currentKarkunName =
-    ruknSummary?.currentAssignment &&
-    getKarkunById(ruknSummary.currentAssignment.karkunId)?.name
-
   const closeModal = () => {
     setModalMode(null)
     setActionError('')
@@ -163,36 +158,15 @@ export function AssignmentManagementPage() {
     )
   }
 
-  const handleReplace = (input: {
-    newKarkunId: string
-    effectiveFrom: string
-    replacementReason: import('@/types/assignment').ReplacementReason
-    remarks?: string
-  }) => {
-    if (!selectedRukn) return
-    const result = replaceAssignment({
-      ruknId: selectedRukn.id,
-      newKarkunId: input.newKarkunId,
-      effectiveFrom: input.effectiveFrom,
-      replacementReason: input.replacementReason,
-      remarks: input.remarks,
-      assignedBy: 'Administrator',
-    })
-    if (!result.success) {
-      setActionError(result.error)
-      return
-    }
-    closeModal()
-  }
-
   const handleRemove = (input: {
     effectiveFrom: string
     removalReason: import('@/types/assignment').RemovalReason
     remarks?: string
   }) => {
-    if (!selectedRukn) return
+    if (!selectedRukn || !removingKarkun) return
     const result = removeAssignment({
       ruknId: selectedRukn.id,
+      karkunId: removingKarkun.id,
       effectiveFrom: input.effectiveFrom,
       removalReason: input.removalReason,
       remarks: input.remarks,
@@ -202,6 +176,7 @@ export function AssignmentManagementPage() {
       setActionError(result.error)
       return
     }
+    setRemovingKarkun(null)
     closeModal()
   }
 
@@ -414,11 +389,12 @@ export function AssignmentManagementPage() {
         </section>
       </div>
 
-      {selectedRukn && selectedKarkun && ruknSummary?.assignmentStatus === 'Unassigned' && (
+      {selectedRukn && selectedKarkun && (
         <section className="rounded-(--radius-card) border border-primary/30 bg-surface p-6 shadow-card">
           <h2 className="text-lg font-semibold text-text-heading">Assignment Preview</h2>
           <p className="mt-1 text-sm text-secondary">
-            Review the pairing before confirming the assignment.
+            Review the pairing before confirming the assignment. A Rukn can hold multiple active
+            Karkuns.
           </p>
           <dl className="mt-4 grid gap-3 sm:grid-cols-2">
             <div className="rounded-lg border border-border bg-surface-muted px-4 py-3">
@@ -451,6 +427,10 @@ export function AssignmentManagementPage() {
               <h2 className="text-lg font-semibold text-text-heading">{selectedRukn.name}</h2>
               <p className="mt-1 text-sm text-secondary">
                 Status: {ruknSummary.assignmentStatus}
+                {ruknSummary.assignedKarkunCount > 0 &&
+                  ` · ${ruknSummary.assignedKarkunCount} active Karkun${
+                    ruknSummary.assignedKarkunCount === 1 ? '' : 's'
+                  }`}
                 {ruknSummary.assignmentSince &&
                   ` · Since ${ruknSummary.assignmentSince.slice(0, 10)}`}
               </p>
@@ -463,36 +443,65 @@ export function AssignmentManagementPage() {
             </div>
 
             <div className="flex flex-wrap gap-2">
-              {ruknSummary.assignmentStatus === 'Assigned' &&
-                ruknSummary.currentAssignment && (
-                  <Link to={adminAnnexure1Path(ruknSummary.currentAssignment.karkunId)}>
-                    <PrimaryButton type="button">Open Annexure-1</PrimaryButton>
-                  </Link>
-                )}
-              {ruknSummary.assignmentStatus === 'Unassigned' ? (
-                <>
-                  <PrimaryButton type="button" onClick={() => setModalMode('assign')}>
-                    Assign
-                  </PrimaryButton>
-                  <SecondaryButton type="button" onClick={() => setModalMode('restore')}>
-                    Restore
-                  </SecondaryButton>
-                </>
-              ) : (
-                <>
-                  <SecondaryButton type="button" onClick={() => setModalMode('replace')}>
-                    Replace
-                  </SecondaryButton>
-                  <SecondaryButton type="button" onClick={() => setModalMode('remove')}>
-                    Remove
-                  </SecondaryButton>
-                </>
+              <PrimaryButton type="button" onClick={() => setModalMode('assign')}>
+                Assign Karkun
+              </PrimaryButton>
+              {ruknSummary.assignmentStatus !== 'Assigned' && (
+                <SecondaryButton type="button" onClick={() => setModalMode('restore')}>
+                  Restore
+                </SecondaryButton>
               )}
               <SecondaryButton type="button" onClick={() => setModalMode('history')}>
                 View History
               </SecondaryButton>
             </div>
           </div>
+
+          {ruknSummary.activeAssignments.length > 0 && (
+            <div className="mt-6">
+              <h3 className="text-sm font-semibold text-text-heading">
+                Assigned Karkuns ({ruknSummary.assignedKarkunCount})
+              </h3>
+              <ul className="mt-3 space-y-2">
+                {ruknSummary.activeAssignments.map((assignment) => {
+                  const assignedKarkun = getKarkunById(assignment.karkunId)
+                  return (
+                    <li
+                      key={assignment.assignmentId}
+                      className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-surface-muted px-3 py-2"
+                    >
+                      <div className="min-w-0">
+                        <p className="font-medium text-text-heading">
+                          {assignedKarkun?.name ?? assignment.karkunId}
+                        </p>
+                        <p className="text-xs text-secondary">{assignment.assignmentNumber}</p>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <Link to={adminAnnexure1Path(assignment.karkunId)}>
+                          <SecondaryButton type="button" className="px-3 py-1.5 text-sm">
+                            Annexure-1
+                          </SecondaryButton>
+                        </Link>
+                        <SecondaryButton
+                          type="button"
+                          className="px-3 py-1.5 text-sm"
+                          onClick={() => {
+                            setRemovingKarkun({
+                              id: assignment.karkunId,
+                              name: assignedKarkun?.name ?? assignment.karkunId,
+                            })
+                            setModalMode('remove')
+                          }}
+                        >
+                          Remove
+                        </SecondaryButton>
+                      </div>
+                    </li>
+                  )
+                })}
+              </ul>
+            </div>
+          )}
 
           <div className="mt-6">
             <AssignmentHistoryTimeline
@@ -513,21 +522,15 @@ export function AssignmentManagementPage() {
         onSubmit={handleAssign}
       />
 
-      <ReplaceAssignmentModal
-        isOpen={modalMode === 'replace'}
-        rukn={selectedRukn ?? null}
-        currentKarkunName={currentKarkunName ?? 'Unknown'}
-        error={actionError}
-        onClose={closeModal}
-        onSubmit={handleReplace}
-      />
-
       <RemoveAssignmentModal
         isOpen={modalMode === 'remove'}
         rukn={selectedRukn ?? null}
-        currentKarkunName={currentKarkunName ?? 'Unknown'}
+        currentKarkunName={removingKarkun?.name ?? 'Unknown'}
         error={actionError}
-        onClose={closeModal}
+        onClose={() => {
+          setRemovingKarkun(null)
+          closeModal()
+        }}
         onSubmit={handleRemove}
       />
 

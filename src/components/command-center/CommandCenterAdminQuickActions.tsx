@@ -17,7 +17,7 @@ export function CommandCenterAdminQuickActions() {
   return (
     <section className="cc-card-sm">
       <EnterpriseSectionHeader title="Quick Actions" />
-      <div className="mt-1 grid grid-cols-4 gap-1.5">
+      <div className="mt-1 grid grid-cols-2 gap-1.5">
         {ADMIN_ACTIONS.map((action) => (
           <Link
             key={action.id}

@@ -10,6 +10,7 @@ import {
   generateAssignmentNumber,
   getActiveAssignmentForRukn,
   getActiveAssignmentsForKarkun,
+  getActiveAssignmentsForRukn,
   getAllAssignments,
   getAssignmentHistoryForKarkun,
   getAssignmentHistoryForRukn,
@@ -137,7 +138,11 @@ export function replaceAssignment(input: ReplaceInput): AssignmentResult {
     return { success: false, error: validation.error }
   }
 
-  const current = getActiveAssignmentForRukn(input.ruknId)!
+  const current = (input.currentKarkunId
+    ? getActiveAssignmentsForKarkun(input.currentKarkunId).find(
+        (record) => record.ruknId === input.ruknId,
+      )
+    : getActiveAssignmentForRukn(input.ruknId))!
   const endedAt = input.effectiveFrom
   const timestamp = nowIso()
 
@@ -201,7 +206,11 @@ export function removeAssignment(input: RemoveInput): AssignmentResult {
     return { success: false, error: validation.error }
   }
 
-  const current = getActiveAssignmentForRukn(input.ruknId)!
+  const current = (input.karkunId
+    ? getActiveAssignmentsForKarkun(input.karkunId).find(
+        (record) => record.ruknId === input.ruknId,
+      )
+    : getActiveAssignmentForRukn(input.ruknId))!
   const timestamp = nowIso()
 
   updateAssignmentStatus(current.assignmentId, 'Unassigned', {
@@ -263,20 +272,25 @@ export function restoreAssignment(input: RestoreInput): AssignmentResult {
 
 export function getRuknAssignmentSummary(ruknId: string): RuknAssignmentSummary {
   const history = getAssignmentHistoryForRukn(ruknId)
-  const currentAssignment = getActiveAssignmentForRukn(ruknId) ?? null
+  const activeAssignments = getActiveAssignmentsForRukn(ruknId)
+  const currentAssignment = activeAssignments[0] ?? null
   const suspendedAssignment = getSuspendedAssignmentForRukn(ruknId) ?? null
   const lastChange = history[0]
 
   let assignmentStatus: RuknAssignmentSummary['assignmentStatus'] = 'Unassigned'
-  if (currentAssignment) {
+  if (activeAssignments.length > 0) {
     assignmentStatus = 'Assigned'
   } else if (suspendedAssignment) {
     assignmentStatus = 'Suspended'
   }
 
+  const primary = currentAssignment ?? suspendedAssignment
+
   return {
-    currentAssignment: currentAssignment ?? suspendedAssignment,
-    assignmentSince: (currentAssignment ?? suspendedAssignment)?.effectiveFrom ?? null,
+    currentAssignment: primary,
+    activeAssignments,
+    assignedKarkunCount: activeAssignments.length,
+    assignmentSince: primary?.effectiveFrom ?? null,
     assignmentHistory: history,
     lastAssignmentChange: lastChange?.updatedAt ?? null,
     assignmentStatus,
