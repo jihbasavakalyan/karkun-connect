@@ -1,43 +1,27 @@
 import {
   FEMALE_KARKUN_PRODUCTION_RECORDS,
   MALE_KARKUN_PRODUCTION_RECORDS,
-  RUKN_PRODUCTION_RECORDS,
   toProductionImportRow,
 } from '@/data/production'
-import { ruknMaster } from '@/data/ruknMaster'
-import { clearPeopleAuditLog } from '@/lib/peopleAuditLog'
 import {
-  clearKarkunRegistry,
-  clearRuknMaster,
   getAllKarkuns,
   getPeopleStatistics,
   importKarkunsFromRows,
-  importRuknsFromRows,
-  replaceRuknMaster,
-  resetNextKarkunId,
+  removeMaleKarkunsFromRegistry,
 } from '@/lib/peopleStore'
-import { isValidMobileFormat } from '@/lib/mobileValidation'
-import { clearActivityLogStore } from '@/stores/activityLogStore'
-import { clearAnnexure1Store } from '@/stores/annexure1Store'
-import { clearAssignmentStore } from '@/stores/assignmentStore'
-import { clearBaitulMaalStore } from '@/stores/baitulMaalStore'
-import { clearFollowUpStore } from '@/stores/followUpStore'
-import { clearIjtemaAttendanceStore } from '@/stores/ijtemaAttendanceStore'
-import { clearJihWebPortalStore } from '@/stores/jihWebPortalStore'
 import {
   ensureBaitulMaalRecord,
-  resetBaitulMaalComplianceInitialization,
 } from '@/services/baitulMaalService'
 import {
   ensureIjtemaAttendanceRecord,
-  resetIjtemaAttendanceComplianceInitialization,
 } from '@/services/ijtemaAttendanceService'
 import {
   ensureRegistration,
-  resetJihWebPortalComplianceInitialization,
 } from '@/services/jihWebPortalService'
 import type { ImportSummary } from '@/types/people.types'
 import type { ProductionMigrationSummary } from '@/types/productionMigration'
+
+const MIGRATION_VERSION = 2
 
 let migrationCompleted = false
 let lastMigrationSummary: ProductionMigrationSummary | null = null
@@ -55,129 +39,52 @@ function createEmptyImportSummary(rowCount: number): ImportSummary {
   }
 }
 
-function countValidProductionRukns(): number {
-  return RUKN_PRODUCTION_RECORDS.filter((record) => isValidMobileFormat(record.mobile)).length
-}
-
-function clearRuntimeDemoStores(): void {
-  clearAssignmentStore()
-  clearAnnexure1Store()
-  clearFollowUpStore()
-  clearJihWebPortalStore()
-  clearBaitulMaalStore()
-  clearIjtemaAttendanceStore()
-  clearActivityLogStore()
-  clearPeopleAuditLog()
-  resetJihWebPortalComplianceInitialization()
-  resetBaitulMaalComplianceInitialization()
-  resetIjtemaAttendanceComplianceInitialization()
-}
-
-function removeDemoKarkuns(): void {
-  clearKarkunRegistry()
-  resetNextKarkunId(1)
-}
-
-function migrateProductionRukns(): { summary: ImportSummary; replaced: boolean } {
-  const rows = RUKN_PRODUCTION_RECORDS.map(toProductionImportRow)
-  const validCount = countValidProductionRukns()
-
-  if (validCount === 0) {
-    return {
-      summary: {
-        ...createEmptyImportSummary(rows.length),
-        skipped: rows.length,
-        invalidMobiles: rows.map((row, index) => ({
-          row: index + 2,
-          name: row.name,
-          mobile: row.mobile,
-          reason: 'Verified mobile number required for production import.',
-        })),
-      },
-      replaced: false,
-    }
-  }
-
-  const existingRukns = [...ruknMaster]
-  clearRuknMaster()
-  const summary = importRuknsFromRows(rows, 'Production Migration')
-
-  if (summary.imported === 0) {
-    replaceRuknMaster(existingRukns)
-    return { summary, replaced: false }
-  }
-
-  return { summary, replaced: true }
-}
-
-function dedupeKarkunProductionRows(
+function dedupeMaleProductionRows(
   maleRows: ReturnType<typeof toProductionImportRow>[],
-  femaleRows: ReturnType<typeof toProductionImportRow>[],
 ): {
   maleRows: ReturnType<typeof toProductionImportRow>[]
-  femaleRows: ReturnType<typeof toProductionImportRow>[]
   crossDuplicates: ImportSummary['duplicateMobiles']
 } {
   const seenMobiles = new Set<string>()
   const crossDuplicates: ImportSummary['duplicateMobiles'] = []
 
-  const filterRows = (
-    rows: ReturnType<typeof toProductionImportRow>[],
-    source: 'Male Karkun Master' | 'Female Karkun Master',
-  ) => {
-    const kept: ReturnType<typeof toProductionImportRow>[] = []
+  const kept: ReturnType<typeof toProductionImportRow>[] = []
 
-    rows.forEach((row, index) => {
-      const mobileKey = row.mobile.replace(/\D/g, '')
-      if (!mobileKey) {
-        kept.push(row)
-        return
-      }
-
-      if (seenMobiles.has(mobileKey)) {
-        crossDuplicates.push({
-          row: index + 2,
-          name: row.name,
-          mobile: row.mobile,
-          existingPerson: `Duplicate in ${source}`,
-        })
-        return
-      }
-
-      seenMobiles.add(mobileKey)
+  maleRows.forEach((row, index) => {
+    const mobileKey = row.mobile.replace(/\D/g, '')
+    if (!mobileKey) {
       kept.push(row)
-    })
+      return
+    }
 
-    return kept
-  }
+    if (seenMobiles.has(mobileKey)) {
+      crossDuplicates.push({
+        row: index + 2,
+        name: row.name,
+        mobile: row.mobile,
+        existingPerson: 'Duplicate in Male Karkun Master',
+      })
+      return
+    }
 
-  return {
-    maleRows: filterRows(maleRows, 'Male Karkun Master'),
-    femaleRows: filterRows(femaleRows, 'Female Karkun Master'),
-    crossDuplicates,
-  }
+    seenMobiles.add(mobileKey)
+    kept.push(row)
+  })
+
+  return { maleRows: kept, crossDuplicates }
 }
 
-function migrateProductionKarkuns(): {
-  male: ImportSummary
-  female: ImportSummary
-} {
+function migrateMaleKarkunMaster(): ImportSummary {
   const maleSource = MALE_KARKUN_PRODUCTION_RECORDS.map(toProductionImportRow)
-  const femaleSource = FEMALE_KARKUN_PRODUCTION_RECORDS.map(toProductionImportRow)
-  const { maleRows, femaleRows, crossDuplicates } = dedupeKarkunProductionRows(
-    maleSource,
-    femaleSource,
-  )
-
-  const male = importKarkunsFromRows(maleRows, 'Production Migration')
-  const female = importKarkunsFromRows(femaleRows, 'Production Migration')
+  const { maleRows, crossDuplicates } = dedupeMaleProductionRows(maleSource)
+  const summary = importKarkunsFromRows(maleRows, 'Production Migration')
 
   if (crossDuplicates.length > 0) {
-    male.duplicateMobiles.push(...crossDuplicates)
-    male.skipped += crossDuplicates.length
+    summary.duplicateMobiles.push(...crossDuplicates)
+    summary.skipped += crossDuplicates.length
   }
 
-  return { male, female }
+  return summary
 }
 
 function initializeComplianceDefaults(): void {
@@ -193,22 +100,19 @@ export function runProductionDataMigration(): ProductionMigrationSummary {
     return lastMigrationSummary
   }
 
-  clearRuntimeDemoStores()
-  removeDemoKarkuns()
-
-  const { summary: rukns, replaced: ruknsReplaced } = migrateProductionRukns()
-  const { male: maleKarkuns, female: femaleKarkuns } = migrateProductionKarkuns()
-
+  removeMaleKarkunsFromRegistry()
+  const maleKarkuns = migrateMaleKarkunMaster()
   initializeComplianceDefaults()
 
   const stats = getPeopleStatistics()
   const summary: ProductionMigrationSummary = {
-    rukns,
+    rukns: createEmptyImportSummary(0),
     maleKarkuns,
-    femaleKarkuns,
+    femaleKarkuns: createEmptyImportSummary(FEMALE_KARKUN_PRODUCTION_RECORDS.length),
     demoDataRemoved: true,
-    runtimeStoresCleared: true,
-    ruknsReplaced: ruknsReplaced,
+    runtimeStoresCleared: false,
+    ruknsReplaced: false,
+    migrationVersion: MIGRATION_VERSION,
     dashboardVerified: {
       totalRukns: stats.totalRukns,
       maleKarkuns: stats.totalMaleKarkuns,
@@ -222,7 +126,7 @@ export function runProductionDataMigration(): ProductionMigrationSummary {
   lastMigrationSummary = summary
 
   if (import.meta.env.DEV) {
-    console.info('[Production Migration]', summary)
+    console.info('[Production Migration — Male Karkun Master]', summary)
   }
 
   return summary
@@ -241,14 +145,20 @@ export function formatProductionMigrationReport(summary: ProductionMigrationSumm
   const skippedCount =
     summary.rukns.skipped + summary.maleKarkuns.skipped + summary.femaleKarkuns.skipped
 
+  const blankNameCount = summary.maleKarkuns.otherErrors.filter((entry) =>
+    entry.reason.includes('Name is required'),
+  ).length
+
   return [
-    `Rukns imported: ${summary.rukns.imported}`,
     `Male Karkuns imported: ${summary.maleKarkuns.imported}`,
-    `Female Karkuns imported: ${summary.femaleKarkuns.imported}`,
-    `Skipped records: ${skippedCount}`,
+    `Male Karkuns skipped: ${summary.maleKarkuns.skipped}`,
+    `Duplicate mobile conflicts: ${summary.maleKarkuns.duplicateMobiles.length}`,
+    `Invalid mobile records: ${summary.maleKarkuns.invalidMobiles.length}`,
+    `Blank-name records: ${blankNameCount}`,
+    `Total skipped (all sources): ${skippedCount}`,
     `Duplicate records detected: ${duplicateCount}`,
-    `Demo data removed: ${summary.demoDataRemoved ? 'Yes' : 'No'}`,
-    `Rukn master replaced: ${summary.ruknsReplaced ? 'Yes' : 'No (awaiting verified mobiles)'}`,
-    `Dashboard — Rukns: ${summary.dashboardVerified.totalRukns}, Male Karkuns: ${summary.dashboardVerified.maleKarkuns}, Female Karkuns: ${summary.dashboardVerified.femaleKarkuns}, Assigned: ${summary.dashboardVerified.assignedKarkuns}, Unassigned: ${summary.dashboardVerified.unassignedKarkuns}`,
+    `Final Male Karkun count: ${summary.dashboardVerified.maleKarkuns}`,
+    `Female Karkuns preserved: ${summary.dashboardVerified.femaleKarkuns}`,
+    `Rukns preserved: ${summary.dashboardVerified.totalRukns}`,
   ].join('\n')
 }

@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "migrate:generate": "node scripts/generate-production-seeds.mjs"
+    "migrate:generate": "node scripts/generate-production-seeds.mjs",
+    "migrate:import-male-karkuns": "node scripts/import-cleaned-karkun-list.mjs"
   },
   "dependencies": {
     "react": "^19.2.7",

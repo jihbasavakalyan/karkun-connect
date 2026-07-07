@@ -294,6 +294,19 @@ export function clearKarkunRegistry(): void {
   notifyPeopleChange()
 }
 
+export function removeMaleKarkunsFromRegistry(): void {
+  const remaining = MOCK_KARKUN_REGISTRY.filter((karkun) => karkun.gender === 'Female')
+  MOCK_KARKUN_REGISTRY.length = 0
+  MOCK_KARKUN_REGISTRY.push(...remaining)
+
+  const maxNum = remaining.reduce((max, karkun) => {
+    const num = Number.parseInt(karkun.id.replace('kr-', ''), 10)
+    return Number.isNaN(num) ? max : Math.max(max, num)
+  }, 0)
+  nextKarkunNum = maxNum + 1
+  notifyPeopleChange()
+}
+
 export function resetNextKarkunId(start = 1): void {
   nextKarkunNum = start
 }

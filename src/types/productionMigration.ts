@@ -7,6 +7,7 @@ export type ProductionMigrationSummary = {
   demoDataRemoved: boolean
   runtimeStoresCleared: boolean
   ruknsReplaced: boolean
+  migrationVersion?: number
   dashboardVerified: {
     totalRukns: number
     maleKarkuns: number
