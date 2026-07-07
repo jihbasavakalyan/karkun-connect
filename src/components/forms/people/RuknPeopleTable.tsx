@@ -13,8 +13,6 @@ type RuknPeopleTableProps = {
   onToggleSelection: (id: string) => void
   onToggleSelectAll: () => void
   onEdit: (rukn: Rukn) => void
-  onToggleStatus: (rukn: Rukn) => void
-  onUpdateMobile: (rukn: Rukn) => void
 }
 
 function SortHeader({
@@ -63,8 +61,6 @@ export function RuknPeopleTable({
   onToggleSelection,
   onToggleSelectAll,
   onEdit,
-  onToggleStatus,
-  onUpdateMobile,
 }: RuknPeopleTableProps) {
   if (records.length === 0) {
     return (
@@ -109,7 +105,6 @@ export function RuknPeopleTable({
                   onToggleSort={onToggleSort}
                 />
               </th>
-              <th className="px-4 py-3 font-semibold text-text-heading">Place</th>
               <th className="px-4 py-3">
                 <SortHeader
                   label="Status"
@@ -141,35 +136,18 @@ export function RuknPeopleTable({
                 </td>
                 <td className="px-4 py-3 text-secondary">{rukn.gender}</td>
                 <td className="px-4 py-3 text-secondary">{rukn.mobile || '—'}</td>
-                <td className="px-4 py-3 text-secondary">{rukn.place}</td>
                 <td className="px-4 py-3">
                   <StatusBadge status={rukn.status} />
                 </td>
                 <td className="px-4 py-3 text-secondary">{rukn.updatedAt.slice(0, 10)}</td>
                 <td className="px-4 py-3">
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      className="text-sm font-medium text-primary hover:underline"
-                      onClick={() => onEdit(rukn)}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      className="text-sm font-medium text-primary hover:underline"
-                      onClick={() => onUpdateMobile(rukn)}
-                    >
-                      Mobile
-                    </button>
-                    <button
-                      type="button"
-                      className="text-sm font-medium text-primary hover:underline"
-                      onClick={() => onToggleStatus(rukn)}
-                    >
-                      {rukn.status === 'active' ? 'Deactivate' : 'Activate'}
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    className="text-sm font-medium text-primary hover:underline"
+                    onClick={() => onEdit(rukn)}
+                  >
+                    Edit
+                  </button>
                 </td>
               </tr>
             ))}
@@ -200,24 +178,9 @@ export function RuknPeopleTable({
                 <p className="mt-1 text-sm text-secondary">
                   {rukn.gender} · {rukn.mobile || 'No mobile'}
                 </p>
-                <p className="text-sm text-secondary">{rukn.place}</p>
-                <div className="mt-3 flex flex-wrap gap-3 text-sm">
+                <div className="mt-3 text-sm">
                   <button type="button" className="font-medium text-primary" onClick={() => onEdit(rukn)}>
                     Edit
-                  </button>
-                  <button
-                    type="button"
-                    className="font-medium text-primary"
-                    onClick={() => onUpdateMobile(rukn)}
-                  >
-                    Mobile
-                  </button>
-                  <button
-                    type="button"
-                    className="font-medium text-primary"
-                    onClick={() => onToggleStatus(rukn)}
-                  >
-                    {rukn.status === 'active' ? 'Deactivate' : 'Activate'}
                   </button>
                 </div>
               </div>

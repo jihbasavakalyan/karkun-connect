@@ -10,7 +10,6 @@ import {
   bulkSetKarkunStatus,
   createKarkun,
   importKarkunsFromRows,
-  setKarkunStatus,
   updateKarkun,
 } from '@/lib/peopleStore'
 import {
@@ -24,7 +23,6 @@ import {
   ImportExportToolbar,
   ImportSummaryModal,
   KarkunPeopleTable,
-  MobileUpdateModal,
   PeopleFiltersBar,
   PeoplePagination,
   PersonFormModal,
@@ -48,9 +46,7 @@ function KarkunGenderSection({ gender }: { gender: PersonGender }) {
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false)
   const [editingKarkun, setEditingKarkun] = useState<KarkunRegistryRecord | null>(null)
   const [formError, setFormError] = useState('')
-  const [mobileTarget, setMobileTarget] = useState<KarkunRegistryRecord | null>(null)
-  const [mobileError, setMobileError] = useState('')
-  const [pendingMobile, setPendingMobile] = useState('')
+  const [pendingFormValues, setPendingFormValues] = useState<PersonFormValues | null>(null)
   const [mobileOwner, setMobileOwner] = useState<MobileLookupResult | null>(null)
   const [importSummary, setImportSummary] = useState<ImportSummary | null>(null)
   const [bulkBaitulMaalStatus, setBulkBaitulMaalStatus] = useState<BaitulMaalStatus | null>(null)
@@ -69,15 +65,24 @@ function KarkunGenderSection({ gender }: { gender: PersonGender }) {
     setIsFormOpen(true)
   }
 
-  const handleFormSubmit = (values: PersonFormValues) => {
+  const handleFormSubmit = (
+    values: PersonFormValues,
+    options?: { confirmMobileOverwrite?: boolean },
+  ) => {
     const payload = { ...values, gender }
     const { assignedRuknId, ...karkunPayload } = payload
 
     const result = editingKarkun
-      ? updateKarkun(editingKarkun.id, karkunPayload)
+      ? updateKarkun(editingKarkun.id, karkunPayload, 'Administrator', options)
       : createKarkun(karkunPayload)
 
     if (!result.success) {
+      if (result.needsMobileConfirm && result.existingOwner) {
+        setPendingFormValues(values)
+        setMobileOwner(result.existingOwner)
+        setFormError('')
+        return
+      }
       setFormError(result.error ?? 'Unable to save Karkun.')
       return
     }
@@ -93,6 +98,15 @@ function KarkunGenderSection({ gender }: { gender: PersonGender }) {
     setIsFormOpen(false)
     setEditingKarkun(null)
     setFormError('')
+    setPendingFormValues(null)
+    setMobileOwner(null)
+  }
+
+  const confirmMobileOverwrite = () => {
+    if (!pendingFormValues) {
+      return
+    }
+    handleFormSubmit(pendingFormValues, { confirmMobileOverwrite: true })
   }
 
   const handleAssignmentChange = (karkun: KarkunRegistryRecord, ruknId: string) => {
@@ -113,44 +127,6 @@ function KarkunGenderSection({ gender }: { gender: PersonGender }) {
       delete next[karkun.id]
       return next
     })
-  }
-
-  const handleMobileSubmit = (mobile: string) => {
-    if (!mobileTarget) return
-
-    const result = updateKarkun(mobileTarget.id, { mobile })
-    if (!result.success && result.needsMobileConfirm && result.existingOwner) {
-      setPendingMobile(mobile)
-      setMobileOwner(result.existingOwner)
-      setMobileError('')
-      return
-    }
-
-    if (!result.success) {
-      setMobileError(result.error ?? 'Unable to update mobile.')
-      return
-    }
-
-    setMobileTarget(null)
-    setMobileError('')
-  }
-
-  const confirmMobileOverwrite = () => {
-    if (!mobileTarget || !pendingMobile) return
-    const result = updateKarkun(
-      mobileTarget.id,
-      { mobile: pendingMobile },
-      'Administrator',
-      { confirmMobileOverwrite: true },
-    )
-    if (!result.success) {
-      setMobileError(result.error ?? 'Unable to update mobile.')
-      return
-    }
-    setMobileOwner(null)
-    setPendingMobile('')
-    setMobileTarget(null)
-    setMobileError('')
   }
 
   const handleImport = async (file: File) => {
@@ -228,13 +204,6 @@ function KarkunGenderSection({ gender }: { gender: PersonGender }) {
         onToggleSelection={management.toggleSelection}
         onToggleSelectAll={management.toggleSelectAll}
         onEdit={openEditForm}
-        onToggleStatus={(karkun) =>
-          setKarkunStatus(karkun.id, karkun.status === 'active' ? 'inactive' : 'active')
-        }
-        onUpdateMobile={(karkun) => {
-          setMobileTarget(karkun)
-          setMobileError('')
-        }}
         onAssignmentChange={handleAssignmentChange}
         assignmentErrors={assignmentErrors}
       />
@@ -258,11 +227,7 @@ function KarkunGenderSection({ gender }: { gender: PersonGender }) {
                 gender: editingKarkun.gender,
                 mobile: editingKarkun.mobile,
                 whatsapp: editingKarkun.whatsapp,
-                place: editingKarkun.place,
                 status: editingKarkun.status,
-                notes: editingKarkun.notes,
-                area: editingKarkun.area,
-                address: editingKarkun.address,
                 assignedRuknId: editingKarkun.assignedRuknId,
               }
             : { gender }
@@ -274,19 +239,7 @@ function KarkunGenderSection({ gender }: { gender: PersonGender }) {
           setEditingKarkun(null)
           setFormError('')
         }}
-        onSubmit={handleFormSubmit}
-      />
-
-      <MobileUpdateModal
-        isOpen={Boolean(mobileTarget)}
-        personName={mobileTarget?.name ?? ''}
-        currentMobile={mobileTarget?.mobile ?? ''}
-        error={mobileError}
-        onClose={() => {
-          setMobileTarget(null)
-          setMobileError('')
-        }}
-        onSubmit={handleMobileSubmit}
+        onSubmit={(values) => handleFormSubmit(values)}
       />
 
       <ConfirmDialog
@@ -302,7 +255,7 @@ function KarkunGenderSection({ gender }: { gender: PersonGender }) {
         onConfirm={confirmMobileOverwrite}
         onClose={() => {
           setMobileOwner(null)
-          setPendingMobile('')
+          setPendingFormValues(null)
         }}
       />
 

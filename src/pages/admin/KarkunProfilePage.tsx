@@ -15,11 +15,14 @@ import {
   updateJihRegistration,
 } from '@/services/jihWebPortalService'
 import { InputField } from '@/components/forms/InputField'
+import { PersonContactActions } from '@/components/forms/people/PersonContactActions'
 import { RuknAssignmentSelect } from '@/components/forms/people/RuknAssignmentSelect'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import type { KarkunRegistryRecord, PersonGender, PersonStatus } from '@/types/karkun-registry.types'
+import { DEFAULT_PLACE } from '@/types/people.types'
 import { formatPersonNameForDisplay } from '@/utils/formatPersonDisplay'
+import { MOBILE_INPUT_PLACEHOLDER } from '@/utils/personContactLinks'
 
 const selectClassName =
   'w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text-heading focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20'
@@ -82,7 +85,6 @@ function KarkunProfileForm({ karkun, karkunId }: KarkunProfileFormProps) {
   const [gender, setGender] = useState<PersonGender>(karkun.gender)
   const [mobile, setMobile] = useState(karkun.mobile)
   const [whatsapp, setWhatsapp] = useState(karkun.whatsapp ?? '')
-  const [place, setPlace] = useState(karkun.place)
   const [status, setStatus] = useState<PersonStatus>(karkun.status)
   const [assignedRuknId, setAssignedRuknId] = useState(karkun.assignedRuknId)
   const [weeklyIjtema, setWeeklyIjtema] = useState(initialCompliance.weeklyIjtema)
@@ -122,7 +124,7 @@ function KarkunProfileForm({ karkun, karkunId }: KarkunProfileFormProps) {
       gender,
       mobile,
       whatsapp: whatsapp || undefined,
-      place,
+      place: DEFAULT_PLACE,
       status,
     })
 
@@ -285,6 +287,7 @@ function KarkunProfileForm({ karkun, karkunId }: KarkunProfileFormProps) {
             value={mobile}
             onValueChange={setMobile}
             className={compactInputClass}
+            placeholder={MOBILE_INPUT_PLACEHOLDER}
             required
           />
 
@@ -295,17 +298,11 @@ function KarkunProfileForm({ karkun, karkunId }: KarkunProfileFormProps) {
             value={whatsapp}
             onValueChange={setWhatsapp}
             className={compactInputClass}
-          />
-
-          <InputField
-            id="profile-place"
-            label="Place"
-            value={place}
-            onValueChange={setPlace}
-            className={compactInputClass}
-            required
+            placeholder={MOBILE_INPUT_PLACEHOLDER}
           />
         </div>
+
+        <PersonContactActions mobile={mobile} whatsapp={whatsapp} />
       </section>
 
       <section className="rounded-(--radius-card) border border-border bg-surface p-4 shadow-card">

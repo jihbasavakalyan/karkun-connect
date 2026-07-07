@@ -4,6 +4,7 @@ import { TextAreaField } from '@/components/forms/TextAreaField'
 import { Modal } from '@/components/common/Modal'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
+import { MOBILE_INPUT_PLACEHOLDER } from '@/utils/personContactLinks'
 
 type AddKarkunModalProps = {
   isOpen: boolean
@@ -52,7 +53,7 @@ export function AddKarkunModal({ isOpen, onClose }: AddKarkunModalProps) {
           type="tel"
           value={mobile}
           onValueChange={setMobile}
-          placeholder="+92 300 0000000"
+          placeholder={MOBILE_INPUT_PLACEHOLDER}
           required
         />
         <InputField

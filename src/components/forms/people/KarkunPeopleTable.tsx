@@ -21,8 +21,6 @@ type KarkunPeopleTableProps = {
   onToggleSelection: (id: string) => void
   onToggleSelectAll: () => void
   onEdit: (karkun: KarkunRegistryRecord) => void
-  onToggleStatus: (karkun: KarkunRegistryRecord) => void
-  onUpdateMobile: (karkun: KarkunRegistryRecord) => void
   onAssignmentChange: (karkun: KarkunRegistryRecord, ruknId: string) => void
   assignmentErrors?: Record<string, string>
 }
@@ -73,8 +71,6 @@ export function KarkunPeopleTable({
   onToggleSelection,
   onToggleSelectAll,
   onEdit,
-  onToggleStatus,
-  onUpdateMobile,
   onAssignmentChange,
   assignmentErrors = {},
 }: KarkunPeopleTableProps) {
@@ -170,29 +166,13 @@ export function KarkunPeopleTable({
                   <StatusBadge status={karkun.status} />
                 </td>
                 <td className={PEOPLE_TABLE_CELL_CLASS}>
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      className="text-sm font-medium text-primary hover:underline"
-                      onClick={() => onEdit(karkun)}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      className="text-sm font-medium text-primary hover:underline"
-                      onClick={() => onUpdateMobile(karkun)}
-                    >
-                      Mobile
-                    </button>
-                    <button
-                      type="button"
-                      className="text-sm font-medium text-primary hover:underline"
-                      onClick={() => onToggleStatus(karkun)}
-                    >
-                      {karkun.status === 'active' ? 'Deactivate' : 'Activate'}
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    className="text-sm font-medium text-primary hover:underline"
+                    onClick={() => onEdit(karkun)}
+                  >
+                    Edit
+                  </button>
                 </td>
               </tr>
             ))}
@@ -241,23 +221,9 @@ export function KarkunPeopleTable({
                     <dd className="font-medium">{karkun.assignmentStatus}</dd>
                   </div>
                 </dl>
-                <div className="mt-3 flex flex-wrap gap-3 text-sm">
+                <div className="mt-3 text-sm">
                   <button type="button" className="font-medium text-primary" onClick={() => onEdit(karkun)}>
                     Edit
-                  </button>
-                  <button
-                    type="button"
-                    className="font-medium text-primary"
-                    onClick={() => onUpdateMobile(karkun)}
-                  >
-                    Mobile
-                  </button>
-                  <button
-                    type="button"
-                    className="font-medium text-primary"
-                    onClick={() => onToggleStatus(karkun)}
-                  >
-                    {karkun.status === 'active' ? 'Deactivate' : 'Activate'}
                   </button>
                 </div>
               </div>

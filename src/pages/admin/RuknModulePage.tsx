@@ -6,7 +6,6 @@ import {
   bulkSetRuknStatus,
   createRukn,
   importRuknsFromRows,
-  setRuknStatus,
   updateRukn,
 } from '@/lib/peopleStore'
 import {
@@ -23,7 +22,6 @@ import {
   ConfirmDialog,
   ImportExportToolbar,
   ImportSummaryModal,
-  MobileUpdateModal,
   PeopleFiltersBar,
   PeoplePagination,
   PersonFormModal,
@@ -42,9 +40,7 @@ export function RuknModulePage() {
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingRukn, setEditingRukn] = useState<Rukn | null>(null)
   const [formError, setFormError] = useState('')
-  const [mobileTarget, setMobileTarget] = useState<Rukn | null>(null)
-  const [mobileError, setMobileError] = useState('')
-  const [pendingMobile, setPendingMobile] = useState('')
+  const [pendingFormValues, setPendingFormValues] = useState<PersonFormValues | null>(null)
   const [mobileOwner, setMobileOwner] = useState<MobileLookupResult | null>(null)
   const [importSummary, setImportSummary] = useState<ImportSummary | null>(null)
 
@@ -65,14 +61,19 @@ export function RuknModulePage() {
     setIsFormOpen(true)
   }
 
-  const handleFormSubmit = (values: PersonFormValues) => {
+  const handleFormSubmit = (
+    values: PersonFormValues,
+    options?: { confirmMobileOverwrite?: boolean },
+  ) => {
     const result = editingRukn
-      ? updateRukn(editingRukn.id, values)
+      ? updateRukn(editingRukn.id, values, 'Administrator', options)
       : createRukn(values)
 
     if (!result.success) {
       if (result.needsMobileConfirm && result.existingOwner) {
-        setFormError(result.error ?? 'Mobile number already in use.')
+        setPendingFormValues(values)
+        setMobileOwner(result.existingOwner)
+        setFormError('')
         return
       }
       setFormError(result.error ?? 'Unable to save Rukn.')
@@ -82,48 +83,15 @@ export function RuknModulePage() {
     setIsFormOpen(false)
     setEditingRukn(null)
     setFormError('')
-  }
-
-  const handleMobileSubmit = (mobile: string) => {
-    if (!mobileTarget) return
-
-    const result = updateRukn(mobileTarget.id, { mobile })
-    if (!result.success && result.needsMobileConfirm && result.existingOwner) {
-      setPendingMobile(mobile)
-      setMobileOwner(result.existingOwner)
-      setMobileError('')
-      return
-    }
-
-    if (!result.success) {
-      setMobileError(result.error ?? 'Unable to update mobile.')
-      return
-    }
-
-    setMobileTarget(null)
-    setMobileError('')
+    setPendingFormValues(null)
+    setMobileOwner(null)
   }
 
   const confirmMobileOverwrite = () => {
-    if (!mobileTarget || !pendingMobile) return
-    const result = updateRukn(
-      mobileTarget.id,
-      { mobile: pendingMobile },
-      'Administrator',
-      { confirmMobileOverwrite: true },
-    )
-    if (!result.success) {
-      setMobileError(result.error ?? 'Unable to update mobile.')
+    if (!pendingFormValues) {
       return
     }
-    setMobileOwner(null)
-    setPendingMobile('')
-    setMobileTarget(null)
-    setMobileError('')
-  }
-
-  const handleToggleStatus = (rukn: Rukn) => {
-    setRuknStatus(rukn.id, rukn.status === 'active' ? 'inactive' : 'active')
+    handleFormSubmit(pendingFormValues, { confirmMobileOverwrite: true })
   }
 
   const handleImport = async (file: File) => {
@@ -208,11 +176,6 @@ export function RuknModulePage() {
             onToggleSelection={management.toggleSelection}
             onToggleSelectAll={management.toggleSelectAll}
             onEdit={openEditForm}
-            onToggleStatus={handleToggleStatus}
-            onUpdateMobile={(rukn) => {
-              setMobileTarget(rukn)
-              setMobileError('')
-            }}
           />
 
           <PeoplePagination
@@ -249,9 +212,7 @@ export function RuknModulePage() {
                 gender: editingRukn.gender,
                 mobile: editingRukn.mobile,
                 whatsapp: editingRukn.whatsapp,
-                place: editingRukn.place,
                 status: editingRukn.status,
-                notes: editingRukn.notes,
               }
             : undefined
         }
@@ -261,19 +222,7 @@ export function RuknModulePage() {
           setEditingRukn(null)
           setFormError('')
         }}
-        onSubmit={handleFormSubmit}
-      />
-
-      <MobileUpdateModal
-        isOpen={Boolean(mobileTarget)}
-        personName={mobileTarget?.name ?? ''}
-        currentMobile={mobileTarget?.mobile ?? ''}
-        error={mobileError}
-        onClose={() => {
-          setMobileTarget(null)
-          setMobileError('')
-        }}
-        onSubmit={handleMobileSubmit}
+        onSubmit={(values) => handleFormSubmit(values)}
       />
 
       <ConfirmDialog
@@ -290,7 +239,7 @@ export function RuknModulePage() {
         onConfirm={confirmMobileOverwrite}
         onClose={() => {
           setMobileOwner(null)
-          setPendingMobile('')
+          setPendingFormValues(null)
         }}
       />
 
