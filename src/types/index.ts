@@ -50,6 +50,13 @@ export type {
   JihMonthlyReportingStatus,
 } from './jihWebPortal'
 
+export type {
+  BaitulMaalRecord,
+  BaitulMaalDashboardMetrics,
+  BaitulMaalKarkunSummary,
+  BaitulMaalStatus,
+} from './baitulMaal'
+
 export {
   JIH_APP_REGISTRATION_FORM_OPTIONS,
   createInitialAnnexure1FormState,

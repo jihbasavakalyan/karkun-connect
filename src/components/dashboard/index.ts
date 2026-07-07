@@ -10,6 +10,7 @@ export { CommandCenterAssignmentMetrics } from './CommandCenterAssignmentMetrics
 export { CommandCenterActiveCampaign } from './CommandCenterActiveCampaign'
 export { CommandCenterTodaysWork } from './CommandCenterTodaysWork'
 export { CommandCenterQuickActions } from './CommandCenterQuickActions'
+export { CommandCenterBaitulMaalMetrics } from './CommandCenterBaitulMaalMetrics'
 export { CommandCenterJihWebPortalMetrics } from './CommandCenterJihWebPortalMetrics'
 export { RecentActivityPanel } from './RecentActivityPanel'
 export {

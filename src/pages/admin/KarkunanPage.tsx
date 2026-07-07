@@ -31,6 +31,8 @@ import {
 } from '@/components/forms/people'
 import type { PersonFormValues } from '@/components/forms/people'
 import { AssignKarkunModal } from '@/components/forms/assignment'
+import { BaitulMaalBulkUpdateModal } from '@/components/forms/baitulMaal/BaitulMaalBulkUpdateModal'
+import type { BaitulMaalStatus } from '@/types/baitulMaal'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 
@@ -49,6 +51,7 @@ function KarkunGenderSection({ gender }: { gender: PersonGender }) {
   const [pendingMobile, setPendingMobile] = useState('')
   const [mobileOwner, setMobileOwner] = useState<MobileLookupResult | null>(null)
   const [importSummary, setImportSummary] = useState<ImportSummary | null>(null)
+  const [bulkBaitulMaalStatus, setBulkBaitulMaalStatus] = useState<BaitulMaalStatus | null>(null)
 
   const openAddForm = () => {
     setEditingKarkun(null)
@@ -151,6 +154,7 @@ function KarkunGenderSection({ gender }: { gender: PersonGender }) {
         onClear={management.clearFilters}
         showAssignmentFilters
         showJihPortalFilters
+        showBaitulMaalFilters
       />
 
       <BulkActionsBar
@@ -169,6 +173,8 @@ function KarkunGenderSection({ gender }: { gender: PersonGender }) {
           }
           management.clearSelection()
         }}
+        onMarkBaitulMaalPaid={() => setBulkBaitulMaalStatus('Paid')}
+        onMarkBaitulMaalPending={() => setBulkBaitulMaalStatus('Pending')}
         onClearSelection={management.clearSelection}
       />
 
@@ -271,6 +277,15 @@ function KarkunGenderSection({ gender }: { gender: PersonGender }) {
         isOpen={isAssignModalOpen}
         genderFilter={gender}
         onClose={() => setIsAssignModalOpen(false)}
+      />
+
+      <BaitulMaalBulkUpdateModal
+        isOpen={bulkBaitulMaalStatus !== null}
+        selectedCount={management.selectedIds.length}
+        status={bulkBaitulMaalStatus ?? 'Pending'}
+        karkunIds={management.selectedIds}
+        onClose={() => setBulkBaitulMaalStatus(null)}
+        onComplete={() => management.clearSelection()}
       />
     </div>
   )

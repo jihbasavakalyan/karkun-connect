@@ -15,6 +15,9 @@ export type PeopleFilters = {
   assignmentStatus: '' | 'Assigned' | 'Unassigned'
   jihPortalRegistration: '' | 'Not Registered' | 'Registered'
   jihPortalReporting: '' | 'Pending' | 'Submitted'
+  baitulMaalStatus: '' | 'Pending' | 'Paid'
+  baitulMaalMonth: string
+  baitulMaalYear: string
 }
 
 export type PeopleAuditAction =

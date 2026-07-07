@@ -6,9 +6,11 @@ import {
 } from '@/services/annexure1Service'
 import { getFollowUpDashboardMetrics } from '@/services/followUpService'
 import { getAllJihWebPortalSummaries } from '@/services/jihWebPortalService'
+import { getAllBaitulMaalSummaries } from '@/services/baitulMaalService'
 import { subscribeToAnnexure1Store } from '@/stores/annexure1Store'
 import { subscribeToFollowUpStore } from '@/stores/followUpStore'
 import { subscribeToJihWebPortalStore } from '@/stores/jihWebPortalStore'
+import { subscribeToBaitulMaalStore } from '@/stores/baitulMaalStore'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import { Link } from 'react-router-dom'
 import { adminKarkunProfilePath } from '@/constants/routes'
@@ -20,10 +22,12 @@ export function ReviewReportsModulePage() {
     const unsubAnnexure = subscribeToAnnexure1Store(() => setVersion((value) => value + 1))
     const unsubFollowUp = subscribeToFollowUpStore(() => setVersion((value) => value + 1))
     const unsubJih = subscribeToJihWebPortalStore(() => setVersion((value) => value + 1))
+    const unsubBaitulMaal = subscribeToBaitulMaalStore(() => setVersion((value) => value + 1))
     return () => {
       unsubAnnexure()
       unsubFollowUp()
       unsubJih()
+      unsubBaitulMaal()
     }
   }, [])
 
@@ -32,6 +36,7 @@ export function ReviewReportsModulePage() {
   const performanceMetrics = getPerformanceMetricsFromAnnexure1()
   const followUpMetrics = getFollowUpDashboardMetrics()
   const jihPortalSummaries = getAllJihWebPortalSummaries()
+  const baitulMaalSummaries = getAllBaitulMaalSummaries()
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
@@ -139,6 +144,48 @@ export function ReviewReportsModulePage() {
                       ? summary.monthlyStatus
                       : 'Not applicable'}
                   </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className="rounded-(--radius-card) border border-border bg-surface p-6 shadow-card">
+        <h2 className="text-lg font-semibold text-text-heading">Monthly Bait-ul-Maal Compliance</h2>
+        <p className="mt-1 text-sm text-secondary">
+          Current month payment status for each Karkun.
+        </p>
+        <div className="mt-4 overflow-x-auto">
+          <table className="min-w-full text-left text-sm">
+            <thead>
+              <tr className="border-b border-border text-secondary">
+                <th className="px-3 py-2 font-medium">Karkun</th>
+                <th className="px-3 py-2 font-medium">Month</th>
+                <th className="px-3 py-2 font-medium">Year</th>
+                <th className="px-3 py-2 font-medium">Status</th>
+                <th className="px-3 py-2 font-medium">Payment Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {baitulMaalSummaries.map((summary) => (
+                <tr key={summary.karkunId} className="border-b border-border/60">
+                  <td className="px-3 py-3">
+                    <Link
+                      to={adminKarkunProfilePath(summary.karkunId)}
+                      className="font-medium text-primary hover:underline"
+                    >
+                      {summary.karkunName}
+                    </Link>
+                  </td>
+                  <td className="px-3 py-3 text-text-heading">
+                    {new Date(summary.year, summary.month - 1, 1).toLocaleDateString('en-GB', {
+                      month: 'long',
+                    })}
+                  </td>
+                  <td className="px-3 py-3 text-text-heading">{summary.year}</td>
+                  <td className="px-3 py-3 text-text-heading">{summary.status}</td>
+                  <td className="px-3 py-3 text-text-heading">{summary.paymentDate ?? '—'}</td>
                 </tr>
               ))}
             </tbody>

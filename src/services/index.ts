@@ -52,3 +52,16 @@ export {
   matchesJihPortalFilters,
   getCurrentMonthKey,
 } from './jihWebPortalService'
+
+export {
+  initializeBaitulMaalCompliance,
+  ensureBaitulMaalRecord,
+  getCurrentBaitulMaalStatus,
+  getBaitulMaalStatusForKarkun,
+  updateBaitulMaal,
+  bulkUpdateBaitulMaal,
+  getBaitulMaalDashboardMetrics,
+  getAllBaitulMaalSummaries,
+  matchesBaitulMaalFilters,
+  getFilterMonthKey,
+} from './baitulMaalService'

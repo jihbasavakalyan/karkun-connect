@@ -8,6 +8,11 @@ import {
   JIH_PORTAL_REGISTRATION_FILTER_OPTIONS,
   JIH_PORTAL_REPORTING_FILTER_OPTIONS,
 } from '@/types/jihWebPortal'
+import {
+  BAITUL_MAAL_MONTH_FILTER_OPTIONS,
+  BAITUL_MAAL_STATUS_FILTER_OPTIONS,
+  getBaitulMaalYearFilterOptions,
+} from '@/types/baitulMaal'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 
 type PeopleFiltersBarProps = {
@@ -16,6 +21,7 @@ type PeopleFiltersBarProps = {
   onClear: () => void
   showAssignmentFilters?: boolean
   showJihPortalFilters?: boolean
+  showBaitulMaalFilters?: boolean
 }
 
 const selectClassName =
@@ -27,7 +33,9 @@ export function PeopleFiltersBar({
   onClear,
   showAssignmentFilters = false,
   showJihPortalFilters = false,
+  showBaitulMaalFilters = false,
 }: PeopleFiltersBarProps) {
+  const yearFilterOptions = getBaitulMaalYearFilterOptions()
   return (
     <div className="rounded-(--radius-card) border border-border bg-surface p-4 shadow-card">
       <div className="mb-4 flex items-center justify-between gap-3">
@@ -145,6 +153,73 @@ export function PeopleFiltersBar({
                 className={selectClassName}
               >
                 {JIH_PORTAL_REPORTING_FILTER_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </>
+        )}
+
+        {showBaitulMaalFilters && (
+          <>
+            <div className="flex flex-col gap-2">
+              <label
+                htmlFor="filter-baitul-maal-status"
+                className="text-sm font-medium text-secondary"
+              >
+                Bait-ul-Maal Status
+              </label>
+              <select
+                id="filter-baitul-maal-status"
+                value={filters.baitulMaalStatus}
+                onChange={(event) => onFilterChange('baitulMaalStatus', event.target.value)}
+                className={selectClassName}
+              >
+                {BAITUL_MAAL_STATUS_FILTER_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label
+                htmlFor="filter-baitul-maal-month"
+                className="text-sm font-medium text-secondary"
+              >
+                Bait-ul-Maal Month
+              </label>
+              <select
+                id="filter-baitul-maal-month"
+                value={filters.baitulMaalMonth}
+                onChange={(event) => onFilterChange('baitulMaalMonth', event.target.value)}
+                className={selectClassName}
+              >
+                {BAITUL_MAAL_MONTH_FILTER_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label
+                htmlFor="filter-baitul-maal-year"
+                className="text-sm font-medium text-secondary"
+              >
+                Bait-ul-Maal Year
+              </label>
+              <select
+                id="filter-baitul-maal-year"
+                value={filters.baitulMaalYear}
+                onChange={(event) => onFilterChange('baitulMaalYear', event.target.value)}
+                className={selectClassName}
+              >
+                {yearFilterOptions.map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}
                   </option>

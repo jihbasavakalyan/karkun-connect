@@ -12,6 +12,9 @@ const initialFilters: PeopleFilters = {
   assignmentStatus: '',
   jihPortalRegistration: '',
   jihPortalReporting: '',
+  baitulMaalStatus: '',
+  baitulMaalMonth: '',
+  baitulMaalYear: '',
 }
 
 function matchesRuknFilters(rukn: Rukn, filters: PeopleFilters): boolean {

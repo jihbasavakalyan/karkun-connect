@@ -5,20 +5,12 @@ import {
   getRegistrationForKarkun,
 } from '@/services/jihWebPortalService'
 import { subscribeToJihWebPortalStore } from '@/stores/jihWebPortalStore'
+import { ComplianceProfileField } from '@/components/forms/compliance/ComplianceProfileField'
 import { JihWebPortalEditModal } from '@/components/forms/jih/JihWebPortalEditModal'
 
 type JihWebPortalCardProps = {
   karkunId: string
   karkunName: string
-}
-
-function ProfileField({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-lg border border-border bg-surface-muted px-4 py-3">
-      <dt className="text-sm text-secondary">{label}</dt>
-      <dd className="mt-1 font-medium text-text-heading">{value}</dd>
-    </div>
-  )
 }
 
 export function JihWebPortalCard({ karkunId, karkunName }: JihWebPortalCardProps) {
@@ -34,10 +26,10 @@ export function JihWebPortalCard({ karkunId, karkunName }: JihWebPortalCardProps
 
   return (
     <>
-      <section className="rounded-(--radius-card) border border-border bg-surface p-6 shadow-card">
+      <div className="rounded-lg border border-border bg-surface-muted p-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-text-heading">JIH Web Portal</h2>
+            <h3 className="text-base font-semibold text-text-heading">JIH Web Portal</h3>
             <p className="mt-1 text-sm text-secondary">
               Portal registration and monthly report compliance.
             </p>
@@ -49,43 +41,46 @@ export function JihWebPortalCard({ karkunId, karkunName }: JihWebPortalCardProps
 
         <div className="mt-6 space-y-6">
           <div>
-            <h3 className="text-sm font-semibold text-text-heading">Registration</h3>
+            <h4 className="text-sm font-semibold text-text-heading">Registration</h4>
             <dl className="mt-3 grid gap-4 sm:grid-cols-2">
-              <ProfileField label="Status" value={registration.status} />
-              <ProfileField label="Registration Number" value={registration.registrationNumber ?? '—'} />
-              <ProfileField
+              <ComplianceProfileField label="Status" value={registration.status} />
+              <ComplianceProfileField
+                label="Registration Number"
+                value={registration.registrationNumber ?? '—'}
+              />
+              <ComplianceProfileField
                 label="Registration Date"
                 value={registration.registrationDate ?? '—'}
               />
               {registration.remarks && (
-                <ProfileField label="Remarks" value={registration.remarks} />
+                <ComplianceProfileField label="Remarks" value={registration.remarks} />
               )}
             </dl>
           </div>
 
           <div>
-            <h3 className="text-sm font-semibold text-text-heading">Monthly Reporting</h3>
+            <h4 className="text-sm font-semibold text-text-heading">Monthly Reporting</h4>
             <dl className="mt-3 grid gap-4 sm:grid-cols-2">
-              <ProfileField label="Current Month" value={monthly.monthLabel} />
-              <ProfileField
+              <ComplianceProfileField label="Current Month" value={monthly.monthLabel} />
+              <ComplianceProfileField
                 label="Status"
                 value={
                   registration.status === 'Registered' ? monthly.status : 'Not applicable'
                 }
               />
-              <ProfileField
+              <ComplianceProfileField
                 label="Submission Date"
                 value={
                   registration.status === 'Registered' ? (monthly.submissionDate ?? '—') : '—'
                 }
               />
               {monthly.remarks && (
-                <ProfileField label="Remarks" value={monthly.remarks} />
+                <ComplianceProfileField label="Remarks" value={monthly.remarks} />
               )}
             </dl>
           </div>
         </div>
-      </section>
+      </div>
 
       <JihWebPortalEditModal
         isOpen={isEditing}

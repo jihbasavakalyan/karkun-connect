@@ -15,6 +15,8 @@ import { useEffect, useState } from 'react'
 import { AssignmentHistoryTimeline } from '@/components/forms/assignment/AssignmentHistoryTimeline'
 import { CampaignStatusBadge } from '@/components/forms/karkunan/CampaignStatusBadge'
 import { JihWebPortalCard } from '@/components/forms/jih/JihWebPortalCard'
+import { BaitulMaalCard } from '@/components/forms/baitulMaal/BaitulMaalCard'
+import { ComplianceSection } from '@/components/forms/compliance/ComplianceSection'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 
 function ProfileField({ label, value }: { label: string; value: string }) {
@@ -108,7 +110,10 @@ export function KarkunProfilePage() {
         </div>
       </section>
 
-      <JihWebPortalCard karkunId={karkun.id} karkunName={karkun.name} />
+      <ComplianceSection>
+        <JihWebPortalCard karkunId={karkun.id} karkunName={karkun.name} />
+        <BaitulMaalCard karkunId={karkun.id} karkunName={karkun.name} />
+      </ComplianceSection>
 
       <section className="rounded-(--radius-card) border border-border bg-surface p-6 shadow-card">
         <h2 className="text-lg font-semibold text-text-heading">Next Follow-up</h2>
