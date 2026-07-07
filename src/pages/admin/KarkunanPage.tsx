@@ -153,14 +153,14 @@ function KarkunGenderSection({
     handleFormSubmit(pendingFormValues, { confirmMobileOverwrite: true })
   }
 
-  const handleAssignmentChange = (karkun: KarkunRegistryRecord, ruknId: string) => {
+  const handleAssignmentChange = (karkun: KarkunRegistryRecord, ruknId: string): boolean => {
     const result = changeKarkunRuknAssignment(karkun.id, ruknId)
     if (!result.success) {
       setAssignmentErrors((current) => ({
         ...current,
         [karkun.id]: result.error ?? 'Assignment failed.',
       }))
-      return
+      return false
     }
 
     setAssignmentErrors((current) => {
@@ -171,6 +171,7 @@ function KarkunGenderSection({
       delete next[karkun.id]
       return next
     })
+    return true
   }
 
   const handleImport = useCallback(async (file: File) => {

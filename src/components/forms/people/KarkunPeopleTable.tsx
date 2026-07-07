@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
 import { adminKarkunProfilePath } from '@/constants/routes'
@@ -5,6 +6,8 @@ import type { PersonStatus } from '@/types/karkun-registry.types'
 import { formatPersonStatus, type PeopleSortField } from '@/types/people.types'
 import { formatPersonNameForDisplay } from '@/utils/formatPersonDisplay'
 import { RuknAssignmentSelect } from '@/components/forms/people/RuknAssignmentSelect'
+import { PrimaryButton } from '@/components/ui/PrimaryButton'
+import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import {
   PEOPLE_TABLE_CELL_CLASS,
   PEOPLE_TABLE_MOBILE_CLASS,
@@ -21,7 +24,7 @@ type KarkunPeopleTableProps = {
   onToggleSelection: (id: string) => void
   onToggleSelectAll: () => void
   onEdit: (karkun: KarkunRegistryRecord) => void
-  onAssignmentChange: (karkun: KarkunRegistryRecord, ruknId: string) => void
+  onAssignmentChange: (karkun: KarkunRegistryRecord, ruknId: string) => boolean
   assignmentErrors?: Record<string, string>
 }
 
@@ -74,6 +77,36 @@ export function KarkunPeopleTable({
   onAssignmentChange,
   assignmentErrors = {},
 }: KarkunPeopleTableProps) {
+  const [pendingRukns, setPendingRukns] = useState<Record<string, string>>({})
+
+  const pendingValueFor = (karkun: KarkunRegistryRecord) =>
+    pendingRukns[karkun.id] ?? karkun.assignedRuknId
+
+  const hasPendingChange = (karkun: KarkunRegistryRecord) =>
+    pendingValueFor(karkun) !== karkun.assignedRuknId
+
+  const handlePendingChange = (karkun: KarkunRegistryRecord, ruknId: string) => {
+    setPendingRukns((current) => ({ ...current, [karkun.id]: ruknId }))
+  }
+
+  const clearPending = (karkunId: string) => {
+    setPendingRukns((current) => {
+      if (!(karkunId in current)) {
+        return current
+      }
+      const next = { ...current }
+      delete next[karkunId]
+      return next
+    })
+  }
+
+  const handleSaveAssignment = (karkun: KarkunRegistryRecord) => {
+    const saved = onAssignmentChange(karkun, pendingValueFor(karkun))
+    if (saved) {
+      clearPending(karkun.id)
+    }
+  }
+
   if (records.length === 0) {
     return (
       <div className="rounded-(--radius-card) border border-border bg-surface p-8 text-center shadow-card">
@@ -153,13 +186,33 @@ export function KarkunPeopleTable({
                   {karkun.mobile}
                 </td>
                 <td className={PEOPLE_TABLE_CELL_CLASS}>
-                  <RuknAssignmentSelect
-                    karkunId={karkun.id}
-                    value={karkun.assignedRuknId}
-                    compact
-                    error={assignmentErrors[karkun.id]}
-                    onChange={(ruknId) => onAssignmentChange(karkun, ruknId)}
-                  />
+                  <div className="flex flex-col gap-1.5">
+                    <RuknAssignmentSelect
+                      karkunId={karkun.id}
+                      value={pendingValueFor(karkun)}
+                      compact
+                      error={assignmentErrors[karkun.id]}
+                      onChange={(ruknId) => handlePendingChange(karkun, ruknId)}
+                    />
+                    {hasPendingChange(karkun) && (
+                      <div className="flex items-center gap-1.5">
+                        <PrimaryButton
+                          type="button"
+                          className="px-2.5 py-1 text-xs"
+                          onClick={() => handleSaveAssignment(karkun)}
+                        >
+                          Save
+                        </PrimaryButton>
+                        <SecondaryButton
+                          type="button"
+                          className="px-2.5 py-1 text-xs"
+                          onClick={() => clearPending(karkun.id)}
+                        >
+                          Cancel
+                        </SecondaryButton>
+                      </div>
+                    )}
+                  </div>
                 </td>
                 <td className={`${PEOPLE_TABLE_CELL_CLASS} text-secondary`}>{karkun.assignmentStatus}</td>
                 <td className={PEOPLE_TABLE_CELL_CLASS}>
@@ -207,13 +260,31 @@ export function KarkunPeopleTable({
                 <dl className="mt-3 space-y-1 text-sm">
                   <div className="flex flex-col gap-1">
                     <dt className="text-secondary">Assigned Rukn</dt>
-                    <dd>
+                    <dd className="flex flex-col gap-2">
                       <RuknAssignmentSelect
                         karkunId={karkun.id}
-                        value={karkun.assignedRuknId}
+                        value={pendingValueFor(karkun)}
                         error={assignmentErrors[karkun.id]}
-                        onChange={(ruknId) => onAssignmentChange(karkun, ruknId)}
+                        onChange={(ruknId) => handlePendingChange(karkun, ruknId)}
                       />
+                      {hasPendingChange(karkun) && (
+                        <div className="flex items-center gap-2">
+                          <PrimaryButton
+                            type="button"
+                            className="px-3 py-1.5 text-sm"
+                            onClick={() => handleSaveAssignment(karkun)}
+                          >
+                            Save
+                          </PrimaryButton>
+                          <SecondaryButton
+                            type="button"
+                            className="px-3 py-1.5 text-sm"
+                            onClick={() => clearPending(karkun.id)}
+                          >
+                            Cancel
+                          </SecondaryButton>
+                        </div>
+                      )}
                     </dd>
                   </div>
                   <div className="flex justify-between gap-3">
