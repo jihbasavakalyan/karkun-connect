@@ -8,6 +8,7 @@ import { getRuknById } from '@/data/ruknMaster'
 import { logPeopleAudit } from '@/lib/peopleAuditLog'
 import { getAllAssignments } from '@/stores/assignmentStore'
 import { logActivity } from '@/stores/activityLogStore'
+import { createCommitment, recordTimelineEvent } from '@/services/guidanceService'
 import {
   appendSubmittedForm,
   getSubmissionPeriodCounts,
@@ -147,6 +148,31 @@ export function submitAnnexure1(
     assignmentId: record.assignmentId,
     actor: context.actorRole === 'rukn' ? 'Rukn' : 'Administrator',
   })
+
+  recordTimelineEvent({
+    karkunId: context.karkunId,
+    stageId: 'first-meeting',
+    title: 'First Meeting',
+    description: form.discussionSummary || 'Visit recorded',
+    occurredAt: record.submittedAt,
+    source: 'visit',
+  })
+
+  if (form.commitmentMade && form.commitmentDetails.trim()) {
+    const targetDate =
+      form.followUpRequired === 'yes' && form.followUpDate
+        ? form.followUpDate
+        : form.visitDate
+    createCommitment({
+      karkunId: context.karkunId,
+      ruknId: assignment.ruknId,
+      assignmentId: assignment.assignmentId,
+      text: form.commitmentDetails.trim(),
+      targetDate,
+      createdBy: context.actorRole === 'rukn' ? 'Rukn' : 'Administrator',
+      source: 'visit',
+    })
+  }
 
   return { success: true, submission: record }
 }

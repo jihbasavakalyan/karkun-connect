@@ -10,6 +10,7 @@ import {
   CommandCenterRecentActivity,
   CommandCenterTodaysWork,
 } from '@/components/command-center'
+import { AdminCoachingPanel } from '@/components/guidance'
 import { useCampaignAutomationEngine } from '@/hooks/useCampaignAutomationEngine'
 
 export function AdminHomePage() {
@@ -18,6 +19,8 @@ export function AdminHomePage() {
   return (
     <div className="cc-stack mx-auto max-w-[1680px]">
       <CommandCenterHero hero={snapshot.hero} />
+
+      <AdminCoachingPanel />
 
       <CommandCenterMissionCenter
         kpis={snapshot.kpis}

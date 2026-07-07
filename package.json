@@ -12,6 +12,7 @@
     "verify:auth": "npx vite-node scripts/verify-auth-session.ts",
     "verify:assignments": "npx vite-node scripts/verify-inline-assignment.ts",
     "verify:persistence": "npx vite-node scripts/verify-persistence.ts",
+    "verify:guidance": "npx vite-node scripts/verify-guidance.ts",
     "verify:compliance": "npx vite-node scripts/verify-compliance-module.ts",
     "verify:data": "npx vite-node scripts/verify-data-integrity.ts",
     "verify:automation": "npx vite-node scripts/verify-campaign-automation.ts",

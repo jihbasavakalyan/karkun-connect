@@ -1,63 +1,56 @@
-import { getActiveFollowUpForKarkun } from '@/stores/followUpStore'
 import {
-  getLatestSubmissionForKarkun,
-  hasSubmittedAnnexureForAssignment,
-} from '@/stores/annexure1Store'
-import { getRegistrationForKarkun } from '@/services/jihWebPortalService'
+  JOURNEY_STAGE_LABELS,
+  JOURNEY_STAGE_ORDER,
+  type JourneyStageId,
+} from '@/types/guidance'
+import {
+  isStageComplete,
+  resolveCurrentJourneyStage,
+} from '@/lib/guidance/journeyEngine'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
 
 export type ConnectionProgressStep = {
   id: string
   label: string
   complete: boolean
+  current: boolean
 }
 
 export type ConnectionJourneySnapshot = {
+  currentStage: JourneyStageId
+  stageLabel: string
+  steps: ConnectionProgressStep[]
+  completedCount: number
+  totalCount: number
+  /** @deprecated use currentStage — kept for compatibility */
   hasVisit: boolean
   jihRegistered: boolean
   regularContact: boolean
   isActive: boolean
-  steps: ConnectionProgressStep[]
-  completedCount: number
-  totalCount: number
 }
 
-/**
- * Computes the Connection Progress ladder for a Karkun:
- * Connected → First Meeting → JIH Registration → Regular Contact → Active.
- */
 export function buildConnectionJourney(
   karkun: KarkunRegistryRecord,
   assignmentId: string | undefined,
 ): ConnectionJourneySnapshot {
-  const hasVisit =
-    karkun.visitStatus === 'completed' ||
-    Boolean(getLatestSubmissionForKarkun(karkun.id)) ||
-    (assignmentId ? hasSubmittedAnnexureForAssignment(assignmentId) : false)
+  const { currentStage, stagesCompleted } = resolveCurrentJourneyStage(karkun, assignmentId)
 
-  const portalRegistered = getRegistrationForKarkun(karkun.id).status === 'Registered'
-  const jihRegistered = karkun.jihAppRegistrationStatus === 'Registered' || portalRegistered
-
-  const regularContact =
-    Boolean(getActiveFollowUpForKarkun(karkun.id)) || Boolean(karkun.currentCommitment?.trim())
-
-  const isActive = karkun.campaignStatus === 'active' && jihRegistered && regularContact
-
-  const steps: ConnectionProgressStep[] = [
-    { id: 'connected', label: 'Connected', complete: Boolean(assignmentId) },
-    { id: 'first-meeting', label: 'First Meeting', complete: hasVisit },
-    { id: 'jih-registration', label: 'JIH Registration', complete: jihRegistered },
-    { id: 'regular-contact', label: 'Regular Contact', complete: regularContact },
-    { id: 'active', label: 'Active', complete: isActive },
-  ]
+  const steps: ConnectionProgressStep[] = JOURNEY_STAGE_ORDER.map((stageId) => ({
+    id: stageId,
+    label: JOURNEY_STAGE_LABELS[stageId],
+    complete: stagesCompleted.includes(stageId),
+    current: stageId === currentStage,
+  }))
 
   return {
-    hasVisit,
-    jihRegistered,
-    regularContact,
-    isActive,
+    currentStage,
+    stageLabel: JOURNEY_STAGE_LABELS[currentStage],
     steps,
-    completedCount: steps.filter((step) => step.complete).length,
-    totalCount: steps.length,
+    completedCount: stagesCompleted.length,
+    totalCount: JOURNEY_STAGE_ORDER.length,
+    hasVisit: isStageComplete('first-meeting', karkun, assignmentId),
+    jihRegistered: isStageComplete('jih-registration', karkun, assignmentId),
+    regularContact: isStageComplete('regular-contact', karkun, assignmentId),
+    isActive: isStageComplete('development', karkun, assignmentId),
   }
 }

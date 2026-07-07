@@ -22,16 +22,25 @@ export function ConnectionProgressTracker({ snapshot }: ConnectionProgressTracke
               className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs ${
                 step.complete
                   ? 'border-green-300 bg-green-50 text-green-700'
-                  : 'border-border bg-surface text-secondary'
+                  : step.current
+                    ? 'border-primary bg-primary-muted text-primary'
+                    : 'border-border bg-surface text-secondary'
               }`}
               aria-hidden="true"
             >
-              {step.complete ? '✓' : '○'}
+              {step.complete ? '✓' : step.current ? '●' : '○'}
             </span>
             <span
-              className={step.complete ? 'font-medium text-text-heading' : 'text-secondary'}
+              className={
+                step.complete || step.current
+                  ? 'font-medium text-text-heading'
+                  : 'text-secondary'
+              }
             >
               {step.label}
+              {step.current && !step.complete && (
+                <span className="ml-2 text-xs font-normal text-primary">(current)</span>
+              )}
             </span>
           </li>
         ))}

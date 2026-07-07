@@ -7,6 +7,7 @@ import { clearBaitulMaalStore } from '@/stores/baitulMaalStore'
 import { clearIjtemaAttendanceStore } from '@/stores/ijtemaAttendanceStore'
 import { clearJihWebPortalStore } from '@/stores/jihWebPortalStore'
 import { clearBroadcastListStore } from '@/stores/broadcastListStore'
+import { clearGuidanceStore } from '@/stores/guidanceStore'
 import { clearPeopleRegistryPersistence } from '@/lib/peopleRegistryPersistence'
 import { clearAuthSession } from '@/lib/authSession'
 
@@ -42,6 +43,7 @@ function clearRuntimeStores(): void {
   clearIjtemaAttendanceStore()
   clearJihWebPortalStore()
   clearBroadcastListStore()
+  clearGuidanceStore()
 }
 
 /**

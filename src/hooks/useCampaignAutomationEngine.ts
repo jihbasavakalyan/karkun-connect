@@ -10,6 +10,7 @@ import { subscribeToBaitulMaalStore } from '@/stores/baitulMaalStore'
 import { subscribeToFollowUpStore } from '@/stores/followUpStore'
 import { subscribeToIjtemaAttendanceStore } from '@/stores/ijtemaAttendanceStore'
 import { subscribeToJihWebPortalStore } from '@/stores/jihWebPortalStore'
+import { subscribeToGuidanceStore } from '@/stores/guidanceStore'
 import { subscribeToPeopleStore } from '@/lib/peopleStore'
 import type {
   AdminCommandCenterSnapshot,
@@ -37,6 +38,7 @@ export function useCampaignAutomationEngine(
       subscribeToBaitulMaalStore(bump),
       subscribeToIjtemaAttendanceStore(bump),
       subscribeToActivityLog(bump),
+      subscribeToGuidanceStore(bump),
     ]
 
     return () => {

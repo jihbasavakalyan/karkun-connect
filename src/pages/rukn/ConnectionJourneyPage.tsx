@@ -11,6 +11,14 @@ import { ContactActionBar } from '@/components/common/ContactActionBar'
 import { MessageComposerModal } from '@/components/communication/MessageComposerModal'
 import { SchedulePickerModal } from '@/components/communication/SchedulePickerModal'
 import { ConnectionProgressTracker } from '@/components/rukn/ConnectionProgressTracker'
+import {
+  CommitmentPanel,
+  JourneyTimeline,
+  NextActionCard,
+  RelationshipHealthBadge,
+  SmartSuggestions,
+} from '@/components/guidance'
+import { useGuidance } from '@/hooks/useGuidance'
 import { Annexure1ExecutionForm } from '@/components/forms/annexure1'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
@@ -55,11 +63,13 @@ export function ConnectionJourneyPage() {
   const isAdminContext = location.pathname.startsWith('/admin/annexure-1')
   const backPath = isAdminContext ? ROUTES.ADMIN_ASSIGNMENTS : ROUTES.RUKN_MY_KARKUN
   const { user } = useAuth()
+  const ruknId = user?.ruknId ?? DEFAULT_DEMO_RUKN_ID
   useAssignmentEngine()
   const { sendIndividualMessage } = useCommunication()
+  const { getKarkunGuidance, version: guidanceVersion } = useGuidance(ruknId)
+  const [, setGuidanceTick] = useState(0)
 
   const karkun = karkunId ? getKarkunById(karkunId) : undefined
-  const ruknId = user?.ruknId ?? DEFAULT_DEMO_RUKN_ID
   const actorRole = user?.role === 'administrator' ? 'administrator' : 'rukn'
   const activeAssignment = karkunId
     ? resolveActiveAssignmentForAnnexure1(karkunId, ruknId)
@@ -105,6 +115,8 @@ export function ConnectionJourneyPage() {
   }
 
   const journey = buildConnectionJourney(karkun, activeAssignment.assignmentId)
+  void guidanceVersion
+  const guidance = getKarkunGuidance(karkun.id)
   const latestSubmission = getLatestSubmissionForKarkun(karkun.id)
   const portalRegistration = getRegistrationForKarkun(karkun.id)
   const relationLabel = karkun.gender === 'Female' ? 'Husband' : 'Father'
@@ -215,7 +227,21 @@ export function ConnectionJourneyPage() {
         )}
         <p className="mt-1 text-sm text-secondary">{karkun.area || karkun.place}</p>
         <p className="mt-1 text-xs text-secondary">Connection: {activeAssignment.assignmentNumber}</p>
+        {guidance && (
+          <div className="mt-4">
+            <RelationshipHealthBadge health={guidance.health} showReasons />
+          </div>
+        )}
       </header>
+
+      {guidance && (
+        <section className={sectionClass()} aria-label="Next Action">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-secondary">Next Action</h2>
+          <div className="mt-3">
+            <NextActionCard action={guidance.nextAction} />
+          </div>
+        </section>
+      )}
 
       <section className={sectionClass()} aria-label="Communication">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-secondary">Communication</h2>
@@ -235,7 +261,7 @@ export function ConnectionJourneyPage() {
 
       <section className={sectionClass()} aria-label="Connection Progress">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-secondary">
-          Connection Progress
+          Journey Stage — {journey.stageLabel}
         </h2>
         <div className="mt-4">
           <ConnectionProgressTracker snapshot={journey} />
@@ -337,8 +363,47 @@ export function ConnectionJourneyPage() {
         )}
       </section>
 
-      <section className={sectionClass()} aria-label="Next Action">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-secondary">Next Action</h2>
+      {guidance && (
+        <section className={sectionClass()} aria-label="Commitments">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-secondary">
+            Agreed Next Steps
+          </h2>
+          <div className="mt-4">
+            <CommitmentPanel
+              karkunId={karkun.id}
+              ruknId={activeAssignment.ruknId}
+              assignmentId={activeAssignment.assignmentId}
+              commitments={guidance.pendingCommitments}
+              onChange={() => setGuidanceTick((current) => current + 1)}
+            />
+          </div>
+        </section>
+      )}
+
+      {guidance && guidance.suggestions.length > 0 && (
+        <section className={sectionClass()} aria-label="Suggestions">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-secondary">
+            Smart Suggestions
+          </h2>
+          <div className="mt-4">
+            <SmartSuggestions suggestions={guidance.suggestions} />
+          </div>
+        </section>
+      )}
+
+      {guidance && (
+        <section className={sectionClass()} aria-label="Journey Timeline">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-secondary">
+            Journey Timeline
+          </h2>
+          <div className="mt-4">
+            <JourneyTimeline events={guidance.timeline} />
+          </div>
+        </section>
+      )}
+
+      <section className={sectionClass()} aria-label="Quick Actions">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-secondary">Quick Actions</h2>
         {scheduleNotice && (
           <p className="mt-3 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">
             {scheduleNotice}

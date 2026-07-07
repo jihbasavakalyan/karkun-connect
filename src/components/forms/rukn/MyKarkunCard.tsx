@@ -1,19 +1,18 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ruknVisitPath } from '@/constants/routes'
-import { ExecutionStatusBadge } from '@/components/execution/ExecutionStatusBadge'
 import {
-  getAnnexureActionLabel,
-  getExecutionStatusForAssignment,
-} from '@/lib/executionStatus'
-import { getActiveAssignmentsForKarkun } from '@/stores/assignmentStore'
-import { getNextFollowUpForKarkun } from '@/services/followUpService'
-import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
+  JourneyStageBadge,
+  NextActionCard,
+  RelationshipHealthBadge,
+} from '@/components/guidance'
+import { useGuidance } from '@/hooks/useGuidance'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { ReleaseKarkunModal, ReplaceKarkunModal } from '@/components/forms/assignment'
 import { ContactActionBar } from '@/components/common/ContactActionBar'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
+import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
 
 type MyKarkunCardProps = {
   karkun: KarkunRegistryRecord
@@ -22,17 +21,12 @@ type MyKarkunCardProps = {
 
 export function MyKarkunCard({ karkun, ruknId }: MyKarkunCardProps) {
   const { releaseKarkun } = useAssignmentEngine()
+  const { getKarkunGuidance, version } = useGuidance(ruknId)
   const [releaseOpen, setReleaseOpen] = useState(false)
   const [replaceOpen, setReplaceOpen] = useState(false)
 
-  const assignment = getActiveAssignmentsForKarkun(karkun.id).find(
-    (record) => record.ruknId === ruknId,
-  )
-  const executionStatus = assignment
-    ? getExecutionStatusForAssignment(assignment.assignmentId, karkun.id)
-    : 'Pending'
-  const nextFollowUp = getNextFollowUpForKarkun(karkun.id)
-  const actionLabel = getAnnexureActionLabel(executionStatus)
+  void version
+  const guidance = getKarkunGuidance(karkun.id)
 
   const handleRelease = (reason: Parameters<typeof releaseKarkun>[2]) => {
     releaseKarkun(karkun.id, ruknId, reason)
@@ -42,7 +36,7 @@ export function MyKarkunCard({ karkun, ruknId }: MyKarkunCardProps) {
   return (
     <>
       <article className="rounded-(--radius-card) border border-border bg-surface p-5 shadow-card">
-        <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-start justify-between gap-2">
           <div>
             <h2 className="text-lg font-semibold text-text-heading">{karkun.name}</h2>
             {karkun.fatherHusbandName?.trim() && (
@@ -52,13 +46,14 @@ export function MyKarkunCard({ karkun, ruknId }: MyKarkunCardProps) {
             )}
             <p className="mt-1 text-sm text-secondary">{karkun.area}</p>
           </div>
-          <ExecutionStatusBadge status={executionStatus} />
+          {guidance && <JourneyStageBadge stageId={guidance.currentStage} />}
         </div>
 
-        {nextFollowUp && (
-          <p className="mt-3 text-sm text-secondary">
-            Next follow-up: {nextFollowUp.formattedDate} · {nextFollowUp.purpose}
-          </p>
+        {guidance && (
+          <div className="mt-3 space-y-3">
+            <RelationshipHealthBadge health={guidance.health} showReasons />
+            <NextActionCard action={guidance.nextAction} compact />
+          </div>
         )}
 
         {karkun.mobile.trim() && (
@@ -67,6 +62,7 @@ export function MyKarkunCard({ karkun, ruknId }: MyKarkunCardProps) {
               name={karkun.name}
               mobile={karkun.mobile}
               whatsapp={karkun.whatsapp}
+              viewDetailsHref={ruknVisitPath(karkun.id)}
               size="sm"
             />
           </div>
@@ -75,7 +71,7 @@ export function MyKarkunCard({ karkun, ruknId }: MyKarkunCardProps) {
         <div className="mt-4 grid gap-2">
           <Link to={ruknVisitPath(karkun.id)}>
             <PrimaryButton type="button" fullWidth>
-              {actionLabel}
+              Open Connection Journey
             </PrimaryButton>
           </Link>
           <div className="grid grid-cols-2 gap-2">
