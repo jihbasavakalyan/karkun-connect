@@ -1,5 +1,3 @@
-import { Link } from 'react-router-dom'
-import { ROUTES, ruknVisitPath } from '@/constants/routes'
 import type { RuknMission } from '@/constants/mockMissions'
 
 type CurrentVisitPanelProps = {
@@ -85,30 +83,5 @@ export function CompletedWorkPanel({ items }: CompletedWorkPanelProps) {
         ))}
       </ul>
     </section>
-  )
-}
-
-type ContinueMissionButtonProps = {
-  ruknId: string
-  pendingKarkunId?: string
-}
-
-export function ContinueMissionButton({ pendingKarkunId }: ContinueMissionButtonProps) {
-  if (!pendingKarkunId) {
-    return (
-      <Link to={ROUTES.RUKN_MY_KARKUN} className="mt-4 inline-block w-full">
-        <span className="block w-full rounded-lg border border-border px-4 py-3 text-center text-sm font-medium text-secondary">
-          View My Karkun
-        </span>
-      </Link>
-    )
-  }
-
-  return (
-    <Link to={ruknVisitPath(pendingKarkunId)} className="mt-4 block">
-      <span className="block w-full rounded-lg border border-primary bg-primary px-4 py-3 text-center text-sm font-medium text-white">
-        Open Annexure-1
-      </span>
-    </Link>
   )
 }
