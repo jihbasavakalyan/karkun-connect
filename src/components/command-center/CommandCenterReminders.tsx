@@ -13,36 +13,32 @@ function urgencyVariant(priority: ReminderItem['priority']): 'danger' | 'warning
 }
 
 export function CommandCenterReminders({ reminders }: CommandCenterRemindersProps) {
-  if (reminders.length === 0) {
-    return (
-      <section className="cc-card-sm">
-        <EnterpriseSectionHeader title="Reminder Center" />
-        <p className="mt-2 text-sm text-secondary">Compliance and execution reminders are up to date.</p>
-      </section>
-    )
-  }
-
   return (
     <section className="cc-card-sm">
       <EnterpriseSectionHeader title="Reminder Center" />
-      <ul className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-        {reminders.map((reminder) => (
-          <li key={reminder.id}>
-            <Link
-              to={reminder.route}
-              className="flex items-start justify-between gap-2 rounded-lg border border-border p-2.5 transition-colors hover:bg-surface-muted"
-            >
-              <span className="min-w-0">
-                <span className="block line-clamp-1 text-sm font-semibold text-text-heading">
-                  {reminder.label}
+
+      {reminders.length === 0 ? (
+        <p className="mt-1 text-xs text-secondary">Compliance and execution reminders are up to date.</p>
+      ) : (
+        <ul className="cc-list-md mt-1 space-y-1">
+          {reminders.map((reminder) => (
+            <li key={reminder.id}>
+              <Link
+                to={reminder.route}
+                className="flex items-center justify-between gap-2 rounded border border-border px-2 py-1.5 transition-colors hover:bg-surface-muted"
+              >
+                <span className="min-w-0">
+                  <span className="block truncate text-xs font-semibold text-text-heading">
+                    {reminder.label}
+                  </span>
+                  <span className="block truncate text-[10px] text-secondary">{reminder.reason}</span>
                 </span>
-                <span className="mt-0.5 block line-clamp-1 text-xs text-secondary">{reminder.reason}</span>
-              </span>
-              <EnterpriseBadge variant={urgencyVariant(reminder.priority)}>Act</EnterpriseBadge>
-            </Link>
-          </li>
-        ))}
-      </ul>
+                <EnterpriseBadge variant={urgencyVariant(reminder.priority)}>Act</EnterpriseBadge>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   )
 }

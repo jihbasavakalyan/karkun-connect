@@ -60,11 +60,11 @@
   }
 
   .enterprise-section-title {
-    @apply text-lg font-semibold tracking-tight text-text-heading;
+    @apply text-[15px] font-semibold tracking-tight text-text-heading;
   }
 
   .enterprise-section-subtitle {
-    @apply mt-0.5 text-xs text-secondary;
+    @apply mt-0 text-[11px] text-secondary;
   }
 
   .campaign-glass-card {
@@ -84,11 +84,23 @@
   }
 
   .cc-stack {
-    @apply space-y-4;
+    @apply space-y-3;
   }
 
   .cc-grid {
-    @apply gap-4;
+    @apply gap-3;
+  }
+
+  .cc-list-sm {
+    @apply max-h-[140px] overflow-y-auto;
+  }
+
+  .cc-list-md {
+    @apply max-h-[150px] overflow-y-auto;
+  }
+
+  .cc-list-lg {
+    @apply max-h-[160px] overflow-y-auto;
   }
 
   .campaign-count-up {

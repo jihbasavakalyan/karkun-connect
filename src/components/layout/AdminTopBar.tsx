@@ -38,8 +38,8 @@ export function AdminTopBar({ alertCount = 0, onMenuToggle }: AdminTopBarProps) 
   }
 
   return (
-    <header className="sticky top-0 z-20 border-b border-border bg-surface/95 backdrop-blur-md lg:h-[68px]">
-      <div className="flex items-center justify-between gap-3 px-4 py-2.5 lg:h-full lg:py-0 lg:px-5">
+    <header className="sticky top-0 z-20 border-b border-border bg-surface/95 backdrop-blur-md lg:h-16">
+      <div className="flex items-center justify-between gap-2 px-3 py-2 lg:h-full lg:py-0 lg:px-4">
         <div className="flex min-w-0 items-center gap-3">
           <button
             type="button"
@@ -73,14 +73,14 @@ export function AdminTopBar({ alertCount = 0, onMenuToggle }: AdminTopBarProps) 
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Search Karkun, Rukn, assignments…"
-            className="w-full rounded-lg border border-border bg-surface-muted px-3 py-2 text-sm text-text-heading placeholder:text-secondary-light focus:border-primary-light focus:outline-none focus:ring-2 focus:ring-primary-muted"
+            className="w-full rounded-md border border-border bg-surface-muted px-2.5 py-1.5 text-sm text-text-heading placeholder:text-secondary-light focus:border-primary-light focus:outline-none focus:ring-2 focus:ring-primary-muted"
           />
         </form>
 
         <div className="flex items-center gap-2 sm:gap-3">
           <Link
             to={`${ROUTES.ADMIN}#operational-alerts`}
-            className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-surface-muted text-base transition-colors hover:border-primary/30 hover:bg-primary-muted"
+            className="relative flex h-8 w-8 items-center justify-center rounded-md border border-border bg-surface-muted text-sm transition-colors hover:border-primary/30 hover:bg-primary-muted"
             aria-label={`${alertCount} operational alerts`}
           >
             🔔
@@ -92,7 +92,7 @@ export function AdminTopBar({ alertCount = 0, onMenuToggle }: AdminTopBarProps) 
           </Link>
           <Link
             to={ROUTES.ADMIN_SETTINGS}
-            className="hidden h-9 w-9 items-center justify-center rounded-lg border border-border bg-surface-muted text-base transition-colors hover:border-primary/30 sm:flex"
+            className="hidden h-8 w-8 items-center justify-center rounded-md border border-border bg-surface-muted text-sm transition-colors hover:border-primary/30 sm:flex"
             aria-label="Settings"
           >
             ⚙️

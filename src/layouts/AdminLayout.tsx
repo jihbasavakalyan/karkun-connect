@@ -38,7 +38,7 @@ export function AdminLayout() {
           alertCount={snapshot.alerts.length}
           onMenuToggle={() => setMobileNavOpen((value) => !value)}
         />
-        <main className="flex-1 overflow-y-auto p-3 lg:p-4">
+        <main className="flex-1 overflow-y-auto p-2 lg:p-3">
           <Outlet />
         </main>
       </div>

@@ -39,12 +39,12 @@ export function CommandCenterTeamPerformance() {
 
   if (sorted.length === 0) {
     return (
-      <section className="cc-card-sm flex h-full min-h-[220px] flex-col">
+      <section className="cc-card-sm">
         <EnterpriseSectionHeader title="Team Performance" />
-        <p className="mt-2 text-sm text-secondary">No active Rukn assignments yet.</p>
+        <p className="mt-1 text-xs text-secondary">No active Rukn assignments yet.</p>
         <Link
           to={ROUTES.ADMIN_ASSIGNMENTS}
-          className="mt-auto text-sm font-medium text-primary hover:underline"
+          className="mt-1 inline-block text-xs font-medium text-primary hover:underline"
         >
           Open Assignments →
         </Link>
@@ -53,11 +53,11 @@ export function CommandCenterTeamPerformance() {
   }
 
   return (
-    <section className="cc-card-sm flex h-full min-h-[220px] flex-col overflow-hidden">
+    <section className="cc-card-sm overflow-hidden">
       <EnterpriseSectionHeader title="Team Performance" />
-      <div className="mt-2 max-h-[180px] flex-1 overflow-auto">
-        <table className="w-full min-w-[320px] text-left text-xs">
-          <thead className="sticky top-0 bg-surface text-[10px] uppercase tracking-wide text-secondary">
+      <div className="cc-list-md mt-1">
+        <table className="w-full min-w-[280px] text-left text-[11px]">
+          <thead className="sticky top-0 bg-surface text-[9px] uppercase tracking-wide text-secondary">
             <tr className="border-b border-border">
               {(
                 [
@@ -68,7 +68,7 @@ export function CommandCenterTeamPerformance() {
                   ['visits', 'Vis'],
                 ] as const
               ).map(([key, label]) => (
-                <th key={key} className="px-2 py-1.5 font-semibold">
+                <th key={key} className="px-1.5 py-1 font-semibold">
                   <button
                     type="button"
                     onClick={() => toggleSort(key)}
@@ -87,18 +87,18 @@ export function CommandCenterTeamPerformance() {
                 key={row.ruknId}
                 className="border-b border-border/60 transition-colors hover:bg-surface-muted/50"
               >
-                <td className="max-w-[6rem] truncate px-2 py-1.5 font-medium text-text-heading">
+                <td className="max-w-[5rem] truncate px-1.5 py-1 font-medium text-text-heading">
                   {index < 3 && <span className="mr-0.5">{['🥇', '🥈', '🥉'][index]}</span>}
                   {row.ruknName}
                 </td>
-                <td className="px-2 py-1.5">{row.assignedKarkuns}</td>
-                <td className="px-2 py-1.5">{row.pendingWork}</td>
-                <td className="px-2 py-1.5">
-                  <span className="rounded-full bg-primary-muted px-1.5 py-0.5 text-[10px] font-semibold text-primary">
+                <td className="px-1.5 py-1">{row.assignedKarkuns}</td>
+                <td className="px-1.5 py-1">{row.pendingWork}</td>
+                <td className="px-1.5 py-1">
+                  <span className="rounded-full bg-primary-muted px-1 py-0.5 text-[9px] font-semibold text-primary">
                     {row.completionPct}%
                   </span>
                 </td>
-                <td className="px-2 py-1.5">{row.visits}</td>
+                <td className="px-1.5 py-1">{row.visits}</td>
               </tr>
             ))}
           </tbody>

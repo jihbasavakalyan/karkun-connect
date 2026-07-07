@@ -25,7 +25,7 @@ export function AdminSidebar({ collapsed, onToggle }: AdminSidebarProps) {
       ].join(' ')}
       aria-label="Administrator navigation"
     >
-      <div className="border-b border-sidebar-border px-3 py-3">
+      <div className="border-b border-sidebar-border px-2.5 py-2">
         <div className="flex items-center justify-between gap-2">
           {!collapsed && (
             <div className="min-w-0">
@@ -47,7 +47,7 @@ export function AdminSidebar({ collapsed, onToggle }: AdminSidebarProps) {
         )}
       </div>
 
-      <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto p-2">
+      <nav className="flex flex-1 flex-col gap-0 overflow-y-auto p-1.5">
         {mainNav.map((item) => (
           <NavLink
             key={item.id}
@@ -56,7 +56,7 @@ export function AdminSidebar({ collapsed, onToggle }: AdminSidebarProps) {
             title={collapsed ? item.label : undefined}
             className={({ isActive }) =>
               [
-                'group flex min-h-9 items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium transition-all duration-200',
+                'group flex min-h-8 items-center gap-2 rounded-md px-2.5 py-2 text-[15px] font-medium transition-all duration-200',
                 isActive
                   ? 'bg-sidebar-active text-white shadow-sm'
                   : 'text-sidebar-text hover:bg-sidebar-hover hover:text-white',
@@ -64,7 +64,7 @@ export function AdminSidebar({ collapsed, onToggle }: AdminSidebarProps) {
               ].join(' ')
             }
           >
-            <span className="text-lg transition-transform group-hover:scale-110" aria-hidden="true">
+            <span className="text-xl transition-transform group-hover:scale-110" aria-hidden="true">
               {item.icon}
             </span>
             {!collapsed && <span>{item.label}</span>}
@@ -72,7 +72,7 @@ export function AdminSidebar({ collapsed, onToggle }: AdminSidebarProps) {
         ))}
       </nav>
 
-      <div className="space-y-2 border-t border-sidebar-border p-2">
+      <div className="space-y-1 border-t border-sidebar-border p-1.5">
         {!collapsed && user && (
           <div className="enterprise-glass rounded-lg px-2.5 py-2">
             <p className="truncate text-xs font-semibold text-white">{user.email}</p>
@@ -86,7 +86,7 @@ export function AdminSidebar({ collapsed, onToggle }: AdminSidebarProps) {
             title={collapsed ? helpItem.label : undefined}
             className={({ isActive }) =>
               [
-                'flex min-h-10 items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-colors',
+                'flex min-h-8 items-center gap-2 rounded-md px-2.5 py-2 text-[15px] font-medium transition-colors',
                 isActive
                   ? 'bg-sidebar-active text-white'
                   : 'text-sidebar-text-muted hover:bg-sidebar-hover hover:text-white',
@@ -102,7 +102,7 @@ export function AdminSidebar({ collapsed, onToggle }: AdminSidebarProps) {
         {!collapsed && (
           <NavLink
             to={ROUTES.ADMIN_CAMPAIGN}
-            className="block rounded-xl border border-sidebar-border px-3 py-2 text-xs text-sidebar-text-muted transition-colors hover:border-primary-light/40 hover:text-white"
+            className="block rounded-md border border-sidebar-border px-2.5 py-1.5 text-[11px] text-sidebar-text-muted transition-colors hover:border-primary-light/40 hover:text-white"
           >
             Campaign Library →
           </NavLink>

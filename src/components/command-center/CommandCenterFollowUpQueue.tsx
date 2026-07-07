@@ -19,29 +19,29 @@ export function CommandCenterFollowUpQueue({ followUpQueue }: CommandCenterFollo
   )
 
   return (
-    <section className="cc-card-sm flex h-full min-h-[220px] flex-col">
+    <section className="cc-card-sm">
       <EnterpriseSectionHeader title="Follow-up Queue" />
 
       {allItems.length === 0 ? (
-        <p className="mt-2 text-sm text-secondary">All follow-ups are scheduled or completed.</p>
+        <p className="mt-1 text-xs text-secondary">All follow-ups are scheduled or completed.</p>
       ) : (
-        <ul className="mt-2 max-h-[180px] flex-1 space-y-1.5 overflow-y-auto">
+        <ul className="cc-list-md mt-1 space-y-1">
           {allItems.map((item) => (
             <li key={item.followUpId}>
               <Link
                 to={item.route}
                 className={[
-                  'block rounded-lg border p-2 transition-shadow hover:shadow-card',
+                  'flex items-center justify-between gap-2 rounded border px-2 py-1 transition-shadow hover:shadow-card',
                   SECTION_STYLES[item.section],
                 ].join(' ')}
               >
-                <div className="flex items-center justify-between gap-2">
-                  <p className="line-clamp-1 text-sm font-semibold text-text-heading">{item.karkunName}</p>
-                  <span className="shrink-0 text-[10px] font-medium uppercase text-secondary">
-                    {item.groupLabel}
-                  </span>
+                <div className="min-w-0">
+                  <p className="truncate text-xs font-semibold text-text-heading">{item.karkunName}</p>
+                  <p className="truncate text-[10px] text-secondary">{item.purpose}</p>
                 </div>
-                <p className="line-clamp-1 text-xs text-secondary">{item.purpose}</p>
+                <span className="shrink-0 text-[9px] font-medium uppercase text-secondary">
+                  {item.groupLabel}
+                </span>
               </Link>
             </li>
           ))}

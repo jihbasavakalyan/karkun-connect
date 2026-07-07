@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom'
-import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import { EnterpriseBadge, EnterpriseSectionHeader } from '@/components/enterprise'
 import type { CallQueueItem } from '@/types/campaignAutomation.types'
 
@@ -9,32 +8,30 @@ type CommandCenterCallQueueProps = {
 
 export function CommandCenterCallQueue({ callQueue }: CommandCenterCallQueueProps) {
   return (
-    <section className="cc-card-sm flex h-full min-h-[220px] flex-col">
+    <section className="cc-card-sm">
       <EnterpriseSectionHeader title="Call Queue" />
 
       {callQueue.length === 0 ? (
-        <p className="mt-2 text-sm text-secondary">All assigned Karkuns have completed their initial call.</p>
+        <p className="mt-1 text-xs text-secondary">All assigned Karkuns have completed their initial call.</p>
       ) : (
-        <ul className="mt-2 max-h-[180px] flex-1 space-y-1.5 overflow-y-auto">
+        <ul className="cc-list-md mt-1 space-y-1">
           {callQueue.map((item, index) => (
-            <li
-              key={item.id}
-              className="rounded-lg border border-border bg-surface-muted/60 p-2.5"
-            >
-              <div className="flex items-start justify-between gap-2">
+            <li key={item.id}>
+              <Link
+                to={item.route}
+                className="flex items-center justify-between gap-2 rounded border border-border bg-surface-muted/60 px-2 py-1.5 transition-colors hover:bg-surface-muted"
+              >
                 <div className="min-w-0">
-                  <EnterpriseBadge variant={index === 0 ? 'danger' : 'neutral'}>
-                    {index === 0 ? 'Next' : `#${index + 1}`}
-                  </EnterpriseBadge>
-                  <p className="mt-1 line-clamp-1 text-sm font-semibold text-text-heading">{item.label}</p>
-                  <p className="text-xs text-secondary">{item.karkunName}</p>
+                  <div className="flex items-center gap-1.5">
+                    <EnterpriseBadge variant={index === 0 ? 'danger' : 'neutral'}>
+                      {index === 0 ? 'Next' : `#${index + 1}`}
+                    </EnterpriseBadge>
+                    <span className="truncate text-xs font-semibold text-text-heading">{item.label}</span>
+                  </div>
+                  <p className="truncate text-[10px] text-secondary">{item.karkunName}</p>
                 </div>
-                <Link to={item.route}>
-                  <SecondaryButton type="button" className="text-xs">
-                    Open
-                  </SecondaryButton>
-                </Link>
-              </div>
+                <span className="shrink-0 text-[10px] font-medium text-primary">Open →</span>
+              </Link>
             </li>
           ))}
         </ul>

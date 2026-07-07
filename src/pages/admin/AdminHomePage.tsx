@@ -24,29 +24,32 @@ export function AdminHomePage() {
     <div className="cc-stack mx-auto max-w-[1680px]">
       <CommandCenterHero hero={snapshot.hero} />
 
-      <div className="grid gap-4 xl:grid-cols-2">
+      <div className="cc-grid grid xl:grid-cols-2">
         <CommandCenterTodaysMission kpis={snapshot.kpis} hero={snapshot.hero} />
         <CommandCenterNextAction nextAction={snapshot.nextAction} />
       </div>
 
       <CommandCenterKpiGrid kpis={snapshot.kpis} />
 
-      <div className="grid gap-4 xl:grid-cols-3">
+      <div className="cc-grid grid xl:grid-cols-3">
         <CommandCenterProgressOverview />
         <CommandCenterTeamPerformance />
         <CommandCenterAlerts alerts={snapshot.alerts} />
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-3">
+      <div className="cc-grid grid xl:grid-cols-3">
         <CommandCenterSchedule schedule={snapshot.schedule} />
-        <CommandCenterFollowUpQueue followUpQueue={snapshot.followUpQueue} />
         <CommandCenterCallQueue callQueue={snapshot.callQueue} />
+        <CommandCenterFollowUpQueue followUpQueue={snapshot.followUpQueue} />
       </div>
 
-      <CommandCenterReminders reminders={snapshot.reminders} />
-      <CommandCenterIntelligence />
+      <div className="cc-grid grid xl:grid-cols-2">
+        <CommandCenterReminders reminders={snapshot.reminders} />
+        <CommandCenterAdminQuickActions />
+      </div>
+
       <CommandCenterRecentActivity />
-      <CommandCenterAdminQuickActions />
+      <CommandCenterIntelligence />
       <CommandCenterFooter />
     </div>
   )

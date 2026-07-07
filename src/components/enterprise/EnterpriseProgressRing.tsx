@@ -16,7 +16,7 @@ export function EnterpriseProgressRing({
   const offset = circumference - (clamped / 100) * circumference
 
   return (
-    <div className="flex flex-col items-center gap-2">
+    <div className="flex flex-col items-center gap-1">
       <div className="relative" style={{ width: size, height: size }}>
         <svg width={size} height={size} className="-rotate-90" aria-hidden="true">
           <circle
@@ -45,7 +45,7 @@ export function EnterpriseProgressRing({
           <span className="text-lg font-bold text-text-heading">{clamped}%</span>
         </div>
       </div>
-      <span className="text-center text-xs font-medium text-secondary">{label}</span>
+      {label && <span className="text-center text-[10px] font-medium text-secondary">{label}</span>}
     </div>
   )
 }

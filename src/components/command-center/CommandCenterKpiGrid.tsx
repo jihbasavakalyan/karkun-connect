@@ -9,7 +9,7 @@ type CommandCenterKpiGridProps = {
 export function CommandCenterKpiGrid({ kpis }: CommandCenterKpiGridProps) {
   return (
     <section>
-      <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-8">
+      <ul className="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-8">
         {kpis.map((kpi) => {
           const enriched = enrichKpiPresentation(kpi)
           return (

@@ -25,14 +25,14 @@ export function CommandCenterRecentActivity() {
       <EnterpriseSectionHeader title="Recent Activity" />
 
       {activities.length === 0 ? (
-        <p className="mt-2 text-sm text-secondary">No campaign activity recorded yet.</p>
+        <p className="mt-1 text-xs text-secondary">No campaign activity recorded yet.</p>
       ) : (
-        <ol className="mt-2 space-y-1.5">
+        <ol className="cc-list-lg mt-1 space-y-1">
           {activities.map((entry) => (
             <li key={entry.id}>
-              <div className={`rounded-lg px-3 py-2 ${severityClasses(entry.severity)}`}>
-                <p className="line-clamp-1 text-sm font-medium text-text-heading">{entry.message}</p>
-                <p className="mt-0.5 text-[11px] text-secondary">
+              <div className={`rounded px-2 py-1.5 ${severityClasses(entry.severity)}`}>
+                <p className="line-clamp-1 text-xs font-medium text-text-heading">{entry.message}</p>
+                <p className="text-[10px] text-secondary">
                   {new Date(entry.timestamp).toLocaleString()} · {entry.actor}
                 </p>
               </div>

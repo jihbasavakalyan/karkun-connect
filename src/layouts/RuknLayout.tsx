@@ -24,7 +24,7 @@ export function RuknLayout() {
   return (
     <div className="flex min-h-svh flex-col bg-surface-muted">
       <header className="border-b border-border bg-surface">
-        <div className="enterprise-gradient-hero px-4 py-2.5 text-white lg:px-5">
+        <div className="enterprise-gradient-hero px-3 py-2 text-white lg:px-4">
           <div className="mx-auto flex max-w-5xl items-center justify-between gap-3">
             <Logo size="sm" variant="light" />
             <PortalAuthActions portalLabel="Rukn Portal" />
@@ -43,7 +43,7 @@ export function RuknLayout() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-5xl flex-1 px-3 py-4 pb-20 lg:px-4">
+      <main className="mx-auto w-full max-w-5xl flex-1 px-2 py-3 pb-20 lg:px-3">
         <Outlet />
       </main>
 

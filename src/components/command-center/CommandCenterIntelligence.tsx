@@ -17,31 +17,31 @@ export function CommandCenterIntelligence() {
   return (
     <section className="cc-card-sm">
       <EnterpriseSectionHeader title="Campaign Intelligence" />
-      <ul className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <ul className="mt-1.5 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
         {metrics.map((metric) => (
-          <li key={metric.label} className="rounded-lg border border-border bg-surface-muted/40 p-3">
-            <p className="text-[11px] font-medium uppercase tracking-wide text-secondary">{metric.label}</p>
-            <p className="mt-1 text-xl font-bold text-text-heading">{metric.value}</p>
+          <li key={metric.label} className="rounded border border-border bg-surface-muted/40 p-2">
+            <p className="text-[10px] font-medium uppercase tracking-wide text-secondary">{metric.label}</p>
+            <p className="text-lg font-bold text-text-heading">{metric.value}</p>
           </li>
         ))}
       </ul>
 
-      <div className="mt-3 grid gap-3 lg:grid-cols-2">
-        <div className="rounded-lg border border-border p-3">
-          <p className="text-sm font-semibold text-text-heading">Gender Distribution</p>
-          <div className="mt-2 flex h-2 overflow-hidden rounded-full bg-surface-muted">
+      <div className="mt-2 grid gap-2 lg:grid-cols-2">
+        <div className="rounded border border-border p-2">
+          <p className="text-xs font-semibold text-text-heading">Gender Distribution</p>
+          <div className="mt-1 flex h-1.5 overflow-hidden rounded-full bg-surface-muted">
             <div className="bg-primary" style={{ width: `${malePct}%` }} title={`Male ${malePct}%`} />
             <div className="bg-primary-light" style={{ width: `${femalePct}%` }} title={`Female ${femalePct}%`} />
           </div>
-          <div className="mt-1 flex justify-between text-xs text-secondary">
+          <div className="mt-0.5 flex justify-between text-[10px] text-secondary">
             <span>M {data.maleKarkuns} ({malePct}%)</span>
             <span>F {data.femaleKarkuns} ({femalePct}%)</span>
           </div>
         </div>
 
-        <div className="rounded-lg border border-border p-3">
-          <p className="text-sm font-semibold text-text-heading">Trends & Forecast</p>
-          <ul className="mt-2 space-y-1 text-xs text-secondary">
+        <div className="rounded border border-border p-2">
+          <p className="text-xs font-semibold text-text-heading">Trends & Forecast</p>
+          <ul className="mt-1 space-y-0.5 text-[11px] text-secondary">
             <li>
               <span className="font-medium text-text-heading">Daily: </span>
               {data.dailyTrend}

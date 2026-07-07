@@ -52,45 +52,35 @@ export function CommandCenterTodaysMission({ kpis, hero }: CommandCenterTodaysMi
     priority === 'high' ? 'High' : priority === 'medium' ? 'Focused' : priority === 'low' ? 'Light' : 'Clear'
 
   return (
-    <section className="cc-card-sm flex h-full flex-col">
+    <section className="cc-card-sm">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="text-lg font-semibold text-text-heading">Today&apos;s Mission</h2>
+        <h2 className="enterprise-section-title">Today&apos;s Mission</h2>
         <EnterpriseBadge variant={priorityVariant}>{priorityLabel}</EnterpriseBadge>
       </div>
 
       {totalTasks === 0 ? (
-        <p className="mt-2 text-sm text-secondary">All caught up for today.</p>
+        <p className="mt-1 text-xs text-secondary">All caught up for today.</p>
       ) : (
         <>
-          <ul className="mt-2 space-y-1">
-            {lines.map((line) => (
-              <li key={line.id}>
-                <Link
-                  to={line.route}
-                  className="flex items-center justify-between rounded-lg px-2 py-1 text-sm transition-colors hover:bg-surface-muted"
-                >
-                  <span className="text-secondary">
-                    <span className="font-semibold text-text-heading">{line.count}</span> {line.label}
-                  </span>
-                  <span className="text-xs text-primary">→</span>
+          <p className="mt-1 text-sm leading-snug text-text-heading">
+            {lines.map((line, index) => (
+              <span key={line.id}>
+                {index > 0 && <span className="text-secondary"> · </span>}
+                <Link to={line.route} className="hover:text-primary">
+                  <span className="font-semibold">{line.count}</span> {line.label}
                 </Link>
-              </li>
+              </span>
             ))}
-          </ul>
-          <dl className="mt-auto grid grid-cols-3 gap-2 border-t border-border pt-2 text-xs">
-            <div>
-              <dt className="text-secondary">Est. Time</dt>
-              <dd className="font-semibold text-text-heading">{formatDuration(estimatedMinutes)}</dd>
-            </div>
-            <div>
-              <dt className="text-secondary">Tasks</dt>
-              <dd className="font-semibold text-text-heading">{totalTasks}</dd>
-            </div>
-            <div>
-              <dt className="text-secondary">Day</dt>
-              <dd className="truncate font-semibold text-text-heading">{hero?.dayLabel ?? '—'}</dd>
-            </div>
-          </dl>
+          </p>
+          <div className="mt-1 flex flex-wrap gap-x-3 text-[11px] text-secondary">
+            <span>
+              Est. <span className="font-semibold text-text-heading">{formatDuration(estimatedMinutes)}</span>
+            </span>
+            <span>
+              <span className="font-semibold text-text-heading">{totalTasks}</span> tasks
+            </span>
+            <span className="truncate">{hero?.dayLabel ?? '—'}</span>
+          </div>
         </>
       )}
     </section>

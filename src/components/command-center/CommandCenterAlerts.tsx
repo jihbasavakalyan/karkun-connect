@@ -20,29 +20,29 @@ const SEVERITY_LABELS: Record<AutomationAlert['severity'], string> = {
 
 export function CommandCenterAlerts({ alerts }: CommandCenterAlertsProps) {
   return (
-    <section id="operational-alerts" className="cc-card-sm flex h-full min-h-[220px] flex-col">
+    <section id="operational-alerts" className="cc-card-sm">
       <EnterpriseSectionHeader title="Operational Alerts" />
 
       {alerts.length === 0 ? (
-        <p className="mt-2 text-sm text-secondary">All queues within expected thresholds.</p>
+        <p className="mt-1 text-xs text-secondary">All queues within expected thresholds.</p>
       ) : (
-        <ul className="mt-2 max-h-[180px] flex-1 space-y-2 overflow-y-auto">
+        <ul className="cc-list-sm mt-1 space-y-1">
           {alerts.map((alert) => (
             <li key={alert.id}>
               <Link
                 to={alert.route}
                 className={[
-                  'block rounded-lg border p-2.5 transition-shadow hover:shadow-card',
+                  'block rounded border px-2 py-1.5 transition-shadow hover:shadow-card',
                   SEVERITY_STYLES[alert.severity],
                 ].join(' ')}
               >
-                <div className="flex items-start justify-between gap-2">
-                  <p className="line-clamp-1 text-sm font-semibold">{alert.title}</p>
-                  <span className="shrink-0 text-[9px] font-bold uppercase tracking-wide opacity-80">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="line-clamp-1 text-xs font-semibold">{alert.title}</p>
+                  <span className="shrink-0 text-[8px] font-bold uppercase tracking-wide opacity-80">
                     {SEVERITY_LABELS[alert.severity]}
                   </span>
                 </div>
-                <p className="mt-0.5 line-clamp-2 text-xs opacity-90">{alert.message}</p>
+                <p className="line-clamp-1 text-[10px] opacity-90">{alert.message}</p>
               </Link>
             </li>
           ))}

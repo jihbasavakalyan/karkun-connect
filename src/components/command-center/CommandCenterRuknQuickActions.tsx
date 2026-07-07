@@ -14,16 +14,16 @@ export function CommandCenterRuknQuickActions({
 }: CommandCenterRuknQuickActionsProps) {
   const actions = [
     pendingVisitRoute
-      ? { id: 'next-visit', label: 'Complete Visit', icon: '📍', to: pendingVisitRoute }
+      ? { id: 'next-visit', label: 'Visit', icon: '📍', to: pendingVisitRoute }
       : null,
-    { id: 'schedule', label: "Today's Schedule", icon: '📅', to: '#todays-schedule', isHash: true },
+    { id: 'schedule', label: 'Schedule', icon: '📅', to: '#todays-schedule', isHash: true },
     { id: 'follow-ups', label: 'Follow-ups', icon: '🔄', to: ROUTES.RUKN_MY_KARKUN },
     { id: 'karkun', label: 'My Karkun', icon: '👥', to: ROUTES.RUKN_MY_KARKUN },
-    { id: 'available', label: 'Available Karkun', icon: '🔍', to: ROUTES.RUKN_AVAILABLE_KARKUN },
+    { id: 'available', label: 'Available', icon: '🔍', to: ROUTES.RUKN_AVAILABLE_KARKUN },
     nextAction.route && !nextAction.isCaughtUp
-      ? { id: 'annexure', label: 'Submit Annexure-1', icon: '📋', to: nextAction.route }
+      ? { id: 'annexure', label: 'Annexure-1', icon: '📋', to: nextAction.route }
       : null,
-    { id: 'record', label: 'Campaign Record', icon: '📊', to: ROUTES.RUKN_CAMPAIGN_RECORD },
+    { id: 'record', label: 'Record', icon: '📊', to: ROUTES.RUKN_CAMPAIGN_RECORD },
   ].filter(Boolean) as {
     id: string
     label: string
@@ -35,29 +35,25 @@ export function CommandCenterRuknQuickActions({
   return (
     <section className="cc-card-sm">
       <EnterpriseSectionHeader title="Quick Actions" />
-      <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <div className="mt-1 grid grid-cols-4 gap-1.5 sm:grid-cols-7">
         {actions.map((action) =>
           action.isHash ? (
             <a
               key={action.id}
               href={action.to}
-              className="flex items-center gap-2 rounded-lg border border-border p-2.5 transition-colors hover:border-primary/30 hover:bg-surface-muted"
+              className="flex items-center gap-1.5 rounded border border-border px-2 py-1.5 text-xs transition-colors hover:border-primary/30 hover:bg-surface-muted"
             >
-              <span className="text-base" aria-hidden="true">
-                {action.icon}
-              </span>
-              <span className="text-sm font-semibold text-text-heading">{action.label}</span>
+              <span aria-hidden="true">{action.icon}</span>
+              <span className="truncate font-semibold text-text-heading">{action.label}</span>
             </a>
           ) : (
             <Link
               key={action.id}
               to={action.to}
-              className="flex items-center gap-2 rounded-lg border border-border p-2.5 transition-colors hover:border-primary/30 hover:bg-surface-muted"
+              className="flex items-center gap-1.5 rounded border border-border px-2 py-1.5 text-xs transition-colors hover:border-primary/30 hover:bg-surface-muted"
             >
-              <span className="text-base" aria-hidden="true">
-                {action.icon}
-              </span>
-              <span className="text-sm font-semibold text-text-heading">{action.label}</span>
+              <span aria-hidden="true">{action.icon}</span>
+              <span className="truncate font-semibold text-text-heading">{action.label}</span>
             </Link>
           ),
         )}
