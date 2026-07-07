@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { InputField } from '@/components/forms/InputField'
 import { TextAreaField } from '@/components/forms/TextAreaField'
+import { RuknAssignmentSelect } from '@/components/forms/people/RuknAssignmentSelect'
 import { Modal } from '@/components/common/Modal'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
@@ -11,6 +12,7 @@ import { DEFAULT_PLACE } from '@/types/people.types'
 export type PersonFormValues = PersonContactInput & {
   area?: string
   address?: string
+  assignedRuknId?: string
 }
 
 type PersonFormModalProps = {
@@ -21,6 +23,7 @@ type PersonFormModalProps = {
   onClose: () => void
   onSubmit: (values: PersonFormValues) => void
   error?: string
+  karkunId?: string
 }
 
 const selectClassName =
@@ -34,6 +37,7 @@ export function PersonFormModal({
   onClose,
   onSubmit,
   error,
+  karkunId,
 }: PersonFormModalProps) {
   if (!isOpen) {
     return null
@@ -41,13 +45,14 @@ export function PersonFormModal({
 
   return (
     <PersonFormModalContent
-      key={`${mode}-${initialValues?.name ?? 'new'}-${initialValues?.mobile ?? ''}`}
+      key={`${mode}-${initialValues?.name ?? 'new'}-${initialValues?.mobile ?? ''}-${initialValues?.assignedRuknId ?? ''}`}
       kind={kind}
       mode={mode}
       initialValues={initialValues}
       onClose={onClose}
       onSubmit={onSubmit}
       error={error}
+      karkunId={karkunId}
     />
   )
 }
@@ -59,6 +64,7 @@ function PersonFormModalContent({
   onClose,
   onSubmit,
   error,
+  karkunId,
 }: Omit<PersonFormModalProps, 'isOpen'>) {
   const [name, setName] = useState(initialValues?.name ?? '')
   const [gender, setGender] = useState<PersonGender>(initialValues?.gender ?? 'Male')
@@ -69,6 +75,7 @@ function PersonFormModalContent({
   const [notes, setNotes] = useState(initialValues?.notes ?? '')
   const [area, setArea] = useState(initialValues?.area ?? '')
   const [address, setAddress] = useState(initialValues?.address ?? '')
+  const [assignedRuknId, setAssignedRuknId] = useState(initialValues?.assignedRuknId ?? '')
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -82,6 +89,7 @@ function PersonFormModalContent({
       notes: notes || undefined,
       area: kind === 'karkun' ? area : undefined,
       address: kind === 'karkun' ? address : undefined,
+      assignedRuknId: kind === 'karkun' && mode === 'edit' ? assignedRuknId : undefined,
     })
   }
 
@@ -149,6 +157,22 @@ function PersonFormModalContent({
           placeholder={DEFAULT_PLACE}
           required
         />
+
+        {kind === 'karkun' && mode === 'edit' && karkunId && (
+          <div className="flex flex-col gap-2">
+            <label htmlFor="person-assigned-rukn" className="text-sm font-medium text-text-heading">
+              Assigned Rukn
+            </label>
+            <RuknAssignmentSelect
+              karkunId={karkunId}
+              value={assignedRuknId}
+              onChange={setAssignedRuknId}
+            />
+            <p className="text-xs text-secondary">
+              Only active {gender} Rukns are shown. Choose Unassigned to remove the current assignment.
+            </p>
+          </div>
+        )}
 
         {kind === 'karkun' && (
           <>

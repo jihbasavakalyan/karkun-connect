@@ -5,7 +5,7 @@ import type { ImportSummary } from '@/types/people.types'
 import type { MobileLookupResult } from '@/lib/peopleStore'
 import { useKarkunPeopleManagement } from '@/hooks/useKarkunPeopleManagement'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
-import { adminUnassignKarkun } from '@/lib/assignmentEngine'
+import { adminUnassignKarkun, changeKarkunRuknAssignment } from '@/lib/assignmentEngine'
 import {
   bulkSetKarkunStatus,
   createKarkun,
@@ -55,6 +55,7 @@ function KarkunGenderSection({ gender }: { gender: PersonGender }) {
   const [importSummary, setImportSummary] = useState<ImportSummary | null>(null)
   const [bulkBaitulMaalStatus, setBulkBaitulMaalStatus] = useState<BaitulMaalStatus | null>(null)
   const [bulkIjtemaStatus, setBulkIjtemaStatus] = useState<IjtemaAttendanceStatus | null>(null)
+  const [assignmentErrors, setAssignmentErrors] = useState<Record<string, string>>({})
 
   const openAddForm = () => {
     setEditingKarkun(null)
@@ -70,19 +71,48 @@ function KarkunGenderSection({ gender }: { gender: PersonGender }) {
 
   const handleFormSubmit = (values: PersonFormValues) => {
     const payload = { ...values, gender }
+    const { assignedRuknId, ...karkunPayload } = payload
 
     const result = editingKarkun
-      ? updateKarkun(editingKarkun.id, payload)
-      : createKarkun(payload)
+      ? updateKarkun(editingKarkun.id, karkunPayload)
+      : createKarkun(karkunPayload)
 
     if (!result.success) {
       setFormError(result.error ?? 'Unable to save Karkun.')
       return
     }
 
+    if (editingKarkun && assignedRuknId !== undefined) {
+      const assignmentResult = changeKarkunRuknAssignment(editingKarkun.id, assignedRuknId)
+      if (!assignmentResult.success) {
+        setFormError(assignmentResult.error ?? 'Unable to update assignment.')
+        return
+      }
+    }
+
     setIsFormOpen(false)
     setEditingKarkun(null)
     setFormError('')
+  }
+
+  const handleAssignmentChange = (karkun: KarkunRegistryRecord, ruknId: string) => {
+    const result = changeKarkunRuknAssignment(karkun.id, ruknId)
+    if (!result.success) {
+      setAssignmentErrors((current) => ({
+        ...current,
+        [karkun.id]: result.error ?? 'Assignment failed.',
+      }))
+      return
+    }
+
+    setAssignmentErrors((current) => {
+      if (!current[karkun.id]) {
+        return current
+      }
+      const next = { ...current }
+      delete next[karkun.id]
+      return next
+    })
   }
 
   const handleMobileSubmit = (mobile: string) => {
@@ -205,7 +235,8 @@ function KarkunGenderSection({ gender }: { gender: PersonGender }) {
           setMobileTarget(karkun)
           setMobileError('')
         }}
-        onUnassign={(karkun) => adminUnassignKarkun(karkun.id)}
+        onAssignmentChange={handleAssignmentChange}
+        assignmentErrors={assignmentErrors}
       />
 
       <PeoplePagination
@@ -232,9 +263,11 @@ function KarkunGenderSection({ gender }: { gender: PersonGender }) {
                 notes: editingKarkun.notes,
                 area: editingKarkun.area,
                 address: editingKarkun.address,
+                assignedRuknId: editingKarkun.assignedRuknId,
               }
             : { gender }
         }
+        karkunId={editingKarkun?.id}
         error={formError}
         onClose={() => {
           setIsFormOpen(false)

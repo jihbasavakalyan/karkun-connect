@@ -8,6 +8,7 @@ import {
   removeAssignment,
   replaceAssignment,
 } from '@/services/assignmentService'
+import { validateAssignInput } from '@/validation/assignmentValidation'
 import { subscribeToAssignmentStore } from '@/stores/assignmentStore'
 import type { RemovalReason, ReplacementReason } from '@/types/assignment'
 import type { AssignedBy, ReleaseReason } from '@/types/assignment.types'
@@ -152,6 +153,52 @@ export function adminUnassignKarkun(karkunId: string): AssignKarkunResult {
     removalReason: 'Other',
     assignedBy: 'Administrator',
   })
+}
+
+export function changeKarkunRuknAssignment(
+  karkunId: string,
+  selectedRuknId: string,
+  assignedBy: AssignedBy = 'Administrator',
+): AssignKarkunResult {
+  const current = getCurrentAssignmentForKarkun(karkunId)
+  const targetRuknId = selectedRuknId.trim()
+
+  if (!targetRuknId) {
+    if (!current) {
+      return { success: true } as AssignmentResult
+    }
+    return adminUnassignKarkun(karkunId)
+  }
+
+  if (current?.ruknId === targetRuknId) {
+    return { success: true, assignment: current }
+  }
+
+  if (!current) {
+    return assignKarkun(karkunId, targetRuknId, assignedBy)
+  }
+
+  const validation = validateAssignInput({
+    ruknId: targetRuknId,
+    karkunId,
+    effectiveFrom: todayDate(),
+    assignedBy,
+  })
+  if (!validation.valid) {
+    return { success: false, error: validation.error }
+  }
+
+  const removeResult = removeAssignment({
+    ruknId: current.ruknId,
+    effectiveFrom: todayDate(),
+    removalReason: 'Other',
+    assignedBy,
+  })
+  if (!removeResult.success) {
+    return removeResult
+  }
+
+  return assignKarkun(karkunId, targetRuknId, assignedBy)
 }
 
 export function bulkAssignKarkuns(
