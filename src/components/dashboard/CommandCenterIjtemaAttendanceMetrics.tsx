@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { ROUTES } from '@/constants/routes'
+import { ROUTES, adminCompliancePath } from '@/constants/routes'
 import { getIjtemaAttendanceDashboardMetrics } from '@/services/ijtemaAttendanceService'
 import { subscribeToIjtemaAttendanceStore } from '@/stores/ijtemaAttendanceStore'
 import { useEffect, useState } from 'react'
@@ -18,25 +18,30 @@ export function CommandCenterIjtemaAttendanceMetrics() {
       id: 'present',
       label: 'Present',
       count: metrics.present,
-      to: ROUTES.ADMIN_KARKUN,
+      to: adminCompliancePath('ijtema', 'Present'),
     },
     {
       id: 'absent',
       label: 'Absent',
       count: metrics.absent,
-      to: ROUTES.ADMIN_KARKUN,
+      to: adminCompliancePath('ijtema', 'Absent'),
     },
     {
       id: 'informed',
       label: 'Informed',
       count: metrics.informed,
-      to: ROUTES.ADMIN_KARKUN,
+      to: adminCompliancePath('ijtema', 'Informed'),
     },
   ]
 
   return (
     <section className="rounded-(--radius-card) border border-border bg-surface p-6 shadow-card">
-      <h2 className="text-lg font-semibold text-text-heading">Weekly Ijtema</h2>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-lg font-semibold text-text-heading">Weekly Ijtema</h2>
+        <Link to={ROUTES.ADMIN_COMPLIANCE} className="text-sm font-medium text-primary hover:underline">
+          Open Compliance
+        </Link>
+      </div>
       <p className="mt-1 text-sm text-secondary">
         Current week attendance — not an event or scheduling system.
       </p>

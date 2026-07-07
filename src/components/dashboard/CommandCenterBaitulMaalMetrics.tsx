@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { ROUTES } from '@/constants/routes'
+import { ROUTES, adminCompliancePath } from '@/constants/routes'
 import { getBaitulMaalDashboardMetrics } from '@/services/baitulMaalService'
 import { subscribeToBaitulMaalStore } from '@/stores/baitulMaalStore'
 import { useEffect, useState } from 'react'
@@ -18,19 +18,24 @@ export function CommandCenterBaitulMaalMetrics() {
       id: 'paid',
       label: 'Paid',
       count: metrics.paid,
-      to: ROUTES.ADMIN_KARKUN,
+      to: adminCompliancePath('baitul-maal', 'Paid'),
     },
     {
       id: 'pending',
       label: 'Pending',
       count: metrics.pending,
-      to: ROUTES.ADMIN_KARKUN,
+      to: adminCompliancePath('baitul-maal', 'Pending'),
     },
   ]
 
   return (
     <section className="rounded-(--radius-card) border border-border bg-surface p-6 shadow-card">
-      <h2 className="text-lg font-semibold text-text-heading">Monthly Bait-ul-Maal</h2>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-lg font-semibold text-text-heading">Monthly Bait-ul-Maal</h2>
+        <Link to={ROUTES.ADMIN_COMPLIANCE} className="text-sm font-medium text-primary hover:underline">
+          Open Compliance
+        </Link>
+      </div>
       <p className="mt-1 text-sm text-secondary">
         Current month compliance — not an accounting system.
       </p>

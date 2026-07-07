@@ -6,6 +6,7 @@ import { AssignmentManagementPage } from '@/pages/admin/AssignmentManagementPage
 import { AdminHomePage } from '@/pages/admin/AdminHomePage'
 import { CampaignSetupPage } from '@/pages/admin/CampaignSetupPage'
 import { CampaignsPage } from '@/pages/admin/CampaignsPage'
+import { ComplianceModulePage } from '@/pages/admin/ComplianceModulePage'
 import { ExecutionModulePage } from '@/pages/admin/ExecutionModulePage'
 import { FollowUpDevelopmentModulePage } from '@/pages/admin/FollowUpDevelopmentModulePage'
 import { HelpPage } from '@/pages/admin/HelpPage'
@@ -69,6 +70,7 @@ export function AppRouter() {
           <Route path="assignments" element={<AssignmentManagementPage />} />
           <Route path="annexure-1/:karkunId" element={<WorkerMeetingFormPage />} />
           <Route path="execution" element={<ExecutionModulePage />} />
+          <Route path="compliance" element={<ComplianceModulePage />} />
           <Route
             path="review"
             element={<Navigate to={`${ROUTES.ADMIN_EXECUTION}?section=reports`} replace />}

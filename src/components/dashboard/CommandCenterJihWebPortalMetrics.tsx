@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { ROUTES, adminExecutionPath } from '@/constants/routes'
+import { ROUTES, adminCompliancePath } from '@/constants/routes'
 import { getJihWebPortalDashboardMetrics } from '@/services/jihWebPortalService'
 import { subscribeToJihWebPortalStore } from '@/stores/jihWebPortalStore'
 import { useEffect, useState } from 'react'
@@ -18,13 +18,13 @@ export function CommandCenterJihWebPortalMetrics() {
       id: 'registered',
       label: 'Registered',
       count: metrics.registered,
-      to: ROUTES.ADMIN_KARKUN,
+      to: adminCompliancePath('jih-registration', 'Registered'),
     },
     {
       id: 'not-registered',
       label: 'Not Registered',
       count: metrics.notRegistered,
-      to: ROUTES.ADMIN_KARKUN,
+      to: adminCompliancePath('jih-registration', 'Not Registered'),
     },
   ]
 
@@ -33,19 +33,24 @@ export function CommandCenterJihWebPortalMetrics() {
       id: 'pending-reports',
       label: 'Pending Reports',
       count: metrics.pendingReports,
-      to: adminExecutionPath('reports'),
+      to: adminCompliancePath('monthly-reporting', 'Pending'),
     },
     {
       id: 'submitted-reports',
       label: 'Submitted Reports',
       count: metrics.submittedReports,
-      to: adminExecutionPath('reports'),
+      to: adminCompliancePath('monthly-reporting', 'Submitted'),
     },
   ]
 
   return (
     <section className="rounded-(--radius-card) border border-border bg-surface p-6 shadow-card">
-      <h2 className="text-lg font-semibold text-text-heading">JIH Web Portal</h2>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-lg font-semibold text-text-heading">JIH Web Portal</h2>
+        <Link to={ROUTES.ADMIN_COMPLIANCE} className="text-sm font-medium text-primary hover:underline">
+          Open Compliance
+        </Link>
+      </div>
       <p className="mt-1 text-sm text-secondary">
         Compliance tracking for portal registration and monthly reporting.
       </p>
