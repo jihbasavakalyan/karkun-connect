@@ -1,6 +1,13 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ruknVisitPath } from '@/constants/routes'
+import { ExecutionStatusBadge } from '@/components/execution/ExecutionStatusBadge'
+import {
+  getAnnexureActionLabel,
+  getExecutionStatusForAssignment,
+} from '@/lib/executionStatus'
+import { getActiveAssignmentForRukn } from '@/stores/assignmentStore'
+import { getNextFollowUpForKarkun } from '@/services/followUpService'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { ReleaseKarkunModal, ReplaceKarkunModal } from '@/components/forms/assignment'
@@ -17,9 +24,13 @@ export function MyKarkunCard({ karkun, ruknId }: MyKarkunCardProps) {
   const [releaseOpen, setReleaseOpen] = useState(false)
   const [replaceOpen, setReplaceOpen] = useState(false)
 
-  const commitmentLabel = karkun.currentCommitment.trim()
-    ? karkun.currentCommitment
-    : 'No commitment recorded'
+  const assignment = getActiveAssignmentForRukn(ruknId)
+  const executionStatus =
+    assignment?.karkunId === karkun.id
+      ? getExecutionStatusForAssignment(assignment.assignmentId, karkun.id)
+      : 'Pending'
+  const nextFollowUp = getNextFollowUpForKarkun(karkun.id)
+  const actionLabel = getAnnexureActionLabel(executionStatus)
 
   const handleRelease = (reason: Parameters<typeof releaseKarkun>[2]) => {
     releaseKarkun(karkun.id, ruknId, reason)
@@ -29,30 +40,34 @@ export function MyKarkunCard({ karkun, ruknId }: MyKarkunCardProps) {
   return (
     <>
       <article className="rounded-(--radius-card) border border-border bg-surface p-5 shadow-card">
-        <h2 className="text-lg font-semibold text-text-heading">{karkun.name}</h2>
+        <div className="flex flex-wrap items-center gap-2">
+          <h2 className="text-lg font-semibold text-text-heading">{karkun.name}</h2>
+          <ExecutionStatusBadge status={executionStatus} />
+        </div>
+
         <dl className="mt-3 space-y-2 text-sm">
           <div>
             <dt className="text-secondary">Area</dt>
             <dd className="font-medium text-text-heading">{karkun.area}</dd>
           </div>
+          {nextFollowUp && (
+            <div>
+              <dt className="text-secondary">Next Follow-up</dt>
+              <dd className="font-medium text-text-heading">
+                {nextFollowUp.formattedDate} · {nextFollowUp.purpose}
+              </dd>
+            </div>
+          )}
           <div>
             <dt className="text-secondary">Last Meeting</dt>
             <dd className="font-medium text-text-heading">{karkun.lastVisit ?? '—'}</dd>
-          </div>
-          <div>
-            <dt className="text-secondary">Current Commitment</dt>
-            <dd className="font-medium text-text-heading">{commitmentLabel}</dd>
-          </div>
-          <div>
-            <dt className="text-secondary">JIH App Status</dt>
-            <dd className="font-medium text-text-heading">{karkun.jihAppRegistrationStatus}</dd>
           </div>
         </dl>
 
         <div className="mt-4 grid gap-2">
           <Link to={ruknVisitPath(karkun.id)}>
             <PrimaryButton type="button" fullWidth>
-              Open Annexure-1
+              {actionLabel}
             </PrimaryButton>
           </Link>
           <SecondaryButton type="button" fullWidth onClick={() => setReleaseOpen(true)}>

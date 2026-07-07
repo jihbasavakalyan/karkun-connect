@@ -7,6 +7,7 @@ import {
 import type { Annexure1FormState } from '@/types/annexure1.types'
 import type { AssignmentRecord } from '@/types/assignment'
 import { validateAnnexureFollowUpFields } from '@/validation/followUpValidation'
+import { hasSubmittedAnnexureForAssignment } from '@/stores/annexure1Store'
 
 export type Annexure1ValidationResult = { valid: true } | { valid: false; error: string }
 
@@ -117,6 +118,14 @@ export function validateAnnexure1Submission(
   const contextCheck = validateAnnexure1SubmissionContext(context)
   if (!contextCheck.valid) {
     return contextCheck
+  }
+
+  const assignment = resolveActiveAssignmentForAnnexure1(context.karkunId, context.ruknId)
+  if (assignment && hasSubmittedAnnexureForAssignment(assignment.assignmentId)) {
+    return {
+      valid: false,
+      error: 'Annexure-1 has already been submitted for this assignment.',
+    }
   }
 
   return validateAnnexure1Form(form)

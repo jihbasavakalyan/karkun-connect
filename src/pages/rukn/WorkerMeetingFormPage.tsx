@@ -7,20 +7,40 @@ import { useAnnexure1Form } from '@/hooks/useAnnexure1Form'
 import { useAuth } from '@/hooks/useAuth'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { completeVisitReportSubmission } from '@/lib/mockMissionEngine'
+import { ExecutionStatusBadge } from '@/components/execution/ExecutionStatusBadge'
 import {
   saveAnnexure1Draft,
   submitAnnexure1,
 } from '@/services/annexure1Service'
+import { hasSubmittedAnnexureForAssignment } from '@/stores/annexure1Store'
 import { resolveActiveAssignmentForAnnexure1 } from '@/validation/annexure1Validation'
 import {
   Annexure1ExecutionForm,
-  SubmissionSuccessCard,
   VisitFormHeader,
 } from '@/components/forms/annexure1'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
-import type { SubmittedMeetingForm } from '@/types/annexure1.types'
-import type { RuknMission } from '@/constants/mockMissions'
+
+function buildPostSubmitDestination(
+  isAdminContext: boolean,
+  followUpRequired: boolean,
+): string {
+  if (isAdminContext) {
+    return followUpRequired
+      ? `${ROUTES.ADMIN_FOLLOW_UP}?section=follow-ups`
+      : `${ROUTES.ADMIN_EXECUTION}?section=pending`
+  }
+
+  return ROUTES.RUKN_MY_KARKUN
+}
+
+function buildSuccessMessage(karkunName: string, followUpRequired: boolean): string {
+  if (followUpRequired) {
+    return `Annexure-1 submitted for ${karkunName}. Follow-up scheduled.`
+  }
+
+  return `Annexure-1 submitted for ${karkunName}.`
+}
 
 export function WorkerMeetingFormPage() {
   const { karkunId } = useParams<{ karkunId: string }>()
@@ -37,6 +57,9 @@ export function WorkerMeetingFormPage() {
   const activeAssignment = karkunId
     ? resolveActiveAssignmentForAnnexure1(karkunId, ruknId)
     : undefined
+  const alreadySubmitted =
+    activeAssignment !== undefined &&
+    hasSubmittedAnnexureForAssignment(activeAssignment.assignmentId)
 
   const { form, setField, visitStopped } = useAnnexure1Form(
     karkun
@@ -46,10 +69,6 @@ export function WorkerMeetingFormPage() {
       : undefined,
   )
   const [submitError, setSubmitError] = useState('')
-  const [successState, setSuccessState] = useState<{
-    submission: SubmittedMeetingForm
-    nextMission?: RuknMission
-  } | null>(null)
 
   if (!karkun) {
     return (
@@ -77,12 +96,24 @@ export function WorkerMeetingFormPage() {
     )
   }
 
-  if (successState) {
+  if (alreadySubmitted) {
     return (
-      <SubmissionSuccessCard
-        submission={successState.submission}
-        nextMission={successState.nextMission}
-      />
+      <div className="mx-auto max-w-2xl space-y-4">
+        <VisitFormHeader karkun={karkun} assignmentNumber={activeAssignment.assignmentNumber} />
+        <div className="rounded-(--radius-card) border border-border bg-surface p-6 text-center shadow-card">
+          <ExecutionStatusBadge status="Completed" />
+          <h2 className="mt-4 text-lg font-semibold text-text-heading">Annexure-1 Already Submitted</h2>
+          <p className="mt-2 text-sm text-secondary">
+            This assignment already has a submitted Annexure-1. Duplicate submissions are not
+            allowed.
+          </p>
+          <Link to={backPath} className="mt-6 inline-block">
+            <PrimaryButton type="button">
+              {isAdminContext ? 'Back to Assignments' : 'Back to My Karkun'}
+            </PrimaryButton>
+          </Link>
+        </div>
+      </div>
     )
   }
 
@@ -100,8 +131,14 @@ export function WorkerMeetingFormPage() {
       return
     }
 
-    const { nextMission } = completeVisitReportSubmission()
-    setSuccessState({ submission: result.submission, nextMission })
+    completeVisitReportSubmission()
+
+    const followUpRequired = result.submission.followUpRequired === 'yes'
+    navigate(buildPostSubmitDestination(isAdminContext, followUpRequired), {
+      state: {
+        successMessage: buildSuccessMessage(karkun.name, followUpRequired),
+      },
+    })
   }
 
   const handleSaveDraft = () => {
@@ -111,7 +148,9 @@ export function WorkerMeetingFormPage() {
       setSubmitError(result.error)
       return
     }
-    navigate(isAdminContext ? ROUTES.ADMIN_ASSIGNMENTS : ROUTES.RUKN)
+    navigate(isAdminContext ? ROUTES.ADMIN_ASSIGNMENTS : ROUTES.RUKN_MY_KARKUN, {
+      state: { successMessage: `Draft saved for ${karkun.name}.` },
+    })
   }
 
   const showFullForm = form.visitConducted === 'yes'

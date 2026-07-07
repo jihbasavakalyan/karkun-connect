@@ -1,11 +1,18 @@
 import { useEffect, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
+import { adminAnnexure1Path } from '@/constants/routes'
+import { ExecutionStatusBadge } from '@/components/execution/ExecutionStatusBadge'
+import { ExecutionSuccessBanner } from '@/components/execution/ExecutionSuccessBanner'
 import {
+  completeFollowUpById,
   getCompletedFollowUps,
   getPendingFollowUps,
   getTodaysFollowUps,
 } from '@/services/followUpService'
+import type { FollowUpRecord } from '@/types/followUp'
 import { subscribeToFollowUpStore } from '@/stores/followUpStore'
+import { PrimaryButton } from '@/components/ui/PrimaryButton'
+import { SecondaryButton } from '@/components/ui/SecondaryButton'
 
 const sections = [
   { id: 'follow-ups', label: 'Pending Follow-ups' },
@@ -46,9 +53,13 @@ function SectionNav({
 function FollowUpList({
   records,
   emptyMessage,
+  showActions,
+  onComplete,
 }: {
-  records: ReturnType<typeof getPendingFollowUps>
+  records: FollowUpRecord[]
   emptyMessage: string
+  showActions: boolean
+  onComplete: (followUpId: string) => void
 }) {
   if (records.length === 0) {
     return <p className="text-sm text-secondary">{emptyMessage}</p>
@@ -59,13 +70,38 @@ function FollowUpList({
       {records.map((item) => (
         <li
           key={item.followUpId}
-          className="rounded-lg border border-border bg-surface-muted px-4 py-3 text-sm"
+          className="flex flex-col gap-3 rounded-lg border border-border bg-surface-muted px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
         >
-          <p className="font-semibold text-text-heading">
-            {item.karkunName} · {item.followUpDate} · {item.assignmentNumber}
-          </p>
-          <p className="mt-1 text-secondary">Purpose: {item.purpose}</p>
-          {item.remarks && <p className="mt-1 text-secondary">Remarks: {item.remarks}</p>}
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="font-semibold text-text-heading">{item.karkunName}</p>
+              <ExecutionStatusBadge
+                status={item.status === 'Completed' ? 'Completed' : 'Follow-up Required'}
+              />
+            </div>
+            <p className="mt-1 text-sm text-secondary">
+              {item.followUpDate} · {item.assignmentNumber}
+            </p>
+            <p className="mt-1 text-sm text-secondary">Purpose: {item.purpose}</p>
+          </div>
+
+          {showActions && (
+            <div className="flex shrink-0 flex-col gap-2 sm:w-48">
+              <Link to={adminAnnexure1Path(item.karkunId)}>
+                <PrimaryButton type="button" fullWidth className="px-4 py-2 text-sm">
+                  Open Annexure-1
+                </PrimaryButton>
+              </Link>
+              <SecondaryButton
+                type="button"
+                fullWidth
+                className="px-4 py-2 text-sm"
+                onClick={() => onComplete(item.followUpId)}
+              >
+                Mark Complete
+              </SecondaryButton>
+            </div>
+          )}
         </li>
       ))}
     </ul>
@@ -91,6 +127,10 @@ export function FollowUpDevelopmentModulePage() {
     setSearchParams({ section })
   }
 
+  const handleComplete = (followUpId: string) => {
+    completeFollowUpById(followUpId)
+  }
+
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <div>
@@ -100,6 +140,7 @@ export function FollowUpDevelopmentModulePage() {
         </p>
       </div>
 
+      <ExecutionSuccessBanner />
       <SectionNav active={activeSection} onChange={setSection} />
 
       {activeSection === 'follow-ups' && (
@@ -109,6 +150,8 @@ export function FollowUpDevelopmentModulePage() {
             <FollowUpList
               records={getPendingFollowUps()}
               emptyMessage="No pending follow-ups."
+              showActions
+              onComplete={handleComplete}
             />
           </div>
         </section>
@@ -121,6 +164,8 @@ export function FollowUpDevelopmentModulePage() {
             <FollowUpList
               records={getTodaysFollowUps()}
               emptyMessage="No follow-ups scheduled for today."
+              showActions
+              onComplete={handleComplete}
             />
           </div>
         </section>
@@ -133,6 +178,8 @@ export function FollowUpDevelopmentModulePage() {
             <FollowUpList
               records={getCompletedFollowUps()}
               emptyMessage="No completed follow-ups yet."
+              showActions={false}
+              onComplete={handleComplete}
             />
           </div>
         </section>

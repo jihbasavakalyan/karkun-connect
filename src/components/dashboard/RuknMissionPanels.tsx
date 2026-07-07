@@ -1,14 +1,17 @@
 import { Link } from 'react-router-dom'
-import { DEFAULT_VISIT_KARKUN_ID } from '@/constants/mockCampaignRecord'
-import { ruknVisitPath } from '@/constants/routes'
+import { ROUTES, ruknVisitPath } from '@/constants/routes'
+import { getFirstPendingKarkunIdForRukn } from '@/lib/executionStatus'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import type { RuknMission } from '@/constants/mockMissions'
 
 type CurrentVisitPanelProps = {
   mission?: RuknMission
+  pendingKarkunId?: string
 }
 
-export function CurrentVisitPanel({ mission }: CurrentVisitPanelProps) {
+export function CurrentVisitPanel({ mission, pendingKarkunId }: CurrentVisitPanelProps) {
+  const visitKarkunId = pendingKarkunId
+
   return (
     <section className="rounded-(--radius-card) border border-border bg-surface p-6 shadow-card">
       <h2 className="text-lg font-semibold text-text-heading">Current Visit</h2>
@@ -27,13 +30,17 @@ export function CurrentVisitPanel({ mission }: CurrentVisitPanelProps) {
               <dd className="text-lg font-semibold text-text-heading">{mission.area}</dd>
             </div>
           )}
-          <div>
-            <dt className="text-sm text-secondary">Mission</dt>
-            <dd className="font-medium text-text-heading">{mission.title}</dd>
-          </div>
         </dl>
       ) : (
         <p className="mt-4 text-sm text-secondary">No active visit.</p>
+      )}
+
+      {visitKarkunId && (
+        <Link to={ruknVisitPath(visitKarkunId)} className="mt-4 inline-block">
+          <SecondaryButton type="button" fullWidth>
+            Open Annexure-1
+          </SecondaryButton>
+        </Link>
       )}
     </section>
   )
@@ -97,16 +104,28 @@ export function CompletedWorkPanel({ items }: CompletedWorkPanelProps) {
   )
 }
 
-export function ContinueMissionButton() {
-  if (!DEFAULT_VISIT_KARKUN_ID) {
-    return null
+type ContinueMissionButtonProps = {
+  ruknId: string
+}
+
+export function ContinueMissionButton({ ruknId }: ContinueMissionButtonProps) {
+  const pendingKarkunId = getFirstPendingKarkunIdForRukn(ruknId)
+
+  if (!pendingKarkunId) {
+    return (
+      <Link to={ROUTES.RUKN_MY_KARKUN} className="mt-4 inline-block w-full">
+        <SecondaryButton type="button" fullWidth>
+          View My Karkun
+        </SecondaryButton>
+      </Link>
+    )
   }
 
   return (
     <div className="mt-4">
-      <Link to={ruknVisitPath(DEFAULT_VISIT_KARKUN_ID)}>
+      <Link to={ruknVisitPath(pendingKarkunId)}>
         <SecondaryButton type="button" fullWidth>
-          Continue Mission
+          Continue Annexure-1
         </SecondaryButton>
       </Link>
     </div>

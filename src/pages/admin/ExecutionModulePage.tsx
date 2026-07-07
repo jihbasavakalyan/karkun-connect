@@ -1,6 +1,13 @@
-import { useEffect, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { MOCK_DAILY_PROGRESS_TIMELINE } from '@/constants/mockCommandCenter'
+import { adminAnnexure1Path } from '@/constants/routes'
+import { ExecutionStatusBadge } from '@/components/execution/ExecutionStatusBadge'
+import { ExecutionSuccessBanner } from '@/components/execution/ExecutionSuccessBanner'
+import {
+  getAnnexureActionLabel,
+  getExecutionStatusForAssignment,
+} from '@/lib/executionStatus'
 import {
   getAnnexure1ExecutionMetrics,
   getCampaignRecordData,
@@ -8,11 +15,12 @@ import {
   getTodaysMeetingAssignments,
 } from '@/services/annexure1Service'
 import { subscribeToAnnexure1Store } from '@/stores/annexure1Store'
+import { subscribeToFollowUpStore } from '@/stores/followUpStore'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
+import { PrimaryButton } from '@/components/ui/PrimaryButton'
 
 const sections = [
-  { id: 'meetings', label: "Today's Meetings" },
-  { id: 'reports', label: 'Pending Annexure-1' },
+  { id: 'pending', label: 'Pending Execution' },
   { id: 'completed', label: 'Completed Annexure-1' },
   { id: 'progress', label: 'Daily Progress Timeline' },
 ] as const
@@ -52,19 +60,42 @@ export function ExecutionModulePage() {
   const [, setVersion] = useState(0)
   const [searchParams, setSearchParams] = useSearchParams()
   const sectionParam = searchParams.get('section')
+  const legacySection =
+    sectionParam === 'meetings' || sectionParam === 'reports' ? 'pending' : sectionParam
   const activeSection: ExecutionSection =
-    sections.some((item) => item.id === sectionParam)
-      ? (sectionParam as ExecutionSection)
-      : 'meetings'
+    sections.some((item) => item.id === legacySection)
+      ? (legacySection as ExecutionSection)
+      : 'pending'
 
   useEffect(() => {
-    return subscribeToAnnexure1Store(() => setVersion((value) => value + 1))
+    const unsubAnnexure = subscribeToAnnexure1Store(() => setVersion((value) => value + 1))
+    const unsubFollowUp = subscribeToFollowUpStore(() => setVersion((value) => value + 1))
+    return () => {
+      unsubAnnexure()
+      unsubFollowUp()
+    }
   }, [])
 
   const campaignRecord = getCampaignRecordData()
   const metrics = getAnnexure1ExecutionMetrics()
   const todaysMeetings = getTodaysMeetingAssignments()
   const pendingReports = getPendingReportKarkuns()
+
+  const pendingExecution = useMemo(() => {
+    const byAssignment = new Map<
+      string,
+      (typeof todaysMeetings)[number] | (typeof pendingReports)[number]
+    >()
+
+    for (const item of pendingReports) {
+      byAssignment.set(item.assignment.assignmentId, item)
+    }
+    for (const item of todaysMeetings) {
+      byAssignment.set(item.assignment.assignmentId, item)
+    }
+
+    return [...byAssignment.values()]
+  }, [pendingReports, todaysMeetings])
 
   const setSection = (section: ExecutionSection) => {
     setSearchParams({ section })
@@ -79,54 +110,60 @@ export function ExecutionModulePage() {
         </p>
       </div>
 
+      <ExecutionSuccessBanner />
       <ExecutionSectionNav active={activeSection} onChange={setSection} />
 
-      {activeSection === 'meetings' && (
+      {activeSection === 'pending' && (
         <section className="rounded-(--radius-card) border border-border bg-surface p-6 shadow-card">
-          <h2 className="text-lg font-semibold text-text-heading">Today&apos;s Meetings</h2>
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-semibold text-text-heading">Pending Execution</h2>
+              <p className="mt-1 text-sm text-secondary">
+                Active assignments awaiting today&apos;s Annexure-1 or first submission.
+              </p>
+            </div>
+            <p className="text-3xl font-semibold text-primary">{pendingExecution.length}</p>
+          </div>
           <ul className="mt-4 space-y-3">
-            {todaysMeetings.length === 0 ? (
+            {pendingExecution.length === 0 ? (
               <li className="text-sm text-secondary">
-                All active assignments have Annexure-1 submitted for today.
+                All active assignments are up to date.
               </li>
             ) : (
-              todaysMeetings.map(({ assignment, karkun, rukn }) => (
-                <li
-                  key={assignment.assignmentId}
-                  className="rounded-lg border border-border bg-surface-muted px-4 py-3 text-sm"
-                >
-                  <p className="font-semibold text-text-heading">{karkun!.name}</p>
-                  <p className="mt-1 text-secondary">
-                    {karkun!.area} · Rukn: {rukn!.name} · {assignment.assignmentNumber}
-                  </p>
-                </li>
-              ))
-            )}
-          </ul>
-        </section>
-      )}
+              pendingExecution.map(({ assignment, karkun, rukn }) => {
+                const status = getExecutionStatusForAssignment(
+                  assignment.assignmentId,
+                  assignment.karkunId,
+                )
+                const actionLabel = getAnnexureActionLabel(status)
 
-      {activeSection === 'reports' && (
-        <section className="rounded-(--radius-card) border border-border bg-surface p-6 shadow-card">
-          <h2 className="text-lg font-semibold text-text-heading">Pending Annexure-1</h2>
-          <p className="mt-2 text-3xl font-semibold text-primary">{metrics.pendingReports}</p>
-          <ul className="mt-4 space-y-3">
-            {pendingReports.length === 0 ? (
-              <li className="text-sm text-secondary">All active assignments have Annexure-1 submitted.</li>
-            ) : (
-              pendingReports.map(({ assignment, karkun, rukn }) => (
-                <li
-                  key={assignment.assignmentId}
-                  className="rounded-lg border border-border bg-surface-muted px-4 py-3 text-sm"
-                >
-                  <p className="font-semibold text-text-heading">{karkun!.name}</p>
-                  <p className="mt-1 text-secondary">
-                    Annexure-1 pending · Rukn: {rukn!.name} · {assignment.assignmentNumber}
-                  </p>
-                </li>
-              ))
+                return (
+                  <li
+                    key={assignment.assignmentId}
+                    className="flex flex-col gap-3 rounded-lg border border-border bg-surface-muted px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="font-semibold text-text-heading">{karkun!.name}</p>
+                        <ExecutionStatusBadge status={status} />
+                      </div>
+                      <p className="mt-1 text-sm text-secondary">
+                        {karkun!.area} · Rukn: {rukn!.name} · {assignment.assignmentNumber}
+                      </p>
+                    </div>
+                    <Link to={adminAnnexure1Path(assignment.karkunId)} className="shrink-0">
+                      <PrimaryButton type="button" className="w-full px-4 py-2 text-sm sm:w-auto">
+                        {actionLabel}
+                      </PrimaryButton>
+                    </Link>
+                  </li>
+                )
+              })
             )}
           </ul>
+          <p className="mt-4 text-xs text-secondary">
+            {metrics.pendingMeetings} pending today · {metrics.pendingReports} never submitted
+          </p>
         </section>
       )}
 
@@ -140,16 +177,29 @@ export function ExecutionModulePage() {
               campaignRecord.meetingForms.map((form) => (
                 <li
                   key={form.id}
-                  className="rounded-lg border border-border bg-surface-muted px-4 py-3 text-sm"
+                  className="flex flex-col gap-3 rounded-lg border border-border bg-surface-muted px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
                 >
-                  <p className="font-semibold text-text-heading">
-                    {form.workerName} · {form.visitDate} · {form.assignmentNumber}
-                  </p>
-                  <p className="mt-1 text-secondary">
-                    {form.visitConducted === 'yes'
-                      ? form.discussionSummary || 'Annexure-1 submitted'
-                      : `Not conducted: ${form.notConductedReason}`}
-                  </p>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-semibold text-text-heading">
+                        {form.workerName} · {form.visitDate}
+                      </p>
+                      <ExecutionStatusBadge status="Completed" />
+                    </div>
+                    <p className="mt-1 text-sm text-secondary">
+                      {form.assignmentNumber} · Rukn: {form.assignedRukn}
+                    </p>
+                    <p className="mt-1 text-sm text-secondary">
+                      {form.visitConducted === 'yes'
+                        ? form.discussionSummary || 'Annexure-1 submitted'
+                        : `Not conducted: ${form.notConductedReason}`}
+                    </p>
+                  </div>
+                  <Link to={adminAnnexure1Path(form.karkunId)} className="shrink-0">
+                    <PrimaryButton type="button" className="w-full px-4 py-2 text-sm sm:w-auto">
+                      View Submission
+                    </PrimaryButton>
+                  </Link>
                 </li>
               ))
             )}

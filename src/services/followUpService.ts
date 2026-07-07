@@ -3,6 +3,7 @@ import {
   completePendingFollowUpsForAssignment,
   getAllFollowUpRecords,
   getActiveFollowUpForKarkun,
+  updateFollowUpStatus,
 } from '@/stores/followUpStore'
 import type {
   FollowUpDashboardMetrics,
@@ -152,4 +153,8 @@ export function getFollowUpCompletionRate(): number {
 
   const completed = records.filter((record) => record.status === 'Completed').length
   return Math.round((completed / records.length) * 100)
+}
+
+export function completeFollowUpById(followUpId: string) {
+  return updateFollowUpStatus(followUpId, 'Completed', new Date().toISOString())
 }

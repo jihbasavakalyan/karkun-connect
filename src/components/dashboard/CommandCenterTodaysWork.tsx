@@ -26,13 +26,13 @@ export function CommandCenterTodaysWork() {
       id: 'pending-meetings',
       label: 'Pending Meetings',
       count: metrics.pendingMeetings,
-      to: `${ROUTES.ADMIN_EXECUTION}?section=meetings`,
+      to: `${ROUTES.ADMIN_EXECUTION}?section=pending`,
     },
     {
       id: 'pending-reports',
       label: 'Pending Annexure-1',
       count: metrics.pendingReports,
-      to: `${ROUTES.ADMIN_EXECUTION}?section=reports`,
+      to: `${ROUTES.ADMIN_EXECUTION}?section=pending`,
     },
     {
       id: 'pending-follow-ups',
