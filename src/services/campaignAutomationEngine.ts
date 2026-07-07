@@ -1,0 +1,859 @@
+/**
+ * CampaignAutomationEngine — derives operational work from existing modules.
+ * Does not store data. Follows Workflow Automation Constitution.
+ */
+import { getKarkunById } from '@/constants/mockKarkunRegistry'
+import { APPROVED_CAMPAIGN_OBJECTIVES } from '@/constants/mockCampaignSetup'
+import {
+  adminCompliancePath,
+  adminExecutionPath,
+  ROUTES,
+  ruknVisitPath,
+} from '@/constants/routes'
+import { getExecutionDashboardData, getExecutionStatusForAssignment } from '@/lib/executionStatus'
+import { getAllAssignments } from '@/stores/assignmentStore'
+import { getSubmittedMeetingForms } from '@/stores/annexure1Store'
+import {
+  formatActiveCampaignDuration,
+  getActiveCampaign,
+} from '@/services/campaignService'
+import { getAssignmentDashboardMetrics } from '@/services/assignmentService'
+import {
+  getAnnexure1ExecutionMetrics,
+  getCampaignHealthFromAnnexure1,
+  getTodaysMeetingAssignments,
+} from '@/services/annexure1Service'
+import { getPendingFollowUps } from '@/services/followUpService'
+import { getBaitulMaalDashboardMetrics } from '@/services/baitulMaalService'
+import {
+  getAllIjtemaAttendanceSummaries,
+  getIjtemaAttendanceDashboardMetrics,
+} from '@/services/ijtemaAttendanceService'
+import { getJihWebPortalDashboardMetrics } from '@/services/jihWebPortalService'
+import type {
+  AdminCommandCenterSnapshot,
+  AutomationAlert,
+  AutomationPriority,
+  CallQueueItem,
+  CampaignHeroData,
+  CommandCenterKpi,
+  FollowUpQueueGroup,
+  FollowUpQueueSection,
+  NextRecommendedAction,
+  ReminderItem,
+  RuknCommandCenterSnapshot,
+  ScheduleItem,
+} from '@/types/campaignAutomation.types'
+import type { FollowUpRecord } from '@/types/followUp'
+
+function todayIsoDate(): string {
+  return new Date().toISOString().slice(0, 10)
+}
+
+function addDays(isoDate: string, days: number): string {
+  const date = new Date(isoDate)
+  date.setDate(date.getDate() + days)
+  return date.toISOString().slice(0, 10)
+}
+
+function endOfWeekIso(isoDate: string): string {
+  const date = new Date(isoDate)
+  const day = date.getDay()
+  const daysUntilSunday = day === 0 ? 0 : 7 - day
+  date.setDate(date.getDate() + daysUntilSunday)
+  return date.toISOString().slice(0, 10)
+}
+
+function formatScheduleTime(hour: number, minute = 0): string {
+  return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`
+}
+
+function formatDisplayTime(isoTimestamp: string): string {
+  return new Date(isoTimestamp).toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+  })
+}
+
+function filterByRukn<T extends { ruknId: string }>(items: T[], ruknId?: string): T[] {
+  if (!ruknId) {
+    return items
+  }
+  return items.filter((item) => item.ruknId === ruknId)
+}
+
+function getDerivedCampaignDayCounts(startDate: string, endDate: string): {
+  currentDay: number
+  totalDays: number
+} {
+  const start = new Date(startDate)
+  const end = new Date(endDate)
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  start.setHours(0, 0, 0, 0)
+  end.setHours(0, 0, 0, 0)
+
+  const totalDays = Math.max(1, Math.round((end.getTime() - start.getTime()) / 86400000) + 1)
+  const elapsed = Math.round((today.getTime() - start.getTime()) / 86400000) + 1
+  const currentDay = Math.min(totalDays, Math.max(1, elapsed))
+
+  return { currentDay, totalDays }
+}
+
+function getActiveCampaignTheme(): string {
+  const labels = APPROVED_CAMPAIGN_OBJECTIVES.slice(0, 3).map((objective) => objective.label)
+  return labels.join(' · ')
+}
+
+export function buildCampaignHeroData(): CampaignHeroData | null {
+  const campaign = getActiveCampaign()
+  if (!campaign) {
+    return null
+  }
+
+  const health = getCampaignHealthFromAnnexure1()
+  const { currentDay, totalDays } = getDerivedCampaignDayCounts(
+    campaign.startDate,
+    campaign.endDate,
+  )
+
+  return {
+    name: campaign.name,
+    duration: formatActiveCampaignDuration(),
+    status: campaign.status,
+    progress: health.overallScore,
+    currentDay,
+    totalDays,
+    theme: getActiveCampaignTheme(),
+  }
+}
+
+function getPendingComplianceCount(ruknId?: string): number {
+  const jih = getJihWebPortalDashboardMetrics()
+  const baitul = getBaitulMaalDashboardMetrics()
+  const ijtemaSummaries = getAllIjtemaAttendanceSummaries()
+
+  let ijtemaPending = ijtemaSummaries.filter(
+    (item) => item.status === 'Not recorded' || item.status === 'Absent',
+  ).length
+
+  if (ruknId) {
+    const assignedKarkunIds = new Set(
+      getAllAssignments()
+        .filter((record) => record.status === 'Active' && record.ruknId === ruknId)
+        .map((record) => record.karkunId),
+    )
+    ijtemaPending = ijtemaSummaries.filter(
+      (item) =>
+        assignedKarkunIds.has(item.karkunId) &&
+        (item.status === 'Not recorded' || item.status === 'Absent'),
+    ).length
+
+    const assignedCount = assignedKarkunIds.size
+    const jihPending = Math.min(jih.notRegistered + jih.pendingReports, assignedCount)
+    const baitulPending = Math.min(baitul.pending, assignedCount)
+    return jihPending + baitulPending + ijtemaPending
+  }
+
+  return jih.notRegistered + jih.pendingReports + baitul.pending + ijtemaPending
+}
+
+function getPendingFirstVisitsCount(ruknId?: string): number {
+  const { activeItems } = getExecutionDashboardData()
+  const scoped = ruknId
+    ? activeItems.filter((item) => {
+        const assignment = getAllAssignments().find(
+          (record) => record.assignmentId === item.assignmentId,
+        )
+        return assignment?.ruknId === ruknId
+      })
+    : activeItems
+
+  return scoped.filter((item) => item.status === 'Pending').length
+}
+
+function buildAdminKpis(): CommandCenterKpi[] {
+  const assignmentMetrics = getAssignmentDashboardMetrics()
+  const execution = getExecutionDashboardData()
+  const annexureMetrics = getAnnexure1ExecutionMetrics()
+  const pendingCompliance = getPendingComplianceCount()
+
+  return [
+    {
+      id: 'assigned-karkuns',
+      label: 'Assigned Karkuns',
+      value: assignmentMetrics.activeAssignments,
+      route: ROUTES.ADMIN_ASSIGNMENTS,
+    },
+    {
+      id: 'pending-first-visits',
+      label: 'Pending First Visits',
+      value: getPendingFirstVisitsCount(),
+      route: adminExecutionPath('pending'),
+    },
+    {
+      id: 'todays-visits',
+      label: "Today's Scheduled Visits",
+      value: getTodaysMeetingAssignments().length,
+      route: adminExecutionPath('pending'),
+    },
+    {
+      id: 'pending-annexure',
+      label: 'Pending Annexure-1',
+      value: annexureMetrics.pendingReports,
+      route: adminExecutionPath('pending'),
+    },
+    {
+      id: 'follow-up-required',
+      label: 'Follow-up Required',
+      value: execution.counts.followUpRequired,
+      route: adminExecutionPath('follow-up'),
+    },
+    {
+      id: 'pending-compliance',
+      label: 'Pending Compliance',
+      value: pendingCompliance,
+      route: adminCompliancePath('ijtema'),
+    },
+    {
+      id: 'completed-today',
+      label: 'Completed Today',
+      value: execution.counts.completedToday,
+      route: adminExecutionPath('completed-today'),
+    },
+    {
+      id: 'campaign-progress',
+      label: 'Campaign Progress',
+      value: getCampaignHealthFromAnnexure1().overallScore,
+      route: ROUTES.ADMIN_CAMPAIGN,
+    },
+  ]
+}
+
+function buildRuknKpis(ruknId: string): CommandCenterKpi[] {
+  const assigned = getAllAssignments().filter(
+    (record) => record.status === 'Active' && record.ruknId === ruknId,
+  )
+  const execution = getExecutionDashboardData()
+  const scopedItems = execution.activeItems.filter((item) =>
+    assigned.some((record) => record.assignmentId === item.assignmentId),
+  )
+
+  const pendingAnnexure = scopedItems.filter(
+    (item) => item.status === 'Pending' || item.status === 'In Progress',
+  ).length
+
+  const followUpRequired = scopedItems.filter(
+    (item) => item.status === 'Follow-up Required',
+  ).length
+
+  const completedToday = getSubmittedMeetingForms().filter(
+    (form) =>
+      form.submissionDate.slice(0, 10) === todayIsoDate() &&
+      assigned.some((record) => record.assignmentId === form.assignmentId),
+  ).length
+
+  return [
+    {
+      id: 'assigned-karkuns',
+      label: 'Assigned Karkuns',
+      value: assigned.length,
+      route: ROUTES.RUKN_MY_KARKUN,
+    },
+    {
+      id: 'pending-first-visits',
+      label: 'Pending First Visits',
+      value: scopedItems.filter((item) => item.status === 'Pending').length,
+      route: ROUTES.RUKN_MY_KARKUN,
+    },
+    {
+      id: 'pending-annexure',
+      label: 'Pending Annexure-1',
+      value: pendingAnnexure,
+      route: ROUTES.RUKN_MY_KARKUN,
+    },
+    {
+      id: 'follow-up-required',
+      label: 'Follow-up Required',
+      value: followUpRequired,
+      route: ROUTES.RUKN_MY_KARKUN,
+    },
+    {
+      id: 'pending-compliance',
+      label: 'Pending Compliance',
+      value: getPendingComplianceCount(ruknId),
+      route: ROUTES.RUKN_MY_KARKUN,
+    },
+    {
+      id: 'completed-today',
+      label: 'Completed Today',
+      value: completedToday,
+      route: ROUTES.RUKN_CAMPAIGN_RECORD,
+    },
+    {
+      id: 'campaign-progress',
+      label: 'Campaign Progress',
+      value: getCampaignHealthFromAnnexure1().overallScore,
+      route: ROUTES.RUKN_CAMPAIGN_RECORD,
+    },
+  ]
+}
+
+function categorizeFollowUpRecord(record: FollowUpRecord, today: string): FollowUpQueueSection {
+  if (record.followUpDate < today) {
+    return 'overdue'
+  }
+  if (record.followUpDate === today) {
+    return 'today'
+  }
+  if (record.followUpDate === addDays(today, 1)) {
+    return 'tomorrow'
+  }
+  if (record.followUpDate <= endOfWeekIso(today)) {
+    return 'thisWeek'
+  }
+  return 'thisWeek'
+}
+
+export function buildFollowUpQueue(ruknId?: string): FollowUpQueueGroup[] {
+  const today = todayIsoDate()
+  const pending = filterByRukn(getPendingFollowUps(), ruknId)
+
+  const sections: FollowUpQueueGroup[] = [
+    { section: 'overdue', label: 'Overdue', items: [] },
+    { section: 'today', label: 'Today', items: [] },
+    { section: 'tomorrow', label: 'Tomorrow', items: [] },
+    { section: 'thisWeek', label: 'This Week', items: [] },
+  ]
+
+  for (const record of pending) {
+    const section = categorizeFollowUpRecord(record, today)
+    const group = sections.find((entry) => entry.section === section)
+    if (!group) {
+      continue
+    }
+
+    group.items.push({
+      followUpId: record.followUpId,
+      karkunName: record.karkunName,
+      followUpDate: record.followUpDate,
+      purpose: record.purpose,
+      route: ruknId ? ROUTES.RUKN_MY_KARKUN : ROUTES.ADMIN_FOLLOW_UP,
+    })
+  }
+
+  return sections.filter((group) => group.items.length > 0)
+}
+
+export function buildCallQueue(ruknId?: string): CallQueueItem[] {
+  const activeAssignments = getAllAssignments().filter((record) => record.status === 'Active')
+  const scoped = ruknId
+    ? activeAssignments.filter((record) => record.ruknId === ruknId)
+    : activeAssignments
+
+  return scoped
+    .filter((assignment) => {
+      const status = getExecutionStatusForAssignment(assignment.assignmentId, assignment.karkunId)
+      return status === 'Pending'
+    })
+    .map((assignment) => {
+      const karkun = getKarkunById(assignment.karkunId)
+      return {
+        id: `call-${assignment.assignmentId}`,
+        karkunId: assignment.karkunId,
+        karkunName: karkun?.name ?? assignment.karkunId,
+        mobile: karkun?.mobile ?? '',
+        ruknId: assignment.ruknId,
+        assignmentId: assignment.assignmentId,
+        label: `Call ${karkun?.name ?? 'Karkun'}`,
+        route: ruknId
+          ? ruknVisitPath(assignment.karkunId)
+          : adminExecutionPath('pending'),
+      }
+    })
+    .slice(0, 8)
+}
+
+export function buildReminders(ruknId?: string): ReminderItem[] {
+  const reminders: ReminderItem[] = []
+  const today = todayIsoDate()
+  const ijtema = getIjtemaAttendanceDashboardMetrics()
+  const jih = getJihWebPortalDashboardMetrics()
+  const baitul = getBaitulMaalDashboardMetrics()
+  const pendingFollowUps = filterByRukn(getPendingFollowUps(), ruknId)
+  const overdueFollowUps = pendingFollowUps.filter((record) => record.followUpDate < today)
+  const todaysFollowUps = pendingFollowUps.filter((record) => record.followUpDate === today)
+  const todaysVisits = ruknId
+    ? getTodaysMeetingAssignments().filter((item) => item.assignment.ruknId === ruknId)
+    : getTodaysMeetingAssignments()
+  const newAssignments = (ruknId
+    ? getAllAssignments().filter((record) => record.status === 'Active' && record.ruknId === ruknId)
+    : getAllAssignments().filter((record) => record.status === 'Active')
+  ).filter((assignment) => getExecutionStatusForAssignment(assignment.assignmentId, assignment.karkunId) === 'Pending')
+
+  if (ijtema.absent > 0 || getAllIjtemaAttendanceSummaries().some((item) => item.status === 'Not recorded')) {
+    reminders.push({
+      id: 'reminder-ijtema',
+      label: 'Weekly Ijtema',
+      reason: 'Attendance needs recording for this week',
+      route: adminCompliancePath('ijtema'),
+      priority: 4,
+    })
+  }
+
+  if (jih.pendingReports > 0) {
+    reminders.push({
+      id: 'reminder-monthly-report',
+      label: 'Monthly Report',
+      reason: `${jih.pendingReports} monthly report(s) pending`,
+      route: adminCompliancePath('monthly-reporting'),
+      priority: 4,
+    })
+  }
+
+  if (baitul.pending > 0) {
+    reminders.push({
+      id: 'reminder-baitul-maal',
+      label: 'Bait-ul-Maal',
+      reason: `${baitul.pending} contribution(s) pending`,
+      route: adminCompliancePath('baitul-maal'),
+      priority: 4,
+    })
+  }
+
+  if (overdueFollowUps.length > 0) {
+    reminders.push({
+      id: 'reminder-follow-up-overdue',
+      label: 'Follow-up Due',
+      reason: `${overdueFollowUps.length} overdue follow-up(s)`,
+      route: ruknId ? ROUTES.RUKN_MY_KARKUN : ROUTES.ADMIN_FOLLOW_UP,
+      priority: 1,
+    })
+  }
+
+  if (todaysFollowUps.length > 0) {
+    reminders.push({
+      id: 'reminder-follow-up-today',
+      label: 'Follow-up Today',
+      reason: `${todaysFollowUps.length} follow-up(s) scheduled today`,
+      route: ruknId ? ROUTES.RUKN_MY_KARKUN : ROUTES.ADMIN_FOLLOW_UP,
+      priority: 2,
+    })
+  }
+
+  if (todaysVisits.length > 0) {
+    reminders.push({
+      id: 'reminder-visit-due',
+      label: 'Visit Due',
+      reason: `${todaysVisits.length} visit(s) scheduled for today`,
+      route: ruknId ? ROUTES.RUKN_MY_KARKUN : adminExecutionPath('pending'),
+      priority: 2,
+    })
+  }
+
+  if (newAssignments.length > 0) {
+    reminders.push({
+      id: 'reminder-assignment-pending',
+      label: 'Assignment Pending',
+      reason: `${newAssignments.length} assignment(s) awaiting first visit`,
+      route: ruknId ? ROUTES.RUKN_MY_KARKUN : ROUTES.ADMIN_ASSIGNMENTS,
+      priority: 3,
+    })
+  }
+
+  return reminders.sort((a, b) => a.priority - b.priority)
+}
+
+type RawWorkItem = {
+  id: string
+  title: string
+  subtitle?: string
+  type: ScheduleItem['type']
+  route: string
+  priority: AutomationPriority
+  karkunId?: string
+}
+
+export function buildDailySchedule(ruknId?: string): ScheduleItem[] {
+  const rawItems: RawWorkItem[] = []
+  const followUpQueue = buildFollowUpQueue(ruknId)
+  const callQueue = buildCallQueue(ruknId)
+  const reminders = buildReminders(ruknId)
+  const todaysVisits = ruknId
+    ? getTodaysMeetingAssignments().filter((item) => item.assignment.ruknId === ruknId)
+    : getTodaysMeetingAssignments()
+
+  for (const group of followUpQueue) {
+    if (group.section !== 'overdue' && group.section !== 'today') {
+      continue
+    }
+    for (const item of group.items) {
+      rawItems.push({
+        id: `schedule-follow-up-${item.followUpId}`,
+        title: `Follow-up ${item.karkunName}`,
+        subtitle: item.purpose,
+        type: group.section === 'overdue' ? 'overdue-follow-up' : 'follow-up',
+        route: item.route,
+        priority: group.section === 'overdue' ? 1 : 2,
+        karkunId: undefined,
+      })
+    }
+  }
+
+  for (const visit of todaysVisits) {
+    rawItems.push({
+      id: `schedule-visit-${visit.assignment.assignmentId}`,
+      title: `Visit ${visit.karkun?.name ?? 'Karkun'}`,
+      subtitle: visit.karkun?.area,
+      type: 'scheduled-visit',
+      route: ruknId
+        ? ruknVisitPath(visit.assignment.karkunId)
+        : adminExecutionPath('pending'),
+      priority: 2,
+      karkunId: visit.assignment.karkunId,
+    })
+  }
+
+  for (const call of callQueue) {
+    rawItems.push({
+      id: `schedule-call-${call.id}`,
+      title: call.label,
+      subtitle: call.mobile,
+      type: 'call',
+      route: call.route,
+      priority: 3,
+      karkunId: call.karkunId,
+    })
+  }
+
+  for (const reminder of reminders.slice(0, 3)) {
+    rawItems.push({
+      id: `schedule-reminder-${reminder.id}`,
+      title: reminder.label,
+      subtitle: reminder.reason,
+      type: 'reminder',
+      route: reminder.route,
+      priority: reminder.priority,
+    })
+  }
+
+  const compliancePending = getPendingComplianceCount(ruknId)
+  if (compliancePending > 0) {
+    rawItems.push({
+      id: 'schedule-compliance',
+      title: 'Compliance Review',
+      subtitle: `${compliancePending} item(s) pending`,
+      type: 'compliance',
+      route: adminCompliancePath('ijtema'),
+      priority: 4,
+    })
+  }
+
+  const sorted = rawItems.sort((a, b) => a.priority - b.priority)
+  const startHour = 9
+  const slotMinutes = 90
+
+  return sorted.map((item, index) => {
+    const totalMinutes = startHour * 60 + index * slotMinutes
+    const hour = Math.floor(totalMinutes / 60)
+    const minute = totalMinutes % 60
+
+    return {
+      id: item.id,
+      time: formatScheduleTime(hour, minute),
+      title: item.title,
+      subtitle: item.subtitle,
+      type: item.type,
+      route: item.route,
+      priority: item.priority,
+      karkunId: item.karkunId,
+    }
+  })
+}
+
+export function buildAlerts(ruknId?: string): AutomationAlert[] {
+  const alerts: AutomationAlert[] = []
+  const today = todayIsoDate()
+  const pendingFollowUps = filterByRukn(getPendingFollowUps(), ruknId)
+  const overdueFollowUps = pendingFollowUps.filter((record) => record.followUpDate < today)
+  const annexureMetrics = getAnnexure1ExecutionMetrics()
+  const jih = getJihWebPortalDashboardMetrics()
+  const assignmentMetrics = getAssignmentDashboardMetrics()
+
+  if (overdueFollowUps.length > 0) {
+    alerts.push({
+      id: 'alert-overdue-follow-ups',
+      severity: 'high',
+      title: 'Overdue Follow-ups',
+      message: `${overdueFollowUps.length} follow-up(s) are past due`,
+      route: ruknId ? ROUTES.RUKN_MY_KARKUN : ROUTES.ADMIN_FOLLOW_UP,
+    })
+  }
+
+  if (jih.pendingReports > 0) {
+    alerts.push({
+      id: 'alert-pending-reports',
+      severity: 'medium',
+      title: 'Pending Reports',
+      message: `${jih.pendingReports} monthly report(s) still pending`,
+      route: adminCompliancePath('monthly-reporting'),
+    })
+  }
+
+  const inactiveAssigned = getAllAssignments()
+    .filter((record) => record.status === 'Active')
+    .filter((record) => !ruknId || record.ruknId === ruknId)
+    .filter((record) => getKarkunById(record.karkunId)?.status === 'inactive')
+
+  if (inactiveAssigned.length > 0) {
+    alerts.push({
+      id: 'alert-inactive-karkuns',
+      severity: 'medium',
+      title: 'Inactive Karkuns',
+      message: `${inactiveAssigned.length} assigned Karkun(s) are inactive`,
+      route: ROUTES.ADMIN_KARKUN,
+    })
+  }
+
+  const uncontacted = getAllAssignments()
+    .filter((record) => record.status === 'Active')
+    .filter((record) => !ruknId || record.ruknId === ruknId)
+    .filter(
+      (record) =>
+        getExecutionStatusForAssignment(record.assignmentId, record.karkunId) === 'Pending',
+    )
+
+  if (uncontacted.length > 0) {
+    alerts.push({
+      id: 'alert-uncontacted',
+      severity: 'medium',
+      title: 'Long Uncontacted Karkuns',
+      message: `${uncontacted.length} assigned Karkun(s) have no visit recorded`,
+      route: ruknId ? ROUTES.RUKN_MY_KARKUN : adminExecutionPath('pending'),
+    })
+  }
+
+  if (assignmentMetrics.activeAssignments > 0 && annexureMetrics.pendingReports > 0) {
+    alerts.push({
+      id: 'alert-assignment-without-visit',
+      severity: 'high',
+      title: 'Assignment without Visit',
+      message: `${annexureMetrics.pendingReports} active assignment(s) need Annexure-1`,
+      route: adminExecutionPath('pending'),
+    })
+  }
+
+  const compliancePending = getPendingComplianceCount(ruknId)
+  if (compliancePending > 0) {
+    alerts.push({
+      id: 'alert-compliance-overdue',
+      severity: 'medium',
+      title: 'Compliance Overdue',
+      message: `${compliancePending} compliance item(s) need attention`,
+      route: adminCompliancePath('ijtema'),
+    })
+  }
+
+  return alerts
+}
+
+function buildAdminNextAction(): NextRecommendedAction {
+  const overdue = buildFollowUpQueue().find((group) => group.section === 'overdue')
+  if (overdue && overdue.items.length > 0) {
+    return {
+      title: 'Overdue Follow-ups',
+      description: `${overdue.items.length} follow-up(s) need immediate attention`,
+      route: ROUTES.ADMIN_FOLLOW_UP,
+      actionLabel: 'Open Follow-up',
+      isCaughtUp: false,
+    }
+  }
+
+  const compliancePending = getPendingComplianceCount()
+  if (compliancePending > 0) {
+    return {
+      title: 'Pending Compliance',
+      description: `${compliancePending} compliance item(s) waiting for review`,
+      route: adminCompliancePath('ijtema'),
+      actionLabel: 'Open Compliance',
+      isCaughtUp: false,
+    }
+  }
+
+  const pendingVisits = getPendingFirstVisitsCount()
+  if (pendingVisits > 0) {
+    return {
+      title: 'Pending First Visits',
+      description: `${pendingVisits} Karkun(s) need their first visit`,
+      route: adminExecutionPath('pending'),
+      actionLabel: 'Open Pending Visits',
+      isCaughtUp: false,
+    }
+  }
+
+  const unassignedRukns = getAssignmentDashboardMetrics().unassignedRukns
+  if (unassignedRukns > 0) {
+    return {
+      title: 'Unassigned Rukns',
+      description: `${unassignedRukns} Rukn(s) still need Karkun assignments`,
+      route: ROUTES.ADMIN_ASSIGNMENTS,
+      actionLabel: 'Assign Karkun',
+      isCaughtUp: false,
+    }
+  }
+
+  return {
+    title: "You're all caught up",
+    description: 'No urgent campaign actions right now.',
+    route: ROUTES.ADMIN,
+    actionLabel: 'View Command Center',
+    isCaughtUp: true,
+  }
+}
+
+function buildRuknNextAction(ruknId: string): NextRecommendedAction {
+  const overdue = buildFollowUpQueue(ruknId).find((group) => group.section === 'overdue')
+  if (overdue && overdue.items.length > 0) {
+    return {
+      title: 'Overdue Follow-up',
+      description: `Complete follow-up for ${overdue.items[0]?.karkunName ?? 'Karkun'}`,
+      route: ROUTES.RUKN_MY_KARKUN,
+      actionLabel: 'Complete Follow-up',
+      isCaughtUp: false,
+    }
+  }
+
+  const pendingAssignment = getAllAssignments().find(
+    (record) =>
+      record.status === 'Active' &&
+      record.ruknId === ruknId &&
+      getExecutionStatusForAssignment(record.assignmentId, record.karkunId) === 'Pending',
+  )
+
+  if (pendingAssignment) {
+    const karkun = getKarkunById(pendingAssignment.karkunId)
+    return {
+      title: 'Visit Pending',
+      description: `Open Annexure-1 for ${karkun?.name ?? 'assigned Karkun'}`,
+      route: ruknVisitPath(pendingAssignment.karkunId),
+      actionLabel: 'Open Annexure-1',
+      isCaughtUp: false,
+    }
+  }
+
+  const inProgress = getAllAssignments().find(
+    (record) =>
+      record.status === 'Active' &&
+      record.ruknId === ruknId &&
+      getExecutionStatusForAssignment(record.assignmentId, record.karkunId) === 'In Progress',
+  )
+
+  if (inProgress) {
+    return {
+      title: 'Annexure-1 In Progress',
+      description: 'Continue the visit form you started',
+      route: ruknVisitPath(inProgress.karkunId),
+      actionLabel: 'Continue Annexure-1',
+      isCaughtUp: false,
+    }
+  }
+
+  const followUpRequired = getAllAssignments().find(
+    (record) =>
+      record.status === 'Active' &&
+      record.ruknId === ruknId &&
+      getExecutionStatusForAssignment(record.assignmentId, record.karkunId) ===
+        'Follow-up Required',
+  )
+
+  if (followUpRequired) {
+    return {
+      title: 'Follow-up Due',
+      description: 'Complete the required follow-up visit',
+      route: ROUTES.RUKN_MY_KARKUN,
+      actionLabel: 'Complete Follow-up',
+      isCaughtUp: false,
+    }
+  }
+
+  const callQueue = buildCallQueue(ruknId)
+  if (callQueue.length > 0) {
+    return {
+      title: callQueue[0]!.label,
+      description: 'Start with the next Karkun call before the visit',
+      route: callQueue[0]!.route,
+      actionLabel: 'Start Call Queue',
+      isCaughtUp: false,
+    }
+  }
+
+  return {
+    title: "You're all caught up",
+    description: 'All assigned Karkuns are up to date for today.',
+    route: ROUTES.RUKN,
+    actionLabel: 'View Schedule',
+    isCaughtUp: true,
+  }
+}
+
+function buildRuknCompletedToday(ruknId: string) {
+  const today = todayIsoDate()
+  const assignedIds = new Set(
+    getAllAssignments()
+      .filter((record) => record.status === 'Active' && record.ruknId === ruknId)
+      .map((record) => record.assignmentId),
+  )
+
+  return getSubmittedMeetingForms()
+    .filter(
+      (form) =>
+        form.submissionDate.slice(0, 10) === today &&
+        assignedIds.has(form.assignmentId),
+    )
+    .map((form) => ({
+      id: form.id,
+      label: `Annexure-1 — ${form.workerName}`,
+      time: formatDisplayTime(form.submittedAt),
+    }))
+}
+
+export function getAdminCommandCenterSnapshot(): AdminCommandCenterSnapshot {
+  return {
+    role: 'administrator',
+    hero: buildCampaignHeroData(),
+    kpis: buildAdminKpis(),
+    schedule: buildDailySchedule(),
+    callQueue: buildCallQueue(),
+    reminders: buildReminders(),
+    followUpQueue: buildFollowUpQueue(),
+    alerts: buildAlerts(),
+    nextAction: buildAdminNextAction(),
+  }
+}
+
+export function getRuknCommandCenterSnapshot(ruknId: string): RuknCommandCenterSnapshot {
+  return {
+    role: 'rukn',
+    ruknId,
+    hero: buildCampaignHeroData(),
+    kpis: buildRuknKpis(ruknId),
+    schedule: buildDailySchedule(ruknId),
+    callQueue: buildCallQueue(ruknId),
+    reminders: buildReminders(ruknId),
+    followUpQueue: buildFollowUpQueue(ruknId),
+    alerts: buildAlerts(ruknId),
+    nextAction: buildRuknNextAction(ruknId),
+    completedToday: buildRuknCompletedToday(ruknId),
+  }
+}
+
+export const CampaignAutomationEngine = {
+  buildCampaignHeroData,
+  buildDailySchedule,
+  buildCallQueue,
+  buildReminders,
+  buildFollowUpQueue,
+  buildAlerts,
+  getAdminCommandCenterSnapshot,
+  getRuknCommandCenterSnapshot,
+} as const

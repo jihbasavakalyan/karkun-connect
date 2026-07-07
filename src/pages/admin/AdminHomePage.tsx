@@ -1,33 +1,36 @@
 import {
-  CommandCenterActiveCampaign,
-  CommandCenterAssignmentMetrics,
-  CommandCenterBaitulMaalMetrics,
-  CommandCenterIjtemaAttendanceMetrics,
-  CommandCenterJihWebPortalMetrics,
-  CommandCenterPeopleStats,
-  CommandCenterQuickActions,
-  CommandCenterTodaysWork,
-  RecentActivityPanel,
-} from '@/components/dashboard'
-import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
+  CommandCenterAdminQuickActions,
+  CommandCenterAlerts,
+  CommandCenterCallQueue,
+  CommandCenterFollowUpQueue,
+  CommandCenterHero,
+  CommandCenterKpiGrid,
+  CommandCenterNextAction,
+  CommandCenterReminders,
+  CommandCenterSchedule,
+} from '@/components/command-center'
+import { useCampaignAutomationEngine } from '@/hooks/useCampaignAutomationEngine'
 
 export function AdminHomePage() {
-  useAssignmentEngine()
+  const snapshot = useCampaignAutomationEngine({ role: 'administrator' })
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
-      <CommandCenterActiveCampaign />
-      <CommandCenterPeopleStats />
-      <CommandCenterJihWebPortalMetrics />
-      <CommandCenterBaitulMaalMetrics />
-      <CommandCenterIjtemaAttendanceMetrics />
-      <CommandCenterAssignmentMetrics />
-      <CommandCenterTodaysWork />
+      <CommandCenterHero hero={snapshot.hero} />
+      <CommandCenterNextAction nextAction={snapshot.nextAction} />
+      <CommandCenterKpiGrid kpis={snapshot.kpis} />
+      <CommandCenterAlerts alerts={snapshot.alerts} />
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <CommandCenterQuickActions />
-        <RecentActivityPanel />
+        <CommandCenterSchedule schedule={snapshot.schedule} />
+        <div className="space-y-6">
+          <CommandCenterCallQueue callQueue={snapshot.callQueue} />
+          <CommandCenterReminders reminders={snapshot.reminders} />
+        </div>
       </div>
+
+      <CommandCenterFollowUpQueue followUpQueue={snapshot.followUpQueue} />
+      <CommandCenterAdminQuickActions />
     </div>
   )
 }

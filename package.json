@@ -13,6 +13,7 @@
     "verify:assignments": "npx vite-node scripts/verify-inline-assignment.ts",
     "verify:compliance": "npx vite-node scripts/verify-compliance-module.ts",
     "verify:data": "npx vite-node scripts/verify-data-integrity.ts",
+    "verify:automation": "npx vite-node scripts/verify-campaign-automation.ts",
     "preview": "vite preview",
     "migrate:generate": "node scripts/generate-production-seeds.mjs",
     "migrate:import-male-karkuns": "node scripts/import-cleaned-karkun-list.mjs",

@@ -1,90 +1,63 @@
 import { Link } from 'react-router-dom'
-import { ActiveCampaignSubtitle } from '@/components/layout/CampaignStatusBar'
+import {
+  CommandCenterAlerts,
+  CommandCenterCallQueue,
+  CommandCenterCompletedToday,
+  CommandCenterFollowUpQueue,
+  CommandCenterHero,
+  CommandCenterKpiGrid,
+  CommandCenterNextAction,
+  CommandCenterReminders,
+  CommandCenterRuknQuickActions,
+  CommandCenterSchedule,
+} from '@/components/command-center'
 import { DEFAULT_DEMO_RUKN_ID } from '@/constants/demoRukn'
-import { ROUTES, ruknVisitPath } from '@/constants/routes'
-import { RUKN_COMPLETED_TODAY } from '@/constants/mockMissions'
-import {
-  generateRuknMissionQueue,
-  getCurrentMission,
-  getMissionProgress,
-  getNextMission,
-} from '@/lib/mockMissionEngine'
-import { getFirstPendingKarkunIdForRukn } from '@/lib/executionStatus'
-import { MissionHeroCard } from '@/components/dashboard/MissionHeroCard'
-import { MissionProgress } from '@/components/dashboard/MissionProgress'
-import {
-  CompletedWorkPanel,
-  CurrentVisitPanel,
-  NextMissionPanel,
-} from '@/components/dashboard/RuknMissionPanels'
+import { ROUTES } from '@/constants/routes'
 import { useAuth } from '@/hooks/useAuth'
-import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
-import { PrimaryButton } from '@/components/ui/PrimaryButton'
+import { useCampaignAutomationEngine } from '@/hooks/useCampaignAutomationEngine'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 
 export function RuknHomePage() {
   const { user } = useAuth()
   const ruknId = user?.ruknId ?? DEFAULT_DEMO_RUKN_ID
-  const { getAssignedKarkunanForRukn } = useAssignmentEngine()
-  const assignedKarkunan = getAssignedKarkunanForRukn(ruknId)
-  const pendingKarkunId = getFirstPendingKarkunIdForRukn(ruknId)
+  const snapshot = useCampaignAutomationEngine({ role: 'rukn', ruknId })
 
-  const missions = generateRuknMissionQueue()
-  const currentMission = getCurrentMission(missions)
-  const nextMission = getNextMission(missions)
-  const progress = getMissionProgress(missions)
-  const currentVisit = missions.find((mission) => mission.type === 'visit' && mission.status === 'in_progress')
+  if (snapshot.role !== 'rukn') {
+    return null
+  }
+
+  const pendingVisitRoute = snapshot.nextAction.isCaughtUp
+    ? undefined
+    : snapshot.nextAction.route.startsWith('/rukn/visit/')
+      ? snapshot.nextAction.route
+      : undefined
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-text-heading">Home</h1>
-        <ActiveCampaignSubtitle />
-        <p className="mt-2 text-secondary">Start today&apos;s campaign execution.</p>
-      </div>
+      <CommandCenterHero hero={snapshot.hero} />
+      <CommandCenterNextAction nextAction={snapshot.nextAction} />
 
-      {assignedKarkunan.length > 0 ? (
-        <section className="rounded-(--radius-card) border border-border bg-surface p-5 shadow-card">
-          <h2 className="text-lg font-semibold text-text-heading">Today&apos;s Assigned Karkuns</h2>
-          <p className="mt-1 text-sm text-secondary">
-            {assignedKarkunan.length} assigned
-            {pendingKarkunId ? ' · Annexure-1 pending' : ' · all up to date'}
-          </p>
-          <div className="mt-4 grid gap-2">
-            {pendingKarkunId && (
-              <Link to={ruknVisitPath(pendingKarkunId)}>
-                <PrimaryButton type="button" fullWidth>
-                  Open Annexure-1
-                </PrimaryButton>
-              </Link>
-            )}
-            <Link to={ROUTES.RUKN_MY_KARKUN}>
-              <SecondaryButton type="button" fullWidth>
-                View All Assigned Karkuns
-              </SecondaryButton>
-            </Link>
-          </div>
-        </section>
-      ) : (
+      {snapshot.kpis.find((kpi) => kpi.id === 'assigned-karkuns')?.value === 0 ? (
         <section className="rounded-(--radius-card) border border-border bg-surface p-5 text-center shadow-card">
           <p className="text-secondary">No Karkun assigned yet.</p>
           <Link to={ROUTES.RUKN_AVAILABLE_KARKUN} className="mt-4 inline-block">
             <SecondaryButton type="button">Browse Available Karkun</SecondaryButton>
           </Link>
         </section>
+      ) : (
+        <CommandCenterKpiGrid kpis={snapshot.kpis} />
       )}
 
-      <section className="space-y-4">
-        <MissionHeroCard
-          missionTitle={currentMission?.title ?? 'No missions today'}
-          estimatedTime={currentMission?.estimatedTime ?? '—'}
-        />
-        <MissionProgress progress={progress} />
-      </section>
-
-      <CurrentVisitPanel mission={currentVisit} />
-      <NextMissionPanel mission={nextMission} />
-      <CompletedWorkPanel items={RUKN_COMPLETED_TODAY} />
+      <CommandCenterRuknQuickActions
+        nextAction={snapshot.nextAction}
+        pendingVisitRoute={pendingVisitRoute}
+      />
+      <CommandCenterAlerts alerts={snapshot.alerts} />
+      <CommandCenterSchedule schedule={snapshot.schedule} />
+      <CommandCenterCallQueue callQueue={snapshot.callQueue} />
+      <CommandCenterFollowUpQueue followUpQueue={snapshot.followUpQueue} />
+      <CommandCenterReminders reminders={snapshot.reminders} />
+      <CommandCenterCompletedToday items={snapshot.completedToday} />
     </div>
   )
 }

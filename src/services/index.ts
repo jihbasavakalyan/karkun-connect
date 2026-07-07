@@ -96,3 +96,9 @@ export {
   matchesIjtemaAttendanceFilters,
   getFilterWeekEndingDate,
 } from './ijtemaAttendanceService'
+
+export {
+  CampaignAutomationEngine,
+  getAdminCommandCenterSnapshot,
+  getRuknCommandCenterSnapshot,
+} from './campaignAutomationEngine'

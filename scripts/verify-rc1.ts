@@ -15,6 +15,7 @@ const VERIFICATION_SCRIPTS = [
   'verify-data-integrity.ts',
   'verify-inline-assignment.ts',
   'verify-compliance-module.ts',
+  'verify-campaign-automation.ts',
 ] as const
 
 for (const script of VERIFICATION_SCRIPTS) {

@@ -6,7 +6,6 @@ import { ROUTES } from '@/constants/routes'
 import { useAnnexure1Form } from '@/hooks/useAnnexure1Form'
 import { useAuth } from '@/hooks/useAuth'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
-import { completeVisitReportSubmission } from '@/lib/mockMissionEngine'
 import { ExecutionStatusBadge } from '@/components/execution/ExecutionStatusBadge'
 import {
   saveAnnexure1Draft,
@@ -139,8 +138,6 @@ export function WorkerMeetingFormPage() {
       setSubmitError(result.error)
       return
     }
-
-    completeVisitReportSubmission()
 
     const followUpRequired = wasFollowUpScheduled(
       result.submission.commitmentMade,
