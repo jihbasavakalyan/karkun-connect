@@ -1,7 +1,80 @@
 import type { AssignmentRecord, AssignmentStatus } from '@/types/assignment'
 
-const assignments: AssignmentRecord[] = []
-let nextAssignmentSequence = 1
+const ASSIGNMENTS_STORAGE_KEY = 'karkun-connect.assignments'
+const ASSIGNMENT_SEQUENCE_STORAGE_KEY = 'karkun-connect.assignments.sequence'
+
+const memoryStorage: Record<string, string> = {}
+
+type StorageLike = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>
+
+function getAssignmentStorage(): StorageLike {
+  if (typeof window !== 'undefined') {
+    return localStorage
+  }
+
+  return {
+    getItem: (key) => memoryStorage[key] ?? null,
+    setItem: (key, value) => {
+      memoryStorage[key] = value
+    },
+    removeItem: (key) => {
+      delete memoryStorage[key]
+    },
+  }
+}
+
+function deriveNextSequenceFromRecords(records: AssignmentRecord[]): number {
+  let max = 0
+  for (const record of records) {
+    const match = record.assignmentNumber.match(/ASN-(\d+)/i)
+    if (match) {
+      max = Math.max(max, Number.parseInt(match[1], 10))
+    }
+  }
+  return max + 1
+}
+
+function loadPersistedAssignmentState(): {
+  assignments: AssignmentRecord[]
+  nextSequence: number
+} {
+  const storage = getAssignmentStorage()
+  try {
+    const raw = storage.getItem(ASSIGNMENTS_STORAGE_KEY)
+    if (!raw) {
+      return { assignments: [], nextSequence: 1 }
+    }
+
+    const parsed = JSON.parse(raw) as AssignmentRecord[]
+    if (!Array.isArray(parsed)) {
+      return { assignments: [], nextSequence: 1 }
+    }
+
+    const storedSequence = storage.getItem(ASSIGNMENT_SEQUENCE_STORAGE_KEY)
+    const parsedSequence = storedSequence ? Number.parseInt(storedSequence, 10) : Number.NaN
+    const derivedSequence = deriveNextSequenceFromRecords(parsed)
+    const nextSequence = Number.isFinite(parsedSequence)
+      ? Math.max(parsedSequence, derivedSequence)
+      : derivedSequence
+
+    return { assignments: parsed, nextSequence }
+  } catch {
+    return { assignments: [], nextSequence: 1 }
+  }
+}
+
+function persistAssignmentState(
+  records: AssignmentRecord[],
+  nextSequence: number,
+): void {
+  const storage = getAssignmentStorage()
+  storage.setItem(ASSIGNMENTS_STORAGE_KEY, JSON.stringify(records))
+  storage.setItem(ASSIGNMENT_SEQUENCE_STORAGE_KEY, String(nextSequence))
+}
+
+const persisted = loadPersistedAssignmentState()
+const assignments: AssignmentRecord[] = [...persisted.assignments]
+let nextAssignmentSequence = persisted.nextSequence
 
 type AssignmentStoreListener = () => void
 const listeners = new Set<AssignmentStoreListener>()
@@ -15,9 +88,23 @@ function notifyAssignmentStoreChange(): void {
   listeners.forEach((listener) => listener())
 }
 
+function saveAssignments(): void {
+  persistAssignmentState(assignments, nextAssignmentSequence)
+}
+
+/** Re-read assignments from browser storage (simulates page reload). */
+export function reloadAssignmentStoreFromPersistence(): void {
+  const loaded = loadPersistedAssignmentState()
+  assignments.length = 0
+  assignments.push(...loaded.assignments)
+  nextAssignmentSequence = loaded.nextSequence
+  notifyAssignmentStoreChange()
+}
+
 export function generateAssignmentNumber(): string {
   const number = nextAssignmentSequence
   nextAssignmentSequence += 1
+  saveAssignments()
   return `ASN-${String(number).padStart(6, '0')}`
 }
 
@@ -78,6 +165,7 @@ export function getAssignmentHistoryForKarkun(karkunId: string): AssignmentRecor
 
 export function appendAssignment(record: AssignmentRecord): AssignmentRecord {
   assignments.unshift(record)
+  saveAssignments()
   notifyAssignmentStoreChange()
   return record
 }
@@ -104,6 +192,7 @@ export function updateAssignmentStatus(
   if (updates.endedDate !== undefined) record.endedDate = updates.endedDate
   record.updatedAt = updates.updatedAt ?? new Date().toISOString()
 
+  saveAssignments()
   notifyAssignmentStoreChange()
   return record
 }
@@ -159,5 +248,8 @@ export function searchAssignments(query: string): AssignmentRecord[] {
 export function clearAssignmentStore(): void {
   assignments.length = 0
   nextAssignmentSequence = 1
+  const storage = getAssignmentStorage()
+  storage.removeItem(ASSIGNMENTS_STORAGE_KEY)
+  storage.removeItem(ASSIGNMENT_SEQUENCE_STORAGE_KEY)
   notifyAssignmentStoreChange()
 }

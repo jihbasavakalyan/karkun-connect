@@ -18,6 +18,7 @@ import {
   getRuknAssignmentSummary,
   removeAssignment,
   replaceAssignment,
+  syncAllKarkunRegistryFromAssignments,
 } from '@/services/assignmentService'
 import { getAdminCommandCenterSnapshot, getRuknCommandCenterSnapshot } from '@/services/campaignAutomationEngine'
 import { runProductionDataMigration } from '@/services/productionDataMigrationService'
@@ -25,6 +26,7 @@ import {
   clearAssignmentStore,
   getAssignmentHistoryForKarkun,
   getAssignmentHistoryForRukn,
+  reloadAssignmentStoreFromPersistence,
 } from '@/stores/assignmentStore'
 import { clearActivityLogStore, getRecentActivity } from '@/stores/activityLogStore'
 import type { KarkunRegistryRecord, PersonGender } from '@/types/karkun-registry.types'
@@ -289,6 +291,54 @@ function verifyAssignmentPageFlow(gender: PersonGender): void {
   assert(karkun.assignmentStatus === 'Assigned', 'Assignment page flow must update Karkun registry')
 }
 
+function verifyAssignmentPersistence(gender: PersonGender): void {
+  const rukn = activeRukns(gender)[0]
+  assert(Boolean(rukn), `Need active ${gender} Rukn for persistence test`)
+
+  const karkuns = Array.from({ length: 3 }, (_, index) => {
+    const karkun = createKarkun(`verify-persist-${gender.toLowerCase()}-${index}`, gender)
+    MOCK_KARKUN_REGISTRY.push(karkun)
+    return karkun
+  })
+
+  for (const karkun of karkuns) {
+    const result = assignRukn({
+      ruknId: rukn!.id,
+      karkunId: karkun.id,
+      effectiveFrom: today,
+      assignedBy: 'Administrator',
+    })
+    assert(result.success, `Assign failed: ${result.success ? '' : result.error}`)
+  }
+
+  assert(
+    getRuknAssignmentSummary(rukn!.id).assignedKarkunCount === 3,
+    'Three active assignments must exist before simulated reload',
+  )
+
+  reloadAssignmentStoreFromPersistence()
+  syncAllKarkunRegistryFromAssignments()
+
+  assert(
+    getRuknAssignmentSummary(rukn!.id).assignedKarkunCount === 3,
+    'Assignments must survive browser reload via localStorage persistence',
+  )
+
+  for (const karkun of karkuns) {
+    const refreshed = MOCK_KARKUN_REGISTRY.find((record) => record.id === karkun.id)
+    assert(
+      refreshed?.assignmentStatus === 'Assigned',
+      'Karkun registry must rehydrate from persisted assignments after reload',
+    )
+  }
+
+  const dashboard = getAssignmentDashboardMetrics()
+  assert(
+    dashboard.activeAssignments === 3,
+    'Dashboard metrics must reflect persisted assignments after reload',
+  )
+}
+
 runProductionDataMigration()
 reset()
 verifyInlineGenderFlow('Male')
@@ -306,5 +356,7 @@ reset()
 verifyAssignmentPageFlow('Male')
 reset()
 verifyAssignmentPageFlow('Female')
+reset()
+verifyAssignmentPersistence('Female')
 
 console.log('Assignment workflow verification passed for inline and admin flows.')
