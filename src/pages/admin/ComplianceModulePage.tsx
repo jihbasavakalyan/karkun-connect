@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { ComplianceSummaryCards } from '@/components/compliance/ComplianceSummaryCards'
 import { ExecutionEmptyState } from '@/components/execution/ExecutionEmptyState'
@@ -6,8 +6,10 @@ import { ActiveCampaignSubtitle } from '@/components/layout/CampaignStatusBar'
 import { ROUTES, adminKarkunProfilePath } from '@/constants/routes'
 import {
   COMPLIANCE_SECTIONS,
+  getPendingStatusLabel,
   normalizeComplianceStatus,
   resolveComplianceSection,
+  resolveComplianceViewFilter,
   type ComplianceSection,
 } from '@/lib/complianceNavigation'
 import {
@@ -389,15 +391,21 @@ function BaitulMaalRow({
 }
 
 export function ComplianceModulePage() {
-  const [, setVersion] = useState(0)
+  const [dataVersion, setDataVersion] = useState(0)
   const [searchParams, setSearchParams] = useSearchParams()
   const activeSection = resolveComplianceSection(searchParams.get('section'))
   const statusFilter = normalizeComplianceStatus(searchParams.get('status'))
+  const viewAll = searchParams.get('view') === 'all'
+  const { effectiveStatus, isPendingView } = resolveComplianceViewFilter(
+    activeSection,
+    statusFilter,
+    viewAll,
+  )
 
   useEffect(() => {
-    const unsubJih = subscribeToJihWebPortalStore(() => setVersion((value) => value + 1))
-    const unsubBaitulMaal = subscribeToBaitulMaalStore(() => setVersion((value) => value + 1))
-    const unsubIjtema = subscribeToIjtemaAttendanceStore(() => setVersion((value) => value + 1))
+    const unsubJih = subscribeToJihWebPortalStore(() => setDataVersion((value) => value + 1))
+    const unsubBaitulMaal = subscribeToBaitulMaalStore(() => setDataVersion((value) => value + 1))
+    const unsubIjtema = subscribeToIjtemaAttendanceStore(() => setDataVersion((value) => value + 1))
     return () => {
       unsubJih()
       unsubBaitulMaal()
@@ -405,9 +413,7 @@ export function ComplianceModulePage() {
     }
   }, [])
 
-  const refresh = () => setVersion((value) => value + 1)
-
-  void setVersion
+  const refresh = () => setDataVersion((value) => value + 1)
 
   const sectionLabel =
     COMPLIANCE_SECTIONS.find((section) => section.id === activeSection)?.label ?? 'Compliance'
@@ -417,21 +423,27 @@ export function ComplianceModulePage() {
       setSearchParams({ section, status: statusFilter })
       return
     }
+    if (viewAll) {
+      setSearchParams({ section, view: 'all' })
+      return
+    }
     setSearchParams({ section })
   }
 
   const clearStatusFilter = () => {
-    setSearchParams({ section: activeSection })
+    setSearchParams({ section: activeSection, view: 'all' })
   }
 
-  const listContent = useMemo(() => {
-    switch (activeSection) {
-      case 'ijtema': {
-        const items = filterIjtemaItems(getAllIjtemaAttendanceSummaries(), statusFilter)
-        if (items.length === 0) {
-          return <ExecutionEmptyState {...EMPTY_MESSAGES.ijtema} />
-        }
-        return (
+  void dataVersion
+
+  let listContent: React.ReactNode
+  switch (activeSection) {
+    case 'ijtema': {
+      const items = filterIjtemaItems(getAllIjtemaAttendanceSummaries(), effectiveStatus)
+      if (items.length === 0) {
+        listContent = <ExecutionEmptyState {...EMPTY_MESSAGES.ijtema} />
+      } else {
+        listContent = (
           <ul className="space-y-3">
             {items.map((item) => (
               <IjtemaRow key={item.karkunId} item={item} onUpdated={refresh} />
@@ -439,12 +451,14 @@ export function ComplianceModulePage() {
           </ul>
         )
       }
-      case 'jih-registration': {
-        const items = filterJihRegistrationItems(getAllJihWebPortalSummaries(), statusFilter)
-        if (items.length === 0) {
-          return <ExecutionEmptyState {...EMPTY_MESSAGES['jih-registration']} />
-        }
-        return (
+      break
+    }
+    case 'jih-registration': {
+      const items = filterJihRegistrationItems(getAllJihWebPortalSummaries(), effectiveStatus)
+      if (items.length === 0) {
+        listContent = <ExecutionEmptyState {...EMPTY_MESSAGES['jih-registration']} />
+      } else {
+        listContent = (
           <ul className="space-y-3">
             {items.map((item) => (
               <JihRegistrationRow key={item.karkunId} item={item} onUpdated={refresh} />
@@ -452,12 +466,14 @@ export function ComplianceModulePage() {
           </ul>
         )
       }
-      case 'monthly-reporting': {
-        const items = filterMonthlyReportingItems(getAllJihWebPortalSummaries(), statusFilter)
-        if (items.length === 0) {
-          return <ExecutionEmptyState {...EMPTY_MESSAGES['monthly-reporting']} />
-        }
-        return (
+      break
+    }
+    case 'monthly-reporting': {
+      const items = filterMonthlyReportingItems(getAllJihWebPortalSummaries(), effectiveStatus)
+      if (items.length === 0) {
+        listContent = <ExecutionEmptyState {...EMPTY_MESSAGES['monthly-reporting']} />
+      } else {
+        listContent = (
           <ul className="space-y-3">
             {items.map((item) => (
               <MonthlyReportingRow key={item.karkunId} item={item} onUpdated={refresh} />
@@ -465,12 +481,14 @@ export function ComplianceModulePage() {
           </ul>
         )
       }
-      case 'baitul-maal': {
-        const items = filterBaitulMaalItems(getAllBaitulMaalSummaries(), statusFilter)
-        if (items.length === 0) {
-          return <ExecutionEmptyState {...EMPTY_MESSAGES['baitul-maal']} />
-        }
-        return (
+      break
+    }
+    case 'baitul-maal': {
+      const items = filterBaitulMaalItems(getAllBaitulMaalSummaries(), effectiveStatus)
+      if (items.length === 0) {
+        listContent = <ExecutionEmptyState {...EMPTY_MESSAGES['baitul-maal']} />
+      } else {
+        listContent = (
           <ul className="space-y-3">
             {items.map((item) => (
               <BaitulMaalRow key={item.karkunId} item={item} onUpdated={refresh} />
@@ -478,14 +496,17 @@ export function ComplianceModulePage() {
           </ul>
         )
       }
-      default:
-        return null
+      break
     }
-  }, [activeSection, statusFilter])
+    default:
+      listContent = null
+  }
 
   void getIjtemaAttendanceDashboardMetrics()
   void getJihWebPortalDashboardMetrics()
   void getBaitulMaalDashboardMetrics()
+
+  const filterLabel = statusFilter || (isPendingView ? getPendingStatusLabel(activeSection) : '')
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
@@ -509,9 +530,22 @@ export function ComplianceModulePage() {
 
       <ComplianceSectionNav
         active={activeSection}
-        statusFilter={statusFilter}
+        statusFilter={filterLabel}
         onChange={setSection}
       />
+
+      {isPendingView && (
+        <p className="text-sm text-secondary">
+          Showing pending {getPendingStatusLabel(activeSection).toLowerCase()} items.{' '}
+          <button
+            type="button"
+            onClick={clearStatusFilter}
+            className="font-medium text-primary hover:underline"
+          >
+            View all
+          </button>
+        </p>
+      )}
 
       <section className="rounded-(--radius-card) border border-border bg-surface p-6 shadow-card">
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -522,7 +556,7 @@ export function ComplianceModulePage() {
               onClick={clearStatusFilter}
               className="text-sm font-medium text-primary hover:underline"
             >
-              Clear filter
+              View all
             </button>
           )}
         </div>

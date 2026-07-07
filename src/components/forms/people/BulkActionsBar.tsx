@@ -10,6 +10,10 @@ type BulkActionsBarProps = {
   onMarkIjtemaPresent?: () => void
   onMarkIjtemaAbsent?: () => void
   onMarkIjtemaInformed?: () => void
+  onMarkJihRegistered?: () => void
+  onMarkJihNotRegistered?: () => void
+  onMarkJihReportSubmitted?: () => void
+  onMarkJihReportPending?: () => void
   onClearSelection: () => void
 }
 
@@ -23,6 +27,10 @@ export function BulkActionsBar({
   onMarkIjtemaPresent,
   onMarkIjtemaAbsent,
   onMarkIjtemaInformed,
+  onMarkJihRegistered,
+  onMarkJihNotRegistered,
+  onMarkJihReportSubmitted,
+  onMarkJihReportPending,
   onClearSelection,
 }: BulkActionsBarProps) {
   if (selectedCount === 0) {
@@ -78,6 +86,30 @@ export function BulkActionsBar({
       {onMarkIjtemaInformed && (
         <SecondaryButton type="button" className="px-3 py-2 text-sm" onClick={onMarkIjtemaInformed}>
           Mark Ijtema Informed
+        </SecondaryButton>
+      )}
+      {onMarkJihRegistered && (
+        <SecondaryButton type="button" className="px-3 py-2 text-sm" onClick={onMarkJihRegistered}>
+          Mark JIH Registered
+        </SecondaryButton>
+      )}
+      {onMarkJihNotRegistered && (
+        <SecondaryButton type="button" className="px-3 py-2 text-sm" onClick={onMarkJihNotRegistered}>
+          Mark JIH Not Registered
+        </SecondaryButton>
+      )}
+      {onMarkJihReportSubmitted && (
+        <SecondaryButton
+          type="button"
+          className="px-3 py-2 text-sm"
+          onClick={onMarkJihReportSubmitted}
+        >
+          Mark Report Submitted
+        </SecondaryButton>
+      )}
+      {onMarkJihReportPending && (
+        <SecondaryButton type="button" className="px-3 py-2 text-sm" onClick={onMarkJihReportPending}>
+          Mark Report Pending
         </SecondaryButton>
       )}
       <SecondaryButton type="button" className="px-3 py-2 text-sm" onClick={onClearSelection}>

@@ -7,6 +7,8 @@ import {
   upsertRegistration,
 } from '@/stores/jihWebPortalStore'
 import type {
+  BulkUpdateJihMonthlyReportInput,
+  BulkUpdateJihRegistrationInput,
   JihMonthlyReportingStatus,
   JihWebPortalDashboardMetrics,
   JihWebPortalKarkunSummary,
@@ -143,6 +145,64 @@ export function updateJihMonthlyReport(
   })
 
   return { success: true }
+}
+
+function todayDate(): string {
+  return new Date().toISOString().slice(0, 10)
+}
+
+export function bulkUpdateJihRegistration(
+  input: BulkUpdateJihRegistrationInput,
+): { success: true; updated: number } | { success: false; error: string } {
+  initializeJihWebPortalCompliance()
+
+  let updated = 0
+  for (const karkunId of input.karkunIds) {
+    const existing = getRegistrationForKarkun(karkunId)
+    const result = updateJihRegistration({
+      karkunId,
+      status: input.status,
+      registrationDate:
+        input.status === 'Registered'
+          ? input.registrationDate ?? existing.registrationDate ?? todayDate()
+          : undefined,
+      registrationNumber: existing.registrationNumber,
+      updatedBy: input.updatedBy,
+    })
+
+    if (!result.success) {
+      return { success: false, error: result.error }
+    }
+
+    updated += 1
+  }
+
+  return { success: true, updated }
+}
+
+export function bulkUpdateJihMonthlyReport(
+  input: BulkUpdateJihMonthlyReportInput,
+): { success: true; updated: number } | { success: false; error: string } {
+  initializeJihWebPortalCompliance()
+
+  let updated = 0
+  for (const karkunId of input.karkunIds) {
+    const result = updateJihMonthlyReport({
+      karkunId,
+      status: input.status,
+      submissionDate:
+        input.status === 'Submitted' ? input.submissionDate ?? todayDate() : undefined,
+      updatedBy: input.updatedBy,
+    })
+
+    if (!result.success) {
+      return { success: false, error: result.error }
+    }
+
+    updated += 1
+  }
+
+  return { success: true, updated }
 }
 
 export function getJihWebPortalDashboardMetrics(): JihWebPortalDashboardMetrics {

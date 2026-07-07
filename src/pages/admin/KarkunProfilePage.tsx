@@ -20,6 +20,7 @@ import { RuknAssignmentSelect } from '@/components/forms/people/RuknAssignmentSe
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import type { KarkunRegistryRecord, PersonGender, PersonStatus } from '@/types/karkun-registry.types'
+import type { IjtemaAttendanceStatus } from '@/types/ijtemaAttendance'
 import { DEFAULT_PLACE } from '@/types/people.types'
 import { formatPersonNameForDisplay } from '@/utils/formatPersonDisplay'
 import { MOBILE_INPUT_PLACEHOLDER } from '@/utils/personContactLinks'
@@ -58,14 +59,47 @@ function todayDate(): string {
   return new Date().toISOString().slice(0, 10)
 }
 
+function IjtemaStatusField({
+  value,
+  onChange,
+}: {
+  value: IjtemaAttendanceStatus | null
+  onChange: (status: IjtemaAttendanceStatus) => void
+}) {
+  const options: IjtemaAttendanceStatus[] = ['Present', 'Absent', 'Informed']
+
+  return (
+    <fieldset className="rounded-lg border border-border bg-surface px-3 py-2.5 sm:col-span-2">
+      <legend className="text-sm font-medium text-text-heading">Weekly Ijtema</legend>
+      <div className="mt-2 flex flex-wrap gap-4">
+        {options.map((option) => (
+          <label key={option} className="flex cursor-pointer items-center gap-2 text-sm font-medium">
+            <input
+              type="radio"
+              name="ijtema-status"
+              checked={value === option}
+              onChange={() => onChange(option)}
+              className="size-4 border-border text-primary focus:ring-primary/20"
+            />
+            <span className="text-text-heading">{option}</span>
+          </label>
+        ))}
+      </div>
+    </fieldset>
+  )
+}
+
 function readComplianceState(karkunId: string) {
   const ijtema = getCurrentIjtemaAttendance(karkunId)
   const registration = getRegistrationForKarkun(karkunId)
   const monthly = getCurrentMonthReportingStatus(karkunId)
   const baitulMaal = getCurrentBaitulMaalStatus(karkunId)
 
+  const ijtemaStatus: IjtemaAttendanceStatus | null =
+    ijtema.status === 'Not recorded' ? null : ijtema.status
+
   return {
-    weeklyIjtema: ijtema.status === 'Present' || ijtema.status === 'Informed',
+    ijtemaStatus,
     jihPortalRegistered: registration.status === 'Registered',
     monthlyReportSubmitted: monthly.status === 'Submitted',
     baitulMaalPaid: baitulMaal.status === 'Paid',
@@ -87,7 +121,9 @@ function KarkunProfileForm({ karkun, karkunId }: KarkunProfileFormProps) {
   const [whatsapp, setWhatsapp] = useState(karkun.whatsapp ?? '')
   const [status, setStatus] = useState<PersonStatus>(karkun.status)
   const [assignedRuknId, setAssignedRuknId] = useState(karkun.assignedRuknId)
-  const [weeklyIjtema, setWeeklyIjtema] = useState(initialCompliance.weeklyIjtema)
+  const [ijtemaStatus, setIjtemaStatus] = useState<IjtemaAttendanceStatus | null>(
+    initialCompliance.ijtemaStatus,
+  )
   const [jihPortalRegistered, setJihPortalRegistered] = useState(
     initialCompliance.jihPortalRegistered,
   )
@@ -176,14 +212,16 @@ function KarkunProfileForm({ karkun, karkunId }: KarkunProfileFormProps) {
       }
     }
 
-    const ijtemaResult = updateIjtemaAttendance({
-      karkunId,
-      status: weeklyIjtema ? 'Present' : 'Absent',
-    })
+    if (ijtemaStatus !== null) {
+      const ijtemaResult = updateIjtemaAttendance({
+        karkunId,
+        status: ijtemaStatus,
+      })
 
-    if (!ijtemaResult.success) {
-      setError(ijtemaResult.error)
-      return
+      if (!ijtemaResult.success) {
+        setError(ijtemaResult.error)
+        return
+      }
     }
 
     const baitulMaalResult = updateBaitulMaal({
@@ -309,24 +347,21 @@ function KarkunProfileForm({ karkun, karkunId }: KarkunProfileFormProps) {
         <h2 className="text-sm font-semibold text-text-heading">Compliance</h2>
 
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
-          <ComplianceToggle
-            id="compliance-ijtema"
-            label="Weekly Ijtema"
-            checked={weeklyIjtema}
-            onChange={setWeeklyIjtema}
-          />
+          <IjtemaStatusField value={ijtemaStatus} onChange={setIjtemaStatus} />
           <ComplianceToggle
             id="compliance-jih-portal"
             label="JIH Portal Registered"
             checked={jihPortalRegistered}
             onChange={handleJihPortalChange}
           />
-          <ComplianceToggle
-            id="compliance-monthly-report"
-            label="Monthly Report Submitted"
-            checked={monthlyReportSubmitted}
-            onChange={handleMonthlyReportChange}
-          />
+          {jihPortalRegistered && (
+            <ComplianceToggle
+              id="compliance-monthly-report"
+              label="Monthly Report Submitted"
+              checked={monthlyReportSubmitted}
+              onChange={handleMonthlyReportChange}
+            />
+          )}
           <ComplianceToggle
             id="compliance-baitul-maal"
             label="Bait-ul-Maal Paid"

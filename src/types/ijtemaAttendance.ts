@@ -43,6 +43,7 @@ export type BulkUpdateIjtemaAttendanceInput = {
 
 export const IJTEMA_ATTENDANCE_STATUS_FILTER_OPTIONS = [
   { value: '', label: 'All Statuses' },
+  { value: 'Not recorded', label: 'Not recorded' },
   { value: 'Present', label: 'Present' },
   { value: 'Absent', label: 'Absent' },
   { value: 'Informed', label: 'Informed' },

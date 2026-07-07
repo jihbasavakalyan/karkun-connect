@@ -33,3 +33,33 @@ export function resolveComplianceSection(sectionParam: string | null): Complianc
 export function normalizeComplianceStatus(statusParam: string | null): string {
   return statusParam?.trim() ?? ''
 }
+
+export const COMPLIANCE_PENDING_STATUS: Record<ComplianceSection, string> = {
+  ijtema: 'Not recorded',
+  'jih-registration': 'Not Registered',
+  'monthly-reporting': 'Pending',
+  'baitul-maal': 'Pending',
+}
+
+export function resolveComplianceViewFilter(
+  section: ComplianceSection,
+  statusFilter: string,
+  viewAll: boolean,
+): { effectiveStatus: string; isPendingView: boolean } {
+  if (statusFilter) {
+    return { effectiveStatus: statusFilter, isPendingView: false }
+  }
+
+  if (viewAll) {
+    return { effectiveStatus: '', isPendingView: false }
+  }
+
+  return {
+    effectiveStatus: COMPLIANCE_PENDING_STATUS[section],
+    isPendingView: true,
+  }
+}
+
+export function getPendingStatusLabel(section: ComplianceSection): string {
+  return COMPLIANCE_PENDING_STATUS[section]
+}

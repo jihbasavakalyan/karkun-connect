@@ -57,6 +57,20 @@ export type UpdateJihMonthlyReportInput = {
   updatedBy?: string
 }
 
+export type BulkUpdateJihRegistrationInput = {
+  karkunIds: string[]
+  status: JihWebPortalRegistrationStatus
+  registrationDate?: string
+  updatedBy?: string
+}
+
+export type BulkUpdateJihMonthlyReportInput = {
+  karkunIds: string[]
+  status: JihMonthlyReportingStatus
+  submissionDate?: string
+  updatedBy?: string
+}
+
 export const JIH_PORTAL_REGISTRATION_FILTER_OPTIONS = [
   { value: '', label: 'All Registration' },
   { value: 'Registered', label: 'Registered' },

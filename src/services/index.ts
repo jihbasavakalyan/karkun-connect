@@ -63,6 +63,8 @@ export {
   getCurrentMonthReportingStatus,
   updateJihRegistration,
   updateJihMonthlyReport,
+  bulkUpdateJihRegistration,
+  bulkUpdateJihMonthlyReport,
   getJihWebPortalDashboardMetrics,
   getAllJihWebPortalSummaries,
   matchesJihPortalFilters,

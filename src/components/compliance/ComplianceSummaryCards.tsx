@@ -1,8 +1,12 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { adminCompliancePath } from '@/constants/routes'
 import { getBaitulMaalDashboardMetrics } from '@/services/baitulMaalService'
 import { getIjtemaAttendanceDashboardMetrics } from '@/services/ijtemaAttendanceService'
 import { getJihWebPortalDashboardMetrics } from '@/services/jihWebPortalService'
+import { subscribeToBaitulMaalStore } from '@/stores/baitulMaalStore'
+import { subscribeToIjtemaAttendanceStore } from '@/stores/ijtemaAttendanceStore'
+import { subscribeToJihWebPortalStore } from '@/stores/jihWebPortalStore'
 
 type SummaryCard = {
   key: string
@@ -13,6 +17,21 @@ type SummaryCard = {
 }
 
 export function ComplianceSummaryCards() {
+  const [, setVersion] = useState(0)
+
+  useEffect(() => {
+    const unsubJih = subscribeToJihWebPortalStore(() => setVersion((value) => value + 1))
+    const unsubBaitulMaal = subscribeToBaitulMaalStore(() => setVersion((value) => value + 1))
+    const unsubIjtema = subscribeToIjtemaAttendanceStore(() => setVersion((value) => value + 1))
+    return () => {
+      unsubJih()
+      unsubBaitulMaal()
+      unsubIjtema()
+    }
+  }, [])
+
+  void setVersion
+
   const jih = getJihWebPortalDashboardMetrics()
   const baitulMaal = getBaitulMaalDashboardMetrics()
   const ijtema = getIjtemaAttendanceDashboardMetrics()

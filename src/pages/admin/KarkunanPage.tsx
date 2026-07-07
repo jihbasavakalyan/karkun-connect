@@ -16,7 +16,12 @@ import {
   exportKarkuns,
   parsePeopleImportFile,
   readImportFile,
+  type ExportFormat,
 } from '@/lib/peopleImportExport'
+import {
+  bulkUpdateJihMonthlyReport,
+  bulkUpdateJihRegistration,
+} from '@/services/jihWebPortalService'
 import {
   BulkActionsBar,
   ConfirmDialog,
@@ -33,9 +38,30 @@ import { BaitulMaalBulkUpdateModal } from '@/components/forms/baitulMaal/BaitulM
 import { IjtemaAttendanceBulkUpdateModal } from '@/components/forms/ijtema/IjtemaAttendanceBulkUpdateModal'
 import type { BaitulMaalStatus } from '@/types/baitulMaal'
 import type { IjtemaAttendanceStatus } from '@/types/ijtemaAttendance'
-import type { ExportFormat } from '@/lib/peopleImportExport'
 
 type GenderTab = PersonGender
+
+function applyBulkJihRegistration(
+  karkunIds: string[],
+  status: 'Registered' | 'Not Registered',
+  onComplete: () => void,
+) {
+  const result = bulkUpdateJihRegistration({ karkunIds, status })
+  if (result.success) {
+    onComplete()
+  }
+}
+
+function applyBulkJihMonthlyReport(
+  karkunIds: string[],
+  status: 'Submitted' | 'Pending',
+  onComplete: () => void,
+) {
+  const result = bulkUpdateJihMonthlyReport({ karkunIds, status })
+  if (result.success) {
+    onComplete()
+  }
+}
 
 type KarkunSectionHandlers = {
   openAddForm: () => void
@@ -211,6 +237,26 @@ function KarkunGenderSection({
         onMarkIjtemaPresent={() => setBulkIjtemaStatus('Present')}
         onMarkIjtemaAbsent={() => setBulkIjtemaStatus('Absent')}
         onMarkIjtemaInformed={() => setBulkIjtemaStatus('Informed')}
+        onMarkJihRegistered={() =>
+          applyBulkJihRegistration(management.selectedIds, 'Registered', () =>
+            management.clearSelection(),
+          )
+        }
+        onMarkJihNotRegistered={() =>
+          applyBulkJihRegistration(management.selectedIds, 'Not Registered', () =>
+            management.clearSelection(),
+          )
+        }
+        onMarkJihReportSubmitted={() =>
+          applyBulkJihMonthlyReport(management.selectedIds, 'Submitted', () =>
+            management.clearSelection(),
+          )
+        }
+        onMarkJihReportPending={() =>
+          applyBulkJihMonthlyReport(management.selectedIds, 'Pending', () =>
+            management.clearSelection(),
+          )
+        }
         onClearSelection={management.clearSelection}
       />
 
