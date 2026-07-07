@@ -2,12 +2,13 @@ import { NavLink, Outlet } from 'react-router-dom'
 import { ROUTES } from '@/constants/routes'
 import { Logo } from '@/components/common/Logo'
 import { CampaignStatusBar } from '@/components/layout/CampaignStatusBar'
+import { PortalAuthActions } from '@/components/layout/PortalAuthActions'
 
 const navItems = [
   { label: 'Home', to: ROUTES.RUKN, end: true },
-  { label: 'Available Karkun', to: ROUTES.RUKN_AVAILABLE_KARKUN, end: false },
+  { label: 'Available', to: ROUTES.RUKN_AVAILABLE_KARKUN, end: false },
   { label: 'My Karkun', to: ROUTES.RUKN_MY_KARKUN, end: false },
-  { label: 'Reports', to: `${ROUTES.RUKN}/reports`, end: false },
+  { label: 'Record', to: ROUTES.RUKN_CAMPAIGN_RECORD, end: false },
 ] as const
 
 export function RuknLayout() {
@@ -16,9 +17,9 @@ export function RuknLayout() {
       <CampaignStatusBar />
 
       <header className="border-b border-border bg-surface px-4 py-4">
-        <div className="mx-auto flex max-w-lg items-center justify-between">
+        <div className="mx-auto flex max-w-lg items-center justify-between gap-3">
           <Logo size="sm" />
-          <span className="text-sm font-medium text-secondary">Rukn Portal</span>
+          <PortalAuthActions portalLabel="Rukn Portal" />
         </div>
       </header>
 
@@ -38,7 +39,7 @@ export function RuknLayout() {
                 end={item.end}
                 className={({ isActive }) =>
                   [
-                    'flex flex-col items-center rounded-lg px-1 py-2 text-[10px] font-medium leading-tight transition-colors sm:text-xs',
+                    'flex min-h-11 flex-col items-center justify-center rounded-lg px-1 py-2 text-[10px] font-medium leading-tight transition-colors sm:text-xs',
                     isActive ? 'text-primary' : 'text-secondary hover:text-text-heading',
                   ].join(' ')
                 }

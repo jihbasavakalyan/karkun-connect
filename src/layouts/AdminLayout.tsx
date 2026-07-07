@@ -2,6 +2,7 @@ import { NavLink, Outlet } from 'react-router-dom'
 import { ADMIN_NAV_ITEMS } from '@/constants/adminNavigation'
 import { Logo } from '@/components/common/Logo'
 import { CampaignStatusBar } from '@/components/layout/CampaignStatusBar'
+import { PortalAuthActions } from '@/components/layout/PortalAuthActions'
 
 export function AdminLayout() {
   return (
@@ -21,7 +22,7 @@ export function AdminLayout() {
                 end={item.end}
                 className={({ isActive }) =>
                   [
-                    'flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-colors',
+                    'flex min-h-10 items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-colors',
                     isActive
                       ? 'bg-primary-muted text-primary'
                       : 'text-secondary hover:bg-surface-muted hover:text-text-heading',
@@ -41,7 +42,8 @@ export function AdminLayout() {
               <div className="lg:hidden">
                 <Logo size="sm" />
               </div>
-              <p className="text-sm font-medium text-secondary">Administrator Portal</p>
+              <p className="text-sm font-medium text-secondary lg:hidden">Administrator Portal</p>
+              <PortalAuthActions portalLabel="Administrator Portal" />
             </div>
 
             <nav
