@@ -9,6 +9,7 @@ import { CampaignsPage } from '@/pages/admin/CampaignsPage'
 import { ComplianceModulePage } from '@/pages/admin/ComplianceModulePage'
 import { ExecutionModulePage } from '@/pages/admin/ExecutionModulePage'
 import { FollowUpDevelopmentModulePage } from '@/pages/admin/FollowUpDevelopmentModulePage'
+import { CommunicationModulePage } from '@/pages/admin/CommunicationModulePage'
 import { HelpPage } from '@/pages/admin/HelpPage'
 import { KarkunanPage } from '@/pages/admin/KarkunanPage'
 import { KarkunProfilePage } from '@/pages/admin/KarkunProfilePage'
@@ -67,6 +68,7 @@ export function AppRouter() {
             element={<Navigate to={`${ROUTES.ADMIN_EXECUTION}?section=reports`} replace />}
           />
           <Route path="follow-up" element={<FollowUpDevelopmentModulePage />} />
+          <Route path="communication" element={<CommunicationModulePage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="help" element={<HelpPage />} />
 

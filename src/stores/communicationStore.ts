@@ -1,0 +1,169 @@
+import { DEFAULT_MESSAGE_TEMPLATES } from '@/data/communication/defaultTemplates'
+import type {
+  AutomationRule,
+  CommunicationDashboardMetrics,
+  CommunicationHistoryRecord,
+  MessageTemplate,
+  ScheduledMessage,
+  WhatsAppSettings,
+} from '@/types/communication'
+
+type CommunicationStoreListener = () => void
+
+const listeners = new Set<CommunicationStoreListener>()
+
+const templates: MessageTemplate[] = [...DEFAULT_MESSAGE_TEMPLATES]
+const history: CommunicationHistoryRecord[] = []
+const automationRules: AutomationRule[] = createDefaultAutomationRules()
+const scheduledMessages: ScheduledMessage[] = []
+
+const whatsappSettings: WhatsAppSettings = {
+  businessName: 'Karkun Connect',
+  phoneNumber: 'Not configured',
+  phoneNumberId: '—',
+  webhookStatus: 'pending',
+  apiStatus: 'disconnected',
+  tokenStatus: 'missing',
+  tokenMasked: '••••••••••••',
+}
+
+function createDefaultAutomationRules(): AutomationRule[] {
+  const timestamp = new Date().toISOString()
+  const base = (id: string, name: string, trigger: AutomationRule['trigger'], templateId: string, description: string, delayDays?: number): AutomationRule => ({
+    id,
+    name,
+    trigger,
+    templateId,
+    channel: 'whatsapp',
+    delayDays,
+    isEnabled: false,
+    description,
+    createdAt: timestamp,
+    updatedAt: timestamp,
+  })
+
+  return [
+    base('rule-assignment', 'Assignment Created', 'assignment-created', 'tpl-assignment', 'Send when a new assignment is confirmed.'),
+    base('rule-first-meeting', 'First Meeting Pending', 'first-meeting-pending', 'tpl-meeting-reminder', 'Reminder after 3 days if first meeting is pending.', 3),
+    base('rule-ijtema', 'Ijtema Tomorrow', 'ijtema-tomorrow', 'tpl-ijtema', 'Reminder sent the day before Weekly Ijtema.'),
+    base('rule-monthly', 'Monthly Report Pending', 'monthly-report-pending', 'tpl-monthly-report', 'Reminder when monthly report is pending.'),
+    base('rule-baitul', 'Bait-ul-Maal Due', 'baitul-maal-due', 'tpl-baitul-maal', 'Reminder when Bait-ul-Maal contribution is due.'),
+    base('rule-follow-up', 'Follow-up Tomorrow', 'follow-up-tomorrow', 'tpl-follow-up', 'Reminder for follow-ups scheduled tomorrow.'),
+    base('rule-milestone', 'Campaign Milestone', 'campaign-milestone', 'tpl-campaign-update', 'Congratulations when a campaign milestone is reached.'),
+  ]
+}
+
+export function subscribeToCommunicationStore(listener: CommunicationStoreListener): () => void {
+  listeners.add(listener)
+  return () => listeners.delete(listener)
+}
+
+function notifyCommunicationStoreChange(): void {
+  listeners.forEach((listener) => listener())
+}
+
+export function getAllTemplates(): MessageTemplate[] {
+  return [...templates]
+}
+
+export function getTemplateById(id: string): MessageTemplate | undefined {
+  return templates.find((template) => template.id === id)
+}
+
+export function upsertTemplate(template: MessageTemplate): MessageTemplate {
+  const index = templates.findIndex((item) => item.id === template.id)
+  if (index >= 0) {
+    templates[index] = template
+  } else {
+    templates.unshift(template)
+  }
+  notifyCommunicationStoreChange()
+  return template
+}
+
+export function appendHistoryRecord(record: CommunicationHistoryRecord): CommunicationHistoryRecord {
+  history.unshift(record)
+  notifyCommunicationStoreChange()
+  return record
+}
+
+export function getCommunicationHistory(): CommunicationHistoryRecord[] {
+  return [...history]
+}
+
+export function getFailedMessages(): CommunicationHistoryRecord[] {
+  return history.filter((record) => record.status === 'failed')
+}
+
+export function getAutomationRules(): AutomationRule[] {
+  return [...automationRules]
+}
+
+export function updateAutomationRule(rule: AutomationRule): AutomationRule {
+  const index = automationRules.findIndex((item) => item.id === rule.id)
+  if (index >= 0) {
+    automationRules[index] = rule
+    notifyCommunicationStoreChange()
+  }
+  return rule
+}
+
+export function getScheduledMessages(): ScheduledMessage[] {
+  return [...scheduledMessages]
+}
+
+export function getWhatsAppSettings(): WhatsAppSettings {
+  return { ...whatsappSettings }
+}
+
+export function updateWhatsAppSettings(updates: Partial<WhatsAppSettings>): WhatsAppSettings {
+  Object.assign(whatsappSettings, updates)
+  notifyCommunicationStoreChange()
+  return { ...whatsappSettings }
+}
+
+function isToday(iso: string): boolean {
+  return iso.slice(0, 10) === new Date().toISOString().slice(0, 10)
+}
+
+export function getCommunicationDashboardMetrics(): CommunicationDashboardMetrics {
+  const todayRecords = history.filter((record) => isToday(record.sentAt))
+  const templateCounts = new Map<string, { name: string; count: number }>()
+
+  for (const record of history) {
+    if (!record.templateId) continue
+    const current = templateCounts.get(record.templateId) ?? {
+      name: record.templateName ?? record.templateId,
+      count: 0,
+    }
+    current.count += 1
+    templateCounts.set(record.templateId, current)
+  }
+
+  const topTemplates = [...templateCounts.entries()]
+    .map(([templateId, value]) => ({
+      templateId,
+      templateName: value.name,
+      count: value.count,
+    }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5)
+
+  return {
+    messagesToday: todayRecords.length,
+    delivered: history.filter((r) => r.status === 'delivered' || r.status === 'read').length,
+    read: history.filter((r) => r.status === 'read').length,
+    pending: history.filter((r) => r.status === 'queued' || r.status === 'pending').length,
+    failed: history.filter((r) => r.status === 'failed').length,
+    scheduled: scheduledMessages.filter((m) => m.status === 'scheduled').length,
+    topTemplates,
+  }
+}
+
+export function clearCommunicationStore(): void {
+  templates.length = 0
+  templates.push(...DEFAULT_MESSAGE_TEMPLATES)
+  history.length = 0
+  scheduledMessages.length = 0
+  notifyCommunicationStoreChange()
+}

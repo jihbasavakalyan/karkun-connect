@@ -17,6 +17,7 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   { id: 'execution', label: 'Execution', icon: '📝', to: ROUTES.ADMIN_EXECUTION },
   { id: 'compliance', label: 'Compliance', icon: '✅', to: ROUTES.ADMIN_COMPLIANCE },
   { id: 'follow-up', label: 'Follow-up', icon: '🔄', to: ROUTES.ADMIN_FOLLOW_UP },
+  { id: 'communication', label: 'Communication', icon: '📣', to: ROUTES.ADMIN_COMMUNICATION },
   { id: 'settings', label: 'Settings', icon: '⚙️', to: ROUTES.ADMIN_SETTINGS },
   { id: 'help', label: 'Help', icon: '❓', to: ROUTES.ADMIN_HELP },
 ]

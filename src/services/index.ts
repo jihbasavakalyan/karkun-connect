@@ -109,3 +109,28 @@ export {
   getAdminCommandCenterSnapshot,
   getRuknCommandCenterSnapshot,
 } from './campaignAutomationEngine'
+
+export {
+  sendIndividualMessage,
+  sendBroadcastMessage,
+  getCommunicationMetrics,
+  testWhatsAppConnection,
+  getWhatsAppConfiguration,
+} from './communicationService'
+
+export {
+  listTemplates,
+  getTemplate,
+  saveTemplate,
+  applyTemplateVariables,
+} from './templateService'
+
+export {
+  getMessageHistory,
+  getRecentCommunicationActivity,
+  getFailedCommunicationMessages,
+} from './historyService'
+
+export { getDeliverySummary } from './deliveryService'
+
+export { getNotificationRules, getRulesForTrigger } from './notificationService'

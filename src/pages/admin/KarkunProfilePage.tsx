@@ -16,6 +16,8 @@ import {
 } from '@/services/jihWebPortalService'
 import { InputField } from '@/components/forms/InputField'
 import { PersonContactActions } from '@/components/forms/people/PersonContactActions'
+import { CommunicationActions } from '@/components/communication/CommunicationActions'
+import { useCommunication } from '@/hooks/useCommunication'
 import { RuknAssignmentSelect } from '@/components/forms/people/RuknAssignmentSelect'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
@@ -116,6 +118,7 @@ type KarkunProfileFormProps = {
 
 function KarkunProfileForm({ karkun, karkunId }: KarkunProfileFormProps) {
   const navigate = useNavigate()
+  const { sendIndividualMessage } = useCommunication()
   const initialCompliance = readComplianceState(karkunId)
 
   const [name, setName] = useState(karkun.name)
@@ -344,6 +347,33 @@ function KarkunProfileForm({ karkun, karkunId }: KarkunProfileFormProps) {
         </div>
 
         <PersonContactActions mobile={mobile} whatsapp={whatsapp} />
+        <div className="mt-3">
+          <p className="mb-2 text-sm font-medium text-text-heading">Communication</p>
+          <CommunicationActions
+            personId={karkunId}
+            personKind="karkun"
+            name={name}
+            mobile={mobile}
+            whatsapp={whatsapp}
+            onSend={async (input) => {
+              const result = await sendIndividualMessage({
+                channel: 'whatsapp',
+                recipient: {
+                  personId: karkunId,
+                  personKind: 'karkun',
+                  name,
+                  mobile,
+                  whatsapp: whatsapp || undefined,
+                },
+                templateId: input.templateId,
+                message: input.message,
+              })
+              return result.success
+                ? { success: true }
+                : { success: false, error: result.error }
+            }}
+          />
+        </div>
       </section>
 
       <section className="rounded-(--radius-card) border border-border bg-surface p-4 shadow-card">

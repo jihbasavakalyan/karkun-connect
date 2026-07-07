@@ -1,0 +1,169 @@
+export type CommunicationChannel = 'whatsapp' | 'sms' | 'email'
+
+export type MessageDeliveryStatus =
+  | 'queued'
+  | 'sent'
+  | 'delivered'
+  | 'read'
+  | 'failed'
+  | 'pending'
+
+export type MessageRecipientKind = 'karkun' | 'rukn'
+
+export type TemplateCategory =
+  | 'assignments'
+  | 'first-contact'
+  | 'meeting-reminder'
+  | 'weekly-ijtema'
+  | 'monthly-report'
+  | 'baitul-maal'
+  | 'follow-up'
+  | 'campaign-update'
+  | 'greetings'
+  | 'emergency'
+  | 'custom'
+
+export type MessageTemplate = {
+  id: string
+  name: string
+  category: TemplateCategory
+  subject?: string
+  body: string
+  variables: string[]
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+  updatedBy: string
+}
+
+export type MessageRecipient = {
+  personId: string
+  personKind: MessageRecipientKind
+  name: string
+  mobile: string
+  whatsapp?: string
+}
+
+export type SendIndividualMessageInput = {
+  channel: CommunicationChannel
+  recipient: MessageRecipient
+  templateId?: string
+  message: string
+  linkedAssignmentId?: string
+  linkedFollowUpId?: string
+  linkedCampaignId?: string
+}
+
+export type SendBroadcastMessageInput = {
+  channel: CommunicationChannel
+  recipients: MessageRecipient[]
+  templateId?: string
+  message: string
+  linkedCampaignId?: string
+}
+
+export type CommunicationHistoryRecord = {
+  id: string
+  channel: CommunicationChannel
+  recipient: MessageRecipient
+  templateId?: string
+  templateName?: string
+  message: string
+  status: MessageDeliveryStatus
+  sentAt: string
+  deliveredAt?: string
+  readAt?: string
+  failedAt?: string
+  failureReason?: string
+  retryCount: number
+  linkedCampaignId?: string
+  linkedAssignmentId?: string
+  linkedFollowUpId?: string
+  actor: string
+}
+
+export type CommunicationDashboardMetrics = {
+  messagesToday: number
+  delivered: number
+  read: number
+  pending: number
+  failed: number
+  scheduled: number
+  topTemplates: { templateId: string; templateName: string; count: number }[]
+}
+
+export type AutomationTrigger =
+  | 'assignment-created'
+  | 'first-meeting-pending'
+  | 'ijtema-tomorrow'
+  | 'monthly-report-pending'
+  | 'baitul-maal-due'
+  | 'follow-up-tomorrow'
+  | 'campaign-milestone'
+
+export type AutomationRule = {
+  id: string
+  name: string
+  trigger: AutomationTrigger
+  templateId: string
+  channel: CommunicationChannel
+  delayDays?: number
+  isEnabled: boolean
+  description: string
+  createdAt: string
+  updatedAt: string
+}
+
+export type ScheduledMessage = {
+  id: string
+  channel: CommunicationChannel
+  recipients: MessageRecipient[]
+  templateId?: string
+  message: string
+  scheduledFor: string
+  status: 'scheduled' | 'cancelled' | 'sent'
+  createdAt: string
+  createdBy: string
+}
+
+export type WhatsAppConnectionStatus = 'connected' | 'disconnected' | 'pending' | 'error'
+
+export type WhatsAppSettings = {
+  businessName: string
+  phoneNumber: string
+  phoneNumberId: string
+  webhookStatus: WhatsAppConnectionStatus
+  apiStatus: WhatsAppConnectionStatus
+  tokenStatus: 'configured' | 'missing' | 'expired'
+  tokenMasked: string
+  lastConnectionTest?: string
+  lastConnectionTestResult?: 'success' | 'failure'
+}
+
+export type CommunicationResult =
+  | { success: true; historyId: string; status: MessageDeliveryStatus }
+  | { success: false; error: string }
+
+export const TEMPLATE_CATEGORY_LABELS: Record<TemplateCategory, string> = {
+  assignments: 'Assignments',
+  'first-contact': 'First Contact',
+  'meeting-reminder': 'Meeting Reminder',
+  'weekly-ijtema': 'Weekly Ijtema',
+  'monthly-report': 'Monthly Report',
+  'baitul-maal': 'Bait-ul-Maal',
+  'follow-up': 'Follow-up',
+  'campaign-update': 'Campaign Update',
+  greetings: 'Greetings',
+  emergency: 'Emergency',
+  custom: 'Custom',
+}
+
+export const AUTOMATION_TRIGGER_LABELS: Record<AutomationTrigger, string> = {
+  'assignment-created': 'Assignment Created',
+  'first-meeting-pending': 'First Meeting Pending',
+  'ijtema-tomorrow': 'Ijtema Tomorrow',
+  'monthly-report-pending': 'Monthly Report Pending',
+  'baitul-maal-due': 'Bait-ul-Maal Due',
+  'follow-up-tomorrow': 'Follow-up Tomorrow',
+  'campaign-milestone': 'Campaign Milestone',
+}

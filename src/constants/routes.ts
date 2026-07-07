@@ -15,6 +15,7 @@ export const ROUTES = {
   /** Legacy path — redirects to Execution Reports tab */
   ADMIN_REVIEW: '/admin/review',
   ADMIN_FOLLOW_UP: '/admin/follow-up',
+  ADMIN_COMMUNICATION: '/admin/communication',
   ADMIN_SETTINGS: '/admin/settings',
   ADMIN_HELP: '/admin/help',
   RUKN: '/rukn',
@@ -55,4 +56,8 @@ export function adminCompliancePath(section?: string, status?: string): string {
   }
   const query = params.toString()
   return query ? `${ROUTES.ADMIN_COMPLIANCE}?${query}` : ROUTES.ADMIN_COMPLIANCE
+}
+
+export function adminCommunicationPath(section?: string): string {
+  return section ? `${ROUTES.ADMIN_COMMUNICATION}?section=${section}` : ROUTES.ADMIN_COMMUNICATION
 }

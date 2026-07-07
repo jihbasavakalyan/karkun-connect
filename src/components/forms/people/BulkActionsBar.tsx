@@ -14,6 +14,7 @@ type BulkActionsBarProps = {
   onMarkJihNotRegistered?: () => void
   onMarkJihReportSubmitted?: () => void
   onMarkJihReportPending?: () => void
+  onSendWhatsApp?: () => void
   onClearSelection: () => void
 }
 
@@ -31,6 +32,7 @@ export function BulkActionsBar({
   onMarkJihNotRegistered,
   onMarkJihReportSubmitted,
   onMarkJihReportPending,
+  onSendWhatsApp,
   onClearSelection,
 }: BulkActionsBarProps) {
   if (selectedCount === 0) {
@@ -110,6 +112,11 @@ export function BulkActionsBar({
       {onMarkJihReportPending && (
         <SecondaryButton type="button" className="min-h-10 px-3 py-2 text-sm" onClick={onMarkJihReportPending}>
           Mark Report Pending
+        </SecondaryButton>
+      )}
+      {onSendWhatsApp && (
+        <SecondaryButton type="button" className="min-h-10 px-3 py-2 text-sm" onClick={onSendWhatsApp}>
+          Send WhatsApp
         </SecondaryButton>
       )}
       <SecondaryButton type="button" className="min-h-10 px-3 py-2 text-sm" onClick={onClearSelection}>

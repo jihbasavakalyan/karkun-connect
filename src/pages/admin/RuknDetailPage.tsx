@@ -6,13 +6,16 @@ import { getAuditLogForPerson } from '@/lib/peopleAuditLog'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { ROUTES } from '@/constants/routes'
 import { AssignmentHistoryTimeline } from '@/components/forms/assignment/AssignmentHistoryTimeline'
+import { CommunicationActions } from '@/components/communication/CommunicationActions'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
+import { useCommunication } from '@/hooks/useCommunication'
 import { formatPersonStatus } from '@/types/people.types'
 
 export function RuknDetailPage() {
   const { ruknId } = useParams<{ ruknId: string }>()
   const rukn = ruknId ? getRuknById(ruknId) : undefined
   useAssignmentEngine()
+  const { sendIndividualMessage } = useCommunication()
   const summary = ruknId ? getRuknAssignmentSummary(ruknId) : null
 
   if (!rukn) {
@@ -28,9 +31,9 @@ export function RuknDetailPage() {
 
   const mobileLabel = rukn.mobile.trim() ? rukn.mobile : 'Mobile Not Added'
   const auditLog = getAuditLogForPerson('rukn', rukn.id)
-  const currentKarkun = summary?.currentAssignment
-    ? getKarkunById(summary.currentAssignment.karkunId)
-    : null
+  const assignedKarkunNames = (summary?.activeAssignments ?? [])
+    .map((assignment) => getKarkunById(assignment.karkunId)?.name)
+    .filter((name): name is string => Boolean(name))
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -72,6 +75,33 @@ export function RuknDetailPage() {
             {rukn.notes}
           </p>
         )}
+        <div className="mt-4">
+          <p className="mb-2 text-sm font-medium text-text-heading">Communication</p>
+          <CommunicationActions
+            personId={rukn.id}
+            personKind="rukn"
+            name={rukn.name}
+            mobile={rukn.mobile}
+            whatsapp={rukn.whatsapp}
+            onSend={async (input) => {
+              const result = await sendIndividualMessage({
+                channel: 'whatsapp',
+                recipient: {
+                  personId: rukn.id,
+                  personKind: 'rukn',
+                  name: rukn.name,
+                  mobile: rukn.mobile,
+                  whatsapp: rukn.whatsapp,
+                },
+                templateId: input.templateId,
+                message: input.message,
+              })
+              return result.success
+                ? { success: true }
+                : { success: false, error: result.error }
+            }}
+          />
+        </div>
       </section>
 
       {summary && (
@@ -92,9 +122,11 @@ export function RuknDetailPage() {
               <dd className="mt-1 font-medium text-text-heading">{summary.assignmentStatus}</dd>
             </div>
             <div>
-              <dt className="text-secondary">Current Assignment</dt>
+              <dt className="text-secondary">
+                Assigned Karkuns ({summary.assignedKarkunCount})
+              </dt>
               <dd className="mt-1 font-medium text-text-heading">
-                {currentKarkun?.name ?? 'Unassigned'}
+                {assignedKarkunNames.length > 0 ? assignedKarkunNames.join(', ') : 'Unassigned'}
               </dd>
             </div>
             <div>

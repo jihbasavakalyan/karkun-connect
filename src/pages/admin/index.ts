@@ -1,6 +1,7 @@
 export { AdminHomePage } from './AdminHomePage'
 export { CampaignsPage } from './CampaignsPage'
 export { CampaignSetupPage } from './CampaignSetupPage'
+export { CommunicationModulePage } from './CommunicationModulePage'
 export { ComplianceModulePage } from './ComplianceModulePage'
 export { ExecutionModulePage } from './ExecutionModulePage'
 export { FollowUpDevelopmentModulePage } from './FollowUpDevelopmentModulePage'
