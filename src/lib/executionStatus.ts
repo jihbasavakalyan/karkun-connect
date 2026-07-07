@@ -53,13 +53,13 @@ export function getExecutionStatusForAssignment(
 export function getAnnexureActionLabel(status: ExecutionStatusDisplay): string {
   switch (status) {
     case 'Completed':
-      return 'View Submission'
+      return 'Open Connection Journey'
     case 'In Progress':
-      return 'Continue Annexure-1'
+      return 'Continue Visit'
     case 'Follow-up Required':
       return 'Continue Follow-up'
     default:
-      return 'Open Annexure-1'
+      return 'Open Connection Journey'
   }
 }
 

@@ -16,6 +16,7 @@ export const ROUTES = {
   ADMIN_REVIEW: '/admin/review',
   ADMIN_FOLLOW_UP: '/admin/follow-up',
   ADMIN_COMMUNICATION: '/admin/communication',
+  ADMIN_LISTS: '/admin/lists',
   ADMIN_SETTINGS: '/admin/settings',
   ADMIN_HELP: '/admin/help',
   RUKN: '/rukn',

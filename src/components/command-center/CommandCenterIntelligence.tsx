@@ -11,7 +11,7 @@ export function CommandCenterIntelligence() {
     { label: 'Coverage', value: `${data.coveragePct}%` },
     { label: 'Execution', value: `${data.executionPct}%` },
     { label: 'Activation', value: `${data.activationPct}%` },
-    { label: 'Assigned', value: String(data.assignedKarkuns) },
+    { label: 'Connected', value: String(data.assignedKarkuns) },
   ]
 
   return (

@@ -93,7 +93,7 @@ function FollowUpList({
             <div className="flex shrink-0 flex-col gap-2 sm:w-48">
               <Link to={adminAnnexure1Path(item.karkunId)}>
                 <PrimaryButton type="button" fullWidth className="px-4 py-2 text-sm">
-                  Open Annexure-1
+                  Open Connection
                 </PrimaryButton>
               </Link>
               <SecondaryButton
@@ -141,7 +141,7 @@ export function FollowUpDevelopmentModulePage() {
         <h1 className="text-2xl font-semibold text-text-heading">Follow-up</h1>
         <ActiveCampaignSubtitle />
         <p className="mt-2 text-secondary">
-          Simple follow-ups created from Annexure-1 when another interaction is needed.
+          Simple follow-ups created from a visit when another interaction is needed.
         </p>
       </div>
 

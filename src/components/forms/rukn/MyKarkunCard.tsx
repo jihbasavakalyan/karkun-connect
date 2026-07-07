@@ -11,6 +11,7 @@ import { getNextFollowUpForKarkun } from '@/services/followUpService'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { ReleaseKarkunModal, ReplaceKarkunModal } from '@/components/forms/assignment'
+import { ContactActionBar } from '@/components/common/ContactActionBar'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 
@@ -58,6 +59,17 @@ export function MyKarkunCard({ karkun, ruknId }: MyKarkunCardProps) {
           <p className="mt-3 text-sm text-secondary">
             Next follow-up: {nextFollowUp.formattedDate} · {nextFollowUp.purpose}
           </p>
+        )}
+
+        {karkun.mobile.trim() && (
+          <div className="mt-3">
+            <ContactActionBar
+              name={karkun.name}
+              mobile={karkun.mobile}
+              whatsapp={karkun.whatsapp}
+              size="sm"
+            />
+          </div>
         )}
 
         <div className="mt-4 grid gap-2">

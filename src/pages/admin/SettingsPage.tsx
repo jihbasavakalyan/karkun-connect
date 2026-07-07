@@ -1,5 +1,6 @@
 import { APP_DESCRIPTION, APP_NAME, APP_TAGLINE, APP_VERSION } from '@/constants/app'
 import { getActiveCampaignName, formatActiveCampaignDuration } from '@/services/campaignService'
+import { DangerZone } from '@/components/admin/DangerZone'
 
 export function SettingsPage() {
   const campaignName = getActiveCampaignName()
@@ -49,6 +50,8 @@ export function SettingsPage() {
           is enabled. See Help for workflow guidance.
         </p>
       </section>
+
+      <DangerZone />
     </div>
   )
 }

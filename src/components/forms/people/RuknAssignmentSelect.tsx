@@ -47,7 +47,7 @@ export function RuknAssignmentSelect({
 
   const selectedLabel = value
     ? formatPersonNameForDisplay(options.find((rukn) => rukn.id === value)?.name ?? '')
-    : 'Unassigned'
+    : 'Not Connected'
 
   useEffect(() => {
     if (!isOpen || !triggerRef.current) {
@@ -152,7 +152,7 @@ export function RuknAssignmentSelect({
                 }`}
                 onClick={() => handleSelect('')}
               >
-                Unassigned
+                Not Connected
               </button>
             </li>
             {filteredOptions.map((rukn) => (

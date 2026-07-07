@@ -10,6 +10,7 @@ import { ComplianceModulePage } from '@/pages/admin/ComplianceModulePage'
 import { ExecutionModulePage } from '@/pages/admin/ExecutionModulePage'
 import { FollowUpDevelopmentModulePage } from '@/pages/admin/FollowUpDevelopmentModulePage'
 import { CommunicationModulePage } from '@/pages/admin/CommunicationModulePage'
+import { CampaignListsPage } from '@/pages/admin/CampaignListsPage'
 import { HelpPage } from '@/pages/admin/HelpPage'
 import { KarkunanPage } from '@/pages/admin/KarkunanPage'
 import { KarkunProfilePage } from '@/pages/admin/KarkunProfilePage'
@@ -21,7 +22,7 @@ import { CampaignRecordPage } from '@/pages/rukn/CampaignRecordPage'
 import { RuknHomePage } from '@/pages/rukn/RuknHomePage'
 import { AvailableKarkunPage } from '@/pages/rukn/AvailableKarkunPage'
 import { MyKarkunPage } from '@/pages/rukn/MyKarkunPage'
-import { WorkerMeetingFormPage } from '@/pages/rukn/WorkerMeetingFormPage'
+import { ConnectionJourneyPage } from '@/pages/rukn/ConnectionJourneyPage'
 import { LandingPage } from '@/pages/shared/LandingPage'
 import { GuestRoute, ProtectedRoute } from '@/routes/ProtectedRoute'
 
@@ -60,7 +61,7 @@ export function AppRouter() {
           <Route path="karkun" element={<KarkunanPage />} />
           <Route path="karkun/:karkunId" element={<KarkunProfilePage />} />
           <Route path="assignments" element={<AssignmentManagementPage />} />
-          <Route path="annexure-1/:karkunId" element={<WorkerMeetingFormPage />} />
+          <Route path="annexure-1/:karkunId" element={<ConnectionJourneyPage />} />
           <Route path="execution" element={<ExecutionModulePage />} />
           <Route path="compliance" element={<ComplianceModulePage />} />
           <Route
@@ -69,6 +70,7 @@ export function AppRouter() {
           />
           <Route path="follow-up" element={<FollowUpDevelopmentModulePage />} />
           <Route path="communication" element={<CommunicationModulePage />} />
+          <Route path="lists" element={<CampaignListsPage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="help" element={<HelpPage />} />
 
@@ -94,7 +96,7 @@ export function AppRouter() {
           <Route index element={<RuknHomePage />} />
           <Route path="available-karkun" element={<AvailableKarkunPage />} />
           <Route path="my-karkun" element={<MyKarkunPage />} />
-          <Route path="visit/:karkunId" element={<WorkerMeetingFormPage />} />
+          <Route path="visit/:karkunId" element={<ConnectionJourneyPage />} />
           <Route path="campaign-record" element={<CampaignRecordPage />} />
           <Route path="reports" element={<Navigate to={ROUTES.RUKN_CAMPAIGN_RECORD} replace />} />
           <Route path="tasks" element={<Navigate to={ROUTES.RUKN} replace />} />

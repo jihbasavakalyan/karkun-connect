@@ -4,13 +4,13 @@ import { getAllAssignments } from '@/stores/assignmentStore'
 import type { AssignmentRecord } from '@/types/assignment'
 
 const EXPORT_HEADERS = [
-  'Assignment Number',
+  'Connection Number',
   'Rukn',
   'Karkun',
   'Status',
   'Effective From',
   'Ended Date',
-  'Assigned By',
+  'Connected By',
   'Replacement Reason',
   'Removal Reason',
   'Remarks',

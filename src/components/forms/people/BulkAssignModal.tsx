@@ -40,7 +40,7 @@ export function BulkAssignModal({
 
     const result = bulkAssignKarkuns(karkunIds, ruknId, 'Administrator')
     setResultMessage(
-      `Assigned ${result.success} Karkun. ${result.failed.length > 0 ? `${result.failed.length} failed.` : ''}`,
+      `Connected ${result.success} Karkun. ${result.failed.length > 0 ? `${result.failed.length} failed.` : ''}`,
     )
 
     if (result.failed.length === 0) {
@@ -56,10 +56,10 @@ export function BulkAssignModal({
   }
 
   return (
-    <Modal isOpen={isOpen} title="Bulk Assign Karkun" onClose={handleClose}>
+    <Modal isOpen={isOpen} title="Bulk Connect Karkun" onClose={handleClose}>
       <div className="space-y-4">
         <p className="text-sm text-secondary">
-          Assign {karkunIds.length} selected {sectionGender} Karkun to a compatible {sectionGender}{' '}
+          Connect {karkunIds.length} selected {sectionGender} Karkun to a compatible {sectionGender}{' '}
           Rukn.
         </p>
 
@@ -98,7 +98,7 @@ export function BulkAssignModal({
             Cancel
           </SecondaryButton>
           <PrimaryButton type="button" onClick={handleAssign}>
-            Assign Selected
+            Connect Selected
           </PrimaryButton>
         </div>
       </div>

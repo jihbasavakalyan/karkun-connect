@@ -21,9 +21,9 @@ const KARKUN_HEADERS = [
   ...RUKN_HEADERS,
   'Area',
   'Address',
-  'Assigned Rukn',
-  'Assignment Status',
-  'Assignment Date',
+  'Connected Rukn',
+  'Connection Status',
+  'Connection Date',
 ] as const
 
 function escapeCsvCell(value: string): string {

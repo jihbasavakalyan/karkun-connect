@@ -2,7 +2,10 @@ import { useMemo, useState } from 'react'
 import { Modal } from '@/components/common/Modal'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
+import { SchedulePickerModal } from '@/components/communication/SchedulePickerModal'
 import { applyTemplateVariables, listTemplates } from '@/services/templateService'
+import { scheduleWhatsAppMessage } from '@/services/schedulingService'
+import { buildWhatsAppLink } from '@/utils/personContactLinks'
 import type { MessageRecipient } from '@/types/communication'
 import { TEMPLATE_CATEGORY_LABELS } from '@/types/communication'
 
@@ -51,8 +54,13 @@ function MessageComposerModalContent({
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [sending, setSending] = useState(false)
+  const [scheduleOpen, setScheduleOpen] = useState(false)
 
   const primaryRecipient = recipients[0]
+  const singleRecipient = recipients.length === 1 && primaryRecipient
+  const waLink = singleRecipient
+    ? buildWhatsAppLink(primaryRecipient.whatsapp?.trim() ? primaryRecipient.whatsapp : primaryRecipient.mobile, message)
+    : null
 
   const previewMessage = useMemo(() => {
     if (!primaryRecipient) return message
@@ -88,6 +96,25 @@ function MessageComposerModalContent({
     }
     setSuccess('Message queued for delivery. Backend integration arrives in Sprint 16.')
     setTimeout(() => onClose(), 1200)
+  }
+
+  const handleSendViaWhatsApp = () => {
+    if (!waLink) {
+      return
+    }
+    window.open(waLink, '_blank', 'noopener,noreferrer')
+  }
+
+  const handleSchedule = (scheduledForIso: string) => {
+    scheduleWhatsAppMessage({
+      recipients,
+      templateId: templateId || undefined,
+      message,
+      scheduledFor: scheduledForIso,
+    })
+    setScheduleOpen(false)
+    setSuccess('Message scheduled. It will appear under Communication → Scheduled.')
+    setTimeout(() => onClose(), 1400)
   }
 
   return (
@@ -148,15 +175,43 @@ function MessageComposerModalContent({
         {error && <p className="text-sm text-red-600">{error}</p>}
         {success && <p className="text-sm text-green-700">{success}</p>}
 
-        <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
-          <SecondaryButton type="button" onClick={onClose} disabled={sending}>
-            Cancel
-          </SecondaryButton>
-          <PrimaryButton type="button" onClick={handleSend} disabled={sending || !message.trim()}>
-            {sending ? 'Sending…' : 'Send'}
-          </PrimaryButton>
+        <div className="flex flex-col gap-3 pt-2">
+          {singleRecipient && (
+            <PrimaryButton
+              type="button"
+              fullWidth
+              onClick={handleSendViaWhatsApp}
+              disabled={!waLink}
+            >
+              🟢 Send via WhatsApp
+            </PrimaryButton>
+          )}
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            <SecondaryButton type="button" onClick={onClose} disabled={sending}>
+              Cancel
+            </SecondaryButton>
+            <SecondaryButton
+              type="button"
+              onClick={() => setScheduleOpen(true)}
+              disabled={sending || !message.trim()}
+            >
+              📅 Schedule
+            </SecondaryButton>
+            <PrimaryButton type="button" onClick={handleSend} disabled={sending || !message.trim()}>
+              {sending ? 'Sending…' : 'Queue Message'}
+            </PrimaryButton>
+          </div>
         </div>
       </div>
+
+      <SchedulePickerModal
+        isOpen={scheduleOpen}
+        title="Schedule Message"
+        description="Choose when this message should be sent. Automated delivery arrives in a future sprint."
+        confirmLabel="Schedule Message"
+        onClose={() => setScheduleOpen(false)}
+        onConfirm={handleSchedule}
+      />
     </Modal>
   )
 }

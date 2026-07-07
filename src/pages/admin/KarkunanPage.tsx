@@ -138,7 +138,7 @@ function KarkunGenderSection({
     if (editingKarkun && assignedRuknId !== undefined) {
       const assignmentResult = changeKarkunRuknAssignment(editingKarkun.id, assignedRuknId)
       if (!assignmentResult.success) {
-        setFormError(assignmentResult.error ?? 'Unable to update assignment.')
+        setFormError(assignmentResult.error ?? 'Unable to update connection.')
         return
       }
     }
@@ -162,7 +162,7 @@ function KarkunGenderSection({
     if (!result.success) {
       setAssignmentErrors((current) => ({
         ...current,
-        [karkun.id]: result.error ?? 'Assignment failed.',
+        [karkun.id]: result.error ?? 'Connection failed.',
       }))
       return false
     }
@@ -442,7 +442,7 @@ export function KarkunanPage() {
         <div>
           <h1 className="text-2xl font-semibold text-text-heading">Karkun Management</h1>
           <p className="mt-2 text-secondary">
-            Manage Male and Female Karkun contacts, assignments, and status separately.
+            Manage Male and Female Karkun contacts, connections, and status separately.
           </p>
         </div>
 

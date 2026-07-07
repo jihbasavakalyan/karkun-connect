@@ -21,7 +21,7 @@ export function CommandCenterRuknQuickActions({
     { id: 'karkun', label: 'My Karkun', icon: '👥', to: ROUTES.RUKN_MY_KARKUN },
     { id: 'available', label: 'Available', icon: '🔍', to: ROUTES.RUKN_AVAILABLE_KARKUN },
     nextAction.route && !nextAction.isCaughtUp
-      ? { id: 'annexure', label: 'Annexure-1', icon: '📋', to: nextAction.route }
+      ? { id: 'annexure', label: 'Record Visit', icon: '📋', to: nextAction.route }
       : null,
     { id: 'record', label: 'Record', icon: '📊', to: ROUTES.RUKN_CAMPAIGN_RECORD },
   ].filter(Boolean) as {

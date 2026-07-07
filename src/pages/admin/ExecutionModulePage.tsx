@@ -137,11 +137,11 @@ const EMPTY_STATES: Record<
 > = {
   pending: {
     title: 'No Pending Executions',
-    message: 'All assigned Karkuns have started or completed Annexure-1.',
+    message: 'All connected Karkuns have started or completed their visit.',
   },
   'in-progress': {
     title: 'Nothing In Progress',
-    message: 'No Annexure-1 drafts are currently being worked on.',
+    message: 'No visit drafts are currently being worked on.',
   },
   'follow-up': {
     title: 'No Follow-ups Required',
@@ -198,7 +198,7 @@ export function ExecutionModulePage() {
         {activeSection === 'reports' ? (
           <div className="mt-4">
             <p className="text-sm text-secondary">
-              Submitted Annexure-1 forms. No separate reporting required.
+              Submitted visit records. No separate reporting required.
             </p>
             <div className="mt-4">
               <ExecutionRecordsPanel />
@@ -209,7 +209,7 @@ export function ExecutionModulePage() {
             <div className="mt-4">
               <ExecutionEmptyState
                 title="No Completions Today"
-                message="Annexure-1 submissions completed today will appear here."
+                message="Visits completed today will appear here."
               />
             </div>
           ) : (

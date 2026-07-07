@@ -12,7 +12,7 @@ export function ExecutionRecordsPanel() {
     return (
       <ExecutionEmptyState
         title="No Execution Records Yet"
-        message="Execution reports will appear after Annexure-1 submissions."
+        message="Execution reports will appear after visits are recorded."
       />
     )
   }
@@ -36,7 +36,7 @@ export function ExecutionRecordsPanel() {
             </p>
             <p className="mt-1 text-sm text-secondary">
               {form.visitConducted === 'yes'
-                ? form.discussionSummary || 'Annexure-1 submitted'
+                ? form.discussionSummary || 'Visit recorded'
                 : `Not conducted: ${form.notConductedReason}`}
             </p>
           </div>

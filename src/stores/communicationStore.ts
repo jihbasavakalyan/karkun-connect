@@ -42,7 +42,7 @@ function createDefaultAutomationRules(): AutomationRule[] {
   })
 
   return [
-    base('rule-assignment', 'Assignment Created', 'assignment-created', 'tpl-assignment', 'Send when a new assignment is confirmed.'),
+    base('rule-assignment', 'Connection Created', 'assignment-created', 'tpl-assignment', 'Send when a new connection is confirmed.'),
     base('rule-first-meeting', 'First Meeting Pending', 'first-meeting-pending', 'tpl-meeting-reminder', 'Reminder after 3 days if first meeting is pending.', 3),
     base('rule-ijtema', 'Ijtema Tomorrow', 'ijtema-tomorrow', 'tpl-ijtema', 'Reminder sent the day before Weekly Ijtema.'),
     base('rule-monthly', 'Monthly Report Pending', 'monthly-report-pending', 'tpl-monthly-report', 'Reminder when monthly report is pending.'),
@@ -150,6 +150,20 @@ export function updateAutomationRule(rule: AutomationRule): AutomationRule {
 
 export function getScheduledMessages(): ScheduledMessage[] {
   return [...scheduledMessages]
+}
+
+export function addScheduledMessage(message: ScheduledMessage): ScheduledMessage {
+  scheduledMessages.unshift(message)
+  notifyCommunicationStoreChange()
+  return message
+}
+
+export function cancelScheduledMessage(id: string): void {
+  const index = scheduledMessages.findIndex((item) => item.id === id)
+  if (index >= 0) {
+    scheduledMessages[index] = { ...scheduledMessages[index], status: 'cancelled' }
+    notifyCommunicationStoreChange()
+  }
 }
 
 export function getWhatsAppSettings(): WhatsAppSettings {

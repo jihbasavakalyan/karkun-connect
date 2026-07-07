@@ -136,7 +136,7 @@ export function AssignmentMappingView({ version = 0 }: AssignmentMappingViewProp
           id="mapping-search"
           type="search"
           value={search}
-          placeholder="Search by Rukn, Karkun, Father/Husband name, mobile, place, or assignment number..."
+          placeholder="Search by Rukn, Karkun, Father/Husband name, mobile, place, or connection number..."
           onChange={(event) => setSearch(event.target.value)}
           className={`mt-2 ${inputClassName}`}
         />
@@ -154,7 +154,7 @@ export function AssignmentMappingView({ version = 0 }: AssignmentMappingViewProp
           </select>
 
           <select
-            aria-label="Filter by assignment status"
+            aria-label="Filter by connection status"
             value={assignmentFilter}
             onChange={(event) => setAssignmentFilter(event.target.value)}
             className={selectClassName}
@@ -187,8 +187,8 @@ export function AssignmentMappingView({ version = 0 }: AssignmentMappingViewProp
             <option value="count-desc">Highest Karkun Count</option>
             <option value="count-asc">Lowest Karkun Count</option>
             <option value="alpha">Alphabetical</option>
-            <option value="newest">Newest Assignment</option>
-            <option value="oldest">Oldest Assignment</option>
+            <option value="newest">Newest Connection</option>
+            <option value="oldest">Oldest Connection</option>
           </select>
         </div>
 
@@ -298,7 +298,7 @@ function KarkunRow({
             {familyLabel}: {karkun?.fatherHusbandName?.trim() || '—'}
           </p>
           <p className="mt-0.5 text-xs text-secondary">
-            {karkun?.mobile || 'Mobile not added'} · Assigned {assignment.effectiveFrom.slice(0, 10)}
+            {karkun?.mobile || 'Mobile not added'} · Connected {assignment.effectiveFrom.slice(0, 10)}
           </p>
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <span
@@ -308,11 +308,11 @@ function KarkunRow({
                   : 'bg-amber-100 text-amber-800'
               }`}
             >
-              Annexure-1: {annexureSubmitted ? 'Submitted' : 'Pending'}
+              Visit: {annexureSubmitted ? 'Recorded' : 'Pending'}
             </span>
             <Link to={adminAnnexure1Path(assignment.karkunId)}>
               <SecondaryButton type="button" className="px-3 py-1 text-xs">
-                Open Annexure-1
+                Open Connection
               </SecondaryButton>
             </Link>
           </div>

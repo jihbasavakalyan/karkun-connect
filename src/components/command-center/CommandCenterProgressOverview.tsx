@@ -37,7 +37,7 @@ export function CommandCenterProgressOverview() {
           <ProgressBar label="Coverage" value={overview.coverage} />
           <ProgressBar label="Follow-up" value={overview.followUp} />
           <ProgressBar label="Compliance" value={overview.compliance} />
-          <ProgressBar label="Assignment" value={overview.assignment} />
+          <ProgressBar label="Connection" value={overview.assignment} />
         </div>
       </div>
     </section>

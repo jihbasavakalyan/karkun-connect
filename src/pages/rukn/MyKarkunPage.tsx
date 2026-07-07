@@ -19,9 +19,9 @@ export function MyKarkunPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-text-heading">My Karkun</h1>
+        <h1 className="text-2xl font-semibold text-text-heading">Connected Karkuns</h1>
         <p className="mt-2 text-secondary">
-          Today&apos;s assigned Karkuns. Open Annexure-1 to complete each visit.
+          Open a Connection Journey to guide each Karkun forward.
         </p>
       </div>
 
@@ -29,9 +29,9 @@ export function MyKarkunPage() {
 
       {myKarkunan.length === 0 ? (
         <div className="rounded-(--radius-card) border border-border bg-surface p-8 text-center shadow-card">
-          <p className="text-secondary">You have no assigned Karkun yet.</p>
+          <p className="text-secondary">You have not connected with any Karkun yet.</p>
           <Link to={ROUTES.RUKN_AVAILABLE_KARKUN} className="mt-4 inline-block text-sm font-medium text-primary hover:underline">
-            Browse Available Karkun
+            + Connect Karkun
           </Link>
         </div>
       ) : (

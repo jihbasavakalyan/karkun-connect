@@ -43,4 +43,12 @@ export const RELEASE_REASON_OPTIONS: ReleaseReason[] = [
   'Other',
 ]
 
+const RELEASE_REASON_DISPLAY_LABELS: Partial<Record<ReleaseReason, string>> = {
+  'Wrong Assignment': 'Wrong Connection',
+}
+
+export function getReleaseReasonLabel(reason: ReleaseReason | string): string {
+  return RELEASE_REASON_DISPLAY_LABELS[reason as ReleaseReason] ?? reason
+}
+
 export const ACTIVE_CAMPAIGN_ID = 'campaign-active'

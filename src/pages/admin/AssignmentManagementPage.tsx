@@ -5,6 +5,7 @@ import { adminAnnexure1Path, adminRuknDetailPath } from '@/constants/routes'
 import { AssignmentMappingView } from '@/components/assignment/AssignmentMappingView'
 import { getRuknById, ruknMaster } from '@/data/ruknMaster'
 import { exportAssignmentHistory } from '@/lib/assignmentExport'
+import { getConnectionStatusLabel } from '@/lib/connectionLabels'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { usePeopleStore } from '@/hooks/usePeopleStore'
 import {
@@ -267,13 +268,13 @@ export function AssignmentManagementPage() {
       <>
       <div className="rounded-(--radius-card) border border-border bg-surface p-4 shadow-card">
         <label htmlFor="assignment-global-search" className="text-sm font-medium text-text-heading">
-          Search assignments
+          Search connections
         </label>
         <input
           id="assignment-global-search"
           type="search"
           value={globalSearch}
-          placeholder="Search by Rukn, Karkun, mobile, or assignment number (ASN-...)..."
+          placeholder="Search by Rukn, Karkun, mobile, or connection number (ASN-...)..."
           onChange={(e) => setGlobalSearch(e.target.value)}
           className="mt-2 w-full rounded-lg border border-border bg-surface px-4 py-3 text-sm"
         />
@@ -339,7 +340,7 @@ export function AssignmentManagementPage() {
                               : 'bg-gray-100 text-gray-600'
                         }`}
                       >
-                        {summary.assignmentStatus}
+                        {getConnectionStatusLabel(summary.assignmentStatus)}
                       </span>
                     </div>
                     {summary.currentAssignment && (
@@ -419,7 +420,7 @@ export function AssignmentManagementPage() {
                   >
                     <p className="font-semibold text-text-heading">{karkun.name}</p>
                     <p className="mt-1 text-sm text-secondary">
-                      {karkun.gender} · {karkun.assignmentStatus} · {workload.activeAssignments.length}{' '}
+                      {karkun.gender} · {getConnectionStatusLabel(karkun.assignmentStatus)} · {workload.activeAssignments.length}{' '}
                       active · {workload.inactiveAssignments.length} past
                     </p>
                     {workload.assignedRukns.length > 0 && (
@@ -429,7 +430,7 @@ export function AssignmentManagementPage() {
                     )}
                     {selectedRuknId && !isAssignable && karkun.assignmentStatus === 'Available' && (
                       <p className="mt-2 text-xs text-secondary">
-                        Not assignable — check gender match or mobile number.
+                        Cannot connect — check gender match or mobile number.
                       </p>
                     )}
                   </button>
@@ -444,7 +445,7 @@ export function AssignmentManagementPage() {
         <section className="rounded-(--radius-card) border border-primary/30 bg-surface p-6 shadow-card">
           <h2 className="text-lg font-semibold text-text-heading">Connection Preview</h2>
           <p className="mt-1 text-sm text-secondary">
-            Review the pairing before confirming the assignment. A Rukn can hold multiple active
+            Review the pairing before confirming the connection. A Rukn can hold multiple active
             Karkuns.
           </p>
           <dl className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -458,7 +459,7 @@ export function AssignmentManagementPage() {
             </div>
           </dl>
           <p className="mt-4 text-sm text-secondary">
-            A permanent assignment number will be generated when you confirm.
+            A permanent connection number will be generated when you confirm.
           </p>
           <div className="mt-4 flex flex-wrap gap-3">
             <PrimaryButton type="button" onClick={handleConfirmAssignment}>
@@ -477,7 +478,7 @@ export function AssignmentManagementPage() {
             <div>
               <h2 className="text-lg font-semibold text-text-heading">{selectedRukn.name}</h2>
               <p className="mt-1 text-sm text-secondary">
-                Status: {ruknSummary.assignmentStatus}
+                Status: {getConnectionStatusLabel(ruknSummary.assignmentStatus)}
                 {ruknSummary.assignedKarkunCount > 0 &&
                   ` · ${ruknSummary.assignedKarkunCount} active Karkun${
                     ruknSummary.assignedKarkunCount === 1 ? '' : 's'
@@ -530,7 +531,7 @@ export function AssignmentManagementPage() {
                       <div className="flex flex-wrap gap-2">
                         <Link to={adminAnnexure1Path(assignment.karkunId)}>
                           <SecondaryButton type="button" className="px-3 py-1.5 text-sm">
-                            Annexure-1
+                            Open Connection
                           </SecondaryButton>
                         </Link>
                         <SecondaryButton

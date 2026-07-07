@@ -179,7 +179,7 @@ function KarkunProfileForm({ karkun, karkunId }: KarkunProfileFormProps) {
 
     const assignmentResult = changeKarkunRuknAssignment(karkunId, assignedRuknId)
     if (!assignmentResult.success) {
-      setError(assignmentResult.error ?? 'Unable to update assignment.')
+      setError(assignmentResult.error ?? 'Unable to update connection.')
       return
     }
 
@@ -286,7 +286,7 @@ function KarkunProfileForm({ karkun, karkunId }: KarkunProfileFormProps) {
 
           <div className="flex flex-col gap-2">
             <label htmlFor="profile-assigned-rukn" className="text-sm font-medium text-text-heading">
-              Assigned Rukn
+              Connected Rukn
             </label>
             <RuknAssignmentSelect
               karkunId={karkunId}

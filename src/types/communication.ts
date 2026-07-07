@@ -145,7 +145,7 @@ export type CommunicationResult =
   | { success: false; error: string }
 
 export const TEMPLATE_CATEGORY_LABELS: Record<TemplateCategory, string> = {
-  assignments: 'Assignments',
+  assignments: 'Connections',
   'first-contact': 'First Contact',
   'meeting-reminder': 'Meeting Reminder',
   'weekly-ijtema': 'Weekly Ijtema',
@@ -159,7 +159,7 @@ export const TEMPLATE_CATEGORY_LABELS: Record<TemplateCategory, string> = {
 }
 
 export const AUTOMATION_TRIGGER_LABELS: Record<AutomationTrigger, string> = {
-  'assignment-created': 'Assignment Created',
+  'assignment-created': 'Connection Created',
   'first-meeting-pending': 'First Meeting Pending',
   'ijtema-tomorrow': 'Ijtema Tomorrow',
   'monthly-report-pending': 'Monthly Report Pending',

@@ -20,10 +20,10 @@ export type KpiPresentationMeta = {
 }
 
 export const KPI_PRESENTATION: Record<string, KpiPresentationMeta> = {
-  'assigned-karkuns': { icon: '👥', subtitle: 'Active campaign assignments' },
+  'assigned-karkuns': { icon: '👥', subtitle: 'Active campaign connections' },
   'pending-first-visits': { icon: '📍', subtitle: 'Awaiting first contact visit' },
   'todays-visits': { icon: '📅', subtitle: 'Scheduled for today' },
-  'pending-annexure': { icon: '📋', subtitle: 'Annexure-1 not submitted' },
+  'pending-annexure': { icon: '📋', subtitle: 'Visit not recorded' },
   'follow-up-required': { icon: '🔄', subtitle: 'Needs follow-up action' },
   'pending-compliance': { icon: '✅', subtitle: 'Compliance items open' },
   'completed-today': { icon: '✨', subtitle: 'Finished today' },

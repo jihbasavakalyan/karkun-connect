@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
 import { adminKarkunProfilePath } from '@/constants/routes'
 import type { PersonStatus } from '@/types/karkun-registry.types'
+import { getConnectionStatusLabel } from '@/lib/connectionLabels'
 import { formatPersonStatus, type PeopleSortField } from '@/types/people.types'
 import { formatPersonNameForDisplay } from '@/utils/formatPersonDisplay'
 import { RuknAssignmentSelect } from '@/components/forms/people/RuknAssignmentSelect'
@@ -149,8 +150,8 @@ export function KarkunPeopleTable({
                   onToggleSort={onToggleSort}
                 />
               </th>
-              <th className="px-4 py-3 font-semibold text-text-heading">Assigned Rukn</th>
-              <th className="px-4 py-3 font-semibold text-text-heading">Assignment</th>
+              <th className="px-4 py-3 font-semibold text-text-heading">Connected Rukn</th>
+              <th className="px-4 py-3 font-semibold text-text-heading">Connection</th>
               <th className="px-4 py-3">
                 <SortHeader
                   label="Status"
@@ -214,7 +215,7 @@ export function KarkunPeopleTable({
                     )}
                   </div>
                 </td>
-                <td className={`${PEOPLE_TABLE_CELL_CLASS} text-secondary`}>{karkun.assignmentStatus}</td>
+                <td className={`${PEOPLE_TABLE_CELL_CLASS} text-secondary`}>{getConnectionStatusLabel(karkun.assignmentStatus)}</td>
                 <td className={PEOPLE_TABLE_CELL_CLASS}>
                   <StatusBadge status={karkun.status} />
                 </td>
@@ -259,7 +260,7 @@ export function KarkunPeopleTable({
                 <p className={`mt-1 ${PEOPLE_TABLE_MOBILE_CLASS}`}>{karkun.mobile}</p>
                 <dl className="mt-3 space-y-1 text-sm">
                   <div className="flex flex-col gap-1">
-                    <dt className="text-secondary">Assigned Rukn</dt>
+                    <dt className="text-secondary">Connected Rukn</dt>
                     <dd className="flex flex-col gap-2">
                       <RuknAssignmentSelect
                         karkunId={karkun.id}
@@ -288,8 +289,8 @@ export function KarkunPeopleTable({
                     </dd>
                   </div>
                   <div className="flex justify-between gap-3">
-                    <dt className="text-secondary">Assignment</dt>
-                    <dd className="font-medium">{karkun.assignmentStatus}</dd>
+                    <dt className="text-secondary">Connection</dt>
+                    <dd className="font-medium">{getConnectionStatusLabel(karkun.assignmentStatus)}</dd>
                   </div>
                 </dl>
                 <div className="mt-3 text-sm">

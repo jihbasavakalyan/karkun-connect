@@ -9,37 +9,37 @@ export function CommandCenterAssignmentMetrics() {
   const items = [
     {
       id: 'active',
-      label: 'Active Assignments',
+      label: 'Active Connections',
       count: metrics.activeAssignments,
       to: ROUTES.ADMIN_ASSIGNMENTS,
     },
     {
       id: 'unassigned-rukn',
-      label: 'Unassigned Rukns',
+      label: 'Unconnected Rukns',
       count: metrics.unassignedRukns,
       to: ROUTES.ADMIN_ASSIGNMENTS,
     },
     {
       id: 'assigned-rukn',
-      label: 'Assigned Rukns',
+      label: 'Connected Rukns',
       count: metrics.assignedRukns,
       to: ROUTES.ADMIN_ASSIGNMENTS,
     },
     {
       id: 'today',
-      label: 'Assignments Today',
+      label: 'Connections Today',
       count: metrics.assignmentsToday,
       to: ROUTES.ADMIN_ASSIGNMENTS,
     },
     {
       id: 'week',
-      label: 'Assignments This Week',
+      label: 'Connections This Week',
       count: metrics.assignmentsThisWeek,
       to: ROUTES.ADMIN_ASSIGNMENTS,
     },
     {
       id: 'month',
-      label: 'Assignments This Month',
+      label: 'Connections This Month',
       count: metrics.assignmentsThisMonth,
       to: ROUTES.ADMIN_ASSIGNMENTS,
     },
@@ -57,7 +57,7 @@ export function CommandCenterAssignmentMetrics() {
     },
     {
       id: 'changes',
-      label: 'Total Assignment Changes',
+      label: 'Total Connection Changes',
       count: metrics.totalAssignmentChanges,
       to: ROUTES.ADMIN_ASSIGNMENTS,
     },
@@ -65,7 +65,7 @@ export function CommandCenterAssignmentMetrics() {
 
   return (
     <section className="rounded-(--radius-card) border border-border bg-surface p-6 shadow-card">
-      <h2 className="text-lg font-semibold text-text-heading">Assignments</h2>
+      <h2 className="text-lg font-semibold text-text-heading">Connections</h2>
 
       <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {items.map((item) => (

@@ -14,8 +14,8 @@ export function getAdminDashboardStats(): DashboardStat[] {
 
   return [
     { id: 'total-rukn', label: 'Total Rukn', value: stats.totalRukns },
-    { id: 'assigned-karkunan', label: 'Assigned Karkunan', value: stats.assignedKarkuns },
-    { id: 'unassigned-karkunan', label: 'Unassigned Karkunan', value: stats.unassignedKarkuns },
+    { id: 'assigned-karkunan', label: 'Connected Karkunan', value: stats.assignedKarkuns },
+    { id: 'unassigned-karkunan', label: 'Not Connected Karkunan', value: stats.unassignedKarkuns },
     { id: 'pending-jih', label: 'Not Registered (JIH Web Portal)', value: jihMetrics.notRegistered },
   ]
 }
@@ -23,7 +23,7 @@ export function getAdminDashboardStats(): DashboardStat[] {
 export const adminDashboardStats: DashboardStat[] = getAdminDashboardStats()
 
 export const ruknDashboardStats: DashboardStat[] = [
-  { id: 'my-assigned-karkunan', label: 'My Assigned Karkunan', value: 0 },
+  { id: 'my-assigned-karkunan', label: 'My Connected Karkunan', value: 0 },
   { id: 'visits-pending', label: 'Visits Pending', value: 0 },
   { id: 'reports-pending', label: 'Reports Pending', value: 0 },
 ]

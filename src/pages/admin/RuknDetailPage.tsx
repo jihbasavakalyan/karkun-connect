@@ -10,6 +10,7 @@ import { CommunicationActions } from '@/components/communication/CommunicationAc
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import { useCommunication } from '@/hooks/useCommunication'
+import { getConnectionStatusLabel } from '@/lib/connectionLabels'
 import { formatPersonStatus } from '@/types/people.types'
 
 export function RuknDetailPage() {
@@ -119,24 +120,24 @@ export function RuknDetailPage() {
           <dl className="mt-4 grid gap-4 sm:grid-cols-2 text-sm">
             <div>
               <dt className="text-secondary">Connection Status</dt>
-              <dd className="mt-1 font-medium text-text-heading">{summary.assignmentStatus}</dd>
+              <dd className="mt-1 font-medium text-text-heading">{getConnectionStatusLabel(summary.assignmentStatus)}</dd>
             </div>
             <div>
               <dt className="text-secondary">
                 Connected Karkuns ({summary.assignedKarkunCount})
               </dt>
               <dd className="mt-1 font-medium text-text-heading">
-                {assignedKarkunNames.length > 0 ? assignedKarkunNames.join(', ') : 'Unassigned'}
+                {assignedKarkunNames.length > 0 ? assignedKarkunNames.join(', ') : 'Not Connected'}
               </dd>
             </div>
             <div>
-              <dt className="text-secondary">Assignment Since</dt>
+              <dt className="text-secondary">Connection Since</dt>
               <dd className="mt-1 font-medium text-text-heading">
                 {summary.assignmentSince?.slice(0, 10) ?? '—'}
               </dd>
             </div>
             <div>
-              <dt className="text-secondary">Last Assignment Change</dt>
+              <dt className="text-secondary">Last Connection Change</dt>
               <dd className="mt-1 font-medium text-text-heading">
                 {summary.lastAssignmentChange?.slice(0, 10) ?? '—'}
               </dd>

@@ -11,8 +11,8 @@ import { EnterpriseBadge } from '@/components/enterprise'
 
 const navItems = [
   { label: 'Home', icon: '🏠', to: ROUTES.RUKN, end: true },
-  { label: 'Available', icon: '🔍', to: ROUTES.RUKN_AVAILABLE_KARKUN, end: false },
-  { label: 'My Karkun', icon: '👥', to: ROUTES.RUKN_MY_KARKUN, end: false },
+  { label: 'Connect', icon: '🔍', to: ROUTES.RUKN_AVAILABLE_KARKUN, end: false },
+  { label: 'Connected', icon: '👥', to: ROUTES.RUKN_MY_KARKUN, end: false },
   { label: 'Record', icon: '📊', to: ROUTES.RUKN_CAMPAIGN_RECORD, end: false },
 ] as const
 

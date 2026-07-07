@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { RELEASE_REASON_OPTIONS, type ReleaseReason } from '@/types/assignment.types'
+import { RELEASE_REASON_OPTIONS, getReleaseReasonLabel, type ReleaseReason } from '@/types/assignment.types'
 import { Modal } from '@/components/common/Modal'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
@@ -42,7 +42,7 @@ export function ReleaseKarkunModal({
                 onChange={() => setReason(option)}
                 className="h-4 w-4 text-primary"
               />
-              <span className="text-sm text-text-heading">{option}</span>
+              <span className="text-sm text-text-heading">{getReleaseReasonLabel(option)}</span>
             </label>
           ))}
         </fieldset>

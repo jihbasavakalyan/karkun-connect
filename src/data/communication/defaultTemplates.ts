@@ -29,9 +29,9 @@ function template(
 export const DEFAULT_MESSAGE_TEMPLATES: MessageTemplate[] = [
   template(
     'tpl-assignment',
-    'Assignment Notification',
+    'Connection Notification',
     'assignments',
-    'Assalamu Alaikum {{name}}, you have been assigned to Rukn {{ruknName}}. Assignment: {{assignmentNumber}}. JazakAllah.',
+    'Assalamu Alaikum {{name}}, you have been connected to Rukn {{ruknName}}. Connection: {{assignmentNumber}}. JazakAllah.',
     ['name', 'ruknName', 'assignmentNumber'],
   ),
   template(

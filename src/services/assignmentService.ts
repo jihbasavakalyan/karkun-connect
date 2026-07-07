@@ -134,7 +134,7 @@ export function assignRukn(input: AssignInput): AssignmentResult {
 
   logActivity({
     type: 'assign',
-    message: `${karkunName} assigned to ${ruknName}`,
+    message: `${karkunName} connected to ${ruknName}`,
     ruknId: input.ruknId,
     karkunId: input.karkunId,
     assignmentId: assignment.assignmentId,
@@ -247,7 +247,7 @@ export function removeAssignment(input: RemoveInput): AssignmentResult {
 
   logActivity({
     type: 'remove',
-    message: `Assignment removed — ${karkunName} from ${ruknName}`,
+    message: `Connection removed — ${karkunName} from ${ruknName}`,
     ruknId: input.ruknId,
     karkunId: current.karkunId,
     assignmentId: current.assignmentId,
@@ -272,7 +272,7 @@ export function restoreAssignment(input: RestoreInput): AssignmentResult {
 
   logActivity({
     type: 'restore',
-    message: `Assignment restored — ${karkunName} to ${ruknName}`,
+    message: `Connection restored — ${karkunName} to ${ruknName}`,
     ruknId: input.ruknId,
     karkunId: input.karkunId,
     assignmentId: result.assignment.assignmentId,

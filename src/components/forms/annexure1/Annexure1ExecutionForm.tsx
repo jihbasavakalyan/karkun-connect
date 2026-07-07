@@ -23,7 +23,7 @@ export function Annexure1ExecutionForm({
   return (
     <section
       className="rounded-(--radius-card) border border-border bg-surface p-4 shadow-card sm:p-5"
-      aria-label="Annexure-1 execution form"
+      aria-label="Visit details form"
     >
       <FormFieldGroup title="Visit" first>
         <InputField

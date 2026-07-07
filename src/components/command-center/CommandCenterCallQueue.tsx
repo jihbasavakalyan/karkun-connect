@@ -12,7 +12,7 @@ export function CommandCenterCallQueue({ callQueue }: CommandCenterCallQueueProp
       <EnterpriseSectionHeader title="Call Queue" />
 
       {callQueue.length === 0 ? (
-        <p className="mt-1 text-xs text-secondary">All assigned Karkuns have completed their initial call.</p>
+        <p className="mt-1 text-xs text-secondary">All connected Karkuns have completed their initial call.</p>
       ) : (
         <ul className="cc-list-md mt-1 space-y-1">
           {callQueue.map((item, index) => (

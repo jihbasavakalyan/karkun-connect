@@ -36,13 +36,13 @@ export function HelpPage() {
             </Link>
           </li>
           <li>
-            Assign Karkun to Rukn under{' '}
+            Connect Karkun to Rukn under{' '}
             <Link to={ROUTES.ADMIN_ASSIGNMENTS} className="font-medium text-primary hover:underline">
-              Assignments
+              Connections
             </Link>
           </li>
           <li>
-            Monitor Annexure-1 execution under{' '}
+            Monitor visit execution under{' '}
             <Link to={ROUTES.ADMIN_EXECUTION} className="font-medium text-primary hover:underline">
               Execution
             </Link>
@@ -71,14 +71,14 @@ export function HelpPage() {
       <section className="rounded-(--radius-card) border border-border bg-surface p-6 shadow-card">
         <h2 className="text-lg font-semibold text-text-heading">Rukn Workflow</h2>
         <ol className="mt-4 list-inside list-decimal space-y-2 text-sm text-secondary">
-          <li>Sign in with your assigned demo Rukn account</li>
+          <li>Sign in with your connected demo Rukn account</li>
           <li>
-            Review assigned Karkun under{' '}
+            Review connected Karkun under{' '}
             <Link to={ROUTES.RUKN_MY_KARKUN} className="font-medium text-primary hover:underline">
               My Karkun
             </Link>
           </li>
-          <li>Open Annexure-1 from a Karkun card to conduct the visit</li>
+          <li>Open a Karkun&apos;s Connection Journey to conduct the visit</li>
           <li>Submit the meeting form and complete any follow-up work</li>
           <li>
             Review campaign activity under{' '}

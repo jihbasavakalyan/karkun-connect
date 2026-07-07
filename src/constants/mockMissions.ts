@@ -126,9 +126,9 @@ export const MOCK_CAMPAIGNS: CampaignListItem[] = [
     endDate: '2026-07-26',
     theme: 'Activate every Karkun and integrate them into Jamaat work.',
     objective:
-      'Ensure every assigned Karkun is contacted, visited, engaged, and integrated into Jamaat activities during the campaign.',
+      'Ensure every connected Karkun is contacted, visited, engaged, and integrated into Jamaat activities during the campaign.',
     objectives: ['Reconnect', 'Understand', 'Empower', 'Activate'],
-    nextMilestone: 'Complete first visits for all assigned Karkuns',
+    nextMilestone: 'Complete first visits for all connected Karkuns',
     motto: 'فعال کارکن، فعال جماعت',
   },
   {
@@ -138,7 +138,7 @@ export const MOCK_CAMPAIGNS: CampaignListItem[] = [
     startDate: '2025-03-01',
     endDate: '2025-03-31',
     theme: 'Spring community outreach',
-    objective: 'Reach assigned households during the spring campaign window.',
+    objective: 'Reach connected households during the spring campaign window.',
     objectives: ['Outreach', 'Engage', 'Report', 'Review'],
     nextMilestone: 'Campaign archived',
   },

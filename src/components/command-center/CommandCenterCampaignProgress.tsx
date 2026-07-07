@@ -44,7 +44,7 @@ export function CommandCenterCampaignProgress({ showTeam = true }: CommandCenter
               <MiniBar label="Coverage" value={overview.coverage} />
               <MiniBar label="Follow-up" value={overview.followUp} />
               <MiniBar label="Compliance" value={overview.compliance} />
-              <MiniBar label="Assignment" value={overview.assignment} />
+              <MiniBar label="Connection" value={overview.assignment} />
             </div>
           </div>
         </div>
@@ -58,7 +58,7 @@ export function CommandCenterCampaignProgress({ showTeam = true }: CommandCenter
               </Link>
             </div>
             {team.length === 0 ? (
-              <p className="mt-1 text-xs text-secondary">No active assignments yet.</p>
+              <p className="mt-1 text-xs text-secondary">No active connections yet.</p>
             ) : (
               <ul className="cc-list-md mt-1 space-y-1">
                 {team.map((row, index) => (

@@ -18,9 +18,9 @@ export function StepAssignmentPreview({ state }: StepAssignmentPreviewProps) {
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="text-xl font-semibold text-text-heading">Assignment Preview</h2>
+        <h2 className="text-xl font-semibold text-text-heading">Connection Preview</h2>
         <p className="mt-1 text-sm text-secondary">
-          Review how Karkunan are assigned to each Rukn before confirming the campaign setup.
+          Review how Karkunan are connected to each Rukn before confirming the campaign setup.
         </p>
       </div>
 
@@ -58,11 +58,11 @@ export function StepAssignmentPreview({ state }: StepAssignmentPreviewProps) {
 
                 <div className="rounded-lg border border-dashed border-border bg-surface-muted p-4">
                   <p className="mb-3 text-xs font-medium uppercase tracking-wide text-secondary">
-                    Assigned Karkunan
+                    Connected Karkunan
                   </p>
 
                   {assignedIds.length === 0 ? (
-                    <p className="text-sm text-secondary">No Karkunan assigned yet.</p>
+                    <p className="text-sm text-secondary">No Karkunan connected yet.</p>
                   ) : (
                     <ul className="space-y-2">
                       {assignedIds.map((karkunId) => (

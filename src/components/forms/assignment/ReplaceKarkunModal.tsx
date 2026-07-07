@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
-import { RELEASE_REASON_OPTIONS, type ReleaseReason } from '@/types/assignment.types'
+import { RELEASE_REASON_OPTIONS, getReleaseReasonLabel, type ReleaseReason } from '@/types/assignment.types'
 import { Modal } from '@/components/common/Modal'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
@@ -69,7 +69,7 @@ export function ReplaceKarkunModal({
             Current Karkun:{' '}
             <span className="font-semibold text-text-heading">{currentKarkunName}</span>
           </p>
-          <p className="text-sm text-secondary">First release the current assignment, then select a new Karkun.</p>
+          <p className="text-sm text-secondary">First disconnect the current Karkun, then select a new Karkun.</p>
 
           <fieldset className="space-y-2">
             <legend className="text-sm font-medium text-text-heading">Release Reason</legend>
@@ -86,7 +86,7 @@ export function ReplaceKarkunModal({
                   onChange={() => setReason(option)}
                   className="h-4 w-4 text-primary"
                 />
-                <span className="text-sm text-text-heading">{option}</span>
+                <span className="text-sm text-text-heading">{getReleaseReasonLabel(option)}</span>
               </label>
             ))}
           </fieldset>

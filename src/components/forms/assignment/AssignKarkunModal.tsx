@@ -101,7 +101,7 @@ export function AssignKarkunModal({ isOpen, onClose, genderFilter }: AssignKarku
 
         {genderFilter && (
           <p className="text-xs text-secondary">
-            Only {genderFilter} Karkuns can be assigned to {genderFilter} Rukns.
+            Only {genderFilter} Karkuns can be connected to {genderFilter} Rukns.
           </p>
         )}
 

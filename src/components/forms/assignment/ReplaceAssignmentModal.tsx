@@ -5,7 +5,7 @@ import { InputField } from '@/components/forms/InputField'
 import { TextAreaField } from '@/components/forms/TextAreaField'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
-import { REPLACEMENT_REASON_OPTIONS } from '@/types/assignment'
+import { REPLACEMENT_REASON_OPTIONS, getReplacementReasonLabel } from '@/types/assignment'
 import type { Rukn } from '@/data/ruknMaster'
 import type { ReplacementReason } from '@/types/assignment'
 
@@ -51,10 +51,10 @@ export function ReplaceAssignmentModal({
   if (!rukn) return null
 
   return (
-    <Modal isOpen={isOpen} title={`Replace Assignment — ${rukn.name}`} onClose={onClose}>
+    <Modal isOpen={isOpen} title={`Replace Connection — ${rukn.name}`} onClose={onClose}>
       <div className="space-y-4">
         <p className="text-sm text-secondary">
-          Currently assigned: <strong className="text-text-heading">{currentKarkunName}</strong>
+          Currently connected: <strong className="text-text-heading">{currentKarkunName}</strong>
         </p>
 
         <div className="flex flex-col gap-2">
@@ -97,7 +97,7 @@ export function ReplaceAssignmentModal({
           >
             {REPLACEMENT_REASON_OPTIONS.map((reason) => (
               <option key={reason} value={reason}>
-                {reason}
+                {getReplacementReasonLabel(reason)}
               </option>
             ))}
           </select>
@@ -118,7 +118,7 @@ export function ReplaceAssignmentModal({
             Cancel
           </SecondaryButton>
           <PrimaryButton type="button" onClick={handleSubmit}>
-            Replace Assignment
+            Replace Connection
           </PrimaryButton>
         </div>
       </div>

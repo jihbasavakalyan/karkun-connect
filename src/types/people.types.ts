@@ -124,8 +124,8 @@ export const STATUS_FILTER_OPTIONS = [
 
 export const ASSIGNMENT_STATUS_FILTER_OPTIONS = [
   { value: '', label: 'All' },
-  { value: 'Assigned', label: 'Assigned' },
-  { value: 'Unassigned', label: 'Unassigned' },
+  { value: 'Assigned', label: 'Connected' },
+  { value: 'Unassigned', label: 'Not Connected' },
 ] as const
 
 export function formatPersonStatus(status: PersonStatus): string {

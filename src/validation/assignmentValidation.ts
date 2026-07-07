@@ -39,7 +39,7 @@ export function validateRuknActive(ruknId: string): ValidationResult {
     return { valid: false, error: 'Rukn not found.' }
   }
   if (rukn.status !== 'active') {
-    return { valid: false, error: 'Cannot assign to an inactive Rukn.' }
+    return { valid: false, error: 'Cannot connect to an inactive Rukn.' }
   }
   return { valid: true }
 }
@@ -50,7 +50,7 @@ export function validateKarkunActive(karkunId: string): ValidationResult {
     return { valid: false, error: 'Karkun not found.' }
   }
   if (karkun.status !== 'active') {
-    return { valid: false, error: 'Cannot assign an inactive Karkun.' }
+    return { valid: false, error: 'Cannot connect an inactive Karkun.' }
   }
   return { valid: true }
 }
@@ -63,7 +63,7 @@ export function validateKarkunMobile(karkunId: string): ValidationResult {
 
   const normalized = normalizeMobile(karkun.mobile)
   if (!normalized) {
-    return { valid: false, error: 'Karkun must have a mobile number before assignment.' }
+    return { valid: false, error: 'Karkun must have a mobile number before connecting.' }
   }
 
   if (!isValidMobileFormat(normalized)) {
@@ -78,7 +78,7 @@ export function validateGenderMatch(ruknId: string, karkunId: string): Validatio
     return {
       valid: false,
       error:
-        'Gender mismatch: Male Rukn can only be assigned Male Karkuns, and Female Rukn Female Karkuns.',
+        'Gender mismatch: Male Rukn can only be connected to Male Karkuns, and Female Rukn Female Karkuns.',
     }
   }
   return { valid: true }
@@ -90,7 +90,7 @@ export function validateNoBlockingAssignmentForRukn(ruknId: string): ValidationR
     const statusLabel = blocking.status === 'Suspended' ? 'suspended' : 'active'
     return {
       valid: false,
-      error: `This Rukn already has an ${statusLabel} assignment. Replace or remove it first.`,
+      error: `This Rukn already has an ${statusLabel} connection. Replace or remove it first.`,
     }
   }
   return { valid: true }
@@ -101,7 +101,7 @@ export function validateNoActiveAssignmentForRukn(ruknId: string): ValidationRes
   if (active) {
     return {
       valid: false,
-      error: 'This Rukn already has an active assignment. Replace or remove it first.',
+      error: 'This Rukn already has an active connection. Replace or remove it first.',
     }
   }
   return { valid: true }
@@ -116,14 +116,14 @@ export function validateKarkunAvailable(karkunId: string): ValidationResult {
   if (getActiveAssignmentsForKarkun(karkunId).length > 0) {
     return {
       valid: false,
-      error: 'This Karkun already has an active assignment.',
+      error: 'This Karkun already has an active connection.',
     }
   }
 
   if (karkun.assignmentStatus !== 'Available') {
     return {
       valid: false,
-      error: 'This Karkun is not available for assignment.',
+      error: 'This Karkun is not available to connect.',
     }
   }
 
@@ -156,11 +156,11 @@ export function validateReplaceInput(input: ReplaceInput): ValidationResult {
       )
     : getActiveAssignmentForRukn(input.ruknId)
   if (!active) {
-    return { valid: false, error: 'This Rukn has no active assignment to replace.' }
+    return { valid: false, error: 'This Rukn has no active connection to replace.' }
   }
 
   if (active.karkunId === input.newKarkunId) {
-    return { valid: false, error: 'Select a different Karkun to replace the current assignment.' }
+    return { valid: false, error: 'Select a different Karkun to replace the current connection.' }
   }
 
   if (!input.replacementReason.trim()) {
@@ -189,7 +189,7 @@ export function validateRemoveInput(input: RemoveInput): ValidationResult {
       )
     : getActiveAssignmentForRukn(input.ruknId)
   if (!active) {
-    return { valid: false, error: 'This Rukn has no active assignment to remove.' }
+    return { valid: false, error: 'This Rukn has no active connection to remove.' }
   }
 
   if (!input.removalReason.trim()) {

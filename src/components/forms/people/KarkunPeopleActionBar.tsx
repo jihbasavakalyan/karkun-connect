@@ -85,7 +85,7 @@ export function KarkunPeopleActionBar({
       </div>
 
       <SecondaryButton type="button" className="px-4 py-2 text-sm" onClick={onAssign}>
-        Assign Karkun
+        Connect Karkun
       </SecondaryButton>
 
       <SecondaryButton

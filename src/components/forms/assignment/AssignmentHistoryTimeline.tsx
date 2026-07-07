@@ -1,6 +1,7 @@
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { getRuknById } from '@/data/ruknMaster'
 import type { AssignmentRecord } from '@/types/assignment'
+import { getRemovalReasonLabel, getReplacementReasonLabel } from '@/types/assignment'
 
 type AssignmentHistoryTimelineProps = {
   history: AssignmentRecord[]
@@ -45,7 +46,7 @@ function HistoryCard({
       <p className="mt-1 text-sm text-secondary">{subtitle}</p>
       <dl className="mt-3 space-y-1 text-sm text-secondary">
         <div className="flex gap-2">
-          <dt className="font-medium text-text-heading">Assignment:</dt>
+          <dt className="font-medium text-text-heading">Connection:</dt>
           <dd>{assignmentNumber}</dd>
         </div>
         <div className="flex gap-2">
@@ -81,7 +82,7 @@ export function AssignmentHistoryTimeline({
   if (history.length === 0 && !currentAssignment) {
     return (
       <div className="rounded-(--radius-card) border border-border bg-surface p-6 text-center shadow-card">
-        <p className="text-secondary">No assignment history yet.</p>
+        <p className="text-secondary">No connection history yet.</p>
       </div>
     )
   }
@@ -101,7 +102,7 @@ export function AssignmentHistoryTimeline({
       {currentAssignment && currentTitle && (
         <div>
           <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-primary">
-            {currentAssignment.status === 'Suspended' ? 'Suspended Assignment' : 'Current Assignment'}
+            {currentAssignment.status === 'Suspended' ? 'Suspended Connection' : 'Current Connection'}
           </h3>
           <HistoryCard
             highlight
@@ -134,7 +135,7 @@ export function AssignmentHistoryTimeline({
                       assignmentNumber={record.assignmentNumber}
                       createdBy={record.assignedBy}
                       eventDate={record.endedDate ?? record.updatedAt}
-                      reason={record.replacementReason}
+                      reason={record.replacementReason ? getReplacementReasonLabel(record.replacementReason) : undefined}
                       remarks={record.remarks}
                     />
                   </li>
@@ -145,12 +146,12 @@ export function AssignmentHistoryTimeline({
                 return (
                   <li key={record.assignmentId}>
                     <HistoryCard
-                      title={`Assignment removed — ${perspective === 'rukn' ? karkunName : ruknName}`}
+                      title={`Connection removed — ${perspective === 'rukn' ? karkunName : ruknName}`}
                       subtitle={`Removed on ${formatDate(record.endedDate ?? record.updatedAt)}`}
                       assignmentNumber={record.assignmentNumber}
                       createdBy={record.assignedBy}
                       eventDate={record.endedDate ?? record.updatedAt}
-                      reason={record.removalReason}
+                      reason={record.removalReason ? getRemovalReasonLabel(record.removalReason) : undefined}
                       remarks={record.remarks}
                     />
                   </li>
@@ -190,8 +191,8 @@ export function AssignmentHistoryTimeline({
               return (
                 <li key={record.assignmentId}>
                   <HistoryCard
-                    title={`Assigned to ${perspective === 'rukn' ? karkunName : ruknName}`}
-                    subtitle={`Assigned on ${formatDate(record.effectiveFrom)}`}
+                    title={`Connected to ${perspective === 'rukn' ? karkunName : ruknName}`}
+                    subtitle={`Connected on ${formatDate(record.effectiveFrom)}`}
                     assignmentNumber={record.assignmentNumber}
                     createdBy={record.assignedBy}
                     eventDate={record.effectiveFrom}

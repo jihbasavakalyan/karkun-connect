@@ -9,7 +9,7 @@ export const CAMPAIGN_CHECKLIST_ITEMS: CampaignChecklistItem[] = [
   { id: 'created', label: 'Campaign Created' },
   { id: 'team', label: 'Campaign Team Selected' },
   { id: 'karkunan', label: 'Karkunan Added' },
-  { id: 'assignments', label: 'Assignments Prepared' },
+  { id: 'assignments', label: 'Connections Prepared' },
   { id: 'launched', label: 'Campaign Launched' },
 ]
 
@@ -17,7 +17,7 @@ export const WIZARD_STEPS = [
   { number: 1, label: 'Information' },
   { number: 2, label: 'Campaign Team' },
   { number: 3, label: 'Karkunan' },
-  { number: 4, label: 'Assignments' },
+  { number: 4, label: 'Connections' },
   { number: 5, label: 'Review' },
   { number: 6, label: 'Launch' },
 ] as const
@@ -38,7 +38,7 @@ export const APPROVED_CAMPAIGN_OBJECTIVES: CampaignObjective[] = [
   {
     id: 'visits',
     label: 'Field Visits',
-    description: 'Conduct assigned visits with Karkunan across the local Jamaat.',
+    description: 'Conduct connected visits with Karkunan across the local Jamaat.',
   },
   {
     id: 'visit-reports',

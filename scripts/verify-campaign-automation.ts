@@ -100,7 +100,7 @@ assert(
 
 const pendingVisitAction = ruknSnapshot.nextAction
 assert(
-  pendingVisitAction.actionLabel.toLowerCase().includes('annexure') ||
+  pendingVisitAction.actionLabel.toLowerCase().includes('visit') ||
     pendingVisitAction.actionLabel.toLowerCase().includes('call') ||
     pendingVisitAction.isCaughtUp,
   'Rukn next action must guide to visit or call queue',

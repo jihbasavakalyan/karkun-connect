@@ -233,7 +233,7 @@ export function bulkAssignKarkuns(
     if (result.success) {
       success++
     } else {
-      failed.push({ id: karkunId, error: result.error ?? 'Assignment failed.' })
+      failed.push({ id: karkunId, error: result.error ?? 'Connection failed.' })
     }
   }
 

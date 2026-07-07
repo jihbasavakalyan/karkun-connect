@@ -115,9 +115,9 @@ export function StepCampaignReview({ state }: StepCampaignReviewProps) {
         </ReviewSection>
       </div>
 
-      <ReviewSection title="Assignment Summary">
+      <ReviewSection title="Connection Summary">
         {assignmentSummary.length === 0 ? (
-          <p className="text-secondary">No assignments configured.</p>
+          <p className="text-secondary">No connections configured.</p>
         ) : (
           <ul className="list-inside list-disc space-y-1">
             {assignmentSummary.map((line) => (

@@ -141,7 +141,7 @@ export function submitAnnexure1(
   logActivity({
     type: 'complete',
     severity: 'INFO',
-    message: `Annexure-1 submitted — ${record.workerName} (${record.assignmentNumber})`,
+    message: `Visit recorded — ${record.workerName} (${record.assignmentNumber})`,
     ruknId: record.ruknId,
     karkunId: record.karkunId,
     assignmentId: record.assignmentId,
@@ -198,7 +198,7 @@ export function getCampaignRecordData() {
     assignmentNumber: form.assignmentNumber,
     summary:
       form.visitConducted === 'yes'
-        ? form.discussionSummary || 'Annexure-1 submitted'
+        ? form.discussionSummary || 'Visit recorded'
         : `Not conducted: ${form.notConductedReason}`,
   }))
 
@@ -314,19 +314,19 @@ export function getPerformanceMetricsFromAnnexure1() {
   return [
     {
       id: 'perf-meetings-week',
-      label: 'Annexure-1 This Week',
+      label: 'Visits This Week',
       value: metrics.submittedThisWeek,
       trend: `${metrics.submittedToday} today`,
     },
     {
       id: 'perf-reports',
-      label: 'Annexure-1 Submitted',
+      label: 'Visits Recorded',
       value: metrics.totalSubmitted,
       trend: `${metrics.submittedThisMonth} this month`,
     },
     {
       id: 'perf-pending',
-      label: 'Pending Annexure-1',
+      label: 'Pending Visits',
       value: metrics.pendingReports,
       trend: 'Active assignments',
     },

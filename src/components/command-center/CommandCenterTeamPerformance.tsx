@@ -41,12 +41,12 @@ export function CommandCenterTeamPerformance() {
     return (
       <section className="cc-card-sm">
         <EnterpriseSectionHeader title="Team Performance" />
-        <p className="mt-1 text-xs text-secondary">No active Rukn assignments yet.</p>
+        <p className="mt-1 text-xs text-secondary">No active Rukn connections yet.</p>
         <Link
           to={ROUTES.ADMIN_ASSIGNMENTS}
           className="mt-1 inline-block text-xs font-medium text-primary hover:underline"
         >
-          Open Assignments →
+          Open Connections →
         </Link>
       </section>
     )

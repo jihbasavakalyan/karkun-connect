@@ -46,12 +46,12 @@ export function CampaignRecordPage() {
       </section>
 
       <section className="rounded-(--radius-card) border border-border bg-surface p-5 shadow-card">
-        <h2 className="text-lg font-semibold text-text-heading">Annexure-1 Submissions</h2>
+        <h2 className="text-lg font-semibold text-text-heading">Visit Records</h2>
         {data.meetingForms.length === 0 ? (
           <div className="mt-4">
             <ExecutionEmptyState
               title="No Execution Records Yet"
-              message="Execution reports will appear after Annexure-1 submissions."
+              message="Execution reports will appear after visits are recorded."
             />
           </div>
         ) : (

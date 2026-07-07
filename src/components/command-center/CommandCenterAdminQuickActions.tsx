@@ -3,7 +3,7 @@ import { ROUTES, adminCompliancePath, adminExecutionPath } from '@/constants/rou
 import { EnterpriseSectionHeader } from '@/components/enterprise'
 
 const ADMIN_ACTIONS = [
-  { id: 'assign', label: 'Assign', icon: '🔗', to: ROUTES.ADMIN_ASSIGNMENTS },
+  { id: 'assign', label: 'Connect', icon: '🔗', to: ROUTES.ADMIN_ASSIGNMENTS },
   { id: 'visit', label: 'Visit', icon: '📍', to: adminExecutionPath('pending') },
   { id: 'report', label: 'Report', icon: '📋', to: adminExecutionPath('completed-today') },
   { id: 'compliance', label: 'Compliance', icon: '✅', to: adminCompliancePath('ijtema') },

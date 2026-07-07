@@ -11,7 +11,7 @@ export function VisitFormHeader({ karkun, assignmentNumber }: VisitFormHeaderPro
 
   return (
     <header className="space-y-1">
-      <p className="text-sm font-medium text-primary">Annexure-1</p>
+      <p className="text-sm font-medium text-primary">Visit Details</p>
       {campaignName && (
         <p className="text-sm text-secondary">{campaignName}</p>
       )}

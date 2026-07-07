@@ -54,11 +54,11 @@ export function BulkActionsBar({
         disabled
         title="Coming in Version 2"
       >
-        Bulk Assign (Coming in Version 2)
+        Bulk Connect (Coming in Version 2)
       </SecondaryButton>
       {onUnassign && (
         <SecondaryButton type="button" className="min-h-10 px-3 py-2 text-sm" onClick={onUnassign}>
-          Unassign
+          Disconnect
         </SecondaryButton>
       )}
       {onMarkBaitulMaalPaid && (

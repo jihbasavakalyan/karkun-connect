@@ -4,7 +4,7 @@ import { InputField } from '@/components/forms/InputField'
 import { TextAreaField } from '@/components/forms/TextAreaField'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
-import { REMOVAL_REASON_OPTIONS } from '@/types/assignment'
+import { REMOVAL_REASON_OPTIONS, getRemovalReasonLabel } from '@/types/assignment'
 import type { Rukn } from '@/data/ruknMaster'
 import type { RemovalReason } from '@/types/assignment'
 
@@ -71,7 +71,7 @@ export function RemoveAssignmentModal({
           >
             {REMOVAL_REASON_OPTIONS.map((reason) => (
               <option key={reason} value={reason}>
-                {reason}
+                {getRemovalReasonLabel(reason)}
               </option>
             ))}
           </select>

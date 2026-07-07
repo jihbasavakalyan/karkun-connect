@@ -32,6 +32,11 @@ import { PrimaryButton } from '@/components/ui/PrimaryButton'
 
 type ActiveTab = 'manage' | 'assignments'
 
+const TAB_LABELS: Record<ActiveTab, string> = {
+  manage: 'Manage',
+  assignments: 'Connections',
+}
+
 export function RuknModulePage() {
   const management = useRuknManagement()
   useAssignmentEngine()
@@ -107,7 +112,7 @@ export function RuknModulePage() {
         <div>
           <h1 className="text-2xl font-semibold text-text-heading">Rukn Management</h1>
           <p className="mt-2 text-secondary">
-            Manage Rukn contacts, status, and assignments — {management.totalCount} members
+            Manage Rukn contacts, status, and connections — {management.totalCount} members
           </p>
         </div>
         {activeTab === 'manage' && (
@@ -129,14 +134,14 @@ export function RuknModulePage() {
           <button
             key={tab}
             type="button"
-            className={`border-b-2 px-4 py-2 text-sm font-medium capitalize transition-colors ${
+            className={`border-b-2 px-4 py-2 text-sm font-medium transition-colors ${
               activeTab === tab
                 ? 'border-primary text-primary'
                 : 'border-transparent text-secondary hover:text-text-heading'
             }`}
             onClick={() => setActiveTab(tab)}
           >
-            {tab}
+            {TAB_LABELS[tab]}
           </button>
         ))}
       </div>
@@ -189,7 +194,7 @@ export function RuknModulePage() {
       ) : (
         <>
           <p className="text-sm text-secondary">
-            Assignment overview for {management.totalCount} Rukn
+            Connection overview for {management.totalCount} Rukn
           </p>
           <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {management.allFilteredRecords.map((rukn) => (

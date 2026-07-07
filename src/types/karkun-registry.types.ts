@@ -54,7 +54,7 @@ export const CAMPAIGN_STATUS_FILTER_OPTIONS = [
   { value: '', label: 'All Statuses' },
   { value: 'active', label: 'Active' },
   { value: 'inactive', label: 'Inactive' },
-  { value: 'not_assigned', label: 'Not Assigned' },
+  { value: 'not_assigned', label: 'Not Connected' },
 ] as const
 
 export const VISIT_STATUS_LABELS: Record<KarkunVisitStatus, string> = {
@@ -68,7 +68,7 @@ export const VISIT_STATUS_LABELS: Record<KarkunVisitStatus, string> = {
 export const CAMPAIGN_STATUS_LABELS: Record<KarkunCampaignStatus, string> = {
   active: 'Active',
   inactive: 'Inactive',
-  not_assigned: 'Not Assigned',
+  not_assigned: 'Not Connected',
 }
 
 export const JIH_APP_REGISTRATION_OPTIONS: JihAppRegistrationStatus[] = [

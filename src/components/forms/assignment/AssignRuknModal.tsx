@@ -38,7 +38,7 @@ export function AssignRuknModal({
 
   const handleSubmit = () => {
     if (!karkunId) {
-      setLocalError('Please select a Karkun before assigning.')
+      setLocalError('Please select a Karkun before connecting.')
       return
     }
     setLocalError('')

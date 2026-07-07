@@ -75,7 +75,7 @@ function buildActiveFilterSummary(
 
   if (config.showAssignmentFilters && filters.assignmentStatus) {
     entries.push({
-      label: 'Assignment',
+      label: 'Connection',
       value: labelForOption(ASSIGNMENT_STATUS_FILTER_OPTIONS, filters.assignmentStatus),
     })
   }
@@ -259,7 +259,7 @@ export function PeopleFiltersBar({
           {showAssignmentFilters && (
             <div className="flex flex-col gap-2">
               <label htmlFor="filter-assignment-status" className="text-sm font-medium text-secondary">
-                Assignment
+                Connection
               </label>
               <select
                 id="filter-assignment-status"

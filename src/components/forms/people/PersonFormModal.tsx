@@ -114,7 +114,7 @@ function PersonFormModalContent({
           {kind === 'karkun' && mode === 'edit' && karkunId && (
             <div className="flex flex-col gap-2">
               <label htmlFor="person-assigned-rukn" className="text-sm font-medium text-text-heading">
-                Assigned Rukn
+                Connected Rukn
               </label>
               <RuknAssignmentSelect
                 karkunId={karkunId}

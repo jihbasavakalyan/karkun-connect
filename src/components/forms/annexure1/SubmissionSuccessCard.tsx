@@ -28,7 +28,7 @@ export function SubmissionSuccessCard({ submission, nextMission }: SubmissionSuc
       </div>
 
       <div>
-        <h2 className="text-2xl font-semibold text-text-heading">Annexure-1 Submitted</h2>
+        <h2 className="text-2xl font-semibold text-text-heading">Visit Recorded</h2>
         <p className="mt-2 text-secondary">
           Campaign record and JIH Portal updated automatically.
         </p>
@@ -36,7 +36,7 @@ export function SubmissionSuccessCard({ submission, nextMission }: SubmissionSuc
 
       <dl className="space-y-3 rounded-(--radius-card) border border-border bg-surface p-6 text-left shadow-card">
         <div>
-          <dt className="text-sm text-secondary">Assignment Number</dt>
+          <dt className="text-sm text-secondary">Connection Number</dt>
           <dd className="font-semibold text-text-heading">{submission.assignmentNumber}</dd>
         </div>
         <div>

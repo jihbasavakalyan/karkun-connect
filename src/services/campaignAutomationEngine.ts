@@ -243,7 +243,7 @@ function buildAdminKpis(): CommandCenterKpi[] {
     },
     {
       id: 'pending-annexure',
-      label: 'Pending Annexure-1',
+      label: 'Pending Visit',
       value: annexureMetrics.pendingReports,
       route: adminExecutionPath('pending'),
     },
@@ -312,7 +312,7 @@ function buildRuknKpis(ruknId: string): CommandCenterKpi[] {
     },
     {
       id: 'pending-annexure',
-      label: 'Pending Annexure-1',
+      label: 'Pending Visit',
       value: pendingAnnexure,
       route: ROUTES.RUKN_MY_KARKUN,
     },
@@ -498,8 +498,8 @@ export function buildReminders(ruknId?: string): ReminderItem[] {
   if (newAssignments.length > 0) {
     reminders.push({
       id: 'reminder-assignment-pending',
-      label: 'Assignment Pending',
-      reason: `${newAssignments.length} assignment(s) awaiting first visit`,
+      label: 'Connection Pending',
+      reason: `${newAssignments.length} connection(s) awaiting first visit`,
       route: ruknId ? ROUTES.RUKN_MY_KARKUN : ROUTES.ADMIN_ASSIGNMENTS,
       priority: 3,
     })
@@ -654,7 +654,7 @@ export function buildAlerts(ruknId?: string): AutomationAlert[] {
       id: 'alert-inactive-karkuns',
       severity: 'medium',
       title: 'Inactive Karkuns',
-      message: `${inactiveAssigned.length} assigned Karkun(s) are inactive`,
+      message: `${inactiveAssigned.length} connected Karkun(s) are inactive`,
       route: ROUTES.ADMIN_KARKUN,
     })
   }
@@ -672,7 +672,7 @@ export function buildAlerts(ruknId?: string): AutomationAlert[] {
       id: 'alert-uncontacted',
       severity: 'medium',
       title: 'Long Uncontacted Karkuns',
-      message: `${uncontacted.length} assigned Karkun(s) have no visit recorded`,
+      message: `${uncontacted.length} connected Karkun(s) have no visit recorded`,
       route: ruknId ? ROUTES.RUKN_MY_KARKUN : adminExecutionPath('pending'),
     })
   }
@@ -681,8 +681,8 @@ export function buildAlerts(ruknId?: string): AutomationAlert[] {
     alerts.push({
       id: 'alert-assignment-without-visit',
       severity: 'high',
-      title: 'Assignment without Visit',
-      message: `${annexureMetrics.pendingReports} active assignment(s) need Annexure-1`,
+      title: 'Connection without Visit',
+      message: `${annexureMetrics.pendingReports} active connection(s) need a visit`,
       route: adminExecutionPath('pending'),
     })
   }
@@ -738,8 +738,8 @@ function buildAdminNextAction(): NextRecommendedAction {
   const unassignedRukns = getAssignmentDashboardMetrics().unassignedRukns
   if (unassignedRukns > 0) {
     return {
-      title: 'Unassigned Rukns',
-      description: `${unassignedRukns} Rukn(s) still need Karkun assignments`,
+      title: 'Unconnected Rukns',
+      description: `${unassignedRukns} Rukn(s) still need Karkun connections`,
       route: ROUTES.ADMIN_ASSIGNMENTS,
       actionLabel: 'Connect Karkun',
       isCaughtUp: false,
@@ -778,9 +778,9 @@ function buildRuknNextAction(ruknId: string): NextRecommendedAction {
     const karkun = getKarkunById(pendingAssignment.karkunId)
     return {
       title: 'Visit Pending',
-      description: `Open Annexure-1 for ${karkun?.name ?? 'assigned Karkun'}`,
+      description: `Record a visit for ${karkun?.name ?? 'connected Karkun'}`,
       route: ruknVisitPath(pendingAssignment.karkunId),
-      actionLabel: 'Open Annexure-1',
+      actionLabel: 'Record Visit',
       isCaughtUp: false,
     }
   }
@@ -794,10 +794,10 @@ function buildRuknNextAction(ruknId: string): NextRecommendedAction {
 
   if (inProgress) {
     return {
-      title: 'Annexure-1 In Progress',
+      title: 'Visit In Progress',
       description: 'Continue the visit form you started',
       route: ruknVisitPath(inProgress.karkunId),
-      actionLabel: 'Continue Annexure-1',
+      actionLabel: 'Continue Visit',
       isCaughtUp: false,
     }
   }
@@ -833,7 +833,7 @@ function buildRuknNextAction(ruknId: string): NextRecommendedAction {
 
   return {
     title: "You're all caught up",
-    description: 'All assigned Karkuns are up to date for today.',
+    description: 'All connected Karkuns are up to date for today.',
     route: ROUTES.RUKN,
     actionLabel: 'View Schedule',
     isCaughtUp: true,
@@ -856,7 +856,7 @@ function buildRuknCompletedToday(ruknId: string) {
     )
     .map((form) => ({
       id: form.id,
-      label: `Annexure-1 — ${form.workerName}`,
+      label: `Visit — ${form.workerName}`,
       time: formatDisplayTime(form.submittedAt),
     }))
 }

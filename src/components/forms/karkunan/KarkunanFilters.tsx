@@ -45,7 +45,7 @@ export function KarkunanFilters({ filters, onFilterChange, onClear }: KarkunanFi
 
         <div className="flex flex-col gap-2">
           <label htmlFor="filter-rukn" className="text-sm font-medium text-secondary">
-            Assigned Rukn
+            Connected Rukn
           </label>
           <select
             id="filter-rukn"

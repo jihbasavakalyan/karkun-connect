@@ -32,7 +32,7 @@ export function RecentActivityPanel() {
       <h2 className="text-lg font-semibold text-text-heading">Recent Activity</h2>
 
       {activities.length === 0 ? (
-        <p className="mt-4 text-sm text-secondary">No assignment activity yet.</p>
+        <p className="mt-4 text-sm text-secondary">No connection activity yet.</p>
       ) : (
         <ul className="mt-4 space-y-3">
           {activities.map((entry) => (

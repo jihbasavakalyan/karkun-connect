@@ -82,7 +82,7 @@ export function StepLaunchCampaign({ state, onLaunch }: StepLaunchCampaignProps)
             </dd>
           </div>
           <div>
-            <dt className="text-sm text-secondary">Total Assignments</dt>
+            <dt className="text-sm text-secondary">Total Connections</dt>
             <dd className="mt-1 text-2xl font-semibold text-text-heading">
               {totalAssignments}
             </dd>

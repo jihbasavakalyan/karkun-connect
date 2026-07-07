@@ -70,11 +70,11 @@ export function validateAnnexure1SubmissionContext(
   }
 
   if (rukn.status !== 'active') {
-    return { valid: false, error: 'Cannot submit Annexure-1 for an inactive Rukn.' }
+    return { valid: false, error: 'Cannot record a visit for an inactive Rukn.' }
   }
 
   if (karkun.status !== 'active') {
-    return { valid: false, error: 'Cannot submit Annexure-1 for an inactive Karkun.' }
+    return { valid: false, error: 'Cannot record a visit for an inactive Karkun.' }
   }
 
   return { valid: true }
@@ -128,7 +128,7 @@ export function validateAnnexure1Submission(
   if (assignment && hasSubmittedAnnexureForAssignment(assignment.assignmentId)) {
     return {
       valid: false,
-      error: 'Annexure-1 has already been submitted for this assignment.',
+      error: 'A visit has already been recorded for this connection.',
     }
   }
 

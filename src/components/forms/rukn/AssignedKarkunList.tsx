@@ -11,7 +11,7 @@ export function AssignedKarkunList({ karkunan }: AssignedKarkunListProps) {
   if (karkunan.length === 0) {
     return (
       <div className="rounded-(--radius-card) border border-border bg-surface p-8 text-center shadow-card">
-        <p className="text-secondary">No Karkun assigned to this Rukn yet.</p>
+        <p className="text-secondary">No Karkun connected to this Rukn yet.</p>
       </div>
     )
   }

@@ -53,12 +53,12 @@ export function RuknHomePage() {
           </span>
           <h2 className="text-base font-bold text-text-heading">Your campaign journey starts here</h2>
           <p className="max-w-md text-xs text-secondary">
-            No Karkun is assigned to you yet. Browse available Karkun to begin reconnecting and
-            activating your team.
+            You have not connected with any Karkun yet. Connect a Karkun to begin building
+            relationships and activating your team.
           </p>
           <Link to={ROUTES.RUKN_AVAILABLE_KARKUN} className="mt-0.5 inline-block">
             <SecondaryButton type="button" className="px-3 py-1.5 text-xs">
-              Browse Available Karkun
+              + Connect Karkun
             </SecondaryButton>
           </Link>
         </section>
