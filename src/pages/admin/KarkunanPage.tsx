@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import type { PersonGender } from '@/types/karkun-registry.types'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
 import type { ImportSummary } from '@/types/people.types'
@@ -20,8 +20,8 @@ import {
 import {
   BulkActionsBar,
   ConfirmDialog,
-  ImportExportToolbar,
   ImportSummaryModal,
+  KarkunPeopleActionBar,
   KarkunPeopleTable,
   PeopleFiltersBar,
   PeoplePagination,
@@ -33,16 +33,34 @@ import { BaitulMaalBulkUpdateModal } from '@/components/forms/baitulMaal/BaitulM
 import { IjtemaAttendanceBulkUpdateModal } from '@/components/forms/ijtema/IjtemaAttendanceBulkUpdateModal'
 import type { BaitulMaalStatus } from '@/types/baitulMaal'
 import type { IjtemaAttendanceStatus } from '@/types/ijtemaAttendance'
-import { PrimaryButton } from '@/components/ui/PrimaryButton'
-import { SecondaryButton } from '@/components/ui/SecondaryButton'
+import type { ExportFormat } from '@/lib/peopleImportExport'
 
 type GenderTab = PersonGender
 
-function KarkunGenderSection({ gender }: { gender: PersonGender }) {
+type KarkunSectionHandlers = {
+  openAddForm: () => void
+  openAssign: () => void
+  handleImport: (file: File) => void
+  handleExport: (format: ExportFormat) => void
+}
+
+type KarkunGenderSectionProps = {
+  gender: PersonGender
+  shouldOpenAddForm: boolean
+  onAddFormOpened: () => void
+  onRegisterHandlers: (handlers: KarkunSectionHandlers | null) => void
+}
+
+function KarkunGenderSection({
+  gender,
+  shouldOpenAddForm,
+  onAddFormOpened,
+  onRegisterHandlers,
+}: KarkunGenderSectionProps) {
   const management = useKarkunPeopleManagement(gender)
   useAssignmentEngine()
 
-  const [isFormOpen, setIsFormOpen] = useState(false)
+  const [isFormOpen, setIsFormOpen] = useState(shouldOpenAddForm)
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false)
   const [editingKarkun, setEditingKarkun] = useState<KarkunRegistryRecord | null>(null)
   const [formError, setFormError] = useState('')
@@ -129,33 +147,37 @@ function KarkunGenderSection({ gender }: { gender: PersonGender }) {
     })
   }
 
-  const handleImport = async (file: File) => {
+  const handleImport = useCallback(async (file: File) => {
     const content = await readImportFile(file)
     const rows = parsePeopleImportFile(content, 'karkun').filter((row) => row.gender === gender)
     const summary = importKarkunsFromRows(rows)
     setImportSummary(summary)
-  }
+  }, [gender])
+
+  useEffect(() => {
+    onRegisterHandlers({
+      openAddForm,
+      openAssign: () => setIsAssignModalOpen(true),
+      handleImport: (file) => {
+        void handleImport(file)
+      },
+      handleExport: (format) => exportKarkuns(management.allFilteredRecords, format),
+    })
+
+    return () => onRegisterHandlers(null)
+  }, [gender, management.allFilteredRecords, onRegisterHandlers, handleImport])
+
+  useEffect(() => {
+    if (shouldOpenAddForm) {
+      onAddFormOpened()
+    }
+  }, [shouldOpenAddForm, onAddFormOpened])
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <p className="text-sm text-secondary">
-          {gender} Karkun registry — {management.totalCount} members
-        </p>
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <ImportExportToolbar
-            kind="karkun"
-            onExport={(format) => exportKarkuns(management.allFilteredRecords, format)}
-            onImport={handleImport}
-          />
-          <SecondaryButton type="button" onClick={() => setIsAssignModalOpen(true)}>
-            Assign Karkun
-          </SecondaryButton>
-          <PrimaryButton type="button" onClick={openAddForm}>
-            Add {gender} Karkun
-          </PrimaryButton>
-        </div>
-      </div>
+      <p className="text-sm text-secondary">
+        {gender} Karkun registry — {management.totalCount} members
+      </p>
 
       <PeopleFiltersBar
         filters={management.filters}
@@ -296,14 +318,40 @@ function KarkunGenderSection({ gender }: { gender: PersonGender }) {
 
 export function KarkunanPage() {
   const [activeGender, setActiveGender] = useState<GenderTab>('Male')
+  const [sectionHandlers, setSectionHandlers] = useState<KarkunSectionHandlers | null>(null)
+  const [openAddForGender, setOpenAddForGender] = useState<PersonGender | null>(null)
+
+  const handleAddFormOpened = useCallback(() => {
+    setOpenAddForGender(null)
+  }, [])
+
+  const requestAddKarkun = (gender: PersonGender) => {
+    if (gender === activeGender) {
+      sectionHandlers?.openAddForm()
+      return
+    }
+
+    setOpenAddForGender(gender)
+    setActiveGender(gender)
+  }
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-text-heading">Karkun Management</h1>
-        <p className="mt-2 text-secondary">
-          Manage Male and Female Karkun contacts, assignments, and status separately.
-        </p>
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-text-heading">Karkun Management</h1>
+          <p className="mt-2 text-secondary">
+            Manage Male and Female Karkun contacts, assignments, and status separately.
+          </p>
+        </div>
+
+        <KarkunPeopleActionBar
+          onAddMale={() => requestAddKarkun('Male')}
+          onAddFemale={() => requestAddKarkun('Female')}
+          onAssign={() => sectionHandlers?.openAssign()}
+          onImport={(file) => sectionHandlers?.handleImport(file)}
+          onExport={(format) => sectionHandlers?.handleExport(format)}
+        />
       </div>
 
       <div className="flex gap-2 border-b border-border">
@@ -323,7 +371,13 @@ export function KarkunanPage() {
         ))}
       </div>
 
-      <KarkunGenderSection key={activeGender} gender={activeGender} />
+      <KarkunGenderSection
+        key={activeGender}
+        gender={activeGender}
+        shouldOpenAddForm={openAddForGender === activeGender}
+        onAddFormOpened={handleAddFormOpened}
+        onRegisterHandlers={setSectionHandlers}
+      />
     </div>
   )
 }
