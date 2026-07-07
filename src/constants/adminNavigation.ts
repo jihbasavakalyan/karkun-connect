@@ -11,7 +11,7 @@ export type AdminNavItem = {
 export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   { id: 'dashboard', label: 'Dashboard', icon: '🏠', to: ROUTES.ADMIN, end: true },
   { id: 'campaign', label: 'Campaign', icon: '📊', to: ROUTES.ADMIN_CAMPAIGN },
-  { id: 'rukn', label: 'Rukn', icon: '👥', to: ROUTES.ADMIN_RUKN },
+  { id: 'rukn', label: 'Rukn', icon: '🧑', to: ROUTES.ADMIN_RUKN },
   { id: 'karkun', label: 'Karkun', icon: '👥', to: ROUTES.ADMIN_KARKUN },
   { id: 'assignments', label: 'Assignments', icon: '🔗', to: ROUTES.ADMIN_ASSIGNMENTS },
   { id: 'execution', label: 'Execution', icon: '📝', to: ROUTES.ADMIN_EXECUTION },

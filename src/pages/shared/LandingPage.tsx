@@ -57,7 +57,7 @@ export function LandingPage() {
         </main>
 
         <footer className="border-t border-border pt-8 text-center text-sm text-secondary-light">
-          <p>Version {APP_VERSION.replace('.0', '')}</p>
+          <p>Version {APP_VERSION} RC1</p>
           <p className="mt-1">Internal Use Only</p>
         </footer>
       </div>
