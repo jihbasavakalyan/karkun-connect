@@ -9,7 +9,9 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "migrate:generate": "node scripts/generate-production-seeds.mjs",
-    "migrate:import-male-karkuns": "node scripts/import-cleaned-karkun-list.mjs"
+    "migrate:import-male-karkuns": "node scripts/import-cleaned-karkun-list.mjs",
+    "migrate:import-female-karkuns": "node scripts/import-female-contacts-cleaned.mjs",
+    "migrate:verify-female-karkuns": "node scripts/verify-female-karkun-import.mjs"
   },
   "dependencies": {
     "react": "^19.2.7",
