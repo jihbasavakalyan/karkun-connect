@@ -38,3 +38,7 @@ export function getPeopleAuditLog(): PeopleAuditEntry[] {
 export function getAuditLogForPerson(personKind: PersonKind, personId: string): PeopleAuditEntry[] {
   return auditLog.filter((entry) => entry.personKind === personKind && entry.personId === personId)
 }
+
+export function clearPeopleAuditLog(): void {
+  auditLog.length = 0
+}

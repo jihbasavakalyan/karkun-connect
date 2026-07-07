@@ -1,5 +1,5 @@
-import { MOCK_KARKUN_REGISTRY } from '@/constants/mockKarkunRegistry'
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
+import { getAllKarkuns } from '@/lib/peopleStore'
 import {
   getIjtemaAttendanceRecord,
   upsertIjtemaAttendanceRecord,
@@ -30,6 +30,10 @@ function nowIso(): string {
 export function initializeIjtemaAttendanceCompliance(): void {
   if (initialized) return
   initialized = true
+}
+
+export function resetIjtemaAttendanceComplianceInitialization(): void {
+  initialized = false
 }
 
 export function getFilterWeekEndingDate(weekFilter: string, date = new Date()): string {
@@ -122,7 +126,7 @@ export function getIjtemaAttendanceDashboardMetrics(
   weekEndingDate = getWeekEndingDate(),
 ): IjtemaAttendanceDashboardMetrics {
   initializeIjtemaAttendanceCompliance()
-  const activeKarkuns = MOCK_KARKUN_REGISTRY.filter((k) => !k.isArchived)
+  const activeKarkuns = getAllKarkuns()
 
   let present = 0
   let absent = 0
@@ -145,7 +149,7 @@ export function getAllIjtemaAttendanceSummaries(
 ): IjtemaAttendanceKarkunSummary[] {
   initializeIjtemaAttendanceCompliance()
 
-  return MOCK_KARKUN_REGISTRY.filter((k) => !k.isArchived).map((karkun) => {
+  return getAllKarkuns().map((karkun) => {
     const attendance = getIjtemaAttendanceForKarkun(karkun.id, weekEndingDate)
     return {
       karkunId: karkun.id,

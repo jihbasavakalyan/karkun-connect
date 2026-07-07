@@ -1,5 +1,5 @@
-import { MOCK_KARKUN_REGISTRY } from '@/constants/mockKarkunRegistry'
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
+import { getAllKarkuns } from '@/lib/peopleStore'
 import {
   getBaitulMaalRecord,
   upsertBaitulMaalRecord,
@@ -52,6 +52,10 @@ export function getFilterMonthKey(
 export function initializeBaitulMaalCompliance(): void {
   if (initialized) return
   initialized = true
+}
+
+export function resetBaitulMaalComplianceInitialization(): void {
+  initialized = false
 }
 
 export function getBaitulMaalStatusForKarkun(
@@ -159,7 +163,7 @@ export function getBaitulMaalDashboardMetrics(
   monthKey = getCurrentMonthKey(),
 ): BaitulMaalDashboardMetrics {
   initializeBaitulMaalCompliance()
-  const activeKarkuns = MOCK_KARKUN_REGISTRY.filter((k) => !k.isArchived)
+  const activeKarkuns = getAllKarkuns()
 
   let paid = 0
   let pending = 0
@@ -182,7 +186,7 @@ export function getAllBaitulMaalSummaries(
   initializeBaitulMaalCompliance()
   const { month, year } = parseMonthKey(monthKey)
 
-  return MOCK_KARKUN_REGISTRY.filter((k) => !k.isArchived).map((karkun) => {
+  return getAllKarkuns().map((karkun) => {
     const compliance = getBaitulMaalStatusForKarkun(karkun.id, monthKey)
     return {
       karkunId: karkun.id,

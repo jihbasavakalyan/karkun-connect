@@ -38,3 +38,8 @@ export function upsertIjtemaAttendanceRecord(
 export function getAllIjtemaAttendanceRecords(): IjtemaAttendanceRecord[] {
   return [...records.values()]
 }
+
+export function clearIjtemaAttendanceStore(): void {
+  records.clear()
+  notifyIjtemaAttendanceStoreChange()
+}

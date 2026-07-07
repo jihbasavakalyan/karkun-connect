@@ -59,3 +59,8 @@ export function getActivityLog(): ActivityLogEntry[] {
 export function getRecentActivity(limit = 20): ActivityLogEntry[] {
   return activityLog.slice(0, limit)
 }
+
+export function clearActivityLogStore(): void {
+  activityLog.length = 0
+  notifyActivityLogChange()
+}

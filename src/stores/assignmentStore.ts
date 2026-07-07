@@ -147,3 +147,9 @@ export function searchAssignments(query: string): AssignmentRecord[] {
     record.assignmentNumber.toLowerCase().includes(normalized),
   )
 }
+
+export function clearAssignmentStore(): void {
+  assignments.length = 0
+  nextAssignmentSequence = 1
+  notifyAssignmentStoreChange()
+}

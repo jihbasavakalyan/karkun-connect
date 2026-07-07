@@ -1,5 +1,5 @@
 import type { Dispatch } from 'react'
-import { MOCK_KARKUN_LIST } from '@/constants/mockCampaignSetup'
+import { getCampaignKarkunList } from '@/constants/mockCampaignSetup'
 import { InputField } from '@/components/forms/InputField'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import type { CampaignSetupAction, CampaignSetupState } from '@/types/campaign-setup.types'
@@ -11,7 +11,7 @@ type StepKarkunanProps = {
 
 export function StepKarkunan({ state, dispatch }: StepKarkunanProps) {
   const query = state.karkunSearch.trim().toLowerCase()
-  const filteredKarkuns = MOCK_KARKUN_LIST.filter(
+  const filteredKarkuns = getCampaignKarkunList().filter(
     (karkun) =>
       karkun.name.toLowerCase().includes(query) ||
       karkun.area.toLowerCase().includes(query),

@@ -1,4 +1,4 @@
-import { MOCK_KARKUN_LIST } from '@/constants/mockCampaignSetup'
+import { getCampaignKarkunList } from '@/constants/mockCampaignSetup'
 import { ruknMaster } from '@/data/ruknMaster'
 import type { CampaignSetupState } from '@/types/campaign-setup.types'
 
@@ -7,7 +7,7 @@ type StepAssignmentPreviewProps = {
 }
 
 function getKarkunName(karkunId: string): string {
-  return MOCK_KARKUN_LIST.find((k) => k.id === karkunId)?.name ?? karkunId
+  return getCampaignKarkunList().find((k) => k.id === karkunId)?.name ?? karkunId
 }
 
 export function StepAssignmentPreview({ state }: StepAssignmentPreviewProps) {

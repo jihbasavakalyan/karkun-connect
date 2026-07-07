@@ -85,3 +85,8 @@ export function saveDraftRecord(record: SubmittedMeetingForm): SubmittedMeetingF
   notifyAnnexure1StoreChange()
   return record
 }
+
+export function clearAnnexure1Store(): void {
+  submittedForms.length = 0
+  notifyAnnexure1StoreChange()
+}

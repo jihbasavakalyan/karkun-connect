@@ -53,3 +53,9 @@ export function getAllMonthlyReports(): JihMonthlyReport[] {
 export function getMonthlyReportsForMonth(monthKey: string): JihMonthlyReport[] {
   return getAllMonthlyReports().filter((record) => record.monthKey === monthKey)
 }
+
+export function clearJihWebPortalStore(): void {
+  registrations.clear()
+  monthlyReports.clear()
+  notifyJihWebPortalStoreChange()
+}

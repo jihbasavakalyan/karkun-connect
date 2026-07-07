@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import {
   APPROVED_CAMPAIGN_OBJECTIVES,
-  MOCK_KARKUN_LIST,
+  getCampaignKarkunList,
 } from '@/constants/mockCampaignSetup'
 import { ruknMaster } from '@/data/ruknMaster'
 import type { CampaignSetupState } from '@/types/campaign-setup.types'
@@ -34,7 +34,7 @@ export function StepCampaignReview({ state }: StepCampaignReviewProps) {
     state.selectedRuknIds.includes(rukn.id),
   )
 
-  const selectedKarkuns = MOCK_KARKUN_LIST.filter((karkun) =>
+  const selectedKarkuns = getCampaignKarkunList().filter((karkun) =>
     state.selectedKarkunIds.includes(karkun.id),
   )
 

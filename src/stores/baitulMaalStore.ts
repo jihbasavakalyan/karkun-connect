@@ -34,3 +34,8 @@ export function upsertBaitulMaalRecord(record: BaitulMaalRecord): BaitulMaalReco
 export function getAllBaitulMaalRecords(): BaitulMaalRecord[] {
   return [...records.values()]
 }
+
+export function clearBaitulMaalStore(): void {
+  records.clear()
+  notifyBaitulMaalStoreChange()
+}

@@ -98,6 +98,10 @@ export function CompletedWorkPanel({ items }: CompletedWorkPanelProps) {
 }
 
 export function ContinueMissionButton() {
+  if (!DEFAULT_VISIT_KARKUN_ID) {
+    return null
+  }
+
   return (
     <div className="mt-4">
       <Link to={ruknVisitPath(DEFAULT_VISIT_KARKUN_ID)}>

@@ -37,72 +37,17 @@ export const COMMAND_CENTER_TODAYS_WORK: CommandCenterWorkItem[] = [
   },
 ]
 
-export const COMMAND_CENTER_RECENT_ACTIVITY: CommandCenterActivityItem[] = [
-  {
-    id: 'activity-1',
-    type: 'meeting',
-    title: 'Meeting completed — Mohammad Kareem',
-    subtitle: 'Rukn: Ruqia Tahaniyat · ABC Area',
-    timestamp: 'Today, 10:30 AM',
-    to: `${ROUTES.ADMIN_KARKUN}/kr-001`,
-  },
-  {
-    id: 'activity-2',
-    type: 'report',
-    title: 'Visit report submitted — Ali Raza',
-    subtitle: 'Annexure-1 · Follow-up scheduled',
-    timestamp: 'Yesterday, 4:15 PM',
-    to: ROUTES.ADMIN_REVIEW,
-  },
-  {
-    id: 'activity-3',
-    type: 'karkun',
-    title: 'Karkun updated — Hamza Siddiqui',
-    subtitle: 'Visit status changed to Pending',
-    timestamp: 'Yesterday, 2:00 PM',
-    to: `${ROUTES.ADMIN_KARKUN}/kr-003`,
-  },
-  {
-    id: 'activity-4',
-    type: 'meeting',
-    title: 'Meeting scheduled — Usman Farooq',
-    subtitle: 'Rukn: Syeda Zainab Ghazala',
-    timestamp: 'Mar 11, 2026',
-    to: `${ROUTES.ADMIN_KARKUN}/kr-005`,
-  },
-  {
-    id: 'activity-5',
-    type: 'report',
-    title: 'Daily progress report submitted',
-    subtitle: 'Campaign day 12 summary',
-    timestamp: 'Mar 11, 2026',
-    to: `${ROUTES.ADMIN_EXECUTION}?section=progress`,
-  },
-]
+export const COMMAND_CENTER_RECENT_ACTIVITY: CommandCenterActivityItem[] = []
 
-export const MOCK_FOLLOW_UP_TASKS = [
-  {
-    id: 'fu-1',
-    karkunName: 'Mohammad Kareem',
-    dueDate: '2026-03-15',
-    note: 'JIH registration follow-up',
-    status: 'pending' as const,
-  },
-  {
-    id: 'fu-2',
-    karkunName: 'Ali Raza',
-    dueDate: '2026-03-14',
-    note: 'Commitment check-in',
-    status: 'pending' as const,
-  },
-  {
-    id: 'fu-3',
-    karkunName: 'Nadeem Akhtar',
-    dueDate: '2026-03-12',
-    note: 'Document collection',
-    status: 'overdue' as const,
-  },
-]
+export type MockFollowUpTask = {
+  id: string
+  karkunName: string
+  dueDate: string
+  note: string
+  status: 'pending' | 'overdue'
+}
+
+export const MOCK_FOLLOW_UP_TASKS: MockFollowUpTask[] = []
 
 export const MOCK_RESPONSIBILITIES = [
   { id: 'resp-1', title: 'Weekly area coordination call', assignee: 'Amir Khan', dueDate: '2026-03-16' },

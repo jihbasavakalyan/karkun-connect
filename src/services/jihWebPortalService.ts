@@ -1,5 +1,5 @@
-import { MOCK_KARKUN_REGISTRY } from '@/constants/mockKarkunRegistry'
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
+import { getAllKarkuns } from '@/lib/peopleStore'
 import {
   getMonthlyReport,
   getRegistration,
@@ -48,24 +48,11 @@ function createDefaultRegistration(karkunId: string): JihWebPortalRegistration {
 
 export function initializeJihWebPortalCompliance(): void {
   if (initialized) return
-
-  for (const karkun of MOCK_KARKUN_REGISTRY) {
-    if (karkun.isArchived) continue
-
-    if (!getRegistration(karkun.id)) {
-      const legacyRegistered = karkun.jihAppRegistrationStatus === 'Registered'
-      upsertRegistration({
-        karkunId: karkun.id,
-        status: legacyRegistered ? 'Registered' : 'Not Registered',
-        registrationDate: legacyRegistered ? '2026-01-15' : undefined,
-        registrationNumber: legacyRegistered ? undefined : undefined,
-        updatedAt: nowIso(),
-        updatedBy: 'System',
-      })
-    }
-  }
-
   initialized = true
+}
+
+export function resetJihWebPortalComplianceInitialization(): void {
+  initialized = false
 }
 
 export function ensureRegistration(karkunId: string): JihWebPortalRegistration {
@@ -161,7 +148,7 @@ export function updateJihMonthlyReport(
 export function getJihWebPortalDashboardMetrics(): JihWebPortalDashboardMetrics {
   initializeJihWebPortalCompliance()
   const monthKey = getCurrentMonthKey()
-  const activeKarkuns = MOCK_KARKUN_REGISTRY.filter((k) => !k.isArchived)
+  const activeKarkuns = getAllKarkuns()
   const registrations = activeKarkuns.map((k) => ensureRegistration(k.id))
 
   const registered = registrations.filter((r) => r.status === 'Registered').length
@@ -192,7 +179,7 @@ export function getJihWebPortalDashboardMetrics(): JihWebPortalDashboardMetrics 
 
 export function getAllJihWebPortalSummaries(): JihWebPortalKarkunSummary[] {
   initializeJihWebPortalCompliance()
-  return MOCK_KARKUN_REGISTRY.filter((k) => !k.isArchived).map((karkun) => {
+  return getAllKarkuns().map((karkun) => {
     const registration = ensureRegistration(karkun.id)
     const monthly = getCurrentMonthReportingStatus(karkun.id)
     return {
@@ -232,4 +219,3 @@ export function matchesJihPortalFilters(
   return true
 }
 
-initializeJihWebPortalCompliance()

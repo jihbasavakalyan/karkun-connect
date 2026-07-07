@@ -288,6 +288,27 @@ export function bulkSetRuknStatus(
 
 let nextKarkunNum = 13
 
+export function clearKarkunRegistry(): void {
+  MOCK_KARKUN_REGISTRY.length = 0
+  nextKarkunNum = 1
+  notifyPeopleChange()
+}
+
+export function resetNextKarkunId(start = 1): void {
+  nextKarkunNum = start
+}
+
+export function replaceRuknMaster(records: Rukn[]): void {
+  ruknMaster.length = 0
+  ruknMaster.push(...records)
+  notifyPeopleChange()
+}
+
+export function clearRuknMaster(): void {
+  ruknMaster.length = 0
+  notifyPeopleChange()
+}
+
 export function createKarkun(
   input: PersonContactInput & { area?: string; address?: string },
   updatedBy = 'Administrator',

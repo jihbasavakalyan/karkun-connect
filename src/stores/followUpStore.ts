@@ -74,3 +74,8 @@ export function completePendingFollowUpsForAssignment(assignmentId: string): Fol
 
   return completed
 }
+
+export function clearFollowUpStore(): void {
+  followUpRecords.length = 0
+  notifyFollowUpStoreChange()
+}

@@ -1,4 +1,10 @@
 export {
+  runProductionDataMigration,
+  getProductionMigrationSummary,
+  formatProductionMigrationReport,
+} from './productionDataMigrationService'
+
+export {
   assignRukn,
   replaceAssignment,
   removeAssignment,
