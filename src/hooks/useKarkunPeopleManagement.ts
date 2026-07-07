@@ -1,5 +1,6 @@
 import { useMemo, useState, useEffect } from 'react'
 import { getAllKarkuns } from '@/lib/peopleStore'
+import { subscribeToAssignments } from '@/lib/assignmentEngine'
 import { usePeopleStore } from '@/hooks/usePeopleStore'
 import { matchesJihPortalFilters } from '@/services/jihWebPortalService'
 import { matchesBaitulMaalFilters } from '@/services/baitulMaalService'
@@ -125,11 +126,15 @@ function sortKarkuns(
 
 export function useKarkunPeopleManagement(sectionGender: PersonGender) {
   usePeopleStore()
+  const [assignmentVersion, setAssignmentVersion] = useState(0)
   const [jihVersion, setJihVersion] = useState(0)
   const [baitulMaalVersion, setBaitulMaalVersion] = useState(0)
   const [ijtemaVersion, setIjtemaVersion] = useState(0)
 
   useEffect(() => {
+    const unsubAssignments = subscribeToAssignments(() =>
+      setAssignmentVersion((value) => value + 1),
+    )
     const unsubJih = subscribeToJihWebPortalStore(() => setJihVersion((value) => value + 1))
     const unsubBaitulMaal = subscribeToBaitulMaalStore(() =>
       setBaitulMaalVersion((value) => value + 1),
@@ -138,6 +143,7 @@ export function useKarkunPeopleManagement(sectionGender: PersonGender) {
       setIjtemaVersion((value) => value + 1),
     )
     return () => {
+      unsubAssignments()
       unsubJih()
       unsubBaitulMaal()
       unsubIjtema()
@@ -153,12 +159,13 @@ export function useKarkunPeopleManagement(sectionGender: PersonGender) {
   const allKarkuns = getAllKarkuns().filter((k) => k.gender === sectionGender)
 
   const filteredRecords = useMemo(() => {
+    void assignmentVersion
     void jihVersion
     void baitulMaalVersion
     void ijtemaVersion
     const filtered = allKarkuns.filter((karkun) => matchesKarkunFilters(karkun, filters))
     return sortKarkuns(filtered, sortField, sortDirection)
-  }, [allKarkuns, filters, sortField, sortDirection, jihVersion, baitulMaalVersion, ijtemaVersion])
+  }, [allKarkuns, filters, sortField, sortDirection, assignmentVersion, jihVersion, baitulMaalVersion, ijtemaVersion])
 
   const totalPages = Math.max(1, Math.ceil(filteredRecords.length / PEOPLE_PAGE_SIZE))
 

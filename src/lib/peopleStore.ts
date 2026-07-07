@@ -16,6 +16,7 @@ import {
   mobilesMatch,
   normalizeMobile,
 } from '@/lib/mobileValidation'
+import { getActiveAssignmentForRukn } from '@/stores/assignmentStore'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
 import type {
   ImportSummary,
@@ -45,6 +46,11 @@ export type PeopleMutationResult = {
 
 function notifyPeopleChange(): void {
   listeners.forEach((listener) => listener())
+}
+
+/** Notify subscribers after assignment-driven registry field updates. */
+export function notifyPeopleRegistryChange(): void {
+  notifyPeopleChange()
 }
 
 export function subscribeToPeopleStore(listener: PeopleListener): () => void {
@@ -494,7 +500,20 @@ export function getCompatibleRuknsForKarkun(karkunId: string): Rukn[] {
   if (!karkun) {
     return []
   }
-  return ruknMaster.filter((r) => r.status === 'active' && r.gender === karkun.gender)
+
+  const currentRuknId = karkun.assignedRuknId
+
+  return ruknMaster.filter((rukn) => {
+    if (rukn.status !== 'active' || rukn.gender !== karkun.gender) {
+      return false
+    }
+
+    if (rukn.id === currentRuknId) {
+      return true
+    }
+
+    return !getActiveAssignmentForRukn(rukn.id)
+  })
 }
 
 export function getCompatibleKarkunsForRukn(ruknId: string): KarkunRegistryRecord[] {

@@ -1,5 +1,6 @@
 import { getKarkunById, MOCK_KARKUN_REGISTRY } from '@/constants/mockKarkunRegistry'
 import { getRuknById } from '@/data/ruknMaster'
+import { isValidMobileFormat, normalizeMobile } from '@/lib/mobileValidation'
 import {
   assignRukn,
   getAllAssignments,
@@ -8,7 +9,14 @@ import {
   removeAssignment,
   replaceAssignment,
 } from '@/services/assignmentService'
-import { validateAssignInput } from '@/validation/assignmentValidation'
+import {
+  validateEffectiveDate,
+  validateGenderMatch,
+  validateKarkunActive,
+  validateKarkunMobile,
+  validateNoBlockingAssignmentForRukn,
+  validateRuknActive,
+} from '@/validation/assignmentValidation'
 import { subscribeToAssignmentStore } from '@/stores/assignmentStore'
 import type { RemovalReason, ReplacementReason } from '@/types/assignment'
 import type { AssignedBy, ReleaseReason } from '@/types/assignment.types'
@@ -34,7 +42,12 @@ export function getAssignedKarkunanForRukn(ruknId: string): KarkunRegistryRecord
 
 export function getAvailableKarkunan(): KarkunRegistryRecord[] {
   return MOCK_KARKUN_REGISTRY.filter(
-    (karkun) => !karkun.isArchived && karkun.status === 'active' && karkun.mobile.trim(),
+    (karkun) =>
+      !karkun.isArchived &&
+      karkun.status === 'active' &&
+      karkun.assignmentStatus === 'Available' &&
+      karkun.mobile.trim() &&
+      isValidMobileFormat(normalizeMobile(karkun.mobile)),
   )
 }
 
@@ -178,14 +191,19 @@ export function changeKarkunRuknAssignment(
     return assignKarkun(karkunId, targetRuknId, assignedBy)
   }
 
-  const validation = validateAssignInput({
-    ruknId: targetRuknId,
-    karkunId,
-    effectiveFrom: todayDate(),
-    assignedBy,
-  })
-  if (!validation.valid) {
-    return { success: false, error: validation.error }
+  const transferChecks = [
+    validateEffectiveDate(todayDate()),
+    validateRuknActive(targetRuknId),
+    validateKarkunActive(karkunId),
+    validateKarkunMobile(karkunId),
+    validateGenderMatch(targetRuknId, karkunId),
+    validateNoBlockingAssignmentForRukn(targetRuknId),
+  ]
+
+  for (const check of transferChecks) {
+    if (!check.valid) {
+      return { success: false, error: check.error }
+    }
   }
 
   const removeResult = removeAssignment({
@@ -239,7 +257,14 @@ export function getCompletedAssignmentHistoryForRukn(ruknId: string) {
 
 export function canAssignKarkun(karkunId: string): boolean {
   const karkun = getKarkunById(karkunId)
-  return Boolean(karkun && !karkun.isArchived && karkun.status === 'active' && karkun.mobile.trim())
+  return Boolean(
+    karkun &&
+      !karkun.isArchived &&
+      karkun.status === 'active' &&
+      karkun.assignmentStatus === 'Available' &&
+      karkun.mobile.trim() &&
+      isValidMobileFormat(normalizeMobile(karkun.mobile)),
+  )
 }
 
 export {

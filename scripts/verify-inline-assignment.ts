@@ -1,22 +1,35 @@
 /**
- * Verifies changeKarkunRuknAssignment assign / replace / unassign flows.
- * Run: npx vite-node scripts/verify-inline-assignment.ts
+ * Verifies administrator assignment workflow end-to-end.
+ * Run: npm run verify:assignments
  */
 import { MOCK_KARKUN_REGISTRY } from '@/constants/mockKarkunRegistry'
 import { ruknMaster } from '@/data/ruknMaster'
 import {
   changeKarkunRuknAssignment,
+  getAssignedKarkunanForRukn,
+  getAvailableKarkunan,
   getCurrentAssignmentForKarkun,
 } from '@/lib/assignmentEngine'
-import { getCompatibleRuknsForKarkun } from '@/lib/peopleStore'
+import { getCompatibleKarkunsForRukn, getCompatibleRuknsForKarkun, getPeopleStatistics } from '@/lib/peopleStore'
+import {
+  assignRukn,
+  getAssignmentDashboardMetrics,
+  getRuknAssignmentSummary,
+  removeAssignment,
+  replaceAssignment,
+} from '@/services/assignmentService'
+import { getAdminCommandCenterSnapshot, getRuknCommandCenterSnapshot } from '@/services/campaignAutomationEngine'
+import { runProductionDataMigration } from '@/services/productionDataMigrationService'
 import {
   clearAssignmentStore,
   getAssignmentHistoryForKarkun,
+  getAssignmentHistoryForRukn,
 } from '@/stores/assignmentStore'
 import { clearActivityLogStore, getRecentActivity } from '@/stores/activityLogStore'
 import type { KarkunRegistryRecord, PersonGender } from '@/types/karkun-registry.types'
 
 const now = new Date().toISOString()
+const today = now.slice(0, 10)
 
 function createKarkun(id: string, gender: PersonGender): KarkunRegistryRecord {
   return {
@@ -61,8 +74,8 @@ function reset(): void {
   MOCK_KARKUN_REGISTRY.length = 0
 }
 
-function verifyGenderFlow(gender: PersonGender): void {
-  const karkun = createKarkun(`verify-${gender.toLowerCase()}`, gender)
+function verifyInlineGenderFlow(gender: PersonGender): void {
+  const karkun = createKarkun(`verify-inline-${gender.toLowerCase()}`, gender)
   const rukns = activeRukns(gender)
   const ruknA = rukns[0]
   const ruknB = rukns[1]
@@ -75,11 +88,16 @@ function verifyGenderFlow(gender: PersonGender): void {
     compatible.every((rukn) => rukn.gender === gender),
     `${gender} Karkun must only see ${gender} Rukns`,
   )
+  assert(
+    compatible.every((rukn) => !getRuknAssignmentSummary(rukn.id).currentAssignment),
+    `${gender} inline picker must only list unassigned Rukns`,
+  )
 
   const assignResult = changeKarkunRuknAssignment(karkun.id, ruknA!.id)
   assert(assignResult.success, `Assign failed: ${assignResult.success ? '' : assignResult.error}`)
   assert(karkun.assignmentStatus === 'Assigned', 'Assignment status should be Assigned')
   assert(karkun.assignedRuknId === ruknA!.id, 'Assigned Rukn id should match')
+  assert(Boolean(assignResult.assignment?.assignmentNumber), 'Assignment number must be generated')
 
   const replaceResult = changeKarkunRuknAssignment(karkun.id, ruknB!.id)
   assert(
@@ -108,9 +126,100 @@ function verifyGenderFlow(gender: PersonGender): void {
   assert(activity.some((entry) => entry.type === 'remove'), 'Activity log should record removal')
 }
 
-reset()
-verifyGenderFlow('Male')
-reset()
-verifyGenderFlow('Female')
+function verifyAdminModalFlow(gender: PersonGender): void {
+  const karkun = createKarkun(`verify-admin-${gender.toLowerCase()}`, gender)
+  const rukns = activeRukns(gender)
+  const ruknA = rukns[2]
+  const ruknB = rukns[3]
+  assert(Boolean(ruknA && ruknB), `Need at least four active ${gender} Rukns for admin modal flow`)
 
-console.log('Inline assignment verification passed for Male and Female flows.')
+  MOCK_KARKUN_REGISTRY.push(karkun)
+
+  const availableForRukn = getCompatibleKarkunsForRukn(ruknA!.id)
+  assert(availableForRukn.some((record) => record.id === karkun.id), 'Admin modal must list available Karkun')
+
+  const assignResult = assignRukn({
+    ruknId: ruknA!.id,
+    karkunId: karkun.id,
+    effectiveFrom: today,
+    assignedBy: 'Administrator',
+  })
+  assert(assignResult.success, `assignRukn failed: ${assignResult.success ? '' : assignResult.error}`)
+  assert(
+    getRuknAssignmentSummary(ruknA!.id).assignmentStatus === 'Assigned',
+    'Rukn summary must show Assigned',
+  )
+  assert(
+    getAssignedKarkunanForRukn(ruknA!.id).some((record) => record.id === karkun.id),
+    'Rukn portal must see assigned Karkun',
+  )
+  assert(
+    !getAvailableKarkunan().some((record) => record.id === karkun.id),
+    'Assigned Karkun must disappear from available pool',
+  )
+
+  const statsBeforeReplace = getPeopleStatistics()
+  assert(statsBeforeReplace.assignedKarkuns >= 1, 'People statistics must reflect assigned Karkun')
+
+  const replacementKarkun = createKarkun(`verify-admin-replacement-${gender.toLowerCase()}`, gender)
+  MOCK_KARKUN_REGISTRY.push(replacementKarkun)
+
+  const replaceResult = replaceAssignment({
+    ruknId: ruknA!.id,
+    newKarkunId: replacementKarkun.id,
+    effectiveFrom: today,
+    replacementReason: 'Shifted responsibility',
+    assignedBy: 'Administrator',
+  })
+  assert(
+    replaceResult.success,
+    `replaceAssignment failed: ${replaceResult.success ? '' : replaceResult.error}`,
+  )
+
+  const ruknHistory = getAssignmentHistoryForRukn(ruknA!.id)
+  assert(ruknHistory.some((record) => record.status === 'Replaced'), 'Old assignment must become Replaced history')
+  assert(
+    getRuknAssignmentSummary(ruknA!.id).currentAssignment?.karkunId === replacementKarkun.id,
+    'New assignment must become active',
+  )
+
+  const adminSnapshot = getAdminCommandCenterSnapshot()
+  assert(adminSnapshot.kpis.length >= 8, 'Dashboard KPIs must refresh after assignment changes')
+
+  const ruknSnapshot = getRuknCommandCenterSnapshot(ruknA!.id)
+  assert(ruknSnapshot.kpis.length >= 6, 'Rukn command center must refresh after assignment changes')
+
+  const removeResult = removeAssignment({
+    ruknId: ruknA!.id,
+    effectiveFrom: today,
+    removalReason: 'Other',
+    assignedBy: 'Administrator',
+  })
+  assert(
+    removeResult.success,
+    `removeAssignment failed: ${removeResult.success ? '' : removeResult.error}`,
+  )
+  assert(
+    getRuknAssignmentSummary(ruknA!.id).assignmentStatus === 'Unassigned',
+    'Released Rukn must become Unassigned',
+  )
+  assert(
+    replacementKarkun.assignmentStatus === 'Available',
+    'Released Karkun must become Available',
+  )
+
+  const metrics = getAssignmentDashboardMetrics()
+  assert(metrics.activeAssignments >= 0, 'Assignment dashboard metrics must remain valid')
+}
+
+runProductionDataMigration()
+reset()
+verifyInlineGenderFlow('Male')
+reset()
+verifyInlineGenderFlow('Female')
+reset()
+verifyAdminModalFlow('Male')
+reset()
+verifyAdminModalFlow('Female')
+
+console.log('Assignment workflow verification passed for inline and admin flows.')

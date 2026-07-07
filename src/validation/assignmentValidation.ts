@@ -9,6 +9,7 @@ import { canAssignByGender } from '@/lib/peopleStore'
 import type { AssignInput, RemoveInput, ReplaceInput, RestoreInput } from '@/types/assignment'
 import {
   getActiveAssignmentForRukn,
+  getActiveAssignmentsForKarkun,
   getBlockingAssignmentForRukn,
 } from '@/stores/assignmentStore'
 
@@ -106,11 +107,35 @@ export function validateNoActiveAssignmentForRukn(ruknId: string): ValidationRes
   return { valid: true }
 }
 
+export function validateKarkunAvailable(karkunId: string): ValidationResult {
+  const karkun = getKarkunById(karkunId)
+  if (!karkun || karkun.isArchived) {
+    return { valid: false, error: 'Karkun not found.' }
+  }
+
+  if (getActiveAssignmentsForKarkun(karkunId).length > 0) {
+    return {
+      valid: false,
+      error: 'This Karkun already has an active assignment.',
+    }
+  }
+
+  if (karkun.assignmentStatus !== 'Available') {
+    return {
+      valid: false,
+      error: 'This Karkun is not available for assignment.',
+    }
+  }
+
+  return { valid: true }
+}
+
 export function validateAssignInput(input: AssignInput): ValidationResult {
   const checks = [
     validateEffectiveDate(input.effectiveFrom),
     validateRuknActive(input.ruknId),
     validateKarkunActive(input.karkunId),
+    validateKarkunAvailable(input.karkunId),
     validateKarkunMobile(input.karkunId),
     validateGenderMatch(input.ruknId, input.karkunId),
     validateNoBlockingAssignmentForRukn(input.ruknId),
@@ -140,6 +165,7 @@ export function validateReplaceInput(input: ReplaceInput): ValidationResult {
     validateEffectiveDate(input.effectiveFrom),
     validateRuknActive(input.ruknId),
     validateKarkunActive(input.newKarkunId),
+    validateKarkunAvailable(input.newKarkunId),
     validateKarkunMobile(input.newKarkunId),
     validateGenderMatch(input.ruknId, input.newKarkunId),
   ]
@@ -180,6 +206,7 @@ export function validateRestoreInput(input: RestoreInput): ValidationResult {
     validateEffectiveDate(input.effectiveFrom),
     validateRuknActive(input.ruknId),
     validateKarkunActive(input.karkunId),
+    validateKarkunAvailable(input.karkunId),
     validateKarkunMobile(input.karkunId),
     validateGenderMatch(input.ruknId, input.karkunId),
   ]

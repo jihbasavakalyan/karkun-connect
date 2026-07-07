@@ -1,6 +1,6 @@
 import { MOCK_KARKUN_REGISTRY, getKarkunById } from '@/constants/mockKarkunRegistry'
 import { getRuknById, ruknMaster } from '@/data/ruknMaster'
-import { getAllKarkuns } from '@/lib/peopleStore'
+import { getAllKarkuns, getCompatibleKarkunsForRukn, notifyPeopleRegistryChange } from '@/lib/peopleStore'
 import { logPeopleAudit } from '@/lib/peopleAuditLog'
 import { isValidMobileFormat, normalizeMobile } from '@/lib/mobileValidation'
 import { logActivity } from '@/stores/activityLogStore'
@@ -68,6 +68,7 @@ function syncKarkunRegistryFromAssignments(karkunId: string): void {
     karkun.assignedRukn = ''
     karkun.assignmentDate = undefined
     karkun.campaignStatus = karkun.status === 'active' ? 'not_assigned' : 'inactive'
+    notifyPeopleRegistryChange()
     return
   }
 
@@ -78,6 +79,8 @@ function syncKarkunRegistryFromAssignments(karkunId: string): void {
   karkun.assignedRukn = rukn?.name ?? ''
   karkun.assignmentDate = primary.effectiveFrom
   karkun.campaignStatus = 'active'
+
+  notifyPeopleRegistryChange()
 }
 
 function formatNames(ruknId: string, karkunId: string): { ruknName: string; karkunName: string } {
@@ -316,8 +319,12 @@ export function getAssignmentDashboardMetrics(): AssignmentDashboardMetrics {
     activeAssignments: activeAssignments.length,
     unassignedRukns: activeRukns.filter((rukn) => !assignedRuknIds.has(rukn.id)).length,
     assignedRukns: assignedRuknIds.size,
-    availableMaleKarkuns: karkuns.filter((k) => k.gender === 'Male').length,
-    availableFemaleKarkuns: karkuns.filter((k) => k.gender === 'Female').length,
+    availableMaleKarkuns: karkuns.filter(
+      (k) => k.gender === 'Male' && k.assignmentStatus === 'Available',
+    ).length,
+    availableFemaleKarkuns: karkuns.filter(
+      (k) => k.gender === 'Female' && k.assignmentStatus === 'Available',
+    ).length,
     totalAssignmentChanges: countAssignmentChanges(),
     assignmentsToday: periodCounts.assignmentsToday,
     assignmentsThisWeek: periodCounts.assignmentsThisWeek,
@@ -326,14 +333,8 @@ export function getAssignmentDashboardMetrics(): AssignmentDashboardMetrics {
 }
 
 export function getKarkunsForRuknAssignment(ruknId: string) {
-  const rukn = getRuknById(ruknId)
-  if (!rukn) return []
-  return getAllKarkuns().filter(
-    (k) =>
-      !k.isArchived &&
-      k.status === 'active' &&
-      k.gender === rukn.gender &&
-      isValidMobileFormat(normalizeMobile(k.mobile)),
+  return getCompatibleKarkunsForRukn(ruknId).filter(
+    (k) => !k.isArchived && isValidMobileFormat(normalizeMobile(k.mobile)),
   )
 }
 
