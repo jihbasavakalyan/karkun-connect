@@ -1,4 +1,6 @@
 export { CommandCenterHero } from './CommandCenterHero'
+export { CommandCenterValues } from './CommandCenterValues'
+export { CommandCenterTodaysMission } from './CommandCenterTodaysMission'
 export { CommandCenterKpiGrid } from './CommandCenterKpiGrid'
 export { CommandCenterNextAction } from './CommandCenterNextAction'
 export { CommandCenterAlerts } from './CommandCenterAlerts'

@@ -10,8 +10,8 @@ export function CommandCenterKpiGrid({ kpis }: CommandCenterKpiGridProps) {
   return (
     <section className="space-y-4">
       <EnterpriseSectionHeader
-        title="Operational KPIs"
-        subtitle="Live counts from campaign engines — tap any card to act"
+        title="Campaign Metrics"
+        subtitle="Live counts from every campaign engine — tap any card to act"
       />
       <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {kpis.map((kpi) => {
