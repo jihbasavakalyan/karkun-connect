@@ -106,7 +106,9 @@ export type CampaignListItem = {
   endDate: string
   theme: string
   objective: string
+  objectives: string[]
   nextMilestone: string
+  motto?: string
 }
 
 export const MOCK_NEEDS_ATTENTION: NeedsAttentionSummary = {
@@ -125,7 +127,9 @@ export const MOCK_CAMPAIGNS: CampaignListItem[] = [
     theme: 'Activate every Karkun and integrate them into Jamaat work.',
     objective:
       'Ensure every assigned Karkun is contacted, visited, engaged, and integrated into Jamaat activities during the campaign.',
+    objectives: ['Reconnect', 'Understand', 'Empower', 'Activate'],
     nextMilestone: 'Complete first visits for all assigned Karkuns',
+    motto: 'فعال کارکن، فعال جماعت',
   },
   {
     id: 'campaign-archived-1',
@@ -135,6 +139,7 @@ export const MOCK_CAMPAIGNS: CampaignListItem[] = [
     endDate: '2025-03-31',
     theme: 'Spring community outreach',
     objective: 'Reach assigned households during the spring campaign window.',
+    objectives: ['Outreach', 'Engage', 'Report', 'Review'],
     nextMilestone: 'Campaign archived',
   },
   {
@@ -145,6 +150,7 @@ export const MOCK_CAMPAIGNS: CampaignListItem[] = [
     endDate: '2024-12-31',
     theme: 'Winter engagement drive',
     objective: 'Maintain Jamaat engagement through the winter period.',
+    objectives: ['Connect', 'Visit', 'Support', 'Review'],
     nextMilestone: 'Campaign archived',
   },
 ]

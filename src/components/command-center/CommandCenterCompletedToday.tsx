@@ -8,13 +8,14 @@ export function CommandCenterCompletedToday({ items }: CommandCenterCompletedTod
   }
 
   return (
-    <section className="rounded-(--radius-card) border border-border bg-surface p-6 shadow-card">
-      <h2 className="text-lg font-semibold text-text-heading">Completed Today</h2>
+    <section className="enterprise-card p-6">
+      <h2 className="enterprise-section-title">Completed Today</h2>
+      <p className="enterprise-section-subtitle">Your accomplishments for today</p>
       <ul className="mt-4 space-y-3">
         {items.map((item) => (
           <li
             key={item.id}
-            className="flex items-start justify-between gap-3 rounded-lg border border-border bg-surface-muted px-4 py-3"
+            className="flex items-start justify-between gap-3 rounded-xl border border-green-200/60 bg-green-50/50 px-4 py-3"
           >
             <span className="text-sm font-medium text-text-heading">{item.label}</span>
             <span className="shrink-0 text-xs text-secondary">{item.time}</span>

@@ -21,6 +21,43 @@
   --shadow-card-hover:
     0 4px 6px -1px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.06);
   --radius-card: 0.75rem;
+  --color-sidebar: #0f172a;
+  --color-sidebar-hover: #1e293b;
+  --color-sidebar-border: #334155;
+  --color-sidebar-text: #cbd5e1;
+  --color-sidebar-text-muted: #94a3b8;
+  --color-sidebar-active: #14532d;
+  --color-accent-glow: #40916c;
+  --gradient-hero: linear-gradient(135deg, #1b4332 0%, #2d6a4f 45%, #40916c 100%);
+  --gradient-card: linear-gradient(180deg, rgb(255 255 255 / 0.98) 0%, rgb(248 250 252 / 0.98) 100%);
+  --shadow-enterprise: 0 10px 40px -12px rgb(15 23 42 / 0.18);
+  --shadow-enterprise-lg: 0 20px 50px -20px rgb(15 23 42 / 0.25);
+}
+
+@layer utilities {
+  .enterprise-card {
+    @apply rounded-2xl border border-border/80 bg-surface shadow-card transition-all duration-200;
+  }
+
+  .enterprise-card-interactive {
+    @apply rounded-2xl border border-border/80 bg-surface shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-card-hover;
+  }
+
+  .enterprise-gradient-hero {
+    background: var(--gradient-hero);
+  }
+
+  .enterprise-glass {
+    @apply rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm;
+  }
+
+  .enterprise-section-title {
+    @apply text-lg font-semibold tracking-tight text-text-heading;
+  }
+
+  .enterprise-section-subtitle {
+    @apply mt-1 text-sm text-secondary;
+  }
 }
 
 @layer base {
