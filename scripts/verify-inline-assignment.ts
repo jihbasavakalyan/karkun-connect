@@ -14,6 +14,7 @@ import { getCompatibleKarkunsForRukn, getCompatibleRuknsForKarkun, getPeopleStat
 import {
   assignRukn,
   getAssignmentDashboardMetrics,
+  getKarkunsForRuknAssignment,
   getRuknAssignmentSummary,
   removeAssignment,
   replaceAssignment,
@@ -212,6 +213,32 @@ function verifyAdminModalFlow(gender: PersonGender): void {
   assert(metrics.activeAssignments >= 0, 'Assignment dashboard metrics must remain valid')
 }
 
+function verifyAssignmentPageFlow(gender: PersonGender): void {
+  const karkun = createKarkun(`verify-page-${gender.toLowerCase()}`, gender)
+  const rukns = activeRukns(gender)
+  const rukn = rukns[4]
+  assert(Boolean(rukn), `Need active ${gender} Rukn for page flow`)
+
+  MOCK_KARKUN_REGISTRY.push(karkun)
+
+  const assignableIds = new Set(getKarkunsForRuknAssignment(rukn!.id).map((record) => record.id))
+  assert(assignableIds.has(karkun.id), 'Assignment page must expose assignable Karkun for selected Rukn')
+
+  const result = assignRukn({
+    ruknId: rukn!.id,
+    karkunId: karkun.id,
+    effectiveFrom: today,
+    assignedBy: 'Administrator',
+  })
+  assert(result.success, `Assignment page confirm failed: ${result.success ? '' : result.error}`)
+  assert(Boolean(result.assignment?.assignmentNumber), 'Assignment page must return assignment number')
+  assert(
+    getRuknAssignmentSummary(rukn!.id).assignmentStatus === 'Assigned',
+    'Assignment page flow must update Rukn summary immediately',
+  )
+  assert(karkun.assignmentStatus === 'Assigned', 'Assignment page flow must update Karkun registry')
+}
+
 runProductionDataMigration()
 reset()
 verifyInlineGenderFlow('Male')
@@ -221,5 +248,9 @@ reset()
 verifyAdminModalFlow('Male')
 reset()
 verifyAdminModalFlow('Female')
+reset()
+verifyAssignmentPageFlow('Male')
+reset()
+verifyAssignmentPageFlow('Female')
 
 console.log('Assignment workflow verification passed for inline and admin flows.')

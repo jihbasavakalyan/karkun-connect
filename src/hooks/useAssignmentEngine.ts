@@ -36,6 +36,7 @@ export function useAssignmentEngine() {
   void version
 
   return {
+    assignmentVersion: version,
     getAvailableKarkunan,
     getAssignedKarkunanForRukn,
     getAssignmentMetrics,

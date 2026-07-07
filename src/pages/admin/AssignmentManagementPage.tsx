@@ -6,7 +6,10 @@ import { getRuknById, ruknMaster } from '@/data/ruknMaster'
 import { exportAssignmentHistory } from '@/lib/assignmentExport'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { usePeopleStore } from '@/hooks/usePeopleStore'
-import { ruknMatchesAssignmentSearch } from '@/services/assignmentService'
+import {
+  getKarkunsForRuknAssignment,
+  ruknMatchesAssignmentSearch,
+} from '@/services/assignmentService'
 import { getAssignmentHistoryForKarkun } from '@/stores/assignmentStore'
 import { AssignmentHistoryTimeline } from '@/components/forms/assignment/AssignmentHistoryTimeline'
 import { AssignRuknModal } from '@/components/forms/assignment/AssignRuknModal'
@@ -22,6 +25,7 @@ type ModalMode = 'assign' | 'replace' | 'remove' | 'restore' | 'history' | null
 export function AssignmentManagementPage() {
   usePeopleStore()
   const {
+    assignmentVersion,
     getRuknAssignmentSummary,
     getKarkunWithWorkload,
     assignRukn,
@@ -36,13 +40,32 @@ export function AssignmentManagementPage() {
   const [genderFilter, setGenderFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [selectedRuknId, setSelectedRuknId] = useState<string | null>(null)
+  const [selectedKarkunId, setSelectedKarkunId] = useState<string | null>(null)
   const [modalMode, setModalMode] = useState<ModalMode>(null)
   const [actionError, setActionError] = useState('')
+  const [lastAssignmentNumber, setLastAssignmentNumber] = useState<string | null>(null)
+
+  const selectRukn = (ruknId: string) => {
+    setSelectedRuknId(ruknId)
+    setSelectedKarkunId(null)
+    setLastAssignmentNumber(null)
+    setActionError('')
+  }
 
   const selectedRukn = selectedRuknId ? ruknMaster.find((r) => r.id === selectedRuknId) : null
+  const selectedKarkun = selectedKarkunId ? getKarkunById(selectedKarkunId) : null
   const ruknSummary = selectedRuknId ? getRuknAssignmentSummary(selectedRuknId) : null
 
+  const assignableKarkunIds = useMemo(() => {
+    void assignmentVersion
+    if (!selectedRuknId) {
+      return new Set<string>()
+    }
+    return new Set(getKarkunsForRuknAssignment(selectedRuknId).map((karkun) => karkun.id))
+  }, [selectedRuknId, assignmentVersion])
+
   const filteredRukns = useMemo(() => {
+    void assignmentVersion
     const query = (globalSearch || ruknSearch).trim().toLowerCase()
     return ruknMaster.filter((rukn) => {
       if (globalSearch.trim()) {
@@ -54,15 +77,19 @@ export function AssignmentManagementPage() {
         rukn.mobile.toLowerCase().includes(query)
       )
     })
-  }, [globalSearch, ruknSearch])
+  }, [globalSearch, ruknSearch, assignmentVersion])
 
   const karkunWorkload = useMemo(() => {
+    void assignmentVersion
     const globalQuery = globalSearch.trim().toLowerCase()
     return getKarkunWithWorkload().filter(({ karkun }) => {
+      if (selectedRukn && karkun.gender !== selectedRukn.gender) {
+        return false
+      }
       if (genderFilter && karkun.gender !== genderFilter) return false
       if (statusFilter && karkun.status !== statusFilter) return false
 
-      const searchQuery = (globalQuery || karkunSearch.trim().toLowerCase())
+      const searchQuery = globalQuery || karkunSearch.trim().toLowerCase()
       if (searchQuery) {
         const haystack = [karkun.name, karkun.mobile, karkun.area].join(' ').toLowerCase()
         const history = getAssignmentHistoryForKarkun(karkun.id)
@@ -75,7 +102,15 @@ export function AssignmentManagementPage() {
       }
       return true
     })
-  }, [getKarkunWithWorkload, genderFilter, statusFilter, karkunSearch, globalSearch])
+  }, [
+    assignmentVersion,
+    genderFilter,
+    statusFilter,
+    karkunSearch,
+    globalSearch,
+    selectedRukn,
+    getKarkunWithWorkload,
+  ])
 
   const currentKarkunName =
     ruknSummary?.currentAssignment &&
@@ -86,20 +121,46 @@ export function AssignmentManagementPage() {
     setActionError('')
   }
 
-  const handleAssign = (input: { karkunId: string; effectiveFrom: string; remarks?: string }) => {
-    if (!selectedRukn) return
-    const result = assignRukn({
-      ruknId: selectedRukn.id,
-      karkunId: input.karkunId,
-      effectiveFrom: input.effectiveFrom,
-      remarks: input.remarks,
-      assignedBy: 'Administrator',
-    })
+  const completeAssignment = (result: ReturnType<typeof assignRukn>) => {
     if (!result.success) {
       setActionError(result.error)
+      return false
+    }
+
+    setLastAssignmentNumber(result.assignment?.assignmentNumber ?? null)
+    setSelectedKarkunId(null)
+    setActionError('')
+    closeModal()
+    return true
+  }
+
+  const handleConfirmAssignment = () => {
+    if (!selectedRukn || !selectedKarkunId) {
+      setActionError('Select a Rukn and an available Karkun to continue.')
       return
     }
-    closeModal()
+
+    completeAssignment(
+      assignRukn({
+        ruknId: selectedRukn.id,
+        karkunId: selectedKarkunId,
+        effectiveFrom: new Date().toISOString().slice(0, 10),
+        assignedBy: 'Administrator',
+      }),
+    )
+  }
+
+  const handleAssign = (input: { karkunId: string; effectiveFrom: string; remarks?: string }) => {
+    if (!selectedRukn) return
+    completeAssignment(
+      assignRukn({
+        ruknId: selectedRukn.id,
+        karkunId: input.karkunId,
+        effectiveFrom: input.effectiveFrom,
+        remarks: input.remarks,
+        assignedBy: 'Administrator',
+      }),
+    )
   }
 
   const handleReplace = (input: {
@@ -192,6 +253,22 @@ export function AssignmentManagementPage() {
         />
       </div>
 
+      {lastAssignmentNumber && (
+        <div
+          className="rounded-(--radius-card) border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-900"
+          role="status"
+        >
+          Assignment confirmed. Assignment Number:{' '}
+          <span className="font-semibold">{lastAssignmentNumber}</span>
+        </div>
+      )}
+
+      {actionError && !modalMode && (
+        <div className="rounded-(--radius-card) border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+          {actionError}
+        </div>
+      )}
+
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="space-y-4">
           <div className="rounded-(--radius-card) border border-border bg-surface p-4 shadow-card">
@@ -213,7 +290,7 @@ export function AssignmentManagementPage() {
                 <li key={rukn.id}>
                   <button
                     type="button"
-                    onClick={() => setSelectedRuknId(rukn.id)}
+                    onClick={() => selectRukn(rukn.id)}
                     className={`w-full rounded-lg border p-4 text-left transition-shadow hover:shadow-card ${
                       isSelected
                         ? 'border-primary bg-primary/5'
@@ -255,6 +332,11 @@ export function AssignmentManagementPage() {
         <section className="space-y-4">
           <div className="rounded-(--radius-card) border border-border bg-surface p-4 shadow-card">
             <h2 className="text-lg font-semibold text-text-heading">Karkun Workload</h2>
+            <p className="mt-1 text-sm text-secondary">
+              {selectedRukn
+                ? `Select an available ${selectedRukn.gender} Karkun for ${selectedRukn.name}`
+                : 'Select a Rukn first, then choose an available Karkun'}
+            </p>
             <div className="mt-3 grid gap-2 sm:grid-cols-3">
               <input
                 type="search"
@@ -285,26 +367,82 @@ export function AssignmentManagementPage() {
           </div>
 
           <ul className="max-h-[420px] space-y-2 overflow-y-auto">
-            {karkunWorkload.map(({ karkun, workload }) => (
-              <li
-                key={karkun.id}
-                className="rounded-lg border border-border bg-surface p-4 shadow-card"
-              >
-                <p className="font-semibold text-text-heading">{karkun.name}</p>
-                <p className="mt-1 text-sm text-secondary">
-                  {karkun.gender} · {workload.activeAssignments.length} active ·{' '}
-                  {workload.inactiveAssignments.length} past
-                </p>
-                {workload.assignedRukns.length > 0 && (
-                  <p className="mt-1 text-sm text-secondary">
-                    Rukns: {workload.assignedRukns.join(', ')}
-                  </p>
-                )}
-              </li>
-            ))}
+            {karkunWorkload.map(({ karkun, workload }) => {
+              const isAssignable = assignableKarkunIds.has(karkun.id)
+              const isSelected = selectedKarkunId === karkun.id
+              return (
+                <li key={karkun.id}>
+                  <button
+                    type="button"
+                    disabled={!selectedRuknId || !isAssignable}
+                    onClick={() => {
+                      if (selectedRuknId && isAssignable) {
+                        setSelectedKarkunId(karkun.id)
+                        setActionError('')
+                      }
+                    }}
+                    className={[
+                      'w-full rounded-lg border p-4 text-left shadow-card transition-shadow',
+                      isSelected
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border bg-surface',
+                      selectedRuknId && isAssignable
+                        ? 'hover:border-primary/40 hover:shadow-card-hover'
+                        : 'cursor-not-allowed opacity-70',
+                    ].join(' ')}
+                  >
+                    <p className="font-semibold text-text-heading">{karkun.name}</p>
+                    <p className="mt-1 text-sm text-secondary">
+                      {karkun.gender} · {karkun.assignmentStatus} · {workload.activeAssignments.length}{' '}
+                      active · {workload.inactiveAssignments.length} past
+                    </p>
+                    {workload.assignedRukns.length > 0 && (
+                      <p className="mt-1 text-sm text-secondary">
+                        Rukns: {workload.assignedRukns.join(', ')}
+                      </p>
+                    )}
+                    {selectedRuknId && !isAssignable && karkun.assignmentStatus === 'Available' && (
+                      <p className="mt-2 text-xs text-secondary">
+                        Not assignable — check gender match or mobile number.
+                      </p>
+                    )}
+                  </button>
+                </li>
+              )
+            })}
           </ul>
         </section>
       </div>
+
+      {selectedRukn && selectedKarkun && ruknSummary?.assignmentStatus === 'Unassigned' && (
+        <section className="rounded-(--radius-card) border border-primary/30 bg-surface p-6 shadow-card">
+          <h2 className="text-lg font-semibold text-text-heading">Assignment Preview</h2>
+          <p className="mt-1 text-sm text-secondary">
+            Review the pairing before confirming the assignment.
+          </p>
+          <dl className="mt-4 grid gap-3 sm:grid-cols-2">
+            <div className="rounded-lg border border-border bg-surface-muted px-4 py-3">
+              <dt className="text-xs font-medium uppercase tracking-wide text-secondary">Selected Rukn</dt>
+              <dd className="mt-1 text-sm font-semibold text-text-heading">{selectedRukn.name}</dd>
+            </div>
+            <div className="rounded-lg border border-border bg-surface-muted px-4 py-3">
+              <dt className="text-xs font-medium uppercase tracking-wide text-secondary">Selected Karkun</dt>
+              <dd className="mt-1 text-sm font-semibold text-text-heading">{selectedKarkun.name}</dd>
+            </div>
+          </dl>
+          <p className="mt-4 text-sm text-secondary">
+            A permanent assignment number will be generated when you confirm.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <PrimaryButton type="button" onClick={handleConfirmAssignment}>
+              Confirm Assignment
+            </PrimaryButton>
+            <SecondaryButton type="button" onClick={() => setSelectedKarkunId(null)}>
+              Clear Karkun Selection
+            </SecondaryButton>
+          </div>
+        </section>
+      )}
 
       {selectedRukn && ruknSummary && (
         <section className="rounded-(--radius-card) border border-border bg-surface p-6 shadow-card">
@@ -367,6 +505,7 @@ export function AssignmentManagementPage() {
       )}
 
       <AssignRuknModal
+        key={selectedRukn?.id ?? 'assign-closed'}
         isOpen={modalMode === 'assign'}
         rukn={selectedRukn ?? null}
         error={actionError}

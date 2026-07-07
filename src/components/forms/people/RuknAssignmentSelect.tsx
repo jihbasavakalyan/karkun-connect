@@ -1,4 +1,5 @@
-import { useEffect, useId, useMemo, useRef, useState } from 'react'
+import { useEffect, useId, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { subscribeToAssignments } from '@/lib/assignmentEngine'
 import { getCompatibleRuknsForKarkun } from '@/lib/peopleStore'
 import { formatPersonNameForDisplay } from '@/utils/formatPersonDisplay'
 
@@ -21,10 +22,20 @@ export function RuknAssignmentSelect({
 }: RuknAssignmentSelectProps) {
   const listboxId = useId()
   const containerRef = useRef<HTMLDivElement>(null)
+  const triggerRef = useRef<HTMLButtonElement>(null)
   const [isOpen, setIsOpen] = useState(false)
   const [query, setQuery] = useState('')
+  const [assignmentVersion, setAssignmentVersion] = useState(0)
+  const [menuStyle, setMenuStyle] = useState<CSSProperties>({})
 
-  const options = useMemo(() => getCompatibleRuknsForKarkun(karkunId), [karkunId])
+  useEffect(() => {
+    return subscribeToAssignments(() => setAssignmentVersion((current) => current + 1))
+  }, [])
+
+  const options = useMemo(() => {
+    void assignmentVersion
+    return getCompatibleRuknsForKarkun(karkunId)
+  }, [karkunId, assignmentVersion])
 
   const filteredOptions = useMemo(() => {
     const normalized = query.trim().toLowerCase()
@@ -37,6 +48,35 @@ export function RuknAssignmentSelect({
   const selectedLabel = value
     ? formatPersonNameForDisplay(options.find((rukn) => rukn.id === value)?.name ?? '')
     : 'Unassigned'
+
+  useEffect(() => {
+    if (!isOpen || !triggerRef.current) {
+      return
+    }
+
+    const updatePosition = () => {
+      if (!triggerRef.current) {
+        return
+      }
+      const rect = triggerRef.current.getBoundingClientRect()
+      setMenuStyle({
+        position: 'fixed',
+        top: rect.bottom + 4,
+        left: rect.left,
+        width: Math.max(rect.width, 192),
+        zIndex: 60,
+      })
+    }
+
+    updatePosition()
+    window.addEventListener('resize', updatePosition)
+    window.addEventListener('scroll', updatePosition, true)
+
+    return () => {
+      window.removeEventListener('resize', updatePosition)
+      window.removeEventListener('scroll', updatePosition, true)
+    }
+  }, [isOpen])
 
   useEffect(() => {
     if (!isOpen) {
@@ -71,6 +111,7 @@ export function RuknAssignmentSelect({
   return (
     <div ref={containerRef} className="relative">
       <button
+        ref={triggerRef}
         type="button"
         className={`${triggerClassName} flex min-w-0 items-center gap-1`}
         disabled={disabled}
@@ -87,7 +128,8 @@ export function RuknAssignmentSelect({
         <div
           id={listboxId}
           role="listbox"
-          className="absolute z-30 mt-1 w-full min-w-[12rem] rounded-lg border border-border bg-surface shadow-card"
+          style={menuStyle}
+          className="rounded-lg border border-border bg-surface shadow-card"
         >
           <div className="border-b border-border p-2">
             <input

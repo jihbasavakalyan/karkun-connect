@@ -32,17 +32,24 @@ export function AssignRuknModal({
   const [karkunId, setKarkunId] = useState('')
   const [effectiveFrom, setEffectiveFrom] = useState(new Date().toISOString().slice(0, 10))
   const [remarks, setRemarks] = useState('')
+  const [localError, setLocalError] = useState('')
 
   const karkuns = rukn ? getKarkunsForRuknAssignment(rukn.id) : []
 
   const handleSubmit = () => {
-    if (!karkunId) return
+    if (!karkunId) {
+      setLocalError('Please select a Karkun before assigning.')
+      return
+    }
+    setLocalError('')
     onSubmit({ karkunId, effectiveFrom, remarks: remarks || undefined })
   }
 
   const handleClose = () => {
     setKarkunId('')
     setRemarks('')
+    setLocalError('')
+    setEffectiveFrom(new Date().toISOString().slice(0, 10))
     onClose()
   }
 
@@ -88,6 +95,12 @@ export function AssignRuknModal({
         />
 
         {error && <p className="text-sm text-red-600">{error}</p>}
+        {localError && <p className="text-sm text-red-600">{localError}</p>}
+        {karkuns.length === 0 && (
+          <p className="text-sm text-secondary">
+            No available Karkuns match this Rukn. Check gender compatibility and mobile numbers.
+          </p>
+        )}
 
         <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
           <SecondaryButton type="button" onClick={handleClose}>
