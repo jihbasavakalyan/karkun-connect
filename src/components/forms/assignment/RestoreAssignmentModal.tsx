@@ -39,10 +39,10 @@ export function RestoreAssignmentModal({
   if (!rukn) return null
 
   return (
-    <Modal isOpen={isOpen} title={`Restore Assignment — ${rukn.name}`} onClose={onClose}>
+    <Modal isOpen={isOpen} title={`Reconnect — ${rukn.name}`} onClose={onClose}>
       <div className="space-y-4">
         <p className="text-sm text-secondary">
-          Restore an active assignment for this unassigned Rukn.
+          Reconnect an active Karkun for this Rukn.
         </p>
 
         <div className="flex flex-col gap-2">
@@ -88,7 +88,7 @@ export function RestoreAssignmentModal({
             Cancel
           </SecondaryButton>
           <PrimaryButton type="button" onClick={handleSubmit}>
-            Restore Assignment
+            Reconnect
           </PrimaryButton>
         </div>
       </div>

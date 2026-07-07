@@ -225,9 +225,10 @@ export function AssignmentManagementPage() {
     <div className="mx-auto max-w-7xl space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-text-heading">Assignment Management</h1>
+          <h1 className="text-2xl font-semibold text-text-heading">Connections</h1>
           <p className="mt-2 text-secondary">
-            Manage Rukn–Karkun relationships. One active assignment per Rukn; history is permanent.
+            Manage Rukn–Karkun connections. One Rukn may hold multiple active Karkuns; connection
+            history is permanent.
           </p>
         </div>
         <SecondaryButton type="button" onClick={() => exportAssignmentHistory()}>
@@ -245,7 +246,7 @@ export function AssignmentManagementPage() {
               : 'text-secondary hover:text-text-heading'
           }`}
         >
-          Assignment Desk
+          Connection Desk
         </button>
         <button
           type="button"
@@ -256,7 +257,7 @@ export function AssignmentManagementPage() {
               : 'text-secondary hover:text-text-heading'
           }`}
         >
-          Mapping View
+          Connections View
         </button>
       </div>
 
@@ -283,7 +284,7 @@ export function AssignmentManagementPage() {
           className="rounded-(--radius-card) border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-900"
           role="status"
         >
-          Assignment confirmed. Assignment Number:{' '}
+          Connection confirmed. Connection Number:{' '}
           <span className="font-semibold">{lastAssignmentNumber}</span>
         </div>
       )}
@@ -441,7 +442,7 @@ export function AssignmentManagementPage() {
 
       {selectedRukn && selectedKarkun && (
         <section className="rounded-(--radius-card) border border-primary/30 bg-surface p-6 shadow-card">
-          <h2 className="text-lg font-semibold text-text-heading">Assignment Preview</h2>
+          <h2 className="text-lg font-semibold text-text-heading">Connection Preview</h2>
           <p className="mt-1 text-sm text-secondary">
             Review the pairing before confirming the assignment. A Rukn can hold multiple active
             Karkuns.
@@ -461,7 +462,7 @@ export function AssignmentManagementPage() {
           </p>
           <div className="mt-4 flex flex-wrap gap-3">
             <PrimaryButton type="button" onClick={handleConfirmAssignment}>
-              Confirm Assignment
+              Confirm Connection
             </PrimaryButton>
             <SecondaryButton type="button" onClick={() => setSelectedKarkunId(null)}>
               Clear Karkun Selection
@@ -494,11 +495,11 @@ export function AssignmentManagementPage() {
 
             <div className="flex flex-wrap gap-2">
               <PrimaryButton type="button" onClick={() => setModalMode('assign')}>
-                Assign Karkun
+                Connect Karkun
               </PrimaryButton>
               {ruknSummary.assignmentStatus !== 'Assigned' && (
                 <SecondaryButton type="button" onClick={() => setModalMode('restore')}>
-                  Restore
+                  Reconnect
                 </SecondaryButton>
               )}
               <SecondaryButton type="button" onClick={() => setModalMode('history')}>
@@ -510,7 +511,7 @@ export function AssignmentManagementPage() {
           {ruknSummary.activeAssignments.length > 0 && (
             <div className="mt-6">
               <h3 className="text-sm font-semibold text-text-heading">
-                Assigned Karkuns ({ruknSummary.assignedKarkunCount})
+                Connected Karkuns ({ruknSummary.assignedKarkunCount})
               </h3>
               <ul className="mt-3 space-y-2">
                 {ruknSummary.activeAssignments.map((assignment) => {
@@ -543,7 +544,7 @@ export function AssignmentManagementPage() {
                             setModalMode('remove')
                           }}
                         >
-                          Remove
+                          Disconnect
                         </SecondaryButton>
                       </div>
                     </li>

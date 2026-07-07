@@ -56,7 +56,7 @@ export function AssignKarkunModal({ isOpen, onClose, genderFilter }: AssignKarku
   }
 
   return (
-    <Modal isOpen={isOpen} title="Assign Karkun" onClose={handleClose}>
+    <Modal isOpen={isOpen} title="Connect Karkun" onClose={handleClose}>
       <div className="space-y-4">
         <div className="flex flex-col gap-2">
           <label htmlFor="assign-karkun-select" className="text-sm font-medium text-text-heading">
@@ -109,7 +109,7 @@ export function AssignKarkunModal({ isOpen, onClose, genderFilter }: AssignKarku
 
         <div className="flex flex-col gap-3 pt-2">
           <PrimaryButton type="button" fullWidth onClick={handleAssign}>
-            Assign
+            Connect
           </PrimaryButton>
           <SecondaryButton type="button" fullWidth onClick={handleClose}>
             Cancel

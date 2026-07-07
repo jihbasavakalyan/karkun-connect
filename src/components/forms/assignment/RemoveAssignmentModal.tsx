@@ -43,11 +43,11 @@ export function RemoveAssignmentModal({
   if (!rukn) return null
 
   return (
-    <Modal isOpen={isOpen} title={`Remove Assignment — ${rukn.name}`} onClose={onClose}>
+    <Modal isOpen={isOpen} title={`Disconnect — ${rukn.name}`} onClose={onClose}>
       <div className="space-y-4">
         <p className="text-sm text-secondary">
-          Remove <strong className="text-text-heading">{currentKarkunName}</strong> from this Rukn.
-          History will be preserved.
+          Disconnect <strong className="text-text-heading">{currentKarkunName}</strong> from this Rukn.
+          Connection history will be preserved.
         </p>
 
         <InputField
@@ -92,7 +92,7 @@ export function RemoveAssignmentModal({
             Cancel
           </SecondaryButton>
           <PrimaryButton type="button" onClick={handleSubmit}>
-            Remove Assignment
+            Disconnect
           </PrimaryButton>
         </div>
       </div>

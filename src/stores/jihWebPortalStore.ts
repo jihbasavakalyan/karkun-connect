@@ -1,10 +1,30 @@
 import type { JihMonthlyReport, JihWebPortalRegistration } from '@/types/jihWebPortal'
+import { loadJsonFromStorage, removeFromStorage, saveJsonToStorage } from '@/lib/browserStorage'
 
-const registrations = new Map<string, JihWebPortalRegistration>()
-const monthlyReports = new Map<string, JihMonthlyReport>()
+const STORAGE_KEY = 'karkun-connect.jih-portal'
+
+type JihPortalPersistedState = {
+  registrations: [string, JihWebPortalRegistration][]
+  monthlyReports: [string, JihMonthlyReport][]
+}
+
+const persisted = loadJsonFromStorage<JihPortalPersistedState>(STORAGE_KEY, {
+  registrations: [],
+  monthlyReports: [],
+})
+
+const registrations = new Map<string, JihWebPortalRegistration>(persisted.registrations)
+const monthlyReports = new Map<string, JihMonthlyReport>(persisted.monthlyReports)
 
 type JihWebPortalStoreListener = () => void
 const listeners = new Set<JihWebPortalStoreListener>()
+
+function persistJihWebPortalStore(): void {
+  saveJsonToStorage(STORAGE_KEY, {
+    registrations: [...registrations.entries()],
+    monthlyReports: [...monthlyReports.entries()],
+  } satisfies JihPortalPersistedState)
+}
 
 export function subscribeToJihWebPortalStore(listener: JihWebPortalStoreListener): () => void {
   listeners.add(listener)
@@ -12,6 +32,7 @@ export function subscribeToJihWebPortalStore(listener: JihWebPortalStoreListener
 }
 
 function notifyJihWebPortalStoreChange(): void {
+  persistJihWebPortalStore()
   listeners.forEach((listener) => listener())
 }
 
@@ -57,5 +78,6 @@ export function getMonthlyReportsForMonth(monthKey: string): JihMonthlyReport[] 
 export function clearJihWebPortalStore(): void {
   registrations.clear()
   monthlyReports.clear()
+  removeFromStorage(STORAGE_KEY)
   notifyJihWebPortalStoreChange()
 }

@@ -56,7 +56,7 @@ export function AssignRuknModal({
   if (!rukn) return null
 
   return (
-    <Modal isOpen={isOpen} title={`Assign Karkun to ${rukn.name}`} onClose={handleClose}>
+    <Modal isOpen={isOpen} title={`Connect Karkun to ${rukn.name}`} onClose={handleClose}>
       <div className="space-y-4">
         <div className="flex flex-col gap-2">
           <label htmlFor="assign-karkun" className="text-sm font-medium text-text-heading">
@@ -107,7 +107,7 @@ export function AssignRuknModal({
             Cancel
           </SecondaryButton>
           <PrimaryButton type="button" onClick={handleSubmit}>
-            Assign
+            Connect
           </PrimaryButton>
         </div>
       </div>

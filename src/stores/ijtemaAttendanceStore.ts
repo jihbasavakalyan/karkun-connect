@@ -1,9 +1,16 @@
 import type { IjtemaAttendanceRecord } from '@/types/ijtemaAttendance'
+import { loadMapFromStorage, removeFromStorage, saveMapToStorage } from '@/lib/browserStorage'
 
-const records = new Map<string, IjtemaAttendanceRecord>()
+const STORAGE_KEY = 'karkun-connect.ijtema'
+
+const records = loadMapFromStorage<string, IjtemaAttendanceRecord>(STORAGE_KEY)
 
 type IjtemaAttendanceStoreListener = () => void
 const listeners = new Set<IjtemaAttendanceStoreListener>()
+
+function persistIjtemaAttendanceStore(): void {
+  saveMapToStorage(STORAGE_KEY, records)
+}
 
 export function subscribeToIjtemaAttendanceStore(
   listener: IjtemaAttendanceStoreListener,
@@ -13,6 +20,7 @@ export function subscribeToIjtemaAttendanceStore(
 }
 
 function notifyIjtemaAttendanceStoreChange(): void {
+  persistIjtemaAttendanceStore()
   listeners.forEach((listener) => listener())
 }
 
@@ -41,5 +49,6 @@ export function getAllIjtemaAttendanceRecords(): IjtemaAttendanceRecord[] {
 
 export function clearIjtemaAttendanceStore(): void {
   records.clear()
+  removeFromStorage(STORAGE_KEY)
   notifyIjtemaAttendanceStoreChange()
 }

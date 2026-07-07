@@ -225,7 +225,7 @@ function buildAdminKpis(): CommandCenterKpi[] {
   return [
     {
       id: 'assigned-karkuns',
-      label: 'Assigned Karkuns',
+      label: 'Connected Karkuns',
       value: assignmentMetrics.activeAssignments,
       route: ROUTES.ADMIN_ASSIGNMENTS,
     },
@@ -300,7 +300,7 @@ function buildRuknKpis(ruknId: string): CommandCenterKpi[] {
   return [
     {
       id: 'assigned-karkuns',
-      label: 'Assigned Karkuns',
+      label: 'Connected Karkuns',
       value: assigned.length,
       route: ROUTES.RUKN_MY_KARKUN,
     },
@@ -741,7 +741,7 @@ function buildAdminNextAction(): NextRecommendedAction {
       title: 'Unassigned Rukns',
       description: `${unassignedRukns} Rukn(s) still need Karkun assignments`,
       route: ROUTES.ADMIN_ASSIGNMENTS,
-      actionLabel: 'Assign Karkun',
+      actionLabel: 'Connect Karkun',
       isCaughtUp: false,
     }
   }

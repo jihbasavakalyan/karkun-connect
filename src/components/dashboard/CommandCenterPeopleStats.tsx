@@ -12,8 +12,8 @@ export function CommandCenterPeopleStats() {
     { label: 'Female Rukns', value: stats.femaleRukns },
     { label: 'Male Karkuns', value: stats.totalMaleKarkuns },
     { label: 'Female Karkuns', value: stats.totalFemaleKarkuns },
-    { label: 'Assigned Karkuns', value: stats.assignedKarkuns },
-    { label: 'Unassigned Karkuns', value: stats.unassignedKarkuns },
+    { label: 'Connected Karkuns', value: stats.assignedKarkuns },
+    { label: 'Unconnected Karkuns', value: stats.unassignedKarkuns },
     { label: 'Active Users', value: stats.activeUsers },
     { label: 'Inactive Users', value: stats.inactiveUsers },
   ]

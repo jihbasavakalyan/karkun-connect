@@ -1,9 +1,16 @@
 import type { BaitulMaalRecord } from '@/types/baitulMaal'
+import { loadMapFromStorage, removeFromStorage, saveMapToStorage } from '@/lib/browserStorage'
 
-const records = new Map<string, BaitulMaalRecord>()
+const STORAGE_KEY = 'karkun-connect.baitul-maal'
+
+const records = loadMapFromStorage<string, BaitulMaalRecord>(STORAGE_KEY)
 
 type BaitulMaalStoreListener = () => void
 const listeners = new Set<BaitulMaalStoreListener>()
+
+function persistBaitulMaalStore(): void {
+  saveMapToStorage(STORAGE_KEY, records)
+}
 
 export function subscribeToBaitulMaalStore(listener: BaitulMaalStoreListener): () => void {
   listeners.add(listener)
@@ -11,6 +18,7 @@ export function subscribeToBaitulMaalStore(listener: BaitulMaalStoreListener): (
 }
 
 function notifyBaitulMaalStoreChange(): void {
+  persistBaitulMaalStore()
   listeners.forEach((listener) => listener())
 }
 
@@ -37,5 +45,6 @@ export function getAllBaitulMaalRecords(): BaitulMaalRecord[] {
 
 export function clearBaitulMaalStore(): void {
   records.clear()
+  removeFromStorage(STORAGE_KEY)
   notifyBaitulMaalStoreChange()
 }

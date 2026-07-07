@@ -58,7 +58,7 @@ function createAssignmentRecord(
   }
 }
 
-function syncKarkunRegistryFromAssignments(karkunId: string): void {
+function syncKarkunRegistryFromAssignments(karkunId: string, options?: { notify?: boolean }): void {
   const karkun = MOCK_KARKUN_REGISTRY.find((k) => k.id === karkunId && !k.isArchived)
   if (!karkun) return
 
@@ -69,7 +69,9 @@ function syncKarkunRegistryFromAssignments(karkunId: string): void {
     karkun.assignedRukn = ''
     karkun.assignmentDate = undefined
     karkun.campaignStatus = karkun.status === 'active' ? 'not_assigned' : 'inactive'
-    notifyPeopleRegistryChange()
+    if (options?.notify !== false) {
+      notifyPeopleRegistryChange()
+    }
     return
   }
 
@@ -81,14 +83,17 @@ function syncKarkunRegistryFromAssignments(karkunId: string): void {
   karkun.assignmentDate = primary.effectiveFrom
   karkun.campaignStatus = 'active'
 
-  notifyPeopleRegistryChange()
+  if (options?.notify !== false) {
+    notifyPeopleRegistryChange()
+  }
 }
 
 /** Reconcile Karkun registry fields from persisted assignment records after app reload. */
 export function syncAllKarkunRegistryFromAssignments(): void {
   for (const karkun of getAllKarkuns()) {
-    syncKarkunRegistryFromAssignments(karkun.id)
+    syncKarkunRegistryFromAssignments(karkun.id, { notify: false })
   }
+  notifyPeopleRegistryChange()
 }
 
 function formatNames(ruknId: string, karkunId: string): { ruknName: string; karkunName: string } {

@@ -26,6 +26,7 @@ import type {
   PeopleStatistics,
 } from '@/types/people.types'
 import { DEFAULT_PLACE } from '@/types/people.types'
+import { persistPeopleRegistry } from '@/lib/peopleRegistryPersistence'
 
 type PeopleListener = () => void
 const listeners = new Set<PeopleListener>()
@@ -45,6 +46,7 @@ export type PeopleMutationResult = {
 
 function notifyPeopleChange(): void {
   listeners.forEach((listener) => listener())
+  savePeopleRegistry()
 }
 
 /** Notify subscribers after assignment-driven registry field updates. */
@@ -292,6 +294,18 @@ export function bulkSetRuknStatus(
 }
 
 let nextKarkunNum = 13
+
+export function getNextKarkunNum(): number {
+  return nextKarkunNum
+}
+
+export function setNextKarkunNum(value: number): void {
+  nextKarkunNum = value
+}
+
+function savePeopleRegistry(): void {
+  persistPeopleRegistry(nextKarkunNum)
+}
 
 export function clearKarkunRegistry(): void {
   MOCK_KARKUN_REGISTRY.length = 0

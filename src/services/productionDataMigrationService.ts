@@ -21,6 +21,14 @@ import {
 } from '@/services/jihWebPortalService'
 import type { ImportSummary } from '@/types/people.types'
 import type { ProductionMigrationSummary } from '@/types/productionMigration'
+import {
+  hasPersistedKarkunRegistry,
+  loadPeopleRegistryFromPersistence,
+  PEOPLE_MIGRATION_VERSION_KEY,
+  persistPeopleRegistry,
+} from '@/lib/peopleRegistryPersistence'
+import { getBrowserStorage } from '@/lib/browserStorage'
+import { getNextKarkunNum, setNextKarkunNum } from '@/lib/peopleStore'
 
 const MIGRATION_VERSION = 3
 
@@ -121,6 +129,37 @@ export function runProductionDataMigration(): ProductionMigrationSummary {
     return lastMigrationSummary
   }
 
+  const storage = getBrowserStorage()
+  const storedVersion = storage.getItem(PEOPLE_MIGRATION_VERSION_KEY)
+
+  if (storedVersion === String(MIGRATION_VERSION) && hasPersistedKarkunRegistry()) {
+    const loaded = loadPeopleRegistryFromPersistence()
+    if (loaded.loadedKarkuns) {
+      setNextKarkunNum(loaded.nextKarkunNum)
+      initializeComplianceDefaults()
+      const stats = getPeopleStatistics()
+      const summary: ProductionMigrationSummary = {
+        rukns: createEmptyImportSummary(0),
+        maleKarkuns: createEmptyImportSummary(0),
+        femaleKarkuns: createEmptyImportSummary(0),
+        demoDataRemoved: false,
+        runtimeStoresCleared: false,
+        ruknsReplaced: false,
+        migrationVersion: MIGRATION_VERSION,
+        dashboardVerified: {
+          totalRukns: stats.totalRukns,
+          maleKarkuns: stats.totalMaleKarkuns,
+          femaleKarkuns: stats.totalFemaleKarkuns,
+          assignedKarkuns: stats.assignedKarkuns,
+          unassignedKarkuns: stats.unassignedKarkuns,
+        },
+      }
+      migrationCompleted = true
+      lastMigrationSummary = summary
+      return summary
+    }
+  }
+
   removeMaleKarkunsFromRegistry()
   const maleKarkuns = migrateMaleKarkunMaster()
 
@@ -149,6 +188,9 @@ export function runProductionDataMigration(): ProductionMigrationSummary {
 
   migrationCompleted = true
   lastMigrationSummary = summary
+
+  storage.setItem(PEOPLE_MIGRATION_VERSION_KEY, String(MIGRATION_VERSION))
+  persistPeopleRegistry(getNextKarkunNum())
 
   if (import.meta.env.DEV) {
     console.info('[Production Migration — People Masters]', summary)

@@ -160,8 +160,8 @@ export function AssignmentMappingView({ version = 0 }: AssignmentMappingViewProp
             className={selectClassName}
           >
             <option value="">All Rukns</option>
-            <option value="Assigned">Assigned</option>
-            <option value="No Assignment">No Assignment</option>
+            <option value="Assigned">Connected</option>
+            <option value="No Assignment">No Connection</option>
           </select>
 
           <select
@@ -233,7 +233,7 @@ function MappingCard({ row }: { row: MappingRow }) {
 
       <div className="mt-3 flex flex-wrap gap-2">
         <Link to={adminAssignmentsPath({ ruknId: row.ruknId })} className={actionLinkClass}>
-          ➕ Add Karkun
+          ➕ Connect Karkun
         </Link>
         <Link to={adminRuknDetailPath(row.ruknId)} className={actionLinkClass}>
           👁 View Details
@@ -257,7 +257,7 @@ function MappingCard({ row }: { row: MappingRow }) {
 
       <div className="mt-4 border-t border-border pt-4">
         {row.karkuns.length === 0 ? (
-          <p className="text-sm text-secondary">No active Karkuns assigned yet.</p>
+          <p className="text-sm text-secondary">No active Karkuns connected yet.</p>
         ) : (
           <ul className="space-y-2">
             {row.karkuns.map(({ assignment, karkun }) => (

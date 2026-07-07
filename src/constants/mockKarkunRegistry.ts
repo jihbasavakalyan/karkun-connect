@@ -3,6 +3,7 @@ import type {
   KarkunRegistryRecord,
 } from '@/types/karkun-registry.types'
 import { getActiveRuknNames, getRuknById } from '@/data/ruknMaster'
+import { notifyPeopleRegistryChange } from '@/lib/peopleStore'
 
 /** Production Karkun registry — populated by production data migration. */
 export const MOCK_KARKUN_REGISTRY: KarkunRegistryRecord[] = []
@@ -33,6 +34,7 @@ export function updateKarkunMeetingOutcomes(
 
   karkun.updatedAt = new Date().toISOString()
   karkun.updatedBy = 'Rukn'
+  notifyPeopleRegistryChange()
 }
 
 export function updateKarkunVisitExecution(
@@ -48,6 +50,7 @@ export function updateKarkunVisitExecution(
   karkun.visitStatus = execution.visitConducted ? 'completed' : 'pending'
   karkun.updatedAt = new Date().toISOString()
   karkun.updatedBy = 'Rukn'
+  notifyPeopleRegistryChange()
 }
 
 export function getRegistryFilterOptions() {

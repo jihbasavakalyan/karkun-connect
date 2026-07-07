@@ -7,29 +7,28 @@ import type {
   ScheduledMessage,
   WhatsAppSettings,
 } from '@/types/communication'
+import { loadJsonFromStorage, removeFromStorage, saveJsonToStorage } from '@/lib/browserStorage'
 
-type CommunicationStoreListener = () => void
+const STORAGE_KEY = 'karkun-connect.communication'
 
-const listeners = new Set<CommunicationStoreListener>()
-
-const templates: MessageTemplate[] = [...DEFAULT_MESSAGE_TEMPLATES]
-const history: CommunicationHistoryRecord[] = []
-const automationRules: AutomationRule[] = createDefaultAutomationRules()
-const scheduledMessages: ScheduledMessage[] = []
-
-const whatsappSettings: WhatsAppSettings = {
-  businessName: 'Karkun Connect',
-  phoneNumber: 'Not configured',
-  phoneNumberId: '—',
-  webhookStatus: 'pending',
-  apiStatus: 'disconnected',
-  tokenStatus: 'missing',
-  tokenMasked: '••••••••••••',
+type CommunicationPersistedState = {
+  templates: MessageTemplate[]
+  history: CommunicationHistoryRecord[]
+  automationRules: AutomationRule[]
+  scheduledMessages: ScheduledMessage[]
+  whatsappSettings: WhatsAppSettings
 }
 
 function createDefaultAutomationRules(): AutomationRule[] {
   const timestamp = new Date().toISOString()
-  const base = (id: string, name: string, trigger: AutomationRule['trigger'], templateId: string, description: string, delayDays?: number): AutomationRule => ({
+  const base = (
+    id: string,
+    name: string,
+    trigger: AutomationRule['trigger'],
+    templateId: string,
+    description: string,
+    delayDays?: number,
+  ): AutomationRule => ({
     id,
     name,
     trigger,
@@ -53,12 +52,53 @@ function createDefaultAutomationRules(): AutomationRule[] {
   ]
 }
 
+const defaultWhatsAppSettings: WhatsAppSettings = {
+  businessName: 'Karkun Connect',
+  phoneNumber: 'Not configured',
+  phoneNumberId: '—',
+  webhookStatus: 'pending',
+  apiStatus: 'disconnected',
+  tokenStatus: 'missing',
+  tokenMasked: '••••••••••••',
+}
+
+const defaultState: CommunicationPersistedState = {
+  templates: [...DEFAULT_MESSAGE_TEMPLATES],
+  history: [],
+  automationRules: createDefaultAutomationRules(),
+  scheduledMessages: [],
+  whatsappSettings: defaultWhatsAppSettings,
+}
+
+const persisted = loadJsonFromStorage<CommunicationPersistedState>(STORAGE_KEY, defaultState)
+
+type CommunicationStoreListener = () => void
+
+const listeners = new Set<CommunicationStoreListener>()
+
+const templates: MessageTemplate[] = [...persisted.templates]
+const history: CommunicationHistoryRecord[] = [...persisted.history]
+const automationRules: AutomationRule[] = [...persisted.automationRules]
+const scheduledMessages: ScheduledMessage[] = [...persisted.scheduledMessages]
+const whatsappSettings: WhatsAppSettings = { ...persisted.whatsappSettings }
+
+function persistCommunicationStore(): void {
+  saveJsonToStorage(STORAGE_KEY, {
+    templates,
+    history,
+    automationRules,
+    scheduledMessages,
+    whatsappSettings,
+  } satisfies CommunicationPersistedState)
+}
+
 export function subscribeToCommunicationStore(listener: CommunicationStoreListener): () => void {
   listeners.add(listener)
   return () => listeners.delete(listener)
 }
 
 function notifyCommunicationStoreChange(): void {
+  persistCommunicationStore()
   listeners.forEach((listener) => listener())
 }
 
@@ -164,6 +204,10 @@ export function clearCommunicationStore(): void {
   templates.length = 0
   templates.push(...DEFAULT_MESSAGE_TEMPLATES)
   history.length = 0
+  automationRules.length = 0
+  automationRules.push(...createDefaultAutomationRules())
   scheduledMessages.length = 0
+  Object.assign(whatsappSettings, defaultWhatsAppSettings)
+  removeFromStorage(STORAGE_KEY)
   notifyCommunicationStoreChange()
 }

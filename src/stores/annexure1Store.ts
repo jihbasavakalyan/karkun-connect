@@ -1,9 +1,23 @@
 import type { SubmittedMeetingForm } from '@/types/annexure1.types'
+import {
+  loadJsonFromStorage,
+  removeFromStorage,
+  saveJsonToStorage,
+} from '@/lib/browserStorage'
 
-const submittedForms: SubmittedMeetingForm[] = []
+const STORAGE_KEY = 'karkun-connect.annexure1'
+
+const submittedForms: SubmittedMeetingForm[] = loadJsonFromStorage<SubmittedMeetingForm[]>(
+  STORAGE_KEY,
+  [],
+)
 
 type Annexure1StoreListener = () => void
 const listeners = new Set<Annexure1StoreListener>()
+
+function persistAnnexure1Store(): void {
+  saveJsonToStorage(STORAGE_KEY, submittedForms)
+}
 
 export function subscribeToAnnexure1Store(listener: Annexure1StoreListener): () => void {
   listeners.add(listener)
@@ -11,6 +25,7 @@ export function subscribeToAnnexure1Store(listener: Annexure1StoreListener): () 
 }
 
 function notifyAnnexure1StoreChange(): void {
+  persistAnnexure1Store()
   listeners.forEach((listener) => listener())
 }
 
@@ -86,7 +101,15 @@ export function saveDraftRecord(record: SubmittedMeetingForm): SubmittedMeetingF
   return record
 }
 
+export function reloadAnnexure1StoreFromPersistence(): void {
+  const loaded = loadJsonFromStorage<SubmittedMeetingForm[]>(STORAGE_KEY, [])
+  submittedForms.length = 0
+  submittedForms.push(...loaded)
+  notifyAnnexure1StoreChange()
+}
+
 export function clearAnnexure1Store(): void {
   submittedForms.length = 0
+  removeFromStorage(STORAGE_KEY)
   notifyAnnexure1StoreChange()
 }

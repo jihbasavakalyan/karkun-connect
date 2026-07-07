@@ -108,22 +108,22 @@ export function RuknDetailPage() {
       {summary && (
         <section className="rounded-(--radius-card) border border-border bg-surface p-5 shadow-card">
           <div className="flex items-start justify-between gap-3">
-            <h2 className="text-lg font-semibold text-text-heading">Assignment</h2>
+            <h2 className="text-lg font-semibold text-text-heading">Connection</h2>
             <Link to={adminAssignmentsPath({ ruknId: rukn.id })}>
               <PrimaryButton type="button" className="px-4 py-2 text-sm">
-                ➕ Add Karkun
+                ➕ Connect Karkun
               </PrimaryButton>
             </Link>
           </div>
 
           <dl className="mt-4 grid gap-4 sm:grid-cols-2 text-sm">
             <div>
-              <dt className="text-secondary">Assignment Status</dt>
+              <dt className="text-secondary">Connection Status</dt>
               <dd className="mt-1 font-medium text-text-heading">{summary.assignmentStatus}</dd>
             </div>
             <div>
               <dt className="text-secondary">
-                Assigned Karkuns ({summary.assignedKarkunCount})
+                Connected Karkuns ({summary.assignedKarkunCount})
               </dt>
               <dd className="mt-1 font-medium text-text-heading">
                 {assignedKarkunNames.length > 0 ? assignedKarkunNames.join(', ') : 'Unassigned'}
