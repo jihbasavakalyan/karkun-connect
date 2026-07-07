@@ -2,6 +2,7 @@ import {
   CommandCenterActiveCampaign,
   CommandCenterAssignmentMetrics,
   CommandCenterBaitulMaalMetrics,
+  CommandCenterIjtemaAttendanceMetrics,
   CommandCenterJihWebPortalMetrics,
   CommandCenterPeopleStats,
   CommandCenterQuickActions,
@@ -24,6 +25,7 @@ export function AdminHomePage() {
       <CommandCenterPeopleStats />
       <CommandCenterJihWebPortalMetrics />
       <CommandCenterBaitulMaalMetrics />
+      <CommandCenterIjtemaAttendanceMetrics />
       <CommandCenterAssignmentMetrics />
       <CommandCenterTodaysWork />
 

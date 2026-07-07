@@ -15,6 +15,8 @@ const initialFilters: PeopleFilters = {
   baitulMaalStatus: '',
   baitulMaalMonth: '',
   baitulMaalYear: '',
+  ijtemaAttendanceStatus: '',
+  ijtemaWeek: '',
 }
 
 function matchesRuknFilters(rukn: Rukn, filters: PeopleFilters): boolean {

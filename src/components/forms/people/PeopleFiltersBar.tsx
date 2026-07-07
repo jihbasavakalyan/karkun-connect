@@ -13,6 +13,10 @@ import {
   BAITUL_MAAL_STATUS_FILTER_OPTIONS,
   getBaitulMaalYearFilterOptions,
 } from '@/types/baitulMaal'
+import {
+  IJTEMA_ATTENDANCE_STATUS_FILTER_OPTIONS,
+  getIjtemaWeekFilterOptions,
+} from '@/types/ijtemaAttendance'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 
 type PeopleFiltersBarProps = {
@@ -22,6 +26,7 @@ type PeopleFiltersBarProps = {
   showAssignmentFilters?: boolean
   showJihPortalFilters?: boolean
   showBaitulMaalFilters?: boolean
+  showIjtemaFilters?: boolean
 }
 
 const selectClassName =
@@ -34,8 +39,10 @@ export function PeopleFiltersBar({
   showAssignmentFilters = false,
   showJihPortalFilters = false,
   showBaitulMaalFilters = false,
+  showIjtemaFilters = false,
 }: PeopleFiltersBarProps) {
   const yearFilterOptions = getBaitulMaalYearFilterOptions()
+  const weekFilterOptions = getIjtemaWeekFilterOptions()
   return (
     <div className="rounded-(--radius-card) border border-border bg-surface p-4 shadow-card">
       <div className="mb-4 flex items-center justify-between gap-3">
@@ -221,6 +228,49 @@ export function PeopleFiltersBar({
               >
                 {yearFilterOptions.map((option) => (
                   <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </>
+        )}
+
+        {showIjtemaFilters && (
+          <>
+            <div className="flex flex-col gap-2">
+              <label
+                htmlFor="filter-ijtema-status"
+                className="text-sm font-medium text-secondary"
+              >
+                Ijtema Attendance
+              </label>
+              <select
+                id="filter-ijtema-status"
+                value={filters.ijtemaAttendanceStatus}
+                onChange={(event) => onFilterChange('ijtemaAttendanceStatus', event.target.value)}
+                className={selectClassName}
+              >
+                {IJTEMA_ATTENDANCE_STATUS_FILTER_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label htmlFor="filter-ijtema-week" className="text-sm font-medium text-secondary">
+                Ijtema Week
+              </label>
+              <select
+                id="filter-ijtema-week"
+                value={filters.ijtemaWeek}
+                onChange={(event) => onFilterChange('ijtemaWeek', event.target.value)}
+                className={selectClassName}
+              >
+                {weekFilterOptions.map((option) => (
+                  <option key={option.value || 'current'} value={option.value}>
                     {option.label}
                   </option>
                 ))}

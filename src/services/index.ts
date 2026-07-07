@@ -65,3 +65,16 @@ export {
   matchesBaitulMaalFilters,
   getFilterMonthKey,
 } from './baitulMaalService'
+
+export {
+  initializeIjtemaAttendanceCompliance,
+  ensureIjtemaAttendanceRecord,
+  getCurrentIjtemaAttendance,
+  getIjtemaAttendanceForKarkun,
+  updateIjtemaAttendance,
+  bulkUpdateIjtemaAttendance,
+  getIjtemaAttendanceDashboardMetrics,
+  getAllIjtemaAttendanceSummaries,
+  matchesIjtemaAttendanceFilters,
+  getFilterWeekEndingDate,
+} from './ijtemaAttendanceService'

@@ -7,6 +7,9 @@ type BulkActionsBarProps = {
   onUnassign?: () => void
   onMarkBaitulMaalPaid?: () => void
   onMarkBaitulMaalPending?: () => void
+  onMarkIjtemaPresent?: () => void
+  onMarkIjtemaAbsent?: () => void
+  onMarkIjtemaInformed?: () => void
   onClearSelection: () => void
 }
 
@@ -17,6 +20,9 @@ export function BulkActionsBar({
   onUnassign,
   onMarkBaitulMaalPaid,
   onMarkBaitulMaalPending,
+  onMarkIjtemaPresent,
+  onMarkIjtemaAbsent,
+  onMarkIjtemaInformed,
   onClearSelection,
 }: BulkActionsBarProps) {
   if (selectedCount === 0) {
@@ -57,6 +63,21 @@ export function BulkActionsBar({
           onClick={onMarkBaitulMaalPending}
         >
           Mark Bait-ul-Maal Pending
+        </SecondaryButton>
+      )}
+      {onMarkIjtemaPresent && (
+        <SecondaryButton type="button" className="px-3 py-2 text-sm" onClick={onMarkIjtemaPresent}>
+          Mark Ijtema Present
+        </SecondaryButton>
+      )}
+      {onMarkIjtemaAbsent && (
+        <SecondaryButton type="button" className="px-3 py-2 text-sm" onClick={onMarkIjtemaAbsent}>
+          Mark Ijtema Absent
+        </SecondaryButton>
+      )}
+      {onMarkIjtemaInformed && (
+        <SecondaryButton type="button" className="px-3 py-2 text-sm" onClick={onMarkIjtemaInformed}>
+          Mark Ijtema Informed
         </SecondaryButton>
       )}
       <SecondaryButton type="button" className="px-3 py-2 text-sm" onClick={onClearSelection}>

@@ -18,6 +18,8 @@ export type PeopleFilters = {
   baitulMaalStatus: '' | 'Pending' | 'Paid'
   baitulMaalMonth: string
   baitulMaalYear: string
+  ijtemaAttendanceStatus: '' | 'Present' | 'Absent' | 'Informed'
+  ijtemaWeek: string
 }
 
 export type PeopleAuditAction =

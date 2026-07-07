@@ -16,6 +16,7 @@ import { AssignmentHistoryTimeline } from '@/components/forms/assignment/Assignm
 import { CampaignStatusBadge } from '@/components/forms/karkunan/CampaignStatusBadge'
 import { JihWebPortalCard } from '@/components/forms/jih/JihWebPortalCard'
 import { BaitulMaalCard } from '@/components/forms/baitulMaal/BaitulMaalCard'
+import { IjtemaAttendanceCard } from '@/components/forms/ijtema/IjtemaAttendanceCard'
 import { ComplianceSection } from '@/components/forms/compliance/ComplianceSection'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 
@@ -113,6 +114,7 @@ export function KarkunProfilePage() {
       <ComplianceSection>
         <JihWebPortalCard karkunId={karkun.id} karkunName={karkun.name} />
         <BaitulMaalCard karkunId={karkun.id} karkunName={karkun.name} />
+        <IjtemaAttendanceCard karkunId={karkun.id} karkunName={karkun.name} />
       </ComplianceSection>
 
       <section className="rounded-(--radius-card) border border-border bg-surface p-6 shadow-card">

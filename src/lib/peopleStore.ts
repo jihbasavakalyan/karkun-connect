@@ -1,6 +1,7 @@
 import { MOCK_KARKUN_REGISTRY } from '@/constants/mockKarkunRegistry'
 import { ensureRegistration } from '@/services/jihWebPortalService'
 import { ensureBaitulMaalRecord } from '@/services/baitulMaalService'
+import { ensureIjtemaAttendanceRecord } from '@/services/ijtemaAttendanceService'
 import {
   getNextRuknId,
   getRuknById,
@@ -332,6 +333,7 @@ export function createKarkun(
   MOCK_KARKUN_REGISTRY.push(karkun)
   ensureRegistration(id)
   ensureBaitulMaalRecord(id)
+  ensureIjtemaAttendanceRecord(id)
 
   logPeopleAudit({
     personKind: 'karkun',

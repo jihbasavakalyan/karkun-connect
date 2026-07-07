@@ -3,8 +3,10 @@ import { getAllKarkuns } from '@/lib/peopleStore'
 import { usePeopleStore } from '@/hooks/usePeopleStore'
 import { matchesJihPortalFilters } from '@/services/jihWebPortalService'
 import { matchesBaitulMaalFilters } from '@/services/baitulMaalService'
+import { matchesIjtemaAttendanceFilters } from '@/services/ijtemaAttendanceService'
 import { subscribeToJihWebPortalStore } from '@/stores/jihWebPortalStore'
 import { subscribeToBaitulMaalStore } from '@/stores/baitulMaalStore'
+import { subscribeToIjtemaAttendanceStore } from '@/stores/ijtemaAttendanceStore'
 import type { KarkunRegistryRecord, PersonGender } from '@/types/karkun-registry.types'
 import type { PeopleFilters, PeopleSortDirection, PeopleSortField } from '@/types/people.types'
 import { PEOPLE_PAGE_SIZE } from '@/types/people.types'
@@ -19,6 +21,8 @@ const initialFilters: PeopleFilters = {
   baitulMaalStatus: '',
   baitulMaalMonth: '',
   baitulMaalYear: '',
+  ijtemaAttendanceStatus: '',
+  ijtemaWeek: '',
 }
 
 function matchesKarkunFilters(karkun: KarkunRegistryRecord, filters: PeopleFilters): boolean {
@@ -74,6 +78,16 @@ function matchesKarkunFilters(karkun: KarkunRegistryRecord, filters: PeopleFilte
     return false
   }
 
+  if (
+    !matchesIjtemaAttendanceFilters(
+      karkun.id,
+      filters.ijtemaAttendanceStatus,
+      filters.ijtemaWeek,
+    )
+  ) {
+    return false
+  }
+
   return true
 }
 
@@ -113,15 +127,20 @@ export function useKarkunPeopleManagement(sectionGender: PersonGender) {
   usePeopleStore()
   const [jihVersion, setJihVersion] = useState(0)
   const [baitulMaalVersion, setBaitulMaalVersion] = useState(0)
+  const [ijtemaVersion, setIjtemaVersion] = useState(0)
 
   useEffect(() => {
     const unsubJih = subscribeToJihWebPortalStore(() => setJihVersion((value) => value + 1))
     const unsubBaitulMaal = subscribeToBaitulMaalStore(() =>
       setBaitulMaalVersion((value) => value + 1),
     )
+    const unsubIjtema = subscribeToIjtemaAttendanceStore(() =>
+      setIjtemaVersion((value) => value + 1),
+    )
     return () => {
       unsubJih()
       unsubBaitulMaal()
+      unsubIjtema()
     }
   }, [])
 
@@ -136,9 +155,10 @@ export function useKarkunPeopleManagement(sectionGender: PersonGender) {
   const filteredRecords = useMemo(() => {
     void jihVersion
     void baitulMaalVersion
+    void ijtemaVersion
     const filtered = allKarkuns.filter((karkun) => matchesKarkunFilters(karkun, filters))
     return sortKarkuns(filtered, sortField, sortDirection)
-  }, [allKarkuns, filters, sortField, sortDirection, jihVersion, baitulMaalVersion])
+  }, [allKarkuns, filters, sortField, sortDirection, jihVersion, baitulMaalVersion, ijtemaVersion])
 
   const totalPages = Math.max(1, Math.ceil(filteredRecords.length / PEOPLE_PAGE_SIZE))
 

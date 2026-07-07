@@ -32,7 +32,9 @@ import {
 import type { PersonFormValues } from '@/components/forms/people'
 import { AssignKarkunModal } from '@/components/forms/assignment'
 import { BaitulMaalBulkUpdateModal } from '@/components/forms/baitulMaal/BaitulMaalBulkUpdateModal'
+import { IjtemaAttendanceBulkUpdateModal } from '@/components/forms/ijtema/IjtemaAttendanceBulkUpdateModal'
 import type { BaitulMaalStatus } from '@/types/baitulMaal'
+import type { IjtemaAttendanceStatus } from '@/types/ijtemaAttendance'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 
@@ -52,6 +54,7 @@ function KarkunGenderSection({ gender }: { gender: PersonGender }) {
   const [mobileOwner, setMobileOwner] = useState<MobileLookupResult | null>(null)
   const [importSummary, setImportSummary] = useState<ImportSummary | null>(null)
   const [bulkBaitulMaalStatus, setBulkBaitulMaalStatus] = useState<BaitulMaalStatus | null>(null)
+  const [bulkIjtemaStatus, setBulkIjtemaStatus] = useState<IjtemaAttendanceStatus | null>(null)
 
   const openAddForm = () => {
     setEditingKarkun(null)
@@ -155,6 +158,7 @@ function KarkunGenderSection({ gender }: { gender: PersonGender }) {
         showAssignmentFilters
         showJihPortalFilters
         showBaitulMaalFilters
+        showIjtemaFilters
       />
 
       <BulkActionsBar
@@ -175,6 +179,9 @@ function KarkunGenderSection({ gender }: { gender: PersonGender }) {
         }}
         onMarkBaitulMaalPaid={() => setBulkBaitulMaalStatus('Paid')}
         onMarkBaitulMaalPending={() => setBulkBaitulMaalStatus('Pending')}
+        onMarkIjtemaPresent={() => setBulkIjtemaStatus('Present')}
+        onMarkIjtemaAbsent={() => setBulkIjtemaStatus('Absent')}
+        onMarkIjtemaInformed={() => setBulkIjtemaStatus('Informed')}
         onClearSelection={management.clearSelection}
       />
 
@@ -285,6 +292,15 @@ function KarkunGenderSection({ gender }: { gender: PersonGender }) {
         status={bulkBaitulMaalStatus ?? 'Pending'}
         karkunIds={management.selectedIds}
         onClose={() => setBulkBaitulMaalStatus(null)}
+        onComplete={() => management.clearSelection()}
+      />
+
+      <IjtemaAttendanceBulkUpdateModal
+        isOpen={bulkIjtemaStatus !== null}
+        selectedCount={management.selectedIds.length}
+        status={bulkIjtemaStatus ?? 'Present'}
+        karkunIds={management.selectedIds}
+        onClose={() => setBulkIjtemaStatus(null)}
         onComplete={() => management.clearSelection()}
       />
     </div>

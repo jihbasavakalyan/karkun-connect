@@ -57,6 +57,13 @@ export type {
   BaitulMaalStatus,
 } from './baitulMaal'
 
+export type {
+  IjtemaAttendanceRecord,
+  IjtemaAttendanceDashboardMetrics,
+  IjtemaAttendanceKarkunSummary,
+  IjtemaAttendanceStatus,
+} from './ijtemaAttendance'
+
 export {
   JIH_APP_REGISTRATION_FORM_OPTIONS,
   createInitialAnnexure1FormState,
