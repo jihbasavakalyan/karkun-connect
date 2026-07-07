@@ -81,7 +81,7 @@ Deploy the `dist/` folder to your static hosting target.
 | 2 | `0b4ec29` | Workflow validation |
 | 3 | `cd433da` | UI consistency and responsive polish |
 | 4 | `ee230ff` | Functional regression testing |
-| 5 | *(pending)* | Release candidate preparation |
+| 5 | `487699b` | Release candidate preparation |
 
 ## Feedback
 
