@@ -42,7 +42,7 @@ export function EnterpriseProgressRing({
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-2xl font-bold text-text-heading">{clamped}%</span>
+          <span className="text-lg font-bold text-text-heading">{clamped}%</span>
         </div>
       </div>
       <span className="text-center text-xs font-medium text-secondary">{label}</span>

@@ -4,9 +4,9 @@ import { getRecentActivity, subscribeToActivityLog } from '@/stores/activityLogS
 import type { ActivityLogSeverity } from '@/types/assignment'
 
 function severityClasses(severity: ActivityLogSeverity): string {
-  if (severity === 'IMPORTANT') return 'border-l-4 border-l-amber-400 bg-amber-50/60'
-  if (severity === 'WARNING') return 'border-l-4 border-l-orange-400 bg-orange-50/60'
-  return 'border-l-4 border-l-primary bg-surface-muted/60'
+  if (severity === 'IMPORTANT') return 'border-l-2 border-l-amber-400 bg-amber-50/60'
+  if (severity === 'WARNING') return 'border-l-2 border-l-orange-400 bg-orange-50/60'
+  return 'border-l-2 border-l-primary bg-surface-muted/60'
 }
 
 export function CommandCenterRecentActivity() {
@@ -18,25 +18,21 @@ export function CommandCenterRecentActivity() {
 
   void version
 
-  const activities = getRecentActivity(12)
+  const activities = getRecentActivity(8)
 
   return (
-    <section className="enterprise-card p-6">
-      <EnterpriseSectionHeader
-        title="Recent Activity"
-        subtitle="Assignments, reports, compliance, visits — newest first"
-      />
+    <section className="cc-card-sm">
+      <EnterpriseSectionHeader title="Recent Activity" />
 
       {activities.length === 0 ? (
-        <p className="mt-4 text-sm text-secondary">No campaign activity recorded yet.</p>
+        <p className="mt-2 text-sm text-secondary">No campaign activity recorded yet.</p>
       ) : (
-        <ol className="relative mt-6 space-y-0 border-l border-border pl-6">
+        <ol className="mt-2 space-y-1.5">
           {activities.map((entry) => (
-            <li key={entry.id} className="relative pb-4 last:pb-0">
-              <span className="absolute -left-[calc(0.375rem+1px)] top-2 h-2 w-2 rounded-full bg-primary" />
-              <div className={`rounded-xl px-4 py-3 ${severityClasses(entry.severity)}`}>
-                <p className="text-sm font-medium text-text-heading">{entry.message}</p>
-                <p className="mt-1 text-xs text-secondary">
+            <li key={entry.id}>
+              <div className={`rounded-lg px-3 py-2 ${severityClasses(entry.severity)}`}>
+                <p className="line-clamp-1 text-sm font-medium text-text-heading">{entry.message}</p>
+                <p className="mt-0.5 text-[11px] text-secondary">
                   {new Date(entry.timestamp).toLocaleString()} · {entry.actor}
                 </p>
               </div>

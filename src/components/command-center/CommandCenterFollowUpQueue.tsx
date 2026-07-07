@@ -14,50 +14,39 @@ const SECTION_STYLES: Record<FollowUpQueueGroup['section'], string> = {
 }
 
 export function CommandCenterFollowUpQueue({ followUpQueue }: CommandCenterFollowUpQueueProps) {
-  if (followUpQueue.length === 0) {
-    return (
-      <section className="enterprise-card p-6">
-        <EnterpriseSectionHeader
-          title="Follow-up Queue"
-          subtitle="Follow-up Engine — no pending follow-ups"
-        />
-        <p className="mt-4 text-sm text-secondary">All follow-ups are scheduled or completed.</p>
-      </section>
-    )
-  }
+  const allItems = followUpQueue.flatMap((group) =>
+    group.items.map((item) => ({ ...item, section: group.section, groupLabel: group.label })),
+  )
 
   return (
-    <section className="enterprise-card p-6">
-      <EnterpriseSectionHeader
-        title="Follow-up Queue"
-        subtitle="Follow-up Engine — grouped by urgency"
-      />
-      <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {followUpQueue.map((group) => (
-          <div key={group.section} className="min-w-0">
-            <h3 className="text-sm font-semibold text-text-heading">{group.label}</h3>
-            <ul className="mt-2 space-y-2">
-              {group.items.map((item) => (
-                <li key={item.followUpId}>
-                  <Link
-                    to={item.route}
-                    className={[
-                      'block rounded-xl border p-3 transition-shadow hover:shadow-card',
-                      SECTION_STYLES[group.section],
-                    ].join(' ')}
-                  >
-                    <p className="text-sm font-semibold text-text-heading">{item.karkunName}</p>
-                    <p className="mt-0.5 text-xs text-secondary">{item.purpose}</p>
-                    <p className="mt-1 text-[10px] font-medium uppercase text-secondary">
-                      {item.followUpDate}
-                    </p>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
-      </div>
+    <section className="cc-card-sm flex h-full min-h-[220px] flex-col">
+      <EnterpriseSectionHeader title="Follow-up Queue" />
+
+      {allItems.length === 0 ? (
+        <p className="mt-2 text-sm text-secondary">All follow-ups are scheduled or completed.</p>
+      ) : (
+        <ul className="mt-2 max-h-[180px] flex-1 space-y-1.5 overflow-y-auto">
+          {allItems.map((item) => (
+            <li key={item.followUpId}>
+              <Link
+                to={item.route}
+                className={[
+                  'block rounded-lg border p-2 transition-shadow hover:shadow-card',
+                  SECTION_STYLES[item.section],
+                ].join(' ')}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <p className="line-clamp-1 text-sm font-semibold text-text-heading">{item.karkunName}</p>
+                  <span className="shrink-0 text-[10px] font-medium uppercase text-secondary">
+                    {item.groupLabel}
+                  </span>
+                </div>
+                <p className="line-clamp-1 text-xs text-secondary">{item.purpose}</p>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   )
 }

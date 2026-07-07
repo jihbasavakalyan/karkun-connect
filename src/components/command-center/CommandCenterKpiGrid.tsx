@@ -1,4 +1,4 @@
-import { EnterpriseKpiCard, EnterpriseSectionHeader } from '@/components/enterprise'
+import { EnterpriseKpiCard } from '@/components/enterprise'
 import { enrichKpiPresentation } from '@/lib/commandCenterPresentation'
 import type { CommandCenterKpi } from '@/types/campaignAutomation.types'
 
@@ -8,12 +8,8 @@ type CommandCenterKpiGridProps = {
 
 export function CommandCenterKpiGrid({ kpis }: CommandCenterKpiGridProps) {
   return (
-    <section className="space-y-4">
-      <EnterpriseSectionHeader
-        title="Campaign Metrics"
-        subtitle="Live counts from every campaign engine — tap any card to act"
-      />
-      <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <section>
+      <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-8">
         {kpis.map((kpi) => {
           const enriched = enrichKpiPresentation(kpi)
           return (

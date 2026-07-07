@@ -23,32 +23,24 @@ export function EnterpriseKpiCard({
     <li>
       <Link
         to={route}
-        className="campaign-glass-card-interactive group flex min-h-36 flex-col p-5"
+        className="group flex h-[100px] items-center gap-2 rounded-xl border border-border/80 bg-surface p-3 shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-card-hover"
       >
-        <div className="flex items-start justify-between gap-2">
-          <span
-            className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-muted text-2xl shadow-sm transition-transform duration-200 group-hover:scale-110 group-hover:-rotate-3"
-            aria-hidden="true"
-          >
-            {icon}
+        <span className="shrink-0 text-xl leading-none" aria-hidden="true">
+          {icon}
+        </span>
+        <div className="min-w-0 flex-1">
+          <span className="block truncate text-xs font-medium text-secondary">{label}</span>
+          <span className="campaign-count-up block text-[2rem] font-bold leading-none tracking-tight text-text-heading">
+            {value}
+            {suffix}
           </span>
-          {trend && (
-            <span className="rounded-full bg-primary-muted/70 px-2.5 py-1 text-[11px] font-semibold text-primary">
-              {trend}
-            </span>
-          )}
         </div>
-        <span className="mt-4 text-sm font-medium text-secondary">{label}</span>
-        <span className="campaign-count-up mt-0.5 text-4xl font-bold tracking-tight text-text-heading">
-          {value}
-          {suffix}
-        </span>
-        <span className="mt-auto flex items-center gap-1 pt-2 text-xs text-secondary-light">
-          {subtitle}
-          <span className="ml-auto text-primary opacity-0 transition-opacity group-hover:opacity-100">
-            →
+        {trend && (
+          <span className="max-w-[4rem] shrink-0 truncate rounded-full bg-primary-muted/70 px-1.5 py-0.5 text-center text-[9px] font-semibold leading-tight text-primary">
+            {trend}
           </span>
-        </span>
+        )}
+        <span className="sr-only">{subtitle}</span>
       </Link>
     </li>
   )

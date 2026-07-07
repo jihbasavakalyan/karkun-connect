@@ -33,17 +33,17 @@ export function CommandCenterRuknQuickActions({
   }[]
 
   return (
-    <section className="enterprise-card p-6">
-      <EnterpriseSectionHeader title="Quick Actions" subtitle="Your operational shortcuts" />
-      <div className="mt-4 grid gap-3 grid-cols-2 sm:grid-cols-3">
+    <section className="cc-card-sm">
+      <EnterpriseSectionHeader title="Quick Actions" />
+      <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
         {actions.map((action) =>
           action.isHash ? (
             <a
               key={action.id}
               href={action.to}
-              className="enterprise-card-interactive flex min-h-20 flex-col items-start justify-center gap-1 p-4"
+              className="flex items-center gap-2 rounded-lg border border-border p-2.5 transition-colors hover:border-primary/30 hover:bg-surface-muted"
             >
-              <span className="text-xl" aria-hidden="true">
+              <span className="text-base" aria-hidden="true">
                 {action.icon}
               </span>
               <span className="text-sm font-semibold text-text-heading">{action.label}</span>
@@ -52,9 +52,9 @@ export function CommandCenterRuknQuickActions({
             <Link
               key={action.id}
               to={action.to}
-              className="enterprise-card-interactive flex min-h-20 flex-col items-start justify-center gap-1 p-4"
+              className="flex items-center gap-2 rounded-lg border border-border p-2.5 transition-colors hover:border-primary/30 hover:bg-surface-muted"
             >
-              <span className="text-xl" aria-hidden="true">
+              <span className="text-base" aria-hidden="true">
                 {action.icon}
               </span>
               <span className="text-sm font-semibold text-text-heading">{action.label}</span>

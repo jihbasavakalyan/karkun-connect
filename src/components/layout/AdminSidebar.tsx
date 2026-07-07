@@ -21,16 +21,16 @@ export function AdminSidebar({ collapsed, onToggle }: AdminSidebarProps) {
     <aside
       className={[
         'hidden shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-text transition-all duration-300 lg:flex',
-        collapsed ? 'w-[72px]' : 'w-64',
+        collapsed ? 'w-[72px]' : 'w-60',
       ].join(' ')}
       aria-label="Administrator navigation"
     >
-      <div className="border-b border-sidebar-border px-4 py-5">
+      <div className="border-b border-sidebar-border px-3 py-3">
         <div className="flex items-center justify-between gap-2">
           {!collapsed && (
             <div className="min-w-0">
               <Logo size="sm" variant="light" />
-              <p className="mt-2 truncate text-xs text-sidebar-text-muted">{APP_TAGLINE}</p>
+              <p className="mt-1 truncate text-[11px] text-sidebar-text-muted">{APP_TAGLINE}</p>
             </div>
           )}
           <button
@@ -43,11 +43,11 @@ export function AdminSidebar({ collapsed, onToggle }: AdminSidebarProps) {
           </button>
         </div>
         {!collapsed && campaignName && (
-          <p className="mt-3 truncate text-xs font-medium text-primary-light">{campaignName}</p>
+          <p className="mt-2 truncate text-[11px] font-medium text-primary-light">{campaignName}</p>
         )}
       </div>
 
-      <nav className="flex flex-1 flex-col gap-1 overflow-y-auto p-3">
+      <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto p-2">
         {mainNav.map((item) => (
           <NavLink
             key={item.id}
@@ -56,7 +56,7 @@ export function AdminSidebar({ collapsed, onToggle }: AdminSidebarProps) {
             title={collapsed ? item.label : undefined}
             className={({ isActive }) =>
               [
-                'group flex min-h-11 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200',
+                'group flex min-h-9 items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium transition-all duration-200',
                 isActive
                   ? 'bg-sidebar-active text-white shadow-sm'
                   : 'text-sidebar-text hover:bg-sidebar-hover hover:text-white',
@@ -72,9 +72,9 @@ export function AdminSidebar({ collapsed, onToggle }: AdminSidebarProps) {
         ))}
       </nav>
 
-      <div className="space-y-3 border-t border-sidebar-border p-3">
+      <div className="space-y-2 border-t border-sidebar-border p-2">
         {!collapsed && user && (
-          <div className="enterprise-glass rounded-xl px-3 py-3">
+          <div className="enterprise-glass rounded-lg px-2.5 py-2">
             <p className="truncate text-xs font-semibold text-white">{user.email}</p>
             <p className="text-xs text-sidebar-text-muted">Administrator</p>
           </div>

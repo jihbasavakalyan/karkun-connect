@@ -15,7 +15,6 @@ import {
   CommandCenterRuknQuickActions,
   CommandCenterSchedule,
   CommandCenterTodaysMission,
-  CommandCenterValues,
 } from '@/components/command-center'
 import { DEFAULT_DEMO_RUKN_ID } from '@/constants/demoRukn'
 import { ROUTES } from '@/constants/routes'
@@ -42,27 +41,26 @@ export function RuknHomePage() {
     (snapshot.kpis.find((kpi) => kpi.id === 'assigned-karkuns')?.value ?? 0) > 0
 
   return (
-    <div className="space-y-6 lg:space-y-8">
-      {/* Emotional layer — campaign identity */}
+    <div className="cc-stack">
       <CommandCenterHero hero={snapshot.hero} />
-      <CommandCenterValues />
-      <CommandCenterTodaysMission kpis={snapshot.kpis} hero={snapshot.hero} />
 
-      {/* Operational layer — your mission */}
-      <CommandCenterNextAction nextAction={snapshot.nextAction} />
+      <div className="grid gap-4 xl:grid-cols-2">
+        <CommandCenterTodaysMission kpis={snapshot.kpis} hero={snapshot.hero} />
+        <CommandCenterNextAction nextAction={snapshot.nextAction} />
+      </div>
 
       {!hasAssignments ? (
-        <section className="campaign-glass-card flex flex-col items-center gap-3 p-10 text-center">
-          <span className="text-5xl" aria-hidden="true">
+        <section className="cc-card-sm flex flex-col items-center gap-2 py-6 text-center">
+          <span className="text-3xl" aria-hidden="true">
             🌱
           </span>
-          <h2 className="text-xl font-bold text-text-heading">Your campaign journey starts here</h2>
+          <h2 className="text-lg font-bold text-text-heading">Your campaign journey starts here</h2>
           <p className="max-w-md text-sm text-secondary">
             No Karkun is assigned to you yet. Browse available Karkun to begin reconnecting and
             activating your team.
           </p>
-          <Link to={ROUTES.RUKN_AVAILABLE_KARKUN} className="mt-2 inline-block">
-            <SecondaryButton type="button">🔍 Browse Available Karkun</SecondaryButton>
+          <Link to={ROUTES.RUKN_AVAILABLE_KARKUN} className="mt-1 inline-block">
+            <SecondaryButton type="button">Browse Available Karkun</SecondaryButton>
           </Link>
         </section>
       ) : (
@@ -75,15 +73,18 @@ export function RuknHomePage() {
         </>
       )}
 
-      <div className="grid gap-6 xl:grid-cols-2">
+      <div className="grid gap-4 xl:grid-cols-3">
         <CommandCenterProgressOverview />
         <CommandCenterSchedule schedule={snapshot.schedule} />
+        <CommandCenterAlerts alerts={snapshot.alerts} />
       </div>
 
-      <CommandCenterCallQueue callQueue={snapshot.callQueue} />
+      <div className="grid gap-4 xl:grid-cols-2">
+        <CommandCenterCallQueue callQueue={snapshot.callQueue} />
+        <CommandCenterFollowUpQueue followUpQueue={snapshot.followUpQueue} />
+      </div>
+
       <CommandCenterReminders reminders={snapshot.reminders} />
-      <CommandCenterFollowUpQueue followUpQueue={snapshot.followUpQueue} />
-      <CommandCenterAlerts alerts={snapshot.alerts} />
       <CommandCenterCompletedToday items={snapshot.completedToday} />
       <CommandCenterIntelligence />
       <CommandCenterRecentActivity />

@@ -24,26 +24,26 @@ export function RuknLayout() {
   return (
     <div className="flex min-h-svh flex-col bg-surface-muted">
       <header className="border-b border-border bg-surface">
-        <div className="enterprise-gradient-hero px-4 py-4 text-white lg:px-6">
+        <div className="enterprise-gradient-hero px-4 py-2.5 text-white lg:px-5">
           <div className="mx-auto flex max-w-5xl items-center justify-between gap-3">
             <Logo size="sm" variant="light" />
             <PortalAuthActions portalLabel="Rukn Portal" />
           </div>
-          <div className="mx-auto mt-3 max-w-5xl">
-            <div className="flex flex-wrap items-center gap-2">
+          <div className="mx-auto max-w-5xl">
+            <div className="mt-1.5 flex flex-wrap items-center gap-2">
               <p className="text-sm font-semibold">{campaignName}</p>
               {timeline && (
                 <EnterpriseBadge variant={timeline.status === 'active' ? 'success' : 'info'}>
                   {timeline.dayLabel}
                 </EnterpriseBadge>
               )}
+              <p className="text-xs text-white/80">{duration}</p>
             </div>
-            <p className="mt-1 text-xs text-white/80">{duration}</p>
           </div>
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6 pb-24 lg:px-6">
+      <main className="mx-auto w-full max-w-5xl flex-1 px-3 py-4 pb-20 lg:px-4">
         <Outlet />
       </main>
 

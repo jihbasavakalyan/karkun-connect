@@ -39,15 +39,12 @@ export function CommandCenterTeamPerformance() {
 
   if (sorted.length === 0) {
     return (
-      <section className="enterprise-card p-6">
-        <EnterpriseSectionHeader
-          title="Team Performance"
-          subtitle="Top performing Rukns and pending work"
-        />
-        <p className="mt-4 text-sm text-secondary">No active Rukn assignments yet.</p>
+      <section className="cc-card-sm flex h-full min-h-[220px] flex-col">
+        <EnterpriseSectionHeader title="Team Performance" />
+        <p className="mt-2 text-sm text-secondary">No active Rukn assignments yet.</p>
         <Link
           to={ROUTES.ADMIN_ASSIGNMENTS}
-          className="mt-3 inline-block text-sm font-medium text-primary hover:underline"
+          className="mt-auto text-sm font-medium text-primary hover:underline"
         >
           Open Assignments →
         </Link>
@@ -56,30 +53,26 @@ export function CommandCenterTeamPerformance() {
   }
 
   return (
-    <section className="enterprise-card overflow-hidden p-6">
-      <EnterpriseSectionHeader
-        title="Team Performance"
-        subtitle="Sortable performance across assigned Rukns"
-      />
-      <div className="mt-4 overflow-x-auto">
-        <table className="w-full min-w-[640px] text-left text-sm">
-          <thead className="sticky top-0 bg-surface text-xs uppercase tracking-wide text-secondary">
+    <section className="cc-card-sm flex h-full min-h-[220px] flex-col overflow-hidden">
+      <EnterpriseSectionHeader title="Team Performance" />
+      <div className="mt-2 max-h-[180px] flex-1 overflow-auto">
+        <table className="w-full min-w-[320px] text-left text-xs">
+          <thead className="sticky top-0 bg-surface text-[10px] uppercase tracking-wide text-secondary">
             <tr className="border-b border-border">
               {(
                 [
                   ['ruknName', 'Rukn'],
-                  ['assignedKarkuns', 'Assigned'],
-                  ['pendingWork', 'Pending'],
-                  ['completionPct', 'Completion'],
-                  ['followUpPct', 'Follow-up'],
-                  ['visits', 'Visits'],
+                  ['assignedKarkuns', 'Asgn'],
+                  ['pendingWork', 'Pend'],
+                  ['completionPct', 'Done'],
+                  ['visits', 'Vis'],
                 ] as const
               ).map(([key, label]) => (
-                <th key={key} className="px-3 py-3 font-semibold">
+                <th key={key} className="px-2 py-1.5 font-semibold">
                   <button
                     type="button"
                     onClick={() => toggleSort(key)}
-                    className="inline-flex items-center gap-1 hover:text-text-heading"
+                    className="inline-flex items-center gap-0.5 hover:text-text-heading"
                   >
                     {label}
                     {sortKey === key && <span aria-hidden="true">{sortAsc ? '↑' : '↓'}</span>}
@@ -94,21 +87,18 @@ export function CommandCenterTeamPerformance() {
                 key={row.ruknId}
                 className="border-b border-border/60 transition-colors hover:bg-surface-muted/50"
               >
-                <td className="px-3 py-3">
-                  <span className="font-medium text-text-heading">
-                    {index < 3 && <span className="mr-1">{['🥇', '🥈', '🥉'][index]}</span>}
-                    {row.ruknName}
-                  </span>
+                <td className="max-w-[6rem] truncate px-2 py-1.5 font-medium text-text-heading">
+                  {index < 3 && <span className="mr-0.5">{['🥇', '🥈', '🥉'][index]}</span>}
+                  {row.ruknName}
                 </td>
-                <td className="px-3 py-3">{row.assignedKarkuns}</td>
-                <td className="px-3 py-3">{row.pendingWork}</td>
-                <td className="px-3 py-3">
-                  <span className="rounded-full bg-primary-muted px-2 py-0.5 text-xs font-semibold text-primary">
+                <td className="px-2 py-1.5">{row.assignedKarkuns}</td>
+                <td className="px-2 py-1.5">{row.pendingWork}</td>
+                <td className="px-2 py-1.5">
+                  <span className="rounded-full bg-primary-muted px-1.5 py-0.5 text-[10px] font-semibold text-primary">
                     {row.completionPct}%
                   </span>
                 </td>
-                <td className="px-3 py-3">{row.followUpPct}%</td>
-                <td className="px-3 py-3">{row.visits}</td>
+                <td className="px-2 py-1.5">{row.visits}</td>
               </tr>
             ))}
           </tbody>
