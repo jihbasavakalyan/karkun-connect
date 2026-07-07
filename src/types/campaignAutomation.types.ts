@@ -4,12 +4,20 @@ export type AutomationPriority = 1 | 2 | 3 | 4 | 5
 
 export type CampaignHeroData = {
   name: string
-  duration: string
-  status: 'active' | 'archived'
-  progress: number
-  currentDay: number
-  totalDays: number
   theme: string
+  objective: string
+  duration: string
+  dayLabel: string
+  currentDay: number | null
+  totalDays: number
+  daysRemaining: number | null
+  daysUntilStart: number | null
+  timelineStatus: 'upcoming' | 'active' | 'completed'
+  campaignStatus: 'active' | 'archived'
+  progress: number
+  healthScore: number
+  nextMilestone: string
+  percentageElapsed: number
 }
 
 export type CommandCenterKpi = {

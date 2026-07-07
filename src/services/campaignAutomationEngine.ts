@@ -3,7 +3,6 @@
  * Does not store data. Follows Workflow Automation Constitution.
  */
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
-import { APPROVED_CAMPAIGN_OBJECTIVES } from '@/constants/mockCampaignSetup'
 import {
   adminCompliancePath,
   adminExecutionPath,
@@ -16,6 +15,11 @@ import { getSubmittedMeetingForms } from '@/stores/annexure1Store'
 import {
   formatActiveCampaignDuration,
   getActiveCampaign,
+  getActiveCampaignNextMilestone,
+  getActiveCampaignObjective,
+  getActiveCampaignTheme,
+  getCampaignProgress,
+  getCampaignTimeline,
 } from '@/services/campaignService'
 import { getAssignmentDashboardMetrics } from '@/services/assignmentService'
 import {
@@ -24,12 +28,18 @@ import {
   getTodaysMeetingAssignments,
 } from '@/services/annexure1Service'
 import { getPendingFollowUps } from '@/services/followUpService'
-import { getBaitulMaalDashboardMetrics } from '@/services/baitulMaalService'
+import {
+  getBaitulMaalDashboardMetrics,
+  getAllBaitulMaalSummaries,
+} from '@/services/baitulMaalService'
 import {
   getAllIjtemaAttendanceSummaries,
   getIjtemaAttendanceDashboardMetrics,
 } from '@/services/ijtemaAttendanceService'
-import { getJihWebPortalDashboardMetrics } from '@/services/jihWebPortalService'
+import {
+  getAllJihWebPortalSummaries,
+  getJihWebPortalDashboardMetrics,
+} from '@/services/jihWebPortalService'
 import type {
   AdminCommandCenterSnapshot,
   AutomationAlert,
@@ -82,80 +92,114 @@ function filterByRukn<T extends { ruknId: string }>(items: T[], ruknId?: string)
   return items.filter((item) => item.ruknId === ruknId)
 }
 
-function getDerivedCampaignDayCounts(startDate: string, endDate: string): {
-  currentDay: number
-  totalDays: number
-} {
-  const start = new Date(startDate)
-  const end = new Date(endDate)
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  start.setHours(0, 0, 0, 0)
-  end.setHours(0, 0, 0, 0)
-
-  const totalDays = Math.max(1, Math.round((end.getTime() - start.getTime()) / 86400000) + 1)
-  const elapsed = Math.round((today.getTime() - start.getTime()) / 86400000) + 1
-  const currentDay = Math.min(totalDays, Math.max(1, elapsed))
-
-  return { currentDay, totalDays }
+function getAssignedKarkunIds(ruknId?: string): Set<string> {
+  return new Set(
+    getAllAssignments()
+      .filter((record) => record.status === 'Active' && (!ruknId || record.ruknId === ruknId))
+      .map((record) => record.karkunId),
+  )
 }
 
-function getActiveCampaignTheme(): string {
-  const labels = APPROVED_CAMPAIGN_OBJECTIVES.slice(0, 3).map((objective) => objective.label)
-  return labels.join(' · ')
+type ActionableComplianceItem = {
+  label: string
+  count: number
+  priority: 1 | 2 | 3
+  route: string
+}
+
+type ActionableComplianceSummary = {
+  totalCount: number
+  highestPriority: ActionableComplianceItem | null
+}
+
+function getActionableComplianceSummary(ruknId?: string): ActionableComplianceSummary {
+  const assignedIds = getAssignedKarkunIds(ruknId)
+  if (assignedIds.size === 0) {
+    return { totalCount: 0, highestPriority: null }
+  }
+
+  const items: ActionableComplianceItem[] = []
+
+  const ijtemaPending = getAllIjtemaAttendanceSummaries().filter(
+    (item) =>
+      assignedIds.has(item.karkunId) &&
+      (item.status === 'Not recorded' || item.status === 'Absent'),
+  ).length
+
+  if (ijtemaPending > 0) {
+    items.push({
+      label: 'Pending Weekly Ijtema',
+      count: ijtemaPending,
+      priority: 3,
+      route: adminCompliancePath('ijtema'),
+    })
+  }
+
+  const monthlyReportsPending = getAllJihWebPortalSummaries().filter(
+    (item) =>
+      assignedIds.has(item.karkunId) &&
+      item.registration.status === 'Registered' &&
+      item.monthlyStatus === 'Pending',
+  ).length
+
+  if (monthlyReportsPending > 0) {
+    items.push({
+      label: 'Pending Monthly Reports',
+      count: monthlyReportsPending,
+      priority: 3,
+      route: adminCompliancePath('monthly-reporting'),
+    })
+  }
+
+  const baitulPending = getAllBaitulMaalSummaries().filter(
+    (item) => assignedIds.has(item.karkunId) && item.status === 'Pending',
+  ).length
+
+  if (baitulPending > 0) {
+    items.push({
+      label: 'Pending Bait-ul-Maal',
+      count: baitulPending,
+      priority: 3,
+      route: adminCompliancePath('baitul-maal'),
+    })
+  }
+
+  const totalCount = items.reduce((sum, item) => sum + item.count, 0)
+  const highestPriority = [...items].sort((a, b) => a.priority - b.priority)[0] ?? null
+
+  return { totalCount, highestPriority }
 }
 
 export function buildCampaignHeroData(): CampaignHeroData | null {
   const campaign = getActiveCampaign()
-  if (!campaign) {
+  const timeline = getCampaignTimeline()
+  if (!campaign || !timeline) {
     return null
   }
 
   const health = getCampaignHealthFromAnnexure1()
-  const { currentDay, totalDays } = getDerivedCampaignDayCounts(
-    campaign.startDate,
-    campaign.endDate,
-  )
 
   return {
     name: campaign.name,
-    duration: formatActiveCampaignDuration(),
-    status: campaign.status,
-    progress: health.overallScore,
-    currentDay,
-    totalDays,
     theme: getActiveCampaignTheme(),
+    objective: getActiveCampaignObjective(),
+    duration: formatActiveCampaignDuration(),
+    dayLabel: timeline.dayLabel,
+    currentDay: timeline.currentDay,
+    totalDays: timeline.totalDays,
+    daysRemaining: timeline.daysRemaining,
+    daysUntilStart: timeline.daysUntilStart,
+    timelineStatus: timeline.status,
+    campaignStatus: campaign.status,
+    progress: getCampaignProgress(),
+    healthScore: health.overallScore,
+    nextMilestone: getActiveCampaignNextMilestone(),
+    percentageElapsed: timeline.percentageElapsed,
   }
 }
 
 function getPendingComplianceCount(ruknId?: string): number {
-  const jih = getJihWebPortalDashboardMetrics()
-  const baitul = getBaitulMaalDashboardMetrics()
-  const ijtemaSummaries = getAllIjtemaAttendanceSummaries()
-
-  let ijtemaPending = ijtemaSummaries.filter(
-    (item) => item.status === 'Not recorded' || item.status === 'Absent',
-  ).length
-
-  if (ruknId) {
-    const assignedKarkunIds = new Set(
-      getAllAssignments()
-        .filter((record) => record.status === 'Active' && record.ruknId === ruknId)
-        .map((record) => record.karkunId),
-    )
-    ijtemaPending = ijtemaSummaries.filter(
-      (item) =>
-        assignedKarkunIds.has(item.karkunId) &&
-        (item.status === 'Not recorded' || item.status === 'Absent'),
-    ).length
-
-    const assignedCount = assignedKarkunIds.size
-    const jihPending = Math.min(jih.notRegistered + jih.pendingReports, assignedCount)
-    const baitulPending = Math.min(baitul.pending, assignedCount)
-    return jihPending + baitulPending + ijtemaPending
-  }
-
-  return jih.notRegistered + jih.pendingReports + baitul.pending + ijtemaPending
+  return getActionableComplianceSummary(ruknId).totalCount
 }
 
 function getPendingFirstVisitsCount(ruknId?: string): number {
@@ -224,7 +268,7 @@ function buildAdminKpis(): CommandCenterKpi[] {
     {
       id: 'campaign-progress',
       label: 'Campaign Progress',
-      value: getCampaignHealthFromAnnexure1().overallScore,
+      value: getCampaignProgress(),
       route: ROUTES.ADMIN_CAMPAIGN,
     },
   ]
@@ -293,7 +337,7 @@ function buildRuknKpis(ruknId: string): CommandCenterKpi[] {
     {
       id: 'campaign-progress',
       label: 'Campaign Progress',
-      value: getCampaignHealthFromAnnexure1().overallScore,
+      value: getCampaignProgress(),
       route: ROUTES.RUKN_CAMPAIGN_RECORD,
     },
   ]
@@ -649,7 +693,7 @@ export function buildAlerts(ruknId?: string): AutomationAlert[] {
       id: 'alert-compliance-overdue',
       severity: 'medium',
       title: 'Compliance Overdue',
-      message: `${compliancePending} compliance item(s) need attention`,
+      message: `${compliancePending} actionable compliance item${compliancePending === 1 ? '' : 's'} need attention`,
       route: adminCompliancePath('ijtema'),
     })
   }
@@ -669,12 +713,12 @@ function buildAdminNextAction(): NextRecommendedAction {
     }
   }
 
-  const compliancePending = getPendingComplianceCount()
-  if (compliancePending > 0) {
+  const compliancePending = getActionableComplianceSummary()
+  if (compliancePending.totalCount > 0 && compliancePending.highestPriority) {
     return {
       title: 'Pending Compliance',
-      description: `${compliancePending} compliance item(s) waiting for review`,
-      route: adminCompliancePath('ijtema'),
+      description: `${compliancePending.totalCount} item${compliancePending.totalCount === 1 ? '' : 's'} require attention`,
+      route: compliancePending.highestPriority.route,
       actionLabel: 'Open Compliance',
       isCaughtUp: false,
     }

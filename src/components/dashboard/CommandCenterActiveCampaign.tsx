@@ -2,6 +2,8 @@ import { MissionProgress } from '@/components/dashboard/MissionProgress'
 import {
   formatActiveCampaignDuration,
   getActiveCampaign,
+  getCampaignProgress,
+  getCampaignTimeline,
 } from '@/services/campaignService'
 
 export function CommandCenterActiveCampaign() {
@@ -29,8 +31,15 @@ export function CommandCenterActiveCampaign() {
         </span>
       </p>
 
+      {getCampaignTimeline() && (
+        <p className="mt-2 text-sm text-secondary">
+          Timeline{' '}
+          <span className="font-medium text-text-heading">{getCampaignTimeline()?.dayLabel}</span>
+        </p>
+      )}
+
       <MissionProgress
-        progress={campaign.progress ?? 0}
+        progress={getCampaignProgress()}
         label="Progress"
         variant="inline"
       />

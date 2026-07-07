@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { ROUTES } from '@/constants/routes'
 import type { CampaignListItem } from '@/constants/mockMissions'
+import { getCampaignProgress, formatCampaignDate } from '@/services/campaignService'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { MissionProgress } from '@/components/dashboard/MissionProgress'
 
@@ -25,7 +26,7 @@ function CampaignCard({ campaign }: CampaignCardProps) {
           </p>
           <h3 className="mt-1 text-lg font-semibold text-text-heading">{campaign.name}</h3>
           <p className="mt-1 text-sm text-secondary">
-            {campaign.startDate} — {campaign.endDate}
+            {formatCampaignDate(campaign.startDate)} — {formatCampaignDate(campaign.endDate)}
           </p>
         </div>
         {isActive && (
@@ -35,9 +36,9 @@ function CampaignCard({ campaign }: CampaignCardProps) {
         )}
       </div>
 
-      {campaign.progress !== undefined && (
+      {isActive && (
         <div className="mt-4">
-          <MissionProgress progress={campaign.progress!} label="Progress" variant="inline" />
+          <MissionProgress progress={getCampaignProgress()} label="Progress" variant="inline" />
         </div>
       )}
     </article>

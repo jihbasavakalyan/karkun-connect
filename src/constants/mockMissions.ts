@@ -88,7 +88,7 @@ export const RUKN_MISSION_QUEUE: RuknMission[] = [
 export type ActiveCampaignSummary = {
   name: string
   progress: number
-  currentDay: number
+  dayLabel: string
   totalDays: number
 }
 
@@ -104,9 +104,9 @@ export type CampaignListItem = {
   status: 'active' | 'archived'
   startDate: string
   endDate: string
-  progress?: number
-  currentDay?: number
-  totalDays?: number
+  theme: string
+  objective: string
+  nextMilestone: string
 }
 
 export const MOCK_NEEDS_ATTENTION: NeedsAttentionSummary = {
@@ -120,11 +120,12 @@ export const MOCK_CAMPAIGNS: CampaignListItem[] = [
     id: 'campaign-active',
     name: 'فعال کارکن، فعال جماعت',
     status: 'active',
-    startDate: '2026-03-01',
-    endDate: '2026-03-30',
-    progress: 68,
-    currentDay: 12,
-    totalDays: 30,
+    startDate: '2026-07-18',
+    endDate: '2026-07-26',
+    theme: 'Activate every Karkun and integrate them into Jamaat work.',
+    objective:
+      'Ensure every assigned Karkun is contacted, visited, engaged, and integrated into Jamaat activities during the campaign.',
+    nextMilestone: 'Complete first visits for all assigned Karkuns',
   },
   {
     id: 'campaign-archived-1',
@@ -132,7 +133,9 @@ export const MOCK_CAMPAIGNS: CampaignListItem[] = [
     status: 'archived',
     startDate: '2025-03-01',
     endDate: '2025-03-31',
-    progress: 100,
+    theme: 'Spring community outreach',
+    objective: 'Reach assigned households during the spring campaign window.',
+    nextMilestone: 'Campaign archived',
   },
   {
     id: 'campaign-archived-2',
@@ -140,7 +143,9 @@ export const MOCK_CAMPAIGNS: CampaignListItem[] = [
     status: 'archived',
     startDate: '2024-12-01',
     endDate: '2024-12-31',
-    progress: 100,
+    theme: 'Winter engagement drive',
+    objective: 'Maintain Jamaat engagement through the winter period.',
+    nextMilestone: 'Campaign archived',
   },
 ]
 

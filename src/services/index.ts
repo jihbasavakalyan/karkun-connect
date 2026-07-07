@@ -8,11 +8,18 @@ export {
   getCampaignLibrary,
   getActiveCampaign,
   getActiveCampaignName,
+  getActiveCampaignTheme,
+  getActiveCampaignObjective,
+  getActiveCampaignNextMilestone,
   getActiveCampaigns,
   getArchivedCampaigns,
   getActiveCampaignSummary,
+  getCampaignTimeline,
+  getCampaignProgress,
   formatActiveCampaignDuration,
+  formatCampaignDate,
 } from './campaignService'
+export type { CampaignTimeline, CampaignTimelineStatus } from './campaignService'
 
 export {
   assignRukn,

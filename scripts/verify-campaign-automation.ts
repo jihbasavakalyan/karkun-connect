@@ -13,6 +13,7 @@ import {
   getAdminCommandCenterSnapshot,
   getRuknCommandCenterSnapshot,
 } from '@/services/campaignAutomationEngine'
+import { formatActiveCampaignDuration, getCampaignTimeline } from '@/services/campaignService'
 import { runProductionDataMigration } from '@/services/productionDataMigrationService'
 import { clearAssignmentStore } from '@/stores/assignmentStore'
 import type { KarkunRegistryRecord, PersonGender } from '@/types/karkun-registry.types'
@@ -57,7 +58,16 @@ runProductionDataMigration()
 const adminSnapshot = getAdminCommandCenterSnapshot()
 assert(adminSnapshot.role === 'administrator', 'Admin snapshot role must be administrator')
 assert(adminSnapshot.hero !== null, 'Admin hero must derive from campaign library')
+assert(
+  formatActiveCampaignDuration().includes('18 Jul 2026') &&
+    formatActiveCampaignDuration().includes('26 Jul 2026'),
+  'Campaign duration must come from the official campaign library dates',
+)
+assert(getCampaignTimeline()?.totalDays === 9, 'Official campaign must span 9 days (18–26 Jul 2026)')
 assert(adminSnapshot.hero!.progress >= 0 && adminSnapshot.hero!.progress <= 100, 'Progress must be derived')
+assert(adminSnapshot.hero!.healthScore >= 0 && adminSnapshot.hero!.healthScore <= 100, 'Health score must be derived')
+assert(adminSnapshot.hero!.theme.length > 0, 'Campaign theme must come from campaign library')
+assert(adminSnapshot.hero!.objective.length > 0, 'Campaign objective must come from campaign library')
 assert(adminSnapshot.kpis.length >= 8, 'Admin must expose operational KPI cards')
 assert(adminSnapshot.kpis.every((kpi) => kpi.route.startsWith('/')), 'KPI routes must be absolute')
 assert(Boolean(adminSnapshot.nextAction.title), 'Admin next action must be defined')
