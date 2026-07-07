@@ -1,51 +1,357 @@
-import { Link, useParams } from 'react-router-dom'
+import { useState, type FormEvent } from 'react'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
-import { getKarkunWorkloadSummary } from '@/services/assignmentService'
-import { getNextFollowUpForKarkun } from '@/services/followUpService'
-import { getAuditLogForPerson } from '@/lib/peopleAuditLog'
-import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { ROUTES } from '@/constants/routes'
+import { changeKarkunRuknAssignment } from '@/lib/assignmentEngine'
+import { updateKarkun } from '@/lib/peopleStore'
+import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
+import { usePeopleStore } from '@/hooks/usePeopleStore'
+import { getCurrentBaitulMaalStatus, updateBaitulMaal } from '@/services/baitulMaalService'
+import { getCurrentIjtemaAttendance, updateIjtemaAttendance } from '@/services/ijtemaAttendanceService'
 import {
-  CAMPAIGN_STATUS_LABELS,
-  VISIT_STATUS_LABELS,
-} from '@/types/karkun-registry.types'
-import { formatPersonStatus } from '@/types/people.types'
-import { subscribeToFollowUpStore } from '@/stores/followUpStore'
-import { useEffect, useState } from 'react'
-import { AssignmentHistoryTimeline } from '@/components/forms/assignment/AssignmentHistoryTimeline'
-import { CampaignStatusBadge } from '@/components/forms/karkunan/CampaignStatusBadge'
-import { JihWebPortalCard } from '@/components/forms/jih/JihWebPortalCard'
-import { BaitulMaalCard } from '@/components/forms/baitulMaal/BaitulMaalCard'
-import { IjtemaAttendanceCard } from '@/components/forms/ijtema/IjtemaAttendanceCard'
-import { ComplianceSection } from '@/components/forms/compliance/ComplianceSection'
+  getCurrentMonthReportingStatus,
+  getRegistrationForKarkun,
+  updateJihMonthlyReport,
+  updateJihRegistration,
+} from '@/services/jihWebPortalService'
+import { InputField } from '@/components/forms/InputField'
+import { RuknAssignmentSelect } from '@/components/forms/people/RuknAssignmentSelect'
+import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
+import type { KarkunRegistryRecord, PersonGender, PersonStatus } from '@/types/karkun-registry.types'
+import { formatPersonNameForDisplay } from '@/utils/formatPersonDisplay'
 
-function ProfileField({ label, value }: { label: string; value: string }) {
+const selectClassName =
+  'w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text-heading focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20'
+
+const compactInputClass = 'px-3 py-2 text-sm'
+
+type ComplianceToggleProps = {
+  id: string
+  label: string
+  checked: boolean
+  onChange: (checked: boolean) => void
+}
+
+function ComplianceToggle({ id, label, checked, onChange }: ComplianceToggleProps) {
   return (
-    <div className="rounded-lg border border-border bg-surface-muted px-4 py-3">
-      <dt className="text-sm text-secondary">{label}</dt>
-      <dd className="mt-1 font-medium text-text-heading">{value}</dd>
-    </div>
+    <label
+      htmlFor={id}
+      className="flex cursor-pointer items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2.5 hover:border-primary/40"
+    >
+      <input
+        id={id}
+        type="checkbox"
+        checked={checked}
+        onChange={(event) => onChange(event.target.checked)}
+        className="size-4 rounded border-border text-primary focus:ring-primary/20"
+      />
+      <span className="text-sm font-medium text-text-heading">{label}</span>
+    </label>
+  )
+}
+
+function todayDate(): string {
+  return new Date().toISOString().slice(0, 10)
+}
+
+function readComplianceState(karkunId: string) {
+  const ijtema = getCurrentIjtemaAttendance(karkunId)
+  const registration = getRegistrationForKarkun(karkunId)
+  const monthly = getCurrentMonthReportingStatus(karkunId)
+  const baitulMaal = getCurrentBaitulMaalStatus(karkunId)
+
+  return {
+    weeklyIjtema: ijtema.status === 'Present' || ijtema.status === 'Informed',
+    jihPortalRegistered: registration.status === 'Registered',
+    monthlyReportSubmitted: monthly.status === 'Submitted',
+    baitulMaalPaid: baitulMaal.status === 'Paid',
+  }
+}
+
+type KarkunProfileFormProps = {
+  karkun: KarkunRegistryRecord
+  karkunId: string
+}
+
+function KarkunProfileForm({ karkun, karkunId }: KarkunProfileFormProps) {
+  const navigate = useNavigate()
+  const initialCompliance = readComplianceState(karkunId)
+
+  const [name, setName] = useState(karkun.name)
+  const [gender, setGender] = useState<PersonGender>(karkun.gender)
+  const [mobile, setMobile] = useState(karkun.mobile)
+  const [whatsapp, setWhatsapp] = useState(karkun.whatsapp ?? '')
+  const [place, setPlace] = useState(karkun.place)
+  const [status, setStatus] = useState<PersonStatus>(karkun.status)
+  const [assignedRuknId, setAssignedRuknId] = useState(karkun.assignedRuknId)
+  const [weeklyIjtema, setWeeklyIjtema] = useState(initialCompliance.weeklyIjtema)
+  const [jihPortalRegistered, setJihPortalRegistered] = useState(
+    initialCompliance.jihPortalRegistered,
+  )
+  const [monthlyReportSubmitted, setMonthlyReportSubmitted] = useState(
+    initialCompliance.monthlyReportSubmitted,
+  )
+  const [baitulMaalPaid, setBaitulMaalPaid] = useState(initialCompliance.baitulMaalPaid)
+  const [error, setError] = useState('')
+
+  const handleJihPortalChange = (checked: boolean) => {
+    setJihPortalRegistered(checked)
+    if (!checked) {
+      setMonthlyReportSubmitted(false)
+    }
+  }
+
+  const handleMonthlyReportChange = (checked: boolean) => {
+    setMonthlyReportSubmitted(checked)
+    if (checked) {
+      setJihPortalRegistered(true)
+    }
+  }
+
+  const handleCancel = () => {
+    navigate(ROUTES.ADMIN_KARKUN)
+  }
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setError('')
+
+    const karkunResult = updateKarkun(karkunId, {
+      name,
+      gender,
+      mobile,
+      whatsapp: whatsapp || undefined,
+      place,
+      status,
+    })
+
+    if (!karkunResult.success) {
+      setError(karkunResult.error ?? 'Unable to save Karkun details.')
+      return
+    }
+
+    const assignmentResult = changeKarkunRuknAssignment(karkunId, assignedRuknId)
+    if (!assignmentResult.success) {
+      setError(assignmentResult.error ?? 'Unable to update assignment.')
+      return
+    }
+
+    const existingRegistration = getRegistrationForKarkun(karkunId)
+
+    if (jihPortalRegistered) {
+      const registrationResult = updateJihRegistration({
+        karkunId,
+        status: 'Registered',
+        registrationDate: existingRegistration.registrationDate ?? todayDate(),
+        registrationNumber: existingRegistration.registrationNumber,
+      })
+
+      if (!registrationResult.success) {
+        setError(registrationResult.error)
+        return
+      }
+
+      const monthlyResult = updateJihMonthlyReport({
+        karkunId,
+        status: monthlyReportSubmitted ? 'Submitted' : 'Pending',
+        submissionDate: monthlyReportSubmitted ? todayDate() : undefined,
+      })
+
+      if (!monthlyResult.success) {
+        setError(monthlyResult.error)
+        return
+      }
+    } else {
+      const registrationResult = updateJihRegistration({
+        karkunId,
+        status: 'Not Registered',
+      })
+
+      if (!registrationResult.success) {
+        setError(registrationResult.error)
+        return
+      }
+    }
+
+    const ijtemaResult = updateIjtemaAttendance({
+      karkunId,
+      status: weeklyIjtema ? 'Present' : 'Absent',
+    })
+
+    if (!ijtemaResult.success) {
+      setError(ijtemaResult.error)
+      return
+    }
+
+    const baitulMaalResult = updateBaitulMaal({
+      karkunId,
+      status: baitulMaalPaid ? 'Paid' : 'Pending',
+      paymentDate: baitulMaalPaid ? todayDate() : undefined,
+    })
+
+    if (!baitulMaalResult.success) {
+      setError(baitulMaalResult.error)
+      return
+    }
+
+    navigate(ROUTES.ADMIN_KARKUN)
+  }
+
+  return (
+    <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+      <div className="flex shrink-0 items-start justify-between gap-4">
+        <div className="min-w-0">
+          <Link
+            to={ROUTES.ADMIN_KARKUN}
+            className="text-sm font-medium text-primary hover:underline"
+          >
+            ← Back to Karkun
+          </Link>
+          <h1 className="mt-1 truncate text-xl font-semibold text-text-heading">
+            {formatPersonNameForDisplay(name)}
+          </h1>
+        </div>
+
+        <div className="flex shrink-0 gap-2">
+          <SecondaryButton type="button" className="px-4 py-2 text-sm" onClick={handleCancel}>
+            Cancel
+          </SecondaryButton>
+          <PrimaryButton type="submit" className="px-4 py-2 text-sm">
+            Save
+          </PrimaryButton>
+        </div>
+      </div>
+
+      <section className="rounded-(--radius-card) border border-border bg-surface p-4 shadow-card">
+        <h2 className="text-sm font-semibold text-text-heading">Basic Information</h2>
+
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <InputField
+            id="profile-name"
+            label="Full Name"
+            value={name}
+            onValueChange={setName}
+            className={compactInputClass}
+            required
+          />
+
+          <div className="flex flex-col gap-2">
+            <label htmlFor="profile-assigned-rukn" className="text-sm font-medium text-text-heading">
+              Assigned Rukn
+            </label>
+            <RuknAssignmentSelect
+              karkunId={karkunId}
+              value={assignedRuknId}
+              compact
+              onChange={setAssignedRuknId}
+            />
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label htmlFor="profile-gender" className="text-sm font-medium text-text-heading">
+              Gender
+            </label>
+            <select
+              id="profile-gender"
+              value={gender}
+              onChange={(event) => setGender(event.target.value as PersonGender)}
+              className={selectClassName}
+            >
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+            </select>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label htmlFor="profile-status" className="text-sm font-medium text-text-heading">
+              Status
+            </label>
+            <select
+              id="profile-status"
+              value={status}
+              onChange={(event) => setStatus(event.target.value as PersonStatus)}
+              className={selectClassName}
+            >
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+          </div>
+
+          <InputField
+            id="profile-mobile"
+            label="Mobile Number"
+            type="tel"
+            value={mobile}
+            onValueChange={setMobile}
+            className={compactInputClass}
+            required
+          />
+
+          <InputField
+            id="profile-whatsapp"
+            label="WhatsApp Number"
+            type="tel"
+            value={whatsapp}
+            onValueChange={setWhatsapp}
+            className={compactInputClass}
+          />
+
+          <InputField
+            id="profile-place"
+            label="Place"
+            value={place}
+            onValueChange={setPlace}
+            className={compactInputClass}
+            required
+          />
+        </div>
+      </section>
+
+      <section className="rounded-(--radius-card) border border-border bg-surface p-4 shadow-card">
+        <h2 className="text-sm font-semibold text-text-heading">Compliance</h2>
+
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <ComplianceToggle
+            id="compliance-ijtema"
+            label="Weekly Ijtema"
+            checked={weeklyIjtema}
+            onChange={setWeeklyIjtema}
+          />
+          <ComplianceToggle
+            id="compliance-jih-portal"
+            label="JIH Portal Registered"
+            checked={jihPortalRegistered}
+            onChange={handleJihPortalChange}
+          />
+          <ComplianceToggle
+            id="compliance-monthly-report"
+            label="Monthly Report Submitted"
+            checked={monthlyReportSubmitted}
+            onChange={handleMonthlyReportChange}
+          />
+          <ComplianceToggle
+            id="compliance-baitul-maal"
+            label="Bait-ul-Maal Paid"
+            checked={baitulMaalPaid}
+            onChange={setBaitulMaalPaid}
+          />
+        </div>
+      </section>
+
+      {error && <p className="text-sm text-red-600">{error}</p>}
+    </form>
   )
 }
 
 export function KarkunProfilePage() {
   const { karkunId } = useParams<{ karkunId: string }>()
-  const [, setVersion] = useState(0)
   useAssignmentEngine()
-
-  useEffect(() => {
-    return subscribeToFollowUpStore(() => setVersion((value) => value + 1))
-  }, [])
-
-  void setVersion
+  usePeopleStore()
 
   const karkun = karkunId ? getKarkunById(karkunId) : undefined
-  const auditLog = karkunId ? getAuditLogForPerson('karkun', karkunId) : []
-  const workload = karkunId ? getKarkunWorkloadSummary(karkunId) : null
-  const nextFollowUp = karkunId ? getNextFollowUpForKarkun(karkunId) : null
 
-  if (!karkun) {
+  if (!karkun || !karkunId) {
     return (
       <div className="mx-auto max-w-3xl rounded-(--radius-card) border border-border bg-surface p-8 text-center shadow-card">
         <h1 className="text-xl font-semibold text-text-heading">Karkun Not Found</h1>
@@ -57,149 +363,9 @@ export function KarkunProfilePage() {
     )
   }
 
-  const commitmentDisplay = karkun.currentCommitment.trim()
-    ? karkun.currentCommitment
-    : 'No commitment recorded.'
-
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <Link
-            to={ROUTES.ADMIN_KARKUN}
-            className="text-sm font-medium text-primary hover:underline"
-          >
-            ← Back to Karkun
-          </Link>
-          <h1 className="mt-2 text-2xl font-semibold text-text-heading">{karkun.name}</h1>
-          <div className="mt-3">
-            <CampaignStatusBadge status={karkun.campaignStatus} />
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-3 sm:flex-row">
-          <SecondaryButton type="button">Edit</SecondaryButton>
-          <SecondaryButton type="button">Visit History</SecondaryButton>
-        </div>
-      </div>
-
-      <section className="rounded-(--radius-card) border border-border bg-surface p-6 shadow-card">
-        <h2 className="text-lg font-semibold text-text-heading">Profile</h2>
-
-        <dl className="mt-4 grid gap-4 sm:grid-cols-2">
-          <ProfileField label="Full Name" value={karkun.name} />
-          <ProfileField label="Gender" value={karkun.gender} />
-          <ProfileField label="Mobile" value={karkun.mobile} />
-          <ProfileField label="WhatsApp" value={karkun.whatsapp ?? '—'} />
-          <ProfileField label="Place" value={karkun.place} />
-          <ProfileField label="Status" value={formatPersonStatus(karkun.status)} />
-          <ProfileField label="Address" value={karkun.address || '—'} />
-          <ProfileField label="Area" value={karkun.area} />
-          <ProfileField label="Created Date" value={karkun.createdAt.slice(0, 10)} />
-          <ProfileField label="Updated Date" value={karkun.updatedAt.slice(0, 10)} />
-          <ProfileField label="Updated By" value={karkun.updatedBy} />
-          <ProfileField
-            label="Campaign Status"
-            value={CAMPAIGN_STATUS_LABELS[karkun.campaignStatus]}
-          />
-          <ProfileField label="Visit Status" value={VISIT_STATUS_LABELS[karkun.visitStatus]} />
-          <ProfileField label="Last Meeting" value={karkun.lastVisit ?? '—'} />
-        </dl>
-
-        <div className="mt-4">
-          <ProfileField label="Notes" value={karkun.notes || '—'} />
-        </div>
-      </section>
-
-      <ComplianceSection>
-        <JihWebPortalCard karkunId={karkun.id} karkunName={karkun.name} />
-        <BaitulMaalCard karkunId={karkun.id} karkunName={karkun.name} />
-        <IjtemaAttendanceCard karkunId={karkun.id} karkunName={karkun.name} />
-      </ComplianceSection>
-
-      <section className="rounded-(--radius-card) border border-border bg-surface p-6 shadow-card">
-        <h2 className="text-lg font-semibold text-text-heading">Next Follow-up</h2>
-        {nextFollowUp ? (
-          <dl className="mt-4 space-y-4">
-            <ProfileField label="Date" value={nextFollowUp.formattedDate} />
-            <ProfileField label="Purpose" value={nextFollowUp.purpose} />
-          </dl>
-        ) : (
-          <p className="mt-4 text-sm text-secondary">No follow-up scheduled.</p>
-        )}
-      </section>
-
-      {workload && (
-        <section className="rounded-(--radius-card) border border-border bg-surface p-6 shadow-card">
-          <h2 className="text-lg font-semibold text-text-heading">Workload</h2>
-          <dl className="mt-4 grid gap-4 sm:grid-cols-2">
-            <ProfileField
-              label="Assigned Rukns"
-              value={workload.assignedRukns.length ? workload.assignedRukns.join(', ') : 'None'}
-            />
-            <ProfileField
-              label="Current Active Assignments"
-              value={String(workload.activeAssignments.length)}
-            />
-            <ProfileField
-              label="Completed Assignments"
-              value={String(workload.completedAssignments.length)}
-            />
-            <ProfileField
-              label="Inactive Assignments"
-              value={String(workload.inactiveAssignments.length)}
-            />
-          </dl>
-        </section>
-      )}
-
-      {workload && (
-        <section className="rounded-(--radius-card) border border-border bg-surface p-6 shadow-card">
-          <h2 className="text-lg font-semibold text-text-heading">Assignment History</h2>
-          <div className="mt-4">
-            <AssignmentHistoryTimeline
-              history={workload.activeAssignments.concat(
-                workload.inactiveAssignments,
-                workload.completedAssignments,
-              )}
-              currentAssignment={workload.activeAssignments[0] ?? null}
-              perspective="karkun"
-            />
-          </div>
-        </section>
-      )}
-
-      <section className="rounded-(--radius-card) border border-border bg-surface p-6 shadow-card">
-        <h2 className="text-lg font-semibold text-text-heading">Meeting Outcomes</h2>
-        <p className="mt-1 text-sm text-secondary">
-          Latest commitment and JIH App registration from field meetings.
-        </p>
-
-        <dl className="mt-4 space-y-4">
-          <ProfileField label="Current Commitment" value={commitmentDisplay} />
-          <ProfileField
-            label="JIH App Registration"
-            value={karkun.jihAppRegistrationStatus}
-          />
-        </dl>
-      </section>
-
-      {auditLog.length > 0 && (
-        <section className="rounded-(--radius-card) border border-border bg-surface p-6 shadow-card">
-          <h2 className="text-lg font-semibold text-text-heading">Audit Log</h2>
-          <ul className="mt-4 space-y-2 text-sm">
-            {auditLog.slice(0, 10).map((entry) => (
-              <li key={entry.id} className="rounded-lg border border-border bg-surface-muted px-3 py-2">
-                <span className="font-medium text-text-heading">{entry.action}</span>
-                <span className="text-secondary">
-                  {' '}
-                  · {entry.timestamp.slice(0, 16).replace('T', ' ')} · {entry.updatedBy}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+    <div className="mx-auto max-w-4xl overflow-hidden">
+      <KarkunProfileForm key={karkunId} karkun={karkun} karkunId={karkunId} />
     </div>
   )
 }
