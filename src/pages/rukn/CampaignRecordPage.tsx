@@ -3,22 +3,12 @@ import { Link } from 'react-router-dom'
 import { getCampaignRecordData } from '@/services/annexure1Service'
 import { subscribeToAnnexure1Store } from '@/stores/annexure1Store'
 import { subscribeToFollowUpStore } from '@/stores/followUpStore'
-import { ROUTES } from '@/constants/routes'
-
-function RecordSection({
-  title,
-  children,
-}: {
-  title: string
-  children: React.ReactNode
-}) {
-  return (
-    <section className="rounded-(--radius-card) border border-border bg-surface p-5 shadow-card">
-      <h2 className="text-lg font-semibold text-text-heading">{title}</h2>
-      <div className="mt-4">{children}</div>
-    </section>
-  )
-}
+import { ROUTES, ruknVisitPath } from '@/constants/routes'
+import { ExecutionEmptyState } from '@/components/execution/ExecutionEmptyState'
+import { ExecutionStatusBadge } from '@/components/execution/ExecutionStatusBadge'
+import { ExecutionSummaryCards } from '@/components/execution/ExecutionSummaryCards'
+import { getExecutionDashboardData } from '@/lib/executionStatus'
+import { PrimaryButton } from '@/components/ui/PrimaryButton'
 
 export function CampaignRecordPage() {
   const [, setVersion] = useState(0)
@@ -33,131 +23,95 @@ export function CampaignRecordPage() {
   }, [])
 
   const data = getCampaignRecordData()
+  const { counts } = getExecutionDashboardData()
+  const pendingFollowUps = data.followUps.filter((item) => item.status === 'Pending')
 
   return (
-    <div className="space-y-6 pb-24">
+    <div className="mx-auto max-w-2xl space-y-6 pb-24">
       <div>
-        <Link to={ROUTES.RUKN} className="text-sm font-medium text-primary hover:underline">
-          ← Back to Today&apos;s Mission
+        <Link to={ROUTES.RUKN_MY_KARKUN} className="text-sm font-medium text-primary hover:underline">
+          ← Back to My Karkun
         </Link>
         <h1 className="mt-2 text-2xl font-semibold text-text-heading">Campaign Record</h1>
-        <p className="mt-2 text-secondary">
-          JIH Portal — latest Annexure-1 submissions for the active campaign.
-        </p>
+        <p className="mt-2 text-secondary">Your execution submissions and follow-ups.</p>
       </div>
 
-      <RecordSection title="Annexure-1 Submissions">
+      <section className="rounded-(--radius-card) border border-border bg-surface p-5 shadow-card">
+        <h2 className="text-lg font-semibold text-text-heading">Execution Summary</h2>
+        <div className="mt-4">
+          <ExecutionSummaryCards counts={counts} />
+        </div>
+      </section>
+
+      <section className="rounded-(--radius-card) border border-border bg-surface p-5 shadow-card">
+        <h2 className="text-lg font-semibold text-text-heading">Annexure-1 Submissions</h2>
         {data.meetingForms.length === 0 ? (
-          <p className="text-sm text-secondary">No Annexure-1 forms submitted yet.</p>
+          <div className="mt-4">
+            <ExecutionEmptyState
+              title="No Execution Records Yet"
+              message="Execution reports will appear after Annexure-1 submissions."
+            />
+          </div>
         ) : (
-          <ul className="space-y-3">
+          <ul className="mt-4 space-y-3">
             {data.meetingForms.map((form) => (
               <li
                 key={form.id}
                 className="rounded-lg border border-border bg-surface-muted px-4 py-3 text-sm"
               >
-                <p className="font-semibold text-text-heading">
-                  {form.workerName} · {form.visitDate} · {form.assignmentNumber}
-                </p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="font-semibold text-text-heading">
+                    {form.workerName} · {form.visitDate}
+                  </p>
+                  <ExecutionStatusBadge status="Completed" />
+                </div>
                 <p className="mt-1 text-secondary">
-                  Rukn: {form.assignedRukn} · Submitted {form.submissionDate.slice(0, 10)}
+                  {form.assignmentNumber} · Submitted {form.submissionDate.slice(0, 10)}
                 </p>
-                <p className="mt-1 text-secondary">
-                  {form.visitConducted === 'yes'
-                    ? form.discussionSummary || 'Annexure-1 submitted'
-                    : `Not conducted: ${form.notConductedReason}`}
-                </p>
+                {form.commitmentMade && form.commitmentDetails && (
+                  <p className="mt-1 text-secondary">Commitment: {form.commitmentDetails}</p>
+                )}
               </li>
             ))}
           </ul>
         )}
-      </RecordSection>
+      </section>
 
-      <RecordSection title="Execution History">
-        {data.visitHistory.length === 0 ? (
-          <p className="text-sm text-secondary">No execution records yet.</p>
+      <section className="rounded-(--radius-card) border border-border bg-surface p-5 shadow-card">
+        <h2 className="text-lg font-semibold text-text-heading">Follow-ups</h2>
+        {pendingFollowUps.length === 0 ? (
+          <div className="mt-4">
+            <ExecutionEmptyState
+              title="No Follow-ups Scheduled"
+              message="You're all caught up."
+            />
+          </div>
         ) : (
-          <ul className="space-y-3">
-            {data.visitHistory.map((visit) => (
-              <li
-                key={visit.id}
-                className="rounded-lg border border-border bg-surface-muted px-4 py-3 text-sm"
-              >
-                <p className="font-semibold text-text-heading">
-                  {visit.workerName} · {visit.visitDate} · {visit.assignmentNumber}
-                </p>
-                <p className="mt-1 text-secondary">{visit.summary}</p>
-              </li>
-            ))}
-          </ul>
-        )}
-      </RecordSection>
-
-      <RecordSection title="Commitments">
-        {data.commitments.length === 0 ? (
-          <p className="text-sm text-secondary">No commitments recorded.</p>
-        ) : (
-          <ul className="space-y-3">
-            {data.commitments.map((item) => (
+          <ul className="mt-4 space-y-3">
+            {pendingFollowUps.map((item) => (
               <li
                 key={item.id}
-                className="rounded-lg border border-border bg-surface-muted px-4 py-3 text-sm"
+                className="flex flex-col gap-3 rounded-lg border border-border bg-surface-muted px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
               >
-                <p className="font-semibold text-text-heading">
-                  {item.workerName} · {item.visitDate} · {item.assignmentNumber}
-                </p>
-                <p className="mt-1 text-secondary">{item.details}</p>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="font-semibold text-text-heading">{item.workerName}</p>
+                    <ExecutionStatusBadge status="Follow-up Required" />
+                  </div>
+                  <p className="mt-1 text-sm text-secondary">
+                    {item.followUpDate} · {item.purpose ?? item.note}
+                  </p>
+                </div>
+                <Link to={ruknVisitPath(item.karkunId)} className="shrink-0">
+                  <PrimaryButton type="button" className="w-full px-4 py-2 text-sm sm:w-auto">
+                    Continue Follow-up
+                  </PrimaryButton>
+                </Link>
               </li>
             ))}
           </ul>
         )}
-      </RecordSection>
-
-      <RecordSection title="JIH App Registration">
-        {data.jihRegistrations.length === 0 ? (
-          <p className="text-sm text-secondary">No JIH records.</p>
-        ) : (
-          <ul className="space-y-3">
-            {data.jihRegistrations.map((item) => (
-              <li
-                key={item.id}
-                className="rounded-lg border border-border bg-surface-muted px-4 py-3 text-sm"
-              >
-                <p className="font-semibold text-text-heading">
-                  {item.workerName} · {item.visitDate} · {item.assignmentNumber}
-                </p>
-                <p className="mt-1 text-secondary">
-                  {item.status} · Rukn: {item.ruknName}
-                </p>
-              </li>
-            ))}
-          </ul>
-        )}
-      </RecordSection>
-
-      <RecordSection title="Follow-ups">
-        {data.followUps.length === 0 ? (
-          <p className="text-sm text-secondary">No follow-ups scheduled.</p>
-        ) : (
-          <ul className="space-y-3">
-            {data.followUps.map((item) => (
-              <li
-                key={item.id}
-                className="rounded-lg border border-border bg-surface-muted px-4 py-3 text-sm"
-              >
-                <p className="font-semibold text-text-heading">
-                  {item.workerName} · {item.followUpDate} · {item.assignmentNumber}
-                </p>
-                <p className="mt-1 text-secondary">
-                  Purpose: {item.purpose ?? item.note}
-                  {item.remarks ? ` · ${item.remarks}` : ''}
-                  {item.status ? ` · ${item.status}` : ''}
-                </p>
-              </li>
-            ))}
-          </ul>
-        )}
-      </RecordSection>
+      </section>
     </div>
   )
 }

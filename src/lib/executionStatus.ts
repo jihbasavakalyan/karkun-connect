@@ -1,9 +1,14 @@
+import { getKarkunById } from '@/constants/mockKarkunRegistry'
+import { getRuknById } from '@/data/ruknMaster'
 import { getActiveFollowUpForKarkun } from '@/stores/followUpStore'
 import { getAllAssignments } from '@/stores/assignmentStore'
 import {
   getAllSubmittedForms,
+  getSubmittedMeetingForms,
   hasSubmittedAnnexureForAssignment,
 } from '@/stores/annexure1Store'
+import type { SubmittedMeetingForm } from '@/types/annexure1.types'
+import type { ExecutionSummaryCounts } from '@/components/execution/ExecutionSummaryCards'
 
 export type ExecutionStatusDisplay =
   | 'Pending'
@@ -70,4 +75,60 @@ export function getFirstPendingKarkunIdForRukn(ruknId: string): string | undefin
   }
 
   return undefined
+}
+
+function todayIsoDate(): string {
+  return new Date().toISOString().slice(0, 10)
+}
+
+export type ExecutionAssignmentItem = {
+  assignmentId: string
+  karkunId: string
+  karkunName: string
+  area: string
+  ruknName: string
+  assignmentNumber: string
+  status: ExecutionStatusDisplay
+}
+
+export function getExecutionDashboardData(): {
+  counts: ExecutionSummaryCounts
+  activeItems: ExecutionAssignmentItem[]
+  completedTodayRecords: SubmittedMeetingForm[]
+} {
+  const activeAssignments = getAllAssignments().filter((record) => record.status === 'Active')
+  const today = todayIsoDate()
+
+  const activeItems = activeAssignments
+    .map((assignment) => {
+      const karkun = getKarkunById(assignment.karkunId)
+      const rukn = getRuknById(assignment.ruknId)
+      if (!karkun || !rukn) {
+        return null
+      }
+
+      return {
+        assignmentId: assignment.assignmentId,
+        karkunId: assignment.karkunId,
+        karkunName: karkun.name,
+        area: karkun.area,
+        ruknName: rukn.name,
+        assignmentNumber: assignment.assignmentNumber,
+        status: getExecutionStatusForAssignment(assignment.assignmentId, assignment.karkunId),
+      }
+    })
+    .filter((item): item is ExecutionAssignmentItem => item !== null)
+
+  const completedTodayRecords = getSubmittedMeetingForms().filter(
+    (form) => form.submissionDate.slice(0, 10) === today,
+  )
+
+  const counts: ExecutionSummaryCounts = {
+    pending: activeItems.filter((item) => item.status === 'Pending').length,
+    inProgress: activeItems.filter((item) => item.status === 'In Progress').length,
+    followUpRequired: activeItems.filter((item) => item.status === 'Follow-up Required').length,
+    completedToday: completedTodayRecords.length,
+  }
+
+  return { counts, activeItems, completedTodayRecords }
 }

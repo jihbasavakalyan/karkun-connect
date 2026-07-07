@@ -15,8 +15,8 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   { id: 'karkun', label: 'Karkun', icon: '👥', to: ROUTES.ADMIN_KARKUN },
   { id: 'assignments', label: 'Assignments', icon: '🔗', to: ROUTES.ADMIN_ASSIGNMENTS },
   { id: 'execution', label: 'Execution', icon: '📝', to: ROUTES.ADMIN_EXECUTION },
-  { id: 'review', label: 'Review & Reports', icon: '📋', to: ROUTES.ADMIN_REVIEW },
-  { id: 'follow-up', label: 'Follow-up & Development', icon: '🔄', to: ROUTES.ADMIN_FOLLOW_UP },
+  { id: 'review', label: 'Execution Reports', icon: '📋', to: ROUTES.ADMIN_REVIEW },
+  { id: 'follow-up', label: 'Follow-up', icon: '🔄', to: ROUTES.ADMIN_FOLLOW_UP },
   { id: 'settings', label: 'Settings', icon: '⚙️', to: ROUTES.ADMIN_SETTINGS },
   { id: 'help', label: 'Help', icon: '❓', to: ROUTES.ADMIN_HELP },
 ]

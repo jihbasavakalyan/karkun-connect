@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { adminAnnexure1Path } from '@/constants/routes'
+import { ExecutionEmptyState } from '@/components/execution/ExecutionEmptyState'
 import { ExecutionStatusBadge } from '@/components/execution/ExecutionStatusBadge'
 import { ExecutionSuccessBanner } from '@/components/execution/ExecutionSuccessBanner'
 import {
@@ -52,17 +53,19 @@ function SectionNav({
 
 function FollowUpList({
   records,
+  emptyTitle,
   emptyMessage,
   showActions,
   onComplete,
 }: {
   records: FollowUpRecord[]
+  emptyTitle: string
   emptyMessage: string
   showActions: boolean
   onComplete: (followUpId: string) => void
 }) {
   if (records.length === 0) {
-    return <p className="text-sm text-secondary">{emptyMessage}</p>
+    return <ExecutionEmptyState title={emptyTitle} message={emptyMessage} />
   }
 
   return (
@@ -149,7 +152,8 @@ export function FollowUpDevelopmentModulePage() {
           <div className="mt-4">
             <FollowUpList
               records={getPendingFollowUps()}
-              emptyMessage="No pending follow-ups."
+              emptyTitle="No Follow-ups Scheduled"
+              emptyMessage="You're all caught up."
               showActions
               onComplete={handleComplete}
             />
@@ -163,7 +167,8 @@ export function FollowUpDevelopmentModulePage() {
           <div className="mt-4">
             <FollowUpList
               records={getTodaysFollowUps()}
-              emptyMessage="No follow-ups scheduled for today."
+              emptyTitle="No Follow-ups Today"
+              emptyMessage="No follow-ups are scheduled for today."
               showActions
               onComplete={handleComplete}
             />
@@ -177,7 +182,8 @@ export function FollowUpDevelopmentModulePage() {
           <div className="mt-4">
             <FollowUpList
               records={getCompletedFollowUps()}
-              emptyMessage="No completed follow-ups yet."
+              emptyTitle="No Completed Follow-ups"
+              emptyMessage="Completed follow-ups will appear here."
               showActions={false}
               onComplete={handleComplete}
             />
