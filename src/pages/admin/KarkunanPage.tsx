@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { PersonGender } from '@/types/karkun-registry.types'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
 import type { ImportSummary } from '@/types/people.types'
@@ -97,11 +97,11 @@ function KarkunGenderSection({
   const [bulkIjtemaStatus, setBulkIjtemaStatus] = useState<IjtemaAttendanceStatus | null>(null)
   const [assignmentErrors, setAssignmentErrors] = useState<Record<string, string>>({})
 
-  const openAddForm = () => {
+  const openAddForm = useCallback(() => {
     setEditingKarkun(null)
     setFormError('')
     setIsFormOpen(true)
-  }
+  }, [])
 
   const openEditForm = (karkun: KarkunRegistryRecord) => {
     setEditingKarkun(karkun)
@@ -180,6 +180,12 @@ function KarkunGenderSection({
     setImportSummary(summary)
   }, [gender])
 
+  const filteredRecordsRef = useRef(management.allFilteredRecords)
+
+  useEffect(() => {
+    filteredRecordsRef.current = management.allFilteredRecords
+  }, [management.allFilteredRecords])
+
   useEffect(() => {
     onRegisterHandlers({
       openAddForm,
@@ -187,11 +193,11 @@ function KarkunGenderSection({
       handleImport: (file) => {
         void handleImport(file)
       },
-      handleExport: (format) => exportKarkuns(management.allFilteredRecords, format),
+      handleExport: (format) => exportKarkuns(filteredRecordsRef.current, format),
     })
 
     return () => onRegisterHandlers(null)
-  }, [gender, management.allFilteredRecords, onRegisterHandlers, handleImport])
+  }, [gender, onRegisterHandlers, handleImport, openAddForm])
 
   useEffect(() => {
     if (shouldOpenAddForm) {
@@ -364,8 +370,12 @@ function KarkunGenderSection({
 
 export function KarkunanPage() {
   const [activeGender, setActiveGender] = useState<GenderTab>('Male')
-  const [sectionHandlers, setSectionHandlers] = useState<KarkunSectionHandlers | null>(null)
+  const sectionHandlersRef = useRef<KarkunSectionHandlers | null>(null)
   const [openAddForGender, setOpenAddForGender] = useState<PersonGender | null>(null)
+
+  const registerSectionHandlers = useCallback((handlers: KarkunSectionHandlers | null) => {
+    sectionHandlersRef.current = handlers
+  }, [])
 
   const handleAddFormOpened = useCallback(() => {
     setOpenAddForGender(null)
@@ -373,7 +383,7 @@ export function KarkunanPage() {
 
   const requestAddKarkun = (gender: PersonGender) => {
     if (gender === activeGender) {
-      sectionHandlers?.openAddForm()
+      sectionHandlersRef.current?.openAddForm()
       return
     }
 
@@ -394,9 +404,9 @@ export function KarkunanPage() {
         <KarkunPeopleActionBar
           onAddMale={() => requestAddKarkun('Male')}
           onAddFemale={() => requestAddKarkun('Female')}
-          onAssign={() => sectionHandlers?.openAssign()}
-          onImport={(file) => sectionHandlers?.handleImport(file)}
-          onExport={(format) => sectionHandlers?.handleExport(format)}
+          onAssign={() => sectionHandlersRef.current?.openAssign()}
+          onImport={(file) => sectionHandlersRef.current?.handleImport(file)}
+          onExport={(format) => sectionHandlersRef.current?.handleExport(format)}
         />
       </div>
 
@@ -422,7 +432,7 @@ export function KarkunanPage() {
         gender={activeGender}
         shouldOpenAddForm={openAddForGender === activeGender}
         onAddFormOpened={handleAddFormOpened}
-        onRegisterHandlers={setSectionHandlers}
+        onRegisterHandlers={registerSectionHandlers}
       />
     </div>
   )
