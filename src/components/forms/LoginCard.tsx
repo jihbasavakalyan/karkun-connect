@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getHomeRouteForRole } from '@/constants/mockAuth'
 import { APP_VERSION } from '@/constants/app'
+import { DemoCredentialsPanel } from '@/components/forms/DemoCredentialsPanel'
 import { InputField } from '@/components/forms/InputField'
 import { PasswordField } from '@/components/forms/PasswordField'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
@@ -12,14 +13,14 @@ export function LoginCard() {
   const { login } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [rememberMe, setRememberMe] = useState(false)
+  const [rememberMe, setRememberMe] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setError(null)
 
-    const result = login(email, password)
+    const result = login(email, password, rememberMe)
 
     if (!result.success) {
       setError(result.error)
@@ -29,11 +30,15 @@ export function LoginCard() {
     navigate(getHomeRouteForRole(result.user.role))
   }
 
+  const fillDemoCredentials = (demoEmail: string, demoPassword: string) => {
+    setEmail(demoEmail)
+    setPassword(demoPassword)
+    setError(null)
+  }
+
   return (
     <div className="w-full max-w-md rounded-(--radius-card) bg-surface p-8 shadow-card">
-      <h1 className="mb-6 text-center text-2xl font-semibold text-text-heading">
-        Login
-      </h1>
+      <h1 className="mb-6 text-center text-2xl font-semibold text-text-heading">Login</h1>
 
       <form className="flex flex-col gap-5" onSubmit={handleSubmit} noValidate>
         {error && (
@@ -77,19 +82,11 @@ export function LoginCard() {
         <PrimaryButton type="submit" fullWidth>
           Login
         </PrimaryButton>
-
-        <button
-          type="button"
-          className="text-sm text-secondary transition-colors hover:text-primary"
-          onClick={() => undefined}
-        >
-          Forgot Password
-        </button>
       </form>
 
-      <p className="mt-8 text-center text-xs text-secondary-light">
-        Version {APP_VERSION}
-      </p>
+      <DemoCredentialsPanel onSelect={fillDemoCredentials} />
+
+      <p className="mt-8 text-center text-xs text-secondary-light">Version {APP_VERSION}</p>
     </div>
   )
 }

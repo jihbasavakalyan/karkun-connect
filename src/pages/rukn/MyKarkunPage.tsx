@@ -1,5 +1,5 @@
 import { Link, Navigate } from 'react-router-dom'
-import { DEMO_RUKN_PORTAL_ID } from '@/constants/demoRukn'
+import { DEFAULT_DEMO_RUKN_ID } from '@/constants/demoRukn'
 import { ROUTES } from '@/constants/routes'
 import { ExecutionSuccessBanner } from '@/components/execution/ExecutionSuccessBanner'
 import { useAuth } from '@/hooks/useAuth'
@@ -8,7 +8,7 @@ import { MyKarkunCard } from '@/components/forms/rukn/MyKarkunCard'
 
 export function MyKarkunPage() {
   const { user } = useAuth()
-  const ruknId = user?.ruknId ?? DEMO_RUKN_PORTAL_ID
+  const ruknId = user?.ruknId ?? DEFAULT_DEMO_RUKN_ID
   const { getAssignedKarkunanForRukn } = useAssignmentEngine()
   const myKarkunan = getAssignedKarkunanForRukn(ruknId)
 

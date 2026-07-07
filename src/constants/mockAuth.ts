@@ -1,15 +1,44 @@
+import { DEMO_RUKN_ACCOUNTS, getDemoRuknIdForEmail } from '@/constants/demoRukn'
 import type { AuthUser, UserRole } from '@/types/auth.types'
-import { DEMO_RUKN_PORTAL_ID } from '@/constants/demoRukn'
 
 type MockCredential = {
   email: string
   password: string
   role: UserRole
+  ruknId?: string
 }
 
+const DEMO_PASSWORD = 'password'
+
 const MOCK_CREDENTIALS: MockCredential[] = [
-  { email: 'admin@demo.com', password: 'password', role: 'administrator' },
-  { email: 'rukn@demo.com', password: 'password', role: 'rukn' },
+  { email: 'admin@demo.com', password: DEMO_PASSWORD, role: 'administrator' },
+  ...DEMO_RUKN_ACCOUNTS.map((account) => ({
+    email: account.email,
+    password: DEMO_PASSWORD,
+    role: 'rukn' as const,
+    ruknId: account.ruknId,
+  })),
+]
+
+export type DemoCredentialDisplay = {
+  roleLabel: string
+  email: string
+  password: string
+  detail?: string
+}
+
+export const DEMO_CREDENTIALS_DISPLAY: DemoCredentialDisplay[] = [
+  {
+    roleLabel: 'Administrator',
+    email: 'admin@demo.com',
+    password: DEMO_PASSWORD,
+  },
+  ...DEMO_RUKN_ACCOUNTS.map((account) => ({
+    roleLabel: 'Rukn',
+    email: account.email,
+    password: DEMO_PASSWORD,
+    detail: `${account.label} — ${account.ruknName}`,
+  })),
 ]
 
 export function authenticateMock(email: string, password: string): AuthUser | null {
@@ -23,10 +52,22 @@ export function authenticateMock(email: string, password: string): AuthUser | nu
     return null
   }
 
+  if (match.role === 'rukn') {
+    const ruknId = match.ruknId ?? getDemoRuknIdForEmail(match.email)
+    if (!ruknId) {
+      return null
+    }
+
+    return {
+      email: match.email,
+      role: match.role,
+      ruknId,
+    }
+  }
+
   return {
     email: match.email,
     role: match.role,
-    ...(match.role === 'rukn' ? { ruknId: DEMO_RUKN_PORTAL_ID } : {}),
   }
 }
 

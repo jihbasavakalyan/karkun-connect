@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
-import { DEMO_RUKN_PORTAL_ID } from '@/constants/demoRukn'
+import { DEFAULT_DEMO_RUKN_ID } from '@/constants/demoRukn'
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { ROUTES } from '@/constants/routes'
 import { useAnnexure1Form } from '@/hooks/useAnnexure1Form'
@@ -60,7 +60,7 @@ export function WorkerMeetingFormPage() {
   useAssignmentEngine()
 
   const karkun = karkunId ? getKarkunById(karkunId) : undefined
-  const ruknId = user?.ruknId ?? DEMO_RUKN_PORTAL_ID
+  const ruknId = user?.ruknId ?? DEFAULT_DEMO_RUKN_ID
   const actorRole = user?.role === 'administrator' ? 'administrator' : 'rukn'
   const activeAssignment = karkunId
     ? resolveActiveAssignmentForAnnexure1(karkunId, ruknId)

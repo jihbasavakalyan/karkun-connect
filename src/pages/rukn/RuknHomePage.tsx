@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { ActiveCampaignSubtitle } from '@/components/layout/CampaignStatusBar'
-import { DEMO_RUKN_PORTAL_ID } from '@/constants/demoRukn'
+import { DEFAULT_DEMO_RUKN_ID } from '@/constants/demoRukn'
 import { ROUTES, ruknVisitPath } from '@/constants/routes'
 import { RUKN_COMPLETED_TODAY } from '@/constants/mockMissions'
 import {
@@ -24,7 +24,7 @@ import { SecondaryButton } from '@/components/ui/SecondaryButton'
 
 export function RuknHomePage() {
   const { user } = useAuth()
-  const ruknId = user?.ruknId ?? DEMO_RUKN_PORTAL_ID
+  const ruknId = user?.ruknId ?? DEFAULT_DEMO_RUKN_ID
   const { getAssignedKarkunanForRukn } = useAssignmentEngine()
   const assignedKarkunan = getAssignedKarkunanForRukn(ruknId)
   const pendingKarkunId = getFirstPendingKarkunIdForRukn(ruknId)

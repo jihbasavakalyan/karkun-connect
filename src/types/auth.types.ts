@@ -13,6 +13,6 @@ export type LoginResult =
 export type AuthContextValue = {
   user: AuthUser | null
   isAuthenticated: boolean
-  login: (email: string, password: string) => LoginResult
+  login: (email: string, password: string, rememberMe: boolean) => LoginResult
   logout: () => void
 }

@@ -1,7 +1,9 @@
 # Auth Pages
 
-Authentication and authorization pages for **karkun-connect**.
+Authentication pages for **karkun-connect** (Version 1 pilot).
 
-Pages in this folder handle user identity flows. Examples: login, registration, password reset, email verification, and session expiry.
+- **Login** — mock credential validation via `src/constants/mockAuth.ts`
+- **Session** — persisted in `localStorage` (Remember Me) or `sessionStorage` (tab session)
+- **Demo accounts** — multiple Rukn portal logins mapped to `ruknMaster` records
 
-Authentication state and Firebase integration will be managed via `src/firebase/` and `src/hooks/`.
+Firebase and backend authentication are deferred to Version 2.

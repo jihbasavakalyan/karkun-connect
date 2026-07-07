@@ -1,5 +1,5 @@
 import { Navigate } from 'react-router-dom'
-import { DEMO_RUKN_PORTAL_ID } from '@/constants/demoRukn'
+import { DEFAULT_DEMO_RUKN_ID } from '@/constants/demoRukn'
 import { ROUTES } from '@/constants/routes'
 import { useAuth } from '@/hooks/useAuth'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
@@ -7,7 +7,7 @@ import { AvailableKarkunCard } from '@/components/forms/rukn/AvailableKarkunCard
 
 export function AvailableKarkunPage() {
   const { user } = useAuth()
-  const ruknId = user?.ruknId ?? DEMO_RUKN_PORTAL_ID
+  const ruknId = user?.ruknId ?? DEFAULT_DEMO_RUKN_ID
   const { getAvailableKarkunan } = useAssignmentEngine()
   const availableKarkunan = getAvailableKarkunan()
 
