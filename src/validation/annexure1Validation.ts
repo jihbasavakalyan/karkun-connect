@@ -104,8 +104,12 @@ export function validateAnnexure1Form(form: Annexure1FormState): Annexure1Valida
     return { valid: false, error: 'Commitment details are required when a commitment was made.' }
   }
 
+  if (!form.commitmentMade) {
+    return { valid: true }
+  }
+
   return validateAnnexureFollowUpFields(
-    form.followUpRequired,
+    form.followUpRequired === '' ? 'no' : form.followUpRequired,
     form.followUpDate,
     form.followUpPurpose,
   )

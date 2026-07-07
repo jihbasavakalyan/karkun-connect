@@ -1,6 +1,7 @@
 import { InputField } from '@/components/forms/InputField'
 import { TextAreaField } from '@/components/forms/TextAreaField'
 import { FormFieldGroup, LargeRadioOption } from '@/components/forms/annexure1/FormSectionCard'
+import { todayIsoDate } from '@/lib/annexure1Dates'
 import { JIH_APP_REGISTRATION_FORM_OPTIONS } from '@/types/annexure1.types'
 import type { Annexure1FormState, JihAppRegistrationStatus } from '@/types/annexure1.types'
 import type { Annexure1FormFieldUpdater } from '@/hooks/useAnnexure1Form'
@@ -12,11 +13,7 @@ type Annexure1ExecutionFormProps = {
 }
 
 const selectClassName =
-  'w-full rounded-lg border border-border bg-surface px-4 py-3 text-base text-text-heading focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20'
-
-function todayIsoDate(): string {
-  return new Date().toISOString().slice(0, 10)
-}
+  'min-h-[52px] w-full rounded-lg border border-border bg-surface px-4 py-3 text-base text-text-heading focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20'
 
 export function Annexure1ExecutionForm({
   form,
@@ -116,57 +113,53 @@ export function Annexure1ExecutionForm({
             </label>
 
             {form.commitmentMade && (
-              <InputField
-                id="commitment-details"
-                label="Commitment Details"
-                value={form.commitmentDetails}
-                onValueChange={(value) => setField('commitmentDetails', value)}
-                placeholder="Describe the commitment..."
-              />
-            )}
-          </FormFieldGroup>
-
-          <FormFieldGroup title="Follow-up">
-            <p className="text-sm text-secondary">
-              Most meetings need no follow-up. Select Yes only when another interaction is required.
-            </p>
-
-            <fieldset className="space-y-3">
-              <legend className="text-sm font-medium text-text-heading">Follow-up Required?</legend>
-              <LargeRadioOption
-                name="follow-up-required"
-                value="yes"
-                checked={form.followUpRequired === 'yes'}
-                label="Yes"
-                onChange={(value) => setField('followUpRequired', value as 'yes')}
-              />
-              <LargeRadioOption
-                name="follow-up-required"
-                value="no"
-                checked={form.followUpRequired === 'no'}
-                label="No"
-                onChange={(value) => setField('followUpRequired', value as 'no')}
-              />
-            </fieldset>
-
-            {form.followUpRequired === 'yes' && (
-              <div className="space-y-4">
+              <>
                 <InputField
-                  id="follow-up-date"
-                  label="Follow-up Date"
-                  type="date"
-                  min={todayIsoDate()}
-                  value={form.followUpDate}
-                  onValueChange={(value) => setField('followUpDate', value)}
+                  id="commitment-details"
+                  label="Commitment Details"
+                  value={form.commitmentDetails}
+                  onValueChange={(value) => setField('commitmentDetails', value)}
+                  placeholder="Describe the commitment..."
                 />
-                <InputField
-                  id="follow-up-purpose"
-                  label="Follow-up Purpose"
-                  value={form.followUpPurpose}
-                  onValueChange={(value) => setField('followUpPurpose', value)}
-                  placeholder="e.g. Weekly Ijtema Reminder"
-                />
-              </div>
+
+                <fieldset className="space-y-3">
+                  <legend className="text-sm font-medium text-text-heading">Follow-up Required?</legend>
+                  <LargeRadioOption
+                    name="follow-up-required"
+                    value="yes"
+                    checked={form.followUpRequired === 'yes'}
+                    label="Yes"
+                    onChange={(value) => setField('followUpRequired', value as 'yes')}
+                  />
+                  <LargeRadioOption
+                    name="follow-up-required"
+                    value="no"
+                    checked={form.followUpRequired === 'no'}
+                    label="No"
+                    onChange={(value) => setField('followUpRequired', value as 'no')}
+                  />
+                </fieldset>
+
+                {form.followUpRequired === 'yes' && (
+                  <div className="space-y-4">
+                    <InputField
+                      id="follow-up-date"
+                      label="Follow-up Date"
+                      type="date"
+                      min={todayIsoDate()}
+                      value={form.followUpDate}
+                      onValueChange={(value) => setField('followUpDate', value)}
+                    />
+                    <InputField
+                      id="follow-up-purpose"
+                      label="Follow-up Purpose"
+                      value={form.followUpPurpose}
+                      onValueChange={(value) => setField('followUpPurpose', value)}
+                      placeholder="e.g. Weekly Ijtema Reminder"
+                    />
+                  </div>
+                )}
+              </>
             )}
           </FormFieldGroup>
         </>

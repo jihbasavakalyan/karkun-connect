@@ -62,7 +62,7 @@ export function createInitialAnnexure1FormState(): Annexure1FormState {
     commitmentMade: false,
     commitmentDetails: '',
     jihAppRegistrationStatus: 'Not Discussed',
-    followUpRequired: '',
+    followUpRequired: 'no',
     followUpDate: '',
     followUpPurpose: '',
   }

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { DEMO_RUKN_PORTAL_ID } from '@/constants/demoRukn'
-import { ROUTES } from '@/constants/routes'
+import { ROUTES, ruknVisitPath } from '@/constants/routes'
 import { RUKN_COMPLETED_TODAY } from '@/constants/mockMissions'
 import {
   generateRuknMissionQueue,
@@ -13,13 +13,13 @@ import { MissionHeroCard } from '@/components/dashboard/MissionHeroCard'
 import { MissionProgress } from '@/components/dashboard/MissionProgress'
 import {
   CompletedWorkPanel,
-  ContinueMissionButton,
   CurrentVisitPanel,
   NextMissionPanel,
 } from '@/components/dashboard/RuknMissionPanels'
 import { useAuth } from '@/hooks/useAuth'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
+import { SecondaryButton } from '@/components/ui/SecondaryButton'
 
 export function RuknHomePage() {
   const { user } = useAuth()
@@ -38,31 +38,37 @@ export function RuknHomePage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold text-text-heading">Home</h1>
-        <p className="mt-2 text-secondary">Your field mission queue for today.</p>
+        <p className="mt-2 text-secondary">Start today&apos;s campaign execution.</p>
       </div>
 
-      {assignedKarkunan.length > 0 && (
+      {assignedKarkunan.length > 0 ? (
         <section className="rounded-(--radius-card) border border-border bg-surface p-5 shadow-card">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h2 className="text-lg font-semibold text-text-heading">Today&apos;s Assigned Karkuns</h2>
-              <p className="mt-1 text-sm text-secondary">
-                {assignedKarkunan.length} assigned · start with Annexure-1
-              </p>
-            </div>
+          <h2 className="text-lg font-semibold text-text-heading">Today&apos;s Assigned Karkuns</h2>
+          <p className="mt-1 text-sm text-secondary">
+            {assignedKarkunan.length} assigned
+            {pendingKarkunId ? ' · Annexure-1 pending' : ' · all up to date'}
+          </p>
+          <div className="mt-4 grid gap-2">
+            {pendingKarkunId && (
+              <Link to={ruknVisitPath(pendingKarkunId)}>
+                <PrimaryButton type="button" fullWidth>
+                  Open Annexure-1
+                </PrimaryButton>
+              </Link>
+            )}
             <Link to={ROUTES.RUKN_MY_KARKUN}>
-              <PrimaryButton type="button" className="px-4 py-2 text-sm">
-                View All
-              </PrimaryButton>
+              <SecondaryButton type="button" fullWidth>
+                View All Assigned Karkuns
+              </SecondaryButton>
             </Link>
           </div>
-          {pendingKarkunId && (
-            <Link to={`${ROUTES.RUKN}/visit/${pendingKarkunId}`} className="mt-4 block">
-              <PrimaryButton type="button" fullWidth>
-                Open Next Annexure-1
-              </PrimaryButton>
-            </Link>
-          )}
+        </section>
+      ) : (
+        <section className="rounded-(--radius-card) border border-border bg-surface p-5 text-center shadow-card">
+          <p className="text-secondary">No Karkun assigned yet.</p>
+          <Link to={ROUTES.RUKN_AVAILABLE_KARKUN} className="mt-4 inline-block">
+            <SecondaryButton type="button">Browse Available Karkun</SecondaryButton>
+          </Link>
         </section>
       )}
 
@@ -72,10 +78,9 @@ export function RuknHomePage() {
           estimatedTime={currentMission?.estimatedTime ?? '—'}
         />
         <MissionProgress progress={progress} />
-        <ContinueMissionButton ruknId={ruknId} />
       </section>
 
-      <CurrentVisitPanel mission={currentVisit} pendingKarkunId={pendingKarkunId} />
+      <CurrentVisitPanel mission={currentVisit} />
       <NextMissionPanel mission={nextMission} />
       <CompletedWorkPanel items={RUKN_COMPLETED_TODAY} />
     </div>

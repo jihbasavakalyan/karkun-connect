@@ -1,5 +1,6 @@
 import { InputField } from '@/components/forms/InputField'
 import { FormSectionCard, LargeRadioOption } from '@/components/forms/annexure1/FormSectionCard'
+import { todayIsoDate } from '@/lib/annexure1Dates'
 import type { Annexure1FormState } from '@/types/annexure1.types'
 import type { Annexure1FormFieldUpdater } from '@/hooks/useAnnexure1Form'
 
@@ -8,18 +9,14 @@ type FollowUpSectionProps = {
   setField: Annexure1FormFieldUpdater
 }
 
-function todayIsoDate(): string {
-  return new Date().toISOString().slice(0, 10)
-}
-
 export function FollowUpSection({ form, setField }: FollowUpSectionProps) {
+  if (!form.commitmentMade) {
+    return null
+  }
+
   return (
     <FormSectionCard title="Follow-up">
       <div className="space-y-4">
-        <p className="text-sm text-secondary">
-          Most meetings need no follow-up. Create one only when another interaction is required.
-        </p>
-
         <fieldset className="space-y-3">
           <legend className="text-sm font-medium text-text-heading">Follow-up Required?</legend>
           <LargeRadioOption

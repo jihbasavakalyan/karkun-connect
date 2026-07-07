@@ -20,6 +20,7 @@ import {
 } from '@/components/forms/annexure1'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
+import type { Annexure1FormState } from '@/types/annexure1.types'
 
 function buildPostSubmitDestination(
   isAdminContext: boolean,
@@ -40,6 +41,13 @@ function buildSuccessMessage(karkunName: string, followUpRequired: boolean): str
   }
 
   return `Annexure-1 submitted for ${karkunName}.`
+}
+
+function wasFollowUpScheduled(
+  commitmentMade: boolean,
+  followUpRequired: Annexure1FormState['followUpRequired'],
+): boolean {
+  return commitmentMade && followUpRequired === 'yes'
 }
 
 export function WorkerMeetingFormPage() {
@@ -65,6 +73,7 @@ export function WorkerMeetingFormPage() {
     karkun
       ? {
           jihAppRegistrationStatus: karkun.jihAppRegistrationStatus,
+          followUpRequired: 'no',
         }
       : undefined,
   )
@@ -133,7 +142,10 @@ export function WorkerMeetingFormPage() {
 
     completeVisitReportSubmission()
 
-    const followUpRequired = result.submission.followUpRequired === 'yes'
+    const followUpRequired = wasFollowUpScheduled(
+      result.submission.commitmentMade,
+      result.submission.followUpRequired,
+    )
     navigate(buildPostSubmitDestination(isAdminContext, followUpRequired), {
       state: {
         successMessage: buildSuccessMessage(karkun.name, followUpRequired),
@@ -155,6 +167,9 @@ export function WorkerMeetingFormPage() {
 
   const showFullForm = form.visitConducted === 'yes'
   const showNotConductedActions = visitStopped
+  const stickyActionClassName = isAdminContext
+    ? 'sticky bottom-4 z-10'
+    : 'sticky bottom-20 z-10'
 
   return (
     <div className="mx-auto max-w-2xl space-y-4 pb-28">
@@ -163,7 +178,9 @@ export function WorkerMeetingFormPage() {
       <Annexure1ExecutionForm form={form} setField={setField} showFullForm={showFullForm} />
 
       {(showFullForm || showNotConductedActions) && (
-        <div className="sticky bottom-4 z-10 space-y-2 rounded-(--radius-card) border border-border bg-surface p-3 shadow-card sm:p-4">
+        <div
+          className={`${stickyActionClassName} space-y-2 rounded-(--radius-card) border border-border bg-surface p-3 shadow-card sm:p-4`}
+        >
           {submitError && (
             <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
               {submitError}
@@ -177,11 +194,6 @@ export function WorkerMeetingFormPage() {
               Save Draft
             </SecondaryButton>
           )}
-          <Link to={backPath}>
-            <SecondaryButton type="button" fullWidth>
-              Cancel
-            </SecondaryButton>
-          </Link>
         </div>
       )}
 

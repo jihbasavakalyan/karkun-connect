@@ -40,29 +40,19 @@ export function MyKarkunCard({ karkun, ruknId }: MyKarkunCardProps) {
   return (
     <>
       <article className="rounded-(--radius-card) border border-border bg-surface p-5 shadow-card">
-        <div className="flex flex-wrap items-center gap-2">
-          <h2 className="text-lg font-semibold text-text-heading">{karkun.name}</h2>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h2 className="text-lg font-semibold text-text-heading">{karkun.name}</h2>
+            <p className="mt-1 text-sm text-secondary">{karkun.area}</p>
+          </div>
           <ExecutionStatusBadge status={executionStatus} />
         </div>
 
-        <dl className="mt-3 space-y-2 text-sm">
-          <div>
-            <dt className="text-secondary">Area</dt>
-            <dd className="font-medium text-text-heading">{karkun.area}</dd>
-          </div>
-          {nextFollowUp && (
-            <div>
-              <dt className="text-secondary">Next Follow-up</dt>
-              <dd className="font-medium text-text-heading">
-                {nextFollowUp.formattedDate} · {nextFollowUp.purpose}
-              </dd>
-            </div>
-          )}
-          <div>
-            <dt className="text-secondary">Last Meeting</dt>
-            <dd className="font-medium text-text-heading">{karkun.lastVisit ?? '—'}</dd>
-          </div>
-        </dl>
+        {nextFollowUp && (
+          <p className="mt-3 text-sm text-secondary">
+            Next follow-up: {nextFollowUp.formattedDate} · {nextFollowUp.purpose}
+          </p>
+        )}
 
         <div className="mt-4 grid gap-2">
           <Link to={ruknVisitPath(karkun.id)}>
@@ -70,12 +60,14 @@ export function MyKarkunCard({ karkun, ruknId }: MyKarkunCardProps) {
               {actionLabel}
             </PrimaryButton>
           </Link>
-          <SecondaryButton type="button" fullWidth onClick={() => setReleaseOpen(true)}>
-            Release
-          </SecondaryButton>
-          <SecondaryButton type="button" fullWidth onClick={() => setReplaceOpen(true)}>
-            Replace
-          </SecondaryButton>
+          <div className="grid grid-cols-2 gap-2">
+            <SecondaryButton type="button" fullWidth onClick={() => setReleaseOpen(true)}>
+              Release
+            </SecondaryButton>
+            <SecondaryButton type="button" fullWidth onClick={() => setReplaceOpen(true)}>
+              Replace
+            </SecondaryButton>
+          </div>
         </div>
       </article>
 

@@ -98,6 +98,8 @@ export function submitAnnexure1(
   })
 
   if (form.visitConducted === 'yes') {
+    const followUpRequired =
+      form.commitmentMade && form.followUpRequired === 'yes' ? 'yes' : 'no'
     const followUpResult = handleFollowUpOnAnnexureSubmit(
       assignment.assignmentId,
       assignment.assignmentNumber,
@@ -105,9 +107,9 @@ export function submitAnnexure1(
       context.karkunId,
       record.workerName,
       record.id,
-      form.followUpRequired,
-      form.followUpDate,
-      form.followUpPurpose,
+      followUpRequired,
+      followUpRequired === 'yes' ? form.followUpDate : '',
+      followUpRequired === 'yes' ? form.followUpPurpose : '',
     )
 
     if (followUpResult.error) {
