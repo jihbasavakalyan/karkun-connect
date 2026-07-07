@@ -18,6 +18,8 @@ export type KarkunRegistryRecord = {
   whatsapp?: string
   place: string
   status: PersonStatus
+  /** Optional Father Name (Male) or Husband Name (Female). Blank until enriched. */
+  fatherHusbandName?: string
   createdAt: string
   updatedAt: string
   updatedBy: string

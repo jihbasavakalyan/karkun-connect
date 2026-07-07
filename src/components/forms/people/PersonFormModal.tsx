@@ -7,7 +7,7 @@ import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import type { PersonContactInput, PersonKind } from '@/types/people.types'
 import type { PersonGender, PersonStatus } from '@/types/karkun-registry.types'
-import { DEFAULT_PLACE } from '@/types/people.types'
+import { DEFAULT_PLACE, getFatherHusbandLabel } from '@/types/people.types'
 import { MOBILE_INPUT_PLACEHOLDER } from '@/utils/personContactLinks'
 
 export type PersonFormValues = PersonContactInput & {
@@ -44,7 +44,7 @@ export function PersonFormModal({
 
   return (
     <PersonFormModalContent
-      key={`${mode}-${initialValues?.name ?? 'new'}-${initialValues?.mobile ?? ''}-${initialValues?.assignedRuknId ?? ''}`}
+      key={`${mode}-${initialValues?.name ?? 'new'}-${initialValues?.mobile ?? ''}-${initialValues?.assignedRuknId ?? ''}-${initialValues?.fatherHusbandName ?? ''}`}
       kind={kind}
       mode={mode}
       initialValues={initialValues}
@@ -71,6 +71,9 @@ function PersonFormModalContent({
   const [whatsapp, setWhatsapp] = useState(initialValues?.whatsapp ?? '')
   const [status, setStatus] = useState<PersonStatus>(initialValues?.status ?? 'active')
   const [assignedRuknId, setAssignedRuknId] = useState(initialValues?.assignedRuknId ?? '')
+  const [fatherHusbandName, setFatherHusbandName] = useState(
+    initialValues?.fatherHusbandName ?? '',
+  )
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -81,6 +84,7 @@ function PersonFormModalContent({
       whatsapp: whatsapp || undefined,
       place: DEFAULT_PLACE,
       status,
+      fatherHusbandName: kind === 'karkun' ? fatherHusbandName || undefined : undefined,
       assignedRuknId: kind === 'karkun' && mode === 'edit' ? assignedRuknId : undefined,
     })
   }
@@ -169,6 +173,16 @@ function PersonFormModalContent({
             onValueChange={setWhatsapp}
             placeholder={MOBILE_INPUT_PLACEHOLDER}
           />
+
+          {kind === 'karkun' && (
+            <InputField
+              id="person-father-husband"
+              label={`${getFatherHusbandLabel(gender)} (optional)`}
+              value={fatherHusbandName}
+              onValueChange={setFatherHusbandName}
+              placeholder={getFatherHusbandLabel(gender)}
+            />
+          )}
         </div>
 
         {mode === 'edit' && (

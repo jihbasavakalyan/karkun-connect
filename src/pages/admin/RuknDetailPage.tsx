@@ -4,9 +4,10 @@ import { getRuknById } from '@/data/ruknMaster'
 import { getRuknAssignmentSummary } from '@/services/assignmentService'
 import { getAuditLogForPerson } from '@/lib/peopleAuditLog'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
-import { ROUTES } from '@/constants/routes'
+import { ROUTES, adminAssignmentsPath } from '@/constants/routes'
 import { AssignmentHistoryTimeline } from '@/components/forms/assignment/AssignmentHistoryTimeline'
 import { CommunicationActions } from '@/components/communication/CommunicationActions'
+import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import { useCommunication } from '@/hooks/useCommunication'
 import { formatPersonStatus } from '@/types/people.types'
@@ -108,11 +109,10 @@ export function RuknDetailPage() {
         <section className="rounded-(--radius-card) border border-border bg-surface p-5 shadow-card">
           <div className="flex items-start justify-between gap-3">
             <h2 className="text-lg font-semibold text-text-heading">Assignment</h2>
-            <Link
-              to={ROUTES.ADMIN_ASSIGNMENTS}
-              className="text-sm font-medium text-primary hover:underline"
-            >
-              Manage →
+            <Link to={adminAssignmentsPath({ ruknId: rukn.id })}>
+              <PrimaryButton type="button" className="px-4 py-2 text-sm">
+                ➕ Add Karkun
+              </PrimaryButton>
             </Link>
           </div>
 

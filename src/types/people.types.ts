@@ -97,6 +97,13 @@ export type PersonContactInput = {
   place: string
   status: PersonStatus
   notes?: string
+  /** Optional family name — Father Name (Male) or Husband Name (Female). Gradual enrichment. */
+  fatherHusbandName?: string
+}
+
+/** Gender-aware label for the optional family name field. */
+export function getFatherHusbandLabel(gender: PersonGender): string {
+  return gender === 'Female' ? 'Husband Name' : 'Father Name'
 }
 
 export const DEFAULT_PLACE = 'Basavakalyan'

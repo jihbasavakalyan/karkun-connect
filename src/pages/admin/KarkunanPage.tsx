@@ -309,6 +309,7 @@ function KarkunGenderSection({
                 mobile: editingKarkun.mobile,
                 whatsapp: editingKarkun.whatsapp,
                 status: editingKarkun.status,
+                fatherHusbandName: editingKarkun.fatherHusbandName,
                 assignedRuknId: editingKarkun.assignedRuknId,
               }
             : { gender }

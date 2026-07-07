@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { adminAnnexure1Path, adminRuknDetailPath } from '@/constants/routes'
+import { AssignmentMappingView } from '@/components/assignment/AssignmentMappingView'
 import { getRuknById, ruknMaster } from '@/data/ruknMaster'
 import { exportAssignmentHistory } from '@/lib/assignmentExport'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
@@ -32,12 +33,17 @@ export function AssignmentManagementPage() {
     restoreAssignment,
   } = useAssignmentEngine()
 
+  const [searchParams, setSearchParams] = useSearchParams()
+  const activeView = searchParams.get('view') === 'mapping' ? 'mapping' : 'assign'
+
   const [globalSearch, setGlobalSearch] = useState('')
   const [ruknSearch, setRuknSearch] = useState('')
   const [karkunSearch, setKarkunSearch] = useState('')
   const [genderFilter, setGenderFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
-  const [selectedRuknId, setSelectedRuknId] = useState<string | null>(null)
+  const [selectedRuknId, setSelectedRuknId] = useState<string | null>(
+    () => searchParams.get('rukn'),
+  )
   const [selectedKarkunId, setSelectedKarkunId] = useState<string | null>(null)
   const [modalMode, setModalMode] = useState<ModalMode>(null)
   const [actionError, setActionError] = useState('')
@@ -110,6 +116,21 @@ export function AssignmentManagementPage() {
     selectedRukn,
     getKarkunWithWorkload,
   ])
+
+  const changeView = (next: 'assign' | 'mapping') => {
+    setSearchParams(
+      (params) => {
+        const updated = new URLSearchParams(params)
+        if (next === 'mapping') {
+          updated.set('view', 'mapping')
+        } else {
+          updated.delete('view')
+        }
+        return updated
+      },
+      { replace: true },
+    )
+  }
 
   const closeModal = () => {
     setModalMode(null)
@@ -214,6 +235,35 @@ export function AssignmentManagementPage() {
         </SecondaryButton>
       </div>
 
+      <div className="inline-flex rounded-lg border border-border bg-surface p-1 shadow-card">
+        <button
+          type="button"
+          onClick={() => changeView('assign')}
+          className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+            activeView === 'assign'
+              ? 'bg-primary text-white'
+              : 'text-secondary hover:text-text-heading'
+          }`}
+        >
+          Assignment Desk
+        </button>
+        <button
+          type="button"
+          onClick={() => changeView('mapping')}
+          className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+            activeView === 'mapping'
+              ? 'bg-primary text-white'
+              : 'text-secondary hover:text-text-heading'
+          }`}
+        >
+          Mapping View
+        </button>
+      </div>
+
+      {activeView === 'mapping' && <AssignmentMappingView version={assignmentVersion} />}
+
+      {activeView === 'assign' && (
+      <>
       <div className="rounded-(--radius-card) border border-border bg-surface p-4 shadow-card">
         <label htmlFor="assignment-global-search" className="text-sm font-medium text-text-heading">
           Search assignments
@@ -511,6 +561,8 @@ export function AssignmentManagementPage() {
             />
           </div>
         </section>
+      )}
+      </>
       )}
 
       <AssignRuknModal

@@ -42,6 +42,21 @@ export function adminRuknDetailPath(ruknId: string): string {
   return `${ROUTES.ADMIN_RUKN}/${ruknId}`
 }
 
+export function adminAssignmentsPath(options?: {
+  ruknId?: string
+  view?: 'assign' | 'mapping'
+}): string {
+  const params = new URLSearchParams()
+  if (options?.ruknId) {
+    params.set('rukn', options.ruknId)
+  }
+  if (options?.view) {
+    params.set('view', options.view)
+  }
+  const query = params.toString()
+  return query ? `${ROUTES.ADMIN_ASSIGNMENTS}?${query}` : ROUTES.ADMIN_ASSIGNMENTS
+}
+
 export function adminExecutionPath(section?: string): string {
   return section ? `${ROUTES.ADMIN_EXECUTION}?section=${section}` : ROUTES.ADMIN_EXECUTION
 }

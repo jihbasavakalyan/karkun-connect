@@ -363,6 +363,7 @@ export function createKarkun(
     whatsapp: input.whatsapp?.trim() || undefined,
     place: input.place.trim() || DEFAULT_PLACE,
     status: input.status,
+    fatherHusbandName: input.fatherHusbandName?.trim() || undefined,
     createdAt: timestamp,
     updatedAt: timestamp,
     updatedBy,
@@ -446,6 +447,8 @@ export function updateKarkun(
   if (input.whatsapp !== undefined) karkun.whatsapp = input.whatsapp.trim() || undefined
   if (input.place !== undefined) karkun.place = input.place.trim() || DEFAULT_PLACE
   if (input.status !== undefined) karkun.status = input.status
+  if (input.fatherHusbandName !== undefined)
+    karkun.fatherHusbandName = input.fatherHusbandName.trim() || undefined
   if (input.notes !== undefined) karkun.notes = input.notes.trim()
   if (input.area !== undefined) karkun.area = input.area.trim()
   if (input.address !== undefined) karkun.address = input.address.trim()

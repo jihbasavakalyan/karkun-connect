@@ -23,7 +23,7 @@ import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import type { KarkunRegistryRecord, PersonGender, PersonStatus } from '@/types/karkun-registry.types'
 import type { IjtemaAttendanceStatus } from '@/types/ijtemaAttendance'
-import { DEFAULT_PLACE } from '@/types/people.types'
+import { DEFAULT_PLACE, getFatherHusbandLabel } from '@/types/people.types'
 import { formatPersonNameForDisplay } from '@/utils/formatPersonDisplay'
 import { MOBILE_INPUT_PLACEHOLDER } from '@/utils/personContactLinks'
 
@@ -126,6 +126,7 @@ function KarkunProfileForm({ karkun, karkunId }: KarkunProfileFormProps) {
   const [mobile, setMobile] = useState(karkun.mobile)
   const [whatsapp, setWhatsapp] = useState(karkun.whatsapp ?? '')
   const [status, setStatus] = useState<PersonStatus>(karkun.status)
+  const [fatherHusbandName, setFatherHusbandName] = useState(karkun.fatherHusbandName ?? '')
   const [assignedRuknId, setAssignedRuknId] = useState(karkun.assignedRuknId)
   const [ijtemaStatus, setIjtemaStatus] = useState<IjtemaAttendanceStatus | null>(
     initialCompliance.ijtemaStatus,
@@ -168,6 +169,7 @@ function KarkunProfileForm({ karkun, karkunId }: KarkunProfileFormProps) {
       whatsapp: whatsapp || undefined,
       place: DEFAULT_PLACE,
       status,
+      fatherHusbandName: fatherHusbandName || undefined,
     })
 
     if (!karkunResult.success) {
@@ -343,6 +345,15 @@ function KarkunProfileForm({ karkun, karkunId }: KarkunProfileFormProps) {
             onValueChange={setWhatsapp}
             className={compactInputClass}
             placeholder={MOBILE_INPUT_PLACEHOLDER}
+          />
+
+          <InputField
+            id="profile-father-husband"
+            label={`${getFatherHusbandLabel(gender)} (optional)`}
+            value={fatherHusbandName}
+            onValueChange={setFatherHusbandName}
+            className={compactInputClass}
+            placeholder={getFatherHusbandLabel(gender)}
           />
         </div>
 

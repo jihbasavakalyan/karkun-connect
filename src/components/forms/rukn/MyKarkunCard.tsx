@@ -44,6 +44,11 @@ export function MyKarkunCard({ karkun, ruknId }: MyKarkunCardProps) {
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <h2 className="text-lg font-semibold text-text-heading">{karkun.name}</h2>
+            {karkun.fatherHusbandName?.trim() && (
+              <p className="mt-1 text-sm text-secondary">
+                {karkun.gender === 'Female' ? 'Husband' : 'Father'}: {karkun.fatherHusbandName}
+              </p>
+            )}
             <p className="mt-1 text-sm text-secondary">{karkun.area}</p>
           </div>
           <ExecutionStatusBadge status={executionStatus} />
