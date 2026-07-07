@@ -165,6 +165,7 @@ function KarkunGenderSection({ gender }: { gender: PersonGender }) {
         showJihPortalFilters
         showBaitulMaalFilters
         showIjtemaFilters
+        hideGenderFilter
       />
 
       <BulkActionsBar
