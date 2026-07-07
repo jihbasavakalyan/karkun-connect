@@ -20,8 +20,7 @@ export function StepAssignmentPreview({ state }: StepAssignmentPreviewProps) {
       <div>
         <h2 className="text-xl font-semibold text-text-heading">Assignment Preview</h2>
         <p className="mt-1 text-sm text-secondary">
-          Review how Karkunan are assigned to each Rukn. Drag-and-drop reassignment will be
-          available in a future sprint.
+          Review how Karkunan are assigned to each Rukn before confirming the campaign setup.
         </p>
       </div>
 
