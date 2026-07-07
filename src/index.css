@@ -75,13 +75,6 @@
     @apply rounded-2xl border border-white/70 bg-white/80 shadow-[var(--shadow-glass)] backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-primary-light/50 hover:shadow-[var(--shadow-enterprise-lg)];
   }
 
-  .campaign-hero-pattern {
-    background-image:
-      radial-gradient(circle at 18% 22%, rgb(64 145 108 / 0.35) 0, transparent 42%),
-      radial-gradient(circle at 82% 12%, rgb(201 151 0 / 0.18) 0, transparent 38%),
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='0.06' stroke-width='1'%3E%3Cpath d='M30 0l30 30-30 30L0 30z'/%3E%3Cpath d='M30 12l18 18-18 18-18-18z'/%3E%3C/g%3E%3C/svg%3E");
-  }
-
   .campaign-heading-display {
     @apply text-3xl font-bold tracking-tight text-text-heading sm:text-4xl lg:text-5xl;
   }

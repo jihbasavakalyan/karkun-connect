@@ -15,8 +15,6 @@ export const CAMPAIGN_MOTTO_LINES = [
 export const CAMPAIGN_DESCRIPTION =
   'This campaign focuses on reconnecting every existing Karkun, understanding their current situation, and integrating them back into Jamaat work.'
 
-export const CAMPAIGN_HERO_ILLUSTRATION = '/campaign/hero-illustration.png'
-
 export type CampaignValue = {
   id: string
   icon: string
