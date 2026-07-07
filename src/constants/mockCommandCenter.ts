@@ -1,4 +1,4 @@
-import { ROUTES } from '@/constants/routes'
+import { ROUTES, adminExecutionPath } from '@/constants/routes'
 
 export type CommandCenterWorkItem = {
   id: string
@@ -21,13 +21,13 @@ export const COMMAND_CENTER_TODAYS_WORK: CommandCenterWorkItem[] = [
     id: 'pending-meetings',
     label: 'Pending Meetings',
     count: 4,
-    to: `${ROUTES.ADMIN_EXECUTION}?section=meetings`,
+    to: adminExecutionPath('pending'),
   },
   {
     id: 'pending-reports',
     label: 'Pending Reports',
     count: 8,
-    to: `${ROUTES.ADMIN_EXECUTION}?section=reports`,
+    to: adminExecutionPath('reports'),
   },
   {
     id: 'pending-follow-ups',

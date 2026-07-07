@@ -11,7 +11,6 @@ import { FollowUpDevelopmentModulePage } from '@/pages/admin/FollowUpDevelopment
 import { HelpPage } from '@/pages/admin/HelpPage'
 import { KarkunanPage } from '@/pages/admin/KarkunanPage'
 import { KarkunProfilePage } from '@/pages/admin/KarkunProfilePage'
-import { ReviewReportsModulePage } from '@/pages/admin/ReviewReportsModulePage'
 import { RuknDetailPage } from '@/pages/admin/RuknDetailPage'
 import { RuknModulePage } from '@/pages/admin/RuknModulePage'
 import { SettingsPage } from '@/pages/admin/SettingsPage'
@@ -70,15 +69,20 @@ export function AppRouter() {
           <Route path="assignments" element={<AssignmentManagementPage />} />
           <Route path="annexure-1/:karkunId" element={<WorkerMeetingFormPage />} />
           <Route path="execution" element={<ExecutionModulePage />} />
-          <Route path="review" element={<ReviewReportsModulePage />} />
+          <Route
+            path="review"
+            element={<Navigate to={`${ROUTES.ADMIN_EXECUTION}?section=reports`} replace />}
+          />
           <Route path="follow-up" element={<FollowUpDevelopmentModulePage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="help" element={<HelpPage />} />
 
           {/* Legacy route redirects */}
           <Route path="campaigns" element={<Navigate to={ROUTES.ADMIN_CAMPAIGN} replace />} />
-          <Route path="assignments" element={<Navigate to={ROUTES.ADMIN_ASSIGNMENTS} replace />} />
-          <Route path="reviews" element={<Navigate to={ROUTES.ADMIN_REVIEW} replace />} />
+          <Route
+            path="reviews"
+            element={<Navigate to={`${ROUTES.ADMIN_EXECUTION}?section=reports`} replace />}
+          />
           <Route path="karkunan" element={<Navigate to={ROUTES.ADMIN_KARKUN} replace />} />
           <Route path="karkunan/:karkunId" element={<LegacyKarkunProfileRedirect />} />
           <Route path="rukn-master" element={<Navigate to={ROUTES.ADMIN_RUKN} replace />} />

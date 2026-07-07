@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { ROUTES, adminAnnexure1Path } from '@/constants/routes'
 import { ExecutionEmptyState } from '@/components/execution/ExecutionEmptyState'
+import { ExecutionRecordsPanel } from '@/components/execution/ExecutionRecordsPanel'
 import { ExecutionStatusBadge } from '@/components/execution/ExecutionStatusBadge'
 import { ExecutionSuccessBanner } from '@/components/execution/ExecutionSuccessBanner'
 import { ExecutionSummaryCards } from '@/components/execution/ExecutionSummaryCards'
@@ -17,11 +18,11 @@ import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 
 const sections = [
-  { id: 'action', label: 'Action Required' },
-  { id: 'pending', label: 'Pending' },
+  { id: 'pending', label: 'Pending Execution' },
   { id: 'in-progress', label: 'In Progress' },
   { id: 'follow-up', label: 'Follow-up Required' },
-  { id: 'completed-today', label: 'Completed Today' },
+  { id: 'completed-today', label: 'Completed' },
+  { id: 'reports', label: 'Reports' },
 ] as const
 
 type ExecutionSection = (typeof sections)[number]['id']
@@ -101,13 +102,16 @@ function CompletedTodayRow({ form }: { form: SubmittedMeetingForm }) {
 }
 
 function resolveSection(sectionParam: string | null): ExecutionSection {
-  if (sectionParam === 'meetings' || sectionParam === 'reports') {
-    return 'action'
+  if (sectionParam === 'meetings' || sectionParam === 'action') {
+    return 'pending'
+  }
+  if (sectionParam === 'summary') {
+    return 'reports'
   }
   if (sections.some((item) => item.id === sectionParam)) {
     return sectionParam as ExecutionSection
   }
-  return 'action'
+  return 'pending'
 }
 
 function filterActiveItems(
@@ -121,21 +125,15 @@ function filterActiveItems(
       return items.filter((item) => item.status === 'In Progress')
     case 'follow-up':
       return items.filter((item) => item.status === 'Follow-up Required')
-    case 'action':
-      return items.filter((item) => item.status !== 'Completed')
     default:
       return []
   }
 }
 
 const EMPTY_STATES: Record<
-  Exclude<ExecutionSection, 'completed-today'>,
+  Exclude<ExecutionSection, 'completed-today' | 'reports'>,
   { title: string; message: string }
 > = {
-  action: {
-    title: 'No Pending Executions',
-    message: 'All assigned Karkuns have completed Annexure-1.',
-  },
   pending: {
     title: 'No Pending Executions',
     message: 'All assigned Karkuns have started or completed Annexure-1.',
@@ -184,7 +182,7 @@ export function ExecutionModulePage() {
       <ExecutionSuccessBanner />
 
       <section className="rounded-(--radius-card) border border-border bg-surface p-6 shadow-card">
-        <h2 className="text-lg font-semibold text-text-heading">Today&apos;s Execution</h2>
+        <h2 className="text-lg font-semibold text-text-heading">Execution Summary</h2>
         <div className="mt-4">
           <ExecutionSummaryCards counts={counts} linkBase={ROUTES.ADMIN_EXECUTION} />
         </div>
@@ -195,7 +193,16 @@ export function ExecutionModulePage() {
       <section className="rounded-(--radius-card) border border-border bg-surface p-6 shadow-card">
         <h2 className="text-lg font-semibold text-text-heading">{sectionLabel}</h2>
 
-        {activeSection === 'completed-today' ? (
+        {activeSection === 'reports' ? (
+          <div className="mt-4">
+            <p className="text-sm text-secondary">
+              Submitted Annexure-1 forms. No separate reporting required.
+            </p>
+            <div className="mt-4">
+              <ExecutionRecordsPanel />
+            </div>
+          </div>
+        ) : activeSection === 'completed-today' ? (
           completedTodayRecords.length === 0 ? (
             <div className="mt-4">
               <ExecutionEmptyState

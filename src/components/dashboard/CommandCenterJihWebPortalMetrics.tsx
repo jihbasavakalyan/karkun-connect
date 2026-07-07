@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { ROUTES } from '@/constants/routes'
+import { ROUTES, adminExecutionPath } from '@/constants/routes'
 import { getJihWebPortalDashboardMetrics } from '@/services/jihWebPortalService'
 import { subscribeToJihWebPortalStore } from '@/stores/jihWebPortalStore'
 import { useEffect, useState } from 'react'
@@ -33,13 +33,13 @@ export function CommandCenterJihWebPortalMetrics() {
       id: 'pending-reports',
       label: 'Pending Reports',
       count: metrics.pendingReports,
-      to: ROUTES.ADMIN_REVIEW,
+      to: adminExecutionPath('reports'),
     },
     {
       id: 'submitted-reports',
       label: 'Submitted Reports',
       count: metrics.submittedReports,
-      to: ROUTES.ADMIN_REVIEW,
+      to: adminExecutionPath('reports'),
     },
   ]
 

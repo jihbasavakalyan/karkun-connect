@@ -11,6 +11,7 @@ export const ROUTES = {
   ADMIN_KARKUNAN: '/admin/karkun',
   ADMIN_RUKN_MASTER: '/admin/rukn',
   ADMIN_EXECUTION: '/admin/execution',
+  /** Legacy path — redirects to Execution Reports tab */
   ADMIN_REVIEW: '/admin/review',
   ADMIN_FOLLOW_UP: '/admin/follow-up',
   ADMIN_SETTINGS: '/admin/settings',
@@ -37,4 +38,8 @@ export function adminKarkunProfilePath(karkunId: string): string {
 
 export function adminRuknDetailPath(ruknId: string): string {
   return `${ROUTES.ADMIN_RUKN}/${ruknId}`
+}
+
+export function adminExecutionPath(section?: string): string {
+  return section ? `${ROUTES.ADMIN_EXECUTION}?section=${section}` : ROUTES.ADMIN_EXECUTION
 }
