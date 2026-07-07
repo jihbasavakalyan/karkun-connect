@@ -1,8 +1,11 @@
-import { MOCK_CAMPAIGNS } from '@/constants/mockMissions'
 import { MissionProgress } from '@/components/dashboard/MissionProgress'
+import {
+  formatActiveCampaignDuration,
+  getActiveCampaign,
+} from '@/services/campaignService'
 
 export function CommandCenterActiveCampaign() {
-  const campaign = MOCK_CAMPAIGNS.find((item) => item.status === 'active')
+  const campaign = getActiveCampaign()
 
   if (!campaign) {
     return (
@@ -22,7 +25,7 @@ export function CommandCenterActiveCampaign() {
       <p className="mt-2 text-sm text-secondary">
         Duration{' '}
         <span className="font-medium text-text-heading">
-          {campaign.startDate} — {campaign.endDate}
+          {formatActiveCampaignDuration()}
         </span>
       </p>
 

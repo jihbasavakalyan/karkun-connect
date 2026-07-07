@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { getCampaignRecordData } from '@/services/annexure1Service'
 import { subscribeToAnnexure1Store } from '@/stores/annexure1Store'
 import { subscribeToFollowUpStore } from '@/stores/followUpStore'
+import { ActiveCampaignSubtitle } from '@/components/layout/CampaignStatusBar'
 import { ROUTES, ruknVisitPath } from '@/constants/routes'
 import { ExecutionEmptyState } from '@/components/execution/ExecutionEmptyState'
 import { ExecutionStatusBadge } from '@/components/execution/ExecutionStatusBadge'
@@ -33,6 +34,7 @@ export function CampaignRecordPage() {
           ← Back to My Karkun
         </Link>
         <h1 className="mt-2 text-2xl font-semibold text-text-heading">Campaign Record</h1>
+        <ActiveCampaignSubtitle />
         <p className="mt-2 text-secondary">Your execution submissions and follow-ups.</p>
       </div>
 

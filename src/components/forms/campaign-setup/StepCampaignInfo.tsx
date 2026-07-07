@@ -1,6 +1,7 @@
 import type { Dispatch } from 'react'
 import { InputField } from '@/components/forms/InputField'
 import { TextAreaField } from '@/components/forms/TextAreaField'
+import { getActiveCampaignName } from '@/services/campaignService'
 import type { CampaignSetupAction, CampaignSetupState } from '@/types/campaign-setup.types'
 
 type StepCampaignInfoProps = {
@@ -21,7 +22,7 @@ export function StepCampaignInfo({ state, dispatch }: StepCampaignInfoProps) {
       <InputField
         id="campaign-name"
         label="Campaign Name"
-        placeholder="e.g. کارکن مہم"
+        placeholder={`e.g. ${getActiveCampaignName()}`}
         value={state.name}
         onValueChange={(value) => dispatch({ type: 'SET_FIELD', field: 'name', value })}
       />

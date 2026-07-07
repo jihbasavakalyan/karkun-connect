@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
+import { ActiveCampaignSubtitle } from '@/components/layout/CampaignStatusBar'
 import { adminAnnexure1Path } from '@/constants/routes'
 import { ExecutionEmptyState } from '@/components/execution/ExecutionEmptyState'
 import { ExecutionStatusBadge } from '@/components/execution/ExecutionStatusBadge'
@@ -138,6 +139,7 @@ export function FollowUpDevelopmentModulePage() {
     <div className="mx-auto max-w-6xl space-y-6">
       <div>
         <h1 className="text-2xl font-semibold text-text-heading">Follow-up</h1>
+        <ActiveCampaignSubtitle />
         <p className="mt-2 text-secondary">
           Simple follow-ups created from Annexure-1 when another interaction is needed.
         </p>

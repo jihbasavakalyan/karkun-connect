@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { ActiveCampaignSubtitle } from '@/components/layout/CampaignStatusBar'
 import { DEMO_RUKN_PORTAL_ID } from '@/constants/demoRukn'
 import { ROUTES, ruknVisitPath } from '@/constants/routes'
 import { RUKN_COMPLETED_TODAY } from '@/constants/mockMissions'
@@ -38,6 +39,7 @@ export function RuknHomePage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold text-text-heading">Home</h1>
+        <ActiveCampaignSubtitle />
         <p className="mt-2 text-secondary">Start today&apos;s campaign execution.</p>
       </div>
 

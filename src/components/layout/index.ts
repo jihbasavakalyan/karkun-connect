@@ -1,3 +1,3 @@
 export { PageContainer } from './PageContainer'
 export { BrandPanel } from './BrandPanel'
-export { CampaignStatusBar } from './CampaignStatusBar'
+export { CampaignStatusBar, ActiveCampaignSubtitle } from './CampaignStatusBar'

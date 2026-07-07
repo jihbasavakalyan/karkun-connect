@@ -1,4 +1,4 @@
-import { ACTIVE_CAMPAIGN_NAME } from '@/constants/app'
+import { getActiveCampaignName } from '@/services/campaignService'
 import {
   getKarkunById,
   updateKarkunMeetingOutcomes,
@@ -63,7 +63,7 @@ function createSubmissionRecord(
     workerName: karkun.name,
     area: karkun.area,
     assignedRukn: getRuknById(assignment.ruknId)?.name ?? '',
-    campaignName: ACTIVE_CAMPAIGN_NAME,
+    campaignName: getActiveCampaignName(),
     submittedAt: submissionDate,
     submissionDate,
     status,

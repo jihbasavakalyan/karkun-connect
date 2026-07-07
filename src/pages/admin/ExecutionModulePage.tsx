@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
+import { ActiveCampaignSubtitle } from '@/components/layout/CampaignStatusBar'
 import { ROUTES, adminAnnexure1Path } from '@/constants/routes'
 import { ExecutionEmptyState } from '@/components/execution/ExecutionEmptyState'
 import { ExecutionRecordsPanel } from '@/components/execution/ExecutionRecordsPanel'
@@ -176,6 +177,7 @@ export function ExecutionModulePage() {
     <div className="mx-auto max-w-6xl space-y-6">
       <div>
         <h1 className="text-2xl font-semibold text-text-heading">Execution</h1>
+        <ActiveCampaignSubtitle />
         <p className="mt-2 text-secondary">What requires action today.</p>
       </div>
 

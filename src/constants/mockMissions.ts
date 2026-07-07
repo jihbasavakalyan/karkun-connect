@@ -105,13 +105,8 @@ export type CampaignListItem = {
   startDate: string
   endDate: string
   progress?: number
-}
-
-export const MOCK_ACTIVE_CAMPAIGN: ActiveCampaignSummary = {
-  name: 'کارکن مہم',
-  progress: 68,
-  currentDay: 12,
-  totalDays: 30,
+  currentDay?: number
+  totalDays?: number
 }
 
 export const MOCK_NEEDS_ATTENTION: NeedsAttentionSummary = {
@@ -123,11 +118,13 @@ export const MOCK_NEEDS_ATTENTION: NeedsAttentionSummary = {
 export const MOCK_CAMPAIGNS: CampaignListItem[] = [
   {
     id: 'campaign-active',
-    name: 'کارکن مہم',
+    name: 'فعال کارکن، فعال جماعت',
     status: 'active',
     startDate: '2026-03-01',
     endDate: '2026-03-30',
     progress: 68,
+    currentDay: 12,
+    totalDays: 30,
   },
   {
     id: 'campaign-archived-1',

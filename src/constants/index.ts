@@ -13,7 +13,7 @@ export {
   getSubmittedForms,
   DEFAULT_VISIT_KARKUN_ID,
 } from './mockCampaignRecord'
-export { APP_NAME, APP_TAGLINE, APP_DESCRIPTION, APP_VERSION, ACTIVE_CAMPAIGN_NAME } from './app'
+export { APP_NAME, APP_TAGLINE, APP_DESCRIPTION, APP_VERSION } from './app'
 export { authenticateMock, getHomeRouteForRole } from './mockAuth'
 export {
   adminDashboardStats,
@@ -41,7 +41,6 @@ export {
 export {
   ADMIN_MISSION_QUEUE,
   RUKN_MISSION_QUEUE,
-  MOCK_ACTIVE_CAMPAIGN,
   MOCK_NEEDS_ATTENTION,
   MOCK_CAMPAIGNS,
   RUKN_COMPLETED_TODAY,
