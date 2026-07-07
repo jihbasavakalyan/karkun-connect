@@ -108,7 +108,6 @@ export function submitAnnexure1(
       form.followUpRequired,
       form.followUpDate,
       form.followUpPurpose,
-      form.followUpRemarks,
     )
 
     if (followUpResult.error) {

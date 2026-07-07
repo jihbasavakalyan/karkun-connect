@@ -1,5 +1,4 @@
 import { InputField } from '@/components/forms/InputField'
-import { TextAreaField } from '@/components/forms/TextAreaField'
 import { FormSectionCard, LargeRadioOption } from '@/components/forms/annexure1/FormSectionCard'
 import type { Annexure1FormState } from '@/types/annexure1.types'
 import type { Annexure1FormFieldUpdater } from '@/hooks/useAnnexure1Form'
@@ -55,14 +54,6 @@ export function FollowUpSection({ form, setField }: FollowUpSectionProps) {
               value={form.followUpPurpose}
               onValueChange={(value) => setField('followUpPurpose', value)}
               placeholder="e.g. Weekly Ijtema Reminder"
-            />
-            <TextAreaField
-              id="follow-up-remarks"
-              label="Remarks (optional)"
-              value={form.followUpRemarks}
-              onValueChange={(value) => setField('followUpRemarks', value)}
-              placeholder="Additional notes..."
-              rows={3}
             />
           </div>
         )}

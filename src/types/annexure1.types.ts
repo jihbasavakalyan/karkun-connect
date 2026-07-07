@@ -14,7 +14,6 @@ export type Annexure1FormState = {
   followUpRequired: 'yes' | 'no' | ''
   followUpDate: string
   followUpPurpose: string
-  followUpRemarks: string
 }
 
 export type SubmittedMeetingForm = Annexure1FormState & {
@@ -66,6 +65,5 @@ export function createInitialAnnexure1FormState(): Annexure1FormState {
     followUpRequired: '',
     followUpDate: '',
     followUpPurpose: '',
-    followUpRemarks: '',
   }
 }

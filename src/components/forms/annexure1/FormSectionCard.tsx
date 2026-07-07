@@ -14,6 +14,26 @@ export function FormSectionCard({ title, children }: FormSectionCardProps) {
   )
 }
 
+type FormFieldGroupProps = {
+  title?: string
+  children: ReactNode
+  first?: boolean
+}
+
+export function FormFieldGroup({ title, children, first = false }: FormFieldGroupProps) {
+  return (
+    <div
+      className={[
+        'space-y-4',
+        first ? '' : 'border-t border-border pt-4 mt-4',
+      ].join(' ')}
+    >
+      {title && <h3 className="text-sm font-semibold text-text-heading">{title}</h3>}
+      {children}
+    </div>
+  )
+}
+
 type RadioOptionProps = {
   name: string
   value: string

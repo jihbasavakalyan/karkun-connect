@@ -1,6 +1,6 @@
 import { FormSectionCard } from '@/components/forms/annexure1/FormSectionCard'
 
-type WorkerInfoSectionProps = {
+type KarkunInfoSectionProps = {
   name: string
   mobile: string
   area: string
@@ -16,7 +16,8 @@ function InfoRow({ label, value }: { label: string; value: string }) {
   )
 }
 
-export function WorkerInfoSection({ name, mobile, area, address }: WorkerInfoSectionProps) {
+/** Reserved for future use — not shown on Annexure-1 (context is in the form header). */
+export function KarkunInfoSection({ name, mobile, area, address }: KarkunInfoSectionProps) {
   return (
     <FormSectionCard title="Karkun Information">
       <dl className="space-y-3">

@@ -13,14 +13,9 @@ import {
 } from '@/services/annexure1Service'
 import { resolveActiveAssignmentForAnnexure1 } from '@/validation/annexure1Validation'
 import {
-  CommitmentSection,
-  FollowUpSection,
-  JIHRegistrationSection,
-  MeetingSummarySection,
+  Annexure1ExecutionForm,
   SubmissionSuccessCard,
   VisitFormHeader,
-  VisitStatusSection,
-  WorkerInfoSection,
 } from '@/components/forms/annexure1'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
@@ -123,28 +118,13 @@ export function WorkerMeetingFormPage() {
   const showNotConductedActions = visitStopped
 
   return (
-    <div className="space-y-5 pb-8">
+    <div className="mx-auto max-w-2xl space-y-4 pb-28">
       <VisitFormHeader karkun={karkun} assignmentNumber={activeAssignment.assignmentNumber} />
 
-      <VisitStatusSection form={form} setField={setField} />
-
-      {showFullForm && (
-        <>
-          <WorkerInfoSection
-            name={karkun.name}
-            mobile={karkun.mobile}
-            area={karkun.area}
-            address={karkun.address}
-          />
-          <MeetingSummarySection form={form} setField={setField} />
-          <CommitmentSection form={form} setField={setField} />
-          <JIHRegistrationSection form={form} setField={setField} />
-          <FollowUpSection form={form} setField={setField} />
-        </>
-      )}
+      <Annexure1ExecutionForm form={form} setField={setField} showFullForm={showFullForm} />
 
       {(showFullForm || showNotConductedActions) && (
-        <div className="sticky bottom-20 z-10 space-y-3 rounded-(--radius-card) border border-border bg-surface p-4 shadow-card">
+        <div className="sticky bottom-4 z-10 space-y-2 rounded-(--radius-card) border border-border bg-surface p-3 shadow-card sm:p-4">
           {submitError && (
             <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
               {submitError}
