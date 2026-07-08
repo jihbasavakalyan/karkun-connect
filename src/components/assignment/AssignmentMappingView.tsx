@@ -10,8 +10,11 @@ import {
 import { getRuknAssignmentSummary } from '@/services/assignmentService'
 import { getExecutionStatusForAssignment } from '@/lib/executionStatus'
 import { hasSubmittedAnnexureForAssignment } from '@/stores/annexure1Store'
+import { getGuidanceForRuknKarkuns } from '@/lib/guidance/guidanceEngine'
+import { humanizeVisitPending } from '@/lib/relationshipPresentation'
 import { buildTelLink, buildWhatsAppLink } from '@/utils/personContactLinks'
-import { ExecutionStatusBadge } from '@/components/execution/ExecutionStatusBadge'
+import { JourneyStageBadge, RelationshipHealthBadge } from '@/components/guidance'
+import { KarkunSearchField } from '@/components/relationship'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
 import type { AssignmentRecord } from '@/types/assignment'
@@ -32,21 +35,20 @@ type MappingRow = {
   count: number
   assignmentSince: string | null
   karkuns: MappedKarkun[]
+  needsAttentionCount: number
+  healthyCount: number
+  activityScore: number
 }
 
-type SortOption = 'count-desc' | 'count-asc' | 'alpha' | 'newest' | 'oldest'
-
-const inputClassName =
-  'w-full rounded-lg border border-border bg-surface px-4 py-3 text-sm text-text-heading focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20'
-
-const selectClassName =
-  'rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text-heading focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20'
-
-const actionLinkClass =
-  'inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-1.5 text-sm font-medium text-text-heading transition-colors hover:border-primary hover:text-primary'
+type SortOption =
+  | 'recently-connected'
+  | 'oldest-connection'
+  | 'most-active'
+  | 'needs-attention'
+  | 'healthy'
+  | 'count-desc'
 
 type AssignmentMappingViewProps = {
-  /** Bump from the assignment engine to force recompute when assignments change. */
   version?: number
 }
 
@@ -55,16 +57,30 @@ export function AssignmentMappingView({ version = 0 }: AssignmentMappingViewProp
   const [genderFilter, setGenderFilter] = useState('')
   const [assignmentFilter, setAssignmentFilter] = useState('')
   const [areaFilter, setAreaFilter] = useState('')
-  const [sortBy, setSortBy] = useState<SortOption>('count-desc')
+  const [sortBy, setSortBy] = useState<SortOption>('needs-attention')
+
+  const selectClassName =
+    'rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-text-heading focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 min-h-11'
 
   const rows = useMemo<MappingRow[]>(() => {
     void version
     return ruknMaster.map((rukn) => {
       const summary = getRuknAssignmentSummary(rukn.id)
+      const guidanceList = getGuidanceForRuknKarkuns(rukn.id)
       const karkuns = summary.activeAssignments.map((assignment) => ({
         assignment,
         karkun: getKarkunById(assignment.karkunId),
       }))
+      const needsAttentionCount = guidanceList.filter(
+        (guidance) =>
+          guidance.health.level === 'urgent' ||
+          guidance.health.level === 'needs-attention' ||
+          guidance.health.level === 'dormant',
+      ).length
+      const healthyCount = guidanceList.filter(
+        (guidance) => guidance.health.level === 'healthy',
+      ).length
+
       return {
         ruknId: rukn.id,
         ruknName: rukn.name,
@@ -75,6 +91,11 @@ export function AssignmentMappingView({ version = 0 }: AssignmentMappingViewProp
         count: summary.assignedKarkunCount,
         assignmentSince: summary.assignmentSince,
         karkuns,
+        needsAttentionCount,
+        healthyCount,
+        activityScore: karkuns.filter(({ assignment }) =>
+          hasSubmittedAnnexureForAssignment(assignment.assignmentId),
+        ).length,
       }
     })
   }, [version])
@@ -99,7 +120,13 @@ export function AssignmentMappingView({ version = 0 }: AssignmentMappingViewProp
       for (const { assignment, karkun } of row.karkuns) {
         haystacks.push(assignment.assignmentNumber)
         if (karkun) {
-          haystacks.push(karkun.name, karkun.mobile, karkun.fatherHusbandName ?? '')
+          haystacks.push(
+            karkun.name,
+            karkun.mobile,
+            karkun.fatherHusbandName ?? '',
+            karkun.area,
+            karkun.id,
+          )
         }
       }
       return haystacks.some((value) => value.toLowerCase().includes(query))
@@ -108,14 +135,16 @@ export function AssignmentMappingView({ version = 0 }: AssignmentMappingViewProp
     const sorted = [...filtered]
     sorted.sort((a, b) => {
       switch (sortBy) {
-        case 'count-asc':
-          return a.count - b.count
-        case 'alpha':
-          return a.ruknName.localeCompare(b.ruknName)
-        case 'newest':
+        case 'recently-connected':
           return (b.assignmentSince ?? '').localeCompare(a.assignmentSince ?? '')
-        case 'oldest':
+        case 'oldest-connection':
           return (a.assignmentSince ?? '').localeCompare(b.assignmentSince ?? '')
+        case 'most-active':
+          return b.activityScore - a.activityScore || b.count - a.count
+        case 'needs-attention':
+          return b.needsAttentionCount - a.needsAttentionCount || b.count - a.count
+        case 'healthy':
+          return b.healthyCount - a.healthyCount || a.needsAttentionCount - b.needsAttentionCount
         case 'count-desc':
         default:
           return b.count - a.count
@@ -127,18 +156,14 @@ export function AssignmentMappingView({ version = 0 }: AssignmentMappingViewProp
   const totalMapped = visibleRows.reduce((sum, row) => sum + row.count, 0)
 
   return (
-    <div className="space-y-5">
-      <div className="rounded-(--radius-card) border border-border bg-surface p-4 shadow-card">
-        <label htmlFor="mapping-search" className="text-sm font-medium text-text-heading">
-          Search mapping
-        </label>
-        <input
+    <div className="relationship-page space-y-4">
+      <div className="home-card">
+        <KarkunSearchField
           id="mapping-search"
-          type="search"
           value={search}
-          placeholder="Search by Rukn, Karkun, Father/Husband name, mobile, place, or connection number..."
-          onChange={(event) => setSearch(event.target.value)}
-          className={`mt-2 ${inputClassName}`}
+          onChange={setSearch}
+          placeholder="Search by Rukn, Karkun, mobile, father/husband, area, or connection number…"
+          resultCount={search.trim() ? visibleRows.length : undefined}
         />
 
         <div className="mt-3 flex flex-wrap gap-2">
@@ -184,26 +209,27 @@ export function AssignmentMappingView({ version = 0 }: AssignmentMappingViewProp
             onChange={(event) => setSortBy(event.target.value as SortOption)}
             className={`${selectClassName} ml-auto`}
           >
-            <option value="count-desc">Highest Karkun Count</option>
-            <option value="count-asc">Lowest Karkun Count</option>
-            <option value="alpha">Alphabetical</option>
-            <option value="newest">Newest Connection</option>
-            <option value="oldest">Oldest Connection</option>
+            <option value="needs-attention">Needs Attention</option>
+            <option value="healthy">Healthy</option>
+            <option value="most-active">Most Active</option>
+            <option value="recently-connected">Recently Connected</option>
+            <option value="oldest-connection">Oldest Connection</option>
+            <option value="count-desc">Most Connected Karkuns</option>
           </select>
         </div>
 
         <p className="mt-3 text-sm text-secondary">
           {visibleRows.length} Rukn{visibleRows.length === 1 ? '' : 's'} · {totalMapped} active
-          mapping{totalMapped === 1 ? '' : 's'}
+          connection{totalMapped === 1 ? '' : 's'}
         </p>
       </div>
 
       {visibleRows.length === 0 ? (
-        <div className="rounded-(--radius-card) border border-border bg-surface p-8 text-center text-secondary shadow-card">
+        <div className="home-card text-center text-secondary">
           No Rukns match the current search and filters.
         </div>
       ) : (
-        <div className="grid gap-4 xl:grid-cols-2">
+        <div className="relationship-row-list">
           {visibleRows.map((row) => (
             <MappingCard key={row.ruknId} row={row} />
           ))}
@@ -218,7 +244,7 @@ function MappingCard({ row }: { row: MappingRow }) {
   const whatsAppLink = buildWhatsAppLink(row.whatsapp || row.mobile)
 
   return (
-    <section className="flex flex-col rounded-(--radius-card) border border-border bg-surface p-5 shadow-card">
+    <section className="relationship-connected-card">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h3 className="truncate text-lg font-semibold text-text-heading">{row.ruknName}</h3>
@@ -226,16 +252,22 @@ function MappingCard({ row }: { row: MappingRow }) {
             {row.gender} · {row.area || 'Area not set'} · {row.mobile || 'Mobile not added'}
           </p>
         </div>
-        <span className="shrink-0 rounded-full bg-primary/10 px-3 py-1 text-sm font-semibold text-primary">
-          {row.count} Karkun{row.count === 1 ? '' : 's'}
+        <span className="relationship-chip shrink-0">
+          {row.count} connected
         </span>
       </div>
 
-      <div className="mt-3 flex flex-wrap gap-2">
-        <Link to={adminAssignmentsPath({ ruknId: row.ruknId })} className={actionLinkClass}>
+      <div className="mt-3">
+        <Link
+          to={adminAssignmentsPath({ ruknId: row.ruknId })}
+          className="relationship-quick-action inline-flex min-h-11 items-center justify-center font-semibold"
+        >
           ➕ Connect Karkun
         </Link>
-        <Link to={adminRuknDetailPath(row.ruknId)} className={actionLinkClass}>
+      </div>
+
+      <div className="relationship-quick-actions mt-3">
+        <Link to={adminRuknDetailPath(row.ruknId)} className="relationship-quick-action">
           👁 View Details
         </Link>
         {whatsAppLink && (
@@ -243,13 +275,13 @@ function MappingCard({ row }: { row: MappingRow }) {
             href={whatsAppLink}
             target="_blank"
             rel="noopener noreferrer"
-            className={actionLinkClass}
+            className="relationship-quick-action"
           >
             💬 WhatsApp
           </a>
         )}
         {telLink && (
-          <a href={telLink} className={actionLinkClass}>
+          <a href={telLink} className="relationship-quick-action">
             📞 Call
           </a>
         )}
@@ -261,7 +293,7 @@ function MappingCard({ row }: { row: MappingRow }) {
         ) : (
           <ul className="space-y-2">
             {row.karkuns.map(({ assignment, karkun }) => (
-              <KarkunRow key={assignment.assignmentId} assignment={assignment} karkun={karkun} />
+              <KarkunRow key={assignment.assignmentId} assignment={assignment} karkun={karkun} ruknId={row.ruknId} />
             ))}
           </ul>
         )}
@@ -273,50 +305,52 @@ function MappingCard({ row }: { row: MappingRow }) {
 function KarkunRow({
   assignment,
   karkun,
+  ruknId,
 }: {
   assignment: AssignmentRecord
   karkun: KarkunRegistryRecord | undefined
+  ruknId: string
 }) {
   const name = karkun?.name ?? assignment.karkunId
-  const initial = name.trim().charAt(0).toUpperCase() || '?'
+  const guidanceList = getGuidanceForRuknKarkuns(ruknId)
+  const guidance = guidanceList.find((item) => item.karkunId === assignment.karkunId)
   const meetingStatus = getExecutionStatusForAssignment(assignment.assignmentId, assignment.karkunId)
   const annexureSubmitted = hasSubmittedAnnexureForAssignment(assignment.assignmentId)
   const familyLabel = karkun ? getFatherHusbandLabel(karkun.gender) : 'Father Name'
 
   return (
     <li className="rounded-lg border border-border bg-surface-muted p-3">
-      <div className="flex items-start gap-3">
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
-          {initial}
-        </span>
+      <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="font-medium text-text-heading">{name}</p>
-            <ExecutionStatusBadge status={meetingStatus} />
-          </div>
+          <p className="font-medium text-text-heading">{name}</p>
           <p className="mt-0.5 text-xs text-secondary">
             {familyLabel}: {karkun?.fatherHusbandName?.trim() || '—'}
           </p>
           <p className="mt-0.5 text-xs text-secondary">
-            {karkun?.mobile || 'Mobile not added'} · Connected {assignment.effectiveFrom.slice(0, 10)}
+            {karkun?.mobile || 'Mobile not added'} · {assignment.assignmentNumber}
           </p>
-          <div className="mt-2 flex flex-wrap items-center gap-2">
-            <span
-              className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-                annexureSubmitted
-                  ? 'bg-green-100 text-green-800'
-                  : 'bg-amber-100 text-amber-800'
-              }`}
-            >
-              Visit: {annexureSubmitted ? 'Recorded' : 'Pending'}
-            </span>
-            <Link to={adminAnnexure1Path(assignment.karkunId)}>
-              <SecondaryButton type="button" className="px-3 py-1 text-xs">
-                Open Connection
-              </SecondaryButton>
-            </Link>
-          </div>
+          {guidance && (
+            <div className="mt-2 flex flex-wrap gap-2">
+              <JourneyStageBadge stageId={guidance.currentStage} />
+              <RelationshipHealthBadge health={guidance.health} />
+            </div>
+          )}
+          <p className="mt-2 text-xs text-secondary">
+            {annexureSubmitted
+              ? 'Visit recorded'
+              : karkun
+                ? humanizeVisitPending(karkun.name)
+                : 'Visit not recorded yet'}
+          </p>
         </div>
+        <span className="text-xs text-secondary">{meetingStatus}</span>
+      </div>
+      <div className="mt-2">
+        <Link to={adminAnnexure1Path(assignment.karkunId)}>
+          <SecondaryButton type="button" className="min-h-10 px-3 py-1.5 text-xs">
+            Open Connection Journey
+          </SecondaryButton>
+        </Link>
       </div>
     </li>
   )

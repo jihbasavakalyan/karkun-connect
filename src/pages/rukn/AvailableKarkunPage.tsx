@@ -4,89 +4,107 @@ import { DEFAULT_DEMO_RUKN_ID } from '@/constants/demoRukn'
 import { ROUTES } from '@/constants/routes'
 import { useAuth } from '@/hooks/useAuth'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
-import { AvailableKarkunCard } from '@/components/forms/rukn/AvailableKarkunCard'
-
-const searchInputClassName =
-  'w-full rounded-lg border border-border bg-surface px-4 py-3 text-base text-text-heading focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20'
+import {
+  AvailableKarkunRow,
+  ConnectKarkunConfirmModal,
+  KarkunSearchField,
+} from '@/components/relationship'
+import { humanizeConnectionConfirmed } from '@/lib/relationshipPresentation'
+import { matchesKarkunRegistrySearch } from '@/lib/relationshipPresentation'
+import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
 
 export function AvailableKarkunPage() {
   const { user } = useAuth()
   const ruknId = user?.ruknId ?? DEFAULT_DEMO_RUKN_ID
-  const { getAvailableKarkunan } = useAssignmentEngine()
+  const { getAvailableKarkunan, assignKarkun } = useAssignmentEngine()
   const availableKarkunan = getAvailableKarkunan()
   const [query, setQuery] = useState('')
+  const [pendingKarkun, setPendingKarkun] = useState<KarkunRegistryRecord | null>(null)
+  const [error, setError] = useState('')
+  const [successMessage, setSuccessMessage] = useState('')
 
   const filtered = useMemo(() => {
-    const term = query.trim().toLowerCase()
-    if (!term) {
-      return availableKarkunan
-    }
-    return availableKarkunan.filter((karkun) => {
-      const haystack = [
-        karkun.name,
-        karkun.mobile,
-        karkun.whatsapp ?? '',
-        karkun.fatherHusbandName ?? '',
-        karkun.place,
-        karkun.area,
-        karkun.id,
-      ]
-        .join(' ')
-        .toLowerCase()
-      return haystack.includes(term)
-    })
+    return availableKarkunan.filter((karkun) => matchesKarkunRegistrySearch(karkun, query))
   }, [availableKarkunan, query])
+
+  const handleConfirmConnect = () => {
+    if (!pendingKarkun) return
+    const result = assignKarkun(pendingKarkun.id, ruknId, 'Rukn')
+    if (!result.success) {
+      setError(result.error)
+      return
+    }
+    setSuccessMessage(humanizeConnectionConfirmed(result.assignment?.assignmentNumber))
+    setPendingKarkun(null)
+    setError('')
+  }
 
   if (user?.role !== 'rukn') {
     return <Navigate to={ROUTES.RUKN} replace />
   }
 
   return (
-    <div className="space-y-6">
-      <div>
+    <div className="relationship-page space-y-4">
+      <header>
         <h1 className="text-2xl font-semibold text-text-heading">Connect Karkun</h1>
         <p className="mt-2 text-secondary">
-          Choose a Karkun from the available pool to start a connection. {availableKarkunan.length}{' '}
-          available.
+          Search, connect, and keep going — {availableKarkunan.length} Karkun
+          {availableKarkunan.length === 1 ? '' : 's'} ready to connect.
         </p>
-      </div>
+      </header>
 
-      <div>
-        <label htmlFor="available-search" className="sr-only">
-          Search available Karkuns
-        </label>
-        <input
-          id="available-search"
-          type="search"
-          className={searchInputClassName}
-          placeholder="Search by name, mobile, father/husband, place, or ID"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-        />
-        {query.trim() && (
-          <p className="mt-2 text-sm text-secondary">
-            {filtered.length} match{filtered.length === 1 ? '' : 'es'}
-          </p>
-        )}
-      </div>
+      <KarkunSearchField
+        id="available-karkun-search"
+        value={query}
+        onChange={setQuery}
+        resultCount={query.trim() ? filtered.length : undefined}
+        sticky
+      />
+
+      {successMessage && (
+        <div
+          className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-900"
+          role="status"
+        >
+          {successMessage}
+        </div>
+      )}
 
       {availableKarkunan.length === 0 ? (
-        <div className="rounded-(--radius-card) border border-border bg-surface p-8 text-center shadow-card">
-          <p className="text-secondary">No Karkun available to connect right now.</p>
+        <div className="home-card text-center">
+          <p className="text-secondary">No Karkun is available to connect right now.</p>
         </div>
       ) : filtered.length === 0 ? (
-        <div className="rounded-(--radius-card) border border-border bg-surface p-8 text-center shadow-card">
+        <div className="home-card text-center">
           <p className="text-secondary">No Karkun matches “{query}”.</p>
         </div>
       ) : (
-        <ul className="space-y-4">
+        <ul className="relationship-row-list">
           {filtered.map((karkun) => (
             <li key={karkun.id}>
-              <AvailableKarkunCard karkun={karkun} ruknId={ruknId} />
+              <AvailableKarkunRow
+                karkun={karkun}
+                onConnect={() => {
+                  setPendingKarkun(karkun)
+                  setError('')
+                  setSuccessMessage('')
+                }}
+              />
             </li>
           ))}
         </ul>
       )}
+
+      <ConnectKarkunConfirmModal
+        isOpen={pendingKarkun !== null}
+        karkun={pendingKarkun}
+        error={error}
+        onClose={() => {
+          setPendingKarkun(null)
+          setError('')
+        }}
+        onConfirm={handleConfirmConnect}
+      />
     </div>
   )
 }

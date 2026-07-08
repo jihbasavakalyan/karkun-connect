@@ -20,8 +20,11 @@ import {
 } from '@/components/guidance'
 import { useGuidance } from '@/hooks/useGuidance'
 import { Annexure1ExecutionForm } from '@/components/forms/annexure1'
+import { ReleaseKarkunModal, ReplaceKarkunModal } from '@/components/forms/assignment'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
+import { getRuknById } from '@/data/ruknMaster'
+import { RelationshipActionBar, RelationshipSummaryPanel } from '@/components/relationship'
 import { buildConnectionJourney } from '@/lib/connectionJourney'
 import { getConnectionStatusLabel } from '@/lib/connectionLabels'
 import { saveAnnexure1Draft, submitAnnexure1 } from '@/services/annexure1Service'
@@ -64,7 +67,7 @@ export function ConnectionJourneyPage() {
   const backPath = isAdminContext ? ROUTES.ADMIN_ASSIGNMENTS : ROUTES.RUKN_MY_KARKUN
   const { user } = useAuth()
   const ruknId = user?.ruknId ?? DEFAULT_DEMO_RUKN_ID
-  useAssignmentEngine()
+  const { releaseKarkun } = useAssignmentEngine()
   const { sendIndividualMessage } = useCommunication()
   const { getKarkunGuidance, version: guidanceVersion } = useGuidance(ruknId)
   const [, setGuidanceTick] = useState(0)
@@ -87,6 +90,8 @@ export function ConnectionJourneyPage() {
   const [composerOpen, setComposerOpen] = useState(false)
   const [scheduleOpen, setScheduleOpen] = useState(false)
   const [scheduleNotice, setScheduleNotice] = useState('')
+  const [releaseOpen, setReleaseOpen] = useState(false)
+  const [replaceOpen, setReplaceOpen] = useState(false)
 
   if (!karkun) {
     return (
@@ -117,6 +122,7 @@ export function ConnectionJourneyPage() {
   const journey = buildConnectionJourney(karkun, activeAssignment.assignmentId)
   void guidanceVersion
   const guidance = getKarkunGuidance(karkun.id)
+  const ruknName = getRuknById(activeAssignment.ruknId)?.name
   const latestSubmission = getLatestSubmissionForKarkun(karkun.id)
   const portalRegistration = getRegistrationForKarkun(karkun.id)
   const relationLabel = karkun.gender === 'Female' ? 'Husband' : 'Father'
@@ -217,6 +223,24 @@ export function ConnectionJourneyPage() {
           {getConnectionStatusLabel(karkun.assignmentStatus)}
         </span>
       </div>
+
+      <RelationshipSummaryPanel
+        karkunName={karkun.name}
+        ruknName={ruknName}
+        journeyStageId={guidance?.currentStage}
+        health={guidance?.health}
+        nextAction={guidance?.nextAction}
+        connectionNumber={activeAssignment.assignmentNumber}
+      />
+
+      {!isAdminContext && (
+        <RelationshipActionBar
+          showReplace
+          showRelease
+          onReplace={() => setReplaceOpen(true)}
+          onRelease={() => setReleaseOpen(true)}
+        />
+      )}
 
       <header className={sectionClass()}>
         <h1 className="text-2xl font-semibold text-text-heading">{karkun.name}</h1>
@@ -449,6 +473,31 @@ export function ConnectionJourneyPage() {
         onClose={() => setScheduleOpen(false)}
         onConfirm={handleScheduleMeeting}
       />
+
+      {!isAdminContext && (
+        <>
+          <ReleaseKarkunModal
+            isOpen={releaseOpen}
+            karkunName={karkun.name}
+            onClose={() => setReleaseOpen(false)}
+            onConfirm={(reason) => {
+              releaseKarkun(karkun.id, ruknId, reason)
+              setReleaseOpen(false)
+              navigate(ROUTES.RUKN_MY_KARKUN, {
+                state: { successMessage: 'Connection released successfully.' },
+              })
+            }}
+          />
+          <ReplaceKarkunModal
+            isOpen={replaceOpen}
+            currentKarkunId={karkun.id}
+            currentKarkunName={karkun.name}
+            ruknId={ruknId}
+            onClose={() => setReplaceOpen(false)}
+            onComplete={() => setReplaceOpen(false)}
+          />
+        </>
+      )}
     </div>
   )
 }

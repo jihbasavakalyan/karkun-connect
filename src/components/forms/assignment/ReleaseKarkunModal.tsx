@@ -23,8 +23,8 @@ export function ReleaseKarkunModal({
     <Modal isOpen={isOpen} title="Release this Karkun?" onClose={onClose}>
       <div className="space-y-4">
         <p className="text-secondary">
-          Release <span className="font-semibold text-text-heading">{karkunName}</span> back to
-          the Available pool.
+          Release <span className="font-semibold text-text-heading">{karkunName}</span>? They will
+          return to the available pool.
         </p>
 
         <fieldset className="space-y-2">

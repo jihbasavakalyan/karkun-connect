@@ -3,16 +3,22 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { adminAnnexure1Path, adminRuknDetailPath } from '@/constants/routes'
 import { AssignmentMappingView } from '@/components/assignment/AssignmentMappingView'
-import { getRuknById, ruknMaster } from '@/data/ruknMaster'
+import {
+  AvailableKarkunRow,
+  ConnectKarkunConfirmModal,
+  KarkunSearchField,
+} from '@/components/relationship'
+import { ruknMaster } from '@/data/ruknMaster'
 import { exportAssignmentHistory } from '@/lib/assignmentExport'
 import { getConnectionStatusLabel } from '@/lib/connectionLabels'
+import { humanizeConnectionConfirmed } from '@/lib/relationshipPresentation'
+import { matchesKarkunRegistrySearch } from '@/lib/relationshipPresentation'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { usePeopleStore } from '@/hooks/usePeopleStore'
 import {
   getKarkunsForRuknAssignment,
   ruknMatchesAssignmentSearch,
 } from '@/services/assignmentService'
-import { getAssignmentHistoryForKarkun } from '@/stores/assignmentStore'
 import { AssignmentHistoryTimeline } from '@/components/forms/assignment/AssignmentHistoryTimeline'
 import { AssignRuknModal } from '@/components/forms/assignment/AssignRuknModal'
 import { RemoveAssignmentModal } from '@/components/forms/assignment/RemoveAssignmentModal'
@@ -28,7 +34,6 @@ export function AssignmentManagementPage() {
   const {
     assignmentVersion,
     getRuknAssignmentSummary,
-    getKarkunWithWorkload,
     assignRukn,
     removeAssignment,
     restoreAssignment,
@@ -40,8 +45,6 @@ export function AssignmentManagementPage() {
   const [globalSearch, setGlobalSearch] = useState('')
   const [ruknSearch, setRuknSearch] = useState('')
   const [karkunSearch, setKarkunSearch] = useState('')
-  const [genderFilter, setGenderFilter] = useState('')
-  const [statusFilter, setStatusFilter] = useState('')
   const [selectedRuknId, setSelectedRuknId] = useState<string | null>(
     () => searchParams.get('rukn'),
   )
@@ -50,6 +53,7 @@ export function AssignmentManagementPage() {
   const [actionError, setActionError] = useState('')
   const [lastAssignmentNumber, setLastAssignmentNumber] = useState<string | null>(null)
   const [removingKarkun, setRemovingKarkun] = useState<{ id: string; name: string } | null>(null)
+  const [connectConfirmKarkunId, setConnectConfirmKarkunId] = useState<string | null>(null)
 
   const selectRukn = (ruknId: string) => {
     setSelectedRuknId(ruknId)
@@ -59,16 +63,19 @@ export function AssignmentManagementPage() {
   }
 
   const selectedRukn = selectedRuknId ? ruknMaster.find((r) => r.id === selectedRuknId) : null
-  const selectedKarkun = selectedKarkunId ? getKarkunById(selectedKarkunId) : null
   const ruknSummary = selectedRuknId ? getRuknAssignmentSummary(selectedRuknId) : null
 
-  const assignableKarkunIds = useMemo(() => {
+  const connectConfirmKarkun = connectConfirmKarkunId
+    ? getKarkunById(connectConfirmKarkunId) ?? null
+    : null
+
+  const assignableKarkuns = useMemo(() => {
     void assignmentVersion
-    if (!selectedRuknId) {
-      return new Set<string>()
-    }
-    return new Set(getKarkunsForRuknAssignment(selectedRuknId).map((karkun) => karkun.id))
-  }, [selectedRuknId, assignmentVersion])
+    if (!selectedRuknId) return []
+    return getKarkunsForRuknAssignment(selectedRuknId).filter((karkun) =>
+      matchesKarkunRegistrySearch(karkun, karkunSearch || globalSearch),
+    )
+  }, [selectedRuknId, karkunSearch, globalSearch, assignmentVersion])
 
   const filteredRukns = useMemo(() => {
     void assignmentVersion
@@ -84,39 +91,6 @@ export function AssignmentManagementPage() {
       )
     })
   }, [globalSearch, ruknSearch, assignmentVersion])
-
-  const karkunWorkload = useMemo(() => {
-    void assignmentVersion
-    const globalQuery = globalSearch.trim().toLowerCase()
-    return getKarkunWithWorkload().filter(({ karkun }) => {
-      if (selectedRukn && karkun.gender !== selectedRukn.gender) {
-        return false
-      }
-      if (genderFilter && karkun.gender !== genderFilter) return false
-      if (statusFilter && karkun.status !== statusFilter) return false
-
-      const searchQuery = globalQuery || karkunSearch.trim().toLowerCase()
-      if (searchQuery) {
-        const haystack = [karkun.name, karkun.mobile, karkun.area].join(' ').toLowerCase()
-        const history = getAssignmentHistoryForKarkun(karkun.id)
-        const matchesHistory = history.some(
-          (record) =>
-            record.assignmentNumber.toLowerCase().includes(searchQuery) ||
-            getRuknById(record.ruknId)?.name.toLowerCase().includes(searchQuery),
-        )
-        if (!haystack.includes(searchQuery) && !matchesHistory) return false
-      }
-      return true
-    })
-  }, [
-    assignmentVersion,
-    genderFilter,
-    statusFilter,
-    karkunSearch,
-    globalSearch,
-    selectedRukn,
-    getKarkunWithWorkload,
-  ])
 
   const changeView = (next: 'assign' | 'mapping') => {
     setSearchParams(
@@ -146,6 +120,7 @@ export function AssignmentManagementPage() {
 
     setLastAssignmentNumber(result.assignment?.assignmentNumber ?? null)
     setSelectedKarkunId(null)
+    setConnectConfirmKarkunId(null)
     setActionError('')
     closeModal()
     return true
@@ -282,11 +257,10 @@ export function AssignmentManagementPage() {
 
       {lastAssignmentNumber && (
         <div
-          className="rounded-(--radius-card) border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-900"
+          className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-900"
           role="status"
         >
-          Connection confirmed. Connection Number:{' '}
-          <span className="font-semibold">{lastAssignmentNumber}</span>
+          {humanizeConnectionConfirmed(lastAssignmentNumber)}
         </div>
       )}
 
@@ -357,120 +331,52 @@ export function AssignmentManagementPage() {
         </section>
 
         <section className="space-y-4">
-          <div className="rounded-(--radius-card) border border-border bg-surface p-4 shadow-card">
-            <h2 className="text-lg font-semibold text-text-heading">Karkun Workload</h2>
+          <div className="home-card">
+            <h2 className="text-lg font-semibold text-text-heading">Available Karkuns</h2>
             <p className="mt-1 text-sm text-secondary">
               {selectedRukn
-                ? `Select an available ${selectedRukn.gender} Karkun for ${selectedRukn.name}`
-                : 'Select a Rukn first, then choose an available Karkun'}
+                ? `Connect ${selectedRukn.gender} Karkuns to ${selectedRukn.name} — search and tap Connect.`
+                : 'Select a Rukn first, then connect available Karkuns.'}
             </p>
-            <div className="mt-3 grid gap-2 sm:grid-cols-3">
-              <input
-                type="search"
-                value={karkunSearch}
-                placeholder="Search..."
-                onChange={(e) => setKarkunSearch(e.target.value)}
-                className="rounded-lg border border-border px-3 py-2 text-sm sm:col-span-3"
-              />
-              <select
-                value={genderFilter}
-                onChange={(e) => setGenderFilter(e.target.value)}
-                className="rounded-lg border border-border px-3 py-2 text-sm"
-              >
-                <option value="">All Genders</option>
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-              </select>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="rounded-lg border border-border px-3 py-2 text-sm sm:col-span-2"
-              >
-                <option value="">All Statuses</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </select>
-            </div>
+            {selectedRukn && (
+              <div className="mt-3">
+                <KarkunSearchField
+                  id="admin-karkun-connect-search"
+                  value={karkunSearch}
+                  onChange={setKarkunSearch}
+                  resultCount={karkunSearch.trim() ? assignableKarkuns.length : undefined}
+                />
+              </div>
+            )}
           </div>
 
-          <ul className="max-h-[420px] space-y-2 overflow-y-auto">
-            {karkunWorkload.map(({ karkun, workload }) => {
-              const isAssignable = assignableKarkunIds.has(karkun.id)
-              const isSelected = selectedKarkunId === karkun.id
-              return (
+          {!selectedRukn ? (
+            <div className="home-card text-center text-secondary">
+              Select a Rukn on the left to see Karkuns ready to connect.
+            </div>
+          ) : assignableKarkuns.length === 0 ? (
+            <div className="home-card text-center text-secondary">
+              No available Karkuns match your search for {selectedRukn.name}.
+            </div>
+          ) : (
+            <ul className="relationship-row-list max-h-none">
+              {assignableKarkuns.map((karkun) => (
                 <li key={karkun.id}>
-                  <button
-                    type="button"
-                    disabled={!selectedRuknId || !isAssignable}
-                    onClick={() => {
-                      if (selectedRuknId && isAssignable) {
-                        setSelectedKarkunId(karkun.id)
-                        setActionError('')
-                      }
+                  <AvailableKarkunRow
+                    karkun={karkun}
+                    onConnect={() => {
+                      setConnectConfirmKarkunId(karkun.id)
+                      setSelectedKarkunId(karkun.id)
+                      setActionError('')
                     }}
-                    className={[
-                      'w-full rounded-lg border p-4 text-left shadow-card transition-shadow',
-                      isSelected
-                        ? 'border-primary bg-primary/5'
-                        : 'border-border bg-surface',
-                      selectedRuknId && isAssignable
-                        ? 'hover:border-primary/40 hover:shadow-card-hover'
-                        : 'cursor-not-allowed opacity-70',
-                    ].join(' ')}
-                  >
-                    <p className="font-semibold text-text-heading">{karkun.name}</p>
-                    <p className="mt-1 text-sm text-secondary">
-                      {karkun.gender} · {getConnectionStatusLabel(karkun.assignmentStatus)} · {workload.activeAssignments.length}{' '}
-                      active · {workload.inactiveAssignments.length} past
-                    </p>
-                    {workload.assignedRukns.length > 0 && (
-                      <p className="mt-1 text-sm text-secondary">
-                        Rukns: {workload.assignedRukns.join(', ')}
-                      </p>
-                    )}
-                    {selectedRuknId && !isAssignable && karkun.assignmentStatus === 'Available' && (
-                      <p className="mt-2 text-xs text-secondary">
-                        Cannot connect — check gender match or mobile number.
-                      </p>
-                    )}
-                  </button>
+                  />
                 </li>
-              )
-            })}
-          </ul>
+              ))}
+            </ul>
+          )}
         </section>
       </div>
 
-      {selectedRukn && selectedKarkun && (
-        <section className="rounded-(--radius-card) border border-primary/30 bg-surface p-6 shadow-card">
-          <h2 className="text-lg font-semibold text-text-heading">Connection Preview</h2>
-          <p className="mt-1 text-sm text-secondary">
-            Review the pairing before confirming the connection. A Rukn can hold multiple active
-            Karkuns.
-          </p>
-          <dl className="mt-4 grid gap-3 sm:grid-cols-2">
-            <div className="rounded-lg border border-border bg-surface-muted px-4 py-3">
-              <dt className="text-xs font-medium uppercase tracking-wide text-secondary">Selected Rukn</dt>
-              <dd className="mt-1 text-sm font-semibold text-text-heading">{selectedRukn.name}</dd>
-            </div>
-            <div className="rounded-lg border border-border bg-surface-muted px-4 py-3">
-              <dt className="text-xs font-medium uppercase tracking-wide text-secondary">Selected Karkun</dt>
-              <dd className="mt-1 text-sm font-semibold text-text-heading">{selectedKarkun.name}</dd>
-            </div>
-          </dl>
-          <p className="mt-4 text-sm text-secondary">
-            A permanent connection number will be generated when you confirm.
-          </p>
-          <div className="mt-4 flex flex-wrap gap-3">
-            <PrimaryButton type="button" onClick={handleConfirmAssignment}>
-              Confirm Connection
-            </PrimaryButton>
-            <SecondaryButton type="button" onClick={() => setSelectedKarkunId(null)}>
-              Clear Karkun Selection
-            </SecondaryButton>
-          </div>
-        </section>
-      )}
 
       {selectedRukn && ruknSummary && (
         <section className="rounded-(--radius-card) border border-border bg-surface p-6 shadow-card">
@@ -566,6 +472,18 @@ export function AssignmentManagementPage() {
       )}
       </>
       )}
+
+      <ConnectKarkunConfirmModal
+        isOpen={connectConfirmKarkun !== null}
+        karkun={connectConfirmKarkun}
+        ruknName={selectedRukn?.name}
+        error={actionError}
+        onClose={() => {
+          setConnectConfirmKarkunId(null)
+          setActionError('')
+        }}
+        onConfirm={handleConfirmAssignment}
+      />
 
       <AssignRuknModal
         key={selectedRukn?.id ?? 'assign-closed'}
