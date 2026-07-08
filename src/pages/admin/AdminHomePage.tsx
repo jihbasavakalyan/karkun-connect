@@ -1,51 +1,19 @@
 import {
-  CommandCenterAdminQuickActions,
-  CommandCenterAttentionCenter,
-  CommandCenterCampaignProgress,
-  CommandCenterFooter,
-  CommandCenterHero,
-  CommandCenterIntelligence,
-  CommandCenterKpiGrid,
-  CommandCenterMissionCenter,
-  CommandCenterRecentActivity,
-  CommandCenterTodaysWork,
-} from '@/components/command-center'
-import { AdminCoachingPanel } from '@/components/guidance'
+  AdminCampaignInfoSection,
+  AdminTodaysWorkSection,
+} from '@/components/home'
 import { useCampaignAutomationEngine } from '@/hooks/useCampaignAutomationEngine'
+import type { AdminCommandCenterSnapshot } from '@/types/campaignAutomation.types'
 
 export function AdminHomePage() {
-  const snapshot = useCampaignAutomationEngine({ role: 'administrator' })
+  const snapshot = useCampaignAutomationEngine({
+    role: 'administrator',
+  }) as AdminCommandCenterSnapshot
 
   return (
-    <div className="cc-stack mx-auto max-w-[1680px]">
-      <CommandCenterHero hero={snapshot.hero} />
-
-      <AdminCoachingPanel />
-
-      <CommandCenterMissionCenter
-        kpis={snapshot.kpis}
-        hero={snapshot.hero}
-        nextAction={snapshot.nextAction}
-      />
-
-      <CommandCenterKpiGrid kpis={snapshot.kpis} />
-
-      <CommandCenterCampaignProgress />
-
-      <CommandCenterAttentionCenter
-        alerts={snapshot.alerts}
-        followUpQueue={snapshot.followUpQueue}
-        reminders={snapshot.reminders}
-      />
-
-      <div className="cc-grid grid xl:grid-cols-[7fr_3fr]">
-        <CommandCenterTodaysWork schedule={snapshot.schedule} callQueue={snapshot.callQueue} />
-        <CommandCenterAdminQuickActions />
-      </div>
-
-      <CommandCenterRecentActivity />
-      <CommandCenterIntelligence />
-      <CommandCenterFooter />
+    <div className="home-page mx-auto max-w-[1680px]">
+      <AdminTodaysWorkSection snapshot={snapshot} />
+      <AdminCampaignInfoSection hero={snapshot.hero} />
     </div>
   )
 }

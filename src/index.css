@@ -110,6 +110,110 @@
   .campaign-fade-in {
     animation: campaign-fade-in 0.4s ease-out both;
   }
+
+  .home-page {
+    @apply space-y-6 pb-4;
+  }
+
+  .home-page-rukn {
+    @apply pb-24;
+  }
+
+  .home-stack-tight {
+    @apply space-y-3;
+  }
+
+  .home-section-primary {
+    @apply rounded-2xl border border-border/80 bg-surface p-4 shadow-card sm:p-5;
+  }
+
+  .home-section-secondary {
+    @apply rounded-2xl border border-border/60 bg-surface-muted/40 p-4 sm:p-5;
+  }
+
+  .home-section-header {
+    @apply mb-4 border-b border-border/60 pb-3;
+  }
+
+  .home-section-title {
+    @apply text-lg font-semibold tracking-tight text-text-heading sm:text-xl;
+  }
+
+  .home-section-subtitle {
+    @apply mt-1 text-sm text-secondary;
+  }
+
+  .home-section-body {
+    @apply space-y-3;
+  }
+
+  .home-card {
+    @apply rounded-xl border border-border/80 bg-surface p-4 shadow-card;
+  }
+
+  .home-card-emphasis {
+    @apply border-primary/20 bg-linear-to-br from-primary-muted/30 to-surface shadow-card;
+  }
+
+  .home-card-muted {
+    @apply border-border/60 bg-surface-muted/30 shadow-none;
+  }
+
+  .home-pulse-card {
+    @apply shadow-card;
+  }
+
+  .home-eyebrow {
+    @apply text-xs font-semibold uppercase tracking-wide text-secondary;
+  }
+
+  .home-action-row {
+    @apply flex items-center gap-3 rounded-lg border border-border/70 bg-surface-muted/30 px-3 py-2.5 transition-colors hover:border-primary/30 hover:bg-surface-muted;
+  }
+
+  .home-grid-2 {
+    @apply grid gap-3 lg:grid-cols-2;
+  }
+
+  .home-grid-3 {
+    @apply grid gap-3 md:grid-cols-2 xl:grid-cols-3;
+  }
+
+  .home-campaign-banner {
+    @apply rounded-xl border border-primary/20 bg-linear-to-r from-primary to-primary-hover px-4 py-3 shadow-card;
+  }
+
+  .home-connection-card {
+    @apply transition-shadow hover:shadow-card-hover;
+  }
+
+  .home-quick-action {
+    @apply flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl border border-border/80 bg-surface px-2 py-3 text-center shadow-card transition-all hover:border-primary/30 hover:shadow-card-hover active:scale-[0.98];
+  }
+
+  .rukn-fab-root {
+    @apply fixed bottom-[5.25rem] right-4 z-30 flex flex-col items-end gap-3 sm:bottom-6 sm:right-6;
+  }
+
+  .rukn-fab-trigger {
+    @apply flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white shadow-[0_6px_20px_rgb(0_0_0/0.22)] transition-all duration-200 hover:bg-primary-hover hover:shadow-[0_8px_24px_rgb(0_0_0/0.28)] active:scale-95;
+  }
+
+  .rukn-fab-trigger-open {
+    @apply rotate-0 bg-text-heading;
+  }
+
+  .rukn-fab-icon {
+    @apply text-2xl font-light leading-none;
+  }
+
+  .rukn-fab-menu {
+    @apply flex flex-col items-end gap-2;
+  }
+
+  .rukn-fab-menu-item {
+    @apply flex min-h-11 items-center gap-2 rounded-full border border-border/80 bg-surface px-4 py-2 text-sm font-semibold text-text-heading shadow-card transition-all hover:border-primary/30 hover:bg-surface-muted animate-[campaign-fade-in_0.2s_ease-out_both];
+  }
 }
 
 @keyframes campaign-count-up {
