@@ -1,16 +1,13 @@
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { DEFAULT_DEMO_RUKN_ID } from '@/constants/demoRukn'
 import {
-  CampaignPulseCard,
+  RuknActivityFeed,
   RuknFloatingActionButton,
-  RuknHomeHeader,
-  RuknJourneySummary,
-  RuknQuickActionsBar,
-  RuknRecentActivityPanel,
-  RuknTodaysConnections,
-  RuknTodaysSchedule,
+  RuknHomeHero,
+  RuknJourneyCompact,
+  RuknPeopleRows,
+  RuknScheduleTimeline,
 } from '@/components/home'
-import { CommandCenterFooter } from '@/components/command-center'
 import { useAuth } from '@/hooks/useAuth'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { useCampaignAutomationEngine } from '@/hooks/useCampaignAutomationEngine'
@@ -42,16 +39,12 @@ export function RuknHomePage() {
       : undefined
 
   return (
-    <div className="home-page home-page-rukn">
-      <RuknHomeHeader brief={morningBrief} hero={snapshot.hero} />
-      <RuknTodaysConnections ruknId={ruknId} hasConnections={hasConnections} />
-      <RuknTodaysSchedule schedule={snapshot.schedule} />
-      <CampaignPulseCard scope="rukn" ruknId={ruknId} />
-      <RuknQuickActionsBar nextAction={snapshot.nextAction} />
-      <RuknJourneySummary ruknId={ruknId} />
-      <RuknRecentActivityPanel />
-
-      <CommandCenterFooter />
+    <div className="cd-page cd-page-rukn">
+      <RuknHomeHero brief={morningBrief} hero={snapshot.hero} ruknId={ruknId} />
+      <RuknPeopleRows ruknId={ruknId} hasConnections={hasConnections} />
+      <RuknScheduleTimeline schedule={snapshot.schedule} />
+      <RuknJourneyCompact ruknId={ruknId} />
+      <RuknActivityFeed />
 
       <RuknFloatingActionButton
         nextAction={snapshot.nextAction}
