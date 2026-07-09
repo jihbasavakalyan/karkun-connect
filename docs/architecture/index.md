@@ -85,6 +85,7 @@ Scripts validate routes, auth, data integrity, assignments, and compliance witho
 
 ## Related Documents
 
+- [Repository Layer (M6.9)](./repository-layer.md)
 - [Product Experience Constitution (PX Constitution)](../architecture/product-experience-constitution.md)
 - [Workflow Automation Constitution](../architecture/workflow-automation-constitution.md)
 - [Testing Strategy](../testing/README.md)

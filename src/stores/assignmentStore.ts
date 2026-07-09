@@ -1,27 +1,6 @@
 import type { AssignmentRecord, AssignmentStatus } from '@/types/assignment'
-
-const ASSIGNMENTS_STORAGE_KEY = 'karkun-connect.assignments'
-const ASSIGNMENT_SEQUENCE_STORAGE_KEY = 'karkun-connect.assignments.sequence'
-
-const memoryStorage: Record<string, string> = {}
-
-type StorageLike = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>
-
-function getAssignmentStorage(): StorageLike {
-  if (typeof window !== 'undefined') {
-    return localStorage
-  }
-
-  return {
-    getItem: (key) => memoryStorage[key] ?? null,
-    setItem: (key, value) => {
-      memoryStorage[key] = value
-    },
-    removeItem: (key) => {
-      delete memoryStorage[key]
-    },
-  }
-}
+import { getRepositories } from '@/repositories/provider'
+import { unwrapRepository } from '@/repositories/errors'
 
 function deriveNextSequenceFromRecords(records: AssignmentRecord[]): number {
   let max = 0
@@ -38,38 +17,14 @@ function loadPersistedAssignmentState(): {
   assignments: AssignmentRecord[]
   nextSequence: number
 } {
-  const storage = getAssignmentStorage()
-  try {
-    const raw = storage.getItem(ASSIGNMENTS_STORAGE_KEY)
-    if (!raw) {
-      return { assignments: [], nextSequence: 1 }
-    }
-
-    const parsed = JSON.parse(raw) as AssignmentRecord[]
-    if (!Array.isArray(parsed)) {
-      return { assignments: [], nextSequence: 1 }
-    }
-
-    const storedSequence = storage.getItem(ASSIGNMENT_SEQUENCE_STORAGE_KEY)
-    const parsedSequence = storedSequence ? Number.parseInt(storedSequence, 10) : Number.NaN
-    const derivedSequence = deriveNextSequenceFromRecords(parsed)
-    const nextSequence = Number.isFinite(parsedSequence)
-      ? Math.max(parsedSequence, derivedSequence)
-      : derivedSequence
-
-    return { assignments: parsed, nextSequence }
-  } catch {
-    return { assignments: [], nextSequence: 1 }
-  }
+  return unwrapRepository(
+    getRepositories().connection.loadState(),
+    { assignments: [], nextSequence: 1 },
+  )
 }
 
-function persistAssignmentState(
-  records: AssignmentRecord[],
-  nextSequence: number,
-): void {
-  const storage = getAssignmentStorage()
-  storage.setItem(ASSIGNMENTS_STORAGE_KEY, JSON.stringify(records))
-  storage.setItem(ASSIGNMENT_SEQUENCE_STORAGE_KEY, String(nextSequence))
+function persistAssignmentState(records: AssignmentRecord[], nextSequence: number): void {
+  getRepositories().connection.saveState({ assignments: records, nextSequence })
 }
 
 const persisted = loadPersistedAssignmentState()
@@ -92,7 +47,7 @@ function saveAssignments(): void {
   persistAssignmentState(assignments, nextAssignmentSequence)
 }
 
-/** Re-read assignments from browser storage (simulates page reload). */
+/** Re-read assignments from repository (simulates page reload). */
 export function reloadAssignmentStoreFromPersistence(): void {
   const loaded = loadPersistedAssignmentState()
   assignments.length = 0
@@ -248,9 +203,7 @@ export function searchAssignments(query: string): AssignmentRecord[] {
 export function clearAssignmentStore(): void {
   assignments.length = 0
   nextAssignmentSequence = 1
-  const storage = getAssignmentStorage()
-  storage.removeItem(ASSIGNMENTS_STORAGE_KEY)
-  storage.removeItem(ASSIGNMENT_SEQUENCE_STORAGE_KEY)
+  getRepositories().connection.clear()
   notifyAssignmentStoreChange()
 }
 

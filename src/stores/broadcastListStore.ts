@@ -1,4 +1,5 @@
-import { loadJsonFromStorage, removeFromStorage, saveJsonToStorage } from '@/lib/browserStorage'
+import { getRepositories } from '@/repositories/provider'
+import { unwrapRepository } from '@/repositories/errors'
 
 export type BroadcastList = {
   id: string
@@ -8,9 +9,7 @@ export type BroadcastList = {
   updatedAt: string
 }
 
-const STORAGE_KEY = 'karkun-connect.broadcast-lists'
-
-const persisted = loadJsonFromStorage<BroadcastList[]>(STORAGE_KEY, [])
+const persisted = unwrapRepository(getRepositories().settings.loadBroadcastLists(), [])
 
 const broadcastLists: BroadcastList[] = [...persisted]
 
@@ -18,7 +17,7 @@ type Listener = () => void
 const listeners = new Set<Listener>()
 
 function persist(): void {
-  saveJsonToStorage(STORAGE_KEY, broadcastLists)
+  getRepositories().settings.saveBroadcastLists(broadcastLists)
 }
 
 function notify(): void {
@@ -92,6 +91,6 @@ export function setBroadcastListMembers(id: string, memberIds: string[]): void {
 
 export function clearBroadcastListStore(): void {
   broadcastLists.length = 0
-  removeFromStorage(STORAGE_KEY)
+  getRepositories().settings.clearBroadcastLists()
   notify()
 }

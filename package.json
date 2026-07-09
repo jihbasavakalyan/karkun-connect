@@ -23,7 +23,8 @@
     "migrate:import-female-karkuns": "node scripts/import-female-contacts-cleaned.mjs",
     "migrate:verify-female-karkuns": "node scripts/verify-female-karkun-import.mjs",
     "migrate:templates": "node scripts/generate-migration-templates.mjs",
-    "verify:migration": "npx vite-node scripts/verify-migration.ts"
+    "verify:migration": "npx vite-node scripts/verify-migration.ts",
+    "verify:repositories": "npx vite-node scripts/verify-repositories.ts"
   },
   "dependencies": {
     "react": "^19.2.7",

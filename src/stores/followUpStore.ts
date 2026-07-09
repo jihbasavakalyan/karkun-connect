@@ -1,19 +1,17 @@
 import type { FollowUpRecord, FollowUpStatus } from '@/types/followUp'
-import {
-  loadJsonFromStorage,
-  removeFromStorage,
-  saveJsonToStorage,
-} from '@/lib/browserStorage'
+import { getRepositories } from '@/repositories/provider'
+import { unwrapRepository } from '@/repositories/errors'
 
-const STORAGE_KEY = 'karkun-connect.followups'
-
-const followUpRecords: FollowUpRecord[] = loadJsonFromStorage<FollowUpRecord[]>(STORAGE_KEY, [])
+const followUpRecords: FollowUpRecord[] = unwrapRepository(
+  getRepositories().execution.loadFollowUps(),
+  [],
+)
 
 type FollowUpStoreListener = () => void
 const listeners = new Set<FollowUpStoreListener>()
 
 function persistFollowUpStore(): void {
-  saveJsonToStorage(STORAGE_KEY, followUpRecords)
+  getRepositories().execution.saveFollowUps(followUpRecords)
 }
 
 export function subscribeToFollowUpStore(listener: FollowUpStoreListener): () => void {
@@ -88,7 +86,7 @@ export function completePendingFollowUpsForAssignment(assignmentId: string): Fol
 }
 
 export function reloadFollowUpStoreFromPersistence(): void {
-  const loaded = loadJsonFromStorage<FollowUpRecord[]>(STORAGE_KEY, [])
+  const loaded = unwrapRepository(getRepositories().execution.loadFollowUps(), [])
   followUpRecords.length = 0
   followUpRecords.push(...loaded)
   notifyFollowUpStoreChange()
@@ -96,6 +94,6 @@ export function reloadFollowUpStoreFromPersistence(): void {
 
 export function clearFollowUpStore(): void {
   followUpRecords.length = 0
-  removeFromStorage(STORAGE_KEY)
+  getRepositories().execution.clearFollowUps()
   notifyFollowUpStoreChange()
 }

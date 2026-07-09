@@ -3,17 +3,19 @@ import type {
   ActivityLogSeverity,
   ActivityLogType,
 } from '@/types/assignment'
-import { loadJsonFromStorage, removeFromStorage, saveJsonToStorage } from '@/lib/browserStorage'
+import { getRepositories } from '@/repositories/provider'
+import { unwrapRepository } from '@/repositories/errors'
 
-const STORAGE_KEY = 'karkun-connect.activity-log'
-
-const activityLog: ActivityLogEntry[] = loadJsonFromStorage<ActivityLogEntry[]>(STORAGE_KEY, [])
+const activityLog: ActivityLogEntry[] = unwrapRepository(
+  getRepositories().connection.loadActivityLog(),
+  [],
+)
 
 type ActivityLogListener = () => void
 const listeners = new Set<ActivityLogListener>()
 
 function persistActivityLogStore(): void {
-  saveJsonToStorage(STORAGE_KEY, activityLog)
+  getRepositories().connection.saveActivityLog(activityLog)
 }
 
 export function subscribeToActivityLog(listener: ActivityLogListener): () => void {
@@ -70,6 +72,6 @@ export function getRecentActivity(limit = 20): ActivityLogEntry[] {
 
 export function clearActivityLogStore(): void {
   activityLog.length = 0
-  removeFromStorage(STORAGE_KEY)
+  getRepositories().connection.clearActivityLog()
   notifyActivityLogChange()
 }

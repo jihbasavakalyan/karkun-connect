@@ -1,14 +1,9 @@
 import type { SubmittedMeetingForm } from '@/types/annexure1.types'
-import {
-  loadJsonFromStorage,
-  removeFromStorage,
-  saveJsonToStorage,
-} from '@/lib/browserStorage'
+import { getRepositories } from '@/repositories/provider'
+import { unwrapRepository } from '@/repositories/errors'
 
-const STORAGE_KEY = 'karkun-connect.annexure1'
-
-const submittedForms: SubmittedMeetingForm[] = loadJsonFromStorage<SubmittedMeetingForm[]>(
-  STORAGE_KEY,
+const submittedForms: SubmittedMeetingForm[] = unwrapRepository(
+  getRepositories().execution.loadAnnexureForms(),
   [],
 )
 
@@ -16,7 +11,7 @@ type Annexure1StoreListener = () => void
 const listeners = new Set<Annexure1StoreListener>()
 
 function persistAnnexure1Store(): void {
-  saveJsonToStorage(STORAGE_KEY, submittedForms)
+  getRepositories().execution.saveAnnexureForms(submittedForms)
 }
 
 export function subscribeToAnnexure1Store(listener: Annexure1StoreListener): () => void {
@@ -102,7 +97,7 @@ export function saveDraftRecord(record: SubmittedMeetingForm): SubmittedMeetingF
 }
 
 export function reloadAnnexure1StoreFromPersistence(): void {
-  const loaded = loadJsonFromStorage<SubmittedMeetingForm[]>(STORAGE_KEY, [])
+  const loaded = unwrapRepository(getRepositories().execution.loadAnnexureForms(), [])
   submittedForms.length = 0
   submittedForms.push(...loaded)
   notifyAnnexure1StoreChange()
@@ -110,6 +105,6 @@ export function reloadAnnexure1StoreFromPersistence(): void {
 
 export function clearAnnexure1Store(): void {
   submittedForms.length = 0
-  removeFromStorage(STORAGE_KEY)
+  getRepositories().execution.clearAnnexureForms()
   notifyAnnexure1StoreChange()
 }

@@ -1,5 +1,4 @@
 /**
- * Domain interfaces (ports) barrel export.
+ * Domain interfaces (ports) — re-exported from repository layer (M6.9).
  */
-
-export {};
+export * from '@/repositories/interfaces'

@@ -1,15 +1,17 @@
 import type { BaitulMaalRecord } from '@/types/baitulMaal'
-import { loadMapFromStorage, removeFromStorage, saveMapToStorage } from '@/lib/browserStorage'
+import { getRepositories } from '@/repositories/provider'
+import { unwrapRepository } from '@/repositories/errors'
 
-const STORAGE_KEY = 'karkun-connect.baitul-maal'
-
-const records = loadMapFromStorage<string, BaitulMaalRecord>(STORAGE_KEY)
+const records = new Map<string, BaitulMaalRecord>()
+for (const record of unwrapRepository(getRepositories().compliance.loadBaitulMaal(), [])) {
+  records.set(`${record.karkunId}:${record.monthKey}`, record)
+}
 
 type BaitulMaalStoreListener = () => void
 const listeners = new Set<BaitulMaalStoreListener>()
 
 function persistBaitulMaalStore(): void {
-  saveMapToStorage(STORAGE_KEY, records)
+  getRepositories().compliance.saveBaitulMaal([...records.values()])
 }
 
 export function subscribeToBaitulMaalStore(listener: BaitulMaalStoreListener): () => void {
@@ -45,6 +47,6 @@ export function getAllBaitulMaalRecords(): BaitulMaalRecord[] {
 
 export function clearBaitulMaalStore(): void {
   records.clear()
-  removeFromStorage(STORAGE_KEY)
+  getRepositories().compliance.clearBaitulMaal()
   notifyBaitulMaalStoreChange()
 }

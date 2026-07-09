@@ -1,15 +1,17 @@
 import type { IjtemaAttendanceRecord } from '@/types/ijtemaAttendance'
-import { loadMapFromStorage, removeFromStorage, saveMapToStorage } from '@/lib/browserStorage'
+import { getRepositories } from '@/repositories/provider'
+import { unwrapRepository } from '@/repositories/errors'
 
-const STORAGE_KEY = 'karkun-connect.ijtema'
-
-const records = loadMapFromStorage<string, IjtemaAttendanceRecord>(STORAGE_KEY)
+const records = new Map<string, IjtemaAttendanceRecord>()
+for (const record of unwrapRepository(getRepositories().compliance.loadIjtema(), [])) {
+  records.set(`${record.karkunId}:${record.weekEndingDate}`, record)
+}
 
 type IjtemaAttendanceStoreListener = () => void
 const listeners = new Set<IjtemaAttendanceStoreListener>()
 
 function persistIjtemaAttendanceStore(): void {
-  saveMapToStorage(STORAGE_KEY, records)
+  getRepositories().compliance.saveIjtema([...records.values()])
 }
 
 export function subscribeToIjtemaAttendanceStore(
@@ -49,6 +51,6 @@ export function getAllIjtemaAttendanceRecords(): IjtemaAttendanceRecord[] {
 
 export function clearIjtemaAttendanceStore(): void {
   records.clear()
-  removeFromStorage(STORAGE_KEY)
+  getRepositories().compliance.clearIjtema()
   notifyIjtemaAttendanceStoreChange()
 }

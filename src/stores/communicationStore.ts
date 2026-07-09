@@ -7,9 +7,8 @@ import type {
   ScheduledMessage,
   WhatsAppSettings,
 } from '@/types/communication'
-import { loadJsonFromStorage, removeFromStorage, saveJsonToStorage } from '@/lib/browserStorage'
-
-const STORAGE_KEY = 'karkun-connect.communication'
+import { getRepositories } from '@/repositories/provider'
+import { unwrapRepository } from '@/repositories/errors'
 
 type CommunicationPersistedState = {
   templates: MessageTemplate[]
@@ -70,7 +69,10 @@ const defaultState: CommunicationPersistedState = {
   whatsappSettings: defaultWhatsAppSettings,
 }
 
-const persisted = loadJsonFromStorage<CommunicationPersistedState>(STORAGE_KEY, defaultState)
+const persisted = unwrapRepository(
+  getRepositories().communication.loadState(defaultState),
+  defaultState,
+)
 
 type CommunicationStoreListener = () => void
 
@@ -83,13 +85,13 @@ const scheduledMessages: ScheduledMessage[] = [...persisted.scheduledMessages]
 const whatsappSettings: WhatsAppSettings = { ...persisted.whatsappSettings }
 
 function persistCommunicationStore(): void {
-  saveJsonToStorage(STORAGE_KEY, {
+  getRepositories().communication.saveState({
     templates,
     history,
     automationRules,
     scheduledMessages,
     whatsappSettings,
-  } satisfies CommunicationPersistedState)
+  })
 }
 
 export function subscribeToCommunicationStore(listener: CommunicationStoreListener): () => void {
@@ -222,6 +224,6 @@ export function clearCommunicationStore(): void {
   automationRules.push(...createDefaultAutomationRules())
   scheduledMessages.length = 0
   Object.assign(whatsappSettings, defaultWhatsAppSettings)
-  removeFromStorage(STORAGE_KEY)
+  getRepositories().communication.clear()
   notifyCommunicationStoreChange()
 }

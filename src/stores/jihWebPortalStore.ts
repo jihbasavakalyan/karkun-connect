@@ -1,14 +1,8 @@
 import type { JihMonthlyReport, JihWebPortalRegistration } from '@/types/jihWebPortal'
-import { loadJsonFromStorage, removeFromStorage, saveJsonToStorage } from '@/lib/browserStorage'
+import { getRepositories } from '@/repositories/provider'
+import { unwrapRepository } from '@/repositories/errors'
 
-const STORAGE_KEY = 'karkun-connect.jih-portal'
-
-type JihPortalPersistedState = {
-  registrations: [string, JihWebPortalRegistration][]
-  monthlyReports: [string, JihMonthlyReport][]
-}
-
-const persisted = loadJsonFromStorage<JihPortalPersistedState>(STORAGE_KEY, {
+const persisted = unwrapRepository(getRepositories().compliance.loadJihPortal(), {
   registrations: [],
   monthlyReports: [],
 })
@@ -20,10 +14,10 @@ type JihWebPortalStoreListener = () => void
 const listeners = new Set<JihWebPortalStoreListener>()
 
 function persistJihWebPortalStore(): void {
-  saveJsonToStorage(STORAGE_KEY, {
+  getRepositories().compliance.saveJihPortal({
     registrations: [...registrations.entries()],
     monthlyReports: [...monthlyReports.entries()],
-  } satisfies JihPortalPersistedState)
+  })
 }
 
 export function subscribeToJihWebPortalStore(listener: JihWebPortalStoreListener): () => void {
@@ -78,6 +72,6 @@ export function getMonthlyReportsForMonth(monthKey: string): JihMonthlyReport[] 
 export function clearJihWebPortalStore(): void {
   registrations.clear()
   monthlyReports.clear()
-  removeFromStorage(STORAGE_KEY)
+  getRepositories().compliance.clearJihPortal()
   notifyJihWebPortalStoreChange()
 }

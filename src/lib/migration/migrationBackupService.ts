@@ -12,11 +12,10 @@ import {
   snapshotAssignmentStore,
   type AssignmentStoreSnapshot,
 } from '@/stores/assignmentStore'
-import { loadJsonFromStorage, saveJsonToStorage } from '@/lib/browserStorage'
-import { PEOPLE_MIGRATION_VERSION_KEY } from '@/lib/peopleRegistryPersistence'
+import { getRepositories } from '@/repositories/provider'
+import { unwrapRepository } from '@/repositories/errors'
 import type { DatasetBackup } from '@/types/dataMigration'
 
-const BACKUP_INDEX_KEY = 'karkun-connect.migration.backups'
 const MAX_STORED_BACKUPS = 5
 
 type BackupIndexEntry = {
@@ -30,11 +29,11 @@ function createBackupId(): string {
 }
 
 function readBackupIndex(): BackupIndexEntry[] {
-  return loadJsonFromStorage<BackupIndexEntry[]>(BACKUP_INDEX_KEY, [])
+  return unwrapRepository(getRepositories().settings.loadMigrationBackupIndex(), [])
 }
 
 function writeBackupIndex(entries: BackupIndexEntry[]): void {
-  saveJsonToStorage(BACKUP_INDEX_KEY, entries.slice(0, MAX_STORED_BACKUPS))
+  getRepositories().settings.saveMigrationBackupIndex(entries.slice(0, MAX_STORED_BACKUPS))
 }
 
 export function createDatasetBackup(label = 'Pre-import backup'): DatasetBackup {
@@ -50,12 +49,12 @@ export function createDatasetBackup(label = 'Pre-import backup'): DatasetBackup 
     assignments,
     campaigns: [...getCampaignLibrary()],
     nextKarkunNum: peopleSnapshot.nextKarkunNum,
-    migrationVersion: loadJsonFromStorage<number | null>(PEOPLE_MIGRATION_VERSION_KEY, null),
+    migrationVersion: unwrapRepository(getRepositories().settings.getMigrationVersion(), null),
   }
 }
 
 export function persistDatasetBackup(backup: DatasetBackup): void {
-  saveJsonToStorage(`karkun-connect.migration.backup.${backup.id}`, backup)
+  getRepositories().settings.saveMigrationBackup(backup)
   const index = readBackupIndex()
   writeBackupIndex([
     { id: backup.id, timestamp: backup.timestamp, label: backup.label },
@@ -68,10 +67,7 @@ export function listDatasetBackups(): BackupIndexEntry[] {
 }
 
 export function loadDatasetBackup(id: string): DatasetBackup | null {
-  return loadJsonFromStorage<DatasetBackup | null>(
-    `karkun-connect.migration.backup.${id}`,
-    null,
-  )
+  return unwrapRepository(getRepositories().settings.loadMigrationBackup(id), null)
 }
 
 export function downloadDatasetBackup(backup: DatasetBackup): void {
@@ -105,7 +101,7 @@ export function restoreDatasetBackup(backup: DatasetBackup): RestoreSnapshot {
   const assignmentSnapshot = replaceAllAssignments(backup.assignments)
 
   if (backup.migrationVersion !== null) {
-    saveJsonToStorage(PEOPLE_MIGRATION_VERSION_KEY, backup.migrationVersion)
+    getRepositories().settings.setMigrationVersion(backup.migrationVersion)
   }
 
   return {

@@ -1,0 +1,308 @@
+import { MOCK_CAMPAIGNS, type CampaignListItem } from '@/constants/mockMissions'
+import { ACTIVE_CAMPAIGN_ID } from '@/types/assignment.types'
+import type { ActivityLogEntry, AssignmentRecord } from '@/types/assignment'
+import type { SubmittedMeetingForm } from '@/types/annexure1.types'
+import type { FollowUpRecord } from '@/types/followUp'
+import type { GuidanceState } from '@/repositories/interfaces/ExecutionRepository'
+import type {
+  CommunicationState,
+} from '@/repositories/interfaces/CommunicationRepository'
+import type { BaitulMaalRecord } from '@/types/baitulMaal'
+import type { IjtemaAttendanceRecord } from '@/types/ijtemaAttendance'
+import type { JihPortalState } from '@/repositories/interfaces/ComplianceRepository'
+import type { Rukn } from '@/data/ruknMaster'
+import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
+import type { DatasetBackup } from '@/types/dataMigration'
+import {
+  getBrowserStorage,
+  loadJsonFromStorage,
+  loadMapFromStorage,
+  removeFromStorage,
+  saveJsonToStorage,
+  saveMapToStorage,
+} from '@/lib/browserStorage'
+import { repositoryOk, tryRepository, type RepositoryResult } from '@/repositories/errors'
+import { STORAGE_KEYS } from '@/repositories/storageKeys'
+import type { CampaignRepository } from '@/repositories/interfaces/CampaignRepository'
+import type { RuknRepository } from '@/repositories/interfaces/RuknRepository'
+import type { KarkunRepository, KarkunRegistryState } from '@/repositories/interfaces/KarkunRepository'
+import type { ConnectionRepository, ConnectionState } from '@/repositories/interfaces/ConnectionRepository'
+import type { ExecutionRepository } from '@/repositories/interfaces/ExecutionRepository'
+import type { CommunicationRepository } from '@/repositories/interfaces/CommunicationRepository'
+import type { ComplianceRepository } from '@/repositories/interfaces/ComplianceRepository'
+import type {
+  BroadcastListRecord,
+  MigrationBackupIndexEntry,
+  SettingsRepository,
+} from '@/repositories/interfaces/SettingsRepository'
+
+function deriveNextSequenceFromRecords(records: AssignmentRecord[]): number {
+  let max = 0
+  for (const record of records) {
+    const match = record.assignmentNumber.match(/ASN-(\d+)/i)
+    if (match) {
+      max = Math.max(max, Number.parseInt(match[1], 10))
+    }
+  }
+  return max + 1
+}
+
+export class CampaignLocalRepository implements CampaignRepository {
+  getAll(): RepositoryResult<readonly CampaignListItem[]> {
+    return repositoryOk(MOCK_CAMPAIGNS)
+  }
+
+  getById(id: string): RepositoryResult<CampaignListItem | undefined> {
+    return repositoryOk(MOCK_CAMPAIGNS.find((campaign) => campaign.id === id))
+  }
+
+  getActive(): RepositoryResult<CampaignListItem | undefined> {
+    return repositoryOk(MOCK_CAMPAIGNS.find((campaign) => campaign.id === ACTIVE_CAMPAIGN_ID))
+  }
+}
+
+export class RuknLocalRepository implements RuknRepository {
+  loadAll(): RepositoryResult<Rukn[]> {
+    return tryRepository(() => loadJsonFromStorage<Rukn[]>(STORAGE_KEYS.ruknMaster, []))
+  }
+
+  saveAll(rukns: Rukn[]): RepositoryResult<void> {
+    return tryRepository(() => {
+      saveJsonToStorage(STORAGE_KEYS.ruknMaster, rukns)
+    })
+  }
+
+  clear(): RepositoryResult<void> {
+    return tryRepository(() => removeFromStorage(STORAGE_KEYS.ruknMaster))
+  }
+
+  exists(): RepositoryResult<boolean> {
+    return repositoryOk(getBrowserStorage().getItem(STORAGE_KEYS.ruknMaster) !== null)
+  }
+}
+
+export class KarkunLocalRepository implements KarkunRepository {
+  loadState(): RepositoryResult<KarkunRegistryState> {
+    return tryRepository(() => ({
+      karkuns: loadJsonFromStorage<KarkunRegistryRecord[]>(STORAGE_KEYS.karkunRegistry, []),
+      nextKarkunNum: loadJsonFromStorage<number>(STORAGE_KEYS.karkunNextId, 1),
+    }))
+  }
+
+  saveState(state: KarkunRegistryState): RepositoryResult<void> {
+    return tryRepository(() => {
+      saveJsonToStorage(STORAGE_KEYS.karkunRegistry, state.karkuns)
+      saveJsonToStorage(STORAGE_KEYS.karkunNextId, state.nextKarkunNum)
+    })
+  }
+
+  clear(): RepositoryResult<void> {
+    return tryRepository(() => {
+      removeFromStorage(STORAGE_KEYS.karkunRegistry)
+      removeFromStorage(STORAGE_KEYS.karkunNextId)
+    })
+  }
+
+  exists(): RepositoryResult<boolean> {
+    return repositoryOk(getBrowserStorage().getItem(STORAGE_KEYS.karkunRegistry) !== null)
+  }
+}
+
+export class ConnectionLocalRepository implements ConnectionRepository {
+  loadState(): RepositoryResult<ConnectionState> {
+    return tryRepository(() => {
+      const assignments = loadJsonFromStorage<AssignmentRecord[]>(STORAGE_KEYS.assignments, [])
+      const storedSequence = loadJsonFromStorage<number | null>(STORAGE_KEYS.assignmentSequence, null)
+      const derivedSequence = deriveNextSequenceFromRecords(assignments)
+      const nextSequence =
+        storedSequence !== null && Number.isFinite(storedSequence)
+          ? Math.max(storedSequence, derivedSequence)
+          : derivedSequence
+      return { assignments, nextSequence }
+    })
+  }
+
+  saveState(state: ConnectionState): RepositoryResult<void> {
+    return tryRepository(() => {
+      saveJsonToStorage(STORAGE_KEYS.assignments, state.assignments)
+      saveJsonToStorage(STORAGE_KEYS.assignmentSequence, state.nextSequence)
+    })
+  }
+
+  clear(): RepositoryResult<void> {
+    return tryRepository(() => {
+      removeFromStorage(STORAGE_KEYS.assignments)
+      removeFromStorage(STORAGE_KEYS.assignmentSequence)
+    })
+  }
+
+  loadActivityLog(): RepositoryResult<ActivityLogEntry[]> {
+    return tryRepository(() => loadJsonFromStorage<ActivityLogEntry[]>(STORAGE_KEYS.activityLog, []))
+  }
+
+  saveActivityLog(entries: ActivityLogEntry[]): RepositoryResult<void> {
+    return tryRepository(() => saveJsonToStorage(STORAGE_KEYS.activityLog, entries))
+  }
+
+  clearActivityLog(): RepositoryResult<void> {
+    return tryRepository(() => removeFromStorage(STORAGE_KEYS.activityLog))
+  }
+}
+
+export class ExecutionLocalRepository implements ExecutionRepository {
+  loadAnnexureForms(): RepositoryResult<SubmittedMeetingForm[]> {
+    return tryRepository(() => loadJsonFromStorage<SubmittedMeetingForm[]>(STORAGE_KEYS.annexure1, []))
+  }
+
+  saveAnnexureForms(forms: SubmittedMeetingForm[]): RepositoryResult<void> {
+    return tryRepository(() => saveJsonToStorage(STORAGE_KEYS.annexure1, forms))
+  }
+
+  clearAnnexureForms(): RepositoryResult<void> {
+    return tryRepository(() => removeFromStorage(STORAGE_KEYS.annexure1))
+  }
+
+  loadFollowUps(): RepositoryResult<FollowUpRecord[]> {
+    return tryRepository(() => loadJsonFromStorage<FollowUpRecord[]>(STORAGE_KEYS.followUps, []))
+  }
+
+  saveFollowUps(records: FollowUpRecord[]): RepositoryResult<void> {
+    return tryRepository(() => saveJsonToStorage(STORAGE_KEYS.followUps, records))
+  }
+
+  clearFollowUps(): RepositoryResult<void> {
+    return tryRepository(() => removeFromStorage(STORAGE_KEYS.followUps))
+  }
+
+  loadGuidanceState(): RepositoryResult<GuidanceState> {
+    return tryRepository(() =>
+      loadJsonFromStorage<GuidanceState>(STORAGE_KEYS.guidance, {
+        commitments: [],
+        timelineEvents: [],
+      }),
+    )
+  }
+
+  saveGuidanceState(state: GuidanceState): RepositoryResult<void> {
+    return tryRepository(() => saveJsonToStorage(STORAGE_KEYS.guidance, state))
+  }
+
+  clearGuidanceState(): RepositoryResult<void> {
+    return tryRepository(() => removeFromStorage(STORAGE_KEYS.guidance))
+  }
+}
+
+export class CommunicationLocalRepository implements CommunicationRepository {
+  loadState(fallback: CommunicationState): RepositoryResult<CommunicationState> {
+    return tryRepository(() => loadJsonFromStorage<CommunicationState>(STORAGE_KEYS.communication, fallback))
+  }
+
+  saveState(state: CommunicationState): RepositoryResult<void> {
+    return tryRepository(() => saveJsonToStorage(STORAGE_KEYS.communication, state))
+  }
+
+  clear(): RepositoryResult<void> {
+    return tryRepository(() => removeFromStorage(STORAGE_KEYS.communication))
+  }
+}
+
+export class ComplianceLocalRepository implements ComplianceRepository {
+  loadBaitulMaal(): RepositoryResult<BaitulMaalRecord[]> {
+    return tryRepository(() => [...loadMapFromStorage<string, BaitulMaalRecord>(STORAGE_KEYS.baitulMaal).values()])
+  }
+
+  saveBaitulMaal(records: BaitulMaalRecord[]): RepositoryResult<void> {
+    return tryRepository(() => {
+      const map = new Map<string, BaitulMaalRecord>()
+      for (const record of records) {
+        map.set(`${record.karkunId}:${record.monthKey}`, record)
+      }
+      saveMapToStorage(STORAGE_KEYS.baitulMaal, map)
+    })
+  }
+
+  clearBaitulMaal(): RepositoryResult<void> {
+    return tryRepository(() => removeFromStorage(STORAGE_KEYS.baitulMaal))
+  }
+
+  loadIjtema(): RepositoryResult<IjtemaAttendanceRecord[]> {
+    return tryRepository(() => [...loadMapFromStorage<string, IjtemaAttendanceRecord>(STORAGE_KEYS.ijtema).values()])
+  }
+
+  saveIjtema(records: IjtemaAttendanceRecord[]): RepositoryResult<void> {
+    return tryRepository(() => {
+      const map = new Map<string, IjtemaAttendanceRecord>()
+      for (const record of records) {
+        map.set(`${record.karkunId}:${record.weekEndingDate}`, record)
+      }
+      saveMapToStorage(STORAGE_KEYS.ijtema, map)
+    })
+  }
+
+  clearIjtema(): RepositoryResult<void> {
+    return tryRepository(() => removeFromStorage(STORAGE_KEYS.ijtema))
+  }
+
+  loadJihPortal(): RepositoryResult<JihPortalState> {
+    return tryRepository(() =>
+      loadJsonFromStorage<JihPortalState>(STORAGE_KEYS.jihPortal, {
+        registrations: [],
+        monthlyReports: [],
+      }),
+    )
+  }
+
+  saveJihPortal(state: JihPortalState): RepositoryResult<void> {
+    return tryRepository(() => saveJsonToStorage(STORAGE_KEYS.jihPortal, state))
+  }
+
+  clearJihPortal(): RepositoryResult<void> {
+    return tryRepository(() => removeFromStorage(STORAGE_KEYS.jihPortal))
+  }
+}
+
+export class SettingsLocalRepository implements SettingsRepository {
+  getMigrationVersion(): RepositoryResult<number | null> {
+    return tryRepository(() => loadJsonFromStorage<number | null>(STORAGE_KEYS.migrationVersion, null))
+  }
+
+  setMigrationVersion(version: number): RepositoryResult<void> {
+    return tryRepository(() => saveJsonToStorage(STORAGE_KEYS.migrationVersion, version))
+  }
+
+  clearMigrationVersion(): RepositoryResult<void> {
+    return tryRepository(() => removeFromStorage(STORAGE_KEYS.migrationVersion))
+  }
+
+  loadBroadcastLists(): RepositoryResult<BroadcastListRecord[]> {
+    return tryRepository(() => loadJsonFromStorage<BroadcastListRecord[]>(STORAGE_KEYS.broadcastLists, []))
+  }
+
+  saveBroadcastLists(lists: BroadcastListRecord[]): RepositoryResult<void> {
+    return tryRepository(() => saveJsonToStorage(STORAGE_KEYS.broadcastLists, lists))
+  }
+
+  clearBroadcastLists(): RepositoryResult<void> {
+    return tryRepository(() => removeFromStorage(STORAGE_KEYS.broadcastLists))
+  }
+
+  loadMigrationBackupIndex(): RepositoryResult<MigrationBackupIndexEntry[]> {
+    return tryRepository(() => loadJsonFromStorage<MigrationBackupIndexEntry[]>(STORAGE_KEYS.migrationBackups, []))
+  }
+
+  saveMigrationBackupIndex(entries: MigrationBackupIndexEntry[]): RepositoryResult<void> {
+    return tryRepository(() => saveJsonToStorage(STORAGE_KEYS.migrationBackups, entries))
+  }
+
+  loadMigrationBackup(id: string): RepositoryResult<DatasetBackup | null> {
+    return tryRepository(() => loadJsonFromStorage<DatasetBackup | null>(STORAGE_KEYS.migrationBackup(id), null))
+  }
+
+  saveMigrationBackup(backup: DatasetBackup): RepositoryResult<void> {
+    return tryRepository(() => saveJsonToStorage(STORAGE_KEYS.migrationBackup(backup.id), backup))
+  }
+
+  removeMigrationBackup(id: string): RepositoryResult<void> {
+    return tryRepository(() => removeFromStorage(STORAGE_KEYS.migrationBackup(id)))
+  }
+}

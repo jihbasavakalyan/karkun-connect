@@ -24,10 +24,10 @@ import type { ProductionMigrationSummary } from '@/types/productionMigration'
 import {
   hasPersistedKarkunRegistry,
   loadPeopleRegistryFromPersistence,
-  PEOPLE_MIGRATION_VERSION_KEY,
   persistPeopleRegistry,
 } from '@/lib/peopleRegistryPersistence'
-import { getBrowserStorage } from '@/lib/browserStorage'
+import { getRepositories } from '@/repositories/provider'
+import { unwrapRepository } from '@/repositories/errors'
 import { getNextKarkunNum, setNextKarkunNum } from '@/lib/peopleStore'
 
 const MIGRATION_VERSION = 3
@@ -129,10 +129,9 @@ export function runProductionDataMigration(): ProductionMigrationSummary {
     return lastMigrationSummary
   }
 
-  const storage = getBrowserStorage()
-  const storedVersion = storage.getItem(PEOPLE_MIGRATION_VERSION_KEY)
+  const storedVersion = unwrapRepository(getRepositories().settings.getMigrationVersion(), null)
 
-  if (storedVersion === String(MIGRATION_VERSION) && hasPersistedKarkunRegistry()) {
+  if (storedVersion === MIGRATION_VERSION && hasPersistedKarkunRegistry()) {
     const loaded = loadPeopleRegistryFromPersistence()
     if (loaded.loadedKarkuns) {
       setNextKarkunNum(loaded.nextKarkunNum)
@@ -189,7 +188,7 @@ export function runProductionDataMigration(): ProductionMigrationSummary {
   migrationCompleted = true
   lastMigrationSummary = summary
 
-  storage.setItem(PEOPLE_MIGRATION_VERSION_KEY, String(MIGRATION_VERSION))
+  getRepositories().settings.setMigrationVersion(MIGRATION_VERSION)
   persistPeopleRegistry(getNextKarkunNum())
 
   if (import.meta.env.DEV) {

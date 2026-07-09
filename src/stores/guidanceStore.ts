@@ -1,11 +1,6 @@
 import type { Commitment, JourneyTimelineEvent } from '@/types/guidance'
-import {
-  loadJsonFromStorage,
-  removeFromStorage,
-  saveJsonToStorage,
-} from '@/lib/browserStorage'
-
-const STORAGE_KEY = 'karkun-connect.guidance'
+import { getRepositories } from '@/repositories/provider'
+import { unwrapRepository } from '@/repositories/errors'
 
 type GuidancePersistedState = {
   commitments: Commitment[]
@@ -17,7 +12,7 @@ const defaultState: GuidancePersistedState = {
   timelineEvents: [],
 }
 
-const persisted = loadJsonFromStorage<GuidancePersistedState>(STORAGE_KEY, defaultState)
+const persisted = unwrapRepository(getRepositories().execution.loadGuidanceState(), defaultState)
 
 const commitments: Commitment[] = [...persisted.commitments]
 const timelineEvents: JourneyTimelineEvent[] = [...persisted.timelineEvents]
@@ -26,7 +21,7 @@ type Listener = () => void
 const listeners = new Set<Listener>()
 
 function persist(): void {
-  saveJsonToStorage(STORAGE_KEY, { commitments, timelineEvents } satisfies GuidancePersistedState)
+  getRepositories().execution.saveGuidanceState({ commitments, timelineEvents })
 }
 
 function notify(): void {
@@ -86,6 +81,6 @@ export function appendTimelineEvent(event: JourneyTimelineEvent): JourneyTimelin
 export function clearGuidanceStore(): void {
   commitments.length = 0
   timelineEvents.length = 0
-  removeFromStorage(STORAGE_KEY)
+  getRepositories().execution.clearGuidanceState()
   notify()
 }
