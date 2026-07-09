@@ -8,6 +8,7 @@ import type {
   RuknRepository,
   SettingsRepository,
 } from '@/repositories/interfaces'
+import { isFirebaseConfigured } from '@/lib/firebase/firebase'
 import {
   CampaignLocalRepository,
   CommunicationLocalRepository,
@@ -18,6 +19,16 @@ import {
   RuknLocalRepository,
   SettingsLocalRepository,
 } from '@/repositories/local/localRepositories'
+import {
+  CampaignFirestoreRepository,
+  CommunicationFirestoreRepository,
+  ComplianceFirestoreRepository,
+  ConnectionFirestoreRepository,
+  ExecutionFirestoreRepository,
+  KarkunFirestoreRepository,
+  RuknFirestoreRepository,
+  SettingsFirestoreRepository,
+} from '@/repositories/firestore/firestoreRepositories'
 
 export type RepositoryBundle = {
   campaign: CampaignRepository
@@ -45,13 +56,47 @@ function createLocalRepositories(): RepositoryBundle {
   }
 }
 
+function createFirestoreRepositories(): RepositoryBundle {
+  return {
+    campaign: new CampaignFirestoreRepository(),
+    rukn: new RuknFirestoreRepository(),
+    karkun: new KarkunFirestoreRepository(),
+    connection: new ConnectionFirestoreRepository(),
+    execution: new ExecutionFirestoreRepository(),
+    communication: new CommunicationFirestoreRepository(),
+    compliance: new ComplianceFirestoreRepository(),
+    settings: new SettingsFirestoreRepository(),
+  }
+}
+
+export type RepositoryProviderMode = 'local' | 'firestore'
+
+export function getRepositoryProviderMode(): RepositoryProviderMode {
+  if (typeof window === 'undefined') {
+    return 'local'
+  }
+
+  const configuredMode = import.meta.env.VITE_REPOSITORY_PROVIDER
+  if (configuredMode === 'firestore' && isFirebaseConfigured()) {
+    return 'firestore'
+  }
+
+  return 'local'
+}
+
+function createRepositories(): RepositoryBundle {
+  return getRepositoryProviderMode() === 'firestore'
+    ? createFirestoreRepositories()
+    : createLocalRepositories()
+}
+
 /**
  * Central repository provider.
- * Returns local implementations today; Firestore implementations will plug in here.
+ * Returns local or Firestore implementations based on configuration.
  */
 export function getRepositories(): RepositoryBundle {
   if (!bundle) {
-    bundle = createLocalRepositories()
+    bundle = createRepositories()
   }
   return bundle
 }
@@ -59,10 +104,4 @@ export function getRepositories(): RepositoryBundle {
 /** Test-only reset — not used in production UI. */
 export function resetRepositoryProviderForTests(): void {
   bundle = null
-}
-
-export type RepositoryProviderMode = 'local' | 'firestore'
-
-export function getRepositoryProviderMode(): RepositoryProviderMode {
-  return 'local'
 }

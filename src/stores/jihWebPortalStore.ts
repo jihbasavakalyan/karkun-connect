@@ -69,6 +69,22 @@ export function getMonthlyReportsForMonth(monthKey: string): JihMonthlyReport[] 
   return getAllMonthlyReports().filter((record) => record.monthKey === monthKey)
 }
 
+export function reloadJihWebPortalStoreFromPersistence(): void {
+  const loaded = unwrapRepository(getRepositories().compliance.loadJihPortal(), {
+    registrations: [],
+    monthlyReports: [],
+  })
+  registrations.clear()
+  monthlyReports.clear()
+  for (const entry of loaded.registrations) {
+    registrations.set(entry[0], entry[1])
+  }
+  for (const entry of loaded.monthlyReports) {
+    monthlyReports.set(entry[0], entry[1])
+  }
+  listeners.forEach((listener) => listener())
+}
+
 export function clearJihWebPortalStore(): void {
   registrations.clear()
   monthlyReports.clear()

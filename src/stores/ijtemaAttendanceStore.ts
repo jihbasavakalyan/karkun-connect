@@ -49,6 +49,14 @@ export function getAllIjtemaAttendanceRecords(): IjtemaAttendanceRecord[] {
   return [...records.values()]
 }
 
+export function reloadIjtemaAttendanceStoreFromPersistence(): void {
+  records.clear()
+  for (const record of unwrapRepository(getRepositories().compliance.loadIjtema(), [])) {
+    records.set(recordKey(record.karkunId, record.weekEndingDate), record)
+  }
+  listeners.forEach((listener) => listener())
+}
+
 export function clearIjtemaAttendanceStore(): void {
   records.clear()
   getRepositories().compliance.clearIjtema()

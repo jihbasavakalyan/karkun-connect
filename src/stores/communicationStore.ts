@@ -216,6 +216,23 @@ export function getCommunicationDashboardMetrics(): CommunicationDashboardMetric
   }
 }
 
+export function reloadCommunicationStoreFromPersistence(): void {
+  const loaded = unwrapRepository(
+    getRepositories().communication.loadState(defaultState),
+    defaultState,
+  )
+  templates.length = 0
+  templates.push(...loaded.templates)
+  history.length = 0
+  history.push(...loaded.history)
+  automationRules.length = 0
+  automationRules.push(...loaded.automationRules)
+  scheduledMessages.length = 0
+  scheduledMessages.push(...loaded.scheduledMessages)
+  Object.assign(whatsappSettings, loaded.whatsappSettings)
+  listeners.forEach((listener) => listener())
+}
+
 export function clearCommunicationStore(): void {
   templates.length = 0
   templates.push(...DEFAULT_MESSAGE_TEMPLATES)

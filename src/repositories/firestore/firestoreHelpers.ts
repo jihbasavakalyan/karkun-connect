@@ -1,0 +1,122 @@
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  setDoc,
+  deleteDoc,
+  writeBatch,
+  serverTimestamp,
+  type DocumentData,
+  type Firestore,
+  type WriteBatch,
+} from 'firebase/firestore'
+import { repositoryErr, type RepositoryErrorCode, type RepositoryResult } from '@/repositories/errors'
+import type { FirestoreDocumentMeta } from '@/repositories/firestore/collections'
+
+export function nowIso(): string {
+  return new Date().toISOString()
+}
+
+export function withMeta<T extends object>(
+  payload: T,
+  revision = 1,
+): T & FirestoreDocumentMeta {
+  return {
+    ...payload,
+    _updatedAt: nowIso(),
+    _revision: revision,
+  }
+}
+
+export function stripMeta<T>(value: DocumentData): T {
+  const copy = { ...value } as Record<string, unknown>
+  delete copy._updatedAt
+  delete copy._revision
+  return copy as T
+}
+
+export function mapFirestoreError(error: unknown): RepositoryResult<never> {
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+    return repositoryErr('StorageFailure', 'You appear to be offline. Changes will sync when reconnected.', error)
+  }
+
+  if (typeof error === 'object' && error !== null && 'code' in error) {
+    const code = String((error as { code: string }).code)
+    if (code === 'permission-denied') {
+      return repositoryErr('Permission', 'You do not have permission to access this data.', error)
+    }
+    if (code === 'resource-exhausted') {
+      return repositoryErr('StorageFailure', 'Service quota exceeded. Please try again later.', error)
+    }
+    if (code === 'unavailable' || code === 'deadline-exceeded') {
+      return repositoryErr('StorageFailure', 'Network failure. Changes are queued for retry.', error)
+    }
+    if (code === 'failed-precondition') {
+      return repositoryErr('Duplicate', 'A conflicting update was detected. Please refresh and try again.', error)
+    }
+  }
+
+  return repositoryErr('Unexpected', 'A storage error occurred.', error)
+}
+
+export async function readDoc<T>(db: Firestore, path: string, id: string): Promise<T | null> {
+  const snapshot = await getDoc(doc(db, path, id))
+  if (!snapshot.exists()) {
+    return null
+  }
+  return stripMeta<T>(snapshot.data())
+}
+
+export async function readCollection<T>(db: Firestore, path: string): Promise<T[]> {
+  const snapshot = await getDocs(collection(db, path))
+  return snapshot.docs.map((item) => stripMeta<T>(item.data()))
+}
+
+export async function writeDoc<T extends object>(
+  db: Firestore,
+  path: string,
+  id: string,
+  payload: T,
+  revision?: number,
+): Promise<RepositoryResult<void>> {
+  try {
+    await setDoc(doc(db, path, id), {
+      ...withMeta(payload, revision),
+      _serverTime: serverTimestamp(),
+    })
+    return { ok: true, data: undefined }
+  } catch (error) {
+    return mapFirestoreError(error)
+  }
+}
+
+export async function removeDoc(
+  db: Firestore,
+  path: string,
+  id: string,
+): Promise<RepositoryResult<void>> {
+  try {
+    await deleteDoc(doc(db, path, id))
+    return { ok: true, data: undefined }
+  } catch (error) {
+    return mapFirestoreError(error)
+  }
+}
+
+export function createBatch(db: Firestore): WriteBatch {
+  return writeBatch(db)
+}
+
+export function reportConflict(
+  entity: string,
+  entityId: string,
+  localVersion: unknown,
+  remoteVersion: unknown,
+): RepositoryResult<never> {
+  return repositoryErr(
+    'Duplicate' as RepositoryErrorCode,
+    `Conflict detected for ${entity} ${entityId}. Remote data was preserved.`,
+    { localVersion, remoteVersion },
+  )
+}

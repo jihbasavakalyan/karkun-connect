@@ -89,6 +89,13 @@ export function setBroadcastListMembers(id: string, memberIds: string[]): void {
   }
 }
 
+export function reloadBroadcastListStoreFromPersistence(): void {
+  const loaded = unwrapRepository(getRepositories().settings.loadBroadcastLists(), [])
+  broadcastLists.length = 0
+  broadcastLists.push(...loaded)
+  listeners.forEach((listener) => listener())
+}
+
 export function clearBroadcastListStore(): void {
   broadcastLists.length = 0
   getRepositories().settings.clearBroadcastLists()

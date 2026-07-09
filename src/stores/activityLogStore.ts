@@ -70,6 +70,13 @@ export function getRecentActivity(limit = 20): ActivityLogEntry[] {
   return activityLog.slice(0, limit)
 }
 
+export function reloadActivityLogStoreFromPersistence(): void {
+  const loaded = unwrapRepository(getRepositories().connection.loadActivityLog(), [])
+  activityLog.length = 0
+  activityLog.push(...loaded)
+  listeners.forEach((listener) => listener())
+}
+
 export function clearActivityLogStore(): void {
   activityLog.length = 0
   getRepositories().connection.clearActivityLog()

@@ -1,7 +1,12 @@
 /**
- * Offline / sync extension points (M6.9).
- * Synchronization is not implemented — interfaces only.
+ * Offline / sync extension points (M6.9 / M8).
  */
+
+import {
+  getFirestoreConflicts,
+  getFirestoreSyncStatus,
+} from '@/repositories/firestore/offlineSync'
+import { getRepositoryProviderMode } from '@/repositories/provider'
 
 export type SyncStatus = 'synced' | 'pending' | 'offline' | 'conflict'
 
@@ -28,7 +33,6 @@ export type SyncConflict = {
   detectedAt: string
 }
 
-/** Future Firestore sync layer will implement this port. */
 export interface OfflineSyncPort {
   getStatus(): SyncStatus
   getPendingWrites(): PendingWrite[]
@@ -43,11 +47,25 @@ export type RepositorySyncResult = {
   conflicts: SyncConflict[]
 }
 
-/** Placeholder — no sync in local-only mode. */
-export const offlineSyncPort: OfflineSyncPort = {
+const localOfflineSyncPort: OfflineSyncPort = {
   getStatus: () => 'synced',
   getPendingWrites: () => [],
   getConflicts: () => [],
   enqueue: () => undefined,
   flush: async () => ({ synced: 0, failed: 0, conflicts: [] }),
 }
+
+const firestoreOfflineSyncPort: OfflineSyncPort = {
+  getStatus: () => getFirestoreSyncStatus(),
+  getPendingWrites: () => [],
+  getConflicts: () => getFirestoreConflicts(),
+  enqueue: () => undefined,
+  flush: async () => ({
+    synced: 0,
+    failed: 0,
+    conflicts: getFirestoreConflicts(),
+  }),
+}
+
+export const offlineSyncPort: OfflineSyncPort =
+  getRepositoryProviderMode() === 'firestore' ? firestoreOfflineSyncPort : localOfflineSyncPort

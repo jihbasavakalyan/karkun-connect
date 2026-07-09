@@ -1,0 +1,89 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdministrator() {
+      return isSignedIn() && request.auth.token.role == 'administrator';
+    }
+
+    function isRukn() {
+      return isSignedIn() && request.auth.token.role == 'rukn';
+    }
+
+    function ruknId() {
+      return request.auth.token.ruknId;
+    }
+
+    function assignedToRukn(data) {
+      return isRukn() && data.ruknId == ruknId();
+    }
+
+    function karkunAssignedToRukn(karkunId) {
+      return isRukn() &&
+        get(/databases/$(database)/documents/karkuns/$(karkunId)).data.assignedRuknId == ruknId();
+    }
+
+    match /campaigns/{campaignId} {
+      allow read: if isSignedIn();
+      allow write: if isAdministrator();
+    }
+
+    match /rukns/{docId} {
+      allow read: if isAdministrator() || (isRukn() && docId == ruknId());
+      allow write: if isAdministrator();
+    }
+
+    match /karkuns/{karkunId} {
+      allow read: if isAdministrator() || (isRukn() && resource.data.assignedRuknId == ruknId());
+      allow write: if isAdministrator();
+    }
+
+    match /connections/{assignmentId} {
+      allow read: if isAdministrator() || assignedToRukn(resource.data);
+      allow create: if isAdministrator() || assignedToRukn(request.resource.data);
+      allow update: if isAdministrator() || assignedToRukn(resource.data);
+      allow delete: if isAdministrator();
+    }
+
+    match /activityLogs/{entryId} {
+      allow read: if isAdministrator() || (isRukn() && resource.data.ruknId == ruknId());
+      allow create: if isAdministrator() || (isRukn() && request.resource.data.ruknId == ruknId());
+      allow update, delete: if isAdministrator();
+    }
+
+    match /executions/{docId} {
+      allow read: if isAdministrator() || isRukn();
+      allow create: if isAdministrator() || (isRukn() && request.resource.data.ruknId == ruknId());
+      allow update: if isAdministrator() || (isRukn() && resource.data.ruknId == ruknId());
+      allow delete: if isAdministrator();
+    }
+
+    match /followUps/{followUpId} {
+      allow read: if isAdministrator() || assignedToRukn(resource.data);
+      allow create: if isAdministrator() || assignedToRukn(request.resource.data);
+      allow update: if isAdministrator() || assignedToRukn(resource.data);
+      allow delete: if isAdministrator();
+    }
+
+    match /communications/{docId} {
+      allow read, write: if isAdministrator();
+    }
+
+    match /compliance/{docId} {
+      allow read: if isAdministrator() || isRukn();
+      allow write: if isAdministrator();
+    }
+
+    match /settings/{docId} {
+      allow read, write: if isAdministrator();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -78,6 +78,18 @@ export function appendTimelineEvent(event: JourneyTimelineEvent): JourneyTimelin
   return event
 }
 
+export function reloadGuidanceStoreFromPersistence(): void {
+  const loaded = unwrapRepository(
+    getRepositories().execution.loadGuidanceState(),
+    defaultState,
+  )
+  commitments.length = 0
+  commitments.push(...loaded.commitments)
+  timelineEvents.length = 0
+  timelineEvents.push(...loaded.timelineEvents)
+  listeners.forEach((listener) => listener())
+}
+
 export function clearGuidanceStore(): void {
   commitments.length = 0
   timelineEvents.length = 0

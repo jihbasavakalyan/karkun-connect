@@ -45,6 +45,14 @@ export function getAllBaitulMaalRecords(): BaitulMaalRecord[] {
   return [...records.values()]
 }
 
+export function reloadBaitulMaalStoreFromPersistence(): void {
+  records.clear()
+  for (const record of unwrapRepository(getRepositories().compliance.loadBaitulMaal(), [])) {
+    records.set(recordKey(record.karkunId, record.monthKey), record)
+  }
+  listeners.forEach((listener) => listener())
+}
+
 export function clearBaitulMaalStore(): void {
   records.clear()
   getRepositories().compliance.clearBaitulMaal()
