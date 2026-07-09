@@ -25,26 +25,30 @@ export function AdminHomeHero({ hero }: AdminHomeHeroProps) {
 
   return (
     <header className="cd-hero cd-hero-admin" aria-label="Campaign home">
-      <div className="cd-hero-inner">
-        <p className="cd-hero-greeting">{greetingForTimeOfDay()}</p>
+      <div className="cd-hero-inner cd-hero-inner-compact">
+        <div className="cd-hero-identity">
+          <p className="cd-hero-greeting">{greetingForTimeOfDay()}</p>
 
-        <h1 className="cd-hero-headline" dir="rtl" lang="ur">
-          {CAMPAIGN_HEADLINE}
-        </h1>
+          <h1 className="cd-hero-headline" dir="rtl" lang="ur">
+            {CAMPAIGN_HEADLINE}
+          </h1>
 
-        {campaign && (
-          <p className="cd-hero-campaign-name">{campaign.name}</p>
-        )}
-
-        <div className="cd-hero-meta">
-          <span>{dayLabel}</span>
-          <span className="cd-hero-meta-dot" aria-hidden="true" />
-          <span>{duration}</span>
-          <span className="cd-hero-meta-dot" aria-hidden="true" />
-          <span className="cd-hero-status">{status}</span>
+          {campaign && (
+            <p className="cd-hero-campaign-name">{campaign.name}</p>
+          )}
         </div>
 
-        <p className="cd-hero-motivation">{ADMIN_CAMPAIGN_MOTIVATION}</p>
+        <div className="cd-hero-meta-row">
+          <div className="cd-hero-meta">
+            <span>{dayLabel}</span>
+            <span className="cd-hero-meta-dot" aria-hidden="true" />
+            <span>{duration}</span>
+            <span className="cd-hero-meta-dot" aria-hidden="true" />
+            <span className="cd-hero-status">{status}</span>
+          </div>
+
+          <p className="cd-hero-motivation">{ADMIN_CAMPAIGN_MOTIVATION}</p>
+        </div>
 
         <CampaignPulseHeartbeat pulse={pulse} variant="hero" />
       </div>

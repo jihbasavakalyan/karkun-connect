@@ -78,9 +78,8 @@ export function AdminTodaysWorkPanel({ snapshot }: AdminTodaysWorkPanelProps) {
   ]
 
   return (
-    <div className="cd-panel cd-panel-primary">
+    <div className="cd-panel cd-panel-primary cd-workspace-primary">
       <h2 className="cd-section-heading">Today&apos;s Work</h2>
-      <p className="cd-section-lead">Where should you help today?</p>
 
       {actionItems.length > 0 && (
         <div className="cd-block">
@@ -97,15 +96,6 @@ export function AdminTodaysWorkPanel({ snapshot }: AdminTodaysWorkPanelProps) {
           </ul>
         </div>
       )}
-
-      <div className="cd-block">
-        <h3 className="cd-block-title">Pending connections</h3>
-        <ul className="cd-caption-list">
-          <li>{humanizePendingVisits(pendingVisits)}</li>
-          <li>{humanizePendingRegistration(jihPending)}</li>
-          <li>{humanizePendingCalls(pendingCalls)}</li>
-        </ul>
-      </div>
 
       <div className="cd-block">
         <h3 className="cd-block-title">Critical follow-ups</h3>
@@ -127,8 +117,17 @@ export function AdminTodaysWorkPanel({ snapshot }: AdminTodaysWorkPanelProps) {
           </ul>
         )}
         {todayFollowUps.length > 0 && (
-          <p className="cd-caption mt-3">{humanizeFollowUps(todayFollowUps.length)}</p>
+          <p className="cd-caption mt-2">{humanizeFollowUps(todayFollowUps.length)}</p>
         )}
+      </div>
+
+      <div className="cd-block">
+        <h3 className="cd-block-title">Pending connections</h3>
+        <ul className="cd-caption-list">
+          <li>{humanizePendingVisits(pendingVisits)}</li>
+          <li>{humanizePendingRegistration(jihPending)}</li>
+          <li>{humanizePendingCalls(pendingCalls)}</li>
+        </ul>
       </div>
 
       <div className="cd-block" id="todays-schedule">

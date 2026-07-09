@@ -41,7 +41,6 @@ export function RuknPeopleRows({ ruknId, hasConnections }: RuknPeopleRowsProps) 
   return (
     <section className="cd-people-section" aria-label="Your connections">
       <h2 className="cd-section-heading">Who needs you today</h2>
-      <p className="cd-section-lead">People first — act where relationships need you.</p>
 
       <ul className="cd-people-list">
         {guidanceList.map((guidance, index) => {

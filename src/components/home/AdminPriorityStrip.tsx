@@ -15,7 +15,10 @@ export function AdminPriorityStrip({ snapshot }: AdminPriorityStripProps) {
 
   return (
     <section className="cd-priority-strip" aria-label="Today's priority">
-      <p className="cd-priority-text">{message}</p>
+      <div className="cd-priority-content">
+        <p className="cd-priority-label">What should I do first?</p>
+        <p className="cd-priority-text">{message}</p>
+      </div>
       {route && route !== '#' && (
         <Link to={route} className="cd-priority-cta">
           {actionLabel} →

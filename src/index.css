@@ -111,13 +111,226 @@
     animation: campaign-fade-in 0.4s ease-out both;
   }
 
-  .campaign-fade-in {
-    animation: campaign-fade-in 0.4s ease-out both;
+  /* ── M6 Phase 3: Application-wide design system (ds-*) ── */
+  .ds-page {
+    @apply mx-auto w-full max-w-6xl space-y-6;
+  }
+
+  .ds-page-narrow {
+    @apply max-w-3xl;
+  }
+
+  .ds-page-wide {
+    @apply max-w-7xl;
+  }
+
+  .ds-page-header {
+    @apply flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between;
+  }
+
+  .ds-page-header-text {
+    @apply min-w-0;
+  }
+
+  .ds-page-title {
+    @apply text-2xl font-semibold tracking-tight text-text-heading sm:text-[1.75rem];
+  }
+
+  .ds-page-description {
+    @apply mt-2 text-[15px] leading-relaxed text-secondary;
+  }
+
+  .ds-page-header-actions {
+    @apply flex shrink-0 flex-wrap gap-2;
+  }
+
+  .ds-section-title {
+    @apply text-lg font-semibold tracking-tight text-text-heading;
+  }
+
+  .ds-section-subtitle {
+    @apply mt-1 text-sm leading-relaxed text-secondary;
+  }
+
+  .ds-section {
+    @apply rounded-xl border border-border/80 bg-surface p-5 shadow-card sm:p-6;
+  }
+
+  .ds-section-muted {
+    @apply border-border/60 bg-surface-muted/40 shadow-none;
+  }
+
+  .ds-section-group {
+    @apply space-y-6;
+  }
+
+  .ds-tab-nav {
+    @apply flex flex-wrap gap-2;
+  }
+
+  .ds-tab {
+    @apply min-h-10 rounded-lg px-4 py-2 text-sm font-medium text-secondary transition-colors hover:bg-surface-muted hover:text-text-heading;
+  }
+
+  .ds-tab-active {
+    @apply bg-primary-muted text-primary hover:bg-primary-muted hover:text-primary;
+  }
+
+  .ds-tab-pill-nav {
+    @apply inline-flex rounded-lg border border-border bg-surface p-1 shadow-card;
+  }
+
+  .ds-tab-pill {
+    @apply rounded-md px-4 py-2 text-sm font-medium text-secondary transition-colors hover:text-text-heading;
+  }
+
+  .ds-tab-pill-active {
+    @apply bg-primary text-white hover:text-white;
+  }
+
+  .ds-label {
+    @apply text-sm font-medium text-text-heading;
+  }
+
+  .ds-input {
+    @apply w-full min-h-11 rounded-lg border border-border bg-surface px-4 py-3 text-base text-text-heading placeholder:text-secondary-light transition-shadow focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20;
+  }
+
+  .ds-select {
+    @apply w-full min-h-11 rounded-lg border border-border bg-surface px-4 py-3 text-base text-text-heading transition-shadow focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20;
+  }
+
+  .ds-helper {
+    @apply text-xs leading-relaxed text-secondary;
+  }
+
+  .ds-field-error {
+    @apply text-sm text-error;
+  }
+
+  .ds-form-section {
+    @apply space-y-4;
+  }
+
+  .ds-form-field {
+    @apply flex flex-col gap-2;
+  }
+
+  .ds-badge {
+    @apply inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold;
+  }
+
+  .ds-badge-icon {
+    @apply text-sm leading-none;
+  }
+
+  .ds-badge-block {
+    @apply inline-flex flex-col gap-1;
+  }
+
+  .ds-badge-healthy {
+    @apply border-green-200 bg-green-50 text-green-800;
+  }
+
+  .ds-badge-attention {
+    @apply border-amber-200 bg-amber-50 text-amber-800;
+  }
+
+  .ds-badge-urgent {
+    @apply border-red-200 bg-red-50 text-red-800;
+  }
+
+  .ds-badge-dormant {
+    @apply border-border bg-surface-muted text-secondary;
+  }
+
+  .ds-badge-neutral {
+    @apply border-border bg-surface-muted text-text-heading;
+  }
+
+  .ds-badge-info {
+    @apply border-blue-200 bg-blue-50 text-blue-800;
+  }
+
+  .ds-badge-success {
+    @apply border-green-200 bg-green-50 text-green-800;
+  }
+
+  .ds-badge-warning {
+    @apply border-purple-200 bg-purple-50 text-purple-800;
+  }
+
+  .ds-badge-pending {
+    @apply border-amber-200 bg-amber-50 text-amber-800;
+  }
+
+  .ds-badge-connected {
+    @apply border-primary/25 bg-primary-muted text-primary;
+  }
+
+  .ds-table-wrap {
+    @apply overflow-x-auto rounded-xl border border-border/80 bg-surface shadow-card;
+  }
+
+  .ds-table {
+    @apply min-w-full text-left text-sm;
+  }
+
+  .ds-table thead {
+    @apply sticky top-0 z-10 border-b border-border bg-surface-muted;
+  }
+
+  .ds-table th {
+    @apply px-4 py-3 text-xs font-semibold uppercase tracking-wide text-secondary;
+  }
+
+  .ds-table-row {
+    @apply h-16 border-b border-border/80 transition-colors last:border-b-0 hover:bg-surface-muted/60;
+  }
+
+  .ds-table-cell {
+    @apply px-4 py-4 align-middle;
+  }
+
+  .ds-empty {
+    @apply rounded-xl border border-dashed border-border/80 bg-surface-muted/50 px-6 py-10 text-center;
+  }
+
+  .ds-empty-icon {
+    @apply mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary-muted text-2xl;
+  }
+
+  .ds-empty-title {
+    @apply mt-4 text-base font-semibold text-text-heading;
+  }
+
+  .ds-empty-description {
+    @apply mx-auto mt-2 max-w-md text-sm leading-relaxed text-secondary;
+  }
+
+  .ds-empty-actions {
+    @apply mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row;
+  }
+
+  .ds-skeleton {
+    @apply animate-pulse rounded-lg bg-border/60;
+  }
+
+  .ds-skeleton-page {
+    @apply space-y-4 px-1;
+  }
+
+  .ds-banner-success {
+    @apply rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-900;
+  }
+
+  .ds-banner-error {
+    @apply rounded-xl border border-error-border bg-error-bg px-4 py-3 text-sm text-error;
   }
 
   /* ── Concept D: Campaign Home design system ── */
   .cd-page {
-    @apply mx-auto max-w-[1200px] pb-10;
+    @apply mx-auto max-w-[1200px] pb-8;
     background: var(--gradient-warm-bg);
   }
 
@@ -126,11 +339,11 @@
   }
 
   .cd-page-rukn {
-    @apply max-w-3xl pb-28;
+    @apply max-w-3xl pb-24;
   }
 
   .cd-hero {
-    @apply relative overflow-hidden rounded-none sm:rounded-2xl;
+    @apply relative overflow-hidden rounded-none sm:rounded-xl;
     background: var(--gradient-hero);
     box-shadow: var(--shadow-glass);
   }
@@ -140,32 +353,73 @@
   }
 
   .cd-hero-rukn {
-    @apply rounded-2xl;
+    @apply rounded-xl;
   }
 
   .cd-hero-inner {
-    @apply px-5 py-8 sm:px-8 sm:py-10;
+    @apply px-4 py-5 sm:px-6 sm:py-5;
+  }
+
+  .cd-hero-inner-compact {
+    @apply grid gap-y-2 sm:gap-y-2.5;
+  }
+
+  .cd-hero-admin .cd-hero-inner-compact {
+    @apply sm:grid-cols-[minmax(0,1fr)_minmax(0,18rem)] sm:items-end sm:gap-x-5;
+    grid-template-areas:
+      'identity identity'
+      'meta pulse';
+  }
+
+  .cd-hero-admin .cd-hero-identity {
+    grid-area: identity;
+  }
+
+  .cd-hero-admin .cd-hero-meta-row {
+    grid-area: meta;
+    @apply flex-col items-start gap-1 sm:flex-col;
+  }
+
+  .cd-hero-admin .cd-pulse-hero {
+    grid-area: pulse;
+    @apply self-end;
+  }
+
+  .cd-hero-identity {
+    @apply min-w-0;
+  }
+
+  .cd-hero-meta-row {
+    @apply flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between;
+  }
+
+  .cd-hero-admin .cd-hero-meta-row {
+    @apply lg:items-end;
+  }
+
+  .cd-hero-rukn .cd-hero-meta-row {
+    @apply sm:items-start sm:justify-between;
   }
 
   .cd-hero-greeting {
-    @apply text-sm font-medium tracking-wide text-white/85;
+    @apply text-xs font-medium tracking-wide text-white/80;
   }
 
   .cd-hero-headline {
-    @apply mt-3 text-3xl font-bold leading-tight text-white sm:text-4xl;
+    @apply mt-1 text-xl font-bold leading-tight text-white sm:text-2xl;
     font-family: 'Segoe UI', system-ui, sans-serif;
   }
 
   .cd-hero-headline-rukn {
-    @apply text-2xl sm:text-3xl;
+    @apply text-lg sm:text-xl;
   }
 
   .cd-hero-campaign-name {
-    @apply mt-2 text-sm font-medium text-white/90;
+    @apply mt-0.5 text-xs font-medium text-white/85 sm:text-sm;
   }
 
   .cd-hero-meta {
-    @apply mt-4 flex flex-wrap items-center gap-2 text-sm text-white/80;
+    @apply flex flex-wrap items-center gap-1.5 text-xs text-white/75 sm:text-sm;
   }
 
   .cd-hero-meta-dot {
@@ -173,19 +427,23 @@
   }
 
   .cd-hero-status {
-    @apply rounded-full border border-white/25 bg-white/10 px-2.5 py-0.5 text-xs font-semibold text-white;
+    @apply rounded-full border border-white/20 bg-white/10 px-2 py-px text-[11px] font-semibold text-white;
   }
 
   .cd-hero-motivation {
-    @apply mt-5 max-w-2xl text-base italic leading-relaxed text-amber-100/95 sm:text-lg;
+    @apply max-w-md text-xs italic leading-snug text-amber-100/90 sm:text-right sm:text-sm;
   }
 
   .cd-pulse {
-    @apply mt-6 rounded-xl border px-4 py-4 backdrop-blur-sm;
+    @apply rounded-lg border px-3 py-2 backdrop-blur-sm;
   }
 
   .cd-pulse-hero {
-    @apply mt-6 max-w-xl;
+    @apply mt-0 w-full shrink-0 sm:max-w-sm;
+  }
+
+  .cd-hero-admin .cd-pulse-hero {
+    @apply lg:max-w-md;
   }
 
   .cd-pulse-healthy {
@@ -201,93 +459,113 @@
   }
 
   .cd-pulse-header {
-    @apply flex items-center gap-3;
+    @apply flex items-center gap-2;
   }
 
   .cd-pulse-icon {
-    @apply relative flex h-10 w-10 items-center justify-center;
+    @apply relative flex h-7 w-7 items-center justify-center;
   }
 
   .cd-pulse-dot {
-    @apply relative z-10 text-lg;
+    @apply relative z-10 text-sm;
   }
 
   .cd-pulse-ring {
-    @apply absolute inset-0 rounded-full border-2 border-white/30;
+    @apply absolute inset-0 rounded-full border border-white/30;
     animation: cd-pulse-ring 2s ease-out infinite;
   }
 
   .cd-pulse-label {
-    @apply text-[11px] font-semibold uppercase tracking-widest text-white/70;
+    @apply text-[10px] font-semibold uppercase tracking-widest text-white/65;
   }
 
   .cd-pulse-status {
-    @apply text-lg font-semibold text-white;
+    @apply text-sm font-semibold leading-tight text-white;
   }
 
   .cd-pulse-trends {
-    @apply mt-3 space-y-1 border-t border-white/15 pt-3 text-sm leading-relaxed text-white/90;
+    @apply mt-1.5 flex flex-wrap gap-x-2 gap-y-0.5 border-t border-white/10 pt-1.5 text-[11px] leading-snug text-white/80;
   }
 
   .cd-pulse-trends li::before {
+    content: none;
+  }
+
+  .cd-pulse-trends li:not(:last-child)::after {
     content: '·';
-    @apply mr-2 text-white/50;
+    @apply ml-2 text-white/40;
   }
 
   .cd-rukn-focus {
-    @apply mt-6 border-t border-white/15 pt-5;
+    @apply flex flex-col gap-0.5 border-t border-white/12 pt-2 sm:flex-row sm:flex-wrap sm:items-baseline sm:gap-x-3;
   }
 
   .cd-rukn-focus-label {
-    @apply text-[11px] font-semibold uppercase tracking-widest text-white/70;
+    @apply shrink-0 text-[10px] font-semibold uppercase tracking-widest text-white/65;
   }
 
   .cd-rukn-focus-text {
-    @apply mt-2 text-lg font-medium leading-snug text-white;
+    @apply text-sm font-medium leading-snug text-white;
   }
 
   .cd-rukn-focus-goal {
-    @apply mt-2 text-sm text-white/80;
+    @apply text-xs text-white/75 sm:ml-auto;
   }
 
   .cd-priority-strip {
-    @apply mx-3 mt-6 flex flex-col gap-4 rounded-xl border border-primary/20 bg-accent-soft px-5 py-5 shadow-enterprise sm:mx-0 sm:flex-row sm:items-center sm:justify-between;
+    @apply mx-3 mt-3 flex flex-col gap-3 rounded-lg border-2 border-primary/30 bg-surface px-4 py-3 shadow-sm sm:mx-0 sm:flex-row sm:items-center sm:justify-between;
+  }
+
+  .cd-priority-content {
+    @apply min-w-0;
+  }
+
+  .cd-priority-label {
+    @apply text-[10px] font-bold uppercase tracking-widest text-primary;
   }
 
   .cd-priority-text {
-    @apply text-lg font-semibold leading-snug text-text-heading sm:text-xl;
+    @apply mt-0.5 text-base font-semibold leading-snug text-text-heading;
   }
 
   .cd-priority-cta {
-    @apply inline-flex min-h-11 shrink-0 items-center justify-center rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover;
+    @apply inline-flex min-h-10 shrink-0 items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover;
   }
 
   .cd-workspace {
-    @apply mx-3 mt-10 grid gap-10 lg:mx-0 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] lg:gap-12;
+    @apply mx-3 mt-4 grid gap-6 lg:mx-0 lg:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)] lg:gap-8 lg:items-start;
   }
 
   .cd-panel-primary {
     @apply min-w-0;
   }
 
+  .cd-workspace-primary {
+    @apply border-t border-border/50 pt-4 lg:border-t-0 lg:pt-0;
+  }
+
   .cd-panel-secondary {
-    @apply min-w-0 rounded-xl border border-border/50 bg-surface/60 p-5 backdrop-blur-sm sm:p-6;
+    @apply min-w-0;
+  }
+
+  .cd-panel-context {
+    @apply border-t border-border/40 pt-5 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0;
   }
 
   .cd-section-heading {
-    @apply text-xl font-semibold tracking-tight text-text-heading sm:text-2xl;
+    @apply text-lg font-semibold tracking-tight text-text-heading;
   }
 
   .cd-section-heading-sm {
-    @apply text-base font-semibold sm:text-lg;
+    @apply text-sm font-semibold;
   }
 
   .cd-section-heading-muted {
-    @apply text-base font-semibold text-secondary sm:text-lg;
+    @apply text-sm font-semibold text-secondary;
   }
 
   .cd-section-lead {
-    @apply mt-1 text-sm text-secondary;
+    @apply mt-0.5 text-xs text-secondary;
   }
 
   .cd-section-lead-muted {
@@ -295,31 +573,31 @@
   }
 
   .cd-block {
-    @apply mt-8 border-t border-border/60 pt-8 first:mt-4 first:border-t-0 first:pt-0;
+    @apply mt-5 border-t border-border/50 pt-5 first:mt-3 first:border-t-0 first:pt-0;
   }
 
   .cd-block-title {
-    @apply text-sm font-semibold uppercase tracking-wide text-secondary;
+    @apply text-[11px] font-semibold uppercase tracking-wide text-secondary;
   }
 
   .cd-supporting {
-    @apply mt-2 text-[15px] leading-relaxed text-text-heading;
+    @apply mt-1.5 text-sm leading-relaxed text-text-heading;
   }
 
   .cd-caption {
-    @apply mt-2 text-sm text-secondary;
+    @apply mt-1.5 text-xs text-secondary;
   }
 
   .cd-caption-list {
-    @apply mt-3 space-y-2 text-sm leading-relaxed text-text-heading;
+    @apply mt-2 space-y-1 text-sm leading-snug text-text-heading;
   }
 
   .cd-action-list {
-    @apply mt-3 space-y-1;
+    @apply mt-2 space-y-0;
   }
 
   .cd-action-link {
-    @apply flex min-h-11 items-center justify-between gap-3 rounded-lg px-2 py-2 text-[15px] text-text-heading transition-colors hover:bg-surface-muted hover:text-primary;
+    @apply flex min-h-9 items-center justify-between gap-3 rounded-md px-1.5 py-1.5 text-sm text-text-heading transition-colors hover:bg-surface-muted hover:text-primary;
   }
 
   .cd-action-name {
@@ -335,16 +613,16 @@
   }
 
   .cd-timeline {
-    @apply mt-4 space-y-0 border-l-2 border-border/80 pl-4;
+    @apply mt-2 space-y-0 border-l-2 border-border/70 pl-3;
   }
 
   .cd-timeline-item {
-    @apply relative pb-5 last:pb-0;
+    @apply relative pb-3 last:pb-0;
   }
 
   .cd-timeline-item::before {
     content: '';
-    @apply absolute -left-[1.3rem] top-1.5 h-2.5 w-2.5 rounded-full bg-primary;
+    @apply absolute -left-[1.15rem] top-1 h-2 w-2 rounded-full bg-primary;
   }
 
   .cd-timeline-accent-urgent::before {
@@ -360,15 +638,15 @@
   }
 
   .cd-timeline-link {
-    @apply block rounded-lg py-1 transition-colors hover:bg-surface-muted/80;
+    @apply block rounded-md py-0.5 transition-colors hover:bg-surface-muted/80;
   }
 
   .cd-timeline-time {
-    @apply text-xs font-bold uppercase tracking-wide text-primary;
+    @apply text-[11px] font-bold uppercase tracking-wide text-primary;
   }
 
   .cd-timeline-title {
-    @apply mt-0.5 block text-sm font-medium text-text-heading;
+    @apply mt-px block text-sm font-medium text-text-heading;
   }
 
   .cd-timeline-subtitle {
@@ -376,23 +654,23 @@
   }
 
   .cd-timeline-body {
-    @apply mt-0.5;
+    @apply mt-px;
   }
 
   .cd-context-block {
-    @apply mt-6 border-t border-border/40 pt-6 first:mt-2 first:border-t-0 first:pt-0;
+    @apply mt-4 border-t border-border/30 pt-4 first:mt-2 first:border-t-0 first:pt-0;
   }
 
   .cd-context-title {
-    @apply text-xs font-semibold uppercase tracking-wide text-secondary;
+    @apply text-[10px] font-semibold uppercase tracking-wide text-secondary/90;
   }
 
   .cd-text-link {
-    @apply mt-2 inline-block text-sm font-medium text-primary hover:underline;
+    @apply mt-1.5 inline-block text-xs font-medium text-primary hover:underline;
   }
 
   .cd-progress-bar {
-    @apply mt-2 h-2 overflow-hidden rounded-full bg-surface-muted;
+    @apply mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface-muted;
   }
 
   .cd-progress-fill {
@@ -400,7 +678,7 @@
   }
 
   .cd-journey-bars {
-    @apply mt-3 space-y-2.5;
+    @apply mt-2 space-y-2;
   }
 
   .cd-journey-row {
@@ -408,39 +686,39 @@
   }
 
   .cd-journey-track {
-    @apply mt-1 h-1 overflow-hidden rounded-full bg-surface-muted;
+    @apply mt-0.5 h-1 overflow-hidden rounded-full bg-surface-muted;
   }
 
   .cd-journey-fill {
-    @apply h-full rounded-full bg-primary/50;
+    @apply h-full rounded-full bg-primary/40;
   }
 
   .cd-activity-feed {
-    @apply mt-3 space-y-3;
+    @apply mt-2 space-y-2;
   }
 
   .cd-activity-message {
-    @apply text-sm leading-snug text-text-heading;
+    @apply text-xs leading-snug text-text-heading;
   }
 
   .cd-activity-time {
-    @apply mt-0.5 block text-[11px] text-secondary;
+    @apply mt-0.5 block text-[10px] text-secondary;
   }
 
   .cd-people-section {
-    @apply mt-10 px-1;
+    @apply mt-4 px-0.5;
   }
 
   .cd-people-list {
-    @apply mt-6 divide-y divide-border/70;
+    @apply mt-3 divide-y divide-border/60;
   }
 
   .cd-person-row {
-    @apply flex flex-col gap-4 py-6 first:pt-0 sm:flex-row sm:items-start sm:justify-between;
+    @apply flex flex-col gap-2.5 py-3 first:pt-0 sm:flex-row sm:items-start sm:justify-between;
   }
 
   .cd-person-row-featured {
-    @apply -mx-3 rounded-xl bg-surface px-4 py-6 shadow-card sm:mx-0;
+    @apply -mx-1 rounded-none border-l-2 border-primary bg-primary/5 px-2 py-3 shadow-none sm:mx-0;
   }
 
   .cd-person-main {
@@ -452,19 +730,19 @@
   }
 
   .cd-person-name {
-    @apply text-lg font-semibold text-text-heading hover:text-primary;
+    @apply text-base font-semibold text-text-heading hover:text-primary;
   }
 
   .cd-person-stage {
-    @apply text-xs font-medium text-secondary;
+    @apply text-[11px] font-medium text-secondary;
   }
 
   .cd-person-health {
-    @apply mt-2 flex items-center gap-2 text-sm text-secondary;
+    @apply mt-1 flex items-center gap-1.5 text-xs text-secondary;
   }
 
   .cd-health-dot {
-    @apply h-2 w-2 rounded-full bg-primary;
+    @apply h-1.5 w-1.5 rounded-full bg-primary;
   }
 
   .cd-health-healthy {
@@ -484,39 +762,39 @@
   }
 
   .cd-person-message {
-    @apply mt-3 text-[15px] font-medium leading-relaxed text-text-heading;
+    @apply mt-1.5 text-sm font-medium leading-snug text-text-heading;
   }
 
   .cd-person-actions {
-    @apply flex flex-wrap gap-2 sm:max-w-[14rem] sm:flex-col sm:items-stretch;
+    @apply flex flex-wrap gap-1.5 sm:max-w-[13rem] sm:flex-col sm:items-stretch;
   }
 
   .cd-person-action {
-    @apply inline-flex min-h-11 items-center justify-center rounded-lg border border-border/80 bg-surface px-4 py-2 text-sm font-semibold text-text-heading transition-all hover:border-primary/40 hover:text-primary active:scale-[0.98];
+    @apply inline-flex min-h-9 items-center justify-center rounded-md border border-border/70 bg-transparent px-3 py-1.5 text-xs font-semibold text-text-heading transition-all hover:border-primary/40 hover:bg-surface-muted hover:text-primary active:scale-[0.98];
   }
 
   .cd-people-footer {
-    @apply mt-6 flex justify-center;
+    @apply mt-4 flex justify-center;
   }
 
   .cd-inline-cta {
-    @apply mt-4 inline-flex text-sm font-semibold text-primary hover:underline;
+    @apply mt-3 inline-flex text-sm font-semibold text-primary hover:underline;
   }
 
   .cd-schedule-section {
-    @apply mt-10 border-t border-border/60 pt-10 px-1;
+    @apply mt-6 border-t border-border/50 pt-6 px-0.5;
   }
 
   .cd-journey-compact {
-    @apply mt-8 px-1;
+    @apply mt-5 px-0.5;
   }
 
   .cd-journey-chips {
-    @apply mt-3 flex flex-wrap gap-2;
+    @apply mt-2 flex flex-wrap gap-1.5;
   }
 
   .cd-journey-chip {
-    @apply inline-flex items-center gap-2 rounded-full border border-border/70 bg-surface px-3 py-1.5 text-xs;
+    @apply inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-transparent px-2.5 py-1 text-[11px];
   }
 
   .cd-journey-chip-label {
@@ -528,7 +806,7 @@
   }
 
   .cd-activity-section {
-    @apply mt-8 border-t border-border/40 pt-8 px-1;
+    @apply mt-5 border-t border-border/40 pt-5 px-0.5;
   }
 
   .cd-panel-primary .cc-card-sm {
@@ -537,6 +815,14 @@
 
   .cd-panel-primary .cc-card-sm .enterprise-section-header {
     @apply hidden;
+  }
+
+  .cd-panel-primary .cc-card-sm .grid {
+    @apply gap-1;
+  }
+
+  .cd-panel-primary .cc-card-sm a {
+    @apply rounded-md border-border/60 bg-transparent px-2 py-1.5;
   }
 
   .home-card {
@@ -581,7 +867,7 @@
   }
 
   .relationship-page {
-    @apply space-y-4;
+    @apply mx-auto w-full max-w-3xl space-y-6;
   }
 
   .relationship-search-sticky {

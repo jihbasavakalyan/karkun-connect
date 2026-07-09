@@ -24,22 +24,26 @@ export function RuknHomeHero({ brief, hero, ruknId }: RuknHomeHeroProps) {
 
   return (
     <header className="cd-hero cd-hero-rukn" aria-label="Your campaign home">
-      <div className="cd-hero-inner">
-        <p className="cd-hero-greeting">{brief.greeting}</p>
+      <div className="cd-hero-inner cd-hero-inner-compact">
+        <div className="cd-hero-identity">
+          <p className="cd-hero-greeting">{brief.greeting}</p>
 
-        <h1 className="cd-hero-headline cd-hero-headline-rukn" dir="rtl" lang="ur">
-          {CAMPAIGN_HEADLINE}
-        </h1>
+          <h1 className="cd-hero-headline cd-hero-headline-rukn" dir="rtl" lang="ur">
+            {CAMPAIGN_HEADLINE}
+          </h1>
 
-        {campaign && <p className="cd-hero-campaign-name">{campaign.name}</p>}
-
-        <div className="cd-hero-meta">
-          <span>{dayLabel}</span>
-          <span className="cd-hero-meta-dot" aria-hidden="true" />
-          <span className="cd-hero-status">{status}</span>
+          {campaign && <p className="cd-hero-campaign-name">{campaign.name}</p>}
         </div>
 
-        <CampaignPulseHeartbeat pulse={pulse} variant="hero" />
+        <div className="cd-hero-meta-row">
+          <div className="cd-hero-meta">
+            <span>{dayLabel}</span>
+            <span className="cd-hero-meta-dot" aria-hidden="true" />
+            <span className="cd-hero-status">{status}</span>
+          </div>
+
+          <CampaignPulseHeartbeat pulse={pulse} variant="hero" />
+        </div>
 
         <div className="cd-rukn-focus">
           <p className="cd-rukn-focus-label">Today&apos;s focus</p>

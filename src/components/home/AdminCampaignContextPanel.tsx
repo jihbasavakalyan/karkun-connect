@@ -51,9 +51,8 @@ export function AdminCampaignContextPanel() {
   ].filter((item) => item.pending > 0)
 
   return (
-    <aside className="cd-panel cd-panel-secondary" aria-label="Campaign information">
+    <aside className="cd-panel cd-panel-secondary cd-panel-context" aria-label="Campaign information">
       <h2 className="cd-section-heading cd-section-heading-muted">Campaign information</h2>
-      <p className="cd-section-lead cd-section-lead-muted">Awareness to support your decisions.</p>
 
       <div className="cd-context-block">
         <h3 className="cd-context-title">Campaign progress</h3>
