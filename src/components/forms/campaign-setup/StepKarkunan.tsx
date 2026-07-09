@@ -1,7 +1,6 @@
 import type { Dispatch } from 'react'
 import { getCampaignKarkunList } from '@/constants/mockCampaignSetup'
 import { InputField } from '@/components/forms/InputField'
-import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import type { CampaignSetupAction, CampaignSetupState } from '@/types/campaign-setup.types'
 
 type StepKarkunanProps = {
@@ -26,6 +25,11 @@ export function StepKarkunan({ state, dispatch }: StepKarkunanProps) {
         </p>
       </div>
 
+      <p className="rounded-lg border border-border/70 bg-surface-muted/50 px-4 py-3 text-sm text-secondary">
+        Select from existing Karkun below. To import or add new Karkun, use the{' '}
+        <span className="font-medium text-text-heading">Karkun</span> module first, then return here.
+      </p>
+
       <InputField
         id="karkun-search"
         label="Search Karkunan"
@@ -34,15 +38,6 @@ export function StepKarkunan({ state, dispatch }: StepKarkunanProps) {
         value={state.karkunSearch}
         onValueChange={(value) => dispatch({ type: 'SET_KARKUN_SEARCH', value })}
       />
-
-      <div className="flex flex-col gap-3 sm:flex-row">
-        <SecondaryButton type="button" fullWidth>
-          Import
-        </SecondaryButton>
-        <SecondaryButton type="button" fullWidth>
-          Add Karkun
-        </SecondaryButton>
-      </div>
 
       <ul className="max-h-[360px] space-y-3 overflow-y-auto pr-1">
         {filteredKarkuns.length === 0 ? (

@@ -1,6 +1,5 @@
 import { useMemo, useState, type Dispatch } from 'react'
 import { ruknMaster, searchRukn } from '@/data/ruknMaster'
-import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import type { CampaignSetupAction, CampaignSetupState } from '@/types/campaign-setup.types'
 
 type StepRuknProps = {
@@ -24,10 +23,12 @@ export function StepRukn({ state, dispatch }: StepRuknProps) {
             Select Rukn who will supervise field work during this campaign.
           </p>
         </div>
-        <SecondaryButton type="button" className="shrink-0">
-          Add Rukn
-        </SecondaryButton>
       </div>
+
+      <p className="rounded-lg border border-border/70 bg-surface-muted/50 px-4 py-3 text-sm text-secondary">
+        Select from existing Rukn below. To add new Rukn, use the{' '}
+        <span className="font-medium text-text-heading">Rukn</span> module first, then return here.
+      </p>
 
       <div className="flex flex-col gap-2">
         <label htmlFor="campaign-team-search" className="text-sm font-medium text-text-heading">

@@ -293,6 +293,11 @@ export function ConnectionJourneyPage() {
 
       <section className={sectionClass()} id="visit-details" aria-label="Visit Details">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-secondary">Visit Details</h2>
+        <p className="ds-section-subtitle">
+          Complete the form below, then tap <span className="font-medium text-text-heading">Save Visit</span> to
+          submit. Use <span className="font-medium text-text-heading">Record Visit</span> elsewhere to open this
+          form.
+        </p>
         {alreadySubmitted && latestSubmission ? (
           <dl className="mt-4 space-y-3 text-sm">
             <div className="flex justify-between gap-4">

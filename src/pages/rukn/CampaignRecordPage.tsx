@@ -31,16 +31,16 @@ export function CampaignRecordPage() {
   return (
     <PageShell variant="narrow" className="pb-24">
       <Link to={ROUTES.RUKN_MY_KARKUN} className="text-sm font-medium text-primary hover:underline">
-        ← Back to My Karkun
+        ← Back to Connected Karkuns
       </Link>
       <PageHeader
         title="Campaign Record"
-        description="Your execution submissions and follow-ups."
+        description="Your visit records and follow-ups in one place."
       />
       <ActiveCampaignSubtitle />
 
       <section className="ds-section">
-        <h2 className="ds-section-title">Execution Summary</h2>
+        <h2 className="ds-section-title">Your Progress</h2>
         <div className="mt-4">
           <ExecutionSummaryCards counts={counts} />
         </div>

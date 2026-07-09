@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import type { PersonGender } from '@/types/karkun-registry.types'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
 import type { ImportSummary } from '@/types/people.types'
@@ -76,6 +77,7 @@ type KarkunSectionHandlers = {
 type KarkunGenderSectionProps = {
   gender: PersonGender
   shouldOpenAddForm: boolean
+  initialSearch?: string
   onAddFormOpened: () => void
   onRegisterHandlers: (handlers: KarkunSectionHandlers | null) => void
 }
@@ -83,6 +85,7 @@ type KarkunGenderSectionProps = {
 function KarkunGenderSection({
   gender,
   shouldOpenAddForm,
+  initialSearch = '',
   onAddFormOpened,
   onRegisterHandlers,
 }: KarkunGenderSectionProps) {
@@ -210,6 +213,15 @@ function KarkunGenderSection({
       onAddFormOpened()
     }
   }, [shouldOpenAddForm, onAddFormOpened])
+
+  useEffect(() => {
+    if (!initialSearch.trim()) {
+      return
+    }
+    management.updateFilter('search', initialSearch.trim())
+    // Apply global search once when arriving from the command bar.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return (
     <div className="space-y-6">
@@ -415,6 +427,9 @@ function KarkunGenderSection({
 }
 
 export function KarkunanPage() {
+  const location = useLocation()
+  const initialSearch =
+    (location.state as { searchQuery?: string } | null)?.searchQuery?.trim() ?? ''
   const [activeGender, setActiveGender] = useState<GenderTab>('Male')
   const sectionHandlersRef = useRef<KarkunSectionHandlers | null>(null)
   const [openAddForGender, setOpenAddForGender] = useState<PersonGender | null>(null)
@@ -473,6 +488,7 @@ export function KarkunanPage() {
       <KarkunGenderSection
         key={activeGender}
         gender={activeGender}
+        initialSearch={initialSearch}
         shouldOpenAddForm={openAddForGender === activeGender}
         onAddFormOpened={handleAddFormOpened}
         onRegisterHandlers={registerSectionHandlers}
