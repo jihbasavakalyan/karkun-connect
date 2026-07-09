@@ -1,6 +1,7 @@
 import { APP_DESCRIPTION, APP_NAME, APP_TAGLINE, APP_VERSION } from '@/constants/app'
 import { getActiveCampaignName, formatActiveCampaignDuration } from '@/services/campaignService'
 import { DangerZone } from '@/components/admin/DangerZone'
+import { DataMigrationWizard } from '@/components/migration/DataMigrationWizard'
 import { PageHeader, PageShell } from '@/components/ui'
 
 export function SettingsPage() {
@@ -52,6 +53,8 @@ export function SettingsPage() {
             is enabled. See Help for workflow guidance.
           </p>
         </section>
+
+        <DataMigrationWizard />
 
         <DangerZone />
       </div>

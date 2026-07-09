@@ -21,12 +21,15 @@
     "migrate:generate": "node scripts/generate-production-seeds.mjs",
     "migrate:import-male-karkuns": "node scripts/import-cleaned-karkun-list.mjs",
     "migrate:import-female-karkuns": "node scripts/import-female-contacts-cleaned.mjs",
-    "migrate:verify-female-karkuns": "node scripts/verify-female-karkun-import.mjs"
+    "migrate:verify-female-karkuns": "node scripts/verify-female-karkun-import.mjs",
+    "migrate:templates": "node scripts/generate-migration-templates.mjs",
+    "verify:migration": "npx vite-node scripts/verify-migration.ts"
   },
   "dependencies": {
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
-    "react-router-dom": "^7.18.1"
+    "react-router-dom": "^7.18.1",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

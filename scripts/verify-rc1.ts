@@ -18,6 +18,7 @@ const VERIFICATION_SCRIPTS = [
   'verify-guidance.ts',
   'verify-compliance-module.ts',
   'verify-campaign-automation.ts',
+  'verify-migration.ts',
 ] as const
 
 for (const script of VERIFICATION_SCRIPTS) {

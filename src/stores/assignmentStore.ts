@@ -253,3 +253,34 @@ export function clearAssignmentStore(): void {
   storage.removeItem(ASSIGNMENT_SEQUENCE_STORAGE_KEY)
   notifyAssignmentStoreChange()
 }
+
+export type AssignmentStoreSnapshot = {
+  assignments: AssignmentRecord[]
+  nextSequence: number
+}
+
+export function snapshotAssignmentStore(): AssignmentStoreSnapshot {
+  return {
+    assignments: [...assignments],
+    nextSequence: nextAssignmentSequence,
+  }
+}
+
+/** Migration support — replace all assignments atomically. */
+export function replaceAllAssignments(
+  records: AssignmentRecord[],
+  nextSequence?: number,
+): AssignmentStoreSnapshot {
+  const previous = snapshotAssignmentStore()
+
+  assignments.length = 0
+  assignments.push(...records)
+
+  nextAssignmentSequence =
+    nextSequence ??
+    Math.max(previous.nextSequence, deriveNextSequenceFromRecords(records))
+
+  saveAssignments()
+  notifyAssignmentStoreChange()
+  return previous
+}

@@ -25,6 +25,7 @@ import type {
   PersonStatus,
   PeopleStatistics,
 } from '@/types/people.types'
+import type { ConflictResolution } from '@/types/dataMigration'
 import { DEFAULT_PLACE } from '@/types/people.types'
 import { persistPeopleRegistry } from '@/lib/peopleRegistryPersistence'
 
@@ -538,6 +539,7 @@ export function getCompatibleKarkunsForRukn(ruknId: string): KarkunRegistryRecor
 }
 
 type ImportRow = {
+  id?: string
   name: string
   gender: PersonGender
   mobile: string
@@ -719,4 +721,327 @@ export function importKarkunsFromRows(
   updatedBy = 'Administrator',
 ): ImportSummary {
   return importPeopleFromRows(rows, 'karkun', updatedBy, (input, by) => createKarkun(input, by))
+}
+
+export type PeopleRegistrySnapshot = {
+  rukns: Rukn[]
+  karkuns: KarkunRegistryRecord[]
+  nextKarkunNum: number
+}
+
+export function snapshotPeopleRegistry(): PeopleRegistrySnapshot {
+  return {
+    rukns: getAllRukns(),
+    karkuns: getAllKarkuns(true),
+    nextKarkunNum,
+  }
+}
+
+export function restorePeopleRegistrySnapshot(snapshot: PeopleRegistrySnapshot): void {
+  ruknMaster.length = 0
+  ruknMaster.push(...snapshot.rukns)
+  MOCK_KARKUN_REGISTRY.length = 0
+  MOCK_KARKUN_REGISTRY.push(...snapshot.karkuns)
+  nextKarkunNum = snapshot.nextKarkunNum
+  notifyPeopleChange()
+}
+
+function findExistingByMigrationRow(
+  row: ImportRow & { id?: string },
+  kind: PersonKind,
+): MobileLookupResult | undefined {
+  if (row.id) {
+    if (kind === 'rukn') {
+      const rukn = getRuknById(row.id)
+      if (rukn) {
+        return { kind: 'rukn', id: rukn.id, name: rukn.name }
+      }
+    } else {
+      const karkun = MOCK_KARKUN_REGISTRY.find((k) => k.id === row.id && !k.isArchived)
+      if (karkun) {
+        return { kind: 'karkun', id: karkun.id, name: karkun.name }
+      }
+    }
+  }
+
+  if (row.mobile.trim()) {
+    return findMobileOwner(row.mobile)
+  }
+
+  return undefined
+}
+
+function mergeContactInput(
+  existing: PersonContactInput & { area?: string; address?: string },
+  incoming: ImportRow,
+): PersonContactInput & { area?: string; address?: string } {
+  return {
+    name: existing.name?.trim() || incoming.name.trim(),
+    gender: existing.gender || incoming.gender,
+    mobile: existing.mobile?.trim() || incoming.mobile.trim(),
+    whatsapp: existing.whatsapp?.trim() || incoming.whatsapp?.trim() || undefined,
+    place: existing.place?.trim() || incoming.place?.trim() || DEFAULT_PLACE,
+    status: existing.status || parseStatus(incoming.status),
+    notes: existing.notes?.trim() || incoming.notes?.trim() || undefined,
+    area: existing.area?.trim() || incoming.area?.trim() || undefined,
+    address: existing.address?.trim() || incoming.address?.trim() || undefined,
+  }
+}
+
+function createRuknForMigration(
+  input: PersonContactInput,
+  updatedBy: string,
+): PeopleMutationResult {
+  if (input.mobile.trim()) {
+    return createRukn(input, updatedBy)
+  }
+
+  const timestamp = nowIso()
+  const rukn: Rukn = {
+    id: getNextRuknId(),
+    name: input.name.trim(),
+    gender: input.gender,
+    mobile: '',
+    whatsapp: input.whatsapp?.trim() || undefined,
+    place: input.place.trim() || DEFAULT_PLACE,
+    status: input.status,
+    notes: input.notes?.trim() || undefined,
+    createdAt: timestamp,
+    updatedAt: timestamp,
+    updatedBy,
+  }
+
+  ruknMaster.push(rukn)
+  logPeopleAudit({
+    personKind: 'rukn',
+    personId: rukn.id,
+    personName: rukn.name,
+    action: 'import',
+    updatedBy,
+  })
+  notifyPeopleChange()
+  return { success: true }
+}
+
+export type MigrationImportStats = {
+  imported: number
+  updated: number
+  skipped: number
+  duplicates: number
+  errors: number
+}
+
+export function importPeopleWithMigrationPolicy(
+  rows: ImportRow[],
+  kind: PersonKind,
+  conflictResolution: ConflictResolution,
+  updatedBy = 'Data Migration',
+): MigrationImportStats {
+  const stats: MigrationImportStats = {
+    imported: 0,
+    updated: 0,
+    skipped: 0,
+    duplicates: 0,
+    errors: 0,
+  }
+
+  const seenMobiles = new Set<string>()
+
+  for (const row of rows) {
+    if (!row.name.trim()) {
+      stats.skipped++
+      stats.errors++
+      continue
+    }
+
+    const gender = typeof row.gender === 'string' ? parseGender(row.gender) : row.gender
+    if (!gender) {
+      stats.skipped++
+      stats.errors++
+      continue
+    }
+
+    if (kind === 'karkun' && !row.mobile.trim()) {
+      stats.skipped++
+      stats.errors++
+      continue
+    }
+
+    if (row.mobile.trim()) {
+      const mobileKey = normalizeMobile(row.mobile)
+      if (!isValidMobileFormat(row.mobile)) {
+        stats.skipped++
+        stats.errors++
+        continue
+      }
+      if (seenMobiles.has(mobileKey)) {
+        stats.skipped++
+        stats.duplicates++
+        continue
+      }
+      seenMobiles.add(mobileKey)
+    }
+
+    const existing = findExistingByMigrationRow(row, kind)
+
+    if (existing && existing.kind === kind) {
+      if (conflictResolution === 'skip') {
+        stats.skipped++
+        stats.duplicates++
+        continue
+      }
+
+      if (conflictResolution === 'merge') {
+        if (kind === 'rukn') {
+          const current = getRuknById(existing.id)
+          if (!current) {
+            stats.skipped++
+            stats.errors++
+            continue
+          }
+          const merged = mergeContactInput(
+            {
+              name: current.name,
+              gender: current.gender,
+              mobile: current.mobile,
+              whatsapp: current.whatsapp,
+              place: current.place,
+              status: current.status,
+              notes: current.notes,
+            },
+            row,
+          )
+          const result = updateRukn(existing.id, merged, updatedBy, {
+            confirmMobileOverwrite: true,
+          })
+          if (result.success) {
+            stats.updated++
+          } else {
+            stats.skipped++
+            stats.errors++
+          }
+          continue
+        }
+
+        const current = MOCK_KARKUN_REGISTRY.find((k) => k.id === existing.id)
+        if (!current) {
+          stats.skipped++
+          stats.errors++
+          continue
+        }
+        const merged = mergeContactInput(
+          {
+            name: current.name,
+            gender: current.gender,
+            mobile: current.mobile,
+            whatsapp: current.whatsapp,
+            place: current.place,
+            status: current.status,
+            notes: current.notes,
+            area: current.area,
+            address: current.address,
+          },
+          row,
+        )
+        const result = updateKarkun(existing.id, merged, updatedBy, {
+          confirmMobileOverwrite: true,
+        })
+        if (result.success) {
+          stats.updated++
+        } else {
+          stats.skipped++
+          stats.errors++
+        }
+        continue
+      }
+
+      if (kind === 'rukn') {
+        const result = updateRukn(
+          existing.id,
+          {
+            name: row.name,
+            gender,
+            mobile: row.mobile,
+            whatsapp: row.whatsapp,
+            place: row.place?.trim() || DEFAULT_PLACE,
+            status: parseStatus(row.status),
+            notes: row.notes,
+          },
+          updatedBy,
+          { confirmMobileOverwrite: true },
+        )
+        if (result.success) {
+          stats.updated++
+        } else {
+          stats.skipped++
+          stats.errors++
+        }
+        continue
+      }
+
+      const result = updateKarkun(
+        existing.id,
+        {
+          name: row.name,
+          gender,
+          mobile: row.mobile,
+          whatsapp: row.whatsapp,
+          place: row.place?.trim() || DEFAULT_PLACE,
+          status: parseStatus(row.status),
+          notes: row.notes,
+          area: row.area,
+          address: row.address,
+        },
+        updatedBy,
+        { confirmMobileOverwrite: true },
+      )
+      if (result.success) {
+        stats.updated++
+      } else {
+        stats.skipped++
+        stats.errors++
+      }
+      continue
+    }
+
+    if (row.mobile.trim()) {
+      const crossOwner = findMobileOwner(row.mobile)
+      if (crossOwner) {
+        stats.skipped++
+        stats.duplicates++
+        continue
+      }
+    }
+
+    const createFn =
+      kind === 'rukn'
+        ? (input: PersonContactInput & { area?: string; address?: string }, by: string) =>
+            createRuknForMigration(input, by)
+        : (input: PersonContactInput & { area?: string; address?: string }, by: string) =>
+            createKarkun(input, by)
+
+    const result = createFn(
+      {
+        name: row.name,
+        gender,
+        mobile: row.mobile,
+        whatsapp: row.whatsapp,
+        place: row.place?.trim() || DEFAULT_PLACE,
+        status: parseStatus(row.status),
+        notes: row.notes,
+        area: row.area,
+        address: row.address,
+      },
+      updatedBy,
+    )
+
+    if (result.success) {
+      stats.imported++
+    } else {
+      stats.skipped++
+      stats.errors++
+    }
+  }
+
+  return stats
 }
