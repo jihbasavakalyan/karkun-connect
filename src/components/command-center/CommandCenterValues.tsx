@@ -1,4 +1,5 @@
 import { CAMPAIGN_VALUES, type CampaignValue } from '@/constants/campaignIdentity'
+import { Icon } from '@/components/ui/Icon'
 
 const ACCENT_STYLES: Record<CampaignValue['accent'], { ring: string; icon: string }> = {
   emerald: { ring: 'from-emerald-50 to-white', icon: 'bg-emerald-100 text-emerald-700' },
@@ -18,10 +19,10 @@ export function CommandCenterValues() {
             className={`campaign-glass-card-interactive flex flex-col items-center gap-3 bg-gradient-to-b ${accent.ring} p-6 text-center`}
           >
             <span
-              className={`flex h-14 w-14 items-center justify-center rounded-2xl text-2xl ${accent.icon}`}
+              className={`flex h-14 w-14 items-center justify-center rounded-2xl ${accent.icon}`}
               aria-hidden="true"
             >
-              {value.icon}
+              <Icon name={value.icon} size="lg" />
             </span>
             <h3 className="text-xl font-bold text-text-heading" dir="rtl">
               {value.title}

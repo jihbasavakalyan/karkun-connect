@@ -1,7 +1,35 @@
 # UI Primitives
 
-Primitive, design-system-level UI elements.
+Lowest-level building blocks for Karkun Connect. Stateless, accessible, styled via the frozen design system.
 
-Examples: Button, Input, Badge, Card, Modal, Tooltip, and Typography components.
+## Location
 
-These are the lowest-level building blocks. They should be stateless, accessible, and styled according to the design tokens in `src/styles/`.
+- Components: `src/components/ui/`
+- CSS tokens: `src/index.css` (`ds-*` classes, `@theme`)
+- JS tokens: `src/design-system/tokens.ts`
+- Documentation: `docs/design-system/`
+
+## Exports
+
+```tsx
+import {
+  Icon,
+  PageShell,
+  PageHeader,
+  PrimaryButton,
+  SecondaryButton,
+  GhostButton,
+  DangerButton,
+  StatusBadge,
+  EmptyState,
+  Skeleton,
+  FORM_INPUT_CLASS,
+  FORM_LABEL_CLASS,
+} from '@/components/ui'
+```
+
+## Guidelines
+
+- Prefer `ds-*` classes over ad-hoc Tailwind for layout and forms.
+- Use `Icon` with `IconName` — no emoji.
+- See `docs/design-system/contribution-guide.md` before adding new primitives.

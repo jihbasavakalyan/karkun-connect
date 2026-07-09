@@ -1,10 +1,12 @@
 import { Link } from 'react-router-dom'
+import type { IconName } from '@/design-system/iconNames'
+import { Icon } from '@/components/ui/Icon'
 
 type EnterpriseKpiCardProps = {
   label: string
   value: number | string
   route: string
-  icon: string
+  icon: IconName
   subtitle: string
   trend: string
   suffix?: string
@@ -25,8 +27,8 @@ export function EnterpriseKpiCard({
         to={route}
         className="group flex h-[92px] items-center gap-1.5 rounded-lg border border-border/80 bg-surface p-2.5 shadow-card transition-all duration-200 hover:border-primary/30 hover:shadow-card-hover"
       >
-        <span className="shrink-0 text-xl leading-none" aria-hidden="true">
-          {icon}
+        <span className="shrink-0" aria-hidden="true">
+          <Icon name={icon} size="lg" className="text-primary" />
         </span>
         <div className="min-w-0 flex-1">
           <span className="block truncate text-[11px] font-medium text-secondary">{label}</span>

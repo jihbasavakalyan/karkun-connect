@@ -1,4 +1,6 @@
 import type { ReactNode } from 'react'
+import type { IconName } from '@/design-system/iconNames'
+import { Icon } from './Icon'
 
 export type StatusBadgeVariant =
   | 'healthy'
@@ -28,7 +30,7 @@ const VARIANT_CLASS: Record<StatusBadgeVariant, string> = {
 type StatusBadgeProps = {
   children: ReactNode
   variant?: StatusBadgeVariant
-  icon?: string
+  icon?: IconName
   className?: string
 }
 
@@ -42,7 +44,7 @@ export function StatusBadge({
     <span className={`ds-badge ${VARIANT_CLASS[variant]} ${className}`.trim()}>
       {icon && (
         <span className="ds-badge-icon" aria-hidden="true">
-          {icon}
+          <Icon name={icon} size="sm" />
         </span>
       )}
       {children}

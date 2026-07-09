@@ -63,8 +63,12 @@ export function CommandCenterCampaignProgress({ showTeam = true }: CommandCenter
               <ul className="cc-list-md mt-1 space-y-1">
                 {team.map((row, index) => (
                   <li key={row.ruknId} className="flex items-center gap-2">
-                    <span className="w-4 shrink-0 text-center text-[11px]">
-                      {index < 3 ? ['🥇', '🥈', '🥉'][index] : index + 1}
+                    <span
+                      className={`w-4 shrink-0 text-center text-[11px] font-semibold ${
+                        index < 3 ? 'text-primary' : 'text-secondary'
+                      }`}
+                    >
+                      {index + 1}
                     </span>
                     <span className="w-20 shrink-0 truncate text-[11px] font-medium text-text-heading">
                       {row.ruknName}

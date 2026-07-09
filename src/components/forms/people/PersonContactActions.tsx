@@ -1,4 +1,5 @@
 import { buildTelLink, buildWhatsAppLink } from '@/utils/personContactLinks'
+import { Icon } from '@/components/ui/Icon'
 
 type PersonContactActionsProps = {
   mobile: string
@@ -20,7 +21,8 @@ export function PersonContactActions({ mobile, whatsapp }: PersonContactActionsP
     <div className="flex flex-wrap gap-2">
       {telLink && (
         <a href={telLink} className={actionClassName}>
-          📞 Call
+          <Icon name="phone" size="sm" />
+          Call
         </a>
       )}
       {whatsAppLink && (
@@ -30,7 +32,8 @@ export function PersonContactActions({ mobile, whatsapp }: PersonContactActionsP
           rel="noopener noreferrer"
           className={actionClassName}
         >
-          💬 WhatsApp
+          <Icon name="message" size="sm" />
+          WhatsApp
         </a>
       )}
     </div>

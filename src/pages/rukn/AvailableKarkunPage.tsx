@@ -69,14 +69,14 @@ export function AvailableKarkunPage() {
 
       {availableKarkunan.length === 0 ? (
         <EmptyState
-          icon="🤝"
+          icon="link"
           title="All caught up"
           description="No Karkun is available to connect right now. Check back later or contact your administrator."
           primaryAction={{ label: 'View Connected Karkuns', href: ROUTES.RUKN_MY_KARKUN }}
         />
       ) : filtered.length === 0 ? (
         <EmptyState
-          icon="🔍"
+          icon="search"
           title="No matches"
           description={`No Karkun matches "${query}". Try a different name or number.`}
         />

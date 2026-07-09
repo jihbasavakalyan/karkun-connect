@@ -15,9 +15,11 @@ export const CAMPAIGN_MOTTO_LINES = [
 export const CAMPAIGN_DESCRIPTION =
   'This campaign focuses on reconnecting every existing Karkun, understanding their current situation, and integrating them back into Jamaat work.'
 
+import type { IconName } from '@/design-system/iconNames'
+
 export type CampaignValue = {
   id: string
-  icon: string
+  icon: IconName
   title: string
   subtitle: string
   accent: 'emerald' | 'rose' | 'lime' | 'gold'
@@ -26,28 +28,28 @@ export type CampaignValue = {
 export const CAMPAIGN_VALUES: CampaignValue[] = [
   {
     id: 'rabta',
-    icon: '🤝',
+    icon: 'handshake',
     title: 'رابطہ',
     subtitle: 'ہر کارکن تک رسائی',
     accent: 'emerald',
   },
   {
     id: 'tafheem',
-    icon: '❤️',
+    icon: 'heart',
     title: 'تفہیم',
     subtitle: 'کارکن کو سمجھیں',
     accent: 'rose',
   },
   {
     id: 'faaliyat',
-    icon: '🌱',
+    icon: 'sprout',
     title: 'فعالیت',
     subtitle: 'کارکن کو جماعتی عمل میں شامل کریں',
     accent: 'lime',
   },
   {
     id: 'istiqamat',
-    icon: '🚩',
+    icon: 'flag',
     title: 'استقامت',
     subtitle: 'مسلسل رابطہ برقرار رکھیں',
     accent: 'gold',

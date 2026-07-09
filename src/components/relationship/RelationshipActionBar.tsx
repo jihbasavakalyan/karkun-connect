@@ -1,5 +1,6 @@
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
+import { Icon } from '@/components/ui/Icon'
 
 type RelationshipActionBarProps = {
   onConnect?: () => void
@@ -42,17 +43,20 @@ export function RelationshipActionBar({
           disabled={connectDisabled}
           onClick={onConnect}
         >
-          ➕ Connect
+          <Icon name="plus" size="sm" />
+          Connect
         </PrimaryButton>
       )}
       {showReplace && onReplace && (
         <SecondaryButton type="button" className={buttonClass} onClick={onReplace}>
-          🔄 Replace
+          <Icon name="refresh" size="sm" />
+          Replace
         </SecondaryButton>
       )}
       {showRelease && onRelease && (
         <SecondaryButton type="button" className={buttonClass} onClick={onRelease}>
-          ❌ Release
+          <Icon name="x" size="sm" />
+          Release
         </SecondaryButton>
       )}
     </div>

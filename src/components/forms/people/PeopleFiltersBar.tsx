@@ -21,6 +21,7 @@ import {
 } from '@/types/ijtemaAttendance'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
+import { Icon } from '@/components/ui/Icon'
 
 type PeopleFiltersBarProps = {
   filters: PeopleFilters
@@ -200,8 +201,9 @@ export function PeopleFiltersBar({
         </div>
 
         <div className="flex flex-wrap gap-2">
-          <PrimaryButton type="submit" className="px-4 py-2 text-sm">
-            🔍 Search
+          <PrimaryButton type="submit" className="inline-flex items-center gap-1.5 px-4 py-2 text-sm">
+            <Icon name="search" size="sm" />
+            Search
           </PrimaryButton>
           <SecondaryButton
             type="button"

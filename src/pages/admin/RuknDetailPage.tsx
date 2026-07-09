@@ -11,7 +11,7 @@ import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { useCommunication } from '@/hooks/useCommunication'
 import { getConnectionStatusLabel } from '@/lib/connectionLabels'
 import { formatPersonStatus } from '@/types/people.types'
-import { EmptyState, PageHeader, PageShell } from '@/components/ui'
+import { EmptyState, PageHeader, PageShell, Icon } from '@/components/ui'
 
 export function RuknDetailPage() {
   const { ruknId } = useParams<{ ruknId: string }>()
@@ -24,7 +24,7 @@ export function RuknDetailPage() {
     return (
       <PageShell variant="narrow">
         <EmptyState
-          icon="🔍"
+          icon="search"
           title="Rukn not found"
           description="This Rukn record does not exist or may have been removed."
           primaryAction={{ label: 'Back to Rukn', href: ROUTES.ADMIN_RUKN }}
@@ -111,8 +111,9 @@ export function RuknDetailPage() {
           <div className="flex items-start justify-between gap-3">
             <h2 className="ds-section-title">Connection</h2>
             <Link to={adminAssignmentsPath({ ruknId: rukn.id })}>
-              <PrimaryButton type="button" className="px-4 py-2 text-sm">
-                ➕ Connect Karkun
+              <PrimaryButton type="button" className="inline-flex items-center gap-1.5 px-4 py-2 text-sm">
+                <Icon name="plus" size="sm" />
+                Connect Karkun
               </PrimaryButton>
             </Link>
           </div>

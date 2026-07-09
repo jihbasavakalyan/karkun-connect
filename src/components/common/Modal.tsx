@@ -1,4 +1,5 @@
 import { useEffect, type ReactNode } from 'react'
+import { Icon } from '@/components/ui/Icon'
 
 type ModalProps = {
   isOpen: boolean
@@ -57,7 +58,7 @@ export function Modal({ isOpen, title, onClose, children }: ModalProps) {
             className="rounded-lg px-2 py-1 text-secondary hover:bg-surface-muted hover:text-text-heading"
             aria-label="Close"
           >
-            ✕
+            <Icon name="x" size="md" />
           </button>
         </div>
         {children}

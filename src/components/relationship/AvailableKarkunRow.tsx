@@ -1,6 +1,7 @@
 import { getConnectionStatusLabel } from '@/lib/connectionLabels'
 import { humanizeAvailableKarkunStatusShort, fatherHusbandLabel } from '@/lib/relationshipPresentation'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
+import { Icon } from '@/components/ui/Icon'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
 
 type AvailableKarkunRowProps = {
@@ -55,7 +56,8 @@ export function AvailableKarkunRow({
           disabled={connectDisabled || !isReady}
           onClick={onConnect}
         >
-          ➕ Connect
+          <Icon name="plus" size="sm" />
+          Connect
         </PrimaryButton>
       </div>
     </article>

@@ -328,6 +328,60 @@
     @apply rounded-xl border border-error-border bg-error-bg px-4 py-3 text-sm text-error;
   }
 
+  /* ── M6.5: Iconography ── */
+  .ds-icon {
+    @apply inline-block shrink-0;
+  }
+
+  .ds-icon-sm {
+    @apply h-4 w-4;
+  }
+
+  .ds-icon-md {
+    @apply h-5 w-5;
+  }
+
+  .ds-icon-lg {
+    @apply h-6 w-6;
+  }
+
+  .ds-icon-xl {
+    @apply h-7 w-7;
+  }
+
+  .ds-pulse-dot-healthy {
+    @apply inline-block rounded-full bg-green-400;
+  }
+
+  .ds-pulse-dot-attention {
+    @apply inline-block rounded-full bg-amber-400;
+  }
+
+  .ds-pulse-dot-critical {
+    @apply inline-block rounded-full bg-red-400;
+  }
+
+  /* ── M6.5: Typography scale ── */
+  .ds-text-hero {
+    @apply text-2xl font-bold leading-tight tracking-tight text-text-heading sm:text-3xl;
+  }
+
+  .ds-text-card-title {
+    @apply text-base font-semibold text-text-heading;
+  }
+
+  .ds-text-body {
+    @apply text-[15px] leading-relaxed text-text-heading;
+  }
+
+  .ds-text-caption {
+    @apply text-xs leading-snug text-secondary;
+  }
+
+  .ds-text-label {
+    @apply text-sm font-medium text-text-heading;
+  }
+
   /* ── Concept D: Campaign Home design system ── */
   .cd-page {
     @apply mx-auto max-w-[1200px] pb-8;

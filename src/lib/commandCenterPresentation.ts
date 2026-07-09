@@ -1,3 +1,4 @@
+import type { IconName } from '@/design-system/iconNames'
 import { ruknMaster } from '@/data/ruknMaster'
 import { getExecutionDashboardData } from '@/lib/executionStatus'
 import { getPeopleStatistics } from '@/lib/peopleStore'
@@ -15,19 +16,19 @@ import { getJihWebPortalDashboardMetrics } from '@/services/jihWebPortalService'
 import type { CommandCenterKpi } from '@/types/campaignAutomation.types'
 
 export type KpiPresentationMeta = {
-  icon: string
+  icon: IconName
   subtitle: string
 }
 
 export const KPI_PRESENTATION: Record<string, KpiPresentationMeta> = {
-  'assigned-karkuns': { icon: '👥', subtitle: 'Active campaign connections' },
-  'pending-first-visits': { icon: '📍', subtitle: 'Awaiting first contact visit' },
-  'todays-visits': { icon: '📅', subtitle: 'Scheduled for today' },
-  'pending-annexure': { icon: '📋', subtitle: 'Visit not recorded' },
-  'follow-up-required': { icon: '🔄', subtitle: 'Needs follow-up action' },
-  'pending-compliance': { icon: '✅', subtitle: 'Compliance items open' },
-  'completed-today': { icon: '✨', subtitle: 'Finished today' },
-  'campaign-progress': { icon: '📊', subtitle: 'Overall campaign health' },
+  'assigned-karkuns': { icon: 'users', subtitle: 'Active campaign connections' },
+  'pending-first-visits': { icon: 'location', subtitle: 'Awaiting first contact visit' },
+  'todays-visits': { icon: 'calendar', subtitle: 'Scheduled for today' },
+  'pending-annexure': { icon: 'clipboard', subtitle: 'Visit not recorded' },
+  'follow-up-required': { icon: 'refresh', subtitle: 'Needs follow-up action' },
+  'pending-compliance': { icon: 'check', subtitle: 'Compliance items open' },
+  'completed-today': { icon: 'sparkles', subtitle: 'Finished today' },
+  'campaign-progress': { icon: 'chart', subtitle: 'Overall campaign health' },
 }
 
 export function getKpiTrendLabel(kpiId: string): string {
@@ -59,7 +60,7 @@ export function getKpiTrendLabel(kpiId: string): string {
 }
 
 export function enrichKpiPresentation(kpi: CommandCenterKpi) {
-  const meta = KPI_PRESENTATION[kpi.id] ?? { icon: '📌', subtitle: 'Operational metric' }
+  const meta = KPI_PRESENTATION[kpi.id] ?? { icon: 'chart' as IconName, subtitle: 'Operational metric' }
   return {
     ...kpi,
     ...meta,

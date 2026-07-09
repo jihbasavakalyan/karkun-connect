@@ -4,6 +4,7 @@ import type { SubmittedMeetingForm } from '@/types/annexure1.types'
 import type { RuknMission } from '@/constants/mockMissions'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
+import { Icon } from '@/components/ui/Icon'
 
 type SubmissionSuccessCardProps = {
   submission: SubmittedMeetingForm
@@ -23,8 +24,8 @@ export function SubmissionSuccessCard({ submission, nextMission }: SubmissionSuc
 
   return (
     <div className="space-y-6 text-center">
-      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary-muted text-2xl text-primary">
-        ✓
+      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary-muted text-primary">
+        <Icon name="check" size="xl" />
       </div>
 
       <div>

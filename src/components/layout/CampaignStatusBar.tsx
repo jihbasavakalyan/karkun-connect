@@ -2,6 +2,7 @@ import {
   formatActiveCampaignDuration,
   getActiveCampaignName,
 } from '@/services/campaignService'
+import { Icon } from '@/components/ui/Icon'
 
 export function CampaignStatusBar() {
   const campaignName = getActiveCampaignName()
@@ -12,9 +13,11 @@ export function CampaignStatusBar() {
       role="status"
       aria-label={`Active campaign: ${campaignName}`}
     >
-      <span aria-hidden="true">🟢 </span>
-      Active Campaign:{' '}
-      <span className="font-medium text-text-heading">{campaignName}</span>
+      <span className="inline-flex items-center gap-1.5">
+        <Icon name="pulse-healthy" size="sm" />
+        Active Campaign:{' '}
+        <span className="font-medium text-text-heading">{campaignName}</span>
+      </span>
     </div>
   )
 }

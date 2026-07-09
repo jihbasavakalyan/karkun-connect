@@ -1,4 +1,5 @@
 import type { ConnectionJourneySnapshot } from '@/lib/connectionJourney'
+import { Icon } from '@/components/ui/Icon'
 
 type ConnectionProgressTrackerProps = {
   snapshot: ConnectionJourneySnapshot
@@ -19,7 +20,7 @@ export function ConnectionProgressTracker({ snapshot }: ConnectionProgressTracke
         {snapshot.steps.map((step) => (
           <li key={step.id} className="flex items-center gap-3 text-sm">
             <span
-              className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs ${
+              className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border ${
                 step.complete
                   ? 'border-green-300 bg-green-50 text-green-700'
                   : step.current
@@ -28,7 +29,13 @@ export function ConnectionProgressTracker({ snapshot }: ConnectionProgressTracke
               }`}
               aria-hidden="true"
             >
-              {step.complete ? '✓' : step.current ? '●' : '○'}
+              {step.complete ? (
+                <Icon name="check" size="sm" />
+              ) : step.current ? (
+                <Icon name="circle-filled" size="sm" />
+              ) : (
+                <Icon name="circle" size="sm" />
+              )}
             </span>
             <span
               className={

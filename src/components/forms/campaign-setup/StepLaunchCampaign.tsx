@@ -4,6 +4,7 @@ import {
   getTotalAssignments,
 } from '@/hooks/useCampaignSetupWizard'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
+import { Icon } from '@/components/ui/Icon'
 import type { CampaignSetupState } from '@/types/campaign-setup.types'
 
 type StepLaunchCampaignProps = {
@@ -21,8 +22,8 @@ export function StepLaunchCampaign({ state, onLaunch }: StepLaunchCampaignProps)
   if (state.isLaunched) {
     return (
       <div className="space-y-6 text-center">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary-muted text-2xl text-primary">
-          ✓
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary-muted text-primary">
+          <Icon name="check" size="xl" />
         </div>
 
         <div>

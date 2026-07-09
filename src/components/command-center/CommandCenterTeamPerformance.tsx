@@ -88,7 +88,11 @@ export function CommandCenterTeamPerformance() {
                 className="border-b border-border/60 transition-colors hover:bg-surface-muted/50"
               >
                 <td className="max-w-[5rem] truncate px-1.5 py-1 font-medium text-text-heading">
-                  {index < 3 && <span className="mr-0.5">{['🥇', '🥈', '🥉'][index]}</span>}
+                  {index < 3 && (
+                    <span className="mr-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-primary-muted text-[9px] font-bold text-primary">
+                      {index + 1}
+                    </span>
+                  )}
                   {row.ruknName}
                 </td>
                 <td className="px-1.5 py-1">{row.assignedKarkuns}</td>

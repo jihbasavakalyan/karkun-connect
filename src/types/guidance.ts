@@ -1,3 +1,5 @@
+import type { IconName } from '@/design-system/iconNames'
+
 /** Journey stages — order matters for progression. */
 export type JourneyStageId =
   | 'connected'
@@ -82,7 +84,7 @@ export type RelationshipHealthLevel = 'healthy' | 'needs-attention' | 'urgent' |
 export type RelationshipHealth = {
   level: RelationshipHealthLevel
   label: string
-  icon: string
+  icon: IconName
   reasons: string[]
 }
 

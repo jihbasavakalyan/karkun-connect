@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Modal } from '@/components/common/Modal'
+import { Icon } from '@/components/ui/Icon'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 
@@ -68,8 +69,9 @@ export function SchedulePickerModal({
         {description && <p className="text-sm text-secondary">{description}</p>}
 
         <div className="flex flex-col gap-2">
-          <label htmlFor="schedule-date" className="text-sm font-medium text-text-heading">
-            📅 Date
+          <label htmlFor="schedule-date" className="inline-flex items-center gap-1.5 text-sm font-medium text-text-heading">
+            <Icon name="calendar" size="sm" />
+            Date
           </label>
           <input
             id="schedule-date"
@@ -82,8 +84,9 @@ export function SchedulePickerModal({
         </div>
 
         <div className="flex flex-col gap-2">
-          <label htmlFor="schedule-time" className="text-sm font-medium text-text-heading">
-            🕒 Time
+          <label htmlFor="schedule-time" className="inline-flex items-center gap-1.5 text-sm font-medium text-text-heading">
+            <Icon name="clock" size="sm" />
+            Time
           </label>
           <input
             id="schedule-time"

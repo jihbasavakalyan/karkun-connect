@@ -1,3 +1,4 @@
+import type { IconName } from '@/design-system/iconNames'
 import { getAnnexure1ExecutionMetrics } from '@/services/annexure1Service'
 import { buildAdminCoachingSnapshot } from '@/lib/guidance/adminCoachingEngine'
 import { getGuidanceForRuknKarkuns } from '@/lib/guidance/guidanceEngine'
@@ -8,14 +9,14 @@ export type CampaignPulseLevel = 'healthy' | 'needs-attention' | 'critical'
 export type CampaignPulse = {
   level: CampaignPulseLevel
   label: string
-  icon: string
+  icon: IconName
   signals: string[]
 }
 
-const LEVEL_META: Record<CampaignPulseLevel, { label: string; icon: string }> = {
-  healthy: { label: 'Healthy', icon: '🟢' },
-  'needs-attention': { label: 'Needs Attention', icon: '🟡' },
-  critical: { label: 'Critical', icon: '🔴' },
+const LEVEL_META: Record<CampaignPulseLevel, { label: string; icon: IconName }> = {
+  healthy: { label: 'Healthy', icon: 'pulse-healthy' },
+  'needs-attention': { label: 'Needs Attention', icon: 'pulse-attention' },
+  critical: { label: 'Critical', icon: 'pulse-critical' },
 }
 
 export function buildAdminCampaignPulse(): CampaignPulse {

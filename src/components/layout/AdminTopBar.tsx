@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Logo } from '@/components/common/Logo'
+import { Icon } from '@/components/ui/Icon'
 import { ADMIN_NAV_ITEMS } from '@/constants/adminNavigation'
 import { ROUTES } from '@/constants/routes'
 import {
@@ -47,7 +48,7 @@ export function AdminTopBar({ alertCount = 0, onMenuToggle }: AdminTopBarProps) 
             onClick={onMenuToggle}
             aria-label="Open navigation"
           >
-            ☰
+            <Icon name="menu" size="md" />
           </button>
           <div className="min-w-0 lg:hidden">
             <Logo size="sm" />
@@ -83,7 +84,7 @@ export function AdminTopBar({ alertCount = 0, onMenuToggle }: AdminTopBarProps) 
             className="relative flex h-8 w-8 items-center justify-center rounded-md border border-border bg-surface-muted text-sm transition-colors hover:border-primary/30 hover:bg-primary-muted"
             aria-label={`${alertCount} operational alerts`}
           >
-            🔔
+            <Icon name="bell" size="sm" />
             {alertCount > 0 && (
               <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-error px-1 text-[10px] font-bold text-white">
                 {alertCount > 9 ? '9+' : alertCount}
@@ -95,7 +96,7 @@ export function AdminTopBar({ alertCount = 0, onMenuToggle }: AdminTopBarProps) 
             className="hidden h-8 w-8 items-center justify-center rounded-md border border-border bg-surface-muted text-sm transition-colors hover:border-primary/30 sm:flex"
             aria-label="Settings"
           >
-            ⚙️
+            <Icon name="settings" size="sm" />
           </Link>
           <PortalAuthActions portalLabel="Administrator" />
         </div>
@@ -106,9 +107,10 @@ export function AdminTopBar({ alertCount = 0, onMenuToggle }: AdminTopBarProps) 
           <Link
             key={item.id}
             to={item.to}
-            className="shrink-0 rounded-full border border-border bg-surface-muted px-3 py-1.5 text-xs font-medium text-secondary"
+            className="flex shrink-0 items-center gap-1.5 rounded-full border border-border bg-surface-muted px-3 py-1.5 text-xs font-medium text-secondary"
           >
-            {item.icon} {item.label}
+            <Icon name={item.icon} size="sm" />
+            {item.label}
           </Link>
         ))}
       </nav>

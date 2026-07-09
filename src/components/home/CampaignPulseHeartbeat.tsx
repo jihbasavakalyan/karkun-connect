@@ -1,4 +1,5 @@
 import type { CampaignPulse } from '@/lib/campaignPulsePresentation'
+import { Icon } from '@/components/ui/Icon'
 
 type CampaignPulseHeartbeatProps = {
   pulse: CampaignPulse
@@ -23,7 +24,7 @@ export function CampaignPulseHeartbeat({
     >
       <div className="cd-pulse-header">
         <span className="cd-pulse-icon" aria-hidden="true">
-          <span className="cd-pulse-dot">{pulse.icon}</span>
+          <Icon name={pulse.icon} size="md" />
           <span className="cd-pulse-ring" />
         </span>
         <div>

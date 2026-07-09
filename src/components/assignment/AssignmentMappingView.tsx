@@ -16,6 +16,7 @@ import { buildTelLink, buildWhatsAppLink } from '@/utils/personContactLinks'
 import { JourneyStageBadge, RelationshipHealthBadge } from '@/components/guidance'
 import { KarkunSearchField } from '@/components/relationship'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
+import { Icon } from '@/components/ui/Icon'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
 import type { AssignmentRecord } from '@/types/assignment'
 import { getFatherHusbandLabel } from '@/types/people.types'
@@ -260,15 +261,17 @@ function MappingCard({ row }: { row: MappingRow }) {
       <div className="mt-3">
         <Link
           to={adminAssignmentsPath({ ruknId: row.ruknId })}
-          className="relationship-quick-action inline-flex min-h-11 items-center justify-center font-semibold"
+          className="relationship-quick-action inline-flex min-h-11 items-center justify-center gap-1.5 font-semibold"
         >
-          ➕ Connect Karkun
+          <Icon name="plus" size="sm" />
+          Connect Karkun
         </Link>
       </div>
 
       <div className="relationship-quick-actions mt-3">
         <Link to={adminRuknDetailPath(row.ruknId)} className="relationship-quick-action">
-          👁 View Details
+          <Icon name="eye" size="sm" />
+          View Details
         </Link>
         {whatsAppLink && (
           <a
@@ -277,12 +280,14 @@ function MappingCard({ row }: { row: MappingRow }) {
             rel="noopener noreferrer"
             className="relationship-quick-action"
           >
-            💬 WhatsApp
+            <Icon name="message" size="sm" />
+            WhatsApp
           </a>
         )}
         {telLink && (
           <a href={telLink} className="relationship-quick-action">
-            📞 Call
+            <Icon name="phone" size="sm" />
+            Call
           </a>
         )}
       </div>

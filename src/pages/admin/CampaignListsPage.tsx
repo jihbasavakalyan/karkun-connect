@@ -6,7 +6,7 @@ import { MessageComposerModal } from '@/components/communication/MessageComposer
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import { useCommunication } from '@/hooks/useCommunication'
-import { PageHeader, PageShell } from '@/components/ui'
+import { PageHeader, PageShell, Icon } from '@/components/ui'
 import { getAllKarkuns } from '@/lib/peopleStore'
 import {
   DYNAMIC_CAMPAIGN_LISTS,
@@ -109,7 +109,10 @@ function DynamicListsTab({
                 type="button"
                 onClick={() => setExpandedId(expanded ? null : definition.id)}
               >
-                👁 {expanded ? 'Hide Members' : 'View Members'}
+                <span className="inline-flex items-center gap-1.5">
+                  <Icon name="eye" size="sm" />
+                  {expanded ? 'Hide Members' : 'View Members'}
+                </span>
               </SecondaryButton>
               <SecondaryButton
                 type="button"
@@ -121,7 +124,10 @@ function DynamicListsTab({
                   )
                 }
               >
-                🟢 Broadcast
+                <span className="inline-flex items-center gap-1.5">
+                  <Icon name="megaphone" size="sm" />
+                  Broadcast
+                </span>
               </SecondaryButton>
             </div>
             {expanded && <MemberList members={members} />}
@@ -314,7 +320,10 @@ function BroadcastListsTab({
                   type="button"
                   onClick={() => setExpandedId(expanded ? null : list.id)}
                 >
-                  👁 {expanded ? 'Hide Members' : 'View Members'}
+                  <span className="inline-flex items-center gap-1.5">
+                    <Icon name="eye" size="sm" />
+                    {expanded ? 'Hide Members' : 'View Members'}
+                  </span>
                 </SecondaryButton>
                 <SecondaryButton type="button" onClick={() => setManageList(list)}>
                   Manage Members
@@ -324,7 +333,10 @@ function BroadcastListsTab({
                   disabled={members.length === 0}
                   onClick={() => onBroadcast(members.map(toRecipient), list.name)}
                 >
-                  🟢 Broadcast
+                  <span className="inline-flex items-center gap-1.5">
+                    <Icon name="megaphone" size="sm" />
+                    Broadcast
+                  </span>
                 </SecondaryButton>
                 <SecondaryButton
                   type="button"

@@ -6,5 +6,5 @@ type ExecutionEmptyStateProps = {
 }
 
 export function ExecutionEmptyState({ title, message }: ExecutionEmptyStateProps) {
-  return <EmptyState icon="📋" title={title} description={message} />
+  return <EmptyState icon="clipboard" title={title} description={message} />
 }

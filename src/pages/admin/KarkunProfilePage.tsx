@@ -432,7 +432,7 @@ export function KarkunProfilePage() {
     return (
       <PageShell variant="narrow">
         <EmptyState
-          icon="🔍"
+          icon="search"
           title="Karkun not found"
           description="This profile does not exist in the registry."
           primaryAction={{ label: 'Back to Karkun', href: ROUTES.ADMIN_KARKUN }}

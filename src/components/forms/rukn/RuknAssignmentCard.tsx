@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import type { Rukn } from '@/data/ruknMaster'
 import type { RuknAssignmentStats } from '@/lib/ruknAssignments'
 import { adminRuknDetailPath } from '@/constants/routes'
+import { Icon } from '@/components/ui/Icon'
 
 type RuknAssignmentCardProps = {
   rukn: Rukn
@@ -20,7 +21,9 @@ export function RuknAssignmentCard({ rukn, stats }: RuknAssignmentCardProps) {
 
       <dl className="mt-4 space-y-2 text-sm">
         <div className="flex items-start gap-2">
-          <dt className="text-secondary">📱</dt>
+          <dt className="text-secondary">
+            <Icon name="smartphone" size="sm" />
+          </dt>
           <dd className={rukn.mobile.trim() ? 'text-text-heading' : 'text-secondary'}>
             {mobileLabel}
           </dd>

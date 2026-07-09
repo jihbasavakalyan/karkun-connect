@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom'
 import { Logo } from '@/components/common/Logo'
+import { Icon } from '@/components/ui/Icon'
 import { ADMIN_NAV_ITEMS } from '@/constants/adminNavigation'
 import { ROUTES } from '@/constants/routes'
 import { APP_TAGLINE } from '@/constants/app'
@@ -64,9 +65,7 @@ export function AdminSidebar({ collapsed, onToggle }: AdminSidebarProps) {
               ].join(' ')
             }
           >
-            <span className="text-xl transition-transform group-hover:scale-110" aria-hidden="true">
-              {item.icon}
-            </span>
+            <Icon name={item.icon} size="lg" className="text-current" />
             {!collapsed && <span>{item.label}</span>}
           </NavLink>
         ))}

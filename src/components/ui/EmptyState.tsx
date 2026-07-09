@@ -1,10 +1,12 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
+import type { IconName } from '@/design-system/iconNames'
+import { Icon } from './Icon'
 import { PrimaryButton } from './PrimaryButton'
 import { SecondaryButton } from './SecondaryButton'
 
 type EmptyStateProps = {
-  icon?: string
+  icon?: IconName
   title: string
   description: string
   primaryAction?: { label: string; onClick?: () => void; href?: string }
@@ -13,7 +15,7 @@ type EmptyStateProps = {
 }
 
 export function EmptyState({
-  icon = '✨',
+  icon = 'sparkles',
   title,
   description,
   primaryAction,
@@ -23,7 +25,7 @@ export function EmptyState({
   return (
     <div className="ds-empty" role="status">
       <div className="ds-empty-icon" aria-hidden="true">
-        {icon}
+        <Icon name={icon} size="xl" className="text-primary" />
       </div>
       <h3 className="ds-empty-title">{title}</h3>
       <p className="ds-empty-description">{description}</p>

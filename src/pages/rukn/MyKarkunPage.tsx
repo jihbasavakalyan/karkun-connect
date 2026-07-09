@@ -57,14 +57,14 @@ export function MyKarkunPage() {
 
       {myKarkunan.length === 0 ? (
         <EmptyState
-          icon="👥"
+          icon="users"
           title="No connections yet"
           description="Connect with a Karkun to begin guiding them through the campaign journey."
           primaryAction={{ label: 'Connect Karkun', href: ROUTES.RUKN_AVAILABLE_KARKUN }}
         />
       ) : filtered.length === 0 ? (
         <EmptyState
-          icon="🔍"
+          icon="search"
           title="No matches"
           description={`No connected Karkun matches "${query}". Try a different name or number.`}
         />

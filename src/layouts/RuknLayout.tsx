@@ -2,6 +2,8 @@ import { NavLink, Outlet } from 'react-router-dom'
 import { ROUTES } from '@/constants/routes'
 import { Logo } from '@/components/common/Logo'
 import { PortalAuthActions } from '@/components/layout/PortalAuthActions'
+import { Icon } from '@/components/ui/Icon'
+import type { IconName } from '@/design-system/iconNames'
 import {
   formatActiveCampaignDuration,
   getActiveCampaignName,
@@ -9,12 +11,12 @@ import {
 } from '@/services/campaignService'
 import { EnterpriseBadge } from '@/components/enterprise'
 
-const navItems = [
-  { label: 'Home', icon: '🏠', to: ROUTES.RUKN, end: true },
-  { label: 'Connect', icon: '🔍', to: ROUTES.RUKN_AVAILABLE_KARKUN, end: false },
-  { label: 'Connected', icon: '👥', to: ROUTES.RUKN_MY_KARKUN, end: false },
-  { label: 'Record', icon: '📊', to: ROUTES.RUKN_CAMPAIGN_RECORD, end: false },
-] as const
+const navItems: { label: string; icon: IconName; to: string; end: boolean }[] = [
+  { label: 'Home', icon: 'home', to: ROUTES.RUKN, end: true },
+  { label: 'Connect', icon: 'search', to: ROUTES.RUKN_AVAILABLE_KARKUN, end: false },
+  { label: 'Connected', icon: 'users', to: ROUTES.RUKN_MY_KARKUN, end: false },
+  { label: 'Record', icon: 'chart', to: ROUTES.RUKN_CAMPAIGN_RECORD, end: false },
+]
 
 export function RuknLayout() {
   const campaignName = getActiveCampaignName()
@@ -66,9 +68,7 @@ export function RuknLayout() {
                   ].join(' ')
                 }
               >
-                <span className="text-lg" aria-hidden="true">
-                  {item.icon}
-                </span>
+                <Icon name={item.icon} size="lg" className="text-current" />
                 {item.label}
               </NavLink>
             </li>

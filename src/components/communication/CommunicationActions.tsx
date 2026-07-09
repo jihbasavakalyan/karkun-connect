@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { MessageComposerModal } from '@/components/communication/MessageComposerModal'
+import { Icon } from '@/components/ui/Icon'
 import { buildTelLink } from '@/utils/personContactLinks'
 import type { MessageRecipientKind } from '@/types/communication'
 
@@ -44,7 +45,8 @@ export function CommunicationActions({
       <div className="flex flex-wrap gap-2">
         {telLink && (
           <a href={telLink} className={actionClassName}>
-            📞 Call
+            <Icon name="phone" size="sm" />
+            Call
           </a>
         )}
         <button
@@ -54,13 +56,16 @@ export function CommunicationActions({
           title={onSend ? 'Compose WhatsApp message' : 'Communication service unavailable'}
           onClick={() => setComposerOpen(true)}
         >
-          💬 WhatsApp
+          <Icon name="message" size="sm" />
+          WhatsApp
         </button>
         <button type="button" className={actionClassName} disabled title="Coming in a future sprint">
-          📱 SMS
+          <Icon name="smartphone" size="sm" />
+          SMS
         </button>
         <button type="button" className={actionClassName} disabled title="Coming in a future sprint">
-          ✉️ Email
+          <Icon name="mail" size="sm" />
+          Email
         </button>
       </div>
 

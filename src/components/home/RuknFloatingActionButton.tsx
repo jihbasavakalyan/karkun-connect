@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ROUTES } from '@/constants/routes'
+import type { IconName } from '@/design-system/iconNames'
 import type { NextRecommendedAction } from '@/types/campaignAutomation.types'
+import { Icon } from '@/components/ui/Icon'
 
 type RuknFloatingActionButtonProps = {
   nextAction: NextRecommendedAction
@@ -12,7 +14,7 @@ type RuknFloatingActionButtonProps = {
 type FabAction = {
   id: string
   label: string
-  icon: string
+  icon: IconName
   href?: string
   to?: string
   external?: boolean
@@ -50,20 +52,18 @@ export function RuknFloatingActionButton({
   }, [open])
 
   const actions: FabAction[] = [
-    { id: 'connect', label: 'Connect Karkun', icon: '🔗', to: ROUTES.RUKN_AVAILABLE_KARKUN },
+    { id: 'connect', label: 'Connect Karkun', icon: 'link', to: ROUTES.RUKN_AVAILABLE_KARKUN },
     {
       id: 'visit',
       label: 'Record Visit',
-      icon: '📋',
+      icon: 'clipboard',
       to: !nextAction.isCaughtUp ? nextAction.route : ROUTES.RUKN_MY_KARKUN,
     },
-    primaryCallHref
-      ? { id: 'call', label: 'Call', icon: '📞', href: primaryCallHref }
-      : null,
+    primaryCallHref ? { id: 'call', label: 'Call', icon: 'phone', href: primaryCallHref } : null,
     primaryWhatsAppHref
-      ? { id: 'whatsapp', label: 'WhatsApp', icon: '🟢', href: primaryWhatsAppHref, external: true }
+      ? { id: 'whatsapp', label: 'WhatsApp', icon: 'message', href: primaryWhatsAppHref, external: true }
       : null,
-    { id: 'schedule', label: 'Schedule', icon: '📅', href: '#todays-schedule' },
+    { id: 'schedule', label: 'Schedule', icon: 'calendar', href: '#todays-schedule' },
   ].filter(Boolean) as FabAction[]
 
   return (
@@ -84,7 +84,7 @@ export function RuknFloatingActionButton({
                   style={style}
                   onClick={() => setOpen(false)}
                 >
-                  <span aria-hidden="true">{action.icon}</span>
+                  <Icon name={action.icon} size="sm" />
                   {action.label}
                 </Link>
               )
@@ -101,7 +101,7 @@ export function RuknFloatingActionButton({
                 rel={action.external ? 'noopener noreferrer' : undefined}
                 onClick={() => setOpen(false)}
               >
-                <span aria-hidden="true">{action.icon}</span>
+                <Icon name={action.icon} size="sm" />
                 {action.label}
               </a>
             )
@@ -118,7 +118,7 @@ export function RuknFloatingActionButton({
         onClick={() => setOpen((current) => !current)}
       >
         <span className="rukn-fab-icon" aria-hidden="true">
-          {open ? '✕' : '+'}
+          {open ? <Icon name="x" size="lg" /> : <Icon name="plus" size="lg" />}
         </span>
       </button>
     </div>

@@ -17,6 +17,7 @@ import { humanizeNextActionForKarkun } from '@/lib/homePresentation'
 import { scheduleWhatsAppMessage } from '@/services/schedulingService'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
 import { RelationshipActionBar } from './RelationshipActionBar'
+import { Icon } from '@/components/ui/Icon'
 import type { MessageRecipient } from '@/types/communication'
 
 type ConnectedKarkunCardProps = {
@@ -99,7 +100,8 @@ export function ConnectedKarkunCard({ karkun, ruknId, visitPath }: ConnectedKark
         <div className="relationship-quick-actions mt-4">
           {telLink && (
             <a href={telLink} className="relationship-quick-action" aria-label={`Call ${karkun.name}`}>
-              <span aria-hidden="true">📞</span> Call
+              <Icon name="phone" size="sm" />
+              Call
             </a>
           )}
           {whatsAppLink && (
@@ -110,18 +112,21 @@ export function ConnectedKarkunCard({ karkun, ruknId, visitPath }: ConnectedKark
               className="relationship-quick-action"
               aria-label={`WhatsApp ${karkun.name}`}
             >
-              <span aria-hidden="true">💬</span> WhatsApp
+              <Icon name="message" size="sm" />
+              WhatsApp
             </a>
           )}
           <Link to={`${journeyPath}#visit-details`} className="relationship-quick-action">
-            <span aria-hidden="true">📝</span> Record Visit
+            <Icon name="file-text" size="sm" />
+            Record Visit
           </Link>
           <button
             type="button"
             className="relationship-quick-action"
             onClick={() => setScheduleOpen(true)}
           >
-            <span aria-hidden="true">📅</span> Schedule
+            <Icon name="calendar" size="sm" />
+            Schedule
           </button>
         </div>
 

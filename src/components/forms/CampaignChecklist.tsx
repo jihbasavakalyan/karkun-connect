@@ -1,5 +1,6 @@
 import { CAMPAIGN_CHECKLIST_ITEMS } from '@/constants/mockCampaignSetup'
 import { getChecklistCompletion } from '@/hooks/useCampaignSetupWizard'
+import { Icon } from '@/components/ui/Icon'
 import type { CampaignSetupState } from '@/types/campaign-setup.types'
 
 type CampaignChecklistProps = {
@@ -26,14 +27,14 @@ export function CampaignChecklist({ state }: CampaignChecklistProps) {
             <li key={item.id} className="flex items-start gap-3 text-sm">
               <span
                 className={[
-                  'mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-semibold',
+                  'mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full',
                   isComplete
                     ? 'bg-primary text-surface'
                     : 'border border-border bg-surface text-secondary',
                 ].join(' ')}
                 aria-hidden="true"
               >
-                {isComplete ? '✓' : '○'}
+                {isComplete ? <Icon name="check" size="sm" /> : <Icon name="circle" size="sm" />}
               </span>
               <span
                 className={isComplete ? 'font-medium text-text-heading' : 'text-secondary'}

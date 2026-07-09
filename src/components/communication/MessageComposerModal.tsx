@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Modal } from '@/components/common/Modal'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
+import { Icon } from '@/components/ui/Icon'
 import { SchedulePickerModal } from '@/components/communication/SchedulePickerModal'
 import { applyTemplateVariables, listTemplates } from '@/services/templateService'
 import { scheduleWhatsAppMessage } from '@/services/schedulingService'
@@ -183,7 +184,10 @@ function MessageComposerModalContent({
               onClick={handleSendViaWhatsApp}
               disabled={!waLink}
             >
-              🟢 Send via WhatsApp
+              <span className="inline-flex items-center justify-center gap-1.5">
+                <Icon name="message" size="sm" />
+                Send via WhatsApp
+              </span>
             </PrimaryButton>
           )}
           <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
@@ -195,7 +199,10 @@ function MessageComposerModalContent({
               onClick={() => setScheduleOpen(true)}
               disabled={sending || !message.trim()}
             >
-              📅 Schedule
+              <span className="inline-flex items-center gap-1.5">
+                <Icon name="calendar" size="sm" />
+                Schedule
+              </span>
             </SecondaryButton>
             <PrimaryButton type="button" onClick={handleSend} disabled={sending || !message.trim()}>
               {sending ? 'Sending…' : 'Queue Message'}

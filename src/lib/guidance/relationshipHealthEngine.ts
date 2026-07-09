@@ -1,3 +1,4 @@
+import type { IconName } from '@/design-system/iconNames'
 import { getPendingCommitmentsForKarkun } from '@/services/guidanceService'
 import {
   daysSince,
@@ -10,12 +11,12 @@ import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
 
 const HEALTH_META: Record<
   RelationshipHealthLevel,
-  { label: string; icon: string }
+  { label: string; icon: IconName }
 > = {
-  healthy: { label: 'Healthy', icon: '🟢' },
-  'needs-attention': { label: 'Needs Attention', icon: '🟡' },
-  urgent: { label: 'Urgent', icon: '🔴' },
-  dormant: { label: 'Dormant', icon: '⚫' },
+  healthy: { label: 'Healthy', icon: 'pulse-healthy' },
+  'needs-attention': { label: 'Needs Attention', icon: 'pulse-attention' },
+  urgent: { label: 'Urgent', icon: 'pulse-critical' },
+  dormant: { label: 'Dormant', icon: 'pulse-critical' },
 }
 
 export function assessRelationshipHealth(
