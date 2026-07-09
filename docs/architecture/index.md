@@ -29,7 +29,8 @@ Karkun Connect is a single-page React application with role-based routing (Admin
 | `src/routes/AppRouter.tsx` | Route definitions and legacy redirects |
 | `src/constants/adminNavigation.ts` | Admin sidebar navigation |
 | `src/constants/routes.ts` | Route path constants |
-| `src/constants/mockAuth.ts` | Demo credentials |
+| `src/lib/auth/authorization.ts` | Role-based home routes and path guards |
+| `src/services/authenticationService.ts` | Firebase Authentication service |
 | `src/constants/demoRukn.ts` | Rukn email → ID mapping |
 | `src/data/ruknMaster.ts` | 49 Rukn master records |
 | `src/data/production/` | Male/female karkun production seeds |
@@ -54,8 +55,8 @@ Karkun Connect is a single-page React application with role-based routing (Admin
 
 ## Authentication
 
-- Mock credential validation in `mockAuth.ts`
-- Session stored in `localStorage` (Remember Me) or `sessionStorage` (tab session)
+- Firebase Authentication via `authenticationService` (M7)
+- Session cached in `authSession.ts`; Firebase handles token persistence
 - Role-based home redirect: `/admin` or `/rukn`
 
 ## Assignment Invariants
@@ -85,6 +86,7 @@ Scripts validate routes, auth, data integrity, assignments, and compliance witho
 
 ## Related Documents
 
+- [Authentication (M7)](./authentication.md)
 - [Repository Layer (M6.9)](./repository-layer.md)
 - [Product Experience Constitution (PX Constitution)](../architecture/product-experience-constitution.md)
 - [Workflow Automation Constitution](../architecture/workflow-automation-constitution.md)

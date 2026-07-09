@@ -46,7 +46,7 @@ function isAuthUser(value: unknown): value is AuthUser {
   }
 
   const candidate = value as Partial<AuthUser>
-  if (typeof candidate.email !== 'string' || typeof candidate.role !== 'string') {
+  if (typeof candidate.uid !== 'string' || typeof candidate.email !== 'string' || typeof candidate.role !== 'string') {
     return false
   }
 
@@ -54,7 +54,15 @@ function isAuthUser(value: unknown): value is AuthUser {
     return false
   }
 
+  if (candidate.phone !== undefined && typeof candidate.phone !== 'string') {
+    return false
+  }
+
   if (candidate.ruknId !== undefined && typeof candidate.ruknId !== 'string') {
+    return false
+  }
+
+  if (candidate.displayName !== undefined && typeof candidate.displayName !== 'string') {
     return false
   }
 

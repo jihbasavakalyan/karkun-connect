@@ -1,19 +1,28 @@
 /**
- * Sprint 12.5 — mock authentication and session persistence verification.
- * Run: npx vite-node scripts/verify-auth-session.ts
+ * M7 — Authentication and session verification (no live Firebase required).
+ * Run: npm run verify:auth
  */
-import { DEMO_RUKN_ACCOUNTS } from '@/constants/demoRukn'
+import { mapFirebaseAuthError } from '@/lib/auth/authErrors'
 import {
-  authenticateMock,
-  DEMO_CREDENTIALS_DISPLAY,
+  getAuthorizedRedirect,
   getHomeRouteForRole,
-} from '@/constants/mockAuth'
+  isPathAllowedForRole,
+} from '@/lib/auth/authorization'
+import {
+  findRuknIdByPhone,
+  isAdministratorEmail,
+  resolveAuthUser,
+  toE164IndianPhone,
+} from '@/lib/auth/roleResolver'
+import { ruknMaster } from '@/data/ruknMaster'
 import {
   clearAuthSession,
   loadAuthSession,
   resetAuthSessionMemoryForTests,
   saveAuthSession,
 } from '@/lib/authSession'
+import { authenticationService } from '@/services/authenticationService'
+import type { AuthUser } from '@/types/auth.types'
 
 function assert(condition: boolean, message: string): asserts condition {
   if (!condition) {
@@ -21,72 +30,121 @@ function assert(condition: boolean, message: string): asserts condition {
   }
 }
 
-function verifyDemoAccounts(): void {
-  assert(DEMO_CREDENTIALS_DISPLAY.length >= 5, 'Demo credentials panel must list admin + 4 Rukns')
-
-  const admin = authenticateMock('admin@demo.com', 'password')
-  assert(admin?.role === 'administrator', 'Administrator login must succeed')
-  assert(!admin?.ruknId, 'Administrator must not have ruknId')
-
-  const expectedRuknEmails = ['rukn1@demo.com', 'rukn2@demo.com', 'rukn3@demo.com', 'rukn4@demo.com']
-
-  for (const email of expectedRuknEmails) {
-    const user = authenticateMock(email, 'password')
-    assert(user?.role === 'rukn', `${email} must authenticate as rukn`)
-    assert(Boolean(user?.ruknId), `${email} must include ruknId`)
-  }
-
-  assert(
-    authenticateMock('rukn@demo.com', 'password') === null,
-    'Legacy single Rukn login must be removed',
+function verifyRoleResolution(): void {
+  const admin = resolveAuthUser(
+    {
+      uid: 'admin-1',
+      email: 'ops@jih.org',
+      phoneNumber: null,
+      displayName: 'Ops Admin',
+      customClaims: {},
+    },
+    ['ops@jih.org'],
   )
+  assert(admin?.role === 'administrator', 'Administrator email allowlist must resolve')
+  assert(!admin?.ruknId, 'Administrator must not include ruknId')
 
-  assert(DEMO_RUKN_ACCOUNTS.length >= 4, 'At least four demo Rukn accounts must be configured')
+  const claimAdmin = resolveAuthUser({
+    uid: 'admin-2',
+    email: 'any@example.com',
+    phoneNumber: null,
+    displayName: null,
+    customClaims: { role: 'administrator' },
+  })
+  assert(claimAdmin?.role === 'administrator', 'Administrator custom claim must resolve')
 
-  const maleIds = DEMO_RUKN_ACCOUNTS.filter((account) => account.email.startsWith('rukn1') || account.email.startsWith('rukn2'))
-  const femaleIds = DEMO_RUKN_ACCOUNTS.filter((account) => account.email.startsWith('rukn3') || account.email.startsWith('rukn4'))
-  assert(maleIds.length === 2, 'Two male demo Rukn accounts required')
-  assert(femaleIds.length === 2, 'Two female demo Rukn accounts required')
-  assert(maleIds[0]?.ruknId !== femaleIds[0]?.ruknId, 'Male and female demo accounts must map to different Rukns')
+  const activeRukn = ruknMaster.find((rukn) => rukn.status === 'active' && rukn.mobile)
+  assert(Boolean(activeRukn), 'Need an active Rukn with mobile for phone resolution')
+
+  const rukn = resolveAuthUser({
+    uid: 'rukn-1',
+    email: null,
+    phoneNumber: toE164IndianPhone(activeRukn!.mobile),
+    displayName: null,
+    customClaims: {},
+  })
+  assert(rukn?.role === 'rukn', 'Phone login must resolve to rukn role')
+  assert(rukn?.ruknId === activeRukn!.id, 'Phone login must map to matching ruknId')
+
+  const unauthorized = resolveAuthUser({
+    uid: 'unknown',
+    email: 'stranger@example.com',
+    phoneNumber: null,
+    displayName: null,
+    customClaims: {},
+  })
+  assert(unauthorized === null, 'Unknown users must not receive a role')
 }
 
-function verifyRoutes(): void {
+function verifyRoutesAndAuthorization(): void {
   assert(getHomeRouteForRole('administrator') === '/admin', 'Administrator home route must be /admin')
   assert(getHomeRouteForRole('rukn') === '/rukn', 'Rukn home route must be /rukn')
+  assert(isPathAllowedForRole('/admin/settings', 'administrator'), 'Administrator may access admin settings')
+  assert(!isPathAllowedForRole('/admin/settings', 'rukn'), 'Rukn must not access admin settings')
+  assert(isPathAllowedForRole('/rukn/my-karkun', 'rukn'), 'Rukn may access rukn routes')
+  assert(
+    getAuthorizedRedirect('/admin/settings', 'rukn') === '/rukn',
+    'Unauthorized admin path must redirect to rukn home',
+  )
 }
 
-function verifyPersistentSession(): void {
+function verifyErrorMapping(): void {
+  assert(
+    mapFirebaseAuthError({ code: 'auth/wrong-password' }).includes('Invalid email or password'),
+    'Firebase errors must map to friendly messages',
+  )
+  assert(
+    !mapFirebaseAuthError({ code: 'auth/wrong-password' }).includes('auth/'),
+    'Firebase codes must not leak to users',
+  )
+}
+
+function verifySessionPersistence(): void {
   resetAuthSessionMemoryForTests()
   clearAuthSession()
+  authenticationService.resetForTests()
 
-  const user = authenticateMock('admin@demo.com', 'password')
-  assert(user !== null, 'Admin auth required for session test')
+  const adminUser: AuthUser = {
+    uid: 'persist-admin',
+    email: 'admin@example.com',
+    role: 'administrator',
+  }
 
-  saveAuthSession(user, true)
+  saveAuthSession(adminUser, true)
   const restored = loadAuthSession()
-  assert(restored?.email === 'admin@demo.com', 'Persistent session must restore after refresh')
+  assert(restored?.uid === 'persist-admin', 'Persistent session must restore uid')
+  assert(restored?.email === 'admin@example.com', 'Persistent session must restore email')
 
   clearAuthSession()
-  assert(loadAuthSession() === null, 'Clear session must remove persisted auth')
+
+  const ruknUser: AuthUser = {
+    uid: 'persist-rukn',
+    email: '',
+    phone: '9876543210',
+    role: 'rukn',
+    ruknId: 'R001',
+  }
+
+  saveAuthSession(ruknUser, false)
+  const tabRestored = loadAuthSession()
+  assert(tabRestored?.ruknId === 'R001', 'Tab session must restore ruknId')
+
+  clearAuthSession()
+  assert(loadAuthSession() === null, 'Clear session must remove auth cache')
 }
 
-function verifyTabSession(): void {
-  resetAuthSessionMemoryForTests()
-  clearAuthSession()
-
-  const user = authenticateMock('rukn2@demo.com', 'password')
-  assert(user !== null, 'Rukn auth required for tab session test')
-
-  saveAuthSession(user, false)
-  const restored = loadAuthSession()
-  assert(restored?.ruknId === user.ruknId, 'Tab session must restore ruknId')
-
-  clearAuthSession()
+function verifyPhoneHelpers(): void {
+  const activeRukn = ruknMaster.find((rukn) => rukn.status === 'active' && rukn.mobile)
+  assert(Boolean(activeRukn), 'Need active Rukn mobile for helper test')
+  assert(findRuknIdByPhone(activeRukn!.mobile) === activeRukn!.id, 'findRuknIdByPhone must match master')
+  assert(isAdministratorEmail('Admin@JIH.org', ['admin@jih.org']), 'Admin email comparison is case-insensitive')
+  assert(toE164IndianPhone('9876543210') === '+919876543210', 'Indian phone numbers must use +91 prefix')
 }
 
-verifyDemoAccounts()
-verifyRoutes()
-verifyPersistentSession()
-verifyTabSession()
+verifyRoleResolution()
+verifyRoutesAndAuthorization()
+verifyErrorMapping()
+verifySessionPersistence()
+verifyPhoneHelpers()
 
 console.log('Authentication session verification passed.')

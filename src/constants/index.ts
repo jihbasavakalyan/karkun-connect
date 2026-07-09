@@ -14,7 +14,7 @@ export {
   DEFAULT_VISIT_KARKUN_ID,
 } from './mockCampaignRecord'
 export { APP_NAME, APP_TAGLINE, APP_DESCRIPTION, APP_VERSION } from './app'
-export { authenticateMock, getHomeRouteForRole } from './mockAuth'
+export { getHomeRouteForRole } from '@/lib/auth/authorization'
 export {
   adminDashboardStats,
   ruknDashboardStats,

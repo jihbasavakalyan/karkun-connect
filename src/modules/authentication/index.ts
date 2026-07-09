@@ -1,5 +1,1 @@
-/**
- * Authentication module barrel export.
- */
-
-export {};
+export { authenticationService, type AuthenticationService } from '@/services/authenticationService'

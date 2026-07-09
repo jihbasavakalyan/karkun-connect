@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
-import { authenticateMock } from '@/constants/mockAuth'
 import {
   DATA_RESET_OPTIONS,
   resetApplicationData,
@@ -18,7 +17,7 @@ const inputClassName =
 type Step = 1 | 2 | 3 | 4
 
 export function DangerZone() {
-  const { user } = useAuth()
+  const { user, reauthenticateWithPassword } = useAuth()
   const [open, setOpen] = useState(false)
   const [step, setStep] = useState<Step>(1)
   const [scope, setScope] = useState<DataResetScope>('runtime')
@@ -40,9 +39,15 @@ export function DangerZone() {
     setError('')
   }
 
-  const handlePasswordNext = () => {
+  const handlePasswordNext = async () => {
     setError('')
-    if (!user?.email || !authenticateMock(user.email, password)) {
+    if (!user?.email) {
+      setError('Administrator session is required.')
+      return
+    }
+
+    const verified = await reauthenticateWithPassword(password)
+    if (!verified) {
       setError('Incorrect administrator password.')
       return
     }
