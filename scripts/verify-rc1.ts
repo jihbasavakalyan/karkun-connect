@@ -22,6 +22,7 @@ const VERIFICATION_SCRIPTS = [
   'verify-repositories.ts',
   'verify-firestore.ts',
   'verify-production-readiness.ts',
+  'verify-p2-readiness.ts',
 ] as const
 
 for (const script of VERIFICATION_SCRIPTS) {

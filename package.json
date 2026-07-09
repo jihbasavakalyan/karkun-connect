@@ -26,7 +26,9 @@
     "verify:migration": "npx vite-node scripts/verify-migration.ts",
     "verify:repositories": "npx vite-node scripts/verify-repositories.ts",
     "verify:firestore": "npx vite-node scripts/verify-firestore.ts",
-    "verify:production": "npx vite-node scripts/verify-production-readiness.ts"
+    "verify:production": "npx vite-node scripts/verify-production-readiness.ts",
+    "verify:p2": "npx vite-node scripts/verify-p2-readiness.ts",
+    "admin:export-seed": "npx vite-node scripts/admin/export-seed-backup.ts"
   },
   "dependencies": {
     "firebase": "^12.16.0",
@@ -36,6 +38,7 @@
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
+    "firebase-admin": "^13.6.0",
     "@eslint/js": "^10.0.1",
     "@tailwindcss/vite": "^4.3.2",
     "@types/node": "^24.13.2",

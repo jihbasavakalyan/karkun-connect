@@ -1,6 +1,6 @@
-# Operations — Karkun Connect Production Readiness (P1)
+# Operations — Karkun Connect Production Readiness (P1 / P2)
 
-Operational documentation for deploying and running Karkun Connect in production. Core product development is complete; this folder covers configuration, security, deployment, recovery, and pilot launch.
+Operational documentation for deploying and running Karkun Connect in production. Core product development is complete; this folder covers configuration, security, deployment, recovery, staging validation, and pilot launch.
 
 ## Quick Links
 
@@ -20,6 +20,9 @@ Operational documentation for deploying and running Karkun Connect in production
 | [Pilot Launch Guide](pilot-launch-guide.md) | Basavakalyan pilot runbook |
 | [Incident Response](incident-response.md) | Severity levels and escalation |
 | [Release Candidate](release-candidate.md) | RC1 release notes, risks, go-live |
+| [P2 Staging Validation](p2-staging-validation.md) | Production config & staging validation runbook |
+| [Vercel Configuration](vercel-configuration.md) | Vercel env vars and deploy |
+| [Go-Live Report](go-live-report.md) | P2 sign-off template |
 
 ## Verification Commands
 
@@ -28,6 +31,8 @@ npm run lint
 npm run build
 npm run verify:rc1
 npm run verify:production   # P1 operational readiness checks
+npm run verify:p2           # P2 staging validation artifacts
+npm run admin:export-seed   # Export seed JSON for Firestore import
 ```
 
 ## Architecture References

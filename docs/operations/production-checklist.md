@@ -1,6 +1,6 @@
-# Production Checklist — P1
+# Production Checklist — P1 / P2
 
-Master go-live checklist for Basavakalyan pilot.
+Master go-live checklist for Basavakalyan pilot. P2 adds staging validation and live-service configuration — see [P2 Staging Validation](p2-staging-validation.md).
 
 ## Firebase
 
@@ -74,6 +74,18 @@ Master go-live checklist for Basavakalyan pilot.
 - [ ] Administrator and Rukn guides shared
 - [ ] Feedback coordinator assigned
 - [ ] [Pilot Launch Guide](pilot-launch-guide.md) reviewed with team
+
+## P2 — Staging Validation
+
+- [ ] Staging Firebase project configured (Part 1)
+- [ ] Firestore rules and indexes deployed to staging
+- [ ] Custom claims set (`administrator`, `rukn` + `ruknId`)
+- [ ] Vercel staging env vars set and redeployed
+- [ ] Production data imported and verified (`verify-firestore-production.mjs`)
+- [ ] Smoke test completed on staging URL
+- [ ] Multi-device and security tests passed
+- [ ] Performance measurements recorded
+- [ ] [Go-Live Report](go-live-report.md) completed with Go recommendation
 
 ## Sign-Off
 
