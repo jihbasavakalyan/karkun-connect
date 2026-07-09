@@ -1,18 +1,24 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
-import { initializeRepositories } from '@/repositories/firestore/initialize'
+import App from './App.tsx'
 
-async function bootstrap(): Promise<void> {
-  await initializeRepositories()
+async function runDeferredBootstrap(): Promise<void> {
+  const { initializeRepositories } = await import('@/repositories/firestore/initialize')
+  try {
+    await initializeRepositories()
+  } catch (error) {
+    console.error('[bootstrap] repository initialization failed', error)
+  }
 
   const { runProductionDataMigration } = await import('@/services/productionDataMigrationService')
   const { syncAllKarkunRegistryFromAssignments } = await import('@/services/assignmentService')
 
   runProductionDataMigration()
   syncAllKarkunRegistryFromAssignments()
+}
 
-  const { default: App } = await import('./App.tsx')
+function bootstrap(): void {
   const root = document.getElementById('root')
   if (!root) {
     throw new Error('Root element not found')
@@ -23,6 +29,8 @@ async function bootstrap(): Promise<void> {
       <App />
     </StrictMode>,
   )
+
+  void runDeferredBootstrap()
 }
 
-void bootstrap()
+bootstrap()

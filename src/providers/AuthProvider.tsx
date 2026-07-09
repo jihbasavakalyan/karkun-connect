@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { AuthContext } from '@/context/AuthContext'
+import { refreshFirestoreAfterAuth } from '@/repositories/firestore/initialize'
 import { clearAuthSession, loadAuthSession, saveAuthSession } from '@/lib/authSession'
 import { authenticationService } from '@/services/authenticationService'
 import type {
@@ -39,6 +40,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         saveAuthSession(authUser, authenticationService.getRememberMePreference())
         setUser(authUser)
         setStatus('authenticated')
+        void refreshFirestoreAfterAuth()
         return
       }
 
