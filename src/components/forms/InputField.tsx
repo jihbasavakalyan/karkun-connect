@@ -1,35 +1,61 @@
 import type { InputHTMLAttributes } from 'react'
+import {
+  FORM_ERROR_CLASS,
+  FORM_HELPER_CLASS,
+  FORM_INPUT_CLASS,
+  FORM_LABEL_CLASS,
+} from '@/components/ui/formStyles'
 
 type InputFieldProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'onChange'> & {
   label: string
   onValueChange: (value: string) => void
+  helperText?: string
+  error?: string
+  required?: boolean
 }
 
 export function InputField({
   id,
   label,
   onValueChange,
+  helperText,
+  error,
+  required = false,
   className = '',
   ...props
 }: InputFieldProps) {
   return (
-    <div className="flex flex-col gap-2">
-      <label htmlFor={id} className="text-sm font-medium text-text-heading">
+    <div className="ds-form-field">
+      <label htmlFor={id} className={FORM_LABEL_CLASS}>
         {label}
+        {required && (
+          <span className="ml-1 text-error" aria-hidden="true">
+            *
+          </span>
+        )}
       </label>
       <input
         id={id}
-        className={[
-          'w-full rounded-lg border border-border bg-surface px-4 py-3',
-          'text-base text-text-heading placeholder:text-secondary-light',
-          'transition-shadow focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20',
-          className,
-        ]
+        className={[FORM_INPUT_CLASS, error ? 'border-error-border ring-error-border/30' : '', className]
           .filter(Boolean)
           .join(' ')}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={
+          error ? `${id}-error` : helperText ? `${id}-helper` : undefined
+        }
         onChange={(event) => onValueChange(event.target.value)}
         {...props}
       />
+      {helperText && !error && (
+        <p id={`${id}-helper`} className={FORM_HELPER_CLASS}>
+          {helperText}
+        </p>
+      )}
+      {error && (
+        <p id={`${id}-error`} className={FORM_ERROR_CLASS} role="alert">
+          {error}
+        </p>
+      )}
     </div>
   )
 }

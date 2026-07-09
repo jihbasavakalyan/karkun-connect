@@ -1,4 +1,6 @@
 export { AdminHomePage } from './AdminHomePage'
+export { AssignmentManagementPage } from './AssignmentManagementPage'
+export { CampaignListsPage } from './CampaignListsPage'
 export { CampaignsPage } from './CampaignsPage'
 export { CampaignSetupPage } from './CampaignSetupPage'
 export { CommunicationModulePage } from './CommunicationModulePage'

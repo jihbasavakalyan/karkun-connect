@@ -16,6 +16,7 @@ import {
   resolveCommunicationSection,
   type CommunicationSection,
 } from '@/lib/communicationNavigation'
+import { PageHeader, PageShell } from '@/components/ui'
 
 export function CommunicationModulePage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -26,15 +27,12 @@ export function CommunicationModulePage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl space-y-4 sm:space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-text-heading">Communication Center</h1>
-        <ActiveCampaignSubtitle />
-        <p className="mt-2 text-secondary">
-          Campaign communication via WhatsApp Business Platform. Messages are queued through the
-          backend — no credentials are stored in the browser.
-        </p>
-      </div>
+    <PageShell variant="wide">
+      <PageHeader
+        title="Communication Center"
+        description="Campaign communication via WhatsApp Business Platform. Messages are queued through the backend — no credentials are stored in the browser."
+      />
+      <ActiveCampaignSubtitle />
 
       <CommunicationSectionNav active={section} onChange={setSection} />
 
@@ -47,6 +45,6 @@ export function CommunicationModulePage() {
       {section === 'history' && <DeliveryHistoryPanel />}
       {section === 'failed' && <FailedMessagesPanel />}
       {section === 'settings' && <WhatsAppSettingsPanel />}
-    </div>
+    </PageShell>
   )
 }

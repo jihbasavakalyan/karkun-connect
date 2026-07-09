@@ -1,26 +1,31 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react'
+import { BUTTON_BASE_CLASS, BUTTON_SIZE_CLASS, buttonLoadingSpinner, type ButtonSize } from './buttonBase'
 
 type SecondaryButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   children: ReactNode
   fullWidth?: boolean
+  size?: ButtonSize
+  loading?: boolean
 }
 
 export function SecondaryButton({
   children,
   fullWidth = false,
+  size = 'md',
+  loading = false,
   className = '',
   type = 'button',
+  disabled,
   ...props
 }: SecondaryButtonProps) {
   return (
     <button
       type={type}
+      disabled={disabled || loading}
       className={[
-        'inline-flex items-center justify-center rounded-lg border border-border bg-surface px-5 py-3',
-        'text-base font-medium text-text-heading',
-        'transition-shadow hover:shadow-card-hover',
-        'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary',
-        'disabled:cursor-not-allowed disabled:opacity-60',
+        BUTTON_BASE_CLASS,
+        BUTTON_SIZE_CLASS[size],
+        'border border-border bg-surface text-text-heading hover:border-primary/30 hover:bg-surface-muted',
         fullWidth ? 'w-full' : '',
         className,
       ]
@@ -28,6 +33,7 @@ export function SecondaryButton({
         .join(' ')}
       {...props}
     >
+      {loading && <span className={buttonLoadingSpinner()} aria-hidden="true" />}
       {children}
     </button>
   )

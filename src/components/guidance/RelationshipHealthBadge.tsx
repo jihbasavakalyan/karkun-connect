@@ -1,10 +1,11 @@
 import type { RelationshipHealth } from '@/types/guidance'
+import { StatusBadge, type StatusBadgeVariant } from '@/components/ui/StatusBadge'
 
-const LEVEL_STYLES: Record<RelationshipHealth['level'], string> = {
-  healthy: 'border-green-200 bg-green-50 text-green-800',
-  'needs-attention': 'border-amber-200 bg-amber-50 text-amber-800',
-  urgent: 'border-red-200 bg-red-50 text-red-800',
-  dormant: 'border-border bg-surface-muted text-secondary',
+const LEVEL_VARIANT: Record<RelationshipHealth['level'], StatusBadgeVariant> = {
+  healthy: 'healthy',
+  'needs-attention': 'attention',
+  urgent: 'urgent',
+  dormant: 'dormant',
 }
 
 type RelationshipHealthBadgeProps = {
@@ -17,12 +18,12 @@ export function RelationshipHealthBadge({
   showReasons = false,
 }: RelationshipHealthBadgeProps) {
   return (
-    <div className={`rounded-lg border px-3 py-2 ${LEVEL_STYLES[health.level]}`}>
-      <p className="text-sm font-semibold">
-        {health.icon} {health.label}
-      </p>
+    <div className="ds-badge-block">
+      <StatusBadge variant={LEVEL_VARIANT[health.level]} icon={health.icon}>
+        {health.label}
+      </StatusBadge>
       {showReasons && health.reasons[0] && (
-        <p className="mt-1 text-xs opacity-90">{health.reasons[0]}</p>
+        <p className="ds-helper max-w-xs">{health.reasons[0]}</p>
       )}
     </div>
   )

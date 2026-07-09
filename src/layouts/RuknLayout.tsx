@@ -43,7 +43,7 @@ export function RuknLayout() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-5xl flex-1 px-2 py-3 pb-20 lg:px-3">
+      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-4 pb-20 lg:px-6 lg:py-6">
         <Outlet />
       </main>
 

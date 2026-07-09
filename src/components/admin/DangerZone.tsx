@@ -8,6 +8,7 @@ import {
 } from '@/services/dataResetService'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
+import { DangerButton } from '@/components/ui/DangerButton'
 
 const CONFIRM_PHRASE = 'DELETE ALL DATA'
 
@@ -71,13 +72,9 @@ export function DangerZone() {
 
       {!open ? (
         <div className="mt-4">
-          <button
-            type="button"
-            onClick={() => setOpen(true)}
-            className="rounded-lg border border-red-300 bg-surface px-4 py-2 text-sm font-medium text-red-700 transition-colors hover:bg-red-100"
-          >
+          <DangerButton type="button" onClick={() => setOpen(true)}>
             Delete Data…
-          </button>
+          </DangerButton>
         </div>
       ) : (
         <div className="mt-4 rounded-lg border border-red-200 bg-surface p-4">
@@ -185,13 +182,9 @@ export function DangerZone() {
                 <SecondaryButton type="button" onClick={reset}>
                   Cancel
                 </SecondaryButton>
-                <button
-                  type="button"
-                  onClick={handleFinalConfirm}
-                  className="rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-red-700"
-                >
+                <DangerButton type="button" onClick={handleFinalConfirm}>
                   {scopeLabel} — Permanently
-                </button>
+                </DangerButton>
               </div>
             </div>
           )}

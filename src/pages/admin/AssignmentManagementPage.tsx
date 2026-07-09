@@ -25,6 +25,7 @@ import { RemoveAssignmentModal } from '@/components/forms/assignment/RemoveAssig
 import { RestoreAssignmentModal } from '@/components/forms/assignment/RestoreAssignmentModal'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
+import { PageHeader, PageShell } from '@/components/ui'
 import { formatPersonStatus } from '@/types/people.types'
 
 type ModalMode = 'assign' | 'replace' | 'remove' | 'restore' | 'history' | null
@@ -198,40 +199,29 @@ export function AssignmentManagementPage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-text-heading">Connections</h1>
-          <p className="mt-2 text-secondary">
-            Manage Rukn–Karkun connections. One Rukn may hold multiple active Karkuns; connection
-            history is permanent.
-          </p>
-        </div>
-        <SecondaryButton type="button" onClick={() => exportAssignmentHistory()}>
-          Export History (CSV)
-        </SecondaryButton>
-      </div>
+    <PageShell variant="wide">
+      <PageHeader
+        title="Connections"
+        description="Manage Rukn–Karkun connections. One Rukn may hold multiple active Karkuns; connection history is permanent."
+        actions={
+          <SecondaryButton type="button" onClick={() => exportAssignmentHistory()}>
+            Export History (CSV)
+          </SecondaryButton>
+        }
+      />
 
-      <div className="inline-flex rounded-lg border border-border bg-surface p-1 shadow-card">
+      <div className="ds-tab-pill-nav" role="tablist" aria-label="Connection views">
         <button
           type="button"
           onClick={() => changeView('assign')}
-          className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
-            activeView === 'assign'
-              ? 'bg-primary text-white'
-              : 'text-secondary hover:text-text-heading'
-          }`}
+          className={`ds-tab-pill ${activeView === 'assign' ? 'ds-tab-pill-active' : ''}`}
         >
           Connection Desk
         </button>
         <button
           type="button"
           onClick={() => changeView('mapping')}
-          className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
-            activeView === 'mapping'
-              ? 'bg-primary text-white'
-              : 'text-secondary hover:text-text-heading'
-          }`}
+          className={`ds-tab-pill ${activeView === 'mapping' ? 'ds-tab-pill-active' : ''}`}
         >
           Connections View
         </button>
@@ -513,6 +503,6 @@ export function AssignmentManagementPage() {
         onClose={closeModal}
         onSubmit={handleRestore}
       />
-    </div>
+    </PageShell>
   )
 }

@@ -6,23 +6,20 @@ import {
   CampaignsListPanel,
   CreateCampaignButton,
 } from '@/components/dashboard/CampaignsListPanel'
+import { PageHeader, PageShell } from '@/components/ui'
 
 export function CampaignsPage() {
   const activeCampaigns = getActiveCampaigns()
   const archivedCampaigns = getArchivedCampaigns()
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-text-heading">Campaign</h1>
-          <ActiveCampaignSubtitle />
-          <p className="mt-2 text-secondary">
-            Campaign planning and monitoring for your local Jamaat.
-          </p>
-        </div>
-        <CreateCampaignButton />
-      </div>
+    <PageShell variant="narrow">
+      <PageHeader
+        title="Campaign"
+        description="Campaign planning and monitoring for your local Jamaat."
+        actions={<CreateCampaignButton />}
+      />
+      <ActiveCampaignSubtitle />
 
       <CampaignsListPanel
         activeCampaigns={activeCampaigns}
@@ -38,6 +35,6 @@ export function CampaignsPage() {
           to configure campaign details.
         </p>
       )}
-    </div>
+    </PageShell>
   )
 }

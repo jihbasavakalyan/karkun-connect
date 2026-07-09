@@ -6,6 +6,7 @@ import { MessageComposerModal } from '@/components/communication/MessageComposer
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import { useCommunication } from '@/hooks/useCommunication'
+import { PageHeader, PageShell } from '@/components/ui'
 import { getAllKarkuns } from '@/lib/peopleStore'
 import {
   DYNAMIC_CAMPAIGN_LISTS,
@@ -393,21 +394,16 @@ export function CampaignListsPage() {
   }
 
   const tabClass = (active: boolean) =>
-    `rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-      active ? 'bg-primary text-white' : 'bg-surface-muted text-secondary hover:text-text-heading'
-    }`
+    `ds-tab ${active ? 'ds-tab-active' : ''}`
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-text-heading">Campaign Lists</h1>
-        <p className="mt-2 text-secondary">
-          Reach the right Karkuns fast — dynamic lists update automatically, broadcast lists are
-          yours to curate.
-        </p>
-      </div>
+    <PageShell>
+      <PageHeader
+        title="Campaign Lists"
+        description="Reach the right Karkuns fast — dynamic lists update automatically, broadcast lists are yours to curate."
+      />
 
-      <div className="flex gap-2">
+      <nav className="ds-tab-nav" aria-label="Campaign list types">
         <button type="button" className={tabClass(tab === 'dynamic')} onClick={() => setTab('dynamic')}>
           Dynamic Lists
         </button>
@@ -418,7 +414,7 @@ export function CampaignListsPage() {
         >
           Broadcast Lists
         </button>
-      </div>
+      </nav>
 
       {tab === 'dynamic' ? (
         <DynamicListsTab onBroadcast={openBroadcast} />
@@ -435,6 +431,6 @@ export function CampaignListsPage() {
           title={`Broadcast — ${broadcast.title} (${broadcast.recipients.length})`}
         />
       )}
-    </div>
+    </PageShell>
   )
 }

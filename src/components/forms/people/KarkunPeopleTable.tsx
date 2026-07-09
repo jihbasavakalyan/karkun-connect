@@ -9,11 +9,14 @@ import { formatPersonNameForDisplay } from '@/utils/formatPersonDisplay'
 import { RuknAssignmentSelect } from '@/components/forms/people/RuknAssignmentSelect'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
+import { StatusBadge } from '@/components/ui/StatusBadge'
 import {
   PEOPLE_TABLE_CELL_CLASS,
+  PEOPLE_TABLE_CLASS,
   PEOPLE_TABLE_MOBILE_CLASS,
   PEOPLE_TABLE_NAME_CLASS,
   PEOPLE_TABLE_ROW_CLASS,
+  PEOPLE_TABLE_WRAPPER_CLASS,
 } from '@/components/forms/people/peopleTableDisplay'
 
 type KarkunPeopleTableProps = {
@@ -54,15 +57,11 @@ function SortHeader({
   )
 }
 
-function StatusBadge({ status }: { status: PersonStatus }) {
+function PersonStatusBadge({ status }: { status: PersonStatus }) {
   return (
-    <span
-      className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-        status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
-      }`}
-    >
+    <StatusBadge variant={status === 'active' ? 'healthy' : 'dormant'}>
       {formatPersonStatus(status)}
-    </span>
+    </StatusBadge>
   )
 }
 
@@ -110,8 +109,8 @@ export function KarkunPeopleTable({
 
   if (records.length === 0) {
     return (
-      <div className="rounded-(--radius-card) border border-border bg-surface p-8 text-center shadow-card">
-        <p className="text-secondary">No Karkun match your search or filters.</p>
+      <div className="ds-empty" role="status">
+        <p className="ds-empty-description">No Karkun match your search or filters.</p>
       </div>
     )
   }
@@ -120,9 +119,9 @@ export function KarkunPeopleTable({
 
   return (
     <>
-      <div className="hidden overflow-x-auto rounded-(--radius-card) border border-border bg-surface shadow-card md:block">
-        <table className="min-w-full text-left text-sm">
-          <thead className="border-b border-border bg-surface-muted">
+      <div className={PEOPLE_TABLE_WRAPPER_CLASS}>
+        <table className={PEOPLE_TABLE_CLASS}>
+          <thead>
             <tr>
               <th className="px-4 py-3">
                 <input
@@ -217,7 +216,7 @@ export function KarkunPeopleTable({
                 </td>
                 <td className={`${PEOPLE_TABLE_CELL_CLASS} text-secondary`}>{getConnectionStatusLabel(karkun.assignmentStatus)}</td>
                 <td className={PEOPLE_TABLE_CELL_CLASS}>
-                  <StatusBadge status={karkun.status} />
+                  <PersonStatusBadge status={karkun.status} />
                 </td>
                 <td className={PEOPLE_TABLE_CELL_CLASS}>
                   <button
@@ -255,7 +254,7 @@ export function KarkunPeopleTable({
                   >
                     {formatPersonNameForDisplay(karkun.name)}
                   </Link>
-                  <StatusBadge status={karkun.status} />
+                  <PersonStatusBadge status={karkun.status} />
                 </div>
                 <p className={`mt-1 ${PEOPLE_TABLE_MOBILE_CLASS}`}>{karkun.mobile}</p>
                 <dl className="mt-3 space-y-1 text-sm">

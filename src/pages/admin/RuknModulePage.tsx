@@ -29,6 +29,7 @@ import {
 } from '@/components/forms/people'
 import type { PersonFormValues } from '@/components/forms/people'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
+import { PageHeader, PageShell } from '@/components/ui'
 
 type ActiveTab = 'manage' | 'assignments'
 
@@ -107,44 +108,42 @@ export function RuknModulePage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-text-heading">Rukn Management</h1>
-          <p className="mt-2 text-secondary">
-            Manage Rukn contacts, status, and connections — {management.totalCount} members
-          </p>
-        </div>
-        {activeTab === 'manage' && (
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <ImportExportToolbar
-              kind="rukn"
-              onExport={(format) => exportRukns(management.allFilteredRecords, format)}
-              onImport={handleImport}
-            />
-            <PrimaryButton type="button" onClick={openAddForm}>
-              Add Rukn
-            </PrimaryButton>
-          </div>
-        )}
-      </div>
+    <PageShell>
+      <PageHeader
+        title="Rukn Management"
+        description={`Manage Rukn contacts, status, and connections — ${management.totalCount} members`}
+        actions={
+          activeTab === 'manage' ? (
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <ImportExportToolbar
+                kind="rukn"
+                onExport={(format) => exportRukns(management.allFilteredRecords, format)}
+                onImport={handleImport}
+              />
+              <PrimaryButton type="button" onClick={openAddForm}>
+                Add Rukn
+              </PrimaryButton>
+            </div>
+          ) : undefined
+        }
+      />
 
-      <div className="flex gap-2 border-b border-border">
+      <nav className="ds-tab-nav border-b border-border pb-px" aria-label="Rukn sections">
         {(['manage', 'assignments'] as const).map((tab) => (
           <button
             key={tab}
             type="button"
-            className={`border-b-2 px-4 py-2 text-sm font-medium transition-colors ${
+            className={`ds-tab border-b-2 rounded-none px-4 ${
               activeTab === tab
-                ? 'border-primary text-primary'
-                : 'border-transparent text-secondary hover:text-text-heading'
+                ? 'border-primary text-primary ds-tab-active'
+                : 'border-transparent'
             }`}
             onClick={() => setActiveTab(tab)}
           >
             {TAB_LABELS[tab]}
           </button>
         ))}
-      </div>
+      </nav>
 
       {activeTab === 'manage' ? (
         <>
@@ -254,6 +253,6 @@ export function RuknModulePage() {
         kind="rukn"
         onClose={() => setImportSummary(null)}
       />
-    </div>
+    </PageShell>
   )
 }

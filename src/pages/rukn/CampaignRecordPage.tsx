@@ -10,6 +10,7 @@ import { ExecutionStatusBadge } from '@/components/execution/ExecutionStatusBadg
 import { ExecutionSummaryCards } from '@/components/execution/ExecutionSummaryCards'
 import { getExecutionDashboardData } from '@/lib/executionStatus'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
+import { PageHeader, PageShell } from '@/components/ui'
 
 export function CampaignRecordPage() {
   const [, setVersion] = useState(0)
@@ -28,25 +29,25 @@ export function CampaignRecordPage() {
   const pendingFollowUps = data.followUps.filter((item) => item.status === 'Pending')
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6 pb-24">
-      <div>
-        <Link to={ROUTES.RUKN_MY_KARKUN} className="text-sm font-medium text-primary hover:underline">
-          ← Back to My Karkun
-        </Link>
-        <h1 className="mt-2 text-2xl font-semibold text-text-heading">Campaign Record</h1>
-        <ActiveCampaignSubtitle />
-        <p className="mt-2 text-secondary">Your execution submissions and follow-ups.</p>
-      </div>
+    <PageShell variant="narrow" className="pb-24">
+      <Link to={ROUTES.RUKN_MY_KARKUN} className="text-sm font-medium text-primary hover:underline">
+        ← Back to My Karkun
+      </Link>
+      <PageHeader
+        title="Campaign Record"
+        description="Your execution submissions and follow-ups."
+      />
+      <ActiveCampaignSubtitle />
 
-      <section className="rounded-(--radius-card) border border-border bg-surface p-5 shadow-card">
-        <h2 className="text-lg font-semibold text-text-heading">Execution Summary</h2>
+      <section className="ds-section">
+        <h2 className="ds-section-title">Execution Summary</h2>
         <div className="mt-4">
           <ExecutionSummaryCards counts={counts} />
         </div>
       </section>
 
-      <section className="rounded-(--radius-card) border border-border bg-surface p-5 shadow-card">
-        <h2 className="text-lg font-semibold text-text-heading">Visit Records</h2>
+      <section className="ds-section">
+        <h2 className="ds-section-title">Visit Records</h2>
         {data.meetingForms.length === 0 ? (
           <div className="mt-4">
             <ExecutionEmptyState
@@ -79,8 +80,8 @@ export function CampaignRecordPage() {
         )}
       </section>
 
-      <section className="rounded-(--radius-card) border border-border bg-surface p-5 shadow-card">
-        <h2 className="text-lg font-semibold text-text-heading">Follow-ups</h2>
+      <section className="ds-section">
+        <h2 className="ds-section-title">Follow-ups</h2>
         {pendingFollowUps.length === 0 ? (
           <div className="mt-4">
             <ExecutionEmptyState
@@ -114,6 +115,6 @@ export function CampaignRecordPage() {
           </ul>
         )}
       </section>
-    </div>
+    </PageShell>
   )
 }

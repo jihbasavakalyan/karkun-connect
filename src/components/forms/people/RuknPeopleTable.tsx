@@ -3,6 +3,13 @@ import type { Rukn } from '@/data/ruknMaster'
 import { adminRuknDetailPath } from '@/constants/routes'
 import type { PersonStatus } from '@/types/karkun-registry.types'
 import { formatPersonStatus, type PeopleSortField } from '@/types/people.types'
+import { StatusBadge } from '@/components/ui/StatusBadge'
+import {
+  PEOPLE_TABLE_CELL_CLASS,
+  PEOPLE_TABLE_CLASS,
+  PEOPLE_TABLE_ROW_CLASS,
+  PEOPLE_TABLE_WRAPPER_CLASS,
+} from './peopleTableDisplay'
 
 type RuknPeopleTableProps = {
   records: Rukn[]
@@ -40,15 +47,11 @@ function SortHeader({
   )
 }
 
-function StatusBadge({ status }: { status: PersonStatus }) {
+function PersonStatusBadge({ status }: { status: PersonStatus }) {
   return (
-    <span
-      className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-        status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
-      }`}
-    >
+    <StatusBadge variant={status === 'active' ? 'healthy' : 'dormant'}>
       {formatPersonStatus(status)}
-    </span>
+    </StatusBadge>
   )
 }
 
@@ -64,8 +67,8 @@ export function RuknPeopleTable({
 }: RuknPeopleTableProps) {
   if (records.length === 0) {
     return (
-      <div className="rounded-(--radius-card) border border-border bg-surface p-8 text-center shadow-card">
-        <p className="text-secondary">No Rukn match your search or filters.</p>
+      <div className="ds-empty" role="status">
+        <p className="ds-empty-description">No Rukn match your search or filters.</p>
       </div>
     )
   }
@@ -74,9 +77,9 @@ export function RuknPeopleTable({
 
   return (
     <>
-      <div className="hidden overflow-x-auto rounded-(--radius-card) border border-border bg-surface shadow-card md:block">
-        <table className="min-w-full text-left text-sm">
-          <thead className="border-b border-border bg-surface-muted">
+      <div className={PEOPLE_TABLE_WRAPPER_CLASS}>
+        <table className={PEOPLE_TABLE_CLASS}>
+          <thead>
             <tr>
               <th className="px-4 py-3">
                 <input
@@ -120,8 +123,8 @@ export function RuknPeopleTable({
           </thead>
           <tbody>
             {records.map((rukn) => (
-              <tr key={rukn.id} className="border-b border-border last:border-b-0">
-                <td className="px-4 py-3">
+              <tr key={rukn.id} className={PEOPLE_TABLE_ROW_CLASS}>
+                <td className={PEOPLE_TABLE_CELL_CLASS}>
                   <input
                     type="checkbox"
                     checked={selectedIds.includes(rukn.id)}
@@ -129,18 +132,18 @@ export function RuknPeopleTable({
                     onChange={() => onToggleSelection(rukn.id)}
                   />
                 </td>
-                <td className="px-4 py-3 font-medium text-text-heading">
+                <td className={`${PEOPLE_TABLE_CELL_CLASS} font-medium text-text-heading`}>
                   <Link to={adminRuknDetailPath(rukn.id)} className="hover:text-primary hover:underline">
                     {rukn.name}
                   </Link>
                 </td>
-                <td className="px-4 py-3 text-secondary">{rukn.gender}</td>
-                <td className="px-4 py-3 text-secondary">{rukn.mobile || '—'}</td>
-                <td className="px-4 py-3">
-                  <StatusBadge status={rukn.status} />
+                <td className={`${PEOPLE_TABLE_CELL_CLASS} text-secondary`}>{rukn.gender}</td>
+                <td className={`${PEOPLE_TABLE_CELL_CLASS} text-secondary`}>{rukn.mobile || '—'}</td>
+                <td className={PEOPLE_TABLE_CELL_CLASS}>
+                  <PersonStatusBadge status={rukn.status} />
                 </td>
-                <td className="px-4 py-3 text-secondary">{rukn.updatedAt.slice(0, 10)}</td>
-                <td className="px-4 py-3">
+                <td className={`${PEOPLE_TABLE_CELL_CLASS} text-secondary`}>{rukn.updatedAt.slice(0, 10)}</td>
+                <td className={PEOPLE_TABLE_CELL_CLASS}>
                   <button
                     type="button"
                     className="text-sm font-medium text-primary hover:underline"
@@ -173,7 +176,7 @@ export function RuknPeopleTable({
                   <Link to={adminRuknDetailPath(rukn.id)} className="font-semibold text-text-heading">
                     {rukn.name}
                   </Link>
-                  <StatusBadge status={rukn.status} />
+                  <PersonStatusBadge status={rukn.status} />
                 </div>
                 <p className="mt-1 text-sm text-secondary">
                   {rukn.gender} · {rukn.mobile || 'No mobile'}

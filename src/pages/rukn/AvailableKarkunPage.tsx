@@ -9,6 +9,7 @@ import {
   ConnectKarkunConfirmModal,
   KarkunSearchField,
 } from '@/components/relationship'
+import { EmptyState, PageHeader, PageShell } from '@/components/ui'
 import { humanizeConnectionConfirmed } from '@/lib/relationshipPresentation'
 import { matchesKarkunRegistrySearch } from '@/lib/relationshipPresentation'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
@@ -44,14 +45,13 @@ export function AvailableKarkunPage() {
   }
 
   return (
-    <div className="relationship-page space-y-4">
-      <header>
-        <h1 className="text-2xl font-semibold text-text-heading">Connect Karkun</h1>
-        <p className="mt-2 text-secondary">
-          Search, connect, and keep going — {availableKarkunan.length} Karkun
-          {availableKarkunan.length === 1 ? '' : 's'} ready to connect.
-        </p>
-      </header>
+    <PageShell variant="narrow" className="relationship-page max-w-3xl">
+      <PageHeader
+        title="Connect Karkun"
+        description={`Search, connect, and keep going — ${availableKarkunan.length} Karkun${
+          availableKarkunan.length === 1 ? '' : 's'
+        } ready to connect.`}
+      />
 
       <KarkunSearchField
         id="available-karkun-search"
@@ -62,22 +62,24 @@ export function AvailableKarkunPage() {
       />
 
       {successMessage && (
-        <div
-          className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-900"
-          role="status"
-        >
+        <div className="ds-banner-success" role="status">
           {successMessage}
         </div>
       )}
 
       {availableKarkunan.length === 0 ? (
-        <div className="home-card text-center">
-          <p className="text-secondary">No Karkun is available to connect right now.</p>
-        </div>
+        <EmptyState
+          icon="🤝"
+          title="All caught up"
+          description="No Karkun is available to connect right now. Check back later or contact your administrator."
+          primaryAction={{ label: 'View Connected Karkuns', href: ROUTES.RUKN_MY_KARKUN }}
+        />
       ) : filtered.length === 0 ? (
-        <div className="home-card text-center">
-          <p className="text-secondary">No Karkun matches “{query}”.</p>
-        </div>
+        <EmptyState
+          icon="🔍"
+          title="No matches"
+          description={`No Karkun matches "${query}". Try a different name or number.`}
+        />
       ) : (
         <ul className="relationship-row-list">
           {filtered.map((karkun) => (
@@ -105,6 +107,6 @@ export function AvailableKarkunPage() {
         }}
         onConfirm={handleConfirmConnect}
       />
-    </div>
+    </PageShell>
   )
 }

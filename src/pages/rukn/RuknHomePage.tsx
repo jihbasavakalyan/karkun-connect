@@ -16,6 +16,7 @@ import { buildTelLink, buildWhatsAppLink } from '@/utils/personContactLinks'
 import { sortGuidanceByUrgency } from '@/lib/homePresentation'
 import { getGuidanceForRuknKarkuns } from '@/lib/guidance/guidanceEngine'
 import type { RuknCommandCenterSnapshot } from '@/types/campaignAutomation.types'
+import { HomePageSkeleton } from '@/components/ui'
 
 export function RuknHomePage() {
   const { user } = useAuth()
@@ -27,7 +28,7 @@ export function RuknHomePage() {
   const hasConnections = connectedKarkuns.length > 0
 
   if (!morningBrief) {
-    return null
+    return <HomePageSkeleton />
   }
 
   const topGuidance = sortGuidanceByUrgency(getGuidanceForRuknKarkuns(ruknId))[0]

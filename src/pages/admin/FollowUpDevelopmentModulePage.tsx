@@ -15,6 +15,7 @@ import type { FollowUpRecord } from '@/types/followUp'
 import { subscribeToFollowUpStore } from '@/stores/followUpStore'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
+import { PageHeader, PageShell } from '@/components/ui'
 
 const sections = [
   { id: 'follow-ups', label: 'Pending Follow-ups' },
@@ -32,17 +33,15 @@ function SectionNav({
   onChange: (section: FollowUpSection) => void
 }) {
   return (
-    <nav className="flex flex-wrap gap-2" aria-label="Follow-up sections">
+    <nav className="ds-tab-nav" aria-label="Follow-up sections">
       {sections.map((section) => (
         <button
           key={section.id}
           type="button"
           onClick={() => onChange(section.id)}
           className={[
-            'rounded-lg px-4 py-2 text-sm font-medium transition-colors',
-            active === section.id
-              ? 'bg-primary-muted text-primary'
-              : 'bg-surface text-secondary hover:bg-surface-muted hover:text-text-heading',
+            'ds-tab',
+            active === section.id ? 'ds-tab-active' : '',
           ].join(' ')}
         >
           {section.label}
@@ -136,21 +135,19 @@ export function FollowUpDevelopmentModulePage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-text-heading">Follow-up</h1>
-        <ActiveCampaignSubtitle />
-        <p className="mt-2 text-secondary">
-          Simple follow-ups created from a visit when another interaction is needed.
-        </p>
-      </div>
+    <PageShell>
+      <PageHeader
+        title="Follow-up"
+        description="Simple follow-ups created from a visit when another interaction is needed."
+      />
+      <ActiveCampaignSubtitle />
 
       <ExecutionSuccessBanner />
       <SectionNav active={activeSection} onChange={setSection} />
 
       {activeSection === 'follow-ups' && (
-        <section className="rounded-(--radius-card) border border-border bg-surface p-6 shadow-card">
-          <h2 className="text-lg font-semibold text-text-heading">Pending Follow-ups</h2>
+        <section className="ds-section">
+          <h2 className="ds-section-title">Pending Follow-ups</h2>
           <div className="mt-4">
             <FollowUpList
               records={getPendingFollowUps()}
@@ -164,8 +161,8 @@ export function FollowUpDevelopmentModulePage() {
       )}
 
       {activeSection === 'today' && (
-        <section className="rounded-(--radius-card) border border-border bg-surface p-6 shadow-card">
-          <h2 className="text-lg font-semibold text-text-heading">Today&apos;s Follow-ups</h2>
+        <section className="ds-section">
+          <h2 className="ds-section-title">Today&apos;s Follow-ups</h2>
           <div className="mt-4">
             <FollowUpList
               records={getTodaysFollowUps()}
@@ -179,8 +176,8 @@ export function FollowUpDevelopmentModulePage() {
       )}
 
       {activeSection === 'completed' && (
-        <section className="rounded-(--radius-card) border border-border bg-surface p-6 shadow-card">
-          <h2 className="text-lg font-semibold text-text-heading">Completed Follow-ups</h2>
+        <section className="ds-section">
+          <h2 className="ds-section-title">Completed Follow-ups</h2>
           <div className="mt-4">
             <FollowUpList
               records={getCompletedFollowUps()}
@@ -192,6 +189,6 @@ export function FollowUpDevelopmentModulePage() {
           </div>
         </section>
       )}
-    </div>
+    </PageShell>
   )
 }

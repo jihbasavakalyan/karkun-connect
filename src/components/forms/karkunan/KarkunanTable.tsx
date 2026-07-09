@@ -60,17 +60,17 @@ type KarkunanTableProps = {
 export function KarkunanTable({ records }: KarkunanTableProps) {
   if (records.length === 0) {
     return (
-      <div className="rounded-(--radius-card) border border-border bg-surface p-8 text-center shadow-card">
-        <p className="text-secondary">No Karkunan match your search or filters.</p>
+      <div className="ds-empty" role="status">
+        <p className="ds-empty-description">No Karkunan match your search or filters.</p>
       </div>
     )
   }
 
   return (
     <>
-      <div className="hidden overflow-x-auto rounded-(--radius-card) border border-border bg-surface shadow-card md:block">
-        <table className="min-w-full text-left text-sm">
-          <thead className="border-b border-border bg-surface-muted">
+      <div className="ds-table-wrap hidden md:block">
+        <table className="ds-table">
+          <thead>
             <tr>
               <th className="px-4 py-3 font-semibold text-text-heading">Name</th>
               <th className="px-4 py-3 font-semibold text-text-heading">Mobile</th>
@@ -84,19 +84,19 @@ export function KarkunanTable({ records }: KarkunanTableProps) {
           </thead>
           <tbody>
             {records.map((karkun) => (
-              <tr key={karkun.id} className="border-b border-border last:border-b-0">
-                <td className="px-4 py-3 font-medium text-text-heading">{karkun.name}</td>
-                <td className="px-4 py-3 text-secondary">{karkun.mobile}</td>
-                <td className="px-4 py-3 text-secondary">{karkun.area}</td>
-                <td className="px-4 py-3 text-secondary">{getConnectionStatusLabel(karkun.assignmentStatus)}</td>
-                <td className="px-4 py-3 text-secondary">
+              <tr key={karkun.id} className="ds-table-row">
+                <td className="ds-table-cell font-medium text-text-heading">{karkun.name}</td>
+                <td className="ds-table-cell text-secondary">{karkun.mobile}</td>
+                <td className="ds-table-cell text-secondary">{karkun.area}</td>
+                <td className="ds-table-cell text-secondary">{getConnectionStatusLabel(karkun.assignmentStatus)}</td>
+                <td className="ds-table-cell text-secondary">
                   {karkun.assignedRukn.trim() ? karkun.assignedRukn : '—'}
                 </td>
-                <td className="px-4 py-3 text-secondary">
+                <td className="ds-table-cell text-secondary">
                   {VISIT_STATUS_LABELS[karkun.visitStatus]}
                 </td>
-                <td className="px-4 py-3 text-secondary">{karkun.lastVisit ?? '—'}</td>
-                <td className="px-4 py-3">
+                <td className="ds-table-cell text-secondary">{karkun.lastVisit ?? '—'}</td>
+                <td className="ds-table-cell">
                   <KarkunanActionsMenu karkunId={karkun.id} />
                 </td>
               </tr>

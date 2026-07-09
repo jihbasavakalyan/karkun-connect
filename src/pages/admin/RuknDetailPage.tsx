@@ -8,10 +8,10 @@ import { ROUTES, adminAssignmentsPath } from '@/constants/routes'
 import { AssignmentHistoryTimeline } from '@/components/forms/assignment/AssignmentHistoryTimeline'
 import { CommunicationActions } from '@/components/communication/CommunicationActions'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
-import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import { useCommunication } from '@/hooks/useCommunication'
 import { getConnectionStatusLabel } from '@/lib/connectionLabels'
 import { formatPersonStatus } from '@/types/people.types'
+import { EmptyState, PageHeader, PageShell } from '@/components/ui'
 
 export function RuknDetailPage() {
   const { ruknId } = useParams<{ ruknId: string }>()
@@ -22,12 +22,14 @@ export function RuknDetailPage() {
 
   if (!rukn) {
     return (
-      <div className="rounded-(--radius-card) border border-border bg-surface p-8 text-center shadow-card">
-        <h1 className="text-xl font-semibold text-text-heading">Rukn Not Found</h1>
-        <Link to={ROUTES.ADMIN_RUKN} className="mt-6 inline-block">
-          <SecondaryButton type="button">Back to Rukn</SecondaryButton>
-        </Link>
-      </div>
+      <PageShell variant="narrow">
+        <EmptyState
+          icon="🔍"
+          title="Rukn not found"
+          description="This Rukn record does not exist or may have been removed."
+          primaryAction={{ label: 'Back to Rukn', href: ROUTES.ADMIN_RUKN }}
+        />
+      </PageShell>
     )
   }
 
@@ -38,19 +40,17 @@ export function RuknDetailPage() {
     .filter((name): name is string => Boolean(name))
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
-      <div>
-        <Link to={ROUTES.ADMIN_RUKN} className="text-sm font-medium text-primary hover:underline">
-          ← Back to Rukn
-        </Link>
-        <h1 className="mt-2 text-2xl font-semibold text-text-heading">{rukn.name}</h1>
-        <p className="mt-2 text-secondary">
-          {rukn.gender} · {rukn.place} · {mobileLabel}
-        </p>
-      </div>
+    <PageShell variant="narrow" className="max-w-4xl">
+      <Link to={ROUTES.ADMIN_RUKN} className="text-sm font-medium text-primary hover:underline">
+        ← Back to Rukn
+      </Link>
+      <PageHeader
+        title={rukn.name}
+        description={`${rukn.gender} · ${rukn.place} · ${mobileLabel}`}
+      />
 
-      <section className="rounded-(--radius-card) border border-border bg-surface p-5 shadow-card">
-        <h2 className="text-lg font-semibold text-text-heading">Contact</h2>
+      <section className="ds-section">
+        <h2 className="ds-section-title">Contact</h2>
         <dl className="mt-4 grid gap-4 sm:grid-cols-2 text-sm">
           <div>
             <dt className="text-secondary">WhatsApp</dt>
@@ -107,9 +107,9 @@ export function RuknDetailPage() {
       </section>
 
       {summary && (
-        <section className="rounded-(--radius-card) border border-border bg-surface p-5 shadow-card">
+        <section className="ds-section">
           <div className="flex items-start justify-between gap-3">
-            <h2 className="text-lg font-semibold text-text-heading">Connection</h2>
+            <h2 className="ds-section-title">Connection</h2>
             <Link to={adminAssignmentsPath({ ruknId: rukn.id })}>
               <PrimaryButton type="button" className="px-4 py-2 text-sm">
                 ➕ Connect Karkun
@@ -155,8 +155,8 @@ export function RuknDetailPage() {
       )}
 
       {auditLog.length > 0 && (
-        <section className="rounded-(--radius-card) border border-border bg-surface p-5 shadow-card">
-          <h2 className="text-lg font-semibold text-text-heading">Audit Log</h2>
+        <section className="ds-section">
+          <h2 className="ds-section-title">Audit Log</h2>
           <ul className="mt-4 space-y-2 text-sm">
             {auditLog.slice(0, 10).map((entry) => (
               <li key={entry.id} className="rounded-lg border border-border bg-surface-muted px-3 py-2">
@@ -170,6 +170,6 @@ export function RuknDetailPage() {
           </ul>
         </section>
       )}
-    </div>
+    </PageShell>
   )
 }

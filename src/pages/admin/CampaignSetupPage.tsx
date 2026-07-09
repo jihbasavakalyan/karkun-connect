@@ -11,18 +11,17 @@ import {
 } from '@/components/forms/campaign-setup'
 import { TOTAL_WIZARD_STEPS } from '@/constants/mockCampaignSetup'
 import { useCampaignSetupWizard } from '@/hooks/useCampaignSetupWizard'
+import { PageHeader, PageShell } from '@/components/ui'
 
 export function CampaignSetupPage() {
   const { state, dispatch, goNext, goBack, launchCampaign } = useCampaignSetupWizard()
 
   return (
-    <div className="mx-auto max-w-6xl">
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-text-heading">Campaign Setup</h1>
-        <p className="mt-2 text-secondary">
-          Configure your campaign in {TOTAL_WIZARD_STEPS} steps before launch.
-        </p>
-      </div>
+    <PageShell>
+      <PageHeader
+        title="Campaign Setup"
+        description={`Configure your campaign in ${TOTAL_WIZARD_STEPS} steps before launch.`}
+      />
 
       <div className="mb-6 lg:hidden">
         <CampaignChecklist state={state} />
@@ -32,7 +31,7 @@ export function CampaignSetupPage() {
         <div>
           <WizardStepIndicator currentStep={state.step} />
 
-          <div className="rounded-(--radius-card) border border-border bg-surface p-6 shadow-card sm:p-8">
+          <div className="ds-section sm:p-8">
             {state.step === 1 && <StepCampaignInfo state={state} dispatch={dispatch} />}
             {state.step === 2 && <StepRukn state={state} dispatch={dispatch} />}
             {state.step === 3 && <StepKarkunan state={state} dispatch={dispatch} />}
@@ -66,6 +65,6 @@ export function CampaignSetupPage() {
           <CampaignChecklist state={state} />
         </div>
       </div>
-    </div>
+    </PageShell>
   )
 }

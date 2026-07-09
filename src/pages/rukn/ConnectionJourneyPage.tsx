@@ -38,9 +38,10 @@ import { resolveActiveAssignmentForAnnexure1 } from '@/validation/annexure1Valid
 import { buildWhatsAppLink } from '@/utils/personContactLinks'
 import type { Annexure1FormState } from '@/types/annexure1.types'
 import type { MessageRecipient } from '@/types/communication'
+import { PageShell, StatusBadge } from '@/components/ui'
 
 function sectionClass(): string {
-  return 'rounded-(--radius-card) border border-border bg-surface p-5 shadow-card'
+  return 'ds-section'
 }
 
 function buildPostSubmitDestination(isAdminContext: boolean, followUpRequired: boolean): string {
@@ -214,14 +215,12 @@ export function ConnectionJourneyPage() {
   )
 
   return (
-    <div className="mx-auto max-w-2xl space-y-4 pb-28">
+    <PageShell variant="narrow" className="pb-28">
       <div className="flex items-center justify-between">
         <Link to={backPath} className="text-sm font-medium text-primary hover:underline">
           ← {isAdminContext ? 'Connections' : 'Connected Karkuns'}
         </Link>
-        <span className="rounded-full border border-border bg-surface-muted px-3 py-1 text-xs font-medium text-secondary">
-          {getConnectionStatusLabel(karkun.assignmentStatus)}
-        </span>
+        <StatusBadge variant="connected">{getConnectionStatusLabel(karkun.assignmentStatus)}</StatusBadge>
       </div>
 
       <RelationshipSummaryPanel
@@ -498,6 +497,6 @@ export function ConnectionJourneyPage() {
           />
         </>
       )}
-    </div>
+    </PageShell>
   )
 }

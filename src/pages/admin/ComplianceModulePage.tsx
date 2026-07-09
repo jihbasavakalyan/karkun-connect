@@ -38,6 +38,7 @@ import type { IjtemaAttendanceKarkunSummary, IjtemaAttendanceStatus } from '@/ty
 import type { JihWebPortalKarkunSummary } from '@/types/jihWebPortal'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
+import { PageHeader, PageShell } from '@/components/ui'
 
 const ACTION_BUTTON_CLASS = 'min-h-10 px-3 py-2 text-sm'
 
@@ -55,17 +56,15 @@ function ComplianceSectionNav({
   onChange: (section: ComplianceSection) => void
 }) {
   return (
-    <nav className="flex flex-wrap gap-2" aria-label="Compliance sections">
+    <nav className="ds-tab-nav" aria-label="Compliance sections">
       {COMPLIANCE_SECTIONS.map((section) => (
         <button
           key={section.id}
           type="button"
           onClick={() => onChange(section.id)}
           className={[
-            'min-h-10 rounded-lg px-4 py-2 text-sm font-medium transition-colors',
-            active === section.id
-              ? 'bg-primary-muted text-primary'
-              : 'bg-surface text-secondary hover:bg-surface-muted hover:text-text-heading',
+            'ds-tab',
+            active === section.id ? 'ds-tab-active' : '',
           ].join(' ')}
         >
           {section.label}
@@ -489,15 +488,12 @@ export function ComplianceModulePage() {
   const filterLabel = statusFilter || (isPendingView ? getPendingStatusLabel(activeSection) : '')
 
   return (
-    <div className="mx-auto max-w-6xl space-y-4 sm:space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-text-heading">Compliance</h1>
-        <ActiveCampaignSubtitle />
-        <p className="mt-2 text-secondary">What compliance work needs my attention today.</p>
-      </div>
+    <PageShell>
+      <PageHeader title="Compliance" description="What compliance work needs my attention today." />
+      <ActiveCampaignSubtitle />
 
-      <section className="rounded-(--radius-card) border border-border bg-surface p-4 shadow-card sm:p-6">
-        <h2 className="text-lg font-semibold text-text-heading">Compliance Summary</h2>
+      <section className="ds-section">
+        <h2 className="ds-section-title">Compliance Summary</h2>
         <div className="mt-4">
           <ComplianceSummaryCards />
         </div>
@@ -509,10 +505,10 @@ export function ComplianceModulePage() {
         onChange={setSection}
       />
 
-      <section className="rounded-(--radius-card) border border-border bg-surface p-4 shadow-card sm:p-6">
+      <section className="ds-section">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="text-lg font-semibold text-text-heading">{sectionLabel}</h2>
+            <h2 className="ds-section-title">{sectionLabel}</h2>
             {isPendingView && (
               <p className="mt-1 text-sm text-secondary">
                 Showing pending {getPendingStatusLabel(activeSection).toLowerCase()} items.
@@ -531,6 +527,6 @@ export function ComplianceModulePage() {
         </div>
         <div className="mt-4">{listContent}</div>
       </section>
-    </div>
+    </PageShell>
   )
 }

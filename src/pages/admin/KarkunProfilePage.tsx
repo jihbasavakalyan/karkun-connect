@@ -21,6 +21,7 @@ import { useCommunication } from '@/hooks/useCommunication'
 import { RuknAssignmentSelect } from '@/components/forms/people/RuknAssignmentSelect'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
+import { EmptyState, PageShell } from '@/components/ui'
 import type { KarkunRegistryRecord, PersonGender, PersonStatus } from '@/types/karkun-registry.types'
 import type { IjtemaAttendanceStatus } from '@/types/ijtemaAttendance'
 import { DEFAULT_PLACE, getFatherHusbandLabel } from '@/types/people.types'
@@ -429,19 +430,20 @@ export function KarkunProfilePage() {
 
   if (!karkun || !karkunId) {
     return (
-      <div className="mx-auto max-w-3xl rounded-(--radius-card) border border-border bg-surface p-8 text-center shadow-card">
-        <h1 className="text-xl font-semibold text-text-heading">Karkun Not Found</h1>
-        <p className="mt-2 text-secondary">This profile does not exist in the registry.</p>
-        <Link to={ROUTES.ADMIN_KARKUN} className="mt-6 inline-block">
-          <SecondaryButton type="button">Back to Karkun</SecondaryButton>
-        </Link>
-      </div>
+      <PageShell variant="narrow">
+        <EmptyState
+          icon="🔍"
+          title="Karkun not found"
+          description="This profile does not exist in the registry."
+          primaryAction={{ label: 'Back to Karkun', href: ROUTES.ADMIN_KARKUN }}
+        />
+      </PageShell>
     )
   }
 
   return (
-    <div className="mx-auto max-w-4xl overflow-hidden">
+    <PageShell variant="narrow" className="max-w-4xl overflow-hidden">
       <KarkunProfileForm key={karkunId} karkun={karkun} karkunId={karkunId} />
-    </div>
+    </PageShell>
   )
 }

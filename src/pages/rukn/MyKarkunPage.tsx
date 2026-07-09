@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react'
-import { Link, Navigate } from 'react-router-dom'
+import { Navigate } from 'react-router-dom'
 import { DEFAULT_DEMO_RUKN_ID } from '@/constants/demoRukn'
 import { ROUTES } from '@/constants/routes'
 import { ExecutionSuccessBanner } from '@/components/execution/ExecutionSuccessBanner'
 import { ConnectedKarkunCard, KarkunSearchField } from '@/components/relationship'
+import { EmptyState, PageHeader, PageShell } from '@/components/ui'
 import { useAuth } from '@/hooks/useAuth'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { matchesKarkunRegistrySearch } from '@/lib/relationshipPresentation'
@@ -36,13 +37,11 @@ export function MyKarkunPage() {
   }
 
   return (
-    <div className="relationship-page space-y-4">
-      <header>
-        <h1 className="text-2xl font-semibold text-text-heading">Connected Karkuns</h1>
-        <p className="mt-2 text-secondary">
-          Guide each connection — call, visit, or schedule without leaving this page.
-        </p>
-      </header>
+    <PageShell variant="narrow" className="relationship-page max-w-3xl">
+      <PageHeader
+        title="Connected Karkuns"
+        description="Guide each connection — call, visit, or schedule without leaving this page."
+      />
 
       <ExecutionSuccessBanner />
 
@@ -57,19 +56,18 @@ export function MyKarkunPage() {
       )}
 
       {myKarkunan.length === 0 ? (
-        <div className="home-card text-center">
-          <p className="text-secondary">You have not connected with any Karkun yet.</p>
-          <Link
-            to={ROUTES.RUKN_AVAILABLE_KARKUN}
-            className="mt-4 inline-block text-sm font-medium text-primary hover:underline"
-          >
-            + Connect Karkun
-          </Link>
-        </div>
+        <EmptyState
+          icon="👥"
+          title="No connections yet"
+          description="Connect with a Karkun to begin guiding them through the campaign journey."
+          primaryAction={{ label: 'Connect Karkun', href: ROUTES.RUKN_AVAILABLE_KARKUN }}
+        />
       ) : filtered.length === 0 ? (
-        <div className="home-card text-center">
-          <p className="text-secondary">No connected Karkun matches “{query}”.</p>
-        </div>
+        <EmptyState
+          icon="🔍"
+          title="No matches"
+          description={`No connected Karkun matches "${query}". Try a different name or number.`}
+        />
       ) : (
         <ul className="relationship-row-list">
           {filtered.map((karkun) => (
@@ -79,6 +77,6 @@ export function MyKarkunPage() {
           ))}
         </ul>
       )}
-    </div>
+    </PageShell>
   )
 }

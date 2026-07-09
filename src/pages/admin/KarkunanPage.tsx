@@ -40,6 +40,7 @@ import { BaitulMaalBulkUpdateModal } from '@/components/forms/baitulMaal/BaitulM
 import { IjtemaAttendanceBulkUpdateModal } from '@/components/forms/ijtema/IjtemaAttendanceBulkUpdateModal'
 import type { BaitulMaalStatus } from '@/types/baitulMaal'
 import type { IjtemaAttendanceStatus } from '@/types/ijtemaAttendance'
+import { PageHeader, PageShell } from '@/components/ui'
 
 type GenderTab = PersonGender
 
@@ -437,40 +438,37 @@ export function KarkunanPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-text-heading">Karkun Management</h1>
-          <p className="mt-2 text-secondary">
-            Manage Male and Female Karkun contacts, connections, and status separately.
-          </p>
-        </div>
+    <PageShell>
+      <PageHeader
+        title="Karkun Management"
+        description="Manage Male and Female Karkun contacts, connections, and status separately."
+        actions={
+          <KarkunPeopleActionBar
+            onAddMale={() => requestAddKarkun('Male')}
+            onAddFemale={() => requestAddKarkun('Female')}
+            onAssign={() => sectionHandlersRef.current?.openAssign()}
+            onImport={(file) => sectionHandlersRef.current?.handleImport(file)}
+            onExport={(format) => sectionHandlersRef.current?.handleExport(format)}
+          />
+        }
+      />
 
-        <KarkunPeopleActionBar
-          onAddMale={() => requestAddKarkun('Male')}
-          onAddFemale={() => requestAddKarkun('Female')}
-          onAssign={() => sectionHandlersRef.current?.openAssign()}
-          onImport={(file) => sectionHandlersRef.current?.handleImport(file)}
-          onExport={(format) => sectionHandlersRef.current?.handleExport(format)}
-        />
-      </div>
-
-      <div className="flex gap-2 border-b border-border">
+      <nav className="ds-tab-nav border-b border-border pb-px" aria-label="Karkun gender">
         {(['Male', 'Female'] as const).map((gender) => (
           <button
             key={gender}
             type="button"
-            className={`border-b-2 px-4 py-2 text-sm font-medium transition-colors ${
+            className={`ds-tab border-b-2 rounded-none px-4 ${
               activeGender === gender
-                ? 'border-primary text-primary'
-                : 'border-transparent text-secondary hover:text-text-heading'
+                ? 'border-primary text-primary ds-tab-active'
+                : 'border-transparent'
             }`}
             onClick={() => setActiveGender(gender)}
           >
             {gender} Karkuns
           </button>
         ))}
-      </div>
+      </nav>
 
       <KarkunGenderSection
         key={activeGender}
@@ -479,6 +477,6 @@ export function KarkunanPage() {
         onAddFormOpened={handleAddFormOpened}
         onRegisterHandlers={registerSectionHandlers}
       />
-    </div>
+    </PageShell>
   )
 }

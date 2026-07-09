@@ -1,18 +1,23 @@
-import { getComplianceStatusStyle } from '@/lib/complianceStatusStyles'
+import { StatusBadge, type StatusBadgeVariant } from '@/components/ui/StatusBadge'
 
 type ComplianceStatusBadgeProps = {
   status: string
 }
 
+const STATUS_VARIANT: Record<string, StatusBadgeVariant> = {
+  Present: 'success',
+  Absent: 'neutral',
+  Informed: 'info',
+  'Not recorded': 'warning',
+  Registered: 'success',
+  'Not Registered': 'warning',
+  Submitted: 'success',
+  Pending: 'pending',
+  Paid: 'success',
+}
+
 export function ComplianceStatusBadge({ status }: ComplianceStatusBadgeProps) {
   return (
-    <span
-      className={[
-        'inline-flex shrink-0 rounded-full border px-2.5 py-0.5 text-xs font-medium',
-        getComplianceStatusStyle(status),
-      ].join(' ')}
-    >
-      {status}
-    </span>
+    <StatusBadge variant={STATUS_VARIANT[status] ?? 'neutral'}>{status}</StatusBadge>
   )
 }

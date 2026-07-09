@@ -17,6 +17,7 @@ import { subscribeToAnnexure1Store } from '@/stores/annexure1Store'
 import { subscribeToFollowUpStore } from '@/stores/followUpStore'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
+import { PageHeader, PageShell } from '@/components/ui'
 
 const sections = [
   { id: 'pending', label: 'Pending Execution' },
@@ -36,17 +37,15 @@ function ExecutionSectionNav({
   onChange: (section: ExecutionSection) => void
 }) {
   return (
-    <nav className="flex flex-wrap gap-2" aria-label="Execution sections">
+    <nav className="ds-tab-nav" aria-label="Execution sections">
       {sections.map((section) => (
         <button
           key={section.id}
           type="button"
           onClick={() => onChange(section.id)}
           className={[
-            'rounded-lg px-4 py-2 text-sm font-medium transition-colors',
-            active === section.id
-              ? 'bg-primary-muted text-primary'
-              : 'bg-surface text-secondary hover:bg-surface-muted hover:text-text-heading',
+            'ds-tab',
+            active === section.id ? 'ds-tab-active' : '',
           ].join(' ')}
         >
           {section.label}
@@ -174,17 +173,14 @@ export function ExecutionModulePage() {
   const sectionLabel = sections.find((item) => item.id === activeSection)?.label ?? 'Execution'
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-text-heading">Execution</h1>
-        <ActiveCampaignSubtitle />
-        <p className="mt-2 text-secondary">What requires action today.</p>
-      </div>
+    <PageShell>
+      <PageHeader title="Execution" description="What requires action today." />
+      <ActiveCampaignSubtitle />
 
       <ExecutionSuccessBanner />
 
-      <section className="rounded-(--radius-card) border border-border bg-surface p-6 shadow-card">
-        <h2 className="text-lg font-semibold text-text-heading">Execution Summary</h2>
+      <section className="ds-section">
+        <h2 className="ds-section-title">Execution Summary</h2>
         <div className="mt-4">
           <ExecutionSummaryCards counts={counts} linkBase={ROUTES.ADMIN_EXECUTION} />
         </div>
@@ -192,8 +188,8 @@ export function ExecutionModulePage() {
 
       <ExecutionSectionNav active={activeSection} onChange={setSection} />
 
-      <section className="rounded-(--radius-card) border border-border bg-surface p-6 shadow-card">
-        <h2 className="text-lg font-semibold text-text-heading">{sectionLabel}</h2>
+      <section className="ds-section">
+        <h2 className="ds-section-title">{sectionLabel}</h2>
 
         {activeSection === 'reports' ? (
           <div className="mt-4">
@@ -231,6 +227,6 @@ export function ExecutionModulePage() {
           </ul>
         )}
       </section>
-    </div>
+    </PageShell>
   )
 }
