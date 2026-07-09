@@ -1,22 +1,24 @@
 # Basavakalyan Pilot Checklist
 
-Use this checklist to prepare and run the Karkun Connect 1.0 RC1 pilot in Basavakalyan.
+Use this checklist to prepare and run the Karkun Connect production pilot in Basavakalyan.
+
+> **Production auth:** Firebase email/password (Administrator) and phone OTP (Rukn). Demo accounts are no longer used.
 
 ## Pre-Installation
 
+- [ ] Complete [Production Checklist](../operations/production-checklist.md)
 - [ ] Confirm target browsers: Chrome, Edge, Safari (mobile)
-- [ ] Verify network access to deployment URL
-- [ ] Run `npm run build` and `npm run verify:rc1` on release build
+- [ ] Verify network access to production HTTPS URL
+- [ ] Run `npm run build`, `npm run verify:rc1`, `npm run verify:production`
 - [ ] Document deployment URL for administrators and Rukns
 
-## Demo Accounts
+## Accounts (Production)
 
-- [ ] Administrator: `admin@demo.com` / `password`
-- [ ] Male Rukn 1: `rukn1@demo.com` / `password`
-- [ ] Male Rukn 2: `rukn2@demo.com` / `password`
-- [ ] Female Rukn 1: `rukn3@demo.com` / `password`
-- [ ] Female Rukn 2: `rukn4@demo.com` / `password`
-- [ ] Distribute credentials securely (not via public channels)
+- [ ] Administrator Firebase accounts created (see [Admin Setup](../operations/admin-setup.md))
+- [ ] Custom claims `{ role: "administrator" }` set for admins
+- [ ] Rukn mobiles verified against master data
+- [ ] Custom claims `{ role: "rukn", ruknId: "..." }` set (recommended)
+- [ ] Credentials distributed securely (not via public channels)
 
 ## Campaign Setup
 
@@ -27,15 +29,16 @@ Use this checklist to prepare and run the Karkun Connect 1.0 RC1 pilot in Basava
 
 ## Assignment Process
 
-- [ ] Assign at least 2 Karkuns per demo Rukn (male to male, female to female)
+- [ ] Assign at least 2 Karkuns per pilot Rukn (male to male, female to female)
 - [ ] Verify assignment appears on Rukn dashboard after Rukn login
 - [ ] Test replace workflow with documented reason
 - [ ] Test remove assignment workflow
+- [ ] Verify multi-device sync (admin assigns, Rukn sees update)
 
 ## Execution Flow
 
-- [ ] Rukn opens Annexure-1 for an assigned Karkun
-- [ ] Complete form with progressive disclosure
+- [ ] Rukn opens visit journey for an assigned Karkun
+- [ ] Complete Annexure-1 form with progressive disclosure
 - [ ] Confirm duplicate submission is blocked
 - [ ] Administrator sees update at `/admin/execution`
 
@@ -60,6 +63,12 @@ Use this checklist to prepare and run the Karkun Connect 1.0 RC1 pilot in Basava
 - [ ] Login with Remember Me — close browser — reopen — session restored
 - [ ] Login without Remember Me — new tab works, new browser does not persist
 - [ ] Logout clears session and redirects to login
+- [ ] Rukn OTP login and resend flow works
+
+## Offline Testing
+
+- [ ] Make compliance update offline — no crash
+- [ ] Reconnect — data syncs after refresh
 
 ## Feedback Collection
 
@@ -68,18 +77,19 @@ Use this checklist to prepare and run the Karkun Connect 1.0 RC1 pilot in Basava
 - [ ] Schedule daily pilot review during first week
 - [ ] Track critical vs cosmetic issues separately
 
-## Known RC1 Limitations
+## Production Capabilities
 
-- No backend persistence — data resets on full reload (except auth session)
-- No push notifications
-- No territory mapping or analytics
-- Assignments are in-memory only for the session
+- Firebase Authentication (M7)
+- Cloud Firestore persistence with offline cache (M8)
+- Multi-device synchronization
+- JSON backup via Settings → Data Migration
 
 ## Rollback Plan
 
-- [ ] Keep previous stable build URL available
-- [ ] Document git tag/commit for RC1: see release notes
-- [ ] Communicate rollback trigger criteria (critical data loss, auth failure)
+- [ ] Keep previous stable build artifact available
+- [ ] Document git tag/commit for release
+- [ ] Firestore export taken before go-live
+- [ ] Communicate rollback trigger criteria (see [Recovery Guide](../operations/recovery-guide.md))
 
 ## Sign-Off
 

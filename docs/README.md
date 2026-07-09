@@ -10,8 +10,9 @@ Central repository for all project documentation related to **Karkun Connect**.
 | [Administrator Guide](guides/administrator-guide.md) | Full admin campaign workflow |
 | [Rukn Guide](guides/rukn-guide.md) | Field supervisor workflow |
 | [Architecture Index](architecture/index.md) | System structure and data flow |
+| [Operations (P1)](operations/README.md) | Production deployment and runbooks |
+| [Release Candidate](operations/release-candidate.md) | RC1 release notes and go-live |
 | [Pilot Checklist](pilot/basavakalyan-pilot-checklist.md) | Basavakalyan deployment checklist |
-| [Release Notes](sprints/sprint-13-rc1-release-notes.md) | Version 1.0.0 RC1 |
 | [Sprint History](sprints/sprint-history.md) | Development timeline |
 
 ## Subfolders
@@ -19,6 +20,7 @@ Central repository for all project documentation related to **Karkun Connect**.
 | Folder | Purpose |
 |--------|---------|
 | `guides/` | Role-based user documentation |
+| `operations/` | Production deployment, security, and runbooks (P1) |
 | `pilot/` | Pilot deployment and checklists |
 | `architecture/` | Technical architecture and design |
 | `sprints/` | Sprint reports and release notes |

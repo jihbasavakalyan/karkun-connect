@@ -25,7 +25,8 @@
     "migrate:templates": "node scripts/generate-migration-templates.mjs",
     "verify:migration": "npx vite-node scripts/verify-migration.ts",
     "verify:repositories": "npx vite-node scripts/verify-repositories.ts",
-    "verify:firestore": "npx vite-node scripts/verify-firestore.ts"
+    "verify:firestore": "npx vite-node scripts/verify-firestore.ts",
+    "verify:production": "npx vite-node scripts/verify-production-readiness.ts"
   },
   "dependencies": {
     "firebase": "^12.16.0",

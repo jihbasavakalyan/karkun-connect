@@ -21,6 +21,7 @@ const VERIFICATION_SCRIPTS = [
   'verify-migration.ts',
   'verify-repositories.ts',
   'verify-firestore.ts',
+  'verify-production-readiness.ts',
 ] as const
 
 for (const script of VERIFICATION_SCRIPTS) {
