@@ -87,6 +87,15 @@ Master go-live checklist for Basavakalyan pilot. P2 adds staging validation and 
 - [ ] Performance measurements recorded
 - [ ] [Go-Live Report](go-live-report.md) completed with Go recommendation
 
+## P3 — Pilot Operations & Launch Readiness
+
+- [ ] [Pilot Runbook](pilot-runbook.md) reviewed with Pilot Lead
+- [ ] [Administrator Manual](administrator-manual.md) and [Rukn Quick Guide](rukn-quick-guide.md) distributed
+- [ ] Phase 1–7 acceptance reports completed under [docs/pilot/](../pilot/)
+- [ ] [Known Issues](../pilot/known-issues.md) has zero Critical and zero High defects
+- [ ] [Go-Live Approval](../pilot/go-live-approval.md) signed by leadership
+- [ ] `npm run verify:p3` passed on release commit
+
 ## Sign-Off
 
 | Role | Name | Date | Signature |

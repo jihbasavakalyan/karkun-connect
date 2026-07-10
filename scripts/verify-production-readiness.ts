@@ -93,4 +93,27 @@ console.log('▶ migration utility present')
   )
 }
 
+console.log('▶ P3 pilot documentation present')
+{
+  const p3Docs = [
+    'docs/operations/pilot-runbook.md',
+    'docs/operations/administrator-manual.md',
+    'docs/operations/rukn-quick-guide.md',
+    'docs/operations/troubleshooting-guide.md',
+    'docs/operations/known-limitations.md',
+    'docs/operations/release-notes.md',
+    'docs/pilot/administrator-test-report.md',
+    'docs/pilot/rukn-test-report.md',
+    'docs/pilot/campaign-simulation-report.md',
+    'docs/pilot/smoke-test-report.md',
+    'docs/pilot/performance-report.md',
+    'docs/pilot/security-report.md',
+    'docs/pilot/go-live-approval.md',
+    'docs/pilot/known-issues.md',
+  ]
+  for (const doc of p3Docs) {
+    assert.ok(existsSync(path.join(projectRoot, doc)), `Missing ${doc}`)
+  }
+}
+
 console.log('Production operational readiness verification passed.')

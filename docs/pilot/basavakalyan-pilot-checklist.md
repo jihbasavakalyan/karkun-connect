@@ -9,8 +9,10 @@ Use this checklist to prepare and run the Karkun Connect production pilot in Bas
 - [ ] Complete [Production Checklist](../operations/production-checklist.md)
 - [ ] Confirm target browsers: Chrome, Edge, Safari (mobile)
 - [ ] Verify network access to production HTTPS URL
-- [ ] Run `npm run build`, `npm run verify:rc1`, `npm run verify:production`
+- [ ] Run `npm run build`, `npm run verify:rc1`, `npm run verify:production`, `npm run verify:p3`
 - [ ] Document deployment URL for administrators and Rukns
+- [ ] Complete P3 acceptance reports in [docs/pilot/](./) before go-live
+- [ ] Obtain [Go-Live Approval](go-live-approval.md) signatures
 
 ## Accounts (Production)
 

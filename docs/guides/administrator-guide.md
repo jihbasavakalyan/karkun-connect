@@ -2,7 +2,13 @@
 
 This guide walks administrators through the complete campaign workflow for the Basavakalyan pilot.
 
+> **Production pilot:** Use the [Administrator Manual](../operations/administrator-manual.md) for Firebase email/password login. Demo credentials below are for local/dev only and are **not** used in production.
+
 ## Login
+
+**Production:** Assigned Firebase administrator email + password (see [Admin Setup](../operations/admin-setup.md)).
+
+**Local / demo (dev only):**
 
 - Email: `admin@demo.com`
 - Password: `password`

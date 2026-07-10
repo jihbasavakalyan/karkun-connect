@@ -2,7 +2,17 @@
 
 This guide covers the Rukn (field supervisor) workflow for the Basavakalyan pilot.
 
-## Demo Accounts
+> **Production pilot:** Use the [Rukn Quick Guide](../operations/rukn-quick-guide.md). Login is **registered mobile + OTP** (M7.1). Demo email accounts below are for local/dev only and are **not** used in production.
+
+## Production Login
+
+1. Enter your registered mobile number (Rukn Master Login ID)
+2. Receive OTP only if the number exists in Rukn Master
+3. Verify OTP → Rukn Home
+
+Unregistered numbers never receive OTP — contact your administrator.
+
+## Demo Accounts (local / dev only)
 
 | Email | Rukn | Gender |
 |-------|------|--------|
@@ -17,7 +27,7 @@ Password for all: `password`
 
 ### 1. Login
 
-Sign in with your Rukn email. Enable **Remember Me** on personal devices you use in the field.
+**Production:** Registered mobile + OTP. **Local/dev:** Rukn demo email above. Enable **Remember Me** on personal devices you use in the field.
 
 ### 2. Dashboard (`/rukn`)
 

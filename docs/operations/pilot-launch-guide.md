@@ -1,6 +1,8 @@
 # Pilot Launch Guide — Basavakalyan
 
-Operational runbook for launching the Karkun Connect pilot with production Firebase and Firestore.
+Operational timeline for launching the Karkun Connect pilot with production Firebase and Firestore.
+
+> **P3 primary runbook:** Use [Pilot Runbook](pilot-runbook.md) for day-to-day operations, acceptance phases, and go-live gates. This document remains the T-7 / T-0 timeline companion.
 
 ## Timeline
 

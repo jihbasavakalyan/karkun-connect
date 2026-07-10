@@ -64,3 +64,6 @@ firebase deploy --only firestore:rules
 
 - [Backup Guide](backup-guide.md)
 - [Incident Response](incident-response.md)
+- [Pilot Runbook](pilot-runbook.md)
+- [Troubleshooting Guide](troubleshooting-guide.md)
+- [Go-Live Approval](../pilot/go-live-approval.md)
