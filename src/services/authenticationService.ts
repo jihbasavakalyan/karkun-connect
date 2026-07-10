@@ -15,13 +15,23 @@ import { RecaptchaVerifier } from 'firebase/auth'
 import { mapFirebaseAuthError, isOfflineError } from '@/lib/auth/authErrors'
 import { resolveAuthUser, toE164IndianPhone } from '@/lib/auth/roleResolver'
 import { getFirebaseAuth, isFirebaseConfigured } from '@/lib/firebase/firebase'
-import { isValidMobileFormat } from '@/lib/mobileValidation'
+import { logRuknAuthAttempt } from '@/services/ruknAuthAttemptLogger'
+import {
+  findByMobile,
+  phonesMatchRukn,
+  RUKN_AUTH_VERIFICATION_FAILED_MESSAGE,
+  RUKN_DUPLICATE_MOBILE_MESSAGE,
+  RUKN_INVALID_MOBILE_MESSAGE,
+  RUKN_NOT_REGISTERED_MESSAGE,
+} from '@/services/ruknIdentityService'
 import type { AuthUser, LoginResult, OtpSendResult, PasswordResetResult } from '@/types/auth.types'
+import type { Rukn } from '@/data/ruknMaster'
 
 export type AuthStateListener = (user: AuthUser | null) => void
 
 type OtpSession = {
   mobile: string
+  expectedRukn: Rukn
   confirmation: ConfirmationResult
 }
 
@@ -150,11 +160,37 @@ export const authenticationService = {
 
   async sendOtp(mobile: string): Promise<OtpSendResult> {
     try {
-      ensureFirebaseReady()
-      if (!isValidMobileFormat(mobile)) {
-        return { success: false, error: 'Mobile number must be exactly 10 digits.' }
+      const identity = await findByMobile(mobile)
+
+      if (!identity.allowed) {
+        if (identity.reason === 'INVALID_FORMAT') {
+          logRuknAuthAttempt({
+            mobile,
+            result: 'invalid_format',
+            registered: false,
+          })
+          return { success: false, error: RUKN_INVALID_MOBILE_MESSAGE }
+        }
+
+        if (identity.reason === 'NOT_REGISTERED') {
+          logRuknAuthAttempt({
+            mobile,
+            result: 'unregistered',
+            registered: false,
+          })
+          return { success: false, error: RUKN_NOT_REGISTERED_MESSAGE }
+        }
+
+        logRuknAuthAttempt({
+          mobile,
+          result: 'duplicate_mobile',
+          registered: false,
+          detail: identity.reason,
+        })
+        return { success: false, error: RUKN_DUPLICATE_MOBILE_MESSAGE }
       }
 
+      ensureFirebaseReady()
       await applyPersistence(rememberMePreference)
       const phoneNumber = toE164IndianPhone(mobile)
       const confirmation = await signInWithPhoneNumber(
@@ -162,10 +198,22 @@ export const authenticationService = {
         phoneNumber,
         getRecaptchaVerifier(),
       )
-      otpSession = { mobile, confirmation }
+      otpSession = { mobile, expectedRukn: identity.rukn, confirmation }
+      logRuknAuthAttempt({
+        mobile,
+        result: 'otp_sent',
+        registered: true,
+      })
       return { success: true }
     } catch (error) {
       resetRecaptcha()
+      logRuknAuthAttempt({
+        mobile,
+        result: 'otp_send_failed',
+        registered: true,
+        otpOutcome: 'failure',
+        detail: error instanceof Error ? error.message : String(error),
+      })
       return { success: false, error: mapFirebaseAuthError(error) }
     }
   },
@@ -178,11 +226,50 @@ export const authenticationService = {
       }
 
       await applyPersistence(rememberMe)
-      const result = await otpSession.confirmation.confirm(code.trim())
+      const { expectedRukn, confirmation, mobile: sessionMobile } = otpSession
+      const result = await confirmation.confirm(code.trim())
+
+      if (!phonesMatchRukn(result.user.phoneNumber, expectedRukn)) {
+        otpSession = null
+        resetRecaptcha()
+        await signOut(getFirebaseAuth())
+        logRuknAuthAttempt({
+          mobile: sessionMobile,
+          result: 'verification_mismatch',
+          registered: true,
+          otpOutcome: 'failure',
+        })
+        return { success: false, error: RUKN_AUTH_VERIFICATION_FAILED_MESSAGE }
+      }
+
       otpSession = null
       resetRecaptcha()
-      return finalizeLogin(result.user)
+      const loginResult = await finalizeLogin(result.user)
+      if (loginResult.success) {
+        logRuknAuthAttempt({
+          mobile: expectedRukn.mobile,
+          result: 'otp_success',
+          registered: true,
+          otpOutcome: 'success',
+        })
+      } else {
+        logRuknAuthAttempt({
+          mobile: expectedRukn.mobile,
+          result: 'otp_failed',
+          registered: true,
+          otpOutcome: 'failure',
+          detail: loginResult.error,
+        })
+      }
+      return loginResult
     } catch (error) {
+      logRuknAuthAttempt({
+        mobile: otpSession?.mobile ?? '',
+        result: 'otp_failed',
+        registered: true,
+        otpOutcome: 'failure',
+        detail: error instanceof Error ? error.message : String(error),
+      })
       if (isOfflineError(error)) {
         return { success: false, error: mapFirebaseAuthError(error) }
       }

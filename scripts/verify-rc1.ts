@@ -12,6 +12,7 @@ const projectRoot = path.join(scriptsDir, '..')
 const VERIFICATION_SCRIPTS = [
   'verify-routes.ts',
   'verify-auth-session.ts',
+  'verify-rukn-identity.ts',
   'verify-data-integrity.ts',
   'verify-inline-assignment.ts',
   'verify-persistence.ts',

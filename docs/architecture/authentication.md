@@ -51,14 +51,17 @@ Authentication is independent from Firestore (M8). Firebase Auth provides identi
 
 **Forgot password:** `sendPasswordResetEmail` via `resetPassword()`.
 
-### Rukn — Mobile + OTP
+### Rukn — Mobile + OTP (M7.1)
 
 1. User selects **Rukn** and enters a 10-digit mobile number.
-2. `sendOtp()` formats `+91` E.164 and calls `signInWithPhoneNumber` with invisible reCAPTCHA.
-3. User enters OTP; `verifyOtp()` confirms and resolves role.
-4. `findRuknIdByPhone()` matches the verified number against `ruknMaster` (until Firestore profiles in M8).
+2. `ruknIdentityService.findByMobile()` validates format and looks up **Rukn Master** — unregistered numbers stop here (no Firebase, no reCAPTCHA).
+3. `sendOtp()` calls `signInWithPhoneNumber` with invisible reCAPTCHA only when registered.
+4. User enters OTP; `verifyOtp()` confirms with Firebase, then verifies authenticated phone matches the same Rukn Master record.
+5. `resolveAuthUser()` assigns role and `ruknId`.
 
-**Resend:** 60-second countdown; `resendOtp()` clears and re-issues.
+See [Rukn Authentication (M7.1)](rukn-authentication.md) for business rules and sequence diagrams.
+
+**Resend:** 60-second countdown; `resendOtp()` clears and re-issues (re-runs identity lookup).
 
 ## Role Resolution
 
@@ -145,8 +148,9 @@ M7 establishes Firebase Auth as the identity layer. Multi-factor authentication 
 ## Verification
 
 ```bash
-npm run verify:auth    # role resolution, routes, errors, session cache
-npm run verify:rc1     # full regression suite
+npm run verify:auth           # role resolution, routes, errors, session cache
+npm run verify:rukn-identity  # M7.1 Rukn master lookup rules
+npm run verify:rc1            # full regression suite
 ```
 
 ## Related Files
@@ -154,6 +158,8 @@ npm run verify:rc1     # full regression suite
 ```
 src/lib/firebase/firebase.ts
 src/services/authenticationService.ts
+src/services/ruknIdentityService.ts
+src/services/ruknAuthAttemptLogger.ts
 src/lib/auth/roleResolver.ts
 src/lib/auth/authorization.ts
 src/lib/auth/authErrors.ts
