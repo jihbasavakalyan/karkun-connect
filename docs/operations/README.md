@@ -2,6 +2,8 @@
 
 Operational documentation for deploying and running Karkun Connect in production. Core product development is complete; this folder covers configuration, security, deployment, recovery, staging validation, and **pilot launch operations (P3)**.
 
+> **RC1 certified:** See [docs/release/](../release/) — tag `v1.0.0-rc1`. Feature development is frozen; only Critical/High fixes before pilot.
+
 ## Quick Links — P3 Pilot Operations
 
 | Document | Purpose |
@@ -48,6 +50,7 @@ npm run verify:rc1
 npm run verify:production   # P1 + P3 operational readiness checks
 npm run verify:p2           # P2 staging validation artifacts
 npm run verify:p3           # P3 pilot documentation artifacts
+npm run verify:rc1-cert     # RC1 release package certification
 npm run admin:export-seed   # Export seed JSON for Firestore import
 ```
 

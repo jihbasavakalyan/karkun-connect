@@ -2,8 +2,11 @@
 
 **Release date:** July 2026  
 **Target:** Basavakalyan pilot  
-**Phase:** P1 Production Readiness  
-**Commit baseline:** `main` after M6–M8 milestones
+**Phase:** RC1 Certification (after P1–P3)  
+**Git tag:** `v1.0.0-rc1`  
+**Official package:** [docs/release/RC1-CERTIFICATE.md](../release/RC1-CERTIFICATE.md)
+
+> This page is retained for historical RC1 notes. The **authoritative** certification package lives under `docs/release/`.
 
 ## Release Notes
 

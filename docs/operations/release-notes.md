@@ -77,7 +77,11 @@ npm run lint
 npm run build
 npm run verify:production
 npm run verify:rc1
+npm run verify:p3
+npm run verify:rc1-cert
 ```
+
+**RC1 package:** [docs/release/](../release/) — certificate, changelog, deployment sign-off.
 
 ---
 

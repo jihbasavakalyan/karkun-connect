@@ -29,6 +29,7 @@
     "verify:production": "npx vite-node scripts/verify-production-readiness.ts",
     "verify:p2": "npx vite-node scripts/verify-p2-readiness.ts",
     "verify:p3": "npx vite-node scripts/verify-p3-readiness.ts",
+    "verify:rc1-cert": "npx vite-node scripts/verify-rc1-certification.ts",
     "verify:login-render": "npx vite-node scripts/verify-login-render.ts",
     "verify:rukn-identity": "npx vite-node scripts/verify-rukn-identity.ts",
     "admin:export-seed": "npx vite-node scripts/admin/export-seed-backup.ts"

@@ -1,6 +1,8 @@
 # Known Issues — Basavakalyan Pilot V1
 
-Defect and issue log for Pilot V1 acceptance and launch. Update this file during P3 testing and the first week of pilot.
+Defect and issue log for Pilot V1 acceptance and launch. Update this file during acceptance testing and the first week of pilot.
+
+**RC1 freeze (`v1.0.0-rc1`):** Only Critical and High severity defects may be fixed before pilot. Enhancements go to the Version 1.1 backlog.
 
 **Severity policy:** Critical or High defects **block go-live**. Medium/Low may ship with workaround.
 
