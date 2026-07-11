@@ -8,6 +8,12 @@ import { matchesIjtemaAttendanceFilters } from '@/services/ijtemaAttendanceServi
 import { subscribeToJihWebPortalStore } from '@/stores/jihWebPortalStore'
 import { subscribeToBaitulMaalStore } from '@/stores/baitulMaalStore'
 import { subscribeToIjtemaAttendanceStore } from '@/stores/ijtemaAttendanceStore'
+import { getProductionMigrationCompletedFlag } from '@/services/productionDataMigrationService'
+import {
+  setRegistryTraceMigrationCompleted,
+  setRegistryTracePeopleVersion,
+  traceRegistryStage,
+} from '@/lib/registryHydrationTrace'
 import type { KarkunRegistryRecord, PersonGender } from '@/types/karkun-registry.types'
 import type { PeopleFilters, PeopleSortDirection, PeopleSortField } from '@/types/people.types'
 import { PEOPLE_PAGE_SIZE } from '@/types/people.types'
@@ -149,6 +155,15 @@ export function useKarkunPeopleManagement(sectionGender: PersonGender) {
       unsubIjtema()
     }
   }, [])
+
+  useEffect(() => {
+    setRegistryTracePeopleVersion(peopleVersion)
+    setRegistryTraceMigrationCompleted(getProductionMigrationCompletedFlag())
+    traceRegistryStage(`7_useKarkunPeopleManagement_${sectionGender}`, {
+      peopleVersion,
+      migrationCompleted: getProductionMigrationCompletedFlag(),
+    })
+  }, [peopleVersion, sectionGender])
 
   const [filters, setFilters] = useState<PeopleFilters>(initialFilters)
   const [currentPage, setCurrentPage] = useState(1)

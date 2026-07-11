@@ -10,6 +10,7 @@ import { reloadJihWebPortalStoreFromPersistence } from '@/stores/jihWebPortalSto
 import { reloadBroadcastListStoreFromPersistence } from '@/stores/broadcastListStore'
 import { loadPeopleRegistryFromPersistence } from '@/lib/peopleRegistryPersistence'
 import { notifyPeopleRegistryChange } from '@/lib/peopleStore'
+import { traceRegistryStage } from '@/lib/registryHydrationTrace'
 
 /** Re-hydrate in-memory stores from repository caches after remote Firestore updates. */
 export function hydrateStoresFromRepositories(): void {
@@ -24,5 +25,7 @@ export function hydrateStoresFromRepositories(): void {
   reloadJihWebPortalStoreFromPersistence()
   reloadBroadcastListStoreFromPersistence()
   loadPeopleRegistryFromPersistence()
+  traceRegistryStage('3_after_hydrateStoresFromRepositories_post_load')
   notifyPeopleRegistryChange()
+  traceRegistryStage('6_after_notifyPeopleRegistryChange_from_hydrateStores')
 }

@@ -2,20 +2,35 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
+import { traceRegistryStage } from '@/lib/registryHydrationTrace'
 
 async function runDeferredBootstrap(): Promise<void> {
+  traceRegistryStage('1_before_initializeRepositories')
+
   const { initializeRepositories } = await import('@/repositories/firestore/initialize')
   try {
     await initializeRepositories()
   } catch (error) {
     console.error('[bootstrap] repository initialization failed', error)
   }
+  traceRegistryStage('2_after_initializeRepositories')
 
-  const { runProductionDataMigration } = await import('@/services/productionDataMigrationService')
+  const { runProductionDataMigration, getProductionMigrationCompletedFlag } = await import(
+    '@/services/productionDataMigrationService'
+  )
   const { syncAllKarkunRegistryFromAssignments } = await import('@/services/assignmentService')
+  const { setRegistryTraceMigrationCompleted } = await import('@/lib/registryHydrationTrace')
 
   runProductionDataMigration()
+  setRegistryTraceMigrationCompleted(getProductionMigrationCompletedFlag())
+  traceRegistryStage('5_after_runProductionDataMigration', {
+    migrationCompleted: getProductionMigrationCompletedFlag(),
+  })
+
   syncAllKarkunRegistryFromAssignments()
+  traceRegistryStage('bootstrap_after_syncAllKarkunRegistryFromAssignments', {
+    migrationCompleted: getProductionMigrationCompletedFlag(),
+  })
 }
 
 function bootstrap(): void {

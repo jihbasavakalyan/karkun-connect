@@ -359,6 +359,16 @@ export class KarkunFirestoreRepository implements KarkunRepository {
   }
 }
 
+/** Diagnostics: whether the Firestore karkun SyncCache has been marked hydrated. */
+export function getKarkunCacheHydratedFlag(): boolean {
+  return karkunCache.getHydrated()
+}
+
+/** Diagnostics: current karkun documents held in the Firestore SyncCache. */
+export function getKarkunCacheCount(): number {
+  return karkunCache.get().karkuns.length
+}
+
 export class ConnectionFirestoreRepository implements ConnectionRepository {
   loadState(): RepositoryResult<ConnectionState> {
     const state = connectionCache.get()

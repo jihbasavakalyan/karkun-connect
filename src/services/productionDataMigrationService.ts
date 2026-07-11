@@ -208,6 +208,11 @@ export function getProductionMigrationSummary(): ProductionMigrationSummary | nu
   return lastMigrationSummary
 }
 
+/** Diagnostics: whether production migration finished in this JS session. */
+export function getProductionMigrationCompletedFlag(): boolean {
+  return migrationCompleted
+}
+
 export function formatProductionMigrationReport(summary: ProductionMigrationSummary): string {
   const femaleBlankNames = summary.femaleKarkuns.otherErrors.filter((entry) =>
     entry.reason.includes('Name is required'),

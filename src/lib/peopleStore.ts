@@ -32,6 +32,7 @@ import {
   emitPeopleRegistryChange,
   subscribeToPeopleStore,
 } from '@/lib/peopleRegistryEvents'
+import { traceRegistryStage } from '@/lib/registryHydrationTrace'
 
 export { subscribeToPeopleStore }
 
@@ -56,6 +57,7 @@ function notifyPeopleChange(): void {
 /** Notify subscribers after assignment-driven registry field updates. */
 export function notifyPeopleRegistryChange(): void {
   notifyPeopleChange()
+  traceRegistryStage('6_after_notifyPeopleRegistryChange')
 }
 
 function nowIso(): string {

@@ -3,6 +3,7 @@ import { ruknMaster } from '@/data/ruknMaster'
 import { getRepositories } from '@/repositories/provider'
 import { unwrapRepository } from '@/repositories/errors'
 import { emitPeopleRegistryChange } from '@/lib/peopleRegistryEvents'
+import { traceRegistryStage } from '@/lib/registryHydrationTrace'
 
 export function hasPersistedKarkunRegistry(): boolean {
   const result = getRepositories().karkun.exists()
@@ -45,6 +46,8 @@ export function loadPeopleRegistryFromPersistence(): {
     // Always wake UI after in-memory masters change — callers may also notify.
     emitPeopleRegistryChange()
   }
+
+  traceRegistryStage('4_after_loadPeopleRegistryFromPersistence')
 
   return {
     loadedKarkuns: karkunState.karkuns.length > 0,
