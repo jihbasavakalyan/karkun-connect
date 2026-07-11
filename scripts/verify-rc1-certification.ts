@@ -28,6 +28,7 @@ console.log('▶ RC1 release package documents')
     'docs/release/KNOWN-LIMITATIONS.md',
     'docs/release/DEPLOYMENT-SIGNOFF.md',
     'docs/release/SUPPORT-HANDBOOK.md',
+    'docs/release/AUTHENTICATION-CERTIFICATION.md',
   ]
   for (const doc of required) {
     assertFile(doc)

@@ -116,6 +116,7 @@ console.log('▶ P3 pilot documentation present')
     'docs/release/KNOWN-LIMITATIONS.md',
     'docs/release/DEPLOYMENT-SIGNOFF.md',
     'docs/release/SUPPORT-HANDBOOK.md',
+    'docs/release/AUTHENTICATION-CERTIFICATION.md',
   ]
   for (const doc of p3Docs) {
     assert.ok(existsSync(path.join(projectRoot, doc)), `Missing ${doc}`)

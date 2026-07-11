@@ -13,8 +13,10 @@ const AUTH_ERROR_MESSAGES: Record<string, string> = {
   'auth/missing-verification-code': 'Please enter the OTP sent to your mobile.',
   'auth/session-expired': 'Your session has expired. Please sign in again.',
   'auth/requires-recent-login': 'For security, please sign in again to continue.',
-  'auth/operation-not-allowed': 'This sign-in method is not enabled. Contact your administrator.',
+  'auth/operation-not-allowed': 'Unable to send OTP. Please try again in a moment.',
+  'auth/billing-not-enabled': 'Unable to send OTP. Please try again in a moment.',
   'auth/quota-exceeded': 'Service is temporarily unavailable. Please try again later.',
+  'auth/captcha-check-failed': 'Unable to send OTP. Please try again in a moment.',
 }
 
 export function mapFirebaseAuthError(error: unknown): string {
@@ -27,6 +29,10 @@ export function mapFirebaseAuthError(error: unknown): string {
     if (AUTH_ERROR_MESSAGES[code]) {
       return AUTH_ERROR_MESSAGES[code]!
     }
+  }
+
+  if (import.meta.env.DEV && typeof error === 'object' && error !== null && 'code' in error) {
+    console.warn('[auth]', (error as { code: string }).code, (error as { message?: string }).message)
   }
 
   return 'Something went wrong. Please try again.'

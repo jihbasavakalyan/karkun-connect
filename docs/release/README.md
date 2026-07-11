@@ -10,6 +10,7 @@ Official Release Candidate packaging for Basavakalyan Pilot V1.
 | [KNOWN-LIMITATIONS.md](KNOWN-LIMITATIONS.md) | Non-defect boundaries |
 | [DEPLOYMENT-SIGNOFF.md](DEPLOYMENT-SIGNOFF.md) | Deploy / go-live signatures |
 | [SUPPORT-HANDBOOK.md](SUPPORT-HANDBOOK.md) | Pilot support playbook |
+| [AUTHENTICATION-CERTIFICATION.md](AUTHENTICATION-CERTIFICATION.md) | Auth production certification & freeze |
 
 **Tag:** `v1.0.0-rc1`  
 **Verify:** `npm run verify:rc1-cert`
