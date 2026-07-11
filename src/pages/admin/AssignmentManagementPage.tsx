@@ -73,10 +73,11 @@ export function AssignmentManagementPage() {
   const assignableKarkuns = useMemo(() => {
     void assignmentVersion
     if (!selectedRuknId) return []
+    // Use only the Available Karkuns search field so clearing it restores the full eligible list.
     return getKarkunsForRuknAssignment(selectedRuknId).filter((karkun) =>
-      matchesKarkunRegistrySearch(karkun, karkunSearch || globalSearch),
+      matchesKarkunRegistrySearch(karkun, karkunSearch),
     )
-  }, [selectedRuknId, karkunSearch, globalSearch, assignmentVersion])
+  }, [selectedRuknId, karkunSearch, assignmentVersion])
 
   const filteredRukns = useMemo(() => {
     void assignmentVersion
@@ -349,7 +350,7 @@ export function AssignmentManagementPage() {
               No available Karkuns match your search for {selectedRukn.name}.
             </div>
           ) : (
-            <ul className="relationship-row-list max-h-none">
+            <ul className="relationship-row-list max-h-[min(50vh,24rem)] overflow-y-auto overscroll-contain pr-1">
               {assignableKarkuns.map((karkun) => (
                 <li key={karkun.id}>
                   <AvailableKarkunRow

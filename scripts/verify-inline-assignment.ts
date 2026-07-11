@@ -4,6 +4,7 @@
  */
 import { MOCK_KARKUN_REGISTRY } from '@/constants/mockKarkunRegistry'
 import { ruknMaster } from '@/data/ruknMaster'
+import { matchesKarkunRegistrySearch } from '@/lib/relationshipPresentation'
 import {
   changeKarkunRuknAssignment,
   getAssignedKarkunanForRukn,
@@ -382,7 +383,27 @@ function verifyMultiAssignmentReplaceTargetsCorrectKarkun(gender: PersonGender):
   )
 }
 
+function verifyKarkunSearchMatching(): void {
+  const sample: KarkunRegistryRecord = {
+    ...createKarkun('verify-search-k1', 'Male'),
+    name: 'Ahmed Khan',
+    fatherHusbandName: 'Yusuf Khan',
+    mobile: '9876543210',
+    area: 'Basavakalyan',
+    place: 'Basavakalyan',
+  }
+
+  assert(matchesKarkunRegistrySearch(sample, ''), 'Empty search must match all')
+  assert(matchesKarkunRegistrySearch(sample, 'ahmed'), 'Partial name must match')
+  assert(matchesKarkunRegistrySearch(sample, 'khan ahmed'), 'Multi-word order-independent search must match')
+  assert(matchesKarkunRegistrySearch(sample, '98765'), 'Partial mobile digits must match')
+  assert(matchesKarkunRegistrySearch(sample, 'basava'), 'Area/place token must match')
+  assert(!matchesKarkunRegistrySearch(sample, 'zzzz-no-match'), 'Non-matching query must fail')
+  assert(matchesKarkunRegistrySearch(sample, '  '), 'Whitespace-only query must match all')
+}
+
 runProductionDataMigration()
+verifyKarkunSearchMatching()
 reset()
 verifyInlineGenderFlow('Male')
 reset()

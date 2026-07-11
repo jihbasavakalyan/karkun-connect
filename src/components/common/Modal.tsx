@@ -6,9 +6,13 @@ type ModalProps = {
   title: string
   onClose: () => void
   children: ReactNode
+  /** When set, stays pinned below the scrollable body (Cancel / primary actions). */
+  footer?: ReactNode
+  /** Widen modal for denser selection UIs (e.g. connection picker). */
+  size?: 'md' | 'lg'
 }
 
-export function Modal({ isOpen, title, onClose, children }: ModalProps) {
+export function Modal({ isOpen, title, onClose, children, footer, size = 'md' }: ModalProps) {
   useEffect(() => {
     if (!isOpen) {
       return
@@ -47,8 +51,14 @@ export function Modal({ isOpen, title, onClose, children }: ModalProps) {
         onClick={onClose}
       />
 
-      <div className="relative z-10 max-h-[90svh] w-full max-w-lg overflow-y-auto rounded-(--radius-card) border border-border bg-surface p-6 shadow-card">
-        <div className="mb-6 flex items-start justify-between gap-4">
+      <div
+        className={[
+          'relative z-10 flex w-full flex-col overflow-hidden rounded-(--radius-card) border border-border bg-surface shadow-card',
+          'max-h-[min(92svh,40rem)]',
+          size === 'lg' ? 'max-w-xl' : 'max-w-lg',
+        ].join(' ')}
+      >
+        <div className="flex shrink-0 items-start justify-between gap-4 border-b border-border px-5 py-4 sm:px-6">
           <h2 id="modal-title" className="text-xl font-semibold text-text-heading">
             {title}
           </h2>
@@ -61,7 +71,12 @@ export function Modal({ isOpen, title, onClose, children }: ModalProps) {
             <Icon name="x" size="md" />
           </button>
         </div>
-        {children}
+
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 sm:px-6">{children}</div>
+
+        {footer ? (
+          <div className="shrink-0 border-t border-border bg-surface px-5 py-4 sm:px-6">{footer}</div>
+        ) : null}
       </div>
     </div>
   )

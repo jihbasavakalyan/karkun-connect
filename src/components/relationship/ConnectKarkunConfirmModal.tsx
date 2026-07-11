@@ -26,7 +26,21 @@ export function ConnectKarkunConfirmModal({
   }
 
   return (
-    <Modal isOpen={isOpen} title="Connect Karkun" onClose={onClose}>
+    <Modal
+      isOpen={isOpen}
+      title="Connect Karkun"
+      onClose={onClose}
+      footer={
+        <div className="flex flex-col gap-3">
+          <PrimaryButton type="button" fullWidth onClick={onConfirm}>
+            Confirm Connection
+          </PrimaryButton>
+          <SecondaryButton type="button" fullWidth onClick={onClose}>
+            Cancel
+          </SecondaryButton>
+        </div>
+      }
+    >
       <p className="text-secondary">
         {ruknName
           ? `Connect ${karkun.name} with ${ruknName}?`
@@ -53,14 +67,6 @@ export function ConnectKarkunConfirmModal({
         </div>
       </dl>
       {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
-      <div className="mt-6 flex flex-col gap-3">
-        <PrimaryButton type="button" fullWidth onClick={onConfirm}>
-          Confirm Connection
-        </PrimaryButton>
-        <SecondaryButton type="button" fullWidth onClick={onClose}>
-          Cancel
-        </SecondaryButton>
-      </div>
     </Modal>
   )
 }

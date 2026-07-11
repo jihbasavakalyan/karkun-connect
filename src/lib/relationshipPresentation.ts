@@ -1,4 +1,5 @@
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
+import { normalizeMobile } from '@/lib/mobileValidation'
 import { getLatestSubmissionForKarkun } from '@/stores/annexure1Store'
 
 export function matchesKarkunRegistrySearch(
@@ -22,7 +23,18 @@ export function matchesKarkunRegistrySearch(
     .join(' ')
     .toLowerCase()
 
-  return haystack.includes(term)
+  const digitQuery = term.replace(/\D/g, '')
+  if (digitQuery.length >= 3) {
+    const mobileDigits = normalizeMobile(karkun.mobile)
+    const whatsappDigits = normalizeMobile(karkun.whatsapp ?? '')
+    if (mobileDigits.includes(digitQuery) || whatsappDigits.includes(digitQuery)) {
+      return true
+    }
+  }
+
+  // Every whitespace-separated token must appear somewhere (order-independent).
+  // Fixes multi-word searches that failed with a single contiguous includes() check.
+  return term.split(/\s+/).every((token) => token.length > 0 && haystack.includes(token))
 }
 
 export function formatLastVisitLabel(karkunId: string): string {

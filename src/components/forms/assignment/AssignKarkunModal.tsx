@@ -64,13 +64,30 @@ export function AssignKarkunModal({ isOpen, onClose, genderFilter }: AssignKarku
     setError('')
     setPendingKarkunId(null)
     setRuknId('')
+    setQuery('')
     onClose()
   }
 
   return (
     <>
-      <Modal isOpen={isOpen && !pendingKarkun} title="Connect Karkun" onClose={handleClose}>
+      <Modal
+        isOpen={isOpen && !pendingKarkun}
+        title="Connect Karkun"
+        onClose={handleClose}
+        size="lg"
+        footer={
+          <SecondaryButton type="button" fullWidth onClick={handleClose}>
+            Close
+          </SecondaryButton>
+        }
+      >
         <div className="space-y-4">
+          <p className="text-sm text-secondary">
+            {availableKarkunan.length} available Karkun
+            {availableKarkunan.length === 1 ? '' : 's'}
+            {genderFilter ? ` (${genderFilter})` : ''}. Search filters the list live.
+          </p>
+
           <KarkunSearchField
             id="assign-karkun-modal-search"
             value={query}
@@ -78,34 +95,35 @@ export function AssignKarkunModal({ isOpen, onClose, genderFilter }: AssignKarku
             resultCount={query.trim() ? filtered.length : undefined}
           />
 
-          <ul className="relationship-row-list max-h-[18rem] overflow-y-auto">
-            {filtered.map((karkun) => (
-              <li key={karkun.id}>
-                <AvailableKarkunRow
-                  karkun={karkun}
-                  onConnect={() => {
-                    setPendingKarkunId(karkun.id)
-                    setRuknId('')
-                    setError('')
-                  }}
-                />
-              </li>
-            ))}
-          </ul>
-
-          {filtered.length === 0 && (
-            <p className="text-sm text-secondary">No available Karkuns match your search.</p>
-          )}
+          <div className="overflow-hidden rounded-xl border border-border">
+            <ul className="max-h-[min(40vh,16rem)] space-y-0 overflow-y-auto overscroll-contain sm:max-h-[18rem]">
+              {filtered.map((karkun) => (
+                <li key={karkun.id} className="border-b border-border last:border-b-0 p-2">
+                  <AvailableKarkunRow
+                    karkun={karkun}
+                    onConnect={() => {
+                      setPendingKarkunId(karkun.id)
+                      setRuknId('')
+                      setError('')
+                    }}
+                  />
+                </li>
+              ))}
+            </ul>
+            {filtered.length === 0 && (
+              <p className="px-4 py-6 text-center text-sm text-secondary">
+                {availableKarkunan.length === 0
+                  ? 'No available Karkuns to connect.'
+                  : 'No Karkuns match your search. Clear the search to see the full list.'}
+              </p>
+            )}
+          </div>
 
           {genderFilter && (
             <p className="text-xs text-secondary">
               Only {genderFilter} Karkuns can be connected to {genderFilter} Rukns.
             </p>
           )}
-
-          <SecondaryButton type="button" fullWidth onClick={handleClose}>
-            Close
-          </SecondaryButton>
         </div>
       </Modal>
 
@@ -117,6 +135,11 @@ export function AssignKarkunModal({ isOpen, onClose, genderFilter }: AssignKarku
           setRuknId('')
           setError('')
         }}
+        footer={
+          <PrimaryButton type="button" fullWidth disabled={!ruknId} onClick={handleAssign}>
+            Confirm Connection
+          </PrimaryButton>
+        }
       >
         {pendingKarkun && (
           <div className="space-y-4">
@@ -124,7 +147,7 @@ export function AssignKarkunModal({ isOpen, onClose, genderFilter }: AssignKarku
               Connect <span className="font-semibold text-text-heading">{pendingKarkun.name}</span>{' '}
               with:
             </p>
-            <div className="grid gap-2">
+            <div className="grid max-h-[min(40vh,14rem)] gap-2 overflow-y-auto overscroll-contain">
               {ruknOptions.map((rukn) => (
                 <button
                   key={rukn.id}
@@ -144,9 +167,6 @@ export function AssignKarkunModal({ isOpen, onClose, genderFilter }: AssignKarku
               <p className="text-sm text-secondary">No compatible active Rukns found.</p>
             )}
             {error && <p className="text-sm text-red-600">{error}</p>}
-            <PrimaryButton type="button" fullWidth disabled={!ruknId} onClick={handleAssign}>
-              Confirm Connection
-            </PrimaryButton>
           </div>
         )}
       </Modal>
