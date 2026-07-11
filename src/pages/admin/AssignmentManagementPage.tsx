@@ -230,7 +230,9 @@ export function AssignmentManagementPage() {
         </button>
       </div>
 
-      {activeView === 'mapping' && <AssignmentMappingView version={assignmentVersion} />}
+      {activeView === 'mapping' && (
+        <AssignmentMappingView version={assignmentVersion + peopleVersion} />
+      )}
 
       {activeView === 'assign' && (
       <>

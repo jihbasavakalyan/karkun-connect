@@ -4,9 +4,11 @@ import { ruknMaster } from '@/data/ruknMaster'
 import { MessageComposerModal } from '@/components/communication/MessageComposerModal'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { useCommunication } from '@/hooks/useCommunication'
+import { usePeopleStore } from '@/hooks/usePeopleStore'
 import type { MessageRecipient, MessageRecipientKind } from '@/types/communication'
 
 export function IndividualMessagesPanel() {
+  const peopleVersion = usePeopleStore()
   const { sendIndividualMessage } = useCommunication()
   const [kind, setKind] = useState<MessageRecipientKind>('karkun')
   const [personId, setPersonId] = useState('')
@@ -21,7 +23,8 @@ export function IndividualMessagesPanel() {
     return ruknMaster
       .filter((r) => r.status === 'active' && r.mobile.trim())
       .map((r) => ({ id: r.id, name: r.name, mobile: r.mobile, whatsapp: r.whatsapp }))
-  }, [kind])
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- registry is module state
+  }, [kind, peopleVersion])
 
   const selected = options.find((option) => option.id === personId)
   const recipient: MessageRecipient | null = selected

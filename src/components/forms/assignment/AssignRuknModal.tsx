@@ -38,6 +38,7 @@ export function AssignRuknModal({
 
   const eligibleKarkuns = useMemo(
     () => (rukn ? getKarkunsForRuknAssignment(rukn.id) : []),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- registry is module state
     [rukn, peopleVersion],
   )
 

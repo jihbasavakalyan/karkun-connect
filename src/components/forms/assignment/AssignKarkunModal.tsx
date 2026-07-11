@@ -15,9 +15,12 @@ type AssignKarkunModalProps = {
 }
 
 export function AssignKarkunModal({ isOpen, onClose, genderFilter }: AssignKarkunModalProps) {
-  const { getAvailableKarkunan, assignKarkun } = useAssignmentEngine()
-  const availableKarkunan = getAvailableKarkunan().filter(
-    (k) => !genderFilter || k.gender === genderFilter,
+  const { assignmentVersion, getAvailableKarkunan, assignKarkun } = useAssignmentEngine()
+  const availableKarkunan = useMemo(
+    () =>
+      getAvailableKarkunan().filter((k) => !genderFilter || k.gender === genderFilter),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- assignmentVersion includes people hydrate
+    [assignmentVersion, genderFilter, getAvailableKarkunan],
   )
   const [query, setQuery] = useState('')
   const [pendingKarkunId, setPendingKarkunId] = useState<string | null>(null)

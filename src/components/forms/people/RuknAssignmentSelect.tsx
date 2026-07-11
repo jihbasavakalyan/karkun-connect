@@ -1,6 +1,7 @@
 import { useEffect, useId, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { subscribeToAssignments } from '@/lib/assignmentEngine'
 import { getCompatibleRuknsForKarkun } from '@/lib/peopleStore'
+import { usePeopleStore } from '@/hooks/usePeopleStore'
 import { formatPersonNameForDisplay } from '@/utils/formatPersonDisplay'
 
 type RuknAssignmentSelectProps = {
@@ -23,6 +24,7 @@ export function RuknAssignmentSelect({
   const listboxId = useId()
   const containerRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
+  const peopleVersion = usePeopleStore()
   const [isOpen, setIsOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [assignmentVersion, setAssignmentVersion] = useState(0)
@@ -34,8 +36,9 @@ export function RuknAssignmentSelect({
 
   const options = useMemo(() => {
     void assignmentVersion
+    void peopleVersion
     return getCompatibleRuknsForKarkun(karkunId)
-  }, [karkunId, assignmentVersion])
+  }, [karkunId, assignmentVersion, peopleVersion])
 
   const filteredOptions = useMemo(() => {
     const normalized = query.trim().toLowerCase()

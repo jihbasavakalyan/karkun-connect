@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { RELEASE_REASON_OPTIONS, getReleaseReasonLabel, type ReleaseReason } from '@/types/assignment.types'
 import { Modal } from '@/components/common/Modal'
@@ -25,8 +25,12 @@ export function ReplaceKarkunModal({
   onClose,
   onComplete,
 }: ReplaceKarkunModalProps) {
-  const { getAvailableKarkunan, replaceKarkun } = useAssignmentEngine()
-  const availableKarkunan = getAvailableKarkunan()
+  const { assignmentVersion, getAvailableKarkunan, replaceKarkun } = useAssignmentEngine()
+  const availableKarkunan = useMemo(
+    () => getAvailableKarkunan(),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- assignmentVersion includes people hydrate
+    [assignmentVersion, getAvailableKarkunan],
+  )
   const [step, setStep] = useState<'release' | 'select'>('release')
   const [reason, setReason] = useState<ReleaseReason>('Wrong Assignment')
   const [newKarkunId, setNewKarkunId] = useState('')

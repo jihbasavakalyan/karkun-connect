@@ -2,6 +2,7 @@ import { MOCK_KARKUN_REGISTRY } from '@/constants/mockKarkunRegistry'
 import { ruknMaster } from '@/data/ruknMaster'
 import { getRepositories } from '@/repositories/provider'
 import { unwrapRepository } from '@/repositories/errors'
+import { emitPeopleRegistryChange } from '@/lib/peopleRegistryEvents'
 
 export function hasPersistedKarkunRegistry(): boolean {
   const result = getRepositories().karkun.exists()
@@ -26,14 +27,23 @@ export function loadPeopleRegistryFromPersistence(): {
   )
   const rukns = unwrapRepository(getRepositories().rukn.loadAll(), [])
 
+  let mutated = false
+
   if (karkunState.karkuns.length > 0) {
     MOCK_KARKUN_REGISTRY.length = 0
     MOCK_KARKUN_REGISTRY.push(...karkunState.karkuns)
+    mutated = true
   }
 
   if (rukns.length > 0) {
     ruknMaster.length = 0
     ruknMaster.push(...rukns)
+    mutated = true
+  }
+
+  if (mutated) {
+    // Always wake UI after in-memory masters change — callers may also notify.
+    emitPeopleRegistryChange()
   }
 
   return {

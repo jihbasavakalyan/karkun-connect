@@ -15,7 +15,7 @@ import {
   releaseKarkun,
   subscribeToAssignments,
 } from '@/lib/assignmentEngine'
-import { subscribeToPeopleStore } from '@/lib/peopleStore'
+import { subscribeToPeopleStore } from '@/lib/peopleRegistryEvents'
 import {
   getAssignmentDashboardMetrics,
   getKarkunWithWorkload,

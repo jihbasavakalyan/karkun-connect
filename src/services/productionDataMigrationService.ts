@@ -7,9 +7,11 @@ import {
   getAllKarkuns,
   getPeopleStatistics,
   importKarkunsFromRows,
+  notifyPeopleRegistryChange,
   removeFemaleKarkunsFromRegistry,
   removeMaleKarkunsFromRegistry,
 } from '@/lib/peopleStore'
+import { MOCK_KARKUN_REGISTRY } from '@/constants/mockKarkunRegistry'
 import {
   ensureBaitulMaalRecord,
 } from '@/services/baitulMaalService'
@@ -125,7 +127,9 @@ function initializeComplianceDefaults(): void {
 }
 
 export function runProductionDataMigration(): ProductionMigrationSummary {
-  if (migrationCompleted && lastMigrationSummary) {
+  // Same-session short-circuit only when in-memory registry is already populated.
+  // If MOCK was cleared (HMR / reset) while this flag stayed true, fall through and reload.
+  if (migrationCompleted && lastMigrationSummary && MOCK_KARKUN_REGISTRY.length > 0) {
     return lastMigrationSummary
   }
 
@@ -155,6 +159,8 @@ export function runProductionDataMigration(): ProductionMigrationSummary {
       }
       migrationCompleted = true
       lastMigrationSummary = summary
+      // loadPeopleRegistryFromPersistence mutates MOCK without notifying — wake Karkun Management.
+      notifyPeopleRegistryChange()
       return summary
     }
   }

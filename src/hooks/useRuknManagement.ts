@@ -79,7 +79,7 @@ function sortRukns(
 }
 
 export function useRuknManagement() {
-  usePeopleStore()
+  const peopleVersion = usePeopleStore()
 
   const [filters, setFilters] = useState<PeopleFilters>(initialFilters)
   const [currentPage, setCurrentPage] = useState(1)
@@ -87,7 +87,11 @@ export function useRuknManagement() {
   const [sortDirection, setSortDirection] = useState<PeopleSortDirection>('asc')
   const [selectedIds, setSelectedIds] = useState<string[]>([])
 
-  const allRukns = getAllRukns()
+  const allRukns = useMemo(
+    () => getAllRukns(),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- registry is module state
+    [peopleVersion],
+  )
 
   const filteredRecords = useMemo(() => {
     const filtered = allRukns.filter((rukn) => matchesRuknFilters(rukn, filters))

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { subscribeToPeopleStore } from '@/lib/peopleStore'
+import { subscribeToPeopleStore } from '@/lib/peopleRegistryEvents'
 
 export function usePeopleStore(): number {
   const [version, setVersion] = useState(0)

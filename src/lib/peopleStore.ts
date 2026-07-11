@@ -28,9 +28,12 @@ import type {
 import type { ConflictResolution } from '@/types/dataMigration'
 import { DEFAULT_PLACE } from '@/types/people.types'
 import { persistPeopleRegistry } from '@/lib/peopleRegistryPersistence'
+import {
+  emitPeopleRegistryChange,
+  subscribeToPeopleStore,
+} from '@/lib/peopleRegistryEvents'
 
-type PeopleListener = () => void
-const listeners = new Set<PeopleListener>()
+export { subscribeToPeopleStore }
 
 export type MobileLookupResult = {
   kind: PersonKind
@@ -46,18 +49,13 @@ export type PeopleMutationResult = {
 }
 
 function notifyPeopleChange(): void {
-  listeners.forEach((listener) => listener())
+  emitPeopleRegistryChange()
   savePeopleRegistry()
 }
 
 /** Notify subscribers after assignment-driven registry field updates. */
 export function notifyPeopleRegistryChange(): void {
   notifyPeopleChange()
-}
-
-export function subscribeToPeopleStore(listener: PeopleListener): () => void {
-  listeners.add(listener)
-  return () => listeners.delete(listener)
 }
 
 function nowIso(): string {

@@ -125,7 +125,7 @@ function sortKarkuns(
 }
 
 export function useKarkunPeopleManagement(sectionGender: PersonGender) {
-  usePeopleStore()
+  const peopleVersion = usePeopleStore()
   const [assignmentVersion, setAssignmentVersion] = useState(0)
   const [jihVersion, setJihVersion] = useState(0)
   const [baitulMaalVersion, setBaitulMaalVersion] = useState(0)
@@ -156,7 +156,12 @@ export function useKarkunPeopleManagement(sectionGender: PersonGender) {
   const [sortDirection, setSortDirection] = useState<PeopleSortDirection>('asc')
   const [selectedIds, setSelectedIds] = useState<string[]>([])
 
-  const allKarkuns = getAllKarkuns().filter((k) => k.gender === sectionGender)
+  const allKarkuns = useMemo(
+    () => getAllKarkuns().filter((k) => k.gender === sectionGender),
+    // peopleVersion invalidates after mutable MOCK_KARKUN_REGISTRY hydrate
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- registry is module state
+    [sectionGender, peopleVersion],
+  )
 
   const filteredRecords = useMemo(() => {
     void assignmentVersion

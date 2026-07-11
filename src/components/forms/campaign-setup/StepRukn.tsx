@@ -1,5 +1,6 @@
 import { useMemo, useState, type Dispatch } from 'react'
 import { ruknMaster, searchRukn } from '@/data/ruknMaster'
+import { usePeopleStore } from '@/hooks/usePeopleStore'
 import type { CampaignSetupAction, CampaignSetupState } from '@/types/campaign-setup.types'
 
 type StepRuknProps = {
@@ -8,11 +9,20 @@ type StepRuknProps = {
 }
 
 export function StepRukn({ state, dispatch }: StepRuknProps) {
+  const peopleVersion = usePeopleStore()
   const [query, setQuery] = useState('')
 
-  const filteredRukn = useMemo(() => searchRukn(query), [query])
+  const filteredRukn = useMemo(
+    () => searchRukn(query),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- registry is module state
+    [query, peopleVersion],
+  )
 
-  const selectedRukns = ruknMaster.filter((rukn) => state.selectedRuknIds.includes(rukn.id))
+  const selectedRukns = useMemo(
+    () => ruknMaster.filter((rukn) => state.selectedRuknIds.includes(rukn.id)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- registry is module state
+    [state.selectedRuknIds, peopleVersion],
+  )
 
   return (
     <div className="space-y-5">

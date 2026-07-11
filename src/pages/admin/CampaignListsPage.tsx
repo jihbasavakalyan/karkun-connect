@@ -6,6 +6,7 @@ import { MessageComposerModal } from '@/components/communication/MessageComposer
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import { useCommunication } from '@/hooks/useCommunication'
+import { usePeopleStore } from '@/hooks/usePeopleStore'
 import { PageHeader, PageShell, Icon } from '@/components/ui'
 import { getAllKarkuns } from '@/lib/peopleStore'
 import {
@@ -78,7 +79,12 @@ function DynamicListsTab({
 }: {
   onBroadcast: (recipients: MessageRecipient[], title: string) => void
 }) {
-  const counts = useMemo(() => getDynamicListCounts(), [])
+  const peopleVersion = usePeopleStore()
+  const counts = useMemo(
+    () => getDynamicListCounts(),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- registry is module state
+    [peopleVersion],
+  )
   const [expandedId, setExpandedId] = useState<string | null>(null)
 
   return (
@@ -145,7 +151,12 @@ function ManageMembersModal({
   list: BroadcastList
   onClose: () => void
 }) {
-  const allKarkuns = useMemo(() => getAllKarkuns(), [])
+  const peopleVersion = usePeopleStore()
+  const allKarkuns = useMemo(
+    () => getAllKarkuns(),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- registry is module state
+    [peopleVersion],
+  )
   const [selected, setSelected] = useState<Set<string>>(new Set(list.memberIds))
   const [query, setQuery] = useState('')
 
@@ -233,13 +244,15 @@ function BroadcastListsTab({
 
   useEffect(() => subscribeToBroadcastLists(() => setLists(getBroadcastLists())), [])
 
+  const peopleVersion = usePeopleStore()
   const karkunLookup = useMemo(() => {
     const map = new Map<string, KarkunRegistryRecord>()
     for (const karkun of getAllKarkuns()) {
       map.set(karkun.id, karkun)
     }
     return map
-  }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- registry is module state
+  }, [peopleVersion])
 
   const handleCreate = () => {
     if (!newName.trim()) return
