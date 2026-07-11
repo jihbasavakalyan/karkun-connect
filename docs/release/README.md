@@ -11,6 +11,7 @@ Official Release Candidate packaging for Basavakalyan Pilot V1.
 | [DEPLOYMENT-SIGNOFF.md](DEPLOYMENT-SIGNOFF.md) | Deploy / go-live signatures |
 | [SUPPORT-HANDBOOK.md](SUPPORT-HANDBOOK.md) | Pilot support playbook |
 | [AUTHENTICATION-CERTIFICATION.md](AUTHENTICATION-CERTIFICATION.md) | Auth production certification & freeze |
+| [RC1-REGRESSION-REPORT.md](RC1-REGRESSION-REPORT.md) | Final RC1 regression QA report |
 
 **Tag:** `v1.0.0-rc1`  
 **Verify:** `npm run verify:rc1-cert`

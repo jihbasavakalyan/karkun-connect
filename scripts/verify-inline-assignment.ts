@@ -9,6 +9,7 @@ import {
   getAssignedKarkunanForRukn,
   getAvailableKarkunan,
   getCurrentAssignmentForKarkun,
+  replaceKarkun,
 } from '@/lib/assignmentEngine'
 import { getCompatibleKarkunsForRukn, getCompatibleRuknsForKarkun, getPeopleStatistics } from '@/lib/peopleStore'
 import {
@@ -339,6 +340,48 @@ function verifyAssignmentPersistence(gender: PersonGender): void {
   )
 }
 
+function verifyMultiAssignmentReplaceTargetsCorrectKarkun(gender: PersonGender): void {
+  const rukn = activeRukns(gender)[0]
+  assert(Boolean(rukn), `Need active ${gender} Rukn for multi-replace test`)
+
+  const first = createKarkun(`verify-multi-replace-a-${gender.toLowerCase()}`, gender)
+  const second = createKarkun(`verify-multi-replace-b-${gender.toLowerCase()}`, gender)
+  const replacement = createKarkun(`verify-multi-replace-c-${gender.toLowerCase()}`, gender)
+  MOCK_KARKUN_REGISTRY.push(first, second, replacement)
+
+  for (const karkun of [first, second]) {
+    const result = assignRukn({
+      ruknId: rukn!.id,
+      karkunId: karkun.id,
+      effectiveFrom: today,
+      assignedBy: 'Administrator',
+    })
+    assert(result.success, `Assign failed: ${result.success ? '' : result.error}`)
+  }
+
+  assert(
+    getRuknAssignmentSummary(rukn!.id).assignedKarkunCount === 2,
+    'Rukn must have two active assignments before targeted replace',
+  )
+
+  const replaceResult = replaceKarkun(second.id, replacement.id, rukn!.id, 'Other', 'Rukn')
+  assert(
+    replaceResult.success,
+    `replaceKarkun failed: ${replaceResult.success ? '' : replaceResult.error}`,
+  )
+
+  const stillAssigned = getAssignedKarkunanForRukn(rukn!.id).map((record) => record.id)
+  assert(stillAssigned.includes(first.id), 'Untargeted Karkun must remain assigned after replace')
+  assert(stillAssigned.includes(replacement.id), 'Replacement Karkun must become assigned')
+  assert(!stillAssigned.includes(second.id), 'Targeted Karkun must no longer be actively assigned')
+
+  const secondHistory = getAssignmentHistoryForKarkun(second.id)
+  assert(
+    secondHistory.some((record) => record.status === 'Replaced'),
+    'Targeted assignment must be marked Replaced',
+  )
+}
+
 runProductionDataMigration()
 reset()
 verifyInlineGenderFlow('Male')
@@ -357,6 +400,12 @@ verifyAssignmentPageFlow('Male')
 reset()
 verifyAssignmentPageFlow('Female')
 reset()
+verifyAssignmentPersistence('Male')
+reset()
 verifyAssignmentPersistence('Female')
+reset()
+verifyMultiAssignmentReplaceTargetsCorrectKarkun('Male')
+reset()
+verifyMultiAssignmentReplaceTargetsCorrectKarkun('Female')
 
 console.log('Assignment workflow verification passed for inline and admin flows.')

@@ -29,6 +29,7 @@ console.log('▶ RC1 release package documents')
     'docs/release/DEPLOYMENT-SIGNOFF.md',
     'docs/release/SUPPORT-HANDBOOK.md',
     'docs/release/AUTHENTICATION-CERTIFICATION.md',
+    'docs/release/RC1-REGRESSION-REPORT.md',
   ]
   for (const doc of required) {
     assertFile(doc)

@@ -1,6 +1,6 @@
 # Known Issues — Basavakalyan Pilot V1
 
-Defect and issue log for Pilot V1 acceptance and launch. Update this file during acceptance testing and the first week of pilot.
+Defect and issue log for Pilot V1 acceptance and launch. Updated after RC1 Final Regression QA (11 July 2026).
 
 **RC1 freeze (`v1.0.0-rc1`):** Only Critical and High severity defects may be fixed before pilot. Enhancements go to the Version 1.1 backlog.
 
@@ -23,9 +23,13 @@ Defect and issue log for Pilot V1 acceptance and launch. Update this file during
 
 | ID | Severity | Area | Description | Steps / Evidence | Owner | Status |
 |----|----------|------|-------------|------------------|-------|--------|
-| — | — | — | _No Critical or High issues open at P3 documentation freeze_ | — | — | — |
-
-_Add rows as defects are found during Phases 1–7._
+| M-01 | Medium | Connections (Rukn) | Available/Replace lists not gender-filtered | Opposite-gender rows visible until validation | 1.1 | Open |
+| M-02 | Medium | Rukn Campaign Record | Campaign-wide visit/follow-up data shown | Escalates KL-S02 | 1.1 | Open |
+| M-03 | Medium | Admin mobile | Hamburger drawer UX; use chip nav | AdminLayout / AdminSidebar | 1.1 | Open |
+| L-01 | Low | Admin Connections | Dead “View History” control | AssignmentManagementPage | 1.1 | Open |
+| L-02 | Low | RuknLayout | Weak contrast on hero user label | PortalAuthActions on dark hero | 1.1 | Open |
+| L-03 | Low | Admin search | Placeholder overstates search scope | AdminTopBar → Karkun only | 1.1 | Open |
+| L-04 | Low | Session | rememberMePreference cold-reload default | authenticationService module default | 1.1 | Open |
 
 ---
 
@@ -33,17 +37,16 @@ _Add rows as defects are found during Phases 1–7._
 
 | ID | Severity | Area | Description | Resolution | Resolved date |
 |----|----------|------|-------------|------------|---------------|
-| | | | | | |
+| H-01 | High | Connections — Replace | `replaceKarkun` discarded `currentKarkunId`; wrong Karkun could be replaced when Rukn had multiple connections | Pass `currentKarkunId` to `replaceAssignment`; regression test added | 2026-07-11 |
 
 ---
 
 ## Observations (Not Defects)
 
-Items that match [Known Limitations](../operations/known-limitations.md) should be logged here only if they escalate during acceptance.
-
 | ID | Note | Linked limitation |
 |----|------|-------------------|
-| | | |
+| OBS-01 | Auth certified; OTP operational | [AUTHENTICATION-CERTIFICATION.md](../release/AUTHENTICATION-CERTIFICATION.md) |
+| OBS-02 | Executions/compliance rule breadth | KL-S01 / KL-S02 |
 
 ---
 
@@ -59,17 +62,16 @@ Items that match [Known Limitations](../operations/known-limitations.md) should 
 
 | Check | Status |
 |-------|--------|
-| Critical open count = 0 | ☐ |
-| High open count = 0 | ☐ |
+| Critical open count = 0 | ✅ |
+| High open count = 0 | ✅ |
 | Leadership aware of Medium/Low | ☐ |
+| RC1 regression report reviewed | ☐ See [RC1-REGRESSION-REPORT.md](../release/RC1-REGRESSION-REPORT.md) |
 
 When both Critical and High counts are zero and [go-live-approval.md](go-live-approval.md) is signed, pilot may begin.
 
 ---
 
 ## How to Report
-
-Use this template in the feedback channel:
 
 ```
 Screen:

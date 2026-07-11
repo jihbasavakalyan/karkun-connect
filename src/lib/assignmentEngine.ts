@@ -141,9 +141,9 @@ export function replaceKarkun(
   releaseReason: ReleaseReason,
   assignedBy: AssignedBy,
 ): AssignKarkunResult {
-  void currentKarkunId
   return replaceAssignment({
     ruknId,
+    currentKarkunId,
     newKarkunId,
     effectiveFrom: todayDate(),
     replacementReason: mapReleaseToReplacement(releaseReason),
