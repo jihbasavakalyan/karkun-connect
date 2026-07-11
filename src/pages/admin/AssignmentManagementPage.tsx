@@ -31,7 +31,7 @@ import { formatPersonStatus } from '@/types/people.types'
 type ModalMode = 'assign' | 'replace' | 'remove' | 'restore' | 'history' | null
 
 export function AssignmentManagementPage() {
-  usePeopleStore()
+  const peopleVersion = usePeopleStore()
   const {
     assignmentVersion,
     getRuknAssignmentSummary,
@@ -72,15 +72,17 @@ export function AssignmentManagementPage() {
 
   const assignableKarkuns = useMemo(() => {
     void assignmentVersion
+    void peopleVersion
     if (!selectedRuknId) return []
     // Use only the Available Karkuns search field so clearing it restores the full eligible list.
     return getKarkunsForRuknAssignment(selectedRuknId).filter((karkun) =>
       matchesKarkunRegistrySearch(karkun, karkunSearch),
     )
-  }, [selectedRuknId, karkunSearch, assignmentVersion])
+  }, [selectedRuknId, karkunSearch, assignmentVersion, peopleVersion])
 
   const filteredRukns = useMemo(() => {
     void assignmentVersion
+    void peopleVersion
     const query = (globalSearch || ruknSearch).trim().toLowerCase()
     return ruknMaster.filter((rukn) => {
       if (globalSearch.trim()) {
@@ -92,7 +94,7 @@ export function AssignmentManagementPage() {
         rukn.mobile.toLowerCase().includes(query)
       )
     })
-  }, [globalSearch, ruknSearch, assignmentVersion])
+  }, [globalSearch, ruknSearch, assignmentVersion, peopleVersion])
 
   const changeView = (next: 'assign' | 'mapping') => {
     setSearchParams(

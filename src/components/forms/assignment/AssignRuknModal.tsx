@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { usePeopleStore } from '@/hooks/usePeopleStore'
 import { getKarkunsForRuknAssignment } from '@/services/assignmentService'
 import { matchesKarkunRegistrySearch } from '@/lib/relationshipPresentation'
 import { Modal } from '@/components/common/Modal'
@@ -28,6 +29,7 @@ export function AssignRuknModal({
   onSubmit,
   error,
 }: AssignRuknModalProps) {
+  const peopleVersion = usePeopleStore()
   const [karkunId, setKarkunId] = useState('')
   const [search, setSearch] = useState('')
   const [effectiveFrom, setEffectiveFrom] = useState(new Date().toISOString().slice(0, 10))
@@ -36,7 +38,7 @@ export function AssignRuknModal({
 
   const eligibleKarkuns = useMemo(
     () => (rukn ? getKarkunsForRuknAssignment(rukn.id) : []),
-    [rukn],
+    [rukn, peopleVersion],
   )
 
   const filteredKarkuns = useMemo(

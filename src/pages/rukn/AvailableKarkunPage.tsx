@@ -4,6 +4,7 @@ import { DEFAULT_DEMO_RUKN_ID } from '@/constants/demoRukn'
 import { ROUTES } from '@/constants/routes'
 import { useAuth } from '@/hooks/useAuth'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
+import { usePeopleStore } from '@/hooks/usePeopleStore'
 import {
   AvailableKarkunRow,
   ConnectKarkunConfirmModal,
@@ -17,7 +18,8 @@ import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
 export function AvailableKarkunPage() {
   const { user } = useAuth()
   const ruknId = user?.ruknId ?? DEFAULT_DEMO_RUKN_ID
-  const { getAvailableKarkunan, assignKarkun } = useAssignmentEngine()
+  const peopleVersion = usePeopleStore()
+  const { assignmentVersion, getAvailableKarkunan, assignKarkun } = useAssignmentEngine()
   const availableKarkunan = getAvailableKarkunan()
   const [query, setQuery] = useState('')
   const [pendingKarkun, setPendingKarkun] = useState<KarkunRegistryRecord | null>(null)
@@ -25,8 +27,10 @@ export function AvailableKarkunPage() {
   const [successMessage, setSuccessMessage] = useState('')
 
   const filtered = useMemo(() => {
+    void peopleVersion
+    void assignmentVersion
     return availableKarkunan.filter((karkun) => matchesKarkunRegistrySearch(karkun, query))
-  }, [availableKarkunan, query])
+  }, [availableKarkunan, query, peopleVersion, assignmentVersion])
 
   const handleConfirmConnect = () => {
     if (!pendingKarkun) return

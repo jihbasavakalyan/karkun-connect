@@ -15,6 +15,7 @@ import {
   releaseKarkun,
   subscribeToAssignments,
 } from '@/lib/assignmentEngine'
+import { subscribeToPeopleStore } from '@/lib/peopleStore'
 import {
   getAssignmentDashboardMetrics,
   getKarkunWithWorkload,
@@ -30,7 +31,15 @@ export function useAssignmentEngine() {
   const [version, setVersion] = useState(0)
 
   useEffect(() => {
-    return subscribeToAssignments(() => setVersion((current) => current + 1))
+    // Available Karkun lists read the people registry; bump version on both
+    // assignment writes and registry hydrate/import so memos do not stay empty.
+    const bump = () => setVersion((current) => current + 1)
+    const unsubscribeAssignments = subscribeToAssignments(bump)
+    const unsubscribePeople = subscribeToPeopleStore(bump)
+    return () => {
+      unsubscribeAssignments()
+      unsubscribePeople()
+    }
   }, [])
 
   void version

@@ -402,8 +402,58 @@ function verifyKarkunSearchMatching(): void {
   assert(matchesKarkunRegistrySearch(sample, '  '), 'Whitespace-only query must match all')
 }
 
+/**
+ * Available Karkuns pipeline (admin Connect panel / AssignRuknModal).
+ * Stages must stay non-zero through eligibility; only search may reduce further.
+ */
+function verifyAvailableKarkunsPipelineStages(): void {
+  const rukn = activeRukns('Male')[0]
+  assert(Boolean(rukn), 'Need an active Male Rukn for pipeline check')
+
+  // Simulate pre-hydrate empty registry (deferred bootstrap race).
+  MOCK_KARKUN_REGISTRY.length = 0
+  assert(
+    getKarkunsForRuknAssignment(rukn!.id).length === 0,
+    'Pre-hydrate available list must be empty',
+  )
+
+  const seeded = createKarkun('verify-pipeline-k1', 'Male')
+  seeded.mobile = '9876501234'
+  MOCK_KARKUN_REGISTRY.push(seeded)
+
+  const all = MOCK_KARKUN_REGISTRY.length
+  const active = MOCK_KARKUN_REGISTRY.filter((k) => !k.isArchived && k.status === 'active').length
+  const matchingGender = MOCK_KARKUN_REGISTRY.filter(
+    (k) => !k.isArchived && k.status === 'active' && k.gender === rukn!.gender,
+  ).length
+  const notConnected = MOCK_KARKUN_REGISTRY.filter(
+    (k) =>
+      !k.isArchived &&
+      k.status === 'active' &&
+      k.gender === rukn!.gender &&
+      k.assignmentStatus === 'Available',
+  ).length
+  const compatible = getCompatibleKarkunsForRukn(rukn!.id).length
+  const beforeSearch = getKarkunsForRuknAssignment(rukn!.id)
+  const afterEmptySearch = beforeSearch.filter((k) => matchesKarkunRegistrySearch(k, ''))
+  const afterBroadSearch = beforeSearch.filter((k) => matchesKarkunRegistrySearch(k, 'Test'))
+  const afterMiss = beforeSearch.filter((k) => matchesKarkunRegistrySearch(k, 'zzzz-no-match'))
+
+  assert(all === 1, `Stage 1 total registry expected 1, got ${all}`)
+  assert(active === 1, `Stage 2 active expected 1, got ${active}`)
+  assert(matchingGender === 1, `Stage 3 matching gender expected 1, got ${matchingGender}`)
+  assert(notConnected === 1, `Stage 4 not connected expected 1, got ${notConnected}`)
+  assert(compatible === 1, `Stage 5/6 compatible/eligible expected 1, got ${compatible}`)
+  assert(beforeSearch.length === 1, `Stage 6 final before search expected 1, got ${beforeSearch.length}`)
+  assert(afterEmptySearch.length === 1, 'Stage 7 empty search must restore full eligible list')
+  assert(afterBroadSearch.length === 1, 'Stage 7 broad search must keep eligible matches')
+  assert(afterMiss.length === 0, 'Stage 7 non-matching search must return 0')
+}
+
 runProductionDataMigration()
 verifyKarkunSearchMatching()
+reset()
+verifyAvailableKarkunsPipelineStages()
 reset()
 verifyInlineGenderFlow('Male')
 reset()

@@ -41,7 +41,7 @@ function matchesFilters(karkun: KarkunRegistryRecord, filters: KarkunRegistryFil
 }
 
 export function useKarkunRegistry() {
-  usePeopleStore()
+  const peopleVersion = usePeopleStore()
   const [searchQuery, setSearchQuery] = useState('')
   const [filters, setFilters] = useState<KarkunRegistryFilters>(initialFilters)
   const [currentPage, setCurrentPage] = useState(1)
@@ -50,7 +50,7 @@ export function useKarkunRegistry() {
     return MOCK_KARKUN_REGISTRY.filter(
       (karkun) => !karkun.isArchived && matchesSearch(karkun, searchQuery) && matchesFilters(karkun, filters),
     )
-  }, [searchQuery, filters])
+  }, [searchQuery, filters, peopleVersion])
 
   const totalPages = Math.max(1, Math.ceil(filteredRecords.length / KARKUN_REGISTRY_PAGE_SIZE))
 
