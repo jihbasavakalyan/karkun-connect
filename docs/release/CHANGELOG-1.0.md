@@ -1,8 +1,27 @@
 # Changelog — Karkun Connect 1.0
 
-All notable changes through Release Candidate **1.0.0-rc.1** (`v1.0.0-rc1`).
+All notable changes through Release Candidate **1.0.0-rc.1** and patch **RC1.1**.
 
 Format: milestone-oriented summary for pilot operators and leadership.
+
+---
+
+## [RC1.1] — 2026-07-11 — Usability Patch (Connections)
+
+**Commit:** `51da962`  
+**Scope:** Connection modal UX only. No authentication, business-rule, or connection-engine changes.
+
+### Fixed
+
+- Live Karkun search now supports token-based matching (order-independent name tokens + partial mobile digits)
+- Clearing search restores the complete eligible Karkun list (no longer inherits page global search)
+- Connection modal layout improved with responsive max-height and internal list scrolling
+- Fixed footer keeps Cancel / Connect actions always visible
+
+### Notes
+
+- Eligible list still respects gender compatibility and one-Karkun-one-Rukn rules
+- Open Medium items (e.g. Rukn Available list gender filter UI) remain in 1.1 backlog — see [known-issues.md](../pilot/known-issues.md)
 
 ---
 

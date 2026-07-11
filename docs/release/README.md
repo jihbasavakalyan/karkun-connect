@@ -12,6 +12,7 @@ Official Release Candidate packaging for Basavakalyan Pilot V1.
 | [SUPPORT-HANDBOOK.md](SUPPORT-HANDBOOK.md) | Pilot support playbook |
 | [AUTHENTICATION-CERTIFICATION.md](AUTHENTICATION-CERTIFICATION.md) | Auth production certification & freeze |
 | [RC1-REGRESSION-REPORT.md](RC1-REGRESSION-REPORT.md) | Final RC1 regression QA report |
+| [RC1.1-USABILITY-PATCH.md](RC1.1-USABILITY-PATCH.md) | Connections modal usability patch |
 
-**Tag:** `v1.0.0-rc1`  
+**Tag:** `v1.0.0-rc1` (baseline) · Patch: commit `51da962`  
 **Verify:** `npm run verify:rc1-cert`
