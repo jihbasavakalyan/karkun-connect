@@ -1,21 +1,27 @@
 ﻿import { chromium } from 'playwright'
+import { writeFileSync } from 'node:fs'
 
 const url = process.argv[2] ?? 'http://127.0.0.1:5173/'
 const label = process.argv[3] ?? 'LOCAL'
 const waitMs = Number(process.argv[4] ?? 15000)
+const outPath = process.argv[5]
 
 async function main() {
   const browser = await chromium.launch({ headless: true })
   const page = await browser.newPage()
-  const traces = []
-  const warnings = []
-  const errors = []
+  const traces: unknown[] = []
+  const warnings: string[] = []
+  const errors: string[] = []
 
   page.on('console', (msg) => {
     const text = msg.text()
     if (text.includes('[KC-REGISTRY-TRACE]')) {
       const json = text.replace(/^.*\[KC-REGISTRY-TRACE\]\s*/, '')
-      try { traces.push(JSON.parse(json)) } catch { traces.push({ raw: text }) }
+      try {
+        traces.push(JSON.parse(json))
+      } catch {
+        traces.push({ raw: text })
+      }
     }
     if (text.includes('[kc-firestore]') || text.includes('[bootstrap]')) {
       warnings.push(text)
@@ -27,11 +33,11 @@ async function main() {
   await page.waitForTimeout(waitMs)
 
   const fromWindow = await page.evaluate(() => {
-    const w = window
+    const w = window as unknown as { __KC_REGISTRY_TRACE__?: { snapshots: unknown[] } }
     return w.__KC_REGISTRY_TRACE__ ?? null
   })
 
-  console.log(JSON.stringify({
+  const report = {
     label,
     url,
     waitMs,
@@ -41,9 +47,18 @@ async function main() {
     warnings,
     errors,
     snapshots: fromWindow?.snapshots ?? traces,
-  }, null, 2))
+  }
+
+  const text = JSON.stringify(report, null, 2)
+  if (outPath) {
+    writeFileSync(outPath, text, 'utf8')
+  }
+  console.log(text)
 
   await browser.close()
 }
 
-main().catch((e) => { console.error(e); process.exit(1) })
+main().catch((error) => {
+  console.error(error)
+  process.exit(1)
+})

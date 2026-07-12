@@ -12,20 +12,32 @@ import { loadPeopleRegistryFromPersistence } from '@/lib/peopleRegistryPersisten
 import { notifyPeopleRegistryChange } from '@/lib/peopleStore'
 import { traceRegistryStage } from '@/lib/registryHydrationTrace'
 
+let hydratingStores = false
+
 /** Re-hydrate in-memory stores from repository caches after remote Firestore updates. */
 export function hydrateStoresFromRepositories(): void {
-  reloadAssignmentStoreFromPersistence()
-  reloadAnnexure1StoreFromPersistence()
-  reloadFollowUpStoreFromPersistence()
-  reloadActivityLogStoreFromPersistence()
-  reloadGuidanceStoreFromPersistence()
-  reloadCommunicationStoreFromPersistence()
-  reloadBaitulMaalStoreFromPersistence()
-  reloadIjtemaAttendanceStoreFromPersistence()
-  reloadJihWebPortalStoreFromPersistence()
-  reloadBroadcastListStoreFromPersistence()
-  loadPeopleRegistryFromPersistence()
-  traceRegistryStage('3_after_hydrateStoresFromRepositories_post_load')
-  notifyPeopleRegistryChange()
-  traceRegistryStage('6_after_notifyPeopleRegistryChange_from_hydrateStores')
+  // Prevent reentrancy: reload→persist→cache.set→subscribeToFirestoreCacheChanges→hydrate again
+  // previously blew the stack once bootstrap stopped hanging on getDocs.
+  if (hydratingStores) {
+    return
+  }
+  hydratingStores = true
+  try {
+    reloadAssignmentStoreFromPersistence()
+    reloadAnnexure1StoreFromPersistence()
+    reloadFollowUpStoreFromPersistence()
+    reloadActivityLogStoreFromPersistence()
+    reloadGuidanceStoreFromPersistence()
+    reloadCommunicationStoreFromPersistence()
+    reloadBaitulMaalStoreFromPersistence()
+    reloadIjtemaAttendanceStoreFromPersistence()
+    reloadJihWebPortalStoreFromPersistence()
+    reloadBroadcastListStoreFromPersistence()
+    loadPeopleRegistryFromPersistence()
+    traceRegistryStage('3_after_hydrateStoresFromRepositories_post_load')
+    notifyPeopleRegistryChange()
+    traceRegistryStage('6_after_notifyPeopleRegistryChange_from_hydrateStores')
+  } finally {
+    hydratingStores = false
+  }
 }
