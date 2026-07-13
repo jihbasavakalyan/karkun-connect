@@ -18,7 +18,7 @@ export function toProductionImportRow(record: ProductionPersonRecord) {
     name: record.name,
     gender: record.gender,
     mobile: record.mobile,
-    whatsapp: record.whatsapp,
+   whatsapp: record.whatsapp ?? record.mobile,
     place: record.place ?? DEFAULT_PLACE,
     status: record.status ?? 'active',
     notes: record.notes,

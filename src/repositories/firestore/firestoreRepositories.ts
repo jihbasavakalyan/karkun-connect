@@ -47,6 +47,7 @@ import {
   readCollection,
   readDoc,
   removeDoc,
+  sanitizeForFirestore,
   stripMeta,
   writeDoc,
 } from '@/repositories/firestore/firestoreHelpers'
@@ -287,7 +288,7 @@ export class RuknFirestoreRepository implements RuknRepository {
       const db = getFirestoreDb()
       const batch = createBatch(db)
       for (const rukn of rukns) {
-        batch.set(doc(db, FIRESTORE_COLLECTIONS.rukns, rukn.id), rukn)
+        batch.set(doc(db, FIRESTORE_COLLECTIONS.rukns, rukn.id), sanitizeForFirestore(rukn))
       }
       await batch.commit()
       return repositoryOk(undefined)
@@ -327,11 +328,11 @@ export class KarkunFirestoreRepository implements KarkunRepository {
       const db = getFirestoreDb()
       const batch = createBatch(db)
       for (const karkun of state.karkuns) {
-        batch.set(doc(db, FIRESTORE_COLLECTIONS.karkuns, karkun.id), karkun)
+        batch.set(doc(db, FIRESTORE_COLLECTIONS.karkuns, karkun.id), sanitizeForFirestore(karkun))
       }
-      batch.set(doc(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.karkunCounter), {
+      batch.set(doc(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.karkunCounter), sanitizeForFirestore({
         nextKarkunNum: state.nextKarkunNum,
-      })
+      }))
       await batch.commit()
       return repositoryOk(undefined)
     })
@@ -387,11 +388,11 @@ export class ConnectionFirestoreRepository implements ConnectionRepository {
       const db = getFirestoreDb()
       const batch = createBatch(db)
       for (const assignment of state.assignments) {
-        batch.set(doc(db, FIRESTORE_COLLECTIONS.connections, assignment.assignmentId), assignment)
+        batch.set(doc(db, FIRESTORE_COLLECTIONS.connections, assignment.assignmentId), sanitizeForFirestore(assignment))
       }
-      batch.set(doc(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.connectionMeta), {
+      batch.set(doc(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.connectionMeta), sanitizeForFirestore({
         nextSequence: state.nextSequence,
-      })
+      }))
       await batch.commit()
       return repositoryOk(undefined)
     })
@@ -424,7 +425,7 @@ export class ConnectionFirestoreRepository implements ConnectionRepository {
       const db = getFirestoreDb()
       const batch = createBatch(db)
       for (const entry of entries) {
-        batch.set(doc(db, FIRESTORE_COLLECTIONS.activityLogs, entry.id), entry)
+        batch.set(doc(db, FIRESTORE_COLLECTIONS.activityLogs, entry.id), sanitizeForFirestore(entry))
       }
       await batch.commit()
       return repositoryOk(undefined)
@@ -461,7 +462,7 @@ export class ExecutionFirestoreRepository implements ExecutionRepository {
       for (const form of forms) {
         batch.set(
           doc(db, FIRESTORE_COLLECTIONS.executions, executionAnnexureDocId(form.id)),
-          form,
+          sanitizeForFirestore(form),
         )
       }
       await batch.commit()
@@ -485,7 +486,7 @@ export class ExecutionFirestoreRepository implements ExecutionRepository {
       const db = getFirestoreDb()
       const batch = createBatch(db)
       for (const record of records) {
-        batch.set(doc(db, FIRESTORE_COLLECTIONS.followUps, record.followUpId), record)
+        batch.set(doc(db, FIRESTORE_COLLECTIONS.followUps, record.followUpId), sanitizeForFirestore(record))
       }
       await batch.commit()
       return repositoryOk(undefined)
@@ -561,7 +562,7 @@ export class ComplianceFirestoreRepository implements ComplianceRepository {
             FIRESTORE_COLLECTIONS.compliance,
             complianceBaitulMaalDocId(record.karkunId, record.monthKey),
           ),
-          { _docType: 'baitulMaal', record },
+          sanitizeForFirestore({ _docType: 'baitulMaal', record }),
         )
       }
       await batch.commit()
@@ -591,7 +592,7 @@ export class ComplianceFirestoreRepository implements ComplianceRepository {
             FIRESTORE_COLLECTIONS.compliance,
             complianceIjtemaDocId(record.karkunId, record.weekEndingDate),
           ),
-          { _docType: 'ijtema', record },
+          sanitizeForFirestore({ _docType: 'ijtema', record }),
         )
       }
       await batch.commit()
@@ -620,10 +621,10 @@ export class ComplianceFirestoreRepository implements ComplianceRepository {
     })
     void queueWrite('compliance.jihPortal', async () => {
       const db = getFirestoreDb()
-      return writeDoc(db, FIRESTORE_COLLECTIONS.compliance, FIRESTORE_DOCS.jihPortalState, {
+      return writeDoc(db, FIRESTORE_COLLECTIONS.compliance, FIRESTORE_DOCS.jihPortalState, sanitizeForFirestore({
         _docType: 'jihPortal',
         record: state,
-      })
+      }))
     })
     return repositoryOk(undefined)
   }
@@ -665,7 +666,7 @@ export class SettingsFirestoreRepository implements SettingsRepository {
       for (const list of lists) {
         batch.set(
           doc(db, FIRESTORE_COLLECTIONS.settings, settingsBroadcastDocId(list.id)),
-          list,
+          sanitizeForFirestore(list),
         )
       }
       await batch.commit()
@@ -702,7 +703,7 @@ export class SettingsFirestoreRepository implements SettingsRepository {
     backupCache.set(map)
     void queueWrite('settings.backup', async () => {
       const db = getFirestoreDb()
-      return writeDoc(db, FIRESTORE_COLLECTIONS.settings, settingsBackupDocId(backup.id), backup)
+      return writeDoc(db, FIRESTORE_COLLECTIONS.settings, settingsBackupDocId(backup.id), sanitizeForFirestore(backup))
     })
     return repositoryOk(undefined)
   }

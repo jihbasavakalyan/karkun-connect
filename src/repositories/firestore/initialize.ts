@@ -76,7 +76,7 @@ export async function refreshFirestoreAfterAuth(): Promise<void> {
   }
 
   try {
-    await withTimeout(hydrateFirestoreCaches(), HYDRATE_TIMEOUT_MS, 'refreshFirestoreAfterAuth.hydrate')
+    await hydrateFirestoreCaches()
     setRegistryTraceHydrated(getKarkunCacheHydratedFlag())
     traceRegistryStage('refreshFirestoreAfterAuth:after_hydrateFirestoreCaches')
     hydrateStoresFromRepositories()

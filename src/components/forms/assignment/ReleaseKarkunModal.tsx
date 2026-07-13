@@ -20,7 +20,21 @@ export function ReleaseKarkunModal({
   const [reason, setReason] = useState<ReleaseReason>('Wrong Assignment')
 
   return (
-    <Modal isOpen={isOpen} title="Release this Karkun?" onClose={onClose}>
+    <Modal
+      isOpen={isOpen}
+      title="Release this Karkun?"
+      onClose={onClose}
+      footer={
+        <div className="flex flex-col gap-3">
+          <PrimaryButton type="button" fullWidth onClick={() => onConfirm(reason)}>
+            Confirm
+          </PrimaryButton>
+          <SecondaryButton type="button" fullWidth onClick={onClose}>
+            Cancel
+          </SecondaryButton>
+        </div>
+      }
+    >
       <div className="space-y-4">
         <p className="text-secondary">
           Release <span className="font-semibold text-text-heading">{karkunName}</span>? They will
@@ -46,15 +60,6 @@ export function ReleaseKarkunModal({
             </label>
           ))}
         </fieldset>
-
-        <div className="flex flex-col gap-3 pt-2">
-          <PrimaryButton type="button" fullWidth onClick={() => onConfirm(reason)}>
-            Confirm
-          </PrimaryButton>
-          <SecondaryButton type="button" fullWidth onClick={onClose}>
-            Cancel
-          </SecondaryButton>
-        </div>
       </div>
     </Modal>
   )

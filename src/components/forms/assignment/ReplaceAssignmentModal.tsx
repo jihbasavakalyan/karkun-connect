@@ -51,7 +51,21 @@ export function ReplaceAssignmentModal({
   if (!rukn) return null
 
   return (
-    <Modal isOpen={isOpen} title={`Replace Connection — ${rukn.name}`} onClose={onClose}>
+    <Modal
+      isOpen={isOpen}
+      title={`Replace Connection — ${rukn.name}`}
+      onClose={onClose}
+      footer={
+        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+          <SecondaryButton type="button" onClick={onClose}>
+            Cancel
+          </SecondaryButton>
+          <PrimaryButton type="button" onClick={handleSubmit}>
+            Replace Connection
+          </PrimaryButton>
+        </div>
+      }
+    >
       <div className="space-y-4">
         <p className="text-sm text-secondary">
           Currently connected: <strong className="text-text-heading">{currentKarkunName}</strong>
@@ -113,14 +127,6 @@ export function ReplaceAssignmentModal({
 
         {error && <p className="text-sm text-red-600">{error}</p>}
 
-        <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
-          <SecondaryButton type="button" onClick={onClose}>
-            Cancel
-          </SecondaryButton>
-          <PrimaryButton type="button" onClick={handleSubmit}>
-            Replace Connection
-          </PrimaryButton>
-        </div>
       </div>
     </Modal>
   )

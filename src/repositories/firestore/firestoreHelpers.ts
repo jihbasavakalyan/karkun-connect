@@ -36,6 +36,39 @@ export function stripMeta<T>(value: DocumentData): T {
   return copy as T
 }
 
+export function sanitizeForFirestore<T>(value: T): T {
+  if (Array.isArray(value)) {
+    return value.reduce<unknown[]>((acc, item) => {
+      if (item === undefined) {
+        return acc
+      }
+      acc.push(sanitizeForFirestore(item))
+      return acc
+    }, []) as T
+  }
+
+  if (value === null || value === undefined) {
+    return value as T
+  }
+
+  if (typeof value === 'object') {
+    if (value instanceof Date) {
+      return value as T
+    }
+
+    const sanitized: Record<string, unknown> = {}
+    for (const [key, child] of Object.entries(value as Record<string, unknown>)) {
+      if (child === undefined) {
+        continue
+      }
+      sanitized[key] = sanitizeForFirestore(child)
+    }
+    return sanitized as T
+  }
+
+  return value
+}
+
 export function mapFirestoreError(error: unknown): RepositoryResult<never> {
   if (typeof navigator !== 'undefined' && navigator.onLine === false) {
     return repositoryErr('StorageFailure', 'You appear to be offline. Changes will sync when reconnected.', error)
@@ -81,8 +114,9 @@ export async function writeDoc<T extends object>(
   revision?: number,
 ): Promise<RepositoryResult<void>> {
   try {
+    const sanitizedPayload = sanitizeForFirestore(payload)
     await setDoc(doc(db, path, id), {
-      ...withMeta(payload, revision),
+      ...withMeta(sanitizedPayload, revision),
       _serverTime: serverTimestamp(),
     })
     return { ok: true, data: undefined }

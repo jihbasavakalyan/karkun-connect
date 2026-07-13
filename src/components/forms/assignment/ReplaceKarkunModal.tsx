@@ -65,8 +65,24 @@ export function ReplaceKarkunModal({
     onClose()
   }
 
+  const footer =
+    step === 'release' ? (
+      <PrimaryButton type="button" fullWidth onClick={handleReleaseStep}>
+        Continue to Available Karkun
+      </PrimaryButton>
+    ) : (
+      <div className="flex flex-col gap-3">
+        <PrimaryButton type="button" fullWidth onClick={handleConfirm}>
+          Confirm Replacement
+        </PrimaryButton>
+        <SecondaryButton type="button" fullWidth onClick={() => setStep('release')}>
+          Back
+        </SecondaryButton>
+      </div>
+    )
+
   return (
-    <Modal isOpen={isOpen} title="Replace Karkun" onClose={handleClose}>
+    <Modal isOpen={isOpen} title="Replace Karkun" onClose={handleClose} footer={footer}>
       {step === 'release' ? (
         <div className="space-y-4">
           <p className="text-secondary">
@@ -94,10 +110,6 @@ export function ReplaceKarkunModal({
               </label>
             ))}
           </fieldset>
-
-          <PrimaryButton type="button" fullWidth onClick={handleReleaseStep}>
-            Continue to Available Karkun
-          </PrimaryButton>
         </div>
       ) : (
         <div className="space-y-4">
@@ -117,15 +129,6 @@ export function ReplaceKarkunModal({
           </select>
 
           {error && <p className="text-sm text-red-600">{error}</p>}
-
-          <div className="flex flex-col gap-3">
-            <PrimaryButton type="button" fullWidth onClick={handleConfirm}>
-              Confirm Replacement
-            </PrimaryButton>
-            <SecondaryButton type="button" fullWidth onClick={() => setStep('release')}>
-              Back
-            </SecondaryButton>
-          </div>
         </div>
       )}
     </Modal>
