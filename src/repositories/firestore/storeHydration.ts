@@ -11,6 +11,7 @@ import { reloadBroadcastListStoreFromPersistence } from '@/stores/broadcastListS
 import { loadPeopleRegistryFromPersistence } from '@/lib/peopleRegistryPersistence'
 import { notifyPeopleRegistryChange } from '@/lib/peopleStore'
 import { traceRegistryStage } from '@/lib/registryHydrationTrace'
+import { syncAllKarkunRegistryFromAssignments } from '@/services/assignmentService'
 
 let hydratingStores = false
 
@@ -34,6 +35,7 @@ export function hydrateStoresFromRepositories(): void {
     reloadJihWebPortalStoreFromPersistence()
     reloadBroadcastListStoreFromPersistence()
     loadPeopleRegistryFromPersistence()
+    syncAllKarkunRegistryFromAssignments({ notify: false })
     traceRegistryStage('3_after_hydrateStoresFromRepositories_post_load')
     notifyPeopleRegistryChange()
     traceRegistryStage('6_after_notifyPeopleRegistryChange_from_hydrateStores')

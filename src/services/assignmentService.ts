@@ -89,11 +89,13 @@ function syncKarkunRegistryFromAssignments(karkunId: string, options?: { notify?
 }
 
 /** Reconcile Karkun registry fields from persisted assignment records after app reload. */
-export function syncAllKarkunRegistryFromAssignments(): void {
+export function syncAllKarkunRegistryFromAssignments(options?: { notify?: boolean }): void {
   for (const karkun of getAllKarkuns()) {
     syncKarkunRegistryFromAssignments(karkun.id, { notify: false })
   }
-  notifyPeopleRegistryChange()
+  if (options?.notify !== false) {
+    notifyPeopleRegistryChange()
+  }
 }
 
 function formatNames(ruknId: string, karkunId: string): { ruknName: string; karkunName: string } {

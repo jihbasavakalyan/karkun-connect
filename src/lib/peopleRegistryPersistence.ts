@@ -2,7 +2,6 @@ import { MOCK_KARKUN_REGISTRY } from '@/constants/mockKarkunRegistry'
 import { ruknMaster } from '@/data/ruknMaster'
 import { getRepositories } from '@/repositories/provider'
 import { unwrapRepository } from '@/repositories/errors'
-import { emitPeopleRegistryChange } from '@/lib/peopleRegistryEvents'
 import { traceRegistryStage } from '@/lib/registryHydrationTrace'
 
 export function hasPersistedKarkunRegistry(): boolean {
@@ -42,10 +41,7 @@ export function loadPeopleRegistryFromPersistence(): {
     mutated = true
   }
 
-  if (mutated) {
-    // Always wake UI after in-memory masters change — callers may also notify.
-    emitPeopleRegistryChange()
-  }
+  void mutated
 
   traceRegistryStage('4_after_loadPeopleRegistryFromPersistence')
 
