@@ -1,4 +1,5 @@
 import { useEffect, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { Icon } from '@/components/ui/Icon'
 
 type ModalProps = {
@@ -18,6 +19,9 @@ export function Modal({ isOpen, title, onClose, children, footer, size = 'md' }:
       return
     }
 
+    const previousBodyOverflow = document.body.style.overflow
+    const previousHtmlOverflow = document.documentElement.style.overflow
+
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         onClose()
@@ -26,10 +30,12 @@ export function Modal({ isOpen, title, onClose, children, footer, size = 'md' }:
 
     document.addEventListener('keydown', handleEscape)
     document.body.style.overflow = 'hidden'
+    document.documentElement.style.overflow = 'hidden'
 
     return () => {
       document.removeEventListener('keydown', handleEscape)
-      document.body.style.overflow = ''
+      document.body.style.overflow = previousBodyOverflow
+      document.documentElement.style.overflow = previousHtmlOverflow
     }
   }, [isOpen, onClose])
 
@@ -37,9 +43,13 @@ export function Modal({ isOpen, title, onClose, children, footer, size = 'md' }:
     return null
   }
 
-  return (
+  if (typeof document === 'undefined') {
+    return null
+  }
+
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center"
+      className="fixed inset-0 z-50 flex items-end justify-center overflow-hidden p-3 sm:items-center sm:p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-title"
@@ -54,7 +64,7 @@ export function Modal({ isOpen, title, onClose, children, footer, size = 'md' }:
       <div
         className={[
           'relative z-10 flex w-full flex-col overflow-hidden rounded-(--radius-card) border border-border bg-surface shadow-card',
-          'max-h-[min(92svh,40rem)]',
+          'max-h-[90vh]',
           size === 'lg' ? 'max-w-xl' : 'max-w-lg',
         ].join(' ')}
       >
@@ -75,9 +85,13 @@ export function Modal({ isOpen, title, onClose, children, footer, size = 'md' }:
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 sm:px-6">{children}</div>
 
         {footer ? (
-          <div className="shrink-0 border-t border-border bg-surface px-5 py-4 sm:px-6">{footer}</div>
+          <div className="sticky bottom-0 z-10 shrink-0 border-t border-border bg-surface px-5 py-4 sm:px-6">
+            {footer}
+          </div>
         ) : null}
       </div>
     </div>
+    ,
+    document.body,
   )
 }
