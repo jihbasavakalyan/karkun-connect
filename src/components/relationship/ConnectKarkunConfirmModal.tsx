@@ -30,6 +30,7 @@ export function ConnectKarkunConfirmModal({
       isOpen={isOpen}
       title="Connect Karkun"
       onClose={onClose}
+      size="lg"
       footer={
         <div className="flex flex-col gap-3">
           <PrimaryButton type="button" fullWidth onClick={onConfirm}>
@@ -41,32 +42,34 @@ export function ConnectKarkunConfirmModal({
         </div>
       }
     >
-      <p className="text-secondary">
-        {ruknName
-          ? `Connect ${karkun.name} with ${ruknName}?`
-          : 'Do you want to connect with this Karkun?'}
-      </p>
-      <dl className="mt-4 space-y-2 rounded-lg border border-border bg-surface-muted px-4 py-3 text-sm">
-        <div>
-          <dt className="text-secondary">Name</dt>
-          <dd className="font-semibold text-text-heading">{karkun.name}</dd>
-        </div>
-        {karkun.fatherHusbandName?.trim() && (
+      <div className="space-y-4 overflow-y-auto">
+        <p className="text-secondary">
+          {ruknName
+            ? `Connect ${karkun.name} with ${ruknName}?`
+            : 'Do you want to connect with this Karkun?'}
+        </p>
+        <dl className="space-y-2 rounded-lg border border-border bg-surface-muted px-4 py-3 text-sm">
           <div>
-            <dt className="text-secondary">{fatherHusbandLabel(karkun.gender)}</dt>
-            <dd>{karkun.fatherHusbandName}</dd>
+            <dt className="text-secondary">Name</dt>
+            <dd className="font-semibold text-text-heading break-words">{karkun.name}</dd>
           </div>
-        )}
-        <div>
-          <dt className="text-secondary">Mobile</dt>
-          <dd>{karkun.mobile || 'Not added'}</dd>
-        </div>
-        <div>
-          <dt className="text-secondary">Area</dt>
-          <dd>{karkun.area || karkun.place}</dd>
-        </div>
-      </dl>
-      {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+          {karkun.fatherHusbandName?.trim() && (
+            <div>
+              <dt className="text-secondary">{fatherHusbandLabel(karkun.gender)}</dt>
+              <dd className="break-words">{karkun.fatherHusbandName}</dd>
+            </div>
+          )}
+          <div>
+            <dt className="text-secondary">Mobile</dt>
+            <dd className="break-words">{karkun.mobile || 'Not added'}</dd>
+          </div>
+          <div>
+            <dt className="text-secondary">Area</dt>
+            <dd className="break-words">{karkun.area || karkun.place}</dd>
+          </div>
+        </dl>
+        {error && <p className="text-sm text-red-600">{error}</p>}
+      </div>
     </Modal>
   )
 }

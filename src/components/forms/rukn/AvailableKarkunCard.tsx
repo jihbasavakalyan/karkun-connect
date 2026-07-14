@@ -70,19 +70,21 @@ export function AvailableKarkunCard({ karkun, ruknId }: AvailableKarkunCardProps
         isOpen={confirmOpen}
         title="Connect Karkun"
         onClose={() => setConfirmOpen(false)}
+        footer={
+          <div className="flex flex-col gap-3">
+            <PrimaryButton type="button" fullWidth onClick={handleConfirm}>
+              Confirm
+            </PrimaryButton>
+            <SecondaryButton type="button" fullWidth onClick={() => setConfirmOpen(false)}>
+              Cancel
+            </SecondaryButton>
+          </div>
+        }
       >
         <p className="text-secondary">
           Do you want to connect with this Karkun?
         </p>
         <p className="mt-2 font-semibold text-text-heading">{karkun.name}</p>
-        <div className="mt-6 flex flex-col gap-3">
-          <PrimaryButton type="button" fullWidth onClick={handleConfirm}>
-            Confirm
-          </PrimaryButton>
-          <SecondaryButton type="button" fullWidth onClick={() => setConfirmOpen(false)}>
-            Cancel
-          </SecondaryButton>
-        </div>
       </Modal>
     </>
   )
