@@ -2,7 +2,7 @@ import { MOCK_KARKUN_REGISTRY } from '@/constants/mockKarkunRegistry'
 import { ruknMaster } from '@/data/ruknMaster'
 import { getRepositories } from '@/repositories/provider'
 import { unwrapRepository } from '@/repositories/errors'
-import { traceRegistryStage } from '@/lib/registryHydrationTrace'
+import { notifyPeopleRegistryChange } from '@/lib/peopleStore'
 
 export function hasPersistedKarkunRegistry(): boolean {
   const result = getRepositories().karkun.exists()
@@ -41,9 +41,9 @@ export function loadPeopleRegistryFromPersistence(): {
     mutated = true
   }
 
-  void mutated
-
-  traceRegistryStage('4_after_loadPeopleRegistryFromPersistence')
+  if (mutated) {
+    notifyPeopleRegistryChange()
+  }
 
   return {
     loadedKarkuns: karkunState.karkuns.length > 0,

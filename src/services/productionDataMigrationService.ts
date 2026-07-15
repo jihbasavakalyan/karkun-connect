@@ -7,7 +7,6 @@ import {
   getAllKarkuns,
   getPeopleStatistics,
   importKarkunsFromRows,
-  notifyPeopleRegistryChange,
   removeFemaleKarkunsFromRegistry,
   removeMaleKarkunsFromRegistry,
 } from '@/lib/peopleStore'
@@ -159,8 +158,6 @@ export function runProductionDataMigration(): ProductionMigrationSummary {
       }
       migrationCompleted = true
       lastMigrationSummary = summary
-      // loadPeopleRegistryFromPersistence mutates MOCK without notifying — wake Karkun Management.
-      notifyPeopleRegistryChange()
       return summary
     }
   }

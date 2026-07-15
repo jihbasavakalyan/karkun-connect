@@ -5,23 +5,15 @@ import {
   hydrateFirestoreCaches,
   startFirestoreSnapshotListeners,
   stopFirestoreSnapshotListeners,
-  getKarkunCacheHydratedFlag,
 } from '@/repositories/firestore/firestoreRepositories'
 import { hydrateStoresFromRepositories } from '@/repositories/firestore/storeHydration'
-import {
-  setRegistryTraceHydrated,
-  traceRegistryStage,
-} from '@/lib/registryHydrationTrace'
 
 let initialized = false
+let snapshotRefreshQueued = false
+let snapshotRefreshRunning = false
 
 const HYDRATE_TIMEOUT_MS = 8_000
 
-/**
- * First blocking failure was `await hydrateFirestoreCaches()` → Promise.all(getDocs…).
- * Those promises often never settle before Auth is ready (SDK waits on credentials;
- * rules require sign-in). Bootstrap must not await that hang.
- */
 function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
   return new Promise<T>((resolve, reject) => {
     const timer = setTimeout(() => {
@@ -40,32 +32,48 @@ function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise
   })
 }
 
-async function hydrateCachesOrSkip(): Promise<void> {
-  traceRegistryStage('hydrateCachesOrSkip:start')
+async function hydrateCachesOrSkip(): Promise<boolean> {
   try {
     await withTimeout(hydrateFirestoreCaches(), HYDRATE_TIMEOUT_MS, 'hydrateFirestoreCaches')
-    setRegistryTraceHydrated(getKarkunCacheHydratedFlag())
-    traceRegistryStage('hydrateCachesOrSkip:success')
+    return true
   } catch (error) {
-    // Expected before sign-in, on timeout, or when rules deny unauthenticated reads.
     console.warn('[kc-firestore] hydrate skipped or timed out', error)
-    setRegistryTraceHydrated(getKarkunCacheHydratedFlag())
-    traceRegistryStage('hydrateCachesOrSkip:caught_error')
+    return false
   }
 }
 
-/** Background hydrate after authStateReady — never blocks initializeRepositories(). */
-function scheduleBackgroundHydrate(reason: string): void {
+function scheduleBackgroundHydrate(): void {
   void (async () => {
     try {
       await getFirebaseAuth().authStateReady()
-      traceRegistryStage(`backgroundHydrate:authStateReady:${reason}`)
-      await hydrateCachesOrSkip()
-      hydrateStoresFromRepositories()
-      traceRegistryStage(`backgroundHydrate:storesHydrated:${reason}`)
+      const hydrated = await hydrateCachesOrSkip()
+      if (hydrated) {
+        hydrateStoresFromRepositories()
+      }
     } catch (error) {
       console.warn('[kc-firestore] background hydrate failed', error)
-      traceRegistryStage(`backgroundHydrate:failed:${reason}`)
+    }
+  })()
+}
+
+function scheduleSnapshotRefresh(): void {
+  snapshotRefreshQueued = true
+  if (snapshotRefreshRunning) {
+    return
+  }
+
+  snapshotRefreshRunning = true
+  void (async () => {
+    try {
+      while (snapshotRefreshQueued) {
+        snapshotRefreshQueued = false
+        const hydrated = await hydrateCachesOrSkip()
+        if (hydrated) {
+          hydrateStoresFromRepositories()
+        }
+      }
+    } finally {
+      snapshotRefreshRunning = false
     }
   })()
 }
@@ -77,56 +85,31 @@ export async function refreshFirestoreAfterAuth(): Promise<void> {
 
   try {
     await hydrateFirestoreCaches()
-    setRegistryTraceHydrated(getKarkunCacheHydratedFlag())
-    traceRegistryStage('refreshFirestoreAfterAuth:after_hydrateFirestoreCaches')
     hydrateStoresFromRepositories()
-    traceRegistryStage('refreshFirestoreAfterAuth:after_hydrateStoresFromRepositories')
   } catch (error) {
     console.warn('[kc-firestore] post-auth hydrate failed', error)
-    traceRegistryStage('refreshFirestoreAfterAuth:caught_error')
   }
 }
 
 export async function initializeRepositories(): Promise<void> {
   if (initialized || getRepositoryProviderMode() !== 'firestore') {
-    if (getRepositoryProviderMode() !== 'firestore') {
-      setRegistryTraceHydrated(false)
-      traceRegistryStage('initializeRepositories:skipped_non_firestore')
-    }
     return
   }
 
-  traceRegistryStage('initializeRepositories:before_enableFirestorePersistence')
   await enableFirestorePersistence()
-  traceRegistryStage('initializeRepositories:after_enableFirestorePersistence')
-
-  // CRITICAL FIX: do not await hydrateCachesOrSkip() here.
-  // Previously: await hydratePromise blocked forever inside Promise.all(getDocs…),
-  // so runProductionDataMigration() in main.tsx never ran and the registry stayed empty.
-  scheduleBackgroundHydrate('initializeRepositories')
+  scheduleBackgroundHydrate()
 
   stopFirestoreSnapshotListeners()
   startFirestoreSnapshotListeners(() => {
-    void hydrateCachesOrSkip().then(() => {
-      hydrateStoresFromRepositories()
-      traceRegistryStage('snapshotListener:after_hydrateStoresFromRepositories')
-    })
+    scheduleSnapshotRefresh()
   })
 
-  // Apply whatever is already in memory caches (usually empty pre-auth), then finish init
-  // so main.tsx can run production migration immediately.
-  //
-  // Do NOT subscribe SyncCache → hydrateStores here. Local saveState() also updates SyncCache;
-  // wiring that to hydrateStores caused a hydrate↔persist storm while migration imported Karkuns.
-  // Remote updates are already handled by startFirestoreSnapshotListeners above.
-  hydrateStoresFromRepositories()
-
-  setRegistryTraceHydrated(getKarkunCacheHydratedFlag())
   initialized = true
-  traceRegistryStage('2_after_initializeRepositories_complete')
 }
 
 export function resetRepositoryInitializationForTests(): void {
   initialized = false
+  snapshotRefreshQueued = false
+  snapshotRefreshRunning = false
   stopFirestoreSnapshotListeners()
 }

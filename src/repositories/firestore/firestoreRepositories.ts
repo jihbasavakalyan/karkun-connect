@@ -82,8 +82,8 @@ const backupIndexCache = new SyncCache<MigrationBackupIndexEntry[]>([])
 const backupCache = new SyncCache<Map<string, DatasetBackup>>(new Map())
 
 const snapshotUnsubscribers: Unsubscribe[] = []
-let activeHydrations = 0
-let hydrationSequence = 0
+let hydrateInFlight: Promise<void> | null = null
+let hydrateRequestedWhileRunning = false
 
 async function queueWrite(label: string, work: () => Promise<RepositoryResult<void>>): Promise<void> {
   trackPendingWrite()
@@ -97,56 +97,37 @@ async function queueWrite(label: string, work: () => Promise<RepositoryResult<vo
   }
 }
 
-export async function hydrateFirestoreCaches(): Promise<void> {
-  const id = ++hydrationSequence
-  activeHydrations += 1
-  console.log(`[HYDRATE_TRACE] ENTER id=${id} active=${activeHydrations}`)
-
+async function hydrateFirestoreCachesOnce(): Promise<void> {
   const db = getFirestoreDb()
-  const trace = <T>(label: string, promise: Promise<T>): Promise<T> => {
-    console.log(`[HYDRATE] START ${label}`)
-    return promise.then(
-      (value) => {
-        console.log(`[HYDRATE] DONE ${label}`)
-        return value
-      },
-      (error) => {
-        console.error(`[HYDRATE] FAIL ${label}`, error)
-        throw error
-      },
-    )
-  }
-
-  try {
-    const [
-      campaigns,
-      rukns,
-      karkuns,
-      karkunCounter,
-      assignments,
-      connectionMeta,
-      activityLogs,
-      executionSnapshots,
-      followUps,
-      communication,
-      complianceSnapshots,
-      migrationVersion,
-      settingsSnapshots,
-    ] = await Promise.all([
-      trace('campaigns', readCollection<CampaignListItem>(db, FIRESTORE_COLLECTIONS.campaigns)),
-      trace('rukns', readCollection<Rukn>(db, FIRESTORE_COLLECTIONS.rukns)),
-      trace('karkuns', readCollection<KarkunRegistryRecord>(db, FIRESTORE_COLLECTIONS.karkuns)),
-      trace('karkunCounter', readDoc<{ nextKarkunNum: number }>(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.karkunCounter)),
-      trace('connections', readCollection<AssignmentRecord>(db, FIRESTORE_COLLECTIONS.connections)),
-      trace('connectionMeta', readDoc<{ nextSequence: number }>(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.connectionMeta)),
-      trace('activityLogs', readCollection<ActivityLogEntry>(db, FIRESTORE_COLLECTIONS.activityLogs)),
-      trace('executions', getDocs(collection(db, FIRESTORE_COLLECTIONS.executions))),
-      trace('followUps', readCollection<FollowUpRecord>(db, FIRESTORE_COLLECTIONS.followUps)),
-      trace('communication', readDoc<CommunicationState>(db, FIRESTORE_COLLECTIONS.communications, FIRESTORE_DOCS.communicationState)),
-      trace('compliance', getDocs(collection(db, FIRESTORE_COLLECTIONS.compliance))),
-      trace('migrationVersion', readDoc<{ version: number | null }>(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.migrationVersion)),
-      trace('settings', getDocs(collection(db, FIRESTORE_COLLECTIONS.settings))),
-    ])
+  const [
+    campaigns,
+    rukns,
+    karkuns,
+    karkunCounter,
+    assignments,
+    connectionMeta,
+    activityLogs,
+    executionSnapshots,
+    followUps,
+    communication,
+    complianceSnapshots,
+    migrationVersion,
+    settingsSnapshots,
+  ] = await Promise.all([
+    readCollection<CampaignListItem>(db, FIRESTORE_COLLECTIONS.campaigns),
+    readCollection<Rukn>(db, FIRESTORE_COLLECTIONS.rukns),
+    readCollection<KarkunRegistryRecord>(db, FIRESTORE_COLLECTIONS.karkuns),
+    readDoc<{ nextKarkunNum: number }>(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.karkunCounter),
+    readCollection<AssignmentRecord>(db, FIRESTORE_COLLECTIONS.connections),
+    readDoc<{ nextSequence: number }>(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.connectionMeta),
+    readCollection<ActivityLogEntry>(db, FIRESTORE_COLLECTIONS.activityLogs),
+    getDocs(collection(db, FIRESTORE_COLLECTIONS.executions)),
+    readCollection<FollowUpRecord>(db, FIRESTORE_COLLECTIONS.followUps),
+    readDoc<CommunicationState>(db, FIRESTORE_COLLECTIONS.communications, FIRESTORE_DOCS.communicationState),
+    getDocs(collection(db, FIRESTORE_COLLECTIONS.compliance)),
+    readDoc<{ version: number | null }>(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.migrationVersion),
+    getDocs(collection(db, FIRESTORE_COLLECTIONS.settings)),
+  ])
 
     if (campaigns.length > 0) {
       campaignCache.set(campaigns)
@@ -229,15 +210,24 @@ export async function hydrateFirestoreCaches(): Promise<void> {
     broadcastCache.set(broadcastLists)
     backupIndexCache.set(backupIndex)
     backupCache.set(backupMap)
+}
 
-    console.log(`[HYDRATE_TRACE] EXIT id=${id} active=${activeHydrations}`)
-  } catch (error) {
-    console.log(`[HYDRATE_TRACE] EXIT id=${id} active=${activeHydrations}`)
-    throw error
-  } finally {
-    activeHydrations -= 1
-    console.log(`[HYDRATE_TRACE] FINALLY id=${id} active=${activeHydrations}`)
+export async function hydrateFirestoreCaches(): Promise<void> {
+  if (hydrateInFlight) {
+    hydrateRequestedWhileRunning = true
+    return hydrateInFlight
   }
+
+  hydrateInFlight = (async () => {
+    do {
+      hydrateRequestedWhileRunning = false
+      await hydrateFirestoreCachesOnce()
+    } while (hydrateRequestedWhileRunning)
+  })().finally(() => {
+    hydrateInFlight = null
+  })
+
+  return hydrateInFlight
 }
 
 type DocumentRecord = {
@@ -278,7 +268,7 @@ export function startFirestoreSnapshotListeners(onRemoteChange: () => void): voi
   const watch = (path: string, handler: () => void) => {
     snapshotUnsubscribers.push(
       onSnapshot(collection(db, path), () => {
-        void hydrateFirestoreCaches().then(handler)
+        handler()
       }),
     )
   }
@@ -413,16 +403,6 @@ export class KarkunFirestoreRepository implements KarkunRepository {
   exists(): RepositoryResult<boolean> {
     return repositoryOk(karkunCache.get().karkuns.length > 0)
   }
-}
-
-/** Diagnostics: whether the Firestore karkun SyncCache has been marked hydrated. */
-export function getKarkunCacheHydratedFlag(): boolean {
-  return karkunCache.getHydrated()
-}
-
-/** Diagnostics: current karkun documents held in the Firestore SyncCache. */
-export function getKarkunCacheCount(): number {
-  return karkunCache.get().karkuns.length
 }
 
 export class ConnectionFirestoreRepository implements ConnectionRepository {
