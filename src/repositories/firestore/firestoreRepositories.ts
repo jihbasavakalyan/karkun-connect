@@ -52,6 +52,12 @@ import {
   writeDoc,
 } from '@/repositories/firestore/firestoreHelpers'
 import { markPendingWriteComplete, recordFirestoreConflict, trackPendingWrite } from '@/repositories/firestore/offlineSync'
+import {
+  markRepositoryReadiness,
+  traceIncidentStage,
+  traceRepositorySnapshot,
+  traceSequencedIncidentStage,
+} from '@/lib/incidentTraceCollector'
 
 function deriveNextSequenceFromRecords(records: AssignmentRecord[]): number {
   let max = 0
@@ -85,6 +91,15 @@ const snapshotUnsubscribers: Unsubscribe[] = []
 let hydrateInFlight: Promise<void> | null = null
 let hydrateRequestedWhileRunning = false
 
+markRepositoryReadiness('connection_repository', 'UNINITIALIZED', {
+  caller: 'firestoreRepositories.module',
+  sourceOfTruth: 'Firestore',
+})
+markRepositoryReadiness('assignment_repository', 'UNINITIALIZED', {
+  caller: 'firestoreRepositories.module',
+  sourceOfTruth: 'Firestore',
+})
+
 async function queueWrite(label: string, work: () => Promise<RepositoryResult<void>>): Promise<void> {
   trackPendingWrite()
   try {
@@ -98,36 +113,52 @@ async function queueWrite(label: string, work: () => Promise<RepositoryResult<vo
 }
 
 async function hydrateFirestoreCachesOnce(): Promise<void> {
-  const db = getFirestoreDb()
-  const [
-    campaigns,
-    rukns,
-    karkuns,
-    karkunCounter,
-    assignments,
-    connectionMeta,
-    activityLogs,
-    executionSnapshots,
-    followUps,
-    communication,
-    complianceSnapshots,
-    migrationVersion,
-    settingsSnapshots,
-  ] = await Promise.all([
-    readCollection<CampaignListItem>(db, FIRESTORE_COLLECTIONS.campaigns),
-    readCollection<Rukn>(db, FIRESTORE_COLLECTIONS.rukns),
-    readCollection<KarkunRegistryRecord>(db, FIRESTORE_COLLECTIONS.karkuns),
-    readDoc<{ nextKarkunNum: number }>(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.karkunCounter),
-    readCollection<AssignmentRecord>(db, FIRESTORE_COLLECTIONS.connections),
-    readDoc<{ nextSequence: number }>(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.connectionMeta),
-    readCollection<ActivityLogEntry>(db, FIRESTORE_COLLECTIONS.activityLogs),
-    getDocs(collection(db, FIRESTORE_COLLECTIONS.executions)),
-    readCollection<FollowUpRecord>(db, FIRESTORE_COLLECTIONS.followUps),
-    readDoc<CommunicationState>(db, FIRESTORE_COLLECTIONS.communications, FIRESTORE_DOCS.communicationState),
-    getDocs(collection(db, FIRESTORE_COLLECTIONS.compliance)),
-    readDoc<{ version: number | null }>(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.migrationVersion),
-    getDocs(collection(db, FIRESTORE_COLLECTIONS.settings)),
-  ])
+  traceIncidentStage('hydrateFirestoreCachesOnce:start', {
+    caller: 'hydrateFirestoreCachesOnce',
+    sourceOfTruth: 'Firestore',
+  })
+  markRepositoryReadiness('connection_repository', 'LOADING', {
+    caller: 'hydrateFirestoreCachesOnce',
+    reason: 'reading connections collection',
+    sourceOfTruth: 'Firestore',
+  })
+  markRepositoryReadiness('assignment_repository', 'LOADING', {
+    caller: 'hydrateFirestoreCachesOnce',
+    reason: 'reading connections collection',
+    sourceOfTruth: 'Firestore',
+  })
+
+  try {
+    const db = getFirestoreDb()
+    const [
+      campaigns,
+      rukns,
+      karkuns,
+      karkunCounter,
+      assignments,
+      connectionMeta,
+      activityLogs,
+      executionSnapshots,
+      followUps,
+      communication,
+      complianceSnapshots,
+      migrationVersion,
+      settingsSnapshots,
+    ] = await Promise.all([
+      readCollection<CampaignListItem>(db, FIRESTORE_COLLECTIONS.campaigns),
+      readCollection<Rukn>(db, FIRESTORE_COLLECTIONS.rukns),
+      readCollection<KarkunRegistryRecord>(db, FIRESTORE_COLLECTIONS.karkuns),
+      readDoc<{ nextKarkunNum: number }>(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.karkunCounter),
+      readCollection<AssignmentRecord>(db, FIRESTORE_COLLECTIONS.connections),
+      readDoc<{ nextSequence: number }>(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.connectionMeta),
+      readCollection<ActivityLogEntry>(db, FIRESTORE_COLLECTIONS.activityLogs),
+      getDocs(collection(db, FIRESTORE_COLLECTIONS.executions)),
+      readCollection<FollowUpRecord>(db, FIRESTORE_COLLECTIONS.followUps),
+      readDoc<CommunicationState>(db, FIRESTORE_COLLECTIONS.communications, FIRESTORE_DOCS.communicationState),
+      getDocs(collection(db, FIRESTORE_COLLECTIONS.compliance)),
+      readDoc<{ version: number | null }>(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.migrationVersion),
+      getDocs(collection(db, FIRESTORE_COLLECTIONS.settings)),
+    ])
 
     if (campaigns.length > 0) {
       campaignCache.set(campaigns)
@@ -144,6 +175,34 @@ async function hydrateFirestoreCachesOnce(): Promise<void> {
     const derivedSequence = deriveNextSequenceFromRecords(assignments)
     connectionCache.set({
       assignments,
+      nextSequence: Math.max(connectionMeta?.nextSequence ?? 1, derivedSequence),
+    })
+    traceSequencedIncidentStage('repository_cache_update_complete', {
+      connectionCount: assignments.length,
+      assignmentCount: assignments.length,
+      sourceOfTruth: 'Firestore',
+    })
+    markRepositoryReadiness(
+      'connection_repository',
+      assignments.length > 0 ? 'LOADED' : 'LOADED_EMPTY',
+      {
+        caller: 'hydrateFirestoreCachesOnce',
+        sourceOfTruth: 'Firestore',
+      },
+    )
+    markRepositoryReadiness(
+      'assignment_repository',
+      assignments.length > 0 ? 'LOADED' : 'LOADED_EMPTY',
+      {
+        caller: 'hydrateFirestoreCachesOnce',
+        sourceOfTruth: 'Firestore',
+      },
+    )
+    traceRepositorySnapshot('connection_repository', {
+      caller: 'hydrateFirestoreCachesOnce',
+      sourceOfTruth: 'Firestore',
+      connectionCount: assignments.length,
+      assignmentCount: assignments.length,
       nextSequence: Math.max(connectionMeta?.nextSequence ?? 1, derivedSequence),
     })
 
@@ -210,11 +269,42 @@ async function hydrateFirestoreCachesOnce(): Promise<void> {
     broadcastCache.set(broadcastLists)
     backupIndexCache.set(backupIndex)
     backupCache.set(backupMap)
+    traceIncidentStage('hydrateFirestoreCachesOnce:complete', {
+      caller: 'hydrateFirestoreCachesOnce',
+      sourceOfTruth: 'Firestore',
+      connectionCount: assignments.length,
+    })
+  } catch (error) {
+    markRepositoryReadiness('connection_repository', 'FAILED', {
+      caller: 'hydrateFirestoreCachesOnce',
+      sourceOfTruth: 'Firestore',
+      error: error instanceof Error ? error.message : String(error),
+    })
+    markRepositoryReadiness('assignment_repository', 'FAILED', {
+      caller: 'hydrateFirestoreCachesOnce',
+      sourceOfTruth: 'Firestore',
+      error: error instanceof Error ? error.message : String(error),
+    })
+    traceIncidentStage('hydrateFirestoreCachesOnce:failed', {
+      caller: 'hydrateFirestoreCachesOnce',
+      sourceOfTruth: 'Firestore',
+      error: error instanceof Error ? error.message : String(error),
+    })
+    throw error
+  }
 }
 
 export async function hydrateFirestoreCaches(): Promise<void> {
+  traceIncidentStage('hydrateFirestoreCaches:enter', {
+    caller: 'hydrateFirestoreCaches',
+    sourceOfTruth: 'Firestore',
+  })
   if (hydrateInFlight) {
     hydrateRequestedWhileRunning = true
+    traceIncidentStage('hydrateFirestoreCaches:already_in_flight', {
+      caller: 'hydrateFirestoreCaches',
+      sourceOfTruth: 'Firestore',
+    })
     return hydrateInFlight
   }
 
@@ -262,12 +352,21 @@ function normalizeJihPortalState(value: unknown): JihPortalState {
 }
 
 export function startFirestoreSnapshotListeners(onRemoteChange: () => void): void {
+  traceIncidentStage('startFirestoreSnapshotListeners:enter', {
+    caller: 'startFirestoreSnapshotListeners',
+    sourceOfTruth: 'Snapshot Listener',
+  })
   stopFirestoreSnapshotListeners()
   const db = getFirestoreDb()
 
   const watch = (path: string, handler: () => void) => {
     snapshotUnsubscribers.push(
       onSnapshot(collection(db, path), () => {
+        traceIncidentStage('snapshot_listener:fired', {
+          caller: 'onSnapshot',
+          sourceOfTruth: 'Snapshot Listener',
+          path,
+        })
         handler()
       }),
     )
@@ -408,6 +507,13 @@ export class KarkunFirestoreRepository implements KarkunRepository {
 export class ConnectionFirestoreRepository implements ConnectionRepository {
   loadState(): RepositoryResult<ConnectionState> {
     const state = connectionCache.get()
+    traceRepositorySnapshot('connection_repository', {
+      caller: 'ConnectionFirestoreRepository.loadState',
+      sourceOfTruth: 'Firestore',
+      connectionCount: state.assignments.length,
+      assignmentCount: state.assignments.length,
+      nextSequence: state.nextSequence,
+    })
     return repositoryOk({
       assignments: [...state.assignments],
       nextSequence: state.nextSequence,
@@ -415,6 +521,13 @@ export class ConnectionFirestoreRepository implements ConnectionRepository {
   }
 
   saveState(state: ConnectionState): RepositoryResult<void> {
+    traceRepositorySnapshot('connection_repository', {
+      caller: 'ConnectionFirestoreRepository.saveState',
+      sourceOfTruth: 'Derived Calculation',
+      connectionCount: state.assignments.length,
+      assignmentCount: state.assignments.length,
+      nextSequence: state.nextSequence,
+    })
     connectionCache.set({
       assignments: [...state.assignments],
       nextSequence: state.nextSequence,
@@ -435,6 +548,13 @@ export class ConnectionFirestoreRepository implements ConnectionRepository {
   }
 
   clear(): RepositoryResult<void> {
+    traceRepositorySnapshot('connection_repository', {
+      caller: 'ConnectionFirestoreRepository.clear',
+      sourceOfTruth: 'Derived Calculation',
+      connectionCount: 0,
+      assignmentCount: 0,
+      nextSequence: 1,
+    })
     connectionCache.set({ assignments: [], nextSequence: 1 })
     void queueWrite('connections', async () => {
       const db = getFirestoreDb()

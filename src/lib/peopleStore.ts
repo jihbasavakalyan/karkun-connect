@@ -33,6 +33,12 @@ import {
   subscribeToPeopleStore,
 } from '@/lib/peopleRegistryEvents'
 import { traceRegistryStage } from '@/lib/registryHydrationTrace'
+import {
+  createIncidentOperationId,
+  traceMetricSnapshot,
+  traceMutation,
+  traceStoreSnapshot,
+} from '@/lib/incidentTraceCollector'
 
 export { subscribeToPeopleStore }
 
@@ -56,7 +62,38 @@ function notifyPeopleChange(): void {
 
 /** Notify subscribers after assignment-driven registry field updates. */
 export function notifyPeopleRegistryChange(): void {
+  const before = getPeopleStatistics()
   notifyPeopleChange()
+  const after = getPeopleStatistics()
+
+  const operationId = createIncidentOperationId('people-registry-notify')
+  traceMutation({
+    operationId,
+    entity: 'people_registry',
+    field: 'assignedKarkuns',
+    before: before.assignedKarkuns,
+    after: after.assignedKarkuns,
+    caller: 'notifyPeopleRegistryChange',
+    reason: 'registry notify and persist',
+    sourceOfTruth: 'Derived Calculation',
+  })
+  traceMutation({
+    operationId,
+    entity: 'people_registry',
+    field: 'unassignedKarkuns',
+    before: before.unassignedKarkuns,
+    after: after.unassignedKarkuns,
+    caller: 'notifyPeopleRegistryChange',
+    reason: 'registry notify and persist',
+    sourceOfTruth: 'Derived Calculation',
+  })
+  traceStoreSnapshot('people_registry', {
+    caller: 'notifyPeopleRegistryChange',
+    sourceOfTruth: 'Derived Calculation',
+    connectedCount: after.assignedKarkuns,
+    availableCount: after.unassignedKarkuns,
+  })
+
   traceRegistryStage('6_after_notifyPeopleRegistryChange')
 }
 
@@ -160,7 +197,7 @@ export function getPeopleStatistics(): PeopleStatistics {
   const activeKarkuns = karkuns.filter((k) => k.status === 'active').length
   const inactiveKarkuns = karkuns.filter((k) => k.status === 'inactive').length
 
-  return {
+  const stats = {
     totalRukns: rukns.length,
     maleRukns,
     femaleRukns,
@@ -171,6 +208,18 @@ export function getPeopleStatistics(): PeopleStatistics {
     activeUsers: activeRukns + activeKarkuns,
     inactiveUsers: inactiveRukns + inactiveKarkuns,
   }
+
+  traceMetricSnapshot('people_registry_metrics', {
+    caller: 'getPeopleStatistics',
+    sourceOfTruth: 'Derived Calculation',
+    connected: stats.assignedKarkuns,
+    unconnected: stats.unassignedKarkuns,
+    assignedKarkuns: stats.assignedKarkuns,
+    unassignedKarkuns: stats.unassignedKarkuns,
+    totalRukns: stats.totalRukns,
+  })
+
+  return stats
 }
 
 export function createRukn(

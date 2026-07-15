@@ -35,6 +35,13 @@ import {
   validateReplaceInput,
   validateRestoreInput,
 } from '@/validation/assignmentValidation'
+import {
+  createIncidentOperationId,
+  traceIncidentStage,
+  traceMetricSnapshot,
+  traceMutation,
+  traceSequencedIncidentStage,
+} from '@/lib/incidentTraceCollector'
 
 function nowIso(): string {
   return new Date().toISOString()
@@ -62,6 +69,15 @@ function syncKarkunRegistryFromAssignments(karkunId: string, options?: { notify?
   const karkun = MOCK_KARKUN_REGISTRY.find((k) => k.id === karkunId && !k.isArchived)
   if (!karkun) return
 
+  const operationId = createIncidentOperationId('sync-karkun-registry')
+  const before = {
+    assignmentStatus: karkun.assignmentStatus,
+    assignedRuknId: karkun.assignedRuknId,
+    assignedRukn: karkun.assignedRukn,
+    assignmentDate: karkun.assignmentDate,
+    campaignStatus: karkun.campaignStatus,
+  }
+
   const activeAssignments = getActiveAssignmentsForKarkun(karkunId)
   if (activeAssignments.length === 0) {
     karkun.assignmentStatus = 'Available'
@@ -69,6 +85,83 @@ function syncKarkunRegistryFromAssignments(karkunId: string, options?: { notify?
     karkun.assignedRukn = ''
     karkun.assignmentDate = undefined
     karkun.campaignStatus = karkun.status === 'active' ? 'not_assigned' : 'inactive'
+
+    if (before.assignmentStatus !== karkun.assignmentStatus) {
+      traceMutation({
+        operationId,
+        entity: 'karkun_registry',
+        field: 'assignmentStatus',
+        before: before.assignmentStatus,
+        after: karkun.assignmentStatus,
+        caller: 'syncKarkunRegistryFromAssignments',
+        reason: 'no active assignments for karkun',
+        sourceOfTruth: 'Derived Calculation',
+        extras: {
+          karkunId,
+        },
+      })
+    }
+    if (before.assignedRuknId !== karkun.assignedRuknId) {
+      traceMutation({
+        operationId,
+        entity: 'karkun_registry',
+        field: 'assignedRuknId',
+        before: before.assignedRuknId,
+        after: karkun.assignedRuknId,
+        caller: 'syncKarkunRegistryFromAssignments',
+        reason: 'no active assignments for karkun',
+        sourceOfTruth: 'Derived Calculation',
+        extras: {
+          karkunId,
+        },
+      })
+    }
+    if (before.assignedRukn !== karkun.assignedRukn) {
+      traceMutation({
+        operationId,
+        entity: 'karkun_registry',
+        field: 'assignedRukn',
+        before: before.assignedRukn,
+        after: karkun.assignedRukn,
+        caller: 'syncKarkunRegistryFromAssignments',
+        reason: 'no active assignments for karkun',
+        sourceOfTruth: 'Derived Calculation',
+        extras: {
+          karkunId,
+        },
+      })
+    }
+    if (before.assignmentDate !== karkun.assignmentDate) {
+      traceMutation({
+        operationId,
+        entity: 'karkun_registry',
+        field: 'assignmentDate',
+        before: before.assignmentDate,
+        after: karkun.assignmentDate,
+        caller: 'syncKarkunRegistryFromAssignments',
+        reason: 'no active assignments for karkun',
+        sourceOfTruth: 'Derived Calculation',
+        extras: {
+          karkunId,
+        },
+      })
+    }
+    if (before.campaignStatus !== karkun.campaignStatus) {
+      traceMutation({
+        operationId,
+        entity: 'karkun_registry',
+        field: 'campaignStatus',
+        before: before.campaignStatus,
+        after: karkun.campaignStatus,
+        caller: 'syncKarkunRegistryFromAssignments',
+        reason: 'no active assignments for karkun',
+        sourceOfTruth: 'Derived Calculation',
+        extras: {
+          karkunId,
+        },
+      })
+    }
+
     if (options?.notify !== false) {
       notifyPeopleRegistryChange()
     }
@@ -83,6 +176,82 @@ function syncKarkunRegistryFromAssignments(karkunId: string, options?: { notify?
   karkun.assignmentDate = primary.effectiveFrom
   karkun.campaignStatus = 'active'
 
+  if (before.assignmentStatus !== karkun.assignmentStatus) {
+    traceMutation({
+      operationId,
+      entity: 'karkun_registry',
+      field: 'assignmentStatus',
+      before: before.assignmentStatus,
+      after: karkun.assignmentStatus,
+      caller: 'syncKarkunRegistryFromAssignments',
+      reason: 'active assignment present',
+      sourceOfTruth: 'Derived Calculation',
+      extras: {
+        karkunId,
+      },
+    })
+  }
+  if (before.assignedRuknId !== karkun.assignedRuknId) {
+    traceMutation({
+      operationId,
+      entity: 'karkun_registry',
+      field: 'assignedRuknId',
+      before: before.assignedRuknId,
+      after: karkun.assignedRuknId,
+      caller: 'syncKarkunRegistryFromAssignments',
+      reason: 'active assignment present',
+      sourceOfTruth: 'Derived Calculation',
+      extras: {
+        karkunId,
+      },
+    })
+  }
+  if (before.assignedRukn !== karkun.assignedRukn) {
+    traceMutation({
+      operationId,
+      entity: 'karkun_registry',
+      field: 'assignedRukn',
+      before: before.assignedRukn,
+      after: karkun.assignedRukn,
+      caller: 'syncKarkunRegistryFromAssignments',
+      reason: 'active assignment present',
+      sourceOfTruth: 'Derived Calculation',
+      extras: {
+        karkunId,
+      },
+    })
+  }
+  if (before.assignmentDate !== karkun.assignmentDate) {
+    traceMutation({
+      operationId,
+      entity: 'karkun_registry',
+      field: 'assignmentDate',
+      before: before.assignmentDate,
+      after: karkun.assignmentDate,
+      caller: 'syncKarkunRegistryFromAssignments',
+      reason: 'active assignment present',
+      sourceOfTruth: 'Derived Calculation',
+      extras: {
+        karkunId,
+      },
+    })
+  }
+  if (before.campaignStatus !== karkun.campaignStatus) {
+    traceMutation({
+      operationId,
+      entity: 'karkun_registry',
+      field: 'campaignStatus',
+      before: before.campaignStatus,
+      after: karkun.campaignStatus,
+      caller: 'syncKarkunRegistryFromAssignments',
+      reason: 'active assignment present',
+      sourceOfTruth: 'Derived Calculation',
+      extras: {
+        karkunId,
+      },
+    })
+  }
+
   if (options?.notify !== false) {
     notifyPeopleRegistryChange()
   }
@@ -90,12 +259,29 @@ function syncKarkunRegistryFromAssignments(karkunId: string, options?: { notify?
 
 /** Reconcile Karkun registry fields from persisted assignment records after app reload. */
 export function syncAllKarkunRegistryFromAssignments(options?: { notify?: boolean }): void {
+  traceSequencedIncidentStage('syncAllKarkunRegistryFromAssignments_start', {
+    assignmentStoreCount: getAllAssignments().length,
+  })
+  traceIncidentStage('syncAllKarkunRegistryFromAssignments:start', {
+    caller: 'syncAllKarkunRegistryFromAssignments',
+    sourceOfTruth: 'Derived Calculation',
+    assignmentCount: getAllAssignments().length,
+    karkunCount: getAllKarkuns().length,
+  })
+
   for (const karkun of getAllKarkuns()) {
     syncKarkunRegistryFromAssignments(karkun.id, { notify: false })
   }
   if (options?.notify !== false) {
     notifyPeopleRegistryChange()
   }
+
+  traceIncidentStage('syncAllKarkunRegistryFromAssignments:complete', {
+    caller: 'syncAllKarkunRegistryFromAssignments',
+    sourceOfTruth: 'Derived Calculation',
+    assignmentCount: getAllAssignments().length,
+    karkunCount: getAllKarkuns().length,
+  })
 }
 
 function formatNames(ruknId: string, karkunId: string): { ruknName: string; karkunName: string } {
@@ -343,7 +529,7 @@ export function getAssignmentDashboardMetrics(): AssignmentDashboardMetrics {
   )
   const periodCounts = getAssignmentPeriodCounts()
 
-  return {
+  const metrics = {
     activeAssignments: activeAssignments.length,
     unassignedRukns: activeRukns.filter((rukn) => !assignedRuknIds.has(rukn.id)).length,
     assignedRukns: assignedRuknIds.size,
@@ -358,6 +544,18 @@ export function getAssignmentDashboardMetrics(): AssignmentDashboardMetrics {
     assignmentsThisWeek: periodCounts.assignmentsThisWeek,
     assignmentsThisMonth: periodCounts.assignmentsThisMonth,
   }
+
+  traceMetricSnapshot('assignment_dashboard_metrics', {
+    caller: 'getAssignmentDashboardMetrics',
+    sourceOfTruth: 'Derived Calculation',
+    connected: metrics.activeAssignments,
+    unconnected: metrics.unassignedRukns,
+    activeAssignments: metrics.activeAssignments,
+    assignedRukns: metrics.assignedRukns,
+    unassignedRukns: metrics.unassignedRukns,
+  })
+
+  return metrics
 }
 
 export function getKarkunsForRuknAssignment(ruknId: string) {

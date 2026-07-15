@@ -33,8 +33,14 @@ async function main() {
   await page.waitForTimeout(waitMs)
 
   const fromWindow = await page.evaluate(() => {
-    const w = window as unknown as { __KC_REGISTRY_TRACE__?: { snapshots: unknown[] } }
-    return w.__KC_REGISTRY_TRACE__ ?? null
+    const w = window as unknown as {
+      __KC_REGISTRY_TRACE__?: { snapshots: unknown[] }
+      __KC_INCIDENT_TRACE__?: { runId: string; seq: number; events: unknown[] }
+    }
+    return {
+      registry: w.__KC_REGISTRY_TRACE__ ?? null,
+      incident: w.__KC_INCIDENT_TRACE__ ?? null,
+    }
   })
 
   const report = {
@@ -43,10 +49,12 @@ async function main() {
     waitMs,
     capturedAt: new Date().toISOString(),
     consoleTraceCount: traces.length,
-    windowSnapshotCount: fromWindow?.snapshots?.length ?? 0,
+    windowSnapshotCount: fromWindow?.registry?.snapshots?.length ?? 0,
+    incidentEventCount: fromWindow?.incident?.events?.length ?? 0,
     warnings,
     errors,
-    snapshots: fromWindow?.snapshots ?? traces,
+    snapshots: fromWindow?.registry?.snapshots ?? traces,
+    incidentTrace: fromWindow?.incident ?? null,
   }
 
   const text = JSON.stringify(report, null, 2)

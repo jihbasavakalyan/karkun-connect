@@ -35,6 +35,10 @@ import type {
   MigrationBackupIndexEntry,
   SettingsRepository,
 } from '@/repositories/interfaces/SettingsRepository'
+import {
+  markRepositoryReadiness,
+  traceRepositorySnapshot,
+} from '@/lib/incidentTraceCollector'
 
 function normalizePersistedMap<T>(value: unknown): Record<string, T> {
   if (Array.isArray(value)) {
@@ -136,7 +140,16 @@ export class KarkunLocalRepository implements KarkunRepository {
 
 export class ConnectionLocalRepository implements ConnectionRepository {
   loadState(): RepositoryResult<ConnectionState> {
-    return tryRepository(() => {
+    markRepositoryReadiness('connection_repository', 'LOADING', {
+      caller: 'ConnectionLocalRepository.loadState',
+      sourceOfTruth: 'Local Repository',
+    })
+    markRepositoryReadiness('assignment_repository', 'LOADING', {
+      caller: 'ConnectionLocalRepository.loadState',
+      sourceOfTruth: 'Local Repository',
+    })
+
+    const result = tryRepository(() => {
       const assignments = loadJsonFromStorage<AssignmentRecord[]>(STORAGE_KEYS.assignments, [])
       const storedSequence = loadJsonFromStorage<number | null>(STORAGE_KEYS.assignmentSequence, null)
       const derivedSequence = deriveNextSequenceFromRecords(assignments)
@@ -146,9 +159,46 @@ export class ConnectionLocalRepository implements ConnectionRepository {
           : derivedSequence
       return { assignments, nextSequence }
     })
+
+    if (result.ok) {
+      const readiness = result.data.assignments.length > 0 ? 'LOADED' : 'LOADED_EMPTY'
+      markRepositoryReadiness('connection_repository', readiness, {
+        caller: 'ConnectionLocalRepository.loadState',
+        sourceOfTruth: 'Local Repository',
+      })
+      markRepositoryReadiness('assignment_repository', readiness, {
+        caller: 'ConnectionLocalRepository.loadState',
+        sourceOfTruth: 'Local Repository',
+      })
+      traceRepositorySnapshot('connection_repository', {
+        caller: 'ConnectionLocalRepository.loadState',
+        sourceOfTruth: 'Local Repository',
+        connectionCount: result.data.assignments.length,
+        assignmentCount: result.data.assignments.length,
+        nextSequence: result.data.nextSequence,
+      })
+      return result
+    }
+
+    markRepositoryReadiness('connection_repository', 'FAILED', {
+      caller: 'ConnectionLocalRepository.loadState',
+      sourceOfTruth: 'Local Repository',
+    })
+    markRepositoryReadiness('assignment_repository', 'FAILED', {
+      caller: 'ConnectionLocalRepository.loadState',
+      sourceOfTruth: 'Local Repository',
+    })
+    return result
   }
 
   saveState(state: ConnectionState): RepositoryResult<void> {
+    traceRepositorySnapshot('connection_repository', {
+      caller: 'ConnectionLocalRepository.saveState',
+      sourceOfTruth: 'Local Repository',
+      connectionCount: state.assignments.length,
+      assignmentCount: state.assignments.length,
+      nextSequence: state.nextSequence,
+    })
     return tryRepository(() => {
       saveJsonToStorage(STORAGE_KEYS.assignments, state.assignments)
       saveJsonToStorage(STORAGE_KEYS.assignmentSequence, state.nextSequence)
@@ -156,6 +206,13 @@ export class ConnectionLocalRepository implements ConnectionRepository {
   }
 
   clear(): RepositoryResult<void> {
+    traceRepositorySnapshot('connection_repository', {
+      caller: 'ConnectionLocalRepository.clear',
+      sourceOfTruth: 'Local Repository',
+      connectionCount: 0,
+      assignmentCount: 0,
+      nextSequence: 1,
+    })
     return tryRepository(() => {
       removeFromStorage(STORAGE_KEYS.assignments)
       removeFromStorage(STORAGE_KEYS.assignmentSequence)

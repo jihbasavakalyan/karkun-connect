@@ -1,4 +1,4 @@
-import { getRepositoryProviderMode } from '@/repositories/provider'
+import { getRepositories, getRepositoryProviderMode } from '@/repositories/provider'
 import { enableFirestorePersistence } from '@/lib/firebase/firestore'
 import { getFirebaseAuth } from '@/lib/firebase/firebase'
 import {
@@ -9,51 +9,35 @@ import {
 import { hydrateStoresFromRepositories } from '@/repositories/firestore/storeHydration'
 
 let initialized = false
+let initializeInFlight: Promise<void> | null = null
 let snapshotRefreshQueued = false
 let snapshotRefreshRunning = false
 
-const HYDRATE_TIMEOUT_MS = 8_000
-
-function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
-  return new Promise<T>((resolve, reject) => {
-    const timer = setTimeout(() => {
-      reject(new Error(`[kc-firestore] ${label} timed out after ${ms}ms`))
-    }, ms)
-    promise.then(
-      (value) => {
-        clearTimeout(timer)
-        resolve(value)
-      },
-      (error) => {
-        clearTimeout(timer)
-        reject(error)
-      },
+function ensureConnectionRepositoryReadable(): void {
+  const state = getRepositories().connection.loadState()
+  if (!state.ok) {
+    throw new Error(
+      `[kc-firestore] startup contract failed: connection repository unreadable (${state.error.code})`,
     )
-  })
-}
-
-async function hydrateCachesOrSkip(): Promise<boolean> {
-  try {
-    await withTimeout(hydrateFirestoreCaches(), HYDRATE_TIMEOUT_MS, 'hydrateFirestoreCaches')
-    return true
-  } catch (error) {
-    console.warn('[kc-firestore] hydrate skipped or timed out', error)
-    return false
   }
 }
 
-function scheduleBackgroundHydrate(): void {
-  void (async () => {
-    try {
-      await getFirebaseAuth().authStateReady()
-      const hydrated = await hydrateCachesOrSkip()
-      if (hydrated) {
-        hydrateStoresFromRepositories()
-      }
-    } catch (error) {
-      console.warn('[kc-firestore] background hydrate failed', error)
-    }
-  })()
+async function runHydrateAndRebuildCycle(context: string): Promise<void> {
+  try {
+    await hydrateFirestoreCaches()
+  } catch (error) {
+    console.warn(`[kc-firestore] ${context} hydrate failed, using current repository state`, error)
+  }
+
+  // Contract enforcement: assignmentStore rebuild + synchronization must run
+  // against a readable repository state (including explicit empty state).
+  ensureConnectionRepositoryReadable()
+  hydrateStoresFromRepositories()
+}
+
+async function runStartupLifecycle(): Promise<void> {
+  await getFirebaseAuth().authStateReady()
+  await runHydrateAndRebuildCycle('startup')
 }
 
 function scheduleSnapshotRefresh(): void {
@@ -67,10 +51,7 @@ function scheduleSnapshotRefresh(): void {
     try {
       while (snapshotRefreshQueued) {
         snapshotRefreshQueued = false
-        const hydrated = await hydrateCachesOrSkip()
-        if (hydrated) {
-          hydrateStoresFromRepositories()
-        }
+        await runHydrateAndRebuildCycle('snapshot refresh')
       }
     } finally {
       snapshotRefreshRunning = false
@@ -84,31 +65,45 @@ export async function refreshFirestoreAfterAuth(): Promise<void> {
   }
 
   try {
-    await hydrateFirestoreCaches()
-    hydrateStoresFromRepositories()
+    await runHydrateAndRebuildCycle('post-auth')
   } catch (error) {
     console.warn('[kc-firestore] post-auth hydrate failed', error)
   }
 }
 
 export async function initializeRepositories(): Promise<void> {
-  if (initialized || getRepositoryProviderMode() !== 'firestore') {
+  if (getRepositoryProviderMode() !== 'firestore' || initialized) {
     return
   }
 
-  await enableFirestorePersistence()
-  scheduleBackgroundHydrate()
+  if (initializeInFlight) {
+    return initializeInFlight
+  }
 
-  stopFirestoreSnapshotListeners()
-  startFirestoreSnapshotListeners(() => {
-    scheduleSnapshotRefresh()
-  })
+  initializeInFlight = (async () => {
+    await enableFirestorePersistence()
+    await runStartupLifecycle()
 
-  initialized = true
+    stopFirestoreSnapshotListeners()
+    startFirestoreSnapshotListeners(() => {
+      scheduleSnapshotRefresh()
+    })
+
+    initialized = true
+  })()
+
+  try {
+    await initializeInFlight
+  } finally {
+    if (!initialized) {
+      initializeInFlight = null
+    }
+  }
 }
 
 export function resetRepositoryInitializationForTests(): void {
   initialized = false
+  initializeInFlight = null
   snapshotRefreshQueued = false
   snapshotRefreshRunning = false
   stopFirestoreSnapshotListeners()

@@ -18,17 +18,11 @@ async function runDeferredBootstrap(): Promise<void> {
   const { runProductionDataMigration, getProductionMigrationCompletedFlag } = await import(
     '@/services/productionDataMigrationService'
   )
-  const { syncAllKarkunRegistryFromAssignments } = await import('@/services/assignmentService')
   const { setRegistryTraceMigrationCompleted } = await import('@/lib/registryHydrationTrace')
 
   runProductionDataMigration()
   setRegistryTraceMigrationCompleted(getProductionMigrationCompletedFlag())
   traceRegistryStage('5_after_runProductionDataMigration', {
-    migrationCompleted: getProductionMigrationCompletedFlag(),
-  })
-
-  syncAllKarkunRegistryFromAssignments()
-  traceRegistryStage('bootstrap_after_syncAllKarkunRegistryFromAssignments', {
     migrationCompleted: getProductionMigrationCompletedFlag(),
   })
 }

@@ -1,6 +1,14 @@
 import type { AssignmentRecord, AssignmentStatus } from '@/types/assignment'
 import { getRepositories } from '@/repositories/provider'
 import { unwrapRepository } from '@/repositories/errors'
+import {
+  createIncidentOperationId,
+  markRepositoryReadiness,
+  traceMutation,
+  traceRepositorySnapshot,
+  traceSequencedIncidentStage,
+  traceStoreSnapshot,
+} from '@/lib/incidentTraceCollector'
 
 function deriveNextSequenceFromRecords(records: AssignmentRecord[]): number {
   let max = 0
@@ -17,19 +25,59 @@ function loadPersistedAssignmentState(): {
   assignments: AssignmentRecord[]
   nextSequence: number
 } {
-  return unwrapRepository(
-    getRepositories().connection.loadState(),
-    { assignments: [], nextSequence: 1 },
-  )
+  markRepositoryReadiness('assignment_repository', 'LOADING', {
+    caller: 'assignmentStore.loadPersistedAssignmentState',
+    sourceOfTruth: 'Local Repository',
+  })
+
+  const result = getRepositories().connection.loadState()
+  if (result.ok) {
+    const readiness = result.data.assignments.length > 0 ? 'LOADED' : 'LOADED_EMPTY'
+    markRepositoryReadiness('assignment_repository', readiness, {
+      caller: 'assignmentStore.loadPersistedAssignmentState',
+      sourceOfTruth: 'Local Repository',
+    })
+    traceRepositorySnapshot('assignment_repository', {
+      caller: 'assignmentStore.loadPersistedAssignmentState',
+      sourceOfTruth: 'Local Repository',
+      assignmentCount: result.data.assignments.length,
+      nextSequence: result.data.nextSequence,
+    })
+  } else {
+    markRepositoryReadiness('assignment_repository', 'FAILED', {
+      caller: 'assignmentStore.loadPersistedAssignmentState',
+      sourceOfTruth: 'Local Repository',
+      errorCode: result.error.code,
+    })
+  }
+
+  return unwrapRepository(result, { assignments: [], nextSequence: 1 })
 }
 
 function persistAssignmentState(records: AssignmentRecord[], nextSequence: number): void {
+  traceRepositorySnapshot('assignment_repository', {
+    caller: 'assignmentStore.persistAssignmentState',
+    sourceOfTruth: 'Derived Calculation',
+    assignmentCount: records.length,
+    nextSequence,
+  })
   getRepositories().connection.saveState({ assignments: records, nextSequence })
 }
 
+markRepositoryReadiness('assignment_repository', 'UNINITIALIZED', {
+  caller: 'assignmentStore.module',
+  sourceOfTruth: 'Unknown',
+})
 const persisted = loadPersistedAssignmentState()
 const assignments: AssignmentRecord[] = [...persisted.assignments]
 let nextAssignmentSequence = persisted.nextSequence
+
+traceStoreSnapshot('assignment_store', {
+  caller: 'assignmentStore.module_init',
+  sourceOfTruth: 'Local Repository',
+  assignmentCount: assignments.length,
+  nextSequence: nextAssignmentSequence,
+})
 
 type AssignmentStoreListener = () => void
 const listeners = new Set<AssignmentStoreListener>()
@@ -49,10 +97,21 @@ function saveAssignments(): void {
 
 /** Re-read assignments from repository (simulates page reload). */
 export function reloadAssignmentStoreFromPersistence(): void {
+  const beforeCount = assignments.length
   const loaded = loadPersistedAssignmentState()
   assignments.length = 0
   assignments.push(...loaded.assignments)
   nextAssignmentSequence = loaded.nextSequence
+  traceStoreSnapshot('assignment_store', {
+    caller: 'reloadAssignmentStoreFromPersistence',
+    sourceOfTruth: 'Local Repository',
+    beforeCount,
+    afterCount: assignments.length,
+    nextSequence: nextAssignmentSequence,
+  })
+  traceSequencedIncidentStage('assignmentStore_reload_complete', {
+    assignmentStoreCount: assignments.length,
+  })
   notifyAssignmentStoreChange()
 }
 
@@ -119,8 +178,30 @@ export function getAssignmentHistoryForKarkun(karkunId: string): AssignmentRecor
 }
 
 export function appendAssignment(record: AssignmentRecord): AssignmentRecord {
+  const operationId = createIncidentOperationId('assignment-append')
+  traceMutation({
+    operationId,
+    entity: 'assignment_store',
+    field: 'count',
+    before: assignments.length,
+    after: assignments.length + 1,
+    caller: 'appendAssignment',
+    reason: 'assignment appended',
+    sourceOfTruth: 'Derived Calculation',
+    extras: {
+      assignmentId: record.assignmentId,
+      assignmentNumber: record.assignmentNumber,
+    },
+  })
+
   assignments.unshift(record)
   saveAssignments()
+  traceStoreSnapshot('assignment_store', {
+    caller: 'appendAssignment',
+    sourceOfTruth: 'Derived Calculation',
+    assignmentCount: assignments.length,
+    nextSequence: nextAssignmentSequence,
+  })
   notifyAssignmentStoreChange()
   return record
 }
@@ -139,6 +220,21 @@ export function updateAssignmentStatus(
   if (!record) {
     return undefined
   }
+
+  const operationId = createIncidentOperationId('assignment-status-update')
+  traceMutation({
+    operationId,
+    entity: 'assignment_record',
+    field: 'status',
+    before: record.status,
+    after: status,
+    caller: 'updateAssignmentStatus',
+    reason: 'assignment status update',
+    sourceOfTruth: 'Derived Calculation',
+    extras: {
+      assignmentId,
+    },
+  })
 
   record.status = status
   if (updates.replacementReason !== undefined) record.replacementReason = updates.replacementReason
@@ -201,9 +297,27 @@ export function searchAssignments(query: string): AssignmentRecord[] {
 }
 
 export function clearAssignmentStore(): void {
+  const operationId = createIncidentOperationId('assignment-clear')
+  traceMutation({
+    operationId,
+    entity: 'assignment_store',
+    field: 'count',
+    before: assignments.length,
+    after: 0,
+    caller: 'clearAssignmentStore',
+    reason: 'assignment store cleared',
+    sourceOfTruth: 'Derived Calculation',
+  })
+
   assignments.length = 0
   nextAssignmentSequence = 1
   getRepositories().connection.clear()
+  traceStoreSnapshot('assignment_store', {
+    caller: 'clearAssignmentStore',
+    sourceOfTruth: 'Derived Calculation',
+    assignmentCount: assignments.length,
+    nextSequence: nextAssignmentSequence,
+  })
   notifyAssignmentStoreChange()
 }
 
@@ -226,6 +340,18 @@ export function replaceAllAssignments(
 ): AssignmentStoreSnapshot {
   const previous = snapshotAssignmentStore()
 
+  const operationId = createIncidentOperationId('assignment-replace-all')
+  traceMutation({
+    operationId,
+    entity: 'assignment_store',
+    field: 'count',
+    before: previous.assignments.length,
+    after: records.length,
+    caller: 'replaceAllAssignments',
+    reason: 'assignment store replaced',
+    sourceOfTruth: 'Migration',
+  })
+
   assignments.length = 0
   assignments.push(...records)
 
@@ -234,6 +360,12 @@ export function replaceAllAssignments(
     Math.max(previous.nextSequence, deriveNextSequenceFromRecords(records))
 
   saveAssignments()
+  traceStoreSnapshot('assignment_store', {
+    caller: 'replaceAllAssignments',
+    sourceOfTruth: 'Migration',
+    assignmentCount: assignments.length,
+    nextSequence: nextAssignmentSequence,
+  })
   notifyAssignmentStoreChange()
   return previous
 }
