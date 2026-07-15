@@ -1,0 +1,7136 @@
+{
+  "capturedAt": "2026-07-15T20:46:08.601Z",
+  "before": {
+    "createdConnections": 4,
+    "connectedKarkuns": 4,
+    "connectedRukns": 4,
+    "assignmentCount": 4,
+    "dashboard": {
+      "activeAssignments": 4,
+      "unassignedRukns": 45,
+      "assignedRukns": 4,
+      "availableMaleKarkuns": 194,
+      "availableFemaleKarkuns": 295,
+      "totalAssignmentChanges": 0,
+      "assignmentsToday": 4,
+      "assignmentsThisWeek": 4,
+      "assignmentsThisMonth": 4
+    },
+    "peopleStats": {
+      "totalRukns": 49,
+      "maleRukns": 25,
+      "femaleRukns": 24,
+      "totalMaleKarkuns": 196,
+      "totalFemaleKarkuns": 297,
+      "assignedKarkuns": 4,
+      "unassignedKarkuns": 489,
+      "activeUsers": 542,
+      "inactiveUsers": 0
+    },
+    "assignmentStoreData": {
+      "assignments": [
+        {
+          "assignmentId": "asgn-1784148337279-e377g",
+          "assignmentNumber": "ASN-000004",
+          "ruknId": "R004",
+          "karkunId": "kr-198",
+          "status": "Active",
+          "effectiveFrom": "2026-07-15"
+        },
+        {
+          "assignmentId": "asgn-1784148337273-vh8al",
+          "assignmentNumber": "ASN-000003",
+          "ruknId": "R003",
+          "karkunId": "kr-002",
+          "status": "Active",
+          "effectiveFrom": "2026-07-15"
+        },
+        {
+          "assignmentId": "asgn-1784148337268-j2h3r",
+          "assignmentNumber": "ASN-000002",
+          "ruknId": "R002",
+          "karkunId": "kr-001",
+          "status": "Active",
+          "effectiveFrom": "2026-07-15"
+        },
+        {
+          "assignmentId": "asgn-1784148337261-stoqf",
+          "assignmentNumber": "ASN-000001",
+          "ruknId": "R001",
+          "karkunId": "kr-197",
+          "status": "Active",
+          "effectiveFrom": "2026-07-15"
+        }
+      ]
+    },
+    "peopleProjection": [
+      {
+        "id": "kr-001",
+        "assignmentStatus": "Assigned",
+        "assignedRuknId": "R002",
+        "assignedRukn": "Amir Khan",
+        "campaignStatus": "active"
+      },
+      {
+        "id": "kr-002",
+        "assignmentStatus": "Assigned",
+        "assignedRuknId": "R003",
+        "assignedRukn": "Mohd Minhajuddin",
+        "campaignStatus": "active"
+      },
+      {
+        "id": "kr-003",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-004",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-005",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-006",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-007",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-008",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-009",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-010",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-011",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-012",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-013",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-014",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-015",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-016",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-017",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-018",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-019",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-020",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-021",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-022",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-023",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-024",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-025",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-026",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-027",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-028",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-029",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-030",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-031",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-032",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-033",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-034",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-035",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-036",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-037",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-038",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-039",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-040",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-041",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-042",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-043",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-044",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-045",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-046",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-047",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-048",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-049",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-050",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-051",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-052",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-053",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-054",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-055",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-056",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-057",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-058",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-059",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-060",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-061",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-062",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-063",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-064",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-065",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-066",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-067",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-068",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-069",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-070",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-071",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-072",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-073",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-074",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-075",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-076",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-077",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-078",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-079",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-080",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-081",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-082",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-083",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-084",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-085",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-086",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-087",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-088",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-089",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-090",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-091",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-092",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-093",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-094",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-095",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-096",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-097",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-098",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-099",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-100",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-101",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-102",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-103",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-104",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-105",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-106",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-107",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-108",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-109",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-110",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-111",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-112",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-113",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-114",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-115",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-116",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-117",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-118",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-119",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-120",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-121",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-122",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-123",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-124",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-125",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-126",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-127",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-128",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-129",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-130",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-131",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-132",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-133",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-134",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-135",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-136",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-137",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-138",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-139",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-140",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-141",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-142",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-143",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-144",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-145",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-146",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-147",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-148",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-149",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-150",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-151",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-152",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-153",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-154",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-155",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-156",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-157",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-158",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-159",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-160",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-161",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-162",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-163",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-164",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-165",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-166",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-167",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-168",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-169",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-170",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-171",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-172",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-173",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-174",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-175",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-176",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-177",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-178",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-179",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-180",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-181",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-182",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-183",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-184",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-185",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-186",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-187",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-188",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-189",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-190",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-191",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-192",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-193",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-194",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-195",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-196",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-197",
+        "assignmentStatus": "Assigned",
+        "assignedRuknId": "R001",
+        "assignedRukn": "Ruqia Tahaniyat",
+        "campaignStatus": "active"
+      },
+      {
+        "id": "kr-198",
+        "assignmentStatus": "Assigned",
+        "assignedRuknId": "R004",
+        "assignedRukn": "Syeda Zainab Ghazala",
+        "campaignStatus": "active"
+      },
+      {
+        "id": "kr-199",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-200",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-201",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-202",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-203",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-204",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-205",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-206",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-207",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-208",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-209",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-210",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-211",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-212",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-213",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-214",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-215",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-216",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-217",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-218",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-219",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-220",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-221",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-222",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-223",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-224",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-225",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-226",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-227",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-228",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-229",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-230",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-231",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-232",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-233",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-234",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-235",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-236",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-237",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-238",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-239",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-240",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-241",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-242",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-243",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-244",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-245",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-246",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-247",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-248",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-249",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-250",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-251",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-252",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-253",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-254",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-255",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-256",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-257",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-258",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-259",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-260",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-261",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-262",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-263",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-264",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-265",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-266",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-267",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-268",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-269",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-270",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-271",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-272",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-273",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-274",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-275",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-276",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-277",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-278",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-279",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-280",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-281",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-282",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-283",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-284",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-285",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-286",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-287",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-288",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-289",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-290",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-291",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-292",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-293",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-294",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-295",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-296",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-297",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-298",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-299",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-300",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-301",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-302",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-303",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-304",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-305",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-306",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-307",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-308",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-309",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-310",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-311",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-312",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-313",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-314",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-315",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-316",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-317",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-318",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-319",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-320",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-321",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-322",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-323",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-324",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-325",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-326",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-327",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-328",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-329",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-330",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-331",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-332",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-333",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-334",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-335",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-336",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-337",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-338",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-339",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-340",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-341",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-342",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-343",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-344",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-345",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-346",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-347",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-348",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-349",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-350",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-351",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-352",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-353",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-354",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-355",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-356",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-357",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-358",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-359",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-360",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-361",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-362",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-363",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-364",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-365",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-366",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-367",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-368",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-369",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-370",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-371",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-372",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-373",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-374",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-375",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-376",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-377",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-378",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-379",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-380",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-381",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-382",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-383",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-384",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-385",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-386",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-387",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-388",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-389",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-390",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-391",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-392",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-393",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-394",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-395",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-396",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-397",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-398",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-399",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-400",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-401",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-402",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-403",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-404",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-405",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-406",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-407",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-408",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-409",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-410",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-411",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-412",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-413",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-414",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-415",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-416",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-417",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-418",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-419",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-420",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-421",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-422",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-423",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-424",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-425",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-426",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-427",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-428",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-429",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-430",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-431",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-432",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-433",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-434",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-435",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-436",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-437",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-438",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-439",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-440",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-441",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-442",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-443",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-444",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-445",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-446",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-447",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-448",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-449",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-450",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-451",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-452",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-453",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-454",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-455",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-456",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-457",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-458",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-459",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-460",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-461",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-462",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-463",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-464",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-465",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-466",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-467",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-468",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-469",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-470",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-471",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-472",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-473",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-474",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-475",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-476",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-477",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-478",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-479",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-480",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-481",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-482",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-483",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-484",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-485",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-486",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-487",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-488",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-489",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-490",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-491",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-492",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-493",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      }
+    ],
+    "traceSeq": 82
+  },
+  "after": {
+    "connectedKarkuns": 4,
+    "connectedRukns": 4,
+    "assignmentCount": 4,
+    "dashboard": {
+      "activeAssignments": 4,
+      "unassignedRukns": 45,
+      "assignedRukns": 4,
+      "availableMaleKarkuns": 194,
+      "availableFemaleKarkuns": 295,
+      "totalAssignmentChanges": 0,
+      "assignmentsToday": 4,
+      "assignmentsThisWeek": 4,
+      "assignmentsThisMonth": 4
+    },
+    "peopleStats": {
+      "totalRukns": 49,
+      "maleRukns": 25,
+      "femaleRukns": 24,
+      "totalMaleKarkuns": 196,
+      "totalFemaleKarkuns": 297,
+      "assignedKarkuns": 4,
+      "unassignedKarkuns": 489,
+      "activeUsers": 542,
+      "inactiveUsers": 0
+    },
+    "assignmentStoreData": {
+      "assignments": [
+        {
+          "assignmentId": "asgn-1784148337279-e377g",
+          "assignmentNumber": "ASN-000004",
+          "ruknId": "R004",
+          "karkunId": "kr-198",
+          "status": "Active",
+          "effectiveFrom": "2026-07-15"
+        },
+        {
+          "assignmentId": "asgn-1784148337273-vh8al",
+          "assignmentNumber": "ASN-000003",
+          "ruknId": "R003",
+          "karkunId": "kr-002",
+          "status": "Active",
+          "effectiveFrom": "2026-07-15"
+        },
+        {
+          "assignmentId": "asgn-1784148337268-j2h3r",
+          "assignmentNumber": "ASN-000002",
+          "ruknId": "R002",
+          "karkunId": "kr-001",
+          "status": "Active",
+          "effectiveFrom": "2026-07-15"
+        },
+        {
+          "assignmentId": "asgn-1784148337261-stoqf",
+          "assignmentNumber": "ASN-000001",
+          "ruknId": "R001",
+          "karkunId": "kr-197",
+          "status": "Active",
+          "effectiveFrom": "2026-07-15"
+        }
+      ]
+    },
+    "peopleProjection": [
+      {
+        "id": "kr-001",
+        "assignmentStatus": "Assigned",
+        "assignedRuknId": "R002",
+        "assignedRukn": "Amir Khan",
+        "campaignStatus": "active"
+      },
+      {
+        "id": "kr-002",
+        "assignmentStatus": "Assigned",
+        "assignedRuknId": "R003",
+        "assignedRukn": "Mohd Minhajuddin",
+        "campaignStatus": "active"
+      },
+      {
+        "id": "kr-003",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-004",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-005",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-006",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-007",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-008",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-009",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-010",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-011",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-012",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-013",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-014",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-015",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-016",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-017",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-018",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-019",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-020",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-021",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-022",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-023",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-024",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-025",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-026",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-027",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-028",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-029",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-030",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-031",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-032",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-033",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-034",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-035",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-036",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-037",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-038",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-039",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-040",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-041",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-042",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-043",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-044",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-045",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-046",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-047",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-048",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-049",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-050",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-051",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-052",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-053",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-054",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-055",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-056",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-057",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-058",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-059",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-060",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-061",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-062",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-063",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-064",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-065",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-066",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-067",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-068",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-069",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-070",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-071",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-072",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-073",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-074",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-075",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-076",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-077",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-078",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-079",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-080",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-081",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-082",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-083",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-084",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-085",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-086",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-087",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-088",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-089",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-090",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-091",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-092",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-093",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-094",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-095",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-096",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-097",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-098",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-099",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-100",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-101",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-102",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-103",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-104",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-105",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-106",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-107",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-108",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-109",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-110",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-111",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-112",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-113",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-114",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-115",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-116",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-117",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-118",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-119",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-120",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-121",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-122",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-123",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-124",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-125",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-126",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-127",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-128",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-129",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-130",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-131",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-132",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-133",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-134",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-135",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-136",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-137",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-138",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-139",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-140",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-141",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-142",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-143",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-144",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-145",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-146",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-147",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-148",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-149",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-150",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-151",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-152",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-153",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-154",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-155",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-156",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-157",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-158",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-159",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-160",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-161",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-162",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-163",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-164",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-165",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-166",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-167",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-168",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-169",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-170",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-171",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-172",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-173",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-174",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-175",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-176",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-177",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-178",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-179",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-180",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-181",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-182",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-183",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-184",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-185",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-186",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-187",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-188",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-189",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-190",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-191",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-192",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-193",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-194",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-195",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-196",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-197",
+        "assignmentStatus": "Assigned",
+        "assignedRuknId": "R001",
+        "assignedRukn": "Ruqia Tahaniyat",
+        "campaignStatus": "active"
+      },
+      {
+        "id": "kr-198",
+        "assignmentStatus": "Assigned",
+        "assignedRuknId": "R004",
+        "assignedRukn": "Syeda Zainab Ghazala",
+        "campaignStatus": "active"
+      },
+      {
+        "id": "kr-199",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-200",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-201",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-202",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-203",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-204",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-205",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-206",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-207",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-208",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-209",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-210",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-211",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-212",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-213",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-214",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-215",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-216",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-217",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-218",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-219",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-220",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-221",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-222",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-223",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-224",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-225",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-226",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-227",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-228",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-229",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-230",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-231",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-232",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-233",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-234",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-235",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-236",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-237",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-238",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-239",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-240",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-241",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-242",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-243",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-244",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-245",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-246",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-247",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-248",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-249",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-250",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-251",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-252",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-253",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-254",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-255",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-256",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-257",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-258",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-259",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-260",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-261",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-262",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-263",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-264",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-265",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-266",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-267",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-268",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-269",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-270",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-271",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-272",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-273",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-274",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-275",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-276",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-277",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-278",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-279",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-280",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-281",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-282",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-283",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-284",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-285",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-286",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-287",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-288",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-289",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-290",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-291",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-292",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-293",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-294",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-295",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-296",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-297",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-298",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-299",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-300",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-301",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-302",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-303",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-304",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-305",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-306",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-307",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-308",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-309",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-310",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-311",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-312",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-313",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-314",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-315",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-316",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-317",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-318",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-319",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-320",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-321",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-322",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-323",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-324",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-325",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-326",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-327",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-328",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-329",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-330",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-331",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-332",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-333",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-334",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-335",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-336",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-337",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-338",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-339",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-340",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-341",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-342",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-343",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-344",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-345",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-346",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-347",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-348",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-349",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-350",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-351",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-352",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-353",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-354",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-355",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-356",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-357",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-358",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-359",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-360",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-361",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-362",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-363",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-364",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-365",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-366",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-367",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-368",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-369",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-370",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-371",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-372",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-373",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-374",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-375",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-376",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-377",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-378",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-379",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-380",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-381",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-382",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-383",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-384",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-385",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-386",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-387",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-388",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-389",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-390",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-391",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-392",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-393",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-394",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-395",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-396",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-397",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-398",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-399",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-400",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-401",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-402",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-403",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-404",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-405",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-406",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-407",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-408",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-409",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-410",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-411",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-412",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-413",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-414",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-415",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-416",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-417",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-418",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-419",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-420",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-421",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-422",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-423",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-424",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-425",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-426",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-427",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-428",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-429",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-430",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-431",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-432",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-433",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-434",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-435",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-436",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-437",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-438",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-439",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-440",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-441",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-442",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-443",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-444",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-445",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-446",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-447",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-448",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-449",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-450",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-451",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-452",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-453",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-454",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-455",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-456",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-457",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-458",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-459",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-460",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-461",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-462",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-463",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-464",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-465",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-466",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-467",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-468",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-469",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-470",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-471",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-472",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-473",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-474",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-475",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-476",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-477",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-478",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-479",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-480",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-481",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-482",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-483",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-484",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-485",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-486",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-487",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-488",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-489",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-490",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-491",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-492",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      },
+      {
+        "id": "kr-493",
+        "assignmentStatus": "Available",
+        "assignedRuknId": "",
+        "assignedRukn": "",
+        "campaignStatus": "not_assigned"
+      }
+    ],
+    "lifecycle": {
+      "repositoryReady": {
+        "runId": "kc-inc-1784148321971-cajoac",
+        "seq": 90,
+        "at": "2026-07-15T20:45:46.115Z",
+        "eventType": "repository_readiness",
+        "payload": {
+          "repository": "assignment_repository",
+          "readiness": "LOADED",
+          "caller": "assignmentStore.loadPersistedAssignmentState",
+          "sourceOfTruth": "Local Repository"
+        }
+      },
+      "assignmentReload": {
+        "runId": "kc-inc-1784148321971-cajoac",
+        "seq": 93,
+        "at": "2026-07-15T20:45:46.115Z",
+        "eventType": "stage",
+        "payload": {
+          "stage": "assignmentStore_reload_complete",
+          "runId": "kc-inc-1784148321971-cajoac",
+          "timestamp": "2026-07-15T20:45:46.115Z",
+          "sequence": 93,
+          "assignmentStoreCount": 4
+        }
+      },
+      "syncStart": {
+        "runId": "kc-inc-1784148321971-cajoac",
+        "seq": 103,
+        "at": "2026-07-15T20:45:46.120Z",
+        "eventType": "stage",
+        "payload": {
+          "stage": "syncAllKarkunRegistryFromAssignments_start",
+          "runId": "kc-inc-1784148321971-cajoac",
+          "timestamp": "2026-07-15T20:45:46.120Z",
+          "sequence": 103,
+          "assignmentStoreCount": 4
+        }
+      },
+      "peopleProjection": {
+        "runId": "kc-inc-1784148321971-cajoac",
+        "seq": 99,
+        "at": "2026-07-15T20:45:46.119Z",
+        "eventType": "store_snapshot",
+        "payload": {
+          "store": "people_registry",
+          "caller": "notifyPeopleRegistryChange",
+          "sourceOfTruth": "Derived Calculation",
+          "connectedCount": 4,
+          "availableCount": 489
+        }
+      },
+      "dashboardMetric": {
+        "runId": "kc-inc-1784148321971-cajoac",
+        "seq": 108,
+        "at": "2026-07-15T20:45:46.122Z",
+        "eventType": "metric_snapshot",
+        "payload": {
+          "metric": "assignment_dashboard_metrics",
+          "caller": "getAssignmentDashboardMetrics",
+          "sourceOfTruth": "Derived Calculation",
+          "connected": 4,
+          "unconnected": 45,
+          "activeAssignments": 4,
+          "assignedRukns": 4,
+          "unassignedRukns": 45
+        }
+      }
+    },
+    "regressions": {
+      "syncStarts": 4,
+      "reloads": 4,
+      "hydrates": 4
+    }
+  },
+  "hashes": {
+    "assignmentBefore": "8e9325e8",
+    "assignmentAfter": "8e9325e8",
+    "projectionBefore": "5312d8a0",
+    "projectionAfter": "5312d8a0",
+    "dashboardBefore": "4e819443",
+    "dashboardAfter": "4e819443"
+  },
+  "acceptance": {
+    "test1": true,
+    "test2": true,
+    "test3": true,
+    "test4": true,
+    "test5": false
+  },
+  "entryPointCoverage": {
+    "initialStartup": true,
+    "browserRefresh": true,
+    "authRestoration": true,
+    "snapshotListenerUpdate": true,
+    "firestoreReconnectAfterOffline": true,
+    "repositoryReload": true
+  },
+  "regressionPass": false,
+  "productionReady": false
+}

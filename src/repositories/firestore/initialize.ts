@@ -23,10 +23,28 @@ function ensureConnectionRepositoryReadable(): void {
 }
 
 async function runHydrateAndRebuildCycle(context: string): Promise<void> {
+  let hydrateSucceeded = false
   try {
     await hydrateFirestoreCaches()
+    hydrateSucceeded = true
   } catch (error) {
     console.warn(`[kc-firestore] ${context} hydrate failed, using current repository state`, error)
+  }
+
+  const connectionState = getRepositories().connection.loadState()
+  const hasCachedConnections =
+    connectionState.ok && connectionState.data.assignments.length > 0
+
+  // Refresh reconstruction guard:
+  // Do not rebuild assignmentStore / people projection from an empty cache when
+  // hydrate failed. That path projects Connected Karkuns = 0 and persists it.
+  // Wait for a successful hydrate (or a cache that already has connections).
+  // Explicit empty after a successful hydrate is still rebuilt (true empty state).
+  if (!hydrateSucceeded && !hasCachedConnections) {
+    console.warn(
+      `[kc-firestore] ${context} skipping store rebuild until connection cache is available`,
+    )
+    return
   }
 
   // Contract enforcement: assignmentStore rebuild + synchronization must run

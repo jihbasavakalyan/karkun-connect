@@ -1,5 +1,7 @@
 import {
   initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
   type Firestore,
 } from 'firebase/firestore'
 import { getFirebaseApp, isFirebaseConfigured } from '@/lib/firebase/firebase'
@@ -13,7 +15,14 @@ export function getFirestoreDb(): Firestore {
   }
 
   if (!firestoreDb) {
-    firestoreDb = initializeFirestore(getFirebaseApp(), {})
+    // IndexedDB local cache is required for refresh reconstruction:
+    // connection writes must survive page reload even when the SDK briefly
+    // reports offline during startup getDocs.
+    firestoreDb = initializeFirestore(getFirebaseApp(), {
+      localCache: persistentLocalCache({
+        tabManager: persistentMultipleTabManager(),
+      }),
+    })
   }
 
   return firestoreDb

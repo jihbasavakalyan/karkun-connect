@@ -1,0 +1,38 @@
+{
+  "capturedAt": "2026-07-15T20:39:46.410Z",
+  "runId": "kc-inc-1784147924633-qxlala",
+  "totalEvents": 1680,
+  "repositoryReady": {
+    "seq": 6,
+    "at": "2026-07-15T20:38:44.635Z",
+    "payload": {
+      "repository": "assignment_repository",
+      "readiness": "LOADED_EMPTY",
+      "caller": "assignmentStore.loadPersistedAssignmentState",
+      "sourceOfTruth": "Local Repository"
+    }
+  },
+  "assignmentReload": {
+    "seq": 23,
+    "at": "2026-07-15T20:39:10.505Z",
+    "payload": {
+      "stage": "assignmentStore_reload_complete",
+      "runId": "kc-inc-1784147924633-qxlala",
+      "timestamp": "2026-07-15T20:39:10.505Z",
+      "sequence": 23,
+      "assignmentStoreCount": 0
+    }
+  },
+  "syncStart": {
+    "seq": 28,
+    "at": "2026-07-15T20:39:10.506Z",
+    "payload": {
+      "stage": "syncAllKarkunRegistryFromAssignments_start",
+      "runId": "kc-inc-1784147924633-qxlala",
+      "timestamp": "2026-07-15T20:39:10.506Z",
+      "sequence": 28,
+      "assignmentStoreCount": 0
+    }
+  },
+  "startupContractPass": true
+}

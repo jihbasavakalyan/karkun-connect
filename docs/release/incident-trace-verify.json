@@ -1,0 +1,331 @@
+{
+  "label": "INCIDENT-COLLECTOR-VERIFY",
+  "url": "http://127.0.0.1:5173/",
+  "waitMs": 8000,
+  "capturedAt": "2026-07-15T18:35:56.790Z",
+  "consoleTraceCount": 5,
+  "windowSnapshotCount": 5,
+  "incidentEventCount": 17,
+  "warnings": [],
+  "errors": [],
+  "snapshots": [
+    {
+      "stage": "1_before_initializeRepositories",
+      "at": "2026-07-15T18:35:45.531Z",
+      "host": "127.0.0.1:5173",
+      "mode": "firestore",
+      "mockLength": 0,
+      "getAllKarkunsLength": 0,
+      "maleCount": 0,
+      "femaleCount": 0,
+      "peopleVersion": null,
+      "hydrated": null,
+      "migrationCompleted": null,
+      "karkunRepoCount": 0,
+      "karkunRepoExists": false
+    },
+    {
+      "stage": "2_after_initializeRepositories",
+      "at": "2026-07-15T18:35:45.640Z",
+      "host": "127.0.0.1:5173",
+      "mode": "firestore",
+      "mockLength": 0,
+      "getAllKarkunsLength": 0,
+      "maleCount": 0,
+      "femaleCount": 0,
+      "peopleVersion": null,
+      "hydrated": null,
+      "migrationCompleted": null,
+      "karkunRepoCount": 0,
+      "karkunRepoExists": false
+    },
+    {
+      "stage": "5_after_runProductionDataMigration",
+      "at": "2026-07-15T18:35:56.600Z",
+      "host": "127.0.0.1:5173",
+      "mode": "firestore",
+      "mockLength": 493,
+      "getAllKarkunsLength": 493,
+      "maleCount": 196,
+      "femaleCount": 297,
+      "peopleVersion": null,
+      "hydrated": null,
+      "migrationCompleted": true,
+      "karkunRepoCount": 493,
+      "karkunRepoExists": true
+    },
+    {
+      "stage": "6_after_notifyPeopleRegistryChange",
+      "at": "2026-07-15T18:35:56.656Z",
+      "host": "127.0.0.1:5173",
+      "mode": "firestore",
+      "mockLength": 493,
+      "getAllKarkunsLength": 493,
+      "maleCount": 196,
+      "femaleCount": 297,
+      "peopleVersion": null,
+      "hydrated": null,
+      "migrationCompleted": true,
+      "karkunRepoCount": 493,
+      "karkunRepoExists": true
+    },
+    {
+      "stage": "bootstrap_after_syncAllKarkunRegistryFromAssignments",
+      "at": "2026-07-15T18:35:56.657Z",
+      "host": "127.0.0.1:5173",
+      "mode": "firestore",
+      "mockLength": 493,
+      "getAllKarkunsLength": 493,
+      "maleCount": 196,
+      "femaleCount": 297,
+      "peopleVersion": null,
+      "hydrated": null,
+      "migrationCompleted": true,
+      "karkunRepoCount": 493,
+      "karkunRepoExists": true
+    }
+  ],
+  "incidentTrace": {
+    "runId": "kc-inc-1784140545490-n5urow",
+    "seq": 17,
+    "events": [
+      {
+        "runId": "kc-inc-1784140545490-n5urow",
+        "seq": 1,
+        "at": "2026-07-15T18:35:45.491Z",
+        "eventType": "repository_readiness",
+        "payload": {
+          "repository": "connection_repository",
+          "readiness": "UNINITIALIZED",
+          "caller": "firestoreRepositories.module",
+          "sourceOfTruth": "Firestore"
+        }
+      },
+      {
+        "runId": "kc-inc-1784140545490-n5urow",
+        "seq": 2,
+        "at": "2026-07-15T18:35:45.493Z",
+        "eventType": "repository_readiness",
+        "payload": {
+          "repository": "assignment_repository",
+          "readiness": "UNINITIALIZED",
+          "caller": "firestoreRepositories.module",
+          "sourceOfTruth": "Firestore"
+        }
+      },
+      {
+        "runId": "kc-inc-1784140545490-n5urow",
+        "seq": 3,
+        "at": "2026-07-15T18:35:45.493Z",
+        "eventType": "repository_readiness",
+        "payload": {
+          "repository": "assignment_repository",
+          "readiness": "UNINITIALIZED",
+          "caller": "assignmentStore.module",
+          "sourceOfTruth": "Unknown"
+        }
+      },
+      {
+        "runId": "kc-inc-1784140545490-n5urow",
+        "seq": 4,
+        "at": "2026-07-15T18:35:45.495Z",
+        "eventType": "repository_readiness",
+        "payload": {
+          "repository": "assignment_repository",
+          "readiness": "LOADING",
+          "caller": "assignmentStore.loadPersistedAssignmentState",
+          "sourceOfTruth": "Local Repository"
+        }
+      },
+      {
+        "runId": "kc-inc-1784140545490-n5urow",
+        "seq": 5,
+        "at": "2026-07-15T18:35:45.495Z",
+        "eventType": "repository_snapshot",
+        "payload": {
+          "repository": "connection_repository",
+          "readiness": "UNINITIALIZED",
+          "caller": "ConnectionFirestoreRepository.loadState",
+          "sourceOfTruth": "Firestore",
+          "connectionCount": 0,
+          "assignmentCount": 0,
+          "nextSequence": 1
+        }
+      },
+      {
+        "runId": "kc-inc-1784140545490-n5urow",
+        "seq": 6,
+        "at": "2026-07-15T18:35:45.496Z",
+        "eventType": "repository_readiness",
+        "payload": {
+          "repository": "assignment_repository",
+          "readiness": "LOADED_EMPTY",
+          "caller": "assignmentStore.loadPersistedAssignmentState",
+          "sourceOfTruth": "Local Repository"
+        }
+      },
+      {
+        "runId": "kc-inc-1784140545490-n5urow",
+        "seq": 7,
+        "at": "2026-07-15T18:35:45.496Z",
+        "eventType": "repository_snapshot",
+        "payload": {
+          "repository": "assignment_repository",
+          "readiness": "LOADED_EMPTY",
+          "caller": "assignmentStore.loadPersistedAssignmentState",
+          "sourceOfTruth": "Local Repository",
+          "assignmentCount": 0,
+          "nextSequence": 1
+        }
+      },
+      {
+        "runId": "kc-inc-1784140545490-n5urow",
+        "seq": 8,
+        "at": "2026-07-15T18:35:45.496Z",
+        "eventType": "store_snapshot",
+        "payload": {
+          "store": "assignment_store",
+          "caller": "assignmentStore.module_init",
+          "sourceOfTruth": "Local Repository",
+          "assignmentCount": 0,
+          "nextSequence": 1
+        }
+      },
+      {
+        "runId": "kc-inc-1784140545490-n5urow",
+        "seq": 9,
+        "at": "2026-07-15T18:35:45.638Z",
+        "eventType": "stage",
+        "payload": {
+          "stage": "startFirestoreSnapshotListeners:enter",
+          "caller": "startFirestoreSnapshotListeners",
+          "sourceOfTruth": "Snapshot Listener"
+        }
+      },
+      {
+        "runId": "kc-inc-1784140545490-n5urow",
+        "seq": 10,
+        "at": "2026-07-15T18:35:56.575Z",
+        "eventType": "metric_snapshot",
+        "payload": {
+          "metric": "people_registry_metrics",
+          "caller": "getPeopleStatistics",
+          "sourceOfTruth": "Derived Calculation",
+          "connected": 0,
+          "unconnected": 493,
+          "assignedKarkuns": 0,
+          "unassignedKarkuns": 493,
+          "totalRukns": 49
+        }
+      },
+      {
+        "runId": "kc-inc-1784140545490-n5urow",
+        "seq": 11,
+        "at": "2026-07-15T18:35:56.600Z",
+        "eventType": "stage",
+        "payload": {
+          "stage": "syncAllKarkunRegistryFromAssignments:start",
+          "caller": "syncAllKarkunRegistryFromAssignments",
+          "sourceOfTruth": "Derived Calculation",
+          "assignmentCount": 0,
+          "karkunCount": 493
+        }
+      },
+      {
+        "runId": "kc-inc-1784140545490-n5urow",
+        "seq": 12,
+        "at": "2026-07-15T18:35:56.627Z",
+        "eventType": "metric_snapshot",
+        "payload": {
+          "metric": "people_registry_metrics",
+          "caller": "getPeopleStatistics",
+          "sourceOfTruth": "Derived Calculation",
+          "connected": 0,
+          "unconnected": 493,
+          "assignedKarkuns": 0,
+          "unassignedKarkuns": 493,
+          "totalRukns": 49
+        }
+      },
+      {
+        "runId": "kc-inc-1784140545490-n5urow",
+        "seq": 13,
+        "at": "2026-07-15T18:35:56.654Z",
+        "eventType": "metric_snapshot",
+        "payload": {
+          "metric": "people_registry_metrics",
+          "caller": "getPeopleStatistics",
+          "sourceOfTruth": "Derived Calculation",
+          "connected": 0,
+          "unconnected": 493,
+          "assignedKarkuns": 0,
+          "unassignedKarkuns": 493,
+          "totalRukns": 49
+        }
+      },
+      {
+        "runId": "kc-inc-1784140545490-n5urow",
+        "seq": 14,
+        "at": "2026-07-15T18:35:56.655Z",
+        "eventType": "mutation",
+        "payload": {
+          "operationId": "people-registry-notify-1784140556655-ajqky",
+          "entity": "people_registry",
+          "field": "assignedKarkuns",
+          "before": 0,
+          "after": 0,
+          "caller": "notifyPeopleRegistryChange",
+          "reason": "registry notify and persist",
+          "sourceOfTruth": "Derived Calculation"
+        }
+      },
+      {
+        "runId": "kc-inc-1784140545490-n5urow",
+        "seq": 15,
+        "at": "2026-07-15T18:35:56.656Z",
+        "eventType": "mutation",
+        "payload": {
+          "operationId": "people-registry-notify-1784140556655-ajqky",
+          "entity": "people_registry",
+          "field": "unassignedKarkuns",
+          "before": 493,
+          "after": 493,
+          "caller": "notifyPeopleRegistryChange",
+          "reason": "registry notify and persist",
+          "sourceOfTruth": "Derived Calculation"
+        }
+      },
+      {
+        "runId": "kc-inc-1784140545490-n5urow",
+        "seq": 16,
+        "at": "2026-07-15T18:35:56.656Z",
+        "eventType": "store_snapshot",
+        "payload": {
+          "store": "people_registry",
+          "caller": "notifyPeopleRegistryChange",
+          "sourceOfTruth": "Derived Calculation",
+          "connectedCount": 0,
+          "availableCount": 493
+        }
+      },
+      {
+        "runId": "kc-inc-1784140545490-n5urow",
+        "seq": 17,
+        "at": "2026-07-15T18:35:56.657Z",
+        "eventType": "stage",
+        "payload": {
+          "stage": "syncAllKarkunRegistryFromAssignments:complete",
+          "caller": "syncAllKarkunRegistryFromAssignments",
+          "sourceOfTruth": "Derived Calculation",
+          "assignmentCount": 0,
+          "karkunCount": 493
+        }
+      }
+    ],
+    "repositoryReadiness": {
+      "connection_repository": "UNINITIALIZED",
+      "assignment_repository": "LOADED_EMPTY"
+    },
+    "firstPotentialIncorrectSeq": 10
+  }
+}

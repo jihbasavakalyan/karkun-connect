@@ -1,0 +1,162 @@
+{
+  "capturedAt": "2026-07-15T21:20:42.200Z",
+  "before": {
+    "authenticatedUser": false,
+    "createdConnections": 4,
+    "connectedKarkuns": 4,
+    "connectedRukns": 4,
+    "dashboard": {
+      "activeAssignments": 4,
+      "unassignedRukns": 45,
+      "assignedRukns": 4,
+      "availableMaleKarkuns": 194,
+      "availableFemaleKarkuns": 295,
+      "totalAssignmentChanges": 0,
+      "assignmentsToday": 4,
+      "assignmentsThisWeek": 4,
+      "assignmentsThisMonth": 4
+    },
+    "peopleRegistry": {
+      "totalRukns": 49,
+      "maleRukns": 25,
+      "femaleRukns": 24,
+      "totalMaleKarkuns": 196,
+      "totalFemaleKarkuns": 297,
+      "assignedKarkuns": 4,
+      "unassignedKarkuns": 489,
+      "activeUsers": 542,
+      "inactiveUsers": 0
+    },
+    "assignmentCount": 4,
+    "assignmentStoreData": [
+      {
+        "assignmentId": "asgn-1784150410536-2zz2x",
+        "assignmentNumber": "ASN-000004",
+        "ruknId": "R004",
+        "karkunId": "kr-198",
+        "status": "Active",
+        "effectiveFrom": "2026-07-15"
+      },
+      {
+        "assignmentId": "asgn-1784150410531-49alk",
+        "assignmentNumber": "ASN-000003",
+        "ruknId": "R003",
+        "karkunId": "kr-002",
+        "status": "Active",
+        "effectiveFrom": "2026-07-15"
+      },
+      {
+        "assignmentId": "asgn-1784150410525-j2kk2",
+        "assignmentNumber": "ASN-000002",
+        "ruknId": "R002",
+        "karkunId": "kr-001",
+        "status": "Active",
+        "effectiveFrom": "2026-07-15"
+      },
+      {
+        "assignmentId": "asgn-1784150410514-xppqz",
+        "assignmentNumber": "ASN-000001",
+        "ruknId": "R001",
+        "karkunId": "kr-197",
+        "status": "Active",
+        "effectiveFrom": "2026-07-15"
+      }
+    ],
+    "traceSeq": 82
+  },
+  "after": {
+    "state": {
+      "authenticatedUser": false,
+      "connectedKarkuns": 4,
+      "connectedRukns": 4,
+      "dashboard": {
+        "activeAssignments": 4,
+        "unassignedRukns": 45,
+        "assignedRukns": 4,
+        "availableMaleKarkuns": 194,
+        "availableFemaleKarkuns": 295,
+        "totalAssignmentChanges": 0,
+        "assignmentsToday": 4,
+        "assignmentsThisWeek": 4,
+        "assignmentsThisMonth": 4
+      },
+      "peopleRegistry": {
+        "totalRukns": 49,
+        "maleRukns": 25,
+        "femaleRukns": 24,
+        "totalMaleKarkuns": 196,
+        "totalFemaleKarkuns": 297,
+        "assignedKarkuns": 4,
+        "unassignedKarkuns": 489,
+        "activeUsers": 542,
+        "inactiveUsers": 0
+      },
+      "assignmentCount": 4,
+      "assignmentStoreData": [
+        {
+          "assignmentId": "asgn-1784150410536-2zz2x",
+          "assignmentNumber": "ASN-000004",
+          "ruknId": "R004",
+          "karkunId": "kr-198",
+          "status": "Active",
+          "effectiveFrom": "2026-07-15"
+        },
+        {
+          "assignmentId": "asgn-1784150410531-49alk",
+          "assignmentNumber": "ASN-000003",
+          "ruknId": "R003",
+          "karkunId": "kr-002",
+          "status": "Active",
+          "effectiveFrom": "2026-07-15"
+        },
+        {
+          "assignmentId": "asgn-1784150410525-j2kk2",
+          "assignmentNumber": "ASN-000002",
+          "ruknId": "R002",
+          "karkunId": "kr-001",
+          "status": "Active",
+          "effectiveFrom": "2026-07-15"
+        },
+        {
+          "assignmentId": "asgn-1784150410514-xppqz",
+          "assignmentNumber": "ASN-000001",
+          "ruknId": "R001",
+          "karkunId": "kr-197",
+          "status": "Active",
+          "effectiveFrom": "2026-07-15"
+        }
+      ]
+    },
+    "lifecycle": {
+      "repositoryReady": {
+        "seq": 90,
+        "at": "2026-07-15T21:20:20.187Z"
+      },
+      "assignmentReload": {
+        "seq": 93,
+        "at": "2026-07-15T21:20:20.187Z"
+      },
+      "syncStart": {
+        "seq": 101,
+        "at": "2026-07-15T21:20:20.194Z"
+      },
+      "peopleProjection": {
+        "seq": 99,
+        "at": "2026-07-15T21:20:20.194Z"
+      },
+      "dashboardMetric": {
+        "seq": 111,
+        "at": "2026-07-15T21:20:20.200Z"
+      }
+    },
+    "lifecycleWindowCounts": {
+      "syncStarts": 1,
+      "hydrates": 0
+    }
+  },
+  "results": {
+    "refresh": true,
+    "startupContract": false,
+    "regression": false
+  }
+}
