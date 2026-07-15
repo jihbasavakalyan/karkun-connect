@@ -75,13 +75,15 @@ const guidanceCache = new SyncCache<GuidanceState>({ commitments: [], timelineEv
 const communicationCache = new SyncCache<CommunicationState | null>(null)
 const baitulMaalCache = new SyncCache<BaitulMaalRecord[]>([])
 const ijtemaCache = new SyncCache<IjtemaAttendanceRecord[]>([])
-const jihPortalCache = new SyncCache<JihPortalState>({ registrations: [], monthlyReports: [] })
+const jihPortalCache = new SyncCache<JihPortalState>({ registrations: {}, monthlyReports: {} })
 const migrationVersionCache = new SyncCache<number | null>(null)
 const broadcastCache = new SyncCache<BroadcastListRecord[]>([])
 const backupIndexCache = new SyncCache<MigrationBackupIndexEntry[]>([])
 const backupCache = new SyncCache<Map<string, DatasetBackup>>(new Map())
 
 const snapshotUnsubscribers: Unsubscribe[] = []
+let activeHydrations = 0
+let hydrationSequence = 0
 
 async function queueWrite(label: string, work: () => Promise<RepositoryResult<void>>): Promise<void> {
   trackPendingWrite()
@@ -96,124 +98,177 @@ async function queueWrite(label: string, work: () => Promise<RepositoryResult<vo
 }
 
 export async function hydrateFirestoreCaches(): Promise<void> {
+  const id = ++hydrationSequence
+  activeHydrations += 1
+  console.log(`[HYDRATE_TRACE] ENTER id=${id} active=${activeHydrations}`)
+
   const db = getFirestoreDb()
-
-  const [
-    campaigns,
-    rukns,
-    karkuns,
-    karkunCounter,
-    assignments,
-    connectionMeta,
-    activityLogs,
-    executionSnapshots,
-    followUps,
-    communication,
-    complianceSnapshots,
-    migrationVersion,
-    settingsSnapshots,
-  ] = await Promise.all([
-    readCollection<CampaignListItem>(db, FIRESTORE_COLLECTIONS.campaigns),
-    readCollection<Rukn>(db, FIRESTORE_COLLECTIONS.rukns),
-    readCollection<KarkunRegistryRecord>(db, FIRESTORE_COLLECTIONS.karkuns),
-    readDoc<{ nextKarkunNum: number }>(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.karkunCounter),
-    readCollection<AssignmentRecord>(db, FIRESTORE_COLLECTIONS.connections),
-    readDoc<{ nextSequence: number }>(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.connectionMeta),
-    readCollection<ActivityLogEntry>(db, FIRESTORE_COLLECTIONS.activityLogs),
-    getDocs(collection(db, FIRESTORE_COLLECTIONS.executions)),
-    readCollection<FollowUpRecord>(db, FIRESTORE_COLLECTIONS.followUps),
-    readDoc<CommunicationState>(db, FIRESTORE_COLLECTIONS.communications, FIRESTORE_DOCS.communicationState),
-    getDocs(collection(db, FIRESTORE_COLLECTIONS.compliance)),
-    readDoc<{ version: number | null }>(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.migrationVersion),
-    getDocs(collection(db, FIRESTORE_COLLECTIONS.settings)),
-  ])
-
-  if (campaigns.length > 0) {
-    campaignCache.set(campaigns)
-  } else {
-    campaignCache.set(MOCK_CAMPAIGNS)
+  const trace = <T>(label: string, promise: Promise<T>): Promise<T> => {
+    console.log(`[HYDRATE] START ${label}`)
+    return promise.then(
+      (value) => {
+        console.log(`[HYDRATE] DONE ${label}`)
+        return value
+      },
+      (error) => {
+        console.error(`[HYDRATE] FAIL ${label}`, error)
+        throw error
+      },
+    )
   }
 
-  ruknCache.set(rukns)
-  karkunCache.set({
-    karkuns,
-    nextKarkunNum: karkunCounter?.nextKarkunNum ?? 1,
-  })
+  try {
+    const [
+      campaigns,
+      rukns,
+      karkuns,
+      karkunCounter,
+      assignments,
+      connectionMeta,
+      activityLogs,
+      executionSnapshots,
+      followUps,
+      communication,
+      complianceSnapshots,
+      migrationVersion,
+      settingsSnapshots,
+    ] = await Promise.all([
+      trace('campaigns', readCollection<CampaignListItem>(db, FIRESTORE_COLLECTIONS.campaigns)),
+      trace('rukns', readCollection<Rukn>(db, FIRESTORE_COLLECTIONS.rukns)),
+      trace('karkuns', readCollection<KarkunRegistryRecord>(db, FIRESTORE_COLLECTIONS.karkuns)),
+      trace('karkunCounter', readDoc<{ nextKarkunNum: number }>(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.karkunCounter)),
+      trace('connections', readCollection<AssignmentRecord>(db, FIRESTORE_COLLECTIONS.connections)),
+      trace('connectionMeta', readDoc<{ nextSequence: number }>(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.connectionMeta)),
+      trace('activityLogs', readCollection<ActivityLogEntry>(db, FIRESTORE_COLLECTIONS.activityLogs)),
+      trace('executions', getDocs(collection(db, FIRESTORE_COLLECTIONS.executions))),
+      trace('followUps', readCollection<FollowUpRecord>(db, FIRESTORE_COLLECTIONS.followUps)),
+      trace('communication', readDoc<CommunicationState>(db, FIRESTORE_COLLECTIONS.communications, FIRESTORE_DOCS.communicationState)),
+      trace('compliance', getDocs(collection(db, FIRESTORE_COLLECTIONS.compliance))),
+      trace('migrationVersion', readDoc<{ version: number | null }>(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.migrationVersion)),
+      trace('settings', getDocs(collection(db, FIRESTORE_COLLECTIONS.settings))),
+    ])
 
-  const derivedSequence = deriveNextSequenceFromRecords(assignments)
-  connectionCache.set({
-    assignments,
-    nextSequence: Math.max(connectionMeta?.nextSequence ?? 1, derivedSequence),
-  })
-
-  activityLogCache.set(activityLogs)
-
-  const annexureForms: SubmittedMeetingForm[] = []
-  let guidance: GuidanceState | null = null
-  for (const snapshot of executionSnapshots.docs) {
-    if (snapshot.id === FIRESTORE_DOCS.guidanceState) {
-      guidance = stripMeta<GuidanceState>(snapshot.data())
-      continue
+    if (campaigns.length > 0) {
+      campaignCache.set(campaigns)
+    } else {
+      campaignCache.set(MOCK_CAMPAIGNS)
     }
-    if (snapshot.id.startsWith('annexure_')) {
-      annexureForms.push(stripMeta<SubmittedMeetingForm>(snapshot.data()))
-    }
-  }
-  annexureCache.set(annexureForms)
-  followUpCache.set(followUps)
-  guidanceCache.set(guidance ?? { commitments: [], timelineEvents: [] })
-  if (communication) {
-    communicationCache.set(communication)
-  }
 
-  const baitulMaal: BaitulMaalRecord[] = []
-  const ijtema: IjtemaAttendanceRecord[] = []
-  let jihPortal: JihPortalState | null = null
-  for (const snapshot of complianceSnapshots.docs) {
-    const data = snapshot.data() as DocumentRecord
-    if (data._docType === 'baitulMaal') {
-      baitulMaal.push(data.record as BaitulMaalRecord)
-    } else if (data._docType === 'ijtema') {
-      ijtema.push(data.record as IjtemaAttendanceRecord)
-    } else if (data._docType === 'jihPortal') {
-      jihPortal = data.record as JihPortalState
-    }
-  }
-  baitulMaalCache.set(baitulMaal)
-  ijtemaCache.set(ijtema)
-  if (jihPortal) {
-    jihPortalCache.set(jihPortal)
-  }
+    ruknCache.set(rukns)
+    karkunCache.set({
+      karkuns,
+      nextKarkunNum: karkunCounter?.nextKarkunNum ?? 1,
+    })
 
-  migrationVersionCache.set(migrationVersion?.version ?? null)
+    const derivedSequence = deriveNextSequenceFromRecords(assignments)
+    connectionCache.set({
+      assignments,
+      nextSequence: Math.max(connectionMeta?.nextSequence ?? 1, derivedSequence),
+    })
 
-  const broadcastLists: BroadcastListRecord[] = []
-  let backupIndex: MigrationBackupIndexEntry[] = []
-  const backupMap = new Map<string, DatasetBackup>()
-  for (const snapshot of settingsSnapshots.docs) {
-    if (snapshot.id.startsWith('broadcast_')) {
-      broadcastLists.push(stripMeta<BroadcastListRecord>(snapshot.data()))
-      continue
-    }
-    if (snapshot.id.startsWith('backup_')) {
-      const backup = stripMeta<DatasetBackup>(snapshot.data())
-      if (backup.id) {
-        backupMap.set(backup.id, backup)
+    activityLogCache.set(activityLogs)
+
+    const annexureForms: SubmittedMeetingForm[] = []
+    let guidance: GuidanceState | null = null
+    for (const snapshot of executionSnapshots.docs) {
+      if (snapshot.id === FIRESTORE_DOCS.guidanceState) {
+        guidance = stripMeta<GuidanceState>(snapshot.data())
+        continue
       }
-      continue
+      if (snapshot.id.startsWith('annexure_')) {
+        annexureForms.push(stripMeta<SubmittedMeetingForm>(snapshot.data()))
+      }
     }
-    if (snapshot.id === FIRESTORE_DOCS.backupIndex) {
-      backupIndex = (snapshot.data() as { entries: MigrationBackupIndexEntry[] }).entries ?? []
+    annexureCache.set(annexureForms)
+    followUpCache.set(followUps)
+    guidanceCache.set(guidance ?? { commitments: [], timelineEvents: [] })
+    if (communication) {
+      communicationCache.set(communication)
     }
+
+    const baitulMaal: BaitulMaalRecord[] = []
+    const ijtema: IjtemaAttendanceRecord[] = []
+    let jihPortal: JihPortalState | null = null
+    for (const snapshot of complianceSnapshots.docs) {
+      const data = snapshot.data() as DocumentRecord
+      if (data._docType === 'baitulMaal') {
+        baitulMaal.push(data.record as BaitulMaalRecord)
+      } else if (data._docType === 'ijtema') {
+        ijtema.push(data.record as IjtemaAttendanceRecord)
+      } else if (data._docType === 'jihPortal') {
+        jihPortal = normalizeJihPortalState(data.record)
+      }
+    }
+    baitulMaalCache.set(baitulMaal)
+    ijtemaCache.set(ijtema)
+    if (jihPortal) {
+      jihPortalCache.set(jihPortal)
+    }
+
+    migrationVersionCache.set(migrationVersion?.version ?? null)
+
+    const broadcastLists: BroadcastListRecord[] = []
+    let backupIndex: MigrationBackupIndexEntry[] = []
+    const backupMap = new Map<string, DatasetBackup>()
+    for (const snapshot of settingsSnapshots.docs) {
+      if (snapshot.id.startsWith('broadcast_')) {
+        broadcastLists.push(stripMeta<BroadcastListRecord>(snapshot.data()))
+        continue
+      }
+      if (snapshot.id.startsWith('backup_')) {
+        const backup = stripMeta<DatasetBackup>(snapshot.data())
+        if (backup.id) {
+          backupMap.set(backup.id, backup)
+        }
+        continue
+      }
+      if (snapshot.id === FIRESTORE_DOCS.backupIndex) {
+        backupIndex = (snapshot.data() as { entries: MigrationBackupIndexEntry[] }).entries ?? []
+      }
+    }
+    broadcastCache.set(broadcastLists)
+    backupIndexCache.set(backupIndex)
+    backupCache.set(backupMap)
+
+    console.log(`[HYDRATE_TRACE] EXIT id=${id} active=${activeHydrations}`)
+  } catch (error) {
+    console.log(`[HYDRATE_TRACE] EXIT id=${id} active=${activeHydrations}`)
+    throw error
+  } finally {
+    activeHydrations -= 1
+    console.log(`[HYDRATE_TRACE] FINALLY id=${id} active=${activeHydrations}`)
   }
-  broadcastCache.set(broadcastLists)
-  backupIndexCache.set(backupIndex)
-  backupCache.set(backupMap)
 }
 
 type DocumentRecord = {
   _docType: 'baitulMaal' | 'ijtema' | 'jihPortal'
   record: unknown
+}
+
+function normalizePersistedMap<T>(value: unknown): Record<string, T> {
+  if (Array.isArray(value)) {
+    const result: Record<string, T> = {}
+    for (const entry of value) {
+      if (Array.isArray(entry) && typeof entry[0] === 'string') {
+        result[entry[0]] = entry[1] as T
+      }
+    }
+    return result
+  }
+
+  if (value && typeof value === 'object') {
+    return { ...(value as Record<string, T>) }
+  }
+
+  return {}
+}
+
+function normalizeJihPortalState(value: unknown): JihPortalState {
+  const state = value && typeof value === 'object' ? (value as Record<string, unknown>) : {}
+  return {
+    registrations: normalizePersistedMap(state.registrations),
+    monthlyReports: normalizePersistedMap(state.monthlyReports),
+  }
 }
 
 export function startFirestoreSnapshotListeners(onRemoteChange: () => void): void {
@@ -609,28 +664,29 @@ export class ComplianceFirestoreRepository implements ComplianceRepository {
   loadJihPortal(): RepositoryResult<JihPortalState> {
     const state = jihPortalCache.get()
     return repositoryOk({
-      registrations: [...state.registrations],
-      monthlyReports: [...state.monthlyReports],
+      registrations: { ...state.registrations },
+      monthlyReports: { ...state.monthlyReports },
     })
   }
 
   saveJihPortal(state: JihPortalState): RepositoryResult<void> {
+    const normalized = normalizeJihPortalState(state)
     jihPortalCache.set({
-      registrations: [...state.registrations],
-      monthlyReports: [...state.monthlyReports],
+      registrations: { ...normalized.registrations },
+      monthlyReports: { ...normalized.monthlyReports },
     })
     void queueWrite('compliance.jihPortal', async () => {
       const db = getFirestoreDb()
       return writeDoc(db, FIRESTORE_COLLECTIONS.compliance, FIRESTORE_DOCS.jihPortalState, sanitizeForFirestore({
         _docType: 'jihPortal',
-        record: state,
+        record: normalized,
       }))
     })
     return repositoryOk(undefined)
   }
 
   clearJihPortal(): RepositoryResult<void> {
-    jihPortalCache.set({ registrations: [], monthlyReports: [] })
+    jihPortalCache.set({ registrations: {}, monthlyReports: {} })
     return repositoryOk(undefined)
   }
 }
@@ -733,7 +789,7 @@ export async function clearAllFirestoreCachesForTests(): Promise<void> {
   communicationCache.reset(null)
   baitulMaalCache.reset([])
   ijtemaCache.reset([])
-  jihPortalCache.reset({ registrations: [], monthlyReports: [] })
+  jihPortalCache.reset({ registrations: {}, monthlyReports: {} })
   migrationVersionCache.reset(null)
   broadcastCache.reset([])
   backupIndexCache.reset([])

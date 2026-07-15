@@ -36,6 +36,32 @@ import type {
   SettingsRepository,
 } from '@/repositories/interfaces/SettingsRepository'
 
+function normalizePersistedMap<T>(value: unknown): Record<string, T> {
+  if (Array.isArray(value)) {
+    const result: Record<string, T> = {}
+    for (const entry of value) {
+      if (Array.isArray(entry) && typeof entry[0] === 'string') {
+        result[entry[0]] = entry[1] as T
+      }
+    }
+    return result
+  }
+
+  if (value && typeof value === 'object') {
+    return { ...(value as Record<string, T>) }
+  }
+
+  return {}
+}
+
+function normalizeJihPortalState(value: unknown): JihPortalState {
+  const state = value && typeof value === 'object' ? (value as Record<string, unknown>) : {}
+  return {
+    registrations: normalizePersistedMap(state.registrations),
+    monthlyReports: normalizePersistedMap(state.monthlyReports),
+  }
+}
+
 function deriveNextSequenceFromRecords(records: AssignmentRecord[]): number {
   let max = 0
   for (const record of records) {
@@ -244,16 +270,17 @@ export class ComplianceLocalRepository implements ComplianceRepository {
   }
 
   loadJihPortal(): RepositoryResult<JihPortalState> {
-    return tryRepository(() =>
-      loadJsonFromStorage<JihPortalState>(STORAGE_KEYS.jihPortal, {
-        registrations: [],
-        monthlyReports: [],
-      }),
-    )
+    return tryRepository(() => {
+      const persisted = loadJsonFromStorage<unknown>(STORAGE_KEYS.jihPortal, {
+        registrations: {},
+        monthlyReports: {},
+      })
+      return normalizeJihPortalState(persisted)
+    })
   }
 
   saveJihPortal(state: JihPortalState): RepositoryResult<void> {
-    return tryRepository(() => saveJsonToStorage(STORAGE_KEYS.jihPortal, state))
+    return tryRepository(() => saveJsonToStorage(STORAGE_KEYS.jihPortal, normalizeJihPortalState(state)))
   }
 
   clearJihPortal(): RepositoryResult<void> {

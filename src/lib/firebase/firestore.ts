@@ -1,7 +1,5 @@
 import {
   initializeFirestore,
-  persistentLocalCache,
-  persistentMultipleTabManager,
   type Firestore,
 } from 'firebase/firestore'
 import { getFirebaseApp, isFirebaseConfigured } from '@/lib/firebase/firebase'
@@ -15,11 +13,7 @@ export function getFirestoreDb(): Firestore {
   }
 
   if (!firestoreDb) {
-    firestoreDb = initializeFirestore(getFirebaseApp(), {
-      localCache: persistentLocalCache({
-        tabManager: persistentMultipleTabManager(),
-      }),
-    })
+    firestoreDb = initializeFirestore(getFirebaseApp(), {})
   }
 
   return firestoreDb

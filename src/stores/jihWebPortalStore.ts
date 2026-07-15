@@ -3,20 +3,20 @@ import { getRepositories } from '@/repositories/provider'
 import { unwrapRepository } from '@/repositories/errors'
 
 const persisted = unwrapRepository(getRepositories().compliance.loadJihPortal(), {
-  registrations: [],
-  monthlyReports: [],
+  registrations: {},
+  monthlyReports: {},
 })
 
-const registrations = new Map<string, JihWebPortalRegistration>(persisted.registrations)
-const monthlyReports = new Map<string, JihMonthlyReport>(persisted.monthlyReports)
+const registrations = new Map<string, JihWebPortalRegistration>(Object.entries(persisted.registrations))
+const monthlyReports = new Map<string, JihMonthlyReport>(Object.entries(persisted.monthlyReports))
 
 type JihWebPortalStoreListener = () => void
 const listeners = new Set<JihWebPortalStoreListener>()
 
 function persistJihWebPortalStore(): void {
   getRepositories().compliance.saveJihPortal({
-    registrations: [...registrations.entries()],
-    monthlyReports: [...monthlyReports.entries()],
+    registrations: Object.fromEntries(registrations.entries()),
+    monthlyReports: Object.fromEntries(monthlyReports.entries()),
   })
 }
 
@@ -71,16 +71,16 @@ export function getMonthlyReportsForMonth(monthKey: string): JihMonthlyReport[] 
 
 export function reloadJihWebPortalStoreFromPersistence(): void {
   const loaded = unwrapRepository(getRepositories().compliance.loadJihPortal(), {
-    registrations: [],
-    monthlyReports: [],
+    registrations: {},
+    monthlyReports: {},
   })
   registrations.clear()
   monthlyReports.clear()
-  for (const entry of loaded.registrations) {
-    registrations.set(entry[0], entry[1])
+  for (const [key, value] of Object.entries(loaded.registrations)) {
+    registrations.set(key, value)
   }
-  for (const entry of loaded.monthlyReports) {
-    monthlyReports.set(entry[0], entry[1])
+  for (const [key, value] of Object.entries(loaded.monthlyReports)) {
+    monthlyReports.set(key, value)
   }
   listeners.forEach((listener) => listener())
 }

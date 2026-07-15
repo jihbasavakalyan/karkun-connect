@@ -4,8 +4,8 @@ import type { JihMonthlyReport, JihWebPortalRegistration } from '@/types/jihWebP
 import type { RepositoryResult } from '@/repositories/errors'
 
 export type JihPortalState = {
-  registrations: [string, JihWebPortalRegistration][]
-  monthlyReports: [string, JihMonthlyReport][]
+  registrations: Record<string, JihWebPortalRegistration>
+  monthlyReports: Record<string, JihMonthlyReport>
 }
 
 export interface ComplianceRepository {

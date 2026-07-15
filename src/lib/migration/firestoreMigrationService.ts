@@ -94,8 +94,8 @@ export async function migrateLocalStorageToFirestore(): Promise<FirestoreMigrati
     const ijtema = unwrapRepository(new localBundle.ComplianceLocalRepository().loadIjtema(), [])
     unwrapRepository(firestoreBundle.compliance.saveIjtema(ijtema), undefined)
     const jihPortal = unwrapRepository(new localBundle.ComplianceLocalRepository().loadJihPortal(), {
-      registrations: [],
-      monthlyReports: [],
+      registrations: {},
+      monthlyReports: {},
     })
     unwrapRepository(firestoreBundle.compliance.saveJihPortal(jihPortal), undefined)
     summary.migratedCollections.push('compliance')
