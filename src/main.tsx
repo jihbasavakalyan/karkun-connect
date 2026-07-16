@@ -2,29 +2,21 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
-import { traceRegistryStage } from '@/lib/registryHydrationTrace'
 
 async function runDeferredBootstrap(): Promise<void> {
-  traceRegistryStage('1_before_initializeRepositories')
-
   const { initializeRepositories } = await import('@/repositories/firestore/initialize')
+  const { markRepositoryHydrationReady } = await import('@/repositories/hydrationReady')
   try {
     await initializeRepositories()
   } catch (error) {
     console.error('[bootstrap] repository initialization failed', error)
+  } finally {
+    // Gate UI empty states until startup hydrate finishes (or local provider short-circuits).
+    markRepositoryHydrationReady()
   }
-  traceRegistryStage('2_after_initializeRepositories')
 
-  const { runProductionDataMigration, getProductionMigrationCompletedFlag } = await import(
-    '@/services/productionDataMigrationService'
-  )
-  const { setRegistryTraceMigrationCompleted } = await import('@/lib/registryHydrationTrace')
-
+  const { runProductionDataMigration } = await import('@/services/productionDataMigrationService')
   runProductionDataMigration()
-  setRegistryTraceMigrationCompleted(getProductionMigrationCompletedFlag())
-  traceRegistryStage('5_after_runProductionDataMigration', {
-    migrationCompleted: getProductionMigrationCompletedFlag(),
-  })
 }
 
 function bootstrap(): void {

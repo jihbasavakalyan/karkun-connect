@@ -1,6 +1,7 @@
 import { useEffect, useId, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { subscribeToAssignments } from '@/lib/assignmentEngine'
 import { getCompatibleRuknsForKarkun } from '@/lib/peopleStore'
+import { getRuknAssignmentSummary } from '@/services/assignmentService'
 import { usePeopleStore } from '@/hooks/usePeopleStore'
 import { formatPersonNameForDisplay } from '@/utils/formatPersonDisplay'
 
@@ -158,7 +159,9 @@ export function RuknAssignmentSelect({
                 Not Connected
               </button>
             </li>
-            {filteredOptions.map((rukn) => (
+            {filteredOptions.map((rukn) => {
+              const connectedCount = getRuknAssignmentSummary(rukn.id).assignedKarkunCount
+              return (
               <li key={rukn.id}>
                 <button
                   type="button"
@@ -171,10 +174,16 @@ export function RuknAssignmentSelect({
                   }`}
                   onClick={() => handleSelect(rukn.id)}
                 >
-                  {formatPersonNameForDisplay(rukn.name)}
+                  <span className="block">
+                    {rukn.id} – {formatPersonNameForDisplay(rukn.name)}
+                  </span>
+                  <span className="mt-0.5 block text-xs font-normal text-secondary">
+                    Connected Karkuns: {connectedCount}
+                  </span>
                 </button>
               </li>
-            ))}
+              )
+            })}
             {filteredOptions.length === 0 && (
               <li className="px-3 py-2 text-secondary">No matching Rukns.</li>
             )}

@@ -2,8 +2,9 @@ import type { ReactNode } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
 import { getAuthorizedRedirect, getHomeRouteForRole } from '@/lib/auth/authorization'
 import { ROUTES } from '@/constants/routes'
-import { Skeleton } from '@/components/ui/Skeleton'
+import { HomePageSkeleton, Skeleton } from '@/components/ui/Skeleton'
 import { useAuth } from '@/hooks/useAuth'
+import { useRepositoryHydration } from '@/hooks/useRepositoryHydration'
 import type { UserRole } from '@/types/auth.types'
 
 type ProtectedRouteProps = {
@@ -24,9 +25,24 @@ function AuthLoadingScreen() {
   )
 }
 
+function HydrationLoadingScreen() {
+  return (
+    <div
+      className="min-h-svh bg-surface-muted px-4 py-8 sm:px-6"
+      aria-busy="true"
+      aria-label="Loading campaign data"
+    >
+      <div className="mx-auto max-w-5xl">
+        <HomePageSkeleton />
+      </div>
+    </div>
+  )
+}
+
 export function ProtectedRoute({ allowedRole, children }: ProtectedRouteProps) {
   const location = useLocation()
   const { user, isAuthenticated, isInitializing } = useAuth()
+  const isHydrated = useRepositoryHydration()
 
   if (isInitializing) {
     return <AuthLoadingScreen />
@@ -39,6 +55,10 @@ export function ProtectedRoute({ allowedRole, children }: ProtectedRouteProps) {
   if (user.role !== allowedRole) {
     const redirect = getAuthorizedRedirect(location.pathname, user.role)
     return <Navigate to={redirect} replace />
+  }
+
+  if (!isHydrated) {
+    return <HydrationLoadingScreen />
   }
 
   return children

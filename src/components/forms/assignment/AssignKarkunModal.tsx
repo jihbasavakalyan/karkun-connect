@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { getCompatibleRuknsForKarkun } from '@/lib/peopleStore'
+import { getRuknAssignmentSummary } from '@/services/assignmentService'
 import { matchesKarkunRegistrySearch } from '@/lib/relationshipPresentation'
 import { AvailableKarkunRow, KarkunSearchField } from '@/components/relationship'
 import { Modal } from '@/components/common/Modal'
@@ -151,7 +152,9 @@ export function AssignKarkunModal({ isOpen, onClose, genderFilter }: AssignKarku
               with:
             </p>
             <div className="grid max-h-[min(40vh,14rem)] gap-2 overflow-y-auto overscroll-contain">
-              {ruknOptions.map((rukn) => (
+              {ruknOptions.map((rukn) => {
+                const connectedCount = getRuknAssignmentSummary(rukn.id).assignedKarkunCount
+                return (
                 <button
                   key={rukn.id}
                   type="button"
@@ -162,9 +165,15 @@ export function AssignKarkunModal({ isOpen, onClose, genderFilter }: AssignKarku
                       : 'border-border hover:border-primary/30'
                   }`}
                 >
-                  {rukn.name} · {rukn.gender}
+                  <span className="block">
+                    {rukn.id} – {rukn.name}
+                  </span>
+                  <span className="mt-0.5 block text-xs font-normal text-secondary">
+                    Connected Karkuns: {connectedCount}
+                  </span>
                 </button>
-              ))}
+                )
+              })}
             </div>
             {ruknOptions.length === 0 && (
               <p className="text-sm text-secondary">No compatible active Rukns found.</p>

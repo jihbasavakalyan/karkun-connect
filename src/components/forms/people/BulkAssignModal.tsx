@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { ruknMaster } from '@/data/ruknMaster'
 import { bulkAssignKarkuns } from '@/lib/assignmentEngine'
 import { getCompatibleRuknsForKarkun } from '@/lib/peopleStore'
+import { getRuknAssignmentSummary } from '@/services/assignmentService'
 import { Modal } from '@/components/common/Modal'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
@@ -76,7 +77,7 @@ export function BulkAssignModal({
             <option value="">Choose Rukn...</option>
             {compatibleRukns.map((rukn) => (
               <option key={rukn.id} value={rukn.id}>
-                {rukn.name}
+                {rukn.id} – {rukn.name} (Connected Karkuns: {getRuknAssignmentSummary(rukn.id).assignedKarkunCount})
               </option>
             ))}
           </select>

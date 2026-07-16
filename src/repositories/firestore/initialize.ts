@@ -7,6 +7,7 @@ import {
   stopFirestoreSnapshotListeners,
 } from '@/repositories/firestore/firestoreRepositories'
 import { hydrateStoresFromRepositories } from '@/repositories/firestore/storeHydration'
+import { resetRepositoryHydrationReadyForTests } from '@/repositories/hydrationReady'
 
 let initialized = false
 let initializeInFlight: Promise<void> | null = null
@@ -125,4 +126,5 @@ export function resetRepositoryInitializationForTests(): void {
   snapshotRefreshQueued = false
   snapshotRefreshRunning = false
   stopFirestoreSnapshotListeners()
+  resetRepositoryHydrationReadyForTests()
 }

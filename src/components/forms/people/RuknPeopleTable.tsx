@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import type { Rukn } from '@/data/ruknMaster'
 import { adminRuknDetailPath } from '@/constants/routes'
+import { getRuknAssignmentSummary } from '@/services/assignmentService'
 import type { PersonStatus } from '@/types/karkun-registry.types'
 import { formatPersonStatus, type PeopleSortField } from '@/types/people.types'
 import { StatusBadge } from '@/components/ui/StatusBadge'
@@ -98,6 +99,7 @@ export function RuknPeopleTable({
                   onToggleSort={onToggleSort}
                 />
               </th>
+              <th className="px-4 py-3 font-semibold text-text-heading">Connected Karkuns</th>
               <th className="px-4 py-3 font-semibold text-text-heading">Gender</th>
               <th className="px-4 py-3">
                 <SortHeader
@@ -122,7 +124,9 @@ export function RuknPeopleTable({
             </tr>
           </thead>
           <tbody>
-            {records.map((rukn) => (
+            {records.map((rukn) => {
+              const connectedCount = getRuknAssignmentSummary(rukn.id).assignedKarkunCount
+              return (
               <tr key={rukn.id} className={PEOPLE_TABLE_ROW_CLASS}>
                 <td className={PEOPLE_TABLE_CELL_CLASS}>
                   <input
@@ -134,8 +138,11 @@ export function RuknPeopleTable({
                 </td>
                 <td className={`${PEOPLE_TABLE_CELL_CLASS} font-medium text-text-heading`}>
                   <Link to={adminRuknDetailPath(rukn.id)} className="hover:text-primary hover:underline">
-                    {rukn.name}
+                    {rukn.id} – {rukn.name}
                   </Link>
+                </td>
+                <td className={`${PEOPLE_TABLE_CELL_CLASS} text-secondary`}>
+                  Connected Karkuns: {connectedCount}
                 </td>
                 <td className={`${PEOPLE_TABLE_CELL_CLASS} text-secondary`}>{rukn.gender}</td>
                 <td className={`${PEOPLE_TABLE_CELL_CLASS} text-secondary`}>{rukn.mobile || '—'}</td>
@@ -153,13 +160,16 @@ export function RuknPeopleTable({
                   </button>
                 </td>
               </tr>
-            ))}
+              )
+            })}
           </tbody>
         </table>
       </div>
 
       <ul className="space-y-4 md:hidden">
-        {records.map((rukn) => (
+        {records.map((rukn) => {
+          const connectedCount = getRuknAssignmentSummary(rukn.id).assignedKarkunCount
+          return (
           <li
             key={rukn.id}
             className="rounded-(--radius-card) border border-border bg-surface p-4 shadow-card"
@@ -174,11 +184,14 @@ export function RuknPeopleTable({
               <div className="min-w-0 flex-1">
                 <div className="flex items-start justify-between gap-2">
                   <Link to={adminRuknDetailPath(rukn.id)} className="font-semibold text-text-heading">
-                    {rukn.name}
+                    {rukn.id} – {rukn.name}
                   </Link>
                   <PersonStatusBadge status={rukn.status} />
                 </div>
                 <p className="mt-1 text-sm text-secondary">
+                  Connected Karkuns: {connectedCount}
+                </p>
+                <p className="mt-0.5 text-sm text-secondary">
                   {rukn.gender} · {rukn.mobile || 'No mobile'}
                 </p>
                 <div className="mt-3 text-sm">
@@ -189,7 +202,8 @@ export function RuknPeopleTable({
               </div>
             </div>
           </li>
-        ))}
+          )
+        })}
       </ul>
     </>
   )

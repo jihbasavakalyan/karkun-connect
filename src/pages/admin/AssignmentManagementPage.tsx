@@ -294,9 +294,14 @@ export function AssignmentManagementPage() {
                     }`}
                   >
                     <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <p className="font-semibold text-text-heading">{rukn.name}</p>
+                      <div className="min-w-0">
+                        <p className="font-semibold text-text-heading">
+                          {rukn.id} – {rukn.name}
+                        </p>
                         <p className="mt-1 text-sm text-secondary">
+                          Connected Karkuns: {summary.assignedKarkunCount}
+                        </p>
+                        <p className="mt-0.5 text-sm text-secondary">
                           {rukn.gender} · {formatPersonStatus(rukn.status)}
                         </p>
                       </div>

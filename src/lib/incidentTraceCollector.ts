@@ -1,3 +1,5 @@
+/** No-op stubs — investigation instrumentation removed for production. */
+
 export type IncidentEventType =
   | 'stage'
   | 'repository_readiness'
@@ -38,152 +40,47 @@ export type IncidentTraceState = {
   firstPotentialIncorrectSeq: number | null
 }
 
-declare global {
-  interface Window {
-    __KC_INCIDENT_TRACE__?: IncidentTraceState
-  }
-}
-
-function createRunId(): string {
-  return `kc-inc-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
-}
-
-function ensureState(): IncidentTraceState {
-  if (typeof window === 'undefined') {
-    return {
-      runId: 'ssr',
-      seq: 0,
-      events: [],
-      repositoryReadiness: {},
-      firstPotentialIncorrectSeq: null,
-    }
-  }
-
-  if (!window.__KC_INCIDENT_TRACE__) {
-    window.__KC_INCIDENT_TRACE__ = {
-      runId: createRunId(),
-      seq: 0,
-      events: [],
-      repositoryReadiness: {},
-      firstPotentialIncorrectSeq: null,
-    }
-  }
-
-  return window.__KC_INCIDENT_TRACE__
-}
-
-function nextSeq(state: IncidentTraceState): number {
-  state.seq += 1
-  return state.seq
-}
-
-function pushEvent(eventType: IncidentEventType, payload: Record<string, unknown>): IncidentEvent {
-  const state = ensureState()
-  const event: IncidentEvent = {
-    runId: state.runId,
-    seq: nextSeq(state),
-    at: new Date().toISOString(),
-    eventType,
-    payload,
-  }
-  state.events.push(event)
-  console.info('[KC-INCIDENT-TRACE]', JSON.stringify(event))
-  return event
-}
-
 export function getIncidentTraceState(): IncidentTraceState {
-  const state = ensureState()
   return {
-    runId: state.runId,
-    seq: state.seq,
-    events: [...state.events],
-    repositoryReadiness: { ...state.repositoryReadiness },
-    firstPotentialIncorrectSeq: state.firstPotentialIncorrectSeq,
+    runId: '',
+    seq: 0,
+    events: [],
+    repositoryReadiness: {},
+    firstPotentialIncorrectSeq: null,
   }
 }
 
 export function markRepositoryReadiness(
-  repository: string,
-  readiness: RepositoryReadiness,
-  extras?: Record<string, unknown>,
-): void {
-  const state = ensureState()
-  state.repositoryReadiness[repository] = readiness
-  pushEvent('repository_readiness', {
-    repository,
-    readiness,
-    ...extras,
-  })
+  _repository: string,
+  _readiness: RepositoryReadiness,
+  _extras?: Record<string, unknown>,
+): void {}
+
+export function readRepositoryReadiness(_repository: string): RepositoryReadiness | null {
+  return null
 }
 
-export function readRepositoryReadiness(repository: string): RepositoryReadiness | null {
-  const state = ensureState()
-  return state.repositoryReadiness[repository] ?? null
-}
-
-export function traceIncidentStage(stage: string, extras?: Record<string, unknown>): void {
-  pushEvent('stage', {
-    stage,
-    ...extras,
-  })
-}
+export function traceIncidentStage(_stage: string, _extras?: Record<string, unknown>): void {}
 
 export function traceSequencedIncidentStage(
-  stage: string,
-  extras?: Record<string, unknown>,
-): void {
-  const state = ensureState()
-  const timestamp = new Date().toISOString()
-  const sequence = state.seq + 1
-
-  pushEvent('stage', {
-    stage,
-    runId: state.runId,
-    timestamp,
-    sequence,
-    ...extras,
-  })
-}
+  _stage: string,
+  _extras?: Record<string, unknown>,
+): void {}
 
 export function traceRepositorySnapshot(
-  repository: string,
-  snapshot: Record<string, unknown>,
-): void {
-  pushEvent('repository_snapshot', {
-    repository,
-    readiness: readRepositoryReadiness(repository),
-    ...snapshot,
-  })
-}
+  _repository: string,
+  _snapshot: Record<string, unknown>,
+): void {}
 
-export function traceStoreSnapshot(store: string, snapshot: Record<string, unknown>): void {
-  pushEvent('store_snapshot', {
-    store,
-    ...snapshot,
-  })
-}
+export function traceStoreSnapshot(_store: string, _snapshot: Record<string, unknown>): void {}
 
-export function traceMetricSnapshot(metric: string, snapshot: Record<string, unknown>): void {
-  const event = pushEvent('metric_snapshot', {
-    metric,
-    ...snapshot,
-  })
-
-  const connected = snapshot.connected
-  const unconnected = snapshot.unconnected
-  if (typeof connected === 'number' && typeof unconnected === 'number') {
-    const state = ensureState()
-    if (state.firstPotentialIncorrectSeq === null && connected === 0 && unconnected > 0) {
-      state.firstPotentialIncorrectSeq = event.seq
-    }
-  }
-}
+export function traceMetricSnapshot(_metric: string, _snapshot: Record<string, unknown>): void {}
 
 export function createIncidentOperationId(prefix: string): string {
-  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
+  return `${prefix}-${Date.now()}`
 }
 
-export function traceMutation(details: {
+export function traceMutation(_details: {
   operationId: string
   entity: string
   field: string
@@ -193,23 +90,6 @@ export function traceMutation(details: {
   reason: string
   sourceOfTruth: SourceOfTruth
   extras?: Record<string, unknown>
-}): void {
-  pushEvent('mutation', {
-    operationId: details.operationId,
-    entity: details.entity,
-    field: details.field,
-    before: details.before,
-    after: details.after,
-    caller: details.caller,
-    reason: details.reason,
-    sourceOfTruth: details.sourceOfTruth,
-    ...(details.extras ?? {}),
-  })
-}
+}): void {}
 
-export function traceUiSnapshot(view: string, snapshot: Record<string, unknown>): void {
-  pushEvent('ui_snapshot', {
-    view,
-    ...snapshot,
-  })
-}
+export function traceUiSnapshot(_view: string, _snapshot: Record<string, unknown>): void {}

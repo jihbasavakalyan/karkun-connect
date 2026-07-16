@@ -248,13 +248,15 @@ function MappingCard({ row }: { row: MappingRow }) {
     <section className="relationship-connected-card">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h3 className="truncate text-lg font-semibold text-text-heading">{row.ruknName}</h3>
+          <h3 className="truncate text-lg font-semibold text-text-heading">
+            {row.ruknId} – {row.ruknName}
+          </h3>
           <p className="mt-1 text-sm text-secondary">
             {row.gender} · {row.area || 'Area not set'} · {row.mobile || 'Mobile not added'}
           </p>
         </div>
         <span className="relationship-chip shrink-0">
-          {row.count} connected
+          Connected Karkuns: {row.count}
         </span>
       </div>
 

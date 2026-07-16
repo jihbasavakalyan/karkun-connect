@@ -17,7 +17,10 @@ export function RuknAssignmentCard({ rukn, stats }: RuknAssignmentCardProps) {
       to={adminRuknDetailPath(rukn.id)}
       className="block rounded-(--radius-card) border border-border bg-surface p-5 shadow-card transition-shadow hover:shadow-card-hover"
     >
-      <h2 className="text-lg font-semibold text-text-heading">{rukn.name}</h2>
+      <h2 className="text-lg font-semibold text-text-heading">
+        {rukn.id} – {rukn.name}
+      </h2>
+      <p className="mt-1 text-sm text-secondary">Connected Karkuns: {stats.assignedCount}</p>
 
       <dl className="mt-4 space-y-2 text-sm">
         <div className="flex items-start gap-2">
@@ -30,7 +33,7 @@ export function RuknAssignmentCard({ rukn, stats }: RuknAssignmentCardProps) {
         </div>
         <div className="flex justify-between gap-3 border-t border-border pt-3">
           <div>
-            <dt className="text-secondary">Connected</dt>
+            <dt className="text-secondary">Connected Karkuns</dt>
             <dd className="text-lg font-semibold text-text-heading">{stats.assignedCount}</dd>
           </div>
           <div>

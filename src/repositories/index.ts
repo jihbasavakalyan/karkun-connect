@@ -4,6 +4,12 @@ export * from './offline'
 export * from './storageKeys'
 export * from './interfaces'
 export { initializeRepositories, resetRepositoryInitializationForTests } from './firestore/initialize'
+export {
+  isRepositoryHydrationReady,
+  markRepositoryHydrationReady,
+  subscribeToRepositoryHydration,
+  resetRepositoryHydrationReadyForTests,
+} from './hydrationReady'
 export { migrateLocalStorageToFirestore } from '@/lib/migration/firestoreMigrationService'
 export {
   getRepositories,
