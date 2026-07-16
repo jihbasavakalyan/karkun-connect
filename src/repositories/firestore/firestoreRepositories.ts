@@ -541,7 +541,18 @@ export class ConnectionFirestoreRepository implements ConnectionRepository {
       batch.set(doc(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.connectionMeta), sanitizeForFirestore({
         nextSequence: state.nextSequence,
       }))
-      await batch.commit()
+      try {
+        console.log('[KC001] COMMIT START', {
+          assignmentCount: state.assignments.length,
+          assignmentIds: state.assignments.map((a) => a.assignmentId),
+          nextSequence: state.nextSequence,
+        })
+        await batch.commit()
+        console.log('[KC001] COMMIT SUCCESS')
+      } catch (error) {
+        console.error('[KC001] COMMIT FAILED', error)
+        throw error
+      }
       return repositoryOk(undefined)
     })
     return repositoryOk(undefined)
