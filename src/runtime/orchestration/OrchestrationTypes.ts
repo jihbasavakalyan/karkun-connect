@@ -12,6 +12,7 @@ import type { KnowledgeDomain } from '@/conversation/knowledge'
 /** Structural conversation intents — routing only, not business decisions. */
 export type ConversationIntent =
   | 'dashboard_open'
+  | 'dashboard_overview'
   | 'home_open'
   | 'meeting_preparation'
   | 'compliance_reminder'
@@ -51,6 +52,7 @@ export type KnowledgeDomainPlan = {
 export function planForIntent(intent: ConversationIntent): KnowledgeDomainPlan {
   switch (intent) {
     case 'dashboard_open':
+    case 'dashboard_overview':
       return {
         intent,
         domains: ['reports', 'campaign'],

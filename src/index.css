@@ -634,6 +634,30 @@
     @apply text-[11px] font-semibold uppercase tracking-wide text-secondary;
   }
 
+  .cd-rafeeq-panel {
+    @apply mt-5;
+  }
+
+  .cd-rafeeq-block {
+    @apply first:mt-2;
+  }
+
+  .cd-rafeeq-status {
+    @apply mt-1.5 text-sm font-semibold;
+  }
+
+  .cd-rafeeq-health-healthy {
+    @apply text-primary;
+  }
+
+  .cd-rafeeq-health-degraded {
+    @apply text-secondary;
+  }
+
+  .cd-rafeeq-health-unavailable {
+    @apply text-secondary/80;
+  }
+
   .cd-supporting {
     @apply mt-1.5 text-sm leading-relaxed text-text-heading;
   }

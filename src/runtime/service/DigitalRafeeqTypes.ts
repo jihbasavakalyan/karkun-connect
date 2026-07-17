@@ -84,6 +84,7 @@ export type DigitalRafeeqError = {
 
 export const DIGITAL_RAFEEQ_INTENTS: readonly DigitalRafeeqIntent[] = [
   'dashboard_open',
+  'dashboard_overview',
   'home_open',
   'meeting_preparation',
   'compliance_reminder',

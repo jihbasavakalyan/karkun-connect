@@ -36,6 +36,7 @@
     "verify:orchestration": "npx vite-node scripts/verify-conversation-orchestration.ts",
     "verify:digital-rafeeq": "npx vite-node scripts/verify-digital-rafeeq-service.ts",
     "verify:runtime": "npx vite-node scripts/verify-runtime.ts",
+    "verify:admin-assistant": "npx vite-node scripts/verify-admin-assistant.ts",
     "admin:export-seed": "npx vite-node scripts/admin/export-seed-backup.ts"
   },
   "dependencies": {

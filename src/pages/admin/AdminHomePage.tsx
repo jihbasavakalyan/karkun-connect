@@ -4,6 +4,7 @@ import {
   AdminPriorityStrip,
   AdminTodaysWorkPanel,
 } from '@/components/home'
+import { AdminAssistantPanel } from '@/features/digitalRafeeq/admin'
 import { useCampaignAutomationEngine } from '@/hooks/useCampaignAutomationEngine'
 import type { AdminCommandCenterSnapshot } from '@/types/campaignAutomation.types'
 
@@ -16,6 +17,8 @@ export function AdminHomePage() {
     <div className="cd-page cd-page-admin">
       <AdminHomeHero hero={snapshot.hero} />
       <AdminPriorityStrip snapshot={snapshot} />
+
+      <AdminAssistantPanel />
 
       <div className="cd-workspace">
         <AdminTodaysWorkPanel snapshot={snapshot} />
