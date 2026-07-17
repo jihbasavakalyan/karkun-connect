@@ -4,7 +4,14 @@
  * Purpose: Public façade contracts — hide runtime internals from the application.
  */
 
-import type { ConversationRole } from '@/conversation'
+import type {
+  ConversationContext,
+  ConversationLifecycleState,
+  ConversationRole,
+  PendingConfirmation,
+} from '@/conversation'
+import type { CommunicationPlan } from '@/conversation/communication'
+import type { GuidanceBundle } from '@/conversation/guidance'
 import type { ConversationIntent } from '../orchestration'
 
 export type DigitalRafeeqStatus =
@@ -44,6 +51,18 @@ export type DigitalRafeeqExecutionMetadata = {
   sessionId?: string
   source: 'service'
   validated: boolean
+}
+
+export type DigitalRafeeqSession = {
+  sessionId: string
+  conversationState: ConversationLifecycleState
+  currentContext: ConversationContext | null
+  pendingConfirmation: PendingConfirmation | null
+  generatedGuidance: GuidanceBundle | null
+  communicationPlan: CommunicationPlan | null
+  lastIntent: DigitalRafeeqIntent | null
+  interrupted: boolean
+  metadata: Readonly<Record<string, unknown>>
 }
 
 export type DigitalRafeeqTiming = {

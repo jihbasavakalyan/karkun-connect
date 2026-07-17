@@ -188,7 +188,11 @@ async function main(): Promise<void> {
       )
       expectResponseShape(resumed)
       assert(resumed.sessionId.length > 0, 'expected resumed session')
-      assert(typeof wiredService.getConversationState() === 'string', 'state missing')
+      assert(wiredService.getSession() !== null, 'expected active session')
+      assert(
+        typeof wiredService.getSession()?.conversationState === 'string',
+        'state missing',
+      )
     }),
   )
 

@@ -39,6 +39,7 @@ export {
   type DigitalRafeeqHealthStatus,
   type DigitalRafeeqIdentity,
   type DigitalRafeeqIntent,
+  type DigitalRafeeqSession,
   type DigitalRafeeqStatus,
   type DigitalRafeeqTiming,
 } from './DigitalRafeeqTypes'

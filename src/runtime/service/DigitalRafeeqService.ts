@@ -8,7 +8,6 @@
  */
 
 import type { CommunicationPlan } from '@/conversation/communication'
-import type { ConversationLifecycleState } from '@/conversation'
 import type { GuidanceBundle } from '@/conversation/guidance'
 import type { RuntimeContainer } from '@/conversation/runtime'
 import {
@@ -35,6 +34,7 @@ import {
   type DigitalRafeeqError,
   type DigitalRafeeqHealth,
   type DigitalRafeeqHealthStatus,
+  type DigitalRafeeqSession,
   type DigitalRafeeqStatus,
   type DigitalRafeeqTiming,
 } from './DigitalRafeeqTypes'
@@ -202,7 +202,10 @@ export class DigitalRafeeqService {
     return this.processRequest({ ...request, intent: 'interrupt' })
   }
 
-  closeConversation(): DigitalRafeeqResponse {
+  /**
+   * Complete and close the active conversation session.
+   */
+  completeConversation(): DigitalRafeeqResponse {
     const startedAt = Date.now()
     if (!this.isReady() || !this.runtime) {
       return this.failureResponse(
@@ -239,44 +242,73 @@ export class DigitalRafeeqService {
         ? undefined
         : {
             code: 'ORCHESTRATION_FAILED',
-            message: result.error ?? 'Failed to close conversation',
+            message: result.error ?? 'Failed to complete conversation',
           },
     }
     this.lastResponse = response
     return response
   }
 
-  getConversationState(): ConversationLifecycleState {
-    if (!this.runtime) return 'idle'
-    return this.runtime.conversationEngine.getState()
+  getSession(): DigitalRafeeqSession | null {
+    if (!this.runtime || !this.orchestrator) return null
+
+    const engineSession = this.runtime.conversationEngine.getSession()
+    if (!engineSession) return null
+
+    const recorded = this.orchestrator
+      .getSessionManager()
+      .get(engineSession.sessionId)
+
+    if (recorded) {
+      return {
+        sessionId: recorded.sessionId,
+        conversationState: recorded.conversationState,
+        currentContext: recorded.currentContext,
+        pendingConfirmation: recorded.pendingConfirmation,
+        generatedGuidance: recorded.generatedGuidance,
+        communicationPlan: recorded.communicationPlan,
+        lastIntent: recorded.lastIntent,
+        interrupted: recorded.interrupted,
+        metadata: recorded.metadata,
+      }
+    }
+
+    return {
+      sessionId: engineSession.sessionId,
+      conversationState: this.runtime.conversationEngine.getState(),
+      currentContext: this.runtime.conversationEngine.getContext(),
+      pendingConfirmation:
+        this.runtime.conversationEngine.getPendingConfirmation(),
+      generatedGuidance: this.lastResponse?.guidancePlan ?? null,
+      communicationPlan: this.lastResponse?.communicationPlan ?? null,
+      lastIntent: this.lastResponse?.metadata.intent ?? null,
+      interrupted: false,
+      metadata: {},
+    }
   }
 
   getCommunicationPlan(): CommunicationPlan | null {
     if (this.lastResponse?.communicationPlan) {
       return this.lastResponse.communicationPlan
     }
-    const sessionId = this.runtime?.conversationEngine.getSession()?.sessionId
-    if (!sessionId || !this.orchestrator) return null
-    return (
-      this.orchestrator.getSessionManager().get(sessionId)?.communicationPlan ??
-      null
-    )
+    return this.getSession()?.communicationPlan ?? null
   }
 
   getGuidance(): GuidanceBundle | null {
     if (this.lastResponse?.guidancePlan) {
       return this.lastResponse.guidancePlan
     }
-    const sessionId = this.runtime?.conversationEngine.getSession()?.sessionId
-    if (!sessionId || !this.orchestrator) return null
-    return (
-      this.orchestrator.getSessionManager().get(sessionId)?.generatedGuidance ??
-      null
-    )
+    return this.getSession()?.generatedGuidance ?? null
   }
 
-  /** Test helper — clear wired runtime without touching global bootstrap. */
-  resetForTests(): void {
+  /**
+   * Detach runtime wiring and return the service to an uninitialized state.
+   * Does not tear down the global bootstrap singleton used by other consumers.
+   */
+  shutdown(): void {
+    if (this.runtime?.conversationEngine.getSession()) {
+      this.runtime.conversationEngine.closeConversation()
+    }
     this.unsubscribeOrchestrator?.()
     this.unsubscribeOrchestrator = null
     this.runtime = null
@@ -284,6 +316,11 @@ export class DigitalRafeeqService {
     this.lastResponse = null
     this.initializedAt = undefined
     this.status = 'NotInitialized'
+  }
+
+  /** Test helper — clear wired runtime without touching global bootstrap. */
+  resetForTests(): void {
+    this.shutdown()
   }
 
   private bindRuntime(
@@ -396,7 +433,7 @@ export class DigitalRafeeqService {
             ? 'Unavailable'
             : this.status
           : this.status,
-      conversationState: this.getConversationState(),
+      conversationState: this.getSession()?.conversationState ?? 'idle',
       sessionId: request?.sessionId ?? '',
       knowledgeSummary: null,
       guidancePlan: null,

@@ -99,6 +99,7 @@ export {
   type DigitalRafeeqRequest,
   type DigitalRafeeqResponse,
   type DigitalRafeeqServiceOptions,
+  type DigitalRafeeqSession,
   type DigitalRafeeqStatus,
   type DigitalRafeeqTiming,
   type GuidanceGeneratedEvent,
