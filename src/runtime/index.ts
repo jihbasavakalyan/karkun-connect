@@ -30,3 +30,16 @@ export {
   registerRepositoryAdapters,
   type RepositoryAdapterSet,
 } from './adapters'
+
+export {
+  CampaignKnowledgeProvider,
+  ComplianceKnowledgeProvider,
+  KarkunKnowledgeProvider,
+  KnowledgeProviderFactory,
+  MeetingKnowledgeProvider,
+  ReportKnowledgeProvider,
+  createKnowledgeProviderFactory,
+  createKnowledgeProviders,
+  registerKnowledgeProviders,
+  type LiveKnowledgeProviderSet,
+} from './knowledge'

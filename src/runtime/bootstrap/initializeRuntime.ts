@@ -1,8 +1,8 @@
 /**
- * Runtime bootstrap initialization (KC-005 Sprint 2.0 / 2.1).
+ * Runtime bootstrap initialization (KC-005 Sprint 2.0–2.2).
  *
  * Purpose: Initialize Digital Rafeeq Runtime once after application startup.
- * Ownership: Bootstrap only — wires concrete repository adapters into AdapterRegistry.
+ * Ownership: Bootstrap wires repository adapters and live knowledge providers.
  * Failures are isolated — Karkun Connect continues without the runtime.
  */
 
@@ -15,6 +15,7 @@ import {
 } from '@/conversation/runtime'
 import { getRepositories } from '@/repositories'
 import { registerRepositoryAdapters } from '@/runtime/adapters'
+import { registerKnowledgeProviders } from '@/runtime/knowledge'
 
 export type RuntimeBootstrapStatus =
   | 'NotInitialized'
@@ -54,9 +55,11 @@ function resolveProfile(
 
 function buildRuntime(profile: 'development' | 'testing' | 'production'): RuntimeContainer {
   const adapterRegistry = createAdapterRegistry()
+  let adapters = null as ReturnType<typeof registerRepositoryAdapters>['adapters'] | null
 
   try {
-    registerRepositoryAdapters(getRepositories(), adapterRegistry)
+    const registered = registerRepositoryAdapters(getRepositories(), adapterRegistry)
+    adapters = registered.adapters
   } catch (error) {
     console.warn('[runtime] repository adapter registration failed', error)
   }
@@ -66,15 +69,22 @@ function buildRuntime(profile: 'development' | 'testing' | 'production'): Runtim
     packageVersion: '1.0.0-rc.1' as const,
   }
 
-  switch (profile) {
-    case 'production':
-      return createProductionRuntime(factoryOptions)
-    case 'testing':
-      return createTestingRuntime(factoryOptions)
-    case 'development':
-    default:
-      return createDevelopmentRuntime(factoryOptions)
+  const runtime =
+    profile === 'production'
+      ? createProductionRuntime(factoryOptions)
+      : profile === 'testing'
+        ? createTestingRuntime(factoryOptions)
+        : createDevelopmentRuntime(factoryOptions)
+
+  if (adapters) {
+    try {
+      registerKnowledgeProviders(runtime.knowledgeManager, adapters)
+    } catch (error) {
+      console.warn('[runtime] knowledge provider registration failed', error)
+    }
   }
+
+  return runtime
 }
 
 /**

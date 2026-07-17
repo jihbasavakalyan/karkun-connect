@@ -13,9 +13,11 @@ export {
   createKnowledgeProviderContribution,
   type CampaignKnowledgeProvider,
   type CommunicationKnowledgeProvider,
+  type ComplianceKnowledgeProvider,
   type FutureAIKnowledgeProvider,
   type KnowledgeProvider,
   type MeetingKnowledgeProvider,
+  type ReportKnowledgeProvider,
   type RepositoryKnowledgeProvider,
   type WorkerKnowledgeProvider,
 } from './KnowledgeProviders'

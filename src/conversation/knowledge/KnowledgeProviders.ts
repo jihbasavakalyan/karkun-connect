@@ -68,6 +68,18 @@ export interface FutureAIKnowledgeProvider extends KnowledgeProvider {
   readonly supportedDomains: readonly ['future_ai']
 }
 
+/** Supplies compliance domain knowledge — summaries and outstanding items. */
+export interface ComplianceKnowledgeProvider extends KnowledgeProvider {
+  readonly providerId: 'compliance'
+  readonly supportedDomains: readonly ['compliance']
+}
+
+/** Supplies reports domain knowledge — dashboard and progress metrics. */
+export interface ReportKnowledgeProvider extends KnowledgeProvider {
+  readonly providerId: 'report'
+  readonly supportedDomains: readonly ['reports']
+}
+
 export function createKnowledgeProviderContribution(
   providerId: KnowledgeProviderId,
   domain: KnowledgeDomain,

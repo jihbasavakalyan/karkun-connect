@@ -36,6 +36,8 @@ export type KnowledgeProviderId =
   | 'repository'
   | 'communication'
   | 'future_ai'
+  | 'compliance'
+  | 'report'
 
 /**
  * Request for knowledge aggregation — answers "what is known?" not "what is valid?"

@@ -67,6 +67,7 @@ export {
   createKnowledgeResolver,
   type CampaignKnowledgeProvider,
   type CommunicationKnowledgeProvider,
+  type ComplianceKnowledgeProvider,
   type DomainKnowledgePayload,
   type FutureAIKnowledgeProvider,
   type KnowledgeAvailability,
@@ -87,6 +88,7 @@ export {
   type KnowledgeResolutionResult,
   type KnowledgeSnapshotData,
   type MeetingKnowledgeProvider,
+  type ReportKnowledgeProvider,
   type RepositoryKnowledgeProvider,
   type WorkerKnowledgeProvider,
 } from './knowledge'
