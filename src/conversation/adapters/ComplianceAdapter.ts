@@ -2,13 +2,13 @@
  * Compliance repository adapter contract (KC-004 Sprint 1.5).
  *
  * Purpose: Translate compliance repository reads into conversation-safe summaries.
- * Repository dependency: Implementations wrap ComplianceRepository.
+ * Dependencies: Implementations wrap ComplianceRepository.
+ * Capabilities: Read-focused; compliance writes remain in existing Rukn workflows.
+ * Supported operations: compliance summaries, tracker status, outstanding items.
  * Future extensions: Tracker summaries may feed reminder policies via Knowledge snapshots.
- * Capability support: Read-focused; compliance writes remain in existing Rukn workflows.
- * Error mapping: PermissionDenied for out-of-scope Rukn reads.
  */
 
-import type { RepositoryAdapter } from './RepositoryAdapter'
+import type { RepositoryAdapter } from './AdapterCapabilities'
 import type { AdapterResult, AdapterScope } from './AdapterTypes'
 
 export type AdapterComplianceDomain =
@@ -31,11 +31,22 @@ export type AdapterTrackerSummary = {
   overdueCount: number
 }
 
+export type AdapterOutstandingItem = {
+  domain: AdapterComplianceDomain
+  itemKey: string
+  status: 'pending' | 'overdue'
+  dueAt?: string
+  karkunId?: string
+}
+
 /**
- * ComplianceAdapter — read compliance posture and tracker summaries.
+ * ComplianceAdapter — summaries, tracker status, and outstanding items.
  */
 export interface ComplianceAdapter extends RepositoryAdapter {
   readonly adapterId: 'compliance'
-  readCompliance(scope: AdapterScope): AdapterResult<readonly AdapterComplianceSummary[]>
-  readTrackerSummaries(scope: AdapterScope): AdapterResult<readonly AdapterTrackerSummary[]>
+  readComplianceSummaries(
+    scope: AdapterScope,
+  ): AdapterResult<readonly AdapterComplianceSummary[]>
+  readTrackerStatus(scope: AdapterScope): AdapterResult<readonly AdapterTrackerSummary[]>
+  readOutstandingItems(scope: AdapterScope): AdapterResult<readonly AdapterOutstandingItem[]>
 }

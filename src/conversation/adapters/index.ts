@@ -7,6 +7,7 @@
 export type {
   AdapterCampaignContext,
   AdapterCampaignStatus,
+  AdapterCampaignSummary,
   AdapterTodaysProgramme,
   CampaignAdapter,
 } from './CampaignAdapter'
@@ -14,12 +15,14 @@ export type {
 export type {
   AdapterComplianceDomain,
   AdapterComplianceSummary,
+  AdapterOutstandingItem,
   AdapterTrackerSummary,
   ComplianceAdapter,
 } from './ComplianceAdapter'
 
 export type {
   AdapterAssignedKarkun,
+  AdapterConnectionInfo,
   AdapterJourneyStage,
   AdapterJourneyState,
   KarkunAdapter,
@@ -28,22 +31,18 @@ export type {
 export type {
   AdapterCreateMeetingRequest,
   AdapterCreateMeetingResponse,
+  AdapterFollowUp,
   AdapterMeetingHistoryEntry,
   MeetingAdapter,
 } from './MeetingAdapter'
 
 export type {
   AdapterDashboardMetric,
+  AdapterDashboardSummary,
+  AdapterExecutionSummary,
   AdapterProgressSummary,
   ReportAdapter,
 } from './ReportAdapter'
-
-export {
-  BaseRepositoryAdapter,
-  mapRepositoryFailure,
-  mapRepositoryFailureResult,
-  type RepositoryAdapter,
-} from './RepositoryAdapter'
 
 export {
   AdapterRegistry,
@@ -55,14 +54,24 @@ export {
 } from './AdapterRegistry'
 
 export {
+  BaseRepositoryAdapter,
   DEFAULT_READ_CAPABILITIES,
   DEFAULT_READ_WRITE_CAPABILITIES,
-  adapterErr,
-  adapterOk,
-  type AdapterAvailability,
   type AdapterCapabilities,
+  type RepositoryAdapter,
+} from './AdapterCapabilities'
+
+export {
+  adapterErr,
+  mapRepositoryFailure,
+  mapRepositoryFailureResult,
   type AdapterError,
   type AdapterErrorCode,
+} from './AdapterErrors'
+
+export {
+  adapterOk,
+  type AdapterAvailability,
   type AdapterId,
   type AdapterResult,
   type AdapterScope,

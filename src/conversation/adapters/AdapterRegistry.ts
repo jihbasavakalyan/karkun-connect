@@ -13,12 +13,12 @@ import type { ComplianceAdapter } from './ComplianceAdapter'
 import type { KarkunAdapter } from './KarkunAdapter'
 import type { MeetingAdapter } from './MeetingAdapter'
 import type { ReportAdapter } from './ReportAdapter'
-import type { RepositoryAdapter } from './RepositoryAdapter'
+import type { RepositoryAdapter } from './AdapterCapabilities'
 import type {
   AdapterAvailability,
-  AdapterCapabilities,
   AdapterId,
 } from './AdapterTypes'
+import type { AdapterCapabilities } from './AdapterCapabilities'
 
 export type RegisteredDomainAdapter =
   | CampaignAdapter

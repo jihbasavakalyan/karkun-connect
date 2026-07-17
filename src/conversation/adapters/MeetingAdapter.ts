@@ -2,19 +2,26 @@
  * Meeting repository adapter contract (KC-004 Sprint 1.5).
  *
  * Purpose: Translate meeting / execution reads into conversation-safe meeting refs.
- * Repository dependency: Implementations wrap ExecutionRepository (and related stores).
- * Future extensions: Create meeting request is a contract only — write path stays in existing services.
- * Capability support: canRead required; canWrite optional for request contracts.
- * Error mapping: ValidationFailed for incomplete create requests; RecordNotFound for missing meetings.
+ * Dependencies: Implementations wrap ExecutionRepository (and related stores).
+ * Capabilities: canRead required; supportsHistory for meeting history; canWrite optional for requests.
+ * Supported operations: meeting lookup, history, create request contracts, follow-up lookup.
+ * Future extensions: Create meeting request remains a contract — write path stays in existing services.
  */
 
 import type { ConversationMeetingRef } from '../ConversationContext'
-import type { RepositoryAdapter } from './RepositoryAdapter'
+import type { RepositoryAdapter } from './AdapterCapabilities'
 import type { AdapterResult, AdapterScope } from './AdapterTypes'
 
 export type AdapterMeetingHistoryEntry = ConversationMeetingRef & {
   outcome?: string
   recordedAt?: number
+}
+
+export type AdapterFollowUp = {
+  karkunId: string
+  followUpAt?: string
+  label?: string
+  meetingId?: string
 }
 
 /**
@@ -36,11 +43,11 @@ export type AdapterCreateMeetingResponse = {
 }
 
 /**
- * MeetingAdapter — read meetings, history, and accept create requests (contract only).
+ * MeetingAdapter — lookup, history, create request contracts, follow-up lookup.
  */
 export interface MeetingAdapter extends RepositoryAdapter {
   readonly adapterId: 'meeting'
-  readMeetings(scope: AdapterScope): AdapterResult<readonly ConversationMeetingRef[]>
+  lookupMeetings(scope: AdapterScope): AdapterResult<readonly ConversationMeetingRef[]>
   readMeetingHistory(
     karkunId: string,
     scope?: AdapterScope,
@@ -49,4 +56,5 @@ export interface MeetingAdapter extends RepositoryAdapter {
   createMeetingRequest(
     request: AdapterCreateMeetingRequest,
   ): AdapterResult<AdapterCreateMeetingResponse>
+  lookupFollowUps(scope: AdapterScope): AdapterResult<readonly AdapterFollowUp[]>
 }

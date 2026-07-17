@@ -2,13 +2,13 @@
  * Report repository adapter contract (KC-004 Sprint 1.5).
  *
  * Purpose: Translate dashboard / progress metrics into conversation-safe summaries.
- * Repository dependency: Implementations may wrap campaign, execution, and reporting reads.
+ * Dependencies: Implementations may wrap campaign, execution, and reporting reads.
+ * Capabilities: Read and optional batch for report channel composition.
+ * Supported operations: dashboard summaries, execution summaries, progress metrics.
  * Future extensions: Aggregate metrics for administrator reporting channels.
- * Capability support: Read and optional batch for report channel composition.
- * Error mapping: RepositoryUnavailable when metrics sources are offline.
  */
 
-import type { RepositoryAdapter } from './RepositoryAdapter'
+import type { RepositoryAdapter } from './AdapterCapabilities'
 import type { AdapterResult, AdapterScope } from './AdapterTypes'
 
 export type AdapterDashboardMetric = {
@@ -16,6 +16,20 @@ export type AdapterDashboardMetric = {
   value: number | string
   unit?: string
   labelKey?: string
+}
+
+export type AdapterDashboardSummary = {
+  campaignId?: string
+  metrics: readonly AdapterDashboardMetric[]
+  generatedAt?: number
+}
+
+export type AdapterExecutionSummary = {
+  campaignId?: string
+  meetingsCompleted?: number
+  meetingsPending?: number
+  followUpsDue?: number
+  metrics: readonly AdapterDashboardMetric[]
 }
 
 export type AdapterProgressSummary = {
@@ -27,10 +41,11 @@ export type AdapterProgressSummary = {
 }
 
 /**
- * ReportAdapter — read dashboard metrics and progress summaries.
+ * ReportAdapter — dashboard summaries, execution summaries, progress metrics.
  */
 export interface ReportAdapter extends RepositoryAdapter {
   readonly adapterId: 'report'
-  readDashboardMetrics(scope?: AdapterScope): AdapterResult<readonly AdapterDashboardMetric[]>
-  readProgressSummaries(scope?: AdapterScope): AdapterResult<AdapterProgressSummary>
+  readDashboardSummaries(scope?: AdapterScope): AdapterResult<AdapterDashboardSummary>
+  readExecutionSummaries(scope?: AdapterScope): AdapterResult<AdapterExecutionSummary>
+  readProgressMetrics(scope?: AdapterScope): AdapterResult<AdapterProgressSummary>
 }
