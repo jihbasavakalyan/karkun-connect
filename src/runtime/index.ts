@@ -17,3 +17,16 @@ export {
   type RuntimeBootstrapStatus,
   type RuntimeContextValue,
 } from './bootstrap'
+
+export {
+  CampaignRepositoryAdapter,
+  ComplianceRepositoryAdapter,
+  KarkunRepositoryAdapter,
+  MeetingRepositoryAdapter,
+  ReportRepositoryAdapter,
+  RepositoryAdapterFactory,
+  createRepositoryAdapterFactory,
+  createRepositoryAdapters,
+  registerRepositoryAdapters,
+  type RepositoryAdapterSet,
+} from './adapters'

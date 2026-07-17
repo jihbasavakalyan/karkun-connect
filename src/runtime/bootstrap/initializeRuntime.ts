@@ -1,19 +1,20 @@
 /**
- * Runtime bootstrap initialization (KC-005 Sprint 2.0).
+ * Runtime bootstrap initialization (KC-005 Sprint 2.0 / 2.1).
  *
  * Purpose: Initialize Digital Rafeeq Runtime once after application startup.
- * Ownership: Bootstrap only — no feature logic, no repository wiring.
- * Future extensions: Concrete adapters register after this passive init.
- *
+ * Ownership: Bootstrap only — wires concrete repository adapters into AdapterRegistry.
  * Failures are isolated — Karkun Connect continues without the runtime.
  */
 
+import { createAdapterRegistry } from '@/conversation/adapters'
 import {
   createDevelopmentRuntime,
   createProductionRuntime,
   createTestingRuntime,
   type RuntimeContainer,
 } from '@/conversation/runtime'
+import { getRepositories } from '@/repositories'
+import { registerRepositoryAdapters } from '@/runtime/adapters'
 
 export type RuntimeBootstrapStatus =
   | 'NotInitialized'
@@ -52,14 +53,27 @@ function resolveProfile(
 }
 
 function buildRuntime(profile: 'development' | 'testing' | 'production'): RuntimeContainer {
+  const adapterRegistry = createAdapterRegistry()
+
+  try {
+    registerRepositoryAdapters(getRepositories(), adapterRegistry)
+  } catch (error) {
+    console.warn('[runtime] repository adapter registration failed', error)
+  }
+
+  const factoryOptions = {
+    adapterRegistry,
+    packageVersion: '1.0.0-rc.1' as const,
+  }
+
   switch (profile) {
     case 'production':
-      return createProductionRuntime({ packageVersion: '1.0.0-rc.1' })
+      return createProductionRuntime(factoryOptions)
     case 'testing':
-      return createTestingRuntime({ packageVersion: '1.0.0-rc.1' })
+      return createTestingRuntime(factoryOptions)
     case 'development':
     default:
-      return createDevelopmentRuntime({ packageVersion: '1.0.0-rc.1' })
+      return createDevelopmentRuntime(factoryOptions)
   }
 }
 
@@ -108,7 +122,6 @@ export function initializeRuntime(
         initializedAt: Date.now(),
       }
       status = 'Failed'
-      // Allow a future explicit retry by clearing the promise only on failure.
       initPromise = null
       return result
     })
