@@ -1720,12 +1720,70 @@
     @apply mt-0.5 text-xs leading-relaxed text-secondary;
   }
 
+  .ri-priority-schedule {
+    @apply mt-1 text-[11px] font-medium text-emerald-800;
+  }
+
+  .mc-campaign-task-row {
+    @apply mt-2 flex flex-wrap gap-2;
+  }
+
+  .mc-campaign-task-badge {
+    @apply flex min-w-[6.5rem] flex-1 flex-col gap-1 rounded-xl border border-border/70 bg-white px-2.5 py-2 sm:min-w-[7.5rem];
+  }
+
+  .mc-campaign-task-label {
+    @apply text-[11px] font-semibold text-secondary;
+  }
+
+  .mc-campaign-task-value {
+    @apply text-sm font-bold text-text-heading;
+  }
+
+  .mc-campaign-task-track,
+  .mc-dev-summary-track {
+    @apply mt-0.5 h-1.5 w-full overflow-hidden rounded-full bg-border/50;
+  }
+
+  .mc-campaign-task-fill,
+  .mc-dev-summary-fill {
+    @apply block h-full rounded-full bg-primary/80;
+  }
+
+  .mc-dev-summary-grid {
+    @apply mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4;
+  }
+
+  .mc-dev-summary-item {
+    @apply flex flex-col gap-0.5 rounded-xl border border-border/60 bg-white px-2.5 py-2;
+  }
+
+  .mc-dev-summary-label {
+    @apply text-[11px] font-semibold leading-tight text-secondary;
+  }
+
+  .mc-dev-summary-value {
+    @apply text-base font-bold text-text-heading;
+  }
+
+  .mc-dev-summary-target {
+    @apply text-sm font-medium text-secondary;
+  }
+
   .ri-card-badges {
     @apply flex flex-col items-end gap-1;
   }
 
   .ri-card-intel {
     @apply mt-2 space-y-2 rounded-lg border border-primary/10 bg-primary-muted/15 px-2.5 py-2;
+  }
+
+  .ri-card-intel-profile {
+    @apply border-border/50 bg-surface/80;
+  }
+
+  .ri-card-coaching {
+    @apply text-sm leading-relaxed text-text-heading;
   }
 
   .ri-card-recommendation {

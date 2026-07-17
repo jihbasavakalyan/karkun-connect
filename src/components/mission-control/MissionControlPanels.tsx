@@ -2,14 +2,14 @@ import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import type { AdminMissionControlModel } from '@/lib/missionControl/buildAdminMissionControl'
 import type { RuknMissionControlModel } from '@/lib/missionControl/buildRuknMissionControl'
+import {
+  buildCampaignTaskBadges,
+  buildDevelopmentSummary,
+  buildOrphanVisitQueueItems,
+  buildPriorityScheduleNotes,
+} from '@/lib/missionControl/missionControlPresentation'
 import { adminRuknDetailPath, ROUTES, adminCompliancePath, adminExecutionPath } from '@/constants/routes'
 import { McProgressRing, leaderboardStatus } from './McProgressRing'
-import { MyKarkunProgress } from '@/components/relationship/MyKarkunProgress'
-import {
-  RUKN_PROGRESS_LABELS,
-  RUKN_PROGRESS_SHORT_LABELS,
-  type RuknProgressStageId,
-} from '@/lib/ruknProgressPresentation'
 import { buildDailyPriorityMission } from '@/lib/relationshipIntelligencePresentation'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import type { JourneyStageId } from '@/types/guidance'
@@ -240,43 +240,29 @@ type RuknMissionControlPanelsProps = {
   model: RuknMissionControlModel
 }
 
-export function RuknTodaysVisitQueue({ model }: RuknMissionControlPanelsProps) {
-  return (
-    <section className="mc-panel mc-panel-compact mc-panel-primary" aria-label="Today's visit queue">
-      <h2 className="mc-panel-title">Today&apos;s Visit Queue</h2>
-      {model.todaysVisits.length === 0 ? (
-        <p className="mc-caption">No visits scheduled in today’s timeline.</p>
-      ) : (
-        <ul className="mc-priority-list mc-priority-list-compact">
-          {model.todaysVisits.map((item) => (
-            <li key={item.id}>
-              <Link to={item.route} className="mc-priority-link mc-priority-link-compact">
-                <span className="mc-priority-title">{item.title}</span>
-                {item.subtitle ? <span className="mc-caption">{item.subtitle}</span> : null}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
-  )
-}
-
 type RuknPriorityMissionProps = {
   ruknId: string
+  model: RuknMissionControlModel
 }
 
-export function RuknPriorityMissionList({ ruknId }: RuknPriorityMissionProps) {
+export function RuknPriorityMissionList({ ruknId, model }: RuknPriorityMissionProps) {
   const { assignmentVersion } = useAssignmentEngine()
   const items = useMemo(() => {
     void assignmentVersion
     return buildDailyPriorityMission(ruknId)
   }, [ruknId, assignmentVersion])
 
-  if (items.length === 0) {
+  const scheduleNotes = useMemo(() => buildPriorityScheduleNotes(model), [model])
+
+  const orphanVisits = useMemo(
+    () => buildOrphanVisitQueueItems(model, items.map((item) => item.karkunId)),
+    [model, items],
+  )
+
+  if (items.length === 0 && orphanVisits.length === 0) {
     return (
-      <section className="mc-panel mc-panel-compact mc-panel-primary" aria-label="Today's mission priorities">
-        <h2 className="mc-panel-title">Who needs attention</h2>
+      <section className="mc-panel mc-panel-compact mc-panel-primary" aria-label="Priority Karkuns">
+        <h2 className="mc-panel-title">Priority Karkuns</h2>
         <p className="mc-caption">
           No urgent follow-ups right now. A gentle check-in with any connected Karkun still helps.
         </p>
@@ -285,21 +271,151 @@ export function RuknPriorityMissionList({ ruknId }: RuknPriorityMissionProps) {
   }
 
   return (
-    <section className="mc-panel mc-panel-compact mc-panel-primary ri-priority-panel" aria-label="Today's mission priorities">
-      <h2 className="mc-panel-title">Who needs attention</h2>
-      <p className="mc-caption">Prioritised by relationship need — why each person appears today.</p>
-      <ul className="ri-priority-list">
-        {items.map((item) => (
-          <li key={item.id}>
-            <Link to={item.route} className="ri-priority-link">
-              <div className="ri-priority-head">
-                <span className="ri-priority-name">{item.karkunName}</span>
-                <span className={`ri-priority-health ri-health-${item.healthLevel}`}>
-                  {item.healthLabel}
+    <>
+      <section className="mc-panel mc-panel-compact mc-panel-primary ri-priority-panel" aria-label="Priority Karkuns">
+        <h2 className="mc-panel-title">Priority Karkuns</h2>
+        <p className="mc-caption">Who needs attention first — and why.</p>
+        {items.length > 0 ? (
+          <ul className="ri-priority-list">
+            {items.map((item) => {
+              const scheduleNote = scheduleNotes.get(item.karkunId)
+              return (
+                <li key={item.id}>
+                  <Link to={item.route} className="ri-priority-link">
+                    <div className="ri-priority-head">
+                      <span className="ri-priority-name">{item.karkunName}</span>
+                      <span className={`ri-priority-health ri-health-${item.healthLevel}`}>
+                        {item.healthLabel}
+                      </span>
+                    </div>
+                    <p className="ri-priority-why">{item.why}</p>
+                    <p className="ri-priority-rec">{item.recommendation}</p>
+                    {scheduleNote ? (
+                      <p className="ri-priority-schedule">Scheduled: {scheduleNote}</p>
+                    ) : null}
+                  </Link>
+                </li>
+              )
+            })}
+          </ul>
+        ) : null}
+      </section>
+
+      {orphanVisits.length > 0 ? (
+        <section className="mc-panel mc-panel-compact" aria-label="Additional scheduled visits">
+          <h2 className="mc-panel-title">Additional scheduled visits</h2>
+          <p className="mc-caption">On today&apos;s timeline, beyond the priority list.</p>
+          <ul className="mc-priority-list mc-priority-list-compact">
+            {orphanVisits.map((item) => (
+              <li key={item.id}>
+                <Link to={item.route} className="mc-priority-link mc-priority-link-compact">
+                  <span className="mc-priority-title">{item.title}</span>
+                  {item.subtitle ? <span className="mc-caption">{item.subtitle}</span> : null}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+    </>
+  )
+}
+
+export function RuknCampaignTaskTracker({
+  ruknId,
+  model,
+}: {
+  ruknId: string
+  model: RuknMissionControlModel
+}) {
+  const { assignmentVersion } = useAssignmentEngine()
+  const tasks = useMemo(() => {
+    void assignmentVersion
+    return buildCampaignTaskBadges(ruknId, model)
+  }, [ruknId, model, assignmentVersion])
+
+  return (
+    <section className="mc-panel mc-panel-compact mc-campaign-tasks" aria-label="Campaign tasks">
+      <h2 className="mc-panel-title">Campaign Tasks</h2>
+      <p className="mc-caption">Campaign objectives at a glance — not only visits.</p>
+      <ul className="mc-campaign-task-row">
+        {tasks.map((task) => {
+          const pct =
+            task.target > 0 ? Math.min(100, Math.round((task.current / task.target) * 100)) : 0
+          return (
+            <li key={task.id} className="mc-campaign-task-badge">
+              <span className="mc-campaign-task-label">{task.label}</span>
+              <span className="mc-campaign-task-value">
+                {task.current} / {task.target}
+              </span>
+              <span className="mc-campaign-task-track" aria-hidden="true">
+                <span className="mc-campaign-task-fill" style={{ width: `${pct}%` }} />
+              </span>
+            </li>
+          )
+        })}
+      </ul>
+    </section>
+  )
+}
+
+export function RuknDevelopmentSummary({
+  ruknId,
+  model,
+}: {
+  ruknId: string
+  model: RuknMissionControlModel
+}) {
+  const { assignmentVersion } = useAssignmentEngine()
+  const items = useMemo(() => {
+    void assignmentVersion
+    return buildDevelopmentSummary(ruknId, model)
+  }, [ruknId, model, assignmentVersion])
+
+  return (
+    <section className="mc-panel mc-panel-compact mc-dev-summary" aria-label="Development summary">
+      <h2 className="mc-panel-title">Development Summary</h2>
+      <p className="mc-caption">A snapshot of relationship and campaign progress.</p>
+      <ul className="mc-dev-summary-grid">
+        {items.map((item) => {
+          const pct =
+            item.target && item.target > 0
+              ? Math.min(100, Math.round((item.current / item.target) * 100))
+              : null
+          return (
+            <li key={item.id} className="mc-dev-summary-item">
+              <span className="mc-dev-summary-label">{item.label}</span>
+              <span className="mc-dev-summary-value">
+                {item.current}
+                {item.target !== null ? (
+                  <span className="mc-dev-summary-target"> / {item.target}</span>
+                ) : null}
+              </span>
+              {pct !== null ? (
+                <span className="mc-dev-summary-track" aria-hidden="true">
+                  <span className="mc-dev-summary-fill" style={{ width: `${pct}%` }} />
                 </span>
-              </div>
-              <p className="ri-priority-why">{item.why}</p>
-              <p className="ri-priority-rec">{item.recommendation}</p>
+              ) : null}
+            </li>
+          )
+        })}
+      </ul>
+    </section>
+  )
+}
+
+/** Visit queue merged into Priority Karkuns (KC-012.1). Kept for compatibility. */
+export function RuknTodaysVisitQueue({ model }: RuknMissionControlPanelsProps) {
+  if (model.todaysVisits.length === 0) return null
+  return (
+    <section className="mc-panel mc-panel-compact" aria-label="Today's visit queue">
+      <h2 className="mc-panel-title">Today&apos;s Visit Queue</h2>
+      <ul className="mc-priority-list mc-priority-list-compact">
+        {model.todaysVisits.map((item) => (
+          <li key={item.id}>
+            <Link to={item.route} className="mc-priority-link mc-priority-link-compact">
+              <span className="mc-priority-title">{item.title}</span>
+              {item.subtitle ? <span className="mc-caption">{item.subtitle}</span> : null}
             </Link>
           </li>
         ))}
@@ -309,67 +425,24 @@ export function RuknPriorityMissionList({ ruknId }: RuknPriorityMissionProps) {
 }
 
 export function RuknMissionControlPanels({ model }: RuknMissionControlPanelsProps) {
-  const funnelStages = model.journeyFunnel
-    .filter((stage) => FUNNEL_FOCUS.includes(stage.stageId))
-    .map((stage) => {
-      const stageId = stage.stageId as RuknProgressStageId
-      return {
-        stageId,
-        label: RUKN_PROGRESS_LABELS[stageId] ?? stage.label,
-        shortLabel: RUKN_PROGRESS_SHORT_LABELS[stageId] ?? stage.label,
-        count: stage.count,
-      }
-    })
-  const totalConnected = model.kpis.find((kpi) => kpi.id === 'my-connected')
-  const connectedCount =
-    typeof totalConnected?.value === 'number'
-      ? totalConnected.value
-      : funnelStages.reduce((sum, stage) => sum + stage.count, 0)
+  if (model.recentActivity.length === 0) return null
 
   return (
-    <div className="mc-panels mc-panels-rukn-compact">
-      <section className="mc-panel mc-panel-wide mc-panel-bare">
-        <MyKarkunProgress
-          stages={funnelStages}
-          totalConnected={connectedCount}
-          hideConnectedMilestone
-        />
-      </section>
-
-      <details className="mc-panel mc-panel-compact mc-panel-wide mc-more-details">
-        <summary className="mc-more-summary">
-          <span className="mc-panel-title">Monthly &amp; recent</span>
-          <span className="mc-more-hint">Targets · Activity</span>
-        </summary>
-        <div className="mc-more-body">
-          <ul className="mc-inline-metrics" aria-label="Monthly targets">
-            <li>
-              <span>Connected</span>
-              <strong>{model.monthlyTarget.connected}</strong>
+    <details className="mc-panel mc-panel-compact mc-panel-wide mc-more-details">
+      <summary className="mc-more-summary">
+        <span className="mc-panel-title">Recent activity</span>
+        <span className="mc-more-hint">Optional</span>
+      </summary>
+      <div className="mc-more-body">
+        <ul className="mc-activity-list mc-activity-list-compact">
+          {model.recentActivity.slice(0, 3).map((item) => (
+            <li key={item.id}>
+              <p className="mc-activity-message">{item.message}</p>
+              <p className="mc-caption">{new Date(item.timestamp).toLocaleString()}</p>
             </li>
-            <li>
-              <span>Bait-ul-Maal pending</span>
-              <strong>{model.monthlyTarget.baitulMaalPending}</strong>
-            </li>
-            <li>
-              <span>Development due</span>
-              <strong>{model.monthlyTarget.developmentDue}</strong>
-            </li>
-          </ul>
-          {model.recentActivity.length === 0 ? (
-            <p className="mc-caption mt-2">No recent activity.</p>
-          ) : (
-            <ul className="mc-activity-list mc-activity-list-compact">
-              {model.recentActivity.slice(0, 3).map((item) => (
-                <li key={item.id}>
-                  <p className="mc-activity-message">{item.message}</p>
-                  <p className="mc-caption">{new Date(item.timestamp).toLocaleString()}</p>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      </details>
-    </div>
+          ))}
+        </ul>
+      </div>
+    </details>
   )
 }

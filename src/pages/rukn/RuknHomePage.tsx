@@ -4,10 +4,11 @@ import { ROUTES } from '@/constants/routes'
 import {
   AskDigitalRafeeqCard,
   PrimaryMissionCta,
+  RuknCampaignTaskTracker,
+  RuknDevelopmentSummary,
   RuknMissionControlHero,
   RuknMissionControlPanels,
   RuknPriorityMissionList,
-  RuknTodaysVisitQueue,
 } from '@/components/mission-control'
 import { RuknFloatingActionButton, RuknIjtemaAttendancePanel } from '@/components/home'
 import { openDigitalRafeeqAssistant } from '@/features/digitalRafeeq/launcher'
@@ -58,24 +59,34 @@ export function RuknHomePage() {
 
   return (
     <div className="cd-page cd-page-rukn mc-page mc-page-rukn-compact mc-page-execution">
-      <RuknMissionControlHero
-        model={model}
-        greeting={morningBrief.greeting}
-        missionLine={morningBrief.mission}
-      />
-
+      {/* 1. Digital Rafeeq briefing */}
       <AskDigitalRafeeqCard
         featured
         onOpen={openDigitalRafeeqAssistant}
         guidanceLine={rafeeqLine}
       />
 
+      {/* 2. Today's Mission */}
+      <RuknMissionControlHero
+        model={model}
+        greeting={morningBrief.greeting}
+        missionLine={morningBrief.mission}
+      />
+
       {primary ? <PrimaryMissionCta label={primary.label} route={primary.route} /> : null}
 
-      <RuknPriorityMissionList ruknId={ruknId} />
-      <RuknTodaysVisitQueue model={model} />
-      <RuknMissionControlPanels model={model} />
+      {/* 3. Priority Karkuns (single primary visit list) */}
+      <RuknPriorityMissionList ruknId={ruknId} model={model} />
+
+      {/* 4. Campaign Task Progress */}
+      <RuknCampaignTaskTracker ruknId={ruknId} model={model} />
+
+      {/* 5. Development Summary */}
+      <RuknDevelopmentSummary ruknId={ruknId} model={model} />
+
+      {/* 6. Everything else */}
       <RuknIjtemaAttendancePanel ruknId={ruknId} />
+      <RuknMissionControlPanels model={model} />
 
       <RuknFloatingActionButton
         nextAction={snapshot.nextAction}

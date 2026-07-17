@@ -348,7 +348,7 @@ function answerRuknQuery(
     const count = snapshot?.followUpQueue.reduce((sum, group) => sum + group.items.length, 0) ?? 0
     return {
       text: conversational(
-        `آپ کے پاس ${count} فالو اپ باقی ہیں۔ آج چند مکمل کرنے سے تعلق گرم رہے گا۔`,
+        `آپ کے پاس ${count} فالو اپ باقی ہیں۔ آج چند مکمل کرنے سے تعلق مضبوط رہے گا۔`,
       ),
       actions: [{ id: 'connected', label: 'روابط کھولیں', route: ROUTES.RUKN_MY_KARKUN }],
     }

@@ -28,7 +28,7 @@ const LOCALIZATION_URDU: Readonly<Record<string, string>> = {
   'guidance.encouragement.milestone':
     'الحمد للہ، آج کی کوشش اچھی رہی۔ اسی روانی کو برقرار رکھیے۔',
   'guidance.completion.close':
-    'مکمل شدہ کام محفوظ کر لیں تاکہ آج کا سلسلہ اطمینان سے بند ہو۔',
+    'مکمل شدہ کام محفوظ کر لیں تاکہ آج کا کام اطمینان سے مکمل ہو۔',
   'guidance.recovery.resume':
     'جہاں کام رک گیا تھا وہیں سے دوبارہ شروع کر سکتے ہیں — میں آپ کے ساتھ ہوں۔',
 }
@@ -64,7 +64,7 @@ export function buildContextualRafeeqGuidance(ruknId: string): string {
   const plan = getActivePlanForKarkun(top.karkunId)
 
   if (plan?.summaryUrdu) {
-    return `میری تجویز ہے کہ آج سب سے پہلے ${name} سے رابطہ کیا جائے کیونکہ آپ کا لائحۂ عمل اسی طرف اشارہ کرتا ہے: ${plan.summaryUrdu}`
+    return `آج سب سے پہلے ${name} سے رابطہ موزوں لگتا ہے — آپ کا لائحۂ عمل بھی اسی طرف ہے: ${plan.summaryUrdu}`
   }
 
   return buildRafeeqPriorityWhyUrdu(top)

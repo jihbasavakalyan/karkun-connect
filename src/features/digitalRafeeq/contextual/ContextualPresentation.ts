@@ -77,7 +77,7 @@ const LOCALIZATION_COPY: Readonly<Record<string, string>> = {
   'guidance.encouragement.milestone':
     'الحمد للہ، پیش رفت اچھی ہے — اسی روانی کو برقرار رکھیے۔',
   'guidance.completion.close':
-    'مکمل شدہ کام محفوظ کر لیں تاکہ سلسلہ اطمینان سے بند ہو۔',
+    'مکمل شدہ کام محفوظ کر لیں تاکہ آج کا کام اطمینان سے مکمل ہو۔',
   'guidance.recovery.resume':
     'جہاں کام رک گیا تھا وہیں سے دوبارہ شروع کر سکتے ہیں۔',
 }
@@ -204,7 +204,7 @@ export function buildExecutionGuidanceView(
     return typeof name === 'string' && name.length > 0
   })
   const suggestedNextKarkun = nextKarkunRec
-    ? `میری تجویز ہے کہ اگلا رابطہ ${String(nextKarkunRec.metadata?.karkunName)} صاحب سے کیا جائے۔`
+    ? `اگلا رابطہ ${String(nextKarkunRec.metadata?.karkunName)} صاحب سے کرنا مناسب ہو سکتا ہے۔`
     : response.knowledgeSummary?.availableDomains.includes('karkun')
       ? 'اپنے مربوط کارکنان میں سے اگلا مناسب رابطہ منتخب کیجیے۔'
       : null

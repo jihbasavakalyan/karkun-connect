@@ -41,6 +41,7 @@
     "verify:contextual-guidance": "npx vite-node scripts/verify-contextual-guidance.ts",
     "verify:kc009-plan": "npx vite-node scripts/verify-kc009-execution-plan.ts",
     "verify:kc012-ri": "npx vite-node scripts/verify-kc012-relationship-intelligence.ts",
+    "verify:kc012-1": "npx vite-node scripts/verify-kc012-1-dashboard-ia.ts",
     "admin:export-seed": "npx vite-node scripts/admin/export-seed-backup.ts"
   },
   "dependencies": {

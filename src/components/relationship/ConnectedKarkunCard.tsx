@@ -9,7 +9,6 @@ import { SchedulePickerModal } from '@/components/communication/SchedulePickerMo
 import { useGuidance } from '@/hooks/useGuidance'
 import { buildTelLink, buildWhatsAppLink } from '@/utils/personContactLinks'
 import { formatLastVisitLabel } from '@/lib/relationshipPresentation'
-import { humanizeNextActionForKarkun } from '@/lib/homePresentation'
 import {
   buildConnectedIntelligenceView,
 } from '@/lib/relationshipIntelligencePresentation'
@@ -20,7 +19,6 @@ import type { AssignmentReviewReason } from '@/types/assignmentReview.types'
 import { RelationshipActionBar } from './RelationshipActionBar'
 import { ProfileCompletionReminder } from './ProfileCompletionReminder'
 import { RequestReviewModal } from '@/components/forms/assignment/RequestReviewModal'
-import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { Icon } from '@/components/ui/Icon'
 import type { MessageRecipient } from '@/types/communication'
 
@@ -50,9 +48,6 @@ export function ConnectedKarkunCard({ karkun, ruknId, visitPath }: ConnectedKark
   const telLink = buildTelLink(karkun.mobile)
   const whatsAppLink = buildWhatsAppLink(karkun.whatsapp?.trim() ? karkun.whatsapp : karkun.mobile)
   const lastVisit = formatLastVisitLabel(karkun.id)
-  const humanizedAction = guidance
-    ? humanizeNextActionForKarkun(karkun.name, guidance.nextAction)
-    : null
 
   const recipient: MessageRecipient = {
     personId: karkun.id,
@@ -112,13 +107,11 @@ export function ConnectedKarkunCard({ karkun, ruknId, visitPath }: ConnectedKark
         </div>
 
         {intelligence ? (
-          <div className="ri-card-intel">
-            <p className="ri-card-recommendation">{intelligence.recommendation.text}</p>
+          <div className="ri-card-intel ri-card-intel-profile">
+            <p className="ri-card-coaching urdu-text" dir="rtl" lang="ur">
+              {intelligence.coachingUrdu}
+            </p>
             <dl className="ri-card-facts">
-              <div>
-                <dt>Suggested action</dt>
-                <dd>{intelligence.suggestedAction}</dd>
-              </div>
               {intelligence.previousVisitSummary || lastVisit ? (
                 <div>
                   <dt>Previous visit</dt>
@@ -138,14 +131,6 @@ export function ConnectedKarkunCard({ karkun, ruknId, visitPath }: ConnectedKark
                 </div>
               ) : null}
             </dl>
-            <Link
-              to={intelligence.suggestedActionRoute}
-              className="connected-card-cta-wrap"
-            >
-              <PrimaryButton type="button" className="connected-card-cta">
-                {humanizedAction ?? guidance?.nextAction.label ?? 'Continue'}
-              </PrimaryButton>
-            </Link>
           </div>
         ) : null}
 
