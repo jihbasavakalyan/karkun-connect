@@ -43,3 +43,5 @@ export {
   type DigitalRafeeqStatus,
   type DigitalRafeeqTiming,
 } from './DigitalRafeeqTypes'
+
+export type { ConversationRole } from '@/conversation'

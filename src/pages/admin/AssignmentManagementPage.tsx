@@ -26,6 +26,7 @@ import { RestoreAssignmentModal } from '@/components/forms/assignment/RestoreAss
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import { PageHeader, PageShell } from '@/components/ui'
+import { ExecutionGuidanceCard } from '@/features/digitalRafeeq/contextual'
 type ModalMode = 'assign' | 'replace' | 'remove' | 'restore' | 'history' | null
 
 export function AssignmentManagementPage() {
@@ -211,6 +212,8 @@ export function AssignmentManagementPage() {
           </SecondaryButton>
         }
       />
+
+      <ExecutionGuidanceCard route="/admin/assignments" role="administrator" />
 
       <div className="ds-tab-pill-nav" role="tablist" aria-label="Connection views">
         <button

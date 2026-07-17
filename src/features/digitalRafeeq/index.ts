@@ -28,3 +28,26 @@ export {
   type RuknConnectQueueView,
   type RuknPersonalProgressView,
 } from './rukn'
+
+export {
+  ComplianceGuidanceCard,
+  ExecutionGuidanceCard,
+  MeetingGuidanceCard,
+  ReportGuidanceCard,
+  buildComplianceGuidanceView,
+  buildExecutionGuidanceView,
+  buildMeetingGuidanceView,
+  buildReportGuidanceView,
+  resolveContextualRequest,
+  useComplianceGuidance,
+  useExecutionGuidance,
+  useMeetingGuidance,
+  useReportGuidance,
+  type ComplianceGuidanceView,
+  type ContextualGuidanceRequest,
+  type ContextualSurface,
+  type ContextualVisibility,
+  type ExecutionGuidanceView,
+  type MeetingGuidanceView,
+  type ReportGuidanceView,
+} from './contextual'

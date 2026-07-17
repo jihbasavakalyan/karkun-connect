@@ -18,6 +18,7 @@ import { subscribeToFollowUpStore } from '@/stores/followUpStore'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { PageHeader, PageShell } from '@/components/ui'
+import { ReportGuidanceCard } from '@/features/digitalRafeeq/contextual'
 
 const sections = [
   { id: 'pending', label: 'Pending Execution' },
@@ -196,6 +197,7 @@ export function ExecutionModulePage() {
             <p className="text-sm text-secondary">
               Submitted visit records. No separate reporting required.
             </p>
+            <ReportGuidanceCard route="/admin/execution?section=reports" role="administrator" />
             <div className="mt-4">
               <ExecutionRecordsPanel />
             </div>

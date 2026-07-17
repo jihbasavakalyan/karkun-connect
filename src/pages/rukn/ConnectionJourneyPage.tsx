@@ -25,6 +25,7 @@ import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import { getRuknById } from '@/data/ruknMaster'
 import { RelationshipActionBar, RelationshipSummaryPanel } from '@/components/relationship'
+import { MeetingGuidanceCard } from '@/features/digitalRafeeq/contextual'
 import { buildConnectionJourney } from '@/lib/connectionJourney'
 import { getConnectionStatusLabel } from '@/lib/connectionLabels'
 import { saveAnnexure1Draft, submitAnnexure1 } from '@/services/annexure1Service'
@@ -251,6 +252,12 @@ export function ConnectionJourneyPage() {
           onRelease={() => setReleaseOpen(true)}
         />
       )}
+
+      <MeetingGuidanceCard
+        route={isAdminContext ? `/admin/annexure-1/${karkun.id}` : `/rukn/visit/${karkun.id}`}
+        role={isAdminContext ? 'administrator' : 'rukn'}
+        payload={{ karkunId: karkun.id, karkunName: karkun.name }}
+      />
 
       <header className={sectionClass()}>
         <h1 className="text-2xl font-semibold text-text-heading">{karkun.name}</h1>

@@ -11,6 +11,7 @@ import { ExecutionSummaryCards } from '@/components/execution/ExecutionSummaryCa
 import { getExecutionDashboardData } from '@/lib/executionStatus'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { PageHeader, PageShell } from '@/components/ui'
+import { ReportGuidanceCard } from '@/features/digitalRafeeq/contextual'
 
 export function CampaignRecordPage() {
   const [, setVersion] = useState(0)
@@ -45,6 +46,8 @@ export function CampaignRecordPage() {
           <ExecutionSummaryCards counts={counts} />
         </div>
       </section>
+
+      <ReportGuidanceCard route="/rukn/campaign-record" role="rukn" />
 
       <section className="ds-section">
         <h2 className="ds-section-title">Visit Records</h2>

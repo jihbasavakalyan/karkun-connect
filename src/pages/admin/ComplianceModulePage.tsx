@@ -39,6 +39,7 @@ import type { JihWebPortalKarkunSummary } from '@/types/jihWebPortal'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import { PageHeader, PageShell } from '@/components/ui'
+import { ComplianceGuidanceCard } from '@/features/digitalRafeeq/contextual'
 
 const ACTION_BUTTON_CLASS = 'min-h-10 px-3 py-2 text-sm'
 
@@ -498,6 +499,8 @@ export function ComplianceModulePage() {
           <ComplianceSummaryCards />
         </div>
       </section>
+
+      <ComplianceGuidanceCard route="/admin/compliance" />
 
       <ComplianceSectionNav
         active={activeSection}

@@ -15,9 +15,12 @@ export type ConversationIntent =
   | 'dashboard_overview'
   | 'home_open'
   | 'daily_execution'
+  | 'connect_execution'
   | 'meeting_preparation'
   | 'compliance_reminder'
+  | 'compliance_review'
   | 'campaign_summary'
+  | 'report_review'
   | 'resume'
   | 'interrupt'
   | 'general'
@@ -74,6 +77,13 @@ export function planForIntent(intent: ConversationIntent): KnowledgeDomainPlan {
         objective: 'todays_programme',
         navigationView: 'dashboard',
       }
+    case 'connect_execution':
+      return {
+        intent,
+        domains: ['campaign', 'karkun'],
+        objective: 'todays_programme',
+        navigationView: 'karkun',
+      }
     case 'meeting_preparation':
       return {
         intent,
@@ -82,6 +92,7 @@ export function planForIntent(intent: ConversationIntent): KnowledgeDomainPlan {
         navigationView: 'meetings',
       }
     case 'compliance_reminder':
+    case 'compliance_review':
       return {
         intent,
         domains: ['compliance'],
@@ -89,6 +100,7 @@ export function planForIntent(intent: ConversationIntent): KnowledgeDomainPlan {
         navigationView: 'guidance',
       }
     case 'campaign_summary':
+    case 'report_review':
       return {
         intent,
         domains: ['campaign', 'reports'],

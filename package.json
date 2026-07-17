@@ -38,6 +38,7 @@
     "verify:runtime": "npx vite-node scripts/verify-runtime.ts",
     "verify:admin-assistant": "npx vite-node scripts/verify-admin-assistant.ts",
     "verify:rukn-assistant": "npx vite-node scripts/verify-rukn-assistant.ts",
+    "verify:contextual-guidance": "npx vite-node scripts/verify-contextual-guidance.ts",
     "admin:export-seed": "npx vite-node scripts/admin/export-seed-backup.ts"
   },
   "dependencies": {

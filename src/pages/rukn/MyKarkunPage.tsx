@@ -4,6 +4,7 @@ import { ROUTES } from '@/constants/routes'
 import { ExecutionSuccessBanner } from '@/components/execution/ExecutionSuccessBanner'
 import { ConnectedKarkunCard, KarkunSearchField } from '@/components/relationship'
 import { EmptyState, PageHeader, PageShell } from '@/components/ui'
+import { ExecutionGuidanceCard } from '@/features/digitalRafeeq/contextual'
 import { useRequiredRuknId } from '@/hooks/useRequiredRuknId'
 import { useAuth } from '@/hooks/useAuth'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
@@ -49,6 +50,8 @@ export function MyKarkunPage() {
       />
 
       <ExecutionSuccessBanner />
+
+      <ExecutionGuidanceCard route="/rukn/my-karkun" role="rukn" />
 
       {myKarkunan.length > 0 && (
         <KarkunSearchField
