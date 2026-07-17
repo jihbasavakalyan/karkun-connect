@@ -15,6 +15,7 @@
 
 import type { ConversationContext } from './ConversationContext'
 import type { ContextManagerBridge } from './context'
+import type { KnowledgeBundleSnapshot, KnowledgeRequest } from './knowledge'
 import { createConversationEvent } from './ConversationEvents'
 import type { ConversationEvent } from './ConversationEvents'
 import {
@@ -87,6 +88,24 @@ export class ConversationEngine {
 
   hasContextManager(): boolean {
     return this.contextManager !== undefined
+  }
+
+  /**
+   * Request aggregated knowledge via Context Manager → Knowledge Manager chain.
+   * Engine does not know provider origins.
+   */
+  requestKnowledge(request: KnowledgeRequest): KnowledgeBundleSnapshot | null {
+    if (!this.contextManager?.requestKnowledge) return null
+    const context = this.getContext()
+    return this.contextManager.requestKnowledge({
+      ...request,
+      sessionId: this.session?.sessionId,
+      conversationContext: request.conversationContext ?? context ?? undefined,
+    })
+  }
+
+  hasKnowledgePath(): boolean {
+    return this.contextManager?.requestKnowledge !== undefined
   }
 
   onEvent(listener: ConversationEventListener): () => void {

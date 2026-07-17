@@ -9,6 +9,11 @@
 
 import type { ConversationContext } from '../ConversationContext'
 import { createEmptyConversationContext } from '../ConversationContext'
+import type {
+  KnowledgeBundleSnapshot,
+  KnowledgeManagerBridge,
+  KnowledgeRequest,
+} from '../knowledge'
 import type { PendingConfirmation } from '../ConversationTypes'
 import type { ContextProvider } from './ContextProviders'
 import { ContextResolver, createContextResolver } from './ContextResolver'
@@ -27,6 +32,8 @@ export type ContextManagerOptions = {
   resolver?: ContextResolver
   initialNavigation?: NavigationContext
   initialConversation?: Partial<ConversationContext>
+  /** Injected knowledge assembly — Context Manager forwards; Engine never sees providers. */
+  knowledgeManager?: KnowledgeManagerBridge
 }
 
 /**
@@ -34,10 +41,12 @@ export type ContextManagerOptions = {
  */
 export interface ContextManagerBridge {
   provideContextFor(consumer: ConversationContextConsumer): ContextSnapshot
+  requestKnowledge?(request: KnowledgeRequest): KnowledgeBundleSnapshot | null
 }
 
 export class ContextManager implements ContextManagerBridge {
   private readonly resolver: ContextResolver
+  private readonly knowledgeManager?: KnowledgeManagerBridge
   private readonly providers = new Map<ContextProviderId, ContextProvider>()
   private navigation: NavigationContext
   private baseConversation: ConversationContext
@@ -49,8 +58,13 @@ export class ContextManager implements ContextManagerBridge {
 
   constructor(options: ContextManagerOptions = {}) {
     this.resolver = options.resolver ?? createContextResolver()
+    this.knowledgeManager = options.knowledgeManager
     this.navigation = options.initialNavigation ?? { currentView: 'unknown' }
     this.baseConversation = createEmptyConversationContext(options.initialConversation)
+  }
+
+  hasKnowledgeManager(): boolean {
+    return this.knowledgeManager !== undefined
   }
 
   registerProvider(provider: ContextProvider): () => void {
@@ -167,6 +181,19 @@ export class ContextManager implements ContextManagerBridge {
 
   provideContextFor(consumer: ConversationContextConsumer): ContextSnapshot {
     return this.syncToConsumer(consumer)
+  }
+
+  requestKnowledge(request: KnowledgeRequest): KnowledgeBundleSnapshot | null {
+    if (!this.knowledgeManager) return null
+
+    const contextSnapshot = this.latestSnapshot ?? this.resolveSnapshot()
+    const conversationContext =
+      request.conversationContext ?? contextSnapshot.getConversation()
+
+    return this.knowledgeManager.requestKnowledge({
+      ...request,
+      conversationContext,
+    })
   }
 
   syncToConsumer(consumer: ConversationContextConsumer): ContextSnapshot {
