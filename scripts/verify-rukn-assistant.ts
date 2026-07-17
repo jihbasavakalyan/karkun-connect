@@ -84,7 +84,8 @@ async function main(): Promise<void> {
   results.push(
     await runScenario('1. Flag OFF hides assistant', () => {
       const flags = getFeatureFlagService()
-      assert(flags.isDigitalRafeeqEnabled() === false, 'flag should default false')
+      flags.setFlag('digitalRafeeq.enabled', false)
+      assert(flags.isDigitalRafeeqEnabled() === false, 'flag should be off')
       const view = buildRuknAssistantViewModel(null, { enabled: false })
       assert(view.visibility === 'hidden', 'expected hidden when flag off')
     }),

@@ -66,6 +66,7 @@ async function main(): Promise<void> {
 
   results.push(
     await runScenario('1. Flag OFF hides all contextual views', () => {
+      getFeatureFlagService().setFlag('digitalRafeeq.enabled', false)
       assert(getFeatureFlagService().isDigitalRafeeqEnabled() === false, 'flag off')
       assert(
         buildExecutionGuidanceView(null, false).visibility === 'hidden',

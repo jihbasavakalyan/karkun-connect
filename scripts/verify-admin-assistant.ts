@@ -86,7 +86,8 @@ async function main(): Promise<void> {
   results.push(
     await runScenario('1. Administrator — flag OFF hides assistant', () => {
       const flags = getFeatureFlagService()
-      assert(flags.isDigitalRafeeqEnabled() === false, 'flag should default false')
+      flags.setFlag('digitalRafeeq.enabled', false)
+      assert(flags.isDigitalRafeeqEnabled() === false, 'flag should be off')
       const view = buildAdminAssistantViewModel(null, { enabled: false })
       assert(view.visibility === 'hidden', 'expected hidden when flag off')
       assert(view.healthLabel === 'Disabled', 'expected Disabled label')

@@ -7,7 +7,7 @@
  * - Orchestrator registered
  * - Knowledge providers registered
  * - Adapter registry populated
- * - Feature flags loaded (digitalRafeeq.enabled default false)
+ * - Feature flags loaded (digitalRafeeq.enabled default true when env unset)
  * - Health available
  * - Metrics collected
  */
@@ -80,23 +80,23 @@ async function main(): Promise<void> {
   await service.initialize()
 
   results.push(
-    await runScenario('1. Feature flag defaults to disabled', () => {
+    await runScenario('1. Feature flag defaults to enabled', () => {
       const loaded = flags.load()
       assert(
         loaded['digitalRafeeq.enabled'] ===
           DEFAULT_RUNTIME_FEATURE_FLAGS['digitalRafeeq.enabled'],
-        'expected default digitalRafeeq.enabled=false',
+        'expected default digitalRafeeq.enabled=true',
       )
-      assert(loaded['digitalRafeeq.enabled'] === false, 'flag must default false')
+      assert(loaded['digitalRafeeq.enabled'] === true, 'flag must default true')
       assert(
-        service.isEnabled() === false,
-        'service.isEnabled should be false by default',
+        service.isEnabled() === true,
+        'service.isEnabled should be true by default',
       )
     }),
   )
 
   results.push(
-    await runScenario('2. Runtime initializes while feature disabled', () => {
+    await runScenario('2. Runtime initializes while feature enabled', () => {
       assert(service.isReady(), 'runtime/service should still be ready')
       const health = service.getHealth()
       assert(
@@ -155,8 +155,8 @@ async function main(): Promise<void> {
       )
       assert(Array.isArray(health.recentFailures), 'recentFailures missing')
       assert(
-        health.featureDigitalRafeeqEnabled === false,
-        'flag should remain disabled',
+        health.featureDigitalRafeeqEnabled === true,
+        'flag should remain enabled by default',
       )
       assert(health.metrics.requestCount >= 1, 'metrics missing')
       assert(typeof health.runtimeVersion === 'string', 'runtime version missing')
@@ -167,13 +167,16 @@ async function main(): Promise<void> {
   results.push(
     await runScenario('6. Feature flag override for user-facing entry', () => {
       const localFlags = createFeatureFlagService()
-      assert(localFlags.isDigitalRafeeqEnabled() === false, 'default disabled')
-      localFlags.setFlag('digitalRafeeq.enabled', true)
-      assert(localFlags.isDigitalRafeeqEnabled() === true, 'flag should enable')
+      assert(localFlags.isDigitalRafeeqEnabled() === true, 'default enabled')
       localFlags.setFlag('digitalRafeeq.enabled', false)
       assert(
         localFlags.isDigitalRafeeqEnabled() === false,
-        'flag should disable again',
+        'flag should disable',
+      )
+      localFlags.setFlag('digitalRafeeq.enabled', true)
+      assert(
+        localFlags.isDigitalRafeeqEnabled() === true,
+        'flag should enable again',
       )
     }),
   )

@@ -4,7 +4,7 @@
  * Purpose: Future-safe accessors for runtime modules — no business methods.
  * Ownership: Read-only views of RuntimeProvider context.
  *
- * User-facing entry points respect digitalRafeeq.enabled (default: false).
+ * User-facing entry points respect digitalRafeeq.enabled (default: true when env unset).
  * Runtime bootstrap continues independently of the feature flag.
  */
 

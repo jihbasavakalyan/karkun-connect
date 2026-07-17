@@ -19,15 +19,19 @@ export type FeatureFlagServiceOptions = {
   overrides?: RuntimeFeatureFlagOverrides
 }
 
-function resolveEnvEnabled(): boolean | undefined {
+/**
+ * Final resolution for digitalRafeeq.enabled:
+ * - VITE_DIGITAL_RAFEEQ_ENABLED defined → true only when value is exactly "true"
+ * - otherwise → enabled (production default)
+ */
+function resolveDigitalRafeeqEnabledFromEnv(): boolean {
   try {
     const value = import.meta.env.VITE_DIGITAL_RAFEEQ_ENABLED
-    if (value === 'true') return true
-    if (value === 'false') return false
+    return value !== undefined ? value === 'true' : true
   } catch {
     // Non-Vite contexts (some scripts) may not expose import.meta.env the same way.
+    return true
   }
-  return undefined
 }
 
 export class FeatureFlagService {
@@ -68,12 +72,9 @@ export class FeatureFlagService {
   private resolveFlags(
     overrides?: RuntimeFeatureFlagOverrides,
   ): RuntimeFeatureFlags {
-    const envEnabled = resolveEnvEnabled()
     return {
       ...DEFAULT_RUNTIME_FEATURE_FLAGS,
-      ...(envEnabled === undefined
-        ? {}
-        : { 'digitalRafeeq.enabled': envEnabled }),
+      'digitalRafeeq.enabled': resolveDigitalRafeeqEnabledFromEnv(),
       ...overrides,
     }
   }
