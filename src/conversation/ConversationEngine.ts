@@ -14,7 +14,8 @@
  */
 
 import type { ConversationContext } from './ConversationContext'
-import type { ContextManagerBridge } from './context'
+import type { ContextManagerBridge, GuidanceOrchestrationRequest } from './context'
+import type { GuidanceBundle } from './guidance'
 import type { KnowledgeBundleSnapshot, KnowledgeRequest } from './knowledge'
 import { createConversationEvent } from './ConversationEvents'
 import type { ConversationEvent } from './ConversationEvents'
@@ -106,6 +107,29 @@ export class ConversationEngine {
 
   hasKnowledgePath(): boolean {
     return this.contextManager?.requestKnowledge !== undefined
+  }
+
+  /**
+   * Request guidance recommendations via Context Manager → Knowledge Manager → Guidance Engine.
+   * Engine does not know policy origins.
+   */
+  requestGuidance(
+    orchestration?: Partial<GuidanceOrchestrationRequest>,
+  ): GuidanceBundle | null {
+    if (!this.contextManager?.requestGuidance) return null
+    return this.contextManager.requestGuidance({
+      conversationState: orchestration?.conversationState ?? this.getState(),
+      pendingConfirmation:
+        orchestration?.pendingConfirmation ?? this.getPendingConfirmation(),
+      knowledgeBundle: orchestration?.knowledgeBundle,
+      knowledgeDomains: orchestration?.knowledgeDomains,
+      suppressedCategories: orchestration?.suppressedCategories,
+      sessionId: orchestration?.sessionId ?? this.session?.sessionId,
+    })
+  }
+
+  hasGuidancePath(): boolean {
+    return this.contextManager?.requestGuidance !== undefined
   }
 
   onEvent(listener: ConversationEventListener): () => void {

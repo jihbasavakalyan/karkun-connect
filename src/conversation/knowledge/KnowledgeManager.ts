@@ -8,6 +8,7 @@
  */
 
 import type { ConversationContext } from '../ConversationContext'
+import type { GuidanceBundle, GuidanceEngineBridge, GuidanceRequest } from '../guidance'
 import type { KnowledgeProvider } from './KnowledgeProviders'
 import { KnowledgeResolver, createKnowledgeResolver } from './KnowledgeResolver'
 import type { KnowledgeResolutionResult } from './KnowledgeResolver'
@@ -21,6 +22,8 @@ import type {
 
 export type KnowledgeManagerOptions = {
   resolver?: KnowledgeResolver
+  /** Injected guidance assembly — Knowledge Manager forwards; Engine never sees policies. */
+  guidanceManager?: GuidanceEngineBridge
 }
 
 /**
@@ -28,6 +31,8 @@ export type KnowledgeManagerOptions = {
  */
 export interface KnowledgeManagerBridge {
   requestKnowledge(request: KnowledgeRequest): KnowledgeBundleSnapshot
+  requestGuidance?(request: GuidanceRequest): GuidanceBundle | null
+  getLatestBundle?(): KnowledgeBundleSnapshot | null
 }
 
 let requestCounter = 0
@@ -42,12 +47,18 @@ function createRequestId(): string {
 
 export class KnowledgeManager implements KnowledgeManagerBridge {
   private readonly resolver: KnowledgeResolver
+  private readonly guidanceManager?: GuidanceEngineBridge
   private readonly providers = new Map<KnowledgeProviderId, KnowledgeProvider>()
   private snapshotVersion = 1
   private latestBundle: KnowledgeBundleSnapshot | null = null
 
   constructor(options: KnowledgeManagerOptions = {}) {
     this.resolver = options.resolver ?? createKnowledgeResolver()
+    this.guidanceManager = options.guidanceManager
+  }
+
+  hasGuidanceManager(): boolean {
+    return this.guidanceManager !== undefined
   }
 
   registerProvider(provider: KnowledgeProvider): () => void {
@@ -119,6 +130,11 @@ export class KnowledgeManager implements KnowledgeManagerBridge {
       conversationContext,
       sessionId,
     })
+  }
+
+  requestGuidance(request: GuidanceRequest): GuidanceBundle | null {
+    if (!this.guidanceManager) return null
+    return this.guidanceManager.generateGuidance(request)
   }
 
   private resolveFromContributions(

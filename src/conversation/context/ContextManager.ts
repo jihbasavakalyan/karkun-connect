@@ -11,10 +11,13 @@ import type { ConversationContext } from '../ConversationContext'
 import { createEmptyConversationContext } from '../ConversationContext'
 import type {
   KnowledgeBundleSnapshot,
+  KnowledgeDomain,
   KnowledgeManagerBridge,
   KnowledgeRequest,
 } from '../knowledge'
+import type { GuidanceBundle, GuidanceCategory } from '../guidance'
 import type { PendingConfirmation } from '../ConversationTypes'
+import type { ConversationLifecycleState } from '../ConversationTypes'
 import type { ContextProvider } from './ContextProviders'
 import { ContextResolver, createContextResolver } from './ContextResolver'
 import type { ContextResolutionResult } from './ContextResolver'
@@ -42,6 +45,17 @@ export type ContextManagerOptions = {
 export interface ContextManagerBridge {
   provideContextFor(consumer: ConversationContextConsumer): ContextSnapshot
   requestKnowledge?(request: KnowledgeRequest): KnowledgeBundleSnapshot | null
+  requestGuidance?(request: GuidanceOrchestrationRequest): GuidanceBundle | null
+}
+
+/** Orchestration request assembled by Context Manager for the guidance chain. */
+export type GuidanceOrchestrationRequest = {
+  conversationState: ConversationLifecycleState
+  pendingConfirmation?: PendingConfirmation | null
+  knowledgeBundle?: KnowledgeBundleSnapshot | null
+  knowledgeDomains?: readonly KnowledgeDomain[]
+  suppressedCategories?: readonly GuidanceCategory[]
+  sessionId?: string
 }
 
 export class ContextManager implements ContextManagerBridge {
@@ -193,6 +207,32 @@ export class ContextManager implements ContextManagerBridge {
     return this.knowledgeManager.requestKnowledge({
       ...request,
       conversationContext,
+    })
+  }
+
+  requestGuidance(request: GuidanceOrchestrationRequest): GuidanceBundle | null {
+    if (!this.knowledgeManager?.requestGuidance) return null
+
+    const contextSnapshot = this.latestSnapshot ?? this.resolveSnapshot()
+    const conversationContext = contextSnapshot.getConversation()
+
+    const knowledgeBundle =
+      request.knowledgeBundle ??
+      (request.knowledgeDomains && request.knowledgeDomains.length > 0
+        ? this.requestKnowledge({
+            domains: request.knowledgeDomains,
+            conversationContext,
+            sessionId: request.sessionId,
+          })
+        : this.knowledgeManager.getLatestBundle?.() ?? null)
+
+    return this.knowledgeManager.requestGuidance({
+      conversationContext,
+      conversationState: request.conversationState,
+      pendingConfirmation: request.pendingConfirmation,
+      knowledgeBundle: knowledgeBundle ?? undefined,
+      sessionId: request.sessionId,
+      suppressedCategories: request.suppressedCategories,
     })
   }
 
