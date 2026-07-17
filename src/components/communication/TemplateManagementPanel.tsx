@@ -1,10 +1,22 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
-import { extractTemplateVariables, saveTemplate } from '@/services/templateService'
-import { useCommunication } from '@/hooks/useCommunication'
+import {
+  PERSONAL_MESSAGE_FOOTER,
+  OFFICIAL_MESSAGE_FOOTER,
+} from '@/data/communication/defaultTemplates'
+import {
+  archiveTemplate,
+  composeWhatsAppMessage,
+  extractTemplateVariables,
+  listTemplates,
+  restoreTemplate,
+  saveTemplate,
+} from '@/services/templateService'
+import { subscribeToCommunicationStore } from '@/stores/communicationStore'
 import {
   TEMPLATE_CATEGORY_LABELS,
+  TEMPLATE_PLACEHOLDER_KEYS,
   type MessageTemplate,
   type TemplateCategory,
 } from '@/types/communication'
@@ -15,12 +27,24 @@ const selectClassName =
 const CATEGORIES = Object.keys(TEMPLATE_CATEGORY_LABELS) as TemplateCategory[]
 
 export function TemplateManagementPanel() {
-  const { templates } = useCommunication()
+  const [, setVersion] = useState(0)
+  const [showArchived, setShowArchived] = useState(false)
   const [editing, setEditing] = useState<MessageTemplate | 'new' | null>(null)
   const [name, setName] = useState('')
   const [category, setCategory] = useState<TemplateCategory>('custom')
   const [body, setBody] = useState('')
   const [error, setError] = useState('')
+  const [previewName, setPreviewName] = useState('احمد')
+
+  useEffect(() => {
+    return subscribeToCommunicationStore(() => setVersion((value) => value + 1))
+  }, [])
+
+  void setVersion
+
+  const templates = listTemplates({ includeArchived: showArchived }).filter((template) =>
+    showArchived ? true : template.isActive !== false,
+  )
 
   const openEditor = (template?: MessageTemplate) => {
     if (template) {
@@ -32,20 +56,40 @@ export function TemplateManagementPanel() {
       setEditing('new')
       setName('')
       setCategory('custom')
-      setBody('')
+      setBody('السلام علیکم {name}\n\n')
     }
     setError('')
   }
 
+  const preview = useMemo(() => {
+    if (!body.trim()) return ''
+    return composeWhatsAppMessage(
+      body,
+      {
+        name: previewName,
+        date: '۲۵ جولائی',
+        time: 'بعد از نماز مغرب',
+        venue: 'مرکزی مسجد',
+        event: 'تربیتی نشست',
+        month: 'جولائی',
+        campaign: 'کارکن رابطہ مہم',
+      },
+      'official',
+    )
+  }, [body, previewName])
+
   const handleSave = () => {
     try {
+      const existing = editing !== 'new' && editing ? editing : undefined
       saveTemplate({
-        id: editing !== 'new' && editing ? editing.id : undefined,
+        id: existing?.id,
         name,
         category,
         body,
         variables: extractTemplateVariables(body),
-        isActive: true,
+        isActive: existing?.isActive ?? true,
+        isOfficial: existing?.isOfficial ?? false,
+        footerMode: existing?.footerMode ?? 'personal',
         updatedBy: 'Administrator',
       })
       setEditing(null)
@@ -55,17 +99,53 @@ export function TemplateManagementPanel() {
     }
   }
 
+  const handleArchive = (template: MessageTemplate) => {
+    try {
+      if (template.isActive === false) {
+        restoreTemplate(template.id)
+      } else {
+        archiveTemplate(template.id)
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to update template.')
+    }
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-secondary">
-          Manage WhatsApp message templates. Administrators can edit all templates — nothing is
-          hardcoded in the UI.
-        </p>
-        <PrimaryButton type="button" onClick={() => openEditor()}>
-          New Template
-        </PrimaryButton>
+        <div>
+          <p className="text-sm text-secondary">
+            Official WhatsApp templates (Version 1). Administrators may create, edit, archive,
+            categorize, and preview. Rukn cannot change official wording.
+          </p>
+          <p className="mt-1 text-xs text-secondary">
+            Placeholders: {TEMPLATE_PLACEHOLDER_KEYS.map((key) => `{${key}}`).join(' · ')}
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <SecondaryButton type="button" onClick={() => setShowArchived((value) => !value)}>
+            {showArchived ? 'Hide archived' : 'Show archived'}
+          </SecondaryButton>
+          <PrimaryButton type="button" onClick={() => openEditor()}>
+            New Template
+          </PrimaryButton>
+        </div>
       </div>
+
+      <details className="rounded-lg border border-border bg-surface-muted/40 px-4 py-3 text-sm">
+        <summary className="cursor-pointer font-medium text-text-heading">Footer policy</summary>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <div>
+            <p className="text-xs font-semibold uppercase text-secondary">Personal (Rukn)</p>
+            <pre className="mt-1 whitespace-pre-wrap text-xs text-text-heading">{PERSONAL_MESSAGE_FOOTER}</pre>
+          </div>
+          <div>
+            <p className="text-xs font-semibold uppercase text-secondary">Official (Administrator)</p>
+            <pre className="mt-1 whitespace-pre-wrap text-xs text-text-heading">{OFFICIAL_MESSAGE_FOOTER}</pre>
+          </div>
+        </div>
+      </details>
 
       <ul className="space-y-2">
         {templates.map((template) => (
@@ -74,15 +154,43 @@ export function TemplateManagementPanel() {
             className="flex flex-wrap items-start justify-between gap-3 rounded-lg border border-border bg-surface p-4 shadow-card"
           >
             <div className="min-w-0">
-              <p className="font-semibold text-text-heading">{template.name}</p>
-              <p className="mt-1 text-xs text-secondary">
-                {TEMPLATE_CATEGORY_LABELS[template.category]} · {template.variables.join(', ') || 'No variables'}
+              <p className="font-semibold text-text-heading">
+                {template.name}
+                {template.isOfficial ? (
+                  <span className="ml-2 rounded-full bg-primary-muted px-2 py-0.5 text-[10px] font-semibold uppercase text-primary">
+                    Official
+                  </span>
+                ) : null}
+                {template.isActive === false ? (
+                  <span className="ml-2 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold uppercase text-amber-800">
+                    Archived
+                  </span>
+                ) : null}
               </p>
-              <p className="mt-2 line-clamp-2 text-sm text-secondary">{template.body}</p>
+              <p className="mt-1 text-xs text-secondary">
+                {TEMPLATE_CATEGORY_LABELS[template.category]} ·{' '}
+                {template.variables.join(', ') || 'No variables'}
+              </p>
+              <p className="mt-2 line-clamp-3 whitespace-pre-wrap text-sm text-secondary" dir="auto">
+                {template.body}
+              </p>
             </div>
-            <SecondaryButton type="button" className="px-3 py-1.5 text-sm" onClick={() => openEditor(template)}>
-              Edit
-            </SecondaryButton>
+            <div className="flex flex-wrap gap-2">
+              <SecondaryButton
+                type="button"
+                className="px-3 py-1.5 text-sm"
+                onClick={() => openEditor(template)}
+              >
+                Edit
+              </SecondaryButton>
+              <SecondaryButton
+                type="button"
+                className="px-3 py-1.5 text-sm"
+                onClick={() => handleArchive(template)}
+              >
+                {template.isActive === false ? 'Restore' : 'Archive'}
+              </SecondaryButton>
+            </div>
           </li>
         ))}
       </ul>
@@ -111,15 +219,35 @@ export function TemplateManagementPanel() {
                 ))}
               </select>
             </div>
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-medium text-text-heading">Preview name</label>
+              <input
+                value={previewName}
+                onChange={(e) => setPreviewName(e.target.value)}
+                className={selectClassName}
+              />
+            </div>
             <div className="flex flex-col gap-2 sm:col-span-2">
               <label className="text-sm font-medium text-text-heading">Body</label>
               <textarea
                 value={body}
                 onChange={(e) => setBody(e.target.value)}
-                rows={6}
+                rows={8}
+                dir="auto"
                 className={selectClassName}
-                placeholder="Use {{name}}, {{date}}, etc."
+                placeholder="السلام علیکم {name} — use {date}, {time}, {venue}, {event}, {month}, {campaign}"
               />
+              <p className="text-xs text-secondary">
+                Do not include footer text — footers are appended automatically by role.
+              </p>
+            </div>
+            <div className="sm:col-span-2 rounded-lg border border-border bg-surface-muted p-3">
+              <p className="text-xs font-medium uppercase tracking-wide text-secondary">
+                Preview (Administrator footer)
+              </p>
+              <p className="mt-2 whitespace-pre-wrap text-sm text-text-heading" dir="auto">
+                {preview}
+              </p>
             </div>
           </div>
           {error && <p className="mt-3 text-sm text-red-600">{error}</p>}

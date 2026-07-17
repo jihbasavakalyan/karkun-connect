@@ -134,7 +134,12 @@ export {
   listTemplates,
   getTemplate,
   saveTemplate,
+  archiveTemplate,
+  restoreTemplate,
   applyTemplateVariables,
+  composeWhatsAppMessage,
+  extractTemplateVariables,
+  resolveFooterMode,
 } from './templateService'
 
 export {

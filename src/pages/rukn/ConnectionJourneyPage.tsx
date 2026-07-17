@@ -29,6 +29,7 @@ import { RelationshipActionBar, RelationshipSummaryPanel } from '@/components/re
 import { MeetingGuidanceCard } from '@/features/digitalRafeeq/contextual'
 import { buildConnectionJourney } from '@/lib/connectionJourney'
 import { getConnectionStatusLabel } from '@/lib/connectionLabels'
+import { buildIndividualCommunicationContext } from '@/lib/communicationContext'
 import { saveAnnexure1Draft, submitAnnexure1 } from '@/services/annexure1Service'
 import { scheduleWhatsAppMessage } from '@/services/schedulingService'
 import { getRegistrationForKarkun } from '@/services/jihWebPortalService'
@@ -226,6 +227,7 @@ export function ConnectionJourneyPage() {
     karkun.whatsapp?.trim() ? karkun.whatsapp : karkun.mobile,
     reminderMessage,
   )
+  const communicationContext = buildIndividualCommunicationContext(karkun.id)
 
   return (
     <PageShell variant="narrow" className="pb-28">
@@ -491,6 +493,10 @@ export function ConnectionJourneyPage() {
       <MessageComposerModal
         isOpen={composerOpen}
         recipients={[recipient]}
+        role={isAdminContext ? 'administrator' : 'rukn'}
+        initialTemplateId={communicationContext?.recommendedTemplate?.templateId}
+        recommendedTemplateId={communicationContext?.recommendedTemplate?.templateId}
+        contextVariables={communicationContext?.defaultVariables}
         onClose={() => setComposerOpen(false)}
         onSend={handleSendMessage}
         title={`WhatsApp — ${karkun.name}`}

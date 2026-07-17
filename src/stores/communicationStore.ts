@@ -1,4 +1,7 @@
-import { DEFAULT_MESSAGE_TEMPLATES } from '@/data/communication/defaultTemplates'
+import {
+  DEFAULT_MESSAGE_TEMPLATES,
+  OFFICIAL_WHATSAPP_TEMPLATES,
+} from '@/data/communication/defaultTemplates'
 import type {
   AutomationRule,
   CommunicationDashboardMetrics,
@@ -41,14 +44,65 @@ function createDefaultAutomationRules(): AutomationRule[] {
   })
 
   return [
-    base('rule-assignment', 'Connection Created', 'assignment-created', 'tpl-assignment', 'Send when a new connection is confirmed.'),
-    base('rule-first-meeting', 'First Meeting Pending', 'first-meeting-pending', 'tpl-meeting-reminder', 'Reminder after 3 days if first meeting is pending.', 3),
+    base('rule-assignment', 'Connection Created', 'assignment-created', 'tpl-welcome', 'Welcome when a new connection is confirmed.'),
+    base('rule-first-meeting', 'First Meeting Pending', 'first-meeting-pending', 'tpl-visit-reminder', 'Reminder after 3 days if first meeting is pending.', 3),
     base('rule-ijtema', 'Ijtema Tomorrow', 'ijtema-tomorrow', 'tpl-ijtema', 'Reminder sent the day before Weekly Ijtema.'),
-    base('rule-monthly', 'Monthly Report Pending', 'monthly-report-pending', 'tpl-monthly-report', 'Reminder when monthly report is pending.'),
+    base('rule-monthly', 'JIH Registration Pending', 'monthly-report-pending', 'tpl-jih-registration', 'Reminder when JIH registration is pending.'),
     base('rule-baitul', 'Bait-ul-Maal Due', 'baitul-maal-due', 'tpl-baitul-maal', 'Reminder when Bait-ul-Maal contribution is due.'),
-    base('rule-follow-up', 'Follow-up Tomorrow', 'follow-up-tomorrow', 'tpl-follow-up', 'Reminder for follow-ups scheduled tomorrow.'),
-    base('rule-milestone', 'Campaign Milestone', 'campaign-milestone', 'tpl-campaign-update', 'Congratulations when a campaign milestone is reached.'),
+    base('rule-follow-up', 'Follow-up Tomorrow', 'follow-up-tomorrow', 'tpl-development-follow-up', 'Reminder for follow-ups scheduled tomorrow.'),
+    base('rule-milestone', 'Campaign Milestone', 'campaign-milestone', 'tpl-campaign-announcement', 'Announcement when a campaign milestone is reached.'),
   ]
+}
+
+/** Merge official library with persisted custom/admin edits; preserve archive flags. */
+export function mergeOfficialTemplates(persisted: MessageTemplate[]): MessageTemplate[] {
+  const obsoleteDefaultIds = new Set([
+    'tpl-assignment',
+    'tpl-first-contact',
+    'tpl-meeting-reminder',
+    'tpl-monthly-report',
+    'tpl-follow-up',
+    'tpl-campaign-update',
+    'tpl-greeting',
+    'tpl-emergency',
+  ])
+
+  const byId = new Map(
+    persisted
+      .filter((template) => !obsoleteDefaultIds.has(template.id))
+      .map((template) => [template.id, template]),
+  )
+  const result: MessageTemplate[] = []
+
+  for (const official of OFFICIAL_WHATSAPP_TEMPLATES) {
+    const existing = byId.get(official.id)
+    if (existing) {
+      result.push({
+        ...official,
+        // Prefer admin-edited body/name/category when updatedBy is not System
+        name: existing.updatedBy !== 'System' ? existing.name : official.name,
+        body: existing.updatedBy !== 'System' ? existing.body : official.body,
+        category: existing.updatedBy !== 'System' ? existing.category : official.category,
+        variables:
+          existing.updatedBy !== 'System' ? existing.variables : official.variables,
+        isActive: existing.isActive,
+        isOfficial: true,
+        footerMode: existing.footerMode ?? official.footerMode,
+        createdAt: existing.createdAt,
+        updatedAt: existing.updatedAt,
+        updatedBy: existing.updatedBy,
+      })
+      byId.delete(official.id)
+    } else {
+      result.push(official)
+    }
+  }
+
+  for (const remaining of byId.values()) {
+    result.push(remaining)
+  }
+
+  return result
 }
 
 const defaultWhatsAppSettings: WhatsAppSettings = {
@@ -78,7 +132,7 @@ type CommunicationStoreListener = () => void
 
 const listeners = new Set<CommunicationStoreListener>()
 
-const templates: MessageTemplate[] = [...persisted.templates]
+const templates: MessageTemplate[] = mergeOfficialTemplates(persisted.templates)
 const history: CommunicationHistoryRecord[] = [...persisted.history]
 const automationRules: AutomationRule[] = [...persisted.automationRules]
 const scheduledMessages: ScheduledMessage[] = [...persisted.scheduledMessages]
@@ -222,7 +276,7 @@ export function reloadCommunicationStoreFromPersistence(): void {
     defaultState,
   )
   templates.length = 0
-  templates.push(...loaded.templates)
+  templates.push(...mergeOfficialTemplates(loaded.templates))
   history.length = 0
   history.push(...loaded.history)
   automationRules.length = 0

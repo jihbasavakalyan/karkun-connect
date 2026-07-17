@@ -4,11 +4,15 @@ import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import { Icon } from '@/components/ui/Icon'
 import { SchedulePickerModal } from '@/components/communication/SchedulePickerModal'
-import { applyTemplateVariables, listTemplates } from '@/services/templateService'
+import {
+  composeWhatsAppMessage,
+  listTemplates,
+  resolveFooterMode,
+} from '@/services/templateService'
 import { scheduleWhatsAppMessage } from '@/services/schedulingService'
 import { buildWhatsAppLink } from '@/utils/personContactLinks'
-import type { MessageRecipient } from '@/types/communication'
-import { TEMPLATE_CATEGORY_LABELS } from '@/types/communication'
+import type { MessageRecipient, MessageTemplate } from '@/types/communication'
+import { TEMPLATE_CATEGORY_LABELS, TEMPLATE_PLACEHOLDER_KEYS } from '@/types/communication'
 
 const selectClassName =
   'w-full rounded-lg border border-border bg-surface px-4 py-3 text-base text-text-heading focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20'
@@ -21,6 +25,10 @@ type MessageComposerModalProps = {
   title?: string
   initialTemplateId?: string
   contextVariables?: Record<string, string>
+  /** Controls footer and whether official wording is editable. Default administrator. */
+  role?: 'administrator' | 'rukn'
+  /** Digital Rafeeq recommended template id (highlighted). */
+  recommendedTemplateId?: string
 }
 
 export function MessageComposerModal({
@@ -31,6 +39,8 @@ export function MessageComposerModal({
   title = 'Compose WhatsApp Message',
   initialTemplateId,
   contextVariables,
+  role = 'administrator',
+  recommendedTemplateId,
 }: MessageComposerModalProps) {
   if (!isOpen) {
     return null
@@ -45,6 +55,8 @@ export function MessageComposerModal({
       title={title}
       initialTemplateId={initialTemplateId}
       contextVariables={contextVariables}
+      role={role}
+      recommendedTemplateId={recommendedTemplateId}
     />
   )
 }
@@ -56,44 +68,69 @@ function MessageComposerModalContent({
   title = 'Compose WhatsApp Message',
   initialTemplateId,
   contextVariables,
+  role = 'administrator',
+  recommendedTemplateId,
 }: Omit<MessageComposerModalProps, 'isOpen'>) {
   const templates = listTemplates()
-  const [templateId, setTemplateId] = useState(initialTemplateId ?? '')
-  const [message, setMessage] = useState(() => {
-    if (!initialTemplateId) return ''
-    return templates.find((item) => item.id === initialTemplateId)?.body ?? ''
-  })
+  const footerMode = resolveFooterMode(role)
+  const startingId = initialTemplateId ?? recommendedTemplateId ?? ''
+  const startingTemplate = templates.find((item) => item.id === startingId)
+
+  const [templateId, setTemplateId] = useState(startingId)
+  const [message, setMessage] = useState(startingTemplate?.body ?? '')
+  const [placeholders, setPlaceholders] = useState<Record<string, string>>(() => ({
+    name: recipients[0]?.name ?? '',
+    date: '',
+    time: '',
+    venue: '',
+    event: '',
+    month: '',
+    campaign: '',
+    ...contextVariables,
+  }))
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [sending, setSending] = useState(false)
   const [scheduleOpen, setScheduleOpen] = useState(false)
 
+  const selectedTemplate: MessageTemplate | undefined = templates.find(
+    (item) => item.id === templateId,
+  )
+  const isOfficialLocked = role === 'rukn' && Boolean(selectedTemplate?.isOfficial)
+  const variableKeys = selectedTemplate?.variables.length
+    ? selectedTemplate.variables
+    : TEMPLATE_PLACEHOLDER_KEYS.filter((key) => message.includes(`{${key}}`))
+
+  const mergedVariables = useMemo(
+    () => ({
+      ...placeholders,
+      name: placeholders.name || recipients[0]?.name || '',
+      ...contextVariables,
+    }),
+    [placeholders, recipients, contextVariables],
+  )
+
+  const composedMessage = useMemo(
+    () => composeWhatsAppMessage(message, mergedVariables, footerMode),
+    [message, mergedVariables, footerMode],
+  )
+
   const primaryRecipient = recipients[0]
   const singleRecipient = recipients.length === 1 && primaryRecipient
   const waLink = singleRecipient
-    ? buildWhatsAppLink(primaryRecipient.whatsapp?.trim() ? primaryRecipient.whatsapp : primaryRecipient.mobile, message)
+    ? buildWhatsAppLink(
+        primaryRecipient.whatsapp?.trim() ? primaryRecipient.whatsapp : primaryRecipient.mobile,
+        composedMessage,
+      )
     : null
-
-  const previewMessage = useMemo(() => {
-    if (!primaryRecipient) return message
-    return applyTemplateVariables(message, {
-      name: primaryRecipient.name,
-      ruknName: 'Rukn',
-      assignmentNumber: 'ASN-000000',
-      date: new Date().toISOString().slice(0, 10),
-      purpose: 'Follow-up',
-      headline: 'Campaign Update',
-      details: 'Details here',
-      message: message,
-      ...contextVariables,
-    })
-  }, [message, primaryRecipient, contextVariables])
 
   const handleTemplateChange = (id: string) => {
     setTemplateId(id)
     const template = templates.find((item) => item.id === id)
     if (template) {
       setMessage(template.body)
+    } else {
+      setMessage('')
     }
   }
 
@@ -101,7 +138,10 @@ function MessageComposerModalContent({
     setError('')
     setSuccess('')
     setSending(true)
-    const result = await onSend({ templateId: templateId || undefined, message })
+    const result = await onSend({
+      templateId: templateId || undefined,
+      message: composedMessage,
+    })
     setSending(false)
     if (!result.success) {
       setError(result.error ?? 'Unable to queue message.')
@@ -112,9 +152,7 @@ function MessageComposerModalContent({
   }
 
   const handleSendViaWhatsApp = () => {
-    if (!waLink) {
-      return
-    }
+    if (!waLink) return
     window.open(waLink, '_blank', 'noopener,noreferrer')
   }
 
@@ -122,7 +160,7 @@ function MessageComposerModalContent({
     scheduleWhatsAppMessage({
       recipients,
       templateId: templateId || undefined,
-      message,
+      message: composedMessage,
       scheduledFor: scheduledForIso,
     })
     setScheduleOpen(false)
@@ -157,31 +195,66 @@ function MessageComposerModalContent({
             <option value="">Custom message</option>
             {templates.map((template) => (
               <option key={template.id} value={template.id}>
+                {template.id === recommendedTemplateId ? '★ ' : ''}
                 {template.name} ({TEMPLATE_CATEGORY_LABELS[template.category]})
+                {template.isOfficial ? ' · Official' : ''}
               </option>
             ))}
           </select>
+          {recommendedTemplateId && templateId === recommendedTemplateId ? (
+            <p className="text-xs text-primary">Digital Rafeeq recommendation selected.</p>
+          ) : null}
+          {role === 'rukn' ? (
+            <p className="text-xs text-secondary">
+              Official wording is locked. Fill placeholders, preview, then send.
+            </p>
+          ) : null}
         </div>
+
+        {variableKeys.length > 0 && (
+          <div className="grid gap-3 sm:grid-cols-2">
+            {variableKeys.map((key) => (
+              <div key={key} className="flex flex-col gap-1">
+                <label className="text-xs font-medium text-text-heading">{`{${key}}`}</label>
+                <input
+                  value={placeholders[key] ?? ''}
+                  onChange={(event) =>
+                    setPlaceholders((current) => ({ ...current, [key]: event.target.value }))
+                  }
+                  className={selectClassName}
+                  placeholder={key}
+                />
+              </div>
+            ))}
+          </div>
+        )}
 
         <div className="flex flex-col gap-2">
           <label htmlFor="composer-message" className="text-sm font-medium text-text-heading">
-            Message
+            Message {isOfficialLocked ? '(read-only official wording)' : ''}
           </label>
           <textarea
             id="composer-message"
             value={message}
             onChange={(event) => setMessage(event.target.value)}
-            rows={5}
-            className={selectClassName}
+            rows={6}
+            dir="auto"
+            readOnly={isOfficialLocked}
+            className={`${selectClassName} ${isOfficialLocked ? 'bg-surface-muted' : ''}`}
             placeholder="Type your message..."
           />
-          <p className="text-xs text-secondary">{message.length} characters</p>
+          <p className="text-xs text-secondary">
+            {composedMessage.length} characters including footer (
+            {footerMode === 'official' ? 'Administrator' : 'Personal'})
+          </p>
         </div>
 
-        {message && (
+        {composedMessage && (
           <div className="rounded-lg border border-border bg-surface-muted p-3">
             <p className="text-xs font-medium uppercase tracking-wide text-secondary">Preview</p>
-            <p className="mt-2 whitespace-pre-wrap text-sm text-text-heading">{previewMessage}</p>
+            <p className="mt-2 whitespace-pre-wrap text-sm text-text-heading" dir="auto">
+              {composedMessage}
+            </p>
           </div>
         )}
 
@@ -209,14 +282,18 @@ function MessageComposerModalContent({
             <SecondaryButton
               type="button"
               onClick={() => setScheduleOpen(true)}
-              disabled={sending || !message.trim()}
+              disabled={sending || !composedMessage.trim()}
             >
               <span className="inline-flex items-center gap-1.5">
                 <Icon name="calendar" size="sm" />
                 Schedule
               </span>
             </SecondaryButton>
-            <PrimaryButton type="button" onClick={handleSend} disabled={sending || !message.trim()}>
+            <PrimaryButton
+              type="button"
+              onClick={handleSend}
+              disabled={sending || !composedMessage.trim()}
+            >
               {sending ? 'Sending…' : 'Queue Message'}
             </PrimaryButton>
           </div>

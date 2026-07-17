@@ -6,7 +6,7 @@ export {
   getWhatsAppConfiguration,
 } from '@/services/communicationService'
 
-export { listTemplates, getTemplate, saveTemplate, applyTemplateVariables } from '@/services/templateService'
+export { listTemplates, getTemplate, saveTemplate, archiveTemplate, restoreTemplate, applyTemplateVariables, composeWhatsAppMessage, extractTemplateVariables, resolveFooterMode } from '@/services/templateService'
 
 export {
   getMessageHistory,

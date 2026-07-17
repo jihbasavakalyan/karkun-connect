@@ -62,7 +62,8 @@ export function IndividualMessagesPanel() {
     <section className="rounded-(--radius-card) border border-border bg-surface p-4 shadow-card sm:p-6">
       <h2 className="text-lg font-semibold text-text-heading">Individual Messages</h2>
       <p className="mt-2 text-sm text-secondary">
-        Send a WhatsApp message to a single Karkun or Rukn via the Communication Engine.
+        Official Urdu WhatsApp templates with role-based footers. Placeholders are filled before
+        send.
       </p>
 
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
@@ -123,14 +124,49 @@ export function IndividualMessagesPanel() {
             </div>
           </dl>
 
-          {context.suggestions.length > 0 && (
+          {context.recommendedTemplate && (
+            <div className="mt-3 rounded-lg border border-primary/30 bg-primary-muted/40 px-3 py-2">
+              <h4 className="text-xs font-semibold uppercase tracking-wide text-primary">
+                Digital Rafeeq recommendation
+              </h4>
+              <p className="mt-1 text-sm font-semibold text-text-heading">
+                {context.recommendedTemplate.templateName}
+              </p>
+              <p className="text-xs text-secondary">{context.recommendedTemplate.reason}</p>
+              <PrimaryButton
+                type="button"
+                className="mt-2"
+                disabled={!recipient}
+                onClick={() => {
+                  setPreferredTemplateId(context.recommendedTemplate!.templateId)
+                  setComposerOpen(true)
+                }}
+              >
+                Review &amp; send suggested message
+              </PrimaryButton>
+            </div>
+          )}
+
+          {context.recommendations.length > 1 && (
             <div className="mt-3">
               <h4 className="text-xs font-semibold uppercase tracking-wide text-secondary">
-                Digital Rafeeq Suggestions
+                Other suggestions
               </h4>
               <ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-text-heading">
-                {context.suggestions.map((suggestion) => (
-                  <li key={suggestion}>{suggestion}</li>
+                {context.recommendations.slice(1).map((item) => (
+                  <li key={item.templateId}>
+                    <button
+                      type="button"
+                      className="text-primary underline-offset-2 hover:underline"
+                      onClick={() => {
+                        setPreferredTemplateId(item.templateId)
+                        setComposerOpen(true)
+                      }}
+                    >
+                      {item.templateName}
+                    </button>
+                    <span className="text-secondary"> — {item.reason}</span>
+                  </li>
                 ))}
               </ul>
             </div>
@@ -165,7 +201,7 @@ export function IndividualMessagesPanel() {
           type="button"
           disabled={!recipient}
           onClick={() => {
-            setPreferredTemplateId(undefined)
+            setPreferredTemplateId(context?.recommendedTemplate?.templateId)
             setComposerOpen(true)
           }}
         >
@@ -177,15 +213,10 @@ export function IndividualMessagesPanel() {
         <MessageComposerModal
           isOpen={composerOpen}
           recipients={[recipient]}
+          role="administrator"
           initialTemplateId={preferredTemplateId}
-          contextVariables={
-            context
-              ? {
-                  name: context.karkunName,
-                  ruknName: context.assignedRuknName,
-                }
-              : undefined
-          }
+          recommendedTemplateId={context?.recommendedTemplate?.templateId}
+          contextVariables={context?.defaultVariables}
           onClose={() => setComposerOpen(false)}
           onSend={async (input) => {
             const result = await sendIndividualMessage({

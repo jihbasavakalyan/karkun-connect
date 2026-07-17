@@ -22,6 +22,12 @@ export type TemplateCategory =
   | 'greetings'
   | 'emergency'
   | 'custom'
+  | 'orientation'
+  | 'development'
+  | 'study'
+
+/** Footer appended at send time — never editable by Rukn for official templates. */
+export type TemplateFooterMode = 'personal' | 'official'
 
 export type MessageTemplate = {
   id: string
@@ -31,6 +37,13 @@ export type MessageTemplate = {
   body: string
   variables: string[]
   isActive: boolean
+  /** Official Version 1 wording — Rukn may select/fill/preview/send only. */
+  isOfficial?: boolean
+  /**
+   * Preferred footer for this template when role does not override.
+   * Administrator sends always use `official` footer; Rukn uses `personal`.
+   */
+  footerMode?: TemplateFooterMode
   createdAt: string
   updatedAt: string
   updatedBy: string
@@ -146,17 +159,32 @@ export type CommunicationResult =
 
 export const TEMPLATE_CATEGORY_LABELS: Record<TemplateCategory, string> = {
   assignments: 'Connections',
-  'first-contact': 'First Contact',
-  'meeting-reminder': 'Meeting Reminder',
+  'first-contact': 'Welcome / First Contact',
+  'meeting-reminder': 'Visit / Meeting',
   'weekly-ijtema': 'Weekly Ijtema',
-  'monthly-report': 'Monthly Report',
+  'monthly-report': 'JIH Registration',
   'baitul-maal': 'Bait-ul-Maal',
   'follow-up': 'Follow-up',
-  'campaign-update': 'Campaign Update',
+  'campaign-update': 'Campaign / Events',
   greetings: 'Greetings',
   emergency: 'Emergency',
   custom: 'Custom',
+  orientation: 'Orientation',
+  development: 'Development',
+  study: 'Islamic Study',
 }
+
+export const TEMPLATE_PLACEHOLDER_KEYS = [
+  'name',
+  'date',
+  'time',
+  'venue',
+  'event',
+  'month',
+  'campaign',
+] as const
+
+export type TemplatePlaceholderKey = (typeof TEMPLATE_PLACEHOLDER_KEYS)[number]
 
 export const AUTOMATION_TRIGGER_LABELS: Record<AutomationTrigger, string> = {
   'assignment-created': 'Connection Created',
