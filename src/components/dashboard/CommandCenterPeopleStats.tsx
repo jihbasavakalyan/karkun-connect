@@ -1,21 +1,25 @@
-import { getPeopleStatistics } from '@/lib/peopleStore'
-import { usePeopleStore } from '@/hooks/usePeopleStore'
+import { getKarkunById } from '@/constants/mockKarkunRegistry'
+import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
+import { getAllAssignments } from '@/services/assignmentService'
 import { StatCard } from '@/components/dashboard/StatCard'
 
 export function CommandCenterPeopleStats() {
-  usePeopleStore()
-  const stats = getPeopleStatistics()
+  const { assignmentVersion } = useAssignmentEngine()
+  void assignmentVersion
+
+  const connectedAssignments = getAllAssignments().filter((assignment) => assignment.status === 'Active')
+  const connectedKarkuns = connectedAssignments
+    .map((assignment) => getKarkunById(assignment.karkunId))
+    .filter((karkun): karkun is NonNullable<typeof karkun> => Boolean(karkun))
+
+  const maleConnected = connectedKarkuns.filter((karkun) => karkun.gender === 'Male').length
+  const femaleConnected = connectedKarkuns.filter((karkun) => karkun.gender === 'Female').length
+  const totalConnected = maleConnected + femaleConnected
 
   const cards = [
-    { label: 'Total Rukns', value: stats.totalRukns },
-    { label: 'Male Rukns', value: stats.maleRukns },
-    { label: 'Female Rukns', value: stats.femaleRukns },
-    { label: 'Male Karkuns', value: stats.totalMaleKarkuns },
-    { label: 'Female Karkuns', value: stats.totalFemaleKarkuns },
-    { label: 'Connected Karkuns', value: stats.assignedKarkuns },
-    { label: 'Unconnected Karkuns', value: stats.unassignedKarkuns },
-    { label: 'Active Users', value: stats.activeUsers },
-    { label: 'Inactive Users', value: stats.inactiveUsers },
+    { label: 'Male Karkuns', value: maleConnected },
+    { label: 'Female Karkuns', value: femaleConnected },
+    { label: 'Total Connected', value: totalConnected },
   ]
 
   return (

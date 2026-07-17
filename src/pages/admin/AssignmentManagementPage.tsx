@@ -26,8 +26,6 @@ import { RestoreAssignmentModal } from '@/components/forms/assignment/RestoreAss
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import { PageHeader, PageShell } from '@/components/ui'
-import { formatPersonStatus } from '@/types/people.types'
-
 type ModalMode = 'assign' | 'replace' | 'remove' | 'restore' | 'history' | null
 
 export function AssignmentManagementPage() {
@@ -80,21 +78,22 @@ export function AssignmentManagementPage() {
     )
   }, [selectedRuknId, karkunSearch, assignmentVersion, peopleVersion])
 
-  const filteredRukns = useMemo(() => {
+  const directoryRukns = useMemo(() => {
     void assignmentVersion
     void peopleVersion
-    const query = (globalSearch || ruknSearch).trim().toLowerCase()
+    const query = ruknSearch.trim().toLowerCase()
     return ruknMaster.filter((rukn) => {
+      if (rukn.status !== 'active') return false
       if (globalSearch.trim()) {
         return ruknMatchesAssignmentSearch(rukn.id, globalSearch)
       }
       if (!query) return true
       return (
-        rukn.name.toLowerCase().includes(query) ||
-        rukn.mobile.toLowerCase().includes(query)
+        rukn.id.toLowerCase().includes(query) ||
+        rukn.name.toLowerCase().includes(query)
       )
     })
-  }, [globalSearch, ruknSearch, assignmentVersion, peopleVersion])
+  }, [ruknSearch, globalSearch, assignmentVersion, peopleVersion])
 
   const changeView = (next: 'assign' | 'mapping') => {
     setSearchParams(
@@ -265,118 +264,75 @@ export function AssignmentManagementPage() {
         </div>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <section className="space-y-4">
-          <div className="rounded-(--radius-card) border border-border bg-surface p-4 shadow-card">
-            <h2 className="text-lg font-semibold text-text-heading">Rukn</h2>
-            <input
-              type="search"
-              value={ruknSearch}
-              placeholder="Search Rukn..."
-              onChange={(e) => setRuknSearch(e.target.value)}
-              className="mt-3 w-full rounded-lg border border-border bg-surface px-4 py-3 text-sm"
-            />
-          </div>
+      <section className="rounded-(--radius-card) border border-border bg-surface p-4 shadow-card">
+        <h2 className="text-lg font-semibold text-text-heading">Rukn Directory</h2>
+        <label htmlFor="rukn-directory-search" className="sr-only">
+          Search Rukn by ID or Name
+        </label>
+        <input
+          id="rukn-directory-search"
+          type="search"
+          value={ruknSearch}
+          placeholder="Search Rukn by ID or Name..."
+          onChange={(e) => setRuknSearch(e.target.value)}
+          className="mt-3 w-full rounded-lg border border-border bg-surface px-4 py-2.5 text-sm"
+        />
 
-          <ul className="max-h-[420px] space-y-2 overflow-y-auto">
-            {filteredRukns.map((rukn) => {
+        {directoryRukns.length === 0 ? (
+          <p className="mt-4 text-center text-sm text-secondary">
+            {ruknSearch.trim()
+              ? 'No Rukns match your search. Clear the search to see the full directory.'
+              : 'No active Rukns in the directory.'}
+          </p>
+        ) : (
+          <div
+            className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8"
+            role="list"
+            aria-label="Rukn directory"
+          >
+            {directoryRukns.map((rukn) => {
               const summary = getRuknAssignmentSummary(rukn.id)
               const isSelected = selectedRuknId === rukn.id
               return (
-                <li key={rukn.id}>
-                  <button
-                    type="button"
-                    onClick={() => selectRukn(rukn.id)}
-                    className={`w-full rounded-lg border p-4 text-left transition-shadow hover:shadow-card ${
-                      isSelected
-                        ? 'border-primary bg-primary/5'
-                        : 'border-border bg-surface'
+                <button
+                  key={rukn.id}
+                  type="button"
+                  role="listitem"
+                  aria-pressed={isSelected}
+                  onClick={() => selectRukn(rukn.id)}
+                  className={[
+                    'flex min-h-[5.5rem] flex-col justify-between rounded-lg border px-2.5 py-2 text-left transition-shadow',
+                    isSelected
+                      ? 'border-primary bg-primary text-white shadow-card'
+                      : 'border-border bg-surface text-text-heading hover:border-primary/30 hover:shadow-card',
+                  ].join(' ')}
+                >
+                  <span
+                    className={`text-xs font-semibold tracking-wide ${
+                      isSelected ? 'text-white/90' : 'text-secondary'
                     }`}
                   >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="font-semibold text-text-heading">
-                          {rukn.id} – {rukn.name}
-                        </p>
-                        <p className="mt-1 text-sm text-secondary">
-                          Connected Karkuns: {summary.assignedKarkunCount}
-                        </p>
-                        <p className="mt-0.5 text-sm text-secondary">
-                          {rukn.gender} · {formatPersonStatus(rukn.status)}
-                        </p>
-                      </div>
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                          summary.assignmentStatus === 'Assigned'
-                            ? 'bg-green-100 text-green-800'
-                            : summary.assignmentStatus === 'Suspended'
-                              ? 'bg-amber-100 text-amber-800'
-                              : 'bg-gray-100 text-gray-600'
-                        }`}
-                      >
-                        {getConnectionStatusLabel(summary.assignmentStatus)}
-                      </span>
-                    </div>
-                    {summary.currentAssignment && (
-                      <p className="mt-2 text-sm text-secondary">
-                        Karkun:{' '}
-                        {getKarkunById(summary.currentAssignment.karkunId)?.name ?? '—'}
-                      </p>
-                    )}
-                  </button>
-                </li>
+                    {rukn.id}
+                  </span>
+                  <span
+                    className={`line-clamp-2 text-sm font-medium leading-snug ${
+                      isSelected ? 'text-white' : 'text-text-heading'
+                    }`}
+                  >
+                    {rukn.name}
+                  </span>
+                  <span
+                    className={`text-xs ${isSelected ? 'text-white/90' : 'text-secondary'}`}
+                    aria-label={`${summary.assignedKarkunCount} connected Karkuns`}
+                  >
+                    👥 {summary.assignedKarkunCount}
+                  </span>
+                </button>
               )
             })}
-          </ul>
-        </section>
-
-        <section className="space-y-4">
-          <div className="home-card">
-            <h2 className="text-lg font-semibold text-text-heading">Available Karkuns</h2>
-            <p className="mt-1 text-sm text-secondary">
-              {selectedRukn
-                ? `Connect ${selectedRukn.gender} Karkuns to ${selectedRukn.name} — search and tap Connect.`
-                : 'Select a Rukn first, then connect available Karkuns.'}
-            </p>
-            {selectedRukn && (
-              <div className="mt-3">
-                <KarkunSearchField
-                  id="admin-karkun-connect-search"
-                  value={karkunSearch}
-                  onChange={setKarkunSearch}
-                  resultCount={karkunSearch.trim() ? assignableKarkuns.length : undefined}
-                />
-              </div>
-            )}
           </div>
-
-          {!selectedRukn ? (
-            <div className="home-card text-center text-secondary">
-              Select a Rukn on the left to see Karkuns ready to connect.
-            </div>
-          ) : assignableKarkuns.length === 0 ? (
-            <div className="home-card text-center text-secondary">
-              No available Karkuns match your search for {selectedRukn.name}.
-            </div>
-          ) : (
-            <ul className="relationship-row-list max-h-[min(50vh,24rem)] overflow-y-auto overscroll-contain pr-1">
-              {assignableKarkuns.map((karkun) => (
-                <li key={karkun.id}>
-                  <AvailableKarkunRow
-                    karkun={karkun}
-                    onConnect={() => {
-                      setConnectConfirmKarkunId(karkun.id)
-                      setSelectedKarkunId(karkun.id)
-                      setActionError('')
-                    }}
-                  />
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-      </div>
-
+        )}
+      </section>
 
       {selectedRukn && ruknSummary && (
         <section className="rounded-(--radius-card) border border-border bg-surface p-6 shadow-card">
@@ -470,6 +426,52 @@ export function AssignmentManagementPage() {
           </div>
         </section>
       )}
+
+      <section className="space-y-4">
+        <div className="home-card">
+          <h2 className="text-lg font-semibold text-text-heading">Available Karkuns</h2>
+          <p className="mt-1 text-sm text-secondary">
+            {selectedRukn
+              ? `Connect ${selectedRukn.gender} Karkuns to ${selectedRukn.name} — search and tap Connect.`
+              : 'Select a Rukn from the directory, then connect available Karkuns.'}
+          </p>
+          {selectedRukn && (
+            <div className="mt-3">
+              <KarkunSearchField
+                id="admin-karkun-connect-search"
+                value={karkunSearch}
+                onChange={setKarkunSearch}
+                resultCount={karkunSearch.trim() ? assignableKarkuns.length : undefined}
+              />
+            </div>
+          )}
+        </div>
+
+        {!selectedRukn ? (
+          <div className="home-card text-center text-secondary">
+            Select a Rukn from the directory to see Karkuns ready to connect.
+          </div>
+        ) : assignableKarkuns.length === 0 ? (
+          <div className="home-card text-center text-secondary">
+            No available Karkuns match your search for {selectedRukn.name}.
+          </div>
+        ) : (
+          <ul className="relationship-row-list max-h-[min(50vh,24rem)] overflow-y-auto overscroll-contain pr-1">
+            {assignableKarkuns.map((karkun) => (
+              <li key={karkun.id}>
+                <AvailableKarkunRow
+                  karkun={karkun}
+                  onConnect={() => {
+                    setConnectConfirmKarkunId(karkun.id)
+                    setSelectedKarkunId(karkun.id)
+                    setActionError('')
+                  }}
+                />
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
       </>
       )}
 
