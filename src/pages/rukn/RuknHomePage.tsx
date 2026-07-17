@@ -3,14 +3,12 @@ import { Navigate } from 'react-router-dom'
 import { ROUTES } from '@/constants/routes'
 import {
   AskDigitalRafeeqCard,
-  MissionControlKpiGrid,
   RuknMissionControlHero,
   RuknMissionControlPanels,
 } from '@/components/mission-control'
 import { RuknFloatingActionButton, RuknIjtemaAttendancePanel } from '@/components/home'
 import { openDigitalRafeeqAssistant } from '@/features/digitalRafeeq/launcher'
 import { useRequiredRuknId } from '@/hooks/useRequiredRuknId'
-import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { useCampaignAutomationEngine } from '@/hooks/useCampaignAutomationEngine'
 import { useGuidance } from '@/hooks/useGuidance'
 import { buildRuknMissionControl } from '@/lib/missionControl/buildRuknMissionControl'
@@ -23,7 +21,6 @@ import { HomePageSkeleton } from '@/components/ui'
 
 export function RuknHomePage() {
   const ruknId = useRequiredRuknId()
-  const { getAssignedKarkunanForRukn } = useAssignmentEngine()
   const { morningBrief } = useGuidance(ruknId ?? '')
   const snapshot = useCampaignAutomationEngine({
     role: 'rukn',
@@ -43,9 +40,6 @@ export function RuknHomePage() {
     return <HomePageSkeleton />
   }
 
-  const connectedKarkuns = getAssignedKarkunanForRukn(ruknId)
-  void connectedKarkuns
-
   const topGuidance = sortGuidanceByUrgency(getGuidanceForRuknKarkuns(ruknId))[0]
   const topKarkun = topGuidance ? getKarkunById(topGuidance.karkunId) : undefined
   const primaryCallHref = topKarkun?.mobile ? buildTelLink(topKarkun.mobile) ?? undefined : undefined
@@ -59,7 +53,6 @@ export function RuknHomePage() {
     <div className="cd-page cd-page-rukn mc-page">
       <RuknMissionControlHero model={model} />
       <AskDigitalRafeeqCard onOpen={openDigitalRafeeqAssistant} />
-      <MissionControlKpiGrid kpis={model.kpis} />
       <RuknMissionControlPanels model={model} />
       <RuknIjtemaAttendancePanel ruknId={ruknId} />
 

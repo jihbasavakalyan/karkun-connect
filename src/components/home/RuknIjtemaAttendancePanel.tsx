@@ -30,8 +30,8 @@ const STATUS_OPTIONS: IjtemaAttendanceStatus[] = ['Present', 'Absent', 'Excused'
 
 export function RuknIjtemaAttendancePanel({ ruknId }: RuknIjtemaAttendancePanelProps) {
   const { user } = useAuth()
-  const { getAssignedKarkunanForRukn } = useAssignmentEngine()
-  const [, setVersion] = useState(0)
+  const { assignmentVersion, getAssignedKarkunanForRukn } = useAssignmentEngine()
+  const [attendanceVersion, setAttendanceVersion] = useState(0)
   const [weekFilter, setWeekFilter] = useState('')
   const [draft, setDraft] = useState<Record<string, DraftStatus>>({})
   const [remarks, setRemarks] = useState<Record<string, string>>({})
@@ -39,12 +39,13 @@ export function RuknIjtemaAttendancePanel({ ruknId }: RuknIjtemaAttendancePanelP
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    return subscribeToIjtemaAttendanceStore(() => setVersion((value) => value + 1))
+    return subscribeToIjtemaAttendanceStore(() => setAttendanceVersion((value) => value + 1))
   }, [])
 
-  void setVersion
-
-  const connected = getAssignedKarkunanForRukn(ruknId)
+  const connected = useMemo(
+    () => getAssignedKarkunanForRukn(ruknId),
+    [ruknId, assignmentVersion, getAssignedKarkunanForRukn],
+  )
   const weekEndingDate = getFilterWeekEndingDate(weekFilter)
   const weekOptions = useMemo(() => getIjtemaWeekFilterOptions(), [])
 
@@ -59,7 +60,7 @@ export function RuknIjtemaAttendancePanel({ ruknId }: RuknIjtemaAttendancePanelP
     setDraft(nextDraft)
     setRemarks(nextRemarks)
     setMessage('')
-  }, [connected, weekEndingDate])
+  }, [connected, weekEndingDate, attendanceVersion])
 
   if (connected.length === 0) {
     return null

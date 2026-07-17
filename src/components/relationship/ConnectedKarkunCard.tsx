@@ -83,7 +83,7 @@ export function ConnectedKarkunCard({ karkun, ruknId, visitPath }: ConnectedKark
             )}
             <p className="text-sm text-secondary">{karkun.area}</p>
           </div>
-          {guidance && <JourneyStageBadge stageId={guidance.currentStage} />}
+          {guidance && <JourneyStageBadge stageId={guidance.currentStage} variant="rukn" />}
         </div>
 
         {guidance && (

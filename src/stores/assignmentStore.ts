@@ -178,6 +178,16 @@ export function getAssignmentHistoryForKarkun(karkunId: string): AssignmentRecor
 }
 
 export function appendAssignment(record: AssignmentRecord): AssignmentRecord {
+  // ONE KARKUN = ONE ACTIVE RUKN — last-line store defense
+  if (record.status === 'Active') {
+    const existingActive = assignments.find(
+      (item) => item.karkunId === record.karkunId && item.status === 'Active',
+    )
+    if (existingActive) {
+      throw new Error('This Karkun is already connected to a Rukn. Use Transfer to reassign.')
+    }
+  }
+
   const operationId = createIncidentOperationId('assignment-append')
   traceMutation({
     operationId,

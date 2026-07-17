@@ -16,7 +16,7 @@ import {
   validateKarkunMobile,
   validateRuknActive,
 } from '@/validation/assignmentValidation'
-import { subscribeToAssignmentStore } from '@/stores/assignmentStore'
+import { subscribeToAssignmentStore, getActiveAssignmentsForKarkun } from '@/stores/assignmentStore'
 import type { RemovalReason, ReplacementReason } from '@/types/assignment'
 import type { AssignedBy, ReleaseReason } from '@/types/assignment.types'
 import type { AssignmentRecord, AssignmentResult } from '@/types/assignment'
@@ -32,10 +32,19 @@ export const subscribeToAssignments = subscribeToAssignmentStore
 
 export function getAssignedKarkunanForRukn(ruknId: string): KarkunRegistryRecord[] {
   // One Rukn may hold many active Karkuns — return every active assignment's Karkun.
-  return getAssignmentHistoryForRukn(ruknId)
-    .filter((record) => record.status === 'Active')
-    .map((record) => getKarkunById(record.karkunId))
-    .filter((karkun): karkun is KarkunRegistryRecord => Boolean(karkun && !karkun.isArchived))
+  // Deduplicate by karkunId so duplicate Active rows never render twice.
+  const seen = new Set<string>()
+  const result: KarkunRegistryRecord[] = []
+  for (const record of getAssignmentHistoryForRukn(ruknId)) {
+    if (record.status !== 'Active') continue
+    if (seen.has(record.karkunId)) continue
+    seen.add(record.karkunId)
+    const karkun = getKarkunById(record.karkunId)
+    if (karkun && !karkun.isArchived) {
+      result.push(karkun)
+    }
+  }
+  return result
 }
 
 export function getAvailableKarkunan(): KarkunRegistryRecord[] {
@@ -44,6 +53,7 @@ export function getAvailableKarkunan(): KarkunRegistryRecord[] {
       !karkun.isArchived &&
       karkun.status === 'active' &&
       karkun.assignmentStatus === 'Available' &&
+      getActiveAssignmentsForKarkun(karkun.id).length === 0 &&
       karkun.mobile.trim() &&
       isValidMobileFormat(normalizeMobile(karkun.mobile)),
   )
@@ -280,6 +290,7 @@ export function canAssignKarkun(karkunId: string): boolean {
       !karkun.isArchived &&
       karkun.status === 'active' &&
       karkun.assignmentStatus === 'Available' &&
+      getActiveAssignmentsForKarkun(karkunId).length === 0 &&
       karkun.mobile.trim() &&
       isValidMobileFormat(normalizeMobile(karkun.mobile)),
   )

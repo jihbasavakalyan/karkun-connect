@@ -38,7 +38,7 @@ export function RelationshipSummaryPanel({
           <div className="relationship-summary-item">
             <dt>Journey</dt>
             <dd>
-              <JourneyStageBadge stageId={journeyStageId} />
+              <JourneyStageBadge stageId={journeyStageId} variant="rukn" />
             </dd>
           </div>
         )}

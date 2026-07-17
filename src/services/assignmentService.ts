@@ -297,15 +297,26 @@ export function assignRukn(input: AssignInput): AssignmentResult {
     return { success: false, error: validation.error }
   }
 
-  const assignment = appendAssignment(
-    createAssignmentRecord({
-      ruknId: input.ruknId,
-      karkunId: input.karkunId,
-      effectiveFrom: input.effectiveFrom,
-      assignedBy: input.assignedBy,
-      remarks: input.remarks,
-    }),
-  )
+  let assignment
+  try {
+    assignment = appendAssignment(
+      createAssignmentRecord({
+        ruknId: input.ruknId,
+        karkunId: input.karkunId,
+        effectiveFrom: input.effectiveFrom,
+        assignedBy: input.assignedBy,
+        remarks: input.remarks,
+      }),
+    )
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : 'This Karkun is already connected to a Rukn. Use Transfer to reassign.',
+    }
+  }
 
   syncKarkunRegistryFromAssignments(input.karkunId)
 
@@ -355,15 +366,26 @@ export function replaceAssignment(input: ReplaceInput): AssignmentResult {
 
   syncKarkunRegistryFromAssignments(current.karkunId)
 
-  const newAssignment = appendAssignment(
-    createAssignmentRecord({
-      ruknId: input.ruknId,
-      karkunId: input.newKarkunId,
-      effectiveFrom: input.effectiveFrom,
-      assignedBy: input.assignedBy,
-      remarks: input.remarks,
-    }),
-  )
+  let newAssignment
+  try {
+    newAssignment = appendAssignment(
+      createAssignmentRecord({
+        ruknId: input.ruknId,
+        karkunId: input.newKarkunId,
+        effectiveFrom: input.effectiveFrom,
+        assignedBy: input.assignedBy,
+        remarks: input.remarks,
+      }),
+    )
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : 'This Karkun is already connected to a Rukn. Use Transfer to reassign.',
+    }
+  }
 
   syncKarkunRegistryFromAssignments(input.newKarkunId)
 

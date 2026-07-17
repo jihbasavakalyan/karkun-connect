@@ -1,0 +1,11 @@
+{
+  "ruknId": "R001",
+  "assignedCount": 0,
+  "sameReferenceAcrossCalls": false,
+  "effectDepWouldChangeEveryRender": true,
+  "source": {
+    "panel": "src/components/home/RuknIjtemaAttendancePanel.tsx",
+    "badDep": "useEffect(..., [connected, weekEndingDate])",
+    "unstableValue": "connected = getAssignedKarkunanForRukn(ruknId) // new array every render"
+  }
+}

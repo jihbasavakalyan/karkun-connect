@@ -3,6 +3,12 @@ import type { AdminMissionControlModel } from '@/lib/missionControl/buildAdminMi
 import type { RuknMissionControlModel } from '@/lib/missionControl/buildRuknMissionControl'
 import { adminRuknDetailPath, ROUTES, adminCompliancePath, adminExecutionPath } from '@/constants/routes'
 import { McProgressRing, leaderboardStatus } from './McProgressRing'
+import { MyKarkunProgress } from '@/components/relationship/MyKarkunProgress'
+import {
+  RUKN_PROGRESS_LABELS,
+  RUKN_PROGRESS_SHORT_LABELS,
+  type RuknProgressStageId,
+} from '@/lib/ruknProgressPresentation'
 import type { JourneyStageId } from '@/types/guidance'
 
 type AdminMissionControlPanelsProps = {
@@ -232,8 +238,17 @@ type RuknMissionControlPanelsProps = {
 }
 
 export function RuknMissionControlPanels({ model }: RuknMissionControlPanelsProps) {
-  const funnelStages = model.journeyFunnel.filter((stage) => FUNNEL_FOCUS.includes(stage.stageId))
-  const maxFunnel = Math.max(...funnelStages.map((stage) => stage.count), 1)
+  const funnelStages = model.journeyFunnel
+    .filter((stage) => FUNNEL_FOCUS.includes(stage.stageId))
+    .map((stage) => {
+      const stageId = stage.stageId as RuknProgressStageId
+      return {
+        stageId,
+        label: RUKN_PROGRESS_LABELS[stageId] ?? stage.label,
+        shortLabel: RUKN_PROGRESS_SHORT_LABELS[stageId] ?? stage.label,
+        count: stage.count,
+      }
+    })
   const attendanceTotal =
     model.attendanceStrip.present +
     model.attendanceStrip.absent +
@@ -243,32 +258,16 @@ export function RuknMissionControlPanels({ model }: RuknMissionControlPanelsProp
     attendanceTotal === 0
       ? 0
       : Math.round((model.attendanceStrip.present / Math.max(attendanceTotal, 1)) * 100)
+  const totalConnected = model.kpis.find((kpi) => kpi.id === 'my-connected')
+  const connectedCount =
+    typeof totalConnected?.value === 'number'
+      ? totalConnected.value
+      : funnelStages.reduce((sum, stage) => sum + stage.count, 0)
 
   return (
     <div className="mc-panels">
-      <section className="mc-panel mc-panel-wide mc-panel-funnel">
-        <h2 className="mc-panel-title">Journey Funnel</h2>
-        <ol className="mc-funnel-flow">
-          {funnelStages.map((stage, index) => (
-            <li key={stage.stageId} className={`mc-funnel-stage ${FUNNEL_TONE[stage.stageId] ?? ''}`}>
-              <div className="mc-funnel-stage-head">
-                <span className="mc-funnel-stage-label">{stage.label}</span>
-                <span className="mc-funnel-stage-count">{stage.count}</span>
-              </div>
-              <div className="mc-progress-track mc-progress-track-lg">
-                <div
-                  className="mc-progress-fill"
-                  style={{ width: `${(stage.count / maxFunnel) * 100}%` }}
-                />
-              </div>
-              {index < funnelStages.length - 1 ? (
-                <span className="mc-funnel-arrow" aria-hidden="true">
-                  ↓
-                </span>
-              ) : null}
-            </li>
-          ))}
-        </ol>
+      <section className="mc-panel mc-panel-wide !p-0 !shadow-none !bg-transparent">
+        <MyKarkunProgress stages={funnelStages} totalConnected={connectedCount} />
       </section>
 
       <section className="mc-panel mc-panel-primary">

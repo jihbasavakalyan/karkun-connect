@@ -1,0 +1,472 @@
+{
+  "title": "KC-007.3 Runtime Click Investigation",
+  "ruknIdUsed": "R001",
+  "comparison": {
+    "homeHasMcQuickActions": true,
+    "visitHasMcQuickActions": false,
+    "visitLiteralHasMcQuickActions": false,
+    "homeHasTodaysMission": true,
+    "visitHasTodaysMission": false
+  },
+  "home": {
+    "path": "/rukn",
+    "evidence": {
+      "pathname": "/rukn",
+      "hasMcHero": true,
+      "hasMcQuickActions": true,
+      "hasTodaysMissionCopy": true,
+      "hasAskRafeeq": true,
+      "missionFiber": [
+        "RuknMissionControlHero",
+        "RuknHomePage",
+        "Route",
+        "RenderedRoute",
+        "Memo/ForwardRef",
+        "Outlet",
+        "RuknLayout",
+        "Route",
+        "RenderedRoute",
+        "Routes",
+        "Location",
+        "Navigation",
+        "Router",
+        "MemoryRouter",
+        "Memo/ForwardRef",
+        "RuntimeProvider",
+        "Memo/ForwardRef",
+        "AuthShell",
+        "AppTree"
+      ],
+      "quickNavFiber": [
+        "MissionControlQuickActions",
+        "RuknMissionControlHero",
+        "RuknHomePage",
+        "Route",
+        "RenderedRoute",
+        "Memo/ForwardRef",
+        "Outlet",
+        "RuknLayout",
+        "Route",
+        "RenderedRoute",
+        "Routes",
+        "Location",
+        "Navigation",
+        "Router",
+        "MemoryRouter",
+        "Memo/ForwardRef",
+        "RuntimeProvider",
+        "Memo/ForwardRef",
+        "AuthShell",
+        "AppTree"
+      ],
+      "quickButtons": [
+        {
+          "text": "Connect",
+          "tag": "BUTTON",
+          "disabled": false,
+          "className": "mc-quick-action",
+          "hasOnClickProp": true,
+          "fiberChain": [
+            "MissionControlQuickActions",
+            "RuknMissionControlHero",
+            "RuknHomePage",
+            "Route",
+            "RenderedRoute",
+            "Memo/ForwardRef",
+            "Outlet",
+            "RuknLayout",
+            "Route",
+            "RenderedRoute",
+            "Routes",
+            "Location",
+            "Navigation",
+            "Router",
+            "MemoryRouter",
+            "Memo/ForwardRef",
+            "RuntimeProvider",
+            "Memo/ForwardRef",
+            "AuthShell",
+            "AppTree"
+          ]
+        },
+        {
+          "text": "Connected",
+          "tag": "BUTTON",
+          "disabled": false,
+          "className": "mc-quick-action",
+          "hasOnClickProp": true,
+          "fiberChain": [
+            "MissionControlQuickActions",
+            "RuknMissionControlHero",
+            "RuknHomePage",
+            "Route",
+            "RenderedRoute",
+            "Memo/ForwardRef",
+            "Outlet",
+            "RuknLayout",
+            "Route",
+            "RenderedRoute",
+            "Routes",
+            "Location",
+            "Navigation",
+            "Router",
+            "MemoryRouter",
+            "Memo/ForwardRef",
+            "RuntimeProvider",
+            "Memo/ForwardRef",
+            "AuthShell",
+            "AppTree"
+          ]
+        },
+        {
+          "text": "Record",
+          "tag": "BUTTON",
+          "disabled": false,
+          "className": "mc-quick-action",
+          "hasOnClickProp": true,
+          "fiberChain": [
+            "MissionControlQuickActions",
+            "RuknMissionControlHero",
+            "RuknHomePage",
+            "Route",
+            "RenderedRoute",
+            "Memo/ForwardRef",
+            "Outlet",
+            "RuknLayout",
+            "Route",
+            "RenderedRoute",
+            "Routes",
+            "Location",
+            "Navigation",
+            "Router",
+            "MemoryRouter",
+            "Memo/ForwardRef",
+            "RuntimeProvider",
+            "Memo/ForwardRef",
+            "AuthShell",
+            "AppTree"
+          ]
+        },
+        {
+          "text": "Record Visit",
+          "tag": "BUTTON",
+          "disabled": false,
+          "className": "mc-quick-action",
+          "hasOnClickProp": true,
+          "fiberChain": [
+            "MissionControlQuickActions",
+            "RuknMissionControlHero",
+            "RuknHomePage",
+            "Route",
+            "RenderedRoute",
+            "Memo/ForwardRef",
+            "Outlet",
+            "RuknLayout",
+            "Route",
+            "RenderedRoute",
+            "Routes",
+            "Location",
+            "Navigation",
+            "Router",
+            "MemoryRouter",
+            "Memo/ForwardRef",
+            "RuntimeProvider",
+            "Memo/ForwardRef",
+            "AuthShell",
+            "AppTree"
+          ]
+        }
+      ],
+      "bottomNavLinks": [
+        {
+          "text": "Home",
+          "href": "/rukn",
+          "fiberChain": [
+            "Link",
+            "NavLink",
+            "RuknLayout",
+            "Route",
+            "RenderedRoute",
+            "Routes",
+            "Location",
+            "Navigation",
+            "Router",
+            "MemoryRouter",
+            "Memo/ForwardRef",
+            "RuntimeProvider"
+          ]
+        },
+        {
+          "text": "Connect",
+          "href": "/rukn/available-karkun",
+          "fiberChain": [
+            "Link",
+            "NavLink",
+            "RuknLayout",
+            "Route",
+            "RenderedRoute",
+            "Routes",
+            "Location",
+            "Navigation",
+            "Router",
+            "MemoryRouter",
+            "Memo/ForwardRef",
+            "RuntimeProvider"
+          ]
+        },
+        {
+          "text": "Connected",
+          "href": "/rukn/my-karkun",
+          "fiberChain": [
+            "Link",
+            "NavLink",
+            "RuknLayout",
+            "Route",
+            "RenderedRoute",
+            "Routes",
+            "Location",
+            "Navigation",
+            "Router",
+            "MemoryRouter",
+            "Memo/ForwardRef",
+            "RuntimeProvider"
+          ]
+        },
+        {
+          "text": "Record",
+          "href": "/rukn/campaign-record",
+          "fiberChain": [
+            "Link",
+            "NavLink",
+            "RuknLayout",
+            "Route",
+            "RenderedRoute",
+            "Routes",
+            "Location",
+            "Navigation",
+            "Router",
+            "MemoryRouter",
+            "Memo/ForwardRef",
+            "RuntimeProvider"
+          ]
+        }
+      ],
+      "bodyTextSample": "karkun-connect\nRuqia Tahaniyat\nRukn PortalLogout\nفعال کارکن، فعال جماعتDay 1 of 9\n18 Jul 2026 — 26 Jul 2026\nToday's Mission\nYou're all caught up\nAll connected Karkuns are up to date for today.Start mission\n0%Attendance\nToday's Plan\nNo scheduled items yet.\nConnectConnectedRecordRecord Visit\nAsk Digital Rafeeq\nVoice Assistant\nStatus · ReadyOpen Assistant\nMy Connected0RemainingConnect moreOpen ConnectVisits Due0Attendance0/00 not recordedBait-ul-Maal0Pending this monthDevelopment Progress0Assessments due\nJourney Funnel\nConnected0↓JIH Registration0↓Orientation0↓Participation0↓Tarbiyah & Development0\nToday's Visits\nNo visits scheduled in today’s timeline.\nAttendance Strip\n0%Present\nPresent · 0Absent · 0Excused · 0Not recorded · 0\nMonthly Target\n0Connected100%Bait-ul-Maal0Dev due\nRecent Activity\nNo recent activity.\nHomeConnectConnectedRecord"
+    },
+    "clickTrace": {
+      "attempted": true,
+      "stages": [
+        "click-capture",
+        "click-bubble"
+      ],
+      "beforePath": "/rukn",
+      "afterPath": "/rukn",
+      "navigated": false,
+      "overlays": {
+        "x": 0,
+        "y": 0,
+        "coveringCandidates": []
+      }
+    }
+  },
+  "visit": {
+    "path": "/rukn/visit/K001",
+    "evidence": {
+      "pathname": "/rukn/visit/K001",
+      "hasMcHero": false,
+      "hasMcQuickActions": false,
+      "hasTodaysMissionCopy": false,
+      "hasAskRafeeq": false,
+      "missionFiber": [],
+      "quickNavFiber": [],
+      "quickButtons": [],
+      "bottomNavLinks": [
+        {
+          "text": "Home",
+          "href": "/rukn",
+          "fiberChain": [
+            "Link",
+            "NavLink",
+            "RuknLayout",
+            "Route",
+            "RenderedRoute",
+            "Routes",
+            "Location",
+            "Navigation",
+            "Router",
+            "MemoryRouter",
+            "Memo/ForwardRef",
+            "RuntimeProvider"
+          ]
+        },
+        {
+          "text": "Connect",
+          "href": "/rukn/available-karkun",
+          "fiberChain": [
+            "Link",
+            "NavLink",
+            "RuknLayout",
+            "Route",
+            "RenderedRoute",
+            "Routes",
+            "Location",
+            "Navigation",
+            "Router",
+            "MemoryRouter",
+            "Memo/ForwardRef",
+            "RuntimeProvider"
+          ]
+        },
+        {
+          "text": "Connected",
+          "href": "/rukn/my-karkun",
+          "fiberChain": [
+            "Link",
+            "NavLink",
+            "RuknLayout",
+            "Route",
+            "RenderedRoute",
+            "Routes",
+            "Location",
+            "Navigation",
+            "Router",
+            "MemoryRouter",
+            "Memo/ForwardRef",
+            "RuntimeProvider"
+          ]
+        },
+        {
+          "text": "Record",
+          "href": "/rukn/campaign-record",
+          "fiberChain": [
+            "Link",
+            "NavLink",
+            "RuknLayout",
+            "Route",
+            "RenderedRoute",
+            "Routes",
+            "Location",
+            "Navigation",
+            "Router",
+            "MemoryRouter",
+            "Memo/ForwardRef",
+            "RuntimeProvider"
+          ]
+        }
+      ],
+      "bodyTextSample": "karkun-connect\nRuqia Tahaniyat\nRukn PortalLogout\nفعال کارکن، فعال جماعتDay 1 of 9\n18 Jul 2026 — 26 Jul 2026\nKarkun Not Found\nThis Karkun is not in the registry.Back to Connected Karkuns\nHomeConnectConnectedRecord"
+    },
+    "clickTrace": {
+      "attempted": false,
+      "note": "No .mc-quick-action Connect button mounted",
+      "anyConnectInBottomNav": true,
+      "overlaysAtHeroArea": {
+        "x": 0,
+        "y": 0,
+        "coveringCandidates": []
+      }
+    }
+  },
+  "visitLiteral": {
+    "path": "/rukn/visit/:id",
+    "evidence": {
+      "pathname": "/rukn/visit/:id",
+      "hasMcHero": false,
+      "hasMcQuickActions": false,
+      "hasTodaysMissionCopy": false,
+      "hasAskRafeeq": false,
+      "missionFiber": [],
+      "quickNavFiber": [],
+      "quickButtons": [],
+      "bottomNavLinks": [
+        {
+          "text": "Home",
+          "href": "/rukn",
+          "fiberChain": [
+            "Link",
+            "NavLink",
+            "RuknLayout",
+            "Route",
+            "RenderedRoute",
+            "Routes",
+            "Location",
+            "Navigation",
+            "Router",
+            "MemoryRouter",
+            "Memo/ForwardRef",
+            "RuntimeProvider"
+          ]
+        },
+        {
+          "text": "Connect",
+          "href": "/rukn/available-karkun",
+          "fiberChain": [
+            "Link",
+            "NavLink",
+            "RuknLayout",
+            "Route",
+            "RenderedRoute",
+            "Routes",
+            "Location",
+            "Navigation",
+            "Router",
+            "MemoryRouter",
+            "Memo/ForwardRef",
+            "RuntimeProvider"
+          ]
+        },
+        {
+          "text": "Connected",
+          "href": "/rukn/my-karkun",
+          "fiberChain": [
+            "Link",
+            "NavLink",
+            "RuknLayout",
+            "Route",
+            "RenderedRoute",
+            "Routes",
+            "Location",
+            "Navigation",
+            "Router",
+            "MemoryRouter",
+            "Memo/ForwardRef",
+            "RuntimeProvider"
+          ]
+        },
+        {
+          "text": "Record",
+          "href": "/rukn/campaign-record",
+          "fiberChain": [
+            "Link",
+            "NavLink",
+            "RuknLayout",
+            "Route",
+            "RenderedRoute",
+            "Routes",
+            "Location",
+            "Navigation",
+            "Router",
+            "MemoryRouter",
+            "Memo/ForwardRef",
+            "RuntimeProvider"
+          ]
+        }
+      ],
+      "bodyTextSample": "karkun-connect\nRuqia Tahaniyat\nRukn PortalLogout\nفعال کارکن، فعال جماعتDay 1 of 9\n18 Jul 2026 — 26 Jul 2026\nKarkun Not Found\nThis Karkun is not in the registry.Back to Connected Karkuns\nHomeConnectConnectedRecord"
+    },
+    "clickTrace": {
+      "attempted": false,
+      "note": "No .mc-quick-action Connect button mounted",
+      "anyConnectInBottomNav": true,
+      "overlaysAtHeroArea": {
+        "x": 0,
+        "y": 0,
+        "coveringCandidates": []
+      }
+    }
+  },
+  "conclusionHints": {
+    "ifVisitLacksMcQuick": "ConnectionJourneyPage does not mount MissionControlQuickActions at runtime in this harness.",
+    "ifHomeClickNavigates": "MissionControlQuickActions onClick→navigate works when mounted on Home."
+  }
+}

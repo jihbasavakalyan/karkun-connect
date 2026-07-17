@@ -2,13 +2,18 @@ import { useMemo, useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import { ROUTES } from '@/constants/routes'
 import { ExecutionSuccessBanner } from '@/components/execution/ExecutionSuccessBanner'
-import { ConnectedKarkunCard, KarkunSearchField } from '@/components/relationship'
+import {
+  ConnectedKarkunCard,
+  KarkunSearchField,
+  MyKarkunProgress,
+} from '@/components/relationship'
 import { EmptyState, PageHeader, PageShell } from '@/components/ui'
 import { ExecutionGuidanceCard } from '@/features/digitalRafeeq/contextual'
 import { useRequiredRuknId } from '@/hooks/useRequiredRuknId'
 import { useAuth } from '@/hooks/useAuth'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { matchesKarkunRegistrySearch } from '@/lib/relationshipPresentation'
+import { buildRuknProgressStages } from '@/lib/ruknProgressPresentation'
 import { sortGuidanceByUrgency } from '@/lib/homePresentation'
 import { getGuidanceForRuknKarkuns } from '@/lib/guidance/guidanceEngine'
 
@@ -18,6 +23,11 @@ export function MyKarkunPage() {
   const { getAssignedKarkunanForRukn } = useAssignmentEngine()
   const myKarkunan = getAssignedKarkunanForRukn(ruknId ?? '')
   const [query, setQuery] = useState('')
+
+  const progressStages = useMemo(
+    () => (ruknId ? buildRuknProgressStages(ruknId) : []),
+    [ruknId, myKarkunan],
+  )
 
   const sortedKarkuns = useMemo(() => {
     if (!ruknId) return []
@@ -46,45 +56,53 @@ export function MyKarkunPage() {
     <PageShell variant="narrow" className="relationship-page max-w-3xl">
       <PageHeader
         title="Connected Karkuns"
-        description="Guide each connection — call, visit, or schedule without leaving this page."
+        description="See progress at a glance, then work your list."
       />
 
       <ExecutionSuccessBanner />
 
+      {myKarkunan.length > 0 ? (
+        <MyKarkunProgress stages={progressStages} totalConnected={myKarkunan.length} />
+      ) : null}
+
+      <div className="space-y-3">
+        <h2 className="rukn-my-karkuns-heading">My Karkuns</h2>
+
+        {myKarkunan.length > 0 && (
+          <KarkunSearchField
+            id="connected-karkun-search"
+            value={query}
+            onChange={setQuery}
+            resultCount={query.trim() ? filtered.length : undefined}
+            sticky
+          />
+        )}
+
+        {myKarkunan.length === 0 ? (
+          <EmptyState
+            icon="users"
+            title="No connections yet"
+            description="Connect with a Karkun to begin guiding them through the campaign journey."
+            primaryAction={{ label: 'Connect Karkun', href: ROUTES.RUKN_AVAILABLE_KARKUN }}
+          />
+        ) : filtered.length === 0 ? (
+          <EmptyState
+            icon="search"
+            title="No matches"
+            description={`No connected Karkun matches "${query}". Try a different name or number.`}
+          />
+        ) : (
+          <ul className="relationship-row-list">
+            {filtered.map((karkun) => (
+              <li key={karkun.id}>
+                <ConnectedKarkunCard karkun={karkun} ruknId={ruknId} />
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
       <ExecutionGuidanceCard route="/rukn/my-karkun" role="rukn" />
-
-      {myKarkunan.length > 0 && (
-        <KarkunSearchField
-          id="connected-karkun-search"
-          value={query}
-          onChange={setQuery}
-          resultCount={query.trim() ? filtered.length : undefined}
-          sticky
-        />
-      )}
-
-      {myKarkunan.length === 0 ? (
-        <EmptyState
-          icon="users"
-          title="No connections yet"
-          description="Connect with a Karkun to begin guiding them through the campaign journey."
-          primaryAction={{ label: 'Connect Karkun', href: ROUTES.RUKN_AVAILABLE_KARKUN }}
-        />
-      ) : filtered.length === 0 ? (
-        <EmptyState
-          icon="search"
-          title="No matches"
-          description={`No connected Karkun matches "${query}". Try a different name or number.`}
-        />
-      ) : (
-        <ul className="relationship-row-list">
-          {filtered.map((karkun) => (
-            <li key={karkun.id}>
-              <ConnectedKarkunCard karkun={karkun} ruknId={ruknId} />
-            </li>
-          ))}
-        </ul>
-      )}
     </PageShell>
   )
 }

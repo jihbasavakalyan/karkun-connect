@@ -2,6 +2,7 @@ import { MOCK_KARKUN_REGISTRY } from '@/constants/mockKarkunRegistry'
 import { ensureRegistration } from '@/services/jihWebPortalService'
 import { ensureBaitulMaalRecord } from '@/services/baitulMaalService'
 import { ensureIjtemaAttendanceRecord } from '@/services/ijtemaAttendanceService'
+import { getActiveAssignmentsForKarkun } from '@/stores/assignmentStore'
 import {
   getNextRuknId,
   getRuknById,
@@ -583,7 +584,8 @@ export function getCompatibleKarkunsForRukn(ruknId: string): KarkunRegistryRecor
     (k) =>
       k.status === 'active' &&
       k.gender === rukn.gender &&
-      k.assignmentStatus === 'Available',
+      k.assignmentStatus === 'Available' &&
+      getActiveAssignmentsForKarkun(k.id).length === 0,
   )
 }
 

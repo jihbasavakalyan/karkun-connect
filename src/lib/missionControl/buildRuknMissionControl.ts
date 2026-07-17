@@ -43,7 +43,7 @@ export function buildRuknMissionControl(
   snapshot: RuknCommandCenterSnapshot,
 ): RuknMissionControlModel {
   const assignments = getActiveAssignmentsForRukn(ruknId)
-  const connectedIds = assignments.map((record) => record.karkunId)
+  const connectedIds = [...new Set(assignments.map((record) => record.karkunId))]
   const guidance = getGuidanceForRuknKarkuns(ruknId)
   const baitulMaal = getRuknBaitulMaalMetrics(connectedIds)
 
@@ -74,19 +74,23 @@ export function buildRuknMissionControl(
     /visit|meeting/i.test(item.title),
   ).length
 
+  const registrationPending = stageCounts.get('jih-registration') ?? 0
+  const tarbiyatiPending = stageCounts.get('orientation') ?? 0
+  const ijtemaParticipationPending = stageCounts.get('participation') ?? 0
+  const ijtemaAttention = Math.max(absent + notRecorded, ijtemaParticipationPending)
+
   const developmentDue = connectedIds.filter((karkunId) => {
     const stage = guidance.find((item) => item.karkunId === karkunId)?.currentStage
     if (stage !== 'development') return false
     return !getDevelopmentAssessment(karkunId)?.indicators.ready_for_next_stage
   }).length
 
-  const availablePoolHint = Math.max(0, 0) // Remaining for this Rukn = not assigned to them; show connect CTA
-  void availablePoolHint
+  const todayWork = resolveTodayWorkAction(snapshot)
 
   return {
     missionTitle: snapshot.nextAction.title,
     missionDetail: snapshot.nextAction.description,
-    missionRoute: snapshot.nextAction.route || ROUTES.RUKN_MY_KARKUN,
+    missionRoute: todayWork.route,
     planItems: snapshot.schedule.slice(0, 6).map((item) => ({
       id: item.id,
       title: item.title,
@@ -96,55 +100,36 @@ export function buildRuknMissionControl(
     kpis: [
       {
         id: 'my-connected',
-        label: 'My Connected',
+        label: 'Assigned to Me',
         value: connectedIds.length,
-        route: ROUTES.RUKN_MY_KARKUN,
-      },
-      {
-        id: 'remaining',
-        label: 'Remaining',
-        value: 'Connect more',
-        hint: 'Open Connect',
-        route: ROUTES.RUKN_AVAILABLE_KARKUN,
+        hint: 'Connected Karkuns',
       },
       {
         id: 'visits-due',
-        label: 'Visits Due',
+        label: 'Visits Today',
         value: visitsDue,
-        route: ROUTES.RUKN_MY_KARKUN,
+        hint: visitsDue > 0 ? 'Require a visit' : 'None queued',
       },
       {
-        id: 'attendance',
-        label: 'Attendance',
-        value: `${present}/${connectedIds.length || 0}`,
-        hint: `${notRecorded} not recorded`,
-        route: ROUTES.RUKN,
+        id: 'registration-pending',
+        label: 'Registration Pending',
+        value: registrationPending,
+        hint: 'JIH registration',
       },
       {
-        id: 'baitul-maal',
-        label: 'Bait-ul-Maal',
-        value: baitulMaal.pending,
-        hint: 'Pending this month',
-        route: ROUTES.RUKN_MY_KARKUN,
+        id: 'tarbiyati-pending',
+        label: 'Participation in Tarbiyati Programme',
+        value: tarbiyatiPending,
+        hint: 'Need participation',
       },
       {
-        id: 'development',
-        label: 'Development Progress',
-        value: developmentDue,
-        hint: 'Assessments due',
-        route: ROUTES.RUKN_MY_KARKUN,
+        id: 'ijtema-attention',
+        label: 'Participation in Weekly Ijtema',
+        value: ijtemaAttention,
+        hint: 'Need participation / follow-up',
       },
     ],
-    quickActions: [
-      { id: 'connect', label: 'Connect', route: ROUTES.RUKN_AVAILABLE_KARKUN },
-      { id: 'connected', label: 'Connected', route: ROUTES.RUKN_MY_KARKUN },
-      { id: 'record', label: 'Record', route: ROUTES.RUKN_CAMPAIGN_RECORD },
-      {
-        id: 'record-visit',
-        label: 'Record Visit',
-        route: resolveRecordVisitRoute(snapshot),
-      },
-    ],
+    quickActions: [todayWork],
     journeyFunnel,
     todaysVisits: snapshot.schedule
       .filter((item) => item.karkunId || /visit|meeting/i.test(item.title))
@@ -198,5 +183,35 @@ function resolveRecordVisitRoute(snapshot: RuknCommandCenterSnapshot): string {
     return scheduledVisit.route
   }
 
-  return ROUTES.RUKN_MY_KARKUN
+  return snapshot.nextAction.route || ROUTES.RUKN_MY_KARKUN
+}
+
+/** Contextual CTA only — never module navigation (Connect / Connected / Record). */
+function resolveTodayWorkAction(snapshot: RuknCommandCenterSnapshot): MissionControlQuickAction {
+  const route = resolveRecordVisitRoute(snapshot)
+  const label = snapshot.nextAction.actionLabel?.trim()
+  const title = snapshot.nextAction.title?.trim() ?? ''
+
+  if (label && /continue/i.test(label)) {
+    return { id: 'continue-visit', label: 'Continue Visit', route }
+  }
+  if (label && /visit/i.test(label)) {
+    return { id: 'record-visit', label: label, route }
+  }
+  if (/visit/i.test(title) || route.includes('/visit/')) {
+    return { id: 'record-visit', label: 'Record Visit', route }
+  }
+  if (snapshot.nextAction.isCaughtUp) {
+    return {
+      id: 'today-work',
+      label: "Continue Today's Work",
+      route: ROUTES.RUKN_MY_KARKUN,
+    }
+  }
+
+  return {
+    id: 'today-work',
+    label: label || "Continue Today's Work",
+    route: snapshot.nextAction.route || ROUTES.RUKN_MY_KARKUN,
+  }
 }

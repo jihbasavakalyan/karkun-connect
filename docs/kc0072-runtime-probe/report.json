@@ -1,0 +1,95 @@
+{
+  "base": "http://127.0.0.1:5173",
+  "karkunId": "K001",
+  "steps": [
+    {
+      "step": "login",
+      "url": "http://127.0.0.1:5173/login",
+      "body": "karkun-connect\n\nCampaign Execution Platform\n\nPlan, execute, monitor and review the Karkun Campaign through a single digital platform.\n\nLogin\nAdministrator\nRukn\nEmail Address\nPassword\nRemember Me\nForgot Password?\nLogin\n\nVersion 1.0.0"
+    },
+    {
+      "step": "direct-visit",
+      "dump": {
+        "url": "http://127.0.0.1:5173/login",
+        "pathname": "/login",
+        "markers": {
+          "hasTodaysMission": false,
+          "hasConnectChip": false,
+          "hasRecordVisit": false,
+          "hasAskRafeeq": false,
+          "hasConnectionJourney": false,
+          "hasMcHero": false,
+          "hasMcQuick": false
+        },
+        "quickButtons": [],
+        "missionFiber": [],
+        "quickFiber": [],
+        "connectFiber": [],
+        "uniquePages": [],
+        "bodyPreview": "karkun-connect\n\nCampaign Execution Platform\n\nPlan, execute, monitor and review the Karkun Campaign through a single digital platform.\n\nLogin\nAdministrator\nRukn\nEmail Address\nPassword\nRemember Me\nForgot Password?\nLogin\n\nVersion 1.0.0",
+        "title": "karkun-connect",
+        "routerStateSummary": null
+      }
+    },
+    {
+      "step": "direct-home",
+      "dump": {
+        "url": "http://127.0.0.1:5173/login",
+        "pathname": "/login",
+        "markers": {
+          "hasTodaysMission": false,
+          "hasConnectChip": false,
+          "hasRecordVisit": false,
+          "hasAskRafeeq": false,
+          "hasConnectionJourney": false,
+          "hasMcHero": false,
+          "hasMcQuick": false
+        },
+        "quickButtons": [],
+        "missionFiber": [],
+        "quickFiber": [],
+        "connectFiber": [],
+        "uniquePages": [],
+        "bodyPreview": "karkun-connect\n\nCampaign Execution Platform\n\nPlan, execute, monitor and review the Karkun Campaign through a single digital platform.\n\nLogin\nAdministrator\nRukn\nEmail Address\nPassword\nRemember Me\nForgot Password?\nLogin\n\nVersion 1.0.0",
+        "title": "karkun-connect",
+        "routerStateSummary": null
+      }
+    },
+    {
+      "step": "production-visit",
+      "dump": {
+        "url": "https://karkun-connect.vercel.app/login",
+        "pathname": "/login",
+        "markers": {
+          "hasTodaysMission": false,
+          "hasConnectChip": false,
+          "hasRecordVisit": false,
+          "hasAskRafeeq": false,
+          "hasConnectionJourney": false,
+          "hasMcHero": false,
+          "hasMcQuick": false
+        },
+        "quickButtons": [],
+        "missionFiber": [],
+        "quickFiber": [],
+        "connectFiber": [],
+        "uniquePages": [],
+        "bodyPreview": "karkun-connect\n\nCampaign Execution Platform\n\nPlan, execute, monitor and review the Karkun Campaign through a single digital platform.\n\nLogin\nAdministrator\nRukn\nEmail Address\nPassword\nRemember Me\nForgot Password?\nLogin\n\nVersion 1.0.0",
+        "title": "karkun-connect",
+        "routerStateSummary": null
+      }
+    }
+  ],
+  "console": [
+    "[debug] [vite] connecting...",
+    "[debug] [vite] connected.",
+    "[info] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "[warning] [2026-07-17T18:39:31.531Z]  @firebase/firestore: Firestore (12.16.0): WebChannelConnection RPC 'Listen' stream 0x3bc849e7 transport errored. Name: undefined Message: undefined",
+    "[debug] [vite] connecting...",
+    "[debug] [vite] connected.",
+    "[info] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "[debug] [vite] connecting...",
+    "[debug] [vite] connected.",
+    "[info] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  ]
+}

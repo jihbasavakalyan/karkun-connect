@@ -64,7 +64,7 @@ export function RuknTodaysConnections({ ruknId, hasConnections }: RuknTodaysConn
                       <p className="mt-0.5 text-xs text-secondary">{karkun.area}</p>
                     )}
                   </div>
-                  <JourneyStageBadge stageId={guidance.currentStage} />
+                  <JourneyStageBadge stageId={guidance.currentStage} variant="rukn" />
                 </div>
 
                 <div className="mt-3 space-y-2">

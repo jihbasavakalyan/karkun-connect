@@ -116,7 +116,7 @@ export function validateKarkunAvailable(karkunId: string): ValidationResult {
   if (getActiveAssignmentsForKarkun(karkunId).length > 0) {
     return {
       valid: false,
-      error: 'This Karkun already has an active connection.',
+      error: 'This Karkun is already connected to a Rukn. Use Transfer to reassign.',
     }
   }
 
