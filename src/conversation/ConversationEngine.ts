@@ -14,6 +14,7 @@
  */
 
 import type { ConversationContext } from './ConversationContext'
+import type { ContextManagerBridge } from './context'
 import { createConversationEvent } from './ConversationEvents'
 import type { ConversationEvent } from './ConversationEvents'
 import {
@@ -34,6 +35,8 @@ import {
 
 export type ConversationEngineOptions = {
   registry?: ConversationRegistry
+  /** Injected context assembly — engine never accesses providers directly. */
+  contextManager?: ContextManagerBridge
 }
 
 export type ConversationEventListener = (event: ConversationEvent) => void
@@ -41,10 +44,12 @@ export type ConversationEventListener = (event: ConversationEvent) => void
 export class ConversationEngine {
   private session: ConversationSession | null = null
   private readonly registry: ConversationRegistry
+  private readonly contextManager?: ContextManagerBridge
   private readonly listeners = new Set<ConversationEventListener>()
 
   constructor(options: ConversationEngineOptions = {}) {
     this.registry = options.registry ?? createConversationRegistry()
+    this.contextManager = options.contextManager
   }
 
   getRegistry(): ConversationRegistry {
@@ -65,6 +70,23 @@ export class ConversationEngine {
 
   getPendingConfirmation(): PendingConfirmation | null {
     return this.session?.getPendingConfirmation() ?? null
+  }
+
+  /**
+   * Request assembled context from injected Context Manager.
+   * Engine does not know provider origins — only receives resolved ConversationContext.
+   */
+  requestContext(): ConversationContext | null {
+    if (!this.session) return null
+    if (this.contextManager) {
+      const snapshot = this.contextManager.provideContextFor(this)
+      return snapshot.getConversation()
+    }
+    return this.getContext()
+  }
+
+  hasContextManager(): boolean {
+    return this.contextManager !== undefined
   }
 
   onEvent(listener: ConversationEventListener): () => void {
