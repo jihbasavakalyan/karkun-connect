@@ -1,6 +1,6 @@
 export { AskDigitalRafeeqCard } from './AskDigitalRafeeqCard'
 export { AdminMissionControlHero } from './AdminMissionControlHero'
-export { RuknMissionControlHero } from './RuknMissionControlHero'
+export { RuknMissionControlHero, PrimaryMissionCta } from './RuknMissionControlHero'
 export { MissionControlKpiGrid } from './MissionControlKpiGrid'
 export { McProgressRing, leaderboardStatus } from './McProgressRing'
 export {

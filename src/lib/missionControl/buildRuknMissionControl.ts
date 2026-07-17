@@ -4,6 +4,7 @@
 
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { getGuidanceForRuknKarkuns } from '@/lib/guidance/guidanceEngine'
+import { buildRuknExecutionSummary } from '@/lib/executionStatus'
 import { getRuknBaitulMaalMetrics } from '@/services/baitulMaalService'
 import { getCurrentIjtemaAttendance } from '@/services/ijtemaAttendanceService'
 import { getDevelopmentAssessment } from '@/stores/developmentAssessmentStore'
@@ -70,15 +71,6 @@ export function buildRuknMissionControl(
     else notRecorded += 1
   }
 
-  const visitsDue = snapshot.schedule.filter((item) =>
-    /visit|meeting/i.test(item.title),
-  ).length
-
-  const registrationPending = stageCounts.get('jih-registration') ?? 0
-  const tarbiyatiPending = stageCounts.get('orientation') ?? 0
-  const ijtemaParticipationPending = stageCounts.get('participation') ?? 0
-  const ijtemaAttention = Math.max(absent + notRecorded, ijtemaParticipationPending)
-
   const developmentDue = connectedIds.filter((karkunId) => {
     const stage = guidance.find((item) => item.karkunId === karkunId)?.currentStage
     if (stage !== 'development') return false
@@ -86,6 +78,10 @@ export function buildRuknMissionControl(
   }).length
 
   const todayWork = resolveTodayWorkAction(snapshot)
+  const execution = buildRuknExecutionSummary(ruknId)
+  const workloadOpen =
+    execution.counts.pending + execution.counts.inProgress + execution.counts.followUpRequired
+  const todayTarget = Math.max(1, Math.min(3, workloadOpen || connectedIds.length || 1))
 
   return {
     missionTitle: snapshot.nextAction.title,
@@ -99,34 +95,34 @@ export function buildRuknMissionControl(
     })),
     kpis: [
       {
+        id: 'pending',
+        label: 'Pending',
+        value: execution.counts.pending,
+        hint: 'Visits waiting',
+      },
+      {
+        id: 'today-target',
+        label: "Today's Target",
+        value: todayTarget,
+        hint: 'Meaningful contacts',
+      },
+      {
+        id: 'completed-today',
+        label: 'Completed Today',
+        value: execution.counts.completedToday,
+        hint: 'Visits recorded today',
+      },
+      {
+        id: 'follow-ups',
+        label: 'Follow-ups Due',
+        value: execution.counts.followUpRequired,
+        hint: 'Need follow-up',
+      },
+      {
         id: 'my-connected',
         label: 'Assigned to Me',
         value: connectedIds.length,
         hint: 'Connected Karkuns',
-      },
-      {
-        id: 'visits-due',
-        label: 'Visits Today',
-        value: visitsDue,
-        hint: visitsDue > 0 ? 'Require a visit' : 'None queued',
-      },
-      {
-        id: 'registration-pending',
-        label: 'Registration Pending',
-        value: registrationPending,
-        hint: 'JIH registration',
-      },
-      {
-        id: 'tarbiyati-pending',
-        label: 'Participation in Tarbiyati Programme',
-        value: tarbiyatiPending,
-        hint: 'Need participation',
-      },
-      {
-        id: 'ijtema-attention',
-        label: 'Participation in Weekly Ijtema',
-        value: ijtemaAttention,
-        hint: 'Need participation / follow-up',
       },
     ],
     quickActions: [todayWork],
@@ -191,27 +187,28 @@ function resolveTodayWorkAction(snapshot: RuknCommandCenterSnapshot): MissionCon
   const route = resolveRecordVisitRoute(snapshot)
   const label = snapshot.nextAction.actionLabel?.trim()
   const title = snapshot.nextAction.title?.trim() ?? ''
+  const hasVisitRoute = route.includes('/visit/')
 
-  if (label && /continue/i.test(label)) {
-    return { id: 'continue-visit', label: 'Continue Visit', route }
-  }
-  if (label && /visit/i.test(label)) {
-    return { id: 'record-visit', label: label, route }
-  }
-  if (/visit/i.test(title) || route.includes('/visit/')) {
-    return { id: 'record-visit', label: 'Record Visit', route }
-  }
-  if (snapshot.nextAction.isCaughtUp) {
+  if (snapshot.nextAction.isCaughtUp && !hasVisitRoute) {
     return {
       id: 'today-work',
-      label: "Continue Today's Work",
+      label: "Continue Today's Mission",
       route: ROUTES.RUKN_MY_KARKUN,
+    }
+  }
+
+  if (hasVisitRoute || /visit/i.test(title) || (label && /visit/i.test(label))) {
+    const isContinue = Boolean(label && /continue/i.test(label))
+    return {
+      id: isContinue ? 'continue-visit' : 'start-visit',
+      label: isContinue ? "Continue Today's Mission" : 'Start First Visit',
+      route,
     }
   }
 
   return {
     id: 'today-work',
-    label: label || "Continue Today's Work",
+    label: label || "Continue Today's Mission",
     route: snapshot.nextAction.route || ROUTES.RUKN_MY_KARKUN,
   }
 }

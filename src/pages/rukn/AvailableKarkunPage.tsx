@@ -11,9 +11,16 @@ import {
   KarkunSearchField,
 } from '@/components/relationship'
 import { EmptyState, PageHeader, PageShell } from '@/components/ui'
+import { PlanningConversationModal } from '@/features/digitalRafeeq/planning'
 import { humanizeConnectionConfirmed } from '@/lib/relationshipPresentation'
 import { matchesKarkunRegistrySearch } from '@/lib/relationshipPresentation'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
+
+type PlanningTarget = {
+  karkunId: string
+  karkunName: string
+  assignmentId?: string
+}
 
 export function AvailableKarkunPage() {
   const { user } = useAuth()
@@ -25,6 +32,7 @@ export function AvailableKarkunPage() {
   const [pendingKarkun, setPendingKarkun] = useState<KarkunRegistryRecord | null>(null)
   const [error, setError] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
+  const [planning, setPlanning] = useState<PlanningTarget | null>(null)
 
   const filtered = useMemo(() => {
     void peopleVersion
@@ -39,9 +47,15 @@ export function AvailableKarkunPage() {
       setError(result.error)
       return
     }
+    const connected = pendingKarkun
     setSuccessMessage(humanizeConnectionConfirmed(result.assignment?.assignmentNumber))
     setPendingKarkun(null)
     setError('')
+    setPlanning({
+      karkunId: connected.id,
+      karkunName: connected.name,
+      assignmentId: result.assignment?.assignmentId,
+    })
   }
 
   if (!ruknId) {
@@ -115,6 +129,17 @@ export function AvailableKarkunPage() {
         }}
         onConfirm={handleConfirmConnect}
       />
+
+      {planning && ruknId ? (
+        <PlanningConversationModal
+          isOpen
+          karkunId={planning.karkunId}
+          karkunName={planning.karkunName}
+          ruknId={ruknId}
+          assignmentId={planning.assignmentId}
+          onClose={() => setPlanning(null)}
+        />
+      ) : null}
     </PageShell>
   )
 }

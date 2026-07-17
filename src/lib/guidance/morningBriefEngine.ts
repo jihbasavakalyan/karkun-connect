@@ -6,12 +6,12 @@ import type { MorningBrief } from '@/types/guidance'
 function greetingForHour(): string {
   const hour = new Date().getHours()
   if (hour < 12) {
-    return 'Good Morning'
+    return 'السلام علیکم — صبح بخیر'
   }
   if (hour < 17) {
-    return 'Good Afternoon'
+    return 'السلام علیکم — دن بخیر'
   }
-  return 'Good Evening'
+  return 'السلام علیکم — شام بخیر'
 }
 
 export function buildMorningBrief(ruknId: string): MorningBrief {

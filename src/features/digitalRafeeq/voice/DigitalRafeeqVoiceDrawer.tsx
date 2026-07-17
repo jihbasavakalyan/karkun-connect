@@ -225,11 +225,13 @@ export function DigitalRafeeqVoiceDrawer({
 
   return (
     <div className="dr-voice-overlay" role="presentation" onClick={onClose}>
-      <aside
-        className="dr-voice-drawer"
+        <aside
+        className="dr-voice-drawer urdu-text"
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
+        dir="rtl"
+        lang="ur"
         onClick={(event) => event.stopPropagation()}
       >
         <header className="dr-voice-header">

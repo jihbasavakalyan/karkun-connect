@@ -3,6 +3,7 @@ import { Navigate } from 'react-router-dom'
 import { ROUTES } from '@/constants/routes'
 import {
   AskDigitalRafeeqCard,
+  PrimaryMissionCta,
   RuknMissionControlHero,
   RuknMissionControlPanels,
   RuknTodaysVisitQueue,
@@ -41,6 +42,7 @@ export function RuknHomePage() {
     return <HomePageSkeleton />
   }
 
+  const primary = model.quickActions[0]
   const topGuidance = sortGuidanceByUrgency(getGuidanceForRuknKarkuns(ruknId))[0]
   const topKarkun = topGuidance ? getKarkunById(topGuidance.karkunId) : undefined
   const primaryCallHref = topKarkun?.mobile ? buildTelLink(topKarkun.mobile) ?? undefined : undefined
@@ -50,13 +52,29 @@ export function RuknHomePage() {
         undefined
       : undefined
 
+  const rafeeqLine = topKarkun
+    ? `آج ${topKarkun.name} سے رابطہ آپ کے مشن کا اہم حصہ ہو سکتا ہے — میں آپ کے ساتھ ہوں۔`
+    : undefined
+
   return (
-    <div className="cd-page cd-page-rukn mc-page mc-page-rukn-compact">
-      <RuknMissionControlHero model={model} greeting={morningBrief.greeting} />
+    <div className="cd-page cd-page-rukn mc-page mc-page-rukn-compact mc-page-execution">
+      <RuknMissionControlHero
+        model={model}
+        greeting={morningBrief.greeting}
+        missionLine={morningBrief.mission}
+      />
+
+      <AskDigitalRafeeqCard
+        featured
+        onOpen={openDigitalRafeeqAssistant}
+        guidanceLine={rafeeqLine}
+      />
+
+      {primary ? <PrimaryMissionCta label={primary.label} route={primary.route} /> : null}
+
       <RuknTodaysVisitQueue model={model} />
       <RuknMissionControlPanels model={model} />
       <RuknIjtemaAttendancePanel ruknId={ruknId} />
-      <AskDigitalRafeeqCard compact onOpen={openDigitalRafeeqAssistant} />
 
       <RuknFloatingActionButton
         nextAction={snapshot.nextAction}

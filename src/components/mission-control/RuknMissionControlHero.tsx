@@ -4,48 +4,78 @@ import { MissionControlActionButton } from './MissionControlQuickActions'
 type RuknMissionControlHeroProps = {
   model: RuknMissionControlModel
   greeting?: string
+  missionLine?: string
 }
 
-/** Short labels for dense summary strip (presentation only). */
-const SUMMARY_SHORT: Record<string, string> = {
-  'my-connected': 'Assigned',
-  'visits-due': 'Today',
-  'registration-pending': 'Registration',
-  'tarbiyati-pending': 'Pending',
-  'ijtema-attention': 'Ijtema',
+/** Compact execution chips — answers “what remains for me?” */
+const MISSION_CHIP_ORDER = [
+  'pending',
+  'today-target',
+  'completed-today',
+  'follow-ups',
+] as const
+
+const CHIP_FALLBACK_LABEL: Record<string, string> = {
+  pending: 'Pending',
+  'today-target': "Today's Target",
+  'completed-today': 'Completed Today',
+  'follow-ups': 'Follow-ups Due',
 }
 
-export function RuknMissionControlHero({ model, greeting }: RuknMissionControlHeroProps) {
-  const primary = model.quickActions[0]
+export function RuknMissionControlHero({
+  model,
+  greeting,
+  missionLine,
+}: RuknMissionControlHeroProps) {
+  const chips = model.kpis.filter((kpi) =>
+    (MISSION_CHIP_ORDER as readonly string[]).includes(kpi.id),
+  )
+  const displayChips = chips.length > 0 ? chips : model.kpis.slice(0, 4)
 
   return (
-    <header className="mc-hero mc-hero-rukn mc-hero-rukn-compact" aria-label="Rukn Mission Control">
-      <div className="mc-hero-rukn-top">
-        <div className="mc-hero-identity">
-          {greeting ? <p className="mc-hero-greeting">{greeting}</p> : null}
-          <p className="mc-eyebrow">Today&apos;s Mission</p>
-          <h1 className="mc-hero-title mc-hero-title-compact">{model.missionTitle}</h1>
-        </div>
-
-        {primary ? (
-          <div className="mc-quick-actions mc-quick-actions-contextual" aria-label="Today's work">
-            <MissionControlActionButton
-              label={primary.label}
-              route={primary.route}
-              className="mc-quick-action-primary"
-            />
-          </div>
+    <header
+      className="mc-hero mc-hero-rukn mc-hero-rukn-compact mc-hero-execution"
+      aria-label="Today's Mission"
+    >
+      <div className="mc-hero-identity">
+        {greeting ? (
+          <p className="mc-hero-greeting urdu-text" dir="rtl" lang="ur">
+            {greeting}
+          </p>
+        ) : null}
+        <p className="mc-eyebrow">Today&apos;s Mission</p>
+        <h1 className="mc-hero-title mc-hero-title-compact">{model.missionTitle}</h1>
+        {missionLine ? <p className="mc-hero-mission-line">{missionLine}</p> : null}
+        {model.missionDetail ? (
+          <p className="mc-caption mc-hero-detail">{model.missionDetail}</p>
         ) : null}
       </div>
 
-      <dl className="mc-mission-summary mc-mission-summary-dense" aria-label="Mission summary">
-        {model.kpis.map((kpi) => (
-          <div key={kpi.id} className="mc-mission-summary-item">
-            <dt>{SUMMARY_SHORT[kpi.id] ?? kpi.label}</dt>
+      <dl className="mc-mission-chips" aria-label="Mission summary">
+        {displayChips.map((kpi) => (
+          <div key={kpi.id} className="mc-mission-chip">
+            <dt>{CHIP_FALLBACK_LABEL[kpi.id] ?? kpi.label}</dt>
             <dd>{kpi.value}</dd>
           </div>
         ))}
       </dl>
     </header>
+  )
+}
+
+type PrimaryMissionCtaProps = {
+  label: string
+  route: string
+}
+
+export function PrimaryMissionCta({ label, route }: PrimaryMissionCtaProps) {
+  return (
+    <div className="mc-primary-mission-cta" aria-label="Primary action">
+      <MissionControlActionButton
+        label={label}
+        route={route}
+        className="mc-quick-action-primary mc-primary-mission-button"
+      />
+    </div>
   )
 }
