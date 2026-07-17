@@ -1,12 +1,13 @@
+import { useMemo } from 'react'
 import {
-  AdminCampaignContextPanel,
-  AdminHomeHero,
-  AdminOperationalHealthPanel,
-  AdminPriorityStrip,
-  AdminTodaysWorkPanel,
-} from '@/components/home'
-import { AdminAssistantPanel } from '@/features/digitalRafeeq/admin'
+  AdminMissionControlHero,
+  AdminMissionControlPanels,
+  AskDigitalRafeeqCard,
+  MissionControlKpiGrid,
+} from '@/components/mission-control'
+import { openDigitalRafeeqAssistant } from '@/features/digitalRafeeq/launcher'
 import { useCampaignAutomationEngine } from '@/hooks/useCampaignAutomationEngine'
+import { buildAdminMissionControl } from '@/lib/missionControl/buildAdminMissionControl'
 import type { AdminCommandCenterSnapshot } from '@/types/campaignAutomation.types'
 
 export function AdminHomePage() {
@@ -14,18 +15,14 @@ export function AdminHomePage() {
     role: 'administrator',
   }) as AdminCommandCenterSnapshot
 
+  const model = useMemo(() => buildAdminMissionControl(snapshot), [snapshot])
+
   return (
-    <div className="cd-page cd-page-admin">
-      <AdminHomeHero hero={snapshot.hero} />
-      <AdminPriorityStrip snapshot={snapshot} />
-
-      <AdminAssistantPanel />
-      <AdminOperationalHealthPanel snapshot={snapshot} />
-
-      <div className="cd-workspace">
-        <AdminTodaysWorkPanel snapshot={snapshot} />
-        <AdminCampaignContextPanel />
-      </div>
+    <div className="cd-page cd-page-admin mc-page">
+      <AdminMissionControlHero model={model} />
+      <AskDigitalRafeeqCard onOpen={openDigitalRafeeqAssistant} />
+      <MissionControlKpiGrid kpis={model.kpis} />
+      <AdminMissionControlPanels model={model} />
     </div>
   )
 }

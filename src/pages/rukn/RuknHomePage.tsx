@@ -1,22 +1,20 @@
+import { useMemo } from 'react'
 import { Navigate } from 'react-router-dom'
-import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { ROUTES } from '@/constants/routes'
 import {
-  RuknActivityFeed,
-  RuknBaitulMaalPanel,
-  RuknFloatingActionButton,
-  RuknHomeHero,
-  RuknIjtemaAttendancePanel,
-  RuknJourneyCompact,
-  RuknPeopleRows,
-  RuknScheduleTimeline,
-  RuknOperationalPanel,
-} from '@/components/home'
-import { RuknAssistantPanel } from '@/features/digitalRafeeq/rukn'
+  AskDigitalRafeeqCard,
+  MissionControlKpiGrid,
+  RuknMissionControlHero,
+  RuknMissionControlPanels,
+} from '@/components/mission-control'
+import { RuknFloatingActionButton, RuknIjtemaAttendancePanel } from '@/components/home'
+import { openDigitalRafeeqAssistant } from '@/features/digitalRafeeq/launcher'
 import { useRequiredRuknId } from '@/hooks/useRequiredRuknId'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { useCampaignAutomationEngine } from '@/hooks/useCampaignAutomationEngine'
 import { useGuidance } from '@/hooks/useGuidance'
+import { buildRuknMissionControl } from '@/lib/missionControl/buildRuknMissionControl'
+import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { buildTelLink, buildWhatsAppLink } from '@/utils/personContactLinks'
 import { sortGuidanceByUrgency } from '@/lib/homePresentation'
 import { getGuidanceForRuknKarkuns } from '@/lib/guidance/guidanceEngine'
@@ -32,38 +30,38 @@ export function RuknHomePage() {
     ruknId: ruknId ?? '',
   }) as RuknCommandCenterSnapshot
 
+  const model = useMemo(
+    () => (ruknId ? buildRuknMissionControl(ruknId, snapshot) : null),
+    [ruknId, snapshot],
+  )
+
   if (!ruknId) {
     return <Navigate to={ROUTES.LOGIN} replace />
   }
-  const connectedKarkuns = getAssignedKarkunanForRukn(ruknId)
-  const hasConnections = connectedKarkuns.length > 0
 
-  if (!morningBrief) {
+  if (!morningBrief || !model) {
     return <HomePageSkeleton />
   }
+
+  const connectedKarkuns = getAssignedKarkunanForRukn(ruknId)
+  void connectedKarkuns
 
   const topGuidance = sortGuidanceByUrgency(getGuidanceForRuknKarkuns(ruknId))[0]
   const topKarkun = topGuidance ? getKarkunById(topGuidance.karkunId) : undefined
   const primaryCallHref = topKarkun?.mobile ? buildTelLink(topKarkun.mobile) ?? undefined : undefined
   const primaryWhatsAppHref =
     topKarkun?.mobile || topKarkun?.whatsapp
-      ? buildWhatsAppLink(topKarkun.whatsapp?.trim() ? topKarkun.whatsapp : topKarkun.mobile) ?? undefined
+      ? buildWhatsAppLink(topKarkun.whatsapp?.trim() ? topKarkun.whatsapp : topKarkun.mobile) ??
+        undefined
       : undefined
 
   return (
-    <div className="cd-page cd-page-rukn">
-      <RuknHomeHero brief={morningBrief} hero={snapshot.hero} ruknId={ruknId} />
-      <RuknAssistantPanel />
-      <RuknOperationalPanel ruknId={ruknId} snapshot={snapshot} />
+    <div className="cd-page cd-page-rukn mc-page">
+      <RuknMissionControlHero model={model} />
+      <AskDigitalRafeeqCard onOpen={openDigitalRafeeqAssistant} />
+      <MissionControlKpiGrid kpis={model.kpis} />
+      <RuknMissionControlPanels model={model} />
       <RuknIjtemaAttendancePanel ruknId={ruknId} />
-      <RuknBaitulMaalPanel ruknId={ruknId} />
-      <RuknPeopleRows ruknId={ruknId} hasConnections={hasConnections} />
-      <RuknScheduleTimeline
-        schedule={snapshot.schedule}
-        completedToday={snapshot.completedToday.length}
-      />
-      <RuknJourneyCompact ruknId={ruknId} />
-      <RuknActivityFeed />
 
       <RuknFloatingActionButton
         nextAction={snapshot.nextAction}
