@@ -17,6 +17,19 @@ async function runDeferredBootstrap(): Promise<void> {
 
   const { runProductionDataMigration } = await import('@/services/productionDataMigrationService')
   runProductionDataMigration()
+
+  // Digital Rafeeq Runtime — passive enhancement; never blocks application readiness.
+  try {
+    const { initializeRuntime } = await import('@/runtime/bootstrap/initializeRuntime')
+    const runtimeResult = await initializeRuntime()
+    if (runtimeResult.status === 'Failed') {
+      console.warn('[bootstrap] Digital Rafeeq runtime failed', runtimeResult.errorMessage)
+    } else if (runtimeResult.status === 'Degraded') {
+      console.info('[bootstrap] Digital Rafeeq runtime degraded', runtimeResult.errorMessage)
+    }
+  } catch (error) {
+    console.warn('[bootstrap] Digital Rafeeq runtime initialization error', error)
+  }
 }
 
 function bootstrap(): void {

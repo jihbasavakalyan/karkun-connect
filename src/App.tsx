@@ -1,10 +1,13 @@
 import { AuthProvider } from '@/providers/AuthProvider'
+import { RuntimeProvider } from '@/runtime/bootstrap'
 import { AppRouter } from '@/routes/AppRouter'
 
 function App() {
   return (
     <AuthProvider>
-      <AppRouter />
+      <RuntimeProvider>
+        <AppRouter />
+      </RuntimeProvider>
     </AuthProvider>
   )
 }
