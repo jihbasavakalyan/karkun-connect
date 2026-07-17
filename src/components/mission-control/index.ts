@@ -4,6 +4,10 @@ export { RuknMissionControlHero } from './RuknMissionControlHero'
 export { MissionControlKpiGrid } from './MissionControlKpiGrid'
 export { McProgressRing, leaderboardStatus } from './McProgressRing'
 export {
+  MissionControlQuickActions,
+  MissionControlActionButton,
+} from './MissionControlQuickActions'
+export {
   AdminMissionControlPanels,
   RuknMissionControlPanels,
 } from './MissionControlPanels'

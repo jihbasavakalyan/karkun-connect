@@ -1,7 +1,7 @@
-import { Link } from 'react-router-dom'
 import type { AdminMissionControlModel } from '@/lib/missionControl/buildAdminMissionControl'
 import { formatCampaignWindowLabel } from '@/lib/missionControl/buildAdminMissionControl'
 import { McProgressRing } from './McProgressRing'
+import { MissionControlQuickActions } from './MissionControlQuickActions'
 
 type MissionControlHeroProps = {
   model: AdminMissionControlModel
@@ -53,13 +53,7 @@ export function AdminMissionControlHero({ model }: MissionControlHeroProps) {
         </div>
       </div>
 
-      <div className="mc-quick-actions" aria-label="Quick actions">
-        {model.quickActions.map((action) => (
-          <Link key={action.id} to={action.route} className="mc-quick-action">
-            {action.label}
-          </Link>
-        ))}
-      </div>
+      <MissionControlQuickActions actions={model.quickActions} />
     </header>
   )
 }

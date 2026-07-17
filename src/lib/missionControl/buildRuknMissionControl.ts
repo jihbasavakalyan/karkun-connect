@@ -140,9 +140,9 @@ export function buildRuknMissionControl(
       { id: 'connected', label: 'Connected', route: ROUTES.RUKN_MY_KARKUN },
       { id: 'record', label: 'Record', route: ROUTES.RUKN_CAMPAIGN_RECORD },
       {
-        id: 'mission',
-        label: snapshot.nextAction.actionLabel || 'Start Mission',
-        route: snapshot.nextAction.route || ROUTES.RUKN_MY_KARKUN,
+        id: 'record-visit',
+        label: 'Record Visit',
+        route: resolveRecordVisitRoute(snapshot),
       },
     ],
     journeyFunnel,
@@ -175,4 +175,28 @@ export function buildRuknMissionControl(
 export function resolveVisitTargetName(karkunId?: string): string {
   if (!karkunId) return 'Karkun'
   return getKarkunById(karkunId)?.name ?? 'Karkun'
+}
+
+/** Prefer an active visit workflow route; fall back to Connected Karkuns. */
+function resolveRecordVisitRoute(snapshot: RuknCommandCenterSnapshot): string {
+  const nextRoute = snapshot.nextAction.route?.trim()
+  if (
+    nextRoute &&
+    (/visit/i.test(snapshot.nextAction.actionLabel) ||
+      /visit/i.test(snapshot.nextAction.title) ||
+      nextRoute.includes('/visit/'))
+  ) {
+    return nextRoute
+  }
+
+  const scheduledVisit = snapshot.schedule.find((item) => item.karkunId)
+  if (scheduledVisit?.karkunId) {
+    return ruknVisitPath(scheduledVisit.karkunId)
+  }
+
+  if (scheduledVisit?.route) {
+    return scheduledVisit.route
+  }
+
+  return ROUTES.RUKN_MY_KARKUN
 }

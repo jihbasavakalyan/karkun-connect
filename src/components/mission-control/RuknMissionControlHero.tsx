@@ -1,6 +1,10 @@
 import { Link } from 'react-router-dom'
 import type { RuknMissionControlModel } from '@/lib/missionControl/buildRuknMissionControl'
 import { McProgressRing } from './McProgressRing'
+import {
+  MissionControlActionButton,
+  MissionControlQuickActions,
+} from './MissionControlQuickActions'
 
 type RuknMissionControlHeroProps = {
   model: RuknMissionControlModel
@@ -24,9 +28,11 @@ export function RuknMissionControlHero({ model }: RuknMissionControlHeroProps) {
           <p className="mc-eyebrow">Today&apos;s Mission</p>
           <h1 className="mc-hero-title">{model.missionTitle}</h1>
           <p className="mc-hero-date">{model.missionDetail}</p>
-          <Link to={model.missionRoute} className="mc-quick-action mc-quick-action-primary mt-3 inline-flex">
-            Start mission
-          </Link>
+          <MissionControlActionButton
+            label="Start mission"
+            route={model.missionRoute}
+            className="mc-quick-action-primary mt-3"
+          />
         </div>
 
         <div className="mc-hero-progress-card mc-hero-progress-card-rich">
@@ -51,13 +57,7 @@ export function RuknMissionControlHero({ model }: RuknMissionControlHeroProps) {
         </div>
       </div>
 
-      <div className="mc-quick-actions" aria-label="Quick actions">
-        {model.quickActions.map((action) => (
-          <Link key={action.id} to={action.route} className="mc-quick-action">
-            {action.label}
-          </Link>
-        ))}
-      </div>
+      <MissionControlQuickActions actions={model.quickActions} />
     </header>
   )
 }

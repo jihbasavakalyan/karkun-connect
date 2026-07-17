@@ -28,7 +28,9 @@ export function AdminLayout() {
       <div
         className={[
           'fixed inset-y-0 left-0 z-40 w-64 transform bg-sidebar transition-transform lg:hidden',
-          mobileNavOpen ? 'translate-x-0' : '-translate-x-full',
+          mobileNavOpen
+            ? 'pointer-events-auto translate-x-0'
+            : 'pointer-events-none -translate-x-full',
         ].join(' ')}
       >
         <AdminSidebar collapsed={false} onToggle={() => setMobileNavOpen(false)} />
