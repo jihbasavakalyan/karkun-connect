@@ -6,6 +6,7 @@
  */
 
 import type { DigitalRafeeqResponse } from '@/runtime/service'
+import { buildBaitulMaalGuidanceReminders } from '@/services/baitulMaalService'
 import type {
   RuknAssistantRecommendationItem,
   RuknAssistantViewModel,
@@ -126,6 +127,8 @@ function buildPersonalProgress(
       knowledge?.requestedDomains.includes('compliance') === true,
   ).length
 
+  const baitulReminders = buildBaitulMaalGuidanceReminders('rukn')
+
   return {
     connectionsCompleted:
       completionCount + encouragementCount > 0
@@ -138,9 +141,10 @@ function buildPersonalProgress(
         ? 'Meeting completion signals are present.'
         : EMPTY_PERSONAL_PROGRESS.meetingsCompleted,
     complianceReminders:
-      complianceDue > 0 || knowledge?.availableDomains.includes('compliance')
+      baitulReminders[0] ??
+      (complianceDue > 0 || knowledge?.availableDomains.includes('compliance')
         ? 'Compliance reminders are in scope for today.'
-        : EMPTY_PERSONAL_PROGRESS.complianceReminders,
+        : EMPTY_PERSONAL_PROGRESS.complianceReminders),
   }
 }
 

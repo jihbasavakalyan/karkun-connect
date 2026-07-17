@@ -83,13 +83,25 @@ export {
   ensureBaitulMaalRecord,
   getCurrentBaitulMaalStatus,
   getBaitulMaalStatusForKarkun,
+  isBaitulMaalSettledThisMonth,
   updateBaitulMaal,
   bulkUpdateBaitulMaal,
   getBaitulMaalDashboardMetrics,
+  getRuknBaitulMaalMetrics,
   getAllBaitulMaalSummaries,
   matchesBaitulMaalFilters,
   getFilterMonthKey,
+  isBaitulMaalAmountEnabled,
+  setBaitulMaalAmountEnabled,
+  buildBaitulMaalGuidanceReminders,
 } from './baitulMaalService'
+
+export {
+  getOrCreateDevelopmentAssessment,
+  getDevelopmentIndicatorsForDisplay,
+  setDevelopmentIndicator,
+  setDevelopmentAssessmentNotes,
+} from './developmentAssessmentService'
 
 export {
   initializeIjtemaAttendanceCompliance,

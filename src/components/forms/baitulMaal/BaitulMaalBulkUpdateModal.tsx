@@ -3,7 +3,10 @@ import { Modal } from '@/components/common/Modal'
 import { InputField } from '@/components/forms/InputField'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
-import { bulkUpdateBaitulMaal } from '@/services/baitulMaalService'
+import {
+  bulkUpdateBaitulMaal,
+  isBaitulMaalAmountEnabled,
+} from '@/services/baitulMaalService'
 import type { BaitulMaalStatus } from '@/types/baitulMaal'
 
 type BaitulMaalBulkUpdateModalProps = {
@@ -49,6 +52,7 @@ function BaitulMaalBulkUpdateModalContent({
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().slice(0, 10))
   const [amount, setAmount] = useState('')
   const [error, setError] = useState('')
+  const amountEnabled = isBaitulMaalAmountEnabled()
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -58,7 +62,8 @@ function BaitulMaalBulkUpdateModalContent({
       karkunIds,
       status,
       paymentDate: status === 'Paid' ? paymentDate : undefined,
-      amount: amount.trim() ? Number(amount) : undefined,
+      amount:
+        amountEnabled && amount.trim() ? Number(amount) : undefined,
     })
 
     if (!result.success) {
@@ -71,7 +76,11 @@ function BaitulMaalBulkUpdateModalContent({
   }
 
   const title =
-    status === 'Paid' ? 'Mark Bait-ul-Maal as Paid' : 'Mark Bait-ul-Maal as Pending'
+    status === 'Paid'
+      ? 'Mark Bait-ul-Maal as Paid'
+      : status === 'Exempt'
+        ? 'Mark Bait-ul-Maal as Exempt'
+        : 'Mark Bait-ul-Maal as Pending'
 
   return (
     <Modal isOpen title={title} onClose={onClose}>
@@ -85,26 +94,33 @@ function BaitulMaalBulkUpdateModalContent({
           <>
             <InputField
               id="bulk-baitul-maal-payment-date"
-              label="Payment Date"
+              label="Date of Contribution"
               type="date"
               value={paymentDate}
               onValueChange={setPaymentDate}
               required
             />
-            <InputField
-              id="bulk-baitul-maal-amount"
-              label="Amount (optional)"
-              type="number"
-              min="0"
-              step="0.01"
-              value={amount}
-              onValueChange={setAmount}
-              placeholder="Same amount for all selected"
-            />
+            {amountEnabled ? (
+              <InputField
+                id="bulk-baitul-maal-amount"
+                label="Amount (optional)"
+                type="number"
+                min="0"
+                step="0.01"
+                value={amount}
+                onValueChange={setAmount}
+                placeholder="Same amount for all selected"
+              />
+            ) : null}
           </>
+        ) : status === 'Exempt' ? (
+          <p className="text-sm text-secondary">
+            Selected Karkuns will be marked Exempt for the current month. No contribution date is
+            required.
+          </p>
         ) : (
           <p className="text-sm text-secondary">
-            Selected Karkuns will be marked as Pending for the current month. Payment date and
+            Selected Karkuns will be marked as Pending for the current month. Contribution date and
             amount will be cleared.
           </p>
         )}

@@ -18,18 +18,32 @@ export function CommandCenterBaitulMaalMetrics() {
 
   const items = [
     {
+      id: 'compliance',
+      label: 'Compliance %',
+      status: metrics.compliancePercentage >= 80 ? 'Paid' : 'Pending',
+      count: `${metrics.compliancePercentage}%`,
+      to: adminCompliancePath('baitul-maal'),
+    },
+    {
       id: 'paid',
       label: 'Paid',
       status: 'Paid',
-      count: metrics.paid,
+      count: String(metrics.paid),
       to: adminCompliancePath('baitul-maal', 'Paid'),
     },
     {
       id: 'pending',
       label: 'Pending',
       status: 'Pending',
-      count: metrics.pending,
+      count: String(metrics.pending),
       to: adminCompliancePath('baitul-maal', 'Pending'),
+    },
+    {
+      id: 'exempt',
+      label: 'Exempt',
+      status: 'Exempt',
+      count: String(metrics.exempt),
+      to: adminCompliancePath('baitul-maal', 'Exempt'),
     },
   ]
 
@@ -42,7 +56,15 @@ export function CommandCenterBaitulMaalMetrics() {
         </Link>
       </div>
 
-      <ul className="mt-4 grid gap-2 sm:grid-cols-2 sm:gap-3">
+      {metrics.campaignName ? (
+        <p className="mt-2 text-sm text-secondary">
+          Campaign: {metrics.campaignName} — {metrics.campaignTrendLabel}
+        </p>
+      ) : (
+        <p className="mt-2 text-sm text-secondary">{metrics.campaignTrendLabel}</p>
+      )}
+
+      <ul className="mt-4 grid gap-2 sm:grid-cols-2 sm:gap-3 lg:grid-cols-4">
         {items.map((item) => (
           <li key={item.id}>
             <Link to={item.to} className="block">
@@ -53,7 +75,9 @@ export function CommandCenterBaitulMaalMetrics() {
                 ].join(' ')}
               >
                 <span className="text-sm font-medium">{item.label}</span>
-                <span className="mt-1 text-2xl font-semibold sm:mt-2 sm:text-3xl">{item.count}</span>
+                <span className="mt-1 text-2xl font-semibold sm:mt-2 sm:text-3xl">
+                  {item.count}
+                </span>
               </div>
             </Link>
           </li>

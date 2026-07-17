@@ -1,5 +1,6 @@
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { getAllKarkuns } from '@/lib/peopleStore'
+import { getActiveCampaign } from '@/services/campaignService'
 import {
   getBaitulMaalRecord,
   upsertBaitulMaalRecord,
@@ -19,6 +20,8 @@ import {
 } from '@/validation/baitulMaalValidation'
 
 let initialized = false
+
+const AMOUNT_ENABLED_KEY = 'karkun-connect.baitul-maal.amount-enabled'
 
 function nowIso(): string {
   return new Date().toISOString()
@@ -49,6 +52,28 @@ export function getFilterMonthKey(
   return buildMonthKey(year, month)
 }
 
+export function isBaitulMaalAmountEnabled(): boolean {
+  try {
+    return localStorage.getItem(AMOUNT_ENABLED_KEY) === 'true'
+  } catch {
+    return false
+  }
+}
+
+/** Administrator-only toggle — amount is never required, only optionally collected. */
+export function setBaitulMaalAmountEnabled(enabled: boolean): void {
+  try {
+    localStorage.setItem(AMOUNT_ENABLED_KEY, enabled ? 'true' : 'false')
+  } catch {
+    // ignore storage failures
+  }
+}
+
+export function getDaysUntilMonthClose(date = new Date()): number {
+  const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate()
+  return Math.max(0, lastDay - date.getDate())
+}
+
 export function initializeBaitulMaalCompliance(): void {
   if (initialized) return
   initialized = true
@@ -56,6 +81,20 @@ export function initializeBaitulMaalCompliance(): void {
 
 export function resetBaitulMaalComplianceInitialization(): void {
   initialized = false
+}
+
+function resolveCampaignFields(
+  input?: Pick<UpdateBaitulMaalInput, 'campaignId' | 'campaignName'>,
+): { campaignId?: string; campaignName?: string } {
+  if (input?.campaignId || input?.campaignName) {
+    return {
+      campaignId: input.campaignId,
+      campaignName: input.campaignName,
+    }
+  }
+  const campaign = getActiveCampaign()
+  if (!campaign) return {}
+  return { campaignId: campaign.id, campaignName: campaign.name }
 }
 
 export function getBaitulMaalStatusForKarkun(
@@ -66,10 +105,13 @@ export function getBaitulMaalStatusForKarkun(
   month: number
   year: number
   monthLabel: string
+  campaignId?: string
+  campaignName?: string
   status: BaitulMaalStatus
   paymentDate?: string
   amount?: number
   remarks?: string
+  recordedBy?: string
 } {
   initializeBaitulMaalCompliance()
   const { month, year } = parseMonthKey(monthKey)
@@ -80,15 +122,24 @@ export function getBaitulMaalStatusForKarkun(
     month,
     year,
     monthLabel: formatMonthLabel(monthKey),
+    campaignId: record?.campaignId,
+    campaignName: record?.campaignName,
     status: record?.status ?? 'Pending',
     paymentDate: record?.paymentDate,
     amount: record?.amount,
     remarks: record?.remarks,
+    recordedBy: record?.updatedBy,
   }
 }
 
 export function getCurrentBaitulMaalStatus(karkunId: string) {
   return getBaitulMaalStatusForKarkun(karkunId, getCurrentMonthKey())
+}
+
+/** True when compliance indicates contribution is settled for the month (Paid or Exempt). */
+export function isBaitulMaalSettledThisMonth(karkunId: string): boolean {
+  const status = getCurrentBaitulMaalStatus(karkunId).status
+  return status === 'Paid' || status === 'Exempt'
 }
 
 export function updateBaitulMaal(
@@ -107,16 +158,23 @@ export function updateBaitulMaal(
   }
 
   const { month, year } = parseMonthKey(monthKey)
+  const campaign = resolveCampaignFields(input)
+  const amountEnabled = isBaitulMaalAmountEnabled()
 
   const record = upsertBaitulMaalRecord({
     karkunId: input.karkunId,
     month,
     year,
     monthKey,
+    campaignId: campaign.campaignId,
+    campaignName: campaign.campaignName,
     status: input.status,
     paymentDate: input.status === 'Paid' ? input.paymentDate?.trim() : undefined,
     amount:
-      input.status === 'Paid' && input.amount !== undefined && input.amount !== null
+      amountEnabled &&
+      input.status === 'Paid' &&
+      input.amount !== undefined &&
+      input.amount !== null
         ? input.amount
         : undefined,
     remarks: input.remarks?.trim() || undefined,
@@ -149,6 +207,7 @@ export function bulkUpdateBaitulMaal(
       status: input.status,
       paymentDate: input.paymentDate,
       amount: input.amount,
+      remarks: input.remarks,
       updatedBy: input.updatedBy,
     })
     if (result.success) {
@@ -164,20 +223,99 @@ export function getBaitulMaalDashboardMetrics(
 ): BaitulMaalDashboardMetrics {
   initializeBaitulMaalCompliance()
   const activeKarkuns = getAllKarkuns()
+  const campaign = getActiveCampaign()
 
   let paid = 0
   let pending = 0
+  let exempt = 0
 
   for (const karkun of activeKarkuns) {
     const status = getBaitulMaalStatusForKarkun(karkun.id, monthKey).status
     if (status === 'Paid') {
       paid += 1
+    } else if (status === 'Exempt') {
+      exempt += 1
     } else {
       pending += 1
     }
   }
 
-  return { paid, pending }
+  const total = activeKarkuns.length
+  const compliant = paid + exempt
+  const compliancePercentage =
+    total === 0 ? 0 : Math.round((compliant / total) * 100)
+
+  const campaignTrendLabel =
+    total === 0
+      ? 'No contributors in scope'
+      : pending === 0
+        ? 'On track for this campaign month'
+        : compliancePercentage >= 80
+          ? 'Strong compliance this campaign month'
+          : compliancePercentage >= 50
+            ? 'Moderate — follow up on pending contributors'
+            : 'Needs attention — many pending this month'
+
+  return {
+    paid,
+    pending,
+    exempt,
+    total,
+    compliancePercentage,
+    daysUntilMonthClose: getDaysUntilMonthClose(),
+    campaignId: campaign?.id,
+    campaignName: campaign?.name,
+    campaignTrendLabel,
+  }
+}
+
+/** Rukn-scoped metrics for connected Karkuns only. */
+export function getRuknBaitulMaalMetrics(
+  karkunIds: readonly string[],
+  monthKey = getCurrentMonthKey(),
+): BaitulMaalDashboardMetrics {
+  initializeBaitulMaalCompliance()
+  const campaign = getActiveCampaign()
+
+  let paid = 0
+  let pending = 0
+  let exempt = 0
+
+  for (const karkunId of karkunIds) {
+    const status = getBaitulMaalStatusForKarkun(karkunId, monthKey).status
+    if (status === 'Paid') {
+      paid += 1
+    } else if (status === 'Exempt') {
+      exempt += 1
+    } else {
+      pending += 1
+    }
+  }
+
+  const total = karkunIds.length
+  const compliant = paid + exempt
+  const compliancePercentage =
+    total === 0 ? 0 : Math.round((compliant / total) * 100)
+  const daysUntilMonthClose = getDaysUntilMonthClose()
+
+  const campaignTrendLabel =
+    daysUntilMonthClose <= 5 && pending > 0
+      ? `Reminder: ${pending} pending before month closes (${daysUntilMonthClose} day${daysUntilMonthClose === 1 ? '' : 's'} left)`
+      : pending > 0
+        ? `${pending} connected Karkun${pending === 1 ? '' : 's'} pending this month`
+        : 'All connected Karkuns settled this month'
+
+  return {
+    paid,
+    pending,
+    exempt,
+    total,
+    compliancePercentage,
+    daysUntilMonthClose,
+    campaignId: campaign?.id,
+    campaignName: campaign?.name,
+    campaignTrendLabel,
+  }
 }
 
 export function getAllBaitulMaalSummaries(
@@ -194,10 +332,14 @@ export function getAllBaitulMaalSummaries(
       month,
       year,
       monthLabel: compliance.monthLabel,
+      monthKey,
+      campaignId: compliance.campaignId,
+      campaignName: compliance.campaignName,
       status: compliance.status,
       paymentDate: compliance.paymentDate,
       amount: compliance.amount,
       remarks: compliance.remarks,
+      recordedBy: compliance.recordedBy,
     }
   })
 }
@@ -233,6 +375,41 @@ export function ensureBaitulMaalRecord(karkunId: string): void {
   if (!getBaitulMaalRecord(karkunId, monthKey)) {
     getBaitulMaalStatusForKarkun(karkunId, monthKey)
   }
+}
+
+/** Informational reminder lines for Digital Rafeeq — no status mutations. */
+export function buildBaitulMaalGuidanceReminders(
+  scope: 'administrator' | 'rukn',
+  karkunIds?: readonly string[],
+): string[] {
+  const metrics =
+    scope === 'rukn' && karkunIds
+      ? getRuknBaitulMaalMetrics(karkunIds)
+      : getBaitulMaalDashboardMetrics()
+
+  const reminders: string[] = []
+
+  if (metrics.pending > 0) {
+    if (scope === 'rukn') {
+      reminders.push(
+        `Monthly contribution record is pending for ${metrics.pending} connected Karkun${metrics.pending === 1 ? '' : 's'}.`,
+      )
+    } else {
+      reminders.push(
+        `${metrics.pending} Karkun${metrics.pending === 1 ? ' has' : 's have'} pending Bait-ul-Maal this month.`,
+      )
+    }
+  }
+
+  if (metrics.total > 0) {
+    reminders.push(`This month's compliance is ${metrics.compliancePercentage}%.`)
+  }
+
+  if (metrics.daysUntilMonthClose <= 5 && metrics.pending > 0) {
+    reminders.push(metrics.campaignTrendLabel)
+  }
+
+  return reminders
 }
 
 initializeBaitulMaalCompliance()

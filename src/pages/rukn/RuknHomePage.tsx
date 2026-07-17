@@ -3,6 +3,7 @@ import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { ROUTES } from '@/constants/routes'
 import {
   RuknActivityFeed,
+  RuknBaitulMaalPanel,
   RuknFloatingActionButton,
   RuknHomeHero,
   RuknJourneyCompact,
@@ -51,6 +52,7 @@ export function RuknHomePage() {
     <div className="cd-page cd-page-rukn">
       <RuknHomeHero brief={morningBrief} hero={snapshot.hero} ruknId={ruknId} />
       <RuknAssistantPanel />
+      <RuknBaitulMaalPanel ruknId={ruknId} />
       <RuknPeopleRows ruknId={ruknId} hasConnections={hasConnections} />
       <RuknScheduleTimeline
         schedule={snapshot.schedule}

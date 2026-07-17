@@ -8,6 +8,7 @@ export type ComplianceStatusLabel =
   | 'Submitted'
   | 'Pending'
   | 'Paid'
+  | 'Exempt'
 
 const STATUS_STYLES: Record<ComplianceStatusLabel, string> = {
   Present: 'bg-green-50 text-green-800 border-green-200',
@@ -19,6 +20,7 @@ const STATUS_STYLES: Record<ComplianceStatusLabel, string> = {
   Submitted: 'bg-green-50 text-green-800 border-green-200',
   Pending: 'bg-amber-50 text-amber-800 border-amber-200',
   Paid: 'bg-green-50 text-green-800 border-green-200',
+  Exempt: 'bg-slate-50 text-slate-700 border-slate-200',
 }
 
 export function getComplianceStatusStyle(status: string): string {

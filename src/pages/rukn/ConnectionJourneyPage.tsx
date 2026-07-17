@@ -13,6 +13,7 @@ import { SchedulePickerModal } from '@/components/communication/SchedulePickerMo
 import { ConnectionProgressTracker } from '@/components/rukn/ConnectionProgressTracker'
 import {
   CommitmentPanel,
+  DevelopmentAssessmentPanel,
   JourneyTimeline,
   NextActionCard,
   RelationshipHealthBadge,
@@ -424,6 +425,14 @@ export function ConnectionJourneyPage() {
             />
           </div>
         </section>
+      )}
+
+      {!isAdminContext && (
+        <DevelopmentAssessmentPanel
+          karkunId={karkun.id}
+          ruknId={activeAssignment.ruknId}
+          onChange={() => setGuidanceTick((current) => current + 1)}
+        />
       )}
 
       {guidance && guidance.suggestions.length > 0 && (

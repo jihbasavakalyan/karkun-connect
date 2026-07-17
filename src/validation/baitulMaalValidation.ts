@@ -8,8 +8,12 @@ export function validateBaitulMaalUpdate(
   if (input.status === 'Paid' && !input.paymentDate?.trim()) {
     return {
       valid: false,
-      error: 'Payment date is required when status is Paid.',
+      error: 'Contribution date is required when status is Paid.',
     }
+  }
+
+  if (input.status === 'Exempt') {
+    // Exempt does not require a contribution date or amount.
   }
 
   if (input.amount !== undefined && input.amount < 0) {
@@ -34,7 +38,7 @@ export function validateBulkBaitulMaalUpdate(
   if (status === 'Paid' && !paymentDate?.trim()) {
     return {
       valid: false,
-      error: 'Payment date is required when marking as Paid.',
+      error: 'Contribution date is required when marking as Paid.',
     }
   }
 

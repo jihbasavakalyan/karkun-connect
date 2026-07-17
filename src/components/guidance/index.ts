@@ -1,5 +1,6 @@
 export { AdminCoachingPanel } from './AdminCoachingPanel'
 export { CommitmentPanel } from './CommitmentPanel'
+export { DevelopmentAssessmentPanel } from './DevelopmentAssessmentPanel'
 export { JourneyStageBadge } from './JourneyStageBadge'
 export { JourneyTimeline } from './JourneyTimeline'
 export { MorningBriefPanel } from './MorningBriefPanel'

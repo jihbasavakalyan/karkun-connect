@@ -339,12 +339,26 @@ function BaitulMaalRow({
     }
   }
 
+  const markExempt = () => {
+    const result = updateBaitulMaal({
+      karkunId: item.karkunId,
+      status: 'Exempt',
+    })
+    if (result.success) {
+      onUpdated()
+    }
+  }
+
+  const metaParts = [item.monthLabel]
+  if (item.campaignName) metaParts.push(item.campaignName)
+  if (item.recordedBy) metaParts.push(`Recorded by ${item.recordedBy}`)
+
   return (
     <ComplianceListRow
       karkunId={item.karkunId}
       karkunName={item.karkunName}
       status={item.status}
-      meta={item.monthLabel}
+      meta={metaParts.join(' · ')}
       actions={
         <>
           {item.status !== 'Paid' && (
@@ -356,7 +370,16 @@ function BaitulMaalRow({
               Mark Paid
             </PrimaryButton>
           )}
-          {item.status === 'Paid' && (
+          {item.status !== 'Exempt' && (
+            <SecondaryButton
+              type="button"
+              className={`w-full sm:w-auto ${ACTION_BUTTON_CLASS}`}
+              onClick={markExempt}
+            >
+              Mark Exempt
+            </SecondaryButton>
+          )}
+          {item.status !== 'Pending' && (
             <SecondaryButton
               type="button"
               className={`w-full sm:w-auto ${ACTION_BUTTON_CLASS}`}

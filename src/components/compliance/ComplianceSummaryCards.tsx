@@ -83,6 +83,13 @@ export function ComplianceSummaryCards() {
       section: 'baitul-maal',
       status: 'Pending',
     },
+    {
+      key: 'baitul-exempt',
+      label: 'Bait-ul-Maal Exempt',
+      count: baitulMaal.exempt,
+      section: 'baitul-maal',
+      status: 'Exempt',
+    },
   ]
 
   return (

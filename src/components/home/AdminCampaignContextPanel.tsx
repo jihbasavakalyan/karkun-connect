@@ -110,6 +110,24 @@ export function AdminCampaignContextPanel() {
       </div>
 
       <div className="cd-context-block">
+        <h3 className="cd-context-title">Monthly Bait-ul-Maal</h3>
+        <ul className="cd-caption-list">
+          <li>Compliance — {baitulMaal.compliancePercentage}%</li>
+          <li>
+            <Link to={adminCompliancePath('baitul-maal', 'Pending')} className="cd-text-link">
+              Pending — {baitulMaal.pending}
+            </Link>
+          </li>
+          <li>
+            <Link to={adminCompliancePath('baitul-maal', 'Exempt')} className="cd-text-link">
+              Exempt — {baitulMaal.exempt}
+            </Link>
+          </li>
+          <li className="text-secondary">{baitulMaal.campaignTrendLabel}</li>
+        </ul>
+      </div>
+
+      <div className="cd-context-block">
         <h3 className="cd-context-title">Communication</h3>
         <ul className="cd-caption-list">
           <li>

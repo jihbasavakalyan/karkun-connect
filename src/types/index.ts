@@ -58,6 +58,14 @@ export type {
 } from './baitulMaal'
 
 export type {
+  DevelopmentAssessmentRecord,
+  DevelopmentIndicatorId,
+  DevelopmentIndicatorState,
+} from './developmentAssessment'
+
+export { DEVELOPMENT_INDICATORS, createEmptyDevelopmentIndicators } from './developmentAssessment'
+
+export type {
   IjtemaAttendanceRecord,
   IjtemaAttendanceDashboardMetrics,
   IjtemaAttendanceKarkunSummary,

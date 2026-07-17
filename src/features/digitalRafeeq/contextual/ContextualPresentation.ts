@@ -9,6 +9,7 @@ import type {
   DigitalRafeeqIntent,
   DigitalRafeeqResponse,
 } from '@/runtime/service'
+import { buildBaitulMaalGuidanceReminders } from '@/services/baitulMaalService'
 
 export type ContextualSurface =
   | 'connect_execution'
@@ -300,21 +301,27 @@ export function buildComplianceGuidanceView(
   const messages = getMessages(response)
   const knowledge = response.knowledgeSummary
 
-  const outstandingSubmissions = recommendations
-    .filter(
-      (item) =>
-        item.category === 'reminder' ||
-        item.category === 'suggestion' ||
-        item.priority === 'high' ||
-        item.priority === 'critical',
-    )
-    .slice(0, 3)
-    .map((item) => resolveItemText(item, messages))
+  const baitulReminders = buildBaitulMaalGuidanceReminders('administrator')
 
-  const upcomingDeadlines = recommendations
-    .filter((item) => item.category === 'preparation' || item.category === 'reminder')
-    .slice(0, 3)
-    .map((item) => resolveItemText(item, messages))
+  const outstandingSubmissions = [
+    ...baitulReminders,
+    ...recommendations
+      .filter(
+        (item) =>
+          item.category === 'reminder' ||
+          item.category === 'suggestion' ||
+          item.priority === 'high' ||
+          item.priority === 'critical',
+      )
+      .map((item) => resolveItemText(item, messages)),
+  ].slice(0, 5)
+
+  const upcomingDeadlines = [
+    ...baitulReminders.filter((line) => line.toLowerCase().includes('month')),
+    ...recommendations
+      .filter((item) => item.category === 'preparation' || item.category === 'reminder')
+      .map((item) => resolveItemText(item, messages)),
+  ].slice(0, 3)
 
   const missingRecords =
     knowledge?.unavailableDomains.includes('compliance')
@@ -330,6 +337,7 @@ export function buildComplianceGuidanceView(
     outstandingSubmissions.length > 0 ||
     upcomingDeadlines.length > 0 ||
     missingRecords.length > 0 ||
+    baitulReminders.length > 0 ||
     knowledge?.availableDomains.includes('compliance') === true
 
   return {
