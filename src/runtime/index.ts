@@ -105,3 +105,38 @@ export {
   type GuidanceGeneratedEvent,
   type RuntimeReadyEvent,
 } from './service'
+
+export {
+  DEFAULT_RUNTIME_FEATURE_FLAGS,
+  FeatureFlagService,
+  createFeatureFlagService,
+  getFeatureFlagService,
+  resetFeatureFlagServiceForTests,
+  type FeatureFlagServiceOptions,
+  type RuntimeFeatureFlagKey,
+  type RuntimeFeatureFlagOverrides,
+  type RuntimeFeatureFlags,
+} from './featureFlags'
+
+export {
+  RuntimeHealthReporter,
+  RuntimeMetrics,
+  RuntimeTelemetry,
+  createRuntimeHealthReporter,
+  createRuntimeMetrics,
+  createRuntimeObservability,
+  createRuntimeTelemetry,
+  getRuntimeObservability,
+  resetRuntimeObservabilityForTests,
+  runRuntimeDiagnostics,
+  type DiagnosticCheckName,
+  type DiagnosticCheckResult,
+  type RecentFailureRecord,
+  type RequestMetricInput,
+  type RuntimeDiagnosticsInput,
+  type RuntimeDiagnosticsReport,
+  type RuntimeMetricsSnapshot,
+  type RuntimeObservability,
+  type RuntimeObservabilityHealth,
+  type RuntimeTelemetryOptions,
+} from './monitoring'

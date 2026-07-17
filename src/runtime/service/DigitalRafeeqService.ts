@@ -15,6 +15,8 @@ import {
   initializeRuntime,
   type InitializeRuntimeOptions,
 } from '../bootstrap/initializeRuntime'
+import { getFeatureFlagService } from '../featureFlags'
+import { getRuntimeObservability } from '../monitoring/RuntimeObservability'
 import {
   createConversationOrchestrator,
   type ConversationOrchestrator,
@@ -64,16 +66,24 @@ export class DigitalRafeeqService {
 
   /**
    * Initialize runtime + orchestrator. Idempotent when already Ready/Degraded.
+   * Continues regardless of digitalRafeeq.enabled feature flag.
    */
   async initialize(
     options?: InitializeRuntimeOptions,
   ): Promise<DigitalRafeeqHealth> {
+    const startedAt = Date.now()
+
     if (this.runtime && (this.status === 'Ready' || this.status === 'Degraded')) {
+      const snap = getRuntimeObservability().metrics.getSnapshot()
+      if (snap.runtimeStartupDurationMs === null) {
+        this.recordStartup(startedAt, true)
+      }
       return this.getHealth()
     }
 
     if (this.injected.runtime) {
       this.bindRuntime(this.injected.runtime, this.injected.orchestrator)
+      this.recordStartup(startedAt)
       return this.getHealth()
     }
 
@@ -83,12 +93,22 @@ export class DigitalRafeeqService {
       this.status = bootstrap.status === 'Failed' ? 'Failed' : 'Unavailable'
       this.runtime = null
       this.orchestrator = null
+      this.recordStartup(startedAt, false)
       return this.getHealth()
     }
 
     this.bindRuntime(bootstrap.runtime)
     this.initializedAt = bootstrap.initializedAt ?? Date.now()
+    this.recordStartup(startedAt, true)
     return this.getHealth()
+  }
+
+  /**
+   * Whether user-facing Digital Rafeeq experiences should be active.
+   * Independent of runtime initialization — runtime may be ready while disabled.
+   */
+  isEnabled(): boolean {
+    return getFeatureFlagService().isDigitalRafeeqEnabled()
   }
 
   isReady(): boolean {
@@ -166,6 +186,7 @@ export class DigitalRafeeqService {
       const orchestrationResponse = this.orchestrator.handle(orchestrationRequest)
       const response = this.toServiceResponse(orchestrationResponse, request, startedAt)
       this.lastResponse = response
+      getRuntimeObservability().telemetry.recordResponse(response, request.intent)
       return response
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
@@ -176,12 +197,14 @@ export class DigitalRafeeqService {
         intent: request.intent,
         errorMessage: message,
       })
-      return this.failureResponse(
+      const failure = this.failureResponse(
         startedAt,
         request,
         { code: 'ORCHESTRATION_FAILED', message },
         true,
       )
+      getRuntimeObservability().telemetry.recordResponse(failure, request.intent)
+      return failure
     }
   }
 
@@ -309,6 +332,7 @@ export class DigitalRafeeqService {
     if (this.runtime?.conversationEngine.getSession()) {
       this.runtime.conversationEngine.closeConversation()
     }
+    getRuntimeObservability().telemetry.detach()
     this.unsubscribeOrchestrator?.()
     this.unsubscribeOrchestrator = null
     this.runtime = null
@@ -321,6 +345,18 @@ export class DigitalRafeeqService {
   /** Test helper — clear wired runtime without touching global bootstrap. */
   resetForTests(): void {
     this.shutdown()
+  }
+
+  private recordStartup(startedAt: number, runtimeAvailable?: boolean): void {
+    const observability = getRuntimeObservability()
+    const available =
+      runtimeAvailable ?? (this.runtime !== null && this.isReady())
+    observability.telemetry.recordStartup(Date.now() - startedAt, available)
+    if (this.runtime) {
+      observability.telemetry.recordRepositoryAvailability(
+        this.runtime.registeredAdapters().length > 0,
+      )
+    }
   }
 
   private bindRuntime(
@@ -336,6 +372,11 @@ export class DigitalRafeeqService {
     this.unsubscribeOrchestrator = this.orchestrator.onEvent((event) => {
       this.forwardOrchestrationEvent(event)
     })
+    const observability = getRuntimeObservability()
+    observability.telemetry.attach(this)
+    observability.telemetry.recordRepositoryAvailability(
+      runtime.registeredAdapters().length > 0,
+    )
     this.emit({
       type: 'RuntimeReady',
       timestamp: Date.now(),

@@ -35,6 +35,7 @@
     "verify:rukn-identity": "npx vite-node scripts/verify-rukn-identity.ts",
     "verify:orchestration": "npx vite-node scripts/verify-conversation-orchestration.ts",
     "verify:digital-rafeeq": "npx vite-node scripts/verify-digital-rafeeq-service.ts",
+    "verify:runtime": "npx vite-node scripts/verify-runtime.ts",
     "admin:export-seed": "npx vite-node scripts/admin/export-seed-backup.ts"
   },
   "dependencies": {
