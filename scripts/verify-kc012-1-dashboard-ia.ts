@@ -1,11 +1,11 @@
 /**
  * KC-012.1 — Dashboard IA / mission consolidation checks.
+ * KC-012.2 — Connected view has no coaching / Digital Rafeeq fields.
  */
 
 import assert from 'node:assert/strict'
 import {
   buildConnectedIntelligenceView,
-  buildConnectedKarkunCoachingUrdu,
   buildRafeeqPriorityWhyUrdu,
   buildSmartFollowUpRecommendation,
 } from '../src/lib/relationshipIntelligencePresentation'
@@ -38,14 +38,9 @@ const urdu = buildRafeeqPriorityWhyUrdu(sample)
 assert.doesNotMatch(urdu, /سلسلہ گرم|تعلق گرم/)
 assert.match(urdu, /مناسب ہوگا|ملاقات/)
 
-const coaching = buildConnectedKarkunCoachingUrdu(sample)
-assert.doesNotMatch(coaching, /short visit is recommended|میری تجویز/)
-assert.ok(coaching.length > 10)
-
 const rec = buildSmartFollowUpRecommendation(sample)
 assert.match(rec.text, /14 days/)
 
-// Connected view must not expose Home-style recommendation fields
 const connected = buildConnectedIntelligenceView('nonexistent', 'nonexistent')
 assert.equal(connected, null)
 

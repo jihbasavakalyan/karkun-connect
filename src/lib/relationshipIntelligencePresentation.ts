@@ -50,8 +50,6 @@ export type ConnectedIntelligenceView = {
   recentActivity: string | null
   previousVisitSummary: string | null
   nextReminder: string | null
-  /** Reflective coaching — not a Home mission recommendation. */
-  coachingUrdu: string
 }
 
 export type AdminRelationshipInsights = {
@@ -237,7 +235,6 @@ export function buildConnectedIntelligenceView(
       : null,
     previousVisitSummary: recent?.source === 'visit' ? recent.title : recent?.title ?? null,
     nextReminder: reminder ? `${reminder.title}: ${reminder.message}` : null,
-    coachingUrdu: buildConnectedKarkunCoachingUrdu(guidance),
   }
 }
 
@@ -379,37 +376,4 @@ export function buildRafeeqPriorityWhyUrdu(guidance: KarkunGuidance): string {
     return `${name} صاحب سے طے شدہ وعدہ پورا کرنا اعتماد بڑھائے گا۔`
   }
   return `اب ${name} صاحب سے ایک مختصر ملاقات مفید ہوگی۔`
-}
-
-/**
- * Per-Karkun coaching for the Connected workspace (KC-012.1).
- * Reflective and stage-aware — does not repeat Home mission recommendations.
- */
-export function buildConnectedKarkunCoachingUrdu(guidance: KarkunGuidance): string {
-  const name = guidance.karkunName
-  const stage = guidance.currentStage
-  const level = guidance.health.level
-  const reason = guidance.health.reasons[0] ?? ''
-  const gapMatch = reason.match(/No contact for (\d+) days/i)
-  const gapDays = gapMatch ? Number(gapMatch[1]) : null
-
-  if (gapDays !== null && gapDays >= 14) {
-    return `${name} صاحب کے ساتھ تعلق کو یاد رکھنا مفید ہے — کچھ عرصے سے رابطہ نہیں ہوا۔`
-  }
-  if (stage === 'connected' || stage === 'first-meeting') {
-    return `اس تعلق کے آغاز میں صبر اور توجہ بہت قیمتی ہے — ${name} صاحب کے ساتھ آہستہ اور بامقصد آگے بڑھیں۔`
-  }
-  if (stage === 'jih-registration') {
-    return `${name} صاحب کی رجسٹریشن کا مرحلہ تعلق میں اعتماد پیدا کر سکتا ہے — جب وہ تیار ہوں۔`
-  }
-  if (stage === 'development' || stage === 'regular-contact') {
-    return `${name} صاحب کے ساتھ ذاتی گفتگو تعلق کو گہرا کر سکتی ہے — جب موقع مناسب ہو۔`
-  }
-  if (level === 'urgent' || level === 'dormant') {
-    return `${name} صاحب کو کچھ خاص توجہ درکار ہے — نرم انداز میں رابطہ برقرار رکھیں۔`
-  }
-  if (guidance.reminders[0]) {
-    return `${name} صاحب کے لیے ایک یادداشت موجود ہے — مناسب وقت پر دیکھ لیجیے۔`
-  }
-  return `${name} صاحب کے سفر کو دیکھتے ہوئے تعلق کو سکون سے آگے بڑھانا بہتر رہے گا۔`
 }

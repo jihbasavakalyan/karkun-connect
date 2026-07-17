@@ -48,14 +48,13 @@ export function MyKarkunPage() {
     <PageShell variant="narrow" className="relationship-page connected-workspace max-w-3xl">
       <PageHeader
         title="Connected Karkuns"
-        description="Everything about each Karkun — profile, journey, and relationship history."
+        description="Profile, journey, and actions for each Karkun."
       />
 
       <ExecutionSuccessBanner />
 
       <section className="connected-workspace-list" aria-label="Connected Karkuns">
         <div className="connected-workspace-list-head">
-          <h2 className="rukn-my-karkuns-heading">Your connections</h2>
           {myKarkunan.length > 0 ? (
             <KarkunSearchField
               id="connected-karkun-search"

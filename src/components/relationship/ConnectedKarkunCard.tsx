@@ -83,6 +83,12 @@ export function ConnectedKarkunCard({ karkun, ruknId, visitPath }: ConnectedKark
     setScheduleNotice(`Meeting scheduled for ${new Date(scheduledForIso).toLocaleString()}.`)
   }
 
+  const summaryBits = [
+    intelligence?.previousVisitSummary ?? lastVisit,
+    intelligence?.recentActivity,
+    intelligence?.nextReminder ? `Reminder: ${intelligence.nextReminder}` : null,
+  ].filter(Boolean) as string[]
+
   return (
     <>
       <article className="relationship-connected-card connected-workspace-card ri-connected-card">
@@ -105,34 +111,6 @@ export function ConnectedKarkunCard({ karkun, ruknId, visitPath }: ConnectedKark
             </div>
           ) : null}
         </div>
-
-        {intelligence ? (
-          <div className="ri-card-intel ri-card-intel-profile">
-            <p className="ri-card-coaching urdu-text" dir="rtl" lang="ur">
-              {intelligence.coachingUrdu}
-            </p>
-            <dl className="ri-card-facts">
-              {intelligence.previousVisitSummary || lastVisit ? (
-                <div>
-                  <dt>Previous visit</dt>
-                  <dd>{intelligence.previousVisitSummary ?? lastVisit}</dd>
-                </div>
-              ) : null}
-              {intelligence.recentActivity ? (
-                <div>
-                  <dt>Recent activity</dt>
-                  <dd>{intelligence.recentActivity}</dd>
-                </div>
-              ) : null}
-              {intelligence.nextReminder ? (
-                <div>
-                  <dt>Next reminder</dt>
-                  <dd>{intelligence.nextReminder}</dd>
-                </div>
-              ) : null}
-            </dl>
-          </div>
-        ) : null}
 
         <ProfileCompletionReminder karkunId={karkun.id} variant="chip" />
 
@@ -169,18 +147,7 @@ export function ConnectedKarkunCard({ karkun, ruknId, visitPath }: ConnectedKark
           </button>
         </div>
 
-        {scheduleNotice ? (
-          <p className="mt-2 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-800">
-            {scheduleNotice}
-          </p>
-        ) : null}
-        {reviewNotice ? (
-          <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-            {reviewNotice}
-          </p>
-        ) : null}
-
-        <div className="mt-2">
+        <div className="connected-card-action-row">
           <RelationshipActionBar
             showRequestReview
             onRequestReview={() => {
@@ -190,6 +157,23 @@ export function ConnectedKarkunCard({ karkun, ruknId, visitPath }: ConnectedKark
             compact
           />
         </div>
+
+        {summaryBits.length > 0 ? (
+          <p className="connected-card-summary" title={summaryBits.join(' · ')}>
+            {summaryBits.join(' · ')}
+          </p>
+        ) : null}
+
+        {scheduleNotice ? (
+          <p className="mt-1.5 rounded-md border border-green-200 bg-green-50 px-2.5 py-1.5 text-xs text-green-800">
+            {scheduleNotice}
+          </p>
+        ) : null}
+        {reviewNotice ? (
+          <p className="mt-1.5 rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-xs text-amber-900">
+            {reviewNotice}
+          </p>
+        ) : null}
       </article>
 
       <RequestReviewModal

@@ -14,6 +14,8 @@ type ExecutionSummaryCardsProps = {
   linkBase?: string
   /** Rukn personal workload labels vs Admin campaign labels. */
   variant?: 'campaign' | 'rukn'
+  /** Compact horizontal strip for above-the-fold Record pages. */
+  dense?: boolean
 }
 
 const CAMPAIGN_LABELS: Record<keyof ExecutionSummaryCounts, string> = {
@@ -28,6 +30,13 @@ const RUKN_LABELS: Record<keyof ExecutionSummaryCounts, string> = {
   inProgress: 'Visits In Progress',
   followUpRequired: 'Follow-ups Due',
   completedToday: 'Visits Completed Today',
+}
+
+const RUKN_DENSE_LABELS: Record<keyof ExecutionSummaryCounts, string> = {
+  pending: 'Pending',
+  inProgress: 'In progress',
+  followUpRequired: 'Follow-ups',
+  completedToday: 'Done today',
 }
 
 const CARD_CONFIG: {
@@ -45,23 +54,40 @@ export function ExecutionSummaryCards({
   counts,
   linkBase,
   variant = 'campaign',
+  dense = false,
 }: ExecutionSummaryCardsProps) {
-  const labels = variant === 'rukn' ? RUKN_LABELS : CAMPAIGN_LABELS
+  const labels =
+    dense && variant === 'rukn'
+      ? RUKN_DENSE_LABELS
+      : variant === 'rukn'
+        ? RUKN_LABELS
+        : CAMPAIGN_LABELS
 
   return (
-    <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+    <ul
+      className={
+        dense
+          ? 'grid grid-cols-2 gap-2 sm:grid-cols-4'
+          : 'grid gap-3 sm:grid-cols-2 lg:grid-cols-4'
+      }
+    >
       {CARD_CONFIG.map(({ key, section, statusStyle }) => {
         const count = counts[key]
         const content = (
           <div
             className={[
-              'flex flex-col rounded-lg border px-4 py-4 transition-shadow',
+              'flex flex-col rounded-lg border transition-shadow',
+              dense ? 'px-2.5 py-2' : 'px-4 py-4',
               getExecutionStatusStyle(statusStyle),
               linkBase ? 'hover:shadow-card' : '',
             ].join(' ')}
           >
-            <span className="text-sm font-medium">{labels[key]}</span>
-            <span className="mt-2 text-3xl font-semibold">{count}</span>
+            <span className={dense ? 'text-[11px] font-medium leading-tight' : 'text-sm font-medium'}>
+              {labels[key]}
+            </span>
+            <span className={dense ? 'mt-0.5 text-xl font-semibold' : 'mt-2 text-3xl font-semibold'}>
+              {count}
+            </span>
           </div>
         )
 

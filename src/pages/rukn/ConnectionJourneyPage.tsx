@@ -29,7 +29,6 @@ import {
   RelationshipActionBar,
   RelationshipSummaryPanel,
 } from '@/components/relationship'
-import { MeetingGuidanceCard } from '@/features/digitalRafeeq/contextual'
 import { buildConnectionJourney } from '@/lib/connectionJourney'
 import { getConnectionStatusLabel } from '@/lib/connectionLabels'
 import { buildIndividualCommunicationContext } from '@/lib/communicationContext'
@@ -269,12 +268,6 @@ export function ConnectionJourneyPage() {
           {reviewNotice}
         </p>
       ) : null}
-
-      <MeetingGuidanceCard
-        route={isAdminContext ? `/admin/annexure-1/${karkun.id}` : `/rukn/visit/${karkun.id}`}
-        role={isAdminContext ? 'administrator' : 'rukn'}
-        payload={{ karkunId: karkun.id, karkunName: karkun.name }}
-      />
 
       <header className={sectionClass()}>
         <h1 className="text-2xl font-semibold text-text-heading">{karkun.name}</h1>
