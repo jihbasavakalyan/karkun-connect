@@ -1,6 +1,7 @@
 export { AdminHomeHero } from './AdminHomeHero'
 export { AdminPriorityStrip } from './AdminPriorityStrip'
 export { AdminTodaysWorkPanel } from './AdminTodaysWorkPanel'
+export { TodaysVisitQueue } from './TodaysVisitQueue'
 export { AdminCampaignContextPanel } from './AdminCampaignContextPanel'
 export { CampaignPulseHeartbeat } from './CampaignPulseHeartbeat'
 export { RuknHomeHero } from './RuknHomeHero'

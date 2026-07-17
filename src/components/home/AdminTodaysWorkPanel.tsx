@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom'
 import { CommandCenterAdminQuickActions } from '@/components/command-center/CommandCenterAdminQuickActions'
+import { TodaysVisitQueue } from '@/components/home/TodaysVisitQueue'
+import { adminExecutionPath } from '@/constants/routes'
 import {
   getKpiValue,
   humanizeFollowUps,
@@ -12,12 +14,6 @@ import type { AdminCommandCenterSnapshot } from '@/types/campaignAutomation.type
 
 type AdminTodaysWorkPanelProps = {
   snapshot: AdminCommandCenterSnapshot
-}
-
-function scheduleAccent(priority: number): string {
-  if (priority <= 1) return 'cd-timeline-accent-urgent'
-  if (priority <= 2) return 'cd-timeline-accent-warn'
-  return 'cd-timeline-accent-normal'
 }
 
 export function AdminTodaysWorkPanel({ snapshot }: AdminTodaysWorkPanelProps) {
@@ -130,23 +126,11 @@ export function AdminTodaysWorkPanel({ snapshot }: AdminTodaysWorkPanelProps) {
         </ul>
       </div>
 
-      <div className="cd-block" id="todays-schedule">
-        <h3 className="cd-block-title">Today&apos;s schedule</h3>
-        {snapshot.schedule.length === 0 ? (
-          <p className="cd-supporting">Your schedule is clear — focus on today&apos;s priority.</p>
-        ) : (
-          <ol className="cd-timeline">
-            {snapshot.schedule.slice(0, 8).map((item) => (
-              <li key={item.id} className={`cd-timeline-item ${scheduleAccent(item.priority)}`}>
-                <Link to={item.route} className="cd-timeline-link">
-                  <time className="cd-timeline-time">{item.time}</time>
-                  <span className="cd-timeline-title">{item.title}</span>
-                </Link>
-              </li>
-            ))}
-          </ol>
-        )}
-      </div>
+      <TodaysVisitQueue
+        schedule={snapshot.schedule}
+        visitQueuePath={adminExecutionPath('pending')}
+        upcomingPath={adminExecutionPath('pending')}
+      />
 
       <div className="cd-block">
         <h3 className="cd-block-title">Quick access</h3>

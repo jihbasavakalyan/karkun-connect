@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { CommandCenterAdminQuickActions } from '@/components/command-center/CommandCenterAdminQuickActions'
+import { TodaysVisitQueue } from '@/components/home/TodaysVisitQueue'
+import { adminExecutionPath } from '@/constants/routes'
 import {
   buildAdminPriorityMessage,
   getKpiValue,
@@ -15,12 +17,6 @@ import { HomeSection } from './HomeSection'
 
 type AdminTodaysWorkSectionProps = {
   snapshot: AdminCommandCenterSnapshot
-}
-
-function priorityToneClass(priority: number): string {
-  if (priority <= 1) return 'border-l-red-500'
-  if (priority <= 2) return 'border-l-amber-500'
-  return 'border-l-primary'
 }
 
 export function AdminTodaysWorkSection({ snapshot }: AdminTodaysWorkSectionProps) {
@@ -149,28 +145,12 @@ export function AdminTodaysWorkSection({ snapshot }: AdminTodaysWorkSectionProps
         </div>
 
         <div className="home-grid-2">
-          <article className="home-card" id="todays-schedule">
-            <p className="home-eyebrow">Today's Schedule</p>
-            {snapshot.schedule.length === 0 ? (
-              <p className="mt-3 text-sm text-secondary">Your schedule is clear for now.</p>
-            ) : (
-              <ol className="mt-3 space-y-2">
-                {snapshot.schedule.slice(0, 6).map((item) => (
-                  <li key={item.id}>
-                    <Link
-                      to={item.route}
-                      className={`home-action-row border-l-4 pl-3 ${priorityToneClass(item.priority)}`}
-                    >
-                      <span className="shrink-0 text-xs font-bold text-primary">{item.time}</span>
-                      <span className="min-w-0 flex-1 truncate text-sm text-text-heading">
-                        {item.title}
-                      </span>
-                    </Link>
-                  </li>
-                ))}
-              </ol>
-            )}
-          </article>
+          <TodaysVisitQueue
+            schedule={snapshot.schedule}
+            visitQueuePath={adminExecutionPath('pending')}
+            upcomingPath={adminExecutionPath('pending')}
+            variant="home"
+          />
 
           <CommandCenterAdminQuickActions />
         </div>

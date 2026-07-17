@@ -3,6 +3,8 @@ import {
   type ActiveCampaignSummary,
   type CampaignListItem,
 } from '@/constants/mockMissions'
+import { getRepositories } from '@/repositories/provider'
+import { unwrapRepository } from '@/repositories/errors'
 import { getAllAssignments } from '@/stores/assignmentStore'
 import { getAnnexure1ExecutionMetrics, getCampaignHealthFromAnnexure1 } from '@/services/annexure1Service'
 import { ACTIVE_CAMPAIGN_ID } from '@/types/assignment.types'
@@ -19,13 +21,20 @@ export type CampaignTimeline = {
   dayLabel: string
 }
 
-/** Campaign library — single source of truth for official campaign data. */
+function getCampaignLibraryFromRepository(): readonly CampaignListItem[] {
+  return unwrapRepository(getRepositories().campaign.getAll(), MOCK_CAMPAIGNS)
+}
+
+/** Campaign library — repository-backed (Firestore cache or local seed fallback). */
 export function getCampaignLibrary(): readonly CampaignListItem[] {
-  return MOCK_CAMPAIGNS
+  return getCampaignLibraryFromRepository()
 }
 
 export function getActiveCampaign(): CampaignListItem | undefined {
-  return MOCK_CAMPAIGNS.find((campaign) => campaign.id === ACTIVE_CAMPAIGN_ID)
+  return (
+    unwrapRepository(getRepositories().campaign.getActive(), undefined) ??
+    getCampaignLibraryFromRepository().find((campaign) => campaign.id === ACTIVE_CAMPAIGN_ID)
+  )
 }
 
 export function getActiveCampaignName(): string {
@@ -45,11 +54,11 @@ export function getActiveCampaignNextMilestone(): string {
 }
 
 export function getActiveCampaigns(): CampaignListItem[] {
-  return MOCK_CAMPAIGNS.filter((campaign) => campaign.status === 'active')
+  return getCampaignLibraryFromRepository().filter((campaign) => campaign.status === 'active')
 }
 
 export function getArchivedCampaigns(): CampaignListItem[] {
-  return MOCK_CAMPAIGNS.filter((campaign) => campaign.status === 'archived')
+  return getCampaignLibraryFromRepository().filter((campaign) => campaign.status === 'archived')
 }
 
 function parseCampaignDate(isoDate: string): Date {

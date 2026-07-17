@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react'
 import { Navigate } from 'react-router-dom'
-import { DEFAULT_DEMO_RUKN_ID } from '@/constants/demoRukn'
 import { ROUTES } from '@/constants/routes'
 import { ExecutionSuccessBanner } from '@/components/execution/ExecutionSuccessBanner'
 import { ConnectedKarkunCard, KarkunSearchField } from '@/components/relationship'
 import { EmptyState, PageHeader, PageShell } from '@/components/ui'
+import { useRequiredRuknId } from '@/hooks/useRequiredRuknId'
 import { useAuth } from '@/hooks/useAuth'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { matchesKarkunRegistrySearch } from '@/lib/relationshipPresentation'
@@ -13,12 +13,13 @@ import { getGuidanceForRuknKarkuns } from '@/lib/guidance/guidanceEngine'
 
 export function MyKarkunPage() {
   const { user } = useAuth()
-  const ruknId = user?.ruknId ?? DEFAULT_DEMO_RUKN_ID
+  const ruknId = useRequiredRuknId()
   const { getAssignedKarkunanForRukn } = useAssignmentEngine()
-  const myKarkunan = getAssignedKarkunanForRukn(ruknId)
+  const myKarkunan = getAssignedKarkunanForRukn(ruknId ?? '')
   const [query, setQuery] = useState('')
 
   const sortedKarkuns = useMemo(() => {
+    if (!ruknId) return []
     const guidanceOrder = sortGuidanceByUrgency(getGuidanceForRuknKarkuns(ruknId)).map(
       (guidance) => guidance.karkunId,
     )
@@ -31,6 +32,10 @@ export function MyKarkunPage() {
   const filtered = useMemo(() => {
     return sortedKarkuns.filter((karkun) => matchesKarkunRegistrySearch(karkun, query))
   }, [sortedKarkuns, query])
+
+  if (!ruknId) {
+    return <Navigate to={ROUTES.LOGIN} replace />
+  }
 
   if (user?.role !== 'rukn') {
     return <Navigate to={ROUTES.RUKN} replace />

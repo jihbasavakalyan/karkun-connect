@@ -1,5 +1,6 @@
+import { Navigate } from 'react-router-dom'
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
-import { DEFAULT_DEMO_RUKN_ID } from '@/constants/demoRukn'
+import { ROUTES } from '@/constants/routes'
 import {
   RuknActivityFeed,
   RuknFloatingActionButton,
@@ -8,7 +9,7 @@ import {
   RuknPeopleRows,
   RuknScheduleTimeline,
 } from '@/components/home'
-import { useAuth } from '@/hooks/useAuth'
+import { useRequiredRuknId } from '@/hooks/useRequiredRuknId'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { useCampaignAutomationEngine } from '@/hooks/useCampaignAutomationEngine'
 import { useGuidance } from '@/hooks/useGuidance'
@@ -19,11 +20,17 @@ import type { RuknCommandCenterSnapshot } from '@/types/campaignAutomation.types
 import { HomePageSkeleton } from '@/components/ui'
 
 export function RuknHomePage() {
-  const { user } = useAuth()
-  const ruknId = user?.ruknId ?? DEFAULT_DEMO_RUKN_ID
+  const ruknId = useRequiredRuknId()
   const { getAssignedKarkunanForRukn } = useAssignmentEngine()
-  const { morningBrief } = useGuidance(ruknId)
-  const snapshot = useCampaignAutomationEngine({ role: 'rukn', ruknId }) as RuknCommandCenterSnapshot
+  const { morningBrief } = useGuidance(ruknId ?? '')
+  const snapshot = useCampaignAutomationEngine({
+    role: 'rukn',
+    ruknId: ruknId ?? '',
+  }) as RuknCommandCenterSnapshot
+
+  if (!ruknId) {
+    return <Navigate to={ROUTES.LOGIN} replace />
+  }
   const connectedKarkuns = getAssignedKarkunanForRukn(ruknId)
   const hasConnections = connectedKarkuns.length > 0
 
@@ -43,7 +50,10 @@ export function RuknHomePage() {
     <div className="cd-page cd-page-rukn">
       <RuknHomeHero brief={morningBrief} hero={snapshot.hero} ruknId={ruknId} />
       <RuknPeopleRows ruknId={ruknId} hasConnections={hasConnections} />
-      <RuknScheduleTimeline schedule={snapshot.schedule} />
+      <RuknScheduleTimeline
+        schedule={snapshot.schedule}
+        completedToday={snapshot.completedToday.length}
+      />
       <RuknJourneyCompact ruknId={ruknId} />
       <RuknActivityFeed />
 

@@ -1,10 +1,10 @@
 import { useState } from 'react'
-import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
-import { DEFAULT_DEMO_RUKN_ID } from '@/constants/demoRukn'
+import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { ROUTES } from '@/constants/routes'
 import { useAnnexure1Form } from '@/hooks/useAnnexure1Form'
 import { useAuth } from '@/hooks/useAuth'
+import { useRequiredRuknId } from '@/hooks/useRequiredRuknId'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { useCommunication } from '@/hooks/useCommunication'
 import { ContactActionBar } from '@/components/common/ContactActionBar'
@@ -30,6 +30,7 @@ import { getConnectionStatusLabel } from '@/lib/connectionLabels'
 import { saveAnnexure1Draft, submitAnnexure1 } from '@/services/annexure1Service'
 import { scheduleWhatsAppMessage } from '@/services/schedulingService'
 import { getRegistrationForKarkun } from '@/services/jihWebPortalService'
+import { getActiveAssignmentsForKarkun } from '@/stores/assignmentStore'
 import {
   getLatestSubmissionForKarkun,
   hasSubmittedAnnexureForAssignment,
@@ -67,16 +68,26 @@ export function ConnectionJourneyPage() {
   const isAdminContext = location.pathname.startsWith('/admin/annexure-1')
   const backPath = isAdminContext ? ROUTES.ADMIN_ASSIGNMENTS : ROUTES.RUKN_MY_KARKUN
   const { user } = useAuth()
-  const ruknId = user?.ruknId ?? DEFAULT_DEMO_RUKN_ID
+  const authRuknId = useRequiredRuknId()
+  const guidanceRuknId = isAdminContext
+    ? (karkunId ? getActiveAssignmentsForKarkun(karkunId)[0]?.ruknId ?? '' : '')
+    : (authRuknId ?? '')
   const { releaseKarkun } = useAssignmentEngine()
   const { sendIndividualMessage } = useCommunication()
-  const { getKarkunGuidance, version: guidanceVersion } = useGuidance(ruknId)
+  const { getKarkunGuidance, version: guidanceVersion } = useGuidance(guidanceRuknId)
   const [, setGuidanceTick] = useState(0)
+
+  if (!isAdminContext && !authRuknId) {
+    return <Navigate to={ROUTES.LOGIN} replace />
+  }
 
   const karkun = karkunId ? getKarkunById(karkunId) : undefined
   const actorRole = user?.role === 'administrator' ? 'administrator' : 'rukn'
   const activeAssignment = karkunId
-    ? resolveActiveAssignmentForAnnexure1(karkunId, ruknId)
+    ? resolveActiveAssignmentForAnnexure1(
+        karkunId,
+        isAdminContext ? undefined : (authRuknId ?? undefined),
+      )
     : undefined
   const alreadySubmitted =
     activeAssignment !== undefined &&
@@ -485,7 +496,8 @@ export function ConnectionJourneyPage() {
             karkunName={karkun.name}
             onClose={() => setReleaseOpen(false)}
             onConfirm={(reason) => {
-              releaseKarkun(karkun.id, ruknId, reason)
+              if (!authRuknId) return
+              releaseKarkun(karkun.id, authRuknId, reason)
               setReleaseOpen(false)
               navigate(ROUTES.RUKN_MY_KARKUN, {
                 state: { successMessage: 'Connection released successfully.' },
@@ -496,7 +508,7 @@ export function ConnectionJourneyPage() {
             isOpen={replaceOpen}
             currentKarkunId={karkun.id}
             currentKarkunName={karkun.name}
-            ruknId={ruknId}
+            ruknId={authRuknId ?? ''}
             onClose={() => setReplaceOpen(false)}
             onComplete={() => setReplaceOpen(false)}
           />

@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react'
 import { Navigate } from 'react-router-dom'
-import { DEFAULT_DEMO_RUKN_ID } from '@/constants/demoRukn'
 import { ROUTES } from '@/constants/routes'
 import { useAuth } from '@/hooks/useAuth'
+import { useRequiredRuknId } from '@/hooks/useRequiredRuknId'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { usePeopleStore } from '@/hooks/usePeopleStore'
 import {
@@ -17,7 +17,7 @@ import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
 
 export function AvailableKarkunPage() {
   const { user } = useAuth()
-  const ruknId = user?.ruknId ?? DEFAULT_DEMO_RUKN_ID
+  const ruknId = useRequiredRuknId()
   const peopleVersion = usePeopleStore()
   const { assignmentVersion, getAvailableKarkunan, assignKarkun } = useAssignmentEngine()
   const availableKarkunan = getAvailableKarkunan()
@@ -33,7 +33,7 @@ export function AvailableKarkunPage() {
   }, [availableKarkunan, query, peopleVersion, assignmentVersion])
 
   const handleConfirmConnect = () => {
-    if (!pendingKarkun) return
+    if (!pendingKarkun || !ruknId) return
     const result = assignKarkun(pendingKarkun.id, ruknId, 'Rukn')
     if (!result.success) {
       setError(result.error)
@@ -42,6 +42,10 @@ export function AvailableKarkunPage() {
     setSuccessMessage(humanizeConnectionConfirmed(result.assignment?.assignmentNumber))
     setPendingKarkun(null)
     setError('')
+  }
+
+  if (!ruknId) {
+    return <Navigate to={ROUTES.LOGIN} replace />
   }
 
   if (user?.role !== 'rukn') {
