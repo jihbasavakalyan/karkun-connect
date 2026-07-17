@@ -39,7 +39,7 @@ type DigitalRafeeqVoiceDrawerProps = {
 }
 
 function statusLabel(status: VoiceStatus, thinking: boolean, speaking: boolean): string {
-  if (thinking) return 'Thinking…'
+  if (thinking) return 'Digital Rafeeq is analysing…'
   if (speaking) return 'Speaking…'
   if (status === 'listening') return 'Listening…'
   if (status === 'denied') return 'Microphone blocked'
@@ -55,12 +55,44 @@ function speakText(text: string): Promise<void> {
       return
     }
     window.speechSynthesis.cancel()
-    const utterance = new SpeechSynthesisUtterance(text)
+    const spoken = text.replace(/^السلام علیکم\s*/u, '').trim() || text
+    const utterance = new SpeechSynthesisUtterance(spoken)
     utterance.rate = 1
     utterance.onend = () => resolve()
     utterance.onerror = () => resolve()
     window.speechSynthesis.speak(utterance)
   })
+}
+
+function VoiceStageFeedback({
+  listening,
+  thinking,
+  speaking,
+}: {
+  listening: boolean
+  thinking: boolean
+  speaking: boolean
+}) {
+  if (!listening && !thinking && !speaking) return null
+
+  return (
+    <div className="dr-voice-stage" aria-hidden="true">
+      {listening ? (
+        <div className="dr-voice-waveform">
+          {Array.from({ length: 7 }).map((_, index) => (
+            <span key={index} className="dr-voice-wave-bar" />
+          ))}
+        </div>
+      ) : null}
+      {thinking ? (
+        <p className="dr-voice-thinking">
+          <span className="dr-voice-thinking-dot" />
+          Digital Rafeeq is analysing…
+        </p>
+      ) : null}
+      {speaking ? <div className="dr-voice-speaking-orb" /> : null}
+    </div>
+  )
 }
 
 export function DigitalRafeeqVoiceDrawer({
@@ -184,6 +216,12 @@ export function DigitalRafeeqVoiceDrawer({
           </button>
         </header>
 
+        <VoiceStageFeedback
+          listening={speech.status === 'listening'}
+          thinking={thinking}
+          speaking={speaking}
+        />
+
         <div ref={listRef} className="dr-voice-messages" aria-live="polite">
           {messages.length === 0 && (
             <p className="dr-voice-empty">
@@ -214,7 +252,6 @@ export function DigitalRafeeqVoiceDrawer({
               )}
             </div>
           ))}
-          {thinking && <p className="dr-voice-thinking">Analysing operational data…</p>}
         </div>
 
         <div className="dr-voice-suggestions">

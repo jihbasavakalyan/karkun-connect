@@ -64,6 +64,13 @@ export function answerOperationalQuery(
   return answerRuknQuery(query, context.ruknId ?? '', context.ruknSnapshot)
 }
 
+function conversational(body: string): string {
+  const clean = body.trim()
+  if (!clean) return clean
+  if (/السلام علیکم/.test(clean)) return clean
+  return `السلام علیکم\n\n${clean}`
+}
+
 function answerAdminQuery(
   query: string,
   snapshot?: AdminCommandCenterSnapshot,
@@ -77,7 +84,9 @@ function answerAdminQuery(
 
   if (matches(query, [/unconnected|remain|available|not connected|pending connection/])) {
     return {
-      text: `${people.unassignedKarkuns} Karkuns remain unconnected. ${people.assignedKarkuns} are already connected.`,
+      text: conversational(
+        `${people.unassignedKarkuns} Karkuns remain unconnected, while ${people.assignedKarkuns} are already connected. I recommend focusing Connections on the remaining pool next.`,
+      ),
       actions: [
         { id: 'connections', label: 'Open Connections', route: adminAssignmentsPath() },
         { id: 'execution', label: 'Open Execution', route: adminExecutionPath() },
@@ -90,12 +99,14 @@ function answerAdminQuery(
     const strongest = [...team].sort((a, b) => b.completionPct - a.completionPct)[0]
     if (!weakest) {
       return {
-        text: 'No Rukn performance data is available yet.',
+        text: conversational('Rukn performance data is not available yet. Once connections begin, I will highlight who needs support.'),
         actions: [{ id: 'connections', label: 'Open Connections', route: ROUTES.ADMIN_ASSIGNMENTS }],
       }
     }
     return {
-      text: `${weakest.ruknName} needs attention (${weakest.completionPct}% completion, ${weakest.pendingWork} pending). Top performer: ${strongest.ruknName} (${strongest.completionPct}%).`,
+      text: conversational(
+        `${weakest.ruknName} needs attention right now (${weakest.completionPct}% completion, ${weakest.pendingWork} pending). ${strongest.ruknName} is currently leading at ${strongest.completionPct}%.`,
+      ),
       actions: [
         { id: 'rukn', label: 'Open Rukns', route: ROUTES.ADMIN_RUKN },
         { id: 'execution', label: 'Open Execution', route: adminExecutionPath() },
@@ -105,7 +116,9 @@ function answerAdminQuery(
 
   if (matches(query, [/attendance|ijtema|missed/])) {
     return {
-      text: `Weekly Ijtema: ${ijtema.present} present, ${ijtema.absent} absent, ${ijtema.excused} excused, ${ijtema.notRecorded} not recorded.`,
+      text: conversational(
+        `This week’s Ijtema picture: ${ijtema.present} present, ${ijtema.absent} absent, ${ijtema.excused} excused, and ${ijtema.notRecorded} not yet recorded. Attendance follow-up will strengthen participation.`,
+      ),
       actions: [
         { id: 'attendance', label: 'Open Attendance', route: adminCompliancePath('ijtema') },
         { id: 'reminder', label: 'Send Reminder', route: ROUTES.ADMIN_COMMUNICATION },
@@ -115,7 +128,9 @@ function answerAdminQuery(
 
   if (matches(query, [/bait.?ul.?maal|contribution|target/])) {
     return {
-      text: `Bait-ul-Maal compliance is ${baitulMaal.compliancePercentage}%. Pending: ${baitulMaal.pending}. Paid: ${baitulMaal.paid}.`,
+      text: conversational(
+        `Bait-ul-Maal compliance is at ${baitulMaal.compliancePercentage}%. ${baitulMaal.pending} are pending and ${baitulMaal.paid} are paid. A gentle reminder wave will help close the month calmly.`,
+      ),
       actions: [
         { id: 'baitul', label: 'Open Bait-ul-Maal', route: adminCompliancePath('baitul-maal') },
         { id: 'reminder', label: 'Send Reminder', route: ROUTES.ADMIN_COMMUNICATION },
@@ -127,7 +142,9 @@ function answerAdminQuery(
     const overdue =
       snapshot?.followUpQueue.find((group) => group.section === 'overdue')?.items.length ?? 0
     return {
-      text: `There are ${overdue} overdue follow-ups. Active connections: ${assignments.activeAssignments}.`,
+      text: conversational(
+        `There ${overdue === 1 ? 'is' : 'are'} ${overdue} overdue follow-up${overdue === 1 ? '' : 's'} across ${assignments.activeAssignments} active connections. Clearing these first will restore campaign rhythm.`,
+      ),
       actions: [
         { id: 'follow-up', label: 'Open Follow-ups', route: ROUTES.ADMIN_FOLLOW_UP },
         { id: 'execution', label: 'Open Execution', route: adminExecutionPath() },
@@ -139,7 +156,9 @@ function answerAdminQuery(
     const title = snapshot?.nextAction.title ?? 'Review campaign priorities'
     const detail = snapshot?.nextAction.description ?? ''
     return {
-      text: `Focus today: ${title}. ${detail}`.trim(),
+      text: conversational(
+        `For today, I recommend this focus: ${title}${detail ? `. ${detail}` : ''}`,
+      ),
       actions: [
         {
           id: 'mission',
@@ -153,7 +172,9 @@ function answerAdminQuery(
 
   if (matches(query, [/jih|registration/])) {
     return {
-      text: `JIH portal: ${jih.registered} registered, ${jih.notRegistered} not registered, ${jih.pendingReports} pending reports.`,
+      text: conversational(
+        `JIH registration status: ${jih.registered} registered, ${jih.notRegistered} not registered, and ${jih.pendingReports} pending reports. Supporting registrations will unlock the next journey stages.`,
+      ),
       actions: [
         { id: 'jih', label: 'Open Compliance', route: adminCompliancePath('jih-portal') },
       ],
@@ -161,7 +182,9 @@ function answerAdminQuery(
   }
 
   return {
-    text: `Campaign snapshot — Connected: ${people.assignedKarkuns}, Remaining: ${people.unassignedKarkuns}, Active Rukns with work: ${team.length}. Ask about visits, attendance, follow-ups, or Rukn performance.`,
+    text: conversational(
+      `Campaign snapshot — ${people.assignedKarkuns} connected, ${people.unassignedKarkuns} remaining, and ${team.length} Rukns with active work. Ask me about visits, attendance, follow-ups, or Rukn performance.`,
+    ),
     actions: [
       { id: 'connections', label: 'Open Connections', route: ROUTES.ADMIN_ASSIGNMENTS },
       { id: 'compliance', label: 'Open Compliance', route: ROUTES.ADMIN_COMPLIANCE },
@@ -181,7 +204,11 @@ function answerRuknQuery(
 
   if (matches(query, [/today|focus|mission|should i|what.*(do|work)/])) {
     return {
-      text: `${snapshot?.nextAction.title ?? 'Review your connected Karkuns'}. ${snapshot?.nextAction.description ?? ''}`.trim(),
+      text: conversational(
+        `${snapshot?.nextAction.title ?? 'Review your connected Karkuns'}${
+          snapshot?.nextAction.description ? `. ${snapshot.nextAction.description}` : ''
+        }`,
+      ),
       actions: [
         {
           id: 'mission',
@@ -200,13 +227,18 @@ function answerRuknQuery(
     const names = visitItems
       .slice(0, 5)
       .map((item) => (item.karkunId ? getKarkunById(item.karkunId)?.name : item.title))
-      .filter(Boolean)
+      .filter(Boolean) as string[]
     const firstId = visitItems.find((item) => item.karkunId)?.karkunId
+    const recommendation =
+      names.length > 0
+        ? ` I recommend completing ${names.slice(0, 3).join(', ')} first.`
+        : ''
     return {
-      text:
+      text: conversational(
         visitItems.length === 0
-          ? 'No visits are queued in today’s schedule. Review connected Karkuns for pending meetings.'
-          : `You have ${visitItems.length} visit-related items today${names.length ? `: ${names.join(', ')}` : ''}.`,
+          ? 'No visits are queued in today’s schedule. A quick review of connected Karkuns will show who needs a meeting next.'
+          : `Today you have ${visitItems.length} pending visit${visitItems.length === 1 ? '' : 's'}.${recommendation}`,
+      ),
       actions: [
         ...(firstId
           ? [{ id: 'record', label: 'Record Visit', route: ruknVisitPath(firstId) }]
@@ -225,12 +257,15 @@ function answerRuknQuery(
     const names = missed
       .slice(0, 5)
       .map((id) => getKarkunById(id)?.name)
-      .filter(Boolean)
+      .filter(Boolean) as string[]
     return {
-      text:
+      text: conversational(
         missed.length === 0
-          ? 'All connected Karkuns have Present or Excused attendance this week.'
-          : `${missed.length} need attendance attention${names.length ? `: ${names.join(', ')}` : ''}.`,
+          ? 'Alhamdulillah — all connected Karkuns are Present or Excused for this week’s Ijtema.'
+          : `${missed.length} Karkun${missed.length === 1 ? '' : 's'} need attendance attention${
+              names.length ? `: ${names.join(', ')}` : ''
+            }. A short reminder will help.`,
+      ),
       actions: [
         { id: 'attendance', label: 'Open Attendance', route: ROUTES.RUKN },
         { id: 'reminder', label: 'Send Reminder', route: ROUTES.RUKN_MY_KARKUN },
@@ -246,19 +281,24 @@ function answerRuknQuery(
     const names = pending
       .slice(0, 5)
       .map((id) => getKarkunById(id)?.name)
-      .filter(Boolean)
+      .filter(Boolean) as string[]
     return {
-      text:
+      text: conversational(
         pending.length === 0
-          ? 'All connected Karkuns appear registered on JIH.'
-          : `${pending.length} pending registration${names.length ? `: ${names.join(', ')}` : ''}.`,
+          ? 'All connected Karkuns appear registered on JIH. You can move attention to visits and development.'
+          : `${pending.length} still need registration support${
+              names.length ? `: ${names.join(', ')}` : ''
+            }.`,
+      ),
       actions: [{ id: 'connected', label: 'Open Connections', route: ROUTES.RUKN_MY_KARKUN }],
     }
   }
 
   if (matches(query, [/bait.?ul.?maal|contribution/])) {
     return {
-      text: `Bait-ul-Maal for your connections — Pending: ${baitulMaal.pending}, Paid: ${baitulMaal.paid}, Exempt: ${baitulMaal.exempt}.`,
+      text: conversational(
+        `For your connections, Bait-ul-Maal shows ${baitulMaal.pending} pending, ${baitulMaal.paid} paid, and ${baitulMaal.exempt} exempt. A calm reminder helps close the month.`,
+      ),
       actions: [
         { id: 'baitul', label: 'Open Bait-ul-Maal', route: ROUTES.RUKN_MY_KARKUN },
         { id: 'reminder', label: 'Send Reminder', route: ROUTES.RUKN_MY_KARKUN },
@@ -273,7 +313,9 @@ function answerRuknQuery(
       return !getDevelopmentAssessment(id)?.indicators.ready_for_next_stage
     }).length
     return {
-      text: `You have ${connectedIds.length} connected Karkuns. ${due} development assessments are due. Journey stages are tracked on each connection.`,
+      text: conversational(
+        `You are accompanying ${connectedIds.length} connected Karkuns. ${due} development assessment${due === 1 ? '' : 's'} ${due === 1 ? 'is' : 'are'} due — take them one by one with care.`,
+      ),
       actions: [{ id: 'connected', label: 'Open Connections', route: ROUTES.RUKN_MY_KARKUN }],
     }
   }
@@ -281,13 +323,17 @@ function answerRuknQuery(
   if (matches(query, [/follow.?up/])) {
     const count = snapshot?.followUpQueue.reduce((sum, group) => sum + group.items.length, 0) ?? 0
     return {
-      text: `You have ${count} follow-up items across your queues.`,
+      text: conversational(
+        `You have ${count} follow-up item${count === 1 ? '' : 's'} waiting. Clearing even a few today will keep relationships warm.`,
+      ),
       actions: [{ id: 'connected', label: 'Open Connections', route: ROUTES.RUKN_MY_KARKUN }],
     }
   }
 
   return {
-    text: `You have ${connectedIds.length} connected Karkuns. Ask about today’s mission, visits, Ijtema, registration, or Bait-ul-Maal.`,
+    text: conversational(
+      `You currently have ${connectedIds.length} connected Karkuns. Ask me about today’s mission, visits, Ijtema, registration, or Bait-ul-Maal.`,
+    ),
     actions: [
       { id: 'connected', label: 'Open Connections', route: ROUTES.RUKN_MY_KARKUN },
       { id: 'connect', label: 'Connect Karkun', route: ROUTES.RUKN_AVAILABLE_KARKUN },

@@ -1,6 +1,5 @@
 /**
- * Compact Digital Rafeeq dashboard entry (KC-007).
- * No long recommendation text — opens the voice assistant drawer.
+ * Compact Digital Rafeeq dashboard entry (KC-007.1).
  */
 
 import { Icon } from '@/components/ui/Icon'
@@ -14,16 +13,20 @@ type AskDigitalRafeeqCardProps = {
 export function AskDigitalRafeeqCard({ onOpen, ready = true }: AskDigitalRafeeqCardProps) {
   return (
     <section className="mc-ask-rafeeq" aria-label="Ask Digital Rafeeq">
+      <div className="mc-ask-rafeeq-orb" aria-hidden="true">
+        <Icon name="sparkles" size="md" />
+      </div>
       <div className="mc-ask-rafeeq-copy">
         <p className="mc-ask-rafeeq-eyebrow">Ask Digital Rafeeq</p>
-        <h2 className="mc-ask-rafeeq-title">
-          <Icon name="mic" size="sm" /> Voice Assistant
-        </h2>
+        <h2 className="mc-ask-rafeeq-title">Voice Assistant</h2>
         <p className="mc-ask-rafeeq-status">
-          Status · <span className={ready ? 'mc-ask-ready' : 'mc-ask-busy'}>{ready ? 'Ready' : 'Preparing'}</span>
+          Status ·{' '}
+          <span className={ready ? 'mc-ask-ready' : 'mc-ask-busy'}>
+            {ready ? 'Ready' : 'Preparing'}
+          </span>
         </p>
       </div>
-      <PrimaryButton type="button" onClick={onOpen}>
+      <PrimaryButton type="button" className="mc-ask-rafeeq-cta" onClick={onOpen}>
         Open Assistant
       </PrimaryButton>
     </section>
