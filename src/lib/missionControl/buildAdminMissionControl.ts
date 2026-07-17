@@ -15,6 +15,7 @@ import {
 import { getBaitulMaalDashboardMetrics } from '@/services/baitulMaalService'
 import { getIjtemaAttendanceDashboardMetrics } from '@/services/ijtemaAttendanceService'
 import { getJihWebPortalDashboardMetrics } from '@/services/jihWebPortalService'
+import { getConnectedProfileCompletionMetrics } from '@/lib/karkunProfileCompletion'
 import { getAllAssignments } from '@/stores/assignmentStore'
 import { getRecentActivity } from '@/stores/activityLogStore'
 import { JOURNEY_STAGE_LABELS, JOURNEY_STAGE_ORDER, type JourneyStageId } from '@/types/guidance'
@@ -144,6 +145,8 @@ export function buildAdminMissionControl(
     })) ?? []),
   ].slice(0, 6)
 
+  const profileCompletion = getConnectedProfileCompletionMetrics()
+
   return {
     campaignName: campaign?.name ?? 'Active Campaign',
     currentDateLabel: new Date().toLocaleDateString('en-GB', {
@@ -169,6 +172,13 @@ export function buildAdminMissionControl(
         value: remaining,
         hint: 'Available to connect',
         route: adminAssignmentsPath(),
+      },
+      {
+        id: 'profile-completion',
+        label: 'Complete Profiles',
+        value: `${profileCompletion.complete} / ${profileCompletion.totalConnected || 0}`,
+        hint: `${profileCompletion.incomplete} incomplete`,
+        route: ROUTES.ADMIN_KARKUN,
       },
       {
         id: 'rukns',

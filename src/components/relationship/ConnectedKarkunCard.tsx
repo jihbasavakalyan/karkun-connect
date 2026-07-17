@@ -7,16 +7,18 @@ import {
 } from '@/components/guidance'
 import { SchedulePickerModal } from '@/components/communication/SchedulePickerModal'
 import { useGuidance } from '@/hooks/useGuidance'
-import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
-import { ReleaseKarkunModal, ReplaceKarkunModal } from '@/components/forms/assignment'
 import { buildTelLink, buildWhatsAppLink } from '@/utils/personContactLinks'
 import {
   formatLastVisitLabel,
 } from '@/lib/relationshipPresentation'
 import { humanizeNextActionForKarkun } from '@/lib/homePresentation'
 import { scheduleWhatsAppMessage } from '@/services/schedulingService'
+import { submitAssignmentReviewRequest } from '@/services/assignmentReviewService'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
+import type { AssignmentReviewReason } from '@/types/assignmentReview.types'
 import { RelationshipActionBar } from './RelationshipActionBar'
+import { ProfileCompletionReminder } from './ProfileCompletionReminder'
+import { RequestReviewModal } from '@/components/forms/assignment/RequestReviewModal'
 import { Icon } from '@/components/ui/Icon'
 import type { MessageRecipient } from '@/types/communication'
 
@@ -27,10 +29,10 @@ type ConnectedKarkunCardProps = {
 }
 
 export function ConnectedKarkunCard({ karkun, ruknId, visitPath }: ConnectedKarkunCardProps) {
-  const { releaseKarkun } = useAssignmentEngine()
   const { getKarkunGuidance, version } = useGuidance(ruknId)
-  const [releaseOpen, setReleaseOpen] = useState(false)
-  const [replaceOpen, setReplaceOpen] = useState(false)
+  const [reviewOpen, setReviewOpen] = useState(false)
+  const [reviewError, setReviewError] = useState('')
+  const [reviewNotice, setReviewNotice] = useState('')
   const [scheduleOpen, setScheduleOpen] = useState(false)
   const [scheduleNotice, setScheduleNotice] = useState('')
 
@@ -52,9 +54,20 @@ export function ConnectedKarkunCard({ karkun, ruknId, visitPath }: ConnectedKark
     whatsapp: karkun.whatsapp,
   }
 
-  const handleRelease = (reason: Parameters<typeof releaseKarkun>[2]) => {
-    releaseKarkun(karkun.id, ruknId, reason)
-    setReleaseOpen(false)
+  const handleRequestReview = (reason: AssignmentReviewReason, notes: string) => {
+    const result = submitAssignmentReviewRequest({
+      karkunId: karkun.id,
+      ruknId,
+      reason,
+      notes,
+    })
+    if (!result.ok) {
+      setReviewError(result.error)
+      return
+    }
+    setReviewError('')
+    setReviewOpen(false)
+    setReviewNotice('Review request sent to Administrator. Ownership is unchanged.')
   }
 
   const handleSchedule = (scheduledForIso: string) => {
@@ -97,6 +110,10 @@ export function ConnectedKarkunCard({ karkun, ruknId, visitPath }: ConnectedKark
 
         <p className="mt-3 text-sm text-secondary">{lastVisit}</p>
 
+        <div className="mt-2">
+          <ProfileCompletionReminder karkunId={karkun.id} variant="chip" />
+        </div>
+
         <div className="relationship-quick-actions mt-4">
           {telLink && (
             <a href={telLink} className="relationship-quick-action" aria-label={`Call ${karkun.name}`}>
@@ -135,32 +152,30 @@ export function ConnectedKarkunCard({ karkun, ruknId, visitPath }: ConnectedKark
             {scheduleNotice}
           </p>
         )}
+        {reviewNotice && (
+          <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+            {reviewNotice}
+          </p>
+        )}
 
         <div className="mt-4">
           <RelationshipActionBar
-            showReplace
-            showRelease
-            onReplace={() => setReplaceOpen(true)}
-            onRelease={() => setReleaseOpen(true)}
+            showRequestReview
+            onRequestReview={() => {
+              setReviewError('')
+              setReviewOpen(true)
+            }}
             compact
           />
         </div>
       </article>
 
-      <ReleaseKarkunModal
-        isOpen={releaseOpen}
+      <RequestReviewModal
+        isOpen={reviewOpen}
         karkunName={karkun.name}
-        onClose={() => setReleaseOpen(false)}
-        onConfirm={handleRelease}
-      />
-
-      <ReplaceKarkunModal
-        isOpen={replaceOpen}
-        currentKarkunId={karkun.id}
-        currentKarkunName={karkun.name}
-        ruknId={ruknId}
-        onClose={() => setReplaceOpen(false)}
-        onComplete={() => setReplaceOpen(false)}
+        onClose={() => setReviewOpen(false)}
+        onConfirm={handleRequestReview}
+        error={reviewError}
       />
 
       <SchedulePickerModal

@@ -4,26 +4,24 @@ import { Icon } from '@/components/ui/Icon'
 
 type RelationshipActionBarProps = {
   onConnect?: () => void
-  onReplace?: () => void
-  onRelease?: () => void
+  onRequestReview?: () => void
   showConnect?: boolean
-  showReplace?: boolean
-  showRelease?: boolean
+  showRequestReview?: boolean
   connectDisabled?: boolean
+  requestReviewDisabled?: boolean
   compact?: boolean
 }
 
 export function RelationshipActionBar({
   onConnect,
-  onReplace,
-  onRelease,
+  onRequestReview,
   showConnect = false,
-  showReplace = false,
-  showRelease = false,
+  showRequestReview = false,
   connectDisabled = false,
+  requestReviewDisabled = false,
   compact = false,
 }: RelationshipActionBarProps) {
-  const hasActions = showConnect || showReplace || showRelease
+  const hasActions = showConnect || showRequestReview
   if (!hasActions) {
     return null
   }
@@ -47,16 +45,15 @@ export function RelationshipActionBar({
           Connect
         </PrimaryButton>
       )}
-      {showReplace && onReplace && (
-        <SecondaryButton type="button" className={buttonClass} onClick={onReplace}>
-          <Icon name="refresh" size="sm" />
-          Replace
-        </SecondaryButton>
-      )}
-      {showRelease && onRelease && (
-        <SecondaryButton type="button" className={buttonClass} onClick={onRelease}>
-          <Icon name="x" size="sm" />
-          Release
+      {showRequestReview && onRequestReview && (
+        <SecondaryButton
+          type="button"
+          className={buttonClass}
+          disabled={requestReviewDisabled}
+          onClick={onRequestReview}
+        >
+          <Icon name="flag" size="sm" />
+          Request Review
         </SecondaryButton>
       )}
     </div>

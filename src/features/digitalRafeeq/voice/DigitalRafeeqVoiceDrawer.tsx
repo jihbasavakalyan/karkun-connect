@@ -39,18 +39,34 @@ type DigitalRafeeqVoiceDrawerProps = {
 }
 
 function statusLabel(status: VoiceStatus, thinking: boolean, speaking: boolean): string {
-  if (thinking) return 'Digital Rafeeq is analysing…'
-  if (speaking) return 'Speaking…'
-  if (status === 'listening') return 'Listening…'
-  if (status === 'denied') return 'Microphone blocked'
-  if (status === 'unsupported') return 'Voice unsupported — type instead'
-  if (status === 'error') return 'Voice error — try typing'
-  return 'Ready'
+  if (thinking) return 'ڈیجیٹل رفیق سوچ رہے ہیں…'
+  if (speaking) return 'بول رہے ہیں…'
+  if (status === 'listening') return 'سن رہے ہیں…'
+  if (status === 'denied') return 'مائیک بند ہے'
+  if (status === 'unsupported') return 'آواز دستیاب نہیں — لکھیں'
+  if (status === 'error') return 'آواز میں مسئلہ — لکھ کر پوچھیں'
+  return 'تیار'
 }
 
-function speakText(text: string): Promise<void> {
+function pickUrduVoice(): SpeechSynthesisVoice | null {
+  if (typeof window === 'undefined' || !window.speechSynthesis) return null
+  const voices = window.speechSynthesis.getVoices()
+  return (
+    voices.find((voice) => /^ur(-|$)/i.test(voice.lang)) ??
+    voices.find((voice) => /urdu/i.test(voice.name)) ??
+    null
+  )
+}
+
+function speakText(
+  text: string,
+  onFallbackNotice?: (message: string) => void,
+): Promise<void> {
   return new Promise((resolve) => {
     if (typeof window === 'undefined' || !window.speechSynthesis) {
+      onFallbackNotice?.(
+        'اردو آواز اس آلے پر دستیاب نہیں۔ جواب متن میں دکھایا گیا ہے؛ اگر ضروری ہو تو انگریزی آواز استعمال ہو سکتی ہے۔',
+      )
       resolve()
       return
     }
@@ -58,6 +74,18 @@ function speakText(text: string): Promise<void> {
     const spoken = text.replace(/^السلام علیکم\s*/u, '').trim() || text
     const utterance = new SpeechSynthesisUtterance(spoken)
     utterance.rate = 1
+    const urduVoice = pickUrduVoice()
+    if (urduVoice) {
+      utterance.voice = urduVoice
+      utterance.lang = urduVoice.lang || 'ur-IN'
+    } else {
+      utterance.lang = 'ur-IN'
+      onFallbackNotice?.(
+        'اردو آواز اس براؤزر میں دستیاب نہیں۔ جواب اردو متن میں ہے؛ بولنے کے لیے انگریزی آواز استعمال ہو رہی ہے۔',
+      )
+      // Explicit English fallback only after notifying — never silent.
+      utterance.lang = 'en-IN'
+    }
     utterance.onend = () => resolve()
     utterance.onerror = () => resolve()
     window.speechSynthesis.speak(utterance)
@@ -87,7 +115,7 @@ function VoiceStageFeedback({
       {thinking ? (
         <p className="dr-voice-thinking">
           <span className="dr-voice-thinking-dot" />
-          Digital Rafeeq is analysing…
+          Digital Rafeeq سوچ رہے ہیں…
         </p>
       ) : null}
       {speaking ? <div className="dr-voice-speaking-orb" /> : null}
@@ -106,6 +134,7 @@ export function DigitalRafeeqVoiceDrawer({
   const [input, setInput] = useState('')
   const [thinking, setThinking] = useState(false)
   const [speaking, setSpeaking] = useState(false)
+  const [voiceNotice, setVoiceNotice] = useState('')
   const ruknId = useRequiredRuknId()
 
   const adminSnapshot = useCampaignAutomationEngine({
@@ -161,11 +190,12 @@ export function DigitalRafeeqVoiceDrawer({
     ])
 
     setSpeaking(true)
-    await speakText(answer.text)
+    await speakText(answer.text, (message) => setVoiceNotice(message))
     setSpeaking(false)
   }
 
   const speech = useSpeechRecognition({
+    lang: 'ur-IN',
     onFinalTranscript: (text) => {
       void handleAnswer(text)
     },
@@ -225,7 +255,7 @@ export function DigitalRafeeqVoiceDrawer({
         <div ref={listRef} className="dr-voice-messages" aria-live="polite">
           {messages.length === 0 && (
             <p className="dr-voice-empty">
-              Ask about visits, connections, attendance, or today’s priorities.
+              ملاقات، روابط، حاضری یا آج کی ترجیحات کے بارے میں پوچھیں۔
             </p>
           )}
           {messages.map((message) => (
@@ -275,7 +305,7 @@ export function DigitalRafeeqVoiceDrawer({
           <button
             type="button"
             className={voiceClass}
-            aria-label={speech.status === 'listening' ? 'Stop listening' : 'Start voice input'}
+            aria-label={speech.status === 'listening' ? 'سننا بند کریں' : 'آواز سے پوچھیں'}
             onClick={() => {
               if (speech.status === 'listening') speech.stop()
               else speech.start()
@@ -295,27 +325,30 @@ export function DigitalRafeeqVoiceDrawer({
             <input
               value={input}
               onChange={(event) => setInput(event.target.value)}
-              placeholder="Type a question…"
+              placeholder="سوال لکھیں…"
               className="dr-voice-input"
-              aria-label="Message Digital Rafeeq"
+              aria-label="ڈیجیٹل رفیق سے پوچھیں"
+              dir="auto"
             />
             <PrimaryButton type="submit" disabled={!input.trim() || thinking}>
-              Send
+              بھیجیں
             </PrimaryButton>
           </form>
         </footer>
 
+        {voiceNotice ? <p className="dr-voice-fallback">{voiceNotice}</p> : null}
+
         {(speech.status === 'denied' || speech.status === 'unsupported') && (
           <p className="dr-voice-fallback">
             {speech.status === 'denied'
-              ? 'Microphone permission denied. You can still type questions.'
-              : 'Speech recognition is not available in this browser. Type your question instead.'}
+              ? 'مائیک کی اجازت نہیں ملی۔ آپ لکھ کر پوچھ سکتے ہیں۔'
+              : 'اس براؤزر میں آواز کی پہچان دستیاب نہیں۔ سوال لکھ کر بھیجیں۔'}
           </p>
         )}
 
         <div className="dr-voice-footer-note">
           <SecondaryButton type="button" onClick={onClose}>
-            Close
+            بند کریں
           </SecondaryButton>
         </div>
       </aside>

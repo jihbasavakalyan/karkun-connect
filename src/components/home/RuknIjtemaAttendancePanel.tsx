@@ -37,6 +37,7 @@ export function RuknIjtemaAttendancePanel({ ruknId }: RuknIjtemaAttendancePanelP
   const [remarks, setRemarks] = useState<Record<string, string>>({})
   const [message, setMessage] = useState('')
   const [saving, setSaving] = useState(false)
+  const [expanded, setExpanded] = useState(false)
 
   useEffect(() => {
     return subscribeToIjtemaAttendanceStore(() => setAttendanceVersion((value) => value + 1))
@@ -120,96 +121,129 @@ export function RuknIjtemaAttendancePanel({ ruknId }: RuknIjtemaAttendancePanelP
     })
   }
 
+  const markedCount = connected.filter((karkun) => {
+    const status = draft[karkun.id] ?? 'Not recorded'
+    return status !== 'Not recorded'
+  }).length
+
   return (
-    <section className="cd-panel cd-panel-secondary" aria-label="Weekly Ijtema attendance">
-      <h2 className="cd-section-heading cd-section-heading-sm">Weekly Ijtema Attendance</h2>
-      <p className="cd-caption mt-1">
-        Record Sunday attendance for connected Karkuns. One record per Karkun per week.
-      </p>
-
-      <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div className="flex min-w-0 flex-1 flex-col gap-2">
-          <label htmlFor="rukn-ijtema-week" className="text-sm font-medium text-text-heading">
-            Week
-          </label>
-          <select
-            id="rukn-ijtema-week"
-            value={weekFilter}
-            onChange={(e) => setWeekFilter(e.target.value)}
-            className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm"
-          >
-            {weekOptions.map((option) => (
-              <option key={option.value || 'current'} value={option.value}>
-                {option.label}
-                {option.value === '' || option.value === weekEndingDate
-                  ? ` (${formatWeekLabel(weekEndingDate)})`
-                  : ''}
-              </option>
-            ))}
-          </select>
+    <section className="cd-panel cd-panel-secondary rukn-ijtema-compact" aria-label="Weekly Ijtema attendance">
+      <div className="rukn-ijtema-summary">
+        <div>
+          <h2 className="cd-section-heading cd-section-heading-sm">Weekly Ijtema</h2>
+          <p className="cd-caption mt-0.5">
+            {markedCount} / {connected.length} Marked
+          </p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <SecondaryButton type="button" className="min-h-10 px-3 py-2 text-sm" onClick={() => markAll('Present')}>
-            All Present
-          </SecondaryButton>
-          <SecondaryButton type="button" className="min-h-10 px-3 py-2 text-sm" onClick={() => markAll('Absent')}>
-            All Absent
-          </SecondaryButton>
-        </div>
+        <button
+          type="button"
+          className="rukn-ijtema-expand"
+          aria-expanded={expanded}
+          onClick={() => setExpanded((value) => !value)}
+        >
+          {expanded ? '▲ Hide' : '▼ Record Attendance'}
+        </button>
       </div>
 
-      <ul className="mt-4 space-y-3">
-        {connected.map((karkun) => (
-          <li
-            key={karkun.id}
-            className="rounded-lg border border-border bg-surface-muted/40 px-3 py-3"
-          >
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-sm font-semibold text-text-heading">{karkun.name}</p>
-              <div className="flex flex-wrap gap-2" role="group" aria-label={`Attendance for ${karkun.name}`}>
-                {STATUS_OPTIONS.map((status) => (
-                  <label
-                    key={status}
-                    className={[
-                      'cursor-pointer rounded-full border px-3 py-1.5 text-xs font-semibold',
-                      draft[karkun.id] === status
-                        ? 'border-primary bg-primary-muted text-primary'
-                        : 'border-border bg-surface text-secondary',
-                    ].join(' ')}
-                  >
-                    <input
-                      type="radio"
-                      className="sr-only"
-                      name={`ijtema-${karkun.id}`}
-                      checked={draft[karkun.id] === status}
-                      onChange={() =>
-                        setDraft((current) => ({ ...current, [karkun.id]: status }))
-                      }
-                    />
-                    {status}
-                  </label>
+      {expanded ? (
+        <>
+          <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+              <label htmlFor="rukn-ijtema-week" className="text-sm font-medium text-text-heading">
+                Week
+              </label>
+              <select
+                id="rukn-ijtema-week"
+                value={weekFilter}
+                onChange={(e) => setWeekFilter(e.target.value)}
+                className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm"
+              >
+                {weekOptions.map((option) => (
+                  <option key={option.value || 'current'} value={option.value}>
+                    {option.label}
+                    {option.value === '' || option.value === weekEndingDate
+                      ? ` (${formatWeekLabel(weekEndingDate)})`
+                      : ''}
+                  </option>
                 ))}
-              </div>
+              </select>
             </div>
-            <input
-              type="text"
-              value={remarks[karkun.id] ?? ''}
-              onChange={(e) =>
-                setRemarks((current) => ({ ...current, [karkun.id]: e.target.value }))
-              }
-              placeholder="Remarks (optional)"
-              className="mt-2 w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm"
-            />
-          </li>
-        ))}
-      </ul>
+            <div className="flex flex-wrap gap-2">
+              <SecondaryButton
+                type="button"
+                className="min-h-10 px-3 py-2 text-sm"
+                onClick={() => markAll('Present')}
+              >
+                All Present
+              </SecondaryButton>
+              <SecondaryButton
+                type="button"
+                className="min-h-10 px-3 py-2 text-sm"
+                onClick={() => markAll('Absent')}
+              >
+                All Absent
+              </SecondaryButton>
+            </div>
+          </div>
 
-      <div className="mt-4 flex flex-wrap items-center gap-3">
-        <PrimaryButton type="button" disabled={saving || dirtyCount === 0} onClick={handleSave}>
-          {saving ? 'Saving…' : `Save attendance${dirtyCount > 0 ? ` (${dirtyCount})` : ''}`}
-        </PrimaryButton>
-        {message ? <p className="text-sm text-secondary">{message}</p> : null}
-      </div>
+          <ul className="mt-3 space-y-2">
+            {connected.map((karkun) => (
+              <li
+                key={karkun.id}
+                className="rounded-lg border border-border bg-surface-muted/40 px-3 py-2"
+              >
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-sm font-semibold text-text-heading">{karkun.name}</p>
+                  <div
+                    className="flex flex-wrap gap-2"
+                    role="group"
+                    aria-label={`Attendance for ${karkun.name}`}
+                  >
+                    {STATUS_OPTIONS.map((status) => (
+                      <label
+                        key={status}
+                        className={[
+                          'cursor-pointer rounded-full border px-3 py-1.5 text-xs font-semibold',
+                          draft[karkun.id] === status
+                            ? 'border-primary bg-primary-muted text-primary'
+                            : 'border-border bg-surface text-secondary',
+                        ].join(' ')}
+                      >
+                        <input
+                          type="radio"
+                          className="sr-only"
+                          name={`ijtema-${karkun.id}`}
+                          checked={draft[karkun.id] === status}
+                          onChange={() =>
+                            setDraft((current) => ({ ...current, [karkun.id]: status }))
+                          }
+                        />
+                        {status}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                <input
+                  type="text"
+                  value={remarks[karkun.id] ?? ''}
+                  onChange={(e) =>
+                    setRemarks((current) => ({ ...current, [karkun.id]: e.target.value }))
+                  }
+                  placeholder="Remarks (optional)"
+                  className="mt-2 w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm"
+                />
+              </li>
+            ))}
+          </ul>
+
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <PrimaryButton type="button" disabled={saving || dirtyCount === 0} onClick={handleSave}>
+              {saving ? 'Saving…' : `Save attendance${dirtyCount > 0 ? ` (${dirtyCount})` : ''}`}
+            </PrimaryButton>
+            {message ? <p className="text-sm text-secondary">{message}</p> : null}
+          </div>
+        </>
+      ) : null}
     </section>
   )
 }

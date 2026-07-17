@@ -114,6 +114,16 @@ await act(async () => {
   await new Promise((r) => setTimeout(r, 40))
 })
 
+const expand = [...happy.document.querySelectorAll('button')].find((node) =>
+  (node.textContent ?? '').includes('Record Attendance'),
+) as HTMLButtonElement | undefined
+assert(Boolean(expand), 'expand control missing')
+
+await act(async () => {
+  expand!.click()
+  await new Promise((r) => setTimeout(r, 40))
+})
+
 const present = [...happy.document.querySelectorAll('input[type="radio"]')].find((node) =>
   (node.parentElement?.textContent ?? '').includes('Present'),
 ) as HTMLInputElement | undefined

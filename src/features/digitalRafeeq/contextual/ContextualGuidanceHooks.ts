@@ -80,7 +80,7 @@ function useContextualResponse(
           route: request.route,
           intent: request.intent,
           channel: 'dashboard',
-          locale: 'en',
+          locale: 'ur',
           payload: request.payload,
         })
 

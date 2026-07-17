@@ -10,4 +10,5 @@ export {
 export {
   AdminMissionControlPanels,
   RuknMissionControlPanels,
+  RuknTodaysVisitQueue,
 } from './MissionControlPanels'

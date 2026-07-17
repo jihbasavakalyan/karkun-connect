@@ -77,7 +77,7 @@ export function useRuknAssistant(): UseRuknAssistantResult {
           route: '/home',
           intent: 'daily_execution',
           channel: 'dashboard',
-          locale: 'en',
+          locale: 'ur',
         })
 
         if (cancelled) return

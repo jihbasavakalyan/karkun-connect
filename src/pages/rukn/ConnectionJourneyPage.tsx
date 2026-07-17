@@ -5,7 +5,6 @@ import { ROUTES } from '@/constants/routes'
 import { useAnnexure1Form } from '@/hooks/useAnnexure1Form'
 import { useAuth } from '@/hooks/useAuth'
 import { useRequiredRuknId } from '@/hooks/useRequiredRuknId'
-import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { useCommunication } from '@/hooks/useCommunication'
 import { ContactActionBar } from '@/components/common/ContactActionBar'
 import { MessageComposerModal } from '@/components/communication/MessageComposerModal'
@@ -21,17 +20,23 @@ import {
 } from '@/components/guidance'
 import { useGuidance } from '@/hooks/useGuidance'
 import { Annexure1ExecutionForm } from '@/components/forms/annexure1'
-import { ReleaseKarkunModal, ReplaceKarkunModal } from '@/components/forms/assignment'
+import { RequestReviewModal } from '@/components/forms/assignment/RequestReviewModal'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import { getRuknById } from '@/data/ruknMaster'
-import { RelationshipActionBar, RelationshipSummaryPanel } from '@/components/relationship'
+import {
+  ProfileCompletionReminder,
+  RelationshipActionBar,
+  RelationshipSummaryPanel,
+} from '@/components/relationship'
 import { MeetingGuidanceCard } from '@/features/digitalRafeeq/contextual'
 import { buildConnectionJourney } from '@/lib/connectionJourney'
 import { getConnectionStatusLabel } from '@/lib/connectionLabels'
 import { buildIndividualCommunicationContext } from '@/lib/communicationContext'
 import { saveAnnexure1Draft, submitAnnexure1 } from '@/services/annexure1Service'
 import { scheduleWhatsAppMessage } from '@/services/schedulingService'
+import { submitAssignmentReviewRequest } from '@/services/assignmentReviewService'
+import type { AssignmentReviewReason } from '@/types/assignmentReview.types'
 import { getRegistrationForKarkun } from '@/services/jihWebPortalService'
 import { getActiveAssignmentsForKarkun } from '@/stores/assignmentStore'
 import {
@@ -75,7 +80,6 @@ export function ConnectionJourneyPage() {
   const guidanceRuknId = isAdminContext
     ? (karkunId ? getActiveAssignmentsForKarkun(karkunId)[0]?.ruknId ?? '' : '')
     : (authRuknId ?? '')
-  const { releaseKarkun } = useAssignmentEngine()
   const { sendIndividualMessage } = useCommunication()
   const { getKarkunGuidance, version: guidanceVersion } = useGuidance(guidanceRuknId)
   const [, setGuidanceTick] = useState(0)
@@ -105,8 +109,9 @@ export function ConnectionJourneyPage() {
   const [composerOpen, setComposerOpen] = useState(false)
   const [scheduleOpen, setScheduleOpen] = useState(false)
   const [scheduleNotice, setScheduleNotice] = useState('')
-  const [releaseOpen, setReleaseOpen] = useState(false)
-  const [replaceOpen, setReplaceOpen] = useState(false)
+  const [reviewOpen, setReviewOpen] = useState(false)
+  const [reviewError, setReviewError] = useState('')
+  const [reviewNotice, setReviewNotice] = useState('')
 
   if (!karkun) {
     return (
@@ -247,14 +252,23 @@ export function ConnectionJourneyPage() {
         connectionNumber={activeAssignment.assignmentNumber}
       />
 
+      {!isAdminContext ? <ProfileCompletionReminder karkunId={karkun.id} /> : null}
+
       {!isAdminContext && (
         <RelationshipActionBar
-          showReplace
-          showRelease
-          onReplace={() => setReplaceOpen(true)}
-          onRelease={() => setReleaseOpen(true)}
+          showRequestReview
+          onRequestReview={() => {
+            setReviewError('')
+            setReviewOpen(true)
+          }}
         />
       )}
+
+      {reviewNotice && !isAdminContext ? (
+        <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+          {reviewNotice}
+        </p>
+      ) : null}
 
       <MeetingGuidanceCard
         route={isAdminContext ? `/admin/annexure-1/${karkun.id}` : `/rukn/visit/${karkun.id}`}
@@ -512,29 +526,28 @@ export function ConnectionJourneyPage() {
       />
 
       {!isAdminContext && (
-        <>
-          <ReleaseKarkunModal
-            isOpen={releaseOpen}
-            karkunName={karkun.name}
-            onClose={() => setReleaseOpen(false)}
-            onConfirm={(reason) => {
-              if (!authRuknId) return
-              releaseKarkun(karkun.id, authRuknId, reason)
-              setReleaseOpen(false)
-              navigate(ROUTES.RUKN_MY_KARKUN, {
-                state: { successMessage: 'Connection released successfully.' },
-              })
-            }}
-          />
-          <ReplaceKarkunModal
-            isOpen={replaceOpen}
-            currentKarkunId={karkun.id}
-            currentKarkunName={karkun.name}
-            ruknId={authRuknId ?? ''}
-            onClose={() => setReplaceOpen(false)}
-            onComplete={() => setReplaceOpen(false)}
-          />
-        </>
+        <RequestReviewModal
+          isOpen={reviewOpen}
+          karkunName={karkun.name}
+          onClose={() => setReviewOpen(false)}
+          error={reviewError}
+          onConfirm={(reason: AssignmentReviewReason, notes: string) => {
+            if (!authRuknId) return
+            const result = submitAssignmentReviewRequest({
+              karkunId: karkun.id,
+              ruknId: authRuknId,
+              reason,
+              notes,
+              createdBy: user?.displayName ?? user?.uid ?? 'Rukn',
+            })
+            if (!result.ok) {
+              setReviewError(result.error)
+              return
+            }
+            setReviewOpen(false)
+            setReviewNotice('Review request sent to Administrator. Ownership is unchanged.')
+          }}
+        />
       )}
     </PageShell>
   )

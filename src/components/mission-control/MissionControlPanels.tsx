@@ -237,6 +237,28 @@ type RuknMissionControlPanelsProps = {
   model: RuknMissionControlModel
 }
 
+export function RuknTodaysVisitQueue({ model }: RuknMissionControlPanelsProps) {
+  return (
+    <section className="mc-panel mc-panel-compact mc-panel-primary" aria-label="Today's visit queue">
+      <h2 className="mc-panel-title">Today&apos;s Visit Queue</h2>
+      {model.todaysVisits.length === 0 ? (
+        <p className="mc-caption">No visits scheduled in today’s timeline.</p>
+      ) : (
+        <ul className="mc-priority-list mc-priority-list-compact">
+          {model.todaysVisits.map((item) => (
+            <li key={item.id}>
+              <Link to={item.route} className="mc-priority-link mc-priority-link-compact">
+                <span className="mc-priority-title">{item.title}</span>
+                {item.subtitle ? <span className="mc-caption">{item.subtitle}</span> : null}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  )
+}
+
 export function RuknMissionControlPanels({ model }: RuknMissionControlPanelsProps) {
   const funnelStages = model.journeyFunnel
     .filter((stage) => FUNNEL_FOCUS.includes(stage.stageId))
@@ -249,15 +271,6 @@ export function RuknMissionControlPanels({ model }: RuknMissionControlPanelsProp
         count: stage.count,
       }
     })
-  const attendanceTotal =
-    model.attendanceStrip.present +
-    model.attendanceStrip.absent +
-    model.attendanceStrip.excused +
-    model.attendanceStrip.notRecorded
-  const attendancePct =
-    attendanceTotal === 0
-      ? 0
-      : Math.round((model.attendanceStrip.present / Math.max(attendanceTotal, 1)) * 100)
   const totalConnected = model.kpis.find((kpi) => kpi.id === 'my-connected')
   const connectedCount =
     typeof totalConnected?.value === 'number'
@@ -265,100 +278,49 @@ export function RuknMissionControlPanels({ model }: RuknMissionControlPanelsProp
       : funnelStages.reduce((sum, stage) => sum + stage.count, 0)
 
   return (
-    <div className="mc-panels">
-      <section className="mc-panel mc-panel-wide !p-0 !shadow-none !bg-transparent">
-        <MyKarkunProgress stages={funnelStages} totalConnected={connectedCount} />
+    <div className="mc-panels mc-panels-rukn-compact">
+      <section className="mc-panel mc-panel-wide mc-panel-bare">
+        <MyKarkunProgress
+          stages={funnelStages}
+          totalConnected={connectedCount}
+          hideConnectedMilestone
+        />
       </section>
 
-      <section className="mc-panel mc-panel-primary">
-        <h2 className="mc-panel-title">Today&apos;s Visits</h2>
-        {model.todaysVisits.length === 0 ? (
-          <p className="mc-caption">No visits scheduled in today’s timeline.</p>
-        ) : (
-          <ul className="mc-priority-list">
-            {model.todaysVisits.map((item) => (
-              <li key={item.id}>
-                <Link to={item.route} className="mc-priority-link">
-                  <span className="mc-priority-title">{item.title}</span>
-                  {item.subtitle ? <span className="mc-caption">{item.subtitle}</span> : null}
-                </Link>
-              </li>
-            ))}
+      <details className="mc-panel mc-panel-compact mc-panel-wide mc-more-details">
+        <summary className="mc-more-summary">
+          <span className="mc-panel-title">Monthly &amp; recent</span>
+          <span className="mc-more-hint">Targets · Activity</span>
+        </summary>
+        <div className="mc-more-body">
+          <ul className="mc-inline-metrics" aria-label="Monthly targets">
+            <li>
+              <span>Connected</span>
+              <strong>{model.monthlyTarget.connected}</strong>
+            </li>
+            <li>
+              <span>Bait-ul-Maal pending</span>
+              <strong>{model.monthlyTarget.baitulMaalPending}</strong>
+            </li>
+            <li>
+              <span>Development due</span>
+              <strong>{model.monthlyTarget.developmentDue}</strong>
+            </li>
           </ul>
-        )}
-      </section>
-
-      <section className="mc-panel">
-        <h2 className="mc-panel-title">Attendance Strip</h2>
-        <div className="mc-attendance-visual">
-          <McProgressRing value={attendancePct} size={80} tone="blue" sublabel="Present" />
-          <ul className="mc-stat-list mc-stat-strip">
-            <li>Present · {model.attendanceStrip.present}</li>
-            <li>Absent · {model.attendanceStrip.absent}</li>
-            <li>Excused · {model.attendanceStrip.excused}</li>
-            <li>Not recorded · {model.attendanceStrip.notRecorded}</li>
-          </ul>
+          {model.recentActivity.length === 0 ? (
+            <p className="mc-caption mt-2">No recent activity.</p>
+          ) : (
+            <ul className="mc-activity-list mc-activity-list-compact">
+              {model.recentActivity.slice(0, 3).map((item) => (
+                <li key={item.id}>
+                  <p className="mc-activity-message">{item.message}</p>
+                  <p className="mc-caption">{new Date(item.timestamp).toLocaleString()}</p>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
-      </section>
-
-      <section className="mc-panel">
-        <h2 className="mc-panel-title">Monthly Target</h2>
-        <ul className="mc-health-grid mc-health-grid-compact">
-          <li>
-            <McProgressRing
-              value={Math.min(100, model.monthlyTarget.connected * 10)}
-              size={68}
-              tone="green"
-              label={String(model.monthlyTarget.connected)}
-              sublabel="Connected"
-            />
-          </li>
-          <li>
-            <McProgressRing
-              value={
-                model.monthlyTarget.baitulMaalPaid + model.monthlyTarget.baitulMaalPending === 0
-                  ? 100
-                  : Math.round(
-                      (model.monthlyTarget.baitulMaalPaid /
-                        Math.max(
-                          model.monthlyTarget.baitulMaalPaid + model.monthlyTarget.baitulMaalPending,
-                          1,
-                        )) *
-                        100,
-                    )
-              }
-              size={68}
-              tone="amber"
-              sublabel="Bait-ul-Maal"
-            />
-          </li>
-          <li>
-            <McProgressRing
-              value={Math.max(0, 100 - model.monthlyTarget.developmentDue * 15)}
-              size={68}
-              tone="purple"
-              label={String(model.monthlyTarget.developmentDue)}
-              sublabel="Dev due"
-            />
-          </li>
-        </ul>
-      </section>
-
-      <section className="mc-panel mc-panel-quiet">
-        <h2 className="mc-panel-title">Recent Activity</h2>
-        {model.recentActivity.length === 0 ? (
-          <p className="mc-caption">No recent activity.</p>
-        ) : (
-          <ul className="mc-activity-list">
-            {model.recentActivity.slice(0, 5).map((item) => (
-              <li key={item.id}>
-                <p className="mc-activity-message">{item.message}</p>
-                <p className="mc-caption">{new Date(item.timestamp).toLocaleString()}</p>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      </details>
     </div>
   )
 }

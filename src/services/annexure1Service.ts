@@ -19,6 +19,7 @@ import {
   getFollowUpCompletionRate,
   getFollowUpDashboardMetrics,
   getFollowUpsForCampaignRecord,
+  getFollowUpsForRukn,
   handleFollowUpOnAnnexureSubmit,
 } from '@/services/followUpService'
 import type {
@@ -197,6 +198,19 @@ export function saveAnnexure1Draft(
 
 export function getCampaignRecordData() {
   const meetingForms = getSubmittedMeetingForms()
+  return buildCampaignRecordPayload(meetingForms, getFollowUpsForCampaignRecord())
+}
+
+/** Rukn-scoped visit records and follow-ups (KC-008). */
+export function getRuknCampaignRecordData(ruknId: string) {
+  const meetingForms = getSubmittedMeetingForms().filter((form) => form.ruknId === ruknId)
+  return buildCampaignRecordPayload(meetingForms, getFollowUpsForRukn(ruknId))
+}
+
+function buildCampaignRecordPayload(
+  meetingForms: ReturnType<typeof getSubmittedMeetingForms>,
+  followUps: ReturnType<typeof getFollowUpsForCampaignRecord>,
+) {
   const commitments = meetingForms
     .filter((form) => form.commitmentMade && form.commitmentDetails)
     .map((form) => ({
@@ -233,7 +247,7 @@ export function getCampaignRecordData() {
     meetingForms,
     commitments,
     jihRegistrations,
-    followUps: getFollowUpsForCampaignRecord(),
+    followUps,
   }
 }
 

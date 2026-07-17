@@ -1,5 +1,5 @@
 /**
- * Operational Q&A for Digital Rafeeq voice/text (KC-007).
+ * Operational Q&A for Digital Rafeeq (KC-008) — Urdu-first companion.
  * Answers from live repositories/services — no hardcoded metrics.
  */
 
@@ -53,7 +53,9 @@ export function answerOperationalQuery(
   const query = normalize(rawQuery)
   if (!query) {
     return {
-      text: 'Please ask about visits, connections, attendance, follow-ups, or today’s priorities.',
+      text: conversational(
+        'ملاقات، روابط، اجتماع، فالو اپ یا آج کی ترجیحات کے بارے میں پوچھیں۔',
+      ),
       actions: [],
     }
   }
@@ -82,112 +84,129 @@ function answerAdminQuery(
   const jih = getJihWebPortalDashboardMetrics()
   const team = getTeamPerformanceRows()
 
-  if (matches(query, [/unconnected|remain|available|not connected|pending connection/])) {
+  if (
+    matches(query, [
+      /unconnected|remain|available|not connected|pending connection/,
+      /غیر مربوط|باقی|دستیاب|رابطہ نہیں/,
+    ])
+  ) {
     return {
       text: conversational(
-        `${people.unassignedKarkuns} Karkuns remain unconnected, while ${people.assignedKarkuns} are already connected. I recommend focusing Connections on the remaining pool next.`,
+        `${people.unassignedKarkuns} کارکن ابھی مربوط نہیں ہیں، جبکہ ${people.assignedKarkuns} پہلے سے مربوط ہیں۔ اگلا قدم روابط پر توجہ دینا چاہیے۔`,
       ),
       actions: [
-        { id: 'connections', label: 'Open Connections', route: adminAssignmentsPath() },
-        { id: 'execution', label: 'Open Execution', route: adminExecutionPath() },
+        { id: 'connections', label: 'روابط کھولیں', route: adminAssignmentsPath() },
+        { id: 'execution', label: 'عملدرآمد کھولیں', route: adminExecutionPath() },
       ],
     }
   }
 
-  if (matches(query, [/rukn.*(attention|need|poor|weak|behind)|which rukn|leaderboard|performance/])) {
+  if (
+    matches(query, [
+      /rukn.*(attention|need|poor|weak|behind)|which rukn|leaderboard|performance/,
+      /رکن.*(توجہ|کمزور)|کون سا رکن|کارکردگی/,
+    ])
+  ) {
     const weakest = [...team].sort((a, b) => a.completionPct - b.completionPct)[0]
     const strongest = [...team].sort((a, b) => b.completionPct - a.completionPct)[0]
     if (!weakest) {
       return {
-        text: conversational('Rukn performance data is not available yet. Once connections begin, I will highlight who needs support.'),
-        actions: [{ id: 'connections', label: 'Open Connections', route: ROUTES.ADMIN_ASSIGNMENTS }],
+        text: conversational(
+          'رکن کی کارکردگی ابھی دستیاب نہیں۔ جب روابط شروع ہوں گے تو میں بتائوں گا کسے مدد درکار ہے۔',
+        ),
+        actions: [{ id: 'connections', label: 'روابط کھولیں', route: ROUTES.ADMIN_ASSIGNMENTS }],
       }
     }
     return {
       text: conversational(
-        `${weakest.ruknName} needs attention right now (${weakest.completionPct}% completion, ${weakest.pendingWork} pending). ${strongest.ruknName} is currently leading at ${strongest.completionPct}%.`,
+        `${weakest.ruknName} کو ابھی توجہ درکار ہے (${weakest.completionPct}% تکمیل، ${weakest.pendingWork} باقی)۔ ${strongest.ruknName} اس وقت آگے ہیں (${strongest.completionPct}%)۔`,
       ),
       actions: [
-        { id: 'rukn', label: 'Open Rukns', route: ROUTES.ADMIN_RUKN },
-        { id: 'execution', label: 'Open Execution', route: adminExecutionPath() },
+        { id: 'rukn', label: 'ارکان کھولیں', route: ROUTES.ADMIN_RUKN },
+        { id: 'execution', label: 'عملدرآمد کھولیں', route: adminExecutionPath() },
       ],
     }
   }
 
-  if (matches(query, [/attendance|ijtema|missed/])) {
+  if (matches(query, [/attendance|ijtema|missed/, /حاضری|اجتماع|غائب/])) {
     return {
       text: conversational(
-        `This week’s Ijtema picture: ${ijtema.present} present, ${ijtema.absent} absent, ${ijtema.excused} excused, and ${ijtema.notRecorded} not yet recorded. Attendance follow-up will strengthen participation.`,
+        `اس ہفتے کا اجتماع: ${ijtema.present} حاضر، ${ijtema.absent} غائب، ${ijtema.excused} معذور، اور ${ijtema.notRecorded} ابھی درج نہیں۔ حاضری فالو اپ سے شرکت بہتر ہوگی۔`,
       ),
       actions: [
-        { id: 'attendance', label: 'Open Attendance', route: adminCompliancePath('ijtema') },
-        { id: 'reminder', label: 'Send Reminder', route: ROUTES.ADMIN_COMMUNICATION },
+        { id: 'attendance', label: 'حاضری کھولیں', route: adminCompliancePath('ijtema') },
+        { id: 'reminder', label: 'یاد دہانی بھیجیں', route: ROUTES.ADMIN_COMMUNICATION },
       ],
     }
   }
 
-  if (matches(query, [/bait.?ul.?maal|contribution|target/])) {
+  if (matches(query, [/bait.?ul.?maal|contribution|target/, /بیت المال|عطیہ/])) {
     return {
       text: conversational(
-        `Bait-ul-Maal compliance is at ${baitulMaal.compliancePercentage}%. ${baitulMaal.pending} are pending and ${baitulMaal.paid} are paid. A gentle reminder wave will help close the month calmly.`,
+        `بیت المال کی تکمیل ${baitulMaal.compliancePercentage}% ہے۔ ${baitulMaal.pending} باقی اور ${baitulMaal.paid} ادا شدہ ہیں۔ نرم یاد دہانی سے مہینہ مکمل ہو سکتا ہے۔`,
       ),
       actions: [
-        { id: 'baitul', label: 'Open Bait-ul-Maal', route: adminCompliancePath('baitul-maal') },
-        { id: 'reminder', label: 'Send Reminder', route: ROUTES.ADMIN_COMMUNICATION },
+        { id: 'baitul', label: 'بیت المال کھولیں', route: adminCompliancePath('baitul-maal') },
+        { id: 'reminder', label: 'یاد دہانی بھیجیں', route: ROUTES.ADMIN_COMMUNICATION },
       ],
     }
   }
 
-  if (matches(query, [/follow.?up|overdue/])) {
+  if (matches(query, [/follow.?up|overdue/, /فالو اپ|تاخیر/])) {
     const overdue =
       snapshot?.followUpQueue.find((group) => group.section === 'overdue')?.items.length ?? 0
     return {
       text: conversational(
-        `There ${overdue === 1 ? 'is' : 'are'} ${overdue} overdue follow-up${overdue === 1 ? '' : 's'} across ${assignments.activeAssignments} active connections. Clearing these first will restore campaign rhythm.`,
+        `${assignments.activeAssignments} فعال روابط میں ${overdue} تاخیر شدہ فالو اپ ہیں۔ پہلے انہیں مکمل کریں تاکہ مہم کی رفتار بحال ہو۔`,
       ),
       actions: [
-        { id: 'follow-up', label: 'Open Follow-ups', route: ROUTES.ADMIN_FOLLOW_UP },
-        { id: 'execution', label: 'Open Execution', route: adminExecutionPath() },
+        { id: 'follow-up', label: 'فالو اپ کھولیں', route: ROUTES.ADMIN_FOLLOW_UP },
+        { id: 'execution', label: 'عملدرآمد کھولیں', route: adminExecutionPath() },
       ],
     }
   }
 
-  if (matches(query, [/today|focus|priorit|should i|what.*(do|work)/])) {
-    const title = snapshot?.nextAction.title ?? 'Review campaign priorities'
+  if (
+    matches(query, [
+      /today|focus|priorit|should i|what.*(do|work)/,
+      /آج|ترجیح|کیا کروں|کام/,
+    ])
+  ) {
+    const title = snapshot?.nextAction.title ?? 'مہم کی ترجیحات دیکھیں'
     const detail = snapshot?.nextAction.description ?? ''
     return {
       text: conversational(
-        `For today, I recommend this focus: ${title}${detail ? `. ${detail}` : ''}`,
+        `آج کی توجہ: ${title}${detail ? `۔ ${detail}` : ''}`,
       ),
       actions: [
         {
           id: 'mission',
-          label: snapshot?.nextAction.actionLabel ?? 'Open Mission',
+          label: snapshot?.nextAction.actionLabel ?? 'مشن کھولیں',
           route: snapshot?.nextAction.route ?? ROUTES.ADMIN,
         },
-        { id: 'execution', label: 'Open Execution', route: adminExecutionPath() },
+        { id: 'execution', label: 'عملدرآمد کھولیں', route: adminExecutionPath() },
       ],
     }
   }
 
-  if (matches(query, [/jih|registration/])) {
+  if (matches(query, [/jih|registration/, /اندراج|رجسٹریشن/])) {
     return {
       text: conversational(
-        `JIH registration status: ${jih.registered} registered, ${jih.notRegistered} not registered, and ${jih.pendingReports} pending reports. Supporting registrations will unlock the next journey stages.`,
+        `جے آئی ایچ رجسٹریشن: ${jih.registered} مکمل، ${jih.notRegistered} باقی، اور ${jih.pendingReports} رپورٹ زیر التوا۔ رجسٹریشن سے اگلے مراحل کھلتے ہیں۔`,
       ),
       actions: [
-        { id: 'jih', label: 'Open Compliance', route: adminCompliancePath('jih-portal') },
+        { id: 'jih', label: 'تعمیل کھولیں', route: adminCompliancePath('jih-portal') },
       ],
     }
   }
 
   return {
     text: conversational(
-      `Campaign snapshot — ${people.assignedKarkuns} connected, ${people.unassignedKarkuns} remaining, and ${team.length} Rukns with active work. Ask me about visits, attendance, follow-ups, or Rukn performance.`,
+      `مہم کا خلاصہ — ${people.assignedKarkuns} مربوط، ${people.unassignedKarkuns} باقی، اور ${team.length} ارکان فعال کام پر۔ ملاقات، حاضری، فالو اپ یا رکن کی کارکردگی پوچھیں۔`,
     ),
     actions: [
-      { id: 'connections', label: 'Open Connections', route: ROUTES.ADMIN_ASSIGNMENTS },
-      { id: 'compliance', label: 'Open Compliance', route: ROUTES.ADMIN_COMPLIANCE },
+      { id: 'connections', label: 'روابط کھولیں', route: ROUTES.ADMIN_ASSIGNMENTS },
+      { id: 'compliance', label: 'تعمیل کھولیں', route: ROUTES.ADMIN_COMPLIANCE },
     ],
   }
 }
@@ -202,27 +221,32 @@ function answerRuknQuery(
   const guidance = getGuidanceForRuknKarkuns(ruknId)
   const baitulMaal = getRuknBaitulMaalMetrics(connectedIds)
 
-  if (matches(query, [/today|focus|mission|should i|what.*(do|work)/])) {
+  if (
+    matches(query, [
+      /today|focus|mission|should i|what.*(do|work)/,
+      /آج|مشن|کیا کروں|کام/,
+    ])
+  ) {
     return {
       text: conversational(
-        `${snapshot?.nextAction.title ?? 'Review your connected Karkuns'}${
-          snapshot?.nextAction.description ? `. ${snapshot.nextAction.description}` : ''
+        `${snapshot?.nextAction.title ?? 'اپنے مربوط کارکنان دیکھیں'}${
+          snapshot?.nextAction.description ? `۔ ${snapshot.nextAction.description}` : ''
         }`,
       ),
       actions: [
         {
           id: 'mission',
-          label: snapshot?.nextAction.actionLabel ?? "Today's Mission",
+          label: snapshot?.nextAction.actionLabel ?? 'آج کا مشن',
           route: snapshot?.nextAction.route ?? ROUTES.RUKN_MY_KARKUN,
         },
-        { id: 'connected', label: 'Open Connections', route: ROUTES.RUKN_MY_KARKUN },
+        { id: 'connected', label: 'روابط کھولیں', route: ROUTES.RUKN_MY_KARKUN },
       ],
     }
   }
 
-  if (matches(query, [/visit|meeting|overdue visit/])) {
+  if (matches(query, [/visit|meeting|overdue visit/, /ملاقات|وزیٹ|ملاقات باقی/])) {
     const visitItems = (snapshot?.schedule ?? []).filter(
-      (item) => item.karkunId || /visit|meeting/i.test(item.title),
+      (item) => item.karkunId || /visit|meeting|ملاقات/i.test(item.title),
     )
     const names = visitItems
       .slice(0, 5)
@@ -231,25 +255,25 @@ function answerRuknQuery(
     const firstId = visitItems.find((item) => item.karkunId)?.karkunId
     const recommendation =
       names.length > 0
-        ? ` I recommend completing ${names.slice(0, 3).join(', ')} first.`
+        ? ` پہلے ${names.slice(0, 3).join('، ')} کی ملاقات مکمل کریں۔`
         : ''
     return {
       text: conversational(
         visitItems.length === 0
-          ? 'No visits are queued in today’s schedule. A quick review of connected Karkuns will show who needs a meeting next.'
-          : `Today you have ${visitItems.length} pending visit${visitItems.length === 1 ? '' : 's'}.${recommendation}`,
+          ? 'آج کی فہرست میں کوئی ملاقات نہیں۔ مربوط کارکنان دیکھ کر اگلی ملاقات طے کریں۔'
+          : `آج ${visitItems.length} ملاقات باقی ہیں۔${recommendation}`,
       ),
       actions: [
         ...(firstId
-          ? [{ id: 'record', label: 'Record Visit', route: ruknVisitPath(firstId) }]
+          ? [{ id: 'record', label: 'ملاقات محفوظ کریں', route: ruknVisitPath(firstId) }]
           : []),
-        { id: 'connected', label: 'Open Connections', route: ROUTES.RUKN_MY_KARKUN },
-        { id: 'schedule', label: 'Schedule Visit', route: ROUTES.RUKN_MY_KARKUN },
+        { id: 'connected', label: 'روابط کھولیں', route: ROUTES.RUKN_MY_KARKUN },
+        { id: 'schedule', label: 'ملاقات طے کریں', route: ROUTES.RUKN_MY_KARKUN },
       ],
     }
   }
 
-  if (matches(query, [/ijtema|attendance|missed/])) {
+  if (matches(query, [/ijtema|attendance|missed/, /اجتماع|حاضری|غائب/])) {
     const missed = connectedIds.filter((id) => {
       const status = getCurrentIjtemaAttendance(id).status
       return status === 'Absent' || status === 'Not recorded'
@@ -261,19 +285,19 @@ function answerRuknQuery(
     return {
       text: conversational(
         missed.length === 0
-          ? 'Alhamdulillah — all connected Karkuns are Present or Excused for this week’s Ijtema.'
-          : `${missed.length} Karkun${missed.length === 1 ? '' : 's'} need attendance attention${
-              names.length ? `: ${names.join(', ')}` : ''
-            }. A short reminder will help.`,
+          ? 'الحمد للہ — اس ہفتے کے اجتماع میں سب مربوط کارکنان حاضر یا معذور ہیں۔'
+          : `${missed.length} کارکن کی حاضری پر توجہ درکار ہے${
+              names.length ? `: ${names.join('، ')}` : ''
+            }۔ مختصر یاد دہانی مددگار ہوگی۔`,
       ),
       actions: [
-        { id: 'attendance', label: 'Open Attendance', route: ROUTES.RUKN },
-        { id: 'reminder', label: 'Send Reminder', route: ROUTES.RUKN_MY_KARKUN },
+        { id: 'attendance', label: 'حاضری کھولیں', route: ROUTES.RUKN },
+        { id: 'reminder', label: 'یاد دہانی بھیجیں', route: ROUTES.RUKN_MY_KARKUN },
       ],
     }
   }
 
-  if (matches(query, [/registration|jih/])) {
+  if (matches(query, [/registration|jih/, /رجسٹریشن|اندراج/])) {
     const pending = connectedIds.filter((id) => {
       const karkun = getKarkunById(id)
       return karkun && karkun.jihAppRegistrationStatus !== 'Registered'
@@ -285,28 +309,28 @@ function answerRuknQuery(
     return {
       text: conversational(
         pending.length === 0
-          ? 'All connected Karkuns appear registered on JIH. You can move attention to visits and development.'
-          : `${pending.length} still need registration support${
-              names.length ? `: ${names.join(', ')}` : ''
-            }.`,
+          ? 'سب مربوط کارکنان جے آئی ایچ پر رجسٹر نظر آتے ہیں۔ اب ملاقات اور ترقی پر توجہ دے سکتے ہیں۔'
+          : `${pending.length} کو رجسٹریشن میں مدد درکار ہے${
+              names.length ? `: ${names.join('، ')}` : ''
+            }۔`,
       ),
-      actions: [{ id: 'connected', label: 'Open Connections', route: ROUTES.RUKN_MY_KARKUN }],
+      actions: [{ id: 'connected', label: 'روابط کھولیں', route: ROUTES.RUKN_MY_KARKUN }],
     }
   }
 
-  if (matches(query, [/bait.?ul.?maal|contribution/])) {
+  if (matches(query, [/bait.?ul.?maal|contribution/, /بیت المال|عطیہ/])) {
     return {
       text: conversational(
-        `For your connections, Bait-ul-Maal shows ${baitulMaal.pending} pending, ${baitulMaal.paid} paid, and ${baitulMaal.exempt} exempt. A calm reminder helps close the month.`,
+        `آپ کے روابط میں بیت المال: ${baitulMaal.pending} باقی، ${baitulMaal.paid} ادا شدہ، اور ${baitulMaal.exempt} مستثنیٰ۔ نرم یاد دہانی سے مہینہ مکمل ہو سکتا ہے۔`,
       ),
       actions: [
-        { id: 'baitul', label: 'Open Bait-ul-Maal', route: ROUTES.RUKN_MY_KARKUN },
-        { id: 'reminder', label: 'Send Reminder', route: ROUTES.RUKN_MY_KARKUN },
+        { id: 'baitul', label: 'بیت المال کھولیں', route: ROUTES.RUKN_MY_KARKUN },
+        { id: 'reminder', label: 'یاد دہانی بھیجیں', route: ROUTES.RUKN_MY_KARKUN },
       ],
     }
   }
 
-  if (matches(query, [/development|tarbiyah|assessment|performance|overall/])) {
+  if (matches(query, [/development|tarbiyah|assessment|performance|overall/, /ترقی|تربیت|جائزہ/])) {
     const due = connectedIds.filter((id) => {
       const stage = guidance.find((item) => item.karkunId === id)?.currentStage
       if (stage !== 'development') return false
@@ -314,44 +338,44 @@ function answerRuknQuery(
     }).length
     return {
       text: conversational(
-        `You are accompanying ${connectedIds.length} connected Karkuns. ${due} development assessment${due === 1 ? '' : 's'} ${due === 1 ? 'is' : 'are'} due — take them one by one with care.`,
+        `آپ ${connectedIds.length} مربوط کارکنان کے ساتھ ہیں۔ ${due} ترقیاتی جائزے باقی ہیں — ایک ایک کر کے مکمل کریں۔`,
       ),
-      actions: [{ id: 'connected', label: 'Open Connections', route: ROUTES.RUKN_MY_KARKUN }],
+      actions: [{ id: 'connected', label: 'روابط کھولیں', route: ROUTES.RUKN_MY_KARKUN }],
     }
   }
 
-  if (matches(query, [/follow.?up/])) {
+  if (matches(query, [/follow.?up/, /فالو اپ/])) {
     const count = snapshot?.followUpQueue.reduce((sum, group) => sum + group.items.length, 0) ?? 0
     return {
       text: conversational(
-        `You have ${count} follow-up item${count === 1 ? '' : 's'} waiting. Clearing even a few today will keep relationships warm.`,
+        `آپ کے پاس ${count} فالو اپ باقی ہیں۔ آج چند مکمل کرنے سے تعلق گرم رہے گا۔`,
       ),
-      actions: [{ id: 'connected', label: 'Open Connections', route: ROUTES.RUKN_MY_KARKUN }],
+      actions: [{ id: 'connected', label: 'روابط کھولیں', route: ROUTES.RUKN_MY_KARKUN }],
     }
   }
 
   return {
     text: conversational(
-      `You currently have ${connectedIds.length} connected Karkuns. Ask me about today’s mission, visits, Ijtema, registration, or Bait-ul-Maal.`,
+      `اس وقت آپ کے ${connectedIds.length} مربوط کارکن ہیں۔ آج کا مشن، ملاقاتیں، اجتماع، رجسٹریشن یا بیت المال پوچھیں۔`,
     ),
     actions: [
-      { id: 'connected', label: 'Open Connections', route: ROUTES.RUKN_MY_KARKUN },
-      { id: 'connect', label: 'Connect Karkun', route: ROUTES.RUKN_AVAILABLE_KARKUN },
+      { id: 'connected', label: 'روابط کھولیں', route: ROUTES.RUKN_MY_KARKUN },
+      { id: 'connect', label: 'کارکن مربوط کریں', route: ROUTES.RUKN_AVAILABLE_KARKUN },
     ],
   }
 }
 
 export const SUGGESTED_QUESTIONS_ADMIN = [
-  'How many Karkuns remain unconnected?',
-  'Which Rukn needs attention?',
-  'Show poor attendance.',
-  'What should I focus on today?',
+  'کتنے کارکن ابھی مربوط نہیں؟',
+  'کس رکن کو توجہ درکار ہے؟',
+  'کمزور حاضری دکھائیں',
+  'آج کس پر توجہ دوں؟',
 ] as const
 
 export const SUGGESTED_QUESTIONS_RUKN = [
-  'What should I do today?',
-  'Who needs a visit?',
-  'Who missed Ijtema?',
-  'Which Karkun has pending registration?',
-  'What is my development progress?',
+  'آج میں کیا کروں؟',
+  'کس کی ملاقات باقی ہے؟',
+  'اجتماع کون چھوٹ گیا؟',
+  'کس کارکن کی رجسٹریشن باقی ہے؟',
+  'میری ترقی کیسی ہے؟',
 ] as const

@@ -1,3 +1,7 @@
+/**
+ * Execution status helpers + role-separated summary builders (KC-008).
+ */
+
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { getRuknById } from '@/data/ruknMaster'
 import { getActiveFollowUpForKarkun } from '@/stores/followUpStore'
@@ -89,17 +93,19 @@ export type ExecutionAssignmentItem = {
   ruknName: string
   assignmentNumber: string
   status: ExecutionStatusDisplay
+  ruknId: string
 }
 
-export function getExecutionDashboardData(): {
+export type ExecutionSummary = {
   counts: ExecutionSummaryCounts
   activeItems: ExecutionAssignmentItem[]
   completedTodayRecords: SubmittedMeetingForm[]
-} {
-  const activeAssignments = getAllAssignments().filter((record) => record.status === 'Active')
-  const today = todayIsoDate()
+}
 
-  const activeItems = activeAssignments
+function buildItemsForAssignments(
+  assignments: ReturnType<typeof getAllAssignments>,
+): ExecutionAssignmentItem[] {
+  return assignments
     .map((assignment) => {
       const karkun = getKarkunById(assignment.karkunId)
       const rukn = getRuknById(assignment.ruknId)
@@ -115,20 +121,64 @@ export function getExecutionDashboardData(): {
         ruknName: rukn.name,
         assignmentNumber: assignment.assignmentNumber,
         status: getExecutionStatusForAssignment(assignment.assignmentId, assignment.karkunId),
+        ruknId: assignment.ruknId,
       }
     })
     .filter((item): item is ExecutionAssignmentItem => item !== null)
+}
 
-  const completedTodayRecords = getSubmittedMeetingForms().filter(
-    (form) => form.submissionDate.slice(0, 10) === today,
-  )
-
-  const counts: ExecutionSummaryCounts = {
+function countsFromItems(
+  activeItems: ExecutionAssignmentItem[],
+  completedTodayRecords: SubmittedMeetingForm[],
+): ExecutionSummaryCounts {
+  return {
     pending: activeItems.filter((item) => item.status === 'Pending').length,
     inProgress: activeItems.filter((item) => item.status === 'In Progress').length,
     followUpRequired: activeItems.filter((item) => item.status === 'Follow-up Required').length,
     completedToday: completedTodayRecords.length,
   }
+}
 
-  return { counts, activeItems, completedTodayRecords }
+/** Campaign-wide execution summary — Administrator only. */
+export function buildCampaignExecutionSummary(): ExecutionSummary {
+  const activeAssignments = getAllAssignments().filter((record) => record.status === 'Active')
+  const today = todayIsoDate()
+  const activeItems = buildItemsForAssignments(activeAssignments)
+  const completedTodayRecords = getSubmittedMeetingForms().filter(
+    (form) => form.submissionDate.slice(0, 10) === today,
+  )
+
+  return {
+    counts: countsFromItems(activeItems, completedTodayRecords),
+    activeItems,
+    completedTodayRecords,
+  }
+}
+
+/** Personal workload summary — logged-in Rukn only. */
+export function buildRuknExecutionSummary(ruknId: string): ExecutionSummary {
+  const activeAssignments = getAllAssignments().filter(
+    (record) => record.status === 'Active' && record.ruknId === ruknId,
+  )
+  const today = todayIsoDate()
+  const activeItems = buildItemsForAssignments(activeAssignments)
+  const assignmentIds = new Set(activeAssignments.map((record) => record.assignmentId))
+  const completedTodayRecords = getSubmittedMeetingForms().filter(
+    (form) =>
+      form.submissionDate.slice(0, 10) === today && assignmentIds.has(form.assignmentId),
+  )
+
+  return {
+    counts: countsFromItems(activeItems, completedTodayRecords),
+    activeItems,
+    completedTodayRecords,
+  }
+}
+
+/**
+ * @deprecated Prefer buildCampaignExecutionSummary() for Admin.
+ * Kept for existing Admin / home callers (campaign-wide scope).
+ */
+export function getExecutionDashboardData(): ExecutionSummary {
+  return buildCampaignExecutionSummary()
 }

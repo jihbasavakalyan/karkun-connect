@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { getCampaignRecordData } from '@/services/annexure1Service'
+import { Link, Navigate } from 'react-router-dom'
+import { getRuknCampaignRecordData } from '@/services/annexure1Service'
 import { subscribeToAnnexure1Store } from '@/stores/annexure1Store'
 import { subscribeToFollowUpStore } from '@/stores/followUpStore'
 import { ActiveCampaignSubtitle } from '@/components/layout/CampaignStatusBar'
@@ -8,12 +8,14 @@ import { ROUTES, ruknVisitPath } from '@/constants/routes'
 import { ExecutionEmptyState } from '@/components/execution/ExecutionEmptyState'
 import { ExecutionStatusBadge } from '@/components/execution/ExecutionStatusBadge'
 import { ExecutionSummaryCards } from '@/components/execution/ExecutionSummaryCards'
-import { getExecutionDashboardData } from '@/lib/executionStatus'
+import { buildRuknExecutionSummary } from '@/lib/executionStatus'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { PageHeader, PageShell } from '@/components/ui'
 import { ReportGuidanceCard } from '@/features/digitalRafeeq/contextual'
+import { useRequiredRuknId } from '@/hooks/useRequiredRuknId'
 
 export function CampaignRecordPage() {
+  const ruknId = useRequiredRuknId()
   const [, setVersion] = useState(0)
 
   useEffect(() => {
@@ -25,8 +27,12 @@ export function CampaignRecordPage() {
     }
   }, [])
 
-  const data = getCampaignRecordData()
-  const { counts } = getExecutionDashboardData()
+  if (!ruknId) {
+    return <Navigate to={ROUTES.LOGIN} replace />
+  }
+
+  const data = getRuknCampaignRecordData(ruknId)
+  const { counts } = buildRuknExecutionSummary(ruknId)
   const pendingFollowUps = data.followUps.filter((item) => item.status === 'Pending')
 
   return (
@@ -43,7 +49,7 @@ export function CampaignRecordPage() {
       <section className="ds-section">
         <h2 className="ds-section-title">Your Progress</h2>
         <div className="mt-4">
-          <ExecutionSummaryCards counts={counts} />
+          <ExecutionSummaryCards counts={counts} variant="rukn" />
         </div>
       </section>
 

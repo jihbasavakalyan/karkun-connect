@@ -1,5 +1,6 @@
 /**
  * Compact Rukn “My Karkun Progress” summary (presentation only).
+ * Collapsed by default — progressive disclosure (KC-008).
  */
 
 import { useId, useState } from 'react'
@@ -8,21 +9,36 @@ import type { RuknProgressStageView } from '@/lib/ruknProgressPresentation'
 type MyKarkunProgressProps = {
   stages: RuknProgressStageView[]
   totalConnected: number
+  /** Home compaction: hide Connected milestone (already in hero Assigned). */
+  hideConnectedMilestone?: boolean
 }
 
-export function MyKarkunProgress({ stages, totalConnected }: MyKarkunProgressProps) {
+/** Home compact view: exclude Connected milestone (shown in hero Assigned). */
+const HOME_STAGE_IDS = new Set([
+  'jih-registration',
+  'orientation',
+  'participation',
+  'development',
+])
+
+export function MyKarkunProgress({
+  stages,
+  totalConnected,
+  hideConnectedMilestone = false,
+}: MyKarkunProgressProps) {
   const detailsId = useId()
   const [expanded, setExpanded] = useState(false)
-  const maxCount = Math.max(...stages.map((stage) => stage.count), 1)
+  const visible = hideConnectedMilestone
+    ? stages.filter((stage) => HOME_STAGE_IDS.has(stage.stageId))
+    : stages
+  const maxCount = Math.max(...visible.map((stage) => stage.count), 1)
 
   return (
-    <section className="rukn-progress" aria-label="My Karkun Progress">
+    <section className="rukn-progress rukn-progress-compact" aria-label="My Karkun Progress">
       <div className="rukn-progress-head">
         <div>
           <h2 className="rukn-progress-title">My Karkun Progress</h2>
-          <p className="rukn-progress-caption">
-            {totalConnected} connected · where your Karkuns stand today
-          </p>
+          <p className="rukn-progress-caption">{totalConnected} connected</p>
         </div>
         <button
           type="button"
@@ -31,42 +47,40 @@ export function MyKarkunProgress({ stages, totalConnected }: MyKarkunProgressPro
           aria-controls={detailsId}
           onClick={() => setExpanded((value) => !value)}
         >
-          {expanded ? 'Hide details' : 'Details'}
+          {expanded ? 'Hide' : 'Show'}
         </button>
       </div>
 
-      <ol className="rukn-progress-rail" aria-label="Progress milestones">
-        {stages.map((stage, index) => (
-          <li key={stage.stageId} className="rukn-progress-step">
-            <span className="rukn-progress-count" title={stage.label}>
-              {stage.count}
-            </span>
-            <span className="rukn-progress-dot" aria-hidden="true" />
-            <span className="rukn-progress-short">{stage.shortLabel}</span>
-            {index < stages.length - 1 ? (
-              <span className="rukn-progress-connector" aria-hidden="true" />
-            ) : null}
-          </li>
-        ))}
-      </ol>
-
       {expanded ? (
-        <ul id={detailsId} className="rukn-progress-details">
-          {stages.map((stage) => (
-            <li key={stage.stageId}>
-              <div className="rukn-progress-detail-row">
-                <span className="rukn-progress-detail-label">{stage.label}</span>
-                <span className="rukn-progress-detail-count">{stage.count}</span>
-              </div>
-              <div className="rukn-progress-detail-track" role="presentation">
-                <div
-                  className="rukn-progress-detail-fill"
-                  style={{ width: `${(stage.count / maxCount) * 100}%` }}
-                />
-              </div>
-            </li>
-          ))}
-        </ul>
+        <div id={detailsId}>
+          <ul className="rukn-progress-bars" aria-label="Progress milestones">
+            {visible.map((stage) => (
+              <li key={stage.stageId}>
+                <div className="rukn-progress-detail-row">
+                  <span className="rukn-progress-detail-label">{stage.shortLabel}</span>
+                  <span className="rukn-progress-detail-count">{stage.count}</span>
+                </div>
+                <div className="rukn-progress-detail-track" role="presentation">
+                  <div
+                    className="rukn-progress-detail-fill"
+                    style={{ width: `${(stage.count / maxCount) * 100}%` }}
+                  />
+                </div>
+              </li>
+            ))}
+          </ul>
+
+          <ul className="rukn-progress-details">
+            {visible.map((stage) => (
+              <li key={stage.stageId}>
+                <div className="rukn-progress-detail-row">
+                  <span className="rukn-progress-detail-label">{stage.label}</span>
+                  <span className="rukn-progress-detail-count">{stage.count}</span>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
       ) : null}
     </section>
   )

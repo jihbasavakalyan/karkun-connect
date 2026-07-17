@@ -84,7 +84,7 @@ export function useAdminAssistant(): UseAdminAssistantResult {
           route: '/admin',
           intent: 'dashboard_overview',
           channel: 'dashboard',
-          locale: 'en',
+          locale: 'ur',
         })
 
         if (cancelled) return

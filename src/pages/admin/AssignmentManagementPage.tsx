@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { adminAnnexure1Path, adminRuknDetailPath } from '@/constants/routes'
 import { AssignmentMappingView } from '@/components/assignment/AssignmentMappingView'
+import { AssignmentReviewQueue } from '@/components/assignment/AssignmentReviewQueue'
 import {
   AvailableKarkunRow,
   ConnectKarkunConfirmModal,
@@ -242,6 +243,8 @@ export function AssignmentManagementPage() {
       />
 
       <ExecutionGuidanceCard route="/admin/assignments" role="administrator" />
+
+      <AssignmentReviewQueue />
 
       <div className="ds-tab-pill-nav" role="tablist" aria-label="Connection views">
         <button

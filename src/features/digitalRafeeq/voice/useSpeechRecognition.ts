@@ -57,7 +57,7 @@ export function useSpeechRecognition(options?: {
     }
 
     const recognition = new Ctor()
-    recognition.lang = options?.lang ?? 'en-IN'
+    recognition.lang = options?.lang ?? 'ur-IN'
     recognition.continuous = false
     recognition.interimResults = true
     recognition.maxAlternatives = 1

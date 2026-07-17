@@ -145,6 +145,10 @@ export function getFollowUpsForCampaignRecord() {
   }))
 }
 
+export function getFollowUpsForRukn(ruknId: string) {
+  return getFollowUpsForCampaignRecord().filter((record) => record.ruknId === ruknId)
+}
+
 export function getFollowUpCompletionRate(): number {
   const records = getAllFollowUpRecords()
   if (records.length === 0) {

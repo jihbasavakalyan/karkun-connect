@@ -5,6 +5,7 @@ import {
   AskDigitalRafeeqCard,
   RuknMissionControlHero,
   RuknMissionControlPanels,
+  RuknTodaysVisitQueue,
 } from '@/components/mission-control'
 import { RuknFloatingActionButton, RuknIjtemaAttendancePanel } from '@/components/home'
 import { openDigitalRafeeqAssistant } from '@/features/digitalRafeeq/launcher'
@@ -50,11 +51,12 @@ export function RuknHomePage() {
       : undefined
 
   return (
-    <div className="cd-page cd-page-rukn mc-page">
-      <RuknMissionControlHero model={model} />
-      <AskDigitalRafeeqCard onOpen={openDigitalRafeeqAssistant} />
+    <div className="cd-page cd-page-rukn mc-page mc-page-rukn-compact">
+      <RuknMissionControlHero model={model} greeting={morningBrief.greeting} />
+      <RuknTodaysVisitQueue model={model} />
       <RuknMissionControlPanels model={model} />
       <RuknIjtemaAttendancePanel ruknId={ruknId} />
+      <AskDigitalRafeeqCard compact onOpen={openDigitalRafeeqAssistant} />
 
       <RuknFloatingActionButton
         nextAction={snapshot.nextAction}
