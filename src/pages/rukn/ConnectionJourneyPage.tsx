@@ -427,7 +427,7 @@ export function ConnectionJourneyPage() {
         </section>
       )}
 
-      {!isAdminContext && (
+      {!isAdminContext && guidance?.currentStage === 'development' && (
         <DevelopmentAssessmentPanel
           karkunId={karkun.id}
           ruknId={activeAssignment.ruknId}

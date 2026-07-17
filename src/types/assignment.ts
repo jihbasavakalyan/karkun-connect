@@ -17,12 +17,17 @@ export type ReplacementReason =
   | 'Other'
 
 export type RemovalReason =
+  | 'Transferred'
+  | 'Inactive'
+  | 'Duplicate'
+  | 'Incorrect Assignment'
+  | 'Other'
+  /** Legacy values retained for existing history records. */
   | 'Temporary removal'
   | 'Wrong Assignment'
   | 'Shifted Area'
   | 'Not Available'
   | 'Personal Reason'
-  | 'Other'
 
 export type AssignmentRecord = {
   assignmentId: string
@@ -123,16 +128,16 @@ export const REPLACEMENT_REASON_OPTIONS: ReplacementReason[] = [
 ]
 
 export const REMOVAL_REASON_OPTIONS: RemovalReason[] = [
-  'Temporary removal',
-  'Wrong Assignment',
-  'Shifted Area',
-  'Not Available',
-  'Personal Reason',
+  'Transferred',
+  'Inactive',
+  'Duplicate',
+  'Incorrect Assignment',
   'Other',
 ]
 
 const REASON_DISPLAY_LABELS: Partial<Record<string, string>> = {
-  'Wrong Assignment': 'Wrong Connection',
+  'Wrong Assignment': 'Incorrect Assignment',
+  'Incorrect Assignment': 'Incorrect Assignment',
 }
 
 export function getReplacementReasonLabel(reason: ReplacementReason | string): string {

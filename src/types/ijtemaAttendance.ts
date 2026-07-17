@@ -1,4 +1,7 @@
-export type IjtemaAttendanceStatus = 'Present' | 'Absent' | 'Informed'
+export type IjtemaAttendanceStatus = 'Present' | 'Absent' | 'Excused'
+
+/** Legacy stored value — normalized to Excused on read. */
+export type LegacyIjtemaAttendanceStatus = IjtemaAttendanceStatus | 'Informed'
 
 export type IjtemaAttendanceRecord = {
   karkunId: string
@@ -7,11 +10,19 @@ export type IjtemaAttendanceRecord = {
   remarks?: string
   updatedAt: string
   updatedBy: string
+  /** Optional campaign scope for operational reporting. */
+  campaignId?: string
+  campaignName?: string
+  ruknId?: string
+  createdAt?: string
 }
 
 export type IjtemaAttendanceDashboardMetrics = {
   present: number
   absent: number
+  excused: number
+  notRecorded: number
+  /** @deprecated Use excused */
   informed: number
 }
 
@@ -23,6 +34,8 @@ export type IjtemaAttendanceKarkunSummary = {
   status: IjtemaAttendanceStatus | 'Not recorded'
   remarks?: string
   updatedAt?: string
+  ruknId?: string
+  campaignId?: string
 }
 
 export type UpdateIjtemaAttendanceInput = {
@@ -31,6 +44,9 @@ export type UpdateIjtemaAttendanceInput = {
   status: IjtemaAttendanceStatus
   remarks?: string
   updatedBy?: string
+  ruknId?: string
+  campaignId?: string
+  campaignName?: string
 }
 
 export type BulkUpdateIjtemaAttendanceInput = {
@@ -39,6 +55,7 @@ export type BulkUpdateIjtemaAttendanceInput = {
   status: IjtemaAttendanceStatus
   remarks?: string
   updatedBy?: string
+  ruknId?: string
 }
 
 export const IJTEMA_ATTENDANCE_STATUS_FILTER_OPTIONS = [
@@ -46,8 +63,19 @@ export const IJTEMA_ATTENDANCE_STATUS_FILTER_OPTIONS = [
   { value: 'Not recorded', label: 'Not recorded' },
   { value: 'Present', label: 'Present' },
   { value: 'Absent', label: 'Absent' },
-  { value: 'Informed', label: 'Informed' },
+  { value: 'Excused', label: 'Excused' },
 ] as const
+
+export function normalizeIjtemaAttendanceStatus(
+  status: string | undefined,
+): IjtemaAttendanceStatus | undefined {
+  if (!status) return undefined
+  if (status === 'Informed') return 'Excused'
+  if (status === 'Present' || status === 'Absent' || status === 'Excused') {
+    return status
+  }
+  return undefined
+}
 
 export function getIjtemaWeekFilterOptions(
   date = new Date(),

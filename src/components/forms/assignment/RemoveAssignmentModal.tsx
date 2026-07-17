@@ -33,7 +33,7 @@ export function RemoveAssignmentModal({
   error,
 }: RemoveAssignmentModalProps) {
   const [effectiveFrom, setEffectiveFrom] = useState(new Date().toISOString().slice(0, 10))
-  const [removalReason, setRemovalReason] = useState<RemovalReason>('Temporary removal')
+  const [removalReason, setRemovalReason] = useState<RemovalReason>('Inactive')
   const [remarks, setRemarks] = useState('')
 
   const handleSubmit = () => {

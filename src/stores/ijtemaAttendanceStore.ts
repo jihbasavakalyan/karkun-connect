@@ -1,10 +1,17 @@
 import type { IjtemaAttendanceRecord } from '@/types/ijtemaAttendance'
+import { normalizeIjtemaAttendanceStatus } from '@/types/ijtemaAttendance'
 import { getRepositories } from '@/repositories/provider'
 import { unwrapRepository } from '@/repositories/errors'
 
+function hydrateRecord(raw: IjtemaAttendanceRecord): IjtemaAttendanceRecord {
+  const status = normalizeIjtemaAttendanceStatus(raw.status) ?? 'Absent'
+  return { ...raw, status }
+}
+
 const records = new Map<string, IjtemaAttendanceRecord>()
 for (const record of unwrapRepository(getRepositories().compliance.loadIjtema(), [])) {
-  records.set(`${record.karkunId}:${record.weekEndingDate}`, record)
+  const hydrated = hydrateRecord(record as IjtemaAttendanceRecord)
+  records.set(`${hydrated.karkunId}:${hydrated.weekEndingDate}`, hydrated)
 }
 
 type IjtemaAttendanceStoreListener = () => void
@@ -52,7 +59,8 @@ export function getAllIjtemaAttendanceRecords(): IjtemaAttendanceRecord[] {
 export function reloadIjtemaAttendanceStoreFromPersistence(): void {
   records.clear()
   for (const record of unwrapRepository(getRepositories().compliance.loadIjtema(), [])) {
-    records.set(recordKey(record.karkunId, record.weekEndingDate), record)
+    const hydrated = hydrateRecord(record as IjtemaAttendanceRecord)
+    records.set(recordKey(hydrated.karkunId, hydrated.weekEndingDate), hydrated)
   }
   listeners.forEach((listener) => listener())
 }

@@ -1,5 +1,6 @@
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { getAllKarkuns } from '@/lib/peopleStore'
+import { getActiveCampaign } from '@/services/campaignService'
 import {
   getIjtemaAttendanceRecord,
   upsertIjtemaAttendanceRecord,
@@ -15,6 +16,7 @@ import type {
 import {
   formatWeekLabel,
   getWeekEndingDate,
+  normalizeIjtemaAttendanceStatus,
 } from '@/types/ijtemaAttendance'
 import {
   validateBulkIjtemaAttendanceInput,
@@ -25,6 +27,16 @@ let initialized = false
 
 function nowIso(): string {
   return new Date().toISOString()
+}
+
+function normalizeRecord(
+  record: IjtemaAttendanceRecord | undefined,
+): IjtemaAttendanceRecord | undefined {
+  if (!record) return undefined
+  const status = normalizeIjtemaAttendanceStatus(record.status)
+  if (!status) return undefined
+  if (status === record.status) return record
+  return { ...record, status }
 }
 
 export function initializeIjtemaAttendanceCompliance(): void {
@@ -50,9 +62,11 @@ export function getIjtemaAttendanceForKarkun(
   remarks?: string
   updatedAt?: string
   updatedBy?: string
+  ruknId?: string
+  campaignId?: string
 } {
   initializeIjtemaAttendanceCompliance()
-  const record = getIjtemaAttendanceRecord(karkunId, weekEndingDate)
+  const record = normalizeRecord(getIjtemaAttendanceRecord(karkunId, weekEndingDate))
 
   return {
     weekEndingDate,
@@ -61,6 +75,8 @@ export function getIjtemaAttendanceForKarkun(
     remarks: record?.remarks,
     updatedAt: record?.updatedAt,
     updatedBy: record?.updatedBy,
+    ruknId: record?.ruknId,
+    campaignId: record?.campaignId,
   }
 }
 
@@ -73,7 +89,12 @@ export function updateIjtemaAttendance(
 ): { success: true; record: IjtemaAttendanceRecord } | { success: false; error: string } {
   initializeIjtemaAttendanceCompliance()
   const weekEndingDate = input.weekEndingDate ?? getWeekEndingDate()
-  const validation = validateIjtemaAttendanceUpdate({ ...input, weekEndingDate })
+  const status = normalizeIjtemaAttendanceStatus(input.status)
+  if (!status) {
+    return { success: false, error: 'Attendance status is required.' }
+  }
+
+  const validation = validateIjtemaAttendanceUpdate({ ...input, weekEndingDate, status })
   if (!validation.valid) {
     return { success: false, error: validation.error }
   }
@@ -83,13 +104,21 @@ export function updateIjtemaAttendance(
     return { success: false, error: 'Karkun not found.' }
   }
 
+  const existing = normalizeRecord(getIjtemaAttendanceRecord(input.karkunId, weekEndingDate))
+  const campaign = getActiveCampaign()
+  const timestamp = nowIso()
+
   const record = upsertIjtemaAttendanceRecord({
     karkunId: input.karkunId,
     weekEndingDate,
-    status: input.status,
+    status,
     remarks: input.remarks?.trim() || undefined,
-    updatedAt: nowIso(),
+    updatedAt: timestamp,
     updatedBy: input.updatedBy ?? 'Administrator',
+    campaignId: input.campaignId ?? existing?.campaignId ?? campaign?.id,
+    campaignName: input.campaignName ?? existing?.campaignName ?? campaign?.name,
+    ruknId: input.ruknId ?? existing?.ruknId,
+    createdAt: existing?.createdAt ?? timestamp,
   })
 
   return { success: true, record }
@@ -113,6 +142,7 @@ export function bulkUpdateIjtemaAttendance(
       status: input.status,
       remarks: input.remarks,
       updatedBy: input.updatedBy,
+      ruknId: input.ruknId,
     })
     if (result.success) {
       updated += 1
@@ -130,18 +160,28 @@ export function getIjtemaAttendanceDashboardMetrics(
 
   let present = 0
   let absent = 0
-  let informed = 0
+  let excused = 0
+  let notRecorded = 0
 
   for (const karkun of activeKarkuns) {
-    const record = getIjtemaAttendanceRecord(karkun.id, weekEndingDate)
-    if (!record) continue
+    const record = normalizeRecord(getIjtemaAttendanceRecord(karkun.id, weekEndingDate))
+    if (!record) {
+      notRecorded += 1
+      continue
+    }
 
     if (record.status === 'Present') present += 1
     if (record.status === 'Absent') absent += 1
-    if (record.status === 'Informed') informed += 1
+    if (record.status === 'Excused') excused += 1
   }
 
-  return { present, absent, informed }
+  return {
+    present,
+    absent,
+    excused,
+    notRecorded,
+    informed: excused,
+  }
 }
 
 export function getAllIjtemaAttendanceSummaries(
@@ -159,6 +199,8 @@ export function getAllIjtemaAttendanceSummaries(
       status: attendance.status,
       remarks: attendance.remarks,
       updatedAt: attendance.updatedAt,
+      ruknId: attendance.ruknId,
+      campaignId: attendance.campaignId,
     }
   })
 }
@@ -179,8 +221,10 @@ export function matchesIjtemaAttendanceFilters(
 
   const weekEndingDate = getFilterWeekEndingDate(weekFilter)
   const attendance = getIjtemaAttendanceForKarkun(karkunId, weekEndingDate)
+  const normalizedFilter =
+    statusFilter === 'Informed' ? 'Excused' : statusFilter
 
-  if (hasStatusFilter && attendance.status !== statusFilter) {
+  if (hasStatusFilter && attendance.status !== normalizedFilter) {
     return false
   }
 

@@ -32,11 +32,18 @@ export function CommandCenterIjtemaAttendanceMetrics() {
       to: adminCompliancePath('ijtema', 'Absent'),
     },
     {
-      id: 'informed',
-      label: 'Informed',
-      status: 'Informed',
-      count: metrics.informed,
-      to: adminCompliancePath('ijtema', 'Informed'),
+      id: 'excused',
+      label: 'Excused',
+      status: 'Excused',
+      count: metrics.excused,
+      to: adminCompliancePath('ijtema', 'Excused'),
+    },
+    {
+      id: 'not-recorded',
+      label: 'Not recorded',
+      status: 'Not recorded',
+      count: metrics.notRecorded,
+      to: adminCompliancePath('ijtema', 'Not recorded'),
     },
   ]
 
@@ -49,7 +56,7 @@ export function CommandCenterIjtemaAttendanceMetrics() {
         </Link>
       </div>
 
-      <ul className="mt-4 grid gap-2 sm:grid-cols-3 sm:gap-3">
+      <ul className="mt-4 grid gap-2 sm:grid-cols-2 sm:gap-3 lg:grid-cols-4">
         {items.map((item) => (
           <li key={item.id}>
             <Link to={item.to} className="block">

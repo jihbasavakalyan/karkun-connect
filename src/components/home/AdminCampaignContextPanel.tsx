@@ -46,7 +46,12 @@ export function AdminCampaignContextPanel() {
 
   const complianceItems = [
     { id: 'jih', label: 'JIH Portal', pending: jih.notRegistered + jih.pendingReports, route: adminCompliancePath('jih-portal') },
-    { id: 'ijtema', label: 'Ijtema', pending: ijtema.absent, route: adminCompliancePath('ijtema') },
+    {
+      id: 'ijtema',
+      label: 'Ijtema',
+      pending: ijtema.absent + ijtema.notRecorded,
+      route: adminCompliancePath('ijtema'),
+    },
     { id: 'baitul-maal', label: 'Baitul Maal', pending: baitulMaal.pending, route: adminCompliancePath('baitul-maal') },
   ].filter((item) => item.pending > 0)
 

@@ -5,12 +5,14 @@ import {
 } from '@/stores/annexure1Store'
 import { getActiveFollowUpForKarkun } from '@/stores/followUpStore'
 import { getIjtemaAttendanceRecord } from '@/stores/ijtemaAttendanceStore'
+import { getDevelopmentAssessment } from '@/stores/developmentAssessmentStore'
 import { getRegistrationForKarkun } from '@/services/jihWebPortalService'
 import { getCommitmentsForKarkun } from '@/stores/guidanceStore'
 import {
   JOURNEY_STAGE_ORDER,
   type JourneyStageId,
 } from '@/types/guidance'
+import { getWeekEndingDate } from '@/types/ijtemaAttendance'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
 
 export function todayIsoDate(): string {
@@ -57,7 +59,7 @@ export function hasOrientationSignal(karkun: KarkunRegistryRecord): boolean {
 }
 
 export function hasParticipationSignal(karkun: KarkunRegistryRecord): boolean {
-  const ijtema = getIjtemaAttendanceRecord(karkun.id, todayIsoDate())
+  const ijtema = getIjtemaAttendanceRecord(karkun.id, getWeekEndingDate())
   if (ijtema?.status === 'Present') {
     return true
   }
@@ -74,6 +76,11 @@ export function hasRegularContact(karkun: KarkunRegistryRecord): boolean {
     Boolean(karkun.currentCommitment?.trim()) ||
     getCommitmentsForKarkun(karkun.id).some((commitment) => commitment.status === 'pending')
   return recentVisit && hasActiveRhythm
+}
+
+/** Tarbiyah & Development is manual — Rukn assessment only. */
+export function hasManualDevelopmentDecision(karkunId: string): boolean {
+  return Boolean(getDevelopmentAssessment(karkunId)?.indicators.ready_for_next_stage)
 }
 
 export function isStageComplete(
@@ -95,25 +102,25 @@ export function isStageComplete(
     case 'regular-contact':
       return hasRegularContact(karkun)
     case 'development':
-      return (
-        karkun.campaignStatus === 'active' &&
-        isJihRegistered(karkun) &&
-        hasRegularContact(karkun) &&
-        hasParticipationSignal(karkun)
-      )
+      // Manual only — never auto-complete from operational signals alone.
+      return hasManualDevelopmentDecision(karkun.id)
     default:
       return false
   }
 }
 
-/** Current stage = first incomplete stage, or `development` when all complete. */
+/**
+ * Automatic stages resolve from operational signals.
+ * Tarbiyah & Development is entered when prior stages complete; completion is manual.
+ */
 export function resolveCurrentJourneyStage(
   karkun: KarkunRegistryRecord,
   assignmentId?: string,
 ): { currentStage: JourneyStageId; stagesCompleted: JourneyStageId[] } {
   const stagesCompleted: JourneyStageId[] = []
+  const automaticStages = JOURNEY_STAGE_ORDER.filter((stageId) => stageId !== 'development')
 
-  for (const stageId of JOURNEY_STAGE_ORDER) {
+  for (const stageId of automaticStages) {
     if (isStageComplete(stageId, karkun, assignmentId)) {
       stagesCompleted.push(stageId)
     } else {
@@ -121,5 +128,12 @@ export function resolveCurrentJourneyStage(
     }
   }
 
-  return { currentStage: 'development', stagesCompleted: [...JOURNEY_STAGE_ORDER] }
+  if (hasManualDevelopmentDecision(karkun.id)) {
+    return {
+      currentStage: 'development',
+      stagesCompleted: [...JOURNEY_STAGE_ORDER],
+    }
+  }
+
+  return { currentStage: 'development', stagesCompleted }
 }

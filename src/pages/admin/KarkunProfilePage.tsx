@@ -69,7 +69,7 @@ function IjtemaStatusField({
   value: IjtemaAttendanceStatus | null
   onChange: (status: IjtemaAttendanceStatus) => void
 }) {
-  const options: IjtemaAttendanceStatus[] = ['Present', 'Absent', 'Informed']
+  const options: IjtemaAttendanceStatus[] = ['Present', 'Absent', 'Excused']
 
   return (
     <fieldset className="rounded-lg border border-border bg-surface px-3 py-3 sm:col-span-2">

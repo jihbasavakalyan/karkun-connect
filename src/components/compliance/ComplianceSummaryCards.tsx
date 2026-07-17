@@ -40,7 +40,14 @@ export function ComplianceSummaryCards() {
   const cards: SummaryCard[] = [
     { key: 'ijtema-present', label: 'Ijtema Present', count: ijtema.present, section: 'ijtema', status: 'Present' },
     { key: 'ijtema-absent', label: 'Ijtema Absent', count: ijtema.absent, section: 'ijtema', status: 'Absent' },
-    { key: 'ijtema-informed', label: 'Ijtema Informed', count: ijtema.informed, section: 'ijtema', status: 'Informed' },
+    { key: 'ijtema-excused', label: 'Ijtema Excused', count: ijtema.excused, section: 'ijtema', status: 'Excused' },
+    {
+      key: 'ijtema-not-recorded',
+      label: 'Ijtema Not Recorded',
+      count: ijtema.notRecorded,
+      section: 'ijtema',
+      status: 'Not recorded',
+    },
     {
       key: 'jih-registered',
       label: 'Portal Registered',

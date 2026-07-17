@@ -1,3 +1,4 @@
+export { TransferConnectionModal } from './TransferConnectionModal'
 export { AssignKarkunModal } from './AssignKarkunModal'
 export { AssignRuknModal } from './AssignRuknModal'
 export { AssignmentHistoryTimeline } from './AssignmentHistoryTimeline'

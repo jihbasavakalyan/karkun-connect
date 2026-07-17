@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Outlet } from 'react-router-dom'
 import { AdminSidebar } from '@/components/layout/AdminSidebar'
 import { AdminTopBar } from '@/components/layout/AdminTopBar'
+import { DigitalRafeeqLauncher } from '@/features/digitalRafeeq/launcher'
 import { useCampaignAutomationEngine } from '@/hooks/useCampaignAutomationEngine'
 
 export function AdminLayout() {
@@ -42,6 +43,8 @@ export function AdminLayout() {
           <Outlet />
         </main>
       </div>
+
+      <DigitalRafeeqLauncher role="administrator" />
     </div>
   )
 }

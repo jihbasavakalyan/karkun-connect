@@ -5,6 +5,11 @@ import { MessageComposerModal } from '@/components/communication/MessageComposer
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { useCommunication } from '@/hooks/useCommunication'
 import { usePeopleStore } from '@/hooks/usePeopleStore'
+import {
+  buildIndividualCommunicationContext,
+  QUICK_COMMUNICATION_TEMPLATE_IDS,
+} from '@/lib/communicationContext'
+import { listTemplates } from '@/services/templateService'
 import type { MessageRecipient, MessageRecipientKind } from '@/types/communication'
 
 export function IndividualMessagesPanel() {
@@ -13,6 +18,7 @@ export function IndividualMessagesPanel() {
   const [kind, setKind] = useState<MessageRecipientKind>('karkun')
   const [personId, setPersonId] = useState('')
   const [composerOpen, setComposerOpen] = useState(false)
+  const [preferredTemplateId, setPreferredTemplateId] = useState<string | undefined>()
 
   const options = useMemo(() => {
     if (kind === 'karkun') {
@@ -36,6 +42,21 @@ export function IndividualMessagesPanel() {
         whatsapp: selected.whatsapp,
       }
     : null
+
+  const context =
+    kind === 'karkun' && personId
+      ? buildIndividualCommunicationContext(personId)
+      : null
+
+  const quickTemplates = useMemo(
+    () =>
+      listTemplates().filter((template) =>
+        QUICK_COMMUNICATION_TEMPLATE_IDS.includes(
+          template.id as (typeof QUICK_COMMUNICATION_TEMPLATE_IDS)[number],
+        ),
+      ),
+    [],
+  )
 
   return (
     <section className="rounded-(--radius-card) border border-border bg-surface p-4 shadow-card sm:p-6">
@@ -76,8 +97,78 @@ export function IndividualMessagesPanel() {
         </div>
       </div>
 
+      {context && (
+        <div className="mt-4 rounded-lg border border-border bg-surface-muted/50 px-4 py-3">
+          <h3 className="text-sm font-semibold text-text-heading">Karkun context</h3>
+          <dl className="mt-2 grid gap-2 text-sm sm:grid-cols-2">
+            <div>
+              <dt className="text-secondary">Assigned Rukn</dt>
+              <dd className="font-medium text-text-heading">{context.assignedRuknName}</dd>
+            </div>
+            <div>
+              <dt className="text-secondary">Journey Stage</dt>
+              <dd className="font-medium text-text-heading">{context.journeyStage}</dd>
+            </div>
+            <div>
+              <dt className="text-secondary">Last Visit</dt>
+              <dd className="font-medium text-text-heading">{context.lastVisit}</dd>
+            </div>
+            <div>
+              <dt className="text-secondary">Last Ijtema</dt>
+              <dd className="font-medium text-text-heading">{context.lastIjtema}</dd>
+            </div>
+            <div>
+              <dt className="text-secondary">Bait-ul-Maal Status</dt>
+              <dd className="font-medium text-text-heading">{context.baitulMaalStatus}</dd>
+            </div>
+          </dl>
+
+          {context.suggestions.length > 0 && (
+            <div className="mt-3">
+              <h4 className="text-xs font-semibold uppercase tracking-wide text-secondary">
+                Digital Rafeeq Suggestions
+              </h4>
+              <ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-text-heading">
+                {context.suggestions.map((suggestion) => (
+                  <li key={suggestion}>{suggestion}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+
+      {kind === 'karkun' && (
+        <div className="mt-4">
+          <h3 className="text-sm font-semibold text-text-heading">Quick Templates</h3>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {quickTemplates.map((template) => (
+              <button
+                key={template.id}
+                type="button"
+                disabled={!recipient}
+                className="rounded-full border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-text-heading disabled:opacity-50"
+                onClick={() => {
+                  setPreferredTemplateId(template.id)
+                  setComposerOpen(true)
+                }}
+              >
+                {template.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="mt-4">
-        <PrimaryButton type="button" disabled={!recipient} onClick={() => setComposerOpen(true)}>
+        <PrimaryButton
+          type="button"
+          disabled={!recipient}
+          onClick={() => {
+            setPreferredTemplateId(undefined)
+            setComposerOpen(true)
+          }}
+        >
           Compose WhatsApp
         </PrimaryButton>
       </div>
@@ -86,6 +177,15 @@ export function IndividualMessagesPanel() {
         <MessageComposerModal
           isOpen={composerOpen}
           recipients={[recipient]}
+          initialTemplateId={preferredTemplateId}
+          contextVariables={
+            context
+              ? {
+                  name: context.karkunName,
+                  ruknName: context.assignedRuknName,
+                }
+              : undefined
+          }
           onClose={() => setComposerOpen(false)}
           onSend={async (input) => {
             const result = await sendIndividualMessage({

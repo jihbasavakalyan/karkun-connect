@@ -27,7 +27,7 @@ export const JOURNEY_STAGE_LABELS: Record<JourneyStageId, string> = {
   orientation: 'Orientation',
   participation: 'Participation',
   'regular-contact': 'Regular Contact',
-  development: 'Development',
+  development: 'Tarbiyah & Development',
 }
 
 export type NextActionKind =

@@ -165,13 +165,13 @@ function IjtemaRow({
               Mark Present
             </PrimaryButton>
           )}
-          {item.status !== 'Informed' && (
+          {item.status !== 'Excused' && (
             <SecondaryButton
               type="button"
               className={`w-full sm:w-auto ${ACTION_BUTTON_CLASS}`}
-              onClick={() => markStatus('Informed')}
+              onClick={() => markStatus('Excused')}
             >
-              Mark Informed
+              Mark Excused
             </SecondaryButton>
           )}
           {item.status !== 'Absent' && (

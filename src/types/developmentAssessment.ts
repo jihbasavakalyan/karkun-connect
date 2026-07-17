@@ -25,12 +25,12 @@ export type DevelopmentIndicatorDefinition = {
 }
 
 export const DEVELOPMENT_INDICATORS: readonly DevelopmentIndicatorDefinition[] = [
-  { id: 'quran_study', label: 'Regular study of Qur’an with Translation' },
-  { id: 'hadith_study', label: 'Study of Hadith' },
-  { id: 'islamic_literature', label: 'Reading Islamic Literature' },
-  { id: 'islamic_rituals', label: 'Observance of Islamic Rituals' },
+  { id: 'quran_study', label: 'Qur’an with Translation' },
+  { id: 'hadith_study', label: 'Hadith Study' },
+  { id: 'islamic_literature', label: 'Islamic Literature' },
+  { id: 'islamic_rituals', label: 'Salah & Islamic Practices' },
   { id: 'weekly_ijtema', label: 'Weekly Ijtema Attendance' },
-  { id: 'jamaat_activities', label: 'Participation in Jamaat Activities' },
+  { id: 'jamaat_activities', label: 'Jamaat Activities' },
   {
     id: 'monthly_baitul_maal',
     label: 'Monthly Bait-ul-Maal Contribution',

@@ -6,9 +6,11 @@ import {
   RuknBaitulMaalPanel,
   RuknFloatingActionButton,
   RuknHomeHero,
+  RuknIjtemaAttendancePanel,
   RuknJourneyCompact,
   RuknPeopleRows,
   RuknScheduleTimeline,
+  RuknOperationalPanel,
 } from '@/components/home'
 import { RuknAssistantPanel } from '@/features/digitalRafeeq/rukn'
 import { useRequiredRuknId } from '@/hooks/useRequiredRuknId'
@@ -52,6 +54,8 @@ export function RuknHomePage() {
     <div className="cd-page cd-page-rukn">
       <RuknHomeHero brief={morningBrief} hero={snapshot.hero} ruknId={ruknId} />
       <RuknAssistantPanel />
+      <RuknOperationalPanel ruknId={ruknId} snapshot={snapshot} />
+      <RuknIjtemaAttendancePanel ruknId={ruknId} />
       <RuknBaitulMaalPanel ruknId={ruknId} />
       <RuknPeopleRows ruknId={ruknId} hasConnections={hasConnections} />
       <RuknScheduleTimeline

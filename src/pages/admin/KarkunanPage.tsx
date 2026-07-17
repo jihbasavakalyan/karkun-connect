@@ -260,7 +260,7 @@ function KarkunGenderSection({
         onMarkBaitulMaalPending={() => setBulkBaitulMaalStatus('Pending')}
         onMarkIjtemaPresent={() => setBulkIjtemaStatus('Present')}
         onMarkIjtemaAbsent={() => setBulkIjtemaStatus('Absent')}
-        onMarkIjtemaInformed={() => setBulkIjtemaStatus('Informed')}
+        onMarkIjtemaInformed={() => setBulkIjtemaStatus('Excused')}
         onMarkJihRegistered={() =>
           applyBulkJihRegistration(management.selectedIds, 'Registered', () =>
             management.clearSelection(),

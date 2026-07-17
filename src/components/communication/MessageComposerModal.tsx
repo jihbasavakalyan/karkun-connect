@@ -19,6 +19,8 @@ type MessageComposerModalProps = {
   onClose: () => void
   onSend: (input: { templateId?: string; message: string }) => Promise<{ success: boolean; error?: string }>
   title?: string
+  initialTemplateId?: string
+  contextVariables?: Record<string, string>
 }
 
 export function MessageComposerModal({
@@ -27,6 +29,8 @@ export function MessageComposerModal({
   onClose,
   onSend,
   title = 'Compose WhatsApp Message',
+  initialTemplateId,
+  contextVariables,
 }: MessageComposerModalProps) {
   if (!isOpen) {
     return null
@@ -34,11 +38,13 @@ export function MessageComposerModal({
 
   return (
     <MessageComposerModalContent
-      key={`${title}-${recipients.map((r) => r.personId).join(',')}`}
+      key={`${title}-${recipients.map((r) => r.personId).join(',')}-${initialTemplateId ?? ''}`}
       recipients={recipients}
       onClose={onClose}
       onSend={onSend}
       title={title}
+      initialTemplateId={initialTemplateId}
+      contextVariables={contextVariables}
     />
   )
 }
@@ -48,10 +54,15 @@ function MessageComposerModalContent({
   onClose,
   onSend,
   title = 'Compose WhatsApp Message',
+  initialTemplateId,
+  contextVariables,
 }: Omit<MessageComposerModalProps, 'isOpen'>) {
   const templates = listTemplates()
-  const [templateId, setTemplateId] = useState('')
-  const [message, setMessage] = useState('')
+  const [templateId, setTemplateId] = useState(initialTemplateId ?? '')
+  const [message, setMessage] = useState(() => {
+    if (!initialTemplateId) return ''
+    return templates.find((item) => item.id === initialTemplateId)?.body ?? ''
+  })
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [sending, setSending] = useState(false)
@@ -74,8 +85,9 @@ function MessageComposerModalContent({
       headline: 'Campaign Update',
       details: 'Details here',
       message: message,
+      ...contextVariables,
     })
-  }, [message, primaryRecipient])
+  }, [message, primaryRecipient, contextVariables])
 
   const handleTemplateChange = (id: string) => {
     setTemplateId(id)

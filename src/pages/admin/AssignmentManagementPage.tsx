@@ -23,11 +23,13 @@ import { AssignmentHistoryTimeline } from '@/components/forms/assignment/Assignm
 import { AssignRuknModal } from '@/components/forms/assignment/AssignRuknModal'
 import { RemoveAssignmentModal } from '@/components/forms/assignment/RemoveAssignmentModal'
 import { RestoreAssignmentModal } from '@/components/forms/assignment/RestoreAssignmentModal'
+import { TransferConnectionModal } from '@/components/forms/assignment/TransferConnectionModal'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import { PageHeader, PageShell } from '@/components/ui'
 import { ExecutionGuidanceCard } from '@/features/digitalRafeeq/contextual'
-type ModalMode = 'assign' | 'replace' | 'remove' | 'restore' | 'history' | null
+import { changeKarkunRuknAssignment } from '@/lib/assignmentEngine'
+type ModalMode = 'assign' | 'replace' | 'remove' | 'restore' | 'history' | 'transfer' | null
 
 export function AssignmentManagementPage() {
   const peopleVersion = usePeopleStore()
@@ -178,6 +180,32 @@ export function AssignmentManagementPage() {
       return
     }
     setRemovingKarkun(null)
+    closeModal()
+  }
+
+  const handleTransfer = (input: {
+    newRuknId: string
+    effectiveFrom: string
+    transferReason: import('@/types/assignment').RemovalReason
+    remarks?: string
+  }) => {
+    if (!removingKarkun) return
+    const result = changeKarkunRuknAssignment(
+      removingKarkun.id,
+      input.newRuknId,
+      'Administrator',
+      {
+        removalReason: input.transferReason,
+        remarks: input.remarks,
+        effectiveFrom: input.effectiveFrom,
+      },
+    )
+    if (!result.success) {
+      setActionError(result.error)
+      return
+    }
+    setRemovingKarkun(null)
+    setSelectedRuknId(input.newRuknId)
     closeModal()
   }
 
@@ -407,6 +435,19 @@ export function AssignmentManagementPage() {
                               id: assignment.karkunId,
                               name: assignedKarkun?.name ?? assignment.karkunId,
                             })
+                            setModalMode('transfer')
+                          }}
+                        >
+                          Transfer
+                        </SecondaryButton>
+                        <SecondaryButton
+                          type="button"
+                          className="px-3 py-1.5 text-sm"
+                          onClick={() => {
+                            setRemovingKarkun({
+                              id: assignment.karkunId,
+                              name: assignedKarkun?.name ?? assignment.karkunId,
+                            })
                             setModalMode('remove')
                           }}
                         >
@@ -509,6 +550,18 @@ export function AssignmentManagementPage() {
           closeModal()
         }}
         onSubmit={handleRemove}
+      />
+
+      <TransferConnectionModal
+        isOpen={modalMode === 'transfer'}
+        karkunName={removingKarkun?.name ?? 'Unknown'}
+        currentRukn={selectedRukn ?? null}
+        error={actionError}
+        onClose={() => {
+          setRemovingKarkun(null)
+          closeModal()
+        }}
+        onSubmit={handleTransfer}
       />
 
       <RestoreAssignmentModal

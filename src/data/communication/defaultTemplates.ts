@@ -56,6 +56,13 @@ export const DEFAULT_MESSAGE_TEMPLATES: MessageTemplate[] = [
     ['name'],
   ),
   template(
+    'tpl-orientation',
+    'Orientation Invitation',
+    'meeting-reminder',
+    'Assalamu Alaikum {{name}}, you are invited to the orientation session with {{ruknName}}. Please confirm your attendance.',
+    ['name', 'ruknName'],
+  ),
+  template(
     'tpl-monthly-report',
     'Monthly Report Reminder',
     'monthly-report',
@@ -67,6 +74,20 @@ export const DEFAULT_MESSAGE_TEMPLATES: MessageTemplate[] = [
     'Bait-ul-Maal Reminder',
     'baitul-maal',
     'Assalamu Alaikum {{name}}, this is a gentle reminder regarding Bait-ul-Maal contribution for this month.',
+    ['name'],
+  ),
+  template(
+    'tpl-development-follow-up',
+    'Development Follow-up',
+    'follow-up',
+    'Assalamu Alaikum {{name}}, following up on your Tarbiyah & Development progress with {{ruknName}}. Looking forward to our next discussion.',
+    ['name', 'ruknName'],
+  ),
+  template(
+    'tpl-thank-you',
+    'Thank You',
+    'greetings',
+    'Assalamu Alaikum {{name}}, thank you for your participation and commitment. JazakAllah Khair.',
     ['name'],
   ),
   template(

@@ -87,7 +87,7 @@ export function BulkActionsBar({
       )}
       {onMarkIjtemaInformed && (
         <SecondaryButton type="button" className="min-h-10 px-3 py-2 text-sm" onClick={onMarkIjtemaInformed}>
-          Mark Ijtema Informed
+          Mark Ijtema Excused
         </SecondaryButton>
       )}
       {onMarkJihRegistered && (

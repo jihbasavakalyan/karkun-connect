@@ -1,6 +1,7 @@
 import {
   AdminCampaignContextPanel,
   AdminHomeHero,
+  AdminOperationalHealthPanel,
   AdminPriorityStrip,
   AdminTodaysWorkPanel,
 } from '@/components/home'
@@ -19,6 +20,7 @@ export function AdminHomePage() {
       <AdminPriorityStrip snapshot={snapshot} />
 
       <AdminAssistantPanel />
+      <AdminOperationalHealthPanel snapshot={snapshot} />
 
       <div className="cd-workspace">
         <AdminTodaysWorkPanel snapshot={snapshot} />

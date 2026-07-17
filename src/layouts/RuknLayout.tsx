@@ -10,6 +10,7 @@ import {
   getCampaignTimeline,
 } from '@/services/campaignService'
 import { EnterpriseBadge } from '@/components/enterprise'
+import { DigitalRafeeqLauncher } from '@/features/digitalRafeeq/launcher'
 
 const navItems: { label: string; icon: IconName; to: string; end: boolean }[] = [
   { label: 'Home', icon: 'home', to: ROUTES.RUKN, end: true },
@@ -75,6 +76,8 @@ export function RuknLayout() {
           ))}
         </ul>
       </nav>
+
+      <DigitalRafeeqLauncher role="rukn" offsetClassName="digital-rafeeq-fab-offset-rukn" />
     </div>
   )
 }

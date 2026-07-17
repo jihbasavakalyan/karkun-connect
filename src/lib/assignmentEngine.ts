@@ -151,7 +151,14 @@ export function replaceKarkun(
   })
 }
 
-export function adminUnassignKarkun(karkunId: string): AssignKarkunResult {
+export function adminUnassignKarkun(
+  karkunId: string,
+  options?: {
+    removalReason?: RemovalReason
+    remarks?: string
+    effectiveFrom?: string
+  },
+): AssignKarkunResult {
   const active = getAllAssignments().find(
     (record) => record.karkunId === karkunId && record.status === 'Active',
   )
@@ -161,8 +168,9 @@ export function adminUnassignKarkun(karkunId: string): AssignKarkunResult {
   return removeAssignment({
     ruknId: active.ruknId,
     karkunId,
-    effectiveFrom: todayDate(),
-    removalReason: 'Other',
+    effectiveFrom: options?.effectiveFrom ?? todayDate(),
+    removalReason: options?.removalReason ?? 'Other',
+    remarks: options?.remarks,
     assignedBy: 'Administrator',
   })
 }
@@ -171,6 +179,11 @@ export function changeKarkunRuknAssignment(
   karkunId: string,
   selectedRuknId: string,
   assignedBy: AssignedBy = 'Administrator',
+  options?: {
+    removalReason?: RemovalReason
+    remarks?: string
+    effectiveFrom?: string
+  },
 ): AssignKarkunResult {
   const current = getCurrentAssignmentForKarkun(karkunId)
   const targetRuknId = selectedRuknId.trim()
@@ -179,7 +192,7 @@ export function changeKarkunRuknAssignment(
     if (!current) {
       return { success: true } as AssignmentResult
     }
-    return adminUnassignKarkun(karkunId)
+    return adminUnassignKarkun(karkunId, options)
   }
 
   if (current?.ruknId === targetRuknId) {
@@ -192,8 +205,9 @@ export function changeKarkunRuknAssignment(
 
   // Transferring a Karkun to a Rukn that already has other active Karkuns is allowed:
   // the target Rukn is no longer blocked. Only this Karkun's current assignment moves.
+  const effectiveFrom = options?.effectiveFrom ?? todayDate()
   const transferChecks = [
-    validateEffectiveDate(todayDate()),
+    validateEffectiveDate(effectiveFrom),
     validateRuknActive(targetRuknId),
     validateKarkunActive(karkunId),
     validateKarkunMobile(karkunId),
@@ -209,8 +223,11 @@ export function changeKarkunRuknAssignment(
   const removeResult = removeAssignment({
     ruknId: current.ruknId,
     karkunId,
-    effectiveFrom: todayDate(),
-    removalReason: 'Other',
+    effectiveFrom,
+    removalReason: options?.removalReason ?? 'Transferred',
+    remarks: options?.remarks
+      ? `Previous Rukn: ${current.ruknId}. ${options.remarks}`
+      : `Previous Rukn: ${current.ruknId}`,
     assignedBy,
   })
   if (!removeResult.success) {
