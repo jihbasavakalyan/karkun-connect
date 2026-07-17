@@ -8,7 +8,10 @@ import {
   MyKarkunProgress,
 } from '@/components/relationship'
 import { EmptyState, PageHeader, PageShell } from '@/components/ui'
+import { AskDigitalRafeeqCard } from '@/components/mission-control'
 import { ExecutionGuidanceCard } from '@/features/digitalRafeeq/contextual'
+import { openDigitalRafeeqAssistant } from '@/features/digitalRafeeq/launcher'
+import { buildContextualRafeeqGuidance } from '@/features/digitalRafeeq/companion/rafeeqUrduCopy'
 import { useRequiredRuknId } from '@/hooks/useRequiredRuknId'
 import { useAuth } from '@/hooks/useAuth'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
@@ -44,6 +47,8 @@ export function MyKarkunPage() {
     return sortedKarkuns.filter((karkun) => matchesKarkunRegistrySearch(karkun, query))
   }, [sortedKarkuns, query])
 
+  const rafeeqLine = ruknId ? buildContextualRafeeqGuidance(ruknId) : undefined
+
   if (!ruknId) {
     return <Navigate to={ROUTES.LOGIN} replace />
   }
@@ -53,30 +58,42 @@ export function MyKarkunPage() {
   }
 
   return (
-    <PageShell variant="narrow" className="relationship-page max-w-3xl">
+    <PageShell variant="narrow" className="relationship-page connected-workspace max-w-3xl">
       <PageHeader
         title="Connected Karkuns"
-        description="See progress at a glance, then work your list."
+        description="Your personal workspace — contact one more Karkun today."
       />
 
       <ExecutionSuccessBanner />
 
+      <AskDigitalRafeeqCard
+        featured
+        onOpen={openDigitalRafeeqAssistant}
+        guidanceLine={rafeeqLine}
+      />
+
       {myKarkunan.length > 0 ? (
-        <MyKarkunProgress stages={progressStages} totalConnected={myKarkunan.length} />
+        <details className="connected-progress-details">
+          <summary>
+            <span>My Karkun Progress</span>
+            <span className="connected-progress-hint">{myKarkunan.length} connected</span>
+          </summary>
+          <MyKarkunProgress stages={progressStages} totalConnected={myKarkunan.length} />
+        </details>
       ) : null}
 
-      <div className="space-y-3">
-        <h2 className="rukn-my-karkuns-heading">My Karkuns</h2>
-
-        {myKarkunan.length > 0 && (
-          <KarkunSearchField
-            id="connected-karkun-search"
-            value={query}
-            onChange={setQuery}
-            resultCount={query.trim() ? filtered.length : undefined}
-            sticky
-          />
-        )}
+      <section className="connected-workspace-list" aria-label="Connected Karkuns">
+        <div className="connected-workspace-list-head">
+          <h2 className="rukn-my-karkuns-heading">Today&apos;s contacts</h2>
+          {myKarkunan.length > 0 ? (
+            <KarkunSearchField
+              id="connected-karkun-search"
+              value={query}
+              onChange={setQuery}
+              resultCount={query.trim() ? filtered.length : undefined}
+            />
+          ) : null}
+        </div>
 
         {myKarkunan.length === 0 ? (
           <EmptyState
@@ -92,7 +109,7 @@ export function MyKarkunPage() {
             description={`No connected Karkun matches "${query}". Try a different name or number.`}
           />
         ) : (
-          <ul className="relationship-row-list">
+          <ul className="connected-workspace-grid">
             {filtered.map((karkun) => (
               <li key={karkun.id}>
                 <ConnectedKarkunCard karkun={karkun} ruknId={ruknId} />
@@ -100,7 +117,7 @@ export function MyKarkunPage() {
             ))}
           </ul>
         )}
-      </div>
+      </section>
 
       <ExecutionGuidanceCard route="/rukn/my-karkun" role="rukn" />
     </PageShell>

@@ -10,6 +10,7 @@ import {
 } from '@/components/mission-control'
 import { RuknFloatingActionButton, RuknIjtemaAttendancePanel } from '@/components/home'
 import { openDigitalRafeeqAssistant } from '@/features/digitalRafeeq/launcher'
+import { buildContextualRafeeqGuidance } from '@/features/digitalRafeeq/companion/rafeeqUrduCopy'
 import { useRequiredRuknId } from '@/hooks/useRequiredRuknId'
 import { useCampaignAutomationEngine } from '@/hooks/useCampaignAutomationEngine'
 import { useGuidance } from '@/hooks/useGuidance'
@@ -52,9 +53,7 @@ export function RuknHomePage() {
         undefined
       : undefined
 
-  const rafeeqLine = topKarkun
-    ? `آج ${topKarkun.name} سے رابطہ آپ کے مشن کا اہم حصہ ہو سکتا ہے — میں آپ کے ساتھ ہوں۔`
-    : undefined
+  const rafeeqLine = buildContextualRafeeqGuidance(ruknId)
 
   return (
     <div className="cd-page cd-page-rukn mc-page mc-page-rukn-compact mc-page-execution">

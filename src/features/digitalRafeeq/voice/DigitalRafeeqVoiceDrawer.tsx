@@ -39,13 +39,13 @@ type DigitalRafeeqVoiceDrawerProps = {
 }
 
 function statusLabel(status: VoiceStatus, thinking: boolean, speaking: boolean): string {
-  if (thinking) return 'ڈیجیٹل رفیق سوچ رہے ہیں…'
+  if (thinking) return 'سوچ رہے ہیں…'
   if (speaking) return 'بول رہے ہیں…'
   if (status === 'listening') return 'سن رہے ہیں…'
   if (status === 'denied') return 'مائیک بند ہے'
   if (status === 'unsupported') return 'آواز دستیاب نہیں — لکھیں'
   if (status === 'error') return 'آواز میں مسئلہ — لکھ کر پوچھیں'
-  return 'تیار'
+  return 'آپ کا خصوصی معاون'
 }
 
 function pickUrduVoice(): SpeechSynthesisVoice | null {
@@ -115,7 +115,7 @@ function VoiceStageFeedback({
       {thinking ? (
         <p className="dr-voice-thinking">
           <span className="dr-voice-thinking-dot" />
-          Digital Rafeeq سوچ رہے ہیں…
+          سوچ رہے ہیں…
         </p>
       ) : null}
       {speaking ? <div className="dr-voice-speaking-orb" /> : null}

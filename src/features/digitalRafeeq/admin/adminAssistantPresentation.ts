@@ -13,15 +13,24 @@ import type {
 } from './AdminAssistantTypes'
 
 const LOCALIZATION_COPY: Readonly<Record<string, string>> = {
-  'guidance.greeting.open': 'Review today’s campaign posture and open priorities.',
-  'guidance.clarification.request': 'Clarify outstanding programme details before proceeding.',
-  'guidance.confirmation.request': 'Confirm the next programme step with your team.',
-  'guidance.reminder.deferred': 'Follow up on deferred campaign topics.',
-  'guidance.preparation.meeting': 'Prepare for the next Karkun meeting.',
-  'guidance.suggestion.next_step': 'Advance the next programme objective.',
-  'guidance.encouragement.milestone': 'Campaign momentum is building — keep the pace.',
-  'guidance.completion.close': 'Close out completed programme items.',
-  'guidance.recovery.resume': 'Resume the interrupted guidance flow.',
+  'guidance.greeting.open':
+    'آئیے آج کی مہم کو سکون اور توجہ کے ساتھ آگے بڑھائیں۔',
+  'guidance.clarification.request':
+    'آگے بڑھنے سے پہلے اگلا انتظامی قدم واضح کر لیجیے۔',
+  'guidance.confirmation.request':
+    'اگر مناسب سمجھیں تو طے شدہ قدم تصدیق کر کے آگے بڑھیں۔',
+  'guidance.reminder.deferred':
+    'ایک فالو اپ باقی ہے — مناسب وقت پر توجہ مفید ہوگی۔',
+  'guidance.preparation.meeting':
+    'ملاقات یا جائزہ قریب ہے — ضروری نکات ذہن میں رکھ لیجیے۔',
+  'guidance.suggestion.next_step':
+    'اگر ممکن ہو تو اب اگلا انتظامی قدم اٹھا لیجیے۔',
+  'guidance.encouragement.milestone':
+    'الحمد للہ، پیش رفت اچھی ہے — اسی روانی کو برقرار رکھیے۔',
+  'guidance.completion.close':
+    'مکمل شدہ کام محفوظ کر لیں تاکہ آج کا سلسلہ اطمینان سے بند ہو۔',
+  'guidance.recovery.resume':
+    'جہاں کام رک گیا تھا وہیں سے دوبارہ شروع کر سکتے ہیں۔',
 }
 
 function formatWithVariables(
@@ -135,10 +144,10 @@ export function buildAdminAssistantViewModel(
   const knowledge = response.knowledgeSummary
   const campaignSummary = knowledge
     ? knowledge.availableDomains.length > 0
-      ? `Campaign knowledge ready across ${knowledge.availableDomains.join(', ')} (${knowledge.aggregateConfidence} confidence).`
+      ? `مہم کا علم دستیاب ہے: ${knowledge.availableDomains.join('، ')} (${knowledge.aggregateConfidence})۔`
       : knowledge.unavailableDomains.length > 0
-        ? `Campaign knowledge limited — unavailable: ${knowledge.unavailableDomains.join(', ')}.`
-        : 'Campaign knowledge summary is available.'
+        ? `مہم کا علم محدود ہے — دستیاب نہیں: ${knowledge.unavailableDomains.join('، ')}۔`
+        : 'مہم کے خلاصے کی معلومات دستیاب ہیں۔'
     : null
 
   const outstandingActions = recommendations

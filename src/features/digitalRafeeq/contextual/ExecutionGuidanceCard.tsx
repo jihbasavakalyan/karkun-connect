@@ -1,9 +1,17 @@
 /**
- * Connect / execution guidance card (KC-006 Sprint 6.4).
+ * Connect / execution guidance card (KC-009.1) — Urdu companion copy.
  */
 
+import { useRequiredRuknId } from '@/hooks/useRequiredRuknId'
 import { useExecutionGuidance } from './ContextualGuidanceHooks'
 import type { ConversationRole } from '@/runtime/service'
+import {
+  RAFEEQ_BRAND,
+  RAFEEQ_EMPTY_LINES,
+  RAFEEQ_SUBTITLE,
+  buildContextualRafeeqGuidance,
+  resolveRafeeqLocalization,
+} from '@/features/digitalRafeeq/companion/rafeeqUrduCopy'
 
 export type ExecutionGuidanceCardProps = {
   route: string
@@ -16,6 +24,7 @@ export function ExecutionGuidanceCard({
   role,
   payload,
 }: ExecutionGuidanceCardProps) {
+  const ruknId = useRequiredRuknId()
   const { enabled, loading, viewModel } = useExecutionGuidance({
     route,
     role,
@@ -25,43 +34,65 @@ export function ExecutionGuidanceCard({
   if (!enabled) return null
   if (viewModel.visibility === 'hidden' && !loading) return null
 
+  const contextual =
+    role === 'rukn' && ruknId ? buildContextualRafeeqGuidance(ruknId) : null
+
+  const priority =
+    contextual ??
+    (viewModel.todaysPriority
+      ? resolveRafeeqLocalization(
+          // prefer known keys; fall back to raw if already localized
+          viewModel.todaysPriority.startsWith('guidance.')
+            ? viewModel.todaysPriority
+            : 'guidance.suggestion.next_step',
+        )
+      : RAFEEQ_EMPTY_LINES.noPriority)
+
+  const nextKarkun = contextual ?? viewModel.suggestedNextKarkun ?? RAFEEQ_EMPTY_LINES.noNext
+  const followUp = viewModel.pendingFollowUp
+    ? viewModel.pendingFollowUp.startsWith('guidance.')
+      ? resolveRafeeqLocalization(viewModel.pendingFollowUp)
+      : viewModel.pendingFollowUp
+    : RAFEEQ_EMPTY_LINES.noFollowUp
+
   return (
     <div
-      className="cd-panel cd-panel-secondary cd-rafeeq-panel"
-      aria-label="Digital Rafeeq connect guidance"
+      className="cd-panel cd-panel-secondary cd-rafeeq-panel urdu-text"
+      aria-label={RAFEEQ_BRAND}
+      dir="rtl"
+      lang="ur"
     >
-      <h2 className="cd-section-heading">Digital Rafeeq</h2>
-      {loading ? <p className="cd-caption">Preparing connect guidance…</p> : null}
+      <h2 className="cd-section-heading" dir="ltr" lang="en" style={{ textAlign: 'left' }}>
+        {RAFEEQ_BRAND}
+      </h2>
+      <p className="cd-caption">{RAFEEQ_SUBTITLE}</p>
+      {loading ? <p className="cd-caption">{RAFEEQ_EMPTY_LINES.preparing}</p> : null}
 
       <div className="cd-block cd-rafeeq-block">
-        <h3 className="cd-block-title">Today&apos;s priority</h3>
-        <p className="cd-supporting">
-          {viewModel.todaysPriority ?? 'No priority highlighted right now.'}
-        </p>
+        <h3 className="cd-block-title">آج کی تجویز</h3>
+        <p className="cd-supporting">{priority}</p>
       </div>
 
       <div className="cd-block cd-rafeeq-block">
-        <h3 className="cd-block-title">Suggested next Karkun</h3>
-        <p className="cd-supporting">
-          {viewModel.suggestedNextKarkun ?? 'No next Karkun suggested.'}
-        </p>
+        <h3 className="cd-block-title">اگلا رابطہ</h3>
+        <p className="cd-supporting">{nextKarkun}</p>
       </div>
 
       <div className="cd-block cd-rafeeq-block">
-        <h3 className="cd-block-title">Pending follow-up reminder</h3>
-        <p className="cd-supporting">
-          {viewModel.pendingFollowUp ?? 'No follow-up reminder flagged.'}
-        </p>
+        <h3 className="cd-block-title">فالو اپ یاد دہانی</h3>
+        <p className="cd-supporting">{followUp}</p>
       </div>
 
       <div className="cd-block cd-rafeeq-block">
-        <h3 className="cd-block-title">Blockers</h3>
+        <h3 className="cd-block-title">رکاوٹیں</h3>
         {viewModel.blockers.length === 0 ? (
-          <p className="cd-caption">No blockers flagged.</p>
+          <p className="cd-caption">{RAFEEQ_EMPTY_LINES.noBlockers}</p>
         ) : (
           <ul className="cd-caption-list">
             {viewModel.blockers.map((item) => (
-              <li key={item}>{item}</li>
+              <li key={item}>
+                {item.startsWith('guidance.') ? resolveRafeeqLocalization(item) : item}
+              </li>
             ))}
           </ul>
         )}

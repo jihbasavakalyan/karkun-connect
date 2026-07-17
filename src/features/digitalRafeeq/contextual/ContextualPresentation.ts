@@ -62,15 +62,24 @@ export type ContextualGuidanceRequest = {
 }
 
 const LOCALIZATION_COPY: Readonly<Record<string, string>> = {
-  'guidance.greeting.open': 'Begin with today’s highest-priority connection.',
-  'guidance.clarification.request': 'Clarify the next step before continuing.',
-  'guidance.confirmation.request': 'Confirm the planned action before proceeding.',
-  'guidance.reminder.deferred': 'A follow-up reminder is pending.',
-  'guidance.preparation.meeting': 'Prepare the meeting agenda and talking points.',
-  'guidance.suggestion.next_step': 'Take the next suggested campaign action.',
-  'guidance.encouragement.milestone': 'Progress is on track — keep the rhythm.',
-  'guidance.completion.close': 'Close completed items and update records.',
-  'guidance.recovery.resume': 'Resume the interrupted guidance flow.',
+  'guidance.greeting.open':
+    'آئیے آج کے روابط کو سکون اور توجہ کے ساتھ آگے بڑھائیں۔',
+  'guidance.clarification.request':
+    'آگے بڑھنے سے پہلے اگلا قدم واضح کر لیجیے۔',
+  'guidance.confirmation.request':
+    'اگر مناسب سمجھیں تو طے شدہ قدم تصدیق کر کے آگے بڑھیں۔',
+  'guidance.reminder.deferred':
+    'ایک فالو اپ باقی ہے — مناسب وقت پر دوبارہ رابطہ مفید ہوگا۔',
+  'guidance.preparation.meeting':
+    'ملاقات قریب ہے — چند باتیں ذہن میں رکھ لیں تاکہ گفتگو نرم رہے۔',
+  'guidance.suggestion.next_step':
+    'اگر ممکن ہو تو اب اگلا رابطہ کر لیجیے۔',
+  'guidance.encouragement.milestone':
+    'الحمد للہ، پیش رفت اچھی ہے — اسی روانی کو برقرار رکھیے۔',
+  'guidance.completion.close':
+    'مکمل شدہ کام محفوظ کر لیں تاکہ سلسلہ اطمینان سے بند ہو۔',
+  'guidance.recovery.resume':
+    'جہاں کام رک گیا تھا وہیں سے دوبارہ شروع کر سکتے ہیں۔',
 }
 
 type GuidanceLike = {
@@ -195,9 +204,9 @@ export function buildExecutionGuidanceView(
     return typeof name === 'string' && name.length > 0
   })
   const suggestedNextKarkun = nextKarkunRec
-    ? `Suggested next Karkun: ${String(nextKarkunRec.metadata?.karkunName)}`
+    ? `میری تجویز ہے کہ اگلا رابطہ ${String(nextKarkunRec.metadata?.karkunName)} صاحب سے کیا جائے۔`
     : response.knowledgeSummary?.availableDomains.includes('karkun')
-      ? 'Suggested next Karkun: review your connected queue.'
+      ? 'اپنے مربوط کارکنان میں سے اگلا مناسب رابطہ منتخب کیجیے۔'
       : null
 
   const followUp = recommendations.find(
@@ -263,7 +272,7 @@ export function buildMeetingGuidanceView(
   const previousMeetingSummary = previous
     ? resolveItemText(previous, messages)
     : response.knowledgeSummary?.availableDomains.includes('meeting')
-      ? 'Previous meeting context is available for this connection.'
+      ? 'گزشتہ ملاقات کا سیاق دستیاب ہے — اسے سامنے رکھ کر بات کیجیے۔'
       : null
 
   const pendingActionItems = recommendations
@@ -325,9 +334,9 @@ export function buildComplianceGuidanceView(
 
   const missingRecords =
     knowledge?.unavailableDomains.includes('compliance')
-      ? ['Compliance records are currently unavailable.']
+      ? ['تعمیل کے ریکارڈ اس وقت دستیاب نہیں۔']
       : knowledge?.partialDomains.includes('compliance')
-        ? ['Some compliance records appear incomplete.']
+        ? ['کچھ تعمیل کے ریکارڈ نامکمل معلوم ہوتے ہیں۔']
         : recommendations
             .filter((item) => item.category === 'clarification')
             .slice(0, 3)
@@ -346,7 +355,7 @@ export function buildComplianceGuidanceView(
       outstandingSubmissions.length > 0
         ? outstandingSubmissions
         : knowledge?.availableDomains.includes('compliance')
-          ? ['Review outstanding compliance submissions for today.']
+          ? ['آج کی باقی تعمیل کی تفصیلات دیکھ لیجیے۔']
           : [],
     upcomingDeadlines,
     missingRecords,
@@ -366,8 +375,8 @@ export function buildReportGuidanceView(
 
   const campaignProgressSummary = knowledge
     ? knowledge.availableDomains.length > 0
-      ? `Campaign progress ready across ${knowledge.availableDomains.join(', ')} (${knowledge.aggregateConfidence} confidence).`
-      : 'Campaign progress summary is limited right now.'
+      ? `مہم کی پیش رفت تیار ہے: ${knowledge.availableDomains.join('، ')} (${knowledge.aggregateConfidence})۔`
+      : 'مہم کی پیش رفت کا خلاصہ اس وقت محدود ہے۔'
     : response.communicationPlan?.getPrimaryMessage()
       ? resolveLocalizationKey(
           (response.communicationPlan.getPrimaryMessage() as MessageLike)
@@ -379,7 +388,7 @@ export function buildReportGuidanceView(
   const missingReporting =
     knowledge?.unavailableDomains
       .filter((domain) => domain === 'reports' || domain === 'campaign')
-      .map((domain) => `Missing ${domain} knowledge for reporting.`) ?? []
+      .map((domain) => `${domain} کی رپورٹنگ کے لیے معلومات کم ہیں۔`) ?? []
 
   const suggestedReviewActions = recommendations
     .slice(0, 3)

@@ -118,7 +118,9 @@ export function PlanningConversationModal({
         onClick={(event) => event.stopPropagation()}
       >
         <header className="dr-plan-header">
-          <p className="dr-plan-eyebrow">ڈیجیٹل رفیق</p>
+          <p className="dr-plan-eyebrow" dir="ltr" lang="en">
+            Digital Rafeeq
+          </p>
           <h2 className="dr-plan-title">لائحۂ عمل</h2>
           <button type="button" className="dr-plan-close" onClick={resetAndClose} aria-label="بند کریں">
             ×
@@ -138,12 +140,12 @@ export function PlanningConversationModal({
           {step === 'when' ? (
             <>
               <p className="dr-plan-message">{askWhen(karkunName)}</p>
-              <div className="dr-plan-options">
+              <div className="dr-plan-options dr-plan-options-grid">
                 {WHEN_OPTIONS.map((option) => (
                   <button
                     key={option.id}
                     type="button"
-                    className={`dr-plan-chip ${when === option.id ? 'dr-plan-chip-active' : ''}`}
+                    className={`dr-plan-chip dr-plan-option-card ${when === option.id ? 'dr-plan-chip-active' : ''}`}
                     onClick={() => {
                       setWhen(option.id)
                       if (option.id !== 'custom') setStep('channel')
@@ -176,12 +178,12 @@ export function PlanningConversationModal({
           {step === 'channel' ? (
             <>
               <p className="dr-plan-message">{askChannel(karkunName)}</p>
-              <div className="dr-plan-options">
+              <div className="dr-plan-options dr-plan-options-grid">
                 {CHANNEL_OPTIONS.map((option) => (
                   <button
                     key={option.id}
                     type="button"
-                    className={`dr-plan-chip ${channel === option.id ? 'dr-plan-chip-active' : ''}`}
+                    className={`dr-plan-chip dr-plan-option-card ${channel === option.id ? 'dr-plan-chip-active' : ''}`}
                     onClick={() => {
                       setChannel(option.id)
                       if (option.id === 'visit') setStep('time')
@@ -198,12 +200,12 @@ export function PlanningConversationModal({
           {step === 'time' ? (
             <>
               <p className="dr-plan-message">{askVisitTime()}</p>
-              <div className="dr-plan-options">
+              <div className="dr-plan-options dr-plan-options-grid">
                 {TIME_OPTIONS.map((option) => (
                   <button
                     key={option.id}
                     type="button"
-                    className={`dr-plan-chip ${preferredTime === option.id ? 'dr-plan-chip-active' : ''}`}
+                    className={`dr-plan-chip dr-plan-option-card ${preferredTime === option.id ? 'dr-plan-chip-active' : ''}`}
                     onClick={() => {
                       setPreferredTime(option.id)
                       if (option.id !== 'custom') setStep('review')

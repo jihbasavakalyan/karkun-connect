@@ -19,15 +19,24 @@ import {
 } from './RuknAssistantTypes'
 
 const LOCALIZATION_COPY: Readonly<Record<string, string>> = {
-  'guidance.greeting.open': 'Begin today’s campaign connections with clarity and calm focus.',
-  'guidance.clarification.request': 'Clarify the next Karkun step before you continue.',
-  'guidance.confirmation.request': 'Confirm today’s planned connection before you proceed.',
-  'guidance.reminder.deferred': 'A follow-up is due — reconnect with the pending Karkun.',
-  'guidance.preparation.meeting': 'A meeting is due — prepare your talking points and intent.',
-  'guidance.suggestion.next_step': 'Take the next campaign action on your connect queue.',
-  'guidance.encouragement.milestone': 'Good progress today — keep your connection rhythm.',
-  'guidance.completion.close': 'Mark completed work and close the loop for today.',
-  'guidance.recovery.resume': 'Resume your interrupted daily execution plan.',
+  'guidance.greeting.open':
+    'آئیے آج کے روابط کو سکون اور توجہ کے ساتھ آگے بڑھائیں۔',
+  'guidance.clarification.request':
+    'آگے بڑھنے سے پہلے اگلا قدم واضح کر لیجیے۔',
+  'guidance.confirmation.request':
+    'اگر مناسب سمجھیں تو طے شدہ رابطہ تصدیق کر کے شروع کیجیے۔',
+  'guidance.reminder.deferred':
+    'ایک فالو اپ باقی ہے — مناسب وقت پر دوبارہ رابطہ مفید ہوگا۔',
+  'guidance.preparation.meeting':
+    'ملاقات قریب ہے — چند باتیں ذہن میں رکھ لیں تاکہ گفتگو نرم رہے۔',
+  'guidance.suggestion.next_step':
+    'اگر ممکن ہو تو اب اگلا رابطہ کر لیجیے۔',
+  'guidance.encouragement.milestone':
+    'الحمد للہ، آج کی کوشش اچھی رہی۔ اسی روانی کو برقرار رکھیے۔',
+  'guidance.completion.close':
+    'مکمل شدہ کام محفوظ کر لیں تاکہ آج کا سلسلہ اطمینان سے بند ہو۔',
+  'guidance.recovery.resume':
+    'جہاں کام رک گیا تھا وہیں سے دوبارہ شروع کر سکتے ہیں — میں آپ کے ساتھ ہوں۔',
 }
 
 type GuidanceLike = {
@@ -92,17 +101,17 @@ function buildConnectQueue(
 
   return {
     connectedKarkuns: karkunReady
-      ? 'Connected Karkun context is ready for today’s work.'
+      ? 'مربوط کارکنان کا سیاق آج کے کام کے لیے تیار ہے۔'
       : knowledge?.requestedDomains.includes('karkun')
-        ? 'Connected Karkun context is limited right now.'
+        ? 'مربوط کارکنان کا سیاق اس وقت محدود ہے۔'
         : EMPTY_CONNECT_QUEUE.connectedKarkuns,
     pendingVisits:
       followUpDueCount > 0
-        ? `${followUpDueCount} follow-up / visit priorit${followUpDueCount === 1 ? 'y' : 'ies'} flagged.`
+        ? `${followUpDueCount} فالو اپ / ملاقات توجہ مانگتی ہے۔`
         : EMPTY_CONNECT_QUEUE.pendingVisits,
     pendingMeetings:
       meetingDueCount > 0
-        ? `${meetingDueCount} meeting priorit${meetingDueCount === 1 ? 'y' : 'ies'} flagged.`
+        ? `${meetingDueCount} ملاقات قریب ہے۔`
         : EMPTY_CONNECT_QUEUE.pendingMeetings,
   }
 }
@@ -132,18 +141,18 @@ function buildPersonalProgress(
   return {
     connectionsCompleted:
       completionCount + encouragementCount > 0
-        ? 'Connection progress signals are available for today.'
+        ? 'آج رابطوں کی پیش رفت نظر آ رہی ہے۔'
         : knowledge?.availableDomains.includes('campaign') === true
-          ? 'Campaign progress context is available.'
+          ? 'مہم کی پیش رفت کا سیاق دستیاب ہے۔'
           : EMPTY_PERSONAL_PROGRESS.connectionsCompleted,
     meetingsCompleted:
       completionCount > 0
-        ? 'Meeting completion signals are present.'
+        ? 'ملاقاتوں کی تکمیل کے اشارے موجود ہیں۔'
         : EMPTY_PERSONAL_PROGRESS.meetingsCompleted,
     complianceReminders:
       baitulReminders[0] ??
       (complianceDue > 0 || knowledge?.availableDomains.includes('compliance')
-        ? 'Compliance reminders are in scope for today.'
+        ? 'آج تعمیل کی یاد دہانیاں توجہ مانگتی ہیں۔'
         : EMPTY_PERSONAL_PROGRESS.complianceReminders),
   }
 }

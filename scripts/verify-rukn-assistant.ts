@@ -218,7 +218,7 @@ async function main(): Promise<void> {
       assert(view.signals.meetingDue === true, 'expected meeting due')
       assert(view.todaysMission !== null, 'expected mission from meeting prep')
       assert(
-        view.connectQueue.pendingMeetings.includes('meeting'),
+        view.connectQueue.pendingMeetings.includes('ملاقات'),
         'expected pending meetings copy',
       )
     }),
@@ -272,7 +272,7 @@ async function main(): Promise<void> {
       const view = buildRuknAssistantViewModel(synthetic, { enabled: true })
       assert(view.signals.followUpDue === true, 'expected follow-up due')
       assert(
-        view.connectQueue.pendingVisits.includes('follow-up'),
+        view.connectQueue.pendingVisits.includes('فالو اپ'),
         'expected pending visits copy',
       )
     }),

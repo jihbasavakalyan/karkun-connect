@@ -1,6 +1,6 @@
 /**
- * Rukn Home — Weekly Ijtema attendance (KC-006 Sprint 6.6).
- * Operational source of truth for Sunday attendance; one record per Karkun per week.
+ * Rukn Home — Weekly Ijtema attendance (KC-006 / KC-009.1).
+ * Dirty tracking is touch-based so Present/Absent/Excused all enable Save.
  */
 
 import { useEffect, useMemo, useState } from 'react'
@@ -35,6 +35,7 @@ export function RuknIjtemaAttendancePanel({ ruknId }: RuknIjtemaAttendancePanelP
   const [weekFilter, setWeekFilter] = useState('')
   const [draft, setDraft] = useState<Record<string, DraftStatus>>({})
   const [remarks, setRemarks] = useState<Record<string, string>>({})
+  const [touchedIds, setTouchedIds] = useState<Set<string>>(() => new Set())
   const [message, setMessage] = useState('')
   const [saving, setSaving] = useState(false)
   const [expanded, setExpanded] = useState(false)
@@ -49,6 +50,7 @@ export function RuknIjtemaAttendancePanel({ ruknId }: RuknIjtemaAttendancePanelP
   )
   const weekEndingDate = getFilterWeekEndingDate(weekFilter)
   const weekOptions = useMemo(() => getIjtemaWeekFilterOptions(), [])
+  const connectedKey = connected.map((karkun) => karkun.id).join('|')
 
   useEffect(() => {
     const nextDraft: Record<string, DraftStatus> = {}
@@ -60,22 +62,39 @@ export function RuknIjtemaAttendancePanel({ ruknId }: RuknIjtemaAttendancePanelP
     }
     setDraft(nextDraft)
     setRemarks(nextRemarks)
+    setTouchedIds(new Set())
     setMessage('')
-  }, [connected, weekEndingDate, attendanceVersion])
+    // connectedKey captures membership without resetting on new array identity
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional stable key
+  }, [connectedKey, weekEndingDate, attendanceVersion])
 
   if (connected.length === 0) {
     return null
   }
 
   const dirtyCount = connected.filter((karkun) => {
+    if (touchedIds.has(karkun.id)) return true
     const saved = getIjtemaAttendanceForKarkun(karkun.id, weekEndingDate)
     const draftStatus = draft[karkun.id] ?? 'Not recorded'
     const draftRemark = (remarks[karkun.id] ?? '').trim()
     if (draftStatus === 'Not recorded') {
       return saved.status !== 'Not recorded'
     }
-    return draftStatus !== saved.status || draftRemark !== (saved.remarks ?? '')
+    return draftStatus !== saved.status || draftRemark !== (saved.remarks ?? '').trim()
   }).length
+
+  const markTouched = (ids: string[]) => {
+    setTouchedIds((current) => {
+      const next = new Set(current)
+      for (const id of ids) next.add(id)
+      return next
+    })
+  }
+
+  const setStatus = (karkunId: string, status: IjtemaAttendanceStatus) => {
+    markTouched([karkunId])
+    setDraft((current) => ({ ...current, [karkunId]: status }))
+  }
 
   const handleSave = () => {
     setSaving(true)
@@ -108,10 +127,12 @@ export function RuknIjtemaAttendancePanel({ ruknId }: RuknIjtemaAttendancePanelP
       setMessage(error)
       return
     }
+    setTouchedIds(new Set())
     setMessage(`Saved attendance for ${updated} Karkun${updated === 1 ? '' : 's'}.`)
   }
 
   const markAll = (status: IjtemaAttendanceStatus) => {
+    markTouched(connected.map((karkun) => karkun.id))
     setDraft((current) => {
       const next = { ...current }
       for (const karkun of connected) {
@@ -125,6 +146,13 @@ export function RuknIjtemaAttendancePanel({ ruknId }: RuknIjtemaAttendancePanelP
     const status = draft[karkun.id] ?? 'Not recorded'
     return status !== 'Not recorded'
   }).length
+
+  const canSave =
+    dirtyCount > 0 &&
+    connected.some((karkun) => {
+      const status = draft[karkun.id]
+      return Boolean(status && status !== 'Not recorded')
+    })
 
   return (
     <section className="cd-panel cd-panel-secondary rukn-ijtema-compact" aria-label="Weekly Ijtema attendance">
@@ -214,9 +242,7 @@ export function RuknIjtemaAttendancePanel({ ruknId }: RuknIjtemaAttendancePanelP
                           className="sr-only"
                           name={`ijtema-${karkun.id}`}
                           checked={draft[karkun.id] === status}
-                          onChange={() =>
-                            setDraft((current) => ({ ...current, [karkun.id]: status }))
-                          }
+                          onChange={() => setStatus(karkun.id, status)}
                         />
                         {status}
                       </label>
@@ -226,9 +252,10 @@ export function RuknIjtemaAttendancePanel({ ruknId }: RuknIjtemaAttendancePanelP
                 <input
                   type="text"
                   value={remarks[karkun.id] ?? ''}
-                  onChange={(e) =>
+                  onChange={(e) => {
+                    markTouched([karkun.id])
                     setRemarks((current) => ({ ...current, [karkun.id]: e.target.value }))
-                  }
+                  }}
                   placeholder="Remarks (optional)"
                   className="mt-2 w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm"
                 />
@@ -237,7 +264,7 @@ export function RuknIjtemaAttendancePanel({ ruknId }: RuknIjtemaAttendancePanelP
           </ul>
 
           <div className="mt-3 flex flex-wrap items-center gap-3">
-            <PrimaryButton type="button" disabled={saving || dirtyCount === 0} onClick={handleSave}>
+            <PrimaryButton type="button" disabled={saving || !canSave} onClick={handleSave}>
               {saving ? 'Saving…' : `Save attendance${dirtyCount > 0 ? ` (${dirtyCount})` : ''}`}
             </PrimaryButton>
             {message ? <p className="text-sm text-secondary">{message}</p> : null}

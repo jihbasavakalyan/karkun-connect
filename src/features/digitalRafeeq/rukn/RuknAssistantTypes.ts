@@ -36,15 +36,15 @@ export type RuknAssistantViewModel = {
 }
 
 export const EMPTY_CONNECT_QUEUE: RuknConnectQueueView = {
-  connectedKarkuns: 'No connected Karkun context yet.',
-  pendingVisits: 'No pending visits flagged.',
-  pendingMeetings: 'No pending meetings flagged.',
+  connectedKarkuns: 'ابھی مربوط کارکن کا سیاق نہیں۔',
+  pendingVisits: 'کوئی باقی ملاقات نہیں۔',
+  pendingMeetings: 'کوئی طے شدہ ملاقات نہیں۔',
 }
 
 export const EMPTY_PERSONAL_PROGRESS: RuknPersonalProgressView = {
-  connectionsCompleted: 'No connection progress signals yet.',
-  meetingsCompleted: 'No meeting progress signals yet.',
-  complianceReminders: 'No compliance reminders flagged.',
+  connectionsCompleted: 'ابھی پیش رفت کا اشارہ نہیں۔',
+  meetingsCompleted: 'ابھی ملاقات کی پیش رفت نہیں۔',
+  complianceReminders: 'کوئی تعمیل یاد دہانی نہیں۔',
 }
 
 export const EMPTY_RUKN_ASSISTANT_VIEW: RuknAssistantViewModel = {
