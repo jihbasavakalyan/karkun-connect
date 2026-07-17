@@ -287,7 +287,11 @@ export function ConnectionJourneyPage() {
         <p className="mt-1 text-xs text-secondary">Connection: {activeAssignment.assignmentNumber}</p>
         {guidance && (
           <div className="mt-4">
-            <RelationshipHealthBadge health={guidance.health} showReasons />
+            <RelationshipHealthBadge
+              health={guidance.health}
+              stageId={guidance.currentStage}
+              showReasons
+            />
           </div>
         )}
       </header>

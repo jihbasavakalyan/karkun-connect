@@ -11,4 +11,6 @@ export {
   AdminMissionControlPanels,
   RuknMissionControlPanels,
   RuknTodaysVisitQueue,
+  RuknPriorityMissionList,
 } from './MissionControlPanels'
+export { AdminRelationshipInsightsPanel } from './AdminRelationshipInsightsPanel'

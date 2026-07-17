@@ -1,13 +1,12 @@
 /**
- * Natural Urdu companion copy for Digital Rafeeq (KC-009.1).
+ * Natural Urdu companion copy for Digital Rafeeq (KC-009.1 / KC-012).
  * Brand name stays English: "Digital Rafeeq". Conversation is always Urdu.
  */
 
-import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { getGuidanceForRuknKarkuns } from '@/lib/guidance/guidanceEngine'
 import { sortGuidanceByUrgency } from '@/lib/homePresentation'
 import { getActivePlanForKarkun } from '@/stores/executionPlanStore'
-import type { KarkunGuidance } from '@/types/guidance'
+import { buildRafeeqPriorityWhyUrdu } from '@/lib/relationshipIntelligencePresentation'
 
 export const RAFEEQ_BRAND = 'Digital Rafeeq'
 
@@ -63,48 +62,12 @@ export function buildContextualRafeeqGuidance(ruknId: string): string {
 
   const name = respectName(top.karkunName)
   const plan = getActivePlanForKarkun(top.karkunId)
-  const reason = reasonForGuidance(top)
 
   if (plan?.summaryUrdu) {
     return `میری تجویز ہے کہ آج سب سے پہلے ${name} سے رابطہ کیا جائے کیونکہ آپ کا لائحۂ عمل اسی طرف اشارہ کرتا ہے: ${plan.summaryUrdu}`
   }
 
-  return `میری تجویز ہے کہ آج سب سے پہلے ${name} سے رابطہ کیا جائے کیونکہ ${reason}`
-}
-
-function reasonForGuidance(guidance: KarkunGuidance): string {
-  const health = guidance.health.level
-  const action = guidance.nextAction
-  const karkun = getKarkunById(guidance.karkunId)
-  const lastVisit = karkun?.lastVisit?.trim()
-
-  if (health === 'urgent' || health === 'needs-attention') {
-    return 'ان کے تعلق کو اب توجہ درکار ہے اور تاخیر سے فاصلہ بڑھ سکتا ہے۔'
-  }
-  if (action.kind === 'call-today') {
-    return 'آج ایک مختصر کال سے سلسلہ دوبارہ گرم ہو سکتا ہے۔'
-  }
-  if (action.kind === 'visit-this-week' || action.kind === 'arrange-meeting') {
-    return lastVisit
-      ? `گزشتہ ملاقات (${lastVisit}) کے بعد دوبارہ بالمشافہ رابطہ مفید رہے گا۔`
-      : 'ان سے بالمشافہ ملاقات کا وقت مناسب معلوم ہوتا ہے۔'
-  }
-  if (action.kind === 'help-jih-registration') {
-    return 'ان کی رجسٹریشن ابھی مکمل نہیں اور آپ کی رہنمائی سے یہ مرحلہ آسان ہو سکتا ہے۔'
-  }
-  if (action.kind === 'invite-ijtema') {
-    return 'اجتماع میں شرکت کی دعوت سے ان کا تعلق جماعت سے مضبوط ہو سکتا ہے۔'
-  }
-  if (action.kind === 'honor-commitment') {
-    return 'ان سے کوئی وعدہ باقی ہے اور اسے وقت پر پورا کرنا اعتماد بڑھاتا ہے۔'
-  }
-  if (action.kind === 'complete-visit-notes') {
-    return 'گزشتہ ملاقات کی تفصیلات محفوظ کرنا اگلے قدم کو آسان بنائے گا۔'
-  }
-  if (lastVisit) {
-    return `گزشتہ ہفتے کے قریب ان سے رابطہ ہوا تھا اور سلسلہ جاری رکھنا بہتر ہے۔`
-  }
-  return 'ان سے رابطہ آپ کے آج کے مشن کا اہم حصہ ہے۔'
+  return buildRafeeqPriorityWhyUrdu(top)
 }
 
 export function buildSuggestedNextKarkunUrdu(ruknId: string): string | null {

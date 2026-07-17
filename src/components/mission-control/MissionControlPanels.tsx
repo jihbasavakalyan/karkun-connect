@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import type { AdminMissionControlModel } from '@/lib/missionControl/buildAdminMissionControl'
 import type { RuknMissionControlModel } from '@/lib/missionControl/buildRuknMissionControl'
@@ -9,6 +10,8 @@ import {
   RUKN_PROGRESS_SHORT_LABELS,
   type RuknProgressStageId,
 } from '@/lib/ruknProgressPresentation'
+import { buildDailyPriorityMission } from '@/lib/relationshipIntelligencePresentation'
+import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import type { JourneyStageId } from '@/types/guidance'
 
 type AdminMissionControlPanelsProps = {
@@ -255,6 +258,52 @@ export function RuknTodaysVisitQueue({ model }: RuknMissionControlPanelsProps) {
           ))}
         </ul>
       )}
+    </section>
+  )
+}
+
+type RuknPriorityMissionProps = {
+  ruknId: string
+}
+
+export function RuknPriorityMissionList({ ruknId }: RuknPriorityMissionProps) {
+  const { assignmentVersion } = useAssignmentEngine()
+  const items = useMemo(() => {
+    void assignmentVersion
+    return buildDailyPriorityMission(ruknId)
+  }, [ruknId, assignmentVersion])
+
+  if (items.length === 0) {
+    return (
+      <section className="mc-panel mc-panel-compact mc-panel-primary" aria-label="Today's mission priorities">
+        <h2 className="mc-panel-title">Who needs attention</h2>
+        <p className="mc-caption">
+          No urgent follow-ups right now. A gentle check-in with any connected Karkun still helps.
+        </p>
+      </section>
+    )
+  }
+
+  return (
+    <section className="mc-panel mc-panel-compact mc-panel-primary ri-priority-panel" aria-label="Today's mission priorities">
+      <h2 className="mc-panel-title">Who needs attention</h2>
+      <p className="mc-caption">Prioritised by relationship need — why each person appears today.</p>
+      <ul className="ri-priority-list">
+        {items.map((item) => (
+          <li key={item.id}>
+            <Link to={item.route} className="ri-priority-link">
+              <div className="ri-priority-head">
+                <span className="ri-priority-name">{item.karkunName}</span>
+                <span className={`ri-priority-health ri-health-${item.healthLevel}`}>
+                  {item.healthLabel}
+                </span>
+              </div>
+              <p className="ri-priority-why">{item.why}</p>
+              <p className="ri-priority-rec">{item.recommendation}</p>
+            </Link>
+          </li>
+        ))}
+      </ul>
     </section>
   )
 }

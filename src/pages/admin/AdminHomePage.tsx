@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import {
   AdminMissionControlHero,
   AdminMissionControlPanels,
+  AdminRelationshipInsightsPanel,
   AskDigitalRafeeqCard,
   MissionControlKpiGrid,
 } from '@/components/mission-control'
@@ -22,6 +23,7 @@ export function AdminHomePage() {
       <AdminMissionControlHero model={model} />
       <AskDigitalRafeeqCard onOpen={openDigitalRafeeqAssistant} />
       <MissionControlKpiGrid kpis={model.kpis} />
+      <AdminRelationshipInsightsPanel />
       <AdminMissionControlPanels model={model} />
     </div>
   )

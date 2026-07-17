@@ -6,6 +6,7 @@ import {
   PrimaryMissionCta,
   RuknMissionControlHero,
   RuknMissionControlPanels,
+  RuknPriorityMissionList,
   RuknTodaysVisitQueue,
 } from '@/components/mission-control'
 import { RuknFloatingActionButton, RuknIjtemaAttendancePanel } from '@/components/home'
@@ -71,6 +72,7 @@ export function RuknHomePage() {
 
       {primary ? <PrimaryMissionCta label={primary.label} route={primary.route} /> : null}
 
+      <RuknPriorityMissionList ruknId={ruknId} />
       <RuknTodaysVisitQueue model={model} />
       <RuknMissionControlPanels model={model} />
       <RuknIjtemaAttendancePanel ruknId={ruknId} />

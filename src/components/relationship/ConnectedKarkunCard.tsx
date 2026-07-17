@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ruknVisitPath } from '@/constants/routes'
 import {
@@ -10,6 +10,9 @@ import { useGuidance } from '@/hooks/useGuidance'
 import { buildTelLink, buildWhatsAppLink } from '@/utils/personContactLinks'
 import { formatLastVisitLabel } from '@/lib/relationshipPresentation'
 import { humanizeNextActionForKarkun } from '@/lib/homePresentation'
+import {
+  buildConnectedIntelligenceView,
+} from '@/lib/relationshipIntelligencePresentation'
 import { scheduleWhatsAppMessage } from '@/services/schedulingService'
 import { submitAssignmentReviewRequest } from '@/services/assignmentReviewService'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
@@ -37,6 +40,12 @@ export function ConnectedKarkunCard({ karkun, ruknId, visitPath }: ConnectedKark
 
   void version
   const guidance = getKarkunGuidance(karkun.id)
+  const intelligence = useMemo(
+    () => buildConnectedIntelligenceView(karkun.id, ruknId),
+    // guidance version covers store-driven refresh
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [karkun.id, ruknId, version],
+  )
   const journeyPath = visitPath ?? ruknVisitPath(karkun.id)
   const telLink = buildTelLink(karkun.mobile)
   const whatsAppLink = buildWhatsAppLink(karkun.whatsapp?.trim() ? karkun.whatsapp : karkun.mobile)
@@ -81,7 +90,7 @@ export function ConnectedKarkunCard({ karkun, ruknId, visitPath }: ConnectedKark
 
   return (
     <>
-      <article className="relationship-connected-card connected-workspace-card">
+      <article className="relationship-connected-card connected-workspace-card ri-connected-card">
         <div className="connected-card-top">
           <div className="min-w-0">
             <Link to={journeyPath} className="connected-card-name">
@@ -90,30 +99,55 @@ export function ConnectedKarkunCard({ karkun, ruknId, visitPath }: ConnectedKark
             <p className="connected-card-meta">
               {[karkun.mobile || null, karkun.area || null].filter(Boolean).join(' · ')}
             </p>
-            {karkun.fatherHusbandName?.trim() ? (
-              <p className="connected-card-meta">
-                {karkun.gender === 'Female' ? 'Husband' : 'Father'}: {karkun.fatherHusbandName}
-              </p>
-            ) : null}
           </div>
-          {guidance ? <JourneyStageBadge stageId={guidance.currentStage} variant="rukn" /> : null}
+          {guidance ? (
+            <div className="ri-card-badges">
+              <JourneyStageBadge stageId={guidance.currentStage} variant="rukn" />
+              <RelationshipHealthBadge
+                health={guidance.health}
+                stageId={guidance.currentStage}
+              />
+            </div>
+          ) : null}
         </div>
 
-        {guidance ? (
-          <div className="connected-card-next">
-            <RelationshipHealthBadge health={guidance.health} showReasons={false} />
-            <p className="connected-card-action">
-              {humanizedAction ?? guidance.nextAction.label}
-            </p>
-            <Link to={guidance.nextAction.route || journeyPath} className="connected-card-cta-wrap">
+        {intelligence ? (
+          <div className="ri-card-intel">
+            <p className="ri-card-recommendation">{intelligence.recommendation.text}</p>
+            <dl className="ri-card-facts">
+              <div>
+                <dt>Suggested action</dt>
+                <dd>{intelligence.suggestedAction}</dd>
+              </div>
+              {intelligence.previousVisitSummary || lastVisit ? (
+                <div>
+                  <dt>Previous visit</dt>
+                  <dd>{intelligence.previousVisitSummary ?? lastVisit}</dd>
+                </div>
+              ) : null}
+              {intelligence.recentActivity ? (
+                <div>
+                  <dt>Recent activity</dt>
+                  <dd>{intelligence.recentActivity}</dd>
+                </div>
+              ) : null}
+              {intelligence.nextReminder ? (
+                <div>
+                  <dt>Next reminder</dt>
+                  <dd>{intelligence.nextReminder}</dd>
+                </div>
+              ) : null}
+            </dl>
+            <Link
+              to={intelligence.suggestedActionRoute}
+              className="connected-card-cta-wrap"
+            >
               <PrimaryButton type="button" className="connected-card-cta">
-                {guidance.nextAction.label}
+                {humanizedAction ?? guidance?.nextAction.label ?? 'Continue'}
               </PrimaryButton>
             </Link>
           </div>
         ) : null}
-
-        <p className="connected-card-visit">{lastVisit}</p>
 
         <ProfileCompletionReminder karkunId={karkun.id} variant="chip" />
 

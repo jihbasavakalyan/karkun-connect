@@ -1627,6 +1627,123 @@
     @apply w-full sm:w-auto;
   }
 
+  .ri-admin-panel {
+    @apply space-y-3;
+  }
+
+  .ri-admin-summary {
+    @apply mt-3 grid grid-cols-3 gap-2;
+  }
+
+  .ri-admin-metric {
+    @apply rounded-xl border border-border/70 bg-white/80 px-3 py-2 text-center;
+  }
+
+  .ri-admin-metric-label {
+    @apply block text-[11px] font-medium uppercase tracking-wide text-secondary;
+  }
+
+  .ri-admin-metric-value {
+    @apply mt-1 block text-base font-semibold text-text-heading;
+  }
+
+  .ri-admin-grid {
+    @apply mt-3 grid gap-3 sm:grid-cols-2;
+  }
+
+  .ri-admin-subheading {
+    @apply text-sm font-semibold text-text-heading;
+  }
+
+  .ri-admin-list {
+    @apply mt-2 space-y-1.5;
+  }
+
+  .ri-admin-list li {
+    @apply flex items-center justify-between gap-2 rounded-lg bg-surface-muted/50 px-2.5 py-1.5 text-sm;
+  }
+
+  .ri-admin-bullets {
+    @apply mt-2 list-disc space-y-1 pl-5 text-sm text-text;
+  }
+
+  .ri-admin-rukn-list {
+    @apply mt-2 space-y-1.5;
+  }
+
+  .ri-admin-rukn-link {
+    @apply flex items-center justify-between gap-2 rounded-lg border border-border/60 bg-white px-3 py-2 text-sm font-medium text-text-heading hover:border-primary hover:text-primary;
+  }
+
+  .ri-priority-panel {
+    @apply space-y-2;
+  }
+
+  .ri-priority-list {
+    @apply mt-2 space-y-2;
+  }
+
+  .ri-priority-link {
+    @apply block rounded-xl border border-border/70 bg-white px-3 py-2.5 transition hover:border-primary/40 hover:shadow-sm;
+  }
+
+  .ri-priority-head {
+    @apply flex flex-wrap items-center justify-between gap-2;
+  }
+
+  .ri-priority-name {
+    @apply text-sm font-semibold text-text-heading;
+  }
+
+  .ri-priority-health {
+    @apply rounded-full px-2 py-0.5 text-[11px] font-semibold;
+  }
+
+  .ri-health-healthy {
+    @apply bg-emerald-50 text-emerald-800;
+  }
+
+  .ri-health-needs-attention {
+    @apply bg-amber-50 text-amber-900;
+  }
+
+  .ri-health-urgent,
+  .ri-health-dormant {
+    @apply bg-red-50 text-red-800;
+  }
+
+  .ri-priority-why {
+    @apply mt-1 text-xs font-semibold text-primary;
+  }
+
+  .ri-priority-rec {
+    @apply mt-0.5 text-xs leading-relaxed text-secondary;
+  }
+
+  .ri-card-badges {
+    @apply flex flex-col items-end gap-1;
+  }
+
+  .ri-card-intel {
+    @apply mt-2 space-y-2 rounded-lg border border-primary/10 bg-primary-muted/15 px-2.5 py-2;
+  }
+
+  .ri-card-recommendation {
+    @apply text-sm font-medium text-text-heading;
+  }
+
+  .ri-card-facts {
+    @apply space-y-1.5;
+  }
+
+  .ri-card-facts dt {
+    @apply text-[10px] font-semibold uppercase tracking-wide text-secondary;
+  }
+
+  .ri-card-facts dd {
+    @apply text-xs text-text;
+  }
+
   @keyframes mc-rafeeq-breathe {
     0%,
     100% {
