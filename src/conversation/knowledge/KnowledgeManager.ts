@@ -7,6 +7,11 @@
  * Extension points: Context Manager forwards requests; Engine never sees provider origins.
  */
 
+import type {
+  AdapterAvailabilityReport,
+  AdapterCapabilityReport,
+  AdapterRegistryBridge,
+} from '../adapters'
 import type { ConversationContext } from '../ConversationContext'
 import type { CommunicationPlan, CommunicationRequest } from '../communication'
 import type { GuidanceBundle, GuidanceEngineBridge, GuidanceRequest } from '../guidance'
@@ -25,6 +30,11 @@ export type KnowledgeManagerOptions = {
   resolver?: KnowledgeResolver
   /** Injected guidance assembly — Knowledge Manager forwards; Engine never sees policies. */
   guidanceManager?: GuidanceEngineBridge
+  /**
+   * Injected repository adapters — Knowledge Manager may query availability/capabilities.
+   * Concrete repository wiring lives outside conversation/; adapters are the only boundary.
+   */
+  adapterRegistry?: AdapterRegistryBridge
 }
 
 /**
@@ -35,6 +45,8 @@ export interface KnowledgeManagerBridge {
   requestGuidance?(request: GuidanceRequest): GuidanceBundle | null
   composeCommunication?(request: CommunicationRequest): CommunicationPlan | null
   getLatestBundle?(): KnowledgeBundleSnapshot | null
+  getAdapterAvailability?(): AdapterAvailabilityReport | null
+  getAdapterCapabilities?(): AdapterCapabilityReport | null
 }
 
 let requestCounter = 0
@@ -50,6 +62,7 @@ function createRequestId(): string {
 export class KnowledgeManager implements KnowledgeManagerBridge {
   private readonly resolver: KnowledgeResolver
   private readonly guidanceManager?: GuidanceEngineBridge
+  private readonly adapterRegistry?: AdapterRegistryBridge
   private readonly providers = new Map<KnowledgeProviderId, KnowledgeProvider>()
   private snapshotVersion = 1
   private latestBundle: KnowledgeBundleSnapshot | null = null
@@ -57,10 +70,27 @@ export class KnowledgeManager implements KnowledgeManagerBridge {
   constructor(options: KnowledgeManagerOptions = {}) {
     this.resolver = options.resolver ?? createKnowledgeResolver()
     this.guidanceManager = options.guidanceManager
+    this.adapterRegistry = options.adapterRegistry
   }
 
   hasGuidanceManager(): boolean {
     return this.guidanceManager !== undefined
+  }
+
+  hasAdapterRegistry(): boolean {
+    return this.adapterRegistry !== undefined
+  }
+
+  getAdapterAvailability(): AdapterAvailabilityReport | null {
+    return this.adapterRegistry?.reportAvailability() ?? null
+  }
+
+  getAdapterCapabilities(): AdapterCapabilityReport | null {
+    return this.adapterRegistry?.reportCapabilities() ?? null
+  }
+
+  getAdapterRegistry(): AdapterRegistryBridge | undefined {
+    return this.adapterRegistry
   }
 
   registerProvider(provider: KnowledgeProvider): () => void {
