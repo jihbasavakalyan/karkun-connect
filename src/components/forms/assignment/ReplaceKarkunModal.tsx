@@ -1,9 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { RELEASE_REASON_OPTIONS, getReleaseReasonLabel, type ReleaseReason } from '@/types/assignment.types'
-import { Modal } from '@/components/common/Modal'
-import { PrimaryButton } from '@/components/ui/PrimaryButton'
-import { SecondaryButton } from '@/components/ui/SecondaryButton'
+import { Modal, ModalFormFooter, ModalFormGrid, ModalFormSection } from '@/components/common'
 
 type ReplaceKarkunModalProps = {
   isOpen: boolean
@@ -67,68 +65,79 @@ export function ReplaceKarkunModal({
 
   const footer =
     step === 'release' ? (
-      <PrimaryButton type="button" fullWidth onClick={handleReleaseStep}>
-        Continue to Available Karkun
-      </PrimaryButton>
+      <ModalFormFooter
+        onCancel={handleClose}
+        primaryLabel="Continue to Available Karkun"
+        onPrimaryClick={handleReleaseStep}
+      />
     ) : (
-      <div className="flex flex-col gap-3">
-        <PrimaryButton type="button" fullWidth onClick={handleConfirm}>
-          Confirm Replacement
-        </PrimaryButton>
-        <SecondaryButton type="button" fullWidth onClick={() => setStep('release')}>
-          Back
-        </SecondaryButton>
-      </div>
+      <ModalFormFooter
+        onCancel={() => setStep('release')}
+        primaryLabel="Confirm Replacement"
+        onPrimaryClick={handleConfirm}
+      />
     )
 
   return (
     <Modal isOpen={isOpen} title="Replace Karkun" onClose={handleClose} footer={footer}>
       {step === 'release' ? (
-        <div className="space-y-4">
-          <p className="text-secondary">
-            Current Karkun:{' '}
-            <span className="font-semibold text-text-heading">{currentKarkunName}</span>
-          </p>
-          <p className="text-sm text-secondary">First disconnect the current Karkun, then select a new Karkun.</p>
+        <div className="space-y-6">
+          <ModalFormSection title="Basic Information">
+            <p className="text-secondary">
+              Current Karkun:{' '}
+              <span className="font-semibold text-text-heading">{currentKarkunName}</span>
+            </p>
+            <p className="text-sm text-secondary">
+              First disconnect the current Karkun, then select a new Karkun.
+            </p>
+          </ModalFormSection>
 
-          <fieldset className="space-y-2">
-            <legend className="text-sm font-medium text-text-heading">Release Reason</legend>
-            {RELEASE_REASON_OPTIONS.map((option) => (
-              <label
-                key={option}
-                className="flex min-h-[44px] cursor-pointer items-center gap-3 rounded-lg border border-border px-4 py-2"
-              >
-                <input
-                  type="radio"
-                  name="replace-reason"
-                  value={option}
-                  checked={reason === option}
-                  onChange={() => setReason(option)}
-                  className="h-4 w-4 text-primary"
-                />
-                <span className="text-sm text-text-heading">{getReleaseReasonLabel(option)}</span>
-              </label>
-            ))}
-          </fieldset>
+          <ModalFormSection title="Additional Information">
+            <fieldset className="space-y-2">
+              <legend className="mb-2 text-sm font-medium text-text-heading">Release Reason</legend>
+              <ModalFormGrid>
+                {RELEASE_REASON_OPTIONS.map((option) => (
+                  <label
+                    key={option}
+                    className="flex min-h-[44px] cursor-pointer items-center gap-3 rounded-lg border border-border px-4 py-2"
+                  >
+                    <input
+                      type="radio"
+                      name="replace-reason"
+                      value={option}
+                      checked={reason === option}
+                      onChange={() => setReason(option)}
+                      className="h-4 w-4 text-primary"
+                    />
+                    <span className="text-sm text-text-heading">{getReleaseReasonLabel(option)}</span>
+                  </label>
+                ))}
+              </ModalFormGrid>
+            </fieldset>
+          </ModalFormSection>
         </div>
       ) : (
-        <div className="space-y-4">
-          <p className="text-sm text-secondary">Select a new Karkun from the Available pool.</p>
+        <div className="space-y-6">
+          <ModalFormSection title="Connection">
+            <div className="space-y-4">
+              <p className="text-sm text-secondary">Select a new Karkun from the Available pool.</p>
 
-          <select
-            value={newKarkunId}
-            onChange={(event) => setNewKarkunId(event.target.value)}
-            className={selectClassName}
-          >
-            <option value="">Choose Karkun...</option>
-            {availableKarkunan.map((karkun) => (
-              <option key={karkun.id} value={karkun.id}>
-                {karkun.name} · {karkun.area}
-              </option>
-            ))}
-          </select>
+              <select
+                value={newKarkunId}
+                onChange={(event) => setNewKarkunId(event.target.value)}
+                className={selectClassName}
+              >
+                <option value="">Choose Karkun...</option>
+                {availableKarkunan.map((karkun) => (
+                  <option key={karkun.id} value={karkun.id}>
+                    {karkun.name} · {karkun.area}
+                  </option>
+                ))}
+              </select>
 
-          {error && <p className="text-sm text-red-600">{error}</p>}
+              {error && <p className="text-sm text-red-600">{error}</p>}
+            </div>
+          </ModalFormSection>
         </div>
       )}
     </Modal>

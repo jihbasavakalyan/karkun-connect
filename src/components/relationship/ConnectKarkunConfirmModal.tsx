@@ -1,6 +1,4 @@
-import { Modal } from '@/components/common/Modal'
-import { PrimaryButton } from '@/components/ui/PrimaryButton'
-import { SecondaryButton } from '@/components/ui/SecondaryButton'
+import { Modal, ModalFormFooter, ModalFormGrid, ModalFormSection } from '@/components/common'
 import { fatherHusbandLabel } from '@/lib/relationshipPresentation'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
 
@@ -30,44 +28,54 @@ export function ConnectKarkunConfirmModal({
       isOpen={isOpen}
       title="Connect Karkun"
       onClose={onClose}
-      size="lg"
       footer={
-        <div className="flex flex-col gap-3">
-          <PrimaryButton type="button" fullWidth onClick={onConfirm}>
-            Confirm Connection
-          </PrimaryButton>
-          <SecondaryButton type="button" fullWidth onClick={onClose}>
-            Cancel
-          </SecondaryButton>
-        </div>
+        <ModalFormFooter
+          onCancel={onClose}
+          primaryLabel="Confirm Connection"
+          onPrimaryClick={onConfirm}
+        />
       }
     >
-      <div className="space-y-4 overflow-y-auto">
+      <div className="space-y-6">
         <p className="text-secondary">
           {ruknName
             ? `Connect ${karkun.name} with ${ruknName}?`
             : 'Do you want to connect with this Karkun?'}
         </p>
-        <dl className="space-y-2 rounded-lg border border-border bg-surface-muted px-4 py-3 text-sm">
-          <div>
-            <dt className="text-secondary">Name</dt>
-            <dd className="font-semibold text-text-heading break-words">{karkun.name}</dd>
-          </div>
-          {karkun.fatherHusbandName?.trim() && (
+
+        <ModalFormSection title="Basic Information">
+          <ModalFormGrid>
             <div>
-              <dt className="text-secondary">{fatherHusbandLabel(karkun.gender)}</dt>
-              <dd className="break-words">{karkun.fatherHusbandName}</dd>
+              <p className="text-sm text-secondary">Name</p>
+              <p className="font-semibold break-words text-text-heading">{karkun.name}</p>
             </div>
-          )}
-          <div>
-            <dt className="text-secondary">Mobile</dt>
-            <dd className="break-words">{karkun.mobile || 'Not added'}</dd>
-          </div>
-          <div>
-            <dt className="text-secondary">Area</dt>
-            <dd className="break-words">{karkun.area || karkun.place}</dd>
-          </div>
-        </dl>
+            {karkun.fatherHusbandName?.trim() && (
+              <div>
+                <p className="text-sm text-secondary">{fatherHusbandLabel(karkun.gender)}</p>
+                <p className="break-words">{karkun.fatherHusbandName}</p>
+              </div>
+            )}
+          </ModalFormGrid>
+        </ModalFormSection>
+
+        <ModalFormSection title="Contact Information">
+          <ModalFormGrid>
+            <div>
+              <p className="text-sm text-secondary">Mobile</p>
+              <p className="break-words">{karkun.mobile || 'Not added'}</p>
+            </div>
+          </ModalFormGrid>
+        </ModalFormSection>
+
+        <ModalFormSection title="Additional Information">
+          <ModalFormGrid>
+            <div>
+              <p className="text-sm text-secondary">Area</p>
+              <p className="break-words">{karkun.area || karkun.place}</p>
+            </div>
+          </ModalFormGrid>
+        </ModalFormSection>
+
         {error && <p className="text-sm text-red-600">{error}</p>}
       </div>
     </Modal>

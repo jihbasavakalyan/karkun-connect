@@ -9,11 +9,17 @@ type ModalProps = {
   children: ReactNode
   /** When set, stays pinned below the scrollable body (Cancel / primary actions). */
   footer?: ReactNode
-  /** Widen modal for denser selection UIs (e.g. connection picker). */
-  size?: 'md' | 'lg'
+  /** Desktop width; `form` is the standard ~740px layout for edit/add modals. */
+  size?: 'form' | 'md' | 'lg'
 }
 
-export function Modal({ isOpen, title, onClose, children, footer, size = 'md' }: ModalProps) {
+const MODAL_WIDTH_CLASS: Record<NonNullable<ModalProps['size']>, string> = {
+  form: 'max-w-[740px]',
+  md: 'max-w-lg',
+  lg: 'max-w-[740px]',
+}
+
+export function Modal({ isOpen, title, onClose, children, footer, size = 'form' }: ModalProps) {
   useEffect(() => {
     if (!isOpen) {
       return
@@ -65,7 +71,7 @@ export function Modal({ isOpen, title, onClose, children, footer, size = 'md' }:
         className={[
           'relative z-10 flex w-full flex-col overflow-hidden rounded-(--radius-card) border border-border bg-surface shadow-card',
           'max-h-[90vh]',
-          size === 'lg' ? 'max-w-xl' : 'max-w-lg',
+          MODAL_WIDTH_CLASS[size],
         ].join(' ')}
       >
         <div className="flex shrink-0 items-start justify-between gap-4 border-b border-border px-5 py-4 sm:px-6">
