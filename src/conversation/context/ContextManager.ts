@@ -10,6 +10,11 @@
 import type { ConversationContext } from '../ConversationContext'
 import { createEmptyConversationContext } from '../ConversationContext'
 import type {
+  CommunicationChannel,
+  CommunicationPlan,
+  LocalizationPreferences,
+} from '../communication'
+import type {
   KnowledgeBundleSnapshot,
   KnowledgeDomain,
   KnowledgeManagerBridge,
@@ -46,6 +51,7 @@ export interface ContextManagerBridge {
   provideContextFor(consumer: ConversationContextConsumer): ContextSnapshot
   requestKnowledge?(request: KnowledgeRequest): KnowledgeBundleSnapshot | null
   requestGuidance?(request: GuidanceOrchestrationRequest): GuidanceBundle | null
+  requestCommunication?(request: CommunicationOrchestrationRequest): CommunicationPlan | null
 }
 
 /** Orchestration request assembled by Context Manager for the guidance chain. */
@@ -56,6 +62,13 @@ export type GuidanceOrchestrationRequest = {
   knowledgeDomains?: readonly KnowledgeDomain[]
   suppressedCategories?: readonly GuidanceCategory[]
   sessionId?: string
+}
+
+/** Orchestration request for the full communication composition chain. */
+export type CommunicationOrchestrationRequest = GuidanceOrchestrationRequest & {
+  channel: CommunicationChannel
+  localization?: LocalizationPreferences
+  guidanceBundle?: GuidanceBundle | null
 }
 
 export class ContextManager implements ContextManagerBridge {
@@ -233,6 +246,43 @@ export class ContextManager implements ContextManagerBridge {
       knowledgeBundle: knowledgeBundle ?? undefined,
       sessionId: request.sessionId,
       suppressedCategories: request.suppressedCategories,
+    })
+  }
+
+  requestCommunication(
+    request: CommunicationOrchestrationRequest,
+  ): CommunicationPlan | null {
+    if (!this.knowledgeManager?.composeCommunication) return null
+
+    const contextSnapshot = this.latestSnapshot ?? this.resolveSnapshot()
+    const conversationContext = contextSnapshot.getConversation()
+
+    const guidanceBundle =
+      request.guidanceBundle ??
+      this.requestGuidance({
+        conversationState: request.conversationState,
+        pendingConfirmation: request.pendingConfirmation,
+        knowledgeBundle: request.knowledgeBundle,
+        knowledgeDomains: request.knowledgeDomains,
+        suppressedCategories: request.suppressedCategories,
+        sessionId: request.sessionId,
+      })
+
+    if (!guidanceBundle) return null
+
+    const localization: LocalizationPreferences = request.localization ?? {
+      locale: conversationContext.sessionMetadata.locale ?? 'ur',
+      fallbackLocale: 'en',
+      script: 'arabic',
+      formality: 'formal',
+    }
+
+    return this.knowledgeManager.composeCommunication({
+      guidanceBundle,
+      conversationContext,
+      channel: request.channel,
+      localization,
+      sessionId: request.sessionId,
     })
   }
 

@@ -7,6 +7,7 @@ export {
   createContextManager,
   type ContextManagerBridge,
   type ContextManagerOptions,
+  type CommunicationOrchestrationRequest,
   type GuidanceOrchestrationRequest,
 } from './ContextManager'
 

@@ -7,6 +7,7 @@
  * Future integrations: Wired via Knowledge Manager → Context Manager → Conversation Engine chain.
  */
 
+import type { CommunicationEngineBridge, CommunicationPlan, CommunicationRequest } from '../communication'
 import { createGuidanceContext } from './GuidanceContext'
 import type { GuidanceContext } from './GuidanceContext'
 import type { GuidanceRecommendation } from './GuidanceRecommendation'
@@ -75,6 +76,8 @@ export class GuidanceBundle {
 export type GuidanceEngineOptions = {
   registry?: GuidanceRegistry
   registerDefaults?: boolean
+  /** Injected communication composition — Guidance Engine forwards; Engine never sees templates. */
+  communicationManager?: CommunicationEngineBridge
 }
 
 /**
@@ -82,6 +85,7 @@ export type GuidanceEngineOptions = {
  */
 export interface GuidanceEngineBridge {
   generateGuidance(request: GuidanceRequest): GuidanceBundle
+  composeCommunication?(request: CommunicationRequest): CommunicationPlan | null
 }
 
 let bundleCounter = 0
@@ -96,14 +100,20 @@ function createBundleRequestId(): string {
 
 export class GuidanceEngine implements GuidanceEngineBridge {
   private readonly registry: GuidanceRegistry
+  private readonly communicationManager?: CommunicationEngineBridge
   private readonly suppressions = new Map<GuidanceCategory, GuidanceSuppressionRule>()
   private latestBundle: GuidanceBundle | null = null
 
   constructor(options: GuidanceEngineOptions = {}) {
     this.registry = options.registry ?? createGuidanceRegistry()
+    this.communicationManager = options.communicationManager
     if (options.registerDefaults !== false) {
       registerDefaultGuidancePolicies(this.registry)
     }
+  }
+
+  hasCommunicationManager(): boolean {
+    return this.communicationManager !== undefined
   }
 
   getRegistry(): GuidanceRegistry {
@@ -151,6 +161,11 @@ export class GuidanceEngine implements GuidanceEngineBridge {
 
     this.latestBundle = bundle
     return bundle
+  }
+
+  composeCommunication(request: CommunicationRequest): CommunicationPlan | null {
+    if (!this.communicationManager) return null
+    return this.communicationManager.composePlan(request)
   }
 
   private applyFilters(

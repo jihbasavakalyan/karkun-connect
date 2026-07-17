@@ -14,7 +14,12 @@
  */
 
 import type { ConversationContext } from './ConversationContext'
-import type { ContextManagerBridge, GuidanceOrchestrationRequest } from './context'
+import type {
+  CommunicationOrchestrationRequest,
+  ContextManagerBridge,
+  GuidanceOrchestrationRequest,
+} from './context'
+import type { CommunicationPlan } from './communication'
 import type { GuidanceBundle } from './guidance'
 import type { KnowledgeBundleSnapshot, KnowledgeRequest } from './knowledge'
 import { createConversationEvent } from './ConversationEvents'
@@ -130,6 +135,27 @@ export class ConversationEngine {
 
   hasGuidancePath(): boolean {
     return this.contextManager?.requestGuidance !== undefined
+  }
+
+  /**
+   * Request communication plan via Context Manager → Knowledge Manager → Guidance Engine → Communication Engine.
+   * Engine does not know template origins.
+   */
+  requestCommunication(
+    orchestration: CommunicationOrchestrationRequest,
+  ): CommunicationPlan | null {
+    if (!this.contextManager?.requestCommunication) return null
+    return this.contextManager.requestCommunication({
+      ...orchestration,
+      conversationState: orchestration.conversationState ?? this.getState(),
+      pendingConfirmation:
+        orchestration.pendingConfirmation ?? this.getPendingConfirmation(),
+      sessionId: orchestration.sessionId ?? this.session?.sessionId,
+    })
+  }
+
+  hasCommunicationPath(): boolean {
+    return this.contextManager?.requestCommunication !== undefined
   }
 
   onEvent(listener: ConversationEventListener): () => void {

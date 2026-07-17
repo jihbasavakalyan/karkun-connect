@@ -8,6 +8,7 @@
  */
 
 import type { ConversationContext } from '../ConversationContext'
+import type { CommunicationPlan, CommunicationRequest } from '../communication'
 import type { GuidanceBundle, GuidanceEngineBridge, GuidanceRequest } from '../guidance'
 import type { KnowledgeProvider } from './KnowledgeProviders'
 import { KnowledgeResolver, createKnowledgeResolver } from './KnowledgeResolver'
@@ -32,6 +33,7 @@ export type KnowledgeManagerOptions = {
 export interface KnowledgeManagerBridge {
   requestKnowledge(request: KnowledgeRequest): KnowledgeBundleSnapshot
   requestGuidance?(request: GuidanceRequest): GuidanceBundle | null
+  composeCommunication?(request: CommunicationRequest): CommunicationPlan | null
   getLatestBundle?(): KnowledgeBundleSnapshot | null
 }
 
@@ -135,6 +137,11 @@ export class KnowledgeManager implements KnowledgeManagerBridge {
   requestGuidance(request: GuidanceRequest): GuidanceBundle | null {
     if (!this.guidanceManager) return null
     return this.guidanceManager.generateGuidance(request)
+  }
+
+  composeCommunication(request: CommunicationRequest): CommunicationPlan | null {
+    if (!this.guidanceManager?.composeCommunication) return null
+    return this.guidanceManager.composeCommunication(request)
   }
 
   private resolveFromContributions(
