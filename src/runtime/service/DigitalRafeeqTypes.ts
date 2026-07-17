@@ -86,6 +86,7 @@ export const DIGITAL_RAFEEQ_INTENTS: readonly DigitalRafeeqIntent[] = [
   'dashboard_open',
   'dashboard_overview',
   'home_open',
+  'daily_execution',
   'meeting_preparation',
   'compliance_reminder',
   'campaign_summary',

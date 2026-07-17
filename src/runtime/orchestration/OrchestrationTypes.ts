@@ -14,6 +14,7 @@ export type ConversationIntent =
   | 'dashboard_open'
   | 'dashboard_overview'
   | 'home_open'
+  | 'daily_execution'
   | 'meeting_preparation'
   | 'compliance_reminder'
   | 'campaign_summary'
@@ -64,6 +65,13 @@ export function planForIntent(intent: ConversationIntent): KnowledgeDomainPlan {
         intent,
         domains: ['campaign', 'karkun'],
         objective: 'morning_orientation',
+        navigationView: 'dashboard',
+      }
+    case 'daily_execution':
+      return {
+        intent,
+        domains: ['campaign', 'karkun', 'meeting', 'compliance'],
+        objective: 'todays_programme',
         navigationView: 'dashboard',
       }
     case 'meeting_preparation':

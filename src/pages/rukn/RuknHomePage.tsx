@@ -9,6 +9,7 @@ import {
   RuknPeopleRows,
   RuknScheduleTimeline,
 } from '@/components/home'
+import { RuknAssistantPanel } from '@/features/digitalRafeeq/rukn'
 import { useRequiredRuknId } from '@/hooks/useRequiredRuknId'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { useCampaignAutomationEngine } from '@/hooks/useCampaignAutomationEngine'
@@ -49,6 +50,7 @@ export function RuknHomePage() {
   return (
     <div className="cd-page cd-page-rukn">
       <RuknHomeHero brief={morningBrief} hero={snapshot.hero} ruknId={ruknId} />
+      <RuknAssistantPanel />
       <RuknPeopleRows ruknId={ruknId} hasConnections={hasConnections} />
       <RuknScheduleTimeline
         schedule={snapshot.schedule}
