@@ -5,6 +5,7 @@ import {
 } from '@/stores/annexure1Store'
 import { getTimelineEventsForKarkun } from '@/stores/guidanceStore'
 import { getRegistrationForKarkun } from '@/services/jihWebPortalService'
+import { compareIsoDateStringsDesc } from '@/lib/dates/compareIsoDateStrings'
 import { JOURNEY_STAGE_LABELS, type JourneyTimelineEvent } from '@/types/guidance'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
 
@@ -23,7 +24,11 @@ export function buildJourneyTimeline(karkun: KarkunRegistryRecord): JourneyTimel
       stageId: 'connected',
       title: 'Connected',
       description: `Connection ${assignment.assignmentNumber}`,
-      occurredAt: assignment.effectiveFrom || karkun.assignmentDate || karkun.createdAt,
+      occurredAt:
+        assignment.effectiveFrom ||
+        karkun.assignmentDate ||
+        karkun.createdAt ||
+        new Date(0).toISOString(),
       source: 'system',
     })
   }
@@ -38,7 +43,11 @@ export function buildJourneyTimeline(karkun: KarkunRegistryRecord): JourneyTimel
       stageId: 'first-meeting',
       title: 'First Meeting',
       description: form.discussionSummary || 'Visit recorded',
-      occurredAt: form.submittedAt || form.visitDate,
+      occurredAt:
+        form.submittedAt ||
+        form.submissionDate ||
+        form.visitDate ||
+        new Date(0).toISOString(),
       source: 'visit',
     })
   }
@@ -79,7 +88,7 @@ export function buildJourneyTimeline(karkun: KarkunRegistryRecord): JourneyTimel
       seen.add(event.id)
       return true
     })
-    .sort((a, b) => b.occurredAt.localeCompare(a.occurredAt))
+    .sort((a, b) => compareIsoDateStringsDesc(a.occurredAt, b.occurredAt))
 }
 
 export function appendSystemTimelineIfNeeded(

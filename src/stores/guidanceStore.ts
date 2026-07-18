@@ -1,4 +1,5 @@
 import type { Commitment, JourneyTimelineEvent } from '@/types/guidance'
+import { compareIsoDateStringsDesc } from '@/lib/dates/compareIsoDateStrings'
 import { getRepositories } from '@/repositories/provider'
 import { unwrapRepository } from '@/repositories/errors'
 
@@ -66,7 +67,7 @@ export function upsertCommitment(record: Commitment): Commitment {
 export function getTimelineEventsForKarkun(karkunId: string): JourneyTimelineEvent[] {
   return timelineEvents
     .filter((event) => event.karkunId === karkunId)
-    .sort((a, b) => b.occurredAt.localeCompare(a.occurredAt))
+    .sort((a, b) => compareIsoDateStringsDesc(a.occurredAt, b.occurredAt))
 }
 
 export function appendTimelineEvent(event: JourneyTimelineEvent): JourneyTimelineEvent {

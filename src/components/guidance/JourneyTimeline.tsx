@@ -1,3 +1,4 @@
+import { compareIsoDateStringsAsc } from '@/lib/dates/compareIsoDateStrings'
 import type { JourneyTimelineEvent } from '@/types/guidance'
 
 type JourneyTimelineProps = {
@@ -13,7 +14,9 @@ export function JourneyTimeline({ events }: JourneyTimelineProps) {
     )
   }
 
-  const chronological = [...events].sort((a, b) => a.occurredAt.localeCompare(b.occurredAt))
+  const chronological = [...events].sort((a, b) =>
+    compareIsoDateStringsAsc(a.occurredAt, b.occurredAt),
+  )
 
   return (
     <ol className="relative space-y-0 border-l-2 border-border pl-6">

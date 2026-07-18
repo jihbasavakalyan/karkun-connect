@@ -1,4 +1,5 @@
 import { ROUTES } from '@/constants/routes'
+import { compareIsoDateStringsDesc } from '@/lib/dates/compareIsoDateStrings'
 import { getGuidanceForRuknKarkuns } from '@/lib/guidance/guidanceEngine'
 import { getUpcomingCommitmentsForRukn } from '@/services/guidanceService'
 import type { MorningBrief } from '@/types/guidance'
@@ -27,7 +28,7 @@ export function buildMorningBrief(ruknId: string): MorningBrief {
 
   const recentProgress = guidanceList
     .flatMap((guidance) => guidance.timeline)
-    .sort((a, b) => b.occurredAt.localeCompare(a.occurredAt))
+    .sort((a, b) => compareIsoDateStringsDesc(a.occurredAt, b.occurredAt))
     .slice(0, 4)
 
   const urgentCount = guidanceList.filter(

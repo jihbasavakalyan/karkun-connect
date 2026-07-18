@@ -1,6 +1,7 @@
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { getAssignedKarkunanForRukn } from '@/lib/assignmentEngine'
 import { getActiveAssignmentsForKarkun } from '@/stores/assignmentStore'
+import { compareIsoDateStringsAsc } from '@/lib/dates/compareIsoDateStrings'
 import { resolveCurrentJourneyStage } from '@/lib/guidance/journeyEngine'
 import { resolveNextAction } from '@/lib/guidance/nextActionEngine'
 import { buildRemindersForKarkun } from '@/lib/guidance/reminderEngine'
@@ -24,7 +25,7 @@ export function getKarkunGuidance(karkunId: string, ruknId?: string): KarkunGuid
   const { currentStage, stagesCompleted } = resolveCurrentJourneyStage(karkun, assignmentId)
   const pendingCommitments = getPendingCommitmentsForKarkun(karkunId)
   const upcomingCommitment = pendingCommitments
-    .sort((a, b) => a.targetDate.localeCompare(b.targetDate))[0]
+    .sort((a, b) => compareIsoDateStringsAsc(a.targetDate, b.targetDate))[0]
 
   return {
     karkunId,

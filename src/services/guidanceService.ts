@@ -5,6 +5,7 @@ import {
   getPendingCommitmentsForRukn,
   upsertCommitment,
 } from '@/stores/guidanceStore'
+import { compareIsoDateStringsAsc } from '@/lib/dates/compareIsoDateStrings'
 import type { Commitment, JourneyTimelineEvent } from '@/types/guidance'
 
 function nowIso(): string {
@@ -21,7 +22,7 @@ export function getPendingCommitmentsForKarkun(karkunId: string): Commitment[] {
 
 export function getUpcomingCommitmentsForRukn(ruknId: string, limit = 5): Commitment[] {
   return getPendingCommitmentsForRukn(ruknId)
-    .sort((a, b) => a.targetDate.localeCompare(b.targetDate))
+    .sort((a, b) => compareIsoDateStringsAsc(a.targetDate, b.targetDate))
     .slice(0, limit)
 }
 
