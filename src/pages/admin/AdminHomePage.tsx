@@ -19,9 +19,9 @@ export function AdminHomePage() {
   const model = useMemo(() => buildAdminMissionControl(snapshot), [snapshot])
 
   return (
-    <div className="cd-page cd-page-admin mc-page">
+    <div className="cd-page cd-page-admin mc-page mc-page-admin-compact">
       <AdminMissionControlHero model={model} />
-      <AskDigitalRafeeqCard onOpen={openDigitalRafeeqAssistant} />
+      <AskDigitalRafeeqCard compact onOpen={openDigitalRafeeqAssistant} />
       <MissionControlKpiGrid kpis={model.kpis} />
       <AdminRelationshipInsightsPanel />
       <AdminMissionControlPanels model={model} />

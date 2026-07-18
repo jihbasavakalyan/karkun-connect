@@ -15,7 +15,6 @@ import {
   DevelopmentAssessmentPanel,
   JourneyTimeline,
   NextActionCard,
-  RelationshipHealthBadge,
   SmartSuggestions,
 } from '@/components/guidance'
 import { useGuidance } from '@/hooks/useGuidance'
@@ -49,7 +48,7 @@ import type { MessageRecipient } from '@/types/communication'
 import { PageShell, StatusBadge } from '@/components/ui'
 
 function sectionClass(): string {
-  return 'ds-section'
+  return 'app-screen-block'
 }
 
 function buildPostSubmitDestination(isAdminContext: boolean, followUpRequired: boolean): string {
@@ -144,7 +143,6 @@ export function ConnectionJourneyPage() {
   const ruknName = getRuknById(activeAssignment.ruknId)?.name
   const latestSubmission = getLatestSubmissionForKarkun(karkun.id)
   const portalRegistration = getRegistrationForKarkun(karkun.id)
-  const relationLabel = karkun.gender === 'Female' ? 'Husband' : 'Father'
 
   const recipient: MessageRecipient = {
     personId: karkun.id,
@@ -234,10 +232,10 @@ export function ConnectionJourneyPage() {
   const communicationContext = buildIndividualCommunicationContext(karkun.id)
 
   return (
-    <PageShell variant="narrow" className="pb-28">
-      <div className="flex items-center justify-between">
-        <Link to={backPath} className="text-sm font-medium text-primary hover:underline">
-          ← {isAdminContext ? 'Connections' : 'Connected Karkuns'}
+    <PageShell variant="narrow" className="app-screen visit-screen pb-24">
+      <div className="flex items-center justify-between gap-2">
+        <Link to={backPath} className="app-screen-back">
+          ← {isAdminContext ? 'Connections' : 'Connected'}
         </Link>
         <StatusBadge variant="connected">{getConnectionStatusLabel(karkun.assignmentStatus)}</StatusBadge>
       </div>
@@ -260,47 +258,28 @@ export function ConnectionJourneyPage() {
             setReviewError('')
             setReviewOpen(true)
           }}
+          compact
         />
       )}
 
       {reviewNotice && !isAdminContext ? (
-        <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+        <p className="rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-xs text-amber-900">
           {reviewNotice}
         </p>
       ) : null}
 
-      <header className={sectionClass()}>
-        <h1 className="text-2xl font-semibold text-text-heading">{karkun.name}</h1>
-        {karkun.fatherHusbandName?.trim() && (
-          <p className="mt-1 text-sm text-secondary">
-            {relationLabel}: {karkun.fatherHusbandName}
-          </p>
-        )}
-        <p className="mt-1 text-sm text-secondary">{karkun.area || karkun.place}</p>
-        <p className="mt-1 text-xs text-secondary">Connection: {activeAssignment.assignmentNumber}</p>
-        {guidance && (
-          <div className="mt-4">
-            <RelationshipHealthBadge
-              health={guidance.health}
-              stageId={guidance.currentStage}
-              showReasons
-            />
-          </div>
-        )}
-      </header>
-
-      {guidance && (
+      {guidance ? (
         <section className={sectionClass()} aria-label="Next Action">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-secondary">Next Action</h2>
-          <div className="mt-3">
+          <h2 className="app-screen-block-title">Next Action</h2>
+          <div className="mt-2">
             <NextActionCard action={guidance.nextAction} />
           </div>
         </section>
-      )}
+      ) : null}
 
       <section className={sectionClass()} aria-label="Communication">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-secondary">Communication</h2>
-        <div className="mt-3">
+        <h2 className="app-screen-block-title">Communication</h2>
+        <div className="mt-2">
           <ContactActionBar
             name={karkun.name}
             mobile={karkun.mobile}
@@ -309,29 +288,15 @@ export function ConnectionJourneyPage() {
             onWhatsApp={() => setComposerOpen(true)}
           />
         </div>
-        {!karkun.mobile.trim() && (
-          <p className="mt-2 text-sm text-secondary">No mobile number on file yet.</p>
-        )}
+        {!karkun.mobile.trim() ? (
+          <p className="mt-1.5 text-xs text-secondary">No mobile number on file yet.</p>
+        ) : null}
       </section>
 
-      <section className={sectionClass()} aria-label="Connection Progress">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-secondary">
-          Journey Stage — {journey.stageLabel}
-        </h2>
-        <div className="mt-4">
-          <ConnectionProgressTracker snapshot={journey} />
-        </div>
-      </section>
-
-      <section className={sectionClass()} id="visit-details" aria-label="Visit Details">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-secondary">Visit Details</h2>
-        <p className="ds-section-subtitle">
-          Complete the form below, then tap <span className="font-medium text-text-heading">Save Visit</span> to
-          submit. Use <span className="font-medium text-text-heading">Record Visit</span> elsewhere to open this
-          form.
-        </p>
+      <section className={`${sectionClass()} visit-primary-block`} id="visit-details" aria-label="Visit Details">
+        <h2 className="app-screen-block-title">Visit Details</h2>
         {alreadySubmitted && latestSubmission ? (
-          <dl className="mt-4 space-y-3 text-sm">
+          <dl className="mt-2 space-y-2 text-sm">
             <div className="flex justify-between gap-4">
               <dt className="text-secondary">Date of Visit</dt>
               <dd className="font-medium text-text-heading">{latestSubmission.visitDate}</dd>
@@ -342,164 +307,187 @@ export function ConnectionJourneyPage() {
                 {latestSubmission.visitConducted === 'yes' ? 'Yes' : 'No'}
               </dd>
             </div>
-            {latestSubmission.discussionSummary && (
+            {latestSubmission.discussionSummary ? (
               <div>
                 <dt className="text-secondary">Remarks / Outcome</dt>
                 <dd className="mt-1 whitespace-pre-wrap font-medium text-text-heading">
                   {latestSubmission.discussionSummary}
                 </dd>
               </div>
-            )}
-            {latestSubmission.commitmentMade && latestSubmission.commitmentDetails && (
+            ) : null}
+            {latestSubmission.commitmentMade && latestSubmission.commitmentDetails ? (
               <div>
                 <dt className="text-secondary">Commitment</dt>
                 <dd className="mt-1 font-medium text-text-heading">
                   {latestSubmission.commitmentDetails}
                 </dd>
               </div>
-            )}
+            ) : null}
           </dl>
         ) : (
-          <div className="mt-4">
+          <div className="mt-2">
             <Annexure1ExecutionForm form={form} setField={setField} showFullForm={showFullForm} />
-            {showFormActions && (
-              <div className="mt-4 space-y-2">
-                {submitError && (
-                  <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            {showFormActions ? (
+              <div className="visit-sticky-actions">
+                {submitError ? (
+                  <p className="rounded-md border border-red-200 bg-red-50 px-2.5 py-1.5 text-xs text-red-700">
                     {submitError}
                   </p>
-                )}
+                ) : null}
                 <PrimaryButton type="button" fullWidth onClick={handleSubmit}>
                   Save Visit
                 </PrimaryButton>
-                {showFullForm && (
+                {showFullForm ? (
                   <SecondaryButton type="button" fullWidth onClick={handleSaveDraft}>
                     Save Draft
                   </SecondaryButton>
-                )}
+                ) : null}
               </div>
-            )}
-            {!showFullForm && !visitStopped && (
-              <p className="mt-3 text-center text-sm text-secondary">
+            ) : null}
+            {!showFullForm && !visitStopped ? (
+              <p className="mt-2 text-center text-xs text-secondary">
                 Select whether the visit was conducted to continue.
               </p>
-            )}
+            ) : null}
           </div>
         )}
       </section>
 
-      <section className={sectionClass()} aria-label="JIH App Registration">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-secondary">
-          JIH App Registration
-        </h2>
-        <dl className="mt-4 space-y-3 text-sm">
-          <div className="flex justify-between gap-4">
-            <dt className="text-secondary">Status</dt>
-            <dd className="font-medium text-text-heading">
-              {journey.jihRegistered ? 'Registered' : karkun.jihAppRegistrationStatus}
-            </dd>
-          </div>
-          {portalRegistration.registrationDate && (
-            <div className="flex justify-between gap-4">
-              <dt className="text-secondary">Registration Date</dt>
-              <dd className="font-medium text-text-heading">
-                {portalRegistration.registrationDate}
-              </dd>
+      <details className="visit-more-details">
+        <summary>Journey &amp; registration</summary>
+        <div className="visit-more-body space-y-2">
+          <section className={sectionClass()} aria-label="Connection Progress">
+            <h2 className="app-screen-block-title">Journey Stage — {journey.stageLabel}</h2>
+            <div className="mt-2">
+              <ConnectionProgressTracker snapshot={journey} />
             </div>
-          )}
-          {portalRegistration.registrationNumber && (
-            <div className="flex justify-between gap-4">
-              <dt className="text-secondary">JIH ID</dt>
-              <dd className="font-medium text-text-heading">
-                {portalRegistration.registrationNumber}
-              </dd>
-            </div>
-          )}
-        </dl>
-        {!journey.jihRegistered && (
-          <p className="mt-3 text-sm text-secondary">
-            Record the JIH App Registration status while saving the visit above.
-          </p>
-        )}
-      </section>
+          </section>
 
-      {guidance && (
-        <section className={sectionClass()} aria-label="Commitments">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-secondary">
-            Agreed Next Steps
-          </h2>
-          <div className="mt-4">
-            <CommitmentPanel
-              karkunId={karkun.id}
-              ruknId={activeAssignment.ruknId}
-              assignmentId={activeAssignment.assignmentId}
-              commitments={guidance.pendingCommitments}
-              onChange={() => setGuidanceTick((current) => current + 1)}
-            />
-          </div>
-        </section>
-      )}
-
-      {!isAdminContext && guidance?.currentStage === 'development' && (
-        <DevelopmentAssessmentPanel
-          karkunId={karkun.id}
-          ruknId={activeAssignment.ruknId}
-          onChange={() => setGuidanceTick((current) => current + 1)}
-        />
-      )}
-
-      {guidance && guidance.suggestions.length > 0 && (
-        <section className={sectionClass()} aria-label="Suggestions">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-secondary">
-            Smart Suggestions
-          </h2>
-          <div className="mt-4">
-            <SmartSuggestions suggestions={guidance.suggestions} />
-          </div>
-        </section>
-      )}
-
-      {guidance && (
-        <section className={sectionClass()} aria-label="Journey Timeline">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-secondary">
-            Journey Timeline
-          </h2>
-          <div className="mt-4">
-            <JourneyTimeline events={guidance.timeline} />
-          </div>
-        </section>
-      )}
-
-      <section className={sectionClass()} aria-label="Quick Actions">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-secondary">Quick Actions</h2>
-        {scheduleNotice && (
-          <p className="mt-3 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">
-            {scheduleNotice}
-          </p>
-        )}
-        <div className="mt-3 grid gap-2 sm:grid-cols-2">
-          {!alreadySubmitted && (
-            <a href="#visit-details">
-              <PrimaryButton type="button" fullWidth>
-                {journey.hasVisit ? 'Visit Again' : 'Record Visit'}
-              </PrimaryButton>
-            </a>
-          )}
-          {waReminderLink && (
-            <a href={waReminderLink} target="_blank" rel="noopener noreferrer">
-              <SecondaryButton type="button" fullWidth>
-                Send Reminder
-              </SecondaryButton>
-            </a>
-          )}
-          <SecondaryButton type="button" fullWidth onClick={() => setScheduleOpen(true)}>
-            Schedule Meeting
-          </SecondaryButton>
-          <SecondaryButton type="button" fullWidth onClick={() => setComposerOpen(true)}>
-            Compose Message
-          </SecondaryButton>
+          <section className={sectionClass()} aria-label="JIH App Registration">
+            <h2 className="app-screen-block-title">JIH App Registration</h2>
+            <dl className="mt-2 space-y-2 text-sm">
+              <div className="flex justify-between gap-4">
+                <dt className="text-secondary">Status</dt>
+                <dd className="font-medium text-text-heading">
+                  {journey.jihRegistered ? 'Registered' : karkun.jihAppRegistrationStatus}
+                </dd>
+              </div>
+              {portalRegistration.registrationDate ? (
+                <div className="flex justify-between gap-4">
+                  <dt className="text-secondary">Registration Date</dt>
+                  <dd className="font-medium text-text-heading">
+                    {portalRegistration.registrationDate}
+                  </dd>
+                </div>
+              ) : null}
+              {portalRegistration.registrationNumber ? (
+                <div className="flex justify-between gap-4">
+                  <dt className="text-secondary">JIH ID</dt>
+                  <dd className="font-medium text-text-heading">
+                    {portalRegistration.registrationNumber}
+                  </dd>
+                </div>
+              ) : null}
+            </dl>
+          </section>
         </div>
-      </section>
+      </details>
+
+      {guidance ? (
+        <details className="visit-more-details">
+          <summary>Commitments &amp; history</summary>
+          <div className="visit-more-body space-y-2">
+            <section className={sectionClass()} aria-label="Commitments">
+              <h2 className="app-screen-block-title">Agreed Next Steps</h2>
+              <div className="mt-2">
+                <CommitmentPanel
+                  karkunId={karkun.id}
+                  ruknId={activeAssignment.ruknId}
+                  assignmentId={activeAssignment.assignmentId}
+                  commitments={guidance.pendingCommitments}
+                  onChange={() => setGuidanceTick((current) => current + 1)}
+                />
+              </div>
+            </section>
+
+            {!isAdminContext && guidance.currentStage === 'development' ? (
+              <DevelopmentAssessmentPanel
+                karkunId={karkun.id}
+                ruknId={activeAssignment.ruknId}
+                onChange={() => setGuidanceTick((current) => current + 1)}
+              />
+            ) : null}
+
+            {guidance.suggestions.length > 0 ? (
+              <section className={sectionClass()} aria-label="Suggestions">
+                <h2 className="app-screen-block-title">Smart Suggestions</h2>
+                <div className="mt-2">
+                  <SmartSuggestions suggestions={guidance.suggestions} />
+                </div>
+              </section>
+            ) : null}
+
+            <section className={sectionClass()} aria-label="Journey Timeline">
+              <div className="app-screen-block-head">
+                <h2 className="app-screen-block-title">Recent Timeline</h2>
+              </div>
+              <div className="mt-2">
+                <JourneyTimeline events={guidance.timeline.slice(0, 3)} />
+              </div>
+              {guidance.timeline.length > 3 ? (
+                <p className="mt-1 text-[11px] text-secondary">
+                  Showing latest 3 of {guidance.timeline.length} events.
+                </p>
+              ) : null}
+            </section>
+          </div>
+        </details>
+      ) : null}
+
+      <details className="visit-more-details">
+        <summary>More actions</summary>
+        <div className="visit-more-body">
+          <section className={sectionClass()} aria-label="Quick Actions">
+            {scheduleNotice ? (
+              <p className="mb-2 rounded-md border border-green-200 bg-green-50 px-2.5 py-1.5 text-xs text-green-700">
+                {scheduleNotice}
+              </p>
+            ) : null}
+            <div className="grid grid-cols-2 gap-1.5">
+              {!alreadySubmitted ? (
+                <a href="#visit-details">
+                  <PrimaryButton type="button" fullWidth className="min-h-10 text-sm">
+                    {journey.hasVisit ? 'Visit Again' : 'Record Visit'}
+                  </PrimaryButton>
+                </a>
+              ) : null}
+              {waReminderLink ? (
+                <a href={waReminderLink} target="_blank" rel="noopener noreferrer">
+                  <SecondaryButton type="button" fullWidth className="min-h-10 text-sm">
+                    Send Reminder
+                  </SecondaryButton>
+                </a>
+              ) : null}
+              <SecondaryButton
+                type="button"
+                fullWidth
+                className="min-h-10 text-sm"
+                onClick={() => setScheduleOpen(true)}
+              >
+                Schedule
+              </SecondaryButton>
+              <SecondaryButton
+                type="button"
+                fullWidth
+                className="min-h-10 text-sm"
+                onClick={() => setComposerOpen(true)}
+              >
+                Message
+              </SecondaryButton>
+            </div>
+          </section>
+        </div>
+      </details>
 
       <MessageComposerModal
         isOpen={composerOpen}

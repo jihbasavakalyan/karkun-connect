@@ -52,7 +52,7 @@ export function AvailableKarkunRow({
       <div className="relationship-available-row-action">
         <PrimaryButton
           type="button"
-          className="min-h-11 w-full whitespace-nowrap sm:w-auto sm:min-w-[8.5rem]"
+          className="min-h-10 w-full whitespace-nowrap px-3 text-sm sm:w-auto sm:min-w-[7.5rem]"
           disabled={connectDisabled || !isReady}
           onClick={onConnect}
         >

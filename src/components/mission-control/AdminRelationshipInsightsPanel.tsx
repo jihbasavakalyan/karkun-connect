@@ -22,11 +22,8 @@ export function AdminRelationshipInsightsPanel() {
   }
 
   return (
-    <section className="mc-panel mc-panel-wide ri-admin-panel" aria-label="Relationship insights">
+    <section className="mc-panel mc-panel-compact mc-panel-wide ri-admin-panel" aria-label="Relationship insights">
       <h2 className="mc-panel-title">Relationship Intelligence</h2>
-      <p className="mc-caption">
-        Campaign overview — who needs support, without drowning in individual records.
-      </p>
 
       <div className="ri-admin-summary">
         <div className="ri-admin-metric">

@@ -24,7 +24,7 @@ export function RelationshipSummaryPanel({
       <dl className="relationship-summary-grid">
         <div className="relationship-summary-item">
           <dt>Connected Karkun</dt>
-          <dd className="text-lg font-semibold">{karkunName}</dd>
+          <dd className="text-base font-semibold sm:text-lg">{karkunName}</dd>
         </div>
 
         {ruknName && (

@@ -89,8 +89,8 @@ export function AdminMissionControlPanels({ model }: AdminMissionControlPanelsPr
   ].sort((a, b) => b.count - a.count)
 
   return (
-    <div className="mc-panels">
-      <section className="mc-panel mc-panel-primary">
+    <div className="mc-panels mc-panels-admin-compact">
+      <section className="mc-panel mc-panel-compact mc-panel-primary">
         <h2 className="mc-panel-title">Connection Progress</h2>
         <div className="mc-connection-progress">
           <McProgressRing
@@ -114,7 +114,7 @@ export function AdminMissionControlPanels({ model }: AdminMissionControlPanelsPr
         </div>
       </section>
 
-      <section className="mc-panel mc-panel-primary">
+      <section className="mc-panel mc-panel-compact mc-panel-primary">
         <h2 className="mc-panel-title">Campaign Health</h2>
         <ul className="mc-health-grid">
           <li>
@@ -135,7 +135,7 @@ export function AdminMissionControlPanels({ model }: AdminMissionControlPanelsPr
         </ul>
       </section>
 
-      <section className="mc-panel mc-panel-wide mc-panel-funnel">
+      <section className="mc-panel mc-panel-compact mc-panel-wide mc-panel-funnel">
         <h2 className="mc-panel-title">Journey Funnel</h2>
         <ol className="mc-funnel-flow">
           {funnelStages.map((stage, index) => (
@@ -160,7 +160,7 @@ export function AdminMissionControlPanels({ model }: AdminMissionControlPanelsPr
         </ol>
       </section>
 
-      <section className="mc-panel">
+      <section className="mc-panel mc-panel-compact">
         <h2 className="mc-panel-title">Rukn Leaderboard</h2>
         {model.ruknLeaderboard.length === 0 ? (
           <p className="mc-caption">No Rukn performance yet.</p>
@@ -189,7 +189,7 @@ export function AdminMissionControlPanels({ model }: AdminMissionControlPanelsPr
         )}
       </section>
 
-      <section className="mc-panel">
+      <section className="mc-panel mc-panel-compact">
         <h2 className="mc-panel-title">Today&apos;s Mission</h2>
         <ul className="mc-mission-groups">
           {missionGroups.map((group) => (
@@ -217,7 +217,7 @@ export function AdminMissionControlPanels({ model }: AdminMissionControlPanelsPr
         ) : null}
       </section>
 
-      <section className="mc-panel mc-panel-quiet">
+      <section className="mc-panel mc-panel-compact mc-panel-quiet">
         <h2 className="mc-panel-title">Recent Activity</h2>
         {model.recentActivity.length === 0 ? (
           <p className="mc-caption">No recent activity.</p>

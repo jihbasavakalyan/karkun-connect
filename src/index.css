@@ -114,7 +114,7 @@
 
   /* ── M6 Phase 3: Application-wide design system (ds-*) ── */
   .ds-page {
-    @apply mx-auto w-full max-w-6xl space-y-6;
+    @apply mx-auto w-full max-w-6xl space-y-4 sm:space-y-6;
   }
 
   .ds-page-narrow {
@@ -126,7 +126,7 @@
   }
 
   .ds-page-header {
-    @apply flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between;
+    @apply flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4;
   }
 
   .ds-page-header-text {
@@ -134,11 +134,11 @@
   }
 
   .ds-page-title {
-    @apply text-2xl font-semibold tracking-tight text-text-heading sm:text-[1.75rem];
+    @apply text-xl font-semibold tracking-tight text-text-heading sm:text-2xl;
   }
 
   .ds-page-description {
-    @apply mt-2 text-[15px] leading-relaxed text-secondary;
+    @apply mt-1 text-sm leading-snug text-secondary sm:mt-2 sm:text-[15px] sm:leading-relaxed;
   }
 
   .ds-page-header-actions {
@@ -154,7 +154,7 @@
   }
 
   .ds-section {
-    @apply rounded-xl border border-border/80 bg-surface p-5 shadow-card sm:p-6;
+    @apply rounded-xl border border-border/80 bg-surface p-3 shadow-card sm:p-5 sm:shadow-card;
   }
 
   .ds-section-dense {
@@ -1348,7 +1348,7 @@
   }
 
   .relationship-search-input {
-    @apply w-full min-h-12 rounded-xl border border-border/80 bg-surface px-4 py-3 text-base text-text-heading shadow-card focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20;
+    @apply w-full min-h-10 rounded-lg border border-border/80 bg-surface px-3 py-2 text-sm text-text-heading shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20;
   }
 
   .relationship-row-list {
@@ -1356,11 +1356,11 @@
   }
 
   .relationship-available-row {
-    @apply flex flex-col gap-3 rounded-xl border border-border/80 bg-surface p-4 shadow-card sm:flex-row sm:items-center;
+    @apply flex flex-row items-center gap-2 rounded-xl border border-border/80 bg-surface p-2.5 shadow-sm sm:gap-3 sm:p-3;
   }
 
   .relationship-available-row-main {
-    @apply min-w-0 flex-1 space-y-2 sm:flex sm:items-start sm:gap-4 sm:space-y-0;
+    @apply min-w-0 flex-1 space-y-1 sm:flex sm:items-start sm:gap-3 sm:space-y-0;
   }
 
   .relationship-available-row-meta {
@@ -1517,28 +1517,96 @@
   }
 
   .relationship-summary-panel {
-    @apply rounded-xl border border-primary/15 bg-linear-to-br from-primary-muted/25 to-surface p-4 shadow-card;
+    @apply rounded-xl border border-primary/15 bg-linear-to-br from-primary-muted/25 to-surface p-3 shadow-sm;
   }
 
   .relationship-summary-grid {
-    @apply grid gap-4 sm:grid-cols-2;
+    @apply grid gap-2 sm:grid-cols-2 sm:gap-3;
   }
 
   .relationship-summary-item dt {
-    @apply text-xs font-semibold uppercase tracking-wide text-secondary;
+    @apply text-[10px] font-semibold uppercase tracking-wide text-secondary;
   }
 
   .relationship-summary-item dd {
-    @apply mt-1 text-sm text-text-heading;
+    @apply mt-0.5 text-sm text-text-heading;
   }
 
   .relationship-summary-item-wide {
     @apply sm:col-span-2;
   }
 
+  .visit-sticky-actions {
+    @apply sticky bottom-[4.75rem] z-20 mt-3 space-y-1.5 rounded-xl border border-border/70 bg-surface/95 p-2.5 shadow-lg backdrop-blur-md lg:static lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none lg:backdrop-blur-none;
+  }
+
+  .visit-more-details {
+    @apply rounded-xl border border-border/70 bg-surface px-3 py-2;
+  }
+
+  .visit-more-details > summary {
+    @apply cursor-pointer list-none text-sm font-semibold text-text-heading;
+  }
+
+  .visit-more-details > summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .visit-more-body {
+    @apply mt-2;
+  }
+
   /* KC-007.1 Mission Control presentation polish */
   .mc-page {
-    @apply space-y-6;
+    @apply space-y-4 sm:space-y-6;
+  }
+
+  .mc-page-admin-compact {
+    @apply space-y-2.5 sm:space-y-3;
+  }
+
+  .mc-page-admin-compact .mc-hero-admin-compact {
+    @apply rounded-2xl p-3 sm:p-4;
+  }
+
+  .mc-page-admin-compact .mc-hero-top {
+    @apply gap-3;
+  }
+
+  .mc-page-admin-compact .mc-hero-title-admin {
+    @apply mt-0.5 text-xl sm:text-2xl;
+  }
+
+  .mc-page-admin-compact .mc-hero-progress-card {
+    @apply min-w-0 rounded-xl p-3;
+  }
+
+  .mc-page-admin-compact .mc-hero-progress-card-rich {
+    @apply gap-3;
+  }
+
+  .mc-page-admin-compact .mc-kpi-grid {
+    @apply grid-cols-2 gap-2 xl:grid-cols-4;
+  }
+
+  .mc-page-admin-compact .mc-kpi-card {
+    @apply rounded-xl p-3 hover:translate-y-0;
+  }
+
+  .mc-page-admin-compact .mc-kpi-value {
+    @apply mt-1 text-2xl;
+  }
+
+  .mc-page-admin-compact .mc-kpi-icon {
+    @apply h-8 w-8 rounded-lg;
+  }
+
+  .mc-page-admin-compact .mc-kpi-hint {
+    @apply line-clamp-1 text-[11px];
+  }
+
+  .mc-panels-admin-compact {
+    @apply gap-2.5 lg:grid-cols-2;
   }
 
   .mc-page-rukn-compact {

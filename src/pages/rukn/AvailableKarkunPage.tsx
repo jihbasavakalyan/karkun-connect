@@ -10,7 +10,7 @@ import {
   ConnectKarkunConfirmModal,
   KarkunSearchField,
 } from '@/components/relationship'
-import { EmptyState, PageHeader, PageShell } from '@/components/ui'
+import { EmptyState, PageShell } from '@/components/ui'
 import { PlanningConversationModal } from '@/features/digitalRafeeq/planning'
 import { humanizeConnectionConfirmed } from '@/lib/relationshipPresentation'
 import { matchesKarkunRegistrySearch } from '@/lib/relationshipPresentation'
@@ -67,13 +67,13 @@ export function AvailableKarkunPage() {
   }
 
   return (
-    <PageShell variant="narrow" className="relationship-page max-w-3xl">
-      <PageHeader
-        title="Connect Karkun"
-        description={`Search, connect, and keep going — ${availableKarkunan.length} Karkun${
-          availableKarkunan.length === 1 ? '' : 's'
-        } ready to connect.`}
-      />
+    <PageShell variant="narrow" className="app-screen connect-screen max-w-3xl">
+      <header className="app-screen-header">
+        <h1 className="app-screen-title">Connect</h1>
+        <p className="app-screen-subtitle">
+          {availableKarkunan.length} ready to connect
+        </p>
+      </header>
 
       <KarkunSearchField
         id="available-karkun-search"

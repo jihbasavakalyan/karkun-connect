@@ -9,11 +9,11 @@ type MissionControlHeroProps = {
 
 export function AdminMissionControlHero({ model }: MissionControlHeroProps) {
   return (
-    <header className="mc-hero" aria-label="Mission Control">
+    <header className="mc-hero mc-hero-admin-compact" aria-label="Mission Control">
       <div className="mc-hero-top">
         <div className="mc-hero-identity">
           <p className="mc-eyebrow">Mission Control</p>
-          <h1 className="mc-hero-title">{model.campaignName}</h1>
+          <h1 className="mc-hero-title mc-hero-title-admin">{model.campaignName}</h1>
           <p className="mc-hero-date">{model.currentDateLabel}</p>
           {formatCampaignWindowLabel() ? (
             <p className="mc-caption">{formatCampaignWindowLabel()}</p>
@@ -23,8 +23,8 @@ export function AdminMissionControlHero({ model }: MissionControlHeroProps) {
         <div className="mc-hero-progress-card mc-hero-progress-card-rich">
           <McProgressRing
             value={model.connectionProgress.pct}
-            size={112}
-            stroke={10}
+            size={88}
+            stroke={9}
             tone="green"
             label={`${model.connectionProgress.pct}%`}
             sublabel="Complete"
