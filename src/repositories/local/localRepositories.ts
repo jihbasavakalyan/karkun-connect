@@ -38,6 +38,7 @@ import {
   formatAssignmentNumber,
   planAsnCollisionRepair,
 } from '@/lib/connections/assignmentNumber'
+import { planActiveConnectionIntegrity } from '@/lib/connections/activeConnectionIntegrity'
 import { canonicalizeConnectionRecords } from '@/lib/connections/canonicalizeConnectionRecords'
 import type { ExecutionRepository } from '@/repositories/interfaces/ExecutionRepository'
 import type { CommunicationRepository } from '@/repositories/interfaces/CommunicationRepository'
@@ -163,15 +164,29 @@ export class ConnectionLocalRepository implements ConnectionRepository {
           ? Math.max(storedSequence, derivedSequence)
           : derivedSequence
 
-      const planned = planAsnCollisionRepair(assignments, nextSequence)
+      let working = assignments
+      let sequence = nextSequence
+      const planned = planAsnCollisionRepair(working, sequence)
       if (planned.report.reassigned > 0) {
-        saveJsonToStorage(STORAGE_KEYS.assignments, planned.records)
-        saveJsonToStorage(STORAGE_KEYS.assignmentSequence, planned.report.nextSequence)
+        working = planned.records
+        sequence = planned.report.nextSequence
+        saveJsonToStorage(STORAGE_KEYS.assignmentSequence, sequence)
         saveJsonToStorage(STORAGE_KEYS.assignmentAsnRepairVersion, ASN_REPAIR_VERSION)
-        return { assignments: planned.records, nextSequence: planned.report.nextSequence }
       }
 
-      return { assignments, nextSequence }
+      const activeIntegrity = planActiveConnectionIntegrity(working)
+      if (activeIntegrity.needsWrite) {
+        working = activeIntegrity.records
+        console.warn('[KC-003] superseded duplicate Active connections on local load', {
+          superseded: activeIntegrity.report.superseded,
+        })
+      }
+
+      if (planned.report.reassigned > 0 || activeIntegrity.needsWrite) {
+        saveJsonToStorage(STORAGE_KEYS.assignments, working)
+      }
+
+      return { assignments: working, nextSequence: sequence }
     })
 
     if (result.ok) {

@@ -9,6 +9,10 @@ import {
   planAsnCollisionRepair,
 } from '@/lib/connections/assignmentNumber'
 import {
+  assertAtMostOneActivePerKarkun,
+  planActiveConnectionIntegrity,
+} from '@/lib/connections/activeConnectionIntegrity'
+import {
   createIncidentOperationId,
   markRepositoryReadiness,
   traceMutation,
@@ -48,17 +52,32 @@ function loadPersistedAssignmentState(): {
   }
 
   const loaded = unwrapRepository(result, { assignments: [], nextSequence: 1 })
-  const { records, duplicates } = canonicalizeConnectionRecords(loaded.assignments)
+  const { records: identityRecords, duplicates } = canonicalizeConnectionRecords(loaded.assignments)
   if (duplicates.length > 0) {
     console.warn('[KC-002] assignmentId duplicates canonicalized on store load', duplicates)
   }
 
-  const asnCollisions = findAssignmentNumberCollisions(records)
+  const asnCollisions = findAssignmentNumberCollisions(identityRecords)
   if (asnCollisions.length > 0) {
     console.warn('[KC-002] assignmentNumber collisions present in store load', asnCollisions)
   }
 
-  return { assignments: records, nextSequence: loaded.nextSequence }
+  const activeIntegrity = planActiveConnectionIntegrity(identityRecords)
+  if (activeIntegrity.needsWrite) {
+    console.warn('[KC-003] superseding duplicate Active connections on store load', {
+      superseded: activeIntegrity.report.superseded,
+      changes: activeIntegrity.report.changes,
+    })
+    getRepositories().connection.saveState({
+      assignments: activeIntegrity.records,
+      nextSequence: loaded.nextSequence,
+    })
+  }
+
+  return {
+    assignments: activeIntegrity.needsWrite ? activeIntegrity.records : identityRecords,
+    nextSequence: loaded.nextSequence,
+  }
 }
 
 function persistAssignmentState(records: AssignmentRecord[], nextSequence: number): void {
@@ -232,8 +251,9 @@ export function appendAssignment(record: AssignmentRecord): AssignmentRecord {
     },
   })
 
-  // PHASE 4 — runtime uniqueness guard before mutation
+  // Runtime guards before mutation
   assertUniqueAssignmentNumbers([record, ...assignments])
+  assertAtMostOneActivePerKarkun([record, ...assignments])
   assignments.unshift(record)
   saveAssignments()
   traceStoreSnapshot('assignment_store', {
@@ -393,18 +413,24 @@ export function replaceAllAssignments(
   })
 
   const { records: identityCanonical } = canonicalizeConnectionRecords(records)
-  const repaired = planAsnCollisionRepair(
+  const asnRepaired = planAsnCollisionRepair(
     identityCanonical,
     nextSequence ?? previous.nextSequence,
   )
-  assertUniqueAssignmentNumbers(repaired.records)
+  const activeRepaired = planActiveConnectionIntegrity(asnRepaired.records)
+  assertUniqueAssignmentNumbers(activeRepaired.records)
+  assertAtMostOneActivePerKarkun(activeRepaired.records)
 
   assignments.length = 0
-  assignments.push(...repaired.records)
+  assignments.push(...activeRepaired.records)
 
   nextAssignmentSequence =
     nextSequence ??
-    Math.max(previous.nextSequence, repaired.report.nextSequence, deriveNextSequenceFromRecords(repaired.records))
+    Math.max(
+      previous.nextSequence,
+      asnRepaired.report.nextSequence,
+      deriveNextSequenceFromRecords(activeRepaired.records),
+    )
 
   saveAssignments()
   const setNext = getRepositories().connection.setNextSequence

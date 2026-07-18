@@ -37,6 +37,10 @@ import {
   formatAssignmentNumber,
   planAsnCollisionRepair,
 } from '@/lib/connections/assignmentNumber'
+import {
+  ACTIVE_INTEGRITY_VERSION,
+  planActiveConnectionIntegrity,
+} from '@/lib/connections/activeConnectionIntegrity'
 import type { ExecutionRepository } from '@/repositories/interfaces/ExecutionRepository'
 import type { CommunicationRepository } from '@/repositories/interfaces/CommunicationRepository'
 import type { ComplianceRepository } from '@/repositories/interfaces/ComplianceRepository'
@@ -78,6 +82,7 @@ import { canonicalizeConnectionRecords } from '@/lib/connections/canonicalizeCon
 type ConnectionMetaDoc = {
   nextSequence?: number
   asnRepairVersion?: number
+  activeIntegrityVersion?: number
 }
 
 const campaignCache = new SyncCache<readonly CampaignListItem[]>(MOCK_CAMPAIGNS)
@@ -222,13 +227,52 @@ async function hydrateFirestoreCachesOnce(): Promise<void> {
           sanitizeForFirestore({
             nextSequence: planned.report.nextSequence,
             asnRepairVersion: ASN_REPAIR_VERSION,
+            activeIntegrityVersion: connectionMeta?.activeIntegrityVersion ?? 0,
           }),
+          { merge: true },
         )
         await batch.commit()
         return repositoryOk(undefined)
       })
     } else if (asnCollisions.length > 0) {
       console.warn('[KC-002] assignmentNumber collisions remain after prior repair version', asnCollisions)
+    }
+
+    const activeIntegrityVersion = connectionMeta?.activeIntegrityVersion ?? 0
+    const activeIntegrity = planActiveConnectionIntegrity(hydratedAssignments)
+    if (
+      activeIntegrity.needsWrite &&
+      (activeIntegrityVersion < ACTIVE_INTEGRITY_VERSION || activeIntegrity.report.superseded > 0)
+    ) {
+      hydratedAssignments = activeIntegrity.records
+      console.warn('[KC-003] superseding duplicate Active connections at hydrate', {
+        groupsRepaired: activeIntegrity.report.groupsRepaired,
+        superseded: activeIntegrity.report.superseded,
+        changes: activeIntegrity.report.changes,
+      })
+      void queueWrite('connections-active-integrity', async () => {
+        const repairDb = getFirestoreDb()
+        const batch = createBatch(repairDb)
+        for (const change of activeIntegrity.report.changes) {
+          const record = activeIntegrity.records.find((item) => item.assignmentId === change.assignmentId)
+          if (!record) continue
+          batch.set(
+            doc(repairDb, FIRESTORE_COLLECTIONS.connections, record.assignmentId),
+            sanitizeForFirestore(record),
+          )
+        }
+        batch.set(
+          doc(repairDb, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.connectionMeta),
+          sanitizeForFirestore({
+            nextSequence,
+            asnRepairVersion: Math.max(repairVersion, ASN_REPAIR_VERSION),
+            activeIntegrityVersion: ACTIVE_INTEGRITY_VERSION,
+          }),
+          { merge: true },
+        )
+        await batch.commit()
+        return repositoryOk(undefined)
+      })
     }
 
     connectionCache.set({

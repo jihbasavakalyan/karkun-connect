@@ -1,14 +1,16 @@
 /**
- * KC-028A — Canonical connected-Karkun set.
+ * KC-028A / KC-003 — Canonical connected-Karkun set.
  *
  * Source of truth: assignmentStore ↔ ConnectionRepository (Firestore `connections`).
  * Definition: Active assignment, unique by karkunId, Karkun exists and is not archived.
+ * When multiple Active rows exist for one Karkun, the newest is counted (integrity repair
+ * should supersede the rest — see activeConnectionIntegrity).
  *
- * All UI surfaces (Dashboard, Profile, Connected page, Automation, Digital Rafeeq)
- * must derive connection counts from these helpers — never from raw Active rows alone.
+ * Dashboard Connections KPI uses this unique-Karkun count — not raw assignment document count.
  */
 
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
+import { preferNewestActive } from '@/lib/connections/activeConnectionIntegrity'
 import { getActiveAssignmentsForRukn, getAllAssignments } from '@/stores/assignmentStore'
 import type { AssignmentRecord } from '@/types/assignment'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
@@ -19,17 +21,23 @@ function isCanonicalActiveConnection(record: AssignmentRecord): boolean {
   return Boolean(karkun && !karkun.isArchived)
 }
 
+function collectUniqueActiveByKarkun(records: readonly AssignmentRecord[]): AssignmentRecord[] {
+  const byKarkun = new Map<string, AssignmentRecord>()
+  for (const record of records) {
+    if (!isCanonicalActiveConnection(record)) continue
+    const existing = byKarkun.get(record.karkunId)
+    if (!existing) {
+      byKarkun.set(record.karkunId, record)
+      continue
+    }
+    byKarkun.set(record.karkunId, preferNewestActive(existing, record))
+  }
+  return [...byKarkun.values()]
+}
+
 /** Campaign-wide Active connections (unique Karkun, non-archived). */
 export function getCanonicalConnectedAssignments(): AssignmentRecord[] {
-  const seen = new Set<string>()
-  const result: AssignmentRecord[] = []
-  for (const record of getAllAssignments()) {
-    if (!isCanonicalActiveConnection(record)) continue
-    if (seen.has(record.karkunId)) continue
-    seen.add(record.karkunId)
-    result.push(record)
-  }
-  return result
+  return collectUniqueActiveByKarkun(getAllAssignments())
 }
 
 export function getCanonicalConnectedKarkunCount(): number {
@@ -39,18 +47,7 @@ export function getCanonicalConnectedKarkunCount(): number {
 /** Active connection rows for a Rukn (deduped, non-archived Karkuns only). */
 export function getConnectedAssignmentsForRukn(ruknId: string): AssignmentRecord[] {
   if (!ruknId.trim()) return []
-
-  const seen = new Set<string>()
-  const result: AssignmentRecord[] = []
-
-  for (const record of getActiveAssignmentsForRukn(ruknId)) {
-    if (!isCanonicalActiveConnection(record)) continue
-    if (seen.has(record.karkunId)) continue
-    seen.add(record.karkunId)
-    result.push(record)
-  }
-
-  return result
+  return collectUniqueActiveByKarkun(getActiveAssignmentsForRukn(ruknId))
 }
 
 /** Connected Karkun registry records for a Rukn. */

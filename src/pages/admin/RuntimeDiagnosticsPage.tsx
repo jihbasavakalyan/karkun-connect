@@ -305,6 +305,53 @@ export function RuntimeDiagnosticsPage() {
               </p>
             )}
 
+            <h3 className="mt-4 text-sm font-semibold text-text-heading">
+              Dashboard reconciliation (KC-003)
+            </h3>
+            <p className="mt-1 text-xs text-secondary">{snapshot.dashboardReconciliation.rule}</p>
+            <p className="mt-1 text-sm">
+              Repository {snapshot.dashboardReconciliation.repositoryCount} → included{' '}
+              {snapshot.dashboardReconciliation.includedCount} → excluded{' '}
+              {snapshot.dashboardReconciliation.exclusionCount}
+            </p>
+            {snapshot.dashboardReconciliation.exclusions.length > 0 ? (
+              <div className="mt-2 overflow-x-auto">
+                <table className="min-w-full text-left text-xs">
+                  <thead>
+                    <tr className="border-b border-border text-secondary">
+                      <th className="py-1 pr-2">assignmentId</th>
+                      <th className="py-1 pr-2">ASN</th>
+                      <th className="py-1 pr-2">karkunId</th>
+                      <th className="py-1 pr-2">ruknId</th>
+                      <th className="py-1 pr-2">status</th>
+                      <th className="py-1">reason</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {snapshot.dashboardReconciliation.exclusions.map((row) => (
+                      <tr key={row.assignmentId} className="border-b border-border/50">
+                        <td className="py-1 pr-2 font-mono">{row.assignmentId}</td>
+                        <td className="py-1 pr-2 font-mono">{row.assignmentNumber}</td>
+                        <td className="py-1 pr-2 font-mono">{row.karkunId}</td>
+                        <td className="py-1 pr-2 font-mono">{row.ruknId}</td>
+                        <td className="py-1 pr-2">{row.status}</td>
+                        <td className="py-1">
+                          {row.reason}
+                          {row.keptAssignmentNumber
+                            ? ` (kept ${row.keptAssignmentNumber})`
+                            : ''}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="mt-2 text-sm text-emerald-800">
+                No exclusions — every repository row is included in the Dashboard Connected KPI.
+              </p>
+            )}
+
             <h3 className="mt-4 text-sm font-semibold text-text-heading">Per-Rukn parity</h3>
             <div className="mt-2 overflow-x-auto">
               <table className="min-w-full text-left text-sm">

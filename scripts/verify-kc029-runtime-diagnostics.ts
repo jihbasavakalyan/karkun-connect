@@ -34,6 +34,11 @@ assert(canonical !== undefined, 'canonical layer missing')
 assert(dashboard !== undefined, 'dashboard layer missing')
 assert(automation !== undefined, 'automation layer missing')
 assert(people !== undefined, 'people layer missing')
+assert(Boolean(snapshot.dashboardReconciliation?.rule), 'KC-003 dashboard reconciliation required')
+assert(
+  Array.isArray(snapshot.dashboardReconciliation.exclusions),
+  'KC-003 exclusions list required',
+)
 
 console.log('PASS  diagnostics flag gate + collector')
 console.log('PASS  environment', {

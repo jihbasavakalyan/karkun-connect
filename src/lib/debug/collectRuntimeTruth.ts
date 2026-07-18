@@ -11,6 +11,11 @@ import {
   getCanonicalConnectedKarkunCount,
   getConnectedKarkunCountForRukn,
 } from '@/lib/connections/getConnectedKarkunsForRukn'
+import {
+  DASHBOARD_CONNECTED_RULE,
+  explainCanonicalExclusions,
+  type CanonicalExclusion,
+} from '@/lib/connections/explainCanonicalExclusions'
 import { getPeopleStatistics } from '@/lib/peopleStore'
 import { getStartupTimingMarks } from '@/lib/startupDiagnostics'
 import {
@@ -105,6 +110,14 @@ export type RuntimeTruthSnapshot = {
     canonicalCount: number
     diverge: boolean
   }>
+  /** KC-003 — every repository row excluded from Dashboard Connected KPI. */
+  dashboardReconciliation: {
+    rule: string
+    repositoryCount: number
+    includedCount: number
+    exclusionCount: number
+    exclusions: CanonicalExclusion[]
+  }
   createRefresh: {
     baseline: RuntimeTruthBaseline | null
     comparison: Array<{ layer: string; before: number | null; after: number | null; match: boolean }> | null
@@ -526,6 +539,8 @@ export async function collectRuntimeTruth(input: {
       })
     : null
 
+  const reconciliation = explainCanonicalExclusions(repoAssignments)
+
   const snapshot: RuntimeTruthSnapshot = {
     capturedAt,
     environment: {
@@ -575,6 +590,13 @@ export async function collectRuntimeTruth(input: {
     connectionTrace: selected ? buildTrace(firestoreDoc, storeRecord, canonical, dashboardConnected) : null,
     selectedConnectionId: selectedId,
     ruknParity,
+    dashboardReconciliation: {
+      rule: reconciliation.rule || DASHBOARD_CONNECTED_RULE,
+      repositoryCount: repoAssignments.length,
+      includedCount: reconciliation.included.length,
+      exclusionCount: reconciliation.exclusions.length,
+      exclusions: reconciliation.exclusions,
+    },
     createRefresh: {
       baseline,
       comparison,
