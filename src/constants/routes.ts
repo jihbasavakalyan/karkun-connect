@@ -19,6 +19,8 @@ export const ROUTES = {
   ADMIN_LISTS: '/admin/lists',
   ADMIN_SETTINGS: '/admin/settings',
   ADMIN_HELP: '/admin/help',
+  /** KC-029 — DEV/admin runtime diagnostics (gated by feature flag). */
+  ADMIN_RUNTIME_DEBUG: '/admin/debug/runtime',
   RUKN: '/rukn',
   RUKN_AVAILABLE_KARKUN: '/rukn/available-karkun',
   RUKN_MY_KARKUN: '/rukn/my-karkun',

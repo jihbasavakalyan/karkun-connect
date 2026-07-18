@@ -7,14 +7,17 @@
  * Runtime still initializes regardless of the flag.
  */
 
-export type RuntimeFeatureFlagKey = 'digitalRafeeq.enabled'
+export type RuntimeFeatureFlagKey = 'digitalRafeeq.enabled' | 'runtimeDiagnostics.enabled'
 
 export type RuntimeFeatureFlags = {
   readonly 'digitalRafeeq.enabled': boolean
+  /** KC-029 — DEV-only runtime truth diagnostics. Never on by default in production. */
+  readonly 'runtimeDiagnostics.enabled': boolean
 }
 
 export const DEFAULT_RUNTIME_FEATURE_FLAGS: RuntimeFeatureFlags = {
   'digitalRafeeq.enabled': true,
+  'runtimeDiagnostics.enabled': false,
 }
 
 export type RuntimeFeatureFlagOverrides = Partial<RuntimeFeatureFlags>

@@ -34,6 +34,16 @@ function resolveDigitalRafeeqEnabledFromEnv(): boolean {
   }
 }
 
+/** KC-029: true in Vite DEV, or when VITE_RUNTIME_DIAGNOSTICS=true (explicit staging probe). */
+function resolveRuntimeDiagnosticsEnabledFromEnv(): boolean {
+  try {
+    if (import.meta.env.VITE_RUNTIME_DIAGNOSTICS === 'true') return true
+    return import.meta.env.DEV === true
+  } catch {
+    return false
+  }
+}
+
 export class FeatureFlagService {
   private flags: RuntimeFeatureFlags
 
@@ -75,6 +85,7 @@ export class FeatureFlagService {
     return {
       ...DEFAULT_RUNTIME_FEATURE_FLAGS,
       'digitalRafeeq.enabled': resolveDigitalRafeeqEnabledFromEnv(),
+      'runtimeDiagnostics.enabled': resolveRuntimeDiagnosticsEnabledFromEnv(),
       ...overrides,
     }
   }

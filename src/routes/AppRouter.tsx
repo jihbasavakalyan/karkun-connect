@@ -18,6 +18,7 @@ import { KarkunProfilePage } from '@/pages/admin/KarkunProfilePage'
 import { RuknDetailPage } from '@/pages/admin/RuknDetailPage'
 import { RuknModulePage } from '@/pages/admin/RuknModulePage'
 import { SettingsPage } from '@/pages/admin/SettingsPage'
+import { RuntimeDiagnosticsPage } from '@/pages/admin/RuntimeDiagnosticsPage'
 import { LoginPage } from '@/pages/auth/LoginPage'
 import { CampaignRecordPage } from '@/pages/rukn/CampaignRecordPage'
 import { RuknHomePage } from '@/pages/rukn/RuknHomePage'
@@ -76,6 +77,7 @@ export function AppRouter() {
           <Route path="lists" element={<CampaignListsPage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="help" element={<HelpPage />} />
+          <Route path="debug/runtime" element={<RuntimeDiagnosticsPage />} />
 
           {/* Legacy route redirects */}
           <Route path="campaigns" element={<Navigate to={ROUTES.ADMIN_CAMPAIGN} replace />} />
