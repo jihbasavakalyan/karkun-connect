@@ -27,6 +27,21 @@ npm install
 | `node scripts/admin/import-dataset-backup.mjs <file>` | Import backup JSON to Firestore |
 | `node scripts/admin/set-custom-claims.mjs --csv <file>` | Set administrator / Rukn custom claims |
 | `node scripts/admin/verify-firestore-production.mjs` | Verify row counts, duplicates, connection integrity |
+| `npm run admin:sanitize-runtime:dry` | Preview KC-017.1 runtime wipe (no writes) |
+| `npm run admin:sanitize-runtime -- --yes` | **KC-017.1** Wipe connections/visits/activity; reset karkuns to Unconnected |
+
+## KC-017.1 — Production runtime sanitization
+
+Removes test/demo execution data while preserving master registry (rukns, karkuns identity, campaign config, auth).
+
+```powershell
+firebase login
+npm run admin:sanitize-runtime:dry
+npm run admin:sanitize-runtime -- --yes
+npm run admin:verify-firestore
+```
+
+After sanitization, ask users to hard-refresh (or clear site data once) so IndexedDB offline cache does not resurrect deleted docs.
 
 ## Custom Claims
 

@@ -42,7 +42,10 @@
     "verify:kc009-plan": "npx vite-node scripts/verify-kc009-execution-plan.ts",
     "verify:kc012-ri": "npx vite-node scripts/verify-kc012-relationship-intelligence.ts",
     "verify:kc012-1": "npx vite-node scripts/verify-kc012-1-dashboard-ia.ts",
-    "admin:export-seed": "npx vite-node scripts/admin/export-seed-backup.ts"
+    "admin:export-seed": "npx vite-node scripts/admin/export-seed-backup.ts",
+    "admin:sanitize-runtime": "node scripts/admin/sanitize-production-runtime.mjs",
+    "admin:sanitize-runtime:dry": "node scripts/admin/sanitize-production-runtime.mjs --dry-run",
+    "admin:verify-firestore": "node scripts/admin/verify-firestore-production.mjs"
   },
   "dependencies": {
     "firebase": "^12.16.0",

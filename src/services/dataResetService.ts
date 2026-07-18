@@ -8,8 +8,12 @@ import { clearIjtemaAttendanceStore } from '@/stores/ijtemaAttendanceStore'
 import { clearJihWebPortalStore } from '@/stores/jihWebPortalStore'
 import { clearBroadcastListStore } from '@/stores/broadcastListStore'
 import { clearGuidanceStore } from '@/stores/guidanceStore'
+import { clearDevelopmentAssessmentStore } from '@/stores/developmentAssessmentStore'
+import { clearExecutionPlanStore } from '@/stores/executionPlanStore'
+import { clearAssignmentReviewStore } from '@/stores/assignmentReviewStore'
 import { clearPeopleRegistryPersistence } from '@/lib/peopleRegistryPersistence'
 import { clearAuthSession } from '@/lib/authSession'
+import { STORAGE_KEYS } from '@/repositories/storageKeys'
 
 export type DataResetScope = 'demo' | 'runtime' | 'everything'
 
@@ -33,6 +37,34 @@ export const DATA_RESET_OPTIONS: { value: DataResetScope; label: string; descrip
   },
 ]
 
+/** Clears runtime local/session keys while preserving master registry persistence. */
+function clearRuntimeLocalCaches(): void {
+  if (typeof window === 'undefined') return
+  try {
+    const prefix = 'karkun-connect.'
+    const keep = new Set<string>([
+      STORAGE_KEYS.ruknMaster,
+      STORAGE_KEYS.karkunRegistry,
+      STORAGE_KEYS.karkunNextId,
+      STORAGE_KEYS.migrationVersion,
+    ])
+    const remove: string[] = []
+    for (let index = 0; index < window.localStorage.length; index += 1) {
+      const key = window.localStorage.key(index)
+      if (!key || !key.startsWith(prefix)) continue
+      if (keep.has(key)) continue
+      if (key.startsWith('karkun-connect.auth.')) continue
+      remove.push(key)
+    }
+    for (const key of remove) {
+      window.localStorage.removeItem(key)
+    }
+    window.sessionStorage.clear()
+  } catch {
+    // ignore storage access errors
+  }
+}
+
 function clearRuntimeStores(): void {
   clearAssignmentStore()
   clearAnnexure1Store()
@@ -44,6 +76,10 @@ function clearRuntimeStores(): void {
   clearJihWebPortalStore()
   clearBroadcastListStore()
   clearGuidanceStore()
+  clearDevelopmentAssessmentStore()
+  clearExecutionPlanStore()
+  clearAssignmentReviewStore()
+  clearRuntimeLocalCaches()
 }
 
 /**

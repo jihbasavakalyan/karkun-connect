@@ -1,0 +1,42 @@
+{
+  "sprint": "KC-017.1",
+  "projectId": "karkun-connect-75c68",
+  "dryRun": false,
+  "timestamp": "2026-07-18T01:28:33.809Z",
+  "before": {
+    "rukns": 49,
+    "karkuns": 320,
+    "connections": 89,
+    "followUps": 0,
+    "activityLogs": 102,
+    "executions": 3,
+    "compliance": 15
+  },
+  "after": {
+    "rukns": 49,
+    "karkuns": 320,
+    "connections": 0,
+    "followUps": 0,
+    "activityLogs": 0,
+    "executions": 0,
+    "compliance": 0
+  },
+  "karkunReset": {
+    "totalKarkuns": 320,
+    "assignedBefore": 81,
+    "resetCount": 320
+  },
+  "authResult": {
+    "scanned": 6,
+    "removed": 0
+  },
+  "connectionsRemoved": 89,
+  "visitsRemoved": 3,
+  "followUpsRemoved": 0,
+  "activityRemoved": 102,
+  "complianceRemoved": 15,
+  "mastersPreserved": {
+    "rukns": true,
+    "karkuns": true
+  }
+}
