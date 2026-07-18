@@ -29,6 +29,18 @@ npm install
 | `node scripts/admin/verify-firestore-production.mjs` | Verify row counts, duplicates, connection integrity |
 | `npm run admin:sanitize-runtime:dry` | Preview KC-017.1 runtime wipe (no writes) |
 | `npm run admin:sanitize-runtime -- --yes` | **KC-017.1** Wipe connections/visits/activity; reset karkuns to Unconnected |
+| `npm run admin:recover-karkuns:dry` | Preview KC-017.2 missing-karkun recovery |
+| `npm run admin:recover-karkuns -- --yes` | **KC-017.2** Insert missing seed karkuns only; set counter to 494 |
+
+## KC-017.2 — Missing Karkun recovery
+
+Idempotent differential insert of `kr-321`…`kr-493` from `seed-backup.json` into Firestore. Does not overwrite existing docs.
+
+```powershell
+firebase login
+npm run admin:recover-karkuns:dry
+npm run admin:recover-karkuns -- --yes
+```
 
 ## KC-017.1 — Production runtime sanitization
 

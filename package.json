@@ -45,6 +45,8 @@
     "admin:export-seed": "npx vite-node scripts/admin/export-seed-backup.ts",
     "admin:sanitize-runtime": "node scripts/admin/sanitize-production-runtime.mjs",
     "admin:sanitize-runtime:dry": "node scripts/admin/sanitize-production-runtime.mjs --dry-run",
+    "admin:recover-karkuns": "node scripts/admin/recover-missing-karkuns.mjs",
+    "admin:recover-karkuns:dry": "node scripts/admin/recover-missing-karkuns.mjs --dry-run",
     "admin:verify-firestore": "node scripts/admin/verify-firestore-production.mjs"
   },
   "dependencies": {
