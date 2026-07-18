@@ -1,12 +1,16 @@
 /**
  * KC-019 — Vercel serverless TTS endpoint.
  * Browser → /api/tts → VoiceService → Google Cloud (credentials stay on server).
+ *
+ * Note: ESM on Vercel requires explicit `.js` extensions for relative imports,
+ * and includeFiles so `src/server/voice` is packaged with the function.
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { handleTtsRequest } from '../src/server/voice/httpHandler'
+import { handleTtsRequest } from '../src/server/voice/httpHandler.js'
 
 export const config = {
+  includeFiles: ['src/server/voice/**'],
   api: {
     bodyParser: {
       sizeLimit: '32kb',

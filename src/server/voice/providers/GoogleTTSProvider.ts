@@ -12,7 +12,7 @@ import {
   URDU_VOICE_CANDIDATES,
   type GenerateSpeechInput,
   type VoiceProvider,
-} from '../types'
+} from '../types.js'
 
 type CredentialsJson = {
   client_email?: string

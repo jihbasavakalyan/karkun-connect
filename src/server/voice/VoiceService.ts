@@ -2,9 +2,9 @@
  * KC-019 — VoiceService: provider-agnostic speech generation with cache.
  */
 
-import { getCachedSpeech, hashSpeechKey, setCachedSpeech } from './cache/TtsAudioCache'
-import { logTts } from './logging'
-import { GoogleTTSProvider } from './providers/GoogleTTSProvider'
+import { getCachedSpeech, hashSpeechKey, setCachedSpeech } from './cache/TtsAudioCache.js'
+import { logTts } from './logging.js'
+import { GoogleTTSProvider } from './providers/GoogleTTSProvider.js'
 import {
   DEFAULT_MAX_TTS_CHARS,
   DEFAULT_TTS_LANGUAGE,
@@ -14,7 +14,7 @@ import {
   type GenerateSpeechResult,
   type VoiceProvider,
   type VoiceServiceOptions,
-} from './types'
+} from './types.js'
 
 export class VoiceService {
   private readonly provider: VoiceProvider

@@ -1,4 +1,9 @@
 {
+  "functions": {
+    "api/tts.ts": {
+      "includeFiles": "src/server/voice/**"
+    }
+  },
   "rewrites": [
     {
       "source": "/((?!api/).*)",

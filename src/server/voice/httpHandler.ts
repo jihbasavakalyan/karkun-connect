@@ -2,8 +2,8 @@
  * KC-019 — Shared HTTP handler for /api/tts (Vercel + Vite middleware).
  */
 
-import { getVoiceService } from './VoiceService'
-import { TTS_ERROR_MESSAGE_URDU } from './types'
+import { getVoiceService } from './VoiceService.js'
+import { TTS_ERROR_MESSAGE_URDU } from './types.js'
 
 export type TtsHttpRequest = {
   method?: string
