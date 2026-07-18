@@ -12,6 +12,7 @@ import {
 import { EnterpriseBadge } from '@/components/enterprise'
 import { DigitalRafeeqLauncher } from '@/features/digitalRafeeq/launcher'
 import { useKeyboardInset } from '@/hooks/useKeyboardInset'
+import { RuknCommandCenterProvider } from '@/providers/RuknCommandCenterProvider'
 
 const navItems: { label: string; icon: IconName; to: string; end: boolean }[] = [
   { label: 'Home', icon: 'home', to: ROUTES.RUKN, end: true },
@@ -27,6 +28,7 @@ export function RuknLayout() {
   useKeyboardInset()
 
   return (
+    <RuknCommandCenterProvider>
     <div className="native-shell flex min-h-svh flex-col bg-surface-muted">
       <header className="border-b border-border bg-surface pt-[env(safe-area-inset-top)]">
         <div className="enterprise-gradient-hero px-3 py-2 text-white lg:px-4">
@@ -81,5 +83,6 @@ export function RuknLayout() {
 
       <DigitalRafeeqLauncher role="rukn" offsetClassName="digital-rafeeq-fab-offset-rukn" />
     </div>
+    </RuknCommandCenterProvider>
   )
 }

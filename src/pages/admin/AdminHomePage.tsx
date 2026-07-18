@@ -5,15 +5,11 @@ import {
   AskDigitalRafeeqCard,
 } from '@/components/mission-control'
 import { openDigitalRafeeqAssistant } from '@/features/digitalRafeeq/launcher'
-import { useCampaignAutomationEngine } from '@/hooks/useCampaignAutomationEngine'
 import { buildAdminMissionControl } from '@/lib/missionControl/buildAdminMissionControl'
-import type { AdminCommandCenterSnapshot } from '@/types/campaignAutomation.types'
+import { useAdminCommandCenter } from '@/providers/AdminCommandCenterProvider'
 
 export function AdminHomePage() {
-  const snapshot = useCampaignAutomationEngine({
-    role: 'administrator',
-  }) as AdminCommandCenterSnapshot
-
+  const snapshot = useAdminCommandCenter()
   const model = useMemo(() => buildAdminMissionControl(snapshot), [snapshot])
 
   return (

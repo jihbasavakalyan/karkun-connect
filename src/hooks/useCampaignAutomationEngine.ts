@@ -22,13 +22,49 @@ type UseCampaignAutomationOptions = {
   ruknId?: string
 }
 
+/**
+ * KC-027F — Shared snapshot cache across Layout + Home (and any other callers)
+ * so a store bump / same render pass does not rebuild ~1s snapshots N times.
+ */
+let cacheGeneration = 0
+let cachedAdmin: { generation: number; value: AdminCommandCenterSnapshot } | null = null
+const cachedRukn = new Map<string, { generation: number; value: RuknCommandCenterSnapshot }>()
+
+function invalidateAutomationSnapshotCache(): void {
+  cacheGeneration += 1
+  cachedAdmin = null
+  cachedRukn.clear()
+}
+
+function readAdminSnapshot(): AdminCommandCenterSnapshot {
+  if (cachedAdmin?.generation === cacheGeneration) {
+    return cachedAdmin.value
+  }
+  const value = getAdminCommandCenterSnapshot()
+  cachedAdmin = { generation: cacheGeneration, value }
+  return value
+}
+
+function readRuknSnapshot(ruknId: string): RuknCommandCenterSnapshot {
+  const hit = cachedRukn.get(ruknId)
+  if (hit?.generation === cacheGeneration) {
+    return hit.value
+  }
+  const value = getRuknCommandCenterSnapshot(ruknId)
+  cachedRukn.set(ruknId, { generation: cacheGeneration, value })
+  return value
+}
+
 export function useCampaignAutomationEngine(
   options: UseCampaignAutomationOptions,
 ): AdminCommandCenterSnapshot | RuknCommandCenterSnapshot {
   const [version, setVersion] = useState(0)
 
   useEffect(() => {
-    const bump = () => setVersion((current) => current + 1)
+    const bump = () => {
+      invalidateAutomationSnapshotCache()
+      setVersion((current) => current + 1)
+    }
     const unsubscribers = [
       subscribeToAssignments(bump),
       subscribeToAnnexure1Store(bump),
@@ -50,9 +86,9 @@ export function useCampaignAutomationEngine(
     void version
 
     if (options.role === 'rukn' && options.ruknId) {
-      return getRuknCommandCenterSnapshot(options.ruknId)
+      return readRuknSnapshot(options.ruknId)
     }
 
-    return getAdminCommandCenterSnapshot()
+    return readAdminSnapshot()
   }, [options.role, options.ruknId, version])
 }

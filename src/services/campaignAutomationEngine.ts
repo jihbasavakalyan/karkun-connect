@@ -505,11 +505,33 @@ type RawWorkItem = {
   karkunId?: string
 }
 
-export function buildDailySchedule(ruknId?: string): ScheduleItem[] {
+type SharedCommandParts = {
+  ruknId?: string
+  followUpQueue: FollowUpQueueGroup[]
+  callQueue: CallQueueItem[]
+  reminders: ReminderItem[]
+  complianceSummary: ActionableComplianceSummary
+}
+
+/** KC-027F — compute shared intermediates once per snapshot build (no persistent cache). */
+function buildSharedCommandParts(ruknId?: string): SharedCommandParts {
+  return {
+    ruknId,
+    followUpQueue: buildFollowUpQueue(ruknId),
+    callQueue: buildCallQueue(ruknId),
+    reminders: buildReminders(ruknId),
+    complianceSummary: getActionableComplianceSummary(ruknId),
+  }
+}
+
+export function buildDailySchedule(
+  ruknId?: string,
+  parts?: SharedCommandParts,
+): ScheduleItem[] {
   const rawItems: RawWorkItem[] = []
-  const followUpQueue = buildFollowUpQueue(ruknId)
-  const callQueue = buildCallQueue(ruknId)
-  const reminders = buildReminders(ruknId)
+  const followUpQueue = parts?.followUpQueue ?? buildFollowUpQueue(ruknId)
+  const callQueue = parts?.callQueue ?? buildCallQueue(ruknId)
+  const reminders = parts?.reminders ?? buildReminders(ruknId)
   const todaysVisits = ruknId
     ? getTodaysMeetingAssignments().filter((item) => item.assignment.ruknId === ruknId)
     : getTodaysMeetingAssignments()
@@ -568,7 +590,8 @@ export function buildDailySchedule(ruknId?: string): ScheduleItem[] {
     })
   }
 
-  const compliancePending = getPendingComplianceCount(ruknId)
+  const compliancePending =
+    parts?.complianceSummary.totalCount ?? getPendingComplianceCount(ruknId)
   if (compliancePending > 0) {
     rawItems.push({
       id: 'schedule-compliance',
@@ -602,11 +625,10 @@ export function buildDailySchedule(ruknId?: string): ScheduleItem[] {
   })
 }
 
-export function buildAlerts(ruknId?: string): AutomationAlert[] {
+export function buildAlerts(ruknId?: string, parts?: SharedCommandParts): AutomationAlert[] {
   const alerts: AutomationAlert[] = []
-  const today = todayIsoDate()
-  const pendingFollowUps = filterByRukn(getPendingFollowUps(), ruknId)
-  const overdueFollowUps = pendingFollowUps.filter((record) => record.followUpDate < today)
+  const followUpQueue = parts?.followUpQueue ?? buildFollowUpQueue(ruknId)
+  const overdueFollowUps = followUpQueue.find((group) => group.section === 'overdue')?.items ?? []
   const annexureMetrics = getAnnexure1ExecutionMetrics()
   const jih = getJihWebPortalDashboardMetrics()
   const assignmentMetrics = getAssignmentDashboardMetrics()
@@ -674,7 +696,8 @@ export function buildAlerts(ruknId?: string): AutomationAlert[] {
     })
   }
 
-  const compliancePending = getPendingComplianceCount(ruknId)
+  const compliancePending =
+    parts?.complianceSummary.totalCount ?? getPendingComplianceCount(ruknId)
   if (compliancePending > 0) {
     alerts.push({
       id: 'alert-compliance-overdue',
@@ -688,8 +711,9 @@ export function buildAlerts(ruknId?: string): AutomationAlert[] {
   return alerts
 }
 
-function buildAdminNextAction(): NextRecommendedAction {
-  const overdue = buildFollowUpQueue().find((group) => group.section === 'overdue')
+function buildAdminNextAction(parts?: SharedCommandParts): NextRecommendedAction {
+  const followUpQueue = parts?.followUpQueue ?? buildFollowUpQueue()
+  const overdue = followUpQueue.find((group) => group.section === 'overdue')
   if (overdue && overdue.items.length > 0) {
     return {
       title: 'Overdue Follow-ups',
@@ -700,7 +724,7 @@ function buildAdminNextAction(): NextRecommendedAction {
     }
   }
 
-  const compliancePending = getActionableComplianceSummary()
+  const compliancePending = parts?.complianceSummary ?? getActionableComplianceSummary()
   if (compliancePending.totalCount > 0 && compliancePending.highestPriority) {
     return {
       title: 'Pending Compliance',
@@ -742,8 +766,9 @@ function buildAdminNextAction(): NextRecommendedAction {
   }
 }
 
-function buildRuknNextAction(ruknId: string): NextRecommendedAction {
-  const overdue = buildFollowUpQueue(ruknId).find((group) => group.section === 'overdue')
+function buildRuknNextAction(ruknId: string, parts?: SharedCommandParts): NextRecommendedAction {
+  const followUpQueue = parts?.followUpQueue ?? buildFollowUpQueue(ruknId)
+  const overdue = followUpQueue.find((group) => group.section === 'overdue')
   if (overdue && overdue.items.length > 0) {
     return {
       title: 'Overdue Follow-up',
@@ -807,7 +832,7 @@ function buildRuknNextAction(ruknId: string): NextRecommendedAction {
     }
   }
 
-  const callQueue = buildCallQueue(ruknId)
+  const callQueue = parts?.callQueue ?? buildCallQueue(ruknId)
   if (callQueue.length > 0) {
     return {
       title: callQueue[0]!.label,
@@ -849,31 +874,34 @@ function buildRuknCompletedToday(ruknId: string) {
 }
 
 export function getAdminCommandCenterSnapshot(): AdminCommandCenterSnapshot {
+  // KC-027F: one shared pipeline — reminders/compliance/queues computed once.
+  const parts = buildSharedCommandParts()
   return {
     role: 'administrator',
     hero: buildCampaignHeroData(),
     kpis: buildAdminKpis(),
-    schedule: buildDailySchedule(),
-    callQueue: buildCallQueue(),
-    reminders: buildReminders(),
-    followUpQueue: buildFollowUpQueue(),
-    alerts: buildAlerts(),
-    nextAction: buildAdminNextAction(),
+    schedule: buildDailySchedule(undefined, parts),
+    callQueue: parts.callQueue,
+    reminders: parts.reminders,
+    followUpQueue: parts.followUpQueue,
+    alerts: buildAlerts(undefined, parts),
+    nextAction: buildAdminNextAction(parts),
   }
 }
 
 export function getRuknCommandCenterSnapshot(ruknId: string): RuknCommandCenterSnapshot {
+  const parts = buildSharedCommandParts(ruknId)
   return {
     role: 'rukn',
     ruknId,
     hero: buildCampaignHeroData(),
     kpis: buildRuknKpis(ruknId),
-    schedule: buildDailySchedule(ruknId),
-    callQueue: buildCallQueue(ruknId),
-    reminders: buildReminders(ruknId),
-    followUpQueue: buildFollowUpQueue(ruknId),
-    alerts: buildAlerts(ruknId),
-    nextAction: buildRuknNextAction(ruknId),
+    schedule: buildDailySchedule(ruknId, parts),
+    callQueue: parts.callQueue,
+    reminders: parts.reminders,
+    followUpQueue: parts.followUpQueue,
+    alerts: buildAlerts(ruknId, parts),
+    nextAction: buildRuknNextAction(ruknId, parts),
     completedToday: buildRuknCompletedToday(ruknId),
   }
 }

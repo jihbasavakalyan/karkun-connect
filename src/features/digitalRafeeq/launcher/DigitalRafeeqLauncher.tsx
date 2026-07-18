@@ -1,7 +1,8 @@
 /**
- * Global Digital Rafeeq entry point (KC-007).
+ * Global Digital Rafeeq entry point (KC-007 / KC-027F).
  *
- * FAB + voice assistant drawer. Compact dashboard card can dispatch open event.
+ * FAB is always available when enabled. The voice drawer chunk, runtime, and
+ * automation hooks mount only after the user opens the assistant.
  */
 
 import { Suspense, useEffect, useState } from 'react'
@@ -28,53 +29,22 @@ export function openDigitalRafeeqAssistant(): void {
   window.dispatchEvent(new CustomEvent(DIGITAL_RAFEEQ_OPEN_EVENT))
 }
 
-function useRuntimeAvailable(enabled: boolean): boolean {
-  const [available, setAvailable] = useState(false)
-
-  useEffect(() => {
-    if (!enabled) {
-      setAvailable(false)
-      return
-    }
-
-    let cancelled = false
-    const service = getDigitalRafeeqService()
-
-    void (async () => {
-      try {
-        await service.initialize()
-        if (cancelled) return
-        setAvailable(service.isReady())
-      } catch {
-        if (!cancelled) setAvailable(false)
-      }
-    })()
-
-    return () => {
-      cancelled = true
-    }
-  }, [enabled])
-
-  return available
-}
-
 export function DigitalRafeeqLauncher({
   role,
   offsetClassName = '',
 }: DigitalRafeeqLauncherProps) {
   const enabled = getDigitalRafeeqService().isEnabled()
-  const available = useRuntimeAvailable(enabled)
   const [open, setOpen] = useState(false)
 
   useEffect(() => {
     const handleOpen = () => {
-      if (enabled && available) setOpen(true)
+      if (enabled) setOpen(true)
     }
     window.addEventListener(DIGITAL_RAFEEQ_OPEN_EVENT, handleOpen)
     return () => window.removeEventListener(DIGITAL_RAFEEQ_OPEN_EVENT, handleOpen)
-  }, [enabled, available])
+  }, [enabled])
 
-  if (!enabled || !available) {
+  if (!enabled) {
     return null
   }
 
@@ -96,9 +66,11 @@ export function DigitalRafeeqLauncher({
         </button>
       </div>
 
-      <Suspense fallback={null}>
-        <DigitalRafeeqVoiceDrawer role={role} open={open} onClose={() => setOpen(false)} />
-      </Suspense>
+      {open ? (
+        <Suspense fallback={null}>
+          <DigitalRafeeqVoiceDrawer role={role} open={open} onClose={() => setOpen(false)} />
+        </Suspense>
+      ) : null}
     </>
   )
 }

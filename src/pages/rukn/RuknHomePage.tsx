@@ -15,7 +15,6 @@ import { ExecutionSuccessBanner } from '@/components/execution/ExecutionSuccessB
 import { openDigitalRafeeqAssistant } from '@/features/digitalRafeeq/launcher'
 import { buildContextualRafeeqGuidance } from '@/features/digitalRafeeq/companion/rafeeqUrduCopy'
 import { useRequiredRuknId } from '@/hooks/useRequiredRuknId'
-import { useCampaignAutomationEngine } from '@/hooks/useCampaignAutomationEngine'
 import { useGuidance } from '@/hooks/useGuidance'
 import { buildRuknMissionControl } from '@/lib/missionControl/buildRuknMissionControl'
 import { resolveHomePrimaryWorkflow } from '@/lib/workflowPresentation'
@@ -23,16 +22,13 @@ import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { buildTelLink, buildWhatsAppLink } from '@/utils/personContactLinks'
 import { sortGuidanceByUrgency } from '@/lib/homePresentation'
 import { getGuidanceForRuknKarkuns } from '@/lib/guidance/guidanceEngine'
-import type { RuknCommandCenterSnapshot } from '@/types/campaignAutomation.types'
+import { useRuknCommandCenter } from '@/providers/RuknCommandCenterProvider'
 import { HomePageSkeleton } from '@/components/ui'
 
 export function RuknHomePage() {
   const ruknId = useRequiredRuknId()
   const { morningBrief } = useGuidance(ruknId ?? '')
-  const snapshot = useCampaignAutomationEngine({
-    role: 'rukn',
-    ruknId: ruknId ?? '',
-  }) as RuknCommandCenterSnapshot
+  const snapshot = useRuknCommandCenter()
 
   const model = useMemo(
     () => (ruknId ? buildRuknMissionControl(ruknId, snapshot) : null),

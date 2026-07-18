@@ -3,12 +3,15 @@ import { Outlet } from 'react-router-dom'
 import { AdminSidebar } from '@/components/layout/AdminSidebar'
 import { AdminTopBar } from '@/components/layout/AdminTopBar'
 import { DigitalRafeeqLauncher } from '@/features/digitalRafeeq/launcher'
-import { useCampaignAutomationEngine } from '@/hooks/useCampaignAutomationEngine'
+import {
+  AdminCommandCenterProvider,
+  useAdminCommandCenter,
+} from '@/providers/AdminCommandCenterProvider'
 
-export function AdminLayout() {
+function AdminLayoutShell() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
-  const snapshot = useCampaignAutomationEngine({ role: 'administrator' })
+  const snapshot = useAdminCommandCenter()
 
   return (
     <div className="flex min-h-svh bg-surface-muted">
@@ -48,5 +51,13 @@ export function AdminLayout() {
 
       <DigitalRafeeqLauncher role="administrator" />
     </div>
+  )
+}
+
+export function AdminLayout() {
+  return (
+    <AdminCommandCenterProvider>
+      <AdminLayoutShell />
+    </AdminCommandCenterProvider>
   )
 }

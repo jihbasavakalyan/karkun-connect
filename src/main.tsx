@@ -27,20 +27,30 @@ async function runDeferredBootstrap(): Promise<void> {
   runProductionDataMigration()
   logStartupTiming('productionMigration.invoked')
 
-  // Digital Rafeeq Runtime — passive enhancement; never blocks application readiness.
-  try {
-    const { initializeRuntime } = await import('@/runtime/bootstrap/initializeRuntime')
-    const runtimeResult = await initializeRuntime()
-    logStartupTiming('digitalRafeeqRuntime.complete', { status: runtimeResult.status })
-    if (runtimeResult.status === 'Failed') {
-      console.warn('[bootstrap] Digital Rafeeq runtime failed', runtimeResult.errorMessage)
-    } else if (runtimeResult.status === 'Degraded') {
-      console.info('[bootstrap] Digital Rafeeq runtime degraded', runtimeResult.errorMessage)
-    }
-  } catch (error) {
-    console.warn('[bootstrap] Digital Rafeeq runtime initialization error', error)
-    logStartupTiming('digitalRafeeqRuntime.error')
-  }
+  // KC-027F: Digital Rafeeq runtime must not compete with first dashboard paint.
+  // Schedule after hydrate gate; do not await on the bootstrap critical path.
+  const scheduleRafeeq =
+    typeof window !== 'undefined' && 'requestIdleCallback' in window
+      ? (cb: () => void) => window.requestIdleCallback(cb, { timeout: 2000 })
+      : (cb: () => void) => window.setTimeout(cb, 0)
+
+  scheduleRafeeq(() => {
+    void (async () => {
+      try {
+        const { initializeRuntime } = await import('@/runtime/bootstrap/initializeRuntime')
+        const runtimeResult = await initializeRuntime()
+        logStartupTiming('digitalRafeeqRuntime.complete', { status: runtimeResult.status })
+        if (runtimeResult.status === 'Failed') {
+          console.warn('[bootstrap] Digital Rafeeq runtime failed', runtimeResult.errorMessage)
+        } else if (import.meta.env.DEV && runtimeResult.status === 'Degraded') {
+          console.info('[bootstrap] Digital Rafeeq runtime degraded', runtimeResult.errorMessage)
+        }
+      } catch (error) {
+        console.warn('[bootstrap] Digital Rafeeq runtime initialization error', error)
+        logStartupTiming('digitalRafeeqRuntime.error')
+      }
+    })()
+  })
 }
 
 function bootstrap(): void {

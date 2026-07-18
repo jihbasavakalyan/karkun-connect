@@ -9,13 +9,10 @@ import { Icon } from '@/components/ui/Icon'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import { getDigitalRafeeqService } from '@/runtime/service'
-import { useCampaignAutomationEngine } from '@/hooks/useCampaignAutomationEngine'
 import { useRequiredRuknId } from '@/hooks/useRequiredRuknId'
 import { useUserPreferences } from '@/hooks/useUserPreferences'
-import type {
-  AdminCommandCenterSnapshot,
-  RuknCommandCenterSnapshot,
-} from '@/types/campaignAutomation.types'
+import { useOptionalAdminCommandCenter } from '@/providers/AdminCommandCenterProvider'
+import { useOptionalRuknCommandCenter } from '@/providers/RuknCommandCenterProvider'
 import {
   answerOperationalQuery,
   RAFEEQ_WELCOME_MESSAGE,
@@ -117,21 +114,16 @@ export function DigitalRafeeqVoiceDrawer({
   const ruknId = useRequiredRuknId()
   const { preferences } = useUserPreferences()
 
-  const adminSnapshot = useCampaignAutomationEngine({
-    role: 'administrator',
-  }) as AdminCommandCenterSnapshot
-
-  const ruknSnapshot = useCampaignAutomationEngine({
-    role: 'rukn',
-    ruknId: ruknId ?? '',
-  }) as RuknCommandCenterSnapshot
+  // KC-027F: reuse layout provider snapshot — never rebuild command center here.
+  const adminSnapshot = useOptionalAdminCommandCenter()
+  const ruknSnapshot = useOptionalRuknCommandCenter()
 
   const suggestions = useMemo(() => {
     if (!preferences.rafeeq.suggestedQuestions) return []
     return resolveContextualSuggestions({
       role,
-      ruknSnapshot: role === 'rukn' ? ruknSnapshot : undefined,
-      adminSnapshot: role === 'administrator' ? adminSnapshot : undefined,
+      ruknSnapshot: role === 'rukn' ? (ruknSnapshot ?? undefined) : undefined,
+      adminSnapshot: role === 'administrator' ? (adminSnapshot ?? undefined) : undefined,
     })
   }, [role, ruknSnapshot, adminSnapshot, preferences.rafeeq.suggestedQuestions])
 
@@ -161,8 +153,8 @@ export function DigitalRafeeqVoiceDrawer({
     return answerOperationalQuery(query, {
       role,
       ruknId: ruknId ?? undefined,
-      adminSnapshot: role === 'administrator' ? adminSnapshot : undefined,
-      ruknSnapshot: role === 'rukn' ? ruknSnapshot : undefined,
+      adminSnapshot: role === 'administrator' ? (adminSnapshot ?? undefined) : undefined,
+      ruknSnapshot: role === 'rukn' ? (ruknSnapshot ?? undefined) : undefined,
     })
   }
 

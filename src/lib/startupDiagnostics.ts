@@ -18,7 +18,10 @@ export function logStartupTiming(label: string, detail?: Record<string, unknown>
     detail,
   }
   marks.push(mark)
-  console.info('[KC-027A][timing]', label, detail ?? {})
+  // KC-027F: keep marks in memory for diagnostics; never console.spam production.
+  if (import.meta.env.DEV) {
+    console.info('[KC-027A][timing]', label, detail ?? {})
+  }
 }
 
 export function getStartupTimingMarks(): TimingMark[] {

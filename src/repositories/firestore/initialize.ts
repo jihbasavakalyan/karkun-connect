@@ -83,6 +83,21 @@ export async function refreshFirestoreAfterAuth(): Promise<void> {
     return
   }
 
+  // KC-027F: coalesce with startup init — authStateReady hydrate already ran (or is
+  // in flight). A second full getDocs + store rebuild doubles post-login latency.
+  if (initializeInFlight) {
+    try {
+      await initializeInFlight
+    } catch (error) {
+      console.warn('[kc-firestore] post-auth awaited startup hydrate failure', error)
+    }
+    return
+  }
+
+  if (initialized) {
+    return
+  }
+
   try {
     await runHydrateAndRebuildCycle('post-auth')
   } catch (error) {
