@@ -1,8 +1,11 @@
 import type { IconName } from '@/design-system/iconNames'
 import { ruknMaster } from '@/data/ruknMaster'
+import {
+  getCanonicalConnectedAssignments,
+  getConnectedKarkunCountForRukn,
+} from '@/lib/connections/getConnectedKarkunsForRukn'
 import { getExecutionDashboardData } from '@/lib/executionStatus'
 import { getPeopleStatistics } from '@/lib/peopleStore'
-import { getAllAssignments } from '@/stores/assignmentStore'
 import { getRuknById } from '@/data/ruknMaster'
 import {
   getAnnexure1ExecutionMetrics,
@@ -80,9 +83,9 @@ export type TeamPerformanceRow = {
 }
 
 export function getTeamPerformanceRows(): TeamPerformanceRow[] {
-  const activeAssignments = getAllAssignments().filter((record) => record.status === 'Active')
+  const connectedAssignments = getCanonicalConnectedAssignments()
   const { activeItems } = getExecutionDashboardData()
-  const ruknIds = new Set(activeAssignments.map((record) => record.ruknId))
+  const ruknIds = new Set(connectedAssignments.map((record) => record.ruknId))
 
   const rows: TeamPerformanceRow[] = []
 
@@ -92,7 +95,7 @@ export function getTeamPerformanceRows(): TeamPerformanceRow[] {
       continue
     }
 
-    const assigned = activeAssignments.filter((record) => record.ruknId === ruknId)
+    const assigned = connectedAssignments.filter((record) => record.ruknId === ruknId)
     const scopedItems = activeItems.filter((item) =>
       assigned.some((record) => record.assignmentId === item.assignmentId),
     )
@@ -106,7 +109,7 @@ export function getTeamPerformanceRows(): TeamPerformanceRow[] {
     rows.push({
       ruknId,
       ruknName: rukn.name,
-      assignedKarkuns: assigned.length,
+      assignedKarkuns: getConnectedKarkunCountForRukn(ruknId),
       pendingWork: pending,
       completionPct: Math.round((completed / total) * 100),
       followUpPct: Math.round((followUpRequired / total) * 100),
@@ -153,7 +156,9 @@ export function getCampaignProgressOverview(): CampaignProgressOverview {
     followUp: health.followUpCompletionRate,
     compliance: compliancePct,
     assignment:
-      totalKarkuns > 0 ? Math.round((people.assignedKarkuns / totalKarkuns) * 100) : 0,
+      totalKarkuns > 0
+        ? Math.round((assignmentMetrics.activeAssignments / totalKarkuns) * 100)
+        : 0,
   }
 }
 

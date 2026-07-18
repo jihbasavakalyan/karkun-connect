@@ -2,6 +2,7 @@ import { MOCK_KARKUN_REGISTRY } from '@/constants/mockKarkunRegistry'
 import { ensureRegistration } from '@/services/jihWebPortalService'
 import { ensureBaitulMaalRecord } from '@/services/baitulMaalService'
 import { ensureIjtemaAttendanceRecord } from '@/services/ijtemaAttendanceService'
+import { getCanonicalConnectedKarkunCount } from '@/lib/connections/getConnectedKarkunsForRukn'
 import { getActiveAssignmentsForKarkun } from '@/stores/assignmentStore'
 import {
   getNextRuknId,
@@ -190,8 +191,11 @@ export function getPeopleStatistics(): PeopleStatistics {
   const femaleRukns = rukns.filter((r) => r.gender === 'Female').length
   const maleKarkuns = karkuns.filter((k) => k.gender === 'Male').length
   const femaleKarkuns = karkuns.filter((k) => k.gender === 'Female').length
-  const assignedKarkuns = karkuns.filter((k) => k.assignmentStatus === 'Assigned').length
-  const unassignedKarkuns = karkuns.filter((k) => k.assignmentStatus === 'Available').length
+  // KC-028A: Connected = canonical Active connections (not registry assignmentStatus alone).
+  const assignedKarkuns = getCanonicalConnectedKarkunCount()
+  const unassignedKarkuns = karkuns.filter(
+    (k) => !k.isArchived && k.assignmentStatus === 'Available',
+  ).length
 
   const activeRukns = rukns.filter((r) => r.status === 'active').length
   const inactiveRukns = rukns.filter((r) => r.status === 'inactive').length

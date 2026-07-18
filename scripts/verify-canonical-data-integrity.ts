@@ -8,10 +8,12 @@ import {
   canonicalizeConnectionRecords,
 } from '../src/lib/connections/canonicalizeConnectionRecords'
 import {
+  getCanonicalConnectedKarkunCount,
   getConnectedAssignmentsForRukn,
   getConnectedKarkunCountForRukn,
   getConnectedKarkunsForRukn,
 } from '../src/lib/connections/getConnectedKarkunsForRukn'
+import { getPeopleStatistics } from '../src/lib/peopleStore'
 import { getAssignedKarkunanForRukn } from '../src/lib/assignmentEngine'
 import {
   getAssignmentDashboardMetrics,
@@ -181,6 +183,16 @@ const metricsB = getAssignmentDashboardMetrics()
 assert(
   metricsA.activeAssignments === metricsB.activeAssignments,
   'dashboard connection KPI must be stable',
+)
+
+const people = getPeopleStatistics()
+assert(
+  people.assignedKarkuns === metricsA.activeAssignments,
+  `people.assignedKarkuns (${people.assignedKarkuns}) != metrics.activeAssignments (${metricsA.activeAssignments})`,
+)
+assert(
+  people.assignedKarkuns === getCanonicalConnectedKarkunCount(),
+  'people stats must equal canonical connected count',
 )
 
 const connectedIds = new Set(getConnectedAssignmentsForRukn(ruknId).map((r) => r.assignmentId))

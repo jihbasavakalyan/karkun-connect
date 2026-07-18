@@ -4,7 +4,7 @@
  */
 
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
-import { getAllAssignments } from '@/stores/assignmentStore'
+import { getCanonicalConnectedAssignments } from '@/lib/connections/getConnectedKarkunsForRukn'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
 
 export type ProfileMissingField = {
@@ -60,13 +60,7 @@ export type ProfileCompletionMetrics = {
 
 /** Profile quality across actively connected Karkuns (campaign scope). */
 export function getConnectedProfileCompletionMetrics(): ProfileCompletionMetrics {
-  const connectedIds = [
-    ...new Set(
-      getAllAssignments()
-        .filter((record) => record.status === 'Active')
-        .map((record) => record.karkunId),
-    ),
-  ]
+  const connectedIds = getCanonicalConnectedAssignments().map((record) => record.karkunId)
 
   let complete = 0
   let incomplete = 0

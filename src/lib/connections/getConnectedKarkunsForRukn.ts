@@ -1,5 +1,5 @@
 /**
- * KC-028A — Canonical connected-Karkun set for a Rukn.
+ * KC-028A — Canonical connected-Karkun set.
  *
  * Source of truth: assignmentStore ↔ ConnectionRepository (Firestore `connections`).
  * Definition: Active assignment, unique by karkunId, Karkun exists and is not archived.
@@ -9,9 +9,32 @@
  */
 
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
-import { getActiveAssignmentsForRukn } from '@/stores/assignmentStore'
+import { getActiveAssignmentsForRukn, getAllAssignments } from '@/stores/assignmentStore'
 import type { AssignmentRecord } from '@/types/assignment'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
+
+function isCanonicalActiveConnection(record: AssignmentRecord): boolean {
+  if (record.status !== 'Active') return false
+  const karkun = getKarkunById(record.karkunId)
+  return Boolean(karkun && !karkun.isArchived)
+}
+
+/** Campaign-wide Active connections (unique Karkun, non-archived). */
+export function getCanonicalConnectedAssignments(): AssignmentRecord[] {
+  const seen = new Set<string>()
+  const result: AssignmentRecord[] = []
+  for (const record of getAllAssignments()) {
+    if (!isCanonicalActiveConnection(record)) continue
+    if (seen.has(record.karkunId)) continue
+    seen.add(record.karkunId)
+    result.push(record)
+  }
+  return result
+}
+
+export function getCanonicalConnectedKarkunCount(): number {
+  return getCanonicalConnectedAssignments().length
+}
 
 /** Active connection rows for a Rukn (deduped, non-archived Karkuns only). */
 export function getConnectedAssignmentsForRukn(ruknId: string): AssignmentRecord[] {
@@ -21,9 +44,8 @@ export function getConnectedAssignmentsForRukn(ruknId: string): AssignmentRecord
   const result: AssignmentRecord[] = []
 
   for (const record of getActiveAssignmentsForRukn(ruknId)) {
+    if (!isCanonicalActiveConnection(record)) continue
     if (seen.has(record.karkunId)) continue
-    const karkun = getKarkunById(record.karkunId)
-    if (!karkun || karkun.isArchived) continue
     seen.add(record.karkunId)
     result.push(record)
   }

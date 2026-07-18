@@ -16,7 +16,10 @@ import { getBaitulMaalDashboardMetrics } from '@/services/baitulMaalService'
 import { getIjtemaAttendanceDashboardMetrics } from '@/services/ijtemaAttendanceService'
 import { getJihWebPortalDashboardMetrics } from '@/services/jihWebPortalService'
 import { getConnectedProfileCompletionMetrics } from '@/lib/karkunProfileCompletion'
-import { getAllAssignments } from '@/stores/assignmentStore'
+import {
+  getCanonicalConnectedAssignments,
+  getCanonicalConnectedKarkunCount,
+} from '@/lib/connections/getConnectedKarkunsForRukn'
 import { getRecentActivity } from '@/stores/activityLogStore'
 import { JOURNEY_STAGE_LABELS, JOURNEY_STAGE_ORDER, type JourneyStageId } from '@/types/guidance'
 import type { AdminCommandCenterSnapshot } from '@/types/campaignAutomation.types'
@@ -80,7 +83,7 @@ export type AdminMissionControlModel = {
 }
 
 function buildJourneyFunnel(): MissionControlFunnelStage[] {
-  const activeAssignments = getAllAssignments().filter((record) => record.status === 'Active')
+  const activeAssignments = getCanonicalConnectedAssignments()
   const ruknIds = [...new Set(activeAssignments.map((record) => record.ruknId))]
   const stageCounts = new Map<JourneyStageId, number>()
 
@@ -126,9 +129,10 @@ export function buildAdminMissionControl(
   const criticalFollowUps =
     snapshot.followUpQueue.find((group) => group.section === 'overdue')?.items.length ?? 0
 
-  const total = people.assignedKarkuns + people.unassignedKarkuns
-  const connected = people.assignedKarkuns
-  const remaining = people.unassignedKarkuns
+  // KC-028A: hero Connected uses the same canonical count as Automation / Rafeeq.
+  const connected = getCanonicalConnectedKarkunCount()
+  const remaining = Math.max(people.unassignedKarkuns, 0)
+  const total = connected + remaining
 
   const todaysPriorities = [
     ...snapshot.alerts.slice(0, 4).map((alert) => ({

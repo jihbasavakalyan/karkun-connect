@@ -1,6 +1,7 @@
 import { getKarkunById, MOCK_KARKUN_REGISTRY } from '@/constants/mockKarkunRegistry'
 import { getRuknById } from '@/data/ruknMaster'
 import {
+  getCanonicalConnectedKarkunCount,
   getConnectedKarkunsForRukn,
 } from '@/lib/connections/getConnectedKarkunsForRukn'
 import { isValidMobileFormat, normalizeMobile } from '@/lib/mobileValidation'
@@ -64,11 +65,7 @@ export function getAvailableKarkunan(ruknId?: string): KarkunRegistryRecord[] {
 
 export function getAssignmentMetrics() {
   const availableKarkun = getAvailableKarkunan().length
-  const assignedKarkun = new Set(
-    getAllAssignments()
-      .filter((record) => record.status === 'Active')
-      .map((record) => record.karkunId),
-  ).size
+  const assignedKarkun = getCanonicalConnectedKarkunCount()
   const completedAssignments = getAllAssignments().filter(
     (record) => record.status === 'Completed' || record.status === 'Replaced',
   ).length

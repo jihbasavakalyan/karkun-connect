@@ -1757,6 +1757,27 @@ html[data-theme='dark'] {
     @apply border-border/60 bg-surface-muted/30;
   }
 
+  /* KC-028A — dark: restore semantic KPI tones (no light pastel wash) */
+  html[data-theme='dark'] .acc-health-card.mc-kpi-tone-green {
+    border-color: color-mix(in srgb, var(--color-primary) 45%, var(--color-border));
+    background-color: color-mix(in srgb, var(--color-primary-muted) 70%, transparent);
+  }
+
+  html[data-theme='dark'] .acc-health-card.mc-kpi-tone-amber {
+    border-color: color-mix(in srgb, var(--color-warning) 45%, var(--color-border));
+    background-color: color-mix(in srgb, var(--color-warning-soft) 80%, transparent);
+  }
+
+  html[data-theme='dark'] .acc-health-card.mc-kpi-tone-red {
+    border-color: color-mix(in srgb, var(--color-error) 45%, var(--color-border));
+    background-color: color-mix(in srgb, var(--color-error-bg) 80%, transparent);
+  }
+
+  html[data-theme='dark'] .acc-health-card.mc-kpi-tone-neutral {
+    border-color: var(--color-border);
+    background-color: color-mix(in srgb, var(--color-surface-muted) 80%, transparent);
+  }
+
   .acc-health-link {
     @apply flex h-full flex-col no-underline;
   }
@@ -1779,6 +1800,18 @@ html[data-theme='dark'] {
 
   .acc-health-value.mc-kpi-tone-red {
     @apply text-rose-700;
+  }
+
+  html[data-theme='dark'] .acc-health-value.mc-kpi-tone-green {
+    color: var(--color-primary);
+  }
+
+  html[data-theme='dark'] .acc-health-value.mc-kpi-tone-amber {
+    color: var(--color-warning);
+  }
+
+  html[data-theme='dark'] .acc-health-value.mc-kpi-tone-red {
+    color: var(--color-error);
   }
 
   .acc-health-hint {
@@ -2569,6 +2602,47 @@ html[data-theme='dark'] {
     background-image: linear-gradient(160deg, #f8fafc 0%, #ffffff 60%);
   }
 
+  /* KC-028A — dark mission-control KPI gradients use theme tokens */
+  html[data-theme='dark'] .mc-kpi-card.mc-kpi-tone-green {
+    background-image: linear-gradient(
+      160deg,
+      var(--color-primary-muted) 0%,
+      var(--color-surface) 65%
+    );
+  }
+
+  html[data-theme='dark'] .mc-kpi-card.mc-kpi-tone-blue {
+    background-image: linear-gradient(
+      160deg,
+      var(--color-info-soft) 0%,
+      var(--color-surface) 65%
+    );
+  }
+
+  html[data-theme='dark'] .mc-kpi-card.mc-kpi-tone-amber {
+    background-image: linear-gradient(
+      160deg,
+      var(--color-warning-soft) 0%,
+      var(--color-surface) 65%
+    );
+  }
+
+  html[data-theme='dark'] .mc-kpi-card.mc-kpi-tone-purple {
+    background-image: linear-gradient(
+      160deg,
+      color-mix(in srgb, var(--color-accent-soft) 85%, var(--color-surface)) 0%,
+      var(--color-surface) 65%
+    );
+  }
+
+  html[data-theme='dark'] .mc-kpi-card.mc-kpi-tone-neutral {
+    background-image: linear-gradient(
+      160deg,
+      var(--color-surface-muted) 0%,
+      var(--color-surface) 65%
+    );
+  }
+
   .mc-kpi-link {
     @apply block no-underline;
   }
@@ -2599,6 +2673,31 @@ html[data-theme='dark'] {
 
   .mc-kpi-icon.mc-kpi-tone-neutral {
     @apply bg-slate-100 text-slate-600;
+  }
+
+  html[data-theme='dark'] .mc-kpi-icon.mc-kpi-tone-green {
+    background-color: color-mix(in srgb, var(--color-primary-muted) 90%, transparent);
+    color: var(--color-primary);
+  }
+
+  html[data-theme='dark'] .mc-kpi-icon.mc-kpi-tone-blue {
+    background-color: color-mix(in srgb, var(--color-info-soft) 90%, transparent);
+    color: var(--color-info);
+  }
+
+  html[data-theme='dark'] .mc-kpi-icon.mc-kpi-tone-amber {
+    background-color: color-mix(in srgb, var(--color-warning-soft) 90%, transparent);
+    color: var(--color-warning);
+  }
+
+  html[data-theme='dark'] .mc-kpi-icon.mc-kpi-tone-purple {
+    background-color: color-mix(in srgb, var(--color-accent-soft) 90%, transparent);
+    color: var(--color-accent);
+  }
+
+  html[data-theme='dark'] .mc-kpi-icon.mc-kpi-tone-neutral {
+    background-color: var(--color-surface-muted);
+    color: var(--color-secondary);
   }
 
   .mc-kpi-label {

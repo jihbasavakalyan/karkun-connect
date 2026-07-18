@@ -1,6 +1,10 @@
 import { MOCK_KARKUN_REGISTRY, getKarkunById } from '@/constants/mockKarkunRegistry'
 import { getRuknById, ruknMaster } from '@/data/ruknMaster'
-import { getConnectedAssignmentsForRukn } from '@/lib/connections/getConnectedKarkunsForRukn'
+import {
+  getCanonicalConnectedAssignments,
+  getCanonicalConnectedKarkunCount,
+  getConnectedAssignmentsForRukn,
+} from '@/lib/connections/getConnectedKarkunsForRukn'
 import { getAllKarkuns, getCompatibleKarkunsForRukn, notifyPeopleRegistryChange } from '@/lib/peopleStore'
 import { logPeopleAudit } from '@/lib/peopleAuditLog'
 import { isValidMobileFormat, normalizeMobile } from '@/lib/mobileValidation'
@@ -544,8 +548,9 @@ export function getKarkunWorkloadSummary(karkunId: string): KarkunWorkloadSummar
 }
 
 export function getAssignmentDashboardMetrics(): AssignmentDashboardMetrics {
-  const activeAssignments = getAllAssignments().filter((record) => record.status === 'Active')
-  const assignedRuknIds = new Set(activeAssignments.map((record) => record.ruknId))
+  // KC-028A: Connected KPI = canonical unique Active + !archived Karkuns (not raw row count).
+  const connectedAssignments = getCanonicalConnectedAssignments()
+  const assignedRuknIds = new Set(connectedAssignments.map((record) => record.ruknId))
   const activeRukns = ruknMaster.filter((rukn) => rukn.status === 'active')
   const karkuns = getAllKarkuns().filter(
     (k) => k.status === 'active' && isValidMobileFormat(normalizeMobile(k.mobile)),
@@ -553,7 +558,7 @@ export function getAssignmentDashboardMetrics(): AssignmentDashboardMetrics {
   const periodCounts = getAssignmentPeriodCounts()
 
   const metrics = {
-    activeAssignments: activeAssignments.length,
+    activeAssignments: getCanonicalConnectedKarkunCount(),
     unassignedRukns: activeRukns.filter((rukn) => !assignedRuknIds.has(rukn.id)).length,
     assignedRukns: assignedRuknIds.size,
     availableMaleKarkuns: karkuns.filter(
@@ -589,18 +594,14 @@ export function getKarkunsForRuknAssignment(ruknId: string) {
 
 export function getUnassignedRukns() {
   const assignedIds = new Set(
-    getAllAssignments()
-      .filter((record) => record.status === 'Active')
-      .map((record) => record.ruknId),
+    getCanonicalConnectedAssignments().map((record) => record.ruknId),
   )
   return ruknMaster.filter((rukn) => rukn.status === 'active' && !assignedIds.has(rukn.id))
 }
 
 export function getAssignedRukns() {
   const assignedIds = new Set(
-    getAllAssignments()
-      .filter((record) => record.status === 'Active')
-      .map((record) => record.ruknId),
+    getCanonicalConnectedAssignments().map((record) => record.ruknId),
   )
   return ruknMaster.filter((rukn) => assignedIds.has(rukn.id))
 }

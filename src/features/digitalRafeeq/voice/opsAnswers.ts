@@ -108,7 +108,7 @@ function answerAdminQuery(
   ) {
     return {
       text: companionReply(
-        `ابھی ${people.unassignedKarkuns} کارکن کا رابطہ باقی ہے، جبکہ ${people.assignedKarkuns} پہلے سے مربوط ہیں۔`,
+        `ابھی ${people.unassignedKarkuns} کارکن کا رابطہ باقی ہے، جبکہ ${assignments.activeAssignments} پہلے سے مربوط ہیں۔`,
         'اگر مناسب سمجھیں تو اگلا قدم روابط پر توجہ دینا بہتر ہوگا۔',
         'اللہ اس کوشش میں آسانی عطا فرمائے۔',
       ),
@@ -229,7 +229,7 @@ function answerAdminQuery(
 
   return {
     text: companionReply(
-      `اس وقت ${people.assignedKarkuns} کارکن مربوط ہیں، ${people.unassignedKarkuns} کا رابطہ باقی ہے، اور ${team.length} ارکان خدمت پر ہیں۔`,
+      `اس وقت ${assignments.activeAssignments} کارکن مربوط ہیں، ${people.unassignedKarkuns} کا رابطہ باقی ہے، اور ${team.length} ارکان خدمت پر ہیں۔`,
       'ملاقات، حاضری، فالو اپ یا رکن کی کارکردگی کے بارے میں کچھ بھی پوچھیے۔',
       'میں آپ کے ساتھ ہوں۔',
     ),

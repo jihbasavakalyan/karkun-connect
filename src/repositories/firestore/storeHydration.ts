@@ -79,8 +79,8 @@ export function hydrateStoresFromRepositories(): void {
     traceMetricSnapshot('dashboard_connection_metrics', {
       caller: 'hydrateStoresFromRepositories',
       sourceOfTruth: 'Derived Calculation',
-      connected: people.assignedKarkuns,
-      unconnected: assignmentMetrics.unassignedRukns,
+      connected: assignmentMetrics.activeAssignments,
+      unconnected: people.unassignedKarkuns,
       registryConnected: people.assignedKarkuns,
       registryAvailable: people.unassignedKarkuns,
       activeAssignments: assignmentMetrics.activeAssignments,
