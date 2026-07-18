@@ -2,7 +2,7 @@
  * KC-027 — VoiceConversationService
  *
  * Pipeline only (no business logic):
- * Record → Transcribe → Intelligence answer → TTS playback → session history
+ * Record → Transcribe (Google STT, browser fallback) → Intelligence → TTS → history
  */
 
 import { transcribeCloudAudio } from './cloudSpeechRecognition'
@@ -39,11 +39,37 @@ export type VoiceConversationState = {
   notice: string
   history: VoiceConversationTurn[]
   micStatus: MicRecorderStatus
+  sttMode: 'google' | 'browser'
 }
 
 export type AnswerFn = (query: string) => Promise<OpsAnswer> | OpsAnswer
 
 type Listener = (state: VoiceConversationState) => void
+
+type SpeechRecognitionLike = {
+  lang: string
+  continuous: boolean
+  interimResults: boolean
+  maxAlternatives: number
+  start: () => void
+  stop: () => void
+  abort: () => void
+  onresult: ((event: {
+    resultIndex: number
+    results: ArrayLike<{ 0: { transcript: string }; isFinal: boolean }>
+  }) => void) | null
+  onerror: ((event: { error: string }) => void) | null
+  onend: (() => void) | null
+}
+
+function getBrowserSpeechCtor(): (new () => SpeechRecognitionLike) | undefined {
+  if (typeof window === 'undefined') return undefined
+  const w = window as Window & {
+    SpeechRecognition?: new () => SpeechRecognitionLike
+    webkitSpeechRecognition?: new () => SpeechRecognitionLike
+  }
+  return w.SpeechRecognition ?? w.webkitSpeechRecognition
+}
 
 function friendlyError(error: unknown): string {
   if (!error || typeof error !== 'object') return STT_ERROR_MESSAGE_URDU
@@ -70,6 +96,9 @@ export class VoiceConversationService {
   private notice = ''
   private history: VoiceConversationTurn[] = []
   private micStatus: MicRecorderStatus = 'idle'
+  private preferBrowserStt = false
+  private browserFinal = ''
+  private browserRecognition: SpeechRecognitionLike | null = null
   private readonly listeners = new Set<Listener>()
   private readonly recorder = createMicRecorder({
     silenceMs: 1800,
@@ -97,6 +126,7 @@ export class VoiceConversationService {
       notice: this.notice,
       history: [...this.history],
       micStatus: this.micStatus,
+      sttMode: this.preferBrowserStt ? 'browser' : 'google',
     }
   }
 
@@ -110,21 +140,38 @@ export class VoiceConversationService {
     this.abort?.abort()
     this.abort = null
     this.recorder.cancel()
+    this.stopBrowserRecognition()
     stopCloudSpeech()
     this.phase = 'idle'
     this.interimRecognizedText = ''
     this.emit()
   }
 
-  /** Push-to-talk: start listening (Google STT after stop). */
+  /** Push-to-talk: start listening. */
   async startListening(): Promise<void> {
     this.notice = ''
     this.interimRecognizedText = ''
+    this.browserFinal = ''
     this.phase = 'listening'
     this.emit()
+
+    if (this.preferBrowserStt) {
+      this.startBrowserRecognition()
+      return
+    }
+
     try {
       await this.recorder.start()
     } catch (error) {
+      // Fall back to browser STT when MediaRecorder/mic path is unavailable.
+      const ctor = getBrowserSpeechCtor()
+      if (ctor) {
+        this.preferBrowserStt = true
+        this.notice = 'مقامی آواز کی پہچان استعمال ہو رہی ہے۔'
+        this.startBrowserRecognition()
+        this.emit()
+        return
+      }
       this.phase = 'error'
       this.notice = friendlyError(error)
       this.emit()
@@ -133,12 +180,33 @@ export class VoiceConversationService {
   }
 
   /**
-   * Stop mic, transcribe via Google STT, answer via intelligence, speak reply.
+   * Stop mic, transcribe, answer via intelligence, speak reply.
    */
   async finishListeningAndConverse(answer: AnswerFn): Promise<VoiceConversationTurn | null> {
     const token = ++this.turnToken
     this.abort?.abort()
     this.abort = new AbortController()
+
+    if (this.preferBrowserStt) {
+      this.stopBrowserRecognition()
+      const transcript = this.browserFinal.trim()
+      if (!transcript) {
+        this.phase = 'error'
+        this.notice = STT_NO_SPEECH_MESSAGE_URDU
+        this.emit()
+        return null
+      }
+      this.phase = 'thinking'
+      this.interimRecognizedText = transcript
+      this.emit()
+      return this.runIntelligenceTurn({
+        transcript,
+        answer,
+        source: 'voice',
+        token,
+        speakReply: true,
+      })
+    }
 
     let audio: Blob | null = null
     try {
@@ -171,14 +239,18 @@ export class VoiceConversationService {
       transcript = result.transcript.trim()
     } catch (error) {
       if (token !== this.turnToken) return null
+      // Switch to browser STT for subsequent turns when Google STT is unavailable.
+      this.preferBrowserStt = true
       this.phase = 'error'
-      this.notice = friendlyError(error)
+      this.notice =
+        'کلاؤڈ سننے کا نظام ابھی دستیاب نہیں۔ دوبارہ مائیک دبائیں — مقامی پہچان استعمال ہوگی۔'
       this.interimRecognizedText = ''
+      audio = null
       this.emit()
+      void error
       return null
     }
 
-    // Discard audio reference immediately after transcription.
     audio = null
 
     if (token !== this.turnToken) return null
@@ -202,7 +274,6 @@ export class VoiceConversationService {
     })
   }
 
-  /** Text / chip path — same intelligence, optional spoken reply. */
   async converseFromText(
     text: string,
     answer: AnswerFn,
@@ -222,6 +293,80 @@ export class VoiceConversationService {
       token,
       speakReply: options?.speakReply ?? false,
     })
+  }
+
+  private startBrowserRecognition(): void {
+    const Ctor = getBrowserSpeechCtor()
+    if (!Ctor) {
+      this.phase = 'error'
+      this.notice = 'اس براؤزر میں آواز کی پہچان دستیاب نہیں۔ سوال لکھ کر بھیجیں۔'
+      this.emit()
+      return
+    }
+
+    this.stopBrowserRecognition()
+    const recognition = new Ctor()
+    recognition.lang = 'ur-IN'
+    recognition.continuous = false
+    recognition.interimResults = true
+    recognition.maxAlternatives = 1
+    recognition.onresult = (event) => {
+      let interim = ''
+      let finalText = ''
+      for (let i = event.resultIndex; i < event.results.length; i += 1) {
+        const result = event.results[i]
+        const transcript = result[0]?.transcript ?? ''
+        if (result.isFinal) finalText += transcript
+        else interim += transcript
+      }
+      if (interim) this.interimRecognizedText = interim
+      if (finalText.trim()) {
+        this.browserFinal = finalText.trim()
+        this.interimRecognizedText = this.browserFinal
+      }
+      this.emit()
+    }
+    recognition.onerror = (event) => {
+      if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+        this.phase = 'error'
+        this.notice = STT_MIC_DENIED_MESSAGE_URDU
+        this.emit()
+      } else if (event.error !== 'aborted' && event.error !== 'no-speech') {
+        this.phase = 'error'
+        this.notice = STT_ERROR_MESSAGE_URDU
+        this.emit()
+      }
+    }
+    recognition.onend = () => {
+      if (this.phase === 'listening') {
+        this.phase = 'idle'
+        this.emit()
+      }
+    }
+    this.browserRecognition = recognition
+    this.micStatus = 'recording'
+    try {
+      recognition.start()
+    } catch {
+      this.phase = 'error'
+      this.notice = STT_ERROR_MESSAGE_URDU
+      this.emit()
+    }
+  }
+
+  private stopBrowserRecognition(): void {
+    try {
+      this.browserRecognition?.stop()
+    } catch {
+      // ignore
+    }
+    try {
+      this.browserRecognition?.abort()
+    } catch {
+      // ignore
+    }
+    this.browserRecognition = null
+    this.micStatus = 'idle'
   }
 
   private async runIntelligenceTurn(input: {

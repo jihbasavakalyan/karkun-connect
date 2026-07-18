@@ -65,7 +65,14 @@ Reuses the same service account as TTS:
 | `GOOGLE_APPLICATION_CREDENTIALS` | Local JSON path |
 | `GOOGLE_STT_CREDENTIALS_JSON` | Optional STT-specific override |
 
-Grant the service account **Cloud Speech-to-Text User** (in addition to Text-to-Speech User).
+### Required Google Cloud setup
+
+1. Enable **Cloud Speech-to-Text API** on project `karkun-connect-75c68`  
+   https://console.cloud.google.com/apis/library/speech.googleapis.com
+2. Grant the service account **Cloud Speech-to-Text User** (in addition to Text-to-Speech User).
+3. Redeploy / retry voice conversation.
+
+If Google STT is unavailable, the client **falls back to browser speech recognition** (Chrome / Edge) so conversation still works, then continues through the same intelligence → Google TTS pipeline.
 
 Never use `VITE_*` for credentials. Audio is not stored after transcription.
 
