@@ -2,6 +2,8 @@
 
 Architecture-only foundation. Not a notification system. Not AI. Not a UI redesign.
 
+**Product charter (philosophy & permanent rules):** [`automation-philosophy-charter.md`](./automation-philosophy-charter.md) — **KC-020 CLOSED**.
+
 ## Golden rule
 
 ```text
