@@ -468,6 +468,7 @@ export function AssignmentManagementPage() {
             <AssignmentHistoryTimeline
               history={ruknSummary.assignmentHistory}
               currentAssignment={ruknSummary.currentAssignment}
+              activeAssignments={ruknSummary.activeAssignments}
               perspective="rukn"
             />
           </div>

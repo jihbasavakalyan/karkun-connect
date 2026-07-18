@@ -1,11 +1,15 @@
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { getRuknById } from '@/data/ruknMaster'
+import { partitionConnectionPresentation } from '@/lib/connections/partitionConnectionPresentation'
 import type { AssignmentRecord } from '@/types/assignment'
 import { getRemovalReasonLabel, getReplacementReasonLabel } from '@/types/assignment'
 
 type AssignmentHistoryTimelineProps = {
   history: AssignmentRecord[]
+  /** @deprecated Prefer activeAssignments — single primary is insufficient for multi-Active Rukns. */
   currentAssignment?: AssignmentRecord | null
+  /** KC-003.1 — all current Active connections (shown above History). */
+  activeAssignments?: AssignmentRecord[]
   perspective: 'rukn' | 'karkun'
 }
 
@@ -77,9 +81,15 @@ function HistoryCard({
 export function AssignmentHistoryTimeline({
   history,
   currentAssignment,
+  activeAssignments,
   perspective,
 }: AssignmentHistoryTimelineProps) {
-  if (history.length === 0 && !currentAssignment) {
+  const { current, historical } = partitionConnectionPresentation(history, {
+    activeAssignments,
+    currentAssignment,
+  })
+
+  if (current.length === 0 && historical.length === 0) {
     return (
       <div className="rounded-(--radius-card) border border-border bg-surface p-6 text-center shadow-card">
         <p className="text-secondary">No connection history yet.</p>
@@ -87,42 +97,48 @@ export function AssignmentHistoryTimeline({
     )
   }
 
-  const pastRecords = history.filter(
-    (record) => record.assignmentId !== currentAssignment?.assignmentId,
-  )
-
-  const currentTitle =
-    currentAssignment &&
-    (perspective === 'rukn'
-      ? getKarkunById(currentAssignment.karkunId)?.name ?? 'Unknown Karkun'
-      : getRuknById(currentAssignment.ruknId)?.name ?? 'Unknown Rukn')
-
   return (
     <div className="space-y-4">
-      {currentAssignment && currentTitle && (
+      {current.length > 0 && (
         <div>
           <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-primary">
-            {currentAssignment.status === 'Suspended' ? 'Suspended Connection' : 'Current Connection'}
+            {current.length === 1 && current[0]!.status === 'Suspended'
+              ? 'Suspended Connection'
+              : current.length === 1
+                ? 'Current Connection'
+                : 'Current Connections'}
           </h3>
-          <HistoryCard
-            highlight
-            title={currentTitle}
-            subtitle={`Since ${formatDate(currentAssignment.effectiveFrom)}`}
-            assignmentNumber={currentAssignment.assignmentNumber}
-            createdBy={currentAssignment.assignedBy}
-            eventDate={currentAssignment.effectiveFrom}
-            remarks={currentAssignment.remarks}
-          />
+          <ul className="space-y-3">
+            {current.map((record) => {
+              const title =
+                perspective === 'rukn'
+                  ? getKarkunById(record.karkunId)?.name ?? 'Unknown Karkun'
+                  : getRuknById(record.ruknId)?.name ?? 'Unknown Rukn'
+              return (
+                <li key={record.assignmentId}>
+                  <HistoryCard
+                    highlight
+                    title={title}
+                    subtitle={`Since ${formatDate(record.effectiveFrom)}`}
+                    assignmentNumber={record.assignmentNumber}
+                    createdBy={record.assignedBy}
+                    eventDate={record.effectiveFrom}
+                    remarks={record.remarks}
+                  />
+                </li>
+              )
+            })}
+          </ul>
         </div>
       )}
 
-      {pastRecords.length > 0 && (
+      {historical.length > 0 && (
         <div>
           <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-secondary">
             History
           </h3>
           <ul className="space-y-3">
-            {pastRecords.map((record) => {
+            {historical.map((record) => {
               const karkunName = getKarkunById(record.karkunId)?.name ?? record.karkunId
               const ruknName = getRuknById(record.ruknId)?.name ?? record.ruknId
 
@@ -135,7 +151,11 @@ export function AssignmentHistoryTimeline({
                       assignmentNumber={record.assignmentNumber}
                       createdBy={record.assignedBy}
                       eventDate={record.endedDate ?? record.updatedAt}
-                      reason={record.replacementReason ? getReplacementReasonLabel(record.replacementReason) : undefined}
+                      reason={
+                        record.replacementReason
+                          ? getReplacementReasonLabel(record.replacementReason)
+                          : undefined
+                      }
                       remarks={record.remarks}
                     />
                   </li>
@@ -151,7 +171,11 @@ export function AssignmentHistoryTimeline({
                       assignmentNumber={record.assignmentNumber}
                       createdBy={record.assignedBy}
                       eventDate={record.endedDate ?? record.updatedAt}
-                      reason={record.removalReason ? getRemovalReasonLabel(record.removalReason) : undefined}
+                      reason={
+                        record.removalReason
+                          ? getRemovalReasonLabel(record.removalReason)
+                          : undefined
+                      }
                       remarks={record.remarks}
                     />
                   </li>
@@ -188,14 +212,15 @@ export function AssignmentHistoryTimeline({
                 )
               }
 
+              // Non-Active unknown statuses — still history-only, never "Connected to".
               return (
                 <li key={record.assignmentId}>
                   <HistoryCard
-                    title={`Connected to ${perspective === 'rukn' ? karkunName : ruknName}`}
-                    subtitle={`Connected on ${formatDate(record.effectiveFrom)}`}
+                    title={`${record.status} — ${perspective === 'rukn' ? karkunName : ruknName}`}
+                    subtitle={`Updated ${formatDate(record.updatedAt || record.effectiveFrom)}`}
                     assignmentNumber={record.assignmentNumber}
                     createdBy={record.assignedBy}
-                    eventDate={record.effectiveFrom}
+                    eventDate={record.updatedAt || record.effectiveFrom}
                     remarks={record.remarks}
                   />
                 </li>

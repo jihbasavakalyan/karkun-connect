@@ -13,6 +13,7 @@
     "verify:assignments": "npx vite-node scripts/verify-inline-assignment.ts",
     "verify:kc002": "npx vite-node scripts/verify-kc002-assignment-allocation.ts",
     "verify:kc003": "npx vite-node scripts/verify-kc003-active-integrity.ts",
+    "verify:kc003-1": "npx vite-node scripts/verify-kc003-1-active-list.ts",
     "admin:repair-asns": "npx vite-node scripts/admin/repair-duplicate-asns.ts",
     "admin:repair-asns:dry": "npx vite-node scripts/admin/repair-duplicate-asns.ts --dry-run",
     "verify:persistence": "npx vite-node scripts/verify-persistence.ts",

@@ -150,6 +150,7 @@ export function RuknDetailPage() {
             <AssignmentHistoryTimeline
               history={summary.assignmentHistory}
               currentAssignment={summary.currentAssignment}
+              activeAssignments={summary.activeAssignments}
               perspective="rukn"
             />
           </div>
