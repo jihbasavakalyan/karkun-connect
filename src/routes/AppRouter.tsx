@@ -1,5 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes, useParams } from 'react-router-dom'
 import { ROUTES } from '@/constants/routes'
+import { ScrollToTop } from '@/components/ux/ScrollToTop'
 import { AdminLayout } from '@/layouts/AdminLayout'
 import { RuknLayout } from '@/layouts/RuknLayout'
 import { AssignmentManagementPage } from '@/pages/admin/AssignmentManagementPage'
@@ -34,6 +35,7 @@ function LegacyKarkunProfileRedirect() {
 export function AppRouter() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <Routes>
         <Route path={ROUTES.HOME} element={<LandingPage />} />
         <Route

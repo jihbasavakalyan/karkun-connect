@@ -11,6 +11,7 @@ import {
 } from '@/services/campaignService'
 import { EnterpriseBadge } from '@/components/enterprise'
 import { DigitalRafeeqLauncher } from '@/features/digitalRafeeq/launcher'
+import { useKeyboardInset } from '@/hooks/useKeyboardInset'
 
 const navItems: { label: string; icon: IconName; to: string; end: boolean }[] = [
   { label: 'Home', icon: 'home', to: ROUTES.RUKN, end: true },
@@ -23,10 +24,11 @@ export function RuknLayout() {
   const campaignName = getActiveCampaignName()
   const duration = formatActiveCampaignDuration()
   const timeline = getCampaignTimeline()
+  useKeyboardInset()
 
   return (
-    <div className="flex min-h-svh flex-col bg-surface-muted">
-      <header className="border-b border-border bg-surface">
+    <div className="native-shell flex min-h-svh flex-col bg-surface-muted">
+      <header className="border-b border-border bg-surface pt-[env(safe-area-inset-top)]">
         <div className="enterprise-gradient-hero px-3 py-2 text-white lg:px-4">
           <div className="mx-auto flex max-w-5xl items-center justify-between gap-3">
             <Logo size="sm" variant="light" />
@@ -46,12 +48,12 @@ export function RuknLayout() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-5xl flex-1 px-3 py-3 pb-20 lg:px-6 lg:py-5">
+      <main className="native-main mx-auto w-full max-w-5xl flex-1 px-3 py-3 lg:px-6 lg:py-5">
         <Outlet />
       </main>
 
       <nav
-        className="fixed inset-x-0 bottom-0 z-10 border-t border-border bg-surface/95 backdrop-blur-md px-2 py-2 shadow-[0_-4px_20px_rgb(0_0_0/0.06)]"
+        className="native-bottom-nav fixed inset-x-0 bottom-0 z-10 border-t border-border bg-surface/95 px-2 pt-2 shadow-[0_-4px_20px_rgb(0_0_0/0.06)] backdrop-blur-md"
         aria-label="Rukn navigation"
       >
         <ul className="mx-auto flex max-w-5xl items-stretch justify-around">
@@ -62,9 +64,9 @@ export function RuknLayout() {
                 end={item.end}
                 className={({ isActive }) =>
                   [
-                    'flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 text-[10px] font-semibold leading-tight transition-colors sm:text-xs',
+                    'native-nav-item flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 text-[10px] font-semibold leading-tight transition-all duration-200 sm:text-xs',
                     isActive
-                      ? 'bg-primary-muted text-primary'
+                      ? 'bg-primary-muted text-primary native-nav-item-active'
                       : 'text-secondary hover:bg-surface-muted hover:text-text-heading',
                   ].join(' ')
                 }

@@ -23,7 +23,7 @@ export function EmptyState({
   children,
 }: EmptyStateProps) {
   return (
-    <div className="ds-empty" role="status">
+    <div className="ds-empty native-empty" role="status">
       <div className="ds-empty-icon" aria-hidden="true">
         <Icon name={icon} size="xl" className="text-primary" />
       </div>

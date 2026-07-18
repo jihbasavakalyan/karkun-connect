@@ -61,6 +61,7 @@ export function MyKarkunPage() {
           value={query}
           onChange={setQuery}
           resultCount={query.trim() ? filtered.length : undefined}
+          sticky
         />
       ) : null}
 

@@ -16,6 +16,7 @@ export type IconName =
   | 'phone'
   | 'sparkles'
   | 'mic'
+  | 'speaker'
   | 'plus'
   | 'x'
   | 'export'

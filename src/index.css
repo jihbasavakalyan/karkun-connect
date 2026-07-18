@@ -1220,19 +1220,42 @@
   }
 
   .rukn-fab-root {
-    @apply fixed bottom-[5.25rem] right-4 z-30 flex flex-col items-end gap-3 sm:bottom-6 sm:right-6;
+    @apply fixed z-30 flex flex-col items-end gap-3;
+    right: calc(1rem + env(safe-area-inset-right, 0px));
+    bottom: calc(5.25rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  @media (min-width: 640px) {
+    .rukn-fab-root {
+      right: calc(1.5rem + env(safe-area-inset-right, 0px));
+      bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+    }
   }
 
   .digital-rafeeq-fab-root {
-    @apply fixed bottom-6 right-4 z-40 flex flex-col items-end gap-3 sm:right-6;
+    @apply fixed z-40 flex flex-col items-end gap-3;
+    right: calc(1rem + env(safe-area-inset-right, 0px));
+    bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
   }
 
   .digital-rafeeq-fab-offset-rukn {
-    @apply bottom-[5.25rem] right-[5.5rem] sm:bottom-[5.5rem] sm:right-[5.75rem];
+    right: calc(5.5rem + env(safe-area-inset-right, 0px));
+    bottom: calc(5.25rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  @media (min-width: 640px) {
+    .digital-rafeeq-fab-root {
+      right: calc(1.5rem + env(safe-area-inset-right, 0px));
+    }
+
+    .digital-rafeeq-fab-offset-rukn {
+      right: calc(5.75rem + env(safe-area-inset-right, 0px));
+      bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+    }
   }
 
   .digital-rafeeq-fab-trigger {
-    @apply flex h-14 w-14 items-center justify-center rounded-full text-white transition-all duration-300 active:scale-95;
+    @apply flex h-14 w-14 items-center justify-center rounded-full text-white touch-manipulation transition-all duration-300 active:scale-95;
     background: linear-gradient(145deg, #0f766e 0%, #1b4332 100%);
     box-shadow: 0 8px 28px rgb(15 118 110 / 0.4), 0 2px 8px rgb(0 0 0 / 0.12);
   }
@@ -1569,7 +1592,8 @@
   }
 
   .visit-sticky-actions {
-    @apply sticky bottom-[4.75rem] z-20 mt-3 space-y-1.5 rounded-xl border border-border/70 bg-surface/95 p-2.5 shadow-lg backdrop-blur-md lg:static lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none lg:backdrop-blur-none;
+    @apply sticky z-20 mt-3 space-y-1.5 rounded-xl border border-border/70 bg-surface/95 p-2.5 shadow-lg backdrop-blur-md lg:static lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none lg:backdrop-blur-none;
+    bottom: calc(4.75rem + env(safe-area-inset-bottom, 0px) + var(--keyboard-inset, 0px));
   }
 
   .visit-more-details {
@@ -2793,11 +2817,13 @@
 
   .dr-voice-overlay {
     @apply fixed inset-0 z-50 flex justify-end bg-black/35 p-3 sm:p-4;
+    padding-top: max(0.75rem, env(safe-area-inset-top));
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
   }
 
   .dr-voice-drawer {
     @apply flex h-full w-full max-w-md flex-col overflow-hidden rounded-3xl bg-surface shadow-card;
-    background-image: linear-gradient(180deg, rgb(245 243 255) 0%, rgb(255 255 255) 28%, rgb(248 250 249) 100%);
+    background-image: linear-gradient(180deg, rgb(236 253 245) 0%, rgb(255 255 255) 28%, rgb(248 250 249) 100%);
   }
 
   .dr-voice-header {
@@ -2805,7 +2831,7 @@
   }
 
   .dr-voice-title {
-    @apply text-lg font-semibold text-violet-900;
+    @apply text-lg font-semibold text-primary;
   }
 
   .dr-voice-status {
@@ -2813,11 +2839,11 @@
   }
 
   .dr-voice-close {
-    @apply rounded-xl p-2 text-secondary transition hover:bg-violet-50 hover:text-text-heading;
+    @apply min-h-11 min-w-11 rounded-xl p-2 text-secondary touch-manipulation transition hover:bg-primary-muted hover:text-text-heading;
   }
 
   .dr-voice-stage {
-    @apply mx-4 mb-2 flex flex-col items-center gap-2 rounded-2xl bg-violet-50/80 px-3 py-3;
+    @apply mx-4 mb-2 flex flex-col items-center gap-2 rounded-2xl bg-primary-muted/60 px-3 py-3;
   }
 
   .dr-voice-waveform {
@@ -2825,7 +2851,7 @@
   }
 
   .dr-voice-wave-bar {
-    @apply w-1.5 rounded-full bg-violet-500;
+    @apply w-1.5 rounded-full bg-primary;
     animation: dr-wave 1s ease-in-out infinite;
   }
 
@@ -2882,12 +2908,20 @@
     @apply max-w-[92%] rounded-2xl bg-white/90 px-3 py-2 text-sm leading-relaxed text-text-heading shadow-sm;
   }
 
+  .dr-voice-bubble-row {
+    @apply flex items-start gap-2;
+  }
+
+  .dr-voice-bubble-text {
+    @apply min-w-0 flex-1 whitespace-pre-line;
+  }
+
   .dr-voice-bubble p {
     @apply whitespace-pre-line;
   }
 
   .dr-voice-bubble-user {
-    @apply ml-auto bg-violet-100/80 text-violet-950;
+    @apply ml-auto bg-primary-muted text-text-heading;
   }
 
   .dr-voice-actions {
@@ -2895,15 +2929,15 @@
   }
 
   .dr-voice-action {
-    @apply rounded-full bg-violet-50 px-3 py-1.5 text-xs font-semibold text-violet-800 transition hover:bg-violet-100;
+    @apply min-h-9 rounded-full bg-primary-muted px-3 py-1.5 text-xs font-semibold text-primary transition hover:bg-primary/15;
   }
 
   .dr-voice-thinking {
-    @apply flex items-center gap-2 text-xs font-medium text-violet-700;
+    @apply flex items-center gap-2 text-xs font-medium text-primary;
   }
 
   .dr-voice-thinking-dot {
-    @apply h-2 w-2 rounded-full bg-violet-500;
+    @apply h-2 w-2 rounded-full bg-primary;
     animation: dr-mic-pulse 1s ease-in-out infinite;
   }
 
@@ -2912,20 +2946,21 @@
   }
 
   .dr-voice-chip {
-    @apply shrink-0 rounded-full bg-white px-3 py-1.5 text-xs font-medium text-text-heading shadow-sm transition hover:bg-violet-50;
+    @apply min-h-9 shrink-0 rounded-full bg-white px-3 py-1.5 text-xs font-medium text-text-heading shadow-sm touch-manipulation transition hover:bg-primary-muted;
   }
 
   .dr-voice-interim {
-    @apply mx-4 mb-1 rounded-xl bg-violet-50 px-3 py-2 text-xs italic text-violet-900;
+    @apply mx-4 mb-1 rounded-xl bg-primary-muted/70 px-3 py-2 text-xs italic text-text-heading;
   }
 
   .dr-voice-footer {
     @apply flex items-center gap-2 px-3 py-3;
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
   }
 
   .dr-voice-mic {
-    @apply relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-white transition;
-    background: linear-gradient(145deg, #7c3aed 0%, #5b21b6 100%);
+    @apply relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-white touch-manipulation transition;
+    background: linear-gradient(145deg, #0f766e 0%, #1b4332 100%);
   }
 
   .dr-voice-mic.listening {
@@ -2955,6 +2990,35 @@
 
   .dr-voice-footer-note {
     @apply px-3 py-2;
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0px));
+  }
+
+  .dr-speak-btn {
+    @apply inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border/70 bg-surface text-primary shadow-sm touch-manipulation transition-all duration-200 active:scale-95;
+  }
+
+  .dr-speak-btn:hover {
+    @apply bg-primary-muted;
+  }
+
+  .dr-speak-btn-loading {
+    @apply border-primary/30 text-primary;
+  }
+
+  .dr-speak-btn-playing {
+    @apply border-primary bg-primary text-white;
+  }
+
+  .dr-speak-btn-error {
+    @apply border-rose-300 bg-rose-50 text-rose-700;
+  }
+
+  .dr-speak-spinner {
+    @apply h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent;
+  }
+
+  .dr-speak-icon {
+    @apply text-current;
   }
 
   @media (max-width: 640px) {
@@ -3071,6 +3135,8 @@
   html {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
 
   body {
@@ -3079,9 +3145,149 @@
     color: var(--color-text);
     background-color: var(--color-surface);
     font-size: 15px;
+    overscroll-behavior-y: none;
   }
 
   #root {
     min-height: 100svh;
+    min-height: 100dvh;
+  }
+
+  :root {
+    --keyboard-inset: 0px;
+    --native-nav-height: 4.75rem;
+  }
+
+  a,
+  button,
+  [role='button'],
+  input,
+  select,
+  textarea {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-primary, #1b4332);
+    outline-offset: 2px;
+  }
+
+  .ds-input:focus-visible,
+  .ds-select:focus-visible,
+  .relationship-search-input:focus-visible,
+  .dr-voice-input:focus-visible {
+    outline: none;
+  }
+
+  .ds-form-field input,
+  .ds-form-field textarea,
+  .ds-form-field select {
+    scroll-margin-bottom: calc(6.5rem + env(safe-area-inset-bottom, 0px) + var(--keyboard-inset, 0px));
+  }
+}
+
+/* ── KC-016 Native mobile experience & product polish ── */
+@layer utilities {
+  .native-shell {
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+  }
+
+  .native-main {
+    padding-bottom: calc(5.25rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .native-bottom-nav {
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0px));
+  }
+
+  .native-nav-item {
+    @apply touch-manipulation;
+  }
+
+  .native-nav-item-active {
+    @apply shadow-sm;
+  }
+
+  .native-admin-main {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+  }
+
+  .native-page {
+    animation: campaign-fade-in 220ms ease-out;
+  }
+
+  .native-empty {
+    animation: campaign-fade-in 240ms ease-out;
+  }
+
+  .native-list-skeleton {
+    @apply space-y-2.5;
+  }
+
+  .native-list-skeleton-row {
+    @apply flex items-center gap-3 rounded-xl border border-border/50 bg-surface p-3;
+  }
+
+  .native-bulk-bar {
+    @apply sticky z-20 shadow-sm backdrop-blur-md;
+    bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .mc-kpi-link,
+  .mc-priority-link,
+  .mc-leader-name,
+  .acc-health-link,
+  .acc-queue-item,
+  .connected-action-grid a,
+  .connected-action-grid button,
+  .relationship-available-row,
+  .ri-priority-link {
+    @apply touch-manipulation transition-transform duration-150 active:scale-[0.985];
+  }
+
+  .ds-section,
+  .mc-panel,
+  .acc-health-card,
+  .connected-app-grid > li > * {
+    @apply transition-shadow duration-200;
+  }
+
+  .workflow-success-banner,
+  .ds-banner-success,
+  .ds-banner-error {
+    animation: campaign-fade-in 200ms ease-out;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .campaign-fade-in,
+  .native-page,
+  .native-empty,
+  .workflow-success-banner,
+  .ds-banner-success,
+  .ds-banner-error,
+  .campaign-count-up {
+    animation: none !important;
+  }
+
+  .dr-voice-wave-bar,
+  .dr-voice-mic.listening,
+  .dr-voice-mic.speaking,
+  .dr-voice-thinking-dot,
+  .dr-voice-speaking-orb,
+  .cd-pulse-ring,
+  .mc-rafeeq-breathe,
+  .dr-speak-spinner {
+    animation: none !important;
+  }
+
+  .mc-kpi-link,
+  .mc-priority-link,
+  .acc-queue-item,
+  .ri-priority-link,
+  button,
+  a {
+    transition: none !important;
   }
 }

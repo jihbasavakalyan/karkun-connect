@@ -43,8 +43,9 @@ export function InputField({
         aria-describedby={
           error ? `${id}-error` : helperText ? `${id}-helper` : undefined
         }
-        onChange={(event) => onValueChange(event.target.value)}
+        enterKeyHint="next"
         {...props}
+        onChange={(event) => onValueChange(event.target.value)}
       />
       {helperText && !error && (
         <p id={`${id}-helper`} className={FORM_HELPER_CLASS}>

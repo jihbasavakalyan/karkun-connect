@@ -11,7 +11,7 @@ export function PageShell({ children, variant = 'default', className = '' }: Pag
     variant === 'narrow' ? 'ds-page-narrow' : variant === 'wide' ? 'ds-page-wide' : ''
 
   return (
-    <div className={`ds-page campaign-fade-in ${variantClass} ${className}`.trim()}>
+    <div className={`ds-page campaign-fade-in native-page ${variantClass} ${className}`.trim()}>
       {children}
     </div>
   )

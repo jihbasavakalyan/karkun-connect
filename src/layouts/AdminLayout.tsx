@@ -41,7 +41,7 @@ export function AdminLayout() {
           alertCount={snapshot.alerts.length}
           onMenuToggle={() => setMobileNavOpen((value) => !value)}
         />
-        <main className="flex-1 overflow-y-auto px-3 py-3 lg:p-6">
+        <main className="native-admin-main flex-1 overflow-y-auto overscroll-y-contain px-3 py-3 lg:p-6">
           <Outlet />
         </main>
       </div>

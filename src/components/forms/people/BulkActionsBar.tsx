@@ -40,7 +40,7 @@ export function BulkActionsBar({
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-2 rounded-(--radius-card) border border-primary/20 bg-primary/5 p-3">
+    <div className="native-bulk-bar flex flex-wrap items-center gap-2 rounded-(--radius-card) border border-primary/20 bg-primary/5 p-3">
       <span className="text-sm font-medium text-text-heading">{selectedCount} selected</span>
       <SecondaryButton type="button" className="min-h-10 px-3 py-2 text-sm" onClick={onActivate}>
         Activate

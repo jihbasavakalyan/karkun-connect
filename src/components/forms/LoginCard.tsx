@@ -289,6 +289,7 @@ export function LoginCard() {
             type="text"
             inputMode="numeric"
             autoComplete="one-time-code"
+            enterKeyHint="done"
             placeholder="Enter 6-digit OTP"
             value={otp}
             onValueChange={setOtp}

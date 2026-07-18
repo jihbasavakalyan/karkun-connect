@@ -7,7 +7,7 @@ export const BUTTON_SIZE_CLASS: Record<ButtonSize, string> = {
 }
 
 export const BUTTON_BASE_CLASS =
-  'inline-flex items-center justify-center gap-2 font-semibold transition-all duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98]'
+  'inline-flex items-center justify-center gap-2 font-semibold touch-manipulation transition-all duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.97]'
 
 export function buttonLoadingSpinner(): string {
   return 'inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent'

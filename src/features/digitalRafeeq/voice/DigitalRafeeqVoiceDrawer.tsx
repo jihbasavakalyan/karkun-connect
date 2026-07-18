@@ -1,5 +1,5 @@
 /**
- * Digital Rafeeq voice/text assistant drawer (KC-007).
+ * Digital Rafeeq voice/text assistant drawer (KC-007 + KC-016 voice-ready UI).
  * Lazy-friendly conversational UI over live operational Q&A.
  */
 
@@ -21,6 +21,8 @@ import {
   answerOperationalQuery,
   type OpsAnswerAction,
 } from './opsAnswers'
+import { RafeeqSpeakButton } from './RafeeqSpeakButton'
+import { speakRafeeqText, stopLocalSpeech } from './speechPlayback'
 import { useSpeechRecognition, type VoiceStatus } from './useSpeechRecognition'
 
 export type VoiceAssistantRole = 'administrator' | 'rukn'
@@ -46,50 +48,6 @@ function statusLabel(status: VoiceStatus, thinking: boolean, speaking: boolean):
   if (status === 'unsupported') return 'آواز دستیاب نہیں — لکھیں'
   if (status === 'error') return 'آواز میں مسئلہ — لکھ کر پوچھیں'
   return 'آپ کا خصوصی معاون'
-}
-
-function pickUrduVoice(): SpeechSynthesisVoice | null {
-  if (typeof window === 'undefined' || !window.speechSynthesis) return null
-  const voices = window.speechSynthesis.getVoices()
-  return (
-    voices.find((voice) => /^ur(-|$)/i.test(voice.lang)) ??
-    voices.find((voice) => /urdu/i.test(voice.name)) ??
-    null
-  )
-}
-
-function speakText(
-  text: string,
-  onFallbackNotice?: (message: string) => void,
-): Promise<void> {
-  return new Promise((resolve) => {
-    if (typeof window === 'undefined' || !window.speechSynthesis) {
-      onFallbackNotice?.(
-        'اردو آواز اس آلے پر دستیاب نہیں۔ جواب متن میں دکھایا گیا ہے؛ اگر ضروری ہو تو انگریزی آواز استعمال ہو سکتی ہے۔',
-      )
-      resolve()
-      return
-    }
-    window.speechSynthesis.cancel()
-    const spoken = text.replace(/^السلام علیکم\s*/u, '').trim() || text
-    const utterance = new SpeechSynthesisUtterance(spoken)
-    utterance.rate = 1
-    const urduVoice = pickUrduVoice()
-    if (urduVoice) {
-      utterance.voice = urduVoice
-      utterance.lang = urduVoice.lang || 'ur-IN'
-    } else {
-      utterance.lang = 'ur-IN'
-      onFallbackNotice?.(
-        'اردو آواز اس براؤزر میں دستیاب نہیں۔ جواب اردو متن میں ہے؛ بولنے کے لیے انگریزی آواز استعمال ہو رہی ہے۔',
-      )
-      // Explicit English fallback only after notifying — never silent.
-      utterance.lang = 'en-IN'
-    }
-    utterance.onend = () => resolve()
-    utterance.onerror = () => resolve()
-    window.speechSynthesis.speak(utterance)
-  })
 }
 
 function VoiceStageFeedback({
@@ -190,7 +148,11 @@ export function DigitalRafeeqVoiceDrawer({
     ])
 
     setSpeaking(true)
-    await speakText(answer.text, (message) => setVoiceNotice(message))
+    try {
+      await speakRafeeqText(answer.text, (message) => setVoiceNotice(message))
+    } catch {
+      setVoiceNotice('آڈیو چلانے میں مسئلہ ہوا۔ اسپیکر بٹن سے دوبارہ سنیں۔')
+    }
     setSpeaking(false)
   }
 
@@ -211,6 +173,13 @@ export function DigitalRafeeqVoiceDrawer({
   }, [open, onClose])
 
   useEffect(() => {
+    if (!open) {
+      stopLocalSpeech()
+      setSpeaking(false)
+    }
+  }, [open])
+
+  useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' })
   }, [messages, thinking])
 
@@ -225,7 +194,7 @@ export function DigitalRafeeqVoiceDrawer({
 
   return (
     <div className="dr-voice-overlay" role="presentation" onClick={onClose}>
-        <aside
+      <aside
         className="dr-voice-drawer urdu-text"
         role="dialog"
         aria-modal="true"
@@ -239,9 +208,7 @@ export function DigitalRafeeqVoiceDrawer({
             <h2 id={titleId} className="dr-voice-title">
               Digital Rafeeq
             </h2>
-            <p className="dr-voice-status">
-              {statusLabel(speech.status, thinking, speaking)}
-            </p>
+            <p className="dr-voice-status">{statusLabel(speech.status, thinking, speaking)}</p>
           </div>
           <button type="button" className="dr-voice-close" aria-label="Close assistant" onClick={onClose}>
             <Icon name="x" size="sm" />
@@ -267,7 +234,19 @@ export function DigitalRafeeqVoiceDrawer({
                 message.role === 'user' ? 'dr-voice-bubble dr-voice-bubble-user' : 'dr-voice-bubble'
               }
             >
-              <p>{message.text}</p>
+              <div className="dr-voice-bubble-row">
+                <p className="dr-voice-bubble-text">{message.text}</p>
+                {message.role === 'assistant' ? (
+                  <RafeeqSpeakButton
+                    text={message.text}
+                    onNotice={(notice) => setVoiceNotice(notice)}
+                    onStateChange={(state) => {
+                      if (state === 'playing') setSpeaking(true)
+                      if (state === 'idle' || state === 'error') setSpeaking(false)
+                    }}
+                  />
+                ) : null}
+              </div>
               {message.actions && message.actions.length > 0 && (
                 <div className="dr-voice-actions">
                   {message.actions.map((action) => (
@@ -331,6 +310,8 @@ export function DigitalRafeeqVoiceDrawer({
               className="dr-voice-input"
               aria-label="ڈیجیٹل رفیق سے پوچھیں"
               dir="auto"
+              enterKeyHint="send"
+              autoComplete="off"
             />
             <PrimaryButton type="submit" disabled={!input.trim() || thinking}>
               بھیجیں
