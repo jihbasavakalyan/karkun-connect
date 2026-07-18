@@ -17,9 +17,14 @@ import { getGuidanceForRuknKarkuns } from '@/lib/guidance/guidanceEngine'
 export function MyKarkunPage() {
   const { user } = useAuth()
   const ruknId = useRequiredRuknId()
-  const { getAssignedKarkunanForRukn } = useAssignmentEngine()
-  const myKarkunan = getAssignedKarkunanForRukn(ruknId ?? '')
+  const { assignmentVersion, getAssignedKarkunanForRukn } = useAssignmentEngine()
   const [query, setQuery] = useState('')
+
+  // Canonical connected set — re-read when assignments OR people registry change.
+  const myKarkunan = useMemo(
+    () => getAssignedKarkunanForRukn(ruknId ?? ''),
+    [assignmentVersion, getAssignedKarkunanForRukn, ruknId],
+  )
 
   const sortedKarkuns = useMemo(() => {
     if (!ruknId) return []

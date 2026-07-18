@@ -1,6 +1,7 @@
 import type { AssignmentRecord, AssignmentStatus } from '@/types/assignment'
 import { getRepositories } from '@/repositories/provider'
 import { unwrapRepository } from '@/repositories/errors'
+import { canonicalizeConnectionRecords } from '@/lib/connections/canonicalizeConnectionRecords'
 import {
   createIncidentOperationId,
   markRepositoryReadiness,
@@ -51,7 +52,17 @@ function loadPersistedAssignmentState(): {
     })
   }
 
-  return unwrapRepository(result, { assignments: [], nextSequence: 1 })
+  const loaded = unwrapRepository(result, { assignments: [], nextSequence: 1 })
+  const { records, duplicates } = canonicalizeConnectionRecords(loaded.assignments)
+  if (duplicates.length > 0) {
+    console.warn('[KC-028A] connection duplicates canonicalized on store load', duplicates)
+    // Persist cleaned set so Firestore/local orphans are pruned on next save.
+    getRepositories().connection.saveState({
+      assignments: records,
+      nextSequence: loaded.nextSequence,
+    })
+  }
+  return { assignments: records, nextSequence: loaded.nextSequence }
 }
 
 function persistAssignmentState(records: AssignmentRecord[], nextSequence: number): void {
@@ -178,6 +189,20 @@ export function getAssignmentHistoryForKarkun(karkunId: string): AssignmentRecor
 }
 
 export function appendAssignment(record: AssignmentRecord): AssignmentRecord {
+  if (assignments.some((item) => item.assignmentId === record.assignmentId)) {
+    throw new Error(`Duplicate connection id ${record.assignmentId}`)
+  }
+  if (
+    record.assignmentNumber &&
+    assignments.some(
+      (item) =>
+        item.assignmentNumber.trim().toUpperCase() ===
+        record.assignmentNumber.trim().toUpperCase(),
+    )
+  ) {
+    throw new Error(`Duplicate connection number ${record.assignmentNumber}`)
+  }
+
   // ONE KARKUN = ONE ACTIVE RUKN — last-line store defense
   if (record.status === 'Active') {
     const existingActive = assignments.find(

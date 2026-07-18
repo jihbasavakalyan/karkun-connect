@@ -59,6 +59,7 @@ import {
   traceRepositorySnapshot,
   traceSequencedIncidentStage,
 } from '@/lib/incidentTraceCollector'
+import { canonicalizeConnectionRecords } from '@/lib/connections/canonicalizeConnectionRecords'
 
 function deriveNextSequenceFromRecords(records: AssignmentRecord[]): number {
   let max = 0
@@ -174,19 +175,28 @@ async function hydrateFirestoreCachesOnce(): Promise<void> {
       nextKarkunNum: karkunCounter?.nextKarkunNum ?? 1,
     })
 
-    const derivedSequence = deriveNextSequenceFromRecords(assignments)
+    const { records: canonicalAssignments, duplicates: connectionDuplicates } =
+      canonicalizeConnectionRecords(assignments)
+    if (connectionDuplicates.length > 0) {
+      console.warn(
+        '[KC-028A] connection duplicates detected at Firestore hydrate (first layer)',
+        connectionDuplicates,
+      )
+    }
+    const derivedSequence = deriveNextSequenceFromRecords(canonicalAssignments)
     connectionCache.set({
-      assignments,
+      assignments: canonicalAssignments,
       nextSequence: Math.max(connectionMeta?.nextSequence ?? 1, derivedSequence),
     })
     traceSequencedIncidentStage('repository_cache_update_complete', {
-      connectionCount: assignments.length,
-      assignmentCount: assignments.length,
+      connectionCount: canonicalAssignments.length,
+      assignmentCount: canonicalAssignments.length,
       sourceOfTruth: 'Firestore',
+      duplicatesCanonicalized: connectionDuplicates.length,
     })
     markRepositoryReadiness(
       'connection_repository',
-      assignments.length > 0 ? 'LOADED' : 'LOADED_EMPTY',
+      canonicalAssignments.length > 0 ? 'LOADED' : 'LOADED_EMPTY',
       {
         caller: 'hydrateFirestoreCachesOnce',
         sourceOfTruth: 'Firestore',
@@ -194,7 +204,7 @@ async function hydrateFirestoreCachesOnce(): Promise<void> {
     )
     markRepositoryReadiness(
       'assignment_repository',
-      assignments.length > 0 ? 'LOADED' : 'LOADED_EMPTY',
+      canonicalAssignments.length > 0 ? 'LOADED' : 'LOADED_EMPTY',
       {
         caller: 'hydrateFirestoreCachesOnce',
         sourceOfTruth: 'Firestore',
@@ -203,8 +213,8 @@ async function hydrateFirestoreCachesOnce(): Promise<void> {
     traceRepositorySnapshot('connection_repository', {
       caller: 'hydrateFirestoreCachesOnce',
       sourceOfTruth: 'Firestore',
-      connectionCount: assignments.length,
-      assignmentCount: assignments.length,
+      connectionCount: canonicalAssignments.length,
+      assignmentCount: canonicalAssignments.length,
       nextSequence: Math.max(connectionMeta?.nextSequence ?? 1, derivedSequence),
     })
 
@@ -558,8 +568,19 @@ export class ConnectionFirestoreRepository implements ConnectionRepository {
     void queueWrite('connections', async () => {
       const db = getFirestoreDb()
       const batch = createBatch(db)
+      const existing = await readCollection<AssignmentRecord>(db, FIRESTORE_COLLECTIONS.connections)
+      const keepIds = new Set(state.assignments.map((record) => record.assignmentId))
+      // KC-028A: prune orphan connection docs so hydrate cannot reintroduce duplicates.
+      for (const assignment of existing) {
+        if (!keepIds.has(assignment.assignmentId)) {
+          batch.delete(doc(db, FIRESTORE_COLLECTIONS.connections, assignment.assignmentId))
+        }
+      }
       for (const assignment of state.assignments) {
-        batch.set(doc(db, FIRESTORE_COLLECTIONS.connections, assignment.assignmentId), sanitizeForFirestore(assignment))
+        batch.set(
+          doc(db, FIRESTORE_COLLECTIONS.connections, assignment.assignmentId),
+          sanitizeForFirestore(assignment),
+        )
       }
       batch.set(doc(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.connectionMeta), sanitizeForFirestore({
         nextSequence: state.nextSequence,
