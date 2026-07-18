@@ -4,14 +4,7 @@ import { getUpcomingCommitmentsForRukn } from '@/services/guidanceService'
 import type { MorningBrief } from '@/types/guidance'
 
 function greetingForHour(): string {
-  const hour = new Date().getHours()
-  if (hour < 12) {
-    return 'السلام علیکم — صبح بخیر'
-  }
-  if (hour < 17) {
-    return 'السلام علیکم — دن بخیر'
-  }
-  return 'السلام علیکم — شام بخیر'
+  return 'السلام علیکم'
 }
 
 export function buildMorningBrief(ruknId: string): MorningBrief {

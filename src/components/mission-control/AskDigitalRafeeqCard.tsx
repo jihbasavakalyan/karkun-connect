@@ -54,9 +54,11 @@ export function AskDigitalRafeeqCard({
             {guidanceLine ?? RAFEEQ_SUBTITLE}
           </p>
         </div>
-        <PrimaryButton type="button" className="mc-ask-rafeeq-cta" onClick={onOpen}>
-          بات کریں
-        </PrimaryButton>
+        <div className="mc-ask-rafeeq-actions">
+          <PrimaryButton type="button" className="mc-ask-rafeeq-cta" onClick={onOpen}>
+            بات کریں
+          </PrimaryButton>
+        </div>
       </section>
     )
   }

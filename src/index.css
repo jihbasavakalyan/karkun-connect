@@ -377,11 +377,26 @@
   }
 
   .mc-page-onescreen .mc-ask-rafeeq-guidance {
-    @apply mt-0.5 line-clamp-2 text-xs leading-snug;
+    @apply mt-1 text-base;
+    line-height: 2.15;
+    -webkit-line-clamp: unset;
+    overflow: visible;
+  }
+
+  .mc-page-onescreen .mc-ask-rafeeq-compact {
+    @apply gap-3 p-4;
+  }
+
+  .mc-page-onescreen .mc-ask-rafeeq-compact .mc-ask-rafeeq-status {
+    @apply text-base;
+    font-size: 1.125rem;
+    line-height: 2.2;
+    -webkit-line-clamp: unset;
+    overflow: visible;
   }
 
   .mc-page-onescreen .mc-ask-rafeeq-cta {
-    @apply min-h-9 px-3 py-1.5 text-sm;
+    @apply min-h-11 px-4 py-2.5 text-sm;
   }
 
   .mc-page-onescreen .mc-hero-rukn-compact {
@@ -1905,7 +1920,10 @@
   }
 
   .mc-hero-greeting {
-    @apply text-sm font-medium text-primary;
+    @apply text-lg font-medium text-primary;
+    font-family: var(--font-urdu);
+    line-height: 2.1;
+    text-align: right;
   }
 
   .mc-hero-top {
@@ -2068,8 +2086,15 @@
   }
 
   .mc-ask-rafeeq-compact {
-    @apply flex-row items-center gap-3 rounded-2xl px-3 py-2.5;
+    @apply flex flex-col gap-3 rounded-2xl p-4;
     box-shadow: 0 1px 2px rgb(27 67 50 / 0.05);
+    overflow: hidden;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .mc-ask-rafeeq-compact .mc-ask-rafeeq-copy {
+    @apply flex min-w-0 flex-1 flex-col justify-center gap-1.5;
   }
 
   .mc-ask-rafeeq-compact .mc-ask-rafeeq-eyebrow {
@@ -2077,11 +2102,25 @@
   }
 
   .mc-ask-rafeeq-compact .mc-ask-rafeeq-status {
-    @apply mt-0 line-clamp-2 text-xs;
+    @apply m-0 text-base text-text-heading;
+    font-family: var(--font-urdu);
+    font-size: 1.125rem;
+    line-height: 2.2;
+    text-align: right;
+    overflow: visible;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    white-space: normal;
+    -webkit-line-clamp: unset;
+    display: block;
+  }
+
+  .mc-ask-rafeeq-actions {
+    @apply flex w-full shrink-0 justify-stretch;
   }
 
   .mc-ask-rafeeq-compact .mc-ask-rafeeq-cta {
-    @apply min-h-9 px-3 py-1.5 text-sm;
+    @apply min-h-11 w-full px-4 py-2.5 text-sm;
   }
 
   .mc-ask-rafeeq-orb {
@@ -2118,7 +2157,12 @@
   }
 
   .mc-ask-rafeeq-status {
-    @apply mt-1 text-sm text-secondary;
+    @apply mt-1 text-base text-text-heading;
+    font-family: var(--font-urdu);
+    line-height: 2.15;
+    text-align: right;
+    overflow-wrap: anywhere;
+    word-break: break-word;
   }
 
   .mc-ask-rafeeq-cta {

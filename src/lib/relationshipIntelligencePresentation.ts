@@ -369,7 +369,7 @@ export function buildRafeeqPriorityWhyUrdu(guidance: KarkunGuidance): string {
     return `مناسب ہوگا کہ اس ہفتے ${name} صاحب سے دوبارہ ملاقات کی جائے — ${days} دن سے رابطہ نہیں ہوا۔`
   }
   if (/First follow-up/.test(why)) {
-    return `اب ${name} صاحب سے اگلے رابطے کا وقت موزوں ہے۔`
+    return `${name} صاحب آپ کی پہلی ملاقات کے منتظر ہیں۔ آج ہی ان سے رابطہ کریں۔`
   }
   if (/Ijtema invitation/.test(why)) {
     return `اگر مناسب سمجھیں تو ${name} صاحب کو اگلے اجتماع کی دعوت دینا مفید ہو سکتا ہے۔`

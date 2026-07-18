@@ -60,11 +60,19 @@ export function buildContextualRafeeqGuidance(ruknId: string): string {
     return 'ابھی کوئی کارکن مربوط نہیں۔ جب آپ تیار ہوں تو کسی قریبی کارکن سے رابطہ شروع کیجیے — میں آپ کے ساتھ رہوں گا۔'
   }
 
-  const name = respectName(top.karkunName)
+  const name = top.karkunName.trim() || 'کارکن'
   const plan = getActivePlanForKarkun(top.karkunId)
 
+  // Default first-follow-up home message (KC-018.2) — English name stays as stored.
+  if (
+    !plan?.summaryUrdu &&
+    (top.currentStage === 'connected' || top.currentStage === 'first-meeting')
+  ) {
+    return `${name} صاحب آپ کی پہلی ملاقات کے منتظر ہیں۔ آج ہی ان سے رابطہ کریں۔`
+  }
+
   if (plan?.summaryUrdu) {
-    return `آج سب سے پہلے ${name} سے رابطہ موزوں لگتا ہے — آپ کا لائحۂ عمل بھی اسی طرف ہے: ${plan.summaryUrdu}`
+    return `آج سب سے پہلے ${respectName(name)} سے رابطہ موزوں لگتا ہے — آپ کا لائحۂ عمل بھی اسی طرف ہے: ${plan.summaryUrdu}`
   }
 
   return buildRafeeqPriorityWhyUrdu(top)
