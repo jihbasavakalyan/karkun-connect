@@ -3,6 +3,7 @@ import { AuthContext } from '@/context/AuthContext'
 import { refreshFirestoreAfterAuth } from '@/repositories/firestore/initialize'
 import { clearAuthSession, loadAuthSession, saveAuthSession } from '@/lib/authSession'
 import { authenticationService } from '@/services/authenticationService'
+import { bindUserPreferences } from '@/stores/userPreferencesStore'
 import type {
   AuthContextValue,
   AuthStatus,
@@ -29,6 +30,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [status, setStatus] = useState<AuthStatus>(() =>
     authenticationService.isConfigured() ? 'initializing' : 'unauthenticated',
   )
+
+  useEffect(() => {
+    bindUserPreferences(user?.uid)
+    if (user && typeof sessionStorage !== 'undefined') {
+      sessionStorage.setItem('karkun-connect.last-login', new Date().toLocaleString())
+    }
+  }, [user])
 
   useEffect(() => {
     if (!authenticationService.isConfigured()) {

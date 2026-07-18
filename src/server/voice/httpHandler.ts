@@ -34,6 +34,13 @@ function readText(body: unknown): string {
   return ''
 }
 
+function readSpeakingRate(body: unknown): number | undefined {
+  if (!body || typeof body !== 'object' || !('speakingRate' in body)) return undefined
+  const value = (body as { speakingRate?: unknown }).speakingRate
+  if (typeof value !== 'number' || !Number.isFinite(value)) return undefined
+  return Math.min(1.5, Math.max(0.5, value))
+}
+
 export async function handleTtsRequest(request: TtsHttpRequest): Promise<TtsHttpResult> {
   const method = (request.method ?? 'GET').toUpperCase()
   if (method === 'OPTIONS') {
@@ -72,7 +79,10 @@ export async function handleTtsRequest(request: TtsHttpRequest): Promise<TtsHttp
   }
 
   try {
-    const result = await getVoiceService().generateSpeech({ text })
+    const result = await getVoiceService().generateSpeech({
+      text,
+      speakingRate: readSpeakingRate(request.body),
+    })
     return {
       status: 200,
       headers: {

@@ -1,10 +1,12 @@
 /**
- * KC-019 — Browser client for Digital Rafeeq cloud TTS.
+ * KC-019 / KC-026 — Browser client for Digital Rafeeq cloud TTS.
  * Talks only to /api/tts — never to Google Cloud directly.
+ * Respects Rafeeq preferences (voice on/off, speed). Autoplay stays gesture-driven.
  */
 
 import { TTS_ERROR_MESSAGE_URDU } from './ttsMessages'
 import type { SpeakPlaybackAdapter } from './speechPlayback'
+import { getUserPreferences } from '@/stores/userPreferencesStore'
 
 type CloudSpeakController = {
   abort: AbortController | null
@@ -40,6 +42,13 @@ export function isCloudSpeechAvailable(): boolean {
   return typeof window !== 'undefined' && typeof Audio !== 'undefined' && typeof fetch === 'function'
 }
 
+function speakingRateFromPreferences(): number {
+  const speed = getUserPreferences().rafeeq.voiceSpeed
+  if (speed === 'slow') return 0.85
+  if (speed === 'fast') return 1.1
+  return 0.95
+}
+
 export async function speakRafeeqCloudText(text: string): Promise<void> {
   const trimmed = text.trim()
   if (!trimmed) {
@@ -49,6 +58,14 @@ export async function speakRafeeqCloudText(text: string): Promise<void> {
     throw new Error('speech-unavailable')
   }
 
+  const prefs = getUserPreferences().rafeeq
+  if (!prefs.voiceResponses) {
+    const error = new Error('voice-disabled')
+    ;(error as Error & { userMessage?: string }).userMessage =
+      'آواز بند ہے۔ اسے سیٹنگز میں آن کیا جا سکتا ہے۔'
+    throw error
+  }
+
   stopCloudSpeech()
   const abort = new AbortController()
   controller.abort = abort
@@ -56,7 +73,10 @@ export async function speakRafeeqCloudText(text: string): Promise<void> {
   const response = await fetch('/api/tts', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text: trimmed }),
+    body: JSON.stringify({
+      text: trimmed,
+      speakingRate: speakingRateFromPreferences(),
+    }),
     signal: abort.signal,
   })
 

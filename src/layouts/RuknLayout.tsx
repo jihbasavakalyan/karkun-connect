@@ -32,7 +32,7 @@ export function RuknLayout() {
         <div className="enterprise-gradient-hero px-3 py-2 text-white lg:px-4">
           <div className="mx-auto flex max-w-5xl items-center justify-between gap-3">
             <Logo size="sm" variant="light" />
-            <PortalAuthActions portalLabel="Rukn Portal" />
+            <PortalAuthActions portalLabel="Rukn Portal" tone="on-dark" />
           </div>
           <div className="mx-auto max-w-5xl">
             <div className="mt-1.5 flex flex-wrap items-center gap-2">

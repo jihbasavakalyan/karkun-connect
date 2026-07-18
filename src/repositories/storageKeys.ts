@@ -18,5 +18,6 @@ export const STORAGE_KEYS = {
   broadcastLists: 'karkun-connect.broadcast-lists',
   migrationBackups: 'karkun-connect.migration.backups',
   karkunRequests: 'karkun-connect.karkun-requests',
+  userPreferences: 'karkun-connect.user-preferences',
   migrationBackup: (id: string) => `karkun-connect.migration.backup.${id}`,
 } as const

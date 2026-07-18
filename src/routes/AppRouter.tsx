@@ -24,6 +24,7 @@ import { RuknHomePage } from '@/pages/rukn/RuknHomePage'
 import { AvailableKarkunPage } from '@/pages/rukn/AvailableKarkunPage'
 import { MyKarkunPage } from '@/pages/rukn/MyKarkunPage'
 import { ConnectionJourneyPage } from '@/pages/rukn/ConnectionJourneyPage'
+import { RuknSettingsPage } from '@/pages/rukn/RuknSettingsPage'
 import { LandingPage } from '@/pages/shared/LandingPage'
 import { GuestRoute, ProtectedRoute } from '@/routes/ProtectedRoute'
 
@@ -100,6 +101,7 @@ export function AppRouter() {
           <Route path="my-karkun" element={<MyKarkunPage />} />
           <Route path="visit/:karkunId" element={<ConnectionJourneyPage />} />
           <Route path="campaign-record" element={<CampaignRecordPage />} />
+          <Route path="settings" element={<RuknSettingsPage />} />
           <Route path="reports" element={<Navigate to={ROUTES.RUKN_CAMPAIGN_RECORD} replace />} />
           <Route path="tasks" element={<Navigate to={ROUTES.RUKN} replace />} />
           <Route path="visits" element={<Navigate to={ROUTES.RUKN_MY_KARKUN} replace />} />

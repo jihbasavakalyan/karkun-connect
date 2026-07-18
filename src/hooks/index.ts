@@ -1,4 +1,5 @@
 export { useAuth } from './useAuth'
+export { useUserPreferences } from './useUserPreferences'
 export { useAnnexure1Form } from './useAnnexure1Form'
 export { useAssignmentEngine } from './useAssignmentEngine'
 export { useCampaignSetupWizard } from './useCampaignSetupWizard'

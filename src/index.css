@@ -43,6 +43,30 @@
   --shadow-glass: 0 8px 32px -12px rgb(20 83 45 / 0.22);
 }
 
+/* KC-026 — Appearance themes (calm dark support) */
+html[data-theme='dark'] {
+  color-scheme: dark;
+  --color-primary: #52b788;
+  --color-primary-hover: #74c69d;
+  --color-primary-light: #95d5b2;
+  --color-primary-muted: #1b4332;
+  --color-secondary: #94a3b8;
+  --color-secondary-light: #64748b;
+  --color-surface: #0f172a;
+  --color-surface-muted: #111827;
+  --color-border: #334155;
+  --color-text: #e2e8f0;
+  --color-text-heading: #f8fafc;
+  --color-error: #fca5a5;
+  --color-error-bg: #450a0a;
+  --color-error-border: #7f1d1d;
+  --color-accent-soft: #3f3a1f;
+  --color-info-soft: #1e3a5f;
+  --color-warning-soft: #3f2e12;
+  --gradient-warm-bg: linear-gradient(180deg, #0f172a 0%, #111827 100%);
+  --gradient-card: linear-gradient(180deg, rgb(15 23 42 / 0.98) 0%, rgb(17 24 39 / 0.98) 100%);
+}
+
 @layer utilities {
   .enterprise-card {
     @apply rounded-xl border border-border/80 bg-surface shadow-card transition-all duration-200;

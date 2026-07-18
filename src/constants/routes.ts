@@ -23,6 +23,7 @@ export const ROUTES = {
   RUKN_AVAILABLE_KARKUN: '/rukn/available-karkun',
   RUKN_MY_KARKUN: '/rukn/my-karkun',
   RUKN_CAMPAIGN_RECORD: '/rukn/campaign-record',
+  RUKN_SETTINGS: '/rukn/settings',
 } as const
 
 export type AppRoute = (typeof ROUTES)[keyof typeof ROUTES]
