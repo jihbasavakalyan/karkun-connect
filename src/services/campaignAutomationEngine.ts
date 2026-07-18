@@ -9,7 +9,10 @@ import {
   ROUTES,
   ruknVisitPath,
 } from '@/constants/routes'
-import { getConnectedAssignmentsForRukn } from '@/lib/connections/getConnectedKarkunsForRukn'
+import {
+  getCanonicalConnectedAssignments,
+  getConnectedAssignmentsForRukn,
+} from '@/lib/connections/getConnectedKarkunsForRukn'
 import {
   buildRuknExecutionSummary,
   getExecutionDashboardData,
@@ -99,11 +102,10 @@ function filterByRukn<T extends { ruknId: string }>(items: T[], ruknId?: string)
 }
 
 function getAssignedKarkunIds(ruknId?: string): Set<string> {
-  return new Set(
-    getAllAssignments()
-      .filter((record) => record.status === 'Active' && (!ruknId || record.ruknId === ruknId))
-      .map((record) => record.karkunId),
-  )
+  const records = ruknId
+    ? getConnectedAssignmentsForRukn(ruknId)
+    : getCanonicalConnectedAssignments()
+  return new Set(records.map((record) => record.karkunId))
 }
 
 type ActionableComplianceItem = {
@@ -377,10 +379,11 @@ export function buildFollowUpQueue(ruknId?: string): FollowUpQueueGroup[] {
 }
 
 export function buildCallQueue(ruknId?: string): CallQueueItem[] {
-  const activeAssignments = getAllAssignments().filter((record) => record.status === 'Active')
-  const scoped = ruknId
-    ? activeAssignments.filter((record) => record.ruknId === ruknId)
-    : activeAssignments
+  // KC-028B: same canonical Active + !archived + unique karkun set as Dashboard Connected.
+  const activeAssignments = ruknId
+    ? getConnectedAssignmentsForRukn(ruknId)
+    : getCanonicalConnectedAssignments()
+  const scoped = activeAssignments
 
   return scoped
     .filter((assignment) => {
@@ -418,8 +421,8 @@ export function buildReminders(ruknId?: string): ReminderItem[] {
     ? getTodaysMeetingAssignments().filter((item) => item.assignment.ruknId === ruknId)
     : getTodaysMeetingAssignments()
   const newAssignments = (ruknId
-    ? getAllAssignments().filter((record) => record.status === 'Active' && record.ruknId === ruknId)
-    : getAllAssignments().filter((record) => record.status === 'Active')
+    ? getConnectedAssignmentsForRukn(ruknId)
+    : getCanonicalConnectedAssignments()
   ).filter((assignment) => getExecutionStatusForAssignment(assignment.assignmentId, assignment.karkunId) === 'Pending')
 
   if (ijtema.absent > 0 || getAllIjtemaAttendanceSummaries().some((item) => item.status === 'Not recorded')) {
@@ -653,10 +656,13 @@ export function buildAlerts(ruknId?: string, parts?: SharedCommandParts): Automa
     })
   }
 
-  const inactiveAssigned = getAllAssignments()
-    .filter((record) => record.status === 'Active')
-    .filter((record) => !ruknId || record.ruknId === ruknId)
-    .filter((record) => getKarkunById(record.karkunId)?.status === 'inactive')
+  const scopedConnected = ruknId
+    ? getConnectedAssignmentsForRukn(ruknId)
+    : getCanonicalConnectedAssignments()
+
+  const inactiveAssigned = scopedConnected.filter(
+    (record) => getKarkunById(record.karkunId)?.status === 'inactive',
+  )
 
   if (inactiveAssigned.length > 0) {
     alerts.push({
@@ -668,13 +674,10 @@ export function buildAlerts(ruknId?: string, parts?: SharedCommandParts): Automa
     })
   }
 
-  const uncontacted = getAllAssignments()
-    .filter((record) => record.status === 'Active')
-    .filter((record) => !ruknId || record.ruknId === ruknId)
-    .filter(
-      (record) =>
-        getExecutionStatusForAssignment(record.assignmentId, record.karkunId) === 'Pending',
-    )
+  const uncontacted = scopedConnected.filter(
+    (record) =>
+      getExecutionStatusForAssignment(record.assignmentId, record.karkunId) === 'Pending',
+  )
 
   if (uncontacted.length > 0) {
     alerts.push({
@@ -779,10 +782,10 @@ function buildRuknNextAction(ruknId: string, parts?: SharedCommandParts): NextRe
     }
   }
 
-  const pendingAssignment = getAllAssignments().find(
+  const connectedForRukn = getConnectedAssignmentsForRukn(ruknId)
+
+  const pendingAssignment = connectedForRukn.find(
     (record) =>
-      record.status === 'Active' &&
-      record.ruknId === ruknId &&
       getExecutionStatusForAssignment(record.assignmentId, record.karkunId) === 'Pending',
   )
 
@@ -797,10 +800,8 @@ function buildRuknNextAction(ruknId: string, parts?: SharedCommandParts): NextRe
     }
   }
 
-  const inProgress = getAllAssignments().find(
+  const inProgress = connectedForRukn.find(
     (record) =>
-      record.status === 'Active' &&
-      record.ruknId === ruknId &&
       getExecutionStatusForAssignment(record.assignmentId, record.karkunId) === 'In Progress',
   )
 
@@ -814,12 +815,10 @@ function buildRuknNextAction(ruknId: string, parts?: SharedCommandParts): NextRe
     }
   }
 
-  const followUpRequired = getAllAssignments().find(
+  const followUpRequired = connectedForRukn.find(
     (record) =>
-      record.status === 'Active' &&
-      record.ruknId === ruknId &&
       getExecutionStatusForAssignment(record.assignmentId, record.karkunId) ===
-        'Follow-up Required',
+      'Follow-up Required',
   )
 
   if (followUpRequired) {
@@ -855,9 +854,7 @@ function buildRuknNextAction(ruknId: string, parts?: SharedCommandParts): NextRe
 function buildRuknCompletedToday(ruknId: string) {
   const today = todayIsoDate()
   const assignedIds = new Set(
-    getAllAssignments()
-      .filter((record) => record.status === 'Active' && record.ruknId === ruknId)
-      .map((record) => record.assignmentId),
+    getConnectedAssignmentsForRukn(ruknId).map((record) => record.assignmentId),
   )
 
   return getSubmittedMeetingForms()
