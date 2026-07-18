@@ -1,6 +1,6 @@
 /**
- * Digital Rafeeq voice/text assistant drawer (KC-007 + KC-016 voice-ready UI).
- * Lazy-friendly conversational UI over live operational Q&A.
+ * Digital Rafeeq voice conversation drawer (KC-027).
+ * Mic → Google STT → existing intelligence → Google TTS (spoken reply).
  */
 
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
@@ -11,6 +11,7 @@ import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import { getDigitalRafeeqService } from '@/runtime/service'
 import { useCampaignAutomationEngine } from '@/hooks/useCampaignAutomationEngine'
 import { useRequiredRuknId } from '@/hooks/useRequiredRuknId'
+import { useUserPreferences } from '@/hooks/useUserPreferences'
 import type {
   AdminCommandCenterSnapshot,
   RuknCommandCenterSnapshot,
@@ -24,7 +25,12 @@ import {
 import { RafeeqSpeakButton } from './RafeeqSpeakButton'
 import { stopCloudSpeech } from './cloudSpeechPlayback'
 import { stopLocalSpeech } from './speechPlayback'
-import { useSpeechRecognition, type VoiceStatus } from './useSpeechRecognition'
+import {
+  createVoiceConversationService,
+  type ConversationPhase,
+  type VoiceConversationService,
+  type VoiceConversationTurn,
+} from './VoiceConversationService'
 
 export type VoiceAssistantRole = 'administrator' | 'rukn'
 
@@ -41,45 +47,54 @@ type DigitalRafeeqVoiceDrawerProps = {
   onClose: () => void
 }
 
-function statusLabel(status: VoiceStatus, thinking: boolean, speaking: boolean): string {
-  if (thinking) return 'سوچ رہے ہیں…'
-  if (speaking) return 'بول رہے ہیں…'
-  if (status === 'listening') return 'سن رہے ہیں…'
-  if (status === 'denied') return 'مائیک بند ہے'
-  if (status === 'unsupported') return 'آواز دستیاب نہیں — لکھیں'
-  if (status === 'error') return 'آواز میں مسئلہ — لکھ کر پوچھیں'
+function phaseLabel(phase: ConversationPhase): string {
+  if (phase === 'listening') return 'سن رہے ہیں…'
+  if (phase === 'thinking') return 'سوچ رہے ہیں…'
+  if (phase === 'speaking') return 'بول رہے ہیں…'
+  if (phase === 'ready') return 'تیار'
+  if (phase === 'error') return 'دوبارہ کوشش کریں'
   return 'آپ کا خصوصی معاون'
 }
 
-function VoiceStageFeedback({
-  listening,
-  thinking,
-  speaking,
-}: {
-  listening: boolean
-  thinking: boolean
-  speaking: boolean
-}) {
-  if (!listening && !thinking && !speaking) return null
+function VoiceStageFeedback({ phase }: { phase: ConversationPhase }) {
+  if (phase === 'idle' || phase === 'ready' || phase === 'error') return null
 
   return (
     <div className="dr-voice-stage" aria-hidden="true">
-      {listening ? (
+      {phase === 'listening' ? (
         <div className="dr-voice-waveform">
           {Array.from({ length: 7 }).map((_, index) => (
             <span key={index} className="dr-voice-wave-bar" />
           ))}
         </div>
       ) : null}
-      {thinking ? (
+      {phase === 'thinking' ? (
         <p className="dr-voice-thinking">
           <span className="dr-voice-thinking-dot" />
           سوچ رہے ہیں…
         </p>
       ) : null}
-      {speaking ? <div className="dr-voice-speaking-orb" /> : null}
+      {phase === 'speaking' ? <div className="dr-voice-speaking-orb" /> : null}
     </div>
   )
+}
+
+function turnsToMessages(turns: VoiceConversationTurn[]): ChatMessage[] {
+  const messages: ChatMessage[] = []
+  for (const turn of turns) {
+    messages.push({
+      id: `${turn.id}-u`,
+      role: 'user',
+      text: turn.userSpeechRecognized,
+    })
+    messages.push({
+      id: `${turn.id}-a`,
+      role: 'assistant',
+      text: turn.rafeeqResponse,
+      actions: turn.actions,
+    })
+  }
+  return messages
 }
 
 export function DigitalRafeeqVoiceDrawer({
@@ -89,12 +104,18 @@ export function DigitalRafeeqVoiceDrawer({
 }: DigitalRafeeqVoiceDrawerProps) {
   const titleId = useId()
   const listRef = useRef<HTMLDivElement>(null)
+  const serviceRef = useRef<VoiceConversationService | null>(null)
+  if (!serviceRef.current) serviceRef.current = createVoiceConversationService()
+  const conversation = serviceRef.current
+
+  const [phase, setPhase] = useState<ConversationPhase>('idle')
   const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [interimText, setInterimText] = useState('')
   const [input, setInput] = useState('')
-  const [thinking, setThinking] = useState(false)
-  const [speaking, setSpeaking] = useState(false)
   const [voiceNotice, setVoiceNotice] = useState('')
+  const [busy, setBusy] = useState(false)
   const ruknId = useRequiredRuknId()
+  const { preferences } = useUserPreferences()
 
   const adminSnapshot = useCampaignAutomationEngine({
     role: 'administrator',
@@ -105,65 +126,68 @@ export function DigitalRafeeqVoiceDrawer({
     ruknId: ruknId ?? '',
   }) as RuknCommandCenterSnapshot
 
-  const suggestions = useMemo(
-    () =>
-      resolveContextualSuggestions({
-        role,
-        ruknSnapshot: role === 'rukn' ? ruknSnapshot : undefined,
-        adminSnapshot: role === 'administrator' ? adminSnapshot : undefined,
-      }),
-    [role, ruknSnapshot, adminSnapshot],
-  )
+  const suggestions = useMemo(() => {
+    if (!preferences.rafeeq.suggestedQuestions) return []
+    return resolveContextualSuggestions({
+      role,
+      ruknSnapshot: role === 'rukn' ? ruknSnapshot : undefined,
+      adminSnapshot: role === 'administrator' ? adminSnapshot : undefined,
+    })
+  }, [role, ruknSnapshot, adminSnapshot, preferences.rafeeq.suggestedQuestions])
 
-  const handleAnswer = async (query: string) => {
-    const trimmed = query.trim()
-    if (!trimmed) return
+  useEffect(() => {
+    return conversation.subscribe((state) => {
+      setPhase(state.phase)
+      setInterimText(state.interimRecognizedText)
+      setVoiceNotice(state.notice)
+      setMessages(turnsToMessages(state.history))
+      setBusy(
+        state.phase === 'listening' ||
+          state.phase === 'thinking' ||
+          state.phase === 'speaking',
+      )
+    })
+  }, [conversation])
 
-    setMessages((current) => [
-      ...current,
-      { id: `u-${Date.now()}`, role: 'user', text: trimmed },
-    ])
-    setInput('')
-    setThinking(true)
-
-    // Ensure runtime is warm (guidance path), but answers come from live ops layer.
+  const answerFn = async (query: string) => {
     try {
       const service = getDigitalRafeeqService()
       if (service.isEnabled()) {
         await service.initialize()
       }
     } catch {
-      // Ops answers do not require runtime; continue.
+      // Ops answers do not require runtime.
     }
-
-    await new Promise((resolve) => window.setTimeout(resolve, 280))
-
-    const answer = answerOperationalQuery(trimmed, {
+    return answerOperationalQuery(query, {
       role,
       ruknId: ruknId ?? undefined,
       adminSnapshot: role === 'administrator' ? adminSnapshot : undefined,
       ruknSnapshot: role === 'rukn' ? ruknSnapshot : undefined,
     })
-
-    setThinking(false)
-    setMessages((current) => [
-      ...current,
-      {
-        id: `a-${Date.now()}`,
-        role: 'assistant',
-        text: answer.text,
-        actions: answer.actions,
-      },
-    ])
-    // KC-019: never autoplay — user taps the speaker button to hear Google TTS.
   }
 
-  const speech = useSpeechRecognition({
-    lang: 'ur-IN',
-    onFinalTranscript: (text) => {
-      void handleAnswer(text)
-    },
-  })
+  const handleTextAnswer = async (query: string) => {
+    const trimmed = query.trim()
+    if (!trimmed || busy) return
+    setInput('')
+    await conversation.converseFromText(trimmed, answerFn, { speakReply: false })
+  }
+
+  const handleMicClick = async () => {
+    if (phase === 'listening') {
+      setBusy(true)
+      await conversation.finishListeningAndConverse(answerFn)
+      return
+    }
+    if (busy) return
+    stopCloudSpeech()
+    stopLocalSpeech()
+    try {
+      await conversation.startListening()
+    } catch {
+      // notice already set on service
+    }
+  }
 
   useEffect(() => {
     if (!open) return
@@ -175,25 +199,42 @@ export function DigitalRafeeqVoiceDrawer({
   }, [open, onClose])
 
   useEffect(() => {
+    if (!open) return
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key === ' ' && event.altKey) {
+        event.preventDefault()
+        void handleMicClick()
+      }
+    }
+    document.addEventListener('keydown', handleKey)
+    return () => document.removeEventListener('keydown', handleKey)
+  })
+
+  useEffect(() => {
     if (!open) {
+      conversation.stopAll()
       stopCloudSpeech()
       stopLocalSpeech()
-      setSpeaking(false)
     }
-  }, [open])
+  }, [open, conversation])
 
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' })
-  }, [messages, thinking])
+  }, [messages, phase, interimText])
 
   const voiceClass = useMemo(() => {
-    if (speech.status === 'listening') return 'dr-voice-mic listening'
-    if (thinking) return 'dr-voice-mic thinking'
-    if (speaking) return 'dr-voice-mic speaking'
+    if (phase === 'listening') return 'dr-voice-mic listening'
+    if (phase === 'thinking') return 'dr-voice-mic thinking'
+    if (phase === 'speaking') return 'dr-voice-mic speaking'
     return 'dr-voice-mic'
-  }, [speech.status, thinking, speaking])
+  }, [phase])
 
   if (!open) return null
+
+  const micLabel =
+    phase === 'listening'
+      ? 'سننا بند کریں اور جواب سنیں'
+      : 'آواز سے پوچھیں — دبائیں، بولیں، دوبارہ دبائیں'
 
   return (
     <div className="dr-voice-overlay" role="presentation" onClick={onClose}>
@@ -211,23 +252,24 @@ export function DigitalRafeeqVoiceDrawer({
             <h2 id={titleId} className="dr-voice-title">
               ڈیجیٹل رفیق
             </h2>
-            <p className="dr-voice-status">{statusLabel(speech.status, thinking, speaking)}</p>
+            <p className="dr-voice-status" aria-live="polite">
+              {phaseLabel(phase)}
+            </p>
           </div>
           <button type="button" className="dr-voice-close" aria-label="Close assistant" onClick={onClose}>
             <Icon name="x" size="sm" />
           </button>
         </header>
 
-        <VoiceStageFeedback
-          listening={speech.status === 'listening'}
-          thinking={thinking}
-          speaking={speaking}
-        />
+        <VoiceStageFeedback phase={phase} />
 
         <div ref={listRef} className="dr-voice-messages" aria-live="polite">
-          {messages.length === 0 && (
+          {messages.length === 0 && preferences.rafeeq.dailyGreeting ? (
             <p className="dr-voice-empty">{RAFEEQ_WELCOME_MESSAGE}</p>
-          )}
+          ) : null}
+          {messages.length === 0 && !preferences.rafeeq.dailyGreeting ? (
+            <p className="dr-voice-empty">آپ بول کر یا لکھ کر پوچھ سکتے ہیں۔</p>
+          ) : null}
           {messages.map((message) => (
             <div
               key={message.id}
@@ -241,10 +283,6 @@ export function DigitalRafeeqVoiceDrawer({
                   <RafeeqSpeakButton
                     text={message.text}
                     onNotice={(notice) => setVoiceNotice(notice)}
-                    onStateChange={(state) => {
-                      if (state === 'playing') setSpeaking(true)
-                      if (state === 'idle' || state === 'error') setSpeaking(false)
-                    }}
                   />
                 ) : null}
               </div>
@@ -266,36 +304,38 @@ export function DigitalRafeeqVoiceDrawer({
           ))}
         </div>
 
-        <div className="dr-voice-suggestions" role="list" aria-label="تجویز کردہ سوالات">
-          {suggestions.map((suggestion) => (
-            <button
-              key={suggestion.id}
-              type="button"
-              className="dr-voice-chip"
-              role="listitem"
-              data-suggestion-id={suggestion.id}
-              data-speakable={suggestion.text}
-              onClick={() => void handleAnswer(suggestion.text)}
-            >
-              {suggestion.text}
-            </button>
-          ))}
-        </div>
+        {suggestions.length > 0 ? (
+          <div className="dr-voice-suggestions" role="list" aria-label="تجویز کردہ سوالات">
+            {suggestions.map((suggestion) => (
+              <button
+                key={suggestion.id}
+                type="button"
+                className="dr-voice-chip"
+                role="listitem"
+                disabled={busy}
+                onClick={() => void handleTextAnswer(suggestion.text)}
+              >
+                {suggestion.text}
+              </button>
+            ))}
+          </div>
+        ) : null}
 
-        {speech.interimTranscript ? (
-          <p className="dr-voice-interim">{speech.interimTranscript}</p>
+        {interimText ? (
+          <p className="dr-voice-interim" aria-live="polite">
+            {interimText}
+          </p>
         ) : null}
 
         <footer className="dr-voice-footer">
           <button
             type="button"
             className={voiceClass}
-            aria-label={speech.status === 'listening' ? 'سننا بند کریں' : 'آواز سے پوچھیں'}
-            onClick={() => {
-              if (speech.status === 'listening') speech.stop()
-              else speech.start()
-            }}
-            disabled={!speech.supported && speech.status === 'unsupported'}
+            aria-label={micLabel}
+            aria-pressed={phase === 'listening'}
+            title={`${micLabel} (Alt+Space)`}
+            onClick={() => void handleMicClick()}
+            disabled={phase === 'thinking' || phase === 'speaking'}
           >
             <Icon name="mic" size="md" />
           </button>
@@ -304,7 +344,7 @@ export function DigitalRafeeqVoiceDrawer({
             className="dr-voice-form"
             onSubmit={(event) => {
               event.preventDefault()
-              void handleAnswer(input)
+              void handleTextAnswer(input)
             }}
           >
             <input
@@ -316,8 +356,9 @@ export function DigitalRafeeqVoiceDrawer({
               dir="auto"
               enterKeyHint="send"
               autoComplete="off"
+              disabled={busy}
             />
-            <PrimaryButton type="submit" disabled={!input.trim() || thinking}>
+            <PrimaryButton type="submit" disabled={!input.trim() || busy}>
               بھیجیں
             </PrimaryButton>
           </form>
@@ -325,13 +366,9 @@ export function DigitalRafeeqVoiceDrawer({
 
         {voiceNotice ? <p className="dr-voice-fallback">{voiceNotice}</p> : null}
 
-        {(speech.status === 'denied' || speech.status === 'unsupported') && (
-          <p className="dr-voice-fallback">
-            {speech.status === 'denied'
-              ? 'مائیک کی اجازت نہیں ملی۔ آپ لکھ کر پوچھ سکتے ہیں۔'
-              : 'اس براؤزر میں آواز کی پہچان دستیاب نہیں۔ سوال لکھ کر بھیجیں۔'}
-          </p>
-        )}
+        <p className="dr-voice-fallback dr-voice-hint">
+          مائیک دبائیں، بات کریں، پھر دوبارہ دبائیں — رفیق سنے گا، سمجھے گا اور جواب بولے گا۔
+        </p>
 
         <div className="dr-voice-footer-note">
           <SecondaryButton type="button" onClick={onClose}>

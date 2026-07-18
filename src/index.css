@@ -3175,6 +3175,11 @@ html[data-theme='dark'] {
     line-height: 2.1;
   }
 
+  .dr-voice-hint {
+    @apply text-xs text-secondary;
+    opacity: 0.9;
+  }
+
   @media (min-width: 640px) {
     .dr-voice-fallback {
       @apply px-4;

@@ -2,6 +2,9 @@
   "functions": {
     "api/tts.ts": {
       "includeFiles": "src/server/voice/**"
+    },
+    "api/stt.ts": {
+      "includeFiles": "src/server/voice/**"
     }
   },
   "rewrites": [

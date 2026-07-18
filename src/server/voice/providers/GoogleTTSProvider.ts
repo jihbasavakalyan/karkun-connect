@@ -3,8 +3,8 @@
  * Credentials via env only — never shipped to the browser.
  */
 
-import { existsSync, readFileSync } from 'node:fs'
 import { TextToSpeechClient, protos } from '@google-cloud/text-to-speech'
+import { assertServiceAccount, loadGoogleServiceAccount } from '../credentials.js'
 import {
   DEFAULT_TTS_LANGUAGE,
   DEFAULT_TTS_PITCH,
@@ -14,46 +14,8 @@ import {
   type VoiceProvider,
 } from '../types.js'
 
-type CredentialsJson = {
-  client_email?: string
-  private_key?: string
-  project_id?: string
-  [key: string]: unknown
-}
-
-function loadCredentials(): CredentialsJson | undefined {
-  const raw = process.env.GOOGLE_TTS_CREDENTIALS_JSON?.trim()
-  if (raw) {
-    return JSON.parse(raw) as CredentialsJson
-  }
-
-  const b64 = process.env.GOOGLE_TTS_CREDENTIALS_JSON_BASE64?.trim()
-  if (b64) {
-    return JSON.parse(Buffer.from(b64, 'base64').toString('utf8')) as CredentialsJson
-  }
-
-  const credentialsPath = process.env.GOOGLE_APPLICATION_CREDENTIALS?.trim()
-  if (credentialsPath) {
-    if (!existsSync(credentialsPath)) {
-      throw new Error(`GOOGLE_APPLICATION_CREDENTIALS file not found: ${credentialsPath}`)
-    }
-    return JSON.parse(readFileSync(credentialsPath, 'utf8')) as CredentialsJson
-  }
-
-  return undefined
-}
-
-function assertServiceAccount(credentials: CredentialsJson): void {
-  const missing = ['project_id', 'client_email', 'private_key', 'token_uri'].filter(
-    (key) => !credentials[key],
-  )
-  if (missing.length > 0) {
-    throw new Error(`Invalid Google service account JSON. Missing: ${missing.join(', ')}`)
-  }
-}
-
 function createClient(): TextToSpeechClient {
-  const credentials = loadCredentials()
+  const credentials = loadGoogleServiceAccount()
   if (credentials) {
     assertServiceAccount(credentials)
     return new TextToSpeechClient({
@@ -61,7 +23,6 @@ function createClient(): TextToSpeechClient {
       projectId: typeof credentials.project_id === 'string' ? credentials.project_id : undefined,
     })
   }
-  // Application Default Credentials (gcloud / metadata server)
   return new TextToSpeechClient()
 }
 

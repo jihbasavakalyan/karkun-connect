@@ -1,6 +1,5 @@
 /**
- * KC-019 — Voice provider contracts (TTS foundation).
- * Future: STT, streaming, multi-language, provider switching.
+ * KC-019 / KC-027 — Voice provider contracts (TTS + STT).
  */
 
 export type VoiceProviderId = 'google' | 'azure' | 'elevenlabs' | 'browser'
@@ -28,17 +27,48 @@ export type VoiceProvider = {
   generateSpeech(input: GenerateSpeechInput): Promise<Omit<GenerateSpeechResult, 'cached' | 'generationMs'>>
 }
 
+export type TranscribeSpeechInput = {
+  audio: Buffer
+  contentType?: string
+  languageCode?: string
+  sampleRateHertz?: number
+}
+
+export type TranscribeSpeechResult = {
+  transcript: string
+  confidence?: number
+  provider: VoiceProviderId
+  languageCode: string
+  durationMs: number
+}
+
+export type SpeechToTextProvider = {
+  readonly id: VoiceProviderId
+  transcribeSpeech(
+    input: TranscribeSpeechInput,
+  ): Promise<Omit<TranscribeSpeechResult, 'durationMs'>>
+}
+
 export type VoiceServiceOptions = {
   provider?: VoiceProvider
+  sttProvider?: SpeechToTextProvider
   maxTextLength?: number
+  maxAudioBytes?: number
 }
 
 export const TTS_ERROR_MESSAGE_URDU = 'آواز دستیاب نہیں، براہ کرم دوبارہ کوشش کریں۔'
+export const STT_ERROR_MESSAGE_URDU = 'آواز سمجھ نہیں آئی، براہ کرم دوبارہ کوشش کریں۔'
+export const STT_NO_SPEECH_MESSAGE_URDU = 'کوئی آواز نہیں سنائی دی۔ دوبارہ بول کر آزمائیں۔'
+export const STT_MIC_DENIED_MESSAGE_URDU =
+  'مائیک کی اجازت نہیں ملی۔ آپ لکھ کر بھی پوچھ سکتے ہیں۔'
 
 export const DEFAULT_TTS_LANGUAGE = 'ur-PK'
 export const DEFAULT_TTS_SPEAKING_RATE = 0.95
 export const DEFAULT_TTS_PITCH = 0
 export const DEFAULT_MAX_TTS_CHARS = 1200
+export const DEFAULT_STT_LANGUAGE = 'ur-PK'
+export const DEFAULT_MAX_STT_BYTES = 2_500_000
+export const STT_LANGUAGE_ALTERNATIVES = ['ur-IN', 'en-IN'] as const
 
 /** Preferred Urdu voices — Google currently publishes premium Urdu as ur-IN. */
 export const URDU_VOICE_CANDIDATES = [

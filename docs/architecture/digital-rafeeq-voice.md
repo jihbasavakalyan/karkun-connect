@@ -1,66 +1,110 @@
-# KC-019 — Digital Rafeeq Google Cloud Voice Foundation
+# KC-027 — Digital Rafeeq Voice Conversation
 
-Speech synthesis only (Text → MP3). The browser never talks to Google Cloud.
+Full duplex voice companion on top of the **same** Digital Rafeeq intelligence layer used by text chat.
 
 ```
-Browser (RafeeqSpeakButton)
-  → Voice client adapter
-  → POST /api/tts { text }
-  → VoiceService
-  → GoogleTTSProvider
-  → Google Cloud Text-to-Speech
-  → MP3 (+ cache)
+User speaks
+  → Microphone (push-to-talk)
+  → POST /api/stt  (Google Cloud Speech-to-Text, server-only credentials)
+  → Recognized Urdu text (shown briefly)
+  → answerOperationalQuery / Digital Rafeeq intelligence
+  → Natural Urdu response
+  → POST /api/tts  (Google Cloud Text-to-Speech)
+  → Spoken reply + session history
 ```
 
-## Environment variables (server-only)
+```
+                Digital Rafeeq
+                       │
+        ┌──────────────┼──────────────┐
+        │              │              │
+    Text Chat     Voice Chat     Future WhatsApp
+        │              │              │
+        └──────────────┼──────────────┘
+          Intelligence Engine
+          Automation Engine
+          Execution Context
+          Campaign Knowledge
+```
 
-Never use `VITE_*` for credentials.
+## Architecture files
+
+| Layer | Path |
+|-------|------|
+| Mic recorder | `src/features/digitalRafeeq/voice/micRecorder.ts` |
+| Conversation orchestrator | `src/features/digitalRafeeq/voice/VoiceConversationService.ts` |
+| Cloud STT client | `src/features/digitalRafeeq/voice/cloudSpeechRecognition.ts` |
+| Cloud TTS client | `src/features/digitalRafeeq/voice/cloudSpeechPlayback.ts` |
+| Drawer UX | `src/features/digitalRafeeq/voice/DigitalRafeeqVoiceDrawer.tsx` |
+| Google STT provider | `src/server/voice/providers/GoogleSTTProvider.ts` |
+| STT HTTP | `src/server/voice/sttHttpHandler.ts` → `api/stt.ts` |
+| Shared credentials | `src/server/voice/credentials.ts` |
+
+## Conversation phases
+
+`idle → listening → thinking → speaking → ready → idle`
+
+Subtle waveform / thinking / speaking animations only — no loading screens.
+
+## Push-to-talk
+
+1. Tap mic → listening starts  
+2. Speak (Urdu / Urdu + English names)  
+3. Silence auto-stop (~1.8s) **or** tap mic again  
+4. Transcript shown → intelligence → spoken reply  
+
+Keyboard: **Alt+Space** toggles mic.
+
+## Environment (server-only)
+
+Reuses the same service account as TTS:
 
 | Variable | Purpose |
 |----------|---------|
-| `GOOGLE_TTS_CREDENTIALS_JSON` | Full service-account JSON string (recommended on Vercel) |
-| `GOOGLE_TTS_CREDENTIALS_JSON_BASE64` | Base64 of the same JSON |
-| `GOOGLE_APPLICATION_CREDENTIALS` | Absolute path to JSON key file (local) |
-| `TTS_CACHE_DIR` | Optional cache directory (default `.tts-cache` local, `/tmp/...` on Vercel) |
+| `GOOGLE_TTS_CREDENTIALS_JSON` | Preferred on Vercel (also used for STT) |
+| `GOOGLE_APPLICATION_CREDENTIALS` | Local JSON path |
+| `GOOGLE_STT_CREDENTIALS_JSON` | Optional STT-specific override |
 
-## Local setup
+Grant the service account **Cloud Speech-to-Text User** (in addition to Text-to-Speech User).
 
-1. Enable Cloud Text-to-Speech on your Google Cloud project.
-2. Create a service account with **Cloud Text-to-Speech User**.
-3. Download the JSON key to a path **outside** the repo (e.g. `C:\secrets\karkun-tts-sa.json`).
-4. In `.env.local` (gitignored):
+Never use `VITE_*` for credentials. Audio is not stored after transcription.
 
-```env
-GOOGLE_APPLICATION_CREDENTIALS=C:\secrets\karkun-tts-sa.json
+## Session history
+
+In-memory only for the open drawer session:
+
+User speech → recognized text → Rafeeq response → timestamp  
+
+Cleared when the drawer closes / service stops. No permanent persistence yet.
+
+## Error recovery (Urdu, retryable)
+
+| Case | User message |
+|------|----------------|
+| Mic denied | مائیک کی اجازت نہیں ملی… |
+| No speech | کوئی آواز نہیں سنائی دی… |
+| STT / network failure | آواز سمجھ نہیں آئی… / رابطہ منقطع… |
+| TTS failure | آواز دستیاب نہیں… |
+
+Text input always remains available.
+
+## Settings integration (KC-026)
+
+- `voiceResponses` — spoken reply on/off  
+- `voiceSpeed` — TTS speaking rate  
+- `suggestedQuestions` — chip visibility  
+- `dailyGreeting` — welcome line  
+
+## Future roadmap (no redesign required)
+
+- Continuous conversation / barge-in  
+- Wake phrase  
+- Streaming STT / TTS  
+- Additional languages  
+- Offline provider abstraction  
+
+## Verify
+
+```bash
+npm run verify:voice-conversation
 ```
-
-Or paste JSON:
-
-```env
-GOOGLE_TTS_CREDENTIALS_JSON={"type":"service_account",...}
-```
-
-5. Run `npm run dev` — Vite middleware serves `POST /api/tts`.
-6. Open Digital Rafeeq → tap the speaker on a reply (no autoplay).
-
-## Vercel production setup
-
-1. Project → Settings → Environment Variables → Production.
-2. Add `GOOGLE_TTS_CREDENTIALS_JSON` with the **entire** service-account JSON as one line.
-3. Redeploy.
-4. Confirm `GET` SPA still works and `POST /api/tts` returns `audio/mpeg`.
-
-## Voices
-
-Language preference: `ur-PK`, with graceful fallback to the best available `ur-IN` premium voice (Chirp3-HD → WaveNet → Standard). Speaking rate `0.95`, pitch `0`.
-
-## Cache
-
-Key = SHA-256 of provider + voice + rate + pitch + text. Memory + filesystem (best-effort).
-
-## Known limitations
-
-- Serverless cold starts add latency on first request.
-- Filesystem cache does not persist across all Vercel instances.
-- Google currently publishes premium Urdu mainly as `ur-IN` (not `ur-PK`).
-- Speech-to-Text / live conversation are out of scope for KC-019.

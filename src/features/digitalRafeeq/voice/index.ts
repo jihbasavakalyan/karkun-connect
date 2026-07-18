@@ -13,8 +13,17 @@ export {
   isCloudSpeechAvailable,
   cloudSpeechAdapter,
 } from './cloudSpeechPlayback'
-export { TTS_ERROR_MESSAGE_URDU } from './ttsMessages'
+export { TTS_ERROR_MESSAGE_URDU, STT_ERROR_MESSAGE_URDU } from './ttsMessages'
 export { useSpeechRecognition } from './useSpeechRecognition'
+export {
+  createVoiceConversationService,
+  VoiceConversationService,
+} from './VoiceConversationService'
+export type {
+  ConversationPhase,
+  VoiceConversationTurn,
+  VoiceConversationState,
+} from './VoiceConversationService'
 export {
   answerOperationalQuery,
   SUGGESTED_QUESTIONS_ADMIN,

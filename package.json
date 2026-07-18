@@ -50,9 +50,11 @@
     "admin:verify-firestore": "node scripts/admin/verify-firestore-production.mjs",
     "verify:tts": "npx vite-node --env-file=.env.local scripts/verify-tts.ts",
     "verify:execution-automation": "npx vite-node scripts/verify-execution-automation.ts",
-    "verify:settings": "npx vite-node scripts/verify-settings-experience.ts"
+    "verify:settings": "npx vite-node scripts/verify-settings-experience.ts",
+    "verify:voice-conversation": "npx vite-node scripts/verify-voice-conversation.ts"
   },
   "dependencies": {
+    "@google-cloud/speech": "^7.5.0",
     "@google-cloud/text-to-speech": "^6.4.1",
     "firebase": "^12.16.0",
     "react": "^19.2.7",
