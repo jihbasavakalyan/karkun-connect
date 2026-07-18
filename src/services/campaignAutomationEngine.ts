@@ -10,6 +10,7 @@ import {
   ruknVisitPath,
 } from '@/constants/routes'
 import { getExecutionDashboardData, getExecutionStatusForAssignment } from '@/lib/executionStatus'
+import { isSubmissionDateOnDay } from '@/lib/dates/submissionDateDay'
 import { getAllAssignments } from '@/stores/assignmentStore'
 import { getSubmittedMeetingForms } from '@/stores/annexure1Store'
 import {
@@ -293,7 +294,7 @@ function buildRuknKpis(ruknId: string): CommandCenterKpi[] {
 
   const completedToday = getSubmittedMeetingForms().filter(
     (form) =>
-      form.submissionDate.slice(0, 10) === todayIsoDate() &&
+      isSubmissionDateOnDay(form.submissionDate, todayIsoDate()) &&
       assigned.some((record) => record.assignmentId === form.assignmentId),
   ).length
 
@@ -851,7 +852,7 @@ function buildRuknCompletedToday(ruknId: string) {
   return getSubmittedMeetingForms()
     .filter(
       (form) =>
-        form.submissionDate.slice(0, 10) === today &&
+        isSubmissionDateOnDay(form.submissionDate, today) &&
         assignedIds.has(form.assignmentId),
     )
     .map((form) => ({

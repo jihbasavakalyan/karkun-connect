@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react
 import { AuthContext } from '@/context/AuthContext'
 import { refreshFirestoreAfterAuth } from '@/repositories/firestore/initialize'
 import { clearAuthSession, loadAuthSession, saveAuthSession } from '@/lib/authSession'
+import { logStartupTiming } from '@/lib/startupDiagnostics'
 import { authenticationService } from '@/services/authenticationService'
 import { bindUserPreferences } from '@/stores/userPreferencesStore'
 import type {
@@ -32,29 +33,44 @@ export function AuthProvider({ children }: AuthProviderProps) {
   )
 
   useEffect(() => {
+    logStartupTiming('AuthProvider.user-bound', { uid: user?.uid ?? null, role: user?.role ?? null })
     bindUserPreferences(user?.uid)
     if (user && typeof sessionStorage !== 'undefined') {
-      sessionStorage.setItem('karkun-connect.last-login', new Date().toLocaleString())
+      try {
+        sessionStorage.setItem('karkun-connect.last-login', new Date().toLocaleString())
+      } catch {
+        // Safari private / quota — non-critical telemetry only.
+      }
     }
   }, [user])
 
   useEffect(() => {
     if (!authenticationService.isConfigured()) {
+      logStartupTiming('AuthProvider.subscribe-skip-unconfigured')
       return
     }
 
+    logStartupTiming('AuthProvider.subscribe-start')
     const unsubscribe = authenticationService.subscribe((authUser) => {
       if (authUser) {
-        saveAuthSession(authUser, authenticationService.getRememberMePreference())
+        try {
+          saveAuthSession(authUser, authenticationService.getRememberMePreference())
+        } catch (error) {
+          console.warn('[KC-027A] saveAuthSession failed after auth', error)
+        }
         setUser(authUser)
         setStatus('authenticated')
-        void refreshFirestoreAfterAuth()
+        logStartupTiming('AuthProvider.authenticated', { uid: authUser.uid, role: authUser.role })
+        void refreshFirestoreAfterAuth().then(() => {
+          logStartupTiming('AuthProvider.refreshFirestoreAfterAuth-complete')
+        })
         return
       }
 
       clearAuthSession()
       setUser(null)
       setStatus('unauthenticated')
+      logStartupTiming('AuthProvider.unauthenticated')
     })
 
     return unsubscribe
@@ -82,9 +98,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setStatus('signing-in')
       const result = await authenticationService.loginWithEmail(email, password, rememberMe)
       if (result.success) {
-        saveAuthSession(result.user, rememberMe)
+        try {
+          saveAuthSession(result.user, rememberMe)
+        } catch (error) {
+          console.warn('[KC-027A] saveAuthSession failed on email login', error)
+        }
         setUser(result.user)
         setStatus('authenticated')
+        logStartupTiming('AuthProvider.loginWithEmail-success', { uid: result.user.uid })
       } else {
         setStatus(user ? 'authenticated' : 'unauthenticated')
       }
@@ -105,9 +126,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setStatus('verifying-otp')
       const result = await authenticationService.verifyOtp(code, rememberMe)
       if (result.success) {
-        saveAuthSession(result.user, rememberMe)
+        try {
+          saveAuthSession(result.user, rememberMe)
+        } catch (error) {
+          console.warn('[KC-027A] saveAuthSession failed on OTP verify', error)
+        }
         setUser(result.user)
         setStatus('authenticated')
+        logStartupTiming('AuthProvider.verifyOtp-success', { uid: result.user.uid })
       } else {
         setStatus(user ? 'authenticated' : 'unauthenticated')
       }

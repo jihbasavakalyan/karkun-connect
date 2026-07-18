@@ -16,6 +16,7 @@ import {
   getSubmittedMeetingForms,
   saveDraftRecord,
 } from '@/stores/annexure1Store'
+import { isSubmissionDateOnDay } from '@/lib/dates/submissionDateDay'
 import {
   getFollowUpCompletionRate,
   getFollowUpDashboardMetrics,
@@ -276,7 +277,7 @@ export function getAnnexure1ExecutionMetrics(): Annexure1ExecutionMetrics {
   const submittedAssignmentIds = new Set(submittedForms.map((form) => form.assignmentId))
   const submittedTodayAssignmentIds = new Set(
     submittedForms
-      .filter((form) => form.submissionDate.slice(0, 10) === todayIsoDate())
+      .filter((form) => isSubmissionDateOnDay(form.submissionDate, todayIsoDate()))
       .map((form) => form.assignmentId),
   )
 
@@ -331,7 +332,7 @@ export function getTodaysMeetingAssignments() {
   const today = todayIsoDate()
   const submittedTodayIds = new Set(
     getSubmittedMeetingForms()
-      .filter((form) => form.submissionDate.slice(0, 10) === today)
+      .filter((form) => isSubmissionDateOnDay(form.submissionDate, today))
       .map((form) => form.assignmentId),
   )
 

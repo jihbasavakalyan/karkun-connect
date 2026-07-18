@@ -1,10 +1,11 @@
-import type { ReactNode } from 'react'
+import { useEffect, type ReactNode } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
 import { getAuthorizedRedirect, getHomeRouteForRole } from '@/lib/auth/authorization'
 import { ROUTES } from '@/constants/routes'
 import { HomePageSkeleton, Skeleton } from '@/components/ui/Skeleton'
 import { useAuth } from '@/hooks/useAuth'
 import { useRepositoryHydration } from '@/hooks/useRepositoryHydration'
+import { logStartupTiming } from '@/lib/startupDiagnostics'
 import type { UserRole } from '@/types/auth.types'
 
 type ProtectedRouteProps = {
@@ -43,6 +44,29 @@ export function ProtectedRoute({ allowedRole, children }: ProtectedRouteProps) {
   const location = useLocation()
   const { user, isAuthenticated, isInitializing } = useAuth()
   const isHydrated = useRepositoryHydration()
+
+  const canRenderDashboard =
+    !isInitializing && isAuthenticated && !!user && user.role === allowedRole && isHydrated
+
+  useEffect(() => {
+    logStartupTiming('ProtectedRoute.gate', {
+      route: location.pathname,
+      allowedRole,
+      isInitializing,
+      isAuthenticated,
+      isHydrated,
+      role: user?.role ?? null,
+      canRenderDashboard,
+    })
+  }, [
+    allowedRole,
+    canRenderDashboard,
+    isAuthenticated,
+    isHydrated,
+    isInitializing,
+    location.pathname,
+    user?.role,
+  ])
 
   if (isInitializing) {
     return <AuthLoadingScreen />

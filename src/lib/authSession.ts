@@ -8,36 +8,60 @@ const memorySessionStorage: Record<string, string> = {}
 
 type StorageLike = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>
 
-function getPersistentStorage(): StorageLike {
-  if (typeof window !== 'undefined') {
-    return localStorage
-  }
-
+function createMemoryStorage(store: Record<string, string>): StorageLike {
   return {
-    getItem: (key) => memoryLocalStorage[key] ?? null,
+    getItem: (key) => store[key] ?? null,
     setItem: (key, value) => {
-      memoryLocalStorage[key] = value
+      store[key] = value
     },
     removeItem: (key) => {
-      delete memoryLocalStorage[key]
+      delete store[key]
     },
   }
 }
 
-function getSessionStorage(): StorageLike {
-  if (typeof window !== 'undefined') {
-    return sessionStorage
-  }
-
+function wrapBrowserStorage(storage: Storage, memory: Record<string, string>): StorageLike {
+  const fallback = createMemoryStorage(memory)
   return {
-    getItem: (key) => memorySessionStorage[key] ?? null,
+    getItem: (key) => {
+      try {
+        return storage.getItem(key)
+      } catch {
+        return fallback.getItem(key)
+      }
+    },
     setItem: (key, value) => {
-      memorySessionStorage[key] = value
+      try {
+        storage.setItem(key, value)
+        fallback.setItem(key, value)
+      } catch {
+        // Safari private / quota — keep session in memory for this tab.
+        fallback.setItem(key, value)
+      }
     },
     removeItem: (key) => {
-      delete memorySessionStorage[key]
+      try {
+        storage.removeItem(key)
+      } catch {
+        // ignore
+      }
+      fallback.removeItem(key)
     },
   }
+}
+
+function getPersistentStorage(): StorageLike {
+  if (typeof window !== 'undefined') {
+    return wrapBrowserStorage(localStorage, memoryLocalStorage)
+  }
+  return createMemoryStorage(memoryLocalStorage)
+}
+
+function getSessionStorage(): StorageLike {
+  if (typeof window !== 'undefined') {
+    return wrapBrowserStorage(sessionStorage, memorySessionStorage)
+  }
+  return createMemoryStorage(memorySessionStorage)
 }
 
 function isAuthUser(value: unknown): value is AuthUser {

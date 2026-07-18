@@ -47,7 +47,9 @@ export function SubmissionSuccessCard({ submission, nextMission }: SubmissionSuc
         <div>
           <dt className="text-sm text-secondary">Submission Date</dt>
           <dd className="font-semibold text-text-heading">
-            {submission.submissionDate.slice(0, 10)}
+            {typeof submission.submissionDate === 'string'
+              ? submission.submissionDate.slice(0, 10)
+              : '—'}
           </dd>
         </div>
         <div>

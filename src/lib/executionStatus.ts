@@ -12,6 +12,7 @@ import {
   getSubmittedMeetingForms,
   hasSubmittedAnnexureForAssignment,
 } from '@/stores/annexure1Store'
+import { isSubmissionDateOnDay } from '@/lib/dates/submissionDateDay'
 import type { SubmittedMeetingForm } from '@/types/annexure1.types'
 import type { ExecutionSummaryCounts } from '@/components/execution/ExecutionSummaryCards'
 
@@ -145,8 +146,8 @@ export function buildCampaignExecutionSummary(): ExecutionSummary {
   const activeAssignments = getAllAssignments().filter((record) => record.status === 'Active')
   const today = todayIsoDate()
   const activeItems = buildItemsForAssignments(activeAssignments)
-  const completedTodayRecords = getSubmittedMeetingForms().filter(
-    (form) => form.submissionDate.slice(0, 10) === today,
+  const completedTodayRecords = getSubmittedMeetingForms().filter((form) =>
+    isSubmissionDateOnDay(form.submissionDate, today),
   )
 
   return {
@@ -181,7 +182,7 @@ export function buildRuknExecutionSummary(ruknId: string): ExecutionSummary {
   const assignmentIds = new Set(activeAssignments.map((record) => record.assignmentId))
   const completedTodayRecords = getSubmittedMeetingForms().filter(
     (form) =>
-      form.submissionDate.slice(0, 10) === today &&
+      isSubmissionDateOnDay(form.submissionDate, today) &&
       assignmentIds.has(form.assignmentId) &&
       connectedIds.has(form.karkunId),
   )
