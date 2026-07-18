@@ -35,6 +35,7 @@ export function RuknDetailPage() {
 
   const mobileLabel = rukn.mobile.trim() ? rukn.mobile : 'Mobile Not Added'
   const auditLog = getAuditLogForPerson('rukn', rukn.id)
+  // Names follow canonical connected set (same count as Connected page / Dashboard).
   const assignedKarkunNames = (summary?.activeAssignments ?? [])
     .map((assignment) => getKarkunById(assignment.karkunId)?.name)
     .filter((name): name is string => Boolean(name))

@@ -3,13 +3,13 @@
  */
 
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
+import { getConnectedKarkunIdsForRukn } from '@/lib/connections/getConnectedKarkunsForRukn'
 import { getGuidanceForRuknKarkuns } from '@/lib/guidance/guidanceEngine'
 import { buildRuknExecutionSummary } from '@/lib/executionStatus'
 import { getRuknBaitulMaalMetrics } from '@/services/baitulMaalService'
 import { getCurrentIjtemaAttendance } from '@/services/ijtemaAttendanceService'
 import { getDevelopmentAssessment } from '@/stores/developmentAssessmentStore'
 import { getRecentActivity } from '@/stores/activityLogStore'
-import { getActiveAssignmentsForRukn } from '@/stores/assignmentStore'
 import { JOURNEY_STAGE_LABELS, JOURNEY_STAGE_ORDER, type JourneyStageId } from '@/types/guidance'
 import type { RuknCommandCenterSnapshot } from '@/types/campaignAutomation.types'
 import { ROUTES, ruknVisitPath } from '@/constants/routes'
@@ -43,8 +43,7 @@ export function buildRuknMissionControl(
   ruknId: string,
   snapshot: RuknCommandCenterSnapshot,
 ): RuknMissionControlModel {
-  const assignments = getActiveAssignmentsForRukn(ruknId)
-  const connectedIds = [...new Set(assignments.map((record) => record.karkunId))]
+  const connectedIds = getConnectedKarkunIdsForRukn(ruknId)
   const guidance = getGuidanceForRuknKarkuns(ruknId)
   const baitulMaal = getRuknBaitulMaalMetrics(connectedIds)
 
@@ -79,9 +78,10 @@ export function buildRuknMissionControl(
 
   const todayWork = resolveTodayWorkAction(snapshot)
   const execution = buildRuknExecutionSummary(ruknId)
+  // Target is open visit work on the connected set — never inflated by connection count.
   const workloadOpen =
     execution.counts.pending + execution.counts.inProgress + execution.counts.followUpRequired
-  const todayTarget = Math.max(1, Math.min(3, workloadOpen || connectedIds.length || 1))
+  const todayTarget = Math.min(3, workloadOpen)
 
   return {
     missionTitle: snapshot.nextAction.title,
@@ -120,9 +120,9 @@ export function buildRuknMissionControl(
       },
       {
         id: 'my-connected',
-        label: 'Assigned to Me',
+        label: 'Connected Karkuns',
         value: connectedIds.length,
-        hint: 'Connected Karkuns',
+        hint: 'Active connections',
       },
     ],
     quickActions: [todayWork],

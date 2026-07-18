@@ -11,7 +11,7 @@ import { getAssignmentDashboardMetrics } from '@/services/assignmentService'
 import { getBaitulMaalDashboardMetrics, getRuknBaitulMaalMetrics } from '@/services/baitulMaalService'
 import { getCurrentIjtemaAttendance, getIjtemaAttendanceDashboardMetrics } from '@/services/ijtemaAttendanceService'
 import { getJihWebPortalDashboardMetrics } from '@/services/jihWebPortalService'
-import { getActiveAssignmentsForRukn } from '@/stores/assignmentStore'
+import { getConnectedKarkunIdsForRukn } from '@/lib/connections/getConnectedKarkunsForRukn'
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { getDevelopmentAssessment } from '@/stores/developmentAssessmentStore'
 import type { RuknCommandCenterSnapshot, AdminCommandCenterSnapshot } from '@/types/campaignAutomation.types'
@@ -245,8 +245,7 @@ function answerRuknQuery(
   ruknId: string,
   snapshot?: RuknCommandCenterSnapshot,
 ): OpsAnswer {
-  const assignments = getActiveAssignmentsForRukn(ruknId)
-  const connectedIds = assignments.map((record) => record.karkunId)
+  const connectedIds = getConnectedKarkunIdsForRukn(ruknId)
   const guidance = getGuidanceForRuknKarkuns(ruknId)
   const baitulMaal = getRuknBaitulMaalMetrics(connectedIds)
   const urgent = sortGuidanceByUrgency(guidance)

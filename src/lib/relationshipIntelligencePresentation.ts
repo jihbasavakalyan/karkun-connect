@@ -7,7 +7,7 @@ import { getGuidanceForRuknKarkuns, getKarkunGuidance } from '@/lib/guidance/gui
 import { getRuknJourneyStageLabel } from '@/lib/ruknProgressPresentation'
 import { sortGuidanceByUrgency } from '@/lib/homePresentation'
 import { ruknMaster } from '@/data/ruknMaster'
-import { getActiveAssignmentsForRukn } from '@/stores/assignmentStore'
+import { getConnectedKarkunCountForRukn } from '@/lib/connections/getConnectedKarkunsForRukn'
 import type {
   JourneyStageId,
   KarkunGuidance,
@@ -268,11 +268,11 @@ export function buildAdminRelationshipInsights(): AdminRelationshipInsights {
 
   for (const rukn of ruknMaster) {
     if (rukn.status !== 'active') continue
-    const assignments = getActiveAssignmentsForRukn(rukn.id)
-    if (assignments.length === 0) continue
+    const connectedCount = getConnectedKarkunCountForRukn(rukn.id)
+    if (connectedCount === 0) continue
 
     const guidanceList = getGuidanceForRuknKarkuns(rukn.id)
-    totalConnected += guidanceList.length
+    totalConnected += connectedCount
 
     let ruknAttention = 0
     for (const guidance of guidanceList) {

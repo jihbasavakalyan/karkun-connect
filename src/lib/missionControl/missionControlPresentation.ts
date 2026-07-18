@@ -4,11 +4,11 @@
  */
 
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
+import { getConnectedKarkunIdsForRukn } from '@/lib/connections/getConnectedKarkunsForRukn'
 import { getGuidanceForRuknKarkuns } from '@/lib/guidance/guidanceEngine'
 import { isJihRegistered } from '@/lib/guidance/journeyEngine'
 import { getRuknBaitulMaalMetrics } from '@/services/baitulMaalService'
 import { getDevelopmentAssessment } from '@/stores/developmentAssessmentStore'
-import { getActiveAssignmentsForRukn } from '@/stores/assignmentStore'
 import type { RuknMissionControlModel } from './buildRuknMissionControl'
 
 export type CampaignTaskBadge = {
@@ -29,8 +29,7 @@ export function buildCampaignTaskBadges(
   ruknId: string,
   model: RuknMissionControlModel,
 ): CampaignTaskBadge[] {
-  const assignments = getActiveAssignmentsForRukn(ruknId)
-  const connectedIds = [...new Set(assignments.map((record) => record.karkunId))]
+  const connectedIds = getConnectedKarkunIdsForRukn(ruknId)
   const target = Math.max(connectedIds.length, 1)
 
   const ijtemaPresent = model.attendanceStrip.present
@@ -76,8 +75,7 @@ export function buildDevelopmentSummary(
   ruknId: string,
   model: RuknMissionControlModel,
 ): DevelopmentSummaryItem[] {
-  const assignments = getActiveAssignmentsForRukn(ruknId)
-  const connectedIds = [...new Set(assignments.map((record) => record.karkunId))]
+  const connectedIds = getConnectedKarkunIdsForRukn(ruknId)
   const target = connectedIds.length
   const guidance = getGuidanceForRuknKarkuns(ruknId)
 

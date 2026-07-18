@@ -9,7 +9,12 @@ import {
   ROUTES,
   ruknVisitPath,
 } from '@/constants/routes'
-import { getExecutionDashboardData, getExecutionStatusForAssignment } from '@/lib/executionStatus'
+import { getConnectedAssignmentsForRukn } from '@/lib/connections/getConnectedKarkunsForRukn'
+import {
+  buildRuknExecutionSummary,
+  getExecutionDashboardData,
+  getExecutionStatusForAssignment,
+} from '@/lib/executionStatus'
 import { isSubmissionDateOnDay } from '@/lib/dates/submissionDateDay'
 import { getAllAssignments } from '@/stores/assignmentStore'
 import { getSubmittedMeetingForms } from '@/stores/annexure1Store'
@@ -276,51 +281,32 @@ function buildAdminKpis(): CommandCenterKpi[] {
 }
 
 function buildRuknKpis(ruknId: string): CommandCenterKpi[] {
-  const assigned = getAllAssignments().filter(
-    (record) => record.status === 'Active' && record.ruknId === ruknId,
-  )
-  const execution = getExecutionDashboardData()
-  const scopedItems = execution.activeItems.filter((item) =>
-    assigned.some((record) => record.assignmentId === item.assignmentId),
-  )
-
-  const pendingAnnexure = scopedItems.filter(
-    (item) => item.status === 'Pending' || item.status === 'In Progress',
-  ).length
-
-  const followUpRequired = scopedItems.filter(
-    (item) => item.status === 'Follow-up Required',
-  ).length
-
-  const completedToday = getSubmittedMeetingForms().filter(
-    (form) =>
-      isSubmissionDateOnDay(form.submissionDate, todayIsoDate()) &&
-      assigned.some((record) => record.assignmentId === form.assignmentId),
-  ).length
+  const connected = getConnectedAssignmentsForRukn(ruknId)
+  const execution = buildRuknExecutionSummary(ruknId)
 
   return [
     {
       id: 'assigned-karkuns',
       label: 'Connected Karkuns',
-      value: assigned.length,
+      value: connected.length,
       route: ROUTES.RUKN_MY_KARKUN,
     },
     {
       id: 'pending-first-visits',
       label: 'Pending First Visits',
-      value: scopedItems.filter((item) => item.status === 'Pending').length,
+      value: execution.counts.pending,
       route: ROUTES.RUKN_MY_KARKUN,
     },
     {
       id: 'pending-annexure',
       label: 'Pending Visit',
-      value: pendingAnnexure,
+      value: execution.counts.pending + execution.counts.inProgress,
       route: ROUTES.RUKN_MY_KARKUN,
     },
     {
       id: 'follow-up-required',
       label: 'Follow-up Required',
-      value: followUpRequired,
+      value: execution.counts.followUpRequired,
       route: ROUTES.RUKN_MY_KARKUN,
     },
     {
@@ -332,7 +318,7 @@ function buildRuknKpis(ruknId: string): CommandCenterKpi[] {
     {
       id: 'completed-today',
       label: 'Completed Today',
-      value: completedToday,
+      value: execution.counts.completedToday,
       route: ROUTES.RUKN_CAMPAIGN_RECORD,
     },
     {

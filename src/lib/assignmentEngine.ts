@@ -1,5 +1,8 @@
 import { getKarkunById, MOCK_KARKUN_REGISTRY } from '@/constants/mockKarkunRegistry'
 import { getRuknById } from '@/data/ruknMaster'
+import {
+  getConnectedKarkunsForRukn,
+} from '@/lib/connections/getConnectedKarkunsForRukn'
 import { isValidMobileFormat, normalizeMobile } from '@/lib/mobileValidation'
 import {
   assignRukn,
@@ -31,21 +34,9 @@ function todayDate(): string {
 
 export const subscribeToAssignments = subscribeToAssignmentStore
 
+/** @see getConnectedKarkunsForRukn — canonical Active + !archived + deduped set. */
 export function getAssignedKarkunanForRukn(ruknId: string): KarkunRegistryRecord[] {
-  // One Rukn may hold many active Karkuns — return every active assignment's Karkun.
-  // Deduplicate by karkunId so duplicate Active rows never render twice.
-  const seen = new Set<string>()
-  const result: KarkunRegistryRecord[] = []
-  for (const record of getAssignmentHistoryForRukn(ruknId)) {
-    if (record.status !== 'Active') continue
-    if (seen.has(record.karkunId)) continue
-    seen.add(record.karkunId)
-    const karkun = getKarkunById(record.karkunId)
-    if (karkun && !karkun.isArchived) {
-      result.push(karkun)
-    }
-  }
-  return result
+  return getConnectedKarkunsForRukn(ruknId)
 }
 
 export function getAvailableKarkunan(ruknId?: string): KarkunRegistryRecord[] {

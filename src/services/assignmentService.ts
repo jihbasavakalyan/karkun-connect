@@ -1,5 +1,6 @@
 import { MOCK_KARKUN_REGISTRY, getKarkunById } from '@/constants/mockKarkunRegistry'
 import { getRuknById, ruknMaster } from '@/data/ruknMaster'
+import { getConnectedAssignmentsForRukn } from '@/lib/connections/getConnectedKarkunsForRukn'
 import { getAllKarkuns, getCompatibleKarkunsForRukn, notifyPeopleRegistryChange } from '@/lib/peopleStore'
 import { logPeopleAudit } from '@/lib/peopleAuditLog'
 import { isValidMobileFormat, normalizeMobile } from '@/lib/mobileValidation'
@@ -10,7 +11,6 @@ import {
   generateAssignmentNumber,
   getActiveAssignmentForRukn,
   getActiveAssignmentsForKarkun,
-  getActiveAssignmentsForRukn,
   getAllAssignments,
   getAssignmentHistoryForKarkun,
   getAssignmentHistoryForRukn,
@@ -494,7 +494,8 @@ export function restoreAssignment(input: RestoreInput): AssignmentResult {
 
 export function getRuknAssignmentSummary(ruknId: string): RuknAssignmentSummary {
   const history = getAssignmentHistoryForRukn(ruknId)
-  const activeAssignments = getActiveAssignmentsForRukn(ruknId)
+  // Canonical connected set (same as Dashboard / Connected page / Automation).
+  const activeAssignments = getConnectedAssignmentsForRukn(ruknId)
   const currentAssignment = activeAssignments[0] ?? null
   const suspendedAssignment = getSuspendedAssignmentForRukn(ruknId) ?? null
   const lastChange = history[0]
