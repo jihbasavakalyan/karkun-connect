@@ -126,12 +126,14 @@ export function subscribeToUserPreferences(listener: Listener): () => void {
   }
 }
 
+/**
+ * Return the cached preferences reference (stable until the next update).
+ * Must NOT allocate a new object on each call — useSyncExternalStore compares
+ * snapshots with Object.is; cloning every read causes React error #185
+ * (Maximum update depth exceeded) in DigitalRafeeqVoiceDrawer / settings.
+ */
 export function getUserPreferences(): UserPreferences {
-  return {
-    ...preferences,
-    rafeeq: { ...preferences.rafeeq },
-    notifications: cloneNotifications(preferences.notifications),
-  }
+  return preferences
 }
 
 /** Bind preferences to the signed-in user and apply appearance. */
