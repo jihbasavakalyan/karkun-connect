@@ -30,18 +30,20 @@ export function PendingKarkunRequestQueue() {
   const decidedBy = user?.displayName ?? user?.uid ?? 'Administrator'
 
   const handleApprove = (request: NewKarkunRequest) => {
-    const result = approveNewKarkunRequest({
-      requestId: request.id,
-      decidedBy,
-      decisionNotes: notesById[request.id],
-    })
-    if (!result.ok) {
-      setError(result.error)
-      setNotice('')
-      return
-    }
-    setError('')
-    setNotice(`Approved ${request.fullName} and connected to ${request.requestingRuknName}.`)
+    void (async () => {
+      const result = await approveNewKarkunRequest({
+        requestId: request.id,
+        decidedBy,
+        decisionNotes: notesById[request.id],
+      })
+      if (!result.ok) {
+        setError(result.error)
+        setNotice('')
+        return
+      }
+      setError('')
+      setNotice(`Approved ${request.fullName} and connected to ${request.requestingRuknName}.`)
+    })()
   }
 
   const handleReject = (request: NewKarkunRequest) => {

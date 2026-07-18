@@ -178,12 +178,18 @@ function KarkunProfileForm({ karkun, karkunId }: KarkunProfileFormProps) {
       return
     }
 
-    const assignmentResult = changeKarkunRuknAssignment(karkunId, assignedRuknId)
-    if (!assignmentResult.success) {
-      setError(assignmentResult.error ?? 'Unable to update connection.')
-      return
-    }
+    void (async () => {
+      const assignmentResult = await changeKarkunRuknAssignment(karkunId, assignedRuknId)
+      if (!assignmentResult.success) {
+        setError(assignmentResult.error ?? 'Unable to update connection.')
+        return
+      }
 
+      finishProfileSave(karkunId)
+    })()
+  }
+
+  const finishProfileSave = (karkunId: string) => {
     const existingRegistration = getRegistrationForKarkun(karkunId)
 
     if (jihPortalRegistered) {

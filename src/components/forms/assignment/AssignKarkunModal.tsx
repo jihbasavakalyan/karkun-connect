@@ -50,17 +50,19 @@ export function AssignKarkunModal({ isOpen, onClose, genderFilter }: AssignKarku
       return
     }
 
-    const result = assignKarkun(pendingKarkunId, ruknId, 'Administrator')
-    if (!result.success) {
-      setError(result.error)
-      return
-    }
+    void (async () => {
+      const result = await assignKarkun(pendingKarkunId, ruknId, 'Administrator')
+      if (!result.success) {
+        setError(result.error)
+        return
+      }
 
-    setPendingKarkunId(null)
-    setRuknId('')
-    setQuery('')
-    setError('')
-    onClose()
+      setPendingKarkunId(null)
+      setRuknId('')
+      setQuery('')
+      setError('')
+      onClose()
+    })()
   }
 
   const handleClose = () => {

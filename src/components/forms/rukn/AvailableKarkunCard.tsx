@@ -17,13 +17,15 @@ export function AvailableKarkunCard({ karkun, ruknId }: AvailableKarkunCardProps
   const [error, setError] = useState('')
 
   const handleConfirm = () => {
-    const result = assignKarkun(karkun.id, ruknId, 'Rukn')
-    if (!result.success) {
-      setError(result.error)
-      return
-    }
-    setConfirmOpen(false)
-    setError('')
+    void (async () => {
+      const result = await assignKarkun(karkun.id, ruknId, 'Rukn')
+      if (!result.success) {
+        setError(result.error)
+        return
+      }
+      setConfirmOpen(false)
+      setError('')
+    })()
   }
 
   return (

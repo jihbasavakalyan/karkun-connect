@@ -79,7 +79,7 @@ function reset(): void {
   MOCK_KARKUN_REGISTRY.length = 0
 }
 
-function verifyInlineGenderFlow(gender: PersonGender): void {
+async function verifyInlineGenderFlow(gender: PersonGender): Promise<void> {
   const karkun = createKarkun(`verify-inline-${gender.toLowerCase()}`, gender)
   const rukns = activeRukns(gender)
   const ruknA = rukns[0]
@@ -98,13 +98,13 @@ function verifyInlineGenderFlow(gender: PersonGender): void {
     `${gender} inline picker must list all active ${gender} Rukns regardless of existing assignments`,
   )
 
-  const assignResult = changeKarkunRuknAssignment(karkun.id, ruknA!.id)
+  const assignResult = await changeKarkunRuknAssignment(karkun.id, ruknA!.id)
   assert(assignResult.success, `Assign failed: ${assignResult.success ? '' : assignResult.error}`)
   assert(karkun.assignmentStatus === 'Assigned', 'Assignment status should be Assigned')
   assert(karkun.assignedRuknId === ruknA!.id, 'Assigned Rukn id should match')
   assert(Boolean(assignResult.assignment?.assignmentNumber), 'Assignment number must be generated')
 
-  const replaceResult = changeKarkunRuknAssignment(karkun.id, ruknB!.id)
+  const replaceResult = await changeKarkunRuknAssignment(karkun.id, ruknB!.id)
   assert(
     replaceResult.success,
     `Replace failed: ${replaceResult.success ? '' : replaceResult.error}`,
@@ -118,7 +118,7 @@ function verifyInlineGenderFlow(gender: PersonGender): void {
     'History should contain ended assignment records',
   )
 
-  const unassignResult = changeKarkunRuknAssignment(karkun.id, '')
+  const unassignResult = await changeKarkunRuknAssignment(karkun.id, '')
   assert(
     unassignResult.success,
     `Unassign failed: ${unassignResult.success ? '' : unassignResult.error}`,
@@ -131,7 +131,7 @@ function verifyInlineGenderFlow(gender: PersonGender): void {
   assert(activity.some((entry) => entry.type === 'remove'), 'Activity log should record removal')
 }
 
-function verifyMultipleKarkunsPerRukn(gender: PersonGender): void {
+async function verifyMultipleKarkunsPerRukn(gender: PersonGender): Promise<void> {
   const rukn = activeRukns(gender)[0]
   assert(Boolean(rukn), `Need at least one active ${gender} Rukn for multi-Karkun flow`)
 
@@ -142,7 +142,7 @@ function verifyMultipleKarkunsPerRukn(gender: PersonGender): void {
   })
 
   for (const karkun of karkuns) {
-    const result = changeKarkunRuknAssignment(karkun.id, rukn!.id)
+    const result = await changeKarkunRuknAssignment(karkun.id, rukn!.id)
     assert(result.success, `Multi assign failed: ${result.success ? '' : result.error}`)
     assert(
       karkun.assignmentStatus === 'Assigned' && karkun.assignedRuknId === rukn!.id,
@@ -181,7 +181,7 @@ function verifyMultipleKarkunsPerRukn(gender: PersonGender): void {
   )
 }
 
-function verifyAdminModalFlow(gender: PersonGender): void {
+async function verifyAdminModalFlow(gender: PersonGender): Promise<void> {
   const karkun = createKarkun(`verify-admin-${gender.toLowerCase()}`, gender)
   const rukns = activeRukns(gender)
   const ruknA = rukns[2]
@@ -193,7 +193,7 @@ function verifyAdminModalFlow(gender: PersonGender): void {
   const availableForRukn = getCompatibleKarkunsForRukn(ruknA!.id)
   assert(availableForRukn.some((record) => record.id === karkun.id), 'Admin modal must list available Karkun')
 
-  const assignResult = assignRukn({
+  const assignResult = await assignRukn({
     ruknId: ruknA!.id,
     karkunId: karkun.id,
     effectiveFrom: today,
@@ -219,7 +219,7 @@ function verifyAdminModalFlow(gender: PersonGender): void {
   const replacementKarkun = createKarkun(`verify-admin-replacement-${gender.toLowerCase()}`, gender)
   MOCK_KARKUN_REGISTRY.push(replacementKarkun)
 
-  const replaceResult = replaceAssignment({
+  const replaceResult = await replaceAssignment({
     ruknId: ruknA!.id,
     newKarkunId: replacementKarkun.id,
     effectiveFrom: today,
@@ -267,7 +267,7 @@ function verifyAdminModalFlow(gender: PersonGender): void {
   assert(metrics.activeAssignments >= 0, 'Assignment dashboard metrics must remain valid')
 }
 
-function verifyAssignmentPageFlow(gender: PersonGender): void {
+async function verifyAssignmentPageFlow(gender: PersonGender): Promise<void> {
   const karkun = createKarkun(`verify-page-${gender.toLowerCase()}`, gender)
   const rukns = activeRukns(gender)
   const rukn = rukns[4]
@@ -278,7 +278,7 @@ function verifyAssignmentPageFlow(gender: PersonGender): void {
   const assignableIds = new Set(getKarkunsForRuknAssignment(rukn!.id).map((record) => record.id))
   assert(assignableIds.has(karkun.id), 'Assignment page must expose assignable Karkun for selected Rukn')
 
-  const result = assignRukn({
+  const result = await assignRukn({
     ruknId: rukn!.id,
     karkunId: karkun.id,
     effectiveFrom: today,
@@ -293,7 +293,7 @@ function verifyAssignmentPageFlow(gender: PersonGender): void {
   assert(karkun.assignmentStatus === 'Assigned', 'Assignment page flow must update Karkun registry')
 }
 
-function verifyAssignmentPersistence(gender: PersonGender): void {
+async function verifyAssignmentPersistence(gender: PersonGender): Promise<void> {
   const rukn = activeRukns(gender)[0]
   assert(Boolean(rukn), `Need active ${gender} Rukn for persistence test`)
 
@@ -304,7 +304,7 @@ function verifyAssignmentPersistence(gender: PersonGender): void {
   })
 
   for (const karkun of karkuns) {
-    const result = assignRukn({
+    const result = await assignRukn({
       ruknId: rukn!.id,
       karkunId: karkun.id,
       effectiveFrom: today,
@@ -341,7 +341,7 @@ function verifyAssignmentPersistence(gender: PersonGender): void {
   )
 }
 
-function verifyMultiAssignmentReplaceTargetsCorrectKarkun(gender: PersonGender): void {
+async function verifyMultiAssignmentReplaceTargetsCorrectKarkun(gender: PersonGender): Promise<void> {
   const rukn = activeRukns(gender)[0]
   assert(Boolean(rukn), `Need active ${gender} Rukn for multi-replace test`)
 
@@ -351,7 +351,7 @@ function verifyMultiAssignmentReplaceTargetsCorrectKarkun(gender: PersonGender):
   MOCK_KARKUN_REGISTRY.push(first, second, replacement)
 
   for (const karkun of [first, second]) {
-    const result = assignRukn({
+    const result = await assignRukn({
       ruknId: rukn!.id,
       karkunId: karkun.id,
       effectiveFrom: today,
@@ -365,7 +365,7 @@ function verifyMultiAssignmentReplaceTargetsCorrectKarkun(gender: PersonGender):
     'Rukn must have two active assignments before targeted replace',
   )
 
-  const replaceResult = replaceKarkun(second.id, replacement.id, rukn!.id, 'Other', 'Rukn')
+  const replaceResult = await replaceKarkun(second.id, replacement.id, rukn!.id, 'Other', 'Rukn')
   assert(
     replaceResult.success,
     `replaceKarkun failed: ${replaceResult.success ? '' : replaceResult.error}`,
@@ -450,33 +450,38 @@ function verifyAvailableKarkunsPipelineStages(): void {
   assert(afterMiss.length === 0, 'Stage 7 non-matching search must return 0')
 }
 
-runProductionDataMigration()
-verifyKarkunSearchMatching()
-reset()
-verifyAvailableKarkunsPipelineStages()
-reset()
-verifyInlineGenderFlow('Male')
-reset()
-verifyInlineGenderFlow('Female')
-reset()
-verifyMultipleKarkunsPerRukn('Male')
-reset()
-verifyMultipleKarkunsPerRukn('Female')
-reset()
-verifyAdminModalFlow('Male')
-reset()
-verifyAdminModalFlow('Female')
-reset()
-verifyAssignmentPageFlow('Male')
-reset()
-verifyAssignmentPageFlow('Female')
-reset()
-verifyAssignmentPersistence('Male')
-reset()
-verifyAssignmentPersistence('Female')
-reset()
-verifyMultiAssignmentReplaceTargetsCorrectKarkun('Male')
-reset()
-verifyMultiAssignmentReplaceTargetsCorrectKarkun('Female')
 
-console.log('Assignment workflow verification passed for inline and admin flows.')
+async function main(): Promise<void> {
+  runProductionDataMigration()
+  verifyKarkunSearchMatching()
+  reset()
+  verifyAvailableKarkunsPipelineStages()
+  reset()
+  await verifyInlineGenderFlow('Male')
+  reset()
+  await verifyInlineGenderFlow('Female')
+  reset()
+  await verifyMultipleKarkunsPerRukn('Male')
+  reset()
+  await verifyMultipleKarkunsPerRukn('Female')
+  reset()
+  await verifyAdminModalFlow('Male')
+  reset()
+  await verifyAdminModalFlow('Female')
+  reset()
+  await verifyAssignmentPageFlow('Male')
+  reset()
+  await verifyAssignmentPageFlow('Female')
+  reset()
+  await verifyAssignmentPersistence('Male')
+  reset()
+  await verifyAssignmentPersistence('Female')
+  reset()
+  await verifyMultiAssignmentReplaceTargetsCorrectKarkun('Male')
+  reset()
+  await verifyMultiAssignmentReplaceTargetsCorrectKarkun('Female')
+
+  console.log('Assignment workflow verification passed for inline and admin flows.')
+}
+
+await main()

@@ -7,6 +7,7 @@ export const STORAGE_KEYS = {
   migrationVersion: 'karkun-connect.migration.version',
   assignments: 'karkun-connect.assignments',
   assignmentSequence: 'karkun-connect.assignments.sequence',
+  assignmentAsnRepairVersion: 'karkun-connect.assignments.asnRepairVersion',
   activityLog: 'karkun-connect.activity-log',
   annexure1: 'karkun-connect.annexure1',
   followUps: 'karkun-connect.followups',

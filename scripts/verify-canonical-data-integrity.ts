@@ -1,5 +1,5 @@
 /**
- * KC-028A — Canonical data integrity verification.
+ * KC-028A / KC-002 — Canonical data integrity verification.
  * Run: npx vite-node scripts/verify-canonical-data-integrity.ts
  */
 
@@ -7,6 +7,7 @@ import {
   assertNoConnectionDuplicates,
   canonicalizeConnectionRecords,
 } from '../src/lib/connections/canonicalizeConnectionRecords'
+import { assertUniqueAssignmentNumbers, planAsnCollisionRepair } from '../src/lib/connections/assignmentNumber'
 import {
   getCanonicalConnectedKarkunCount,
   getConnectedAssignmentsForRukn,
@@ -84,8 +85,14 @@ const karkun = {
   isArchived: false,
 }
 MOCK_KARKUN_REGISTRY.push(karkun)
+MOCK_KARKUN_REGISTRY.push({
+  ...karkun,
+  id: 'K-CANON-2',
+  name: 'Canonical Test Karkun 2',
+  mobile: '03001112234',
+})
 
-// Seed duplicate ASN / duplicate id at the raw layer, then canonicalize.
+// Duplicate assignmentId collapses; duplicate ASN does not discard identity.
 const rawDuplicates: AssignmentRecord[] = [
   makeAssignment({
     assignmentId: 'asn-dup-a',
@@ -99,7 +106,7 @@ const rawDuplicates: AssignmentRecord[] = [
     assignmentId: 'asn-dup-b',
     assignmentNumber: 'ASN-000017',
     ruknId,
-    karkunId: karkun!.id,
+    karkunId: 'K-CANON-2',
     status: 'Active',
     updatedAt: '2026-06-01T00:00:00.000Z',
   }),
@@ -114,9 +121,20 @@ const rawDuplicates: AssignmentRecord[] = [
 ]
 
 const { records, duplicates } = canonicalizeConnectionRecords(rawDuplicates)
-assert(duplicates.length >= 2, 'expected duplicate reports')
-assert(records.length === 1, `expected 1 canonical row, got ${records.length}`)
-assert(records[0]!.assignmentId === 'asn-dup-b', 'should keep newest Active')
+assert(duplicates.some((item) => item.kind === 'assignmentId'), 'expected assignmentId duplicate report')
+assert(records.length === 2, `expected 2 identity rows, got ${records.length}`)
+assert(
+  records.some((item) => item.assignmentId === 'asn-dup-a' && item.status === 'Active'),
+  'should keep preferred Active for asn-dup-a',
+)
+assert(
+  records.some((item) => item.assignmentId === 'asn-dup-b'),
+  'must preserve distinct assignmentId with colliding ASN',
+)
+
+const repaired = planAsnCollisionRepair(records)
+assert(repaired.report.reassigned === 1, 'repair should reassign one colliding ASN')
+assertUniqueAssignmentNumbers(repaired.records)
 
 clearAssignmentStore()
 appendAssignment(
@@ -135,7 +153,7 @@ try {
       assignmentId: 'asn-unique-2',
       assignmentNumber: 'ASN-000101',
       ruknId,
-      karkunId: karkun!.id + '-other',
+      karkunId: 'K-CANON-2',
     }),
   )
 } catch {
@@ -144,6 +162,7 @@ try {
 assert(rejected, 'append with duplicate ASN must throw')
 
 assertNoConnectionDuplicates(getAllAssignments())
+assertUniqueAssignmentNumbers(getAllAssignments())
 
 const summary = getRuknAssignmentSummary(ruknId)
 const connectedPage = getAssignedKarkunanForRukn(ruknId)
@@ -198,7 +217,7 @@ assert(
 const connectedIds = new Set(getConnectedAssignmentsForRukn(ruknId).map((r) => r.assignmentId))
 assert(connectedIds.size === summary.activeAssignments.length, 'active assignment id set mismatch')
 
-console.log('PASS  canonicalize collapses duplicate ASN/id')
+console.log('PASS  canonicalize keeps identity; ASN collisions repaired separately')
 console.log('PASS  append rejects duplicate ASN')
 console.log('PASS  profile/connected/canonical counts match', {
   profile: summary.assignedKarkunCount,
@@ -209,4 +228,4 @@ console.log('PASS  KPI refresh stability', executionA.counts, {
   activeAssignments: metricsA.activeAssignments,
 })
 console.log('')
-console.log('KC-028A verify: PASS')
+console.log('KC-028A/KC-002 verify: PASS')

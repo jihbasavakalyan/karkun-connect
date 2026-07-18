@@ -230,24 +230,26 @@ export function AssignmentReviewQueue() {
             setFollowUp(null)
           }}
           onSubmit={(input) => {
-            const result = changeKarkunRuknAssignment(
-              activeRequest.karkunId,
-              input.newRuknId,
-              decidedBy,
-              {
-                removalReason: input.transferReason,
-                remarks: input.remarks || notesById[activeRequest.id],
-                effectiveFrom: input.effectiveFrom,
-              },
-            )
-            if (!result.success) {
-              setError(result.error)
-              return
-            }
-            if (!recordDecision(activeRequest, 'Transfer')) return
-            setNotice(`Transferred ${activeRequest.karkunName} to the selected Rukn.`)
-            setActiveRequest(null)
-            setFollowUp(null)
+            void (async () => {
+              const result = await changeKarkunRuknAssignment(
+                activeRequest.karkunId,
+                input.newRuknId,
+                decidedBy,
+                {
+                  removalReason: input.transferReason,
+                  remarks: input.remarks || notesById[activeRequest.id],
+                  effectiveFrom: input.effectiveFrom,
+                },
+              )
+              if (!result.success) {
+                setError(result.error)
+                return
+              }
+              if (!recordDecision(activeRequest, 'Transfer')) return
+              setNotice(`Transferred ${activeRequest.karkunName} to the selected Rukn.`)
+              setActiveRequest(null)
+              setFollowUp(null)
+            })()
           }}
         />
       ) : null}

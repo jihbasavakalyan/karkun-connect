@@ -1,14 +1,16 @@
 /**
- * KC-028A — Canonical connection record integrity.
+ * KC-002 / KC-028A — Canonical connection record integrity.
  *
- * First layer of duplication may be Firestore (orphan docs / repeated writes) or
- * in-memory reload. Deduplicate here before store/UI consumption — never in the UI.
+ * Identity is assignmentId only. Duplicate assignmentNumbers must never discard
+ * valid connections (KC-001 / KC-002). ASN collisions are reported separately
+ * via findAssignmentNumberCollisions / repair planning.
  */
 
 import type { AssignmentRecord, AssignmentStatus } from '@/types/assignment'
+import { findAssignmentNumberCollisions } from '@/lib/connections/assignmentNumber'
 
 export type ConnectionDuplicateReport = {
-  kind: 'assignmentId' | 'assignmentNumber'
+  kind: 'assignmentId'
   key: string
   keptAssignmentId: string
   droppedAssignmentId: string
@@ -61,38 +63,14 @@ export function canonicalizeConnectionRecords(records: AssignmentRecord[]): {
     byId.set(id, kept)
   }
 
-  const byNumber = new Map<string, AssignmentRecord>()
-  for (const record of byId.values()) {
-    const number = record.assignmentNumber?.trim().toUpperCase()
-    if (!number) {
-      byNumber.set(`__missing_${record.assignmentId}`, record)
-      continue
-    }
-    const existing = byNumber.get(number)
-    if (!existing) {
-      byNumber.set(number, record)
-      continue
-    }
-    const kept = preferRecord(existing, record)
-    const dropped = kept === existing ? record : existing
-    duplicates.push({
-      kind: 'assignmentNumber',
-      key: number,
-      keptAssignmentId: kept.assignmentId,
-      droppedAssignmentId: dropped.assignmentId,
-      keptStatus: kept.status,
-      droppedStatus: dropped.status,
-    })
-    byNumber.set(number, kept)
-  }
-
-  const canonical = [...byNumber.values()].sort((a, b) =>
+  const canonical = [...byId.values()].sort((a, b) =>
     (b.effectiveFrom || '').localeCompare(a.effectiveFrom || ''),
   )
 
   return { records: canonical, duplicates }
 }
 
+/** Identity duplicates only (assignmentId). ASN collisions are not identity failures. */
 export function assertNoConnectionDuplicates(records: AssignmentRecord[]): void {
   const { duplicates } = canonicalizeConnectionRecords(records)
   if (duplicates.length === 0) return
@@ -103,4 +81,11 @@ export function assertNoConnectionDuplicates(records: AssignmentRecord[]): void 
     )
     .join('; ')
   throw new Error(`Connection duplicates detected: ${detail}`)
+}
+
+/** Observability helper — does not mutate or drop records. */
+export function reportAssignmentNumberCollisions(records: AssignmentRecord[]): ReturnType<
+  typeof findAssignmentNumberCollisions
+> {
+  return findAssignmentNumberCollisions(records)
 }

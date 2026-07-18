@@ -44,20 +44,22 @@ export function AvailableKarkunPage() {
 
   const handleConfirmConnect = () => {
     if (!pendingKarkun || !ruknId) return
-    const result = assignKarkun(pendingKarkun.id, ruknId, 'Rukn')
-    if (!result.success) {
-      setError(result.error)
-      return
-    }
-    const connected = pendingKarkun
-    setSuccessMessage(humanizeConnectionConfirmed(result.assignment?.assignmentNumber))
-    setPendingKarkun(null)
-    setError('')
-    setPlanning({
-      karkunId: connected.id,
-      karkunName: connected.name,
-      assignmentId: result.assignment?.assignmentId,
-    })
+    void (async () => {
+      const result = await assignKarkun(pendingKarkun.id, ruknId, 'Rukn')
+      if (!result.success) {
+        setError(result.error)
+        return
+      }
+      const connected = pendingKarkun
+      setSuccessMessage(humanizeConnectionConfirmed(result.assignment?.assignmentNumber))
+      setPendingKarkun(null)
+      setError('')
+      setPlanning({
+        karkunId: connected.id,
+        karkunName: connected.name,
+        assignmentId: result.assignment?.assignmentId,
+      })
+    })()
   }
 
   if (!ruknId) {

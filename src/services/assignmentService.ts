@@ -51,16 +51,17 @@ function nowIso(): string {
   return new Date().toISOString()
 }
 
-function createAssignmentRecord(
+async function createAssignmentRecord(
   input: Omit<
     AssignmentRecord,
     'assignmentId' | 'assignmentNumber' | 'assignedDate' | 'createdAt' | 'updatedAt' | 'status'
   >,
-): AssignmentRecord {
+): Promise<AssignmentRecord> {
   const timestamp = nowIso()
+  const assignmentNumber = await generateAssignmentNumber()
   return {
     assignmentId: `asgn-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-    assignmentNumber: generateAssignmentNumber(),
+    assignmentNumber,
     assignedDate: input.effectiveFrom,
     status: 'Active',
     createdAt: timestamp,
@@ -295,7 +296,7 @@ function formatNames(ruknId: string, karkunId: string): { ruknName: string; kark
   }
 }
 
-export function assignRukn(input: AssignInput): AssignmentResult {
+export async function assignRukn(input: AssignInput): Promise<AssignmentResult> {
   const validation = validateAssignInput(input)
   if (!validation.valid) {
     return { success: false, error: validation.error }
@@ -304,7 +305,7 @@ export function assignRukn(input: AssignInput): AssignmentResult {
   let assignment
   try {
     assignment = appendAssignment(
-      createAssignmentRecord({
+      await createAssignmentRecord({
         ruknId: input.ruknId,
         karkunId: input.karkunId,
         effectiveFrom: input.effectiveFrom,
@@ -347,7 +348,7 @@ export function assignRukn(input: AssignInput): AssignmentResult {
   return { success: true, assignment }
 }
 
-export function replaceAssignment(input: ReplaceInput): AssignmentResult {
+export async function replaceAssignment(input: ReplaceInput): Promise<AssignmentResult> {
   const validation = validateReplaceInput(input)
   if (!validation.valid) {
     return { success: false, error: validation.error }
@@ -373,7 +374,7 @@ export function replaceAssignment(input: ReplaceInput): AssignmentResult {
   let newAssignment
   try {
     newAssignment = appendAssignment(
-      createAssignmentRecord({
+      await createAssignmentRecord({
         ruknId: input.ruknId,
         karkunId: input.newKarkunId,
         effectiveFrom: input.effectiveFrom,
@@ -471,14 +472,14 @@ export function removeAssignment(input: RemoveInput): AssignmentResult {
   return { success: true, assignment: current }
 }
 
-export function restoreAssignment(input: RestoreInput): AssignmentResult {
+export async function restoreAssignment(input: RestoreInput): Promise<AssignmentResult> {
   const validation = validateRestoreInput(input)
   if (!validation.valid) {
     return { success: false, error: validation.error }
   }
 
-  const result = assignRukn(input)
-  if (!result.success) {
+  const result = await assignRukn(input)
+  if (!result.success || !result.assignment) {
     return result
   }
 

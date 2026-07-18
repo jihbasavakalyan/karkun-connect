@@ -139,11 +139,13 @@ export function submitNewKarkunRequest(
   return { ok: true, request }
 }
 
-export function approveNewKarkunRequest(input: {
+export async function approveNewKarkunRequest(input: {
   requestId: string
   decidedBy: string
   decisionNotes?: string
-}): { ok: true; request: NewKarkunRequest; karkunId: string } | { ok: false; error: string } {
+}): Promise<
+  { ok: true; request: NewKarkunRequest; karkunId: string } | { ok: false; error: string }
+> {
   const pending = getPendingKarkunRequests().find((item) => item.id === input.requestId)
   if (!pending) {
     return { ok: false, error: 'Pending request not found.' }
@@ -178,7 +180,7 @@ export function approveNewKarkunRequest(input: {
     return { ok: false, error: 'Karkun was created but could not be located.' }
   }
 
-  const assignResult = assignKarkun(karkunId, pending.requestingRuknId, 'Administrator')
+  const assignResult = await assignKarkun(karkunId, pending.requestingRuknId, 'Administrator')
   if (!assignResult.success) {
     return {
       ok: false,

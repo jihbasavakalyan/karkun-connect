@@ -100,11 +100,11 @@ export function getAssignmentHistory(): AssignmentRecord[] {
   return getAllAssignments()
 }
 
-export function assignKarkun(
+export async function assignKarkun(
   karkunId: string,
   ruknId: string,
   assignedBy: AssignedBy,
-): AssignKarkunResult {
+): Promise<AssignKarkunResult> {
   return assignRukn({
     ruknId,
     karkunId,
@@ -144,13 +144,13 @@ export function releaseKarkun(
   })
 }
 
-export function replaceKarkun(
+export async function replaceKarkun(
   currentKarkunId: string,
   newKarkunId: string,
   ruknId: string,
   releaseReason: ReleaseReason,
   assignedBy: AssignedBy,
-): AssignKarkunResult {
+): Promise<AssignKarkunResult> {
   return replaceAssignment({
     ruknId,
     currentKarkunId,
@@ -185,7 +185,7 @@ export function adminUnassignKarkun(
   })
 }
 
-export function changeKarkunRuknAssignment(
+export async function changeKarkunRuknAssignment(
   karkunId: string,
   selectedRuknId: string,
   assignedBy: AssignedBy = 'Administrator',
@@ -194,7 +194,7 @@ export function changeKarkunRuknAssignment(
     remarks?: string
     effectiveFrom?: string
   },
-): AssignKarkunResult {
+): Promise<AssignKarkunResult> {
   const current = getCurrentAssignmentForKarkun(karkunId)
   const targetRuknId = selectedRuknId.trim()
 
@@ -247,16 +247,16 @@ export function changeKarkunRuknAssignment(
   return assignKarkun(karkunId, targetRuknId, assignedBy)
 }
 
-export function bulkAssignKarkuns(
+export async function bulkAssignKarkuns(
   karkunIds: string[],
   ruknId: string,
   assignedBy: AssignedBy,
-): { success: number; failed: { id: string; error: string }[] } {
+): Promise<{ success: number; failed: { id: string; error: string }[] }> {
   const failed: { id: string; error: string }[] = []
   let success = 0
 
   for (const karkunId of karkunIds) {
-    const result = assignKarkun(karkunId, ruknId, assignedBy)
+    const result = await assignKarkun(karkunId, ruknId, assignedBy)
     if (result.success) {
       success++
     } else {

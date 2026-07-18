@@ -139,19 +139,21 @@ function KarkunGenderSection({
       return
     }
 
-    if (editingKarkun && assignedRuknId !== undefined) {
-      const assignmentResult = changeKarkunRuknAssignment(editingKarkun.id, assignedRuknId)
-      if (!assignmentResult.success) {
-        setFormError(assignmentResult.error ?? 'Unable to update connection.')
-        return
+    void (async () => {
+      if (editingKarkun && assignedRuknId !== undefined) {
+        const assignmentResult = await changeKarkunRuknAssignment(editingKarkun.id, assignedRuknId)
+        if (!assignmentResult.success) {
+          setFormError(assignmentResult.error ?? 'Unable to update connection.')
+          return
+        }
       }
-    }
 
-    setIsFormOpen(false)
-    setEditingKarkun(null)
-    setFormError('')
-    setPendingFormValues(null)
-    setMobileOwner(null)
+      setIsFormOpen(false)
+      setEditingKarkun(null)
+      setFormError('')
+      setPendingFormValues(null)
+      setMobileOwner(null)
+    })()
   }
 
   const confirmMobileOverwrite = () => {
@@ -162,23 +164,25 @@ function KarkunGenderSection({
   }
 
   const handleAssignmentChange = (karkun: KarkunRegistryRecord, ruknId: string): boolean => {
-    const result = changeKarkunRuknAssignment(karkun.id, ruknId)
-    if (!result.success) {
-      setAssignmentErrors((current) => ({
-        ...current,
-        [karkun.id]: result.error ?? 'Connection failed.',
-      }))
-      return false
-    }
-
-    setAssignmentErrors((current) => {
-      if (!current[karkun.id]) {
-        return current
+    void (async () => {
+      const result = await changeKarkunRuknAssignment(karkun.id, ruknId)
+      if (!result.success) {
+        setAssignmentErrors((current) => ({
+          ...current,
+          [karkun.id]: result.error ?? 'Connection failed.',
+        }))
+        return
       }
-      const next = { ...current }
-      delete next[karkun.id]
-      return next
-    })
+
+      setAssignmentErrors((current) => {
+        if (!current[karkun.id]) {
+          return current
+        }
+        const next = { ...current }
+        delete next[karkun.id]
+        return next
+      })
+    })()
     return true
   }
 

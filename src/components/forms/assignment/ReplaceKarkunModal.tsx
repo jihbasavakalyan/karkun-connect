@@ -44,17 +44,19 @@ export function ReplaceKarkunModal({
       return
     }
 
-    const result = replaceKarkun(currentKarkunId, newKarkunId, ruknId, reason, 'Rukn')
-    if (!result.success) {
-      setError(result.error)
-      return
-    }
+    void (async () => {
+      const result = await replaceKarkun(currentKarkunId, newKarkunId, ruknId, reason, 'Rukn')
+      if (!result.success) {
+        setError(result.error)
+        return
+      }
 
-    setStep('release')
-    setNewKarkunId('')
-    setError('')
-    onComplete()
-    onClose()
+      setStep('release')
+      setNewKarkunId('')
+      setError('')
+      onComplete()
+      onClose()
+    })()
   }
 
   const handleClose = () => {

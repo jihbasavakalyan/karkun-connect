@@ -39,15 +39,17 @@ export function BulkAssignModal({
       return
     }
 
-    const result = bulkAssignKarkuns(karkunIds, ruknId, 'Administrator')
-    setResultMessage(
-      `Connected ${result.success} Karkun. ${result.failed.length > 0 ? `${result.failed.length} failed.` : ''}`,
-    )
+    void (async () => {
+      const result = await bulkAssignKarkuns(karkunIds, ruknId, 'Administrator')
+      setResultMessage(
+        `Connected ${result.success} Karkun. ${result.failed.length > 0 ? `${result.failed.length} failed.` : ''}`,
+      )
 
-    if (result.failed.length === 0) {
-      onComplete()
-      onClose()
-    }
+      if (result.failed.length === 0) {
+        onComplete()
+        onClose()
+      }
+    })()
   }
 
   const handleClose = () => {

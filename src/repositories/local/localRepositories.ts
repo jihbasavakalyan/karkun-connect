@@ -26,7 +26,19 @@ import { STORAGE_KEYS } from '@/repositories/storageKeys'
 import type { CampaignRepository } from '@/repositories/interfaces/CampaignRepository'
 import type { RuknRepository } from '@/repositories/interfaces/RuknRepository'
 import type { KarkunRepository, KarkunRegistryState } from '@/repositories/interfaces/KarkunRepository'
-import type { ConnectionRepository, ConnectionState } from '@/repositories/interfaces/ConnectionRepository'
+import type {
+  AllocationResult,
+  ConnectionMetaUpdate,
+  ConnectionRepository,
+  ConnectionState,
+} from '@/repositories/interfaces/ConnectionRepository'
+import {
+  ASN_REPAIR_VERSION,
+  deriveNextSequenceFromRecords,
+  formatAssignmentNumber,
+  planAsnCollisionRepair,
+} from '@/lib/connections/assignmentNumber'
+import { canonicalizeConnectionRecords } from '@/lib/connections/canonicalizeConnectionRecords'
 import type { ExecutionRepository } from '@/repositories/interfaces/ExecutionRepository'
 import type { CommunicationRepository } from '@/repositories/interfaces/CommunicationRepository'
 import type { ComplianceRepository } from '@/repositories/interfaces/ComplianceRepository'
@@ -66,16 +78,8 @@ function normalizeJihPortalState(value: unknown): JihPortalState {
   }
 }
 
-function deriveNextSequenceFromRecords(records: AssignmentRecord[]): number {
-  let max = 0
-  for (const record of records) {
-    const match = record.assignmentNumber.match(/ASN-(\d+)/i)
-    if (match) {
-      max = Math.max(max, Number.parseInt(match[1], 10))
-    }
-  }
-  return max + 1
-}
+/** Serialize local ASN allocations within a single JS realm. */
+let localAllocateChain: Promise<unknown> = Promise.resolve()
 
 export class CampaignLocalRepository implements CampaignRepository {
   getAll(): RepositoryResult<readonly CampaignListItem[]> {
@@ -150,13 +154,23 @@ export class ConnectionLocalRepository implements ConnectionRepository {
     })
 
     const result = tryRepository(() => {
-      const assignments = loadJsonFromStorage<AssignmentRecord[]>(STORAGE_KEYS.assignments, [])
+      const raw = loadJsonFromStorage<AssignmentRecord[]>(STORAGE_KEYS.assignments, [])
+      const { records: assignments } = canonicalizeConnectionRecords(raw)
       const storedSequence = loadJsonFromStorage<number | null>(STORAGE_KEYS.assignmentSequence, null)
       const derivedSequence = deriveNextSequenceFromRecords(assignments)
       const nextSequence =
         storedSequence !== null && Number.isFinite(storedSequence)
           ? Math.max(storedSequence, derivedSequence)
           : derivedSequence
+
+      const planned = planAsnCollisionRepair(assignments, nextSequence)
+      if (planned.report.reassigned > 0) {
+        saveJsonToStorage(STORAGE_KEYS.assignments, planned.records)
+        saveJsonToStorage(STORAGE_KEYS.assignmentSequence, planned.report.nextSequence)
+        saveJsonToStorage(STORAGE_KEYS.assignmentAsnRepairVersion, ASN_REPAIR_VERSION)
+        return { assignments: planned.records, nextSequence: planned.report.nextSequence }
+      }
+
       return { assignments, nextSequence }
     })
 
@@ -192,16 +206,62 @@ export class ConnectionLocalRepository implements ConnectionRepository {
   }
 
   saveState(state: ConnectionState): RepositoryResult<void> {
+    const storedSequence = loadJsonFromStorage<number | null>(STORAGE_KEYS.assignmentSequence, null)
+    const nextSequence = Math.max(
+      state.nextSequence,
+      storedSequence !== null && Number.isFinite(storedSequence) ? storedSequence : 1,
+    )
     traceRepositorySnapshot('connection_repository', {
       caller: 'ConnectionLocalRepository.saveState',
       sourceOfTruth: 'Local Repository',
       connectionCount: state.assignments.length,
       assignmentCount: state.assignments.length,
-      nextSequence: state.nextSequence,
+      nextSequence,
     })
     return tryRepository(() => {
+      // KC-002: document writes must not rewind the sequence counter.
       saveJsonToStorage(STORAGE_KEYS.assignments, state.assignments)
-      saveJsonToStorage(STORAGE_KEYS.assignmentSequence, state.nextSequence)
+    })
+  }
+
+  async allocateNextAssignmentNumber(): Promise<RepositoryResult<AllocationResult>> {
+    const run = async (): Promise<RepositoryResult<AllocationResult>> =>
+      tryRepository(() => {
+        const assignments = loadJsonFromStorage<AssignmentRecord[]>(STORAGE_KEYS.assignments, [])
+        const storedSequence = loadJsonFromStorage<number | null>(STORAGE_KEYS.assignmentSequence, null)
+        const derived = deriveNextSequenceFromRecords(assignments)
+        const current = Math.max(
+          derived,
+          storedSequence !== null && Number.isFinite(storedSequence) ? storedSequence : 1,
+        )
+        const assignmentNumber = formatAssignmentNumber(current)
+        const nextSequence = current + 1
+        saveJsonToStorage(STORAGE_KEYS.assignmentSequence, nextSequence)
+        return { assignmentNumber, nextSequence }
+      })
+
+    const scheduled = localAllocateChain.then(run, run)
+    localAllocateChain = scheduled.then(
+      () => undefined,
+      () => undefined,
+    )
+    return scheduled
+  }
+
+  async setNextSequence(
+    nextSequence: number,
+    meta?: ConnectionMetaUpdate,
+  ): Promise<RepositoryResult<void>> {
+    return tryRepository(() => {
+      const storedSequence = loadJsonFromStorage<number | null>(STORAGE_KEYS.assignmentSequence, null)
+      const monotonic = Math.max(
+        nextSequence,
+        storedSequence !== null && Number.isFinite(storedSequence) ? storedSequence : 1,
+      )
+      saveJsonToStorage(STORAGE_KEYS.assignmentSequence, monotonic)
+      if (meta?.asnRepairVersion !== undefined) {
+        saveJsonToStorage(STORAGE_KEYS.assignmentAsnRepairVersion, meta.asnRepairVersion)
+      }
     })
   }
 
@@ -216,6 +276,7 @@ export class ConnectionLocalRepository implements ConnectionRepository {
     return tryRepository(() => {
       removeFromStorage(STORAGE_KEYS.assignments)
       removeFromStorage(STORAGE_KEYS.assignmentSequence)
+      removeFromStorage(STORAGE_KEYS.assignmentAsnRepairVersion)
     })
   }
 

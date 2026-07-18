@@ -16,6 +16,7 @@ import {
   doc,
   getDocs,
   onSnapshot,
+  runTransaction,
   type Unsubscribe,
 } from 'firebase/firestore'
 import { getFirestoreDb } from '@/lib/firebase/firestore'
@@ -23,7 +24,19 @@ import { repositoryOk, type RepositoryResult } from '@/repositories/errors'
 import type { CampaignRepository } from '@/repositories/interfaces/CampaignRepository'
 import type { RuknRepository } from '@/repositories/interfaces/RuknRepository'
 import type { KarkunRepository, KarkunRegistryState } from '@/repositories/interfaces/KarkunRepository'
-import type { ConnectionRepository, ConnectionState } from '@/repositories/interfaces/ConnectionRepository'
+import type {
+  AllocationResult,
+  ConnectionMetaUpdate,
+  ConnectionRepository,
+  ConnectionState,
+} from '@/repositories/interfaces/ConnectionRepository'
+import {
+  ASN_REPAIR_VERSION,
+  deriveNextSequenceFromRecords,
+  findAssignmentNumberCollisions,
+  formatAssignmentNumber,
+  planAsnCollisionRepair,
+} from '@/lib/connections/assignmentNumber'
 import type { ExecutionRepository } from '@/repositories/interfaces/ExecutionRepository'
 import type { CommunicationRepository } from '@/repositories/interfaces/CommunicationRepository'
 import type { ComplianceRepository } from '@/repositories/interfaces/ComplianceRepository'
@@ -45,6 +58,7 @@ import {
 } from '@/repositories/firestore/collections'
 import {
   createBatch,
+  mapFirestoreError,
   readCollection,
   readDoc,
   removeDoc,
@@ -61,15 +75,9 @@ import {
 } from '@/lib/incidentTraceCollector'
 import { canonicalizeConnectionRecords } from '@/lib/connections/canonicalizeConnectionRecords'
 
-function deriveNextSequenceFromRecords(records: AssignmentRecord[]): number {
-  let max = 0
-  for (const record of records) {
-    const match = record.assignmentNumber.match(/ASN-(\d+)/i)
-    if (match) {
-      max = Math.max(max, Number.parseInt(match[1], 10))
-    }
-  }
-  return max + 1
+type ConnectionMetaDoc = {
+  nextSequence?: number
+  asnRepairVersion?: number
 }
 
 const campaignCache = new SyncCache<readonly CampaignListItem[]>(MOCK_CAMPAIGNS)
@@ -153,7 +161,7 @@ async function hydrateFirestoreCachesOnce(): Promise<void> {
       readCollection<KarkunRegistryRecord>(db, FIRESTORE_COLLECTIONS.karkuns),
       readDoc<{ nextKarkunNum: number }>(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.karkunCounter),
       readCollection<AssignmentRecord>(db, FIRESTORE_COLLECTIONS.connections),
-      readDoc<{ nextSequence: number }>(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.connectionMeta),
+      readDoc<ConnectionMetaDoc>(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.connectionMeta),
       readCollection<ActivityLogEntry>(db, FIRESTORE_COLLECTIONS.activityLogs),
       getDocs(collection(db, FIRESTORE_COLLECTIONS.executions)),
       readCollection<FollowUpRecord>(db, FIRESTORE_COLLECTIONS.followUps),
@@ -175,28 +183,68 @@ async function hydrateFirestoreCachesOnce(): Promise<void> {
       nextKarkunNum: karkunCounter?.nextKarkunNum ?? 1,
     })
 
-    const { records: canonicalAssignments, duplicates: connectionDuplicates } =
+    const { records: identityCanonical, duplicates: connectionDuplicates } =
       canonicalizeConnectionRecords(assignments)
     if (connectionDuplicates.length > 0) {
       console.warn(
-        '[KC-028A] connection duplicates detected at Firestore hydrate (first layer)',
+        '[KC-002] assignmentId duplicates collapsed at Firestore hydrate',
         connectionDuplicates,
       )
     }
-    const derivedSequence = deriveNextSequenceFromRecords(canonicalAssignments)
+
+    const metaNext = connectionMeta?.nextSequence ?? 1
+    const repairVersion = connectionMeta?.asnRepairVersion ?? 0
+    const asnCollisions = findAssignmentNumberCollisions(identityCanonical)
+    let hydratedAssignments = identityCanonical
+    const derivedSequence = deriveNextSequenceFromRecords(identityCanonical)
+    let nextSequence = Math.max(metaNext, derivedSequence)
+
+    if (asnCollisions.length > 0 && repairVersion < ASN_REPAIR_VERSION) {
+      const planned = planAsnCollisionRepair(identityCanonical, nextSequence)
+      hydratedAssignments = planned.records
+      nextSequence = planned.report.nextSequence
+      console.warn('[KC-002] repairing duplicate assignmentNumbers at hydrate', {
+        collisionGroups: planned.report.collisionGroups,
+        reassigned: planned.report.reassigned,
+        nextSequence: planned.report.nextSequence,
+      })
+      void queueWrite('connections-asn-repair', async () => {
+        const repairDb = getFirestoreDb()
+        const batch = createBatch(repairDb)
+        for (const assignment of planned.records) {
+          batch.set(
+            doc(repairDb, FIRESTORE_COLLECTIONS.connections, assignment.assignmentId),
+            sanitizeForFirestore(assignment),
+          )
+        }
+        batch.set(
+          doc(repairDb, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.connectionMeta),
+          sanitizeForFirestore({
+            nextSequence: planned.report.nextSequence,
+            asnRepairVersion: ASN_REPAIR_VERSION,
+          }),
+        )
+        await batch.commit()
+        return repositoryOk(undefined)
+      })
+    } else if (asnCollisions.length > 0) {
+      console.warn('[KC-002] assignmentNumber collisions remain after prior repair version', asnCollisions)
+    }
+
     connectionCache.set({
-      assignments: canonicalAssignments,
-      nextSequence: Math.max(connectionMeta?.nextSequence ?? 1, derivedSequence),
+      assignments: hydratedAssignments,
+      nextSequence,
     })
     traceSequencedIncidentStage('repository_cache_update_complete', {
-      connectionCount: canonicalAssignments.length,
-      assignmentCount: canonicalAssignments.length,
+      connectionCount: hydratedAssignments.length,
+      assignmentCount: hydratedAssignments.length,
       sourceOfTruth: 'Firestore',
       duplicatesCanonicalized: connectionDuplicates.length,
+      asnCollisions: asnCollisions.length,
     })
     markRepositoryReadiness(
       'connection_repository',
-      canonicalAssignments.length > 0 ? 'LOADED' : 'LOADED_EMPTY',
+      hydratedAssignments.length > 0 ? 'LOADED' : 'LOADED_EMPTY',
       {
         caller: 'hydrateFirestoreCachesOnce',
         sourceOfTruth: 'Firestore',
@@ -204,7 +252,7 @@ async function hydrateFirestoreCachesOnce(): Promise<void> {
     )
     markRepositoryReadiness(
       'assignment_repository',
-      canonicalAssignments.length > 0 ? 'LOADED' : 'LOADED_EMPTY',
+      hydratedAssignments.length > 0 ? 'LOADED' : 'LOADED_EMPTY',
       {
         caller: 'hydrateFirestoreCachesOnce',
         sourceOfTruth: 'Firestore',
@@ -213,9 +261,9 @@ async function hydrateFirestoreCachesOnce(): Promise<void> {
     traceRepositorySnapshot('connection_repository', {
       caller: 'hydrateFirestoreCachesOnce',
       sourceOfTruth: 'Firestore',
-      connectionCount: canonicalAssignments.length,
-      assignmentCount: canonicalAssignments.length,
-      nextSequence: Math.max(connectionMeta?.nextSequence ?? 1, derivedSequence),
+      connectionCount: hydratedAssignments.length,
+      assignmentCount: hydratedAssignments.length,
+      nextSequence,
     })
 
     activityLogCache.set(activityLogs)
@@ -554,41 +602,108 @@ export class ConnectionFirestoreRepository implements ConnectionRepository {
   }
 
   saveState(state: ConnectionState): RepositoryResult<void> {
+    const cachedNext = connectionCache.get().nextSequence
+    // KC-002: nextSequence is owned solely by allocateNextAssignmentNumber / setNextSequence.
+    // Never overwrite connectionMeta from a stale client cache on document saves.
+    const nextSequence = Math.max(cachedNext, state.nextSequence)
     traceRepositorySnapshot('connection_repository', {
       caller: 'ConnectionFirestoreRepository.saveState',
       sourceOfTruth: 'Derived Calculation',
       connectionCount: state.assignments.length,
       assignmentCount: state.assignments.length,
-      nextSequence: state.nextSequence,
+      nextSequence,
     })
     connectionCache.set({
       assignments: [...state.assignments],
-      nextSequence: state.nextSequence,
+      nextSequence,
     })
     void queueWrite('connections', async () => {
       const db = getFirestoreDb()
       const batch = createBatch(db)
-      const existing = await readCollection<AssignmentRecord>(db, FIRESTORE_COLLECTIONS.connections)
-      const keepIds = new Set(state.assignments.map((record) => record.assignmentId))
-      // KC-028A: prune orphan connection docs so hydrate cannot reintroduce duplicates.
-      for (const assignment of existing) {
-        if (!keepIds.has(assignment.assignmentId)) {
-          batch.delete(doc(db, FIRESTORE_COLLECTIONS.connections, assignment.assignmentId))
-        }
-      }
+      // KC-002: upsert only — never delete remote connections absent from a partial client set.
       for (const assignment of state.assignments) {
         batch.set(
           doc(db, FIRESTORE_COLLECTIONS.connections, assignment.assignmentId),
           sanitizeForFirestore(assignment),
         )
       }
-      batch.set(doc(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.connectionMeta), sanitizeForFirestore({
-        nextSequence: state.nextSequence,
-      }))
       await batch.commit()
       return repositoryOk(undefined)
     })
     return repositoryOk(undefined)
+  }
+
+  async allocateNextAssignmentNumber(): Promise<RepositoryResult<AllocationResult>> {
+    try {
+      const db = getFirestoreDb()
+      const metaRef = doc(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.connectionMeta)
+      const floor = Math.max(1, connectionCache.get().nextSequence)
+
+      const allocated = await runTransaction(db, async (transaction) => {
+        const snapshot = await transaction.get(metaRef)
+        const meta = snapshot.exists() ? (stripMeta<ConnectionMetaDoc>(snapshot.data()) ?? {}) : {}
+        const remoteNext = Number(meta.nextSequence)
+        const current = Math.max(
+          floor,
+          Number.isFinite(remoteNext) && remoteNext >= 1 ? remoteNext : 1,
+        )
+        const assignmentNumber = formatAssignmentNumber(current)
+        const nextSequence = current + 1
+        transaction.set(
+          metaRef,
+          sanitizeForFirestore({
+            nextSequence,
+            asnRepairVersion: meta.asnRepairVersion ?? ASN_REPAIR_VERSION,
+          }),
+          { merge: true },
+        )
+        return { assignmentNumber, nextSequence }
+      })
+
+      connectionCache.set({
+        ...connectionCache.get(),
+        nextSequence: allocated.nextSequence,
+      })
+      return repositoryOk(allocated)
+    } catch (error) {
+      return mapFirestoreError(error)
+    }
+  }
+
+  async setNextSequence(
+    nextSequence: number,
+    meta?: ConnectionMetaUpdate,
+  ): Promise<RepositoryResult<void>> {
+    try {
+      const db = getFirestoreDb()
+      const metaRef = doc(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.connectionMeta)
+      await runTransaction(db, async (transaction) => {
+        const snapshot = await transaction.get(metaRef)
+        const existing = snapshot.exists()
+          ? (stripMeta<ConnectionMetaDoc>(snapshot.data()) ?? {})
+          : {}
+        const remoteNext = Number(existing.nextSequence)
+        const monotonic = Math.max(
+          nextSequence,
+          Number.isFinite(remoteNext) && remoteNext >= 1 ? remoteNext : 1,
+        )
+        transaction.set(
+          metaRef,
+          sanitizeForFirestore({
+            nextSequence: monotonic,
+            asnRepairVersion: meta?.asnRepairVersion ?? existing.asnRepairVersion ?? ASN_REPAIR_VERSION,
+          }),
+          { merge: true },
+        )
+      })
+      connectionCache.set({
+        ...connectionCache.get(),
+        nextSequence: Math.max(connectionCache.get().nextSequence, nextSequence),
+      })
+      return repositoryOk(undefined)
+    } catch (error) {
+      return mapFirestoreError(error)
+    }
   }
 
   clear(): RepositoryResult<void> {

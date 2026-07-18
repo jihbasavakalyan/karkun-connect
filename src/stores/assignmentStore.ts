@@ -3,6 +3,12 @@ import { getRepositories } from '@/repositories/provider'
 import { unwrapRepository } from '@/repositories/errors'
 import { canonicalizeConnectionRecords } from '@/lib/connections/canonicalizeConnectionRecords'
 import {
+  assertUniqueAssignmentNumbers,
+  deriveNextSequenceFromRecords,
+  findAssignmentNumberCollisions,
+  planAsnCollisionRepair,
+} from '@/lib/connections/assignmentNumber'
+import {
   createIncidentOperationId,
   markRepositoryReadiness,
   traceMutation,
@@ -10,17 +16,6 @@ import {
   traceSequencedIncidentStage,
   traceStoreSnapshot,
 } from '@/lib/incidentTraceCollector'
-
-function deriveNextSequenceFromRecords(records: AssignmentRecord[]): number {
-  let max = 0
-  for (const record of records) {
-    const match = record.assignmentNumber.match(/ASN-(\d+)/i)
-    if (match) {
-      max = Math.max(max, Number.parseInt(match[1], 10))
-    }
-  }
-  return max + 1
-}
 
 function loadPersistedAssignmentState(): {
   assignments: AssignmentRecord[]
@@ -55,13 +50,14 @@ function loadPersistedAssignmentState(): {
   const loaded = unwrapRepository(result, { assignments: [], nextSequence: 1 })
   const { records, duplicates } = canonicalizeConnectionRecords(loaded.assignments)
   if (duplicates.length > 0) {
-    console.warn('[KC-028A] connection duplicates canonicalized on store load', duplicates)
-    // Persist cleaned set so Firestore/local orphans are pruned on next save.
-    getRepositories().connection.saveState({
-      assignments: records,
-      nextSequence: loaded.nextSequence,
-    })
+    console.warn('[KC-002] assignmentId duplicates canonicalized on store load', duplicates)
   }
+
+  const asnCollisions = findAssignmentNumberCollisions(records)
+  if (asnCollisions.length > 0) {
+    console.warn('[KC-002] assignmentNumber collisions present in store load', asnCollisions)
+  }
+
   return { assignments: records, nextSequence: loaded.nextSequence }
 }
 
@@ -81,6 +77,7 @@ markRepositoryReadiness('assignment_repository', 'UNINITIALIZED', {
 })
 const persisted = loadPersistedAssignmentState()
 const assignments: AssignmentRecord[] = [...persisted.assignments]
+/** Cache only — never the allocation source of truth (KC-002). */
 let nextAssignmentSequence = persisted.nextSequence
 
 traceStoreSnapshot('assignment_store', {
@@ -126,11 +123,17 @@ export function reloadAssignmentStoreFromPersistence(): void {
   notifyAssignmentStoreChange()
 }
 
-export function generateAssignmentNumber(): string {
-  const number = nextAssignmentSequence
-  nextAssignmentSequence += 1
-  saveAssignments()
-  return `ASN-${String(number).padStart(6, '0')}`
+/**
+ * KC-002 — Allocate via repository atomic counter (Firestore transaction / local mutex).
+ * Module-level nextAssignmentSequence is updated as a cache only.
+ */
+export async function generateAssignmentNumber(): Promise<string> {
+  const result = await getRepositories().connection.allocateNextAssignmentNumber()
+  if (!result.ok) {
+    throw new Error(result.error.message || 'Failed to allocate assignment number')
+  }
+  nextAssignmentSequence = result.data.nextSequence
+  return result.data.assignmentNumber
 }
 
 export function getAllAssignments(): AssignmentRecord[] {
@@ -229,6 +232,8 @@ export function appendAssignment(record: AssignmentRecord): AssignmentRecord {
     },
   })
 
+  // PHASE 4 — runtime uniqueness guard before mutation
+  assertUniqueAssignmentNumbers([record, ...assignments])
   assignments.unshift(record)
   saveAssignments()
   traceStoreSnapshot('assignment_store', {
@@ -387,14 +392,26 @@ export function replaceAllAssignments(
     sourceOfTruth: 'Migration',
   })
 
+  const { records: identityCanonical } = canonicalizeConnectionRecords(records)
+  const repaired = planAsnCollisionRepair(
+    identityCanonical,
+    nextSequence ?? previous.nextSequence,
+  )
+  assertUniqueAssignmentNumbers(repaired.records)
+
   assignments.length = 0
-  assignments.push(...records)
+  assignments.push(...repaired.records)
 
   nextAssignmentSequence =
     nextSequence ??
-    Math.max(previous.nextSequence, deriveNextSequenceFromRecords(records))
+    Math.max(previous.nextSequence, repaired.report.nextSequence, deriveNextSequenceFromRecords(repaired.records))
 
   saveAssignments()
+  const setNext = getRepositories().connection.setNextSequence
+  if (setNext) {
+    void setNext(nextAssignmentSequence)
+  }
+
   traceStoreSnapshot('assignment_store', {
     caller: 'replaceAllAssignments',
     sourceOfTruth: 'Migration',

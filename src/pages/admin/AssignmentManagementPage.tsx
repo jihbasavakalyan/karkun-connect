@@ -119,7 +119,7 @@ export function AssignmentManagementPage() {
     setActionError('')
   }
 
-  const completeAssignment = (result: ReturnType<typeof assignRukn>) => {
+  const completeAssignment = (result: Awaited<ReturnType<typeof assignRukn>>) => {
     if (!result.success) {
       setActionError(result.error)
       return false
@@ -139,27 +139,23 @@ export function AssignmentManagementPage() {
       return
     }
 
-    completeAssignment(
-      assignRukn({
-        ruknId: selectedRukn.id,
-        karkunId: selectedKarkunId,
-        effectiveFrom: new Date().toISOString().slice(0, 10),
-        assignedBy: 'Administrator',
-      }),
-    )
+    void assignRukn({
+      ruknId: selectedRukn.id,
+      karkunId: selectedKarkunId,
+      effectiveFrom: new Date().toISOString().slice(0, 10),
+      assignedBy: 'Administrator',
+    }).then(completeAssignment)
   }
 
   const handleAssign = (input: { karkunId: string; effectiveFrom: string; remarks?: string }) => {
     if (!selectedRukn) return
-    completeAssignment(
-      assignRukn({
-        ruknId: selectedRukn.id,
-        karkunId: input.karkunId,
-        effectiveFrom: input.effectiveFrom,
-        remarks: input.remarks,
-        assignedBy: 'Administrator',
-      }),
-    )
+    void assignRukn({
+      ruknId: selectedRukn.id,
+      karkunId: input.karkunId,
+      effectiveFrom: input.effectiveFrom,
+      remarks: input.remarks,
+      assignedBy: 'Administrator',
+    }).then(completeAssignment)
   }
 
   const handleRemove = (input: {
@@ -191,23 +187,25 @@ export function AssignmentManagementPage() {
     remarks?: string
   }) => {
     if (!removingKarkun) return
-    const result = changeKarkunRuknAssignment(
-      removingKarkun.id,
-      input.newRuknId,
-      'Administrator',
-      {
-        removalReason: input.transferReason,
-        remarks: input.remarks,
-        effectiveFrom: input.effectiveFrom,
-      },
-    )
-    if (!result.success) {
-      setActionError(result.error)
-      return
-    }
-    setRemovingKarkun(null)
-    setSelectedRuknId(input.newRuknId)
-    closeModal()
+    void (async () => {
+      const result = await changeKarkunRuknAssignment(
+        removingKarkun.id,
+        input.newRuknId,
+        'Administrator',
+        {
+          removalReason: input.transferReason,
+          remarks: input.remarks,
+          effectiveFrom: input.effectiveFrom,
+        },
+      )
+      if (!result.success) {
+        setActionError(result.error)
+        return
+      }
+      setRemovingKarkun(null)
+      setSelectedRuknId(input.newRuknId)
+      closeModal()
+    })()
   }
 
   const handleRestore = (input: {
@@ -216,18 +214,20 @@ export function AssignmentManagementPage() {
     remarks?: string
   }) => {
     if (!selectedRukn) return
-    const result = restoreAssignment({
-      ruknId: selectedRukn.id,
-      karkunId: input.karkunId,
-      effectiveFrom: input.effectiveFrom,
-      remarks: input.remarks,
-      assignedBy: 'Administrator',
-    })
-    if (!result.success) {
-      setActionError(result.error)
-      return
-    }
-    closeModal()
+    void (async () => {
+      const result = await restoreAssignment({
+        ruknId: selectedRukn.id,
+        karkunId: input.karkunId,
+        effectiveFrom: input.effectiveFrom,
+        remarks: input.remarks,
+        assignedBy: 'Administrator',
+      })
+      if (!result.success) {
+        setActionError(result.error)
+        return
+      }
+      closeModal()
+    })()
   }
 
   return (
