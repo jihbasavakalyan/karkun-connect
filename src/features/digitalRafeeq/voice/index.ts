@@ -12,4 +12,13 @@ export {
   answerOperationalQuery,
   SUGGESTED_QUESTIONS_ADMIN,
   SUGGESTED_QUESTIONS_RUKN,
+  RAFEEQ_WELCOME_MESSAGE,
+  RAFEEQ_SUGGESTION_CATALOG,
+  resolveContextualSuggestions,
+  getSuggestionTexts,
+} from './opsAnswers'
+export type {
+  RafeeqSuggestion,
+  RafeeqSuggestionCategory,
+  RafeeqSuggestionContext,
 } from './opsAnswers'

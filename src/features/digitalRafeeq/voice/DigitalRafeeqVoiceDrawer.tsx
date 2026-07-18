@@ -16,9 +16,9 @@ import type {
   RuknCommandCenterSnapshot,
 } from '@/types/campaignAutomation.types'
 import {
-  SUGGESTED_QUESTIONS_ADMIN,
-  SUGGESTED_QUESTIONS_RUKN,
   answerOperationalQuery,
+  RAFEEQ_WELCOME_MESSAGE,
+  resolveContextualSuggestions,
   type OpsAnswerAction,
 } from './opsAnswers'
 import { RafeeqSpeakButton } from './RafeeqSpeakButton'
@@ -104,7 +104,15 @@ export function DigitalRafeeqVoiceDrawer({
     ruknId: ruknId ?? '',
   }) as RuknCommandCenterSnapshot
 
-  const suggestions = role === 'administrator' ? SUGGESTED_QUESTIONS_ADMIN : SUGGESTED_QUESTIONS_RUKN
+  const suggestions = useMemo(
+    () =>
+      resolveContextualSuggestions({
+        role,
+        ruknSnapshot: role === 'rukn' ? ruknSnapshot : undefined,
+        adminSnapshot: role === 'administrator' ? adminSnapshot : undefined,
+      }),
+    [role, ruknSnapshot, adminSnapshot],
+  )
 
   const handleAnswer = async (query: string) => {
     const trimmed = query.trim()
@@ -223,9 +231,7 @@ export function DigitalRafeeqVoiceDrawer({
 
         <div ref={listRef} className="dr-voice-messages" aria-live="polite">
           {messages.length === 0 && (
-            <p className="dr-voice-empty">
-              کارکنان، ملاقاتوں اور اپنی ذمہ داریوں کے بارے میں کچھ بھی پوچھیے...
-            </p>
+            <p className="dr-voice-empty">{RAFEEQ_WELCOME_MESSAGE}</p>
           )}
           {messages.map((message) => (
             <div
@@ -265,15 +271,18 @@ export function DigitalRafeeqVoiceDrawer({
           ))}
         </div>
 
-        <div className="dr-voice-suggestions">
-          {suggestions.map((question) => (
+        <div className="dr-voice-suggestions" role="list" aria-label="تجویز کردہ سوالات">
+          {suggestions.map((suggestion) => (
             <button
-              key={question}
+              key={suggestion.id}
               type="button"
               className="dr-voice-chip"
-              onClick={() => void handleAnswer(question)}
+              role="listitem"
+              data-suggestion-id={suggestion.id}
+              data-speakable={suggestion.text}
+              onClick={() => void handleAnswer(suggestion.text)}
             >
-              {question}
+              {suggestion.text}
             </button>
           ))}
         </div>

@@ -76,9 +76,8 @@ export function answerOperationalQuery(
   if (!query) {
     return {
       text: companionReply(
-        'کارکنان، ملاقاتوں اور اپنی ذمہ داریوں کے بارے میں کچھ بھی پوچھیے...',
-        undefined,
-        'میں آپ کے ساتھ ہوں۔',
+        'میں کارکنان، ملاقاتوں، ترجیحات اور جماعتی ذمہ داریوں کے بارے میں آپ کی رہنمائی کے لیے حاضر ہوں۔',
+        'آپ جو چاہیں پوچھ سکتے ہیں۔',
       ),
       actions: [],
     }
@@ -254,8 +253,59 @@ function answerRuknQuery(
 
   if (
     matches(query, [
-      /today|focus|mission|should i|what.*(do|work)|priorit/,
-      /آج|مشن|کیا کروں|کام|ترجیح/,
+      /phone|call.*karkun|want to call/,
+      /فون کرنا|نام بولیے، میں خدمت/,
+    ])
+  ) {
+    return {
+      text: companionReply(
+        'فون کمانڈ جلد آپ کی خدمت میں حاضر ہوگی۔',
+        'ابھی آپ مربوط کارکنان کی فہرست سے براہِ راست کال کر سکتے ہیں۔',
+        'میں آپ کے ساتھ ہوں۔',
+      ),
+      actions: [
+        { id: 'connected', label: 'مربوط کارکنان', route: ROUTES.RUKN_MY_KARKUN },
+      ],
+    }
+  }
+
+  if (
+    matches(query, [
+      /plan.*(visit|meeting)|order.*visit|schedule.*tomorrow|upcoming.*plan/,
+      /ترتیب|منصوبہ بندی|آئندہ ملاقات|کل کی ملاقات/,
+    ])
+  ) {
+    const topNames = urgent.slice(0, 4).map((item) => respectName(item.karkunName))
+    if (topNames.length === 0) {
+      return {
+        text: companionReply(
+          'ابھی منصوبہ بندی کے لیے کافی تفصیل نہیں۔',
+          'پہلے چند کارکنان سے رابطہ قائم کریں، پھر ترتیب بنانا آسان ہوگا۔',
+        ),
+        actions: [
+          { id: 'connect', label: 'کارکن مربوط کریں', route: ROUTES.RUKN_AVAILABLE_KARKUN },
+        ],
+      }
+    }
+    return {
+      text: companionReply(
+        `مناسب ترتیب یہ ہو سکتی ہے: ${topNames.join('، پھر ')}۔`,
+        'اگر آپ چاہیں تو اسی ترتیب سے آج یا کل رابطہ شروع کیجیے۔',
+        'اللہ منصوبے میں برکت عطا فرمائے۔',
+      ),
+      actions: [
+        ...(urgent[0]
+          ? [{ id: 'record', label: 'ملاقات محفوظ کریں', route: ruknVisitPath(urgent[0].karkunId) }]
+          : []),
+        { id: 'connected', label: 'مربوط کارکنان', route: ROUTES.RUKN_MY_KARKUN },
+      ],
+    }
+  }
+
+  if (
+    matches(query, [
+      /today|focus|mission|should i|what.*(do|work)|priorit|goal|target/,
+      /آج|مشن|کیا کروں|کام|ترجیح|ہدف/,
     ])
   ) {
     return {
@@ -343,19 +393,39 @@ function answerRuknQuery(
 
   if (
     matches(query, [
-      /ijtema|attendance|missed|absent/,
-      /اجتماع|حاضری|غائب|غیر حاضر/,
+      /ijtema|attendance|missed|absent|how many.*(attend|present|participat)/,
+      /اجتماع|حاضری|غائب|غیر حاضر|شریک ہوئے|حاضر ہوئے/,
     ])
   ) {
     const missed = connectedIds.filter((id) => {
       const status = getCurrentIjtemaAttendance(id).status
       return status === 'Absent' || status === 'Not recorded'
     })
+    const present = connectedIds.filter((id) => {
+      const status = getCurrentIjtemaAttendance(id).status
+      return status === 'Present' || status === 'Excused'
+    })
     const names = missed
       .slice(0, 5)
       .map((id) => getKarkunById(id)?.name)
       .filter(Boolean) as string[]
     const named = names.map(respectName)
+
+    if (/شریک ہوئے|حاضر ہوئے|how many.*(attend|present|participat)/.test(query)) {
+      return {
+        text: companionReply(
+          `آج اجتماع میں ${present.length} کارکن شریک ہوئے، جبکہ ${missed.length} غیر حاضر یا غیر محفوظ ہیں۔`,
+          missed.length > 0
+            ? 'اگر مناسب سمجھیں تو غیر حاضر کارکنان سے نرم رابطہ مفید ہوگا۔'
+            : 'الحمد للہ — اسی تسلسل کو برقرار رکھیے۔',
+        ),
+        actions: [
+          { id: 'attendance', label: 'حاضری دیکھیں', route: ROUTES.RUKN },
+          { id: 'connected', label: 'مربوط کارکنان', route: ROUTES.RUKN_MY_KARKUN },
+        ],
+      }
+    }
+
     return {
       text: companionReply(
         missed.length === 0
@@ -521,22 +591,12 @@ function answerRuknQuery(
   }
 }
 
-export const SUGGESTED_QUESTIONS_ADMIN = [
-  'کتنے کارکن ابھی مربوط نہیں؟',
-  'کس رکن کو توجہ درکار ہے؟',
-  'اجتماع کی حاضری کیسی ہے؟',
-  'آج کس پر توجہ دوں؟',
-] as const
-
-/** KC-016.1 — Rukn companion suggested questions (natural, non-judgmental). */
-export const SUGGESTED_QUESTIONS_RUKN = [
-  'آج میری ترجیحات کیا ہیں؟',
-  'میری کارکردگی کیسی ہے؟',
-  'کس کی ملاقات باقی ہے؟',
-  'آج اجتماع میں کون غیر حاضر رہے؟',
-  'کن کارکنان کو زیادہ توجہ درکار ہے؟',
-  'اس ہفتے کس سے رابطہ کرنا مناسب ہوگا؟',
-  'میرے کارکنان کی مجموعی صورتحال کیا ہے؟',
-  'آج مجھے کس سے ملاقات کرنی چاہیے؟',
-  'کس کارکن کی معلومات نامکمل ہیں؟',
-] as const
+export {
+  RAFEEQ_WELCOME_MESSAGE,
+  RAFEEQ_SUGGESTION_CATALOG,
+  resolveContextualSuggestions,
+  getSuggestionTexts,
+  SUGGESTED_QUESTIONS_ADMIN,
+  SUGGESTED_QUESTIONS_RUKN,
+} from './suggestionCatalog'
+export type { RafeeqSuggestion, RafeeqSuggestionCategory, RafeeqSuggestionContext } from './suggestionCatalog'
