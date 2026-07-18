@@ -1,24 +1,30 @@
 /**
- * KC-016 — Reusable Digital Rafeeq speaker control (voice-ready UI).
- * States: idle → loading → playing | error. No cloud TTS wiring.
+ * KC-016 / KC-019 — Reusable Digital Rafeeq speaker control.
+ * Prefer Google Cloud TTS via /api/tts; never call Google from the browser.
  */
 
-import { useEffect, useId, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { Icon } from '@/components/ui/Icon'
 import {
+  cloudSpeechAdapter,
+  stopCloudSpeech,
+} from './cloudSpeechPlayback'
+import {
   localSpeechAdapter,
-  speakRafeeqText,
   stopLocalSpeech,
   type SpeakPlaybackAdapter,
   type SpeakPlaybackState,
 } from './speechPlayback'
+import { TTS_ERROR_MESSAGE_URDU } from './ttsMessages'
 
 type RafeeqSpeakButtonProps = {
   text: string
   label?: string
   className?: string
-  /** Optional future cloud TTS adapter; defaults to local speechSynthesis. */
+  /** Optional override; defaults to cloud TTS adapter. */
   adapter?: SpeakPlaybackAdapter
+  /** When cloud fails, optionally try browser speechSynthesis. Default false. */
+  allowBrowserFallback?: boolean
   onNotice?: (message: string) => void
   onStateChange?: (state: SpeakPlaybackState) => void
 }
@@ -28,11 +34,13 @@ export function RafeeqSpeakButton({
   label = 'جواب سنیں',
   className = '',
   adapter,
+  allowBrowserFallback = false,
   onNotice,
   onStateChange,
 }: RafeeqSpeakButtonProps) {
   const reactId = useId()
   const [state, setState] = useState<SpeakPlaybackState>('idle')
+  const requestGeneration = useRef(0)
 
   const setPlaybackState = (next: SpeakPlaybackState) => {
     setState(next)
@@ -41,43 +49,65 @@ export function RafeeqSpeakButton({
 
   useEffect(() => {
     return () => {
+      requestGeneration.current += 1
+      stopCloudSpeech()
       stopLocalSpeech()
     }
   }, [])
 
   const handleClick = async () => {
-    const playback = adapter ?? localSpeechAdapter
+    const playback = adapter ?? cloudSpeechAdapter
     const trimmed = text.trim()
     if (!trimmed) return
 
     if (state === 'playing' || state === 'loading') {
+      requestGeneration.current += 1
       playback.stop()
+      stopCloudSpeech()
+      stopLocalSpeech()
       setPlaybackState('idle')
       return
     }
 
     if (!playback.isAvailable()) {
       setPlaybackState('error')
-      onNotice?.('آڈیو اس آلے پر دستیاب نہیں۔')
+      onNotice?.(TTS_ERROR_MESSAGE_URDU)
       return
     }
 
+    const generation = ++requestGeneration.current
     setPlaybackState('loading')
+
     try {
-      // Brief loading flash so UI is ready for future cloud TTS latency.
-      await new Promise((resolve) => window.setTimeout(resolve, 120))
-      setPlaybackState('playing')
-      if (adapter) {
-        await adapter.speak(trimmed)
-      } else {
-        await speakRafeeqText(trimmed, onNotice)
-      }
+      await playback.speak(trimmed)
+      if (generation !== requestGeneration.current) return
       setPlaybackState('idle')
-    } catch {
+    } catch (error) {
+      if (generation !== requestGeneration.current) return
+
+      if (allowBrowserFallback && localSpeechAdapter.isAvailable()) {
+        try {
+          setPlaybackState('playing')
+          await localSpeechAdapter.speak(trimmed)
+          if (generation !== requestGeneration.current) return
+          setPlaybackState('idle')
+          return
+        } catch {
+          // fall through to error UX
+        }
+      }
+
+      stopCloudSpeech()
       stopLocalSpeech()
       setPlaybackState('error')
-      onNotice?.('آڈیو چلانے میں مسئلہ ہوا۔ دوبارہ کوشش کریں۔')
-      window.setTimeout(() => setPlaybackState('idle'), 2400)
+      const message =
+        error instanceof Error && 'userMessage' in error
+          ? String((error as Error & { userMessage?: string }).userMessage)
+          : TTS_ERROR_MESSAGE_URDU
+      onNotice?.(message || TTS_ERROR_MESSAGE_URDU)
+      window.setTimeout(() => {
+        if (generation === requestGeneration.current) setPlaybackState('idle')
+      }, 2400)
     }
   }
 

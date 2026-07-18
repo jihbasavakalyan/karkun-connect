@@ -7,6 +7,13 @@ export {
   localSpeechAdapter,
 } from './speechPlayback'
 export type { SpeakPlaybackAdapter, SpeakPlaybackState } from './speechPlayback'
+export {
+  speakRafeeqCloudText,
+  stopCloudSpeech,
+  isCloudSpeechAvailable,
+  cloudSpeechAdapter,
+} from './cloudSpeechPlayback'
+export { TTS_ERROR_MESSAGE_URDU } from './ttsMessages'
 export { useSpeechRecognition } from './useSpeechRecognition'
 export {
   answerOperationalQuery,

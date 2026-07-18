@@ -28,7 +28,9 @@ Apply to **Preview** (staging) first; promote to **Production** after P2 sign-of
 | `VITE_FIREBASE_APP_ID` | `1:123:web:abc` | |
 | `VITE_REPOSITORY_PROVIDER` | `firestore` | **Required** for production |
 | `VITE_ADMIN_EMAILS` | `admin@jih.org` | Bootstrap only; remove after claims |
+| `GOOGLE_TTS_CREDENTIALS_JSON` | service-account JSON (one line) | **KC-019** Digital Rafeeq TTS (server-only) |
 
+Never set Google credentials with a `VITE_` prefix.
 Copy from `.env.staging.example` — never commit filled values.
 
 ## Firebase Authorized Domains

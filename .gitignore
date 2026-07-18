@@ -13,6 +13,14 @@ dist-ssr
 *.local
 .vercel
 
+# Local TTS audio cache (KC-019)
+.tts-cache
+
+# Google Cloud service account keys — never commit
+**/service-account*.json
+**/*-firebase-adminsdk-*.json
+secrets/
+
 # Local acceptance test artifacts (screenshots, scripts, results)
 acceptance-evidence
 

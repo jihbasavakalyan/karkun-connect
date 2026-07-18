@@ -22,7 +22,8 @@ import {
   type OpsAnswerAction,
 } from './opsAnswers'
 import { RafeeqSpeakButton } from './RafeeqSpeakButton'
-import { speakRafeeqText, stopLocalSpeech } from './speechPlayback'
+import { stopCloudSpeech } from './cloudSpeechPlayback'
+import { stopLocalSpeech } from './speechPlayback'
 import { useSpeechRecognition, type VoiceStatus } from './useSpeechRecognition'
 
 export type VoiceAssistantRole = 'administrator' | 'rukn'
@@ -154,14 +155,7 @@ export function DigitalRafeeqVoiceDrawer({
         actions: answer.actions,
       },
     ])
-
-    setSpeaking(true)
-    try {
-      await speakRafeeqText(answer.text, (message) => setVoiceNotice(message))
-    } catch {
-      setVoiceNotice('آڈیو چلانے میں مسئلہ ہوا۔ اسپیکر بٹن سے دوبارہ سنیں۔')
-    }
-    setSpeaking(false)
+    // KC-019: never autoplay — user taps the speaker button to hear Google TTS.
   }
 
   const speech = useSpeechRecognition({
@@ -182,6 +176,7 @@ export function DigitalRafeeqVoiceDrawer({
 
   useEffect(() => {
     if (!open) {
+      stopCloudSpeech()
       stopLocalSpeech()
       setSpeaking(false)
     }
