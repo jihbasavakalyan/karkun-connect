@@ -3,6 +3,7 @@
  * Credentials via env only — never shipped to the browser.
  */
 
+import { existsSync, readFileSync } from 'node:fs'
 import { TextToSpeechClient, protos } from '@google-cloud/text-to-speech'
 import {
   DEFAULT_TTS_LANGUAGE,
@@ -31,18 +32,36 @@ function loadCredentials(): CredentialsJson | undefined {
     return JSON.parse(Buffer.from(b64, 'base64').toString('utf8')) as CredentialsJson
   }
 
-  // GOOGLE_APPLICATION_CREDENTIALS file path is handled by the SDK automatically.
+  const credentialsPath = process.env.GOOGLE_APPLICATION_CREDENTIALS?.trim()
+  if (credentialsPath) {
+    if (!existsSync(credentialsPath)) {
+      throw new Error(`GOOGLE_APPLICATION_CREDENTIALS file not found: ${credentialsPath}`)
+    }
+    return JSON.parse(readFileSync(credentialsPath, 'utf8')) as CredentialsJson
+  }
+
   return undefined
+}
+
+function assertServiceAccount(credentials: CredentialsJson): void {
+  const missing = ['project_id', 'client_email', 'private_key', 'token_uri'].filter(
+    (key) => !credentials[key],
+  )
+  if (missing.length > 0) {
+    throw new Error(`Invalid Google service account JSON. Missing: ${missing.join(', ')}`)
+  }
 }
 
 function createClient(): TextToSpeechClient {
   const credentials = loadCredentials()
   if (credentials) {
+    assertServiceAccount(credentials)
     return new TextToSpeechClient({
       credentials,
-      projectId: credentials.project_id,
+      projectId: typeof credentials.project_id === 'string' ? credentials.project_id : undefined,
     })
   }
+  // Application Default Credentials (gcloud / metadata server)
   return new TextToSpeechClient()
 }
 
