@@ -70,6 +70,10 @@ export function ProtectedRoute({ allowedRole, children }: ProtectedRouteProps) {
         route: location.pathname,
         role: user?.role ?? null,
       })
+      markStartupLifecycle('dashboard.firstInteractive', {
+        route: location.pathname,
+        role: user?.role ?? null,
+      })
     }
   }, [
     allowedRole,

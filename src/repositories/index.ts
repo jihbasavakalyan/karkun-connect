@@ -10,6 +10,12 @@ export {
   subscribeToRepositoryHydration,
   resetRepositoryHydrationReadyForTests,
 } from './hydrationReady'
+export {
+  isBackgroundHydrationReady,
+  markBackgroundHydrationReady,
+  subscribeToBackgroundHydration,
+  resetBackgroundHydrationReadyForTests,
+} from './backgroundHydrationReady'
 export { migrateLocalStorageToFirestore } from '@/lib/migration/firestoreMigrationService'
 export {
   getRepositories,

@@ -17,6 +17,7 @@ import {
   getDocs,
   onSnapshot,
   runTransaction,
+  type DocumentData,
   type Unsubscribe,
 } from 'firebase/firestore'
 import { getFirestoreDb } from '@/lib/firebase/firestore'
@@ -106,6 +107,8 @@ const backupCache = new SyncCache<Map<string, DatasetBackup>>(new Map())
 const snapshotUnsubscribers: Unsubscribe[] = []
 let hydrateInFlight: Promise<void> | null = null
 let hydrateRequestedWhileRunning = false
+/** KC-004B — background-only hydrate; full hydrate awaits this to avoid cache races. */
+let backgroundHydrateInFlight: Promise<void> | null = null
 
 markRepositoryReadiness('connection_repository', 'UNINITIALIZED', {
   caller: 'firestoreRepositories.module',
@@ -128,21 +131,385 @@ async function queueWrite(label: string, work: () => Promise<RepositoryResult<vo
   }
 }
 
+async function applyCriticalHydratePayload(input: {
+  campaigns: CampaignListItem[]
+  rukns: Rukn[]
+  karkuns: KarkunRegistryRecord[]
+  karkunCounter: { nextKarkunNum: number } | null
+  assignments: AssignmentRecord[]
+  connectionMeta: ConnectionMetaDoc | null
+}): Promise<void> {
+  const {
+    campaigns,
+    rukns,
+    karkuns,
+    karkunCounter,
+    assignments,
+    connectionMeta,
+  } = input
+
+  if (campaigns.length > 0) {
+    campaignCache.set(campaigns)
+  } else {
+    campaignCache.set(MOCK_CAMPAIGNS)
+  }
+
+  ruknCache.set(rukns)
+  karkunCache.set({
+    karkuns,
+    nextKarkunNum: karkunCounter?.nextKarkunNum ?? 1,
+  })
+
+  const { records: identityCanonical, duplicates: connectionDuplicates } =
+    canonicalizeConnectionRecords(assignments)
+  if (connectionDuplicates.length > 0) {
+    console.warn(
+      '[KC-002] assignmentId duplicates collapsed at Firestore hydrate',
+      connectionDuplicates,
+    )
+  }
+
+  const metaNext = connectionMeta?.nextSequence ?? 1
+  const repairVersion = connectionMeta?.asnRepairVersion ?? 0
+  const asnCollisions = findAssignmentNumberCollisions(identityCanonical)
+  let hydratedAssignments = identityCanonical
+  const derivedSequence = deriveNextSequenceFromRecords(identityCanonical)
+  let nextSequence = Math.max(metaNext, derivedSequence)
+
+  if (asnCollisions.length > 0 && repairVersion < ASN_REPAIR_VERSION) {
+    const planned = planAsnCollisionRepair(identityCanonical, nextSequence)
+    hydratedAssignments = planned.records
+    nextSequence = planned.report.nextSequence
+    console.warn('[KC-002] repairing duplicate assignmentNumbers at hydrate', {
+      collisionGroups: planned.report.collisionGroups,
+      reassigned: planned.report.reassigned,
+      nextSequence: planned.report.nextSequence,
+    })
+    void queueWrite('connections-asn-repair', async () => {
+      const repairDb = getFirestoreDb()
+      const batch = createBatch(repairDb)
+      for (const assignment of planned.records) {
+        batch.set(
+          doc(repairDb, FIRESTORE_COLLECTIONS.connections, assignment.assignmentId),
+          sanitizeForFirestore(assignment),
+        )
+      }
+      batch.set(
+        doc(repairDb, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.connectionMeta),
+        sanitizeForFirestore({
+          nextSequence: planned.report.nextSequence,
+          asnRepairVersion: ASN_REPAIR_VERSION,
+          activeIntegrityVersion: connectionMeta?.activeIntegrityVersion ?? 0,
+        }),
+        { merge: true },
+      )
+      await batch.commit()
+      return repositoryOk(undefined)
+    })
+  } else if (asnCollisions.length > 0) {
+    console.warn('[KC-002] assignmentNumber collisions remain after prior repair version', asnCollisions)
+  }
+
+  const activeIntegrityVersion = connectionMeta?.activeIntegrityVersion ?? 0
+  const activeIntegrity = planActiveConnectionIntegrity(hydratedAssignments)
+  if (
+    activeIntegrity.needsWrite &&
+    (activeIntegrityVersion < ACTIVE_INTEGRITY_VERSION || activeIntegrity.report.superseded > 0)
+  ) {
+    hydratedAssignments = activeIntegrity.records
+    console.warn('[KC-003] superseding duplicate Active connections at hydrate', {
+      groupsRepaired: activeIntegrity.report.groupsRepaired,
+      superseded: activeIntegrity.report.superseded,
+      changes: activeIntegrity.report.changes,
+    })
+    void queueWrite('connections-active-integrity', async () => {
+      const repairDb = getFirestoreDb()
+      const batch = createBatch(repairDb)
+      for (const change of activeIntegrity.report.changes) {
+        const record = activeIntegrity.records.find((item) => item.assignmentId === change.assignmentId)
+        if (!record) continue
+        batch.set(
+          doc(repairDb, FIRESTORE_COLLECTIONS.connections, record.assignmentId),
+          sanitizeForFirestore(record),
+        )
+      }
+      batch.set(
+        doc(repairDb, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.connectionMeta),
+        sanitizeForFirestore({
+          nextSequence,
+          asnRepairVersion: Math.max(repairVersion, ASN_REPAIR_VERSION),
+          activeIntegrityVersion: ACTIVE_INTEGRITY_VERSION,
+        }),
+        { merge: true },
+      )
+      await batch.commit()
+      return repositoryOk(undefined)
+    })
+  }
+
+  connectionCache.set({
+    assignments: hydratedAssignments,
+    nextSequence,
+  })
+  traceSequencedIncidentStage('repository_cache_update_complete', {
+    connectionCount: hydratedAssignments.length,
+    assignmentCount: hydratedAssignments.length,
+    sourceOfTruth: 'Firestore',
+    duplicatesCanonicalized: connectionDuplicates.length,
+    asnCollisions: asnCollisions.length,
+  })
+  markRepositoryReadiness(
+    'connection_repository',
+    hydratedAssignments.length > 0 ? 'LOADED' : 'LOADED_EMPTY',
+    {
+      caller: 'hydrateFirestoreCachesOnce',
+      sourceOfTruth: 'Firestore',
+    },
+  )
+  markRepositoryReadiness(
+    'assignment_repository',
+    hydratedAssignments.length > 0 ? 'LOADED' : 'LOADED_EMPTY',
+    {
+      caller: 'hydrateFirestoreCachesOnce',
+      sourceOfTruth: 'Firestore',
+    },
+  )
+  traceRepositorySnapshot('connection_repository', {
+    caller: 'hydrateFirestoreCachesOnce',
+    sourceOfTruth: 'Firestore',
+    connectionCount: hydratedAssignments.length,
+    assignmentCount: hydratedAssignments.length,
+    nextSequence,
+  })
+}
+
+function applyBackgroundHydratePayload(input: {
+  activityLogs: ActivityLogEntry[]
+  executionSnapshots: Awaited<ReturnType<typeof getDocs>>
+  followUps: FollowUpRecord[]
+  communication: CommunicationState | null
+  complianceSnapshots: Awaited<ReturnType<typeof getDocs>>
+  migrationVersion: { version: number | null } | null
+  settingsSnapshots: Awaited<ReturnType<typeof getDocs>>
+}): void {
+  const {
+    activityLogs,
+    executionSnapshots,
+    followUps,
+    communication,
+    complianceSnapshots,
+    migrationVersion,
+    settingsSnapshots,
+  } = input
+
+  activityLogCache.set(activityLogs)
+
+  const annexureForms: SubmittedMeetingForm[] = []
+  let guidance: GuidanceState | null = null
+  for (const snapshot of executionSnapshots.docs) {
+    if (snapshot.id === FIRESTORE_DOCS.guidanceState) {
+      guidance = stripMeta<GuidanceState>(snapshot.data() as DocumentData)
+      continue
+    }
+    if (snapshot.id.startsWith('annexure_')) {
+      annexureForms.push(stripMeta<SubmittedMeetingForm>(snapshot.data() as DocumentData))
+    }
+  }
+  annexureCache.set(annexureForms)
+  followUpCache.set(followUps)
+  guidanceCache.set(guidance ?? { commitments: [], timelineEvents: [] })
+  if (communication) {
+    communicationCache.set(communication)
+  }
+
+  const baitulMaal: BaitulMaalRecord[] = []
+  const ijtema: IjtemaAttendanceRecord[] = []
+  let jihPortal: JihPortalState | null = null
+  for (const snapshot of complianceSnapshots.docs) {
+    const data = snapshot.data() as DocumentRecord
+    if (data._docType === 'baitulMaal') {
+      baitulMaal.push(data.record as BaitulMaalRecord)
+    } else if (data._docType === 'ijtema') {
+      ijtema.push(data.record as IjtemaAttendanceRecord)
+    } else if (data._docType === 'jihPortal') {
+      jihPortal = normalizeJihPortalState(data.record)
+    }
+  }
+  baitulMaalCache.set(baitulMaal)
+  ijtemaCache.set(ijtema)
+  if (jihPortal) {
+    jihPortalCache.set(jihPortal)
+  }
+
+  migrationVersionCache.set(migrationVersion?.version ?? null)
+
+  const broadcastLists: BroadcastListRecord[] = []
+  let backupIndex: MigrationBackupIndexEntry[] = []
+  let karkunRequests: NewKarkunRequest[] = []
+  const backupMap = new Map<string, DatasetBackup>()
+  for (const snapshot of settingsSnapshots.docs) {
+    if (snapshot.id.startsWith('broadcast_')) {
+      broadcastLists.push(stripMeta<BroadcastListRecord>(snapshot.data() as DocumentData))
+      continue
+    }
+    if (snapshot.id.startsWith('backup_')) {
+      const backup = stripMeta<DatasetBackup>(snapshot.data() as DocumentData)
+      if (backup.id) {
+        backupMap.set(backup.id, backup)
+      }
+      continue
+    }
+    if (snapshot.id === FIRESTORE_DOCS.backupIndex) {
+      backupIndex = (snapshot.data() as { entries: MigrationBackupIndexEntry[] }).entries ?? []
+    }
+    if (snapshot.id === FIRESTORE_DOCS.karkunRequests) {
+      karkunRequests =
+        (snapshot.data() as { requests: NewKarkunRequest[] }).requests ?? []
+    }
+  }
+  broadcastCache.set(broadcastLists)
+  backupIndexCache.set(backupIndex)
+  backupCache.set(backupMap)
+  karkunRequestCache.set(karkunRequests)
+}
+
+function markConnectionRepositoriesLoading(caller: string): void {
+  markRepositoryReadiness('connection_repository', 'LOADING', {
+    caller,
+    reason: 'reading connections collection',
+    sourceOfTruth: 'Firestore',
+  })
+  markRepositoryReadiness('assignment_repository', 'LOADING', {
+    caller,
+    reason: 'reading connections collection',
+    sourceOfTruth: 'Firestore',
+  })
+}
+
+function markConnectionRepositoriesFailed(caller: string, error: unknown): void {
+  const message = error instanceof Error ? error.message : String(error)
+  markRepositoryReadiness('connection_repository', 'FAILED', {
+    caller,
+    sourceOfTruth: 'Firestore',
+    error: message,
+  })
+  markRepositoryReadiness('assignment_repository', 'FAILED', {
+    caller,
+    sourceOfTruth: 'Firestore',
+    error: message,
+  })
+}
+
+/** KC-004B — collections required before ProtectedRoute / dashboard gate. */
+export async function hydrateCriticalFirestoreCaches(): Promise<void> {
+  traceIncidentStage('hydrateCriticalFirestoreCaches:start', {
+    caller: 'hydrateCriticalFirestoreCaches',
+    sourceOfTruth: 'Firestore',
+  })
+  markConnectionRepositoriesLoading('hydrateCriticalFirestoreCaches')
+  try {
+    const db = getFirestoreDb()
+    const [campaigns, rukns, karkuns, karkunCounter, assignments, connectionMeta] =
+      await Promise.all([
+        readCollection<CampaignListItem>(db, FIRESTORE_COLLECTIONS.campaigns),
+        readCollection<Rukn>(db, FIRESTORE_COLLECTIONS.rukns),
+        readCollection<KarkunRegistryRecord>(db, FIRESTORE_COLLECTIONS.karkuns),
+        readDoc<{ nextKarkunNum: number }>(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.karkunCounter),
+        readCollection<AssignmentRecord>(db, FIRESTORE_COLLECTIONS.connections),
+        readDoc<ConnectionMetaDoc>(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.connectionMeta),
+      ])
+    await applyCriticalHydratePayload({
+      campaigns,
+      rukns,
+      karkuns,
+      karkunCounter,
+      assignments,
+      connectionMeta,
+    })
+    traceIncidentStage('hydrateCriticalFirestoreCaches:complete', {
+      caller: 'hydrateCriticalFirestoreCaches',
+      sourceOfTruth: 'Firestore',
+      connectionCount: assignments.length,
+    })
+  } catch (error) {
+    markConnectionRepositoriesFailed('hydrateCriticalFirestoreCaches', error)
+    traceIncidentStage('hydrateCriticalFirestoreCaches:failed', {
+      caller: 'hydrateCriticalFirestoreCaches',
+      sourceOfTruth: 'Firestore',
+      error: error instanceof Error ? error.message : String(error),
+    })
+    throw error
+  }
+}
+
+/** KC-004B — non-blocking collections; must not gate dashboard render. */
+export async function hydrateBackgroundFirestoreCaches(): Promise<void> {
+  if (backgroundHydrateInFlight) {
+    return backgroundHydrateInFlight
+  }
+  // Full hydrate already covers background collections.
+  if (hydrateInFlight) {
+    return hydrateInFlight
+  }
+
+  backgroundHydrateInFlight = (async () => {
+    traceIncidentStage('hydrateBackgroundFirestoreCaches:start', {
+      caller: 'hydrateBackgroundFirestoreCaches',
+      sourceOfTruth: 'Firestore',
+    })
+    try {
+      const db = getFirestoreDb()
+      const [
+        activityLogs,
+        executionSnapshots,
+        followUps,
+        communication,
+        complianceSnapshots,
+        migrationVersion,
+        settingsSnapshots,
+      ] = await Promise.all([
+        readCollection<ActivityLogEntry>(db, FIRESTORE_COLLECTIONS.activityLogs),
+        getDocs(collection(db, FIRESTORE_COLLECTIONS.executions)),
+        readCollection<FollowUpRecord>(db, FIRESTORE_COLLECTIONS.followUps),
+        readDoc<CommunicationState>(db, FIRESTORE_COLLECTIONS.communications, FIRESTORE_DOCS.communicationState),
+        getDocs(collection(db, FIRESTORE_COLLECTIONS.compliance)),
+        readDoc<{ version: number | null }>(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.migrationVersion),
+        getDocs(collection(db, FIRESTORE_COLLECTIONS.settings)),
+      ])
+      applyBackgroundHydratePayload({
+        activityLogs,
+        executionSnapshots,
+        followUps,
+        communication,
+        complianceSnapshots,
+        migrationVersion,
+        settingsSnapshots,
+      })
+      traceIncidentStage('hydrateBackgroundFirestoreCaches:complete', {
+        caller: 'hydrateBackgroundFirestoreCaches',
+        sourceOfTruth: 'Firestore',
+      })
+    } catch (error) {
+      traceIncidentStage('hydrateBackgroundFirestoreCaches:failed', {
+        caller: 'hydrateBackgroundFirestoreCaches',
+        sourceOfTruth: 'Firestore',
+        error: error instanceof Error ? error.message : String(error),
+      })
+      throw error
+    }
+  })().finally(() => {
+    backgroundHydrateInFlight = null
+  })
+
+  return backgroundHydrateInFlight
+}
+
 async function hydrateFirestoreCachesOnce(): Promise<void> {
   traceIncidentStage('hydrateFirestoreCachesOnce:start', {
     caller: 'hydrateFirestoreCachesOnce',
     sourceOfTruth: 'Firestore',
   })
-  markRepositoryReadiness('connection_repository', 'LOADING', {
-    caller: 'hydrateFirestoreCachesOnce',
-    reason: 'reading connections collection',
-    sourceOfTruth: 'Firestore',
-  })
-  markRepositoryReadiness('assignment_repository', 'LOADING', {
-    caller: 'hydrateFirestoreCachesOnce',
-    reason: 'reading connections collection',
-    sourceOfTruth: 'Firestore',
-  })
+  markConnectionRepositoriesLoading('hydrateFirestoreCachesOnce')
 
   try {
     const db = getFirestoreDb()
@@ -176,225 +543,30 @@ async function hydrateFirestoreCachesOnce(): Promise<void> {
       getDocs(collection(db, FIRESTORE_COLLECTIONS.settings)),
     ])
 
-    if (campaigns.length > 0) {
-      campaignCache.set(campaigns)
-    } else {
-      campaignCache.set(MOCK_CAMPAIGNS)
-    }
-
-    ruknCache.set(rukns)
-    karkunCache.set({
+    await applyCriticalHydratePayload({
+      campaigns,
+      rukns,
       karkuns,
-      nextKarkunNum: karkunCounter?.nextKarkunNum ?? 1,
+      karkunCounter,
+      assignments,
+      connectionMeta,
     })
-
-    const { records: identityCanonical, duplicates: connectionDuplicates } =
-      canonicalizeConnectionRecords(assignments)
-    if (connectionDuplicates.length > 0) {
-      console.warn(
-        '[KC-002] assignmentId duplicates collapsed at Firestore hydrate',
-        connectionDuplicates,
-      )
-    }
-
-    const metaNext = connectionMeta?.nextSequence ?? 1
-    const repairVersion = connectionMeta?.asnRepairVersion ?? 0
-    const asnCollisions = findAssignmentNumberCollisions(identityCanonical)
-    let hydratedAssignments = identityCanonical
-    const derivedSequence = deriveNextSequenceFromRecords(identityCanonical)
-    let nextSequence = Math.max(metaNext, derivedSequence)
-
-    if (asnCollisions.length > 0 && repairVersion < ASN_REPAIR_VERSION) {
-      const planned = planAsnCollisionRepair(identityCanonical, nextSequence)
-      hydratedAssignments = planned.records
-      nextSequence = planned.report.nextSequence
-      console.warn('[KC-002] repairing duplicate assignmentNumbers at hydrate', {
-        collisionGroups: planned.report.collisionGroups,
-        reassigned: planned.report.reassigned,
-        nextSequence: planned.report.nextSequence,
-      })
-      void queueWrite('connections-asn-repair', async () => {
-        const repairDb = getFirestoreDb()
-        const batch = createBatch(repairDb)
-        for (const assignment of planned.records) {
-          batch.set(
-            doc(repairDb, FIRESTORE_COLLECTIONS.connections, assignment.assignmentId),
-            sanitizeForFirestore(assignment),
-          )
-        }
-        batch.set(
-          doc(repairDb, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.connectionMeta),
-          sanitizeForFirestore({
-            nextSequence: planned.report.nextSequence,
-            asnRepairVersion: ASN_REPAIR_VERSION,
-            activeIntegrityVersion: connectionMeta?.activeIntegrityVersion ?? 0,
-          }),
-          { merge: true },
-        )
-        await batch.commit()
-        return repositoryOk(undefined)
-      })
-    } else if (asnCollisions.length > 0) {
-      console.warn('[KC-002] assignmentNumber collisions remain after prior repair version', asnCollisions)
-    }
-
-    const activeIntegrityVersion = connectionMeta?.activeIntegrityVersion ?? 0
-    const activeIntegrity = planActiveConnectionIntegrity(hydratedAssignments)
-    if (
-      activeIntegrity.needsWrite &&
-      (activeIntegrityVersion < ACTIVE_INTEGRITY_VERSION || activeIntegrity.report.superseded > 0)
-    ) {
-      hydratedAssignments = activeIntegrity.records
-      console.warn('[KC-003] superseding duplicate Active connections at hydrate', {
-        groupsRepaired: activeIntegrity.report.groupsRepaired,
-        superseded: activeIntegrity.report.superseded,
-        changes: activeIntegrity.report.changes,
-      })
-      void queueWrite('connections-active-integrity', async () => {
-        const repairDb = getFirestoreDb()
-        const batch = createBatch(repairDb)
-        for (const change of activeIntegrity.report.changes) {
-          const record = activeIntegrity.records.find((item) => item.assignmentId === change.assignmentId)
-          if (!record) continue
-          batch.set(
-            doc(repairDb, FIRESTORE_COLLECTIONS.connections, record.assignmentId),
-            sanitizeForFirestore(record),
-          )
-        }
-        batch.set(
-          doc(repairDb, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.connectionMeta),
-          sanitizeForFirestore({
-            nextSequence,
-            asnRepairVersion: Math.max(repairVersion, ASN_REPAIR_VERSION),
-            activeIntegrityVersion: ACTIVE_INTEGRITY_VERSION,
-          }),
-          { merge: true },
-        )
-        await batch.commit()
-        return repositoryOk(undefined)
-      })
-    }
-
-    connectionCache.set({
-      assignments: hydratedAssignments,
-      nextSequence,
+    applyBackgroundHydratePayload({
+      activityLogs,
+      executionSnapshots,
+      followUps,
+      communication,
+      complianceSnapshots,
+      migrationVersion,
+      settingsSnapshots,
     })
-    traceSequencedIncidentStage('repository_cache_update_complete', {
-      connectionCount: hydratedAssignments.length,
-      assignmentCount: hydratedAssignments.length,
-      sourceOfTruth: 'Firestore',
-      duplicatesCanonicalized: connectionDuplicates.length,
-      asnCollisions: asnCollisions.length,
-    })
-    markRepositoryReadiness(
-      'connection_repository',
-      hydratedAssignments.length > 0 ? 'LOADED' : 'LOADED_EMPTY',
-      {
-        caller: 'hydrateFirestoreCachesOnce',
-        sourceOfTruth: 'Firestore',
-      },
-    )
-    markRepositoryReadiness(
-      'assignment_repository',
-      hydratedAssignments.length > 0 ? 'LOADED' : 'LOADED_EMPTY',
-      {
-        caller: 'hydrateFirestoreCachesOnce',
-        sourceOfTruth: 'Firestore',
-      },
-    )
-    traceRepositorySnapshot('connection_repository', {
-      caller: 'hydrateFirestoreCachesOnce',
-      sourceOfTruth: 'Firestore',
-      connectionCount: hydratedAssignments.length,
-      assignmentCount: hydratedAssignments.length,
-      nextSequence,
-    })
-
-    activityLogCache.set(activityLogs)
-
-    const annexureForms: SubmittedMeetingForm[] = []
-    let guidance: GuidanceState | null = null
-    for (const snapshot of executionSnapshots.docs) {
-      if (snapshot.id === FIRESTORE_DOCS.guidanceState) {
-        guidance = stripMeta<GuidanceState>(snapshot.data())
-        continue
-      }
-      if (snapshot.id.startsWith('annexure_')) {
-        annexureForms.push(stripMeta<SubmittedMeetingForm>(snapshot.data()))
-      }
-    }
-    annexureCache.set(annexureForms)
-    followUpCache.set(followUps)
-    guidanceCache.set(guidance ?? { commitments: [], timelineEvents: [] })
-    if (communication) {
-      communicationCache.set(communication)
-    }
-
-    const baitulMaal: BaitulMaalRecord[] = []
-    const ijtema: IjtemaAttendanceRecord[] = []
-    let jihPortal: JihPortalState | null = null
-    for (const snapshot of complianceSnapshots.docs) {
-      const data = snapshot.data() as DocumentRecord
-      if (data._docType === 'baitulMaal') {
-        baitulMaal.push(data.record as BaitulMaalRecord)
-      } else if (data._docType === 'ijtema') {
-        ijtema.push(data.record as IjtemaAttendanceRecord)
-      } else if (data._docType === 'jihPortal') {
-        jihPortal = normalizeJihPortalState(data.record)
-      }
-    }
-    baitulMaalCache.set(baitulMaal)
-    ijtemaCache.set(ijtema)
-    if (jihPortal) {
-      jihPortalCache.set(jihPortal)
-    }
-
-    migrationVersionCache.set(migrationVersion?.version ?? null)
-
-    const broadcastLists: BroadcastListRecord[] = []
-    let backupIndex: MigrationBackupIndexEntry[] = []
-    let karkunRequests: NewKarkunRequest[] = []
-    const backupMap = new Map<string, DatasetBackup>()
-    for (const snapshot of settingsSnapshots.docs) {
-      if (snapshot.id.startsWith('broadcast_')) {
-        broadcastLists.push(stripMeta<BroadcastListRecord>(snapshot.data()))
-        continue
-      }
-      if (snapshot.id.startsWith('backup_')) {
-        const backup = stripMeta<DatasetBackup>(snapshot.data())
-        if (backup.id) {
-          backupMap.set(backup.id, backup)
-        }
-        continue
-      }
-      if (snapshot.id === FIRESTORE_DOCS.backupIndex) {
-        backupIndex = (snapshot.data() as { entries: MigrationBackupIndexEntry[] }).entries ?? []
-      }
-      if (snapshot.id === FIRESTORE_DOCS.karkunRequests) {
-        karkunRequests =
-          (snapshot.data() as { requests: NewKarkunRequest[] }).requests ?? []
-      }
-    }
-    broadcastCache.set(broadcastLists)
-    backupIndexCache.set(backupIndex)
-    backupCache.set(backupMap)
-    karkunRequestCache.set(karkunRequests)
     traceIncidentStage('hydrateFirestoreCachesOnce:complete', {
       caller: 'hydrateFirestoreCachesOnce',
       sourceOfTruth: 'Firestore',
       connectionCount: assignments.length,
     })
   } catch (error) {
-    markRepositoryReadiness('connection_repository', 'FAILED', {
-      caller: 'hydrateFirestoreCachesOnce',
-      sourceOfTruth: 'Firestore',
-      error: error instanceof Error ? error.message : String(error),
-    })
-    markRepositoryReadiness('assignment_repository', 'FAILED', {
-      caller: 'hydrateFirestoreCachesOnce',
-      sourceOfTruth: 'Firestore',
-      error: error instanceof Error ? error.message : String(error),
-    })
+    markConnectionRepositoriesFailed('hydrateFirestoreCachesOnce', error)
     traceIncidentStage('hydrateFirestoreCachesOnce:failed', {
       caller: 'hydrateFirestoreCachesOnce',
       sourceOfTruth: 'Firestore',
@@ -409,6 +581,14 @@ export async function hydrateFirestoreCaches(): Promise<void> {
     caller: 'hydrateFirestoreCaches',
     sourceOfTruth: 'Firestore',
   })
+  // Avoid racing a phased background hydrate (different cache writers).
+  if (backgroundHydrateInFlight) {
+    try {
+      await backgroundHydrateInFlight
+    } catch {
+      // Full hydrate will re-read; surface errors from the full path.
+    }
+  }
   if (hydrateInFlight) {
     hydrateRequestedWhileRunning = true
     traceIncidentStage('hydrateFirestoreCaches:already_in_flight', {

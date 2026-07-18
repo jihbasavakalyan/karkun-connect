@@ -17,7 +17,17 @@ import {
 import type { AdminMissionControlModel } from '@/lib/missionControl/buildAdminMissionControl'
 import type { AdminCommandCenterSnapshot } from '@/types/campaignAutomation.types'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
+import { useBackgroundHydration } from '@/hooks/useBackgroundHydration'
 import { PendingKarkunRequestQueue } from '@/components/admin/PendingKarkunRequestQueue'
+
+/** KPIs that depend on background hydrate collections (executions / followUps / compliance). */
+const BACKGROUND_HEALTH_KPI_IDS = new Set([
+  'overall',
+  'visits-done',
+  'visits-pending',
+  'follow-ups',
+  'development',
+])
 
 type AdminCommandCenterProps = {
   model: AdminMissionControlModel
@@ -39,6 +49,7 @@ const SEVERITY_CLASS = {
 
 export function AdminCommandCenter({ model, snapshot }: AdminCommandCenterProps) {
   const { assignmentVersion } = useAssignmentEngine()
+  const backgroundReady = useBackgroundHydration()
   const [showAllActivity, setShowAllActivity] = useState(false)
 
   const healthKpis = useMemo(() => {
@@ -48,23 +59,27 @@ export function AdminCommandCenter({ model, snapshot }: AdminCommandCenterProps)
 
   const interventions = useMemo(() => {
     void assignmentVersion
+    if (!backgroundReady) return []
     return buildAdminInterventionQueue(snapshot)
-  }, [snapshot, assignmentVersion])
+  }, [snapshot, assignmentVersion, backgroundReady])
 
   const ruknRows = useMemo(() => {
     void assignmentVersion
+    if (!backgroundReady) return []
     return buildAdminRuknPerformance(12)
-  }, [assignmentVersion])
+  }, [assignmentVersion, backgroundReady])
 
   const trends = useMemo(() => {
     void assignmentVersion
+    if (!backgroundReady) return []
     return buildAdminCampaignTrends()
-  }, [assignmentVersion])
+  }, [assignmentVersion, backgroundReady])
 
   const activity = useMemo(() => {
     void assignmentVersion
+    if (!backgroundReady) return []
     return buildAdminRecentActivityView(showAllActivity ? 20 : 5)
-  }, [assignmentVersion, showAllActivity])
+  }, [assignmentVersion, showAllActivity, backgroundReady])
 
   return (
     <div className="acc-stack">
@@ -77,17 +92,28 @@ export function AdminCommandCenter({ model, snapshot }: AdminCommandCenterProps)
         </div>
         <ul className="acc-health-grid" aria-label="Campaign health KPIs">
           {healthKpis.map((kpi) => {
-            const tone = HEALTH_TONE[kpi.tone]
+            const waitingOnBackground =
+              !backgroundReady && BACKGROUND_HEALTH_KPI_IDS.has(kpi.id)
+            const tone = waitingOnBackground
+              ? HEALTH_TONE.neutral
+              : HEALTH_TONE[kpi.tone]
             const body = (
               <>
                 <span className="acc-health-label">{kpi.label}</span>
-                <span className={`acc-health-value ${tone}`}>{kpi.value}</span>
-                {kpi.hint ? <span className="acc-health-hint">{kpi.hint}</span> : null}
+                <span
+                  className={`acc-health-value ${tone}`}
+                  aria-busy={waitingOnBackground || undefined}
+                >
+                  {waitingOnBackground ? '…' : kpi.value}
+                </span>
+                <span className="acc-health-hint">
+                  {waitingOnBackground ? 'Loading' : (kpi.hint ?? '\u00a0')}
+                </span>
               </>
             )
             return (
               <li key={kpi.id} className={`acc-health-card ${tone}`}>
-                {kpi.route ? (
+                {kpi.route && !waitingOnBackground ? (
                   <Link to={kpi.route} className="acc-health-link">
                     {body}
                   </Link>
@@ -100,16 +126,24 @@ export function AdminCommandCenter({ model, snapshot }: AdminCommandCenterProps)
         </ul>
       </section>
 
-      <PendingKarkunRequestQueue />
+      {backgroundReady ? <PendingKarkunRequestQueue /> : null}
 
       <section className="mc-panel mc-panel-compact mc-panel-primary acc-section" aria-label="Intervention queue">
         <div className="acc-section-head">
           <h2 className="mc-panel-title">Intervention Queue</h2>
           <span className="acc-section-meta">
-            {interventions.length === 0 ? 'Clear' : `${interventions.length} prioritized`}
+            {!backgroundReady
+              ? 'Loading'
+              : interventions.length === 0
+                ? 'Clear'
+                : `${interventions.length} prioritized`}
           </span>
         </div>
-        {interventions.length === 0 ? (
+        {!backgroundReady ? (
+          <p className="mc-caption" aria-busy="true">
+            Loading campaign data…
+          </p>
+        ) : interventions.length === 0 ? (
           <p className="mc-caption">No urgent interventions right now.</p>
         ) : (
           <ol className="acc-queue">
@@ -140,7 +174,11 @@ export function AdminCommandCenter({ model, snapshot }: AdminCommandCenterProps)
             All Rukns →
           </Link>
         </div>
-        {ruknRows.length === 0 ? (
+        {!backgroundReady ? (
+          <p className="mc-caption" aria-busy="true">
+            Loading campaign data…
+          </p>
+        ) : ruknRows.length === 0 ? (
           <p className="mc-caption">No Rukn performance yet.</p>
         ) : (
           <div className="acc-rukn-table-wrap">
@@ -192,22 +230,28 @@ export function AdminCommandCenter({ model, snapshot }: AdminCommandCenterProps)
           <div className="acc-section-head">
             <h2 className="mc-panel-title">Campaign Trends</h2>
           </div>
-          <ul className="acc-trends">
-            {trends.map((trend) => (
-              <li key={trend.id} className="acc-trend-card">
-                <span className="acc-trend-label">{trend.label}</span>
-                <span className="acc-trend-value">{trend.value}</span>
-                {trend.detail ? <span className="acc-trend-detail">{trend.detail}</span> : null}
-                <span
-                  className="acc-trend-bar"
-                  style={{
-                    width: `${Math.min(100, Math.max(12, Number.parseInt(String(trend.value), 10) || 40))}%`,
-                  }}
-                  aria-hidden="true"
-                />
-              </li>
-            ))}
-          </ul>
+          {!backgroundReady ? (
+            <p className="mc-caption" aria-busy="true">
+              Loading campaign data…
+            </p>
+          ) : (
+            <ul className="acc-trends">
+              {trends.map((trend) => (
+                <li key={trend.id} className="acc-trend-card">
+                  <span className="acc-trend-label">{trend.label}</span>
+                  <span className="acc-trend-value">{trend.value}</span>
+                  {trend.detail ? <span className="acc-trend-detail">{trend.detail}</span> : null}
+                  <span
+                    className="acc-trend-bar"
+                    style={{
+                      width: `${Math.min(100, Math.max(12, Number.parseInt(String(trend.value), 10) || 40))}%`,
+                    }}
+                    aria-hidden="true"
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
 
         <section className="mc-panel mc-panel-compact mc-panel-quiet acc-section" aria-label="Recent activity">
@@ -217,7 +261,11 @@ export function AdminCommandCenter({ model, snapshot }: AdminCommandCenterProps)
               History →
             </Link>
           </div>
-          {activity.length === 0 ? (
+          {!backgroundReady ? (
+            <p className="mc-caption" aria-busy="true">
+              Loading campaign data…
+            </p>
+          ) : activity.length === 0 ? (
             <p className="mc-caption">No recent campaign activity.</p>
           ) : (
             <>

@@ -3,17 +3,24 @@ import { enableFirestorePersistence } from '@/lib/firebase/firestore'
 import { getFirebaseAuth } from '@/lib/firebase/firebase'
 import { markStartupLifecycle } from '@/lib/startupLifecycleTrace'
 import {
+  hydrateBackgroundFirestoreCaches,
+  hydrateCriticalFirestoreCaches,
   hydrateFirestoreCaches,
   startFirestoreSnapshotListeners,
   stopFirestoreSnapshotListeners,
 } from '@/repositories/firestore/firestoreRepositories'
 import { hydrateStoresFromRepositories } from '@/repositories/firestore/storeHydration'
+import {
+  markBackgroundHydrationReady,
+  resetBackgroundHydrationReadyForTests,
+} from '@/repositories/backgroundHydrationReady'
 import { resetRepositoryHydrationReadyForTests } from '@/repositories/hydrationReady'
 
 let initialized = false
 let initializeInFlight: Promise<void> | null = null
 let snapshotRefreshQueued = false
 let snapshotRefreshRunning = false
+let backgroundHydrateScheduled = false
 
 function ensureConnectionRepositoryReadable(): void {
   const state = getRepositories().connection.loadState()
@@ -24,19 +31,7 @@ function ensureConnectionRepositoryReadable(): void {
   }
 }
 
-async function runHydrateAndRebuildCycle(context: string): Promise<void> {
-  markStartupLifecycle('hydrate.cycle.start', { context })
-  let hydrateSucceeded = false
-  try {
-    markStartupLifecycle('firestore.hydrate.start', { context })
-    await hydrateFirestoreCaches()
-    hydrateSucceeded = true
-    markStartupLifecycle('firestore.hydrate.complete', { context })
-  } catch (error) {
-    console.warn(`[kc-firestore] ${context} hydrate failed, using current repository state`, error)
-    markStartupLifecycle('firestore.hydrate.failed', { context })
-  }
-
+function rebuildStoresIfSafe(context: string, hydrateSucceeded: boolean): void {
   const connectionState = getRepositories().connection.loadState()
   const hasCachedConnections =
     connectionState.ok && connectionState.data.assignments.length > 0
@@ -54,8 +49,6 @@ async function runHydrateAndRebuildCycle(context: string): Promise<void> {
     return
   }
 
-  // Contract enforcement: assignmentStore rebuild + synchronization must run
-  // against a readable repository state (including explicit empty state).
   ensureConnectionRepositoryReadable()
   markStartupLifecycle('stores.hydrate.start', { context })
   hydrateStoresFromRepositories()
@@ -63,11 +56,76 @@ async function runHydrateAndRebuildCycle(context: string): Promise<void> {
   markStartupLifecycle('hydrate.cycle.complete', { context })
 }
 
+async function runHydrateAndRebuildCycle(context: string): Promise<void> {
+  markStartupLifecycle('hydrate.cycle.start', { context })
+  let hydrateSucceeded = false
+  try {
+    markStartupLifecycle('firestore.hydrate.start', { context })
+    await hydrateFirestoreCaches()
+    hydrateSucceeded = true
+    markStartupLifecycle('firestore.hydrate.complete', { context })
+  } catch (error) {
+    console.warn(`[kc-firestore] ${context} hydrate failed, using current repository state`, error)
+    markStartupLifecycle('firestore.hydrate.failed', { context })
+  }
+
+  rebuildStoresIfSafe(context, hydrateSucceeded)
+}
+
+/** KC-004B — critical path only: unlock ProtectedRoute after dashboard-essential collections. */
+async function runCriticalHydrateAndRebuildCycle(): Promise<void> {
+  markStartupLifecycle('hydrate.cycle.start', { context: 'startup-critical' })
+  markStartupLifecycle('criticalHydrate.start')
+  let hydrateSucceeded = false
+  try {
+    markStartupLifecycle('firestore.hydrate.start', { context: 'startup-critical' })
+    await hydrateCriticalFirestoreCaches()
+    hydrateSucceeded = true
+    markStartupLifecycle('firestore.hydrate.complete', { context: 'startup-critical' })
+    markStartupLifecycle('criticalHydrate.complete')
+  } catch (error) {
+    console.warn('[kc-firestore] startup-critical hydrate failed, using current repository state', error)
+    markStartupLifecycle('firestore.hydrate.failed', { context: 'startup-critical' })
+  }
+
+  rebuildStoresIfSafe('startup-critical', hydrateSucceeded)
+}
+
+/** KC-004B — non-blocking; fills execution/compliance/settings after first paint. */
+function scheduleBackgroundHydrateAndRebuild(): void {
+  if (backgroundHydrateScheduled) {
+    return
+  }
+  backgroundHydrateScheduled = true
+
+  void (async () => {
+    markStartupLifecycle('backgroundHydrate.start')
+    let hydrateSucceeded = false
+    try {
+      markStartupLifecycle('firestore.hydrate.start', { context: 'startup-background' })
+      await hydrateBackgroundFirestoreCaches()
+      hydrateSucceeded = true
+      markStartupLifecycle('firestore.hydrate.complete', { context: 'startup-background' })
+      markStartupLifecycle('backgroundHydrate.complete')
+    } catch (error) {
+      console.warn('[kc-firestore] startup-background hydrate failed', error)
+      markStartupLifecycle('firestore.hydrate.failed', { context: 'startup-background' })
+    }
+
+    if (hydrateSucceeded) {
+      markStartupLifecycle('stores.hydrate.start', { context: 'startup-background' })
+      hydrateStoresFromRepositories()
+      markStartupLifecycle('stores.hydrate.complete', { context: 'startup-background' })
+    }
+    markBackgroundHydrationReady()
+  })()
+}
+
 async function runStartupLifecycle(): Promise<void> {
   markStartupLifecycle('auth.authStateReady.wait')
   await getFirebaseAuth().authStateReady()
   markStartupLifecycle('auth.authStateReady')
-  await runHydrateAndRebuildCycle('startup')
+  await runCriticalHydrateAndRebuildCycle()
 }
 
 function scheduleSnapshotRefresh(): void {
@@ -122,6 +180,7 @@ export async function refreshFirestoreAfterAuth(): Promise<void> {
 
 export async function initializeRepositories(): Promise<void> {
   if (getRepositoryProviderMode() !== 'firestore' || initialized) {
+    markBackgroundHydrationReady()
     return
   }
 
@@ -130,19 +189,28 @@ export async function initializeRepositories(): Promise<void> {
   }
 
   initializeInFlight = (async () => {
-    markStartupLifecycle('initializeRepositories.start')
-    await enableFirestorePersistence()
-    await runStartupLifecycle()
+    try {
+      markStartupLifecycle('initializeRepositories.start')
+      await enableFirestorePersistence()
+      await runStartupLifecycle()
 
-    stopFirestoreSnapshotListeners()
-    markStartupLifecycle('firestore.snapshot.listeners.attach')
-    startFirestoreSnapshotListeners(() => {
-      scheduleSnapshotRefresh()
-    })
-    markStartupLifecycle('firestore.snapshot.listeners.attached')
+      stopFirestoreSnapshotListeners()
+      markStartupLifecycle('firestore.snapshot.listeners.attach')
+      startFirestoreSnapshotListeners(() => {
+        scheduleSnapshotRefresh()
+      })
+      markStartupLifecycle('firestore.snapshot.listeners.attached')
 
-    initialized = true
-    markStartupLifecycle('initializeRepositories.complete')
+      // KC-004B: do not await — ProtectedRoute unlocks after critical hydrate.
+      scheduleBackgroundHydrateAndRebuild()
+
+      initialized = true
+      markStartupLifecycle('initializeRepositories.complete')
+    } catch (error) {
+      // Unblock background-dependent widgets if startup aborts before schedule.
+      markBackgroundHydrationReady()
+      throw error
+    }
   })()
 
   try {
@@ -159,6 +227,8 @@ export function resetRepositoryInitializationForTests(): void {
   initializeInFlight = null
   snapshotRefreshQueued = false
   snapshotRefreshRunning = false
+  backgroundHydrateScheduled = false
   stopFirestoreSnapshotListeners()
   resetRepositoryHydrationReadyForTests()
+  resetBackgroundHydrationReadyForTests()
 }

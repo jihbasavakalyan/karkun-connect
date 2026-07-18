@@ -84,7 +84,7 @@ if (!MOCK_KARKUN_REGISTRY.some((record) => record.id === karkun.id)) {
   MOCK_KARKUN_REGISTRY.push(karkun)
 }
 
-const assignResult = changeKarkunRuknAssignment(karkun.id, maleRukn!.id)
+const assignResult = await changeKarkunRuknAssignment(karkun.id, maleRukn!.id)
 assert(
   assignResult.success,
   `Assignment must succeed for automation flow: ${assignResult.success ? '' : assignResult.error}`,
