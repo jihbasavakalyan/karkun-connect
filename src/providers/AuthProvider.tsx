@@ -3,6 +3,7 @@ import { AuthContext } from '@/context/AuthContext'
 import { refreshFirestoreAfterAuth } from '@/repositories/firestore/initialize'
 import { clearAuthSession, loadAuthSession, saveAuthSession } from '@/lib/authSession'
 import { logStartupTiming } from '@/lib/startupDiagnostics'
+import { markStartupLifecycle } from '@/lib/startupLifecycleTrace'
 import { authenticationService } from '@/services/authenticationService'
 import { bindUserPreferences } from '@/stores/userPreferencesStore'
 import type {
@@ -61,8 +62,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setUser(authUser)
         setStatus('authenticated')
         logStartupTiming('AuthProvider.authenticated', { uid: authUser.uid, role: authUser.role })
+        markStartupLifecycle('auth.authenticated', { uid: authUser.uid, role: authUser.role })
         void refreshFirestoreAfterAuth().then(() => {
           logStartupTiming('AuthProvider.refreshFirestoreAfterAuth-complete')
+          markStartupLifecycle('auth.refreshFirestoreAfterAuth.complete')
         })
         return
       }

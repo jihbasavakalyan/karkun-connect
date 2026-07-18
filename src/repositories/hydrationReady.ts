@@ -1,3 +1,5 @@
+import { markStartupLifecycle } from '@/lib/startupLifecycleTrace'
+
 type HydrationListener = () => void
 
 let ready = false
@@ -12,6 +14,7 @@ export function markRepositoryHydrationReady(): void {
     return
   }
   ready = true
+  markStartupLifecycle('hydrationReady.marked')
   listeners.forEach((listener) => listener())
 }
 

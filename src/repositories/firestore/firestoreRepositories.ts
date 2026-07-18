@@ -367,9 +367,23 @@ export function startFirestoreSnapshotListeners(onRemoteChange: () => void): voi
   stopFirestoreSnapshotListeners()
   const db = getFirestoreDb()
 
+  // KC-027G: each onSnapshot fires once immediately with current server/cache
+  // data. That initial burst must NOT trigger a full hydrate+store rebuild —
+  // startup already hydrated. Only subsequent remote changes refresh stores.
+  const seenInitialSnapshot = new Set<string>()
+
   const watch = (path: string, handler: () => void) => {
     snapshotUnsubscribers.push(
       onSnapshot(collection(db, path), () => {
+        if (!seenInitialSnapshot.has(path)) {
+          seenInitialSnapshot.add(path)
+          traceIncidentStage('snapshot_listener:initial_suppressed', {
+            caller: 'onSnapshot',
+            sourceOfTruth: 'Snapshot Listener',
+            path,
+          })
+          return
+        }
         traceIncidentStage('snapshot_listener:fired', {
           caller: 'onSnapshot',
           sourceOfTruth: 'Snapshot Listener',

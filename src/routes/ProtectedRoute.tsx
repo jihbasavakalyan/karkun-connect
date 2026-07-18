@@ -6,6 +6,7 @@ import { HomePageSkeleton, Skeleton } from '@/components/ui/Skeleton'
 import { useAuth } from '@/hooks/useAuth'
 import { useRepositoryHydration } from '@/hooks/useRepositoryHydration'
 import { logStartupTiming } from '@/lib/startupDiagnostics'
+import { markStartupLifecycle } from '@/lib/startupLifecycleTrace'
 import type { UserRole } from '@/types/auth.types'
 
 type ProtectedRouteProps = {
@@ -58,6 +59,18 @@ export function ProtectedRoute({ allowedRole, children }: ProtectedRouteProps) {
       role: user?.role ?? null,
       canRenderDashboard,
     })
+    markStartupLifecycle('ProtectedRoute.gate', {
+      route: location.pathname,
+      canRenderDashboard,
+      isHydrated,
+      isInitializing,
+    })
+    if (canRenderDashboard) {
+      markStartupLifecycle('ProtectedRoute.canRender', {
+        route: location.pathname,
+        role: user?.role ?? null,
+      })
+    }
   }, [
     allowedRole,
     canRenderDashboard,

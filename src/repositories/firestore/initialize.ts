@@ -1,6 +1,7 @@
 import { getRepositories, getRepositoryProviderMode } from '@/repositories/provider'
 import { enableFirestorePersistence } from '@/lib/firebase/firestore'
 import { getFirebaseAuth } from '@/lib/firebase/firebase'
+import { markStartupLifecycle } from '@/lib/startupLifecycleTrace'
 import {
   hydrateFirestoreCaches,
   startFirestoreSnapshotListeners,
@@ -24,12 +25,16 @@ function ensureConnectionRepositoryReadable(): void {
 }
 
 async function runHydrateAndRebuildCycle(context: string): Promise<void> {
+  markStartupLifecycle('hydrate.cycle.start', { context })
   let hydrateSucceeded = false
   try {
+    markStartupLifecycle('firestore.hydrate.start', { context })
     await hydrateFirestoreCaches()
     hydrateSucceeded = true
+    markStartupLifecycle('firestore.hydrate.complete', { context })
   } catch (error) {
     console.warn(`[kc-firestore] ${context} hydrate failed, using current repository state`, error)
+    markStartupLifecycle('firestore.hydrate.failed', { context })
   }
 
   const connectionState = getRepositories().connection.loadState()
@@ -45,22 +50,31 @@ async function runHydrateAndRebuildCycle(context: string): Promise<void> {
     console.warn(
       `[kc-firestore] ${context} skipping store rebuild until connection cache is available`,
     )
+    markStartupLifecycle('hydrate.cycle.skip_rebuild', { context })
     return
   }
 
   // Contract enforcement: assignmentStore rebuild + synchronization must run
   // against a readable repository state (including explicit empty state).
   ensureConnectionRepositoryReadable()
+  markStartupLifecycle('stores.hydrate.start', { context })
   hydrateStoresFromRepositories()
+  markStartupLifecycle('stores.hydrate.complete', { context })
+  markStartupLifecycle('hydrate.cycle.complete', { context })
 }
 
 async function runStartupLifecycle(): Promise<void> {
+  markStartupLifecycle('auth.authStateReady.wait')
   await getFirebaseAuth().authStateReady()
+  markStartupLifecycle('auth.authStateReady')
   await runHydrateAndRebuildCycle('startup')
 }
 
 function scheduleSnapshotRefresh(): void {
   snapshotRefreshQueued = true
+  markStartupLifecycle('firestore.snapshot.refresh.queued', {
+    alreadyRunning: snapshotRefreshRunning,
+  })
   if (snapshotRefreshRunning) {
     return
   }
@@ -74,6 +88,7 @@ function scheduleSnapshotRefresh(): void {
       }
     } finally {
       snapshotRefreshRunning = false
+      markStartupLifecycle('firestore.snapshot.refresh.idle')
     }
   })()
 }
@@ -115,15 +130,19 @@ export async function initializeRepositories(): Promise<void> {
   }
 
   initializeInFlight = (async () => {
+    markStartupLifecycle('initializeRepositories.start')
     await enableFirestorePersistence()
     await runStartupLifecycle()
 
     stopFirestoreSnapshotListeners()
+    markStartupLifecycle('firestore.snapshot.listeners.attach')
     startFirestoreSnapshotListeners(() => {
       scheduleSnapshotRefresh()
     })
+    markStartupLifecycle('firestore.snapshot.listeners.attached')
 
     initialized = true
+    markStartupLifecycle('initializeRepositories.complete')
   })()
 
   try {

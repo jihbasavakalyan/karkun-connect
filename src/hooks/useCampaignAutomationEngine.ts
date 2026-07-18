@@ -3,6 +3,7 @@ import {
   getAdminCommandCenterSnapshot,
   getRuknCommandCenterSnapshot,
 } from '@/services/campaignAutomationEngine'
+import { markStartupLifecycle } from '@/lib/startupLifecycleTrace'
 import { subscribeToActivityLog } from '@/stores/activityLogStore'
 import { subscribeToAnnexure1Store } from '@/stores/annexure1Store'
 import { subscribeToAssignments } from '@/lib/assignmentEngine'
@@ -38,8 +39,10 @@ function invalidateAutomationSnapshotCache(): void {
 
 function readAdminSnapshot(): AdminCommandCenterSnapshot {
   if (cachedAdmin?.generation === cacheGeneration) {
+    markStartupLifecycle('commandCenter.snapshot.cache_hit', { role: 'administrator' })
     return cachedAdmin.value
   }
+  markStartupLifecycle('commandCenter.snapshot.build', { role: 'administrator' })
   const value = getAdminCommandCenterSnapshot()
   cachedAdmin = { generation: cacheGeneration, value }
   return value
@@ -48,8 +51,10 @@ function readAdminSnapshot(): AdminCommandCenterSnapshot {
 function readRuknSnapshot(ruknId: string): RuknCommandCenterSnapshot {
   const hit = cachedRukn.get(ruknId)
   if (hit?.generation === cacheGeneration) {
+    markStartupLifecycle('commandCenter.snapshot.cache_hit', { role: 'rukn', ruknId })
     return hit.value
   }
+  markStartupLifecycle('commandCenter.snapshot.build', { role: 'rukn', ruknId })
   const value = getRuknCommandCenterSnapshot(ruknId)
   cachedRukn.set(ruknId, { generation: cacheGeneration, value })
   return value
