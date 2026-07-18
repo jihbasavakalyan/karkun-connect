@@ -48,7 +48,8 @@
     "admin:recover-karkuns": "node scripts/admin/recover-missing-karkuns.mjs",
     "admin:recover-karkuns:dry": "node scripts/admin/recover-missing-karkuns.mjs --dry-run",
     "admin:verify-firestore": "node scripts/admin/verify-firestore-production.mjs",
-    "verify:tts": "npx vite-node --env-file=.env.local scripts/verify-tts.ts"
+    "verify:tts": "npx vite-node --env-file=.env.local scripts/verify-tts.ts",
+    "verify:execution-automation": "npx vite-node scripts/verify-execution-automation.ts"
   },
   "dependencies": {
     "@google-cloud/text-to-speech": "^6.4.1",
