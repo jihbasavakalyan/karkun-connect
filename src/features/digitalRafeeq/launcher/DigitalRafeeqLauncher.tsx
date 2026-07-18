@@ -4,11 +4,12 @@
  * FAB + voice assistant drawer. Compact dashboard card can dispatch open event.
  */
 
-import { lazy, Suspense, useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { Icon } from '@/components/ui/Icon'
+import { lazyWithChunkReload } from '@/lib/lazyWithChunkReload'
 import { getDigitalRafeeqService } from '@/runtime/service'
 
-const DigitalRafeeqVoiceDrawer = lazy(() =>
+const DigitalRafeeqVoiceDrawer = lazyWithChunkReload(() =>
   import('../voice/DigitalRafeeqVoiceDrawer').then((module) => ({
     default: module.DigitalRafeeqVoiceDrawer,
   })),

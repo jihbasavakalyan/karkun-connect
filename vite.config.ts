@@ -9,10 +9,16 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: '/',
   plugins: [react(), tailwindcss(), digitalRafeeqTtsApiPlugin()],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
+  },
+  build: {
+    // Emit dist/.vite/manifest.json so deploy checks can match hashed chunks to index.html.
+    manifest: true,
+    assetsDir: 'assets',
   },
 })
