@@ -3,7 +3,7 @@
   "projectId": "karkun-connect-75c68",
   "dryRun": false,
   "timestamp": "2026-07-18T02:02:34.497Z",
-  "backupPath": "C:\\Users\\mdasl\\karkun-connect\\production-data\\exports\\kc-017-2-pre-recovery-backup-2026-07-18T02-02-32-481Z.json",
+  "backupPath": "production-data/exports/kc-017-2-pre-recovery-backup-2026-07-18T02-02-32-481Z.json",
   "before": {
     "rukns": 49,
     "karkuns": 320,
@@ -19,12 +19,11 @@
     "recordsInserted": 173,
     "recordsSkipped": 320,
     "errors": [],
-    "idempotentReRun": {
-      "timestamp": "2026-07-18T02:02:51.513Z",
-      "missingIdsDetected": 0,
-      "recordsInserted": 0,
-      "finalVerification": "PASS"
-    }
+    "idempotentConfirmations": [
+      { "at": "2026-07-18T02:02:51Z", "recovered": 0, "counter": 494 },
+      { "at": "2026-07-18T02:09:43Z", "recovered": 0, "counterRepaired": "13→494" },
+      { "at": "2026-07-18T02:19:06Z", "recovered": 0, "counter": 494 }
+    ]
   },
   "after": {
     "rukns": 49,
@@ -38,5 +37,11 @@
     "stillExtra": [],
     "continuityGaps": []
   },
-  "finalVerification": "PASS"
+  "finalVerification": "PASS",
+  "productionReady": true,
+  "vercelProduction": {
+    "status": "Ready",
+    "commit": "0a9bb3b",
+    "checkedAt": "2026-07-18T02:10:00Z"
+  }
 }
