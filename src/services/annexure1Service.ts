@@ -6,6 +6,7 @@ import {
 } from '@/constants/mockKarkunRegistry'
 import { getRuknById } from '@/data/ruknMaster'
 import { logPeopleAudit } from '@/lib/peopleAuditLog'
+import { getAssignedKarkunanForRukn } from '@/lib/assignmentEngine'
 import { getAllAssignments } from '@/stores/assignmentStore'
 import { logActivity } from '@/stores/activityLogStore'
 import { createCommitment, recordTimelineEvent } from '@/services/guidanceService'
@@ -201,10 +202,20 @@ export function getCampaignRecordData() {
   return buildCampaignRecordPayload(meetingForms, getFollowUpsForCampaignRecord())
 }
 
-/** Rukn-scoped visit records and follow-ups (KC-008). */
+/** Rukn-scoped visit records and follow-ups for currently connected Karkuns only. */
 export function getRuknCampaignRecordData(ruknId: string) {
-  const meetingForms = getSubmittedMeetingForms().filter((form) => form.ruknId === ruknId)
-  return buildCampaignRecordPayload(meetingForms, getFollowUpsForRukn(ruknId))
+  const connectedIds = new Set(getAssignedKarkunanForRukn(ruknId).map((karkun) => karkun.id))
+
+  // When Connected = 0, Visits / Completed / Follow-ups must also be empty.
+  if (connectedIds.size === 0) {
+    return buildCampaignRecordPayload([], [])
+  }
+
+  const meetingForms = getSubmittedMeetingForms().filter(
+    (form) => form.ruknId === ruknId && connectedIds.has(form.karkunId),
+  )
+  const followUps = getFollowUpsForRukn(ruknId).filter((item) => connectedIds.has(item.karkunId))
+  return buildCampaignRecordPayload(meetingForms, followUps)
 }
 
 function buildCampaignRecordPayload(

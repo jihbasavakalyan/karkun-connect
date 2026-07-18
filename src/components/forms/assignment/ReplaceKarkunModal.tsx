@@ -25,9 +25,9 @@ export function ReplaceKarkunModal({
 }: ReplaceKarkunModalProps) {
   const { assignmentVersion, getAvailableKarkunan, replaceKarkun } = useAssignmentEngine()
   const availableKarkunan = useMemo(
-    () => getAvailableKarkunan(),
+    () => getAvailableKarkunan(ruknId),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- assignmentVersion includes people hydrate
-    [assignmentVersion, getAvailableKarkunan],
+    [assignmentVersion, getAvailableKarkunan, ruknId],
   )
   const [step, setStep] = useState<'release' | 'select'>('release')
   const [reason, setReason] = useState<ReleaseReason>('Wrong Assignment')

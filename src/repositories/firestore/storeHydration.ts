@@ -8,6 +8,7 @@ import { reloadBaitulMaalStoreFromPersistence } from '@/stores/baitulMaalStore'
 import { reloadIjtemaAttendanceStoreFromPersistence } from '@/stores/ijtemaAttendanceStore'
 import { reloadJihWebPortalStoreFromPersistence } from '@/stores/jihWebPortalStore'
 import { reloadBroadcastListStoreFromPersistence } from '@/stores/broadcastListStore'
+import { reloadKarkunRequestStoreFromPersistence } from '@/stores/karkunRequestStore'
 import { loadPeopleRegistryFromPersistence } from '@/lib/peopleRegistryPersistence'
 import { getPeopleStatistics, notifyPeopleRegistryChange } from '@/lib/peopleStore'
 import { traceRegistryStage } from '@/lib/registryHydrationTrace'
@@ -54,6 +55,7 @@ export function hydrateStoresFromRepositories(): void {
     reloadIjtemaAttendanceStoreFromPersistence()
     reloadJihWebPortalStoreFromPersistence()
     reloadBroadcastListStoreFromPersistence()
+    reloadKarkunRequestStoreFromPersistence()
     loadPeopleRegistryFromPersistence()
 
     traceIncidentStage('hydrateStoresFromRepositories:before_syncAllKarkunRegistryFromAssignments', {

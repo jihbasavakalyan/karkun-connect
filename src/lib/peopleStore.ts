@@ -556,34 +556,46 @@ export function bulkSetKarkunStatus(
 export function canAssignByGender(ruknId: string, karkunId: string): boolean {
   const rukn = getRuknById(ruknId)
   const karkun = MOCK_KARKUN_REGISTRY.find((k) => k.id === karkunId)
-  if (!rukn || !karkun) {
-    return false
-  }
-  return rukn.gender === karkun.gender
+  const ruknGender = normalizePersonGender(rukn?.gender)
+  const karkunGender = normalizePersonGender(karkun?.gender)
+  return Boolean(ruknGender && karkunGender && ruknGender === karkunGender)
+}
+
+/** Normalize gender labels from seed / Firestore / forms to Male | Female. */
+export function normalizePersonGender(value: unknown): PersonGender | null {
+  if (value === 'Male' || value === 'Female') return value
+  if (typeof value !== 'string') return null
+  const normalized = value.trim().toLowerCase()
+  if (normalized === 'male' || normalized === 'm') return 'Male'
+  if (normalized === 'female' || normalized === 'f') return 'Female'
+  return null
 }
 
 export function getCompatibleRuknsForKarkun(karkunId: string): Rukn[] {
   const karkun = MOCK_KARKUN_REGISTRY.find((k) => k.id === karkunId)
-  if (!karkun) {
+  const karkunGender = normalizePersonGender(karkun?.gender)
+  if (!karkun || !karkunGender) {
     return []
   }
 
   // Business rule: one Rukn may support many active Karkuns, so a Rukn stays
   // selectable even after it already has assignments. Only gender/active are filtered.
   return ruknMaster.filter(
-    (rukn) => rukn.status === 'active' && rukn.gender === karkun.gender,
+    (rukn) =>
+      rukn.status === 'active' && normalizePersonGender(rukn.gender) === karkunGender,
   )
 }
 
 export function getCompatibleKarkunsForRukn(ruknId: string): KarkunRegistryRecord[] {
   const rukn = getRuknById(ruknId)
-  if (!rukn) {
+  const ruknGender = normalizePersonGender(rukn?.gender)
+  if (!rukn || !ruknGender) {
     return []
   }
   return getAllKarkuns().filter(
     (k) =>
       k.status === 'active' &&
-      k.gender === rukn.gender &&
+      normalizePersonGender(k.gender) === ruknGender &&
       k.assignmentStatus === 'Available' &&
       getActiveAssignmentsForKarkun(k.id).length === 0,
   )

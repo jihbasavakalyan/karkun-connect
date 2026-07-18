@@ -32,6 +32,7 @@ import type {
   MigrationBackupIndexEntry,
   SettingsRepository,
 } from '@/repositories/interfaces/SettingsRepository'
+import type { NewKarkunRequest } from '@/types/karkunRequest.types'
 import { SyncCache } from '@/repositories/firestore/cache'
 import {
   FIRESTORE_COLLECTIONS,
@@ -84,6 +85,7 @@ const ijtemaCache = new SyncCache<IjtemaAttendanceRecord[]>([])
 const jihPortalCache = new SyncCache<JihPortalState>({ registrations: {}, monthlyReports: {} })
 const migrationVersionCache = new SyncCache<number | null>(null)
 const broadcastCache = new SyncCache<BroadcastListRecord[]>([])
+const karkunRequestCache = new SyncCache<NewKarkunRequest[]>([])
 const backupIndexCache = new SyncCache<MigrationBackupIndexEntry[]>([])
 const backupCache = new SyncCache<Map<string, DatasetBackup>>(new Map())
 
@@ -249,6 +251,7 @@ async function hydrateFirestoreCachesOnce(): Promise<void> {
 
     const broadcastLists: BroadcastListRecord[] = []
     let backupIndex: MigrationBackupIndexEntry[] = []
+    let karkunRequests: NewKarkunRequest[] = []
     const backupMap = new Map<string, DatasetBackup>()
     for (const snapshot of settingsSnapshots.docs) {
       if (snapshot.id.startsWith('broadcast_')) {
@@ -265,10 +268,15 @@ async function hydrateFirestoreCachesOnce(): Promise<void> {
       if (snapshot.id === FIRESTORE_DOCS.backupIndex) {
         backupIndex = (snapshot.data() as { entries: MigrationBackupIndexEntry[] }).entries ?? []
       }
+      if (snapshot.id === FIRESTORE_DOCS.karkunRequests) {
+        karkunRequests =
+          (snapshot.data() as { requests: NewKarkunRequest[] }).requests ?? []
+      }
     }
     broadcastCache.set(broadcastLists)
     backupIndexCache.set(backupIndex)
     backupCache.set(backupMap)
+    karkunRequestCache.set(karkunRequests)
     traceIncidentStage('hydrateFirestoreCachesOnce:complete', {
       caller: 'hydrateFirestoreCachesOnce',
       sourceOfTruth: 'Firestore',
@@ -403,6 +411,7 @@ export function subscribeToFirestoreCacheChanges(listener: () => void): () => vo
     jihPortalCache.subscribe(listener),
     activityLogCache.subscribe(listener),
     broadcastCache.subscribe(listener),
+    karkunRequestCache.subscribe(listener),
   ]
   return () => unsubs.forEach((unsub) => unsub())
 }
@@ -874,6 +883,26 @@ export class SettingsFirestoreRepository implements SettingsRepository {
     })
     return repositoryOk(undefined)
   }
+
+  loadKarkunRequests(): RepositoryResult<NewKarkunRequest[]> {
+    return repositoryOk([...karkunRequestCache.get()])
+  }
+
+  saveKarkunRequests(requests: NewKarkunRequest[]): RepositoryResult<void> {
+    karkunRequestCache.set([...requests])
+    void queueWrite('settings.karkunRequests', async () => {
+      const db = getFirestoreDb()
+      return writeDoc(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.karkunRequests, {
+        requests,
+      })
+    })
+    return repositoryOk(undefined)
+  }
+
+  clearKarkunRequests(): RepositoryResult<void> {
+    karkunRequestCache.set([])
+    return repositoryOk(undefined)
+  }
 }
 
 export async function clearAllFirestoreCachesForTests(): Promise<void> {
@@ -894,4 +923,5 @@ export async function clearAllFirestoreCachesForTests(): Promise<void> {
   broadcastCache.reset([])
   backupIndexCache.reset([])
   backupCache.reset(new Map())
+  karkunRequestCache.reset([])
 }

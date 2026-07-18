@@ -9,6 +9,7 @@ import {
   AvailableKarkunRow,
   ConnectKarkunConfirmModal,
   KarkunSearchField,
+  NewKarkunRequestModal,
 } from '@/components/relationship'
 import { EmptyState, PageShell } from '@/components/ui'
 import { PlanningConversationModal } from '@/features/digitalRafeeq/planning'
@@ -27,12 +28,13 @@ export function AvailableKarkunPage() {
   const ruknId = useRequiredRuknId()
   const peopleVersion = usePeopleStore()
   const { assignmentVersion, getAvailableKarkunan, assignKarkun } = useAssignmentEngine()
-  const availableKarkunan = getAvailableKarkunan()
+  const availableKarkunan = getAvailableKarkunan(ruknId ?? undefined)
   const [query, setQuery] = useState('')
   const [pendingKarkun, setPendingKarkun] = useState<KarkunRegistryRecord | null>(null)
   const [error, setError] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
   const [planning, setPlanning] = useState<PlanningTarget | null>(null)
+  const [showNewRequest, setShowNewRequest] = useState(false)
 
   const filtered = useMemo(() => {
     void peopleVersion
@@ -83,6 +85,20 @@ export function AvailableKarkunPage() {
         sticky
       />
 
+      <div className="connect-add-karkun">
+        <button
+          type="button"
+          className="connect-add-karkun-button"
+          onClick={() => {
+            setShowNewRequest(true)
+            setError('')
+            setSuccessMessage('')
+          }}
+        >
+          ➕ Add New Karkun
+        </button>
+      </div>
+
       {successMessage && (
         <div className="ds-banner-success" role="status">
           {successMessage}
@@ -128,6 +144,15 @@ export function AvailableKarkunPage() {
           setError('')
         }}
         onConfirm={handleConfirmConnect}
+      />
+
+      <NewKarkunRequestModal
+        isOpen={showNewRequest}
+        ruknId={ruknId}
+        onClose={() => setShowNewRequest(false)}
+        onSubmitted={() =>
+          setSuccessMessage('Request submitted for administrator approval.')
+        }
       />
 
       {planning && ruknId ? (

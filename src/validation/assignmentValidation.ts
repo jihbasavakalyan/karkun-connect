@@ -5,7 +5,7 @@ import {
   isValidMobileFormat,
   normalizeMobile,
 } from '@/lib/mobileValidation'
-import { canAssignByGender } from '@/lib/peopleStore'
+import { canAssignByGender, normalizePersonGender } from '@/lib/peopleStore'
 import type { AssignInput, RemoveInput, ReplaceInput, RestoreInput } from '@/types/assignment'
 import {
   getActiveAssignmentForRukn,
@@ -74,7 +74,32 @@ export function validateKarkunMobile(karkunId: string): ValidationResult {
 }
 
 export function validateGenderMatch(ruknId: string, karkunId: string): ValidationResult {
-  if (!canAssignByGender(ruknId, karkunId)) {
+  const rukn = getRuknById(ruknId)
+  const karkun = getKarkunById(karkunId)
+
+  if (!rukn) {
+    return { valid: false, error: 'Rukn not found.' }
+  }
+  if (!karkun || karkun.isArchived) {
+    return { valid: false, error: 'Karkun not found.' }
+  }
+
+  const ruknGender = normalizePersonGender(rukn.gender)
+  const karkunGender = normalizePersonGender(karkun.gender)
+  const match = canAssignByGender(ruknId, karkunId)
+  const comparisonResult = match ? 'PASS' : 'BLOCK'
+
+  console.info('[gender-validation]', {
+    ruknId,
+    ruknGender: rukn.gender,
+    karkunId,
+    karkunGender: karkun.gender,
+    comparisonResult,
+    ruknGenderNormalized: ruknGender,
+    karkunGenderNormalized: karkunGender,
+  })
+
+  if (!match) {
     return {
       valid: false,
       error:

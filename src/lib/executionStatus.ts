@@ -4,6 +4,7 @@
 
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { getRuknById } from '@/data/ruknMaster'
+import { getAssignedKarkunanForRukn } from '@/lib/assignmentEngine'
 import { getActiveFollowUpForKarkun } from '@/stores/followUpStore'
 import { getAllAssignments } from '@/stores/assignmentStore'
 import {
@@ -157,15 +158,32 @@ export function buildCampaignExecutionSummary(): ExecutionSummary {
 
 /** Personal workload summary — logged-in Rukn only. */
 export function buildRuknExecutionSummary(ruknId: string): ExecutionSummary {
+  const connected = getAssignedKarkunanForRukn(ruknId)
+  const connectedIds = new Set(connected.map((karkun) => karkun.id))
+
+  // Keep Connected / Pending / Completed synchronized: no connections ⇒ zero workload.
+  if (connectedIds.size === 0) {
+    return {
+      counts: { pending: 0, inProgress: 0, followUpRequired: 0, completedToday: 0 },
+      activeItems: [],
+      completedTodayRecords: [],
+    }
+  }
+
   const activeAssignments = getAllAssignments().filter(
-    (record) => record.status === 'Active' && record.ruknId === ruknId,
+    (record) =>
+      record.status === 'Active' &&
+      record.ruknId === ruknId &&
+      connectedIds.has(record.karkunId),
   )
   const today = todayIsoDate()
   const activeItems = buildItemsForAssignments(activeAssignments)
   const assignmentIds = new Set(activeAssignments.map((record) => record.assignmentId))
   const completedTodayRecords = getSubmittedMeetingForms().filter(
     (form) =>
-      form.submissionDate.slice(0, 10) === today && assignmentIds.has(form.assignmentId),
+      form.submissionDate.slice(0, 10) === today &&
+      assignmentIds.has(form.assignmentId) &&
+      connectedIds.has(form.karkunId),
   )
 
   return {

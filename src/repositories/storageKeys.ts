@@ -17,5 +17,6 @@ export const STORAGE_KEYS = {
   jihPortal: 'karkun-connect.jih-portal',
   broadcastLists: 'karkun-connect.broadcast-lists',
   migrationBackups: 'karkun-connect.migration.backups',
+  karkunRequests: 'karkun-connect.karkun-requests',
   migrationBackup: (id: string) => `karkun-connect.migration.backup.${id}`,
 } as const

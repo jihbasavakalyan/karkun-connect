@@ -21,6 +21,7 @@ export const FIRESTORE_DOCS = {
   communicationState: 'state',
   guidanceState: 'guidance',
   jihPortalState: 'jihPortal',
+  karkunRequests: 'karkunRequests',
 } as const
 
 export type FirestoreDocumentMeta = {

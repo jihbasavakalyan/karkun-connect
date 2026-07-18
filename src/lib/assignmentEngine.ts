@@ -16,6 +16,7 @@ import {
   validateKarkunMobile,
   validateRuknActive,
 } from '@/validation/assignmentValidation'
+import { canAssignByGender } from '@/lib/peopleStore'
 import { subscribeToAssignmentStore, getActiveAssignmentsForKarkun } from '@/stores/assignmentStore'
 import type { RemovalReason, ReplacementReason } from '@/types/assignment'
 import type { AssignedBy, ReleaseReason } from '@/types/assignment.types'
@@ -47,8 +48,8 @@ export function getAssignedKarkunanForRukn(ruknId: string): KarkunRegistryRecord
   return result
 }
 
-export function getAvailableKarkunan(): KarkunRegistryRecord[] {
-  return MOCK_KARKUN_REGISTRY.filter(
+export function getAvailableKarkunan(ruknId?: string): KarkunRegistryRecord[] {
+  const available = MOCK_KARKUN_REGISTRY.filter(
     (karkun) =>
       !karkun.isArchived &&
       karkun.status === 'active' &&
@@ -57,6 +58,17 @@ export function getAvailableKarkunan(): KarkunRegistryRecord[] {
       karkun.mobile.trim() &&
       isValidMobileFormat(normalizeMobile(karkun.mobile)),
   )
+
+  if (!ruknId) {
+    return available
+  }
+
+  const rukn = getRuknById(ruknId)
+  if (!rukn) {
+    return []
+  }
+
+  return available.filter((karkun) => canAssignByGender(ruknId, karkun.id))
 }
 
 export function getAssignmentMetrics() {

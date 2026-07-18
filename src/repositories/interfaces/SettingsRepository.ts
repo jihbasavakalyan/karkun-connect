@@ -27,4 +27,9 @@ export interface SettingsRepository {
   loadMigrationBackup(id: string): RepositoryResult<DatasetBackup | null>
   saveMigrationBackup(backup: DatasetBackup): RepositoryResult<void>
   removeMigrationBackup(id: string): RepositoryResult<void>
+  loadKarkunRequests(): RepositoryResult<import('@/types/karkunRequest.types').NewKarkunRequest[]>
+  saveKarkunRequests(
+    requests: import('@/types/karkunRequest.types').NewKarkunRequest[],
+  ): RepositoryResult<void>
+  clearKarkunRequests(): RepositoryResult<void>
 }

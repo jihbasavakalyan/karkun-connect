@@ -188,15 +188,16 @@
   /* ── KC-012.3 one-screen app layouts ── */
   .app-screen.ds-page,
   .ds-page.app-screen {
-    @apply space-y-2.5;
+    @apply space-y-3 overflow-x-hidden;
+    max-width: 100%;
   }
 
   .app-screen-header {
-    @apply space-y-0.5;
+    @apply space-y-1;
   }
 
   .app-screen-back {
-    @apply text-xs font-semibold text-primary hover:underline;
+    @apply inline-flex min-h-10 items-center text-sm font-semibold text-primary hover:underline;
   }
 
   .app-screen-title {
@@ -204,19 +205,19 @@
   }
 
   .app-screen-subtitle {
-    @apply text-xs text-secondary;
+    @apply text-sm text-secondary;
   }
 
   .app-screen-block {
-    @apply rounded-xl border border-border/70 bg-surface p-3;
+    @apply rounded-xl border border-border/70 bg-surface p-3.5;
   }
 
   .app-screen-block-head {
-    @apply mb-1.5 flex items-center justify-between gap-2;
+    @apply mb-2 flex items-center justify-between gap-2;
   }
 
   .app-screen-block-title {
-    @apply text-[11px] font-semibold uppercase tracking-[0.12em] text-secondary;
+    @apply text-xs font-semibold uppercase tracking-[0.12em] text-secondary;
   }
 
   .app-screen-view-all {
@@ -224,7 +225,15 @@
   }
 
   .app-screen-empty {
-    @apply text-xs text-secondary;
+    @apply text-sm text-secondary;
+  }
+
+  .connect-add-karkun {
+    @apply py-1;
+  }
+
+  .connect-add-karkun-button {
+    @apply flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-primary/40 bg-primary-muted/40 px-4 text-sm font-semibold text-primary touch-manipulation transition hover:bg-primary-muted;
   }
 
   .record-chip-row {
@@ -2162,9 +2171,14 @@
 
   .urdu-text {
     font-family: var(--font-urdu);
-    line-height: 1.9;
+    font-size: 1.125rem;
+    line-height: 2.15;
     letter-spacing: 0;
     text-align: right;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    overflow-wrap: anywhere;
+    word-break: break-word;
   }
 
   .dr-voice-drawer .dr-voice-bubble,
@@ -2173,9 +2187,14 @@
   .dr-voice-drawer .dr-voice-status,
   .dr-voice-drawer .dr-voice-title,
   .dr-voice-drawer .dr-voice-fallback,
-  .dr-voice-drawer .dr-voice-interim {
+  .dr-voice-drawer .dr-voice-interim,
+  .dr-voice-drawer .dr-voice-input,
+  .dr-voice-drawer .dr-voice-thinking {
     font-family: var(--font-urdu);
-    line-height: 1.85;
+    line-height: 2.15;
+    color: #12241c;
+    overflow-wrap: anywhere;
+    word-break: break-word;
   }
 
   .dr-voice-messages {
@@ -2193,15 +2212,26 @@
 
   .dr-plan-overlay {
     @apply fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4;
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100vw;
   }
 
   .dr-plan-sheet {
     @apply relative flex max-h-[92vh] w-full max-w-lg flex-col overflow-hidden rounded-t-3xl bg-surface shadow-enterprise sm:rounded-3xl;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+    padding-left: max(0px, env(safe-area-inset-left, 0px));
+    padding-right: max(0px, env(safe-area-inset-right, 0px));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
   .dr-plan-header {
-    @apply relative border-b border-border px-5 py-4;
+    @apply relative flex items-center justify-between gap-3 border-b border-border px-5 py-4;
     background-image: linear-gradient(135deg, #ecfdf5 0%, #ffffff 70%);
+    min-width: 0;
   }
 
   .dr-plan-eyebrow {
@@ -2816,34 +2846,79 @@
   }
 
   .dr-voice-overlay {
-    @apply fixed inset-0 z-50 flex justify-end bg-black/35 p-3 sm:p-4;
-    padding-top: max(0.75rem, env(safe-area-inset-top));
-    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+    @apply fixed inset-0 z-50 flex items-end justify-center bg-black/35 sm:items-stretch sm:justify-end;
+    padding: 0;
+    padding-top: env(safe-area-inset-top, 0px);
+    box-sizing: border-box;
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100vw;
   }
 
   .dr-voice-drawer {
-    @apply flex h-full w-full max-w-md flex-col overflow-hidden rounded-3xl bg-surface shadow-card;
+    @apply flex w-full flex-col overflow-hidden bg-surface shadow-card;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    height: min(92dvh, 100%);
+    max-height: min(92dvh, 100%);
+    border-radius: 1.25rem 1.25rem 0 0;
     background-image: linear-gradient(180deg, rgb(236 253 245) 0%, rgb(255 255 255) 28%, rgb(248 250 249) 100%);
+    overflow-x: hidden;
+    padding-left: max(1rem, env(safe-area-inset-left, 0px));
+    padding-right: max(1rem, env(safe-area-inset-right, 0px));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  @media (min-width: 640px) {
+    .dr-voice-drawer {
+      @apply h-full max-h-none max-w-md rounded-3xl;
+      margin: 0.75rem;
+      height: calc(100% - 1.5rem);
+      padding-left: 0;
+      padding-right: 0;
+    }
   }
 
   .dr-voice-header {
-    @apply flex items-start justify-between gap-3 px-4 py-4;
+    @apply flex items-center justify-between gap-3 py-4;
+    min-width: 0;
+  }
+
+  @media (min-width: 640px) {
+    .dr-voice-header {
+      @apply px-4;
+    }
+  }
+
+  .dr-voice-header-text {
+    @apply min-w-0 flex-1;
   }
 
   .dr-voice-title {
-    @apply text-lg font-semibold text-primary;
+    @apply text-xl font-semibold text-primary;
+    line-height: 2.1;
+    overflow-wrap: anywhere;
+    word-break: break-word;
   }
 
   .dr-voice-status {
-    @apply mt-0.5 text-xs font-medium text-secondary;
+    @apply mt-1 text-sm font-medium text-secondary;
+    line-height: 2;
   }
 
   .dr-voice-close {
-    @apply min-h-11 min-w-11 rounded-xl p-2 text-secondary touch-manipulation transition hover:bg-primary-muted hover:text-text-heading;
+    @apply flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-xl p-2 text-secondary touch-manipulation transition hover:bg-primary-muted hover:text-text-heading;
   }
 
   .dr-voice-stage {
-    @apply mx-4 mb-2 flex flex-col items-center gap-2 rounded-2xl bg-primary-muted/60 px-3 py-3;
+    @apply mb-2 flex flex-col items-center gap-2 rounded-2xl bg-primary-muted/60 px-3 py-3;
+  }
+
+  @media (min-width: 640px) {
+    .dr-voice-stage {
+      @apply mx-4;
+    }
   }
 
   .dr-voice-waveform {
@@ -2897,43 +2972,54 @@
   }
 
   .dr-voice-messages {
-    @apply flex-1 space-y-3 overflow-y-auto px-4 py-4;
+    @apply min-h-0 flex-1 space-y-4 overflow-x-hidden overflow-y-auto py-4;
+  }
+
+  @media (min-width: 640px) {
+    .dr-voice-messages {
+      @apply px-4;
+    }
   }
 
   .dr-voice-empty {
-    @apply text-sm text-secondary;
+    @apply text-base text-secondary;
+    line-height: 2.2;
   }
 
   .dr-voice-bubble {
-    @apply max-w-[92%] rounded-2xl bg-white/90 px-3 py-2 text-sm leading-relaxed text-text-heading shadow-sm;
+    @apply max-w-full rounded-2xl bg-white/90 px-3.5 py-3 text-base text-text-heading shadow-sm;
+    line-height: 2.15;
   }
 
   .dr-voice-bubble-row {
     @apply flex items-start gap-2;
+    min-width: 0;
   }
 
   .dr-voice-bubble-text {
     @apply min-w-0 flex-1 whitespace-pre-line;
+    line-height: 2.15;
   }
 
   .dr-voice-bubble p {
     @apply whitespace-pre-line;
+    margin-block: 0.35em;
   }
 
   .dr-voice-bubble-user {
-    @apply ml-auto bg-primary-muted text-text-heading;
+    @apply ms-auto bg-primary-muted text-text-heading;
   }
 
   .dr-voice-actions {
-    @apply mt-2 flex flex-wrap gap-2;
+    @apply mt-3 flex flex-wrap gap-2;
   }
 
   .dr-voice-action {
-    @apply min-h-9 rounded-full bg-primary-muted px-3 py-1.5 text-xs font-semibold text-primary transition hover:bg-primary/15;
+    @apply min-h-10 rounded-full bg-primary-muted px-3.5 py-2 text-sm font-semibold text-primary transition hover:bg-primary/15;
   }
 
   .dr-voice-thinking {
-    @apply flex items-center gap-2 text-xs font-medium text-primary;
+    @apply flex items-center gap-2 text-sm font-medium text-primary;
   }
 
   .dr-voice-thinking-dot {
@@ -2942,24 +3028,43 @@
   }
 
   .dr-voice-suggestions {
-    @apply flex gap-2 overflow-x-auto px-3 py-2;
-    scroll-behavior: smooth;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: thin;
-    overscroll-behavior-x: contain;
+    @apply flex flex-wrap gap-2 py-2;
+    max-width: 100%;
+  }
+
+  @media (min-width: 640px) {
+    .dr-voice-suggestions {
+      @apply px-3;
+    }
   }
 
   .dr-voice-chip {
-    @apply min-h-9 shrink-0 rounded-full bg-white px-3 py-1.5 text-xs font-medium text-text-heading shadow-sm touch-manipulation transition hover:bg-primary-muted active:scale-[0.98];
+    @apply min-h-11 max-w-full whitespace-normal rounded-2xl bg-white px-3.5 py-2 text-sm font-medium text-text-heading shadow-sm touch-manipulation transition hover:bg-primary-muted active:scale-[0.98];
+    line-height: 2;
+    text-align: right;
   }
 
   .dr-voice-interim {
-    @apply mx-4 mb-1 rounded-xl bg-primary-muted/70 px-3 py-2 text-xs italic text-text-heading;
+    @apply mb-1 rounded-xl bg-primary-muted/70 px-3 py-2 text-sm italic text-text-heading;
+    line-height: 2.1;
+  }
+
+  @media (min-width: 640px) {
+    .dr-voice-interim {
+      @apply mx-4;
+    }
   }
 
   .dr-voice-footer {
-    @apply flex items-center gap-2 px-3 py-3;
+    @apply flex items-center gap-2 py-3;
     padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
+    min-width: 0;
+  }
+
+  @media (min-width: 640px) {
+    .dr-voice-footer {
+      @apply px-3;
+    }
   }
 
   .dr-voice-mic {
@@ -2985,16 +3090,30 @@
   }
 
   .dr-voice-input {
-    @apply min-h-11 w-full rounded-xl bg-white px-3 text-sm shadow-sm;
+    @apply min-h-12 w-full min-w-0 rounded-xl bg-white px-3 text-base shadow-sm;
+    line-height: 2;
   }
 
   .dr-voice-fallback {
-    @apply px-4 pb-2 text-xs text-amber-800;
+    @apply pb-2 text-sm text-amber-900;
+    line-height: 2.1;
+  }
+
+  @media (min-width: 640px) {
+    .dr-voice-fallback {
+      @apply px-4;
+    }
   }
 
   .dr-voice-footer-note {
-    @apply px-3 py-2;
+    @apply py-2;
     padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0px));
+  }
+
+  @media (min-width: 640px) {
+    .dr-voice-footer-note {
+      @apply px-3;
+    }
   }
 
   .dr-speak-btn {

@@ -23,8 +23,8 @@ Defect and issue log for Pilot V1 acceptance and launch. Updated after RC1 Final
 
 | ID | Severity | Area | Description | Steps / Evidence | Owner | Status |
 |----|----------|------|-------------|------------------|-------|--------|
-| M-01 | Medium | Connections (Rukn) | Available/Replace lists not gender-filtered | Opposite-gender rows visible until validation | 1.1 | Open |
-| M-02 | Medium | Rukn Campaign Record | Campaign-wide visit/follow-up data shown | Escalates KL-S02 | 1.1 | Open |
+| M-01 | Medium | Connections (Rukn) | Available/Replace lists not gender-filtered | Opposite-gender rows visible until validation | 1.1 | **Resolved KC-018** |
+| M-02 | Medium | Rukn Campaign Record | Campaign-wide visit/follow-up data shown | Escalates KL-S02 | 1.1 | **Resolved KC-018** |
 | M-03 | Medium | Admin mobile | Hamburger drawer UX; use chip nav | AdminLayout / AdminSidebar | 1.1 | Open |
 | L-01 | Low | Admin Connections | Dead “View History” control | AssignmentManagementPage | 1.1 | Open |
 | L-02 | Low | RuknLayout | Weak contrast on hero user label | PortalAuthActions on dark hero | 1.1 | Open |

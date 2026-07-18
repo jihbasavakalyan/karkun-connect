@@ -389,4 +389,20 @@ export class SettingsLocalRepository implements SettingsRepository {
   removeMigrationBackup(id: string): RepositoryResult<void> {
     return tryRepository(() => removeFromStorage(STORAGE_KEYS.migrationBackup(id)))
   }
+
+  loadKarkunRequests(): RepositoryResult<import('@/types/karkunRequest.types').NewKarkunRequest[]> {
+    return tryRepository(() =>
+      loadJsonFromStorage(STORAGE_KEYS.karkunRequests, [] as import('@/types/karkunRequest.types').NewKarkunRequest[]),
+    )
+  }
+
+  saveKarkunRequests(
+    requests: import('@/types/karkunRequest.types').NewKarkunRequest[],
+  ): RepositoryResult<void> {
+    return tryRepository(() => saveJsonToStorage(STORAGE_KEYS.karkunRequests, requests))
+  }
+
+  clearKarkunRequests(): RepositoryResult<void> {
+    return tryRepository(() => removeFromStorage(STORAGE_KEYS.karkunRequests))
+  }
 }

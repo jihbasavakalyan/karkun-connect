@@ -204,9 +204,9 @@ export function DigitalRafeeqVoiceDrawer({
         onClick={(event) => event.stopPropagation()}
       >
         <header className="dr-voice-header">
-          <div>
+          <div className="dr-voice-header-text">
             <h2 id={titleId} className="dr-voice-title">
-              Digital Rafeeq
+              ڈیجیٹل رفیق
             </h2>
             <p className="dr-voice-status">{statusLabel(speech.status, thinking, speaking)}</p>
           </div>

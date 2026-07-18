@@ -297,7 +297,7 @@ async function wipeSettingsRuntimeDocs(accessToken) {
   let deleted = 0
   for (const id of names) {
     // Keep structural settings only.
-    if (id === 'karkunCounter' || id === 'migrationVersion') continue
+    if (id === 'karkunCounter' || id === 'migrationVersion' || id === 'karkunRequests') continue
 
     await deleteDoc(accessToken, 'settings', id)
     deleted += 1

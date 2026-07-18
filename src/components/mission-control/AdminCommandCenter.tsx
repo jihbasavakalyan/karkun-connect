@@ -17,6 +17,7 @@ import {
 import type { AdminMissionControlModel } from '@/lib/missionControl/buildAdminMissionControl'
 import type { AdminCommandCenterSnapshot } from '@/types/campaignAutomation.types'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
+import { PendingKarkunRequestQueue } from '@/components/admin/PendingKarkunRequestQueue'
 
 type AdminCommandCenterProps = {
   model: AdminMissionControlModel
@@ -98,6 +99,8 @@ export function AdminCommandCenter({ model, snapshot }: AdminCommandCenterProps)
           })}
         </ul>
       </section>
+
+      <PendingKarkunRequestQueue />
 
       <section className="mc-panel mc-panel-compact mc-panel-primary acc-section" aria-label="Intervention queue">
         <div className="acc-section-head">
