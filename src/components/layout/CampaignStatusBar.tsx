@@ -26,7 +26,7 @@ export function ActiveCampaignSubtitle() {
   const duration = formatActiveCampaignDuration()
 
   return (
-    <p className="mt-2 text-secondary">
+    <p className="mt-0.5 text-xs text-secondary">
       {getActiveCampaignName()}
       {duration !== '—' ? ` · ${duration}` : ''}
     </p>

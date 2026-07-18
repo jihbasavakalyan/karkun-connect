@@ -16,7 +16,6 @@ import { scheduleWhatsAppMessage } from '@/services/schedulingService'
 import { submitAssignmentReviewRequest } from '@/services/assignmentReviewService'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
 import type { AssignmentReviewReason } from '@/types/assignmentReview.types'
-import { RelationshipActionBar } from './RelationshipActionBar'
 import { ProfileCompletionReminder } from './ProfileCompletionReminder'
 import { RequestReviewModal } from '@/components/forms/assignment/RequestReviewModal'
 import { Icon } from '@/components/ui/Icon'
@@ -40,7 +39,6 @@ export function ConnectedKarkunCard({ karkun, ruknId, visitPath }: ConnectedKark
   const guidance = getKarkunGuidance(karkun.id)
   const intelligence = useMemo(
     () => buildConnectedIntelligenceView(karkun.id, ruknId),
-    // guidance version covers store-driven refresh
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [karkun.id, ruknId, version],
   )
@@ -48,6 +46,13 @@ export function ConnectedKarkunCard({ karkun, ruknId, visitPath }: ConnectedKark
   const telLink = buildTelLink(karkun.mobile)
   const whatsAppLink = buildWhatsAppLink(karkun.whatsapp?.trim() ? karkun.whatsapp : karkun.mobile)
   const lastVisit = formatLastVisitLabel(karkun.id)
+  const lastContact = intelligence?.lastContactLabel ?? lastVisit
+  const activityItems =
+    intelligence?.recentActivityItems?.length
+      ? intelligence.recentActivityItems
+      : lastVisit
+        ? [lastVisit]
+        : []
 
   const recipient: MessageRecipient = {
     personId: karkun.id,
@@ -83,40 +88,38 @@ export function ConnectedKarkunCard({ karkun, ruknId, visitPath }: ConnectedKark
     setScheduleNotice(`Meeting scheduled for ${new Date(scheduledForIso).toLocaleString()}.`)
   }
 
-  const summaryBits = [
-    intelligence?.previousVisitSummary ?? lastVisit,
-    intelligence?.recentActivity,
-    intelligence?.nextReminder ? `Reminder: ${intelligence.nextReminder}` : null,
-  ].filter(Boolean) as string[]
-
   return (
     <>
-      <article className="relationship-connected-card connected-workspace-card ri-connected-card">
-        <div className="connected-card-top">
-          <div className="min-w-0">
-            <Link to={journeyPath} className="connected-card-name">
-              {karkun.name}
-            </Link>
-            <p className="connected-card-meta">
-              {[karkun.mobile || null, karkun.area || null].filter(Boolean).join(' · ')}
-            </p>
-          </div>
+      <article className="connected-app-card">
+        <div className="connected-app-profile">
+          <Link to={journeyPath} className="connected-app-name">
+            {karkun.name}
+          </Link>
+          <p className="connected-app-meta">
+            {[karkun.mobile || null, karkun.area || null].filter(Boolean).join(' · ')}
+          </p>
+        </div>
+
+        <div className="connected-status-chips" aria-label="Status">
           {guidance ? (
-            <div className="ri-card-badges">
+            <>
               <JourneyStageBadge stageId={guidance.currentStage} variant="rukn" />
               <RelationshipHealthBadge
                 health={guidance.health}
                 stageId={guidance.currentStage}
               />
-            </div>
+            </>
+          ) : null}
+          {lastContact ? (
+            <span className="connected-status-chip">{lastContact}</span>
           ) : null}
         </div>
 
         <ProfileCompletionReminder karkunId={karkun.id} variant="chip" />
 
-        <div className="relationship-quick-actions connected-card-actions">
+        <div className="connected-action-grid" role="toolbar" aria-label="Actions">
           {telLink ? (
-            <a href={telLink} className="relationship-quick-action" aria-label={`Call ${karkun.name}`}>
+            <a href={telLink} className="connected-action" aria-label={`Call ${karkun.name}`}>
               <Icon name="phone" size="sm" />
               Call
             </a>
@@ -126,53 +129,57 @@ export function ConnectedKarkunCard({ karkun, ruknId, visitPath }: ConnectedKark
               href={whatsAppLink}
               target="_blank"
               rel="noopener noreferrer"
-              className="relationship-quick-action"
+              className="connected-action"
               aria-label={`WhatsApp ${karkun.name}`}
             >
               <Icon name="message" size="sm" />
               WhatsApp
             </a>
           ) : null}
-          <Link to={`${journeyPath}#visit-details`} className="relationship-quick-action">
+          <Link to={`${journeyPath}#visit-details`} className="connected-action">
             <Icon name="file-text" size="sm" />
             Visit
           </Link>
-          <button
-            type="button"
-            className="relationship-quick-action"
-            onClick={() => setScheduleOpen(true)}
-          >
+          <button type="button" className="connected-action" onClick={() => setScheduleOpen(true)}>
             <Icon name="calendar" size="sm" />
             Schedule
           </button>
-        </div>
-
-        <div className="connected-card-action-row">
-          <RelationshipActionBar
-            showRequestReview
-            onRequestReview={() => {
+          <button
+            type="button"
+            className="connected-action"
+            onClick={() => {
               setReviewError('')
               setReviewOpen(true)
             }}
-            compact
-          />
+          >
+            <Icon name="flag" size="sm" />
+            Review
+          </button>
         </div>
 
-        {summaryBits.length > 0 ? (
-          <p className="connected-card-summary" title={summaryBits.join(' · ')}>
-            {summaryBits.join(' · ')}
-          </p>
-        ) : null}
+        <div className="connected-activity">
+          <div className="connected-activity-head">
+            <h3 className="connected-activity-title">Recent Activity</h3>
+            <Link to={journeyPath} className="app-screen-view-all">
+              View Full History →
+            </Link>
+          </div>
+          {activityItems.length === 0 ? (
+            <p className="app-screen-empty">No activity yet.</p>
+          ) : (
+            <ul className="connected-activity-list">
+              {activityItems.slice(0, 3).map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          )}
+        </div>
 
         {scheduleNotice ? (
-          <p className="mt-1.5 rounded-md border border-green-200 bg-green-50 px-2.5 py-1.5 text-xs text-green-800">
-            {scheduleNotice}
-          </p>
+          <p className="connected-notice connected-notice-ok">{scheduleNotice}</p>
         ) : null}
         {reviewNotice ? (
-          <p className="mt-1.5 rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-xs text-amber-900">
-            {reviewNotice}
-          </p>
+          <p className="connected-notice connected-notice-amber">{reviewNotice}</p>
         ) : null}
       </article>
 

@@ -58,7 +58,7 @@ export function RuknHomePage() {
   const rafeeqLine = buildContextualRafeeqGuidance(ruknId)
 
   return (
-    <div className="cd-page cd-page-rukn mc-page mc-page-rukn-compact mc-page-execution">
+    <div className="cd-page cd-page-rukn mc-page mc-page-rukn-compact mc-page-execution mc-page-onescreen">
       {/* 1. Digital Rafeeq briefing */}
       <AskDigitalRafeeqCard
         featured

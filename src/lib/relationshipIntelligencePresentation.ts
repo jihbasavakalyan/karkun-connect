@@ -50,6 +50,9 @@ export type ConnectedIntelligenceView = {
   recentActivity: string | null
   previousVisitSummary: string | null
   nextReminder: string | null
+  /** Latest activity lines for compact Connected cards (max 3). */
+  recentActivityItems: string[]
+  lastContactLabel: string | null
 }
 
 export type AdminRelationshipInsights = {
@@ -225,6 +228,9 @@ export function buildConnectedIntelligenceView(
 
   const recent = guidance.timeline[0]
   const reminder = guidance.reminders[0]
+  const recentActivityItems = guidance.timeline.slice(0, 3).map((entry) =>
+    entry.description ? `${entry.title} — ${entry.description}` : entry.title,
+  )
 
   return {
     stageLabel: getRuknJourneyStageLabel(guidance.currentStage),
@@ -235,6 +241,8 @@ export function buildConnectedIntelligenceView(
       : null,
     previousVisitSummary: recent?.source === 'visit' ? recent.title : recent?.title ?? null,
     nextReminder: reminder ? `${reminder.title}: ${reminder.message}` : null,
+    recentActivityItems,
+    lastContactLabel: recent?.title ?? null,
   }
 }
 

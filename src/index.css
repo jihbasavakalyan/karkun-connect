@@ -185,6 +185,253 @@
     @apply flex flex-wrap gap-2;
   }
 
+  /* ── KC-012.3 one-screen app layouts ── */
+  .app-screen.ds-page,
+  .ds-page.app-screen {
+    @apply space-y-2.5;
+  }
+
+  .app-screen-header {
+    @apply space-y-0.5;
+  }
+
+  .app-screen-back {
+    @apply text-xs font-semibold text-primary hover:underline;
+  }
+
+  .app-screen-title {
+    @apply text-xl font-semibold tracking-tight text-text-heading;
+  }
+
+  .app-screen-subtitle {
+    @apply text-xs text-secondary;
+  }
+
+  .app-screen-block {
+    @apply rounded-xl border border-border/70 bg-surface p-3;
+  }
+
+  .app-screen-block-head {
+    @apply mb-1.5 flex items-center justify-between gap-2;
+  }
+
+  .app-screen-block-title {
+    @apply text-[11px] font-semibold uppercase tracking-[0.12em] text-secondary;
+  }
+
+  .app-screen-view-all {
+    @apply shrink-0 text-[11px] font-semibold text-primary hover:underline;
+  }
+
+  .app-screen-empty {
+    @apply text-xs text-secondary;
+  }
+
+  .record-chip-row {
+    @apply grid grid-cols-3 gap-2;
+  }
+
+  .record-chip {
+    @apply flex flex-col items-center justify-center rounded-xl border border-border/70 bg-surface px-2 py-2 text-center;
+  }
+
+  .record-chip-label {
+    @apply text-[10px] font-semibold uppercase tracking-wide text-secondary;
+  }
+
+  .record-chip-value {
+    @apply text-lg font-bold tabular-nums text-text-heading;
+  }
+
+  .record-cta {
+    @apply pt-0.5;
+  }
+
+  .record-cta-button {
+    @apply min-h-11 text-sm font-semibold;
+  }
+
+  .record-list {
+    @apply space-y-1.5;
+  }
+
+  .record-list-item {
+    @apply flex items-center justify-between gap-2 rounded-lg border border-border/60 bg-surface-muted/50 px-2.5 py-2;
+  }
+
+  .record-list-item-action {
+    @apply items-center;
+  }
+
+  .record-list-main {
+    @apply min-w-0 flex-1;
+  }
+
+  .record-list-title {
+    @apply truncate text-sm font-semibold text-text-heading;
+  }
+
+  .record-list-sep {
+    @apply mx-1 text-secondary;
+  }
+
+  .record-list-meta {
+    @apply truncate text-[11px] text-secondary;
+  }
+
+  .connected-app-list {
+    @apply space-y-2;
+  }
+
+  .connected-app-grid {
+    @apply space-y-2;
+  }
+
+  .connected-app-card {
+    @apply space-y-2 rounded-xl border border-border/70 bg-surface p-3;
+  }
+
+  .connected-app-profile {
+    @apply min-w-0;
+  }
+
+  .connected-app-name {
+    @apply text-[15px] font-semibold leading-snug text-text-heading hover:text-primary;
+  }
+
+  .connected-app-meta {
+    @apply mt-0.5 text-[11px] text-secondary;
+  }
+
+  .connected-status-chips {
+    @apply flex flex-wrap items-center gap-1.5;
+  }
+
+  .connected-status-chip {
+    @apply inline-flex rounded-full border border-border/70 bg-surface-muted px-2 py-0.5 text-[11px] font-medium text-secondary;
+  }
+
+  .connected-action-grid {
+    @apply grid grid-cols-3 gap-1.5 sm:grid-cols-5;
+  }
+
+  .connected-action {
+    @apply flex min-h-10 flex-col items-center justify-center gap-0.5 rounded-lg border border-border/70 bg-surface-muted/40 px-1 py-1.5 text-[11px] font-semibold text-text-heading transition hover:border-primary/30 hover:bg-surface-muted active:scale-[0.98];
+  }
+
+  .connected-activity {
+    @apply space-y-1 border-t border-border/50 pt-2;
+  }
+
+  .connected-activity-head {
+    @apply flex items-center justify-between gap-2;
+  }
+
+  .connected-activity-title {
+    @apply text-[11px] font-semibold uppercase tracking-wide text-secondary;
+  }
+
+  .connected-activity-list {
+    @apply space-y-0.5 text-[11px] leading-snug text-secondary;
+  }
+
+  .connected-activity-list li {
+    @apply truncate;
+  }
+
+  .connected-notice {
+    @apply rounded-md px-2.5 py-1.5 text-xs;
+  }
+
+  .connected-notice-ok {
+    @apply border border-green-200 bg-green-50 text-green-800;
+  }
+
+  .connected-notice-amber {
+    @apply border border-amber-200 bg-amber-50 text-amber-900;
+  }
+
+  .mc-page-onescreen {
+    @apply space-y-2;
+  }
+
+  .mc-page-onescreen .mc-ask-rafeeq-featured {
+    @apply gap-2 rounded-xl p-3;
+  }
+
+  .mc-page-onescreen .mc-ask-rafeeq-featured .mc-ask-rafeeq-orb {
+    @apply h-10 w-10 rounded-xl;
+  }
+
+  .mc-page-onescreen .mc-ask-rafeeq-featured .mc-ask-rafeeq-title {
+    @apply text-base;
+  }
+
+  .mc-page-onescreen .mc-ask-rafeeq-guidance {
+    @apply mt-0.5 line-clamp-2 text-xs leading-snug;
+  }
+
+  .mc-page-onescreen .mc-ask-rafeeq-cta {
+    @apply min-h-9 px-3 py-1.5 text-sm;
+  }
+
+  .mc-page-onescreen .mc-hero-rukn-compact {
+    @apply rounded-xl p-3;
+  }
+
+  .mc-page-onescreen .mc-hero-title-compact {
+    @apply text-lg sm:text-xl;
+  }
+
+  .mc-page-onescreen .mc-hero-detail,
+  .mc-page-onescreen .mc-hero-mission-line {
+    @apply line-clamp-2 text-xs;
+  }
+
+  .mc-page-onescreen .mc-mission-chip {
+    @apply px-2.5 py-1;
+  }
+
+  .mc-page-onescreen .mc-mission-chip dd {
+    @apply text-sm;
+  }
+
+  .mc-page-onescreen .mc-primary-mission-cta {
+    @apply mt-0;
+  }
+
+  .mc-page-onescreen .mc-primary-mission-button {
+    @apply min-h-10 text-sm;
+  }
+
+  .mc-page-onescreen .mc-panel-compact {
+    @apply rounded-xl p-2.5 sm:p-3;
+  }
+
+  .ri-priority-list-dense {
+    @apply mt-1.5 space-y-1.5;
+  }
+
+  .ri-priority-link-dense {
+    @apply rounded-lg px-2.5 py-2;
+  }
+
+  .mc-page-onescreen .mc-campaign-task-badge {
+    @apply min-w-[5.5rem] gap-0.5 rounded-lg px-2 py-1.5;
+  }
+
+  .mc-page-onescreen .mc-dev-summary-item {
+    @apply gap-0 rounded-lg px-2 py-1.5;
+  }
+
+  .mc-page-onescreen .mc-dev-summary-value {
+    @apply text-sm;
+  }
+
+  .mc-page-onescreen .relationship-search-input {
+    @apply min-h-10 rounded-lg px-3 py-2 text-sm;
+  }
+
   .ds-section-muted {
     @apply border-border/60 bg-surface-muted/40 shadow-none;
   }

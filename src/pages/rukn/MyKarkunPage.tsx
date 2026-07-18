@@ -6,7 +6,7 @@ import {
   ConnectedKarkunCard,
   KarkunSearchField,
 } from '@/components/relationship'
-import { EmptyState, PageHeader, PageShell } from '@/components/ui'
+import { EmptyState, PageShell } from '@/components/ui'
 import { useRequiredRuknId } from '@/hooks/useRequiredRuknId'
 import { useAuth } from '@/hooks/useAuth'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
@@ -45,26 +45,26 @@ export function MyKarkunPage() {
   }
 
   return (
-    <PageShell variant="narrow" className="relationship-page connected-workspace max-w-3xl">
-      <PageHeader
-        title="Connected Karkuns"
-        description="Profile, journey, and actions for each Karkun."
-      />
+    <PageShell variant="narrow" className="app-screen connected-screen">
+      <header className="app-screen-header">
+        <h1 className="app-screen-title">Connected</h1>
+        <p className="app-screen-subtitle">
+          {myKarkunan.length} Karkun{myKarkunan.length === 1 ? '' : 's'}
+        </p>
+      </header>
 
       <ExecutionSuccessBanner />
 
-      <section className="connected-workspace-list" aria-label="Connected Karkuns">
-        <div className="connected-workspace-list-head">
-          {myKarkunan.length > 0 ? (
-            <KarkunSearchField
-              id="connected-karkun-search"
-              value={query}
-              onChange={setQuery}
-              resultCount={query.trim() ? filtered.length : undefined}
-            />
-          ) : null}
-        </div>
+      {myKarkunan.length > 0 ? (
+        <KarkunSearchField
+          id="connected-karkun-search"
+          value={query}
+          onChange={setQuery}
+          resultCount={query.trim() ? filtered.length : undefined}
+        />
+      ) : null}
 
+      <section className="connected-app-list" aria-label="Connected Karkuns">
         {myKarkunan.length === 0 ? (
           <EmptyState
             icon="users"
@@ -79,7 +79,7 @@ export function MyKarkunPage() {
             description={`No connected Karkun matches "${query}". Try a different name or number.`}
           />
         ) : (
-          <ul className="connected-workspace-grid">
+          <ul className="connected-app-grid">
             {filtered.map((karkun) => (
               <li key={karkun.id}>
                 <ConnectedKarkunCard karkun={karkun} ruknId={ruknId} />

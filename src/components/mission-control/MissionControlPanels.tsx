@@ -249,13 +249,13 @@ export function RuknPriorityMissionList({ ruknId, model }: RuknPriorityMissionPr
   const { assignmentVersion } = useAssignmentEngine()
   const items = useMemo(() => {
     void assignmentVersion
-    return buildDailyPriorityMission(ruknId)
+    return buildDailyPriorityMission(ruknId, 3)
   }, [ruknId, assignmentVersion])
 
   const scheduleNotes = useMemo(() => buildPriorityScheduleNotes(model), [model])
 
   const orphanVisits = useMemo(
-    () => buildOrphanVisitQueueItems(model, items.map((item) => item.karkunId)),
+    () => buildOrphanVisitQueueItems(model, items.map((item) => item.karkunId)).slice(0, 2),
     [model, items],
   )
 
@@ -263,9 +263,7 @@ export function RuknPriorityMissionList({ ruknId, model }: RuknPriorityMissionPr
     return (
       <section className="mc-panel mc-panel-compact mc-panel-primary" aria-label="Priority Karkuns">
         <h2 className="mc-panel-title">Priority Karkuns</h2>
-        <p className="mc-caption">
-          No urgent follow-ups right now. A gentle check-in with any connected Karkun still helps.
-        </p>
+        <p className="mc-caption">No urgent follow-ups right now.</p>
       </section>
     )
   }
@@ -273,15 +271,19 @@ export function RuknPriorityMissionList({ ruknId, model }: RuknPriorityMissionPr
   return (
     <>
       <section className="mc-panel mc-panel-compact mc-panel-primary ri-priority-panel" aria-label="Priority Karkuns">
-        <h2 className="mc-panel-title">Priority Karkuns</h2>
-        <p className="mc-caption">Who needs attention first — and why.</p>
+        <div className="app-screen-block-head">
+          <h2 className="mc-panel-title">Priority Karkuns</h2>
+          <Link to={ROUTES.RUKN_MY_KARKUN} className="app-screen-view-all">
+            View All →
+          </Link>
+        </div>
         {items.length > 0 ? (
-          <ul className="ri-priority-list">
+          <ul className="ri-priority-list ri-priority-list-dense">
             {items.map((item) => {
               const scheduleNote = scheduleNotes.get(item.karkunId)
               return (
                 <li key={item.id}>
-                  <Link to={item.route} className="ri-priority-link">
+                  <Link to={item.route} className="ri-priority-link ri-priority-link-dense">
                     <div className="ri-priority-head">
                       <span className="ri-priority-name">{item.karkunName}</span>
                       <span className={`ri-priority-health ri-health-${item.healthLevel}`}>
@@ -289,9 +291,8 @@ export function RuknPriorityMissionList({ ruknId, model }: RuknPriorityMissionPr
                       </span>
                     </div>
                     <p className="ri-priority-why">{item.why}</p>
-                    <p className="ri-priority-rec">{item.recommendation}</p>
                     {scheduleNote ? (
-                      <p className="ri-priority-schedule">Scheduled: {scheduleNote}</p>
+                      <p className="ri-priority-schedule">{scheduleNote}</p>
                     ) : null}
                   </Link>
                 </li>
@@ -303,8 +304,7 @@ export function RuknPriorityMissionList({ ruknId, model }: RuknPriorityMissionPr
 
       {orphanVisits.length > 0 ? (
         <section className="mc-panel mc-panel-compact" aria-label="Additional scheduled visits">
-          <h2 className="mc-panel-title">Additional scheduled visits</h2>
-          <p className="mc-caption">On today&apos;s timeline, beyond the priority list.</p>
+          <h2 className="mc-panel-title">Also scheduled</h2>
           <ul className="mc-priority-list mc-priority-list-compact">
             {orphanVisits.map((item) => (
               <li key={item.id}>
@@ -337,7 +337,6 @@ export function RuknCampaignTaskTracker({
   return (
     <section className="mc-panel mc-panel-compact mc-campaign-tasks" aria-label="Campaign tasks">
       <h2 className="mc-panel-title">Campaign Tasks</h2>
-      <p className="mc-caption">Campaign objectives at a glance — not only visits.</p>
       <ul className="mc-campaign-task-row">
         {tasks.map((task) => {
           const pct =
@@ -375,7 +374,6 @@ export function RuknDevelopmentSummary({
   return (
     <section className="mc-panel mc-panel-compact mc-dev-summary" aria-label="Development summary">
       <h2 className="mc-panel-title">Development Summary</h2>
-      <p className="mc-caption">A snapshot of relationship and campaign progress.</p>
       <ul className="mc-dev-summary-grid">
         {items.map((item) => {
           const pct =
