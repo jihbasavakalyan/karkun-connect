@@ -1,10 +1,8 @@
 import { useMemo } from 'react'
 import {
+  AdminCommandCenter,
   AdminMissionControlHero,
-  AdminMissionControlPanels,
-  AdminRelationshipInsightsPanel,
   AskDigitalRafeeqCard,
-  MissionControlKpiGrid,
 } from '@/components/mission-control'
 import { openDigitalRafeeqAssistant } from '@/features/digitalRafeeq/launcher'
 import { useCampaignAutomationEngine } from '@/hooks/useCampaignAutomationEngine'
@@ -19,12 +17,10 @@ export function AdminHomePage() {
   const model = useMemo(() => buildAdminMissionControl(snapshot), [snapshot])
 
   return (
-    <div className="cd-page cd-page-admin mc-page mc-page-admin-compact">
+    <div className="cd-page cd-page-admin mc-page mc-page-admin-compact mc-page-admin-command">
       <AdminMissionControlHero model={model} />
+      <AdminCommandCenter model={model} snapshot={snapshot} />
       <AskDigitalRafeeqCard compact onOpen={openDigitalRafeeqAssistant} />
-      <MissionControlKpiGrid kpis={model.kpis} />
-      <AdminRelationshipInsightsPanel />
-      <AdminMissionControlPanels model={model} />
     </div>
   )
 }

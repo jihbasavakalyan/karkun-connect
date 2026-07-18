@@ -12,8 +12,9 @@ export function AdminMissionControlHero({ model }: MissionControlHeroProps) {
     <header className="mc-hero mc-hero-admin-compact" aria-label="Mission Control">
       <div className="mc-hero-top">
         <div className="mc-hero-identity">
-          <p className="mc-eyebrow">Mission Control</p>
+          <p className="mc-eyebrow">Campaign Command Center</p>
           <h1 className="mc-hero-title mc-hero-title-admin">{model.campaignName}</h1>
+          <p className="mc-hero-attention">Where does the campaign need your attention?</p>
           <p className="mc-hero-date">{model.currentDateLabel}</p>
           {formatCampaignWindowLabel() ? (
             <p className="mc-caption">{formatCampaignWindowLabel()}</p>
