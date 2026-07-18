@@ -51,7 +51,7 @@ export function AskDigitalRafeeqCard({
         <div className="mc-ask-rafeeq-copy">
           <p className="mc-ask-rafeeq-eyebrow">{RAFEEQ_BRAND}</p>
           <p className="mc-ask-rafeeq-status urdu-text" dir="rtl" lang="ur">
-            {RAFEEQ_SUBTITLE}
+            {guidanceLine ?? RAFEEQ_SUBTITLE}
           </p>
         </div>
         <PrimaryButton type="button" className="mc-ask-rafeeq-cta" onClick={onOpen}>

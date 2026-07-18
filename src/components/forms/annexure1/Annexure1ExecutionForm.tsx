@@ -13,7 +13,7 @@ type Annexure1ExecutionFormProps = {
 }
 
 const selectClassName =
-  'min-h-[52px] w-full rounded-lg border border-border bg-surface px-4 py-3 text-base text-text-heading focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20'
+  'min-h-11 w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text-heading focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20'
 
 export function Annexure1ExecutionForm({
   form,
@@ -22,7 +22,7 @@ export function Annexure1ExecutionForm({
 }: Annexure1ExecutionFormProps) {
   return (
     <section
-      className="rounded-(--radius-card) border border-border bg-surface p-4 shadow-card sm:p-5"
+      className="visit-form-compact rounded-xl border border-border bg-surface p-3 shadow-sm"
       aria-label="Visit details form"
     >
       <FormFieldGroup title="Visit" first>
@@ -34,22 +34,24 @@ export function Annexure1ExecutionForm({
           onValueChange={(value) => setField('visitDate', value)}
         />
 
-        <fieldset className="space-y-3">
+        <fieldset className="space-y-2">
           <legend className="text-sm font-medium text-text-heading">Visit Conducted?</legend>
-          <LargeRadioOption
-            name="visit-conducted"
-            value="yes"
-            checked={form.visitConducted === 'yes'}
-            label="Yes"
-            onChange={(value) => setField('visitConducted', value as 'yes')}
-          />
-          <LargeRadioOption
-            name="visit-conducted"
-            value="no"
-            checked={form.visitConducted === 'no'}
-            label="No"
-            onChange={(value) => setField('visitConducted', value as 'no')}
-          />
+          <div className="grid grid-cols-2 gap-2">
+            <LargeRadioOption
+              name="visit-conducted"
+              value="yes"
+              checked={form.visitConducted === 'yes'}
+              label="Yes"
+              onChange={(value) => setField('visitConducted', value as 'yes')}
+            />
+            <LargeRadioOption
+              name="visit-conducted"
+              value="no"
+              checked={form.visitConducted === 'no'}
+              label="No"
+              onChange={(value) => setField('visitConducted', value as 'no')}
+            />
+          </div>
         </fieldset>
 
         {form.visitConducted === 'no' && (
@@ -77,7 +79,7 @@ export function Annexure1ExecutionForm({
           </FormFieldGroup>
 
           <FormFieldGroup title="JIH App Registration">
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-1.5">
               <label htmlFor="jih-app-registration" className="text-sm font-medium text-text-heading">
                 Registration Status
               </label>
@@ -102,14 +104,14 @@ export function Annexure1ExecutionForm({
           </FormFieldGroup>
 
           <FormFieldGroup title="Commitment">
-            <label className="flex min-h-[52px] cursor-pointer items-center gap-3 rounded-lg border border-border px-4 py-3">
+            <label className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border border-border px-3 py-2">
               <input
                 type="checkbox"
                 checked={form.commitmentMade}
                 onChange={(event) => setField('commitmentMade', event.target.checked)}
                 className="h-5 w-5 rounded border-border text-primary focus:ring-primary/20"
               />
-              <span className="text-base font-medium text-text-heading">Commitment Made</span>
+              <span className="text-sm font-medium text-text-heading">Commitment Made</span>
             </label>
 
             {form.commitmentMade && (
@@ -122,26 +124,28 @@ export function Annexure1ExecutionForm({
                   placeholder="Describe the commitment..."
                 />
 
-                <fieldset className="space-y-3">
+                <fieldset className="space-y-2">
                   <legend className="text-sm font-medium text-text-heading">Follow-up Required?</legend>
-                  <LargeRadioOption
-                    name="follow-up-required"
-                    value="yes"
-                    checked={form.followUpRequired === 'yes'}
-                    label="Yes"
-                    onChange={(value) => setField('followUpRequired', value as 'yes')}
-                  />
-                  <LargeRadioOption
-                    name="follow-up-required"
-                    value="no"
-                    checked={form.followUpRequired === 'no'}
-                    label="No"
-                    onChange={(value) => setField('followUpRequired', value as 'no')}
-                  />
+                  <div className="grid grid-cols-2 gap-2">
+                    <LargeRadioOption
+                      name="follow-up-required"
+                      value="yes"
+                      checked={form.followUpRequired === 'yes'}
+                      label="Yes"
+                      onChange={(value) => setField('followUpRequired', value as 'yes')}
+                    />
+                    <LargeRadioOption
+                      name="follow-up-required"
+                      value="no"
+                      checked={form.followUpRequired === 'no'}
+                      label="No"
+                      onChange={(value) => setField('followUpRequired', value as 'no')}
+                    />
+                  </div>
                 </fieldset>
 
                 {form.followUpRequired === 'yes' && (
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     <InputField
                       id="follow-up-date"
                       label="Follow-up Date"

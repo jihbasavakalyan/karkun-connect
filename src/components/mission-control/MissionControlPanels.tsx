@@ -283,7 +283,10 @@ export function RuknPriorityMissionList({ ruknId, model }: RuknPriorityMissionPr
               const scheduleNote = scheduleNotes.get(item.karkunId)
               return (
                 <li key={item.id}>
-                  <Link to={item.route} className="ri-priority-link ri-priority-link-dense">
+                  <Link
+                    to={`${item.route}${item.route.includes('#') ? '' : '#visit-details'}`}
+                    className="ri-priority-link ri-priority-link-dense"
+                  >
                     <div className="ri-priority-head">
                       <span className="ri-priority-name">{item.karkunName}</span>
                       <span className={`ri-priority-health ri-health-${item.healthLevel}`}>
@@ -291,6 +294,7 @@ export function RuknPriorityMissionList({ ruknId, model }: RuknPriorityMissionPr
                       </span>
                     </div>
                     <p className="ri-priority-why">{item.why}</p>
+                    <span className="ri-priority-cta">Record Visit →</span>
                     {scheduleNote ? (
                       <p className="ri-priority-schedule">{scheduleNote}</p>
                     ) : null}

@@ -11,12 +11,14 @@ import {
   RuknPriorityMissionList,
 } from '@/components/mission-control'
 import { RuknFloatingActionButton, RuknIjtemaAttendancePanel } from '@/components/home'
+import { ExecutionSuccessBanner } from '@/components/execution/ExecutionSuccessBanner'
 import { openDigitalRafeeqAssistant } from '@/features/digitalRafeeq/launcher'
 import { buildContextualRafeeqGuidance } from '@/features/digitalRafeeq/companion/rafeeqUrduCopy'
 import { useRequiredRuknId } from '@/hooks/useRequiredRuknId'
 import { useCampaignAutomationEngine } from '@/hooks/useCampaignAutomationEngine'
 import { useGuidance } from '@/hooks/useGuidance'
 import { buildRuknMissionControl } from '@/lib/missionControl/buildRuknMissionControl'
+import { resolveHomePrimaryWorkflow } from '@/lib/workflowPresentation'
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { buildTelLink, buildWhatsAppLink } from '@/utils/personContactLinks'
 import { sortGuidanceByUrgency } from '@/lib/homePresentation'
@@ -37,6 +39,11 @@ export function RuknHomePage() {
     [ruknId, snapshot],
   )
 
+  const workflowPrimary = useMemo(
+    () => (ruknId ? resolveHomePrimaryWorkflow(ruknId) : null),
+    [ruknId, snapshot],
+  )
+
   if (!ruknId) {
     return <Navigate to={ROUTES.LOGIN} replace />
   }
@@ -45,7 +52,10 @@ export function RuknHomePage() {
     return <HomePageSkeleton />
   }
 
-  const primary = model.quickActions[0]
+  const fallbackPrimary = model.quickActions[0]
+  const primaryLabel = workflowPrimary?.label ?? fallbackPrimary?.label
+  const primaryRoute = workflowPrimary?.route ?? fallbackPrimary?.route
+
   const topGuidance = sortGuidanceByUrgency(getGuidanceForRuknKarkuns(ruknId))[0]
   const topKarkun = topGuidance ? getKarkunById(topGuidance.karkunId) : undefined
   const primaryCallHref = topKarkun?.mobile ? buildTelLink(topKarkun.mobile) ?? undefined : undefined
@@ -59,24 +69,28 @@ export function RuknHomePage() {
 
   return (
     <div className="cd-page cd-page-rukn mc-page mc-page-rukn-compact mc-page-execution mc-page-onescreen">
-      {/* 1. Digital Rafeeq briefing */}
-      <AskDigitalRafeeqCard
-        featured
-        onOpen={openDigitalRafeeqAssistant}
-        guidanceLine={rafeeqLine}
-      />
+      <ExecutionSuccessBanner />
 
-      {/* 2. Today's Mission */}
+      {/* 1. Today's Mission — highest priority first */}
       <RuknMissionControlHero
         model={model}
         greeting={morningBrief.greeting}
         missionLine={morningBrief.mission}
       />
 
-      {primary ? <PrimaryMissionCta label={primary.label} route={primary.route} /> : null}
+      {primaryLabel && primaryRoute ? (
+        <PrimaryMissionCta label={primaryLabel} route={primaryRoute} />
+      ) : null}
 
-      {/* 3. Priority Karkuns (single primary visit list) */}
+      {/* 2. Priority Karkuns — one tap into visit */}
       <RuknPriorityMissionList ruknId={ruknId} model={model} />
+
+      {/* 3. Digital Rafeeq — supportive, subordinate */}
+      <AskDigitalRafeeqCard
+        compact
+        onOpen={openDigitalRafeeqAssistant}
+        guidanceLine={rafeeqLine}
+      />
 
       {/* 4. Campaign Task Progress */}
       <RuknCampaignTaskTracker ruknId={ruknId} model={model} />

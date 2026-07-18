@@ -11,6 +11,7 @@ import { buildRuknExecutionSummary } from '@/lib/executionStatus'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { PageShell } from '@/components/ui'
 import { useRequiredRuknId } from '@/hooks/useRequiredRuknId'
+import { resolveHomePrimaryWorkflow } from '@/lib/workflowPresentation'
 
 const RECENT_LIMIT = 3
 
@@ -36,6 +37,7 @@ export function CampaignRecordPage() {
   const data = getRuknCampaignRecordData(ruknId)
   const { counts } = buildRuknExecutionSummary(ruknId)
   const pendingFollowUps = data.followUps.filter((item) => item.status === 'Pending')
+  const nextVisit = resolveHomePrimaryWorkflow(ruknId)
 
   const visibleVisits = showAllVisits
     ? data.meetingForms
@@ -70,9 +72,9 @@ export function CampaignRecordPage() {
       </section>
 
       <div className="record-cta">
-        <Link to={ROUTES.RUKN_MY_KARKUN} className="block w-full">
+        <Link to={nextVisit?.route ?? ROUTES.RUKN_MY_KARKUN} className="block w-full">
           <PrimaryButton type="button" className="record-cta-button w-full">
-            Record Visit
+            {nextVisit ? nextVisit.label : 'Record Visit'}
           </PrimaryButton>
         </Link>
       </div>

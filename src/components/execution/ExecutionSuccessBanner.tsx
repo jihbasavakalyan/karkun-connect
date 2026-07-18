@@ -1,15 +1,23 @@
 import { useEffect } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 
 type ExecutionSuccessBannerProps = {
   message?: string
 }
 
+type SuccessLocationState = {
+  successMessage?: string
+  nextActionLabel?: string
+  nextActionRoute?: string
+} | null
+
 export function ExecutionSuccessBanner({ message }: ExecutionSuccessBannerProps) {
   const location = useLocation()
   const navigate = useNavigate()
-  const bannerMessage =
-    message ?? (location.state as { successMessage?: string } | null)?.successMessage
+  const state = location.state as SuccessLocationState
+  const bannerMessage = message ?? state?.successMessage
+  const nextLabel = state?.nextActionLabel
+  const nextRoute = state?.nextActionRoute
 
   useEffect(() => {
     if (!bannerMessage) {
@@ -17,11 +25,14 @@ export function ExecutionSuccessBanner({ message }: ExecutionSuccessBannerProps)
     }
 
     const timer = window.setTimeout(() => {
-      navigate(location.pathname + location.search, { replace: true, state: null })
-    }, 5000)
+      navigate(location.pathname + location.search + location.hash, {
+        replace: true,
+        state: null,
+      })
+    }, 6000)
 
     return () => window.clearTimeout(timer)
-  }, [bannerMessage, location.pathname, location.search, navigate])
+  }, [bannerMessage, location.hash, location.pathname, location.search, navigate])
 
   if (!bannerMessage) {
     return null
@@ -29,10 +40,15 @@ export function ExecutionSuccessBanner({ message }: ExecutionSuccessBannerProps)
 
   return (
     <div
-      className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800"
+      className="workflow-success-banner"
       role="status"
     >
-      {bannerMessage}
+      <p className="workflow-success-message">{bannerMessage}</p>
+      {nextLabel && nextRoute && nextRoute !== location.pathname + location.hash ? (
+        <Link to={nextRoute} className="workflow-success-cta" replace>
+          {nextLabel} →
+        </Link>
+      ) : null}
     </div>
   )
 }

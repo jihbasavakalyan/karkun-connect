@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { ROUTES } from '@/constants/routes'
@@ -31,6 +31,7 @@ import {
 import { buildConnectionJourney } from '@/lib/connectionJourney'
 import { getConnectionStatusLabel } from '@/lib/connectionLabels'
 import { buildIndividualCommunicationContext } from '@/lib/communicationContext'
+import { resolvePostVisitWorkflowDestination } from '@/lib/workflowPresentation'
 import { saveAnnexure1Draft, submitAnnexure1 } from '@/services/annexure1Service'
 import { scheduleWhatsAppMessage } from '@/services/schedulingService'
 import { submitAssignmentReviewRequest } from '@/services/assignmentReviewService'
@@ -46,18 +47,10 @@ import { buildWhatsAppLink } from '@/utils/personContactLinks'
 import type { Annexure1FormState } from '@/types/annexure1.types'
 import type { MessageRecipient } from '@/types/communication'
 import { PageShell, StatusBadge } from '@/components/ui'
+import { ExecutionSuccessBanner } from '@/components/execution/ExecutionSuccessBanner'
 
 function sectionClass(): string {
   return 'app-screen-block'
-}
-
-function buildPostSubmitDestination(isAdminContext: boolean, followUpRequired: boolean): string {
-  if (isAdminContext) {
-    return followUpRequired
-      ? `${ROUTES.ADMIN_FOLLOW_UP}?section=follow-ups`
-      : `${ROUTES.ADMIN_EXECUTION}?section=pending`
-  }
-  return ROUTES.RUKN_MY_KARKUN
 }
 
 function wasFollowUpScheduled(
@@ -110,6 +103,17 @@ export function ConnectionJourneyPage() {
   const [reviewOpen, setReviewOpen] = useState(false)
   const [reviewError, setReviewError] = useState('')
   const [reviewNotice, setReviewNotice] = useState('')
+
+  useEffect(() => {
+    if (location.hash !== '#visit-details') return
+    const timer = window.setTimeout(() => {
+      document.getElementById('visit-details')?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      })
+    }, 80)
+    return () => window.clearTimeout(timer)
+  }, [location.hash, karkunId])
 
   if (!karkun) {
     return (
@@ -186,13 +190,14 @@ export function ConnectionJourneyPage() {
       result.submission.commitmentMade,
       result.submission.followUpRequired,
     )
-    navigate(buildPostSubmitDestination(isAdminContext, followUpRequired), {
-      state: {
-        successMessage: `Visit recorded for ${karkun.name}.${
-          followUpRequired ? ' Follow-up scheduled.' : ''
-        }`,
-      },
+    const destination = resolvePostVisitWorkflowDestination({
+      isAdminContext,
+      followUpRequired,
+      ruknId: activeAssignment.ruknId,
+      completedKarkunId: karkun.id,
+      completedKarkunName: karkun.name,
     })
+    navigate(destination.route, { state: destination.state })
   }
 
   const handleSaveDraft = () => {
@@ -239,6 +244,8 @@ export function ConnectionJourneyPage() {
         </Link>
         <StatusBadge variant="connected">{getConnectionStatusLabel(karkun.assignmentStatus)}</StatusBadge>
       </div>
+
+      <ExecutionSuccessBanner />
 
       <RelationshipSummaryPanel
         karkunName={karkun.name}

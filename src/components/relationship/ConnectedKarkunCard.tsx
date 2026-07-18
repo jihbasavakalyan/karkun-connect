@@ -117,7 +117,12 @@ export function ConnectedKarkunCard({ karkun, ruknId, visitPath }: ConnectedKark
 
         <ProfileCompletionReminder karkunId={karkun.id} variant="chip" />
 
-        <div className="connected-action-grid" role="toolbar" aria-label="Actions">
+        <Link to={`${journeyPath}#visit-details`} className="connected-primary-cta">
+          <Icon name="file-text" size="sm" />
+          Record Visit
+        </Link>
+
+        <div className="connected-action-grid" role="toolbar" aria-label="Secondary actions">
           {telLink ? (
             <a href={telLink} className="connected-action" aria-label={`Call ${karkun.name}`}>
               <Icon name="phone" size="sm" />
@@ -136,10 +141,6 @@ export function ConnectedKarkunCard({ karkun, ruknId, visitPath }: ConnectedKark
               WhatsApp
             </a>
           ) : null}
-          <Link to={`${journeyPath}#visit-details`} className="connected-action">
-            <Icon name="file-text" size="sm" />
-            Visit
-          </Link>
           <button type="button" className="connected-action" onClick={() => setScheduleOpen(true)}>
             <Icon name="calendar" size="sm" />
             Schedule
