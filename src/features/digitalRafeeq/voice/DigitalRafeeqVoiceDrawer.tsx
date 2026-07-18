@@ -224,7 +224,7 @@ export function DigitalRafeeqVoiceDrawer({
         <div ref={listRef} className="dr-voice-messages" aria-live="polite">
           {messages.length === 0 && (
             <p className="dr-voice-empty">
-              ملاقات، روابط، حاضری یا آج کی ترجیحات کے بارے میں پوچھیں۔
+              کارکنان، ملاقاتوں اور اپنی ذمہ داریوں کے بارے میں کچھ بھی پوچھیے...
             </p>
           )}
           {messages.map((message) => (
@@ -306,7 +306,7 @@ export function DigitalRafeeqVoiceDrawer({
             <input
               value={input}
               onChange={(event) => setInput(event.target.value)}
-              placeholder="سوال لکھیں…"
+              placeholder="کچھ بھی پوچھیے…"
               className="dr-voice-input"
               aria-label="ڈیجیٹل رفیق سے پوچھیں"
               dir="auto"

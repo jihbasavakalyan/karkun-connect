@@ -2943,10 +2943,14 @@
 
   .dr-voice-suggestions {
     @apply flex gap-2 overflow-x-auto px-3 py-2;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    overscroll-behavior-x: contain;
   }
 
   .dr-voice-chip {
-    @apply min-h-9 shrink-0 rounded-full bg-white px-3 py-1.5 text-xs font-medium text-text-heading shadow-sm touch-manipulation transition hover:bg-primary-muted;
+    @apply min-h-9 shrink-0 rounded-full bg-white px-3 py-1.5 text-xs font-medium text-text-heading shadow-sm touch-manipulation transition hover:bg-primary-muted active:scale-[0.98];
   }
 
   .dr-voice-interim {

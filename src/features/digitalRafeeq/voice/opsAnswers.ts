@@ -1,11 +1,12 @@
 /**
- * Operational Q&A for Digital Rafeeq (KC-008) — Urdu-first companion.
- * Answers from live repositories/services — no hardcoded metrics.
+ * Operational Q&A for Digital Rafeeq — Urdu-first companion (رفیق).
+ * Answers from live repositories/services — presentation/wording only (KC-016.1).
  */
 
 import { getPeopleStatistics } from '@/lib/peopleStore'
 import { getTeamPerformanceRows } from '@/lib/commandCenterPresentation'
 import { getGuidanceForRuknKarkuns } from '@/lib/guidance/guidanceEngine'
+import { sortGuidanceByUrgency } from '@/lib/homePresentation'
 import { getAssignmentDashboardMetrics } from '@/services/assignmentService'
 import { getBaitulMaalDashboardMetrics, getRuknBaitulMaalMetrics } from '@/services/baitulMaalService'
 import { getCurrentIjtemaAttendance, getIjtemaAttendanceDashboardMetrics } from '@/services/ijtemaAttendanceService'
@@ -41,6 +42,27 @@ function matches(query: string, patterns: RegExp[]): boolean {
   return patterns.some((pattern) => pattern.test(query))
 }
 
+function respectName(name: string): string {
+  const trimmed = name.trim()
+  if (!trimmed) return 'کارکن'
+  if (/صاحب$|بیگم$|آپہ$/.test(trimmed)) return trimmed
+  return `${trimmed} صاحب`
+}
+
+/** Salam + observation (+ optional guidance / soft encouragement). */
+function companionReply(
+  observation: string,
+  guidance?: string,
+  encouragement?: string,
+): string {
+  const parts = [observation.trim()]
+  if (guidance?.trim()) parts.push(guidance.trim())
+  if (encouragement?.trim()) parts.push(encouragement.trim())
+  const body = parts.filter(Boolean).join('\n\n')
+  if (/السلام علیکم/.test(body)) return body
+  return `السلام علیکم\n\n${body}`
+}
+
 export function answerOperationalQuery(
   rawQuery: string,
   context: {
@@ -53,8 +75,10 @@ export function answerOperationalQuery(
   const query = normalize(rawQuery)
   if (!query) {
     return {
-      text: conversational(
-        'ملاقات، روابط، اجتماع، فالو اپ یا آج کی ترجیحات کے بارے میں پوچھیں۔',
+      text: companionReply(
+        'کارکنان، ملاقاتوں اور اپنی ذمہ داریوں کے بارے میں کچھ بھی پوچھیے...',
+        undefined,
+        'میں آپ کے ساتھ ہوں۔',
       ),
       actions: [],
     }
@@ -64,13 +88,6 @@ export function answerOperationalQuery(
     return answerAdminQuery(query, context.adminSnapshot)
   }
   return answerRuknQuery(query, context.ruknId ?? '', context.ruknSnapshot)
-}
-
-function conversational(body: string): string {
-  const clean = body.trim()
-  if (!clean) return clean
-  if (/السلام علیکم/.test(clean)) return clean
-  return `السلام علیکم\n\n${clean}`
 }
 
 function answerAdminQuery(
@@ -91,12 +108,14 @@ function answerAdminQuery(
     ])
   ) {
     return {
-      text: conversational(
-        `${people.unassignedKarkuns} کارکن ابھی مربوط نہیں ہیں، جبکہ ${people.assignedKarkuns} پہلے سے مربوط ہیں۔ اگلا قدم روابط پر توجہ دینا چاہیے۔`,
+      text: companionReply(
+        `ابھی ${people.unassignedKarkuns} کارکن کا رابطہ باقی ہے، جبکہ ${people.assignedKarkuns} پہلے سے مربوط ہیں۔`,
+        'اگر مناسب سمجھیں تو اگلا قدم روابط پر توجہ دینا بہتر ہوگا۔',
+        'اللہ اس کوشش میں آسانی عطا فرمائے۔',
       ),
       actions: [
-        { id: 'connections', label: 'روابط کھولیں', route: adminAssignmentsPath() },
-        { id: 'execution', label: 'عملدرآمد کھولیں', route: adminExecutionPath() },
+        { id: 'connections', label: 'روابط دیکھیں', route: adminAssignmentsPath() },
+        { id: 'execution', label: 'عملدرآمد دیکھیں', route: adminExecutionPath() },
       ],
     }
   }
@@ -111,30 +130,34 @@ function answerAdminQuery(
     const strongest = [...team].sort((a, b) => b.completionPct - a.completionPct)[0]
     if (!weakest) {
       return {
-        text: conversational(
-          'رکن کی کارکردگی ابھی دستیاب نہیں۔ جب روابط شروع ہوں گے تو میں بتائوں گا کسے مدد درکار ہے۔',
+        text: companionReply(
+          'رکن کی کارکردگی ابھی سامنے نہیں آئی۔',
+          'جب روابط شروع ہوں گے تو میں بتاؤں گا کسے مدد درکار ہے۔',
         ),
-        actions: [{ id: 'connections', label: 'روابط کھولیں', route: ROUTES.ADMIN_ASSIGNMENTS }],
+        actions: [{ id: 'connections', label: 'روابط دیکھیں', route: ROUTES.ADMIN_ASSIGNMENTS }],
       }
     }
     return {
-      text: conversational(
-        `${weakest.ruknName} کو ابھی توجہ درکار ہے (${weakest.completionPct}% تکمیل، ${weakest.pendingWork} باقی)۔ ${strongest.ruknName} اس وقت آگے ہیں (${strongest.completionPct}%)۔`,
+      text: companionReply(
+        `${weakest.ruknName} کو اس وقت زیادہ توجہ درکار لگتی ہے — تکمیل تقریباً ${weakest.completionPct}% ہے اور ${weakest.pendingWork} کام باقی ہیں۔ ${strongest.ruknName} اس وقت بہتر رفتار پر ہیں (${strongest.completionPct}%)۔`,
+        'اگر ممکن ہو تو ان کی مدد کے لیے ایک مختصر بات چیت مفید ہوگی۔',
+        'اللہ ارکان کی خدمت میں برکت عطا فرمائے۔',
       ),
       actions: [
-        { id: 'rukn', label: 'ارکان کھولیں', route: ROUTES.ADMIN_RUKN },
-        { id: 'execution', label: 'عملدرآمد کھولیں', route: adminExecutionPath() },
+        { id: 'rukn', label: 'ارکان دیکھیں', route: ROUTES.ADMIN_RUKN },
+        { id: 'execution', label: 'عملدرآمد دیکھیں', route: adminExecutionPath() },
       ],
     }
   }
 
-  if (matches(query, [/attendance|ijtema|missed/, /حاضری|اجتماع|غائب/])) {
+  if (matches(query, [/attendance|ijtema|missed|absent/, /حاضری|اجتماع|غائب|غیر حاضر/])) {
     return {
-      text: conversational(
-        `اس ہفتے کا اجتماع: ${ijtema.present} حاضر، ${ijtema.absent} غائب، ${ijtema.excused} معذور، اور ${ijtema.notRecorded} ابھی درج نہیں۔ حاضری فالو اپ سے شرکت بہتر ہوگی۔`,
+      text: companionReply(
+        `اس ہفتے کے اجتماع میں ${ijtema.present} حاضر رہے، ${ijtema.absent} شریک نہیں ہو سکے، ${ijtema.excused} معذور ہیں، اور ${ijtema.notRecorded} کی حاضری ابھی درج نہیں۔`,
+        'نرم یاد دہانی سے شرکت بہتر ہو سکتی ہے۔',
       ),
       actions: [
-        { id: 'attendance', label: 'حاضری کھولیں', route: adminCompliancePath('ijtema') },
+        { id: 'attendance', label: 'حاضری دیکھیں', route: adminCompliancePath('ijtema') },
         { id: 'reminder', label: 'یاد دہانی بھیجیں', route: ROUTES.ADMIN_COMMUNICATION },
       ],
     }
@@ -142,26 +165,29 @@ function answerAdminQuery(
 
   if (matches(query, [/bait.?ul.?maal|contribution|target/, /بیت المال|عطیہ/])) {
     return {
-      text: conversational(
-        `بیت المال کی تکمیل ${baitulMaal.compliancePercentage}% ہے۔ ${baitulMaal.pending} باقی اور ${baitulMaal.paid} ادا شدہ ہیں۔ نرم یاد دہانی سے مہینہ مکمل ہو سکتا ہے۔`,
+      text: companionReply(
+        `بیت المال کی صورتحال تقریباً ${baitulMaal.compliancePercentage}% مکمل ہے۔ ${baitulMaal.pending} باقی اور ${baitulMaal.paid} ادا شدہ ہیں۔`,
+        'اگر مناسب سمجھیں تو نرم یاد دہانی سے مہینہ مکمل ہو سکتا ہے۔',
       ),
       actions: [
-        { id: 'baitul', label: 'بیت المال کھولیں', route: adminCompliancePath('baitul-maal') },
+        { id: 'baitul', label: 'بیت المال دیکھیں', route: adminCompliancePath('baitul-maal') },
         { id: 'reminder', label: 'یاد دہانی بھیجیں', route: ROUTES.ADMIN_COMMUNICATION },
       ],
     }
   }
 
-  if (matches(query, [/follow.?up|overdue/, /فالو اپ|تاخیر/])) {
+  if (matches(query, [/follow.?up|overdue/, /فالو اپ|باقی فالو/])) {
     const overdue =
       snapshot?.followUpQueue.find((group) => group.section === 'overdue')?.items.length ?? 0
     return {
-      text: conversational(
-        `${assignments.activeAssignments} فعال روابط میں ${overdue} تاخیر شدہ فالو اپ ہیں۔ پہلے انہیں مکمل کریں تاکہ مہم کی رفتار بحال ہو۔`,
+      text: companionReply(
+        `${assignments.activeAssignments} فعال روابط میں ${overdue} فالو اپ ابھی باقی ہیں۔`,
+        'اگر ممکن ہو تو پہلے انہیں مکمل کر لیجیے تاکہ تعلق مضبوط رہے۔',
+        'آپ کی توجہ امانت کا حصہ ہے۔',
       ),
       actions: [
-        { id: 'follow-up', label: 'فالو اپ کھولیں', route: ROUTES.ADMIN_FOLLOW_UP },
-        { id: 'execution', label: 'عملدرآمد کھولیں', route: adminExecutionPath() },
+        { id: 'follow-up', label: 'فالو اپ دیکھیں', route: ROUTES.ADMIN_FOLLOW_UP },
+        { id: 'execution', label: 'عملدرآمد دیکھیں', route: adminExecutionPath() },
       ],
     }
   }
@@ -172,41 +198,45 @@ function answerAdminQuery(
       /آج|ترجیح|کیا کروں|کام/,
     ])
   ) {
-    const title = snapshot?.nextAction.title ?? 'مہم کی ترجیحات دیکھیں'
+    const title = snapshot?.nextAction.title ?? 'مہم کی ترجیحات'
     const detail = snapshot?.nextAction.description ?? ''
     return {
-      text: conversational(
-        `آج کی توجہ: ${title}${detail ? `۔ ${detail}` : ''}`,
+      text: companionReply(
+        `آج کی توجہ یہ لگتی ہے: ${title}${detail ? `۔ ${detail}` : ''}`,
+        'اگر مناسب سمجھیں تو اسی سے آغاز کیجیے۔',
       ),
       actions: [
         {
           id: 'mission',
-          label: snapshot?.nextAction.actionLabel ?? 'مشن کھولیں',
+          label: snapshot?.nextAction.actionLabel ?? 'آگے بڑھیں',
           route: snapshot?.nextAction.route ?? ROUTES.ADMIN,
         },
-        { id: 'execution', label: 'عملدرآمد کھولیں', route: adminExecutionPath() },
+        { id: 'execution', label: 'عملدرآمد دیکھیں', route: adminExecutionPath() },
       ],
     }
   }
 
   if (matches(query, [/jih|registration/, /اندراج|رجسٹریشن/])) {
     return {
-      text: conversational(
-        `جے آئی ایچ رجسٹریشن: ${jih.registered} مکمل، ${jih.notRegistered} باقی، اور ${jih.pendingReports} رپورٹ زیر التوا۔ رجسٹریشن سے اگلے مراحل کھلتے ہیں۔`,
+      text: companionReply(
+        `جے آئی ایچ اندراج کی صورتحال: ${jih.registered} مکمل، ${jih.notRegistered} باقی، اور ${jih.pendingReports} رپورٹ زیر التوا۔`,
+        'اندراج مکمل ہونے سے اگلے مراحل آسان ہو جاتے ہیں۔',
       ),
       actions: [
-        { id: 'jih', label: 'تعمیل کھولیں', route: adminCompliancePath('jih-portal') },
+        { id: 'jih', label: 'اندراج دیکھیں', route: adminCompliancePath('jih-portal') },
       ],
     }
   }
 
   return {
-    text: conversational(
-      `مہم کا خلاصہ — ${people.assignedKarkuns} مربوط، ${people.unassignedKarkuns} باقی، اور ${team.length} ارکان فعال کام پر۔ ملاقات، حاضری، فالو اپ یا رکن کی کارکردگی پوچھیں۔`,
+    text: companionReply(
+      `اس وقت ${people.assignedKarkuns} کارکن مربوط ہیں، ${people.unassignedKarkuns} کا رابطہ باقی ہے، اور ${team.length} ارکان خدمت پر ہیں۔`,
+      'ملاقات، حاضری، فالو اپ یا رکن کی کارکردگی کے بارے میں کچھ بھی پوچھیے۔',
+      'میں آپ کے ساتھ ہوں۔',
     ),
     actions: [
-      { id: 'connections', label: 'روابط کھولیں', route: ROUTES.ADMIN_ASSIGNMENTS },
-      { id: 'compliance', label: 'تعمیل کھولیں', route: ROUTES.ADMIN_COMPLIANCE },
+      { id: 'connections', label: 'روابط دیکھیں', route: ROUTES.ADMIN_ASSIGNMENTS },
+      { id: 'compliance', label: 'تعمیل دیکھیں', route: ROUTES.ADMIN_COMPLIANCE },
     ],
   }
 }
@@ -220,26 +250,61 @@ function answerRuknQuery(
   const connectedIds = assignments.map((record) => record.karkunId)
   const guidance = getGuidanceForRuknKarkuns(ruknId)
   const baitulMaal = getRuknBaitulMaalMetrics(connectedIds)
+  const urgent = sortGuidanceByUrgency(guidance)
 
   if (
     matches(query, [
-      /today|focus|mission|should i|what.*(do|work)/,
-      /آج|مشن|کیا کروں|کام/,
+      /today|focus|mission|should i|what.*(do|work)|priorit/,
+      /آج|مشن|کیا کروں|کام|ترجیح/,
     ])
   ) {
     return {
-      text: conversational(
-        `${snapshot?.nextAction.title ?? 'اپنے مربوط کارکنان دیکھیں'}${
+      text: companionReply(
+        `${snapshot?.nextAction.title ?? 'آج اپنے مربوط کارکنان کو دیکھ لیجیے'}${
           snapshot?.nextAction.description ? `۔ ${snapshot.nextAction.description}` : ''
         }`,
+        'اگر مناسب سمجھیں تو اسی ترجیح سے آغاز کیجیے۔',
+        'اللہ آپ کی خدمت قبول فرمائے۔',
       ),
       actions: [
         {
           id: 'mission',
-          label: snapshot?.nextAction.actionLabel ?? 'آج کا مشن',
+          label: snapshot?.nextAction.actionLabel ?? 'آج کی ترجیح',
           route: snapshot?.nextAction.route ?? ROUTES.RUKN_MY_KARKUN,
         },
-        { id: 'connected', label: 'روابط کھولیں', route: ROUTES.RUKN_MY_KARKUN },
+        { id: 'connected', label: 'مربوط کارکنان', route: ROUTES.RUKN_MY_KARKUN },
+      ],
+    }
+  }
+
+  if (
+    matches(query, [
+      /who.*(meet|visit)|should.*(meet|visit)|recommend.*meet/,
+      /کس سے ملاقات|ملاقات کرنی چاہیے|کس سے رابطہ/,
+    ])
+  ) {
+    const top = urgent[0]
+    if (!top) {
+      return {
+        text: companionReply(
+          'ابھی کوئی خاص ملاقات تجویز کرنے کے لیے کافی تفصیل نہیں۔',
+          'جب آپ تیار ہوں تو کسی قریبی کارکن سے رابطہ شروع کیجیے۔',
+        ),
+        actions: [
+          { id: 'connect', label: 'کارکن مربوط کریں', route: ROUTES.RUKN_AVAILABLE_KARKUN },
+        ],
+      }
+    }
+    const name = respectName(top.karkunName)
+    return {
+      text: companionReply(
+        `آج ${name} سے ملاقات زیادہ مناسب لگتی ہے۔`,
+        'اگر ممکن ہو تو ایک مختصر، نرم گفتگو بھی کافی ہو سکتی ہے۔',
+        'اللہ تعلق میں خیر عطا فرمائے۔',
+      ),
+      actions: [
+        { id: 'record', label: 'ملاقات محفوظ کریں', route: ruknVisitPath(top.karkunId) },
+        { id: 'connected', label: 'مربوط کارکنان', route: ROUTES.RUKN_MY_KARKUN },
       ],
     }
   }
@@ -253,27 +318,35 @@ function answerRuknQuery(
       .map((item) => (item.karkunId ? getKarkunById(item.karkunId)?.name : item.title))
       .filter(Boolean) as string[]
     const firstId = visitItems.find((item) => item.karkunId)?.karkunId
-    const recommendation =
-      names.length > 0
-        ? ` پہلے ${names.slice(0, 3).join('، ')} کی ملاقات مکمل کریں۔`
-        : ''
+    const named = names.slice(0, 3).map(respectName)
     return {
-      text: conversational(
+      text: companionReply(
         visitItems.length === 0
-          ? 'آج کی فہرست میں کوئی ملاقات نہیں۔ مربوط کارکنان دیکھ کر اگلی ملاقات طے کریں۔'
-          : `آج ${visitItems.length} ملاقات باقی ہیں۔${recommendation}`,
+          ? 'آج کی فہرست میں کوئی ملاقات باقی نہیں۔'
+          : `آج ${visitItems.length} ملاقات باقی ہیں${
+              named.length ? ` — خاص طور پر ${named.join('، ')}` : ''
+            }۔`,
+        visitItems.length === 0
+          ? 'اگر مناسب سمجھیں تو مربوط کارکنان دیکھ کر اگلی ملاقات طے کر لیجیے۔'
+          : 'اگر ممکن ہو تو پہلے ان سے رابطہ کر لیجیے۔',
+        visitItems.length > 0 ? 'آپ کی توجہ ان کے لیے قیمتی ہے۔' : undefined,
       ),
       actions: [
         ...(firstId
           ? [{ id: 'record', label: 'ملاقات محفوظ کریں', route: ruknVisitPath(firstId) }]
           : []),
-        { id: 'connected', label: 'روابط کھولیں', route: ROUTES.RUKN_MY_KARKUN },
+        { id: 'connected', label: 'مربوط کارکنان', route: ROUTES.RUKN_MY_KARKUN },
         { id: 'schedule', label: 'ملاقات طے کریں', route: ROUTES.RUKN_MY_KARKUN },
       ],
     }
   }
 
-  if (matches(query, [/ijtema|attendance|missed/, /اجتماع|حاضری|غائب/])) {
+  if (
+    matches(query, [
+      /ijtema|attendance|missed|absent/,
+      /اجتماع|حاضری|غائب|غیر حاضر/,
+    ])
+  ) {
     const missed = connectedIds.filter((id) => {
       const status = getCurrentIjtemaAttendance(id).status
       return status === 'Absent' || status === 'Not recorded'
@@ -282,22 +355,89 @@ function answerRuknQuery(
       .slice(0, 5)
       .map((id) => getKarkunById(id)?.name)
       .filter(Boolean) as string[]
+    const named = names.map(respectName)
     return {
-      text: conversational(
+      text: companionReply(
         missed.length === 0
-          ? 'الحمد للہ — اس ہفتے کے اجتماع میں سب مربوط کارکنان حاضر یا معذور ہیں۔'
-          : `${missed.length} کارکن کی حاضری پر توجہ درکار ہے${
-              names.length ? `: ${names.join('، ')}` : ''
-            }۔ مختصر یاد دہانی مددگار ہوگی۔`,
+          ? 'الحمد للہ — اس ہفتے کے اجتماع میں سب مربوط کارکنان حاضر یا معذور نظر آتے ہیں۔'
+          : `آج اجتماع میں ${missed.length} کارکن شریک نہیں ہو سکے${
+              named.length ? `: ${named.join('، ')}` : ''
+            }۔`,
+        missed.length === 0
+          ? 'اسی تسلسل کو برقرار رکھیے۔'
+          : 'اگر مناسب سمجھیں تو مختصر اور نرم یاد دہانی مفید ہوگی۔',
+        missed.length > 0 ? 'دوبارہ رابطہ تعلق مضبوط کرتا ہے۔' : 'اللہ حاضری میں برکت عطا فرمائے۔',
       ),
       actions: [
-        { id: 'attendance', label: 'حاضری کھولیں', route: ROUTES.RUKN },
-        { id: 'reminder', label: 'یاد دہانی بھیجیں', route: ROUTES.RUKN_MY_KARKUN },
+        { id: 'attendance', label: 'حاضری دیکھیں', route: ROUTES.RUKN },
+        { id: 'reminder', label: 'یاد دہانی', route: ROUTES.RUKN_MY_KARKUN },
       ],
     }
   }
 
-  if (matches(query, [/registration|jih/, /رجسٹریشن|اندراج/])) {
+  if (
+    matches(query, [
+      /attention|need support|priority karkun|more care/,
+      /توجہ درکار|زیادہ توجہ|مدد درکار/,
+    ])
+  ) {
+    const topNames = urgent
+      .slice(0, 4)
+      .map((item) => respectName(item.karkunName))
+    if (topNames.length === 0) {
+      return {
+        text: companionReply(
+          'اس وقت کوئی خاص توجہ والی صورتحال نظر نہیں آ رہی۔',
+          'ایک ہلکا سا رابطہ بھی خیر کا کام ہے۔',
+        ),
+        actions: [{ id: 'connected', label: 'مربوط کارکنان', route: ROUTES.RUKN_MY_KARKUN }],
+      }
+    }
+    return {
+      text: companionReply(
+        `ان کارکنان کو زیادہ توجہ درکار لگتی ہے: ${topNames.join('، ')}۔`,
+        'اگر ممکن ہو تو آج ان میں سے کسی ایک سے رابطہ کر لیجیے۔',
+        'آپ کی مہربانی ان کے لیے سہارا بنتی ہے۔',
+      ),
+      actions: [
+        ...(urgent[0]
+          ? [{ id: 'record', label: 'ملاقات محفوظ کریں', route: ruknVisitPath(urgent[0].karkunId) }]
+          : []),
+        { id: 'connected', label: 'مربوط کارکنان', route: ROUTES.RUKN_MY_KARKUN },
+      ],
+    }
+  }
+
+  if (
+    matches(query, [
+      /this week|week.*(contact|reach|call)/,
+      /اس ہفتے|ہفتے.*رابطہ/,
+    ])
+  ) {
+    const top = urgent[0]
+    if (!top) {
+      return {
+        text: companionReply(
+          'اس ہفتے کے لیے ابھی کوئی خاص تجویز نہیں۔',
+          'جب آپ مناسب سمجھیں تو کسی مربوط کارکن سے نرم رابطہ مفید ہوگا۔',
+        ),
+        actions: [{ id: 'connected', label: 'مربوط کارکنان', route: ROUTES.RUKN_MY_KARKUN }],
+      }
+    }
+    return {
+      text: companionReply(
+        `اس ہفتے ${respectName(top.karkunName)} سے رابطہ کرنا زیادہ مناسب لگتا ہے۔`,
+        'اگر آپ کی سہولت ہو تو مختصر ملاقات یا بات چیت کافی ہو سکتی ہے۔',
+        'اللہ تعلق میں خیر رکھے۔',
+      ),
+      actions: [
+        { id: 'record', label: 'ملاقات محفوظ کریں', route: ruknVisitPath(top.karkunId) },
+        { id: 'connected', label: 'مربوط کارکنان', route: ROUTES.RUKN_MY_KARKUN },
+      ],
+    }
+  }
+
+  if (matches(query, [/registration|jih|incomplete|missing.*(info|detail)/, /رجسٹریشن|اندراج|نامکمل|معلومات/])) {
     const pending = connectedIds.filter((id) => {
       const karkun = getKarkunById(id)
       return karkun && karkun.jihAppRegistrationStatus !== 'Registered'
@@ -306,60 +446,76 @@ function answerRuknQuery(
       .slice(0, 5)
       .map((id) => getKarkunById(id)?.name)
       .filter(Boolean) as string[]
+    const named = names.map(respectName)
     return {
-      text: conversational(
+      text: companionReply(
         pending.length === 0
-          ? 'سب مربوط کارکنان جے آئی ایچ پر رجسٹر نظر آتے ہیں۔ اب ملاقات اور ترقی پر توجہ دے سکتے ہیں۔'
-          : `${pending.length} کو رجسٹریشن میں مدد درکار ہے${
-              names.length ? `: ${names.join('، ')}` : ''
+          ? 'الحمد للہ — سب مربوط کارکنان کی بنیادی معلومات اور اندراج مکمل نظر آتے ہیں۔'
+          : `${pending.length} کارکن کی معلومات یا اندراج ابھی نامکمل ہے${
+              named.length ? `: ${named.join('، ')}` : ''
             }۔`,
+        pending.length === 0
+          ? 'اب ملاقات اور تعلق پر توجہ دے سکتے ہیں۔'
+          : 'اگر مناسب سمجھیں تو نرم رہنمائی سے اندراج مکمل کروا لیجیے۔',
       ),
-      actions: [{ id: 'connected', label: 'روابط کھولیں', route: ROUTES.RUKN_MY_KARKUN }],
+      actions: [{ id: 'connected', label: 'مربوط کارکنان', route: ROUTES.RUKN_MY_KARKUN }],
     }
   }
 
   if (matches(query, [/bait.?ul.?maal|contribution/, /بیت المال|عطیہ/])) {
     return {
-      text: conversational(
-        `آپ کے روابط میں بیت المال: ${baitulMaal.pending} باقی، ${baitulMaal.paid} ادا شدہ، اور ${baitulMaal.exempt} مستثنیٰ۔ نرم یاد دہانی سے مہینہ مکمل ہو سکتا ہے۔`,
+      text: companionReply(
+        `آپ کے روابط میں بیت المال کی صورتحال: ${baitulMaal.pending} باقی، ${baitulMaal.paid} ادا شدہ، اور ${baitulMaal.exempt} مستثنیٰ۔`,
+        'اگر مناسب سمجھیں تو نرم یاد دہانی سے مہینہ مکمل ہو سکتا ہے۔',
       ),
       actions: [
-        { id: 'baitul', label: 'بیت المال کھولیں', route: ROUTES.RUKN_MY_KARKUN },
-        { id: 'reminder', label: 'یاد دہانی بھیجیں', route: ROUTES.RUKN_MY_KARKUN },
+        { id: 'baitul', label: 'بیت المال', route: ROUTES.RUKN_MY_KARKUN },
+        { id: 'reminder', label: 'یاد دہانی', route: ROUTES.RUKN_MY_KARKUN },
       ],
     }
   }
 
-  if (matches(query, [/development|tarbiyah|assessment|performance|overall/, /ترقی|تربیت|جائزہ/])) {
+  if (
+    matches(query, [
+      /development|tarbiyah|assessment|performance|overall|situation|status/,
+      /ترقی|تربیت|جائزہ|کارکردگی|صورتحال|مجموعی/,
+    ])
+  ) {
     const due = connectedIds.filter((id) => {
       const stage = guidance.find((item) => item.karkunId === id)?.currentStage
       if (stage !== 'development') return false
       return !getDevelopmentAssessment(id)?.indicators.ready_for_next_stage
     }).length
     return {
-      text: conversational(
-        `آپ ${connectedIds.length} مربوط کارکنان کے ساتھ ہیں۔ ${due} ترقیاتی جائزے باقی ہیں — ایک ایک کر کے مکمل کریں۔`,
+      text: companionReply(
+        `آپ اس وقت ${connectedIds.length} مربوط کارکنان کے ساتھ ہیں۔ مجموعی طور پر سلسلہ جاری ہے؛ ${due} ترقیاتی جائزے ابھی باقی ہیں۔`,
+        'اگر ممکن ہو تو ایک ایک کر کے آگے بڑھیں — جلدی کی ضرورت نہیں۔',
+        'آپ کی کارکردگی امانت داری سے جڑی ہے۔ اللہ قبول فرمائے۔',
       ),
-      actions: [{ id: 'connected', label: 'روابط کھولیں', route: ROUTES.RUKN_MY_KARKUN }],
+      actions: [{ id: 'connected', label: 'مربوط کارکنان', route: ROUTES.RUKN_MY_KARKUN }],
     }
   }
 
   if (matches(query, [/follow.?up/, /فالو اپ/])) {
     const count = snapshot?.followUpQueue.reduce((sum, group) => sum + group.items.length, 0) ?? 0
     return {
-      text: conversational(
-        `آپ کے پاس ${count} فالو اپ باقی ہیں۔ آج چند مکمل کرنے سے تعلق مضبوط رہے گا۔`,
+      text: companionReply(
+        `آپ کے پاس ${count} فالو اپ باقی ہیں۔`,
+        'اگر ممکن ہو تو آج چند مکمل کر لیجیے تاکہ تعلق مضبوط رہے۔',
+        'چھوٹی کوشش بھی خیر کا ذریعہ بنتی ہے۔',
       ),
-      actions: [{ id: 'connected', label: 'روابط کھولیں', route: ROUTES.RUKN_MY_KARKUN }],
+      actions: [{ id: 'connected', label: 'مربوط کارکنان', route: ROUTES.RUKN_MY_KARKUN }],
     }
   }
 
   return {
-    text: conversational(
-      `اس وقت آپ کے ${connectedIds.length} مربوط کارکن ہیں۔ آج کا مشن، ملاقاتیں، اجتماع، رجسٹریشن یا بیت المال پوچھیں۔`,
+    text: companionReply(
+      `اس وقت آپ کے ${connectedIds.length} مربوط کارکن ہیں۔`,
+      'ترجیحات، ملاقاتیں، اجتماع، اندراج یا مجموعی صورتحال — جو پوچھنا چاہیں پوچھیے۔',
+      'میں آپ کا رفیق ہوں۔',
     ),
     actions: [
-      { id: 'connected', label: 'روابط کھولیں', route: ROUTES.RUKN_MY_KARKUN },
+      { id: 'connected', label: 'مربوط کارکنان', route: ROUTES.RUKN_MY_KARKUN },
       { id: 'connect', label: 'کارکن مربوط کریں', route: ROUTES.RUKN_AVAILABLE_KARKUN },
     ],
   }
@@ -368,14 +524,19 @@ function answerRuknQuery(
 export const SUGGESTED_QUESTIONS_ADMIN = [
   'کتنے کارکن ابھی مربوط نہیں؟',
   'کس رکن کو توجہ درکار ہے؟',
-  'کمزور حاضری دکھائیں',
+  'اجتماع کی حاضری کیسی ہے؟',
   'آج کس پر توجہ دوں؟',
 ] as const
 
+/** KC-016.1 — Rukn companion suggested questions (natural, non-judgmental). */
 export const SUGGESTED_QUESTIONS_RUKN = [
-  'آج میں کیا کروں؟',
+  'آج میری ترجیحات کیا ہیں؟',
+  'میری کارکردگی کیسی ہے؟',
   'کس کی ملاقات باقی ہے؟',
-  'اجتماع کون چھوٹ گیا؟',
-  'کس کارکن کی رجسٹریشن باقی ہے؟',
-  'میری ترقی کیسی ہے؟',
+  'آج اجتماع میں کون غیر حاضر رہے؟',
+  'کن کارکنان کو زیادہ توجہ درکار ہے؟',
+  'اس ہفتے کس سے رابطہ کرنا مناسب ہوگا؟',
+  'میرے کارکنان کی مجموعی صورتحال کیا ہے؟',
+  'آج مجھے کس سے ملاقات کرنی چاہیے؟',
+  'کس کارکن کی معلومات نامکمل ہیں؟',
 ] as const
