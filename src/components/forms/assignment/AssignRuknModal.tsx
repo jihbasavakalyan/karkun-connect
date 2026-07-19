@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { usePeopleStore } from '@/hooks/usePeopleStore'
 import { getKarkunsForRuknAssignment } from '@/services/assignmentService'
 import { matchesKarkunRegistrySearch } from '@/lib/relationshipPresentation'
@@ -18,6 +18,7 @@ type AssignRuknModalProps = {
     remarks?: string
   }) => void
   error?: string
+  loading?: boolean
 }
 
 export function AssignRuknModal({
@@ -26,6 +27,7 @@ export function AssignRuknModal({
   onClose,
   onSubmit,
   error,
+  loading = false,
 }: AssignRuknModalProps) {
   const peopleVersion = usePeopleStore()
   const [karkunId, setKarkunId] = useState('')
@@ -33,6 +35,27 @@ export function AssignRuknModal({
   const [effectiveFrom, setEffectiveFrom] = useState(new Date().toISOString().slice(0, 10))
   const [remarks, setRemarks] = useState('')
   const [localError, setLocalError] = useState('')
+
+  useEffect(() => {
+    if (!isOpen) return
+    setKarkunId('')
+    setSearch('')
+    setRemarks('')
+    setLocalError('')
+    setEffectiveFrom(new Date().toISOString().slice(0, 10))
+  }, [isOpen, rukn?.id])
+
+  useEffect(() => {
+    if (!isOpen) return
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !loading) {
+        event.preventDefault()
+        onClose()
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [isOpen, loading, onClose])
 
   const eligibleKarkuns = useMemo(
     () => (rukn ? getKarkunsForRuknAssignment(rukn.id) : []),
@@ -46,6 +69,7 @@ export function AssignRuknModal({
   )
 
   const handleSubmit = () => {
+    if (loading) return
     if (!karkunId) {
       setLocalError('Please select a Karkun before connecting.')
       return
@@ -55,6 +79,7 @@ export function AssignRuknModal({
   }
 
   const handleClose = () => {
+    if (loading) return
     setKarkunId('')
     setSearch('')
     setRemarks('')
@@ -65,6 +90,8 @@ export function AssignRuknModal({
 
   if (!rukn) return null
 
+  const displayError = localError || error
+
   return (
     <Modal
       isOpen={isOpen}
@@ -73,9 +100,11 @@ export function AssignRuknModal({
       footer={
         <ModalFormFooter
           onCancel={handleClose}
-          primaryLabel="Connect"
+          primaryLabel="Save"
           onPrimaryClick={handleSubmit}
-          primaryDisabled={eligibleKarkuns.length === 0}
+          primaryDisabled={eligibleKarkuns.length === 0 || loading}
+          loading={loading}
+          error={displayError}
         />
       }
     >
@@ -113,6 +142,7 @@ export function AssignRuknModal({
                         type="button"
                         role="option"
                         aria-selected={selected}
+                        disabled={loading}
                         onClick={() => {
                           setKarkunId(karkun.id)
                           setLocalError('')
@@ -156,6 +186,7 @@ export function AssignRuknModal({
               value={effectiveFrom}
               onValueChange={setEffectiveFrom}
               required
+              disabled={loading}
             />
             <div className="md:col-span-2">
               <TextAreaField
@@ -164,13 +195,11 @@ export function AssignRuknModal({
                 value={remarks}
                 onValueChange={setRemarks}
                 rows={2}
+                disabled={loading}
               />
             </div>
           </ModalFormGrid>
         </ModalFormSection>
-
-        {error && <p className="text-sm text-red-600">{error}</p>}
-        {localError && <p className="text-sm text-red-600">{localError}</p>}
       </div>
     </Modal>
   )

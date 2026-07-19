@@ -1,0 +1,21 @@
+{
+  "label": "KC-0054 Firestore validation (read-only)",
+  "generatedAt": "2026-07-19T16:45:00.000Z",
+  "projectId": "karkun-connect-75c68",
+  "totals": {
+    "karkuns": 493,
+    "connections": 56,
+    "activeConnections": 46,
+    "connectionMetaNextSequence": 85
+  },
+  "integrity": {
+    "duplicateAssignmentNumbers": 0,
+    "multiActivePerKarkun": 0,
+    "registryGrowthRisk": "mitigated by KC-004H authoritative registry existence"
+  },
+  "notes": [
+    "No automatic ASN repair performed.",
+    "Assignment Save UX + operator-facing error sanitization shipped in KC-0054.",
+    "Dashboard Campaign Progress shows Loading until repository hydration completes."
+  ]
+}

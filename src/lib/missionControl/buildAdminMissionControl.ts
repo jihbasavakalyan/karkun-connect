@@ -209,7 +209,8 @@ export function buildAdminMissionControl(
     connectionProgress: {
       connected,
       remaining,
-      total: Math.max(total, 1),
+      // KC-0054: never fabricate a denominator of 1 when registry is still empty.
+      total,
       pct: total > 0 ? Math.round((connected / total) * 100) : 0,
     },
     campaignHealth: {

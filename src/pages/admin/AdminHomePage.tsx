@@ -16,12 +16,7 @@ export function AdminHomePage() {
 
   return (
     <div className="cd-page cd-page-admin mc-page mc-page-admin-compact mc-page-admin-command">
-      {!isHydrated ? (
-        <p className="mb-2 text-xs font-medium text-secondary" aria-live="polite">
-          Loading campaign data…
-        </p>
-      ) : null}
-      <AdminMissionControlHero model={model} />
+      <AdminMissionControlHero model={model} metricsReady={isHydrated} />
       <AdminCommandCenter model={model} snapshot={snapshot} />
       <AskDigitalRafeeqCard compact onOpen={openDigitalRafeeqAssistant} />
     </div>

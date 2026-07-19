@@ -7,6 +7,7 @@ import type { MobileLookupResult } from '@/lib/peopleStore'
 import { useKarkunPeopleManagement } from '@/hooks/useKarkunPeopleManagement'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { adminUnassignKarkun, changeKarkunRuknAssignment } from '@/lib/assignmentEngine'
+import { toOperatorAssignmentError } from '@/lib/assignment/operatorFacingError'
 import {
   bulkSetKarkunStatus,
   createKarkun,
@@ -165,23 +166,32 @@ function KarkunGenderSection({
 
   const handleAssignmentChange = (karkun: KarkunRegistryRecord, ruknId: string): boolean => {
     void (async () => {
-      const result = await changeKarkunRuknAssignment(karkun.id, ruknId)
-      if (!result.success) {
+      try {
+        const result = await changeKarkunRuknAssignment(karkun.id, ruknId)
+        if (!result.success) {
+          setAssignmentErrors((current) => ({
+            ...current,
+            [karkun.id]: toOperatorAssignmentError(result.error),
+          }))
+          return
+        }
+
+        setAssignmentErrors((current) => {
+          if (!current[karkun.id]) {
+            return current
+          }
+          const next = { ...current }
+          delete next[karkun.id]
+          return next
+        })
+      } catch (error) {
         setAssignmentErrors((current) => ({
           ...current,
-          [karkun.id]: result.error ?? 'Connection failed.',
+          [karkun.id]: toOperatorAssignmentError(
+            error instanceof Error ? error.message : String(error),
+          ),
         }))
-        return
       }
-
-      setAssignmentErrors((current) => {
-        if (!current[karkun.id]) {
-          return current
-        }
-        const next = { ...current }
-        delete next[karkun.id]
-        return next
-      })
     })()
     return true
   }

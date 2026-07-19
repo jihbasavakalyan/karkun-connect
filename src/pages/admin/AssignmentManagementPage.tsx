@@ -31,6 +31,11 @@ import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import { PageHeader, PageShell } from '@/components/ui'
 import { ExecutionGuidanceCard } from '@/features/digitalRafeeq/contextual'
 import { changeKarkunRuknAssignment } from '@/lib/assignmentEngine'
+import {
+  toOperatorAssignmentError,
+  toOperatorDisconnectError,
+  toOperatorTransferError,
+} from '@/lib/assignment/operatorFacingError'
 type ModalMode = 'assign' | 'replace' | 'remove' | 'restore' | 'history' | 'transfer' | null
 
 export function AssignmentManagementPage() {
@@ -60,6 +65,7 @@ export function AssignmentManagementPage() {
   const [connectConfirmKarkunId, setConnectConfirmKarkunId] = useState<string | null>(null)
   const [transferLoading, setTransferLoading] = useState(false)
   const [assignLoading, setAssignLoading] = useState(false)
+  const [actionSuccess, setActionSuccess] = useState('')
 
   const selectRukn = (ruknId: string) => {
     setSelectedRuknId(ruknId)
@@ -124,25 +130,34 @@ export function AssignmentManagementPage() {
 
   const completeAssignment = (result: Awaited<ReturnType<typeof assignRukn>>) => {
     if (!result.success) {
-      setActionError(result.error)
+      setActionSuccess('')
+      setActionError(toOperatorAssignmentError(result.error))
       return false
     }
 
-    setLastAssignmentNumber(result.assignment?.assignmentNumber ?? null)
+    const asn = result.assignment?.assignmentNumber
+    setLastAssignmentNumber(asn ?? null)
     setSelectedKarkunId(null)
     setConnectConfirmKarkunId(null)
     setActionError('')
+    setActionSuccess(
+      asn
+        ? `Connected successfully. Connection number ${asn}.`
+        : 'Connected successfully.',
+    )
     closeModal()
     return true
   }
 
   const handleConfirmAssignment = () => {
     if (!selectedRukn || !selectedKarkunId) {
-      setActionError('Select a Rukn and an available Karkun to continue.')
+      setActionError(toOperatorAssignmentError('Select a Rukn and an available Karkun to continue.'))
       return
     }
     if (assignLoading) return
     setAssignLoading(true)
+    setActionError('')
+    setActionSuccess('')
     void assignRukn({
       ruknId: selectedRukn.id,
       karkunId: selectedKarkunId,
@@ -150,12 +165,19 @@ export function AssignmentManagementPage() {
       assignedBy: 'Administrator',
     })
       .then(completeAssignment)
+      .catch((error: unknown) => {
+        setActionError(
+          toOperatorAssignmentError(error instanceof Error ? error.message : String(error)),
+        )
+      })
       .finally(() => setAssignLoading(false))
   }
 
   const handleAssign = (input: { karkunId: string; effectiveFrom: string; remarks?: string }) => {
     if (!selectedRukn || assignLoading) return
     setAssignLoading(true)
+    setActionError('')
+    setActionSuccess('')
     void assignRukn({
       ruknId: selectedRukn.id,
       karkunId: input.karkunId,
@@ -164,6 +186,11 @@ export function AssignmentManagementPage() {
       assignedBy: 'Administrator',
     })
       .then(completeAssignment)
+      .catch((error: unknown) => {
+        setActionError(
+          toOperatorAssignmentError(error instanceof Error ? error.message : String(error)),
+        )
+      })
       .finally(() => setAssignLoading(false))
   }
 
@@ -182,10 +209,11 @@ export function AssignmentManagementPage() {
       assignedBy: 'Administrator',
     })
     if (!result.success) {
-      setActionError(result.error)
+      setActionError(toOperatorDisconnectError(result.error))
       return
     }
     setRemovingKarkun(null)
+    setActionSuccess('Disconnected successfully.')
     closeModal()
   }
 
@@ -213,14 +241,17 @@ export function AssignmentManagementPage() {
         },
       )
       if (!result.success) {
-        setActionError(result.error || 'Transfer failed. Please try again.')
+        setActionError(toOperatorTransferError(result.error))
         return
       }
       setRemovingKarkun(null)
       setSelectedRuknId(input.newRuknId)
+      setActionSuccess('Transferred successfully.')
       closeModal()
     } catch (error) {
-      setActionError(error instanceof Error ? error.message : 'Transfer failed unexpectedly.')
+      setActionError(
+        toOperatorTransferError(error instanceof Error ? error.message : String(error)),
+      )
     } finally {
       setTransferLoading(false)
     }
@@ -241,9 +272,10 @@ export function AssignmentManagementPage() {
         assignedBy: 'Administrator',
       })
       if (!result.success) {
-        setActionError(result.error)
+        setActionError(toOperatorAssignmentError(result.error))
         return
       }
+      setActionSuccess('Reconnected successfully.')
       closeModal()
     })()
   }
@@ -301,17 +333,20 @@ export function AssignmentManagementPage() {
         />
       </div>
 
-      {lastAssignmentNumber && (
+      {(actionSuccess || lastAssignmentNumber) && (
         <div
           className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-900"
           role="status"
         >
-          {humanizeConnectionConfirmed(lastAssignmentNumber)}
+          {actionSuccess || humanizeConnectionConfirmed(lastAssignmentNumber ?? undefined)}
         </div>
       )}
 
       {actionError && !modalMode && (
-        <div className="rounded-(--radius-card) border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+        <div
+          className="rounded-(--radius-card) border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+          role="alert"
+        >
           {actionError}
         </div>
       )}
@@ -512,7 +547,9 @@ export function AssignmentManagementPage() {
         karkun={connectConfirmKarkun}
         ruknName={selectedRukn?.name}
         error={actionError}
+        loading={assignLoading}
         onClose={() => {
+          if (assignLoading) return
           setConnectConfirmKarkunId(null)
           setActionError('')
         }}
@@ -524,6 +561,7 @@ export function AssignmentManagementPage() {
         isOpen={modalMode === 'assign'}
         rukn={selectedRukn ?? null}
         error={actionError}
+        loading={assignLoading}
         onClose={closeModal}
         onSubmit={handleAssign}
       />

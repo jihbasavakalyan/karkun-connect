@@ -31,6 +31,8 @@ type ModalFormFooterProps = {
   primaryType?: 'button' | 'submit'
   onPrimaryClick?: () => void
   primaryDisabled?: boolean
+  loading?: boolean
+  error?: string
   /** Associates submit button with a form outside the footer. */
   formId?: string
 }
@@ -41,21 +43,31 @@ export function ModalFormFooter({
   primaryType = 'button',
   onPrimaryClick,
   primaryDisabled = false,
+  loading = false,
+  error,
   formId,
 }: ModalFormFooterProps) {
   return (
-    <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-      <SecondaryButton type="button" onClick={onCancel}>
-        Cancel
-      </SecondaryButton>
-      <PrimaryButton
-        type={primaryType}
-        form={formId}
-        onClick={onPrimaryClick}
-        disabled={primaryDisabled}
-      >
-        {primaryLabel}
-      </PrimaryButton>
+    <div className="flex w-full flex-col gap-3">
+      {error ? (
+        <p className="text-sm text-red-600" role="alert">
+          {error}
+        </p>
+      ) : null}
+      <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+        <SecondaryButton type="button" onClick={onCancel} disabled={loading}>
+          Cancel
+        </SecondaryButton>
+        <PrimaryButton
+          type={primaryType}
+          form={formId}
+          onClick={onPrimaryClick}
+          disabled={primaryDisabled || loading}
+          loading={loading}
+        >
+          {loading ? 'Saving…' : primaryLabel}
+        </PrimaryButton>
+      </div>
     </div>
   )
 }

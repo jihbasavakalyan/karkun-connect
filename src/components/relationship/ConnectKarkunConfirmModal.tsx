@@ -7,6 +7,7 @@ type ConnectKarkunConfirmModalProps = {
   karkun: KarkunRegistryRecord | null
   ruknName?: string
   error?: string
+  loading?: boolean
   onClose: () => void
   onConfirm: () => void
 }
@@ -16,6 +17,7 @@ export function ConnectKarkunConfirmModal({
   karkun,
   ruknName,
   error,
+  loading = false,
   onClose,
   onConfirm,
 }: ConnectKarkunConfirmModalProps) {
@@ -27,12 +29,14 @@ export function ConnectKarkunConfirmModal({
     <Modal
       isOpen={isOpen}
       title="Connect Karkun"
-      onClose={onClose}
+      onClose={loading ? () => undefined : onClose}
       footer={
         <ModalFormFooter
           onCancel={onClose}
           primaryLabel="Confirm Connection"
           onPrimaryClick={onConfirm}
+          loading={loading}
+          error={error}
         />
       }
     >
@@ -75,8 +79,6 @@ export function ConnectKarkunConfirmModal({
             </div>
           </ModalFormGrid>
         </ModalFormSection>
-
-        {error && <p className="text-sm text-red-600">{error}</p>}
       </div>
     </Modal>
   )
