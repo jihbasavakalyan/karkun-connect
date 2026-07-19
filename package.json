@@ -23,6 +23,7 @@
     "verify:kc0058.1": "npx vite-node scripts/verify-kc0058-1-dashboard-metrics.ts",
     "verify:kc0058.2": "npx vite-node scripts/verify-kc0058-2-rukn-stabilization.ts",
     "verify:kc0058.3": "npx vite-node scripts/verify-kc0058-3-critical-hydration-contract.ts",
+    "verify:kc0058.8": "npx vite-node scripts/verify-kc0058-8-hydration-retry.ts",
     "admin:integrity-scan": "npx vite-node scripts/admin/run-integrity-scan.ts",
     "admin:kc0058:integrity": "node scripts/admin/kc0058-production-integrity-scan.mjs",
     "admin:kc0056:recovery-report": "node scripts/admin/kc0056-approval-recovery-report.mjs",

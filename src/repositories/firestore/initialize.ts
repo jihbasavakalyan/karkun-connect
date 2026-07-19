@@ -16,6 +16,7 @@ import {
 } from '@/repositories/backgroundHydrationReady'
 import {
   isRepositoryHydrationFailed,
+  isRepositoryHydrationReady,
   markRepositoryHydrationFailed,
   markRepositoryHydrationReady,
   resetRepositoryHydrationReadyForTests,
@@ -30,6 +31,62 @@ let snapshotRefreshRunning = false
 let backgroundHydrateScheduled = false
 /** KC-0058.3 — background must never rebuild stores after a failed critical hydrate. */
 let criticalHydrateSucceeded = false
+/** KC-0058.8 — at most one automatic startup-critical retry per page load. */
+let criticalHydrateRetryUsed = false
+
+const CRITICAL_HYDRATE_RETRY_DELAY_MS = 400
+
+function getErrorCode(error: unknown): string | null {
+  if (error && typeof error === 'object' && 'code' in error) {
+    const code = (error as { code?: unknown }).code
+    return typeof code === 'string' ? code : null
+  }
+  return null
+}
+
+/**
+ * KC-0058.8 — first-load failures that succeed on immediate refresh are typically
+ * auth-token attachment / transient Firestore availability races, not durable denials.
+ */
+function isTransientCriticalHydrateError(error: unknown): boolean {
+  const code = getErrorCode(error)
+  if (
+    code === 'permission-denied' ||
+    code === 'unauthenticated' ||
+    code === 'unavailable' ||
+    code === 'deadline-exceeded' ||
+    code === 'resource-exhausted' ||
+    code === 'cancelled' ||
+    code === 'failed-precondition'
+  ) {
+    return true
+  }
+  const message = error instanceof Error ? error.message : String(error ?? '')
+  return /permission-denied|Missing or insufficient permissions|unavailable|deadline|unauthenticated/i.test(
+    message,
+  )
+}
+
+/**
+ * Ensure the Auth ID token is available before the first critical Firestore read.
+ * authStateReady can resolve a few ms before AuthProvider / Firestore attach the token.
+ */
+async function ensureAuthTokenReadyForFirestore(forceRefresh = false): Promise<void> {
+  const user = getFirebaseAuth().currentUser
+  if (!user) {
+    markStartupLifecycle('auth.token.skip', { reason: 'no-currentUser', forceRefresh })
+    return
+  }
+  markStartupLifecycle('auth.token.wait', { forceRefresh, uid: user.uid })
+  const tokenResult = await user.getIdTokenResult(forceRefresh)
+  markStartupLifecycle('auth.token.ready', {
+    forceRefresh,
+    uid: user.uid,
+    role: typeof tokenResult.claims.role === 'string' ? tokenResult.claims.role : null,
+    issuedAt: tokenResult.issuedAtTime,
+    authTime: tokenResult.authTime,
+  })
+}
 
 function ensureConnectionRepositoryReadable(): void {
   const state = getRepositories().connection.loadState()
@@ -121,8 +178,8 @@ async function runPhasedStartupHydrate(): Promise<boolean> {
     markStartupLifecycle('firestore.hydrate.failed', {
       context: 'startup-critical',
       error: error instanceof Error ? error.message : String(error),
+      errorCode: getErrorCode(error),
     })
-    markStartupLifecycle('criticalHydrate.failed')
   }
 
   kc004cTraceRegistry({
@@ -213,7 +270,11 @@ async function runPhasedStartupHydrate(): Promise<boolean> {
   }
 
   if (!criticalSucceeded) {
-    markRepositoryHydrationFailed(criticalError)
+    // KC-0058.8 — defer hydrationReady.failed until the single automatic retry is exhausted.
+    markStartupLifecycle('criticalHydrate.failed', {
+      deferredFailureMark: true,
+      error: criticalError instanceof Error ? criticalError.message : String(criticalError),
+    })
     throw criticalError instanceof Error
       ? criticalError
       : new Error(
@@ -227,11 +288,63 @@ async function runPhasedStartupHydrate(): Promise<boolean> {
   return true
 }
 
+async function runCriticalHydrateRetry(firstError: unknown): Promise<void> {
+  criticalHydrateRetryUsed = true
+  const code = getErrorCode(firstError)
+  markStartupLifecycle('criticalHydrate.retry.scheduled', {
+    delayMs: CRITICAL_HYDRATE_RETRY_DELAY_MS,
+    errorCode: code,
+    error: firstError instanceof Error ? firstError.message : String(firstError),
+  })
+  await new Promise((resolve) => setTimeout(resolve, CRITICAL_HYDRATE_RETRY_DELAY_MS))
+  await ensureAuthTokenReadyForFirestore(true)
+  markStartupLifecycle('criticalHydrate.retry.start')
+
+  const ok = await runHydrateAndRebuildCycle('startup-critical-retry')
+  if (!ok) {
+    markStartupLifecycle('criticalHydrate.retry.failed', {
+      errorCode: code,
+    })
+    throw firstError instanceof Error
+      ? firstError
+      : new Error('Startup-critical Firestore hydrate retry failed.')
+  }
+
+  criticalHydrateSucceeded = true
+  backgroundHydrateScheduled = true
+  markStartupLifecycle('criticalHydrate.retry.succeeded')
+  attachSnapshotListeners()
+  markBackgroundHydrationReady()
+  markRepositoryHydrationReady()
+}
+
 async function runStartupLifecycle(): Promise<void> {
   markStartupLifecycle('auth.authStateReady.wait')
   await getFirebaseAuth().authStateReady()
   markStartupLifecycle('auth.authStateReady')
-  await runPhasedStartupHydrate()
+  // KC-0058.8 — close the authStateReady → first getDocs token-attachment gap.
+  await ensureAuthTokenReadyForFirestore(false)
+
+  try {
+    await runPhasedStartupHydrate()
+  } catch (firstError) {
+    const canRetry =
+      !criticalHydrateRetryUsed &&
+      Boolean(getFirebaseAuth().currentUser) &&
+      isTransientCriticalHydrateError(firstError)
+
+    if (!canRetry) {
+      markRepositoryHydrationFailed(firstError)
+      throw firstError
+    }
+
+    try {
+      await runCriticalHydrateRetry(firstError)
+    } catch (retryError) {
+      markRepositoryHydrationFailed(retryError)
+      throw retryError
+    }
+  }
 }
 
 function scheduleSnapshotRefresh(): void {
@@ -286,25 +399,60 @@ export async function refreshFirestoreAfterAuth(): Promise<void> {
       await initializeInFlight
     } catch (error) {
       console.warn('[kc-firestore] post-auth awaited startup hydrate failure', error)
+      // KC-0058.8 — if startup failed while AuthProvider was awaiting it, attempt the
+      // single automatic retry recovery path instead of leaving the error panel stuck.
+      if (
+        !initialized &&
+        !isRepositoryHydrationReady() &&
+        !criticalHydrateRetryUsed &&
+        isTransientCriticalHydrateError(error)
+      ) {
+        try {
+          await ensureAuthTokenReadyForFirestore(true)
+          await runCriticalHydrateRetry(error)
+          initialized = true
+          return
+        } catch (retryError) {
+          console.warn('[kc-firestore] post-auth critical hydrate retry failed', retryError)
+          if (!isRepositoryHydrationFailed()) {
+            markRepositoryHydrationFailed(retryError)
+          }
+          return
+        }
+      }
     }
     return
   }
 
-  if (initialized) {
+  if (initialized || isRepositoryHydrationReady()) {
     return
   }
 
   try {
+    await ensureAuthTokenReadyForFirestore(false)
     const ok = await runHydrateAndRebuildCycle('post-auth')
     if (ok) {
       criticalHydrateSucceeded = true
+      attachSnapshotListeners()
+      markBackgroundHydrationReady()
       markRepositoryHydrationReady()
+      initialized = true
+    } else if (
+      !criticalHydrateRetryUsed &&
+      Boolean(getFirebaseAuth().currentUser)
+    ) {
+      await runCriticalHydrateRetry(
+        new Error('Post-auth Firestore hydrate failed.'),
+      )
+      initialized = true
     } else {
       markRepositoryHydrationFailed('Post-auth Firestore hydrate failed.')
     }
   } catch (error) {
     console.warn('[kc-firestore] post-auth hydrate failed', error)
-    markRepositoryHydrationFailed(error)
+    if (!isRepositoryHydrationFailed()) {
+      markRepositoryHydrationFailed(error)
+    }
   }
 }
 
@@ -362,6 +510,7 @@ export function resetRepositoryInitializationForTests(): void {
   snapshotRefreshRunning = false
   backgroundHydrateScheduled = false
   criticalHydrateSucceeded = false
+  criticalHydrateRetryUsed = false
   stopFirestoreSnapshotListeners()
   resetRepositoryHydrationReadyForTests()
   resetBackgroundHydrationReadyForTests()
