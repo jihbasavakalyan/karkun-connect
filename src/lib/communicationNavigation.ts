@@ -2,6 +2,7 @@ import { ROUTES } from '@/constants/routes'
 
 export const COMMUNICATION_SECTIONS = [
   { id: 'dashboard', label: 'Dashboard' },
+  { id: 'daily-reports', label: 'Daily Reports' },
   { id: 'individual', label: 'Individual Messages' },
   { id: 'broadcast', label: 'Broadcast Messages' },
   { id: 'templates', label: 'Templates' },
@@ -16,6 +17,11 @@ export type CommunicationSection = (typeof COMMUNICATION_SECTIONS)[number]['id']
 
 const SECTION_ALIASES: Record<string, CommunicationSection> = {
   dashboard: 'dashboard',
+  'daily-reports': 'daily-reports',
+  daily: 'daily-reports',
+  reports: 'daily-reports',
+  'daily-progress': 'daily-reports',
+  arkaan: 'daily-reports',
   individual: 'individual',
   'individual-messages': 'individual',
   broadcast: 'broadcast',

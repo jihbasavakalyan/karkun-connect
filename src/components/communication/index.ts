@@ -5,6 +5,7 @@ export { CommunicationDashboard } from '@/components/communication/Communication
 export { CommunicationSectionNav } from '@/components/communication/CommunicationSectionNav'
 export { CommunicationStatusBadge } from '@/components/communication/CommunicationStatusBadge'
 export { CommunicationSummaryCards } from '@/components/communication/CommunicationSummaryCards'
+export { DailyReportsPanel } from '@/components/communication/DailyReportsPanel'
 export { DeliveryHistoryPanel } from '@/components/communication/DeliveryHistoryPanel'
 export { FailedMessagesPanel } from '@/components/communication/FailedMessagesPanel'
 export { IndividualMessagesPanel } from '@/components/communication/IndividualMessagesPanel'

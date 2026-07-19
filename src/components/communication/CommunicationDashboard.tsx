@@ -66,6 +66,19 @@ export function CommunicationDashboard() {
             View delivery history →
           </Link>
         </section>
+
+        <section className="rounded-(--radius-card) border border-border bg-surface p-4 shadow-card sm:p-5 lg:col-span-2">
+          <h2 className="text-lg font-semibold text-text-heading">Daily Reports</h2>
+          <p className="mt-2 text-sm text-secondary">
+            Generate Urdu progress messages for Arkaan from live campaign metrics.
+          </p>
+          <Link
+            to={adminCommunicationPath('daily-reports')}
+            className="mt-3 inline-block text-sm font-medium text-primary hover:underline"
+          >
+            Open Daily Reports →
+          </Link>
+        </section>
       </div>
     </div>
   )

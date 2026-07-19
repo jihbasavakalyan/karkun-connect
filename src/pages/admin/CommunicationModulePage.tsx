@@ -4,6 +4,7 @@ import {
   BroadcastComposerPanel,
   CommunicationDashboard,
   CommunicationSectionNav,
+  DailyReportsPanel,
   DeliveryHistoryPanel,
   FailedMessagesPanel,
   IndividualMessagesPanel,
@@ -37,6 +38,7 @@ export function CommunicationModulePage() {
       <CommunicationSectionNav active={section} onChange={setSection} />
 
       {section === 'dashboard' && <CommunicationDashboard />}
+      {section === 'daily-reports' && <DailyReportsPanel />}
       {section === 'individual' && <IndividualMessagesPanel />}
       {section === 'broadcast' && <BroadcastComposerPanel recipients={[]} />}
       {section === 'templates' && <TemplateManagementPanel />}
