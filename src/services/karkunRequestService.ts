@@ -49,6 +49,10 @@ export type SubmitNewKarkunRequestResult =
       duplicate?: { karkunId: string; name: string; viewRoute: string; connectRoute: string }
     }
 
+function namesMatch(a: string, b: string): boolean {
+  return a.trim().toLowerCase() === b.trim().toLowerCase()
+}
+
 export function submitNewKarkunRequest(
   input: SubmitNewKarkunRequestInput,
 ): SubmitNewKarkunRequestResult {
@@ -151,40 +155,68 @@ export async function approveNewKarkunRequest(input: {
     return { ok: false, error: 'Pending request not found.' }
   }
 
-  const createResult = createKarkun(
-    {
-      name: pending.fullName,
-      gender: pending.gender,
-      mobile: pending.mobile,
-      place: DEFAULT_PLACE,
-      status: 'active',
-      area: pending.area,
-      notes: pending.remarks,
-    },
-    input.decidedBy || 'Administrator',
-  )
+  // Resume path: prior approve may have created the Karkun but failed before closing the request.
+  const existingOwner = findMobileOwner(pending.mobile)
+  let karkunId: string | undefined
 
-  if (!createResult.success) {
-    if (createResult.existingOwner?.kind === 'karkun') {
+  if (existingOwner?.kind === 'karkun') {
+    const existing = getKarkunById(existingOwner.id)
+    if (!existing || !namesMatch(existing.name, pending.fullName)) {
       return {
         ok: false,
         error: 'This Karkun already exists. Reject this request or connect the existing record.',
       }
     }
-    return { ok: false, error: createResult.error ?? 'Could not create Karkun.' }
-  }
+    karkunId = existing.id
+  } else {
+    const createResult = createKarkun(
+      {
+        name: pending.fullName,
+        gender: pending.gender,
+        mobile: pending.mobile,
+        place: DEFAULT_PLACE,
+        status: 'active',
+        area: pending.area,
+        notes: pending.remarks,
+      },
+      input.decidedBy || 'Administrator',
+    )
 
-  const owner = findMobileOwner(pending.mobile)
-  const karkunId = owner?.kind === 'karkun' ? owner.id : undefined
-  if (!karkunId) {
-    return { ok: false, error: 'Karkun was created but could not be located.' }
+    if (!createResult.success) {
+      if (createResult.existingOwner?.kind === 'karkun') {
+        return {
+          ok: false,
+          error: 'This Karkun already exists. Reject this request or connect the existing record.',
+        }
+      }
+      return { ok: false, error: createResult.error ?? 'Could not create Karkun.' }
+    }
+
+    karkunId = createResult.karkunId
+    if (!karkunId) {
+      return { ok: false, error: 'Karkun was created but no ID was returned.' }
+    }
+
+    // Collision / overwrite guard — created row must match the approved request.
+    const created = getKarkunById(karkunId)
+    if (
+      !created ||
+      !namesMatch(created.name, pending.fullName) ||
+      normalizeMobile(created.mobile) !== normalizeMobile(pending.mobile)
+    ) {
+      return {
+        ok: false,
+        error: 'Karkun creation did not persist correctly. Request left pending — retry approval.',
+      }
+    }
   }
 
   const assignResult = await assignKarkun(karkunId, pending.requestingRuknId, 'Administrator')
   if (!assignResult.success) {
+    // KC-0056 — keep request Pending until create + connect + resolve all succeed.
     return {
       ok: false,
-      error: assignResult.error || 'Karkun created but connection failed. Connect manually.',
+      error: assignResult.error || 'Karkun created but connection failed. Connect manually, then retry approval.',
     }
   }
 

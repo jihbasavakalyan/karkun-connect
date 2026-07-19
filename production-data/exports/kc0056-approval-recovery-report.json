@@ -1,0 +1,201 @@
+{
+  "ticket": "KC-0056",
+  "projectId": "karkun-connect-75c68",
+  "generatedAt": "2026-07-19T18:03:33.337Z",
+  "counter": {
+    "nextKarkunNum": 13,
+    "maxExistingKarkunNum": 493,
+    "expectedNextKarkunNum": 494,
+    "lagging": true
+  },
+  "requestStoreCount": 1,
+  "approvalLogCount": 8,
+  "cases": [
+    {
+      "fullName": "Shamsheer Khan",
+      "recoveryStatus": "id_reuse_collision",
+      "recommendation": "Approval claimed an occupied ID. Do not overwrite. Recreate under a new free ID after collecting mobile/gender/area from Rukn.",
+      "approval": {
+        "id": "activity-1784378068410-j5gq9",
+        "timestamp": "2026-07-18T12:34:28.410Z",
+        "message": "Approved new Karkun Shamsheer Khan (kr-022) and connected to Asadulla Khan Zaki.",
+        "fullName": "Shamsheer Khan",
+        "claimedKarkunId": "kr-022",
+        "karkunIdField": "kr-022",
+        "ruknId": "R046",
+        "assignmentId": "asgn-1784378068403-uvxzm",
+        "actor": "Administrator"
+      },
+      "relatedApprovals": [
+        {
+          "id": "activity-1784378049212-4pzx6",
+          "timestamp": "2026-07-18T12:34:09.212Z",
+          "message": "Approved new Karkun Shamsheer Khan (kr-021) and connected to Asadulla Khan Zaki.",
+          "fullName": "Shamsheer Khan",
+          "claimedKarkunId": "kr-021",
+          "karkunIdField": "kr-021",
+          "ruknId": "R046",
+          "assignmentId": "asgn-1784378049205-8p9ab",
+          "actor": "Administrator"
+        }
+      ],
+      "requestStillInStore": false,
+      "requestRow": null,
+      "uniqueKarkunExists": false,
+      "matchingKarkuns": [],
+      "claimedIdOwner": {
+        "id": "kr-022",
+        "name": "MUBEEN PASHA",
+        "mobile": "9035811171"
+      },
+      "claimedIdBelongsToRequest": false,
+      "autoRecreate": false,
+      "reasonNotAutoRecreated": "Request row missing or incomplete; preserve audit history and recreate manually with verified contact details"
+    },
+    {
+      "fullName": "Shahbaz Khan",
+      "recoveryStatus": "id_reuse_collision",
+      "recommendation": "Approval claimed an occupied ID. Do not overwrite. Recreate under a new free ID after collecting mobile/gender/area from Rukn.",
+      "approval": {
+        "id": "activity-1784377992429-bhmk7",
+        "timestamp": "2026-07-18T12:33:12.429Z",
+        "message": "Approved new Karkun Shahbaz Khan (kr-019) and connected to Asadulla Khan Zaki.",
+        "fullName": "Shahbaz Khan",
+        "claimedKarkunId": "kr-019",
+        "karkunIdField": "kr-019",
+        "ruknId": "R046",
+        "assignmentId": "asgn-1784377992423-4egu4",
+        "actor": "Administrator"
+      },
+      "relatedApprovals": [],
+      "requestStillInStore": false,
+      "requestRow": null,
+      "uniqueKarkunExists": false,
+      "matchingKarkuns": [],
+      "claimedIdOwner": {
+        "id": "kr-019",
+        "name": "SHAIKH SHOEB",
+        "mobile": "9902219328"
+      },
+      "claimedIdBelongsToRequest": false,
+      "autoRecreate": false,
+      "reasonNotAutoRecreated": "Request row missing or incomplete; preserve audit history and recreate manually with verified contact details"
+    },
+    {
+      "fullName": "Mohsin sir Chemistry",
+      "recoveryStatus": "id_reuse_collision",
+      "recommendation": "Approval claimed an occupied ID. Do not overwrite. Recreate under a new free ID after collecting mobile/gender/area from Rukn.",
+      "approval": {
+        "id": "activity-1784377940132-1zwkj",
+        "timestamp": "2026-07-18T12:32:20.132Z",
+        "message": "Approved new Karkun Mohsin sir Chemistry (kr-018) and connected to Asadulla Khan Zaki.",
+        "fullName": "Mohsin sir Chemistry",
+        "claimedKarkunId": "kr-018",
+        "karkunIdField": "kr-018",
+        "ruknId": "R046",
+        "assignmentId": "asgn-1784377940126-aanbn",
+        "actor": "Administrator"
+      },
+      "relatedApprovals": [
+        {
+          "id": "activity-1784377915993-080vk",
+          "timestamp": "2026-07-18T12:31:55.993Z",
+          "message": "Approved new Karkun Mohsin sir Chemistry (kr-016) and connected to Asadulla Khan Zaki.",
+          "fullName": "Mohsin sir Chemistry",
+          "claimedKarkunId": "kr-016",
+          "karkunIdField": "kr-016",
+          "ruknId": "R046",
+          "assignmentId": "asgn-1784377915986-578tm",
+          "actor": "Administrator"
+        }
+      ],
+      "requestStillInStore": false,
+      "requestRow": null,
+      "uniqueKarkunExists": false,
+      "matchingKarkuns": [],
+      "claimedIdOwner": {
+        "id": "kr-018",
+        "name": "MD RAFEEQ",
+        "mobile": "8123532385"
+      },
+      "claimedIdBelongsToRequest": false,
+      "autoRecreate": false,
+      "reasonNotAutoRecreated": "Request row missing or incomplete; preserve audit history and recreate manually with verified contact details"
+    },
+    {
+      "fullName": "Mateen",
+      "recoveryStatus": "id_reuse_collision",
+      "recommendation": "Approval claimed an occupied ID. Do not overwrite. Recreate under a new free ID after collecting mobile/gender/area from Rukn.",
+      "approval": {
+        "id": "activity-1784377925675-cdtp5",
+        "timestamp": "2026-07-18T12:32:05.675Z",
+        "message": "Approved new Karkun Mateen (kr-017) and connected to Asadulla Khan Zaki.",
+        "fullName": "Mateen",
+        "claimedKarkunId": "kr-017",
+        "karkunIdField": "kr-017",
+        "ruknId": "R046",
+        "assignmentId": "asgn-1784377925669-pwheq",
+        "actor": "Administrator"
+      },
+      "relatedApprovals": [
+        {
+          "id": "activity-1784377904762-u64uc",
+          "timestamp": "2026-07-18T12:31:44.762Z",
+          "message": "Approved new Karkun Mateen (kr-015) and connected to Asadulla Khan Zaki.",
+          "fullName": "Mateen",
+          "claimedKarkunId": "kr-015",
+          "karkunIdField": "kr-015",
+          "ruknId": "R046",
+          "assignmentId": "asgn-1784377904757-h33nx",
+          "actor": "Administrator"
+        }
+      ],
+      "requestStillInStore": false,
+      "requestRow": null,
+      "uniqueKarkunExists": false,
+      "matchingKarkuns": [],
+      "claimedIdOwner": {
+        "id": "kr-017",
+        "name": "Syed Awlia Pasha",
+        "mobile": "9743281419"
+      },
+      "claimedIdBelongsToRequest": false,
+      "autoRecreate": false,
+      "reasonNotAutoRecreated": "Request row missing or incomplete; preserve audit history and recreate manually with verified contact details"
+    },
+    {
+      "fullName": "Mehboob Pasha",
+      "recoveryStatus": "id_reuse_collision",
+      "recommendation": "Approval claimed an occupied ID. Do not overwrite. Recreate under a new free ID after collecting mobile/gender/area from Rukn.",
+      "approval": {
+        "id": "activity-1784377835998-yy1pi",
+        "timestamp": "2026-07-18T12:30:35.998Z",
+        "message": "Approved new Karkun Mehboob Pasha (kr-013) and connected to Asadulla Khan Zaki.",
+        "fullName": "Mehboob Pasha",
+        "claimedKarkunId": "kr-013",
+        "karkunIdField": "kr-013",
+        "ruknId": "R046",
+        "assignmentId": "asgn-1784377835993-lqhcs",
+        "actor": "Administrator"
+      },
+      "relatedApprovals": [],
+      "requestStillInStore": false,
+      "requestRow": null,
+      "uniqueKarkunExists": false,
+      "matchingKarkuns": [],
+      "claimedIdOwner": {
+        "id": "kr-013",
+        "name": "MOHAMMED ABDULLA",
+        "mobile": "7760534642"
+      },
+      "claimedIdBelongsToRequest": false,
+      "autoRecreate": false,
+      "reasonNotAutoRecreated": "Request row missing or incomplete; preserve audit history and recreate manually with verified contact details"
+    }
+  ],
+  "constraints": {
+    "autoRecreate": false,
+    "preserveExistingKarkuns": true,
+    "preserveAuditHistory": true
+  }
+}

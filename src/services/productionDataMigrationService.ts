@@ -220,6 +220,7 @@ function adoptExistingProductionRegistry(
 ): ProductionMigrationSummary {
   const loaded = loadPeopleRegistryFromPersistence()
   if (loaded.loadedKarkuns) {
+    // KC-0056 — loadPeopleRegistryFromPersistence already heals via syncNextKarkunNumFromRegistry.
     setNextKarkunNum(loaded.nextKarkunNum)
   }
   initializeComplianceDefaults()

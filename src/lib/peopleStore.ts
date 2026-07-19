@@ -55,6 +55,8 @@ export type PeopleMutationResult = {
   error?: string
   needsMobileConfirm?: boolean
   existingOwner?: MobileLookupResult
+  /** Set on successful createKarkun. */
+  karkunId?: string
 }
 
 function notifyPeopleChange(): void {
@@ -348,14 +350,91 @@ export function bulkSetRuknStatus(
   }
 }
 
-let nextKarkunNum = 13
+/** In-memory counter hint only — never trusted alone for allocation (KC-0056). */
+let nextKarkunNum = 1
+
+const MAX_KARKUN_ID_ALLOCATION_ATTEMPTS = 10_000
+
+export function parseKarkunIdNum(id: string): number | null {
+  const match = /^kr-(\d+)$/i.exec(id.trim())
+  if (!match) return null
+  const num = Number.parseInt(match[1]!, 10)
+  return Number.isFinite(num) && num > 0 ? num : null
+}
+
+export function getMaxKarkunNumFromRegistry(
+  records: Iterable<{ id: string }> = MOCK_KARKUN_REGISTRY,
+): number {
+  let max = 0
+  for (const record of records) {
+    const num = parseKarkunIdNum(record.id)
+    if (num != null && num > max) max = num
+  }
+  return max
+}
+
+export function formatKarkunId(num: number): string {
+  return `kr-${String(num).padStart(3, '0')}`
+}
+
+function karkunIdExistsInRegistry(id: string): boolean {
+  return MOCK_KARKUN_REGISTRY.some((karkun) => karkun.id === id)
+}
+
+/**
+ * KC-0056 — Allocate the next free kr-* id.
+ * Floor = max(counter hint, maxExisting+1). Never reuse occupied ids.
+ */
+export function allocateNextKarkunId():
+  | { ok: true; id: string; num: number; collisions: number }
+  | { ok: false; error: string; collisions: number } {
+  const maxExisting = getMaxKarkunNumFromRegistry()
+  let candidate = Math.max(nextKarkunNum, maxExisting + 1)
+  let collisions = 0
+
+  for (let attempt = 0; attempt < MAX_KARKUN_ID_ALLOCATION_ATTEMPTS; attempt += 1) {
+    const id = formatKarkunId(candidate)
+    if (!karkunIdExistsInRegistry(id)) {
+      nextKarkunNum = candidate + 1
+      if (collisions > 0) {
+        console.warn(
+          `[KC-0056] Karkun ID allocation skipped ${collisions} occupied id(s); allocated ${id}`,
+        )
+      }
+      return { ok: true, id, num: candidate, collisions }
+    }
+    collisions += 1
+    console.warn(`[KC-0056] Karkun ID collision avoided: ${id} already exists`)
+    candidate += 1
+  }
+
+  return {
+    ok: false,
+    error: 'Could not allocate a free Karkun ID. Contact an administrator.',
+    collisions,
+  }
+}
 
 export function getNextKarkunNum(): number {
   return nextKarkunNum
 }
 
 export function setNextKarkunNum(value: number): void {
-  nextKarkunNum = value
+  nextKarkunNum = Math.max(1, Math.floor(value))
+}
+
+/**
+ * Heal counter so it never lags behind the highest existing kr-* id.
+ * Never decreases the in-memory counter. Returns the healed nextKarkunNum.
+ */
+export function syncNextKarkunNumFromRegistry(counterHint?: number): number {
+  const maxExisting = getMaxKarkunNumFromRegistry()
+  const hint =
+    counterHint != null && Number.isFinite(counterHint)
+      ? Math.max(1, Math.floor(counterHint))
+      : nextKarkunNum
+  nextKarkunNum = Math.max(1, nextKarkunNum, hint, maxExisting + 1)
+  return nextKarkunNum
 }
 
 function savePeopleRegistry(): void {
@@ -372,12 +451,7 @@ export function removeMaleKarkunsFromRegistry(): void {
   const remaining = MOCK_KARKUN_REGISTRY.filter((karkun) => karkun.gender === 'Female')
   MOCK_KARKUN_REGISTRY.length = 0
   MOCK_KARKUN_REGISTRY.push(...remaining)
-
-  const maxNum = remaining.reduce((max, karkun) => {
-    const num = Number.parseInt(karkun.id.replace('kr-', ''), 10)
-    return Number.isNaN(num) ? max : Math.max(max, num)
-  }, 0)
-  nextKarkunNum = maxNum + 1
+  nextKarkunNum = getMaxKarkunNumFromRegistry() + 1
   notifyPeopleChange()
 }
 
@@ -385,17 +459,12 @@ export function removeFemaleKarkunsFromRegistry(): void {
   const remaining = MOCK_KARKUN_REGISTRY.filter((karkun) => karkun.gender === 'Male')
   MOCK_KARKUN_REGISTRY.length = 0
   MOCK_KARKUN_REGISTRY.push(...remaining)
-
-  const maxNum = remaining.reduce((max, karkun) => {
-    const num = Number.parseInt(karkun.id.replace('kr-', ''), 10)
-    return Number.isNaN(num) ? max : Math.max(max, num)
-  }, 0)
-  nextKarkunNum = maxNum + 1
+  nextKarkunNum = getMaxKarkunNumFromRegistry() + 1
   notifyPeopleChange()
 }
 
 export function resetNextKarkunId(start = 1): void {
-  nextKarkunNum = start
+  nextKarkunNum = Math.max(1, Math.floor(start))
 }
 
 export function replaceRuknMaster(records: Rukn[]): void {
@@ -421,8 +490,22 @@ export function createKarkun(
     return mobileCheck
   }
 
+  const allocation = allocateNextKarkunId()
+  if (!allocation.ok) {
+    return { success: false, error: allocation.error }
+  }
+
+  // Final collision guard — never overwrite an existing registry row.
+  if (karkunIdExistsInRegistry(allocation.id)) {
+    console.error(`[KC-0056] Refusing to create ${allocation.id}: already in registry`)
+    return {
+      success: false,
+      error: `Karkun ID ${allocation.id} is already in use. Retry allocation.`,
+    }
+  }
+
   const timestamp = nowIso()
-  const id = `kr-${String(nextKarkunNum++).padStart(3, '0')}`
+  const id = allocation.id
 
   const karkun: KarkunRegistryRecord = {
     id,
@@ -466,7 +549,7 @@ export function createKarkun(
   })
 
   notifyPeopleChange()
-  return { success: true }
+  return { success: true, karkunId: id }
 }
 
 export function updateKarkun(
@@ -809,7 +892,7 @@ export function restorePeopleRegistrySnapshot(snapshot: PeopleRegistrySnapshot):
   ruknMaster.push(...snapshot.rukns)
   MOCK_KARKUN_REGISTRY.length = 0
   MOCK_KARKUN_REGISTRY.push(...snapshot.karkuns)
-  nextKarkunNum = snapshot.nextKarkunNum
+  syncNextKarkunNumFromRegistry(snapshot.nextKarkunNum)
   notifyPeopleChange()
 }
 

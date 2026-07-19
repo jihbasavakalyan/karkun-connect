@@ -2,7 +2,7 @@ import { MOCK_KARKUN_REGISTRY } from '@/constants/mockKarkunRegistry'
 import { ruknMaster } from '@/data/ruknMaster'
 import { getRepositories } from '@/repositories/provider'
 import { unwrapRepository } from '@/repositories/errors'
-import { notifyPeopleRegistryChange } from '@/lib/peopleStore'
+import { notifyPeopleRegistryChange, syncNextKarkunNumFromRegistry } from '@/lib/peopleStore'
 import { kc004cTraceRegistry } from '@/lib/debug/kc004cRegistryTrace'
 
 export function hasPersistedKarkunRegistry(): boolean {
@@ -65,13 +65,23 @@ export function loadPeopleRegistryFromPersistence(): {
     mutated = true
   }
 
+  // KC-0056 — heal counter so lagging karkunCounter never drives ID reuse.
+  // Only persist the heal when Firestore actually provided karkuns (never flush seed).
+  const healedNext = syncNextKarkunNumFromRegistry(karkunState.nextKarkunNum)
+  if (
+    karkunState.karkuns.length > 0 &&
+    healedNext !== karkunState.nextKarkunNum
+  ) {
+    mutated = true
+  }
+
   if (mutated) {
     notifyPeopleRegistryChange()
   }
 
   return {
     loadedKarkuns: karkunState.karkuns.length > 0,
-    nextKarkunNum: karkunState.nextKarkunNum,
+    nextKarkunNum: healedNext,
   }
 }
 
