@@ -2179,14 +2179,28 @@ html[data-theme='dark'] {
   }
 
   .mc-quick-action {
-    @apply relative z-20 inline-flex min-h-11 cursor-pointer items-center rounded-full border-0 bg-white/90 px-4 py-2 text-sm font-semibold text-text-heading shadow-sm transition duration-200 hover:-translate-y-0.5 hover:text-primary hover:shadow-md active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
+    @apply relative z-20 inline-flex min-h-11 cursor-pointer items-center rounded-full border-0 bg-white/90 px-4 py-2 text-sm font-semibold text-slate-900 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:text-primary hover:shadow-md active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
     pointer-events: auto;
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
   }
 
+  /*
+   * KC-0051A polish — hero action chips on dark gradient.
+   * Force readable contrast in light + dark appearance (theme text tokens are light in dark mode).
+   */
+  .mc-hero .mc-quick-action {
+    @apply border border-white/30 bg-white/15 text-white shadow-sm backdrop-blur-md;
+    @apply hover:-translate-y-0.5 hover:border-white/50 hover:bg-white/25 hover:text-white hover:shadow-md;
+    @apply active:scale-[0.98] active:bg-white/30;
+  }
+
   .mc-quick-action-primary {
     @apply bg-primary text-white hover:bg-primary hover:text-white;
+  }
+
+  .mc-hero .mc-quick-action-primary {
+    @apply border-emerald-200/40 bg-emerald-400/30 text-white hover:border-emerald-100/50 hover:bg-emerald-400/40 hover:text-white;
   }
 
   .mc-ask-rafeeq {
