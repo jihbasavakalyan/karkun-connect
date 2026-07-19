@@ -335,6 +335,32 @@ export function applyInPlaceTransfer(input: {
   return record
 }
 
+/** KC-0058 — patch non-status fields (e.g. soft-archive metadata) without changing lifecycle status. */
+export function patchAssignmentRecord(
+  assignmentId: string,
+  patch: Partial<
+    Pick<
+      AssignmentRecord,
+      | 'isArchived'
+      | 'archivedAt'
+      | 'archivedBy'
+      | 'restoredAt'
+      | 'restoredBy'
+      | 'version'
+      | 'updatedAt'
+      | 'remarks'
+    >
+  >,
+): AssignmentRecord | undefined {
+  const record = assignments.find((item) => item.assignmentId === assignmentId)
+  if (!record) return undefined
+  Object.assign(record, patch)
+  record.updatedAt = patch.updatedAt ?? new Date().toISOString()
+  saveAssignments()
+  notifyAssignmentStoreChange()
+  return record
+}
+
 export function updateAssignmentStatus(
   assignmentId: string,
   status: AssignmentStatus,

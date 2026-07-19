@@ -1,0 +1,26 @@
+{
+  "ticket": "KC-0058",
+  "projectId": "karkun-connect-75c68",
+  "generatedAt": "2026-07-19T18:39:47.362Z",
+  "summary": {
+    "errorCount": 0,
+    "warningCount": 1,
+    "checksRun": 4,
+    "healthy": true,
+    "karkunCount": 493,
+    "ruknCount": 49,
+    "connectionCount": 56,
+    "nextKarkunNum": 494,
+    "maxKarkunNum": 493
+  },
+  "errors": [],
+  "warnings": [
+    {
+      "code": "MISSING_CAMPAIGN_LIBRARY",
+      "message": "No campaigns docs"
+    }
+  ],
+  "recommendations": [
+    "Integrity scan clean — continue normal operations."
+  ]
+}

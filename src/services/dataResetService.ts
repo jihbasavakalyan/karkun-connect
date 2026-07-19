@@ -14,6 +14,8 @@ import { clearAssignmentReviewStore } from '@/stores/assignmentReviewStore'
 import { clearPeopleRegistryPersistence } from '@/lib/peopleRegistryPersistence'
 import { clearAuthSession } from '@/lib/authSession'
 import { STORAGE_KEYS } from '@/repositories/storageKeys'
+import { allowDangerousRepositoryClear } from '@/lib/preservation/dangerousClearGate'
+import { getRepositoryProviderMode } from '@/repositories/provider'
 
 export type DataResetScope = 'demo' | 'runtime' | 'everything'
 
@@ -85,18 +87,31 @@ function clearRuntimeStores(): void {
 /**
  * Destructive data deletion for the administrator Danger Zone.
  * Reloads the app afterward so every store rehydrates from a clean slate.
+ *
+ * KC-0058 — blocked against production Firestore (use archive/soft-delete).
  */
 export function resetApplicationData(scope: DataResetScope): void {
-  if (scope === 'runtime' || scope === 'everything') {
-    clearRuntimeStores()
+  if (getRepositoryProviderMode() === 'firestore') {
+    throw new Error(
+      'KC-0058: Danger Zone hard reset is disabled against production Firestore. Use archive tools instead.',
+    )
   }
 
-  if (scope === 'demo' || scope === 'everything') {
-    clearPeopleRegistryPersistence()
-  }
+  allowDangerousRepositoryClear(true)
+  try {
+    if (scope === 'runtime' || scope === 'everything') {
+      clearRuntimeStores()
+    }
 
-  if (scope === 'everything') {
-    clearAuthSession()
+    if (scope === 'demo' || scope === 'everything') {
+      clearPeopleRegistryPersistence()
+    }
+
+    if (scope === 'everything') {
+      clearAuthSession()
+    }
+  } finally {
+    allowDangerousRepositoryClear(false)
   }
 
   if (typeof window !== 'undefined') {

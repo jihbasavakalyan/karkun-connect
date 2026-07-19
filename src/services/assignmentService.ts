@@ -9,6 +9,7 @@ import { getAllKarkuns, getCompatibleKarkunsForRukn, notifyPeopleRegistryChange 
 import { logPeopleAudit } from '@/lib/peopleAuditLog'
 import { isValidMobileFormat, normalizeMobile } from '@/lib/mobileValidation'
 import { logActivity } from '@/stores/activityLogStore'
+import { appendConnectionLedgerEntry } from '@/services/connectionLedgerService'
 import { getRepositories } from '@/repositories/provider'
 import {
   beginTransferCommit,
@@ -391,6 +392,17 @@ export async function assignRukn(input: AssignInput): Promise<AssignmentResult> 
       actor: input.assignedBy,
     })
 
+    // KC-0058 — immutable connection ledger (does not alter assign semantics).
+    appendConnectionLedgerEntry({
+      eventType: 'CONNECTED',
+      performedBy: input.assignedBy,
+      assignmentId: assignment.assignmentId,
+      connectionId: assignment.assignmentId,
+      ruknId: input.ruknId,
+      karkunId: input.karkunId,
+      metadata: { assignmentNumber: assignment.assignmentNumber },
+    })
+
     return { success: true, assignment }
   })()
 
@@ -553,6 +565,21 @@ export async function transferAssignment(input: TransferInput): Promise<Assignme
       actor: input.assignedBy,
     })
 
+    // KC-0058 — immutable connection ledger (does not alter transfer semantics).
+    appendConnectionLedgerEntry({
+      eventType: 'TRANSFERRED',
+      performedBy: input.assignedBy,
+      assignmentId: updated.assignmentId,
+      connectionId: updated.assignmentId,
+      ruknId: targetRuknId,
+      karkunId: input.karkunId,
+      metadata: {
+        fromRuknId: sourceRuknId,
+        toRuknId: targetRuknId,
+        assignmentNumber: updated.assignmentNumber,
+      },
+    })
+
     const commit = getRepositories().connection.commitConnectionDocuments
     if (commit) {
       const result = await commit([updated, historyMarker])
@@ -631,6 +658,17 @@ export function removeAssignment(input: RemoveInput): AssignmentResult {
     actor: input.assignedBy,
   })
 
+  // KC-0058 — immutable connection ledger (status becomes Unassigned; row retained).
+  appendConnectionLedgerEntry({
+    eventType: 'DISCONNECTED',
+    performedBy: input.assignedBy,
+    assignmentId: current.assignmentId,
+    connectionId: current.assignmentId,
+    ruknId: input.ruknId,
+    karkunId: current.karkunId,
+    metadata: { removalReason: input.removalReason },
+  })
+
   return { success: true, assignment: current }
 }
 
@@ -654,6 +692,16 @@ export async function restoreAssignment(input: RestoreInput): Promise<Assignment
     karkunId: input.karkunId,
     assignmentId: result.assignment.assignmentId,
     actor: input.assignedBy,
+  })
+
+  // KC-0058 — ledger RESTORED (CONNECTED already written by assignRukn).
+  appendConnectionLedgerEntry({
+    eventType: 'RESTORED',
+    performedBy: input.assignedBy,
+    assignmentId: result.assignment.assignmentId,
+    connectionId: result.assignment.assignmentId,
+    ruknId: input.ruknId,
+    karkunId: input.karkunId,
   })
 
   return result

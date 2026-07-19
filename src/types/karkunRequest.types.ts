@@ -19,4 +19,11 @@ export type NewKarkunRequest = {
   decisionNotes?: string
   createdKarkunId?: string
   assignmentId?: string
+  /** KC-0058 — soft archive / recovery metadata (optional; additive). */
+  isArchived?: boolean
+  archivedAt?: string
+  archivedBy?: string
+  restoredAt?: string
+  restoredBy?: string
+  version?: number
 }

@@ -37,6 +37,13 @@ export type KarkunRegistryRecord = {
   jihAppRegistrationStatus: JihAppRegistrationStatus
   notes: string
   isArchived: boolean
+  /** KC-0058 — recovery metadata (optional; additive). */
+  createdBy?: string
+  archivedAt?: string
+  archivedBy?: string
+  restoredAt?: string
+  restoredBy?: string
+  version?: number
 }
 
 export type KarkunRegistryFilters = {

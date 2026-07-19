@@ -86,6 +86,7 @@ Scripts validate routes, auth, data integrity, assignments, and compliance witho
 
 ## Related Documents
 
+- [Data Preservation & Recovery (KC-0058)](./DATA_PRESERVATION.md)
 - [Firestore Backend (M8)](./firestore.md)
 - [Authentication (M7)](./authentication.md)
 - [Repository Layer (M6.9)](./repository-layer.md)

@@ -56,6 +56,14 @@ export type AssignmentRecord = {
   updatedAt: string
   /** KC-0055 — chronological ownership transfers (ASN / assignmentId unchanged). */
   transferHistory?: TransferHistoryEntry[]
+  /** KC-0058 — soft archive / recovery metadata (optional; additive). */
+  isArchived?: boolean
+  archivedAt?: string
+  archivedBy?: string
+  restoredAt?: string
+  restoredBy?: string
+  createdBy?: string
+  version?: number
 }
 
 export type TransferInput = {

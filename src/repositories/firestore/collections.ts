@@ -11,6 +11,8 @@ export const FIRESTORE_COLLECTIONS = {
   settings: 'settings',
   activityLogs: 'activityLogs',
   followUps: 'followUps',
+  /** KC-0058 — append-only connection lifecycle history */
+  connectionLedger: 'connectionLedger',
 } as const
 
 export const FIRESTORE_DOCS = {

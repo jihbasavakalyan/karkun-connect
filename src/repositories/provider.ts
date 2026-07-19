@@ -8,6 +8,7 @@ import type {
   RuknRepository,
   SettingsRepository,
 } from '@/repositories/interfaces'
+import type { ConnectionLedgerRepository } from '@/repositories/interfaces/ConnectionLedgerRepository'
 import { isFirebaseConfigured } from '@/lib/firebase/firebase'
 import {
   CampaignLocalRepository,
@@ -19,6 +20,7 @@ import {
   RuknLocalRepository,
   SettingsLocalRepository,
 } from '@/repositories/local/localRepositories'
+import { ConnectionLedgerLocalRepository } from '@/repositories/local/connectionLedgerLocalRepository'
 import {
   CampaignFirestoreRepository,
   CommunicationFirestoreRepository,
@@ -29,12 +31,14 @@ import {
   RuknFirestoreRepository,
   SettingsFirestoreRepository,
 } from '@/repositories/firestore/firestoreRepositories'
+import { ConnectionLedgerFirestoreRepository } from '@/repositories/firestore/connectionLedgerFirestoreRepository'
 
 export type RepositoryBundle = {
   campaign: CampaignRepository
   rukn: RuknRepository
   karkun: KarkunRepository
   connection: ConnectionRepository
+  connectionLedger: ConnectionLedgerRepository
   execution: ExecutionRepository
   communication: CommunicationRepository
   compliance: ComplianceRepository
@@ -49,6 +53,7 @@ function createLocalRepositories(): RepositoryBundle {
     rukn: new RuknLocalRepository(),
     karkun: new KarkunLocalRepository(),
     connection: new ConnectionLocalRepository(),
+    connectionLedger: new ConnectionLedgerLocalRepository(),
     execution: new ExecutionLocalRepository(),
     communication: new CommunicationLocalRepository(),
     compliance: new ComplianceLocalRepository(),
@@ -62,6 +67,7 @@ function createFirestoreRepositories(): RepositoryBundle {
     rukn: new RuknFirestoreRepository(),
     karkun: new KarkunFirestoreRepository(),
     connection: new ConnectionFirestoreRepository(),
+    connectionLedger: new ConnectionLedgerFirestoreRepository(),
     execution: new ExecutionFirestoreRepository(),
     communication: new CommunicationFirestoreRepository(),
     compliance: new ComplianceFirestoreRepository(),

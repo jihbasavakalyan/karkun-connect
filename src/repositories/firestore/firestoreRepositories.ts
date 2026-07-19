@@ -22,7 +22,11 @@ import {
   type Unsubscribe,
 } from 'firebase/firestore'
 import { getFirestoreDb } from '@/lib/firebase/firestore'
-import { repositoryOk, type RepositoryResult } from '@/repositories/errors'
+import { repositoryErr, repositoryOk, type RepositoryResult } from '@/repositories/errors'
+import {
+  DANGEROUS_CLEAR_BLOCKED_MESSAGE,
+  isDangerousRepositoryClearAllowed,
+} from '@/lib/preservation/dangerousClearGate'
 import type { CampaignRepository } from '@/repositories/interfaces/CampaignRepository'
 import type { RuknRepository } from '@/repositories/interfaces/RuknRepository'
 import type { KarkunRepository, KarkunRegistryState } from '@/repositories/interfaces/KarkunRepository'
@@ -93,6 +97,8 @@ const ruknCache = new SyncCache<Rukn[]>([])
 const karkunCache = new SyncCache<KarkunRegistryState>({ karkuns: [], nextKarkunNum: 1 })
 const connectionCache = new SyncCache<ConnectionState>({ assignments: [], nextSequence: 1 })
 const activityLogCache = new SyncCache<ActivityLogEntry[]>([])
+/** KC-0058 — IDs already durable in Firestore (append-only writes skip these). */
+const persistedActivityIds = new Set<string>()
 const annexureCache = new SyncCache<SubmittedMeetingForm[]>([])
 const followUpCache = new SyncCache<FollowUpRecord[]>([])
 const guidanceCache = new SyncCache<GuidanceState>({ commitments: [], timelineEvents: [] })
@@ -318,6 +324,9 @@ function applyBackgroundHydratePayload(input: {
   } = input
 
   activityLogCache.set(activityLogs)
+  for (const entry of activityLogs) {
+    persistedActivityIds.add(entry.id)
+  }
 
   const annexureForms: SubmittedMeetingForm[] = []
   let guidance: GuidanceState | null = null
@@ -809,6 +818,10 @@ export class RuknFirestoreRepository implements RuknRepository {
   }
 
   clear(): RepositoryResult<void> {
+    // KC-0058 — refuse permanent Rukn deletes.
+    if (!isDangerousRepositoryClearAllowed()) {
+      return repositoryErr('Permission', DANGEROUS_CLEAR_BLOCKED_MESSAGE)
+    }
     ruknCache.set([])
     void queueWrite('rukns', async () => {
       const db = getFirestoreDb()
@@ -877,6 +890,10 @@ export class KarkunFirestoreRepository implements KarkunRepository {
   }
 
   clear(): RepositoryResult<void> {
+    // KC-0058 — refuse permanent Karkun deletes.
+    if (!isDangerousRepositoryClearAllowed()) {
+      return repositoryErr('Permission', DANGEROUS_CLEAR_BLOCKED_MESSAGE)
+    }
     karkunCache.set({ karkuns: [], nextKarkunNum: 1 })
     void queueWrite('karkuns', async () => {
       const db = getFirestoreDb()
@@ -1065,6 +1082,10 @@ export class ConnectionFirestoreRepository implements ConnectionRepository {
   }
 
   clear(): RepositoryResult<void> {
+    // KC-0058 — refuse permanent connection/assignment deletes.
+    if (!isDangerousRepositoryClearAllowed()) {
+      return repositoryErr('Permission', DANGEROUS_CLEAR_BLOCKED_MESSAGE)
+    }
     traceRepositorySnapshot('connection_repository', {
       caller: 'ConnectionFirestoreRepository.clear',
       sourceOfTruth: 'Derived Calculation',
@@ -1093,10 +1114,18 @@ export class ConnectionFirestoreRepository implements ConnectionRepository {
 
   saveActivityLog(entries: ActivityLogEntry[]): RepositoryResult<void> {
     activityLogCache.set([...entries])
+    // KC-0058 — append-only: never rewrite existing activity documents.
+    const toCreate = entries.filter((entry) => !persistedActivityIds.has(entry.id))
+    if (toCreate.length === 0) {
+      return repositoryOk(undefined)
+    }
+    for (const entry of toCreate) {
+      persistedActivityIds.add(entry.id)
+    }
     void queueWrite('activityLogs', async () => {
       const db = getFirestoreDb()
       const batch = createBatch(db)
-      for (const entry of entries) {
+      for (const entry of toCreate) {
         batch.set(doc(db, FIRESTORE_COLLECTIONS.activityLogs, entry.id), sanitizeForFirestore(entry))
       }
       await batch.commit()
@@ -1106,6 +1135,10 @@ export class ConnectionFirestoreRepository implements ConnectionRepository {
   }
 
   clearActivityLog(): RepositoryResult<void> {
+    // KC-0058 — activity is append-only; refuse wipe.
+    if (!isDangerousRepositoryClearAllowed()) {
+      return repositoryErr('Permission', DANGEROUS_CLEAR_BLOCKED_MESSAGE)
+    }
     activityLogCache.set([])
     void queueWrite('activityLogs', async () => {
       const db = getFirestoreDb()

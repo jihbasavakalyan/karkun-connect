@@ -13,6 +13,14 @@ export interface Rukn {
   createdAt: string
   updatedAt: string
   updatedBy: string
+  /** KC-0058 — soft archive / recovery metadata (optional; additive). */
+  isArchived?: boolean
+  createdBy?: string
+  archivedAt?: string
+  archivedBy?: string
+  restoredAt?: string
+  restoredBy?: string
+  version?: number
 }
 
 const RUKN_NAMES = [

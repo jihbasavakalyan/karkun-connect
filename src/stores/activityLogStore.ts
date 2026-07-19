@@ -78,7 +78,12 @@ export function reloadActivityLogStoreFromPersistence(): void {
 }
 
 export function clearActivityLogStore(): void {
+  // KC-0058 — activity is append-only; refuse wipe unless dangerous clear is allowed.
+  const result = getRepositories().connection.clearActivityLog()
+  if (!result.ok) {
+    console.error(result.error.message)
+    return
+  }
   activityLog.length = 0
-  getRepositories().connection.clearActivityLog()
-  notifyActivityLogChange()
+  listeners.forEach((listener) => listener())
 }
