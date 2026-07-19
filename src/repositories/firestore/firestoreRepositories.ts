@@ -257,7 +257,8 @@ async function readConnectionsForClient(
 async function readRuknsForClient(db: ReturnType<typeof getFirestoreDb>): Promise<Rukn[]> {
   const scope = await resolveClientAuthScope()
   if (scope.role === 'rukn' && scope.ruknId) {
-    const own = await readDocSoft<Rukn>(db, FIRESTORE_COLLECTIONS.rukns, scope.ruknId)
+    // Critical-path hard read — missing doc is empty; permission-denied must throw.
+    const own = await readDoc<Rukn>(db, FIRESTORE_COLLECTIONS.rukns, scope.ruknId)
     return own ? [own] : []
   }
   return readCollection<Rukn>(db, FIRESTORE_COLLECTIONS.rukns)
@@ -621,13 +622,14 @@ function markConnectionRepositoriesFailed(caller: string, error: unknown): void 
 }
 
 function readCriticalHydratePayload(db: ReturnType<typeof getFirestoreDb>) {
+  // KC-0058.3 — critical path hard-fails. Soft reads are forbidden here.
   return Promise.all([
     readCollection<CampaignListItem>(db, FIRESTORE_COLLECTIONS.campaigns),
     readRuknsForClient(db),
     readKarkunsForClient(db),
-    readDocSoft<{ nextKarkunNum: number }>(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.karkunCounter),
+    readDoc<{ nextKarkunNum: number }>(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.karkunCounter),
     readConnectionsForClient(db),
-    readDocSoft<ConnectionMetaDoc>(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.connectionMeta),
+    readDoc<ConnectionMetaDoc>(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.connectionMeta),
   ]).then(
     ([campaigns, rukns, karkuns, karkunCounter, assignments, connectionMeta]) => ({
       campaigns,
@@ -791,9 +793,10 @@ async function hydrateFirestoreCachesOnce(): Promise<void> {
       readCollection<CampaignListItem>(db, FIRESTORE_COLLECTIONS.campaigns),
       readRuknsForClient(db),
       readKarkunsForClient(db),
-      readDocSoft<{ nextKarkunNum: number }>(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.karkunCounter),
+      // Critical collections — hard-fail (KC-0058.3). Soft only for optional below.
+      readDoc<{ nextKarkunNum: number }>(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.karkunCounter),
       readConnectionsForClient(db),
-      readDocSoft<ConnectionMetaDoc>(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.connectionMeta),
+      readDoc<ConnectionMetaDoc>(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.connectionMeta),
       readActivityLogsForClient(db),
       getDocsSoft(collection(db, FIRESTORE_COLLECTIONS.executions), 'executions'),
       readFollowUpsForClient(db),

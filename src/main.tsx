@@ -7,33 +7,46 @@ import { installStartupRejectionLogging, logStartupTiming } from '@/lib/startupD
 async function runDeferredBootstrap(): Promise<void> {
   logStartupTiming('bootstrap.start')
   const { initializeRepositories } = await import('@/repositories/firestore/initialize')
-  const { markRepositoryHydrationReady } = await import('@/repositories/hydrationReady')
+  const {
+    markRepositoryHydrationFailed,
+    markRepositoryHydrationReady,
+    isRepositoryHydrationReady,
+    isRepositoryHydrationFailed,
+  } = await import('@/repositories/hydrationReady')
   try {
     logStartupTiming('initializeRepositories.start')
     await initializeRepositories()
     logStartupTiming('initializeRepositories.success')
+    // Local provider marks ready inside initializeRepositories; firestore path
+    // marks ready only after critical hydrate succeeds.
+    if (!isRepositoryHydrationReady() && !isRepositoryHydrationFailed()) {
+      markRepositoryHydrationReady()
+    }
   } catch (error) {
     console.error('[bootstrap] repository initialization failed', error)
     logStartupTiming('initializeRepositories.failed', {
       message: error instanceof Error ? error.message : String(error),
     })
-  } finally {
-    // Gate UI empty states until startup hydrate finishes (or local provider short-circuits).
-    markRepositoryHydrationReady()
-    logStartupTiming('hydrationReady.marked')
+    // KC-0058.3 — never mark ready after critical failure (invalid 0/0/0% state).
+    if (!isRepositoryHydrationFailed()) {
+      markRepositoryHydrationFailed(error)
+    }
   }
 
-  // KC-004D: migration runs after hydrationReady (dashboard unlocked). Uses
-  // authoritative migration version + refuses full seed when registry exists.
-  const { runProductionDataMigration } = await import('@/services/productionDataMigrationService')
-  try {
-    await runProductionDataMigration()
-    logStartupTiming('productionMigration.invoked')
-  } catch (error) {
-    console.error('[bootstrap] production migration failed', error)
-    logStartupTiming('productionMigration.failed', {
-      message: error instanceof Error ? error.message : String(error),
-    })
+  // KC-004D: migration runs after successful hydrationReady only.
+  if (!isRepositoryHydrationReady()) {
+    logStartupTiming('productionMigration.skipped', { reason: 'hydration_not_ready' })
+  } else {
+    const { runProductionDataMigration } = await import('@/services/productionDataMigrationService')
+    try {
+      await runProductionDataMigration()
+      logStartupTiming('productionMigration.invoked')
+    } catch (error) {
+      console.error('[bootstrap] production migration failed', error)
+      logStartupTiming('productionMigration.failed', {
+        message: error instanceof Error ? error.message : String(error),
+      })
+    }
   }
 
   // KC-027F: Digital Rafeeq runtime must not compete with first dashboard paint.

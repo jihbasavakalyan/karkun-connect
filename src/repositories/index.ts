@@ -6,9 +6,14 @@ export * from './interfaces'
 export { initializeRepositories, resetRepositoryInitializationForTests } from './firestore/initialize'
 export {
   isRepositoryHydrationReady,
+  isRepositoryHydrationFailed,
+  getRepositoryHydrationStatus,
+  getRepositoryHydrationFailureMessage,
   markRepositoryHydrationReady,
+  markRepositoryHydrationFailed,
   subscribeToRepositoryHydration,
   resetRepositoryHydrationReadyForTests,
+  type RepositoryHydrationStatus,
 } from './hydrationReady'
 export {
   isBackgroundHydrationReady,
