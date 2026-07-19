@@ -101,6 +101,11 @@ export function submitAnnexure1(
     visitConducted: form.visitConducted === 'yes',
   })
 
+  const followUpCreatedBy =
+    context.actorId?.trim() ||
+    (context.actorRole === 'rukn' ? context.ruknId : undefined) ||
+    assignment.ruknId
+
   if (form.visitConducted === 'yes') {
     const followUpRequired =
       form.commitmentMade && form.followUpRequired === 'yes' ? 'yes' : 'no'
@@ -114,6 +119,8 @@ export function submitAnnexure1(
       followUpRequired,
       followUpRequired === 'yes' ? form.followUpDate : '',
       followUpRequired === 'yes' ? form.followUpPurpose : '',
+      undefined,
+      followUpCreatedBy,
     )
 
     if (followUpResult.error) {
@@ -130,6 +137,8 @@ export function submitAnnexure1(
       'no',
       '',
       '',
+      undefined,
+      followUpCreatedBy,
     )
   }
 

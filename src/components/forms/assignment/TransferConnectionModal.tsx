@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Modal } from '@/components/common/Modal'
 import { InputField } from '@/components/forms/InputField'
 import { TextAreaField } from '@/components/forms/TextAreaField'
@@ -21,8 +21,9 @@ type TransferConnectionModalProps = {
     effectiveFrom: string
     transferReason: RemovalReason
     remarks?: string
-  }) => void
+  }) => void | Promise<void>
   error?: string
+  loading?: boolean
 }
 
 const selectClassName =
@@ -35,11 +36,23 @@ export function TransferConnectionModal({
   onClose,
   onSubmit,
   error,
+  loading = false,
 }: TransferConnectionModalProps) {
   const [newRuknId, setNewRuknId] = useState('')
   const [effectiveFrom, setEffectiveFrom] = useState(new Date().toISOString().slice(0, 10))
   const [transferReason, setTransferReason] = useState<RemovalReason>('Transferred')
   const [remarks, setRemarks] = useState('')
+  const [localError, setLocalError] = useState('')
+
+  // KC-0052: reset form whenever the dialog opens so stale target Rukn cannot no-op transfer.
+  useEffect(() => {
+    if (!isOpen) return
+    setNewRuknId('')
+    setEffectiveFrom(new Date().toISOString().slice(0, 10))
+    setTransferReason('Transferred')
+    setRemarks('')
+    setLocalError('')
+  }, [isOpen, currentRukn?.id, karkunName])
 
   const eligibleRukns = useMemo(
     () =>
@@ -53,9 +66,22 @@ export function TransferConnectionModal({
   )
 
   const handleSubmit = () => {
-    if (!newRuknId.trim()) return
-    onSubmit({
-      newRuknId: newRuknId.trim(),
+    const target = newRuknId.trim()
+    if (!target) {
+      setLocalError('Please select a new Rukn before transferring.')
+      return
+    }
+    if (currentRukn && target === currentRukn.id) {
+      setLocalError('Select a different Rukn. Transfer to the same Rukn has no effect.')
+      return
+    }
+    if (!eligibleRukns.some((rukn) => rukn.id === target)) {
+      setLocalError('Selected Rukn is not eligible for this transfer.')
+      return
+    }
+    setLocalError('')
+    void onSubmit({
+      newRuknId: target,
       effectiveFrom,
       transferReason,
       remarks: remarks.trim() || undefined,
@@ -64,19 +90,33 @@ export function TransferConnectionModal({
 
   if (!currentRukn) return null
 
+  const displayError = localError || error
+
   return (
     <Modal
       isOpen={isOpen}
       title={`Transfer connection — ${karkunName}`}
-      onClose={onClose}
+      onClose={loading ? () => undefined : onClose}
       footer={
-        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-          <SecondaryButton type="button" onClick={onClose}>
-            Cancel
-          </SecondaryButton>
-          <PrimaryButton type="button" disabled={!newRuknId.trim()} onClick={handleSubmit}>
-            Transfer
-          </PrimaryButton>
+        <div className="flex w-full flex-col gap-3">
+          {displayError ? (
+            <p className="text-sm text-red-600" role="alert">
+              {displayError}
+            </p>
+          ) : null}
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            <SecondaryButton type="button" onClick={onClose} disabled={loading}>
+              Cancel
+            </SecondaryButton>
+            <PrimaryButton
+              type="button"
+              disabled={!newRuknId.trim() || loading}
+              loading={loading}
+              onClick={handleSubmit}
+            >
+              Transfer
+            </PrimaryButton>
+          </div>
         </div>
       }
     >
@@ -94,9 +134,13 @@ export function TransferConnectionModal({
           <select
             id="transfer-new-rukn"
             value={newRuknId}
-            onChange={(e) => setNewRuknId(e.target.value)}
+            onChange={(e) => {
+              setNewRuknId(e.target.value)
+              setLocalError('')
+            }}
             className={selectClassName}
             required
+            disabled={loading}
           >
             <option value="">Select Rukn…</option>
             {eligibleRukns.map((rukn) => (
@@ -114,6 +158,7 @@ export function TransferConnectionModal({
           value={effectiveFrom}
           onValueChange={setEffectiveFrom}
           required
+          disabled={loading}
         />
 
         <div className="flex flex-col gap-2">
@@ -126,6 +171,7 @@ export function TransferConnectionModal({
             onChange={(e) => setTransferReason(e.target.value as RemovalReason)}
             className={selectClassName}
             required
+            disabled={loading}
           >
             {REMOVAL_REASON_OPTIONS.map((reason) => (
               <option key={reason} value={reason}>
@@ -141,9 +187,8 @@ export function TransferConnectionModal({
           value={remarks}
           onValueChange={setRemarks}
           rows={2}
+          disabled={loading}
         />
-
-        {error && <p className="text-sm text-red-600">{error}</p>}
       </div>
     </Modal>
   )

@@ -181,6 +181,7 @@ export function ConnectionJourneyPage() {
       karkunId: karkun.id,
       ruknId: activeAssignment.ruknId,
       actorRole: actorRole as 'rukn' | 'administrator',
+      actorId: user?.uid,
     })
     if (!result.success) {
       setSubmitError(result.error)

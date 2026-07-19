@@ -57,6 +57,7 @@ export function AssignmentManagementPage() {
   const [lastAssignmentNumber, setLastAssignmentNumber] = useState<string | null>(null)
   const [removingKarkun, setRemovingKarkun] = useState<{ id: string; name: string } | null>(null)
   const [connectConfirmKarkunId, setConnectConfirmKarkunId] = useState<string | null>(null)
+  const [transferLoading, setTransferLoading] = useState(false)
 
   const selectRukn = (ruknId: string) => {
     setSelectedRuknId(ruknId)
@@ -180,14 +181,19 @@ export function AssignmentManagementPage() {
     closeModal()
   }
 
-  const handleTransfer = (input: {
+  const handleTransfer = async (input: {
     newRuknId: string
     effectiveFrom: string
     transferReason: import('@/types/assignment').RemovalReason
     remarks?: string
   }) => {
-    if (!removingKarkun) return
-    void (async () => {
+    if (!removingKarkun) {
+      setActionError('No Karkun selected for transfer.')
+      return
+    }
+    setTransferLoading(true)
+    setActionError('')
+    try {
       const result = await changeKarkunRuknAssignment(
         removingKarkun.id,
         input.newRuknId,
@@ -199,13 +205,17 @@ export function AssignmentManagementPage() {
         },
       )
       if (!result.success) {
-        setActionError(result.error)
+        setActionError(result.error || 'Transfer failed. Please try again.')
         return
       }
       setRemovingKarkun(null)
       setSelectedRuknId(input.newRuknId)
       closeModal()
-    })()
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : 'Transfer failed unexpectedly.')
+    } finally {
+      setTransferLoading(false)
+    }
   }
 
   const handleRestore = (input: {
@@ -557,12 +567,16 @@ export function AssignmentManagementPage() {
       />
 
       <TransferConnectionModal
+        key={`transfer-${removingKarkun?.id ?? 'closed'}-${selectedRuknId ?? 'none'}`}
         isOpen={modalMode === 'transfer'}
         karkunName={removingKarkun?.name ?? 'Unknown'}
         currentRukn={selectedRukn ?? null}
         error={actionError}
+        loading={transferLoading}
         onClose={() => {
+          if (transferLoading) return
           setRemovingKarkun(null)
+          setActionError('')
           closeModal()
         }}
         onSubmit={handleTransfer}

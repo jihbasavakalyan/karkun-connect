@@ -2,7 +2,7 @@ import { useEffect, type ReactNode } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
 import { getAuthorizedRedirect, getHomeRouteForRole } from '@/lib/auth/authorization'
 import { ROUTES } from '@/constants/routes'
-import { HomePageSkeleton, Skeleton } from '@/components/ui/Skeleton'
+import { Skeleton } from '@/components/ui/Skeleton'
 import { useAuth } from '@/hooks/useAuth'
 import { useRepositoryHydration } from '@/hooks/useRepositoryHydration'
 import { logStartupTiming } from '@/lib/startupDiagnostics'
@@ -27,27 +27,19 @@ function AuthLoadingScreen() {
   )
 }
 
-function HydrationLoadingScreen() {
-  return (
-    <div
-      className="min-h-svh bg-surface-muted px-4 py-8 sm:px-6"
-      aria-busy="true"
-      aria-label="Loading campaign data"
-    >
-      <div className="mx-auto max-w-5xl">
-        <HomePageSkeleton />
-      </div>
-    </div>
-  )
-}
-
+/**
+ * KC-0052 — Progressive shell: after auth, render layout/nav/hero immediately.
+ * Full-page HomePageSkeleton no longer blocks the entire app on repository hydrate.
+ * Pages/sections that need data continue to use useRepositoryHydration / useBackgroundHydration.
+ */
 export function ProtectedRoute({ allowedRole, children }: ProtectedRouteProps) {
   const location = useLocation()
   const { user, isAuthenticated, isInitializing } = useAuth()
   const isHydrated = useRepositoryHydration()
 
-  const canRenderDashboard =
-    !isInitializing && isAuthenticated && !!user && user.role === allowedRole && isHydrated
+  const canRenderShell =
+    !isInitializing && isAuthenticated && !!user && user.role === allowedRole
+  const canRenderDashboard = canRenderShell && isHydrated
 
   useEffect(() => {
     logStartupTiming('ProtectedRoute.gate', {
@@ -57,14 +49,23 @@ export function ProtectedRoute({ allowedRole, children }: ProtectedRouteProps) {
       isAuthenticated,
       isHydrated,
       role: user?.role ?? null,
+      canRenderShell,
       canRenderDashboard,
     })
     markStartupLifecycle('ProtectedRoute.gate', {
       route: location.pathname,
+      canRenderShell,
       canRenderDashboard,
       isHydrated,
       isInitializing,
     })
+    if (canRenderShell) {
+      markStartupLifecycle('ProtectedRoute.shellVisible', {
+        route: location.pathname,
+        role: user?.role ?? null,
+        isHydrated,
+      })
+    }
     if (canRenderDashboard) {
       markStartupLifecycle('ProtectedRoute.canRender', {
         route: location.pathname,
@@ -78,6 +79,7 @@ export function ProtectedRoute({ allowedRole, children }: ProtectedRouteProps) {
   }, [
     allowedRole,
     canRenderDashboard,
+    canRenderShell,
     isAuthenticated,
     isHydrated,
     isInitializing,
@@ -98,11 +100,11 @@ export function ProtectedRoute({ allowedRole, children }: ProtectedRouteProps) {
     return <Navigate to={redirect} replace />
   }
 
-  if (!isHydrated) {
-    return <HydrationLoadingScreen />
-  }
-
-  return children
+  return (
+    <div aria-busy={!isHydrated} data-hydration={isHydrated ? 'ready' : 'pending'}>
+      {children}
+    </div>
+  )
 }
 
 type GuestRouteProps = {

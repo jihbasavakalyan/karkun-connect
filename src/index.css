@@ -1286,22 +1286,22 @@ html[data-theme='dark'] {
   .digital-rafeeq-fab-root {
     @apply fixed z-40 flex flex-col items-end gap-3;
     right: calc(1rem + env(safe-area-inset-right, 0px));
-    bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+    bottom: calc(var(--fab-gap) + env(safe-area-inset-bottom, 0px));
   }
 
   .digital-rafeeq-fab-offset-rukn {
-    right: calc(5.5rem + env(safe-area-inset-right, 0px));
-    bottom: calc(5.25rem + env(safe-area-inset-bottom, 0px));
+    right: calc(var(--fab-right-rukn) + env(safe-area-inset-right, 0px));
+    bottom: calc(var(--fab-bottom-rukn) + env(safe-area-inset-bottom, 0px));
   }
 
   @media (min-width: 640px) {
     .digital-rafeeq-fab-root {
-      right: calc(1.5rem + env(safe-area-inset-right, 0px));
+      right: calc(var(--fab-gap-sm) + env(safe-area-inset-right, 0px));
     }
 
     .digital-rafeeq-fab-offset-rukn {
-      right: calc(5.75rem + env(safe-area-inset-right, 0px));
-      bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+      right: calc(var(--fab-right-rukn) + 0.25rem + env(safe-area-inset-right, 0px));
+      bottom: calc(var(--fab-bottom-rukn) + 0.25rem + env(safe-area-inset-bottom, 0px));
     }
   }
 
@@ -3547,6 +3547,13 @@ html[data-theme='dark'] {
   :root {
     --keyboard-inset: 0px;
     --native-nav-height: 4.75rem;
+    /* KC-0052 — Digital Rafeeq FAB clearance (global, not page-specific) */
+    --fab-size: 3.5rem;
+    --fab-gap: 1.5rem;
+    --fab-gap-sm: 1.5rem;
+    --fab-clearance: calc(var(--fab-size) + var(--fab-gap) + 0.75rem);
+    --fab-bottom-rukn: calc(var(--native-nav-height) + 0.5rem);
+    --fab-right-rukn: calc(var(--fab-size) + 2rem);
   }
 
   a,
@@ -3585,7 +3592,10 @@ html[data-theme='dark'] {
   }
 
   .native-main {
-    padding-bottom: calc(5.25rem + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(
+      max(5.25rem, var(--fab-bottom-rukn) + var(--fab-size) + 0.75rem) +
+        env(safe-area-inset-bottom, 0px)
+    );
   }
 
   .native-bottom-nav {
@@ -3601,7 +3611,12 @@ html[data-theme='dark'] {
   }
 
   .native-admin-main {
-    padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+    /* Reserve space so pagination / bottom actions never sit under Digital Rafeeq FAB */
+    padding-bottom: calc(var(--fab-clearance) + env(safe-area-inset-bottom, 0px));
+  }
+
+  .list-footer-controls {
+    padding-right: calc(var(--fab-size) + var(--fab-gap));
   }
 
   .native-page {
@@ -3623,6 +3638,7 @@ html[data-theme='dark'] {
   .native-bulk-bar {
     @apply sticky z-20 shadow-sm backdrop-blur-md;
     bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+    padding-right: calc(var(--fab-size) + var(--fab-gap) + 0.5rem);
   }
 
   .mc-kpi-link,

@@ -205,7 +205,15 @@ export async function changeKarkunRuknAssignment(
     return adminUnassignKarkun(karkunId, options)
   }
 
+  // KC-0052: Transfer UI always passes options. Same-Rukn must fail visibly (not silent no-op success).
+  // Registry/profile callers omit options and treat same-Rukn as an idempotent no-op.
   if (current?.ruknId === targetRuknId) {
+    if (options) {
+      return {
+        success: false,
+        error: 'Select a different Rukn. Transfer to the same Rukn has no effect.',
+      }
+    }
     return { success: true, assignment: current }
   }
 

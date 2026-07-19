@@ -231,24 +231,28 @@ export function AssignmentReviewQueue() {
           }}
           onSubmit={(input) => {
             void (async () => {
-              const result = await changeKarkunRuknAssignment(
-                activeRequest.karkunId,
-                input.newRuknId,
-                decidedBy,
-                {
-                  removalReason: input.transferReason,
-                  remarks: input.remarks || notesById[activeRequest.id],
-                  effectiveFrom: input.effectiveFrom,
-                },
-              )
-              if (!result.success) {
-                setError(result.error)
-                return
+              try {
+                const result = await changeKarkunRuknAssignment(
+                  activeRequest.karkunId,
+                  input.newRuknId,
+                  decidedBy,
+                  {
+                    removalReason: input.transferReason,
+                    remarks: input.remarks || notesById[activeRequest.id],
+                    effectiveFrom: input.effectiveFrom,
+                  },
+                )
+                if (!result.success) {
+                  setError(result.error || 'Transfer failed. Please try again.')
+                  return
+                }
+                if (!recordDecision(activeRequest, 'Transfer')) return
+                setNotice(`Transferred ${activeRequest.karkunName} to the selected Rukn.`)
+                setActiveRequest(null)
+                setFollowUp(null)
+              } catch (err) {
+                setError(err instanceof Error ? err.message : 'Transfer failed unexpectedly.')
               }
-              if (!recordDecision(activeRequest, 'Transfer')) return
-              setNotice(`Transferred ${activeRequest.karkunName} to the selected Rukn.`)
-              setActiveRequest(null)
-              setFollowUp(null)
             })()
           }}
         />

@@ -54,6 +54,8 @@ export {
   createFollowUp,
   completeFollowUpsForAssignment,
   handleFollowUpOnAnnexureSubmit,
+  updateFollowUpDetails,
+  canEditFollowUp,
   getFollowUpDashboardMetrics,
   getPendingFollowUps,
   getTodaysFollowUps,

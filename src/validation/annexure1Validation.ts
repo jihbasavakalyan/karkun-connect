@@ -15,6 +15,8 @@ export type Annexure1SubmissionContext = {
   karkunId: string
   ruknId: string
   actorRole: 'rukn' | 'administrator'
+  /** Auth uid used as FollowUpRecord.createdBy when scheduling a follow-up. */
+  actorId?: string
 }
 
 export function resolveActiveAssignmentForAnnexure1(

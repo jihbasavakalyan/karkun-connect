@@ -67,6 +67,21 @@ export function updateFollowUpStatus(
   return record
 }
 
+/** Apply an in-place mutation and persist via the existing saveFollowUps path. */
+export function mutateFollowUpRecord(
+  followUpId: string,
+  mutator: (record: FollowUpRecord) => void,
+): FollowUpRecord | undefined {
+  const record = followUpRecords.find((item) => item.followUpId === followUpId)
+  if (!record) {
+    return undefined
+  }
+
+  mutator(record)
+  notifyFollowUpStoreChange()
+  return record
+}
+
 export function completePendingFollowUpsForAssignment(assignmentId: string): FollowUpRecord[] {
   const timestamp = new Date().toISOString()
   const completed = followUpRecords.filter(

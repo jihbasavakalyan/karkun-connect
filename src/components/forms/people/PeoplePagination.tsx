@@ -19,7 +19,7 @@ export function PeoplePagination({
   const end = Math.min(currentPage * pageSize, totalRecords)
 
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="list-footer-controls flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <p className="text-sm text-secondary">
         Showing {start}–{end} of {totalRecords}
       </p>

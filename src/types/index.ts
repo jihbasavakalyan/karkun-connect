@@ -37,6 +37,8 @@ export type {
 export type {
   FollowUpRecord,
   FollowUpStatus,
+  FollowUpEditableField,
+  RecordEditEntry,
   FollowUpDashboardMetrics,
   KarkunNextFollowUp,
 } from './followUp'

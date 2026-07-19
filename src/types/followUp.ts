@@ -1,5 +1,15 @@
 export type FollowUpStatus = 'Pending' | 'Completed'
 
+export type FollowUpEditableField = 'purpose' | 'remarks' | 'followUpDate'
+
+export type RecordEditEntry = {
+  field: FollowUpEditableField
+  original: string
+  edited: string
+  timestamp: string
+  user: string
+}
+
 export type FollowUpRecord = {
   followUpId: string
   assignmentId: string
@@ -14,6 +24,9 @@ export type FollowUpRecord = {
   sourceFormId: string
   createdAt: string
   completedAt?: string
+  /** Creator uid, or ruknId when uid unavailable. */
+  createdBy?: string
+  editHistory?: RecordEditEntry[]
 }
 
 export type FollowUpInput = {
@@ -26,6 +39,7 @@ export type FollowUpInput = {
   purpose: string
   remarks?: string
   sourceFormId: string
+  createdBy?: string
 }
 
 export type FollowUpDashboardMetrics = {

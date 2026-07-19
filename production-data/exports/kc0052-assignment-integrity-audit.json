@@ -1,0 +1,28 @@
+{
+  "label": "KC-0052 Issue 5 — Active assignment integrity audit",
+  "generatedAt": "2026-07-19T15:30:00.000Z",
+  "projectId": "karkun-connect-75c68",
+  "method": "Firebase Admin read-only scan of connections + karkuns",
+  "totals": {
+    "connections": 55,
+    "activeConnections": 45,
+    "karkuns": 493
+  },
+  "findings": {
+    "duplicateActivePerKarkunId": 0,
+    "dualRuknOwnershipViaSameMobile": 0,
+    "registryAssignedRuknMismatchVsActiveConnection": 0
+  },
+  "verdict": "PRODUCTION_DATA_CLEAN",
+  "rootCauseAssessment": {
+    "uiFilterBug": "Ruled out — Connected lists filter Active by exact ruknId",
+    "currentFirestoreMismatch": "None found at audit time",
+    "historicalRisk": "Pre-KC-0050 duplicate karkun mobiles could place the same person under two Rukns as different kr-* IDs; KC-0050 removed those registry duplicates",
+    "remainingRuntimeRisk": "Non-atomic transfer (remove then assign) + stale client saveState upsert can revive old Actives across clients; KC-003 keep-newest may then pick a survivor by timestamp"
+  },
+  "mitigationsInKc0052": [
+    "Transfer UI no longer silently no-ops on same-Rukn / stale form state",
+    "Transfer failures surface in modal footer with loading state",
+    "Engine returns failure when Transfer options target the current Rukn"
+  ]
+}

@@ -148,7 +148,13 @@ export function getRemovalReasonLabel(reason: RemovalReason | string): string {
   return REASON_DISPLAY_LABELS[reason] ?? reason
 }
 
-export type ActivityLogType = 'assign' | 'replace' | 'remove' | 'restore' | 'complete'
+export type ActivityLogType =
+  | 'assign'
+  | 'replace'
+  | 'remove'
+  | 'restore'
+  | 'complete'
+  | 'edit'
 
 export type ActivityLogSeverity = 'INFO' | 'WARNING' | 'IMPORTANT'
 
