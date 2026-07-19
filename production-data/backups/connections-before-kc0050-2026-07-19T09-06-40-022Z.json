@@ -1,0 +1,629 @@
+{
+  "meta": {
+    "label": "KC-0050-pre-apply-backup",
+    "collection": "connections",
+    "projectId": "karkun-connect-75c68",
+    "exportedAt": "2026-07-19T09:06:42.096Z",
+    "documentCount": 40,
+    "clientEmail": "firebase-adminsdk-fbsvc@karkun-connect-75c68.iam.gserviceaccount.com",
+    "readOnly": true
+  },
+  "documents": [
+    {
+      "id": "asgn-1784344130109-yqwbd",
+      "data": {
+        "status": "Active",
+        "assignmentNumber": "ASN-000001",
+        "assignedBy": "Rukn",
+        "assignedDate": "2026-07-18",
+        "karkunId": "kr-011",
+        "effectiveFrom": "2026-07-18",
+        "updatedAt": "2026-07-18T03:08:50.109Z",
+        "createdAt": "2026-07-18T03:08:50.109Z",
+        "ruknId": "R046",
+        "assignmentId": "asgn-1784344130109-yqwbd"
+      }
+    },
+    {
+      "id": "asgn-1784344261313-wcvid",
+      "data": {
+        "status": "Active",
+        "assignmentNumber": "ASN-000002",
+        "assignedBy": "Rukn",
+        "assignedDate": "2026-07-18",
+        "karkunId": "kr-020",
+        "effectiveFrom": "2026-07-18",
+        "updatedAt": "2026-07-18T03:11:01.313Z",
+        "createdAt": "2026-07-18T03:11:01.313Z",
+        "ruknId": "R046",
+        "assignmentId": "asgn-1784344261313-wcvid"
+      }
+    },
+    {
+      "id": "asgn-1784344367196-zv6p0",
+      "data": {
+        "createdAt": "2026-07-18T03:12:47.196Z",
+        "assignmentId": "asgn-1784344367196-zv6p0",
+        "effectiveFrom": "2026-07-18",
+        "karkunId": "kr-003",
+        "assignedBy": "Rukn",
+        "ruknId": "R046",
+        "assignedDate": "2026-07-18",
+        "assignmentNumber": "ASN-000003",
+        "updatedAt": "2026-07-18T03:12:47.196Z",
+        "status": "Active"
+      }
+    },
+    {
+      "id": "asgn-1784344581492-bao8t",
+      "data": {
+        "assignedBy": "Rukn",
+        "assignmentId": "asgn-1784344581492-bao8t",
+        "assignedDate": "2026-07-18",
+        "createdAt": "2026-07-18T03:16:21.492Z",
+        "status": "Active",
+        "assignmentNumber": "ASN-000004",
+        "effectiveFrom": "2026-07-18",
+        "ruknId": "R046",
+        "karkunId": "kr-162",
+        "updatedAt": "2026-07-18T03:16:21.492Z"
+      }
+    },
+    {
+      "id": "asgn-1784345350954-y1v80",
+      "data": {
+        "createdAt": "2026-07-18T03:29:10.954Z",
+        "assignedDate": "2026-07-18",
+        "updatedAt": "2026-07-18T03:29:10.954Z",
+        "status": "Active",
+        "assignmentId": "asgn-1784345350954-y1v80",
+        "assignmentNumber": "ASN-000005",
+        "ruknId": "R041",
+        "assignedBy": "Rukn",
+        "karkunId": "kr-029",
+        "effectiveFrom": "2026-07-18"
+      }
+    },
+    {
+      "id": "asgn-1784345464217-d1wb6",
+      "data": {
+        "status": "Active",
+        "updatedAt": "2026-07-18T03:31:04.217Z",
+        "assignedDate": "2026-07-18",
+        "createdAt": "2026-07-18T03:31:04.217Z",
+        "effectiveFrom": "2026-07-18",
+        "karkunId": "kr-062",
+        "assignedBy": "Rukn",
+        "ruknId": "R041",
+        "assignmentNumber": "ASN-000006",
+        "assignmentId": "asgn-1784345464217-d1wb6"
+      }
+    },
+    {
+      "id": "asgn-1784346331056-1illa",
+      "data": {
+        "assignedBy": "Rukn",
+        "updatedAt": "2026-07-18T03:45:31.056Z",
+        "karkunId": "kr-001",
+        "status": "Active",
+        "createdAt": "2026-07-18T03:45:31.056Z",
+        "assignmentNumber": "ASN-000007",
+        "effectiveFrom": "2026-07-18",
+        "assignedDate": "2026-07-18",
+        "assignmentId": "asgn-1784346331056-1illa",
+        "ruknId": "R019"
+      }
+    },
+    {
+      "id": "asgn-1784346404313-9vknn",
+      "data": {
+        "createdAt": "2026-07-18T03:46:44.313Z",
+        "assignmentNumber": "ASN-000008",
+        "status": "Active",
+        "updatedAt": "2026-07-18T03:46:44.313Z",
+        "karkunId": "kr-014",
+        "assignedBy": "Rukn",
+        "ruknId": "R019",
+        "effectiveFrom": "2026-07-18",
+        "assignedDate": "2026-07-18",
+        "assignmentId": "asgn-1784346404313-9vknn"
+      }
+    },
+    {
+      "id": "asgn-1784355309354-oyfjq",
+      "data": {
+        "assignedBy": "Rukn",
+        "karkunId": "kr-026",
+        "ruknId": "R020",
+        "assignedDate": "2026-07-18",
+        "assignmentId": "asgn-1784355309354-oyfjq",
+        "effectiveFrom": "2026-07-18",
+        "createdAt": "2026-07-18T06:15:09.354Z",
+        "status": "Active",
+        "assignmentNumber": "ASN-000009",
+        "updatedAt": "2026-07-18T06:15:09.354Z"
+      }
+    },
+    {
+      "id": "asgn-1784374704013-5xjn8",
+      "data": {
+        "assignmentId": "asgn-1784374704013-5xjn8",
+        "assignedBy": "Rukn",
+        "status": "Active",
+        "updatedAt": "2026-07-18T11:38:24.013Z",
+        "createdAt": "2026-07-18T11:38:24.013Z",
+        "karkunId": "kr-036",
+        "assignmentNumber": "ASN-000010",
+        "effectiveFrom": "2026-07-18",
+        "ruknId": "R019",
+        "assignedDate": "2026-07-18"
+      }
+    },
+    {
+      "id": "asgn-1784374774822-czdzt",
+      "data": {
+        "assignmentId": "asgn-1784374774822-czdzt",
+        "assignedBy": "Rukn",
+        "status": "Active",
+        "karkunId": "kr-058",
+        "updatedAt": "2026-07-18T11:39:34.822Z",
+        "createdAt": "2026-07-18T11:39:34.822Z",
+        "ruknId": "R019",
+        "assignedDate": "2026-07-18",
+        "assignmentNumber": "ASN-000011",
+        "effectiveFrom": "2026-07-18"
+      }
+    },
+    {
+      "id": "asgn-1784374816362-2jdad",
+      "data": {
+        "status": "Active",
+        "assignmentId": "asgn-1784374816362-2jdad",
+        "ruknId": "R019",
+        "assignedDate": "2026-07-18",
+        "updatedAt": "2026-07-18T11:40:16.362Z",
+        "createdAt": "2026-07-18T11:40:16.362Z",
+        "effectiveFrom": "2026-07-18",
+        "assignedBy": "Rukn",
+        "karkunId": "kr-067",
+        "assignmentNumber": "ASN-000012"
+      }
+    },
+    {
+      "id": "asgn-1784374863738-dsz0t",
+      "data": {
+        "assignedDate": "2026-07-18",
+        "assignmentId": "asgn-1784374863738-dsz0t",
+        "createdAt": "2026-07-18T11:41:03.738Z",
+        "assignedBy": "Rukn",
+        "assignmentNumber": "ASN-000027",
+        "karkunId": "kr-086",
+        "updatedAt": "2026-07-18T22:21:49.954Z",
+        "ruknId": "R019",
+        "status": "Active",
+        "effectiveFrom": "2026-07-18"
+      }
+    },
+    {
+      "id": "asgn-1784374898530-lrirr",
+      "data": {
+        "status": "Active",
+        "assignmentId": "asgn-1784374898530-lrirr",
+        "ruknId": "R019",
+        "assignedDate": "2026-07-18",
+        "updatedAt": "2026-07-18T11:41:38.530Z",
+        "createdAt": "2026-07-18T11:41:38.530Z",
+        "effectiveFrom": "2026-07-18",
+        "assignedBy": "Rukn",
+        "karkunId": "kr-095",
+        "assignmentNumber": "ASN-000013"
+      }
+    },
+    {
+      "id": "asgn-1784374944158-hfoa4",
+      "data": {
+        "updatedAt": "2026-07-18T11:42:24.158Z",
+        "assignedDate": "2026-07-18",
+        "ruknId": "R019",
+        "assignmentId": "asgn-1784374944158-hfoa4",
+        "status": "Active",
+        "assignmentNumber": "ASN-000014",
+        "assignedBy": "Rukn",
+        "karkunId": "kr-100",
+        "effectiveFrom": "2026-07-18",
+        "createdAt": "2026-07-18T11:42:24.158Z"
+      }
+    },
+    {
+      "id": "asgn-1784374965219-dce8m",
+      "data": {
+        "createdAt": "2026-07-18T11:42:45.219Z",
+        "assignedBy": "Rukn",
+        "assignedDate": "2026-07-18",
+        "assignmentId": "asgn-1784374965219-dce8m",
+        "status": "Active",
+        "effectiveFrom": "2026-07-18",
+        "assignmentNumber": "ASN-000031",
+        "karkunId": "kr-103",
+        "updatedAt": "2026-07-18T22:21:49.954Z",
+        "ruknId": "R019"
+      }
+    },
+    {
+      "id": "asgn-1784374990239-xe74g",
+      "data": {
+        "ruknId": "R019",
+        "assignedDate": "2026-07-18",
+        "karkunId": "kr-104",
+        "updatedAt": "2026-07-18T11:43:10.239Z",
+        "assignmentNumber": "ASN-000015",
+        "effectiveFrom": "2026-07-18",
+        "assignmentId": "asgn-1784374990239-xe74g",
+        "createdAt": "2026-07-18T11:43:10.239Z",
+        "assignedBy": "Rukn",
+        "status": "Active"
+      }
+    },
+    {
+      "id": "asgn-1784375074431-yvsfs",
+      "data": {
+        "ruknId": "R019",
+        "assignedDate": "2026-07-18",
+        "karkunId": "kr-139",
+        "updatedAt": "2026-07-18T11:44:34.431Z",
+        "assignmentNumber": "ASN-000016",
+        "effectiveFrom": "2026-07-18",
+        "assignmentId": "asgn-1784375074431-yvsfs",
+        "createdAt": "2026-07-18T11:44:34.431Z",
+        "assignedBy": "Rukn",
+        "status": "Active"
+      }
+    },
+    {
+      "id": "asgn-1784375106366-9zli2",
+      "data": {
+        "remarks": "KC-003: superseded duplicate Active (kept ASN-000036)",
+        "assignmentNumber": "ASN-000017",
+        "assignedDate": "2026-07-18",
+        "assignedBy": "Rukn",
+        "createdAt": "2026-07-18T11:45:06.366Z",
+        "assignmentId": "asgn-1784375106366-9zli2",
+        "removalReason": "Duplicate",
+        "endedDate": "2026-07-18",
+        "effectiveFrom": "2026-07-18",
+        "status": "Replaced",
+        "updatedAt": "2026-07-18T22:51:35.051Z",
+        "replacementReason": "Other",
+        "ruknId": "R019",
+        "karkunId": "kr-141"
+      }
+    },
+    {
+      "id": "asgn-1784375138496-2ndut",
+      "data": {
+        "ruknId": "R019",
+        "updatedAt": "2026-07-18T22:21:49.954Z",
+        "karkunId": "kr-141",
+        "assignmentNumber": "ASN-000036",
+        "effectiveFrom": "2026-07-18",
+        "status": "Active",
+        "assignmentId": "asgn-1784375138496-2ndut",
+        "assignedDate": "2026-07-18",
+        "assignedBy": "Rukn",
+        "createdAt": "2026-07-18T11:45:38.496Z"
+      }
+    },
+    {
+      "id": "asgn-1784375214524-vehbv",
+      "data": {
+        "createdAt": "2026-07-18T11:46:54.524Z",
+        "assignmentId": "asgn-1784375214524-vehbv",
+        "status": "Active",
+        "assignedBy": "Rukn",
+        "effectiveFrom": "2026-07-18",
+        "assignmentNumber": "ASN-000018",
+        "updatedAt": "2026-07-18T11:46:54.524Z",
+        "karkunId": "kr-177",
+        "ruknId": "R019",
+        "assignedDate": "2026-07-18"
+      }
+    },
+    {
+      "id": "asgn-1784375259041-zu76m",
+      "data": {
+        "assignmentId": "asgn-1784375259041-zu76m",
+        "createdAt": "2026-07-18T11:47:39.041Z",
+        "assignedBy": "Rukn",
+        "status": "Active",
+        "effectiveFrom": "2026-07-18",
+        "updatedAt": "2026-07-18T11:47:39.041Z",
+        "assignmentNumber": "ASN-000019",
+        "ruknId": "R019",
+        "assignedDate": "2026-07-18",
+        "karkunId": "kr-190"
+      }
+    },
+    {
+      "id": "asgn-1784375326932-fy063",
+      "data": {
+        "ruknId": "R019",
+        "assignedDate": "2026-07-18",
+        "karkunId": "kr-005",
+        "updatedAt": "2026-07-18T11:48:46.932Z",
+        "assignmentNumber": "ASN-000020",
+        "effectiveFrom": "2026-07-18",
+        "assignedBy": "Rukn",
+        "status": "Active",
+        "assignmentId": "asgn-1784375326932-fy063",
+        "createdAt": "2026-07-18T11:48:46.932Z"
+      }
+    },
+    {
+      "id": "asgn-1784375367178-1dau6",
+      "data": {
+        "status": "Active",
+        "assignedBy": "Rukn",
+        "createdAt": "2026-07-18T11:49:27.178Z",
+        "assignmentId": "asgn-1784375367178-1dau6",
+        "effectiveFrom": "2026-07-18",
+        "assignmentNumber": "ASN-000021",
+        "updatedAt": "2026-07-18T11:49:27.178Z",
+        "karkunId": "kr-009",
+        "ruknId": "R019",
+        "assignedDate": "2026-07-18"
+      }
+    },
+    {
+      "id": "asgn-1784375395395-jaonu",
+      "data": {
+        "removalReason": "Duplicate",
+        "endedDate": "2026-07-18",
+        "effectiveFrom": "2026-07-18",
+        "status": "Replaced",
+        "assignmentId": "asgn-1784375395395-jaonu",
+        "ruknId": "R019",
+        "karkunId": "kr-016",
+        "updatedAt": "2026-07-18T22:51:35.051Z",
+        "replacementReason": "Other",
+        "assignmentNumber": "ASN-000022",
+        "remarks": "KC-003: superseded duplicate Active (kept ASN-000029)",
+        "assignedBy": "Rukn",
+        "createdAt": "2026-07-18T11:49:55.395Z",
+        "assignedDate": "2026-07-18"
+      }
+    },
+    {
+      "id": "asgn-1784375418082-2eupu",
+      "data": {
+        "assignmentNumber": "ASN-000040",
+        "remarks": "KC-003: superseded duplicate Active (kept ASN-000028)",
+        "assignedBy": "Rukn",
+        "createdAt": "2026-07-18T11:50:18.082Z",
+        "assignedDate": "2026-07-18",
+        "removalReason": "Duplicate",
+        "endedDate": "2026-07-18",
+        "status": "Replaced",
+        "effectiveFrom": "2026-07-18",
+        "assignmentId": "asgn-1784375418082-2eupu",
+        "karkunId": "kr-015",
+        "ruknId": "R019",
+        "updatedAt": "2026-07-18T22:51:35.051Z",
+        "replacementReason": "Other"
+      }
+    },
+    {
+      "id": "asgn-1784375451979-r04ms",
+      "data": {
+        "createdAt": "2026-07-18T11:50:51.979Z",
+        "assignedBy": "Rukn",
+        "assignedDate": "2026-07-18",
+        "assignmentNumber": "ASN-000023",
+        "remarks": "KC-003: superseded duplicate Active (kept ASN-000030)",
+        "ruknId": "R019",
+        "karkunId": "kr-017",
+        "updatedAt": "2026-07-18T22:51:35.051Z",
+        "replacementReason": "Other",
+        "endedDate": "2026-07-18",
+        "effectiveFrom": "2026-07-18",
+        "status": "Replaced",
+        "removalReason": "Duplicate",
+        "assignmentId": "asgn-1784375451979-r04ms"
+      }
+    },
+    {
+      "id": "asgn-1784375627480-buct7",
+      "data": {
+        "assignmentId": "asgn-1784375627480-buct7",
+        "assignedDate": "2026-07-18",
+        "assignedBy": "Rukn",
+        "createdAt": "2026-07-18T11:53:47.480Z",
+        "ruknId": "R028",
+        "updatedAt": "2026-07-18T22:21:49.954Z",
+        "karkunId": "kr-488",
+        "assignmentNumber": "ASN-000024",
+        "effectiveFrom": "2026-07-18",
+        "status": "Active"
+      }
+    },
+    {
+      "id": "asgn-1784377806617-fbacs",
+      "data": {
+        "assignmentNumber": "ASN-000025",
+        "karkunId": "kr-366",
+        "updatedAt": "2026-07-18T22:21:49.954Z",
+        "ruknId": "R028",
+        "status": "Active",
+        "effectiveFrom": "2026-07-18",
+        "assignedDate": "2026-07-18",
+        "assignmentId": "asgn-1784377806617-fbacs",
+        "createdAt": "2026-07-18T12:30:06.617Z",
+        "assignedBy": "Rukn"
+      }
+    },
+    {
+      "id": "asgn-1784377835993-lqhcs",
+      "data": {
+        "assignedBy": "Administrator",
+        "createdAt": "2026-07-18T12:30:35.993Z",
+        "assignmentId": "asgn-1784377835993-lqhcs",
+        "assignedDate": "2026-07-18",
+        "status": "Active",
+        "effectiveFrom": "2026-07-18",
+        "karkunId": "kr-013",
+        "assignmentNumber": "ASN-000026",
+        "ruknId": "R046",
+        "updatedAt": "2026-07-18T22:21:49.954Z"
+      }
+    },
+    {
+      "id": "asgn-1784377904757-h33nx",
+      "data": {
+        "assignedDate": "2026-07-18",
+        "assignmentId": "asgn-1784377904757-h33nx",
+        "createdAt": "2026-07-18T12:31:44.757Z",
+        "assignedBy": "Administrator",
+        "assignmentNumber": "ASN-000028",
+        "karkunId": "kr-015",
+        "updatedAt": "2026-07-18T22:21:49.954Z",
+        "ruknId": "R046",
+        "status": "Active",
+        "effectiveFrom": "2026-07-18"
+      }
+    },
+    {
+      "id": "asgn-1784377915986-578tm",
+      "data": {
+        "assignedBy": "Administrator",
+        "createdAt": "2026-07-18T12:31:55.986Z",
+        "assignmentId": "asgn-1784377915986-578tm",
+        "assignedDate": "2026-07-18",
+        "effectiveFrom": "2026-07-18",
+        "status": "Active",
+        "ruknId": "R046",
+        "updatedAt": "2026-07-18T22:21:49.954Z",
+        "karkunId": "kr-016",
+        "assignmentNumber": "ASN-000029"
+      }
+    },
+    {
+      "id": "asgn-1784377925669-pwheq",
+      "data": {
+        "effectiveFrom": "2026-07-18",
+        "status": "Active",
+        "updatedAt": "2026-07-18T22:21:49.954Z",
+        "ruknId": "R046",
+        "assignmentNumber": "ASN-000030",
+        "karkunId": "kr-017",
+        "createdAt": "2026-07-18T12:32:05.669Z",
+        "assignedBy": "Administrator",
+        "assignedDate": "2026-07-18",
+        "assignmentId": "asgn-1784377925669-pwheq"
+      }
+    },
+    {
+      "id": "asgn-1784377940126-aanbn",
+      "data": {
+        "updatedAt": "2026-07-18T22:21:49.954Z",
+        "ruknId": "R046",
+        "assignmentNumber": "ASN-000032",
+        "karkunId": "kr-018",
+        "effectiveFrom": "2026-07-18",
+        "status": "Active",
+        "assignedDate": "2026-07-18",
+        "assignmentId": "asgn-1784377940126-aanbn",
+        "createdAt": "2026-07-18T12:32:20.126Z",
+        "assignedBy": "Administrator"
+      }
+    },
+    {
+      "id": "asgn-1784377992423-4egu4",
+      "data": {
+        "assignedDate": "2026-07-18",
+        "assignmentId": "asgn-1784377992423-4egu4",
+        "createdAt": "2026-07-18T12:33:12.423Z",
+        "assignedBy": "Administrator",
+        "assignmentNumber": "ASN-000033",
+        "karkunId": "kr-019",
+        "updatedAt": "2026-07-18T22:21:49.954Z",
+        "ruknId": "R046",
+        "status": "Active",
+        "effectiveFrom": "2026-07-18"
+      }
+    },
+    {
+      "id": "asgn-1784378049205-8p9ab",
+      "data": {
+        "createdAt": "2026-07-18T12:34:09.205Z",
+        "assignedBy": "Administrator",
+        "assignedDate": "2026-07-18",
+        "assignmentId": "asgn-1784378049205-8p9ab",
+        "status": "Active",
+        "effectiveFrom": "2026-07-18",
+        "assignmentNumber": "ASN-000034",
+        "karkunId": "kr-021",
+        "updatedAt": "2026-07-18T22:21:49.954Z",
+        "ruknId": "R046"
+      }
+    },
+    {
+      "id": "asgn-1784378068403-uvxzm",
+      "data": {
+        "assignedDate": "2026-07-18",
+        "assignmentId": "asgn-1784378068403-uvxzm",
+        "createdAt": "2026-07-18T12:34:28.403Z",
+        "assignedBy": "Administrator",
+        "updatedAt": "2026-07-18T22:21:49.954Z",
+        "ruknId": "R046",
+        "assignmentNumber": "ASN-000037",
+        "karkunId": "kr-022",
+        "effectiveFrom": "2026-07-18",
+        "status": "Active"
+      }
+    },
+    {
+      "id": "asgn-1784380323269-kh3uy",
+      "data": {
+        "updatedAt": "2026-07-18T22:21:49.954Z",
+        "ruknId": "R020",
+        "assignmentNumber": "ASN-000035",
+        "karkunId": "kr-142",
+        "effectiveFrom": "2026-07-18",
+        "status": "Active",
+        "assignedDate": "2026-07-18",
+        "assignmentId": "asgn-1784380323269-kh3uy",
+        "createdAt": "2026-07-18T13:12:03.269Z",
+        "assignedBy": "Rukn"
+      }
+    },
+    {
+      "id": "asgn-1784384502923-gkfd9",
+      "data": {
+        "createdAt": "2026-07-18T14:21:42.923Z",
+        "assignedBy": "Rukn",
+        "assignedDate": "2026-07-18",
+        "assignmentId": "asgn-1784384502923-gkfd9",
+        "status": "Active",
+        "effectiveFrom": "2026-07-18",
+        "assignmentNumber": "ASN-000038",
+        "karkunId": "kr-012",
+        "updatedAt": "2026-07-18T22:21:49.954Z",
+        "ruknId": "R020"
+      }
+    },
+    {
+      "id": "asgn-1784384562015-d2t8w",
+      "data": {
+        "assignmentId": "asgn-1784384562015-d2t8w",
+        "assignedDate": "2026-07-18",
+        "assignedBy": "Rukn",
+        "createdAt": "2026-07-18T14:22:42.015Z",
+        "ruknId": "R020",
+        "updatedAt": "2026-07-18T22:21:49.954Z",
+        "karkunId": "kr-038",
+        "assignmentNumber": "ASN-000039",
+        "effectiveFrom": "2026-07-18",
+        "status": "Active"
+      }
+    }
+  ]
+}

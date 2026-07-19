@@ -1,0 +1,6218 @@
+{
+  "label": "KC-0050",
+  "dryRun": false,
+  "generatedAt": "2026-07-19T09:18:10.102Z",
+  "projectHint": "karkun-connect-75c68",
+  "baseline": {
+    "karkuns": 685,
+    "connections": 40,
+    "activeConnections": 36,
+    "followUps": 1,
+    "activityLogs": 77,
+    "executions": 5,
+    "compliance": 1
+  },
+  "plan": {
+    "beforeCount": 685,
+    "afterCount": 493,
+    "duplicateGroups": 192,
+    "deleteCount": 192,
+    "skippedGroups": 0,
+    "migrationsRequired": 0,
+    "nextKarkunNum": 494,
+    "activeConnectedDistinctKarkuns": 36,
+    "expectedDuplicateMobilesAfter": 0
+  },
+  "skipped": [],
+  "groups": [
+    {
+      "mobileKey": "8861182842",
+      "keepId": "kr-001",
+      "deleteIds": [
+        "kr-494"
+      ],
+      "reason": "active-connection-preferred",
+      "keepReferenced": true,
+      "keepActiveConnected": true,
+      "loserReferenceCounts": {
+        "kr-494": 0
+      },
+      "members": [
+        {
+          "id": "kr-001",
+          "mobile": "8861182842",
+          "createdAt": "2026-07-18T09:25:03.242Z",
+          "name": "Faruq Ali",
+          "refCount": 4,
+          "activeConnected": true
+        },
+        {
+          "id": "kr-494",
+          "mobile": "8861182842",
+          "createdAt": "2026-07-18T23:50:39.747Z",
+          "name": "Faruq Ali",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9341088971",
+      "keepId": "kr-002",
+      "deleteIds": [
+        "kr-495"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-495": 0
+      },
+      "members": [
+        {
+          "id": "kr-002",
+          "mobile": "9341088971",
+          "createdAt": "2026-07-18T09:25:03.243Z",
+          "name": "USMAN ALI",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-495",
+          "mobile": "9341088971",
+          "createdAt": "2026-07-19T00:15:52.445Z",
+          "name": "USMAN ALI",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "7829690870",
+      "keepId": "kr-003",
+      "deleteIds": [
+        "kr-496"
+      ],
+      "reason": "active-connection-preferred",
+      "keepReferenced": true,
+      "keepActiveConnected": true,
+      "loserReferenceCounts": {
+        "kr-496": 0
+      },
+      "members": [
+        {
+          "id": "kr-003",
+          "mobile": "7829690870",
+          "createdAt": "2026-07-18T09:25:03.244Z",
+          "name": "MOHAMMAD MUZAMMIL KHAN",
+          "refCount": 4,
+          "activeConnected": true
+        },
+        {
+          "id": "kr-496",
+          "mobile": "7829690870",
+          "createdAt": "2026-07-19T00:15:52.453Z",
+          "name": "MOHAMMAD MUZAMMIL KHAN",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "7795627994",
+      "keepId": "kr-004",
+      "deleteIds": [
+        "kr-497"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-497": 0
+      },
+      "members": [
+        {
+          "id": "kr-004",
+          "mobile": "7795627994",
+          "createdAt": "2026-07-18T09:25:03.245Z",
+          "name": "Md Asif Ali",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-497",
+          "mobile": "7795627994",
+          "createdAt": "2026-07-19T00:15:52.458Z",
+          "name": "Md Asif Ali",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "7019950945",
+      "keepId": "kr-005",
+      "deleteIds": [
+        "kr-498"
+      ],
+      "reason": "active-connection-preferred",
+      "keepReferenced": true,
+      "keepActiveConnected": true,
+      "loserReferenceCounts": {
+        "kr-498": 0
+      },
+      "members": [
+        {
+          "id": "kr-005",
+          "mobile": "7019950945",
+          "createdAt": "2026-07-18T09:25:03.246Z",
+          "name": "MOHD NAWAZODDIN",
+          "refCount": 5,
+          "activeConnected": true
+        },
+        {
+          "id": "kr-498",
+          "mobile": "7019950945",
+          "createdAt": "2026-07-19T00:15:52.464Z",
+          "name": "MOHD NAWAZODDIN",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "8495800601",
+      "keepId": "kr-006",
+      "deleteIds": [
+        "kr-499"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-499": 0
+      },
+      "members": [
+        {
+          "id": "kr-006",
+          "mobile": "8495800601",
+          "createdAt": "2026-07-18T09:25:03.247Z",
+          "name": "DR ZABIULLAH KHAN WASI",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-499",
+          "mobile": "8495800601",
+          "createdAt": "2026-07-19T00:15:52.470Z",
+          "name": "DR ZABIULLAH KHAN WASI",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "8147200223",
+      "keepId": "kr-007",
+      "deleteIds": [
+        "kr-500"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-500": 0
+      },
+      "members": [
+        {
+          "id": "kr-007",
+          "mobile": "8147200223",
+          "createdAt": "2026-07-18T09:25:03.247Z",
+          "name": "KHIZAR MAHEMOOD",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-500",
+          "mobile": "8147200223",
+          "createdAt": "2026-07-19T00:15:52.474Z",
+          "name": "KHIZAR MAHEMOOD",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "7676767798",
+      "keepId": "kr-008",
+      "deleteIds": [
+        "kr-501"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-501": 0
+      },
+      "members": [
+        {
+          "id": "kr-008",
+          "mobile": "7676767798",
+          "createdAt": "2026-07-18T09:25:03.248Z",
+          "name": "RAUF ALI",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-501",
+          "mobile": "7676767798",
+          "createdAt": "2026-07-19T00:15:52.478Z",
+          "name": "RAUF ALI",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "7676161623",
+      "keepId": "kr-009",
+      "deleteIds": [
+        "kr-502"
+      ],
+      "reason": "active-connection-preferred",
+      "keepReferenced": true,
+      "keepActiveConnected": true,
+      "loserReferenceCounts": {
+        "kr-502": 0
+      },
+      "members": [
+        {
+          "id": "kr-009",
+          "mobile": "7676161623",
+          "createdAt": "2026-07-18T09:25:03.249Z",
+          "name": "MD ISMAIL@BILAL",
+          "refCount": 5,
+          "activeConnected": true
+        },
+        {
+          "id": "kr-502",
+          "mobile": "7676161623",
+          "createdAt": "2026-07-19T00:15:52.484Z",
+          "name": "MD ISMAIL@BILAL",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9480757653",
+      "keepId": "kr-010",
+      "deleteIds": [
+        "kr-503"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-503": 0
+      },
+      "members": [
+        {
+          "id": "kr-010",
+          "mobile": "9480757653",
+          "createdAt": "2026-07-18T09:25:03.249Z",
+          "name": "Dawood miyan",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-503",
+          "mobile": "9480757653",
+          "createdAt": "2026-07-19T00:15:52.489Z",
+          "name": "Dawood miyan",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9886590704",
+      "keepId": "kr-011",
+      "deleteIds": [
+        "kr-504"
+      ],
+      "reason": "active-connection-preferred",
+      "keepReferenced": true,
+      "keepActiveConnected": true,
+      "loserReferenceCounts": {
+        "kr-504": 0
+      },
+      "members": [
+        {
+          "id": "kr-011",
+          "mobile": "9886590704",
+          "createdAt": "2026-07-18T09:25:03.250Z",
+          "name": "SYED SALAUDDIN",
+          "refCount": 4,
+          "activeConnected": true
+        },
+        {
+          "id": "kr-504",
+          "mobile": "9886590704",
+          "createdAt": "2026-07-19T00:15:52.496Z",
+          "name": "SYED SALAUDDIN",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "8867680246",
+      "keepId": "kr-012",
+      "deleteIds": [
+        "kr-505"
+      ],
+      "reason": "active-connection-preferred",
+      "keepReferenced": true,
+      "keepActiveConnected": true,
+      "loserReferenceCounts": {
+        "kr-505": 0
+      },
+      "members": [
+        {
+          "id": "kr-012",
+          "mobile": "8867680246",
+          "createdAt": "2026-07-18T09:25:03.251Z",
+          "name": "MD AASIM AKHTAR",
+          "refCount": 7,
+          "activeConnected": true
+        },
+        {
+          "id": "kr-505",
+          "mobile": "8867680246",
+          "createdAt": "2026-07-19T00:15:52.506Z",
+          "name": "MD AASIM AKHTAR",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "7760534642",
+      "keepId": "kr-013",
+      "deleteIds": [
+        "kr-506"
+      ],
+      "reason": "active-connection-preferred",
+      "keepReferenced": true,
+      "keepActiveConnected": true,
+      "loserReferenceCounts": {
+        "kr-506": 0
+      },
+      "members": [
+        {
+          "id": "kr-013",
+          "mobile": "7760534642",
+          "createdAt": "2026-07-18T09:25:03.251Z",
+          "name": "MOHAMMED ABDULLA",
+          "refCount": 6,
+          "activeConnected": true
+        },
+        {
+          "id": "kr-506",
+          "mobile": "7760534642",
+          "createdAt": "2026-07-19T00:15:52.511Z",
+          "name": "MOHAMMED ABDULLA",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "8951415059",
+      "keepId": "kr-014",
+      "deleteIds": [
+        "kr-507"
+      ],
+      "reason": "active-connection-preferred",
+      "keepReferenced": true,
+      "keepActiveConnected": true,
+      "loserReferenceCounts": {
+        "kr-507": 0
+      },
+      "members": [
+        {
+          "id": "kr-014",
+          "mobile": "8951415059",
+          "createdAt": "2026-07-18T09:25:03.252Z",
+          "name": "Khaleel ahmed",
+          "refCount": 6,
+          "activeConnected": true
+        },
+        {
+          "id": "kr-507",
+          "mobile": "8951415059",
+          "createdAt": "2026-07-19T00:15:52.516Z",
+          "name": "Khaleel ahmed",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "8555802819",
+      "keepId": "kr-015",
+      "deleteIds": [
+        "kr-508"
+      ],
+      "reason": "active-connection-preferred",
+      "keepReferenced": true,
+      "keepActiveConnected": true,
+      "loserReferenceCounts": {
+        "kr-508": 0
+      },
+      "members": [
+        {
+          "id": "kr-015",
+          "mobile": "8555802819",
+          "createdAt": "2026-07-18T09:25:03.253Z",
+          "name": "AKBAR OMAR",
+          "refCount": 8,
+          "activeConnected": true
+        },
+        {
+          "id": "kr-508",
+          "mobile": "8555802819",
+          "createdAt": "2026-07-19T00:15:52.521Z",
+          "name": "AKBAR OMAR",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9342766255",
+      "keepId": "kr-016",
+      "deleteIds": [
+        "kr-509"
+      ],
+      "reason": "active-connection-preferred",
+      "keepReferenced": true,
+      "keepActiveConnected": true,
+      "loserReferenceCounts": {
+        "kr-509": 0
+      },
+      "members": [
+        {
+          "id": "kr-016",
+          "mobile": "9342766255",
+          "createdAt": "2026-07-18T09:25:03.253Z",
+          "name": "HUZUR PASHA HAJI",
+          "refCount": 8,
+          "activeConnected": true
+        },
+        {
+          "id": "kr-509",
+          "mobile": "9342766255",
+          "createdAt": "2026-07-19T00:15:52.526Z",
+          "name": "HUZUR PASHA HAJI",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9743281419",
+      "keepId": "kr-017",
+      "deleteIds": [
+        "kr-510"
+      ],
+      "reason": "active-connection-preferred",
+      "keepReferenced": true,
+      "keepActiveConnected": true,
+      "loserReferenceCounts": {
+        "kr-510": 0
+      },
+      "members": [
+        {
+          "id": "kr-017",
+          "mobile": "9743281419",
+          "createdAt": "2026-07-18T09:25:03.254Z",
+          "name": "Syed Awlia Pasha",
+          "refCount": 9,
+          "activeConnected": true
+        },
+        {
+          "id": "kr-510",
+          "mobile": "9743281419",
+          "createdAt": "2026-07-19T00:15:52.531Z",
+          "name": "Syed Awlia Pasha",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "8123532385",
+      "keepId": "kr-018",
+      "deleteIds": [
+        "kr-511"
+      ],
+      "reason": "active-connection-preferred",
+      "keepReferenced": true,
+      "keepActiveConnected": true,
+      "loserReferenceCounts": {
+        "kr-511": 0
+      },
+      "members": [
+        {
+          "id": "kr-018",
+          "mobile": "8123532385",
+          "createdAt": "2026-07-18T09:25:03.255Z",
+          "name": "MD RAFEEQ",
+          "refCount": 6,
+          "activeConnected": true
+        },
+        {
+          "id": "kr-511",
+          "mobile": "8123532385",
+          "createdAt": "2026-07-19T00:15:52.537Z",
+          "name": "MD RAFEEQ",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9902219328",
+      "keepId": "kr-019",
+      "deleteIds": [
+        "kr-512"
+      ],
+      "reason": "active-connection-preferred",
+      "keepReferenced": true,
+      "keepActiveConnected": true,
+      "loserReferenceCounts": {
+        "kr-512": 0
+      },
+      "members": [
+        {
+          "id": "kr-019",
+          "mobile": "9902219328",
+          "createdAt": "2026-07-18T09:25:03.256Z",
+          "name": "SHAIKH SHOEB",
+          "refCount": 6,
+          "activeConnected": true
+        },
+        {
+          "id": "kr-512",
+          "mobile": "9902219328",
+          "createdAt": "2026-07-19T00:15:52.542Z",
+          "name": "SHAIKH SHOEB",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9986427483",
+      "keepId": "kr-020",
+      "deleteIds": [
+        "kr-513"
+      ],
+      "reason": "active-connection-preferred",
+      "keepReferenced": true,
+      "keepActiveConnected": true,
+      "loserReferenceCounts": {
+        "kr-513": 0
+      },
+      "members": [
+        {
+          "id": "kr-020",
+          "mobile": "9986427483",
+          "createdAt": "2026-07-18T09:25:03.257Z",
+          "name": "SHAIK SHOAIB ARAB",
+          "refCount": 4,
+          "activeConnected": true
+        },
+        {
+          "id": "kr-513",
+          "mobile": "9986427483",
+          "createdAt": "2026-07-19T00:15:52.546Z",
+          "name": "SHAIK SHOAIB ARAB",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9019628755",
+      "keepId": "kr-021",
+      "deleteIds": [
+        "kr-514"
+      ],
+      "reason": "active-connection-preferred",
+      "keepReferenced": true,
+      "keepActiveConnected": true,
+      "loserReferenceCounts": {
+        "kr-514": 0
+      },
+      "members": [
+        {
+          "id": "kr-021",
+          "mobile": "9019628755",
+          "createdAt": "2026-07-18T09:25:03.258Z",
+          "name": "MOHAMMED KAIF",
+          "refCount": 5,
+          "activeConnected": true
+        },
+        {
+          "id": "kr-514",
+          "mobile": "9019628755",
+          "createdAt": "2026-07-19T00:15:52.551Z",
+          "name": "MOHAMMED KAIF",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9035811171",
+      "keepId": "kr-022",
+      "deleteIds": [
+        "kr-515"
+      ],
+      "reason": "active-connection-preferred",
+      "keepReferenced": true,
+      "keepActiveConnected": true,
+      "loserReferenceCounts": {
+        "kr-515": 0
+      },
+      "members": [
+        {
+          "id": "kr-022",
+          "mobile": "9035811171",
+          "createdAt": "2026-07-18T09:25:03.259Z",
+          "name": "MUBEEN PASHA",
+          "refCount": 6,
+          "activeConnected": true
+        },
+        {
+          "id": "kr-515",
+          "mobile": "9035811171",
+          "createdAt": "2026-07-19T00:15:52.558Z",
+          "name": "MUBEEN PASHA",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9945941107",
+      "keepId": "kr-023",
+      "deleteIds": [
+        "kr-516"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-516": 0
+      },
+      "members": [
+        {
+          "id": "kr-023",
+          "mobile": "9945941107",
+          "createdAt": "2026-07-18T09:25:03.260Z",
+          "name": "UMAR FAROOQ",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-516",
+          "mobile": "9945941107",
+          "createdAt": "2026-07-19T00:15:52.563Z",
+          "name": "UMAR FAROOQ",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "8867248780",
+      "keepId": "kr-024",
+      "deleteIds": [
+        "kr-517"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-517": 0
+      },
+      "members": [
+        {
+          "id": "kr-024",
+          "mobile": "8867248780",
+          "createdAt": "2026-07-18T09:25:03.261Z",
+          "name": "HAFIZ AHMED BHOLE",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-517",
+          "mobile": "8867248780",
+          "createdAt": "2026-07-19T00:15:52.568Z",
+          "name": "HAFIZ AHMED BHOLE",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "8147456646",
+      "keepId": "kr-025",
+      "deleteIds": [
+        "kr-518"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-518": 0
+      },
+      "members": [
+        {
+          "id": "kr-025",
+          "mobile": "8147456646",
+          "createdAt": "2026-07-18T09:25:03.261Z",
+          "name": "Zubair khan",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-518",
+          "mobile": "8147456646",
+          "createdAt": "2026-07-19T00:15:52.572Z",
+          "name": "Zubair khan",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "7353181112",
+      "keepId": "kr-026",
+      "deleteIds": [
+        "kr-519"
+      ],
+      "reason": "active-connection-preferred",
+      "keepReferenced": true,
+      "keepActiveConnected": true,
+      "loserReferenceCounts": {
+        "kr-519": 0
+      },
+      "members": [
+        {
+          "id": "kr-026",
+          "mobile": "7353181112",
+          "createdAt": "2026-07-18T09:25:03.262Z",
+          "name": "MOHAMMAD LAYAQ ALI",
+          "refCount": 4,
+          "activeConnected": true
+        },
+        {
+          "id": "kr-519",
+          "mobile": "7353181112",
+          "createdAt": "2026-07-19T00:15:52.577Z",
+          "name": "MOHAMMAD LAYAQ ALI",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "8123114166",
+      "keepId": "kr-027",
+      "deleteIds": [
+        "kr-520"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-520": 0
+      },
+      "members": [
+        {
+          "id": "kr-027",
+          "mobile": "8123114166",
+          "createdAt": "2026-07-18T09:25:03.263Z",
+          "name": "MD IRFAN",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-520",
+          "mobile": "8123114166",
+          "createdAt": "2026-07-19T00:15:52.583Z",
+          "name": "MD IRFAN",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9844736414",
+      "keepId": "kr-028",
+      "deleteIds": [
+        "kr-521"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-521": 0
+      },
+      "members": [
+        {
+          "id": "kr-028",
+          "mobile": "9844736414",
+          "createdAt": "2026-07-18T09:25:03.265Z",
+          "name": "Syed Tufail Mohammed",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-521",
+          "mobile": "9844736414",
+          "createdAt": "2026-07-19T00:15:52.587Z",
+          "name": "Syed Tufail Mohammed",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9738888218",
+      "keepId": "kr-029",
+      "deleteIds": [
+        "kr-522"
+      ],
+      "reason": "active-connection-preferred",
+      "keepReferenced": true,
+      "keepActiveConnected": true,
+      "loserReferenceCounts": {
+        "kr-522": 0
+      },
+      "members": [
+        {
+          "id": "kr-029",
+          "mobile": "9738888218",
+          "createdAt": "2026-07-18T09:25:03.266Z",
+          "name": "Mohammed Khaled Shakeeb",
+          "refCount": 12,
+          "activeConnected": true
+        },
+        {
+          "id": "kr-522",
+          "mobile": "9738888218",
+          "createdAt": "2026-07-19T00:15:52.592Z",
+          "name": "Mohammed Khaled Shakeeb",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "8197256944",
+      "keepId": "kr-030",
+      "deleteIds": [
+        "kr-523"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-523": 0
+      },
+      "members": [
+        {
+          "id": "kr-030",
+          "mobile": "8197256944",
+          "createdAt": "2026-07-18T09:25:03.266Z",
+          "name": "Shaik Aazem",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-523",
+          "mobile": "8197256944",
+          "createdAt": "2026-07-19T00:15:52.599Z",
+          "name": "Shaik Aazem",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "8431283636",
+      "keepId": "kr-031",
+      "deleteIds": [
+        "kr-524"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-524": 0
+      },
+      "members": [
+        {
+          "id": "kr-031",
+          "mobile": "8431283636",
+          "createdAt": "2026-07-18T09:25:03.267Z",
+          "name": "Samad pasha",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-524",
+          "mobile": "8431283636",
+          "createdAt": "2026-07-19T00:15:52.607Z",
+          "name": "Samad pasha",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "8904966534",
+      "keepId": "kr-032",
+      "deleteIds": [
+        "kr-525"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-525": 0
+      },
+      "members": [
+        {
+          "id": "kr-032",
+          "mobile": "8904966534",
+          "createdAt": "2026-07-18T09:25:03.268Z",
+          "name": "UMARFARUQ",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-525",
+          "mobile": "8904966534",
+          "createdAt": "2026-07-19T00:15:52.616Z",
+          "name": "UMARFARUQ",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9035988632",
+      "keepId": "kr-033",
+      "deleteIds": [
+        "kr-526"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-526": 0
+      },
+      "members": [
+        {
+          "id": "kr-033",
+          "mobile": "9035988632",
+          "createdAt": "2026-07-18T09:25:03.272Z",
+          "name": "SYED ZAKIUDDIN",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-526",
+          "mobile": "9035988632",
+          "createdAt": "2026-07-19T00:15:52.625Z",
+          "name": "SYED ZAKIUDDIN",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "7411753720",
+      "keepId": "kr-034",
+      "deleteIds": [
+        "kr-527"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-527": 0
+      },
+      "members": [
+        {
+          "id": "kr-034",
+          "mobile": "7411753720",
+          "createdAt": "2026-07-18T09:25:03.272Z",
+          "name": "MD PARVEZ",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-527",
+          "mobile": "7411753720",
+          "createdAt": "2026-07-19T00:15:52.630Z",
+          "name": "MD PARVEZ",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "7411109474",
+      "keepId": "kr-035",
+      "deleteIds": [
+        "kr-528"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-528": 0
+      },
+      "members": [
+        {
+          "id": "kr-035",
+          "mobile": "7411109474",
+          "createdAt": "2026-07-18T09:25:03.273Z",
+          "name": "Nawaz Ahmed",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-528",
+          "mobile": "7411109474",
+          "createdAt": "2026-07-19T00:15:52.634Z",
+          "name": "Nawaz Ahmed",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9341937984",
+      "keepId": "kr-036",
+      "deleteIds": [
+        "kr-529"
+      ],
+      "reason": "active-connection-preferred",
+      "keepReferenced": true,
+      "keepActiveConnected": true,
+      "loserReferenceCounts": {
+        "kr-529": 0
+      },
+      "members": [
+        {
+          "id": "kr-036",
+          "mobile": "9341937984",
+          "createdAt": "2026-07-18T09:25:03.273Z",
+          "name": "HAFIZ MIR FARQUNDA ALI",
+          "refCount": 5,
+          "activeConnected": true
+        },
+        {
+          "id": "kr-529",
+          "mobile": "9341937984",
+          "createdAt": "2026-07-19T00:15:52.642Z",
+          "name": "HAFIZ MIR FARQUNDA ALI",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9620119347",
+      "keepId": "kr-037",
+      "deleteIds": [
+        "kr-530"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-530": 0
+      },
+      "members": [
+        {
+          "id": "kr-037",
+          "mobile": "9620119347",
+          "createdAt": "2026-07-18T09:25:03.274Z",
+          "name": "Md Ahmed",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-530",
+          "mobile": "9620119347",
+          "createdAt": "2026-07-19T00:15:52.648Z",
+          "name": "Md Ahmed",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "7411061771",
+      "keepId": "kr-038",
+      "deleteIds": [
+        "kr-531"
+      ],
+      "reason": "active-connection-preferred",
+      "keepReferenced": true,
+      "keepActiveConnected": true,
+      "loserReferenceCounts": {
+        "kr-531": 0
+      },
+      "members": [
+        {
+          "id": "kr-038",
+          "mobile": "7411061771",
+          "createdAt": "2026-07-18T09:25:03.274Z",
+          "name": "MD BILAL AHMED",
+          "refCount": 6,
+          "activeConnected": true
+        },
+        {
+          "id": "kr-531",
+          "mobile": "7411061771",
+          "createdAt": "2026-07-19T00:15:52.656Z",
+          "name": "MD BILAL AHMED",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "8861860337",
+      "keepId": "kr-039",
+      "deleteIds": [
+        "kr-532"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-532": 0
+      },
+      "members": [
+        {
+          "id": "kr-039",
+          "mobile": "8861860337",
+          "createdAt": "2026-07-18T09:25:03.275Z",
+          "name": "MD IBRAHIM QURESHI",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-532",
+          "mobile": "8861860337",
+          "createdAt": "2026-07-19T00:15:52.661Z",
+          "name": "MD IBRAHIM QURESHI",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "8880803441",
+      "keepId": "kr-040",
+      "deleteIds": [
+        "kr-533"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-533": 0
+      },
+      "members": [
+        {
+          "id": "kr-040",
+          "mobile": "8880803441",
+          "createdAt": "2026-07-18T09:25:03.275Z",
+          "name": "MD RAHMAT KHAN",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-533",
+          "mobile": "8880803441",
+          "createdAt": "2026-07-19T00:15:52.666Z",
+          "name": "MD RAHMAT KHAN",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "8762876203",
+      "keepId": "kr-041",
+      "deleteIds": [
+        "kr-534"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-534": 0
+      },
+      "members": [
+        {
+          "id": "kr-041",
+          "mobile": "8762876203",
+          "createdAt": "2026-07-18T09:25:03.276Z",
+          "name": "MD MAHABOOB",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-534",
+          "mobile": "8762876203",
+          "createdAt": "2026-07-19T00:15:52.675Z",
+          "name": "MD MAHABOOB",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9379683433",
+      "keepId": "kr-042",
+      "deleteIds": [
+        "kr-535"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-535": 0
+      },
+      "members": [
+        {
+          "id": "kr-042",
+          "mobile": "9379683433",
+          "createdAt": "2026-07-18T09:25:03.277Z",
+          "name": "MINHAJ BAAG",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-535",
+          "mobile": "9379683433",
+          "createdAt": "2026-07-19T00:15:52.682Z",
+          "name": "MINHAJ BAAG",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9972533376",
+      "keepId": "kr-043",
+      "deleteIds": [
+        "kr-536"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-536": 0
+      },
+      "members": [
+        {
+          "id": "kr-043",
+          "mobile": "9972533376",
+          "createdAt": "2026-07-18T09:25:03.277Z",
+          "name": "MD NASEERUDDIN",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-536",
+          "mobile": "9972533376",
+          "createdAt": "2026-07-19T00:15:52.689Z",
+          "name": "MD NASEERUDDIN",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9620117782",
+      "keepId": "kr-044",
+      "deleteIds": [
+        "kr-537"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-537": 0
+      },
+      "members": [
+        {
+          "id": "kr-044",
+          "mobile": "9620117782",
+          "createdAt": "2026-07-18T09:25:03.278Z",
+          "name": "Shaikh Zabiulla",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-537",
+          "mobile": "9620117782",
+          "createdAt": "2026-07-19T00:15:52.694Z",
+          "name": "Shaikh Zabiulla",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9036289697",
+      "keepId": "kr-045",
+      "deleteIds": [
+        "kr-538"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-538": 0
+      },
+      "members": [
+        {
+          "id": "kr-045",
+          "mobile": "9036289697",
+          "createdAt": "2026-07-18T09:25:03.278Z",
+          "name": "Javid Khan",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-538",
+          "mobile": "9036289697",
+          "createdAt": "2026-07-19T00:15:52.699Z",
+          "name": "Javid Khan",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9743278766",
+      "keepId": "kr-046",
+      "deleteIds": [
+        "kr-539"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-539": 0
+      },
+      "members": [
+        {
+          "id": "kr-046",
+          "mobile": "9743278766",
+          "createdAt": "2026-07-18T09:25:03.279Z",
+          "name": "Md Ibrahim",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-539",
+          "mobile": "9743278766",
+          "createdAt": "2026-07-19T00:15:52.704Z",
+          "name": "Md Ibrahim",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9448410876",
+      "keepId": "kr-047",
+      "deleteIds": [
+        "kr-540"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-540": 0
+      },
+      "members": [
+        {
+          "id": "kr-047",
+          "mobile": "9448410876",
+          "createdAt": "2026-07-18T09:25:03.280Z",
+          "name": "Shaik karrar ahmed",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-540",
+          "mobile": "9448410876",
+          "createdAt": "2026-07-19T00:15:52.715Z",
+          "name": "Shaik karrar ahmed",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9448604153",
+      "keepId": "kr-048",
+      "deleteIds": [
+        "kr-541"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-541": 0
+      },
+      "members": [
+        {
+          "id": "kr-048",
+          "mobile": "9448604153",
+          "createdAt": "2026-07-18T09:25:03.281Z",
+          "name": "SYED MANSOOR ALI",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-541",
+          "mobile": "9448604153",
+          "createdAt": "2026-07-19T00:15:52.723Z",
+          "name": "SYED MANSOOR ALI",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "7411875507",
+      "keepId": "kr-049",
+      "deleteIds": [
+        "kr-542"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-542": 0
+      },
+      "members": [
+        {
+          "id": "kr-049",
+          "mobile": "7411875507",
+          "createdAt": "2026-07-18T09:25:03.282Z",
+          "name": "MD VASEEMUDDIN",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-542",
+          "mobile": "7411875507",
+          "createdAt": "2026-07-19T00:15:52.728Z",
+          "name": "MD VASEEMUDDIN",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9972596962",
+      "keepId": "kr-050",
+      "deleteIds": [
+        "kr-543"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-543": 0
+      },
+      "members": [
+        {
+          "id": "kr-050",
+          "mobile": "9972596962",
+          "createdAt": "2026-07-18T09:25:03.284Z",
+          "name": "Md Abdul khadar (Azhar)",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-543",
+          "mobile": "9972596962",
+          "createdAt": "2026-07-19T00:15:52.736Z",
+          "name": "Md Abdul khadar (Azhar)",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "7619180799",
+      "keepId": "kr-051",
+      "deleteIds": [
+        "kr-544"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-544": 0
+      },
+      "members": [
+        {
+          "id": "kr-051",
+          "mobile": "7619180799",
+          "createdAt": "2026-07-18T09:25:03.285Z",
+          "name": "MD ALEEMUDDIN BAAG",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-544",
+          "mobile": "7619180799",
+          "createdAt": "2026-07-19T00:15:52.742Z",
+          "name": "MD ALEEMUDDIN BAAG",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "8970590418",
+      "keepId": "kr-052",
+      "deleteIds": [
+        "kr-545"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-545": 0
+      },
+      "members": [
+        {
+          "id": "kr-052",
+          "mobile": "8970590418",
+          "createdAt": "2026-07-18T09:25:03.286Z",
+          "name": "ABDUSALAM BAAG",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-545",
+          "mobile": "8970590418",
+          "createdAt": "2026-07-19T00:15:52.749Z",
+          "name": "ABDUSALAM BAAG",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "7276422125",
+      "keepId": "kr-053",
+      "deleteIds": [
+        "kr-546"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-546": 0
+      },
+      "members": [
+        {
+          "id": "kr-053",
+          "mobile": "7276422125",
+          "createdAt": "2026-07-18T09:25:03.290Z",
+          "name": "ZABIYUDIN",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-546",
+          "mobile": "7276422125",
+          "createdAt": "2026-07-19T00:15:52.756Z",
+          "name": "ZABIYUDIN",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "8217621153",
+      "keepId": "kr-054",
+      "deleteIds": [
+        "kr-547"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-547": 0
+      },
+      "members": [
+        {
+          "id": "kr-054",
+          "mobile": "8217621153",
+          "createdAt": "2026-07-18T09:25:03.291Z",
+          "name": "IKRAMUDDIN BBAG",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-547",
+          "mobile": "8217621153",
+          "createdAt": "2026-07-19T00:15:52.763Z",
+          "name": "IKRAMUDDIN BBAG",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9035669987",
+      "keepId": "kr-055",
+      "deleteIds": [
+        "kr-548"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-548": 0
+      },
+      "members": [
+        {
+          "id": "kr-055",
+          "mobile": "9035669987",
+          "createdAt": "2026-07-18T09:25:03.292Z",
+          "name": "Mohummad sab",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-548",
+          "mobile": "9035669987",
+          "createdAt": "2026-07-19T00:15:52.770Z",
+          "name": "Mohummad sab",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "8123310584",
+      "keepId": "kr-056",
+      "deleteIds": [
+        "kr-549"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-549": 0
+      },
+      "members": [
+        {
+          "id": "kr-056",
+          "mobile": "8123310584",
+          "createdAt": "2026-07-18T09:25:03.293Z",
+          "name": "Shaik Abdul Mohsin",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-549",
+          "mobile": "8123310584",
+          "createdAt": "2026-07-19T00:15:52.777Z",
+          "name": "Shaik Abdul Mohsin",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9242995604",
+      "keepId": "kr-057",
+      "deleteIds": [
+        "kr-550"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-550": 0
+      },
+      "members": [
+        {
+          "id": "kr-057",
+          "mobile": "9242995604",
+          "createdAt": "2026-07-18T09:25:03.294Z",
+          "name": "ABDUL WAHEED",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-550",
+          "mobile": "9242995604",
+          "createdAt": "2026-07-19T00:15:52.787Z",
+          "name": "ABDUL WAHEED",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9741396970",
+      "keepId": "kr-058",
+      "deleteIds": [
+        "kr-551"
+      ],
+      "reason": "active-connection-preferred",
+      "keepReferenced": true,
+      "keepActiveConnected": true,
+      "loserReferenceCounts": {
+        "kr-551": 0
+      },
+      "members": [
+        {
+          "id": "kr-058",
+          "mobile": "9741396970",
+          "createdAt": "2026-07-18T09:25:03.295Z",
+          "name": "MD IMAMUDDIN",
+          "refCount": 5,
+          "activeConnected": true
+        },
+        {
+          "id": "kr-551",
+          "mobile": "9741396970",
+          "createdAt": "2026-07-19T00:15:52.796Z",
+          "name": "MD IMAMUDDIN",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9036726955",
+      "keepId": "kr-059",
+      "deleteIds": [
+        "kr-552"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-552": 0
+      },
+      "members": [
+        {
+          "id": "kr-059",
+          "mobile": "9036726955",
+          "createdAt": "2026-07-18T09:25:03.296Z",
+          "name": "Md noorilla hussain",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-552",
+          "mobile": "9036726955",
+          "createdAt": "2026-07-19T00:15:52.808Z",
+          "name": "Md noorilla hussain",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9845303542",
+      "keepId": "kr-060",
+      "deleteIds": [
+        "kr-553"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-553": 0
+      },
+      "members": [
+        {
+          "id": "kr-060",
+          "mobile": "9845303542",
+          "createdAt": "2026-07-18T09:25:03.297Z",
+          "name": "Shafi Ahmed qureshi",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-553",
+          "mobile": "9845303542",
+          "createdAt": "2026-07-19T00:15:52.813Z",
+          "name": "Shafi Ahmed qureshi",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9448582360",
+      "keepId": "kr-061",
+      "deleteIds": [
+        "kr-554"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-554": 0
+      },
+      "members": [
+        {
+          "id": "kr-061",
+          "mobile": "9448582360",
+          "createdAt": "2026-07-18T09:25:03.297Z",
+          "name": "MOHD JABER",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-554",
+          "mobile": "9448582360",
+          "createdAt": "2026-07-19T00:15:52.819Z",
+          "name": "MOHD JABER",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9036393253",
+      "keepId": "kr-062",
+      "deleteIds": [
+        "kr-555"
+      ],
+      "reason": "active-connection-preferred",
+      "keepReferenced": true,
+      "keepActiveConnected": true,
+      "loserReferenceCounts": {
+        "kr-555": 0
+      },
+      "members": [
+        {
+          "id": "kr-062",
+          "mobile": "9036393253",
+          "createdAt": "2026-07-18T09:25:03.298Z",
+          "name": "Shaik MohdTauseef Ahmed",
+          "refCount": 5,
+          "activeConnected": true
+        },
+        {
+          "id": "kr-555",
+          "mobile": "9036393253",
+          "createdAt": "2026-07-19T00:15:52.825Z",
+          "name": "Shaik MohdTauseef Ahmed",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9008893514",
+      "keepId": "kr-063",
+      "deleteIds": [
+        "kr-556"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-556": 0
+      },
+      "members": [
+        {
+          "id": "kr-063",
+          "mobile": "9008893514",
+          "createdAt": "2026-07-18T09:25:03.299Z",
+          "name": "SYED HYDER",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-556",
+          "mobile": "9008893514",
+          "createdAt": "2026-07-19T00:15:52.829Z",
+          "name": "SYED HYDER",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "8050978469",
+      "keepId": "kr-064",
+      "deleteIds": [
+        "kr-557"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-557": 0
+      },
+      "members": [
+        {
+          "id": "kr-064",
+          "mobile": "8050978469",
+          "createdAt": "2026-07-18T09:25:03.299Z",
+          "name": "MOHSEEN AHMED",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-557",
+          "mobile": "8050978469",
+          "createdAt": "2026-07-19T00:15:52.834Z",
+          "name": "MOHSEEN AHMED",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "8123107411",
+      "keepId": "kr-065",
+      "deleteIds": [
+        "kr-558"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-558": 0
+      },
+      "members": [
+        {
+          "id": "kr-065",
+          "mobile": "8123107411",
+          "createdAt": "2026-07-18T09:25:03.300Z",
+          "name": "Abdul qader",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-558",
+          "mobile": "8123107411",
+          "createdAt": "2026-07-19T00:15:52.839Z",
+          "name": "Abdul qader",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "8050191968",
+      "keepId": "kr-066",
+      "deleteIds": [
+        "kr-559"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-559": 0
+      },
+      "members": [
+        {
+          "id": "kr-066",
+          "mobile": "8050191968",
+          "createdAt": "2026-07-18T09:25:03.302Z",
+          "name": "Mohammad  Arif",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-559",
+          "mobile": "8050191968",
+          "createdAt": "2026-07-19T00:15:52.844Z",
+          "name": "Mohammad  Arif",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9341199292",
+      "keepId": "kr-067",
+      "deleteIds": [
+        "kr-560"
+      ],
+      "reason": "active-connection-preferred",
+      "keepReferenced": true,
+      "keepActiveConnected": true,
+      "loserReferenceCounts": {
+        "kr-560": 0
+      },
+      "members": [
+        {
+          "id": "kr-067",
+          "mobile": "9341199292",
+          "createdAt": "2026-07-18T09:25:03.303Z",
+          "name": "YAQOOB AKHTER",
+          "refCount": 5,
+          "activeConnected": true
+        },
+        {
+          "id": "kr-560",
+          "mobile": "9341199292",
+          "createdAt": "2026-07-19T00:15:52.852Z",
+          "name": "YAQOOB AKHTER",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9242801796",
+      "keepId": "kr-068",
+      "deleteIds": [
+        "kr-561"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-561": 0
+      },
+      "members": [
+        {
+          "id": "kr-068",
+          "mobile": "9242801796",
+          "createdAt": "2026-07-18T09:25:03.304Z",
+          "name": "SHAIK IBRAHIM",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-561",
+          "mobile": "9242801796",
+          "createdAt": "2026-07-19T00:15:52.860Z",
+          "name": "SHAIK IBRAHIM",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9880280575",
+      "keepId": "kr-069",
+      "deleteIds": [
+        "kr-562"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-562": 0
+      },
+      "members": [
+        {
+          "id": "kr-069",
+          "mobile": "9880280575",
+          "createdAt": "2026-07-18T09:25:03.306Z",
+          "name": "Abdul Gaffar bhole",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-562",
+          "mobile": "9880280575",
+          "createdAt": "2026-07-19T00:15:52.865Z",
+          "name": "Abdul Gaffar bhole",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9611444615",
+      "keepId": "kr-070",
+      "deleteIds": [
+        "kr-563"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-563": 0
+      },
+      "members": [
+        {
+          "id": "kr-070",
+          "mobile": "9611444615",
+          "createdAt": "2026-07-18T09:25:03.309Z",
+          "name": "MD MALLIKSAB",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-563",
+          "mobile": "9611444615",
+          "createdAt": "2026-07-19T00:15:52.869Z",
+          "name": "MD MALLIKSAB",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9686054871",
+      "keepId": "kr-071",
+      "deleteIds": [
+        "kr-564"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-564": 0
+      },
+      "members": [
+        {
+          "id": "kr-071",
+          "mobile": "9686054871",
+          "createdAt": "2026-07-18T09:25:03.310Z",
+          "name": "AZAM",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-564",
+          "mobile": "9686054871",
+          "createdAt": "2026-07-19T00:15:52.874Z",
+          "name": "AZAM",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9591537288",
+      "keepId": "kr-072",
+      "deleteIds": [
+        "kr-565"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-565": 0
+      },
+      "members": [
+        {
+          "id": "kr-072",
+          "mobile": "9591537288",
+          "createdAt": "2026-07-18T09:25:03.311Z",
+          "name": "SYED SOHAIL",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-565",
+          "mobile": "9591537288",
+          "createdAt": "2026-07-19T00:15:52.879Z",
+          "name": "SYED SOHAIL",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9902693208",
+      "keepId": "kr-073",
+      "deleteIds": [
+        "kr-566"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-566": 0
+      },
+      "members": [
+        {
+          "id": "kr-073",
+          "mobile": "9902693208",
+          "createdAt": "2026-07-18T09:25:03.312Z",
+          "name": "MUJAHID",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-566",
+          "mobile": "9902693208",
+          "createdAt": "2026-07-19T00:15:52.884Z",
+          "name": "MUJAHID",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "8147424743",
+      "keepId": "kr-074",
+      "deleteIds": [
+        "kr-567"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-567": 0
+      },
+      "members": [
+        {
+          "id": "kr-074",
+          "mobile": "8147424743",
+          "createdAt": "2026-07-18T09:25:03.313Z",
+          "name": "MUHAMMAD DASTAGIR QURESHI",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-567",
+          "mobile": "8147424743",
+          "createdAt": "2026-07-19T00:15:52.889Z",
+          "name": "MUHAMMAD DASTAGIR QURESHI",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9019411444",
+      "keepId": "kr-075",
+      "deleteIds": [
+        "kr-568"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-568": 0
+      },
+      "members": [
+        {
+          "id": "kr-075",
+          "mobile": "9019411444",
+          "createdAt": "2026-07-18T09:25:03.314Z",
+          "name": "SHAIK MUNEER",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-568",
+          "mobile": "9019411444",
+          "createdAt": "2026-07-19T00:15:52.895Z",
+          "name": "SHAIK MUNEER",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9110843659",
+      "keepId": "kr-076",
+      "deleteIds": [
+        "kr-569"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-569": 0
+      },
+      "members": [
+        {
+          "id": "kr-076",
+          "mobile": "9110843659",
+          "createdAt": "2026-07-18T09:25:03.315Z",
+          "name": "Tajuddin Abdulla",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-569",
+          "mobile": "9110843659",
+          "createdAt": "2026-07-19T00:15:52.902Z",
+          "name": "Tajuddin Abdulla",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9945452400",
+      "keepId": "kr-077",
+      "deleteIds": [
+        "kr-570"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-570": 0
+      },
+      "members": [
+        {
+          "id": "kr-077",
+          "mobile": "9945452400",
+          "createdAt": "2026-07-18T09:25:03.316Z",
+          "name": "Shah Fahad",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-570",
+          "mobile": "9945452400",
+          "createdAt": "2026-07-19T00:15:52.907Z",
+          "name": "Shah Fahad",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9342208320",
+      "keepId": "kr-078",
+      "deleteIds": [
+        "kr-571"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-571": 0
+      },
+      "members": [
+        {
+          "id": "kr-078",
+          "mobile": "9342208320",
+          "createdAt": "2026-07-18T09:25:03.317Z",
+          "name": "Md Wasihudfin",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-571",
+          "mobile": "9342208320",
+          "createdAt": "2026-07-19T00:15:52.912Z",
+          "name": "Md Wasihudfin",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "7795321874",
+      "keepId": "kr-079",
+      "deleteIds": [
+        "kr-572"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-572": 0
+      },
+      "members": [
+        {
+          "id": "kr-079",
+          "mobile": "7795321874",
+          "createdAt": "2026-07-18T09:25:03.318Z",
+          "name": "mohammed mukhtar ahmed",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-572",
+          "mobile": "7795321874",
+          "createdAt": "2026-07-19T00:15:52.918Z",
+          "name": "mohammed mukhtar ahmed",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "6362669989",
+      "keepId": "kr-080",
+      "deleteIds": [
+        "kr-573"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-573": 0
+      },
+      "members": [
+        {
+          "id": "kr-080",
+          "mobile": "6362669989",
+          "createdAt": "2026-07-18T09:25:03.319Z",
+          "name": "Md Ubaid",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-573",
+          "mobile": "6362669989",
+          "createdAt": "2026-07-19T00:15:52.923Z",
+          "name": "Md Ubaid",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "7892095938",
+      "keepId": "kr-081",
+      "deleteIds": [
+        "kr-574"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-574": 0
+      },
+      "members": [
+        {
+          "id": "kr-081",
+          "mobile": "7892095938",
+          "createdAt": "2026-07-18T09:25:03.321Z",
+          "name": "Mohammed yaqub",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-574",
+          "mobile": "7892095938",
+          "createdAt": "2026-07-19T00:15:52.930Z",
+          "name": "Mohammed yaqub",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "6361880972",
+      "keepId": "kr-082",
+      "deleteIds": [
+        "kr-575"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-575": 0
+      },
+      "members": [
+        {
+          "id": "kr-082",
+          "mobile": "6361880972",
+          "createdAt": "2026-07-18T09:25:03.322Z",
+          "name": "SHARIF",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-575",
+          "mobile": "6361880972",
+          "createdAt": "2026-07-19T00:15:52.934Z",
+          "name": "SHARIF",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "8904176442",
+      "keepId": "kr-083",
+      "deleteIds": [
+        "kr-576"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-576": 0
+      },
+      "members": [
+        {
+          "id": "kr-083",
+          "mobile": "8904176442",
+          "createdAt": "2026-07-18T09:25:03.323Z",
+          "name": "MD DASTAGEER",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-576",
+          "mobile": "8904176442",
+          "createdAt": "2026-07-19T00:15:52.941Z",
+          "name": "MD DASTAGEER",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9740889199",
+      "keepId": "kr-084",
+      "deleteIds": [
+        "kr-577"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-577": 0
+      },
+      "members": [
+        {
+          "id": "kr-084",
+          "mobile": "9740889199",
+          "createdAt": "2026-07-18T09:25:03.327Z",
+          "name": "Abdul basid shaikh",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-577",
+          "mobile": "9740889199",
+          "createdAt": "2026-07-19T00:15:52.950Z",
+          "name": "Abdul basid shaikh",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9448336113",
+      "keepId": "kr-085",
+      "deleteIds": [
+        "kr-578"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-578": 0
+      },
+      "members": [
+        {
+          "id": "kr-085",
+          "mobile": "9448336113",
+          "createdAt": "2026-07-18T09:25:03.328Z",
+          "name": "Mohammed Ibrahim Nilange",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-578",
+          "mobile": "9448336113",
+          "createdAt": "2026-07-19T00:15:52.955Z",
+          "name": "Mohammed Ibrahim Nilange",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9341447750",
+      "keepId": "kr-086",
+      "deleteIds": [
+        "kr-579"
+      ],
+      "reason": "active-connection-preferred",
+      "keepReferenced": true,
+      "keepActiveConnected": true,
+      "loserReferenceCounts": {
+        "kr-579": 0
+      },
+      "members": [
+        {
+          "id": "kr-086",
+          "mobile": "9341447750",
+          "createdAt": "2026-07-18T09:25:03.329Z",
+          "name": "Shaik muzamil Zargar",
+          "refCount": 5,
+          "activeConnected": true
+        },
+        {
+          "id": "kr-579",
+          "mobile": "9341447750",
+          "createdAt": "2026-07-19T00:15:52.961Z",
+          "name": "Shaik muzamil Zargar",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9741092924",
+      "keepId": "kr-087",
+      "deleteIds": [
+        "kr-580"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-580": 0
+      },
+      "members": [
+        {
+          "id": "kr-087",
+          "mobile": "9741092924",
+          "createdAt": "2026-07-18T09:25:03.331Z",
+          "name": "Syed Tajuddin",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-580",
+          "mobile": "9741092924",
+          "createdAt": "2026-07-19T00:15:52.966Z",
+          "name": "Syed Tajuddin",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9036226569",
+      "keepId": "kr-088",
+      "deleteIds": [
+        "kr-581"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-581": 0
+      },
+      "members": [
+        {
+          "id": "kr-088",
+          "mobile": "9036226569",
+          "createdAt": "2026-07-18T09:25:03.332Z",
+          "name": "MOHAMMED MOHSIN KHAN",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-581",
+          "mobile": "9036226569",
+          "createdAt": "2026-07-19T00:15:52.971Z",
+          "name": "MOHAMMED MOHSIN KHAN",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "7411339924",
+      "keepId": "kr-089",
+      "deleteIds": [
+        "kr-582"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-582": 0
+      },
+      "members": [
+        {
+          "id": "kr-089",
+          "mobile": "7411339924",
+          "createdAt": "2026-07-18T09:25:03.333Z",
+          "name": "Kamran shaikh",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-582",
+          "mobile": "7411339924",
+          "createdAt": "2026-07-19T00:15:52.977Z",
+          "name": "Kamran shaikh",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9886171933",
+      "keepId": "kr-090",
+      "deleteIds": [
+        "kr-583"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-583": 0
+      },
+      "members": [
+        {
+          "id": "kr-090",
+          "mobile": "9886171933",
+          "createdAt": "2026-07-18T09:25:03.334Z",
+          "name": "Mirza zubair baig",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-583",
+          "mobile": "9886171933",
+          "createdAt": "2026-07-19T00:15:52.983Z",
+          "name": "Mirza zubair baig",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9341882940",
+      "keepId": "kr-091",
+      "deleteIds": [
+        "kr-584"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-584": 0
+      },
+      "members": [
+        {
+          "id": "kr-091",
+          "mobile": "9341882940",
+          "createdAt": "2026-07-18T09:25:03.334Z",
+          "name": "Mohammed zakir",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-584",
+          "mobile": "9341882940",
+          "createdAt": "2026-07-19T00:15:52.987Z",
+          "name": "Mohammed zakir",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "8123148011",
+      "keepId": "kr-092",
+      "deleteIds": [
+        "kr-585"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-585": 0
+      },
+      "members": [
+        {
+          "id": "kr-092",
+          "mobile": "8123148011",
+          "createdAt": "2026-07-18T09:25:03.335Z",
+          "name": "SYED JAVEED",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-585",
+          "mobile": "8123148011",
+          "createdAt": "2026-07-19T00:15:52.996Z",
+          "name": "SYED JAVEED",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "8310399335",
+      "keepId": "kr-093",
+      "deleteIds": [
+        "kr-586"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-586": 0
+      },
+      "members": [
+        {
+          "id": "kr-093",
+          "mobile": "8310399335",
+          "createdAt": "2026-07-18T09:25:03.337Z",
+          "name": "MD MUZAMMIL RAHIL",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-586",
+          "mobile": "8310399335",
+          "createdAt": "2026-07-19T00:15:53.001Z",
+          "name": "MD MUZAMMIL RAHIL",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9900173748",
+      "keepId": "kr-094",
+      "deleteIds": [
+        "kr-587"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-587": 0
+      },
+      "members": [
+        {
+          "id": "kr-094",
+          "mobile": "9900173748",
+          "createdAt": "2026-07-18T09:25:03.338Z",
+          "name": "MEHER BAQASH",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-587",
+          "mobile": "9900173748",
+          "createdAt": "2026-07-19T00:15:53.006Z",
+          "name": "MEHER BAQASH",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9343884428",
+      "keepId": "kr-095",
+      "deleteIds": [
+        "kr-588"
+      ],
+      "reason": "active-connection-preferred",
+      "keepReferenced": true,
+      "keepActiveConnected": true,
+      "loserReferenceCounts": {
+        "kr-588": 0
+      },
+      "members": [
+        {
+          "id": "kr-095",
+          "mobile": "9343884428",
+          "createdAt": "2026-07-18T09:25:03.339Z",
+          "name": "NASER MIYA QURESHI",
+          "refCount": 5,
+          "activeConnected": true
+        },
+        {
+          "id": "kr-588",
+          "mobile": "9343884428",
+          "createdAt": "2026-07-19T00:15:53.013Z",
+          "name": "NASER MIYA QURESHI",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9342638018",
+      "keepId": "kr-096",
+      "deleteIds": [
+        "kr-589"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-589": 0
+      },
+      "members": [
+        {
+          "id": "kr-096",
+          "mobile": "9342638018",
+          "createdAt": "2026-07-18T09:25:03.342Z",
+          "name": "Md mushtaq",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-589",
+          "mobile": "9342638018",
+          "createdAt": "2026-07-19T00:15:53.018Z",
+          "name": "Md mushtaq",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9341875403",
+      "keepId": "kr-097",
+      "deleteIds": [
+        "kr-590"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-590": 0
+      },
+      "members": [
+        {
+          "id": "kr-097",
+          "mobile": "9341875403",
+          "createdAt": "2026-07-18T09:25:03.343Z",
+          "name": "Eqbaliyan",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-590",
+          "mobile": "9341875403",
+          "createdAt": "2026-07-19T00:15:53.022Z",
+          "name": "Eqbaliyan",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "8088121098",
+      "keepId": "kr-098",
+      "deleteIds": [
+        "kr-591"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-591": 0
+      },
+      "members": [
+        {
+          "id": "kr-098",
+          "mobile": "8088121098",
+          "createdAt": "2026-07-18T09:25:03.345Z",
+          "name": "MUHIB AKBER",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-591",
+          "mobile": "8088121098",
+          "createdAt": "2026-07-19T00:15:53.028Z",
+          "name": "MUHIB AKBER",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "8217835048",
+      "keepId": "kr-099",
+      "deleteIds": [
+        "kr-592"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-592": 0
+      },
+      "members": [
+        {
+          "id": "kr-099",
+          "mobile": "8217835048",
+          "createdAt": "2026-07-18T09:25:03.346Z",
+          "name": "Md azharuddin shams",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-592",
+          "mobile": "8217835048",
+          "createdAt": "2026-07-19T00:15:53.037Z",
+          "name": "Md azharuddin shams",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9035861101",
+      "keepId": "kr-100",
+      "deleteIds": [
+        "kr-593"
+      ],
+      "reason": "active-connection-preferred",
+      "keepReferenced": true,
+      "keepActiveConnected": true,
+      "loserReferenceCounts": {
+        "kr-593": 0
+      },
+      "members": [
+        {
+          "id": "kr-100",
+          "mobile": "9035861101",
+          "createdAt": "2026-07-18T09:25:03.348Z",
+          "name": "Parvez ahmed bhosge",
+          "refCount": 5,
+          "activeConnected": true
+        },
+        {
+          "id": "kr-593",
+          "mobile": "9035861101",
+          "createdAt": "2026-07-19T00:15:53.045Z",
+          "name": "Parvez ahmed bhosge",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9242841295",
+      "keepId": "kr-101",
+      "deleteIds": [
+        "kr-594"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-594": 0
+      },
+      "members": [
+        {
+          "id": "kr-101",
+          "mobile": "9242841295",
+          "createdAt": "2026-07-18T09:25:03.349Z",
+          "name": "M d mohiuddin",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-594",
+          "mobile": "9242841295",
+          "createdAt": "2026-07-19T00:15:53.054Z",
+          "name": "M d mohiuddin",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9341978229",
+      "keepId": "kr-102",
+      "deleteIds": [
+        "kr-595"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-595": 0
+      },
+      "members": [
+        {
+          "id": "kr-102",
+          "mobile": "9341978229",
+          "createdAt": "2026-07-18T09:25:03.350Z",
+          "name": "Mohammed Mazharuddin Adhoni",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-595",
+          "mobile": "9341978229",
+          "createdAt": "2026-07-19T00:15:53.062Z",
+          "name": "Mohammed Mazharuddin Adhoni",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9036375430",
+      "keepId": "kr-103",
+      "deleteIds": [
+        "kr-596"
+      ],
+      "reason": "active-connection-preferred",
+      "keepReferenced": true,
+      "keepActiveConnected": true,
+      "loserReferenceCounts": {
+        "kr-596": 0
+      },
+      "members": [
+        {
+          "id": "kr-103",
+          "mobile": "9036375430",
+          "createdAt": "2026-07-18T09:25:03.351Z",
+          "name": "Mohd Samiuddin Bhosge",
+          "refCount": 5,
+          "activeConnected": true
+        },
+        {
+          "id": "kr-596",
+          "mobile": "9036375430",
+          "createdAt": "2026-07-19T00:15:53.067Z",
+          "name": "Mohd Samiuddin Bhosge",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9880138831",
+      "keepId": "kr-104",
+      "deleteIds": [
+        "kr-597"
+      ],
+      "reason": "active-connection-preferred",
+      "keepReferenced": true,
+      "keepActiveConnected": true,
+      "loserReferenceCounts": {
+        "kr-597": 0
+      },
+      "members": [
+        {
+          "id": "kr-104",
+          "mobile": "9880138831",
+          "createdAt": "2026-07-18T09:25:03.352Z",
+          "name": "BHOSGE SOUD AHMED",
+          "refCount": 5,
+          "activeConnected": true
+        },
+        {
+          "id": "kr-597",
+          "mobile": "9880138831",
+          "createdAt": "2026-07-19T00:15:53.072Z",
+          "name": "BHOSGE SOUD AHMED",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "8618399184",
+      "keepId": "kr-105",
+      "deleteIds": [
+        "kr-598"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-598": 0
+      },
+      "members": [
+        {
+          "id": "kr-105",
+          "mobile": "8618399184",
+          "createdAt": "2026-07-18T09:25:03.354Z",
+          "name": "Md khaja ahmed",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-598",
+          "mobile": "8618399184",
+          "createdAt": "2026-07-19T00:15:53.078Z",
+          "name": "Md khaja ahmed",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9880680039",
+      "keepId": "kr-106",
+      "deleteIds": [
+        "kr-599"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-599": 0
+      },
+      "members": [
+        {
+          "id": "kr-106",
+          "mobile": "9880680039",
+          "createdAt": "2026-07-18T09:25:03.355Z",
+          "name": "MOHAMMAD ALTAF AHMED",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-599",
+          "mobile": "9880680039",
+          "createdAt": "2026-07-19T00:15:53.083Z",
+          "name": "MOHAMMAD ALTAF AHMED",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "8892561479",
+      "keepId": "kr-107",
+      "deleteIds": [
+        "kr-600"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-600": 0
+      },
+      "members": [
+        {
+          "id": "kr-107",
+          "mobile": "8892561479",
+          "createdAt": "2026-07-18T09:25:03.360Z",
+          "name": "M A Baig",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-600",
+          "mobile": "8892561479",
+          "createdAt": "2026-07-19T00:15:53.093Z",
+          "name": "M A Baig",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9686465719",
+      "keepId": "kr-108",
+      "deleteIds": [
+        "kr-601"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-601": 0
+      },
+      "members": [
+        {
+          "id": "kr-108",
+          "mobile": "9686465719",
+          "createdAt": "2026-07-18T09:25:03.361Z",
+          "name": "Nazeer Uddin sondke",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-601",
+          "mobile": "9686465719",
+          "createdAt": "2026-07-19T00:15:53.099Z",
+          "name": "Nazeer Uddin sondke",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9036107772",
+      "keepId": "kr-109",
+      "deleteIds": [
+        "kr-602"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-602": 0
+      },
+      "members": [
+        {
+          "id": "kr-109",
+          "mobile": "9036107772",
+          "createdAt": "2026-07-18T09:25:03.362Z",
+          "name": "MIR MAZHAR ALI",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-602",
+          "mobile": "9036107772",
+          "createdAt": "2026-07-19T00:15:53.104Z",
+          "name": "MIR MAZHAR ALI",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9742776556",
+      "keepId": "kr-110",
+      "deleteIds": [
+        "kr-603"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-603": 0
+      },
+      "members": [
+        {
+          "id": "kr-110",
+          "mobile": "9742776556",
+          "createdAt": "2026-07-18T09:25:03.364Z",
+          "name": "MD KHAJA SAB",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-603",
+          "mobile": "9742776556",
+          "createdAt": "2026-07-19T00:15:53.110Z",
+          "name": "MD KHAJA SAB",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9880812656",
+      "keepId": "kr-111",
+      "deleteIds": [
+        "kr-604"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-604": 0
+      },
+      "members": [
+        {
+          "id": "kr-111",
+          "mobile": "9880812656",
+          "createdAt": "2026-07-18T09:25:03.365Z",
+          "name": "Abdul sattar",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-604",
+          "mobile": "9880812656",
+          "createdAt": "2026-07-19T00:15:53.115Z",
+          "name": "Abdul sattar",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9036247781",
+      "keepId": "kr-112",
+      "deleteIds": [
+        "kr-605"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-605": 0
+      },
+      "members": [
+        {
+          "id": "kr-112",
+          "mobile": "9036247781",
+          "createdAt": "2026-07-18T09:25:03.367Z",
+          "name": "MAJID MIYAN",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-605",
+          "mobile": "9036247781",
+          "createdAt": "2026-07-19T00:15:53.120Z",
+          "name": "MAJID MIYAN",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9880041158",
+      "keepId": "kr-113",
+      "deleteIds": [
+        "kr-606"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-606": 0
+      },
+      "members": [
+        {
+          "id": "kr-113",
+          "mobile": "9880041158",
+          "createdAt": "2026-07-18T09:25:03.369Z",
+          "name": "H salaried in",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-606",
+          "mobile": "9880041158",
+          "createdAt": "2026-07-19T00:15:53.126Z",
+          "name": "H salaried in",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9902323464",
+      "keepId": "kr-114",
+      "deleteIds": [
+        "kr-607"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-607": 0
+      },
+      "members": [
+        {
+          "id": "kr-114",
+          "mobile": "9902323464",
+          "createdAt": "2026-07-18T09:25:03.371Z",
+          "name": "MOHAMMED SARFARAZ AHMED",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-607",
+          "mobile": "9902323464",
+          "createdAt": "2026-07-19T00:15:53.136Z",
+          "name": "MOHAMMED SARFARAZ AHMED",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "8660373346",
+      "keepId": "kr-115",
+      "deleteIds": [
+        "kr-608"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-608": 0
+      },
+      "members": [
+        {
+          "id": "kr-115",
+          "mobile": "8660373346",
+          "createdAt": "2026-07-18T09:25:03.372Z",
+          "name": "Syed Saud",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-608",
+          "mobile": "8660373346",
+          "createdAt": "2026-07-19T00:15:53.145Z",
+          "name": "Syed Saud",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9880783526",
+      "keepId": "kr-116",
+      "deleteIds": [
+        "kr-609"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-609": 0
+      },
+      "members": [
+        {
+          "id": "kr-116",
+          "mobile": "9880783526",
+          "createdAt": "2026-07-18T09:25:03.374Z",
+          "name": "Shaikh Junaid",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-609",
+          "mobile": "9880783526",
+          "createdAt": "2026-07-19T00:15:53.150Z",
+          "name": "Shaikh Junaid",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "7812979688",
+      "keepId": "kr-117",
+      "deleteIds": [
+        "kr-610"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-610": 0
+      },
+      "members": [
+        {
+          "id": "kr-117",
+          "mobile": "7812979688",
+          "createdAt": "2026-07-18T09:25:03.377Z",
+          "name": "MIRZA ISMAIL BAIG",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-610",
+          "mobile": "7812979688",
+          "createdAt": "2026-07-19T00:15:53.157Z",
+          "name": "MIRZA ISMAIL BAIG",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9741397594",
+      "keepId": "kr-118",
+      "deleteIds": [
+        "kr-611"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-611": 0
+      },
+      "members": [
+        {
+          "id": "kr-118",
+          "mobile": "9741397594",
+          "createdAt": "2026-07-18T09:25:03.379Z",
+          "name": "ISMAIL KHAN",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-611",
+          "mobile": "9741397594",
+          "createdAt": "2026-07-19T00:15:53.167Z",
+          "name": "ISMAIL KHAN",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9035158770",
+      "keepId": "kr-119",
+      "deleteIds": [
+        "kr-612"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-612": 0
+      },
+      "members": [
+        {
+          "id": "kr-119",
+          "mobile": "9035158770",
+          "createdAt": "2026-07-18T09:25:03.380Z",
+          "name": "Md Khaja Mitan",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-612",
+          "mobile": "9035158770",
+          "createdAt": "2026-07-19T00:15:53.172Z",
+          "name": "Md Khaja Mitan",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9663151803",
+      "keepId": "kr-120",
+      "deleteIds": [
+        "kr-613"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-613": 0
+      },
+      "members": [
+        {
+          "id": "kr-120",
+          "mobile": "9663151803",
+          "createdAt": "2026-07-18T09:25:03.382Z",
+          "name": "MD RAFEEUDDIN",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-613",
+          "mobile": "9663151803",
+          "createdAt": "2026-07-19T00:15:53.179Z",
+          "name": "MD RAFEEUDDIN",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9686066343",
+      "keepId": "kr-121",
+      "deleteIds": [
+        "kr-614"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-614": 0
+      },
+      "members": [
+        {
+          "id": "kr-121",
+          "mobile": "9686066343",
+          "createdAt": "2026-07-18T09:25:03.384Z",
+          "name": "Mohamad Amjad",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-614",
+          "mobile": "9686066343",
+          "createdAt": "2026-07-19T00:15:53.184Z",
+          "name": "Mohamad Amjad",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9019391857",
+      "keepId": "kr-122",
+      "deleteIds": [
+        "kr-615"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-615": 0
+      },
+      "members": [
+        {
+          "id": "kr-122",
+          "mobile": "9019391857",
+          "createdAt": "2026-07-18T09:25:03.386Z",
+          "name": "Dr Khaja miyan Aziz miyan Nilangekar",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-615",
+          "mobile": "9019391857",
+          "createdAt": "2026-07-19T00:15:53.194Z",
+          "name": "Dr Khaja miyan Aziz miyan Nilangekar",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9448127638",
+      "keepId": "kr-123",
+      "deleteIds": [
+        "kr-616"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-616": 0
+      },
+      "members": [
+        {
+          "id": "kr-123",
+          "mobile": "9448127638",
+          "createdAt": "2026-07-18T09:25:03.388Z",
+          "name": "Mohd. Ameer Seth",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-616",
+          "mobile": "9448127638",
+          "createdAt": "2026-07-19T00:15:53.199Z",
+          "name": "Mohd. Ameer Seth",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "8660217643",
+      "keepId": "kr-124",
+      "deleteIds": [
+        "kr-617"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-617": 0
+      },
+      "members": [
+        {
+          "id": "kr-124",
+          "mobile": "8660217643",
+          "createdAt": "2026-07-18T09:25:03.389Z",
+          "name": "MUHAMMED YOUSUF QURESHI",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-617",
+          "mobile": "8660217643",
+          "createdAt": "2026-07-19T00:15:53.205Z",
+          "name": "MUHAMMED YOUSUF QURESHI",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9448604144",
+      "keepId": "kr-125",
+      "deleteIds": [
+        "kr-618"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-618": 0
+      },
+      "members": [
+        {
+          "id": "kr-125",
+          "mobile": "9448604144",
+          "createdAt": "2026-07-18T09:25:03.391Z",
+          "name": "SYED MOHAMMED ALI",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-618",
+          "mobile": "9448604144",
+          "createdAt": "2026-07-19T00:15:53.211Z",
+          "name": "SYED MOHAMMED ALI",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9036407772",
+      "keepId": "kr-126",
+      "deleteIds": [
+        "kr-619"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-619": 0
+      },
+      "members": [
+        {
+          "id": "kr-126",
+          "mobile": "9036407772",
+          "createdAt": "2026-07-18T09:25:03.394Z",
+          "name": "Meer mujahid ali",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-619",
+          "mobile": "9036407772",
+          "createdAt": "2026-07-19T00:15:53.216Z",
+          "name": "Meer mujahid ali",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "7795212620",
+      "keepId": "kr-127",
+      "deleteIds": [
+        "kr-620"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-620": 0
+      },
+      "members": [
+        {
+          "id": "kr-127",
+          "mobile": "7795212620",
+          "createdAt": "2026-07-18T09:25:03.396Z",
+          "name": "SHAIK HAFEZ ARQAM",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-620",
+          "mobile": "7795212620",
+          "createdAt": "2026-07-19T00:15:53.222Z",
+          "name": "SHAIK HAFEZ ARQAM",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "8971308303",
+      "keepId": "kr-128",
+      "deleteIds": [
+        "kr-621"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-621": 0
+      },
+      "members": [
+        {
+          "id": "kr-128",
+          "mobile": "8971308303",
+          "createdAt": "2026-07-18T09:25:03.398Z",
+          "name": "Md Nooruddin",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-621",
+          "mobile": "8971308303",
+          "createdAt": "2026-07-19T00:15:53.228Z",
+          "name": "Md Nooruddin",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9591100184",
+      "keepId": "kr-129",
+      "deleteIds": [
+        "kr-622"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-622": 0
+      },
+      "members": [
+        {
+          "id": "kr-129",
+          "mobile": "9591100184",
+          "createdAt": "2026-07-18T09:25:03.400Z",
+          "name": "Md Mastan",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-622",
+          "mobile": "9591100184",
+          "createdAt": "2026-07-19T00:15:53.237Z",
+          "name": "Md Mastan",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9972698067",
+      "keepId": "kr-130",
+      "deleteIds": [
+        "kr-623"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-623": 0
+      },
+      "members": [
+        {
+          "id": "kr-130",
+          "mobile": "9972698067",
+          "createdAt": "2026-07-18T09:25:03.401Z",
+          "name": "MOHAMMED ASLAM",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-623",
+          "mobile": "9972698067",
+          "createdAt": "2026-07-19T00:15:53.245Z",
+          "name": "MOHAMMED ASLAM",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "8123773042",
+      "keepId": "kr-131",
+      "deleteIds": [
+        "kr-624"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-624": 0
+      },
+      "members": [
+        {
+          "id": "kr-131",
+          "mobile": "8123773042",
+          "createdAt": "2026-07-18T09:25:03.403Z",
+          "name": "ABDUL GAFFAR",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-624",
+          "mobile": "8123773042",
+          "createdAt": "2026-07-19T00:15:53.251Z",
+          "name": "ABDUL GAFFAR",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "8722780731",
+      "keepId": "kr-132",
+      "deleteIds": [
+        "kr-625"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-625": 0
+      },
+      "members": [
+        {
+          "id": "kr-132",
+          "mobile": "8722780731",
+          "createdAt": "2026-07-18T09:25:03.405Z",
+          "name": "NADEEM KHAN",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-625",
+          "mobile": "8722780731",
+          "createdAt": "2026-07-19T00:15:53.258Z",
+          "name": "NADEEM KHAN",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "7676338777",
+      "keepId": "kr-133",
+      "deleteIds": [
+        "kr-626"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-626": 0
+      },
+      "members": [
+        {
+          "id": "kr-133",
+          "mobile": "7676338777",
+          "createdAt": "2026-07-18T09:25:03.407Z",
+          "name": "Md Akmal fayazuddin Bidri",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-626",
+          "mobile": "7676338777",
+          "createdAt": "2026-07-19T00:15:53.266Z",
+          "name": "Md Akmal fayazuddin Bidri",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9611463391",
+      "keepId": "kr-134",
+      "deleteIds": [
+        "kr-627"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-627": 0
+      },
+      "members": [
+        {
+          "id": "kr-134",
+          "mobile": "9611463391",
+          "createdAt": "2026-07-18T09:25:03.409Z",
+          "name": "Md javeed miya patel",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-627",
+          "mobile": "9611463391",
+          "createdAt": "2026-07-19T00:15:53.272Z",
+          "name": "Md javeed miya patel",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9740336014",
+      "keepId": "kr-135",
+      "deleteIds": [
+        "kr-628"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-628": 0
+      },
+      "members": [
+        {
+          "id": "kr-135",
+          "mobile": "9740336014",
+          "createdAt": "2026-07-18T09:25:03.413Z",
+          "name": "MAHETAB PATEL",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-628",
+          "mobile": "9740336014",
+          "createdAt": "2026-07-19T00:15:53.279Z",
+          "name": "MAHETAB PATEL",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "8880693909",
+      "keepId": "kr-136",
+      "deleteIds": [
+        "kr-629"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-629": 0
+      },
+      "members": [
+        {
+          "id": "kr-136",
+          "mobile": "8880693909",
+          "createdAt": "2026-07-18T09:25:03.415Z",
+          "name": "MD MUNAWARUDDIN BAAG",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-629",
+          "mobile": "8880693909",
+          "createdAt": "2026-07-19T00:15:53.288Z",
+          "name": "MD MUNAWARUDDIN BAAG",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9075551242",
+      "keepId": "kr-137",
+      "deleteIds": [
+        "kr-630"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-630": 0
+      },
+      "members": [
+        {
+          "id": "kr-137",
+          "mobile": "9075551242",
+          "createdAt": "2026-07-18T09:25:03.417Z",
+          "name": "ZAFAR KHAN",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-630",
+          "mobile": "9075551242",
+          "createdAt": "2026-07-19T00:15:53.295Z",
+          "name": "ZAFAR KHAN",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9448686020",
+      "keepId": "kr-138",
+      "deleteIds": [
+        "kr-631"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-631": 0
+      },
+      "members": [
+        {
+          "id": "kr-138",
+          "mobile": "9448686020",
+          "createdAt": "2026-07-18T09:25:03.419Z",
+          "name": "ABDUL QUDDUS",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-631",
+          "mobile": "9448686020",
+          "createdAt": "2026-07-19T00:15:53.300Z",
+          "name": "ABDUL QUDDUS",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9448151680",
+      "keepId": "kr-139",
+      "deleteIds": [
+        "kr-632"
+      ],
+      "reason": "active-connection-preferred",
+      "keepReferenced": true,
+      "keepActiveConnected": true,
+      "loserReferenceCounts": {
+        "kr-632": 0
+      },
+      "members": [
+        {
+          "id": "kr-139",
+          "mobile": "9448151680",
+          "createdAt": "2026-07-18T09:25:03.420Z",
+          "name": "BILAL MIYAN",
+          "refCount": 5,
+          "activeConnected": true
+        },
+        {
+          "id": "kr-632",
+          "mobile": "9448151680",
+          "createdAt": "2026-07-19T00:15:53.306Z",
+          "name": "BILAL MIYAN",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9845559371",
+      "keepId": "kr-140",
+      "deleteIds": [
+        "kr-633"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-633": 0
+      },
+      "members": [
+        {
+          "id": "kr-140",
+          "mobile": "9845559371",
+          "createdAt": "2026-07-18T09:25:03.423Z",
+          "name": "H khaleel ahmad",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-633",
+          "mobile": "9845559371",
+          "createdAt": "2026-07-19T00:15:53.313Z",
+          "name": "H khaleel ahmad",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9343406606",
+      "keepId": "kr-141",
+      "deleteIds": [
+        "kr-634"
+      ],
+      "reason": "active-connection-preferred",
+      "keepReferenced": true,
+      "keepActiveConnected": true,
+      "loserReferenceCounts": {
+        "kr-634": 0
+      },
+      "members": [
+        {
+          "id": "kr-141",
+          "mobile": "9343406606",
+          "createdAt": "2026-07-18T09:25:03.426Z",
+          "name": "Md Kaleemuddin Mamu",
+          "refCount": 8,
+          "activeConnected": true
+        },
+        {
+          "id": "kr-634",
+          "mobile": "9343406606",
+          "createdAt": "2026-07-19T00:15:53.318Z",
+          "name": "Md Kaleemuddin Mamu",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "8792276688",
+      "keepId": "kr-142",
+      "deleteIds": [
+        "kr-635"
+      ],
+      "reason": "active-connection-preferred",
+      "keepReferenced": true,
+      "keepActiveConnected": true,
+      "loserReferenceCounts": {
+        "kr-635": 0
+      },
+      "members": [
+        {
+          "id": "kr-142",
+          "mobile": "8792276688",
+          "createdAt": "2026-07-18T09:25:03.428Z",
+          "name": "Mohammed shafi",
+          "refCount": 5,
+          "activeConnected": true
+        },
+        {
+          "id": "kr-635",
+          "mobile": "8792276688",
+          "createdAt": "2026-07-19T00:15:53.328Z",
+          "name": "Mohammed shafi",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9738485840",
+      "keepId": "kr-143",
+      "deleteIds": [
+        "kr-636"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-636": 0
+      },
+      "members": [
+        {
+          "id": "kr-143",
+          "mobile": "9738485840",
+          "createdAt": "2026-07-18T09:25:03.430Z",
+          "name": "Mohammed Muheet",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-636",
+          "mobile": "9738485840",
+          "createdAt": "2026-07-19T00:15:53.334Z",
+          "name": "Mohammed Muheet",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9482664479",
+      "keepId": "kr-144",
+      "deleteIds": [
+        "kr-637"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-637": 0
+      },
+      "members": [
+        {
+          "id": "kr-144",
+          "mobile": "9482664479",
+          "createdAt": "2026-07-18T09:25:03.433Z",
+          "name": "ZIYAN ABDUL MUQEET",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-637",
+          "mobile": "9482664479",
+          "createdAt": "2026-07-19T00:15:53.343Z",
+          "name": "ZIYAN ABDUL MUQEET",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "7760175601",
+      "keepId": "kr-145",
+      "deleteIds": [
+        "kr-638"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-638": 0
+      },
+      "members": [
+        {
+          "id": "kr-145",
+          "mobile": "7760175601",
+          "createdAt": "2026-07-18T09:25:03.434Z",
+          "name": "AFROZ WAISER",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-638",
+          "mobile": "7760175601",
+          "createdAt": "2026-07-19T00:15:53.350Z",
+          "name": "AFROZ WAISER",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9035670464",
+      "keepId": "kr-146",
+      "deleteIds": [
+        "kr-639"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-639": 0
+      },
+      "members": [
+        {
+          "id": "kr-146",
+          "mobile": "9035670464",
+          "createdAt": "2026-07-18T09:25:03.435Z",
+          "name": "SYED ASGER ALI",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-639",
+          "mobile": "9035670464",
+          "createdAt": "2026-07-19T00:15:53.356Z",
+          "name": "SYED ASGER ALI",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9590028001",
+      "keepId": "kr-147",
+      "deleteIds": [
+        "kr-640"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-640": 0
+      },
+      "members": [
+        {
+          "id": "kr-147",
+          "mobile": "9590028001",
+          "createdAt": "2026-07-18T09:25:03.437Z",
+          "name": "ABDUL GHAFUR",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-640",
+          "mobile": "9590028001",
+          "createdAt": "2026-07-19T00:15:53.363Z",
+          "name": "ABDUL GHAFUR",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "7829476797",
+      "keepId": "kr-148",
+      "deleteIds": [
+        "kr-641"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-641": 0
+      },
+      "members": [
+        {
+          "id": "kr-148",
+          "mobile": "7829476797",
+          "createdAt": "2026-07-18T09:25:03.439Z",
+          "name": "KALIM PASHA",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-641",
+          "mobile": "7829476797",
+          "createdAt": "2026-07-19T00:15:53.368Z",
+          "name": "KALIM PASHA",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "7483990282",
+      "keepId": "kr-149",
+      "deleteIds": [
+        "kr-642"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-642": 0
+      },
+      "members": [
+        {
+          "id": "kr-149",
+          "mobile": "7483990282",
+          "createdAt": "2026-07-18T09:25:03.441Z",
+          "name": "Ahmed mushaf",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-642",
+          "mobile": "7483990282",
+          "createdAt": "2026-07-19T00:15:53.377Z",
+          "name": "Ahmed mushaf",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9844970243",
+      "keepId": "kr-150",
+      "deleteIds": [
+        "kr-643"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-643": 0
+      },
+      "members": [
+        {
+          "id": "kr-150",
+          "mobile": "9844970243",
+          "createdAt": "2026-07-18T09:25:03.443Z",
+          "name": "Mohammed Rafeeuddin sondke",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-643",
+          "mobile": "9844970243",
+          "createdAt": "2026-07-19T00:15:53.383Z",
+          "name": "Mohammed Rafeeuddin sondke",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9448426470",
+      "keepId": "kr-151",
+      "deleteIds": [
+        "kr-644"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-644": 0
+      },
+      "members": [
+        {
+          "id": "kr-151",
+          "mobile": "9448426470",
+          "createdAt": "2026-07-18T09:25:03.446Z",
+          "name": "Dr Zaki Uddin",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-644",
+          "mobile": "9448426470",
+          "createdAt": "2026-07-19T00:15:53.393Z",
+          "name": "Dr Zaki Uddin",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9916111176",
+      "keepId": "kr-152",
+      "deleteIds": [
+        "kr-645"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-645": 0
+      },
+      "members": [
+        {
+          "id": "kr-152",
+          "mobile": "9916111176",
+          "createdAt": "2026-07-18T09:25:03.448Z",
+          "name": "SHAIK ZAKI KBN",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-645",
+          "mobile": "9916111176",
+          "createdAt": "2026-07-19T00:15:53.399Z",
+          "name": "SHAIK ZAKI KBN",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9481300172",
+      "keepId": "kr-153",
+      "deleteIds": [
+        "kr-646"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-646": 0
+      },
+      "members": [
+        {
+          "id": "kr-153",
+          "mobile": "9481300172",
+          "createdAt": "2026-07-18T09:25:03.449Z",
+          "name": "MD NABI KHAN",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-646",
+          "mobile": "9481300172",
+          "createdAt": "2026-07-19T00:15:53.405Z",
+          "name": "MD NABI KHAN",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9945510316",
+      "keepId": "kr-154",
+      "deleteIds": [
+        "kr-647"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-647": 0
+      },
+      "members": [
+        {
+          "id": "kr-154",
+          "mobile": "9945510316",
+          "createdAt": "2026-07-18T09:25:03.450Z",
+          "name": "Abdul khader",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-647",
+          "mobile": "9945510316",
+          "createdAt": "2026-07-19T00:15:53.412Z",
+          "name": "Abdul khader",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9398374453",
+      "keepId": "kr-155",
+      "deleteIds": [
+        "kr-648"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-648": 0
+      },
+      "members": [
+        {
+          "id": "kr-155",
+          "mobile": "9398374453",
+          "createdAt": "2026-07-18T09:25:03.451Z",
+          "name": "Amjat mauzan",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-648",
+          "mobile": "9398374453",
+          "createdAt": "2026-07-19T00:15:53.419Z",
+          "name": "Amjat mauzan",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "8971654764",
+      "keepId": "kr-156",
+      "deleteIds": [
+        "kr-649"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-649": 0
+      },
+      "members": [
+        {
+          "id": "kr-156",
+          "mobile": "8971654764",
+          "createdAt": "2026-07-18T09:25:03.452Z",
+          "name": "Samiuddin",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-649",
+          "mobile": "8971654764",
+          "createdAt": "2026-07-19T00:15:53.429Z",
+          "name": "Samiuddin",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9740311186",
+      "keepId": "kr-157",
+      "deleteIds": [
+        "kr-650"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-650": 0
+      },
+      "members": [
+        {
+          "id": "kr-157",
+          "mobile": "9740311186",
+          "createdAt": "2026-07-18T09:25:03.454Z",
+          "name": "Shaker mauzan",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-650",
+          "mobile": "9740311186",
+          "createdAt": "2026-07-19T00:15:53.436Z",
+          "name": "Shaker mauzan",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "8105745521",
+      "keepId": "kr-158",
+      "deleteIds": [
+        "kr-651"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-651": 0
+      },
+      "members": [
+        {
+          "id": "kr-158",
+          "mobile": "8105745521",
+          "createdAt": "2026-07-18T09:25:03.455Z",
+          "name": "Moinuddin",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-651",
+          "mobile": "8105745521",
+          "createdAt": "2026-07-19T00:15:53.442Z",
+          "name": "Moinuddin",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9343697624",
+      "keepId": "kr-159",
+      "deleteIds": [
+        "kr-652"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-652": 0
+      },
+      "members": [
+        {
+          "id": "kr-159",
+          "mobile": "9343697624",
+          "createdAt": "2026-07-18T09:25:03.457Z",
+          "name": "Farooq sawalakhe",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-652",
+          "mobile": "9343697624",
+          "createdAt": "2026-07-19T00:15:53.449Z",
+          "name": "Farooq sawalakhe",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9880453584",
+      "keepId": "kr-160",
+      "deleteIds": [
+        "kr-653"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-653": 0
+      },
+      "members": [
+        {
+          "id": "kr-160",
+          "mobile": "9880453584",
+          "createdAt": "2026-07-18T09:25:03.458Z",
+          "name": "Mir Tahsin Ali Jamadar",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-653",
+          "mobile": "9880453584",
+          "createdAt": "2026-07-19T00:15:53.455Z",
+          "name": "Mir Tahsin Ali Jamadar",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "7411207029",
+      "keepId": "kr-161",
+      "deleteIds": [
+        "kr-654"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-654": 0
+      },
+      "members": [
+        {
+          "id": "kr-161",
+          "mobile": "7411207029",
+          "createdAt": "2026-07-18T09:25:03.459Z",
+          "name": "Hisham deen",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-654",
+          "mobile": "7411207029",
+          "createdAt": "2026-07-19T00:15:53.463Z",
+          "name": "Hisham deen",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9686158485",
+      "keepId": "kr-162",
+      "deleteIds": [
+        "kr-655"
+      ],
+      "reason": "active-connection-preferred",
+      "keepReferenced": true,
+      "keepActiveConnected": true,
+      "loserReferenceCounts": {
+        "kr-655": 0
+      },
+      "members": [
+        {
+          "id": "kr-162",
+          "mobile": "9686158485",
+          "createdAt": "2026-07-18T09:25:03.460Z",
+          "name": "Kareem sir ideal",
+          "refCount": 4,
+          "activeConnected": true
+        },
+        {
+          "id": "kr-655",
+          "mobile": "9686158485",
+          "createdAt": "2026-07-19T00:15:53.471Z",
+          "name": "Kareem sir ideal",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9741973935",
+      "keepId": "kr-163",
+      "deleteIds": [
+        "kr-656"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-656": 0
+      },
+      "members": [
+        {
+          "id": "kr-163",
+          "mobile": "9741973935",
+          "createdAt": "2026-07-18T09:25:03.462Z",
+          "name": "MUSHTAQ CHOWDHARY",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-656",
+          "mobile": "9741973935",
+          "createdAt": "2026-07-19T00:15:53.479Z",
+          "name": "MUSHTAQ CHOWDHARY",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9945448127",
+      "keepId": "kr-164",
+      "deleteIds": [
+        "kr-657"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-657": 0
+      },
+      "members": [
+        {
+          "id": "kr-164",
+          "mobile": "9945448127",
+          "createdAt": "2026-07-18T09:25:03.463Z",
+          "name": "ABDUL HAMEED QURESHI",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-657",
+          "mobile": "9945448127",
+          "createdAt": "2026-07-19T00:15:53.485Z",
+          "name": "ABDUL HAMEED QURESHI",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9731879724",
+      "keepId": "kr-165",
+      "deleteIds": [
+        "kr-658"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-658": 0
+      },
+      "members": [
+        {
+          "id": "kr-165",
+          "mobile": "9731879724",
+          "createdAt": "2026-07-18T09:25:03.466Z",
+          "name": "Mohd younus qureshi",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-658",
+          "mobile": "9731879724",
+          "createdAt": "2026-07-19T00:15:53.491Z",
+          "name": "Mohd younus qureshi",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9448434807",
+      "keepId": "kr-166",
+      "deleteIds": [
+        "kr-659"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-659": 0
+      },
+      "members": [
+        {
+          "id": "kr-166",
+          "mobile": "9448434807",
+          "createdAt": "2026-07-18T09:25:03.470Z",
+          "name": "Md. Jafer Hussain Bhole",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-659",
+          "mobile": "9448434807",
+          "createdAt": "2026-07-19T00:15:53.503Z",
+          "name": "Md. Jafer Hussain Bhole",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9449691375",
+      "keepId": "kr-167",
+      "deleteIds": [
+        "kr-660"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-660": 0
+      },
+      "members": [
+        {
+          "id": "kr-167",
+          "mobile": "9449691375",
+          "createdAt": "2026-07-18T09:25:03.473Z",
+          "name": "Md Moinuddin",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-660",
+          "mobile": "9449691375",
+          "createdAt": "2026-07-19T00:15:53.510Z",
+          "name": "Md Moinuddin",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "8123312774",
+      "keepId": "kr-168",
+      "deleteIds": [
+        "kr-661"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-661": 0
+      },
+      "members": [
+        {
+          "id": "kr-168",
+          "mobile": "8123312774",
+          "createdAt": "2026-07-18T09:25:03.475Z",
+          "name": "MD BILAL",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-661",
+          "mobile": "8123312774",
+          "createdAt": "2026-07-19T00:15:53.517Z",
+          "name": "MD BILAL",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9036953100",
+      "keepId": "kr-169",
+      "deleteIds": [
+        "kr-662"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-662": 0
+      },
+      "members": [
+        {
+          "id": "kr-169",
+          "mobile": "9036953100",
+          "createdAt": "2026-07-18T09:25:03.477Z",
+          "name": "Syed Ahmed",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-662",
+          "mobile": "9036953100",
+          "createdAt": "2026-07-19T00:15:53.540Z",
+          "name": "Syed Ahmed",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9845839496",
+      "keepId": "kr-170",
+      "deleteIds": [
+        "kr-663"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-663": 0
+      },
+      "members": [
+        {
+          "id": "kr-170",
+          "mobile": "9845839496",
+          "createdAt": "2026-07-18T09:25:03.480Z",
+          "name": "Md khaja moinuddin",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-663",
+          "mobile": "9845839496",
+          "createdAt": "2026-07-19T00:15:53.562Z",
+          "name": "Md khaja moinuddin",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "7676586284",
+      "keepId": "kr-171",
+      "deleteIds": [
+        "kr-664"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-664": 0
+      },
+      "members": [
+        {
+          "id": "kr-171",
+          "mobile": "7676586284",
+          "createdAt": "2026-07-18T09:25:03.482Z",
+          "name": "ABDUL AHAD",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-664",
+          "mobile": "7676586284",
+          "createdAt": "2026-07-19T00:15:53.594Z",
+          "name": "ABDUL AHAD",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9035668586",
+      "keepId": "kr-172",
+      "deleteIds": [
+        "kr-665"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-665": 0
+      },
+      "members": [
+        {
+          "id": "kr-172",
+          "mobile": "9035668586",
+          "createdAt": "2026-07-18T09:25:03.484Z",
+          "name": "MUHAMMAD SHUKOOR AHMED",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-665",
+          "mobile": "9035668586",
+          "createdAt": "2026-07-19T00:15:53.601Z",
+          "name": "MUHAMMAD SHUKOOR AHMED",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9449429653",
+      "keepId": "kr-173",
+      "deleteIds": [
+        "kr-666"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-666": 0
+      },
+      "members": [
+        {
+          "id": "kr-173",
+          "mobile": "9449429653",
+          "createdAt": "2026-07-18T09:25:03.488Z",
+          "name": "Md Mastan",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-666",
+          "mobile": "9449429653",
+          "createdAt": "2026-07-19T00:15:53.607Z",
+          "name": "Md Mastan",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9164656788",
+      "keepId": "kr-174",
+      "deleteIds": [
+        "kr-667"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-667": 0
+      },
+      "members": [
+        {
+          "id": "kr-174",
+          "mobile": "9164656788",
+          "createdAt": "2026-07-18T09:25:03.490Z",
+          "name": "Ayazoddin Shaikh",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-667",
+          "mobile": "9164656788",
+          "createdAt": "2026-07-19T00:15:53.614Z",
+          "name": "Ayazoddin Shaikh",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "7406984705",
+      "keepId": "kr-175",
+      "deleteIds": [
+        "kr-668"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-668": 0
+      },
+      "members": [
+        {
+          "id": "kr-175",
+          "mobile": "7406984705",
+          "createdAt": "2026-07-18T09:25:03.493Z",
+          "name": "Md Ghousuddin",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-668",
+          "mobile": "7406984705",
+          "createdAt": "2026-07-19T00:15:53.620Z",
+          "name": "Md Ghousuddin",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9844988542",
+      "keepId": "kr-176",
+      "deleteIds": [
+        "kr-669"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-669": 0
+      },
+      "members": [
+        {
+          "id": "kr-176",
+          "mobile": "9844988542",
+          "createdAt": "2026-07-18T09:25:03.495Z",
+          "name": "SIRAJUDDIN",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-669",
+          "mobile": "9844988542",
+          "createdAt": "2026-07-19T00:15:53.626Z",
+          "name": "SIRAJUDDIN",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9341724060",
+      "keepId": "kr-177",
+      "deleteIds": [
+        "kr-670"
+      ],
+      "reason": "active-connection-preferred",
+      "keepReferenced": true,
+      "keepActiveConnected": true,
+      "loserReferenceCounts": {
+        "kr-670": 0
+      },
+      "members": [
+        {
+          "id": "kr-177",
+          "mobile": "9341724060",
+          "createdAt": "2026-07-18T09:25:03.498Z",
+          "name": "Mohd rabbani baag",
+          "refCount": 5,
+          "activeConnected": true
+        },
+        {
+          "id": "kr-670",
+          "mobile": "9341724060",
+          "createdAt": "2026-07-19T00:15:53.637Z",
+          "name": "Mohd rabbani baag",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "8147674656",
+      "keepId": "kr-178",
+      "deleteIds": [
+        "kr-671"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-671": 0
+      },
+      "members": [
+        {
+          "id": "kr-178",
+          "mobile": "8147674656",
+          "createdAt": "2026-07-18T09:25:03.500Z",
+          "name": "Ahmad sab",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-671",
+          "mobile": "8147674656",
+          "createdAt": "2026-07-19T00:15:53.649Z",
+          "name": "Ahmad sab",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "8317425256",
+      "keepId": "kr-179",
+      "deleteIds": [
+        "kr-672"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-672": 0
+      },
+      "members": [
+        {
+          "id": "kr-179",
+          "mobile": "8317425256",
+          "createdAt": "2026-07-18T09:25:03.503Z",
+          "name": "QAMARUDDIN",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-672",
+          "mobile": "8317425256",
+          "createdAt": "2026-07-19T00:15:53.656Z",
+          "name": "QAMARUDDIN",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "7676767852",
+      "keepId": "kr-180",
+      "deleteIds": [
+        "kr-673"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-673": 0
+      },
+      "members": [
+        {
+          "id": "kr-180",
+          "mobile": "7676767852",
+          "createdAt": "2026-07-18T09:25:03.507Z",
+          "name": "Syed Saber",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-673",
+          "mobile": "7676767852",
+          "createdAt": "2026-07-19T00:15:53.664Z",
+          "name": "Syed Saber",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "6361714763",
+      "keepId": "kr-181",
+      "deleteIds": [
+        "kr-674"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-674": 0
+      },
+      "members": [
+        {
+          "id": "kr-181",
+          "mobile": "6361714763",
+          "createdAt": "2026-07-18T09:25:03.509Z",
+          "name": "Sayed Ismail",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-674",
+          "mobile": "6361714763",
+          "createdAt": "2026-07-19T00:15:53.670Z",
+          "name": "Sayed Ismail",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "8951589890",
+      "keepId": "kr-182",
+      "deleteIds": [
+        "kr-675"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-675": 0
+      },
+      "members": [
+        {
+          "id": "kr-182",
+          "mobile": "8951589890",
+          "createdAt": "2026-07-18T09:25:03.512Z",
+          "name": "Altaf Miyan",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-675",
+          "mobile": "8951589890",
+          "createdAt": "2026-07-19T00:15:53.677Z",
+          "name": "Altaf Miyan",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "8618777199",
+      "keepId": "kr-183",
+      "deleteIds": [
+        "kr-676"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-676": 0
+      },
+      "members": [
+        {
+          "id": "kr-183",
+          "mobile": "8618777199",
+          "createdAt": "2026-07-18T09:25:03.515Z",
+          "name": "Syed Mukhtar",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-676",
+          "mobile": "8618777199",
+          "createdAt": "2026-07-19T00:15:53.683Z",
+          "name": "Syed Mukhtar",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9912687607",
+      "keepId": "kr-184",
+      "deleteIds": [
+        "kr-677"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-677": 0
+      },
+      "members": [
+        {
+          "id": "kr-184",
+          "mobile": "9912687607",
+          "createdAt": "2026-07-18T09:25:03.517Z",
+          "name": "Shaikh feroz",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-677",
+          "mobile": "9912687607",
+          "createdAt": "2026-07-19T00:15:53.693Z",
+          "name": "Shaikh feroz",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9972122762",
+      "keepId": "kr-185",
+      "deleteIds": [
+        "kr-678"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-678": 0
+      },
+      "members": [
+        {
+          "id": "kr-185",
+          "mobile": "9972122762",
+          "createdAt": "2026-07-18T09:25:03.520Z",
+          "name": "SYED BILAL",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-678",
+          "mobile": "9972122762",
+          "createdAt": "2026-07-19T00:15:53.700Z",
+          "name": "SYED BILAL",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9497007714",
+      "keepId": "kr-186",
+      "deleteIds": [
+        "kr-679"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-679": 0
+      },
+      "members": [
+        {
+          "id": "kr-186",
+          "mobile": "9497007714",
+          "createdAt": "2026-07-18T09:25:03.522Z",
+          "name": "Basiluddeen Azad",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-679",
+          "mobile": "9497007714",
+          "createdAt": "2026-07-19T00:15:53.709Z",
+          "name": "Basiluddeen Azad",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "8861019833",
+      "keepId": "kr-187",
+      "deleteIds": [
+        "kr-680"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-680": 0
+      },
+      "members": [
+        {
+          "id": "kr-187",
+          "mobile": "8861019833",
+          "createdAt": "2026-07-18T09:25:03.525Z",
+          "name": "SHAKEEL QURESHI",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-680",
+          "mobile": "8861019833",
+          "createdAt": "2026-07-19T00:15:53.716Z",
+          "name": "SHAKEEL QURESHI",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "8951194939",
+      "keepId": "kr-188",
+      "deleteIds": [
+        "kr-681"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-681": 0
+      },
+      "members": [
+        {
+          "id": "kr-188",
+          "mobile": "8951194939",
+          "createdAt": "2026-07-18T09:25:03.527Z",
+          "name": "SHAIK NAJMUDDIN",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-681",
+          "mobile": "8951194939",
+          "createdAt": "2026-07-19T00:15:53.722Z",
+          "name": "SHAIK NAJMUDDIN",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9342193675",
+      "keepId": "kr-189",
+      "deleteIds": [
+        "kr-682"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-682": 0
+      },
+      "members": [
+        {
+          "id": "kr-189",
+          "mobile": "9342193675",
+          "createdAt": "2026-07-18T09:25:03.529Z",
+          "name": "Md Jamaluddin",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-682",
+          "mobile": "9342193675",
+          "createdAt": "2026-07-19T00:15:53.730Z",
+          "name": "Md Jamaluddin",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9008119287",
+      "keepId": "kr-190",
+      "deleteIds": [
+        "kr-683"
+      ],
+      "reason": "active-connection-preferred",
+      "keepReferenced": true,
+      "keepActiveConnected": true,
+      "loserReferenceCounts": {
+        "kr-683": 0
+      },
+      "members": [
+        {
+          "id": "kr-190",
+          "mobile": "9008119287",
+          "createdAt": "2026-07-18T09:25:03.532Z",
+          "name": "TAQEE MAAZ",
+          "refCount": 5,
+          "activeConnected": true
+        },
+        {
+          "id": "kr-683",
+          "mobile": "9008119287",
+          "createdAt": "2026-07-19T00:15:53.740Z",
+          "name": "TAQEE MAAZ",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9036394558",
+      "keepId": "kr-191",
+      "deleteIds": [
+        "kr-684"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-684": 0
+      },
+      "members": [
+        {
+          "id": "kr-191",
+          "mobile": "9036394558",
+          "createdAt": "2026-07-18T09:25:03.534Z",
+          "name": "NAWAZ PATEL",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-684",
+          "mobile": "9036394558",
+          "createdAt": "2026-07-19T00:15:53.749Z",
+          "name": "NAWAZ PATEL",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    },
+    {
+      "mobileKey": "9036267529",
+      "keepId": "kr-192",
+      "deleteIds": [
+        "kr-685"
+      ],
+      "reason": "sole-referenced-id",
+      "keepReferenced": true,
+      "keepActiveConnected": false,
+      "loserReferenceCounts": {
+        "kr-685": 0
+      },
+      "members": [
+        {
+          "id": "kr-192",
+          "mobile": "9036267529",
+          "createdAt": "2026-07-18T09:25:03.539Z",
+          "name": "Karamathullah",
+          "refCount": 2,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-685",
+          "mobile": "9036267529",
+          "createdAt": "2026-07-19T00:15:53.757Z",
+          "name": "Karamathullah",
+          "refCount": 0,
+          "activeConnected": false
+        }
+      ]
+    }
+  ],
+  "migrations": [],
+  "deleteIds": [
+    "kr-494",
+    "kr-495",
+    "kr-496",
+    "kr-497",
+    "kr-498",
+    "kr-499",
+    "kr-500",
+    "kr-501",
+    "kr-502",
+    "kr-503",
+    "kr-504",
+    "kr-505",
+    "kr-506",
+    "kr-507",
+    "kr-508",
+    "kr-509",
+    "kr-510",
+    "kr-511",
+    "kr-512",
+    "kr-513",
+    "kr-514",
+    "kr-515",
+    "kr-516",
+    "kr-517",
+    "kr-518",
+    "kr-519",
+    "kr-520",
+    "kr-521",
+    "kr-522",
+    "kr-523",
+    "kr-524",
+    "kr-525",
+    "kr-526",
+    "kr-527",
+    "kr-528",
+    "kr-529",
+    "kr-530",
+    "kr-531",
+    "kr-532",
+    "kr-533",
+    "kr-534",
+    "kr-535",
+    "kr-536",
+    "kr-537",
+    "kr-538",
+    "kr-539",
+    "kr-540",
+    "kr-541",
+    "kr-542",
+    "kr-543",
+    "kr-544",
+    "kr-545",
+    "kr-546",
+    "kr-547",
+    "kr-548",
+    "kr-549",
+    "kr-550",
+    "kr-551",
+    "kr-552",
+    "kr-553",
+    "kr-554",
+    "kr-555",
+    "kr-556",
+    "kr-557",
+    "kr-558",
+    "kr-559",
+    "kr-560",
+    "kr-561",
+    "kr-562",
+    "kr-563",
+    "kr-564",
+    "kr-565",
+    "kr-566",
+    "kr-567",
+    "kr-568",
+    "kr-569",
+    "kr-570",
+    "kr-571",
+    "kr-572",
+    "kr-573",
+    "kr-574",
+    "kr-575",
+    "kr-576",
+    "kr-577",
+    "kr-578",
+    "kr-579",
+    "kr-580",
+    "kr-581",
+    "kr-582",
+    "kr-583",
+    "kr-584",
+    "kr-585",
+    "kr-586",
+    "kr-587",
+    "kr-588",
+    "kr-589",
+    "kr-590",
+    "kr-591",
+    "kr-592",
+    "kr-593",
+    "kr-594",
+    "kr-595",
+    "kr-596",
+    "kr-597",
+    "kr-598",
+    "kr-599",
+    "kr-600",
+    "kr-601",
+    "kr-602",
+    "kr-603",
+    "kr-604",
+    "kr-605",
+    "kr-606",
+    "kr-607",
+    "kr-608",
+    "kr-609",
+    "kr-610",
+    "kr-611",
+    "kr-612",
+    "kr-613",
+    "kr-614",
+    "kr-615",
+    "kr-616",
+    "kr-617",
+    "kr-618",
+    "kr-619",
+    "kr-620",
+    "kr-621",
+    "kr-622",
+    "kr-623",
+    "kr-624",
+    "kr-625",
+    "kr-626",
+    "kr-627",
+    "kr-628",
+    "kr-629",
+    "kr-630",
+    "kr-631",
+    "kr-632",
+    "kr-633",
+    "kr-634",
+    "kr-635",
+    "kr-636",
+    "kr-637",
+    "kr-638",
+    "kr-639",
+    "kr-640",
+    "kr-641",
+    "kr-642",
+    "kr-643",
+    "kr-644",
+    "kr-645",
+    "kr-646",
+    "kr-647",
+    "kr-648",
+    "kr-649",
+    "kr-650",
+    "kr-651",
+    "kr-652",
+    "kr-653",
+    "kr-654",
+    "kr-655",
+    "kr-656",
+    "kr-657",
+    "kr-658",
+    "kr-659",
+    "kr-660",
+    "kr-661",
+    "kr-662",
+    "kr-663",
+    "kr-664",
+    "kr-665",
+    "kr-666",
+    "kr-667",
+    "kr-668",
+    "kr-669",
+    "kr-670",
+    "kr-671",
+    "kr-672",
+    "kr-673",
+    "kr-674",
+    "kr-675",
+    "kr-676",
+    "kr-677",
+    "kr-678",
+    "kr-679",
+    "kr-680",
+    "kr-681",
+    "kr-682",
+    "kr-683",
+    "kr-684",
+    "kr-685"
+  ],
+  "sampleDeleteIds": [
+    "kr-494",
+    "kr-495",
+    "kr-496",
+    "kr-497",
+    "kr-498",
+    "kr-499",
+    "kr-500",
+    "kr-501",
+    "kr-502",
+    "kr-503",
+    "kr-504",
+    "kr-505",
+    "kr-506",
+    "kr-507",
+    "kr-508",
+    "kr-509",
+    "kr-510",
+    "kr-511",
+    "kr-512",
+    "kr-513",
+    "kr-514",
+    "kr-515",
+    "kr-516",
+    "kr-517",
+    "kr-518",
+    "kr-519",
+    "kr-520",
+    "kr-521",
+    "kr-522",
+    "kr-523",
+    "kr-524",
+    "kr-525",
+    "kr-526",
+    "kr-527",
+    "kr-528",
+    "kr-529",
+    "kr-530",
+    "kr-531",
+    "kr-532",
+    "kr-533"
+  ]
+}

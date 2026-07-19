@@ -21,6 +21,8 @@
     "admin:repair-asns:dry": "npx vite-node scripts/admin/repair-duplicate-asns.ts --dry-run",
     "admin:repair-karkun-orphans": "node scripts/admin/repair-duplicate-karkun-orphans.mjs --apply",
     "admin:repair-karkun-orphans:dry": "node scripts/admin/repair-duplicate-karkun-orphans.mjs --dry-run",
+    "admin:kc0050:dry": "node scripts/admin/repair-duplicate-karkun-orphans.mjs --dry-run",
+    "admin:kc0050:apply": "node scripts/admin/repair-duplicate-karkun-orphans.mjs --apply",
     "verify:persistence": "npx vite-node scripts/verify-persistence.ts",
     "verify:guidance": "npx vite-node scripts/verify-guidance.ts",
     "verify:compliance": "npx vite-node scripts/verify-compliance-module.ts",
