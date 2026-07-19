@@ -3,10 +3,10 @@
  */
 
 import { ruknMaster } from '@/data/ruknMaster'
-import { getPeopleStatistics } from '@/lib/peopleStore'
 import { getCampaignProgressOverview, getTeamPerformanceRows } from '@/lib/commandCenterPresentation'
 import { getGuidanceForRuknKarkuns } from '@/lib/guidance/guidanceEngine'
 import { getAssignmentDashboardMetrics } from '@/services/assignmentService'
+import { getCampaignConnectionMetrics } from '@/services/metricsService'
 import {
   getActiveCampaign,
   formatCampaignDate,
@@ -16,10 +16,7 @@ import { getBaitulMaalDashboardMetrics } from '@/services/baitulMaalService'
 import { getIjtemaAttendanceDashboardMetrics } from '@/services/ijtemaAttendanceService'
 import { getJihWebPortalDashboardMetrics } from '@/services/jihWebPortalService'
 import { getConnectedProfileCompletionMetrics } from '@/lib/karkunProfileCompletion'
-import {
-  getCanonicalConnectedAssignments,
-  getCanonicalConnectedKarkunCount,
-} from '@/lib/connections/getConnectedKarkunsForRukn'
+import { getCanonicalConnectedAssignments } from '@/lib/connections/getConnectedKarkunsForRukn'
 import { getRecentActivity } from '@/stores/activityLogStore'
 import { JOURNEY_STAGE_LABELS, JOURNEY_STAGE_ORDER, type JourneyStageId } from '@/types/guidance'
 import type { AdminCommandCenterSnapshot } from '@/types/campaignAutomation.types'
@@ -108,8 +105,9 @@ export function buildAdminMissionControl(
 ): AdminMissionControlModel {
   const campaign = getActiveCampaign()
   const timeline = getCampaignTimeline()
-  const people = getPeopleStatistics()
   const assignments = getAssignmentDashboardMetrics()
+  // KC-0058.1 — shared MetricsService (dashboard + integrity scanner).
+  const connectionMetrics = getCampaignConnectionMetrics()
   const overview = getCampaignProgressOverview()
   const ijtema = getIjtemaAttendanceDashboardMetrics()
   const baitulMaal = getBaitulMaalDashboardMetrics()
@@ -129,10 +127,9 @@ export function buildAdminMissionControl(
   const criticalFollowUps =
     snapshot.followUpQueue.find((group) => group.section === 'overdue')?.items.length ?? 0
 
-  // KC-028A: hero Connected uses the same canonical count as Automation / Rafeeq.
-  const connected = getCanonicalConnectedKarkunCount()
-  const remaining = Math.max(people.unassignedKarkuns, 0)
-  const total = connected + remaining
+  const connected = connectionMetrics.connected
+  const remaining = connectionMetrics.remaining
+  const total = connectionMetrics.total
 
   const todaysPriorities = [
     ...snapshot.alerts.slice(0, 4).map((alert) => ({
@@ -211,7 +208,7 @@ export function buildAdminMissionControl(
       remaining,
       // KC-0054: never fabricate a denominator of 1 when registry is still empty.
       total,
-      pct: total > 0 ? Math.round((connected / total) * 100) : 0,
+      pct: connectionMetrics.progressPct,
     },
     campaignHealth: {
       overall: overview.overall,

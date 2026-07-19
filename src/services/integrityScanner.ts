@@ -7,6 +7,7 @@ import { ruknMaster } from '@/data/ruknMaster'
 import { getMaxKarkunNumFromRegistry, getNextKarkunNum, parseKarkunIdNum } from '@/lib/peopleStore'
 import { getAllAssignments } from '@/stores/assignmentStore'
 import { getCampaignLibrary } from '@/services/campaignService'
+import { getCampaignConnectionMetrics } from '@/services/metricsService'
 import type { IntegrityFinding, IntegrityReport } from '@/types/integrity.types'
 
 function finding(
@@ -204,6 +205,20 @@ export function runIntegrityScan(): IntegrityReport {
     void campaignIds
   }
 
+  // KC-0058.1 — shared MetricsService (same Connected/Progress as Admin Dashboard).
+  const metrics = getCampaignConnectionMetrics()
+  checksRun += 1
+  if (metrics.connected === 0 && metrics.activeConnectionRowCount > 0) {
+    warnings.push(
+      finding(
+        'CANONICAL_CONNECTED_ZERO_WITH_ACTIVE_ROWS',
+        'warning',
+        `MetricsService connected=0 but ${metrics.activeConnectionRowCount} Active rows exist (likely missing/archived Karkun registry).`,
+        { details: { ...metrics } },
+      ),
+    )
+  }
+
   const recommendations: string[] = []
   if (errors.some((e) => e.code === 'COUNTER_DRIFT')) {
     recommendations.push('Run npm run admin:kc0056:repair-counter to heal karkunCounter.')
@@ -217,9 +232,17 @@ export function runIntegrityScan(): IntegrityReport {
   if (errors.some((e) => e.code === 'MISSING_KARKUN_REF' || e.code === 'MISSING_RUKN_REF')) {
     recommendations.push('Repair or archive orphan assignments that reference missing people.')
   }
+  if (warnings.some((w) => w.code === 'CANONICAL_CONNECTED_ZERO_WITH_ACTIVE_ROWS')) {
+    recommendations.push(
+      'Dashboard Connected uses MetricsService.connected (canonical). Ensure Karkun registry is hydrated before reading KPIs.',
+    )
+  }
   if (errors.length === 0 && warnings.length === 0) {
     recommendations.push('Integrity scan clean — continue normal operations.')
   }
+  recommendations.push(
+    `Dashboard Connections should show ${metrics.connected}/${metrics.total} (${metrics.progressPct}%). Raw connection docs=${metrics.connectionDocumentCount}.`,
+  )
 
   return {
     generatedAt: new Date().toISOString(),
@@ -228,10 +251,17 @@ export function runIntegrityScan(): IntegrityReport {
       warningCount: warnings.length,
       checksRun,
       healthy: errors.length === 0,
+      connectionDocumentCount: metrics.connectionDocumentCount,
+      activeConnectionRowCount: metrics.activeConnectionRowCount,
+      connected: metrics.connected,
+      remaining: metrics.remaining,
+      total: metrics.total,
+      progressPct: metrics.progressPct,
     },
     errors,
     warnings,
     recommendations,
+    metrics,
   }
 }
 

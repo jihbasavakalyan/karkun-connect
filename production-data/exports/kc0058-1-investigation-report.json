@@ -1,0 +1,44 @@
+{
+  "ticket": "KC-0058.1",
+  "generatedAt": "2026-07-19T19:00:00.000Z",
+  "rootCauseClass": "Dashboard calculation + dual metrics paths (not a Firestore data issue; not a KC-0058 soft-delete regression)",
+  "firestoreEvidence": {
+    "connectionsTotal": 56,
+    "byStatus": { "Active": 46, "Replaced": 10 },
+    "archivedFlagCount": 0,
+    "missingCampaignId": 56,
+    "canonicalConnectedUniqueKarkuns": 46,
+    "karkunDocCount": 493
+  },
+  "whyCountsDiffered": {
+    "integrityScannerBefore": "Reported raw connectionDocumentCount = connections.size (56).",
+    "dashboardBefore": "Reported Metrics-like Connected/total from Mission Control model using canonical Active unique Karkuns (KC-028A). Stale model after hydrate could show 0/0 and 0% when registry/assignments were empty at first paint, and health KPIs re-read a stale model on assignmentVersion bumps.",
+    "expectedAlignedMeaning": "Dashboard Connections label = connected/total where connected = canonical Active unique non-archived Karkuns; total = connected + Available pool. Raw docs (56) remain available as connectionDocumentCount."
+  },
+  "beforeAfter": {
+    "before": {
+      "integrityScanner.connectionCount": 56,
+      "dashboard.connections": "0/0 (observed when Mission Control model stale/empty)",
+      "dashboard.progressPct": 0
+    },
+    "after": {
+      "sharedSource": "MetricsService.getCampaignConnectionMetrics()",
+      "integrityScanner.summary.connected": "canonical Connected (same as dashboard)",
+      "integrityScanner.summary.connectionDocumentCount": "raw docs (56 in production)",
+      "dashboard.connections": "connected/total from MetricsService",
+      "productionExpected": "46 / (46 + Available pool) with progressPct from same service"
+    }
+  },
+  "filesChanged": [
+    "src/services/metricsService.ts",
+    "src/services/integrityScanner.ts",
+    "src/types/integrity.types.ts",
+    "src/lib/missionControl/buildAdminMissionControl.ts",
+    "src/lib/missionControl/adminMissionControlPresentation.ts",
+    "src/pages/admin/AdminHomePage.tsx",
+    "scripts/verify-kc0058-1-dashboard-metrics.ts",
+    "scripts/admin/kc0058-production-integrity-scan.mjs",
+    "scripts/admin/kc0058-1-dashboard-metrics-probe.mjs",
+    "package.json"
+  ]
+}

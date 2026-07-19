@@ -92,8 +92,25 @@ async function main() {
     warnings.push({ code: 'MISSING_CAMPAIGN_LIBRARY', message: 'No campaigns docs' })
   }
 
+  // KC-0058.1 — dashboard-aligned counts (canonical Connected ≠ raw doc count).
+  let activeRowCount = 0
+  let archivedConnectionCount = 0
+  const activeUnique = new Set()
+  for (const a of assignments) {
+    if (a.isArchived) archivedConnectionCount += 1
+    if (a.status === 'Active' && !a.isArchived) {
+      activeRowCount += 1
+      const k = karkuns.find((row) => row.id === a.karkunId)
+      if (k && !k.isArchived) activeUnique.add(a.karkunId)
+    }
+  }
+  const connected = activeUnique.size
+  const remaining = karkuns.filter((k) => !k.isArchived && k.assignmentStatus === 'Available').length
+  const total = connected + remaining
+  const progressPct = total > 0 ? Math.round((connected / total) * 100) : 0
+
   const report = {
-    ticket: 'KC-0058',
+    ticket: 'KC-0058.1',
     projectId,
     generatedAt: new Date().toISOString(),
     summary: {
@@ -103,15 +120,30 @@ async function main() {
       healthy: errors.length === 0,
       karkunCount: karkuns.length,
       ruknCount: rukns.length,
-      connectionCount: assignments.length,
+      connectionDocumentCount: assignments.length,
+      activeConnectionRowCount: activeRowCount,
+      archivedConnectionCount,
+      connected,
+      remaining,
+      total,
+      progressPct,
       nextKarkunNum: counter,
       maxKarkunNum: maxNum,
+    },
+    dashboardAlignment: {
+      note: 'Admin Dashboard Connections KPI = connected/total from MetricsService (canonical Active unique Karkuns / campaign pool).',
+      expectedDashboardConnectionsLabel: `${connected}/${total}`,
+      expectedProgressPct: progressPct,
+      rawConnectionDocuments: assignments.length,
     },
     errors,
     warnings,
     recommendations:
       errors.length === 0
-        ? ['Integrity scan clean — continue normal operations.']
+        ? [
+            'Integrity scan clean — continue normal operations.',
+            `Dashboard Connections should show ${connected}/${total} (${progressPct}%).`,
+          ]
         : ['Review errors before approvals/transfers. Prefer archive over delete.'],
   }
 

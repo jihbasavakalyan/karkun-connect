@@ -1,0 +1,30 @@
+{
+  "ticket": "KC-0058.1",
+  "projectId": "karkun-connect-75c68",
+  "generatedAt": "2026-07-19T18:50:47.898Z",
+  "firestore": {
+    "connectionsTotal": 56,
+    "byStatus": {
+      "Active": 46,
+      "Replaced": 10
+    },
+    "statusSamples": {
+      "Active": "asgn-1784344130109-yqwbd",
+      "Replaced": "asgn-1784374704013-5xjn8"
+    },
+    "archivedFlagCount": 0,
+    "withCampaignId": 0,
+    "missingCampaignId": 56,
+    "activeRowCount": 46,
+    "activeKarkunMissing": 0,
+    "activeKarkunArchived": 0,
+    "canonicalConnectedUniqueKarkuns": 46,
+    "karkunDocCount": 493
+  },
+  "interpretation": {
+    "integrityScannerConnectionCount": 56,
+    "dashboardCanonicalConnectedWouldBe": 46,
+    "likelyCause": "DATA_OK_DASHBOARD_LIKELY_HYDRATION_OR_CLIENT_FILTER"
+  },
+  "missingKarkunSamples": []
+}

@@ -12,6 +12,7 @@ import {
 import { buildAdminRelationshipInsights } from '@/lib/relationshipIntelligencePresentation'
 import { getAnnexure1ExecutionMetrics } from '@/services/annexure1Service'
 import { getFollowUpDashboardMetrics } from '@/services/followUpService'
+import { getCampaignConnectionMetrics } from '@/services/metricsService'
 import { getRecentActivity } from '@/stores/activityLogStore'
 import { adminRuknDetailPath, adminExecutionPath, adminCompliancePath, ROUTES } from '@/constants/routes'
 import { leaderboardStatus } from '@/components/mission-control/McProgressRing'
@@ -67,6 +68,8 @@ export function buildAdminCampaignHealthKpis(
   const overview = getCampaignProgressOverview()
   const annexure = getAnnexure1ExecutionMetrics()
   const followUps = getFollowUpDashboardMetrics()
+  // KC-0058.1 — always read live MetricsService (never trust a stale model snapshot).
+  const connections = getCampaignConnectionMetrics()
   const execution = overview.execution
   const pendingVisits = annexure.pendingMeetings
   const completedVisits = annexure.submittedThisWeek
@@ -84,9 +87,9 @@ export function buildAdminCampaignHealthKpis(
     {
       id: 'connections',
       label: 'Connections',
-      value: `${model.connectionProgress.connected}/${model.connectionProgress.total}`,
-      hint: 'Active connections',
-      tone: healthTone(model.connectionProgress.pct),
+      value: `${connections.connected}/${connections.total}`,
+      hint: 'Canonical connected / campaign pool',
+      tone: healthTone(connections.progressPct),
       route: adminCompliancePath('connections'),
     },
     {

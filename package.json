@@ -20,6 +20,7 @@
     "verify:kc0055": "npx vite-node scripts/verify-kc0055-inplace-transfer.ts",
     "verify:kc0056": "npx vite-node scripts/verify-kc0056-karkun-id-allocation.ts",
     "verify:kc0058": "npx vite-node scripts/verify-kc0058-data-preservation.ts",
+    "verify:kc0058.1": "npx vite-node scripts/verify-kc0058-1-dashboard-metrics.ts",
     "admin:integrity-scan": "npx vite-node scripts/admin/run-integrity-scan.ts",
     "admin:kc0058:integrity": "node scripts/admin/kc0058-production-integrity-scan.mjs",
     "admin:kc0056:recovery-report": "node scripts/admin/kc0056-approval-recovery-report.mjs",

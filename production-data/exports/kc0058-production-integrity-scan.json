@@ -1,7 +1,7 @@
 {
-  "ticket": "KC-0058",
+  "ticket": "KC-0058.1",
   "projectId": "karkun-connect-75c68",
-  "generatedAt": "2026-07-19T18:39:47.362Z",
+  "generatedAt": "2026-07-19T19:02:42.662Z",
   "summary": {
     "errorCount": 0,
     "warningCount": 1,
@@ -9,9 +9,21 @@
     "healthy": true,
     "karkunCount": 493,
     "ruknCount": 49,
-    "connectionCount": 56,
+    "connectionDocumentCount": 56,
+    "activeConnectionRowCount": 46,
+    "archivedConnectionCount": 0,
+    "connected": 46,
+    "remaining": 447,
+    "total": 493,
+    "progressPct": 9,
     "nextKarkunNum": 494,
     "maxKarkunNum": 493
+  },
+  "dashboardAlignment": {
+    "note": "Admin Dashboard Connections KPI = connected/total from MetricsService (canonical Active unique Karkuns / campaign pool).",
+    "expectedDashboardConnectionsLabel": "46/493",
+    "expectedProgressPct": 9,
+    "rawConnectionDocuments": 56
   },
   "errors": [],
   "warnings": [
@@ -21,6 +33,7 @@
     }
   ],
   "recommendations": [
-    "Integrity scan clean — continue normal operations."
+    "Integrity scan clean — continue normal operations.",
+    "Dashboard Connections should show 46/493 (9%)."
   ]
 }

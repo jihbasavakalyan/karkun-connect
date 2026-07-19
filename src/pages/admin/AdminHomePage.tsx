@@ -5,6 +5,7 @@ import {
   AskDigitalRafeeqCard,
 } from '@/components/mission-control'
 import { openDigitalRafeeqAssistant } from '@/features/digitalRafeeq/launcher'
+import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { useRepositoryHydration } from '@/hooks/useRepositoryHydration'
 import { buildAdminMissionControl } from '@/lib/missionControl/buildAdminMissionControl'
 import { useAdminCommandCenter } from '@/providers/AdminCommandCenterProvider'
@@ -12,7 +13,12 @@ import { useAdminCommandCenter } from '@/providers/AdminCommandCenterProvider'
 export function AdminHomePage() {
   const snapshot = useAdminCommandCenter()
   const isHydrated = useRepositoryHydration()
-  const model = useMemo(() => buildAdminMissionControl(snapshot), [snapshot])
+  const { assignmentVersion } = useAssignmentEngine()
+  // KC-0058.1 — rebuild Mission Control from live MetricsService when stores hydrate.
+  const model = useMemo(
+    () => buildAdminMissionControl(snapshot),
+    [snapshot, assignmentVersion, isHydrated],
+  )
 
   return (
     <div className="cd-page cd-page-admin mc-page mc-page-admin-compact mc-page-admin-command">
