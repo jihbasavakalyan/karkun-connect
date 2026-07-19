@@ -23,7 +23,6 @@ import {
 import type { ImportSummary } from '@/types/people.types'
 import type { ProductionMigrationSummary } from '@/types/productionMigration'
 import {
-  hasPersistedKarkunRegistry,
   loadPeopleRegistryFromPersistence,
   persistPeopleRegistry,
 } from '@/lib/peopleRegistryPersistence'
@@ -78,7 +77,6 @@ function dedupeProductionRows(
       kept.push(row)
       return
     }
-
     if (seenMobiles.has(mobileKey)) {
       crossDuplicates.push({
         row: index + 2,
@@ -88,7 +86,6 @@ function dedupeProductionRows(
       })
       return
     }
-
     seenMobiles.add(mobileKey)
     kept.push(row)
   })
@@ -137,12 +134,60 @@ function initializeComplianceDefaults(): void {
   }
 }
 
-function countExistingProductionRegistry(): number {
+/** Transient in-memory count — never the sole production existence signal. */
+function countInMemoryProductionRegistry(): number {
   const persisted = unwrapRepository(getRepositories().karkun.loadState(), {
     karkuns: [],
     nextKarkunNum: 1,
   })
   return Math.max(persisted.karkuns.length, MOCK_KARKUN_REGISTRY.length)
+}
+
+/**
+ * KC-004H — Authoritative registry existence count for migration decisions.
+ * Durable resolveRegistryCount() is primary; in-memory is a floor only.
+ * If durable read fails and memory is empty, fail closed (treat as exists).
+ */
+async function resolveAuthoritativeRegistryCount(forceFullSeed: boolean): Promise<{
+  authoritativeCount: number
+  memoryCount: number
+  durableCount: number | null
+  durableResolveFailed: boolean
+  refuseBecauseUncertain: boolean
+}> {
+  const memoryCount = countInMemoryProductionRegistry()
+  const resolveResult = await getRepositories().karkun.resolveRegistryCount()
+
+  if (resolveResult.ok) {
+    return {
+      authoritativeCount: Math.max(resolveResult.data, memoryCount),
+      memoryCount,
+      durableCount: resolveResult.data,
+      durableResolveFailed: false,
+      refuseBecauseUncertain: false,
+    }
+  }
+
+  const durableError =
+    resolveResult.error.message ||
+    resolveResult.error.code ||
+    'resolveRegistryCount failed'
+  const refuseBecauseUncertain = memoryCount === 0 && !forceFullSeed
+  if (refuseBecauseUncertain) {
+    console.warn(
+      '[KC-004H] resolveRegistryCount failed with empty in-memory registry — refusing full seed',
+      { durableError },
+    )
+  }
+
+  return {
+    // Fail closed: uncertain empty → count 1 so safeguard refuses unless forceFullSeed.
+    authoritativeCount: refuseBecauseUncertain ? 1 : memoryCount,
+    memoryCount,
+    durableCount: null,
+    durableResolveFailed: true,
+    refuseBecauseUncertain,
+  }
 }
 
 function buildAdoptSummary(): ProductionMigrationSummary {
@@ -193,8 +238,8 @@ function adoptExistingProductionRegistry(
     migrationVersion: MIGRATION_VERSION,
     extra: {
       authoritativeVersion,
-      registryCount: countExistingProductionRegistry(),
-      note: 'KC-004D — refused full seed; adopted existing production registry',
+      registryCount: countInMemoryProductionRegistry(),
+      note: 'KC-004H — refused full seed; adopted existing production registry',
     },
   })
   return summary
@@ -215,47 +260,76 @@ export async function runProductionDataMigration(
     return lastMigrationSummary
   }
 
+  // KC-004D — authoritative migration version (not cache-only).
   const authoritativeVersion = unwrapRepository(
     await getRepositories().settings.resolveMigrationVersion(),
     null,
   )
-  const existingCount = countExistingProductionRegistry()
+  const forceFullSeed = options.forceFullSeed === true
+
+  // KC-004H — durable registry existence (not transient memory alone).
+  const {
+    authoritativeCount,
+    memoryCount,
+    durableCount,
+    durableResolveFailed,
+    refuseBecauseUncertain,
+  } = await resolveAuthoritativeRegistryCount(forceFullSeed)
+  const registryExists = authoritativeCount > 0
 
   kc004cTraceRegistry({
     caller: 'runProductionDataMigration',
     phase: 'decision',
-    before: existingCount,
+    before: authoritativeCount,
     migrationVersion: authoritativeVersion,
     extra: {
       expectedVersion: MIGRATION_VERSION,
-      hasPersistedKarkunRegistry: hasPersistedKarkunRegistry(),
-      forceFullSeed: options.forceFullSeed === true,
-      note: 'KC-004D — uses resolveMigrationVersion() (authoritative), not cache-only',
+      memoryCount,
+      durableCount,
+      durableResolveFailed,
+      refuseBecauseUncertain,
+      registryExists,
+      forceFullSeed,
+      note: 'KC-004H — registry existence from resolveRegistryCount() (durable), not memory alone',
     },
   })
 
-  if (authoritativeVersion === MIGRATION_VERSION && hasPersistedKarkunRegistry()) {
+  if (authoritativeVersion === MIGRATION_VERSION && registryExists) {
     return adoptExistingProductionRegistry('early-return-version-match', authoritativeVersion)
   }
 
-  // Permanent production safeguard: never full-seed when registry data already exists.
+  // Permanent production safeguard: never full-seed when durable registry exists
+  // (or when durable existence cannot be confirmed and memory is empty).
   if (
+    refuseBecauseUncertain ||
     shouldRefuseFullProductionSeed({
-      existingRegistryCount: existingCount,
+      existingRegistryCount: authoritativeCount,
       forceFullSeed: options.forceFullSeed,
     })
   ) {
     console.warn(
-      '[KC-004D] Refusing full production seed — registry already exists',
-      { existingCount, authoritativeVersion },
+      '[KC-004H] Refusing full production seed — authoritative registry exists or uncertain',
+      {
+        authoritativeCount,
+        memoryCount,
+        durableCount,
+        durableResolveFailed,
+        refuseBecauseUncertain,
+        authoritativeVersion,
+      },
     )
-    return adoptExistingProductionRegistry('safeguard-existing-registry', authoritativeVersion)
+    return adoptExistingProductionRegistry(
+      refuseBecauseUncertain
+        ? 'safeguard-uncertain-durable-read'
+        : 'safeguard-existing-registry',
+      authoritativeVersion,
+    )
   }
 
-  if (options.forceFullSeed && existingCount > 0) {
+  if (forceFullSeed && authoritativeCount > 0) {
     console.warn(
-      '[KC-004D] forceFullSeed override — full production seed will run despite existing registry',
-      { existingCount },
+      '[KC-004H] forceFullSeed override — full production seed will run despite existing registry',
+      { authoritativeCount, memoryCount, durableCount },
     )
   }
 

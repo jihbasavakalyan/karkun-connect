@@ -22,7 +22,7 @@ function assert(condition: boolean, message: string): asserts condition {
   }
 }
 
-runProductionDataMigration()
+await runProductionDataMigration()
 
 const maleRukns = getAllRukns().filter((record) => record.gender === 'Male')
 assert(maleRukns.length > 0, 'Need at least one male Rukn')
@@ -43,7 +43,7 @@ if (!karkunId || !ruknId) {
   const rukn = maleRukns[0]
   const pool = getAvailableKarkunan().filter((karkun) => karkun.gender === 'Male')
   assert(pool.length > 0, 'Need an available male Karkun for guidance verification')
-  const result = assignKarkun(pool[0].id, rukn.id, 'Administrator')
+  const result = await assignKarkun(pool[0].id, rukn.id, 'Administrator')
   assert(result.success, `Assignment for guidance test must succeed: ${result.error ?? ''}`)
   karkunId = pool[0].id
   ruknId = rukn.id

@@ -19,7 +19,7 @@ function assert(condition: boolean, message: string): asserts condition {
   }
 }
 
-runProductionDataMigration()
+await runProductionDataMigration()
 
 console.log('▶ mobile format validation')
 {

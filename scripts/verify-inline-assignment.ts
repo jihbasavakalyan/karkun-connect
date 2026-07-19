@@ -452,7 +452,7 @@ function verifyAvailableKarkunsPipelineStages(): void {
 
 
 async function main(): Promise<void> {
-  runProductionDataMigration()
+  await runProductionDataMigration()
   verifyKarkunSearchMatching()
   reset()
   verifyAvailableKarkunsPipelineStages()

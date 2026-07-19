@@ -74,7 +74,7 @@ function resetAllPersistence(): void {
   MOCK_KARKUN_REGISTRY.length = 0
 }
 
-function verifyConnectionPersistence(gender: PersonGender): void {
+async function verifyConnectionPersistence(gender: PersonGender): Promise<void> {
   const rukn = ruknMaster.find((record) => record.status === 'active' && record.gender === gender)
   assert(Boolean(rukn), `Need active ${gender} Rukn`)
 
@@ -85,7 +85,7 @@ function verifyConnectionPersistence(gender: PersonGender): void {
   })
 
   for (const karkun of karkuns) {
-    const result = assignRukn({
+    const result = await assignRukn({
       ruknId: rukn!.id,
       karkunId: karkun.id,
       effectiveFrom: today,
@@ -175,17 +175,21 @@ function verifyTemplatePersistence(): void {
   )
 }
 
-resetAllPersistence()
-runProductionDataMigration()
-verifyConnectionPersistence('Female')
-resetAllPersistence()
-runProductionDataMigration()
-verifyAnnexurePersistence()
-resetAllPersistence()
-runProductionDataMigration()
-verifyCompliancePersistence()
-resetAllPersistence()
-runProductionDataMigration()
-verifyTemplatePersistence()
+async function main(): Promise<void> {
+  resetAllPersistence()
+  await runProductionDataMigration()
+  await verifyConnectionPersistence('Female')
+  resetAllPersistence()
+  await runProductionDataMigration()
+  verifyAnnexurePersistence()
+  resetAllPersistence()
+  await runProductionDataMigration()
+  verifyCompliancePersistence()
+  resetAllPersistence()
+  await runProductionDataMigration()
+  verifyTemplatePersistence()
 
-console.log('Persistence and data integrity verification passed.')
+  console.log('Persistence and data integrity verification passed.')
+}
+
+void main()

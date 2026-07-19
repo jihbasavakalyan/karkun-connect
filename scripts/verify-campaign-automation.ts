@@ -53,7 +53,7 @@ function createKarkun(id: string, gender: PersonGender): KarkunRegistryRecord {
   }
 }
 
-runProductionDataMigration()
+await runProductionDataMigration()
 
 const adminSnapshot = getAdminCommandCenterSnapshot()
 assert(adminSnapshot.role === 'administrator', 'Admin snapshot role must be administrator')

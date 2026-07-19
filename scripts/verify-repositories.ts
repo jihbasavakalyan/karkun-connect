@@ -46,9 +46,10 @@ console.log('▶ campaign repository reads static library')
 }
 
 console.log('▶ karkun + rukn round-trip')
-{
+await (async () => {
   reset()
   const repos = getRepositories()
+  assert.equal(typeof repos.karkun.resolveRegistryCount, 'function')
   repos.karkun.saveState({
     karkuns: [
       {
@@ -78,6 +79,9 @@ console.log('▶ karkun + rukn round-trip')
     ],
     nextKarkunNum: 42,
   })
+  const durableCount = await repos.karkun.resolveRegistryCount()
+  assert.equal(durableCount.ok, true)
+  assert.equal(durableCount.ok ? durableCount.data : -1, 1)
   repos.rukn.saveAll([
     {
       id: 'R999',
@@ -98,7 +102,7 @@ console.log('▶ karkun + rukn round-trip')
 
   const rukns = unwrapRepository(repos.rukn.loadAll(), [])
   assert.equal(rukns[0]?.id, 'R999')
-}
+})()
 
 console.log('▶ connection state round-trip')
 {

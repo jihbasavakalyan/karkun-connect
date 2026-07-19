@@ -20,7 +20,7 @@ function assert(condition: boolean, message: string): asserts condition {
   }
 }
 
-const summary = runProductionDataMigration()
+const summary = await runProductionDataMigration()
 
 assert(ruknMaster.length === 49, 'Rukn master must contain 49 records')
 assert(

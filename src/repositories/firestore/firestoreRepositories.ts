@@ -14,6 +14,7 @@ import type { DatasetBackup } from '@/types/dataMigration'
 import {
   collection,
   doc,
+  getCountFromServer,
   getDocs,
   onSnapshot,
   runTransaction,
@@ -878,6 +879,17 @@ export class KarkunFirestoreRepository implements KarkunRepository {
 
   exists(): RepositoryResult<boolean> {
     return repositoryOk(karkunCache.get().karkuns.length > 0)
+  }
+
+  /** KC-004H — durable Firestore count for migration existence decisions. */
+  async resolveRegistryCount(): Promise<RepositoryResult<number>> {
+    try {
+      const db = getFirestoreDb()
+      const snapshot = await getCountFromServer(collection(db, FIRESTORE_COLLECTIONS.karkuns))
+      return repositoryOk(snapshot.data().count)
+    } catch (error) {
+      return mapFirestoreError(error)
+    }
   }
 }
 

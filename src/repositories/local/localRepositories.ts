@@ -141,6 +141,18 @@ export class KarkunLocalRepository implements KarkunRepository {
   exists(): RepositoryResult<boolean> {
     return repositoryOk(getBrowserStorage().getItem(STORAGE_KEYS.karkunRegistry) !== null)
   }
+
+  /** KC-004H — durable localStorage count for migration existence decisions. */
+  async resolveRegistryCount(): Promise<RepositoryResult<number>> {
+    return tryRepository(() => {
+      const stored = getBrowserStorage().getItem(STORAGE_KEYS.karkunRegistry)
+      if (stored === null) {
+        return 0
+      }
+      const parsed = loadJsonFromStorage<KarkunRegistryRecord[]>(STORAGE_KEYS.karkunRegistry, [])
+      return parsed.length
+    })
+  }
 }
 
 export class ConnectionLocalRepository implements ConnectionRepository {
