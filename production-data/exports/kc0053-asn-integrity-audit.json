@@ -1,0 +1,19 @@
+{
+  "label": "KC-0053 ASN integrity audit (read-only)",
+  "generatedAt": "2026-07-19T15:59:54.016Z",
+  "projectId": "karkun-connect-75c68",
+  "totals": {
+    "connections": 55,
+    "active": 45
+  },
+  "connectionMeta": {
+    "nextSequence": 74,
+    "asnRepairVersion": 1
+  },
+  "maxAssignmentNumberInDocs": "ASN-000068",
+  "maxSequenceInDocs": 68,
+  "metaBehindDocs": false,
+  "collisionGroups": 0,
+  "collisions": [],
+  "rootCauseHypothesis": "allocateNextAssignmentNumber uses settings/connectionMeta.nextSequence (+ client cache floor) but does not floor against max ASN already present in connection documents. If meta lags behind docs, a new assign can mint a colliding ASN."
+}

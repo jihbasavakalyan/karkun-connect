@@ -11,6 +11,11 @@ type AssignmentHistoryTimelineProps = {
   /** KC-003.1 — all current Active connections (shown above History). */
   activeAssignments?: AssignmentRecord[]
   perspective: 'rukn' | 'karkun'
+  /**
+   * KC-0053 — When the page already renders Connected Karkuns, hide the duplicate
+   * "Current Connections" block and show History only.
+   */
+  showCurrent?: boolean
 }
 
 function formatDate(iso: string): string {
@@ -83,13 +88,15 @@ export function AssignmentHistoryTimeline({
   currentAssignment,
   activeAssignments,
   perspective,
+  showCurrent = true,
 }: AssignmentHistoryTimelineProps) {
   const { current, historical } = partitionConnectionPresentation(history, {
     activeAssignments,
     currentAssignment,
   })
+  const visibleCurrent = showCurrent ? current : []
 
-  if (current.length === 0 && historical.length === 0) {
+  if (visibleCurrent.length === 0 && historical.length === 0) {
     return (
       <div className="rounded-(--radius-card) border border-border bg-surface p-6 text-center shadow-card">
         <p className="text-secondary">No connection history yet.</p>
@@ -99,17 +106,17 @@ export function AssignmentHistoryTimeline({
 
   return (
     <div className="space-y-4">
-      {current.length > 0 && (
+      {visibleCurrent.length > 0 && (
         <div>
           <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-primary">
-            {current.length === 1 && current[0]!.status === 'Suspended'
+            {visibleCurrent.length === 1 && visibleCurrent[0]!.status === 'Suspended'
               ? 'Suspended Connection'
-              : current.length === 1
+              : visibleCurrent.length === 1
                 ? 'Current Connection'
                 : 'Current Connections'}
           </h3>
           <ul className="space-y-3">
-            {current.map((record) => {
+            {visibleCurrent.map((record) => {
               const title =
                 perspective === 'rukn'
                   ? getKarkunById(record.karkunId)?.name ?? 'Unknown Karkun'

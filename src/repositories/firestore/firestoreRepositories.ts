@@ -945,7 +945,10 @@ export class ConnectionFirestoreRepository implements ConnectionRepository {
     try {
       const db = getFirestoreDb()
       const metaRef = doc(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.connectionMeta)
-      const floor = Math.max(1, connectionCache.get().nextSequence)
+      // KC-0053: floor against max ASN already present in cached docs so a lagging
+      // connectionMeta.nextSequence cannot mint a colliding Assignment Number.
+      const fromDocs = deriveNextSequenceFromRecords(connectionCache.get().assignments)
+      const floor = Math.max(1, connectionCache.get().nextSequence, fromDocs)
 
       const allocated = await runTransaction(db, async (transaction) => {
         const snapshot = await transaction.get(metaRef)

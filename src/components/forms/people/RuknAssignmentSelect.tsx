@@ -1,4 +1,12 @@
-import { useEffect, useId, useMemo, useRef, useState, type CSSProperties } from 'react'
+import {
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+} from 'react'
+import { createPortal } from 'react-dom'
 import { subscribeToAssignments } from '@/lib/assignmentEngine'
 import { getCompatibleRuknsForKarkun } from '@/lib/peopleStore'
 import { getRuknAssignmentSummary } from '@/services/assignmentService'
@@ -25,6 +33,7 @@ export function RuknAssignmentSelect({
   const listboxId = useId()
   const containerRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
   const peopleVersion = usePeopleStore()
   const [isOpen, setIsOpen] = useState(false)
   const [query, setQuery] = useState('')
@@ -63,12 +72,26 @@ export function RuknAssignmentSelect({
         return
       }
       const rect = triggerRef.current.getBoundingClientRect()
+      const width = Math.max(rect.width, 224)
+      const preferredTop = rect.bottom + 4
+      const maxHeight = 280
+      const spaceBelow = window.innerHeight - preferredTop - 8
+      const openUpward = spaceBelow < 160 && rect.top > spaceBelow
+      const top = openUpward
+        ? Math.max(8, rect.top - maxHeight - 4)
+        : preferredTop
+      const left = Math.min(
+        Math.max(8, rect.left),
+        Math.max(8, window.innerWidth - width - 8),
+      )
+
       setMenuStyle({
         position: 'fixed',
-        top: rect.bottom + 4,
-        left: rect.left,
-        width: Math.max(rect.width, 192),
-        zIndex: 60,
+        top,
+        left,
+        width,
+        maxHeight,
+        zIndex: 80,
       })
     }
 
@@ -88,10 +111,12 @@ export function RuknAssignmentSelect({
     }
 
     const handlePointerDown = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setIsOpen(false)
-        setQuery('')
+      const target = event.target as Node
+      if (containerRef.current?.contains(target) || menuRef.current?.contains(target)) {
+        return
       }
+      setIsOpen(false)
+      setQuery('')
     }
 
     document.addEventListener('mousedown', handlePointerDown)
@@ -112,28 +137,14 @@ export function RuknAssignmentSelect({
     ? 'w-full min-w-[10rem] rounded-md border border-border bg-surface px-2 py-1.5 text-left text-sm text-text-heading hover:border-primary focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-60'
     : 'w-full rounded-lg border border-border bg-surface px-4 py-3 text-left text-base text-text-heading hover:border-primary focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-60'
 
-  return (
-    <div ref={containerRef} className="relative">
-      <button
-        ref={triggerRef}
-        type="button"
-        className={`${triggerClassName} flex min-w-0 items-center gap-1`}
-        disabled={disabled}
-        aria-haspopup="listbox"
-        aria-expanded={isOpen}
-        aria-controls={listboxId}
-        onClick={() => setIsOpen((open) => !open)}
-      >
-        <span className="shrink-0">▼</span>
-        <span className="truncate">{selectedLabel}</span>
-      </button>
-
-      {isOpen && (
+  const menu = isOpen
+    ? createPortal(
         <div
+          ref={menuRef}
           id={listboxId}
           role="listbox"
           style={menuStyle}
-          className="rounded-lg border border-border bg-surface shadow-card"
+          className="overflow-hidden rounded-lg border border-border bg-surface shadow-card"
         >
           <div className="border-b border-border p-2">
             <input
@@ -162,34 +173,54 @@ export function RuknAssignmentSelect({
             {filteredOptions.map((rukn) => {
               const connectedCount = getRuknAssignmentSummary(rukn.id).assignedKarkunCount
               return (
-              <li key={rukn.id}>
-                <button
-                  type="button"
-                  role="option"
-                  aria-selected={value === rukn.id}
-                  className={`w-full px-3 py-2 text-left hover:bg-surface-muted ${
-                    value === rukn.id
-                      ? 'bg-surface-muted font-medium text-primary'
-                      : 'text-text-heading'
-                  }`}
-                  onClick={() => handleSelect(rukn.id)}
-                >
-                  <span className="block">
-                    {rukn.id} – {formatPersonNameForDisplay(rukn.name)}
-                  </span>
-                  <span className="mt-0.5 block text-xs font-normal text-secondary">
-                    Connected Karkuns: {connectedCount}
-                  </span>
-                </button>
-              </li>
+                <li key={rukn.id}>
+                  <button
+                    type="button"
+                    role="option"
+                    aria-selected={value === rukn.id}
+                    className={`w-full px-3 py-2 text-left hover:bg-surface-muted ${
+                      value === rukn.id
+                        ? 'bg-surface-muted font-medium text-primary'
+                        : 'text-text-heading'
+                    }`}
+                    onClick={() => handleSelect(rukn.id)}
+                  >
+                    <span className="block">
+                      {rukn.id} – {formatPersonNameForDisplay(rukn.name)}
+                    </span>
+                    <span className="mt-0.5 block text-xs font-normal text-secondary">
+                      Connected Karkuns: {connectedCount}
+                    </span>
+                  </button>
+                </li>
               )
             })}
             {filteredOptions.length === 0 && (
               <li className="px-3 py-2 text-secondary">No matching Rukns.</li>
             )}
           </ul>
-        </div>
-      )}
+        </div>,
+        document.body,
+      )
+    : null
+
+  return (
+    <div ref={containerRef} className="relative">
+      <button
+        ref={triggerRef}
+        type="button"
+        className={`${triggerClassName} flex min-w-0 items-center gap-1`}
+        disabled={disabled}
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        aria-controls={listboxId}
+        onClick={() => setIsOpen((open) => !open)}
+      >
+        <span className="shrink-0">▼</span>
+        <span className="truncate">{selectedLabel}</span>
+      </button>
+
+      {menu}
 
       {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
     </div>

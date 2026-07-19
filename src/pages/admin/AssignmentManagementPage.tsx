@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
-import { adminAnnexure1Path, adminRuknDetailPath } from '@/constants/routes'
+import { adminRuknDetailPath } from '@/constants/routes'
 import { AssignmentMappingView } from '@/components/assignment/AssignmentMappingView'
 import { AssignmentReviewQueue } from '@/components/assignment/AssignmentReviewQueue'
 import {
@@ -21,6 +21,7 @@ import {
   ruknMatchesAssignmentSearch,
 } from '@/services/assignmentService'
 import { AssignmentHistoryTimeline } from '@/components/forms/assignment/AssignmentHistoryTimeline'
+import { ConnectedAssignmentDeskCard } from '@/components/forms/assignment/ConnectedAssignmentDeskCard'
 import { AssignRuknModal } from '@/components/forms/assignment/AssignRuknModal'
 import { RemoveAssignmentModal } from '@/components/forms/assignment/RemoveAssignmentModal'
 import { RestoreAssignmentModal } from '@/components/forms/assignment/RestoreAssignmentModal'
@@ -58,6 +59,7 @@ export function AssignmentManagementPage() {
   const [removingKarkun, setRemovingKarkun] = useState<{ id: string; name: string } | null>(null)
   const [connectConfirmKarkunId, setConnectConfirmKarkunId] = useState<string | null>(null)
   const [transferLoading, setTransferLoading] = useState(false)
+  const [assignLoading, setAssignLoading] = useState(false)
 
   const selectRukn = (ruknId: string) => {
     setSelectedRuknId(ruknId)
@@ -139,24 +141,30 @@ export function AssignmentManagementPage() {
       setActionError('Select a Rukn and an available Karkun to continue.')
       return
     }
-
+    if (assignLoading) return
+    setAssignLoading(true)
     void assignRukn({
       ruknId: selectedRukn.id,
       karkunId: selectedKarkunId,
       effectiveFrom: new Date().toISOString().slice(0, 10),
       assignedBy: 'Administrator',
-    }).then(completeAssignment)
+    })
+      .then(completeAssignment)
+      .finally(() => setAssignLoading(false))
   }
 
   const handleAssign = (input: { karkunId: string; effectiveFrom: string; remarks?: string }) => {
-    if (!selectedRukn) return
+    if (!selectedRukn || assignLoading) return
+    setAssignLoading(true)
     void assignRukn({
       ruknId: selectedRukn.id,
       karkunId: input.karkunId,
       effectiveFrom: input.effectiveFrom,
       remarks: input.remarks,
       assignedBy: 'Administrator',
-    }).then(completeAssignment)
+    })
+      .then(completeAssignment)
+      .finally(() => setAssignLoading(false))
   }
 
   const handleRemove = (input: {
@@ -421,55 +429,20 @@ export function AssignmentManagementPage() {
                 Connected Karkuns ({ruknSummary.assignedKarkunCount})
               </h3>
               <ul className="mt-3 space-y-2">
-                {ruknSummary.activeAssignments.map((assignment) => {
-                  const assignedKarkun = getKarkunById(assignment.karkunId)
-                  return (
-                    <li
-                      key={assignment.assignmentId}
-                      className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-surface-muted px-3 py-2"
-                    >
-                      <div className="min-w-0">
-                        <p className="font-medium text-text-heading">
-                          {assignedKarkun?.name ?? assignment.karkunId}
-                        </p>
-                        <p className="text-xs text-secondary">{assignment.assignmentNumber}</p>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        <Link to={adminAnnexure1Path(assignment.karkunId)}>
-                          <SecondaryButton type="button" className="px-3 py-1.5 text-sm">
-                            Open Connection
-                          </SecondaryButton>
-                        </Link>
-                        <SecondaryButton
-                          type="button"
-                          className="px-3 py-1.5 text-sm"
-                          onClick={() => {
-                            setRemovingKarkun({
-                              id: assignment.karkunId,
-                              name: assignedKarkun?.name ?? assignment.karkunId,
-                            })
-                            setModalMode('transfer')
-                          }}
-                        >
-                          Transfer
-                        </SecondaryButton>
-                        <SecondaryButton
-                          type="button"
-                          className="px-3 py-1.5 text-sm"
-                          onClick={() => {
-                            setRemovingKarkun({
-                              id: assignment.karkunId,
-                              name: assignedKarkun?.name ?? assignment.karkunId,
-                            })
-                            setModalMode('remove')
-                          }}
-                        >
-                          Disconnect
-                        </SecondaryButton>
-                      </div>
-                    </li>
-                  )
-                })}
+                {ruknSummary.activeAssignments.map((assignment) => (
+                  <ConnectedAssignmentDeskCard
+                    key={assignment.assignmentId}
+                    assignment={assignment}
+                    onTransfer={(karkun) => {
+                      setRemovingKarkun(karkun)
+                      setModalMode('transfer')
+                    }}
+                    onDisconnect={(karkun) => {
+                      setRemovingKarkun(karkun)
+                      setModalMode('remove')
+                    }}
+                  />
+                ))}
               </ul>
             </div>
           )}
@@ -480,6 +453,7 @@ export function AssignmentManagementPage() {
               currentAssignment={ruknSummary.currentAssignment}
               activeAssignments={ruknSummary.activeAssignments}
               perspective="rukn"
+              showCurrent={false}
             />
           </div>
         </section>

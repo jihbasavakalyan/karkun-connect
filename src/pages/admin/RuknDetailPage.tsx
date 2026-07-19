@@ -152,6 +152,7 @@ export function RuknDetailPage() {
               currentAssignment={summary.currentAssignment}
               activeAssignments={summary.activeAssignments}
               perspective="rukn"
+              showCurrent={false}
             />
           </div>
         </section>

@@ -58,7 +58,19 @@ async function createAssignmentRecord(
   >,
 ): Promise<AssignmentRecord> {
   const timestamp = nowIso()
-  const assignmentNumber = await generateAssignmentNumber()
+  // KC-0053: retry ASN allocation if the store already holds that number (safe retry / race).
+  let assignmentNumber = ''
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    assignmentNumber = await generateAssignmentNumber()
+    const collision = getAllAssignments().some(
+      (item) =>
+        item.assignmentNumber.trim().toUpperCase() === assignmentNumber.trim().toUpperCase(),
+    )
+    if (!collision) break
+    if (attempt === 4) {
+      throw new Error(`Duplicate assignment numbers detected: ${assignmentNumber}`)
+    }
+  }
   return {
     assignmentId: `asgn-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
     assignmentNumber,
@@ -296,56 +308,91 @@ function formatNames(ruknId: string, karkunId: string): { ruknName: string; kark
   }
 }
 
+/** KC-0053 — coalesce concurrent assign attempts for the same Karkun. */
+const assignInFlightByKarkun = new Map<string, Promise<AssignmentResult>>()
+
 export async function assignRukn(input: AssignInput): Promise<AssignmentResult> {
   const validation = validateAssignInput(input)
   if (!validation.valid) {
     return { success: false, error: validation.error }
   }
 
-  let assignment
-  try {
-    assignment = appendAssignment(
-      await createAssignmentRecord({
-        ruknId: input.ruknId,
-        karkunId: input.karkunId,
-        effectiveFrom: input.effectiveFrom,
-        assignedBy: input.assignedBy,
-        remarks: input.remarks,
-      }),
-    )
-  } catch (error) {
-    return {
-      success: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : 'This Karkun is already connected to a Rukn. Use Transfer to reassign.',
-    }
+  // Idempotent: same Active connection already exists.
+  const existingSame = getActiveAssignmentsForKarkun(input.karkunId).find(
+    (record) => record.ruknId === input.ruknId,
+  )
+  if (existingSame) {
+    return { success: true, assignment: existingSame }
   }
 
-  syncKarkunRegistryFromAssignments(input.karkunId)
+  const inflight = assignInFlightByKarkun.get(input.karkunId)
+  if (inflight) {
+    return inflight
+  }
 
-  const { ruknName, karkunName } = formatNames(input.ruknId, input.karkunId)
+  const work = (async (): Promise<AssignmentResult> => {
+    // Re-check after awaiting any prior work / validation.
+    const again = getActiveAssignmentsForKarkun(input.karkunId).find(
+      (record) => record.ruknId === input.ruknId,
+    )
+    if (again) {
+      return { success: true, assignment: again }
+    }
 
-  logPeopleAudit({
-    personKind: 'karkun',
-    personId: input.karkunId,
-    personName: karkunName,
-    action: 'assign',
-    newValue: ruknName,
-    updatedBy: input.assignedBy,
-  })
+    let assignment
+    try {
+      assignment = appendAssignment(
+        await createAssignmentRecord({
+          ruknId: input.ruknId,
+          karkunId: input.karkunId,
+          effectiveFrom: input.effectiveFrom,
+          assignedBy: input.assignedBy,
+          remarks: input.remarks,
+        }),
+      )
+    } catch (error) {
+      return {
+        success: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : 'This Karkun is already connected to a Rukn. Use Transfer to reassign.',
+      }
+    }
 
-  logActivity({
-    type: 'assign',
-    message: `${karkunName} connected to ${ruknName}`,
-    ruknId: input.ruknId,
-    karkunId: input.karkunId,
-    assignmentId: assignment.assignmentId,
-    actor: input.assignedBy,
-  })
+    syncKarkunRegistryFromAssignments(input.karkunId)
 
-  return { success: true, assignment }
+    const { ruknName, karkunName } = formatNames(input.ruknId, input.karkunId)
+
+    logPeopleAudit({
+      personKind: 'karkun',
+      personId: input.karkunId,
+      personName: karkunName,
+      action: 'assign',
+      newValue: ruknName,
+      updatedBy: input.assignedBy,
+    })
+
+    logActivity({
+      type: 'assign',
+      message: `${karkunName} connected to ${ruknName}`,
+      ruknId: input.ruknId,
+      karkunId: input.karkunId,
+      assignmentId: assignment.assignmentId,
+      actor: input.assignedBy,
+    })
+
+    return { success: true, assignment }
+  })()
+
+  assignInFlightByKarkun.set(input.karkunId, work)
+  try {
+    return await work
+  } finally {
+    if (assignInFlightByKarkun.get(input.karkunId) === work) {
+      assignInFlightByKarkun.delete(input.karkunId)
+    }
+  }
 }
 
 export async function replaceAssignment(input: ReplaceInput): Promise<AssignmentResult> {
