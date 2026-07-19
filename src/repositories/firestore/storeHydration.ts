@@ -21,6 +21,12 @@ import {
 } from '@/lib/incidentTraceCollector'
 import { MOCK_KARKUN_REGISTRY } from '@/constants/mockKarkunRegistry'
 import { kc004cTraceRegistry } from '@/lib/debug/kc004cRegistryTrace'
+import {
+  dashState01MetricsReceived,
+  dashState02StoreUpdated,
+  dashState04StoreReset,
+  dashState05RefreshTrigger,
+} from '@/lib/debug/kc00586DashboardStateProbe'
 
 let hydratingStores = false
 
@@ -38,10 +44,20 @@ export function hydrateStoresFromRepositories(): void {
       caller: 'hydrateStoresFromRepositories',
       sourceOfTruth: 'Derived Calculation',
     })
+    dashState05RefreshTrigger('hydrateStoresFromRepositories.reentrant_skip', {})
     return
   }
   hydratingStores = true
   try {
+    const previousAssignments = getAllAssignments().length
+    const previousRegistry = MOCK_KARKUN_REGISTRY.length
+    const previousMetrics = getAssignmentDashboardMetrics()
+    dashState05RefreshTrigger('hydrateStoresFromRepositories.start', {
+      previousAssignments,
+      previousRegistry,
+      previousConnected: previousMetrics.activeAssignments,
+    })
+
     reloadAssignmentStoreFromPersistence()
     traceStoreSnapshot('assignment_store', {
       caller: 'hydrateStoresFromRepositories.reloadAssignmentStoreFromPersistence',
@@ -99,6 +115,44 @@ export function hydrateStoresFromRepositories(): void {
 
     const people = getPeopleStatistics()
     const assignmentMetrics = getAssignmentDashboardMetrics()
+    const nextAssignments = getAllAssignments().length
+    const nextRegistry = MOCK_KARKUN_REGISTRY.length
+    dashState02StoreUpdated(
+      'hydrateStoresFromRepositories',
+      {
+        assignments: previousAssignments,
+        registry: previousRegistry,
+        connected: previousMetrics.activeAssignments,
+      },
+      {
+        assignments: nextAssignments,
+        registry: nextRegistry,
+        connected: assignmentMetrics.activeAssignments,
+        unassigned: people.unassignedKarkuns,
+      },
+    )
+    if (
+      previousMetrics.activeAssignments > 0 &&
+      (assignmentMetrics.activeAssignments === 0 || nextAssignments === 0)
+    ) {
+      dashState04StoreReset({
+        functionName: 'hydrateStoresFromRepositories',
+        file: 'src/repositories/firestore/storeHydration.ts',
+        reason: 'Store rebuild replaced non-zero connected metrics with zero/empty',
+        previous: {
+          assignments: previousAssignments,
+          connected: previousMetrics.activeAssignments,
+          registry: previousRegistry,
+        },
+        next: {
+          assignments: nextAssignments,
+          connected: assignmentMetrics.activeAssignments,
+          registry: nextRegistry,
+          unassigned: people.unassignedKarkuns,
+        },
+      })
+    }
+    dashState01MetricsReceived('hydrateStoresFromRepositories.complete')
     traceMetricSnapshot('dashboard_connection_metrics', {
       caller: 'hydrateStoresFromRepositories',
       sourceOfTruth: 'Derived Calculation',

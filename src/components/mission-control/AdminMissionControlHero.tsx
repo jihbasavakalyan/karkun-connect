@@ -1,5 +1,7 @@
+import { useEffect } from 'react'
 import type { AdminMissionControlModel } from '@/lib/missionControl/buildAdminMissionControl'
 import { formatCampaignWindowLabel } from '@/lib/missionControl/buildAdminMissionControl'
+import { dashState03WidgetRender } from '@/lib/debug/kc00586DashboardStateProbe'
 import { McProgressRing } from './McProgressRing'
 import { MissionControlQuickActions } from './MissionControlQuickActions'
 
@@ -13,6 +15,27 @@ export function AdminMissionControlHero({
   model,
   metricsReady = true,
 }: MissionControlHeroProps) {
+  // KC-0058.6 — Campaign Progress widget render evidence.
+  useEffect(() => {
+    dashState03WidgetRender(
+      'CampaignProgress',
+      metricsReady ? 'ready' : 'loading',
+      {
+        connected: model.connectionProgress.connected,
+        remaining: model.connectionProgress.remaining,
+        total: model.connectionProgress.total,
+        pct: model.connectionProgress.pct,
+        metricsReady,
+      },
+    )
+  }, [
+    metricsReady,
+    model.connectionProgress.connected,
+    model.connectionProgress.remaining,
+    model.connectionProgress.total,
+    model.connectionProgress.pct,
+  ])
+
   return (
     <header
       className="mc-hero enterprise-gradient-hero mc-hero-admin-compact"

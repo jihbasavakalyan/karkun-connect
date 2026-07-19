@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import {
   AdminCommandCenter,
   AdminMissionControlHero,
@@ -13,17 +13,49 @@ import {
 import { buildAdminMissionControl } from '@/lib/missionControl/buildAdminMissionControl'
 import { useAdminCommandCenter } from '@/providers/AdminCommandCenterProvider'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
+import {
+  dashState01MetricsReceived,
+  dashState05RefreshTrigger,
+} from '@/lib/debug/kc00586DashboardStateProbe'
 
 export function AdminHomePage() {
   const snapshot = useAdminCommandCenter()
   const isHydrated = useRepositoryHydration()
   const hydration = useRepositoryHydrationStatus()
   const { assignmentVersion } = useAssignmentEngine()
+  const prevHydrated = useRef(isHydrated)
+  const prevAssignmentVersion = useRef(assignmentVersion)
+
+  // KC-0058.6 — detect hydration / assignment refresh triggers that remount metrics.
+  useEffect(() => {
+    if (prevHydrated.current !== isHydrated) {
+      dashState05RefreshTrigger('AdminHomePage.isHydrated.change', {
+        previous: prevHydrated.current,
+        next: isHydrated,
+        hydrationStatus: hydration.status,
+      })
+      prevHydrated.current = isHydrated
+    }
+  }, [isHydrated, hydration.status])
+
+  useEffect(() => {
+    if (prevAssignmentVersion.current !== assignmentVersion) {
+      dashState05RefreshTrigger('AdminHomePage.assignmentVersion.bump', {
+        previous: prevAssignmentVersion.current,
+        next: assignmentVersion,
+        isHydrated,
+      })
+      prevAssignmentVersion.current = assignmentVersion
+    }
+  }, [assignmentVersion, isHydrated])
+
   // KC-0058.1 — rebuild Mission Control from live MetricsService when stores hydrate.
-  const model = useMemo(
-    () => buildAdminMissionControl(snapshot),
-    [snapshot, assignmentVersion, isHydrated],
-  )
+  const model = useMemo(() => {
+    const next = buildAdminMissionControl(snapshot)
+    // KC-0058.6 — DASHSTATE-01 at the exact dashboard metrics receive point.
+    dashState01MetricsReceived('AdminHomePage.buildAdminMissionControl')
+    return next
+  }, [snapshot, assignmentVersion, isHydrated])
 
   // KC-0058.3 — never render fabricated 0/0/0% after critical hydrate failure.
   if (hydration.failed) {

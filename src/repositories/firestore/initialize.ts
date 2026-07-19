@@ -186,6 +186,14 @@ async function runPhasedStartupHydrate(): Promise<boolean> {
       // KC-0058.3 — never rebuild stores from background if critical failed.
       if (backgroundSucceeded && criticalHydrateSucceeded) {
         markStartupLifecycle('stores.hydrate.start', { context: 'startup-background' })
+        void import('@/lib/debug/kc00586DashboardStateProbe').then(
+          ({ dashState05RefreshTrigger }) => {
+            dashState05RefreshTrigger('startup-background.store.rebuild', {
+              backgroundSucceeded,
+              criticalHydrateSucceeded,
+            })
+          },
+        )
         hydrateStoresFromRepositories()
         markStartupLifecycle('stores.hydrate.complete', { context: 'startup-background' })
         kc004cTraceRegistry({
@@ -231,6 +239,12 @@ function scheduleSnapshotRefresh(): void {
   markStartupLifecycle('firestore.snapshot.refresh.queued', {
     alreadyRunning: snapshotRefreshRunning,
   })
+  // KC-0058.6 — snapshot-driven dashboard refresh trigger.
+  void import('@/lib/debug/kc00586DashboardStateProbe').then(({ dashState05RefreshTrigger }) => {
+    dashState05RefreshTrigger('firestore.snapshot.refresh.queued', {
+      alreadyRunning: snapshotRefreshRunning,
+    })
+  })
   if (snapshotRefreshRunning) {
     return
   }
@@ -244,6 +258,13 @@ function scheduleSnapshotRefresh(): void {
         while (isTransferCommitInFlight()) {
           await new Promise((resolve) => setTimeout(resolve, 25))
         }
+        void import('@/lib/debug/kc00586DashboardStateProbe').then(
+          ({ dashState05RefreshTrigger }) => {
+            dashState05RefreshTrigger('firestore.snapshot.refresh.run', {
+              context: 'snapshot refresh',
+            })
+          },
+        )
         await runHydrateAndRebuildCycle('snapshot refresh')
       }
     } finally {

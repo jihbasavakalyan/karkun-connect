@@ -3,7 +3,7 @@
  * Presentation only: health, intervention, Rukn performance, trends, activity.
  */
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ROUTES, adminCommunicationPath, adminExecutionPath } from '@/constants/routes'
 import {
@@ -19,6 +19,7 @@ import type { AdminCommandCenterSnapshot } from '@/types/campaignAutomation.type
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { useBackgroundHydration } from '@/hooks/useBackgroundHydration'
 import { PendingKarkunRequestQueue } from '@/components/admin/PendingKarkunRequestQueue'
+import { dashState03WidgetRender } from '@/lib/debug/kc00586DashboardStateProbe'
 
 /** KPIs that depend on background hydrate collections (executions / followUps / compliance). */
 const BACKGROUND_HEALTH_KPI_IDS = new Set([
@@ -57,11 +58,42 @@ export function AdminCommandCenter({ model, snapshot }: AdminCommandCenterProps)
     return buildAdminCampaignHealthKpis(model)
   }, [model, assignmentVersion])
 
+  // KC-0058.6 — per-widget render evidence for Campaign Health cards + intervention.
+  useEffect(() => {
+    for (const kpi of healthKpis) {
+      const waitingOnBackground =
+        !backgroundReady && BACKGROUND_HEALTH_KPI_IDS.has(kpi.id)
+      dashState03WidgetRender(
+        kpi.id === 'connections'
+          ? 'Connections'
+          : kpi.id === 'visits-done'
+            ? 'Visits'
+            : kpi.id === 'visits-pending'
+              ? 'Pending'
+              : kpi.id === 'follow-ups'
+                ? 'FollowUps'
+                : kpi.id === 'development'
+                  ? 'Development'
+                  : `Health:${kpi.id}`,
+        waitingOnBackground ? 'loading' : 'ready',
+        { value: kpi.value, backgroundReady, waitingOnBackground },
+      )
+    }
+  }, [healthKpis, backgroundReady])
+
   const interventions = useMemo(() => {
     void assignmentVersion
     if (!backgroundReady) return []
     return buildAdminInterventionQueue(snapshot)
   }, [snapshot, assignmentVersion, backgroundReady])
+
+  useEffect(() => {
+    dashState03WidgetRender(
+      'InterventionQueue',
+      backgroundReady ? (interventions.length === 0 ? 'empty' : 'ready') : 'loading',
+      { count: interventions.length, backgroundReady },
+    )
+  }, [interventions, backgroundReady])
 
   const ruknRows = useMemo(() => {
     void assignmentVersion

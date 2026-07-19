@@ -129,6 +129,23 @@ export function reloadAssignmentStoreFromPersistence(): void {
   assignments.length = 0
   assignments.push(...loaded.assignments)
   nextAssignmentSequence = loaded.nextSequence
+  // KC-0058.6 — evidence when a non-empty store is replaced with empty.
+  if (beforeCount > 0 && loaded.assignments.length === 0) {
+    void import('@/lib/debug/kc00586DashboardStateProbe').then(
+      ({ dashState04StoreReset }) => {
+        dashState04StoreReset({
+          functionName: 'reloadAssignmentStoreFromPersistence',
+          file: 'src/stores/assignmentStore.ts',
+          reason: 'Reloaded assignment store from empty repository cache',
+          previous: { assignmentCount: beforeCount },
+          next: {
+            assignmentCount: loaded.assignments.length,
+            nextSequence: loaded.nextSequence,
+          },
+        })
+      },
+    )
+  }
   traceStoreSnapshot('assignment_store', {
     caller: 'reloadAssignmentStoreFromPersistence',
     sourceOfTruth: 'Local Repository',
@@ -452,17 +469,30 @@ export function searchAssignments(query: string): AssignmentRecord[] {
 }
 
 export function clearAssignmentStore(): void {
+  const previousCount = assignments.length
   const operationId = createIncidentOperationId('assignment-clear')
   traceMutation({
     operationId,
     entity: 'assignment_store',
     field: 'count',
-    before: assignments.length,
+    before: previousCount,
     after: 0,
     caller: 'clearAssignmentStore',
     reason: 'assignment store cleared',
     sourceOfTruth: 'Derived Calculation',
   })
+
+  if (previousCount > 0) {
+    void import('@/lib/debug/kc00586DashboardStateProbe').then(({ dashState04StoreReset }) => {
+      dashState04StoreReset({
+        functionName: 'clearAssignmentStore',
+        file: 'src/stores/assignmentStore.ts',
+        reason: 'clearAssignmentStore wiped non-empty assignments',
+        previous: { assignmentCount: previousCount },
+        next: { assignmentCount: 0 },
+      })
+    })
+  }
 
   assignments.length = 0
   nextAssignmentSequence = 1
