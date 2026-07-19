@@ -14,7 +14,9 @@ function AdminLayoutShell() {
   const snapshot = useAdminCommandCenter()
 
   return (
-    <div className="flex min-h-svh bg-surface-muted">
+    // KC-0057: viewport-bounded shell so <main> is the real wheel scrollport.
+    // Without h-svh + min-h-0, overflow-y-auto + overscroll-y-contain trapped wheel events.
+    <div className="flex h-svh max-h-svh overflow-hidden bg-surface-muted">
       <AdminSidebar
         collapsed={sidebarCollapsed}
         onToggle={() => setSidebarCollapsed((value) => !value)}
@@ -39,12 +41,12 @@ function AdminLayoutShell() {
         <AdminSidebar collapsed={false} onToggle={() => setMobileNavOpen(false)} />
       </div>
 
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <AdminTopBar
           alertCount={snapshot.alerts.length}
           onMenuToggle={() => setMobileNavOpen((value) => !value)}
         />
-        <main className="native-admin-main flex-1 overflow-y-auto overscroll-y-contain px-3 py-3 lg:p-6">
+        <main className="native-admin-main min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-3 py-3 lg:p-6">
           <Outlet />
         </main>
       </div>
