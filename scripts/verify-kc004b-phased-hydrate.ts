@@ -53,10 +53,8 @@ assert(
 )
 
 assert(
-  /scheduleBackgroundHydrateAndRebuild[\s\S]*attachSnapshotListeners/.test(initializeSrc) ||
-    initializeSrc.indexOf('attachSnapshotListeners()') >
-      initializeSrc.indexOf('backgroundHydrate.complete'),
-  'snapshot listeners must attach after background hydrate (avoid race)',
+  /await background[\s\S]*attachSnapshotListeners\(\)/.test(initializeSrc),
+  'snapshot listeners must attach after awaiting background hydrate (avoid race)',
 )
 
 assert(
