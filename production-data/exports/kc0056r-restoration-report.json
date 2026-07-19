@@ -1,0 +1,382 @@
+{
+  "ticket": "KC-0056R",
+  "projectId": "karkun-connect-75c68",
+  "generatedAt": "2026-07-19T18:20:04.949Z",
+  "dryRun": true,
+  "payloadProvided": false,
+  "summary": {
+    "restored": 0,
+    "dryRunWouldRestore": 0,
+    "alreadyPresent": 0,
+    "blockedMissingFields": 5
+  },
+  "results": [
+    {
+      "fullName": "Shamsheer Khan",
+      "status": "blocked_missing_fields",
+      "newKarkunId": null,
+      "missingMandatoryFields": [
+        "mobile",
+        "gender"
+      ],
+      "fieldsRequiringManualConfirmation": [
+        "mobile",
+        "gender",
+        "area"
+      ],
+      "reason": "Mandatory fields missing from durable logs/request store. Do not guess — supply verified payload.",
+      "recoveredMetadata": {
+        "requestingRuknId": "R046",
+        "submittedAt": "2026-07-18T11:40:46.754Z",
+        "approvedAt": "2026-07-18T12:34:09.212Z",
+        "claimedCollisionIds": [
+          "kr-021",
+          "kr-022"
+        ],
+        "requestingRuknGender": "Male"
+      }
+    },
+    {
+      "fullName": "Mehboob Pasha",
+      "status": "blocked_missing_fields",
+      "newKarkunId": null,
+      "missingMandatoryFields": [
+        "mobile",
+        "gender"
+      ],
+      "fieldsRequiringManualConfirmation": [
+        "mobile",
+        "gender",
+        "area"
+      ],
+      "reason": "Mandatory fields missing from durable logs/request store. Do not guess — supply verified payload.",
+      "recoveredMetadata": {
+        "requestingRuknId": "R046",
+        "submittedAt": "2026-07-18T11:51:05.092Z",
+        "approvedAt": "2026-07-18T12:30:35.998Z",
+        "claimedCollisionIds": [
+          "kr-013"
+        ],
+        "requestingRuknGender": "Male"
+      }
+    },
+    {
+      "fullName": "Mateen",
+      "status": "blocked_missing_fields",
+      "newKarkunId": null,
+      "missingMandatoryFields": [
+        "mobile",
+        "gender"
+      ],
+      "fieldsRequiringManualConfirmation": [
+        "mobile",
+        "gender",
+        "area"
+      ],
+      "reason": "Mandatory fields missing from durable logs/request store. Do not guess — supply verified payload.",
+      "recoveredMetadata": {
+        "requestingRuknId": "R046",
+        "submittedAt": "2026-07-18T11:49:08.111Z",
+        "approvedAt": "2026-07-18T12:31:44.762Z",
+        "claimedCollisionIds": [
+          "kr-015",
+          "kr-017"
+        ],
+        "requestingRuknGender": "Male"
+      }
+    },
+    {
+      "fullName": "Mohsin Sir Chemistry",
+      "status": "blocked_missing_fields",
+      "newKarkunId": null,
+      "missingMandatoryFields": [
+        "mobile",
+        "gender"
+      ],
+      "fieldsRequiringManualConfirmation": [
+        "mobile",
+        "gender",
+        "area"
+      ],
+      "reason": "Mandatory fields missing from durable logs/request store. Do not guess — supply verified payload.",
+      "recoveredMetadata": {
+        "requestingRuknId": "R046",
+        "submittedAt": "2026-07-18T11:45:04.351Z",
+        "approvedAt": "2026-07-18T12:31:55.993Z",
+        "claimedCollisionIds": [
+          "kr-016",
+          "kr-018"
+        ],
+        "requestingRuknGender": "Male"
+      }
+    },
+    {
+      "fullName": "Shahbaz Khan",
+      "status": "blocked_missing_fields",
+      "newKarkunId": null,
+      "missingMandatoryFields": [
+        "mobile",
+        "gender"
+      ],
+      "fieldsRequiringManualConfirmation": [
+        "mobile",
+        "gender",
+        "area"
+      ],
+      "reason": "Mandatory fields missing from durable logs/request store. Do not guess — supply verified payload.",
+      "recoveredMetadata": {
+        "requestingRuknId": "R046",
+        "submittedAt": "2026-07-18T11:42:33.897Z",
+        "approvedAt": "2026-07-18T12:33:12.429Z",
+        "claimedCollisionIds": [
+          "kr-019"
+        ],
+        "requestingRuknGender": "Male"
+      }
+    }
+  ],
+  "plan": [
+    {
+      "fullName": "Shamsheer Khan",
+      "status": "blocked_missing_fields",
+      "reason": "Mandatory fields missing from durable logs/request store. Do not guess — supply verified payload.",
+      "missingMandatoryFields": [
+        "mobile",
+        "gender"
+      ],
+      "fieldsRequiringManualConfirmation": [
+        "mobile",
+        "gender",
+        "area"
+      ],
+      "recoveredMetadata": {
+        "fullName": "Shamsheer Khan",
+        "requestingRuknId": "R046",
+        "requestingRuknName": "Asadulla Khan Zaki",
+        "requestingRuknGender": "Male",
+        "submittedAt": "2026-07-18T11:40:46.754Z",
+        "approvedAt": "2026-07-18T12:34:09.212Z",
+        "claimedCollisionIds": [
+          "kr-021",
+          "kr-022"
+        ],
+        "mobile": null,
+        "gender": null,
+        "area": "",
+        "notes": ""
+      },
+      "existingMatches": [],
+      "relatedActivity": [
+        {
+          "id": "activity-1784374846753-8josh",
+          "timestamp": "2026-07-18T11:40:46.754Z",
+          "message": "New Karkun request submitted for Shamsheer Khan by Asadulla Khan Zaki.",
+          "karkunId": null
+        },
+        {
+          "id": "activity-1784378049212-4pzx6",
+          "timestamp": "2026-07-18T12:34:09.212Z",
+          "message": "Approved new Karkun Shamsheer Khan (kr-021) and connected to Asadulla Khan Zaki.",
+          "karkunId": "kr-021"
+        },
+        {
+          "id": "activity-1784378068410-j5gq9",
+          "timestamp": "2026-07-18T12:34:28.410Z",
+          "message": "Approved new Karkun Shamsheer Khan (kr-022) and connected to Asadulla Khan Zaki.",
+          "karkunId": "kr-022"
+        }
+      ]
+    },
+    {
+      "fullName": "Mehboob Pasha",
+      "status": "blocked_missing_fields",
+      "reason": "Mandatory fields missing from durable logs/request store. Do not guess — supply verified payload.",
+      "missingMandatoryFields": [
+        "mobile",
+        "gender"
+      ],
+      "fieldsRequiringManualConfirmation": [
+        "mobile",
+        "gender",
+        "area"
+      ],
+      "recoveredMetadata": {
+        "fullName": "Mehboob Pasha",
+        "requestingRuknId": "R046",
+        "requestingRuknName": "Asadulla Khan Zaki",
+        "requestingRuknGender": "Male",
+        "submittedAt": "2026-07-18T11:51:05.092Z",
+        "approvedAt": "2026-07-18T12:30:35.998Z",
+        "claimedCollisionIds": [
+          "kr-013"
+        ],
+        "mobile": null,
+        "gender": null,
+        "area": "",
+        "notes": ""
+      },
+      "existingMatches": [],
+      "relatedActivity": [
+        {
+          "id": "activity-1784375465092-o1605",
+          "timestamp": "2026-07-18T11:51:05.092Z",
+          "message": "New Karkun request submitted for Mehboob Pasha by Asadulla Khan Zaki.",
+          "karkunId": null
+        },
+        {
+          "id": "activity-1784377835998-yy1pi",
+          "timestamp": "2026-07-18T12:30:35.998Z",
+          "message": "Approved new Karkun Mehboob Pasha (kr-013) and connected to Asadulla Khan Zaki.",
+          "karkunId": "kr-013"
+        }
+      ]
+    },
+    {
+      "fullName": "Mateen",
+      "status": "blocked_missing_fields",
+      "reason": "Mandatory fields missing from durable logs/request store. Do not guess — supply verified payload.",
+      "missingMandatoryFields": [
+        "mobile",
+        "gender"
+      ],
+      "fieldsRequiringManualConfirmation": [
+        "mobile",
+        "gender",
+        "area"
+      ],
+      "recoveredMetadata": {
+        "fullName": "Mateen",
+        "requestingRuknId": "R046",
+        "requestingRuknName": "Asadulla Khan Zaki",
+        "requestingRuknGender": "Male",
+        "submittedAt": "2026-07-18T11:49:08.111Z",
+        "approvedAt": "2026-07-18T12:31:44.762Z",
+        "claimedCollisionIds": [
+          "kr-015",
+          "kr-017"
+        ],
+        "mobile": null,
+        "gender": null,
+        "area": "",
+        "notes": ""
+      },
+      "existingMatches": [],
+      "relatedActivity": [
+        {
+          "id": "activity-1784375348111-j2eb6",
+          "timestamp": "2026-07-18T11:49:08.111Z",
+          "message": "New Karkun request submitted for Mateen by Asadulla Khan Zaki.",
+          "karkunId": null
+        },
+        {
+          "id": "activity-1784377904762-u64uc",
+          "timestamp": "2026-07-18T12:31:44.762Z",
+          "message": "Approved new Karkun Mateen (kr-015) and connected to Asadulla Khan Zaki.",
+          "karkunId": "kr-015"
+        },
+        {
+          "id": "activity-1784377925675-cdtp5",
+          "timestamp": "2026-07-18T12:32:05.675Z",
+          "message": "Approved new Karkun Mateen (kr-017) and connected to Asadulla Khan Zaki.",
+          "karkunId": "kr-017"
+        }
+      ]
+    },
+    {
+      "fullName": "Mohsin Sir Chemistry",
+      "status": "blocked_missing_fields",
+      "reason": "Mandatory fields missing from durable logs/request store. Do not guess — supply verified payload.",
+      "missingMandatoryFields": [
+        "mobile",
+        "gender"
+      ],
+      "fieldsRequiringManualConfirmation": [
+        "mobile",
+        "gender",
+        "area"
+      ],
+      "recoveredMetadata": {
+        "fullName": "Mohsin Sir Chemistry",
+        "requestingRuknId": "R046",
+        "requestingRuknName": "Asadulla Khan Zaki",
+        "requestingRuknGender": "Male",
+        "submittedAt": "2026-07-18T11:45:04.351Z",
+        "approvedAt": "2026-07-18T12:31:55.993Z",
+        "claimedCollisionIds": [
+          "kr-016",
+          "kr-018"
+        ],
+        "mobile": null,
+        "gender": null,
+        "area": "",
+        "notes": ""
+      },
+      "existingMatches": [],
+      "relatedActivity": [
+        {
+          "id": "activity-1784375104351-911pc",
+          "timestamp": "2026-07-18T11:45:04.351Z",
+          "message": "New Karkun request submitted for Mohsin sir Chemistry by Asadulla Khan Zaki.",
+          "karkunId": null
+        },
+        {
+          "id": "activity-1784377915993-080vk",
+          "timestamp": "2026-07-18T12:31:55.993Z",
+          "message": "Approved new Karkun Mohsin sir Chemistry (kr-016) and connected to Asadulla Khan Zaki.",
+          "karkunId": "kr-016"
+        },
+        {
+          "id": "activity-1784377940132-1zwkj",
+          "timestamp": "2026-07-18T12:32:20.132Z",
+          "message": "Approved new Karkun Mohsin sir Chemistry (kr-018) and connected to Asadulla Khan Zaki.",
+          "karkunId": "kr-018"
+        }
+      ]
+    },
+    {
+      "fullName": "Shahbaz Khan",
+      "status": "blocked_missing_fields",
+      "reason": "Mandatory fields missing from durable logs/request store. Do not guess — supply verified payload.",
+      "missingMandatoryFields": [
+        "mobile",
+        "gender"
+      ],
+      "fieldsRequiringManualConfirmation": [
+        "mobile",
+        "gender",
+        "area"
+      ],
+      "recoveredMetadata": {
+        "fullName": "Shahbaz Khan",
+        "requestingRuknId": "R046",
+        "requestingRuknName": "Asadulla Khan Zaki",
+        "requestingRuknGender": "Male",
+        "submittedAt": "2026-07-18T11:42:33.897Z",
+        "approvedAt": "2026-07-18T12:33:12.429Z",
+        "claimedCollisionIds": [
+          "kr-019"
+        ],
+        "mobile": null,
+        "gender": null,
+        "area": "",
+        "notes": ""
+      },
+      "existingMatches": [],
+      "relatedActivity": [
+        {
+          "id": "activity-1784374953897-s49nr",
+          "timestamp": "2026-07-18T11:42:33.897Z",
+          "message": "New Karkun request submitted for Shahbaz Khan by Asadulla Khan Zaki.",
+          "karkunId": null
+        },
+        {
+          "id": "activity-1784377992429-bhmk7",
+          "timestamp": "2026-07-18T12:33:12.429Z",
+          "message": "Approved new Karkun Shahbaz Khan (kr-019) and connected to Asadulla Khan Zaki.",
+          "karkunId": "kr-019"
+        }
+      ]
+    }
+  ],
+  "note": "Durable activity/request sources do not contain mobile numbers for these approvals. Restoration requires a verified --payload with mobile + gender."
+}

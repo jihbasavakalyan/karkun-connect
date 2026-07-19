@@ -1,0 +1,286 @@
+{
+  "projectId": "karkun-connect-75c68",
+  "generatedAt": "2026-07-19T18:18:30.393Z",
+  "activityHits": [
+    {
+      "id": "activity-1784374846753-8josh",
+      "message": "New Karkun request submitted for Shamsheer Khan by Asadulla Khan Zaki.",
+      "type": "complete",
+      "actor": "Rukn",
+      "ruknId": "R046",
+      "timestamp": "2026-07-18T11:40:46.754Z",
+      "severity": "INFO"
+    },
+    {
+      "id": "activity-1784374953897-s49nr",
+      "actor": "Rukn",
+      "message": "New Karkun request submitted for Shahbaz Khan by Asadulla Khan Zaki.",
+      "type": "complete",
+      "timestamp": "2026-07-18T11:42:33.897Z",
+      "severity": "INFO",
+      "ruknId": "R046"
+    },
+    {
+      "id": "activity-1784375104351-911pc",
+      "timestamp": "2026-07-18T11:45:04.351Z",
+      "severity": "INFO",
+      "ruknId": "R046",
+      "actor": "Rukn",
+      "message": "New Karkun request submitted for Mohsin sir Chemistry by Asadulla Khan Zaki.",
+      "type": "complete"
+    },
+    {
+      "id": "activity-1784375348111-j2eb6",
+      "timestamp": "2026-07-18T11:49:08.111Z",
+      "severity": "INFO",
+      "ruknId": "R046",
+      "actor": "Rukn",
+      "type": "complete",
+      "message": "New Karkun request submitted for Mateen by Asadulla Khan Zaki."
+    },
+    {
+      "id": "activity-1784375465092-o1605",
+      "actor": "Rukn",
+      "message": "New Karkun request submitted for Mehboob Pasha by Asadulla Khan Zaki.",
+      "type": "complete",
+      "timestamp": "2026-07-18T11:51:05.092Z",
+      "severity": "INFO",
+      "ruknId": "R046"
+    },
+    {
+      "id": "activity-1784377835998-yy1pi",
+      "ruknId": "R046",
+      "assignmentId": "asgn-1784377835993-lqhcs",
+      "severity": "INFO",
+      "karkunId": "kr-013",
+      "message": "Approved new Karkun Mehboob Pasha (kr-013) and connected to Asadulla Khan Zaki.",
+      "type": "assign",
+      "actor": "Administrator",
+      "timestamp": "2026-07-18T12:30:35.998Z"
+    },
+    {
+      "id": "activity-1784377904762-u64uc",
+      "type": "assign",
+      "message": "Approved new Karkun Mateen (kr-015) and connected to Asadulla Khan Zaki.",
+      "actor": "Administrator",
+      "timestamp": "2026-07-18T12:31:44.762Z",
+      "ruknId": "R046",
+      "karkunId": "kr-015",
+      "assignmentId": "asgn-1784377904757-h33nx",
+      "severity": "INFO"
+    },
+    {
+      "id": "activity-1784377915993-080vk",
+      "timestamp": "2026-07-18T12:31:55.993Z",
+      "actor": "Administrator",
+      "message": "Approved new Karkun Mohsin sir Chemistry (kr-016) and connected to Asadulla Khan Zaki.",
+      "type": "assign",
+      "severity": "INFO",
+      "assignmentId": "asgn-1784377915986-578tm",
+      "karkunId": "kr-016",
+      "ruknId": "R046"
+    },
+    {
+      "id": "activity-1784377925675-cdtp5",
+      "ruknId": "R046",
+      "severity": "INFO",
+      "assignmentId": "asgn-1784377925669-pwheq",
+      "karkunId": "kr-017",
+      "message": "Approved new Karkun Mateen (kr-017) and connected to Asadulla Khan Zaki.",
+      "type": "assign",
+      "timestamp": "2026-07-18T12:32:05.675Z",
+      "actor": "Administrator"
+    },
+    {
+      "id": "activity-1784377940132-1zwkj",
+      "message": "Approved new Karkun Mohsin sir Chemistry (kr-018) and connected to Asadulla Khan Zaki.",
+      "type": "assign",
+      "timestamp": "2026-07-18T12:32:20.132Z",
+      "actor": "Administrator",
+      "ruknId": "R046",
+      "severity": "INFO",
+      "assignmentId": "asgn-1784377940126-aanbn",
+      "karkunId": "kr-018"
+    },
+    {
+      "id": "activity-1784377992429-bhmk7",
+      "karkunId": "kr-019",
+      "severity": "INFO",
+      "assignmentId": "asgn-1784377992423-4egu4",
+      "ruknId": "R046",
+      "timestamp": "2026-07-18T12:33:12.429Z",
+      "actor": "Administrator",
+      "type": "assign",
+      "message": "Approved new Karkun Shahbaz Khan (kr-019) and connected to Asadulla Khan Zaki."
+    },
+    {
+      "id": "activity-1784378049212-4pzx6",
+      "timestamp": "2026-07-18T12:34:09.212Z",
+      "type": "assign",
+      "karkunId": "kr-021",
+      "message": "Approved new Karkun Shamsheer Khan (kr-021) and connected to Asadulla Khan Zaki.",
+      "actor": "Administrator",
+      "ruknId": "R046",
+      "severity": "INFO",
+      "assignmentId": "asgn-1784378049205-8p9ab"
+    },
+    {
+      "id": "activity-1784378068410-j5gq9",
+      "assignmentId": "asgn-1784378068403-uvxzm",
+      "severity": "INFO",
+      "actor": "Administrator",
+      "ruknId": "R046",
+      "karkunId": "kr-022",
+      "message": "Approved new Karkun Shamsheer Khan (kr-022) and connected to Asadulla Khan Zaki.",
+      "timestamp": "2026-07-18T12:34:28.410Z",
+      "type": "assign"
+    }
+  ],
+  "assignments": [
+    {
+      "id": "asgn-1784378068403-uvxzm",
+      "exists": true,
+      "data": {
+        "assignedDate": "2026-07-18",
+        "assignmentId": "asgn-1784378068403-uvxzm",
+        "createdAt": "2026-07-18T12:34:28.403Z",
+        "assignedBy": "Administrator",
+        "updatedAt": "2026-07-18T22:21:49.954Z",
+        "ruknId": "R046",
+        "assignmentNumber": "ASN-000037",
+        "karkunId": "kr-022",
+        "effectiveFrom": "2026-07-18",
+        "status": "Active"
+      }
+    },
+    {
+      "id": "asgn-1784378049205-8p9ab",
+      "exists": true,
+      "data": {
+        "createdAt": "2026-07-18T12:34:09.205Z",
+        "assignedBy": "Administrator",
+        "assignedDate": "2026-07-18",
+        "assignmentId": "asgn-1784378049205-8p9ab",
+        "status": "Active",
+        "effectiveFrom": "2026-07-18",
+        "assignmentNumber": "ASN-000034",
+        "karkunId": "kr-021",
+        "updatedAt": "2026-07-18T22:21:49.954Z",
+        "ruknId": "R046"
+      }
+    },
+    {
+      "id": "asgn-1784377992423-4egu4",
+      "exists": true,
+      "data": {
+        "assignmentNumber": "ASN-000033",
+        "endedDate": "2026-07-19",
+        "createdAt": "2026-07-18T12:33:12.423Z",
+        "status": "Replaced",
+        "updatedAt": "2026-07-19T14:03:16.645Z",
+        "removalReason": "Duplicate",
+        "karkunId": "kr-019",
+        "effectiveFrom": "2026-07-18",
+        "assignmentId": "asgn-1784377992423-4egu4",
+        "assignedDate": "2026-07-18",
+        "assignedBy": "Administrator",
+        "replacementReason": "Other",
+        "ruknId": "R046",
+        "remarks": "KC-003: superseded duplicate Active (kept ASN-000018)"
+      }
+    },
+    {
+      "id": "asgn-1784377940126-aanbn",
+      "exists": true,
+      "data": {
+        "updatedAt": "2026-07-18T22:21:49.954Z",
+        "ruknId": "R046",
+        "assignmentNumber": "ASN-000032",
+        "karkunId": "kr-018",
+        "effectiveFrom": "2026-07-18",
+        "status": "Active",
+        "assignedDate": "2026-07-18",
+        "assignmentId": "asgn-1784377940126-aanbn",
+        "createdAt": "2026-07-18T12:32:20.126Z",
+        "assignedBy": "Administrator"
+      }
+    },
+    {
+      "id": "asgn-1784377915986-578tm",
+      "exists": true,
+      "data": {
+        "assignedBy": "Administrator",
+        "createdAt": "2026-07-18T12:31:55.986Z",
+        "assignmentId": "asgn-1784377915986-578tm",
+        "assignedDate": "2026-07-18",
+        "effectiveFrom": "2026-07-18",
+        "status": "Active",
+        "ruknId": "R046",
+        "updatedAt": "2026-07-18T22:21:49.954Z",
+        "karkunId": "kr-016",
+        "assignmentNumber": "ASN-000029"
+      }
+    },
+    {
+      "id": "asgn-1784377925669-pwheq",
+      "exists": true,
+      "data": {
+        "effectiveFrom": "2026-07-18",
+        "status": "Active",
+        "updatedAt": "2026-07-18T22:21:49.954Z",
+        "ruknId": "R046",
+        "assignmentNumber": "ASN-000030",
+        "karkunId": "kr-017",
+        "createdAt": "2026-07-18T12:32:05.669Z",
+        "assignedBy": "Administrator",
+        "assignedDate": "2026-07-18",
+        "assignmentId": "asgn-1784377925669-pwheq"
+      }
+    },
+    {
+      "id": "asgn-1784377904757-h33nx",
+      "exists": true,
+      "data": {
+        "assignedDate": "2026-07-18",
+        "assignmentId": "asgn-1784377904757-h33nx",
+        "createdAt": "2026-07-18T12:31:44.757Z",
+        "assignedBy": "Administrator",
+        "assignmentNumber": "ASN-000028",
+        "karkunId": "kr-015",
+        "updatedAt": "2026-07-18T22:21:49.954Z",
+        "ruknId": "R046",
+        "status": "Active",
+        "effectiveFrom": "2026-07-18"
+      }
+    },
+    {
+      "id": "asgn-1784377835993-lqhcs",
+      "exists": true,
+      "data": {
+        "assignedBy": "Administrator",
+        "createdAt": "2026-07-18T12:30:35.993Z",
+        "assignmentId": "asgn-1784377835993-lqhcs",
+        "assignedDate": "2026-07-18",
+        "status": "Active",
+        "effectiveFrom": "2026-07-18",
+        "karkunId": "kr-013",
+        "assignmentNumber": "ASN-000026",
+        "ruknId": "R046",
+        "updatedAt": "2026-07-18T22:21:49.954Z"
+      }
+    }
+  ],
+  "settingHits": [],
+  "extraHits": [],
+  "requestingRukn": {
+    "id": "R046",
+    "name": "Asadulla Khan Zaki",
+    "gender": "Male",
+    "mobile": "7019951060",
+    "place": "Basavakalyan",
+    "status": "active",
+    "createdAt": "2026-01-15T08:00:00.000Z",
+    "updatedAt": "2026-07-07T00:00:00.000Z",
+    "updatedBy": "Production Migration"
+  }
+}

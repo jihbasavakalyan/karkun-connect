@@ -1,0 +1,39 @@
+{
+  "people": [
+    {
+      "fullName": "Shamsheer Khan",
+      "mobile": "REPLACE_WITH_VERIFIED_10_DIGIT_MOBILE",
+      "gender": "Male",
+      "area": "",
+      "notes": "Verified by Rukn R046 / Administrator"
+    },
+    {
+      "fullName": "Mehboob Pasha",
+      "mobile": "REPLACE_WITH_VERIFIED_10_DIGIT_MOBILE",
+      "gender": "Male",
+      "area": "",
+      "notes": "Verified by Rukn R046 / Administrator"
+    },
+    {
+      "fullName": "Mateen",
+      "mobile": "REPLACE_WITH_VERIFIED_10_DIGIT_MOBILE",
+      "gender": "Male",
+      "area": "",
+      "notes": "Verified by Rukn R046 / Administrator"
+    },
+    {
+      "fullName": "Mohsin Sir Chemistry",
+      "mobile": "REPLACE_WITH_VERIFIED_10_DIGIT_MOBILE",
+      "gender": "Male",
+      "area": "",
+      "notes": "Verified by Rukn R046 / Administrator"
+    },
+    {
+      "fullName": "Shahbaz Khan",
+      "mobile": "REPLACE_WITH_VERIFIED_10_DIGIT_MOBILE",
+      "gender": "Male",
+      "area": "",
+      "notes": "Verified by Rukn R046 / Administrator"
+    }
+  ]
+}
