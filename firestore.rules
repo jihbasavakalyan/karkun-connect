@@ -78,8 +78,16 @@ service cloud.firestore {
       allow write: if isAdministrator();
     }
 
+    // KC-0056 — karkunCounter.nextKarkunNum is monotonic (stale clients cannot lag it).
     match /settings/{docId} {
-      allow read, write: if isAdministrator();
+      allow read: if isAdministrator();
+      allow create: if isAdministrator();
+      allow update: if isAdministrator() && (
+        docId != 'karkunCounter' ||
+        !('nextKarkunNum' in resource.data) ||
+        request.resource.data.nextKarkunNum >= resource.data.nextKarkunNum
+      );
+      allow delete: if isAdministrator() && docId != 'karkunCounter';
     }
 
     match /{document=**} {
