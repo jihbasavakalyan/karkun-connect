@@ -34,15 +34,22 @@ assert(
     initializeSrc.includes('criticalHydrate.complete') &&
     initializeSrc.includes('backgroundHydrate.start') &&
     initializeSrc.includes('backgroundHydrate.complete') &&
-    initializeSrc.includes('scheduleBackgroundHydrateAndRebuild'),
+    initializeSrc.includes('runPhasedStartupHydrate') &&
+    initializeSrc.includes('beginPhasedStartupHydrate'),
   'initialize.ts missing KC-004B phased lifecycle',
 )
 
 assert(
-  initializeSrc.includes('hydrateCriticalFirestoreCaches') &&
-    initializeSrc.includes('hydrateBackgroundFirestoreCaches') &&
+  initializeSrc.includes('beginPhasedStartupHydrate') &&
     !/await runHydrateAndRebuildCycle\('startup'\)/.test(initializeSrc),
-  'startup must use critical hydrate, not full blocking cycle',
+  'startup must use parallel phased hydrate, not full blocking cycle',
+)
+
+assert(
+  reposSrc.includes('export function beginPhasedStartupHydrate') &&
+    reposSrc.includes('readCriticalHydratePayload') &&
+    reposSrc.includes('readBackgroundHydratePayload'),
+  'phased reads must start from shared beginPhasedStartupHydrate',
 )
 
 assert(
@@ -80,9 +87,8 @@ console.log(
   JSON.stringify(
     {
       startupUsesCriticalPath: true,
-      backgroundScheduledWithoutAwait: initializeSrc.includes(
-        'scheduleBackgroundHydrateAndRebuild()',
-      ),
+      parallelPhasedReads: initializeSrc.includes('beginPhasedStartupHydrate'),
+      listenersAfterBackground: initializeSrc.includes('attachSnapshotListeners'),
       lifecycleLabels: labels,
     },
     null,

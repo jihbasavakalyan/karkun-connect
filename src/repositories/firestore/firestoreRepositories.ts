@@ -400,46 +400,136 @@ function markConnectionRepositoriesFailed(caller: string, error: unknown): void 
   })
 }
 
-/** KC-004B — collections required before ProtectedRoute / dashboard gate. */
-export async function hydrateCriticalFirestoreCaches(): Promise<void> {
-  traceIncidentStage('hydrateCriticalFirestoreCaches:start', {
-    caller: 'hydrateCriticalFirestoreCaches',
-    sourceOfTruth: 'Firestore',
-  })
-  markConnectionRepositoriesLoading('hydrateCriticalFirestoreCaches')
-  try {
-    const db = getFirestoreDb()
-    const [campaigns, rukns, karkuns, karkunCounter, assignments, connectionMeta] =
-      await Promise.all([
-        readCollection<CampaignListItem>(db, FIRESTORE_COLLECTIONS.campaigns),
-        readCollection<Rukn>(db, FIRESTORE_COLLECTIONS.rukns),
-        readCollection<KarkunRegistryRecord>(db, FIRESTORE_COLLECTIONS.karkuns),
-        readDoc<{ nextKarkunNum: number }>(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.karkunCounter),
-        readCollection<AssignmentRecord>(db, FIRESTORE_COLLECTIONS.connections),
-        readDoc<ConnectionMetaDoc>(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.connectionMeta),
-      ])
-    await applyCriticalHydratePayload({
+function readCriticalHydratePayload(db: ReturnType<typeof getFirestoreDb>) {
+  return Promise.all([
+    readCollection<CampaignListItem>(db, FIRESTORE_COLLECTIONS.campaigns),
+    readCollection<Rukn>(db, FIRESTORE_COLLECTIONS.rukns),
+    readCollection<KarkunRegistryRecord>(db, FIRESTORE_COLLECTIONS.karkuns),
+    readDoc<{ nextKarkunNum: number }>(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.karkunCounter),
+    readCollection<AssignmentRecord>(db, FIRESTORE_COLLECTIONS.connections),
+    readDoc<ConnectionMetaDoc>(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.connectionMeta),
+  ]).then(
+    ([campaigns, rukns, karkuns, karkunCounter, assignments, connectionMeta]) => ({
       campaigns,
       rukns,
       karkuns,
       karkunCounter,
       assignments,
       connectionMeta,
-    })
-    traceIncidentStage('hydrateCriticalFirestoreCaches:complete', {
-      caller: 'hydrateCriticalFirestoreCaches',
-      sourceOfTruth: 'Firestore',
-      connectionCount: assignments.length,
-    })
-  } catch (error) {
-    markConnectionRepositoriesFailed('hydrateCriticalFirestoreCaches', error)
-    traceIncidentStage('hydrateCriticalFirestoreCaches:failed', {
-      caller: 'hydrateCriticalFirestoreCaches',
-      sourceOfTruth: 'Firestore',
-      error: error instanceof Error ? error.message : String(error),
-    })
-    throw error
+    }),
+  )
+}
+
+function readBackgroundHydratePayload(db: ReturnType<typeof getFirestoreDb>) {
+  return Promise.all([
+    readCollection<ActivityLogEntry>(db, FIRESTORE_COLLECTIONS.activityLogs),
+    getDocs(collection(db, FIRESTORE_COLLECTIONS.executions)),
+    readCollection<FollowUpRecord>(db, FIRESTORE_COLLECTIONS.followUps),
+    readDoc<CommunicationState>(db, FIRESTORE_COLLECTIONS.communications, FIRESTORE_DOCS.communicationState),
+    getDocs(collection(db, FIRESTORE_COLLECTIONS.compliance)),
+    readDoc<{ version: number | null }>(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.migrationVersion),
+    getDocs(collection(db, FIRESTORE_COLLECTIONS.settings)),
+  ]).then(
+    ([
+      activityLogs,
+      executionSnapshots,
+      followUps,
+      communication,
+      complianceSnapshots,
+      migrationVersion,
+      settingsSnapshots,
+    ]) => ({
+      activityLogs,
+      executionSnapshots,
+      followUps,
+      communication,
+      complianceSnapshots,
+      migrationVersion,
+      settingsSnapshots,
+    }),
+  )
+}
+
+export type PhasedStartupHydrateHandle = {
+  /** Resolves when critical collections are read + applied. */
+  critical: Promise<void>
+  /** Resolves when background collections are read + applied (started in parallel with critical). */
+  background: Promise<void>
+}
+
+/**
+ * KC-004B — start critical + background Firestore reads in parallel.
+ * Await `critical` to unlock ProtectedRoute; await `background` before listeners.
+ * Each collection is read once (no duplicate getDocs).
+ */
+export function beginPhasedStartupHydrate(): PhasedStartupHydrateHandle {
+  if (backgroundHydrateInFlight || hydrateInFlight) {
+    const shared = hydrateInFlight ?? backgroundHydrateInFlight!
+    return {
+      critical: shared,
+      background: shared,
+    }
   }
+
+  traceIncidentStage('beginPhasedStartupHydrate:start', {
+    caller: 'beginPhasedStartupHydrate',
+    sourceOfTruth: 'Firestore',
+  })
+  markConnectionRepositoriesLoading('beginPhasedStartupHydrate')
+
+  const db = getFirestoreDb()
+  const criticalReads = readCriticalHydratePayload(db)
+  const backgroundReads = readBackgroundHydratePayload(db)
+
+  const critical = (async () => {
+    try {
+      const payload = await criticalReads
+      await applyCriticalHydratePayload(payload)
+      traceIncidentStage('hydrateCriticalFirestoreCaches:complete', {
+        caller: 'beginPhasedStartupHydrate',
+        sourceOfTruth: 'Firestore',
+        connectionCount: payload.assignments.length,
+      })
+    } catch (error) {
+      markConnectionRepositoriesFailed('beginPhasedStartupHydrate', error)
+      traceIncidentStage('hydrateCriticalFirestoreCaches:failed', {
+        caller: 'beginPhasedStartupHydrate',
+        sourceOfTruth: 'Firestore',
+        error: error instanceof Error ? error.message : String(error),
+      })
+      throw error
+    }
+  })()
+
+  const background = (async () => {
+    try {
+      const payload = await backgroundReads
+      applyBackgroundHydratePayload(payload)
+      traceIncidentStage('hydrateBackgroundFirestoreCaches:complete', {
+        caller: 'beginPhasedStartupHydrate',
+        sourceOfTruth: 'Firestore',
+      })
+    } catch (error) {
+      traceIncidentStage('hydrateBackgroundFirestoreCaches:failed', {
+        caller: 'beginPhasedStartupHydrate',
+        sourceOfTruth: 'Firestore',
+        error: error instanceof Error ? error.message : String(error),
+      })
+      throw error
+    }
+  })()
+
+  backgroundHydrateInFlight = background.finally(() => {
+    backgroundHydrateInFlight = null
+  })
+
+  return { critical, background }
+}
+
+/** KC-004B — collections required before ProtectedRoute / dashboard gate. */
+export async function hydrateCriticalFirestoreCaches(): Promise<void> {
+  const { critical } = beginPhasedStartupHydrate()
+  await critical
 }
 
 /** KC-004B — non-blocking collections; must not gate dashboard render. */
@@ -447,61 +537,11 @@ export async function hydrateBackgroundFirestoreCaches(): Promise<void> {
   if (backgroundHydrateInFlight) {
     return backgroundHydrateInFlight
   }
-  // Full hydrate already covers background collections.
   if (hydrateInFlight) {
     return hydrateInFlight
   }
-
-  backgroundHydrateInFlight = (async () => {
-    traceIncidentStage('hydrateBackgroundFirestoreCaches:start', {
-      caller: 'hydrateBackgroundFirestoreCaches',
-      sourceOfTruth: 'Firestore',
-    })
-    try {
-      const db = getFirestoreDb()
-      const [
-        activityLogs,
-        executionSnapshots,
-        followUps,
-        communication,
-        complianceSnapshots,
-        migrationVersion,
-        settingsSnapshots,
-      ] = await Promise.all([
-        readCollection<ActivityLogEntry>(db, FIRESTORE_COLLECTIONS.activityLogs),
-        getDocs(collection(db, FIRESTORE_COLLECTIONS.executions)),
-        readCollection<FollowUpRecord>(db, FIRESTORE_COLLECTIONS.followUps),
-        readDoc<CommunicationState>(db, FIRESTORE_COLLECTIONS.communications, FIRESTORE_DOCS.communicationState),
-        getDocs(collection(db, FIRESTORE_COLLECTIONS.compliance)),
-        readDoc<{ version: number | null }>(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.migrationVersion),
-        getDocs(collection(db, FIRESTORE_COLLECTIONS.settings)),
-      ])
-      applyBackgroundHydratePayload({
-        activityLogs,
-        executionSnapshots,
-        followUps,
-        communication,
-        complianceSnapshots,
-        migrationVersion,
-        settingsSnapshots,
-      })
-      traceIncidentStage('hydrateBackgroundFirestoreCaches:complete', {
-        caller: 'hydrateBackgroundFirestoreCaches',
-        sourceOfTruth: 'Firestore',
-      })
-    } catch (error) {
-      traceIncidentStage('hydrateBackgroundFirestoreCaches:failed', {
-        caller: 'hydrateBackgroundFirestoreCaches',
-        sourceOfTruth: 'Firestore',
-        error: error instanceof Error ? error.message : String(error),
-      })
-      throw error
-    }
-  })().finally(() => {
-    backgroundHydrateInFlight = null
-  })
-
-  return backgroundHydrateInFlight
+  const { background } = beginPhasedStartupHydrate()
+  return background
 }
 
 async function hydrateFirestoreCachesOnce(): Promise<void> {
