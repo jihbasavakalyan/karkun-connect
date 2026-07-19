@@ -151,10 +151,16 @@ function buildClaims(role, ruknId) {
 
 async function applyClaim(auth, target, dryRun) {
   const uid = await resolveUid(auth, target)
-  const claims = buildClaims(target.role, target.ruknId)
+  const nextClaims = buildClaims(target.role, target.ruknId)
+  const user = await auth.getUser(uid)
+  const existing = user.customClaims ?? {}
+  // Merge so unrelated custom claims are preserved; role/ruknId from this run win.
+  const claims = { ...existing, ...nextClaims }
 
   if (dryRun) {
-    console.log(`[dry-run] ${uid}: ${JSON.stringify(claims)}`)
+    console.log(
+      `[dry-run] ${uid}: existing=${JSON.stringify(existing)} next=${JSON.stringify(claims)}`,
+    )
     return
   }
 
