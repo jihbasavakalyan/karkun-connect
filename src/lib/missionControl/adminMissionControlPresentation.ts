@@ -87,6 +87,8 @@ export function buildAdminCampaignHealthKpis(
     {
       id: 'connections',
       label: 'Connections',
+      // KC-0058.1 — live MetricsService. KC-0058.7 — UI must gate on metricsReady
+      // (see AdminHealthKpiCard / ADMIN_HEALTH_KPI_READINESS.connections).
       value: `${connections.connected}/${connections.total}`,
       hint: 'Canonical connected / campaign pool',
       tone: healthTone(connections.progressPct),

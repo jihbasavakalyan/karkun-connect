@@ -87,7 +87,7 @@ export function AdminHomePage() {
   return (
     <div className="cd-page cd-page-admin mc-page mc-page-admin-compact mc-page-admin-command">
       <AdminMissionControlHero model={model} metricsReady={isHydrated} />
-      <AdminCommandCenter model={model} snapshot={snapshot} />
+      <AdminCommandCenter model={model} snapshot={snapshot} metricsReady={isHydrated} />
       <AskDigitalRafeeqCard compact onOpen={openDigitalRafeeqAssistant} />
     </div>
   )

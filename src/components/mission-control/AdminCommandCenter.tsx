@@ -12,7 +12,6 @@ import {
   buildAdminInterventionQueue,
   buildAdminRecentActivityView,
   buildAdminRuknPerformance,
-  type AdminHealthKpi,
 } from '@/lib/missionControl/adminMissionControlPresentation'
 import type { AdminMissionControlModel } from '@/lib/missionControl/buildAdminMissionControl'
 import type { AdminCommandCenterSnapshot } from '@/types/campaignAutomation.types'
@@ -20,26 +19,14 @@ import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { useBackgroundHydration } from '@/hooks/useBackgroundHydration'
 import { PendingKarkunRequestQueue } from '@/components/admin/PendingKarkunRequestQueue'
 import { dashState03WidgetRender } from '@/lib/debug/kc00586DashboardStateProbe'
-
-/** KPIs that depend on background hydrate collections (executions / followUps / compliance). */
-const BACKGROUND_HEALTH_KPI_IDS = new Set([
-  'overall',
-  'visits-done',
-  'visits-pending',
-  'follow-ups',
-  'development',
-])
+import { AdminHealthKpiCard } from './AdminHealthKpiCard'
+import { resolveAdminHealthKpiPending } from './dashboardMetricReadiness'
 
 type AdminCommandCenterProps = {
   model: AdminMissionControlModel
   snapshot: AdminCommandCenterSnapshot
-}
-
-const HEALTH_TONE: Record<AdminHealthKpi['tone'], string> = {
-  green: 'mc-kpi-tone-green',
-  amber: 'mc-kpi-tone-amber',
-  red: 'mc-kpi-tone-red',
-  neutral: 'mc-kpi-tone-neutral',
+  /** KC-0058.7 — same critical readiness gate as Campaign Progress. */
+  metricsReady?: boolean
 }
 
 const SEVERITY_CLASS = {
@@ -48,7 +35,11 @@ const SEVERITY_CLASS = {
   watch: 'acc-severity-watch',
 } as const
 
-export function AdminCommandCenter({ model, snapshot }: AdminCommandCenterProps) {
+export function AdminCommandCenter({
+  model,
+  snapshot,
+  metricsReady = true,
+}: AdminCommandCenterProps) {
   const { assignmentVersion } = useAssignmentEngine()
   const backgroundReady = useBackgroundHydration()
   const [showAllActivity, setShowAllActivity] = useState(false)
@@ -58,11 +49,10 @@ export function AdminCommandCenter({ model, snapshot }: AdminCommandCenterProps)
     return buildAdminCampaignHealthKpis(model)
   }, [model, assignmentVersion])
 
-  // KC-0058.6 — per-widget render evidence for Campaign Health cards + intervention.
+  // KC-0058.6 / KC-0058.7 — per-widget render evidence for Campaign Health cards.
   useEffect(() => {
     for (const kpi of healthKpis) {
-      const waitingOnBackground =
-        !backgroundReady && BACKGROUND_HEALTH_KPI_IDS.has(kpi.id)
+      const pending = resolveAdminHealthKpiPending(kpi.id, metricsReady, backgroundReady)
       dashState03WidgetRender(
         kpi.id === 'connections'
           ? 'Connections'
@@ -75,11 +65,16 @@ export function AdminCommandCenter({ model, snapshot }: AdminCommandCenterProps)
                 : kpi.id === 'development'
                   ? 'Development'
                   : `Health:${kpi.id}`,
-        waitingOnBackground ? 'loading' : 'ready',
-        { value: kpi.value, backgroundReady, waitingOnBackground },
+        pending ? 'loading' : 'ready',
+        {
+          value: kpi.value,
+          metricsReady,
+          backgroundReady,
+          pending,
+        },
       )
     }
-  }, [healthKpis, backgroundReady])
+  }, [healthKpis, metricsReady, backgroundReady])
 
   const interventions = useMemo(() => {
     void assignmentVersion
@@ -123,38 +118,14 @@ export function AdminCommandCenter({ model, snapshot }: AdminCommandCenterProps)
           </Link>
         </div>
         <ul className="acc-health-grid" aria-label="Campaign health KPIs">
-          {healthKpis.map((kpi) => {
-            const waitingOnBackground =
-              !backgroundReady && BACKGROUND_HEALTH_KPI_IDS.has(kpi.id)
-            const tone = waitingOnBackground
-              ? HEALTH_TONE.neutral
-              : HEALTH_TONE[kpi.tone]
-            const body = (
-              <>
-                <span className="acc-health-label">{kpi.label}</span>
-                <span
-                  className={`acc-health-value ${tone}`}
-                  aria-busy={waitingOnBackground || undefined}
-                >
-                  {waitingOnBackground ? '…' : kpi.value}
-                </span>
-                <span className="acc-health-hint">
-                  {waitingOnBackground ? 'Loading' : (kpi.hint ?? '\u00a0')}
-                </span>
-              </>
-            )
-            return (
-              <li key={kpi.id} className={`acc-health-card ${tone}`}>
-                {kpi.route && !waitingOnBackground ? (
-                  <Link to={kpi.route} className="acc-health-link">
-                    {body}
-                  </Link>
-                ) : (
-                  body
-                )}
-              </li>
-            )
-          })}
+          {healthKpis.map((kpi) => (
+            <AdminHealthKpiCard
+              key={kpi.id}
+              kpi={kpi}
+              metricsReady={metricsReady}
+              backgroundReady={backgroundReady}
+            />
+          ))}
         </ul>
       </section>
 
