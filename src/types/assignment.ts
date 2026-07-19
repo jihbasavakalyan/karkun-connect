@@ -29,6 +29,16 @@ export type RemovalReason =
   | 'Not Available'
   | 'Personal Reason'
 
+/** KC-0055 — ownership-change audit on the surviving Active connection. */
+export type TransferHistoryEntry = {
+  fromRuknId: string
+  toRuknId: string
+  at: string
+  by: AssignedBy
+  effectiveFrom: string
+  remarks?: string
+}
+
 export type AssignmentRecord = {
   assignmentId: string
   assignmentNumber: string
@@ -44,6 +54,17 @@ export type AssignmentRecord = {
   endedDate?: string
   createdAt: string
   updatedAt: string
+  /** KC-0055 — chronological ownership transfers (ASN / assignmentId unchanged). */
+  transferHistory?: TransferHistoryEntry[]
+}
+
+export type TransferInput = {
+  karkunId: string
+  targetRuknId: string
+  effectiveFrom: string
+  assignedBy: AssignedBy
+  removalReason?: RemovalReason
+  remarks?: string
 }
 
 export type AssignInput = {
@@ -155,6 +176,7 @@ export type ActivityLogType =
   | 'restore'
   | 'complete'
   | 'edit'
+  | 'transfer'
 
 export type ActivityLogSeverity = 'INFO' | 'WARNING' | 'IMPORTANT'
 

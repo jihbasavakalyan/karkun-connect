@@ -8,6 +8,7 @@ import {
   startFirestoreSnapshotListeners,
   stopFirestoreSnapshotListeners,
 } from '@/repositories/firestore/firestoreRepositories'
+import { isTransferCommitInFlight } from '@/repositories/firestore/offlineSync'
 import { hydrateStoresFromRepositories } from '@/repositories/firestore/storeHydration'
 import {
   markBackgroundHydrationReady,
@@ -183,6 +184,10 @@ function scheduleSnapshotRefresh(): void {
     try {
       while (snapshotRefreshQueued) {
         snapshotRefreshQueued = false
+        // KC-0055: do not rebuild stores over an in-flight Transfer ownership commit.
+        while (isTransferCommitInFlight()) {
+          await new Promise((resolve) => setTimeout(resolve, 25))
+        }
         await runHydrateAndRebuildCycle('snapshot refresh')
       }
     } finally {

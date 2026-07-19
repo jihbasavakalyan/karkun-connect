@@ -17,6 +17,7 @@
     "verify:kc004b": "npx vite-node scripts/verify-kc004b-phased-hydrate.ts",
     "verify:kc004d": "npx vite-node scripts/verify-kc004d-migration-race.ts",
     "verify:kc004h": "npx vite-node scripts/verify-kc004h-authoritative-registry-existence.ts",
+    "verify:kc0055": "npx vite-node scripts/verify-kc0055-inplace-transfer.ts",
     "admin:repair-asns": "npx vite-node scripts/admin/repair-duplicate-asns.ts",
     "admin:repair-asns:dry": "npx vite-node scripts/admin/repair-duplicate-asns.ts --dry-run",
     "admin:repair-karkun-orphans": "node scripts/admin/repair-duplicate-karkun-orphans.mjs --apply",

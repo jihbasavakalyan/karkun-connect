@@ -12,14 +12,8 @@ import {
   getAssignmentHistoryForRukn,
   removeAssignment,
   replaceAssignment,
+  transferAssignment,
 } from '@/services/assignmentService'
-import {
-  validateEffectiveDate,
-  validateGenderMatch,
-  validateKarkunActive,
-  validateKarkunMobile,
-  validateRuknActive,
-} from '@/validation/assignmentValidation'
 import { canAssignByGender } from '@/lib/peopleStore'
 import { subscribeToAssignmentStore, getActiveAssignmentsForKarkun } from '@/stores/assignmentStore'
 import type { RemovalReason, ReplacementReason } from '@/types/assignment'
@@ -185,6 +179,13 @@ export function adminUnassignKarkun(
   })
 }
 
+/**
+ * Change a Karkun's Rukn connection.
+ *
+ * KC-0055 — When Transfer UI passes `options` and an Active connection exists,
+ * ownership is updated in place (same assignmentId + ASN). No ASN allocation.
+ * Registry/profile callers without options still treat same-Rukn as idempotent.
+ */
 export async function changeKarkunRuknAssignment(
   karkunId: string,
   selectedRuknId: string,
@@ -221,38 +222,15 @@ export async function changeKarkunRuknAssignment(
     return assignKarkun(karkunId, targetRuknId, assignedBy)
   }
 
-  // Transferring a Karkun to a Rukn that already has other active Karkuns is allowed:
-  // the target Rukn is no longer blocked. Only this Karkun's current assignment moves.
-  const effectiveFrom = options?.effectiveFrom ?? todayDate()
-  const transferChecks = [
-    validateEffectiveDate(effectiveFrom),
-    validateRuknActive(targetRuknId),
-    validateKarkunActive(karkunId),
-    validateKarkunMobile(karkunId),
-    validateGenderMatch(targetRuknId, karkunId),
-  ]
-
-  for (const check of transferChecks) {
-    if (!check.valid) {
-      return { success: false, error: check.error }
-    }
-  }
-
-  const removeResult = removeAssignment({
-    ruknId: current.ruknId,
+  // KC-0055 — in-place ownership update (same assignmentId + ASN). No ASN allocation.
+  return transferAssignment({
     karkunId,
-    effectiveFrom,
-    removalReason: options?.removalReason ?? 'Transferred',
-    remarks: options?.remarks
-      ? `Previous Rukn: ${current.ruknId}. ${options.remarks}`
-      : `Previous Rukn: ${current.ruknId}`,
+    targetRuknId,
+    effectiveFrom: options?.effectiveFrom ?? todayDate(),
     assignedBy,
+    removalReason: options?.removalReason ?? 'Transferred',
+    remarks: options?.remarks,
   })
-  if (!removeResult.success) {
-    return removeResult
-  }
-
-  return assignKarkun(karkunId, targetRuknId, assignedBy)
 }
 
 export async function bulkAssignKarkuns(
@@ -309,6 +287,7 @@ export {
   replaceAssignment,
   removeAssignment,
   restoreAssignment,
+  transferAssignment,
   getAssignmentHistoryForRukn,
   getAssignmentHistoryForKarkun,
 } from '@/services/assignmentService'

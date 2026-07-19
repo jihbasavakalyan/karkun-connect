@@ -26,6 +26,7 @@ export {
   replaceAssignment,
   removeAssignment,
   restoreAssignment,
+  transferAssignment,
   getRuknAssignmentSummary,
   getKarkunWorkloadSummary,
   getAssignmentDashboardMetrics,

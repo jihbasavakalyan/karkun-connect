@@ -121,6 +121,12 @@ export function AssignmentHistoryTimeline({
                 perspective === 'rukn'
                   ? getKarkunById(record.karkunId)?.name ?? 'Unknown Karkun'
                   : getRuknById(record.ruknId)?.name ?? 'Unknown Rukn'
+              const latestTransfer = record.transferHistory?.[record.transferHistory.length - 1]
+              const transferNote = latestTransfer
+                ? `Last transferred ${formatDate(latestTransfer.at)} from ${
+                    getRuknById(latestTransfer.fromRuknId)?.name ?? latestTransfer.fromRuknId
+                  } to ${getRuknById(latestTransfer.toRuknId)?.name ?? latestTransfer.toRuknId}`
+                : undefined
               return (
                 <li key={record.assignmentId}>
                   <HistoryCard
@@ -130,7 +136,7 @@ export function AssignmentHistoryTimeline({
                     assignmentNumber={record.assignmentNumber}
                     createdBy={record.assignedBy}
                     eventDate={record.effectiveFrom}
-                    remarks={record.remarks}
+                    remarks={[transferNote, record.remarks].filter(Boolean).join(' — ') || undefined}
                   />
                 </li>
               )
@@ -170,12 +176,24 @@ export function AssignmentHistoryTimeline({
               }
 
               if (record.status === 'Unassigned') {
+                const isTransfer = record.removalReason === 'Transferred'
+                const survivingAsn =
+                  record.remarks?.match(/Surviving connection:\s*(ASN-\d+)/i)?.[1] ??
+                  record.assignmentNumber
                 return (
                   <li key={record.assignmentId}>
                     <HistoryCard
-                      title={`Connection removed — ${perspective === 'rukn' ? karkunName : ruknName}`}
-                      subtitle={`Removed on ${formatDate(record.endedDate ?? record.updatedAt)}`}
-                      assignmentNumber={record.assignmentNumber}
+                      title={
+                        isTransfer
+                          ? `Transferred — ${perspective === 'rukn' ? karkunName : ruknName}`
+                          : `Connection removed — ${perspective === 'rukn' ? karkunName : ruknName}`
+                      }
+                      subtitle={
+                        isTransfer
+                          ? `Transferred on ${formatDate(record.endedDate ?? record.updatedAt)}`
+                          : `Removed on ${formatDate(record.endedDate ?? record.updatedAt)}`
+                      }
+                      assignmentNumber={survivingAsn || '—'}
                       createdBy={record.assignedBy}
                       eventDate={record.endedDate ?? record.updatedAt}
                       reason={

@@ -981,6 +981,38 @@ export class ConnectionFirestoreRepository implements ConnectionRepository {
     }
   }
 
+  /** KC-0055 — awaited connection upserts only (no settings/ASN meta). */
+  async commitConnectionDocuments(
+    documents: readonly AssignmentRecord[],
+  ): Promise<RepositoryResult<void>> {
+    try {
+      const db = getFirestoreDb()
+      const batch = createBatch(db)
+      const cached = connectionCache.get()
+      const byId = new Map(cached.assignments.map((item) => [item.assignmentId, item]))
+      for (const document of documents) {
+        byId.set(document.assignmentId, document)
+        batch.set(
+          doc(db, FIRESTORE_COLLECTIONS.connections, document.assignmentId),
+          sanitizeForFirestore(document),
+        )
+      }
+      connectionCache.set({
+        assignments: [...byId.values()],
+        nextSequence: cached.nextSequence,
+      })
+      trackPendingWrite()
+      try {
+        await batch.commit()
+      } finally {
+        markPendingWriteComplete()
+      }
+      return repositoryOk(undefined)
+    } catch (error) {
+      return mapFirestoreError(error)
+    }
+  }
+
   async setNextSequence(
     nextSequence: number,
     meta?: ConnectionMetaUpdate,

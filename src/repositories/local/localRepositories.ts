@@ -251,6 +251,19 @@ export class ConnectionLocalRepository implements ConnectionRepository {
     })
   }
 
+  async commitConnectionDocuments(
+    documents: readonly AssignmentRecord[],
+  ): Promise<RepositoryResult<void>> {
+    return tryRepository(() => {
+      const existing = loadJsonFromStorage<AssignmentRecord[]>(STORAGE_KEYS.assignments, [])
+      const byId = new Map(existing.map((item) => [item.assignmentId, item]))
+      for (const document of documents) {
+        byId.set(document.assignmentId, document)
+      }
+      saveJsonToStorage(STORAGE_KEYS.assignments, [...byId.values()])
+    })
+  }
+
   async allocateNextAssignmentNumber(): Promise<RepositoryResult<AllocationResult>> {
     const run = async (): Promise<RepositoryResult<AllocationResult>> =>
       tryRepository(() => {

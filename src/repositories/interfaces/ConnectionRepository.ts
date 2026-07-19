@@ -38,4 +38,12 @@ export interface ConnectionRepository {
     nextSequence: number,
     meta?: ConnectionMetaUpdate,
   ): Promise<RepositoryResult<void>>
+
+  /**
+   * KC-0055 — Awaited upsert of specific connection documents (no ASN / meta writes).
+   * Used by in-place Transfer so ownership is durable before UI success.
+   */
+  commitConnectionDocuments?(
+    documents: readonly AssignmentRecord[],
+  ): Promise<RepositoryResult<void>>
 }

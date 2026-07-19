@@ -29,7 +29,7 @@ function notifyActivityLogChange(): void {
 }
 
 function severityForType(type: ActivityLogType): ActivityLogSeverity {
-  if (type === 'replace') return 'IMPORTANT'
+  if (type === 'replace' || type === 'transfer') return 'IMPORTANT'
   if (type === 'remove') return 'WARNING'
   return 'INFO'
 }

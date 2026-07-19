@@ -9,13 +9,20 @@ import { getAllKarkuns, getCompatibleKarkunsForRukn, notifyPeopleRegistryChange 
 import { logPeopleAudit } from '@/lib/peopleAuditLog'
 import { isValidMobileFormat, normalizeMobile } from '@/lib/mobileValidation'
 import { logActivity } from '@/stores/activityLogStore'
+import { getRepositories } from '@/repositories/provider'
+import {
+  beginTransferCommit,
+  endTransferCommit,
+} from '@/repositories/firestore/offlineSync'
 import {
   appendAssignment,
+  applyInPlaceTransfer,
   countAssignmentChanges,
   generateAssignmentNumber,
   getActiveAssignmentForRukn,
   getActiveAssignmentsForKarkun,
   getAllAssignments,
+  getAssignmentById,
   getAssignmentHistoryForKarkun,
   getAssignmentHistoryForRukn,
   getAssignmentPeriodCounts,
@@ -32,12 +39,14 @@ import type {
   ReplaceInput,
   RestoreInput,
   RuknAssignmentSummary,
+  TransferInput,
 } from '@/types/assignment'
 import {
   validateAssignInput,
   validateRemoveInput,
   validateReplaceInput,
   validateRestoreInput,
+  validateTransferInput,
 } from '@/validation/assignmentValidation'
 import {
   createIncidentOperationId,
@@ -472,6 +481,112 @@ export async function replaceAssignment(input: ReplaceInput): Promise<Assignment
   })
 
   return { success: true, assignment: newAssignment }
+}
+
+/**
+ * KC-0055 — Transfer ownership in place.
+ * Preserves assignmentId + assignmentNumber. Does not allocate ASN.
+ */
+export async function transferAssignment(input: TransferInput): Promise<AssignmentResult> {
+  const validation = validateTransferInput(input)
+  if (!validation.valid) {
+    return { success: false, error: validation.error }
+  }
+
+  const current = getActiveAssignmentsForKarkun(input.karkunId)[0]!
+  const sourceRuknId = current.ruknId
+  const targetRuknId = input.targetRuknId.trim()
+  const timestamp = nowIso()
+  const sourceNames = formatNames(sourceRuknId, input.karkunId)
+  const targetNames = formatNames(targetRuknId, input.karkunId)
+
+  const transferRemarks = input.remarks?.trim()
+    ? `Transferred from ${sourceNames.ruknName} (${sourceRuknId}) to ${targetNames.ruknName} (${targetRuknId}). ${input.remarks.trim()}`
+    : `Transferred from ${sourceNames.ruknName} (${sourceRuknId}) to ${targetNames.ruknName} (${targetRuknId}).`
+
+  const historyMarker: AssignmentRecord = {
+    assignmentId: `asgn-xfer-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    // Empty ASN — surviving Active keeps the real number (global uniqueness).
+    assignmentNumber: '',
+    ruknId: sourceRuknId,
+    karkunId: input.karkunId,
+    assignedDate: current.assignedDate,
+    effectiveFrom: current.effectiveFrom,
+    status: 'Unassigned',
+    assignedBy: input.assignedBy,
+    removalReason: input.removalReason ?? 'Transferred',
+    remarks: `Transferred to ${targetNames.ruknName} (${targetRuknId}). Surviving connection: ${current.assignmentNumber}.`,
+    endedDate: input.effectiveFrom,
+    createdAt: current.createdAt,
+    updatedAt: timestamp,
+  }
+
+  beginTransferCommit()
+  try {
+    const updated = applyInPlaceTransfer({
+      assignmentId: current.assignmentId,
+      targetRuknId,
+      effectiveFrom: input.effectiveFrom,
+      assignedBy: input.assignedBy,
+      remarks: transferRemarks,
+      historyMarker,
+    })
+
+    syncKarkunRegistryFromAssignments(input.karkunId)
+
+    logPeopleAudit({
+      personKind: 'karkun',
+      personId: input.karkunId,
+      personName: sourceNames.karkunName,
+      action: 'assign',
+      previousValue: sourceNames.ruknName,
+      newValue: targetNames.ruknName,
+      updatedBy: input.assignedBy,
+    })
+
+    logActivity({
+      type: 'transfer',
+      message: `${sourceNames.karkunName} transferred from ${sourceNames.ruknName} to ${targetNames.ruknName}`,
+      ruknId: targetRuknId,
+      karkunId: input.karkunId,
+      assignmentId: updated.assignmentId,
+      actor: input.assignedBy,
+    })
+
+    const commit = getRepositories().connection.commitConnectionDocuments
+    if (commit) {
+      const result = await commit([updated, historyMarker])
+      if (!result.ok) {
+        return {
+          success: false,
+          error: result.error.message || 'Unable to save transfer. Please try again.',
+        }
+      }
+    }
+
+    const confirmed = getAssignmentById(updated.assignmentId)
+    if (!confirmed || confirmed.ruknId !== targetRuknId || confirmed.status !== 'Active') {
+      return {
+        success: false,
+        error: 'Transfer could not be confirmed in local state. Please refresh and try again.',
+      }
+    }
+    if (confirmed.assignmentNumber !== current.assignmentNumber) {
+      return {
+        success: false,
+        error: 'Transfer changed Assignment Number unexpectedly. Contact Administrator.',
+      }
+    }
+
+    return { success: true, assignment: confirmed }
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unable to complete transfer.',
+    }
+  } finally {
+    endTransferCommit()
+  }
 }
 
 export function removeAssignment(input: RemoveInput): AssignmentResult {

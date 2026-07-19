@@ -3,6 +3,8 @@ import type { SyncConflict, SyncStatus } from '@/repositories/offline'
 let syncStatus: SyncStatus = 'synced'
 let pendingWrites = 0
 const conflicts: SyncConflict[] = []
+/** KC-0055 — block snapshot hydrate while Transfer ownership commit is in flight. */
+let transferCommitInFlight = 0
 
 export function trackPendingWrite(): void {
   pendingWrites += 1
@@ -14,6 +16,18 @@ export function markPendingWriteComplete(): void {
   if (pendingWrites === 0) {
     syncStatus = typeof navigator !== 'undefined' && !navigator.onLine ? 'offline' : 'synced'
   }
+}
+
+export function beginTransferCommit(): void {
+  transferCommitInFlight += 1
+}
+
+export function endTransferCommit(): void {
+  transferCommitInFlight = Math.max(0, transferCommitInFlight - 1)
+}
+
+export function isTransferCommitInFlight(): boolean {
+  return transferCommitInFlight > 0
 }
 
 export function recordFirestoreConflict(entity: string, cause: unknown): void {
@@ -43,5 +57,6 @@ export function getFirestoreConflicts(): SyncConflict[] {
 export function resetFirestoreSyncStateForTests(): void {
   syncStatus = 'synced'
   pendingWrites = 0
+  transferCommitInFlight = 0
   conflicts.length = 0
 }

@@ -266,6 +266,75 @@ export function appendAssignment(record: AssignmentRecord): AssignmentRecord {
   return record
 }
 
+/**
+ * KC-0055 — Move Active ownership to another Rukn without changing assignmentId / ASN.
+ * Optionally prepends a source-Rukn history marker (empty ASN — no allocation).
+ */
+export function applyInPlaceTransfer(input: {
+  assignmentId: string
+  targetRuknId: string
+  effectiveFrom: string
+  assignedBy: AssignmentRecord['assignedBy']
+  remarks?: string
+  historyMarker: AssignmentRecord
+}): AssignmentRecord {
+  const record = assignments.find((item) => item.assignmentId === input.assignmentId)
+  if (!record) {
+    throw new Error('Active connection not found for transfer.')
+  }
+  if (record.status !== 'Active') {
+    throw new Error('Only an active connection can be transferred.')
+  }
+  if (record.ruknId === input.targetRuknId) {
+    throw new Error('Select a different Rukn. Transfer to the same Rukn has no effect.')
+  }
+  if (assignments.some((item) => item.assignmentId === input.historyMarker.assignmentId)) {
+    throw new Error(`Duplicate connection id ${input.historyMarker.assignmentId}`)
+  }
+
+  const fromRuknId = record.ruknId
+  const timestamp = input.historyMarker.updatedAt
+  const transferEntry = {
+    fromRuknId,
+    toRuknId: input.targetRuknId,
+    at: timestamp,
+    by: input.assignedBy,
+    effectiveFrom: input.effectiveFrom,
+    remarks: input.remarks,
+  }
+
+  const operationId = createIncidentOperationId('assignment-transfer')
+  traceMutation({
+    operationId,
+    entity: 'assignment_record',
+    field: 'ruknId',
+    before: fromRuknId,
+    after: input.targetRuknId,
+    caller: 'applyInPlaceTransfer',
+    reason: 'in-place ownership transfer',
+    sourceOfTruth: 'Derived Calculation',
+    extras: {
+      assignmentId: record.assignmentId,
+      assignmentNumber: record.assignmentNumber,
+    },
+  })
+
+  record.ruknId = input.targetRuknId
+  record.updatedAt = timestamp
+  record.transferHistory = [...(record.transferHistory ?? []), transferEntry]
+  if (input.remarks !== undefined) {
+    record.remarks = input.remarks
+  }
+
+  // History marker must not carry the surviving ASN (global uniqueness) — empty number.
+  assertUniqueAssignmentNumbers([input.historyMarker, ...assignments])
+  assertAtMostOneActivePerKarkun(assignments)
+  assignments.unshift(input.historyMarker)
+  saveAssignments()
+  notifyAssignmentStoreChange()
+  return record
+}
+
 export function updateAssignmentStatus(
   assignmentId: string,
   status: AssignmentStatus,

@@ -6,7 +6,13 @@ import {
   normalizeMobile,
 } from '@/lib/mobileValidation'
 import { canAssignByGender, normalizePersonGender } from '@/lib/peopleStore'
-import type { AssignInput, RemoveInput, ReplaceInput, RestoreInput } from '@/types/assignment'
+import type {
+  AssignInput,
+  RemoveInput,
+  ReplaceInput,
+  RestoreInput,
+  TransferInput,
+} from '@/types/assignment'
 import {
   getActiveAssignmentForRukn,
   getActiveAssignmentsForKarkun,
@@ -237,6 +243,46 @@ export function validateRestoreInput(input: RestoreInput): ValidationResult {
     validateKarkunAvailable(input.karkunId),
     validateKarkunMobile(input.karkunId),
     validateGenderMatch(input.ruknId, input.karkunId),
+  ]
+
+  for (const check of checks) {
+    if (!check.valid) return check
+  }
+  return { valid: true }
+}
+
+/** KC-0055 — in-place ownership transfer (same assignmentId / ASN). */
+export function validateTransferInput(input: TransferInput): ValidationResult {
+  const targetRuknId = input.targetRuknId.trim()
+  if (!targetRuknId) {
+    return { valid: false, error: 'Please select a new Rukn before transferring.' }
+  }
+
+  const active = getActiveAssignmentsForKarkun(input.karkunId)
+  if (active.length === 0) {
+    return { valid: false, error: 'This Karkun has no active connection to transfer.' }
+  }
+  if (active.length > 1) {
+    return {
+      valid: false,
+      error: 'This Karkun has multiple active connections. Resolve duplicates before transferring.',
+    }
+  }
+
+  const current = active[0]!
+  if (current.ruknId === targetRuknId) {
+    return {
+      valid: false,
+      error: 'Select a different Rukn. Transfer to the same Rukn has no effect.',
+    }
+  }
+
+  const checks = [
+    validateEffectiveDate(input.effectiveFrom),
+    validateRuknActive(targetRuknId),
+    validateKarkunActive(input.karkunId),
+    validateKarkunMobile(input.karkunId),
+    validateGenderMatch(targetRuknId, input.karkunId),
   ]
 
   for (const check of checks) {
