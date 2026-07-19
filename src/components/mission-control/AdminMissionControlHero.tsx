@@ -9,7 +9,10 @@ type MissionControlHeroProps = {
 
 export function AdminMissionControlHero({ model }: MissionControlHeroProps) {
   return (
-    <header className="mc-hero mc-hero-admin-compact" aria-label="Mission Control">
+    <header
+      className="mc-hero enterprise-gradient-hero mc-hero-admin-compact"
+      aria-label="Mission Control"
+    >
       <div className="mc-hero-top">
         <div className="mc-hero-identity">
           <p className="mc-eyebrow">Campaign Command Center</p>
@@ -21,7 +24,7 @@ export function AdminMissionControlHero({ model }: MissionControlHeroProps) {
           ) : null}
         </div>
 
-        <div className="mc-hero-progress-card mc-hero-progress-card-rich">
+        <div className="mc-hero-progress-card mc-hero-progress-card-rich enterprise-glass">
           <McProgressRing
             value={model.connectionProgress.pct}
             size={88}

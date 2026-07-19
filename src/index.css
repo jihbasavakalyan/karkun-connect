@@ -65,6 +65,9 @@ html[data-theme='dark'] {
   --color-warning-soft: #3f2e12;
   --gradient-warm-bg: linear-gradient(180deg, #0f172a 0%, #111827 100%);
   --gradient-card: linear-gradient(180deg, rgb(15 23 42 / 0.98) 0%, rgb(17 24 39 / 0.98) 100%);
+  /* Deepen hero gradient so Mission Control stays premium in dark appearance */
+  --gradient-hero: linear-gradient(135deg, #0f3d24 0%, #14532d 38%, #1b4332 100%);
+  --shadow-glass: 0 8px 32px -12px rgb(0 0 0 / 0.45);
 }
 
 @layer utilities {
@@ -1714,7 +1717,7 @@ html[data-theme='dark'] {
   }
 
   .mc-hero-attention {
-    @apply mt-1 text-sm font-medium text-primary;
+    @apply mt-1 text-sm font-medium text-amber-100/95;
   }
 
   .mc-page-admin-command .acc-stack {
@@ -1959,14 +1962,15 @@ html[data-theme='dark'] {
     @apply space-y-3;
   }
 
+  /*
+   * KC-0051A — Mission Control hero: premium dark gradient + glass.
+   * Reuses --gradient-hero / --shadow-glass (same tokens as .enterprise-gradient-hero).
+   * Typography/glass overrides are scoped under .mc-hero so panels keep surface contrast.
+   */
   .mc-hero {
-    @apply rounded-3xl bg-surface p-6 shadow-card sm:p-8;
-    background-image: linear-gradient(
-      155deg,
-      rgb(248 250 249) 0%,
-      rgb(255 255 255) 48%,
-      rgb(236 253 245) 100%
-    );
+    @apply relative overflow-hidden rounded-3xl p-6 text-white sm:p-8;
+    background: var(--gradient-hero);
+    box-shadow: var(--shadow-glass);
   }
 
   .mc-hero-rukn-compact {
@@ -1978,7 +1982,7 @@ html[data-theme='dark'] {
   }
 
   .mc-hero-greeting {
-    @apply text-lg font-medium text-primary;
+    @apply text-lg font-medium text-white/90;
     font-family: var(--font-urdu);
     line-height: 2.1;
     text-align: right;
@@ -1996,8 +2000,16 @@ html[data-theme='dark'] {
     @apply text-xs font-semibold uppercase tracking-[0.16em] text-secondary;
   }
 
+  .mc-hero .mc-eyebrow {
+    @apply text-emerald-100/80;
+  }
+
   .mc-hero-title {
     @apply mt-2 text-3xl font-semibold tracking-tight text-text-heading sm:text-4xl;
+  }
+
+  .mc-hero .mc-hero-title {
+    @apply text-white;
   }
 
   .mc-hero-title-compact {
@@ -2008,12 +2020,20 @@ html[data-theme='dark'] {
     @apply mt-2 max-w-xl text-sm leading-relaxed text-secondary;
   }
 
+  .mc-hero .mc-hero-date {
+    @apply text-white/75;
+  }
+
   .mc-caption {
     @apply text-xs leading-relaxed text-secondary;
   }
 
+  .mc-hero .mc-caption {
+    @apply text-white/70;
+  }
+
   .mc-hero-progress-card {
-    @apply min-w-[14rem] rounded-2xl bg-white/80 p-5 shadow-sm backdrop-blur-sm;
+    @apply min-w-[14rem] rounded-2xl border border-white/20 bg-white/10 p-5 shadow-sm backdrop-blur-md;
   }
 
   .mc-hero-progress-card-rich {
@@ -2028,6 +2048,11 @@ html[data-theme='dark'] {
     @apply mt-1 text-3xl font-semibold text-text-heading;
   }
 
+  .mc-hero .mc-hero-progress-value,
+  .mc-hero .mc-panel-title {
+    @apply text-white;
+  }
+
   .mc-progress-metrics {
     @apply mt-3 grid grid-cols-3 gap-3;
   }
@@ -2040,8 +2065,20 @@ html[data-theme='dark'] {
     @apply mt-0.5 text-lg font-semibold text-text-heading;
   }
 
+  .mc-hero .mc-progress-metrics dt {
+    @apply text-emerald-100/70;
+  }
+
+  .mc-hero .mc-progress-metrics dd {
+    @apply text-white;
+  }
+
   .mc-progress-track {
     @apply mt-2 h-2 overflow-hidden rounded-full bg-slate-100;
+  }
+
+  .mc-hero .mc-progress-track {
+    @apply bg-white/20;
   }
 
   .mc-progress-track-lg {
@@ -2052,6 +2089,10 @@ html[data-theme='dark'] {
     @apply h-full rounded-full bg-emerald-600 transition-[width] duration-700 ease-out;
   }
 
+  .mc-hero .mc-progress-fill {
+    @apply bg-emerald-300;
+  }
+
   .mc-ring {
     @apply relative inline-flex shrink-0 items-center justify-center;
   }
@@ -2060,8 +2101,16 @@ html[data-theme='dark'] {
     stroke: rgb(226 232 240);
   }
 
+  .mc-hero .mc-ring-track {
+    stroke: rgb(255 255 255 / 0.28);
+  }
+
   .mc-ring-value {
     transition: stroke-dashoffset 0.8s ease;
+  }
+
+  .mc-hero .mc-ring-value {
+    stroke: #86efac;
   }
 
   .mc-ring-center {
@@ -2072,8 +2121,16 @@ html[data-theme='dark'] {
     @apply text-sm font-semibold leading-none text-text-heading;
   }
 
+  .mc-hero .mc-ring-label {
+    @apply text-white;
+  }
+
   .mc-ring-sub {
     @apply mt-1 text-[10px] font-medium uppercase tracking-wide text-secondary;
+  }
+
+  .mc-hero .mc-ring-sub {
+    @apply text-white/70;
   }
 
   .mc-quick-actions {
@@ -2243,16 +2300,32 @@ html[data-theme='dark'] {
     @apply inline-flex items-baseline gap-1.5 rounded-full border border-border/80 bg-white/90 px-3 py-1.5 shadow-sm;
   }
 
+  .mc-hero .mc-mission-chip {
+    @apply border-white/20 bg-white/10 text-white backdrop-blur-sm;
+  }
+
   .mc-mission-chip dt {
     @apply text-[11px] font-medium uppercase tracking-wide text-secondary;
+  }
+
+  .mc-hero .mc-mission-chip dt {
+    @apply text-emerald-100/75;
   }
 
   .mc-mission-chip dd {
     @apply text-base font-semibold tabular-nums text-text-heading;
   }
 
+  .mc-hero .mc-mission-chip dd {
+    @apply text-white;
+  }
+
   .mc-hero-mission-line {
     @apply mt-1 text-sm font-medium text-text;
+  }
+
+  .mc-hero .mc-hero-mission-line {
+    @apply text-white/85;
   }
 
   .mc-hero-detail {
