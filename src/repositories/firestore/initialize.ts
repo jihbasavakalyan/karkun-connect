@@ -91,7 +91,20 @@ async function runCriticalHydrateAndRebuildCycle(): Promise<void> {
   rebuildStoresIfSafe('startup-critical', hydrateSucceeded)
 }
 
-/** KC-004B — non-blocking; fills execution/compliance/settings after first paint. */
+function attachSnapshotListeners(): void {
+  stopFirestoreSnapshotListeners()
+  markStartupLifecycle('firestore.snapshot.listeners.attach')
+  startFirestoreSnapshotListeners(() => {
+    scheduleSnapshotRefresh()
+  })
+  markStartupLifecycle('firestore.snapshot.listeners.attached')
+}
+
+/**
+ * KC-004B — non-blocking background hydrate, then attach listeners.
+ * Listeners stay off until background completes so snapshot refresh cannot
+ * race/await the in-flight background getDocs fan-out.
+ */
 function scheduleBackgroundHydrateAndRebuild(): void {
   if (backgroundHydrateScheduled) {
     return
@@ -117,6 +130,8 @@ function scheduleBackgroundHydrateAndRebuild(): void {
       hydrateStoresFromRepositories()
       markStartupLifecycle('stores.hydrate.complete', { context: 'startup-background' })
     }
+
+    attachSnapshotListeners()
     markBackgroundHydrationReady()
   })()
 }
@@ -194,14 +209,8 @@ export async function initializeRepositories(): Promise<void> {
       await enableFirestorePersistence()
       await runStartupLifecycle()
 
-      stopFirestoreSnapshotListeners()
-      markStartupLifecycle('firestore.snapshot.listeners.attach')
-      startFirestoreSnapshotListeners(() => {
-        scheduleSnapshotRefresh()
-      })
-      markStartupLifecycle('firestore.snapshot.listeners.attached')
-
-      // KC-004B: do not await — ProtectedRoute unlocks after critical hydrate.
+      // KC-004B: return after critical path so ProtectedRoute can unlock.
+      // Background hydrate + listener attach continue asynchronously.
       scheduleBackgroundHydrateAndRebuild()
 
       initialized = true

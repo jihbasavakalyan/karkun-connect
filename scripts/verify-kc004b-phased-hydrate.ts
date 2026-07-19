@@ -46,6 +46,13 @@ assert(
 )
 
 assert(
+  /scheduleBackgroundHydrateAndRebuild[\s\S]*attachSnapshotListeners/.test(initializeSrc) ||
+    initializeSrc.indexOf('attachSnapshotListeners()') >
+      initializeSrc.indexOf('backgroundHydrate.complete'),
+  'snapshot listeners must attach after background hydrate (avoid race)',
+)
+
+assert(
   reposSrc.includes('export async function hydrateCriticalFirestoreCaches') &&
     reposSrc.includes('export async function hydrateBackgroundFirestoreCaches'),
   'firestoreRepositories missing phased hydrate exports',
