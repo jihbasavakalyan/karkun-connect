@@ -426,6 +426,10 @@ export class SettingsLocalRepository implements SettingsRepository {
     return tryRepository(() => loadJsonFromStorage<number | null>(STORAGE_KEYS.migrationVersion, null))
   }
 
+  async resolveMigrationVersion(): Promise<RepositoryResult<number | null>> {
+    return this.getMigrationVersion()
+  }
+
   setMigrationVersion(version: number): RepositoryResult<void> {
     return tryRepository(() => saveJsonToStorage(STORAGE_KEYS.migrationVersion, version))
   }

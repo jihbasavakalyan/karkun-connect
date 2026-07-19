@@ -17,6 +17,11 @@ export type MigrationBackupIndexEntry = {
 
 export interface SettingsRepository {
   getMigrationVersion(): RepositoryResult<number | null>
+  /**
+   * KC-004D — Authoritative migration version for startup decisions.
+   * Cache-first; when cache is null, reads durable storage (Firestore/local).
+   */
+  resolveMigrationVersion(): Promise<RepositoryResult<number | null>>
   setMigrationVersion(version: number): RepositoryResult<void>
   clearMigrationVersion(): RepositoryResult<void>
   loadBroadcastLists(): RepositoryResult<BroadcastListRecord[]>

@@ -19,6 +19,8 @@ import {
   traceMetricSnapshot,
   traceStoreSnapshot,
 } from '@/lib/incidentTraceCollector'
+import { MOCK_KARKUN_REGISTRY } from '@/constants/mockKarkunRegistry'
+import { kc004cTraceRegistry } from '@/lib/debug/kc004cRegistryTrace'
 
 let hydratingStores = false
 
@@ -56,14 +58,29 @@ export function hydrateStoresFromRepositories(): void {
     reloadJihWebPortalStoreFromPersistence()
     reloadBroadcastListStoreFromPersistence()
     reloadKarkunRequestStoreFromPersistence()
+    const registryBeforeLoad = MOCK_KARKUN_REGISTRY.length
     loadPeopleRegistryFromPersistence()
+    kc004cTraceRegistry({
+      caller: 'hydrateStoresFromRepositories',
+      phase: 'after-loadPeopleRegistryFromPersistence',
+      before: registryBeforeLoad,
+      after: MOCK_KARKUN_REGISTRY.length,
+    })
 
     traceIncidentStage('hydrateStoresFromRepositories:before_syncAllKarkunRegistryFromAssignments', {
       caller: 'hydrateStoresFromRepositories',
       sourceOfTruth: 'Derived Calculation',
       assignmentCount: getAllAssignments().length,
     })
+    const registryBeforeSync = MOCK_KARKUN_REGISTRY.length
     syncAllKarkunRegistryFromAssignments({ notify: false })
+    kc004cTraceRegistry({
+      caller: 'hydrateStoresFromRepositories',
+      phase: 'after-syncAllKarkunRegistryFromAssignments',
+      before: registryBeforeSync,
+      after: MOCK_KARKUN_REGISTRY.length,
+      extra: { note: 'sync mutates fields in-place; length should be unchanged' },
+    })
     traceIncidentStage('hydrateStoresFromRepositories:after_syncAllKarkunRegistryFromAssignments', {
       caller: 'hydrateStoresFromRepositories',
       sourceOfTruth: 'Derived Calculation',
@@ -72,6 +89,12 @@ export function hydrateStoresFromRepositories(): void {
 
       traceRegistryStage('3_after_hydrateStoresFromRepositories_post_load')
       notifyPeopleRegistryChange()
+      kc004cTraceRegistry({
+        caller: 'hydrateStoresFromRepositories',
+        phase: 'after-notifyPeopleRegistryChange',
+        after: MOCK_KARKUN_REGISTRY.length,
+        extra: { note: 'notify persists full MOCK via saveState upsert' },
+      })
       traceRegistryStage('6_after_notifyPeopleRegistryChange_from_hydrateStores')
 
     const people = getPeopleStatistics()

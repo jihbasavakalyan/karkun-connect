@@ -79,6 +79,7 @@ import {
   traceSequencedIncidentStage,
 } from '@/lib/incidentTraceCollector'
 import { canonicalizeConnectionRecords } from '@/lib/connections/canonicalizeConnectionRecords'
+import { kc004cTraceRegistry } from '@/lib/debug/kc004cRegistryTrace'
 
 type ConnectionMetaDoc = {
   nextSequence?: number
@@ -155,9 +156,22 @@ async function applyCriticalHydratePayload(input: {
   }
 
   ruknCache.set(rukns)
+  kc004cTraceRegistry({
+    caller: 'applyCriticalHydratePayload',
+    phase: 'before-karkunCache.set',
+    before: karkunCache.get().karkuns.length,
+    firestoreCount: karkuns.length,
+  })
   karkunCache.set({
     karkuns,
     nextKarkunNum: karkunCounter?.nextKarkunNum ?? 1,
+  })
+  kc004cTraceRegistry({
+    caller: 'applyCriticalHydratePayload',
+    phase: 'after-karkunCache.set',
+    firestoreCount: karkuns.length,
+    after: karkunCache.get().karkuns.length,
+    extra: { nextKarkunNum: karkunCounter?.nextKarkunNum ?? 1 },
   })
 
   const { records: identityCanonical, duplicates: connectionDuplicates } =
@@ -342,6 +356,14 @@ function applyBackgroundHydratePayload(input: {
   }
 
   migrationVersionCache.set(migrationVersion?.version ?? null)
+  kc004cTraceRegistry({
+    caller: 'applyBackgroundHydratePayload',
+    phase: 'migrationVersion-applied',
+    migrationVersion: migrationVersion?.version ?? null,
+    extra: {
+      note: 'Too late if runProductionDataMigration already decided using null version',
+    },
+  })
 
   const broadcastLists: BroadcastListRecord[] = []
   let backupIndex: MigrationBackupIndexEntry[] = []
@@ -812,6 +834,16 @@ export class KarkunFirestoreRepository implements KarkunRepository {
   }
 
   saveState(state: KarkunRegistryState): RepositoryResult<void> {
+    kc004cTraceRegistry({
+      caller: 'KarkunFirestoreRepository.saveState',
+      phase: 'upsert-without-orphan-delete',
+      before: karkunCache.get().karkuns.length,
+      after: state.karkuns.length,
+      extra: {
+        nextKarkunNum: state.nextKarkunNum,
+        note: 'Firestore batch.set only; existing docs not in state are not deleted',
+      },
+    })
     karkunCache.set({ karkuns: [...state.karkuns], nextKarkunNum: state.nextKarkunNum })
     void queueWrite('karkuns', async () => {
       const db = getFirestoreDb()
@@ -1217,6 +1249,29 @@ export class ComplianceFirestoreRepository implements ComplianceRepository {
 export class SettingsFirestoreRepository implements SettingsRepository {
   getMigrationVersion(): RepositoryResult<number | null> {
     return repositoryOk(migrationVersionCache.get())
+  }
+
+  /** KC-004D — durable read when phased background hydrate has not filled the cache yet. */
+  async resolveMigrationVersion(): Promise<RepositoryResult<number | null>> {
+    const cached = migrationVersionCache.get()
+    if (cached !== null) {
+      return repositoryOk(cached)
+    }
+    try {
+      const db = getFirestoreDb()
+      const docData = await readDoc<{ version: number | null }>(
+        db,
+        FIRESTORE_COLLECTIONS.settings,
+        FIRESTORE_DOCS.migrationVersion,
+      )
+      const version = docData?.version ?? null
+      if (version !== null) {
+        migrationVersionCache.set(version)
+      }
+      return repositoryOk(version)
+    } catch (error) {
+      return mapFirestoreError(error)
+    }
   }
 
   setMigrationVersion(version: number): RepositoryResult<void> {

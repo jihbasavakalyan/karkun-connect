@@ -14,6 +14,8 @@ import {
   resetBackgroundHydrationReadyForTests,
 } from '@/repositories/backgroundHydrationReady'
 import { resetRepositoryHydrationReadyForTests } from '@/repositories/hydrationReady'
+import { MOCK_KARKUN_REGISTRY } from '@/constants/mockKarkunRegistry'
+import { kc004cTraceRegistry } from '@/lib/debug/kc004cRegistryTrace'
 
 let initialized = false
 let initializeInFlight: Promise<void> | null = null
@@ -103,7 +105,18 @@ async function runPhasedStartupHydrate(): Promise<void> {
     markStartupLifecycle('firestore.hydrate.failed', { context: 'startup-critical' })
   }
 
+  kc004cTraceRegistry({
+    caller: 'runPhasedStartupHydrate',
+    phase: 'before-critical-store-rebuild',
+    before: MOCK_KARKUN_REGISTRY.length,
+  })
   rebuildStoresIfSafe('startup-critical', criticalSucceeded)
+  kc004cTraceRegistry({
+    caller: 'runPhasedStartupHydrate',
+    phase: 'after-critical-store-rebuild',
+    after: MOCK_KARKUN_REGISTRY.length,
+    extra: { note: 'initializeRepositories returns soon; migration may run before background apply' },
+  })
 
   if (backgroundHydrateScheduled) {
     return
@@ -123,10 +136,25 @@ async function runPhasedStartupHydrate(): Promise<void> {
       markStartupLifecycle('firestore.hydrate.failed', { context: 'startup-background' })
     }
 
+    kc004cTraceRegistry({
+      caller: 'runPhasedStartupHydrate',
+      phase: 'background-apply-complete',
+      after: MOCK_KARKUN_REGISTRY.length,
+      extra: {
+        backgroundSucceeded,
+        note: 'migrationVersion cache is set in applyBackgroundHydratePayload',
+      },
+    })
+
     if (backgroundSucceeded) {
       markStartupLifecycle('stores.hydrate.start', { context: 'startup-background' })
       hydrateStoresFromRepositories()
       markStartupLifecycle('stores.hydrate.complete', { context: 'startup-background' })
+      kc004cTraceRegistry({
+        caller: 'runPhasedStartupHydrate',
+        phase: 'after-background-store-rebuild',
+        after: MOCK_KARKUN_REGISTRY.length,
+      })
     }
 
     attachSnapshotListeners()

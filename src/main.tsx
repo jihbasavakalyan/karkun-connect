@@ -23,9 +23,18 @@ async function runDeferredBootstrap(): Promise<void> {
     logStartupTiming('hydrationReady.marked')
   }
 
+  // KC-004D: migration runs after hydrationReady (dashboard unlocked). Uses
+  // authoritative migration version + refuses full seed when registry exists.
   const { runProductionDataMigration } = await import('@/services/productionDataMigrationService')
-  runProductionDataMigration()
-  logStartupTiming('productionMigration.invoked')
+  try {
+    await runProductionDataMigration()
+    logStartupTiming('productionMigration.invoked')
+  } catch (error) {
+    console.error('[bootstrap] production migration failed', error)
+    logStartupTiming('productionMigration.failed', {
+      message: error instanceof Error ? error.message : String(error),
+    })
+  }
 
   // KC-027F: Digital Rafeeq runtime must not compete with first dashboard paint.
   // Schedule after hydrate gate; do not await on the bootstrap critical path.
