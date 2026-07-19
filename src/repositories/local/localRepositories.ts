@@ -126,8 +126,16 @@ export class KarkunLocalRepository implements KarkunRepository {
 
   saveState(state: KarkunRegistryState): RepositoryResult<void> {
     return tryRepository(() => {
+      let maxExisting = 0
+      for (const karkun of state.karkuns) {
+        const match = /^kr-(\d+)$/i.exec(karkun.id)
+        if (!match) continue
+        const num = Number.parseInt(match[1]!, 10)
+        if (Number.isFinite(num) && num > maxExisting) maxExisting = num
+      }
+      const healedNext = Math.max(1, state.nextKarkunNum || 1, maxExisting + 1)
       saveJsonToStorage(STORAGE_KEYS.karkunRegistry, state.karkuns)
-      saveJsonToStorage(STORAGE_KEYS.karkunNextId, state.nextKarkunNum)
+      saveJsonToStorage(STORAGE_KEYS.karkunNextId, healedNext)
     })
   }
 

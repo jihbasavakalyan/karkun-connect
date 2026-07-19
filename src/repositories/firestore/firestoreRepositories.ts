@@ -835,25 +835,40 @@ export class KarkunFirestoreRepository implements KarkunRepository {
   }
 
   saveState(state: KarkunRegistryState): RepositoryResult<void> {
+    // KC-0056 — never persist a lagging counter (guards stale clients).
+    let maxExisting = 0
+    for (const karkun of state.karkuns) {
+      const match = /^kr-(\d+)$/i.exec(karkun.id)
+      if (!match) continue
+      const num = Number.parseInt(match[1]!, 10)
+      if (Number.isFinite(num) && num > maxExisting) maxExisting = num
+    }
+    const healedNext = Math.max(1, state.nextKarkunNum || 1, maxExisting + 1)
+    const healedState: KarkunRegistryState = {
+      karkuns: state.karkuns,
+      nextKarkunNum: healedNext,
+    }
+
     kc004cTraceRegistry({
       caller: 'KarkunFirestoreRepository.saveState',
       phase: 'upsert-without-orphan-delete',
       before: karkunCache.get().karkuns.length,
-      after: state.karkuns.length,
+      after: healedState.karkuns.length,
       extra: {
-        nextKarkunNum: state.nextKarkunNum,
+        nextKarkunNum: healedState.nextKarkunNum,
+        requestedNextKarkunNum: state.nextKarkunNum,
         note: 'Firestore batch.set only; existing docs not in state are not deleted',
       },
     })
-    karkunCache.set({ karkuns: [...state.karkuns], nextKarkunNum: state.nextKarkunNum })
+    karkunCache.set({ karkuns: [...healedState.karkuns], nextKarkunNum: healedState.nextKarkunNum })
     void queueWrite('karkuns', async () => {
       const db = getFirestoreDb()
       const batch = createBatch(db)
-      for (const karkun of state.karkuns) {
+      for (const karkun of healedState.karkuns) {
         batch.set(doc(db, FIRESTORE_COLLECTIONS.karkuns, karkun.id), sanitizeForFirestore(karkun))
       }
       batch.set(doc(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.karkunCounter), sanitizeForFirestore({
-        nextKarkunNum: state.nextKarkunNum,
+        nextKarkunNum: healedState.nextKarkunNum,
       }))
       await batch.commit()
       return repositoryOk(undefined)
