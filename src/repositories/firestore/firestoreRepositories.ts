@@ -88,6 +88,10 @@ import {
   traceSequencedIncidentStage,
 } from '@/lib/incidentTraceCollector'
 import { canonicalizeConnectionRecords } from '@/lib/connections/canonicalizeConnectionRecords'
+import {
+  kc00584CaptureAuthBeforeCritical,
+  kc00584ProbeCriticalOp,
+} from '@/lib/debug/kc00584PermissionProbe'
 import { kc004cTraceRegistry } from '@/lib/debug/kc004cRegistryTrace'
 
 type ConnectionMetaDoc = {
@@ -623,23 +627,107 @@ function markConnectionRepositoriesFailed(caller: string, error: unknown): void 
 
 function readCriticalHydratePayload(db: ReturnType<typeof getFirestoreDb>) {
   // KC-0058.3 — critical path hard-fails. Soft reads are forbidden here.
-  return Promise.all([
-    readCollection<CampaignListItem>(db, FIRESTORE_COLLECTIONS.campaigns),
-    readRuknsForClient(db),
-    readKarkunsForClient(db),
-    readDoc<{ nextKarkunNum: number }>(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.karkunCounter),
-    readConnectionsForClient(db),
-    readDoc<ConnectionMetaDoc>(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.connectionMeta),
-  ]).then(
-    ([campaigns, rukns, karkuns, karkunCounter, assignments, connectionMeta]) => ({
+  // KC-0058.4 — probe wraps each op (behavior unchanged: still fail-fast via Promise.all).
+  return (async () => {
+    const scope = await resolveClientAuthScope()
+    await kc00584CaptureAuthBeforeCritical(scope)
+
+    const [
       campaigns,
       rukns,
       karkuns,
       karkunCounter,
       assignments,
       connectionMeta,
-    }),
-  )
+    ] = await Promise.all([
+      kc00584ProbeCriticalOp({
+        label: 'critical.campaigns',
+        repository: 'CampaignFirestoreRepository / hydrate',
+        method: 'readCollection(campaigns)',
+        firestoreApi: 'getDocs',
+        collection: FIRESTORE_COLLECTIONS.campaigns,
+        query: `collection(db, "${FIRESTORE_COLLECTIONS.campaigns}")`,
+        run: () => readCollection<CampaignListItem>(db, FIRESTORE_COLLECTIONS.campaigns),
+      }),
+      kc00584ProbeCriticalOp({
+        label: 'critical.rukns',
+        repository: 'RuknFirestoreRepository / hydrate',
+        method: 'readRuknsForClient()',
+        firestoreApi: scope.role === 'rukn' ? 'getDoc' : 'getDocs',
+        collection: FIRESTORE_COLLECTIONS.rukns,
+        query:
+          scope.role === 'rukn' && scope.ruknId
+            ? `doc(db, "rukns", "${scope.ruknId}")`
+            : `collection(db, "${FIRESTORE_COLLECTIONS.rukns}")`,
+        documentPath:
+          scope.role === 'rukn' && scope.ruknId ? `rukns/${scope.ruknId}` : null,
+        run: () => readRuknsForClient(db),
+      }),
+      kc00584ProbeCriticalOp({
+        label: 'critical.karkuns',
+        repository: 'KarkunFirestoreRepository / hydrate',
+        method: 'readKarkunsForClient()',
+        firestoreApi: 'getDocs',
+        collection: FIRESTORE_COLLECTIONS.karkuns,
+        query:
+          scope.role === 'rukn' && scope.ruknId
+            ? `where assignedRuknId=="${scope.ruknId}" OR assignedRuknId==""`
+            : `collection(db, "${FIRESTORE_COLLECTIONS.karkuns}")`,
+        run: () => readKarkunsForClient(db),
+      }),
+      kc00584ProbeCriticalOp({
+        label: 'critical.settings.karkunCounter',
+        repository: 'Settings / hydrate',
+        method: 'readDoc(karkunCounter)',
+        firestoreApi: 'getDoc',
+        collection: FIRESTORE_COLLECTIONS.settings,
+        query: `doc(db, "settings", "${FIRESTORE_DOCS.karkunCounter}")`,
+        documentPath: `${FIRESTORE_COLLECTIONS.settings}/${FIRESTORE_DOCS.karkunCounter}`,
+        run: () =>
+          readDoc<{ nextKarkunNum: number }>(
+            db,
+            FIRESTORE_COLLECTIONS.settings,
+            FIRESTORE_DOCS.karkunCounter,
+          ),
+      }),
+      kc00584ProbeCriticalOp({
+        label: 'critical.connections',
+        repository: 'ConnectionFirestoreRepository / hydrate',
+        method: 'readConnectionsForClient()',
+        firestoreApi: 'getDocs',
+        collection: FIRESTORE_COLLECTIONS.connections,
+        query:
+          scope.role === 'rukn' && scope.ruknId
+            ? `where ruknId=="${scope.ruknId}"`
+            : `collection(db, "${FIRESTORE_COLLECTIONS.connections}")`,
+        run: () => readConnectionsForClient(db),
+      }),
+      kc00584ProbeCriticalOp({
+        label: 'critical.settings.connectionMeta',
+        repository: 'Settings / hydrate',
+        method: 'readDoc(connectionMeta)',
+        firestoreApi: 'getDoc',
+        collection: FIRESTORE_COLLECTIONS.settings,
+        query: `doc(db, "settings", "${FIRESTORE_DOCS.connectionMeta}")`,
+        documentPath: `${FIRESTORE_COLLECTIONS.settings}/${FIRESTORE_DOCS.connectionMeta}`,
+        run: () =>
+          readDoc<ConnectionMetaDoc>(
+            db,
+            FIRESTORE_COLLECTIONS.settings,
+            FIRESTORE_DOCS.connectionMeta,
+          ),
+      }),
+    ])
+
+    return {
+      campaigns,
+      rukns,
+      karkuns,
+      karkunCounter,
+      assignments,
+      connectionMeta,
+    }
+  })()
 }
 
 function readBackgroundHydratePayload(db: ReturnType<typeof getFirestoreDb>) {
