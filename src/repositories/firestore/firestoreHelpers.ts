@@ -11,7 +11,12 @@ import {
   type Firestore,
   type WriteBatch,
 } from 'firebase/firestore'
-import { repositoryErr, type RepositoryErrorCode, type RepositoryResult } from '@/repositories/errors'
+import {
+  FRIENDLY_DATA_ACCESS_ERROR,
+  repositoryErr,
+  type RepositoryErrorCode,
+  type RepositoryResult,
+} from '@/repositories/errors'
 import type { FirestoreDocumentMeta } from '@/repositories/firestore/collections'
 
 export function nowIso(): string {
@@ -77,7 +82,9 @@ export function mapFirestoreError(error: unknown): RepositoryResult<never> {
   if (typeof error === 'object' && error !== null && 'code' in error) {
     const code = String((error as { code: string }).code)
     if (code === 'permission-denied') {
-      return repositoryErr('Permission', 'You do not have permission to access this data.', error)
+      // KC-0058.2 — log raw denial; never surface backend permission text to operators.
+      console.error('[firestore:permission-denied]', error)
+      return repositoryErr('Permission', FRIENDLY_DATA_ACCESS_ERROR, error)
     }
     if (code === 'resource-exhausted') {
       return repositoryErr('StorageFailure', 'Service quota exceeded. Please try again later.', error)

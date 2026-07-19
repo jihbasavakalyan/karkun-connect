@@ -30,6 +30,7 @@ import type {
 import type { ConflictResolution } from '@/types/dataMigration'
 import { DEFAULT_PLACE } from '@/types/people.types'
 import { persistPeopleRegistry } from '@/lib/peopleRegistryPersistence'
+import { getRepositories } from '@/repositories/provider'
 import {
   emitPeopleRegistryChange,
   subscribeToPeopleStore,
@@ -619,6 +620,23 @@ export function updateKarkun(
   })
 
   notifyPeopleChange()
+  return { success: true }
+}
+
+/**
+ * KC-0058.2 — Await durable persistence for a single Karkun after in-memory update.
+ * Success means Firestore (or local repo) accepted the write.
+ */
+export async function persistKarkunDurable(id: string): Promise<PeopleMutationResult> {
+  const karkun = MOCK_KARKUN_REGISTRY.find((k) => k.id === id && !k.isArchived)
+  if (!karkun) {
+    return { success: false, error: 'Karkun not found.' }
+  }
+  const result = await getRepositories().karkun.upsertRecord(karkun)
+  if (!result.ok) {
+    console.error('[persistKarkunDurable]', result.error.code, result.error.message, result.error.cause)
+    return { success: false, error: result.error.message }
+  }
   return { success: true }
 }
 

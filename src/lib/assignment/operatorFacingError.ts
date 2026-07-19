@@ -3,6 +3,8 @@
  * Raw details go to console (and optional diagnostics sinks) only.
  */
 
+import { FRIENDLY_DATA_ACCESS_ERROR } from '@/repositories/errors'
+
 const FRIENDLY_ASSIGNMENT_ERROR =
   'Unable to complete assignment. Please try again. If the problem continues, contact Administrator.'
 
@@ -23,7 +25,21 @@ function looksLikeInternalDiagnostic(message: string): boolean {
     lower.includes('stack') ||
     lower.includes('firestore') ||
     lower.includes('permission_denied') ||
+    lower.includes('permission-denied') ||
+    lower.includes('do not have permission') ||
+    lower.includes('permission to access') ||
     lower.includes('failed to allocate')
+  )
+}
+
+function looksLikePermissionDenial(message: string): boolean {
+  const lower = message.toLowerCase()
+  return (
+    lower.includes('permission_denied') ||
+    lower.includes('permission-denied') ||
+    lower.includes('do not have permission') ||
+    lower.includes('permission to access') ||
+    lower.includes('unable to load additional information')
   )
 }
 
@@ -41,6 +57,9 @@ export function toOperatorAssignmentError(
     return FRIENDLY_ASSIGNMENT_ERROR
   }
   logDiagnostic('assign', raw, extras)
+  if (looksLikePermissionDenial(raw)) {
+    return FRIENDLY_DATA_ACCESS_ERROR
+  }
   if (looksLikeInternalDiagnostic(raw)) {
     return FRIENDLY_ASSIGNMENT_ERROR
   }
@@ -54,6 +73,7 @@ export function toOperatorAssignmentError(
 export function toOperatorTransferError(raw: string | undefined | null): string {
   if (!raw?.trim()) return FRIENDLY_TRANSFER_ERROR
   logDiagnostic('transfer', raw)
+  if (looksLikePermissionDenial(raw)) return FRIENDLY_DATA_ACCESS_ERROR
   if (looksLikeInternalDiagnostic(raw)) return FRIENDLY_TRANSFER_ERROR
   if (raw.length <= 160 && !/[{\[]/.test(raw)) return raw
   return FRIENDLY_TRANSFER_ERROR
@@ -62,6 +82,7 @@ export function toOperatorTransferError(raw: string | undefined | null): string 
 export function toOperatorDisconnectError(raw: string | undefined | null): string {
   if (!raw?.trim()) return FRIENDLY_DISCONNECT_ERROR
   logDiagnostic('disconnect', raw)
+  if (looksLikePermissionDenial(raw)) return FRIENDLY_DATA_ACCESS_ERROR
   if (looksLikeInternalDiagnostic(raw)) return FRIENDLY_DISCONNECT_ERROR
   if (raw.length <= 160 && !/[{\[]/.test(raw)) return raw
   return FRIENDLY_DISCONNECT_ERROR

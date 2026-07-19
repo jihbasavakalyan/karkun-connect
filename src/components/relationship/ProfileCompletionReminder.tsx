@@ -7,9 +7,10 @@ import { Modal } from '@/components/common/Modal'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import { useAuth } from '@/hooks/useAuth'
-import { updateKarkun } from '@/lib/peopleStore'
+import { persistKarkunDurable, updateKarkun } from '@/lib/peopleStore'
 import {
   getMissingMandatoryProfileFields,
+  isKarkunProfileComplete,
   type ProfileMissingField,
 } from '@/lib/karkunProfileCompletion'
 import { subscribeToPeopleStore } from '@/lib/peopleRegistryEvents'
@@ -38,8 +39,10 @@ export function ProfileCompletionReminder({
   const karkun = getKarkunById(karkunId)
   if (!karkun) return null
 
+  // Single shared completeness function (KC-0058.2).
+  if (isKarkunProfileComplete(karkun)) return null
+
   const missing = getMissingMandatoryProfileFields(karkun)
-  if (missing.length === 0) return null
 
   return (
     <>
@@ -120,6 +123,7 @@ function ProfileCompletionEditor({
   const [gender, setGender] = useState<PersonGender>(karkun.gender)
   const [whatsapp, setWhatsapp] = useState(karkun.whatsapp ?? '')
   const [error, setError] = useState('')
+  const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     if (!isOpen) return
@@ -130,6 +134,7 @@ function ProfileCompletionEditor({
     setGender(karkun.gender)
     setWhatsapp(karkun.whatsapp ?? '')
     setError('')
+    setSaving(false)
   }, [isOpen, karkun])
 
   const relationLabel = gender === 'Female' ? 'شوہر کا نام' : 'والد کا نام'
@@ -137,41 +142,61 @@ function ProfileCompletionEditor({
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
     setError('')
+    setSaving(true)
 
-    const result = updateKarkun(
-      karkun.id,
-      {
-        fatherHusbandName: fatherHusbandName.trim() || undefined,
-        address: address.trim(),
-        area: area.trim(),
-        place: place.trim() || undefined,
-        gender,
-        whatsapp: whatsapp.trim() || undefined,
-      },
-      updatedBy,
-    )
+    void (async () => {
+      const result = updateKarkun(
+        karkun.id,
+        {
+          fatherHusbandName: fatherHusbandName.trim() || undefined,
+          address: address.trim(),
+          area: area.trim(),
+          place: place.trim() || undefined,
+          gender,
+          whatsapp: whatsapp.trim() || undefined,
+        },
+        updatedBy,
+      )
 
-    if (!result.success) {
-      setError(result.error ?? 'معلومات محفوظ نہیں ہو سکیں۔')
-      return
-    }
+      if (!result.success) {
+        setError(result.error ?? 'معلومات محفوظ نہیں ہو سکیں۔')
+        setSaving(false)
+        return
+      }
 
-    onSaved()
+      // KC-0058.2 — success only after durable repository write.
+      const durable = await persistKarkunDurable(karkun.id)
+      if (!durable.success) {
+        setError(durable.error ?? 'معلومات محفوظ نہیں ہو سکیں۔ براہ کرم دوبارہ کوشش کریں۔')
+        setSaving(false)
+        return
+      }
+
+      const refreshed = getKarkunById(karkun.id)
+      if (!refreshed || !isKarkunProfileComplete(refreshed)) {
+        setError('معلومات مکمل نہیں ہیں۔ براہ کرم تمام ضروری خانے بھریں۔')
+        setSaving(false)
+        return
+      }
+
+      setSaving(false)
+      onSaved()
+    })()
   }
 
   return (
     <Modal
       isOpen={isOpen}
       title="معلومات مکمل کریں"
-      onClose={onClose}
+      onClose={saving ? () => undefined : onClose}
       size="md"
       footer={
         <div className="flex flex-wrap justify-end gap-2">
-          <SecondaryButton type="button" onClick={onClose}>
+          <SecondaryButton type="button" onClick={onClose} disabled={saving}>
             منسوخ
           </SecondaryButton>
-          <PrimaryButton type="submit" form="profile-completion-form">
-            محفوظ کریں
+          <PrimaryButton type="submit" form="profile-completion-form" disabled={saving}>
+            {saving ? 'محفوظ ہو رہا ہے…' : 'محفوظ کریں'}
           </PrimaryButton>
         </div>
       }
@@ -255,7 +280,7 @@ function ProfileCompletionEditor({
           />
         </label>
 
-        {error ? <p className="text-sm text-red-700">{error}</p> : null}
+        {error ? <p className="text-sm text-red-700 whitespace-pre-line">{error}</p> : null}
       </form>
     </Modal>
   )

@@ -139,6 +139,16 @@ export class KarkunLocalRepository implements KarkunRepository {
     })
   }
 
+  async upsertRecord(karkun: KarkunRegistryRecord): Promise<RepositoryResult<void>> {
+    return tryRepository(() => {
+      const current = loadJsonFromStorage<KarkunRegistryRecord[]>(STORAGE_KEYS.karkunRegistry, [])
+      const next = current.some((item) => item.id === karkun.id)
+        ? current.map((item) => (item.id === karkun.id ? karkun : item))
+        : [...current, karkun]
+      saveJsonToStorage(STORAGE_KEYS.karkunRegistry, next)
+    })
+  }
+
   clear(): RepositoryResult<void> {
     return tryRepository(() => {
       removeFromStorage(STORAGE_KEYS.karkunRegistry)

@@ -15,6 +15,7 @@ import { EmptyState, PageShell } from '@/components/ui'
 import { PlanningConversationModal } from '@/features/digitalRafeeq/planning'
 import { humanizeConnectionConfirmed } from '@/lib/relationshipPresentation'
 import { matchesKarkunRegistrySearch } from '@/lib/relationshipPresentation'
+import { toOperatorAssignmentError } from '@/lib/assignment/operatorFacingError'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
 
 type PlanningTarget = {
@@ -47,7 +48,7 @@ export function AvailableKarkunPage() {
     void (async () => {
       const result = await assignKarkun(pendingKarkun.id, ruknId, 'Rukn')
       if (!result.success) {
-        setError(result.error)
+        setError(toOperatorAssignmentError(result.error, { karkunId: pendingKarkun.id, ruknId }))
         return
       }
       const connected = pendingKarkun

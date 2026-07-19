@@ -27,6 +27,32 @@ service cloud.firestore {
         get(/databases/$(database)/documents/karkuns/$(karkunId)).data.assignedRuknId == ruknId();
     }
 
+    function stringOrEmpty(value) {
+      return value is string ? value : '';
+    }
+
+    function isAvailableKarkunData(data) {
+      return stringOrEmpty(data.assignedRuknId) == ''
+        || data.assignmentStatus == 'Available';
+    }
+
+    /**
+     * KC-0058.2 — Rukn may:
+     * - enrich / release own assigned Karkun
+     * - claim an Available Karkun on Connect (assignedRuknId '' → self)
+     * Never reassign to a different Rukn.
+     */
+    function ruknMayUpdateKarkun() {
+      let before = stringOrEmpty(resource.data.assignedRuknId);
+      let after = stringOrEmpty(request.resource.data.assignedRuknId);
+      return request.resource.data.id == resource.data.id
+        && (
+          (before == ruknId() && after == ruknId())
+          || (before == '' && after == ruknId())
+          || (before == ruknId() && after == '')
+        );
+    }
+
     // KC-0058 — critical collections: no client deletes (archive via update only).
     match /campaigns/{campaignId} {
       allow read: if isSignedIn();
@@ -41,8 +67,14 @@ service cloud.firestore {
     }
 
     match /karkuns/{karkunId} {
-      allow read: if isAdministrator() || (isRukn() && resource.data.assignedRuknId == ruknId());
-      allow create, update: if isAdministrator();
+      // Own connected + Available pool (Connect list).
+      allow read: if isAdministrator()
+        || (isRukn() && (
+          resource.data.assignedRuknId == ruknId()
+          || isAvailableKarkunData(resource.data)
+        ));
+      allow create: if isAdministrator();
+      allow update: if isAdministrator() || (isRukn() && ruknMayUpdateKarkun());
       allow delete: if false;
     }
 
@@ -92,14 +124,36 @@ service cloud.firestore {
 
     // KC-0056 — karkunCounter.nextKarkunNum is monotonic (stale clients cannot lag it).
     // KC-0058 — protect connectionMeta from delete.
+    // KC-0058.2 — Rukn may read hydrate counters + allocate ASN via connectionMeta;
+    //             Rukn may update karkunRequests (Add New Karkun). Default deny otherwise.
     match /settings/{docId} {
-      allow read: if isAdministrator();
-      allow create: if isAdministrator();
-      allow update: if isAdministrator() && (
-        docId != 'karkunCounter' ||
-        !('nextKarkunNum' in resource.data) ||
-        request.resource.data.nextKarkunNum >= resource.data.nextKarkunNum
+      allow read: if isAdministrator()
+        || (isRukn() && (
+          docId == 'connectionMeta'
+          || docId == 'karkunCounter'
+          || docId == 'migrationVersion'
+          || docId == 'karkunRequests'
+        ));
+
+      allow create: if isAdministrator()
+        || (isRukn() && docId == 'karkunRequests');
+
+      allow update: if (
+        isAdministrator() && (
+          docId != 'karkunCounter' ||
+          !('nextKarkunNum' in resource.data) ||
+          request.resource.data.nextKarkunNum >= resource.data.nextKarkunNum
+        )
+      ) || (
+        isRukn() && docId == 'connectionMeta' &&
+        (
+          !('nextSequence' in resource.data) ||
+          request.resource.data.nextSequence >= resource.data.nextSequence
+        )
+      ) || (
+        isRukn() && docId == 'karkunRequests'
       );
+
       allow delete: if isAdministrator()
         && docId != 'karkunCounter'
         && docId != 'connectionMeta'

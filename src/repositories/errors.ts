@@ -1,3 +1,7 @@
+/** KC-0058.2 — operator copy for permission denials (never expose backend codes). */
+export const FRIENDLY_DATA_ACCESS_ERROR =
+  'Unable to load additional information.\n\nPlease try again.\n\nIf the problem continues, contact the administrator.'
+
 export type RepositoryErrorCode =
   | 'NotFound'
   | 'Duplicate'

@@ -17,11 +17,15 @@ import {
   getCountFromServer,
   getDocs,
   onSnapshot,
+  query,
   runTransaction,
+  where,
   type DocumentData,
+  type Query,
   type Unsubscribe,
 } from 'firebase/firestore'
 import { getFirestoreDb } from '@/lib/firebase/firestore'
+import { getFirebaseAuth } from '@/lib/firebase/firebase'
 import { repositoryErr, repositoryOk, type RepositoryResult } from '@/repositories/errors'
 import {
   DANGEROUS_CLEAR_BLOCKED_MESSAGE,
@@ -131,11 +135,195 @@ async function queueWrite(label: string, work: () => Promise<RepositoryResult<vo
   trackPendingWrite()
   try {
     const result = await work()
-    if (!result.ok && result.error.code === 'Duplicate') {
-      recordFirestoreConflict(label, result.error.cause)
+    if (!result.ok) {
+      if (result.error.code === 'Duplicate') {
+        recordFirestoreConflict(label, result.error.cause)
+      } else {
+        // KC-0058.2 — never swallow permission / storage failures silently.
+        console.error(`[firestore:queueWrite:${label}]`, result.error.code, result.error.message, result.error.cause)
+      }
     }
+  } catch (error) {
+    console.error(`[firestore:queueWrite:${label}:threw]`, error)
   } finally {
     markPendingWriteComplete()
+  }
+}
+
+function isPermissionDeniedError(error: unknown): boolean {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    String((error as { code: string }).code) === 'permission-denied'
+  )
+}
+
+/** Soft-read: permission denials become null so Rukn hydrate can proceed for admin-only docs. */
+async function readDocSoft<T>(
+  db: ReturnType<typeof getFirestoreDb>,
+  path: string,
+  id: string,
+): Promise<T | null> {
+  try {
+    return await readDoc<T>(db, path, id)
+  } catch (error) {
+    if (isPermissionDeniedError(error)) {
+      console.warn(`[firestore:hydrate] soft-skip ${path}/${id} (permission-denied)`)
+      return null
+    }
+    throw error
+  }
+}
+
+async function getDocsSoft(
+  query: Parameters<typeof getDocs>[0],
+  label: string,
+): Promise<{ docs: Awaited<ReturnType<typeof getDocs>>['docs'] }> {
+  try {
+    return await getDocs(query)
+  } catch (error) {
+    if (isPermissionDeniedError(error)) {
+      console.warn(`[firestore:hydrate] soft-skip ${label} (permission-denied)`)
+      return { docs: [] }
+    }
+    throw error
+  }
+}
+
+type ClientAuthScope = {
+  role: string | null
+  ruknId: string | null
+}
+
+async function resolveClientAuthScope(): Promise<ClientAuthScope> {
+  try {
+    const user = getFirebaseAuth().currentUser
+    if (!user) return { role: null, ruknId: null }
+    const token = await user.getIdTokenResult()
+    const role = typeof token.claims.role === 'string' ? token.claims.role : null
+    const ruknId = typeof token.claims.ruknId === 'string' ? token.claims.ruknId : null
+    return { role, ruknId }
+  } catch {
+    return { role: null, ruknId: null }
+  }
+}
+
+/**
+ * KC-0058.2 — Rukn cannot run unfiltered collection gets under document-scoped rules.
+ * Load own assigned + Available pool via equality filters that match security rules.
+ */
+async function readKarkunsForClient(
+  db: ReturnType<typeof getFirestoreDb>,
+): Promise<KarkunRegistryRecord[]> {
+  const scope = await resolveClientAuthScope()
+  if (scope.role === 'rukn' && scope.ruknId) {
+    const [mineSnap, availableSnap] = await Promise.all([
+      getDocs(
+        query(
+          collection(db, FIRESTORE_COLLECTIONS.karkuns),
+          where('assignedRuknId', '==', scope.ruknId),
+        ),
+      ),
+      getDocs(
+        query(collection(db, FIRESTORE_COLLECTIONS.karkuns), where('assignedRuknId', '==', '')),
+      ),
+    ])
+    const byId = new Map<string, KarkunRegistryRecord>()
+    for (const snapshot of [...mineSnap.docs, ...availableSnap.docs]) {
+      byId.set(snapshot.id, stripMeta<KarkunRegistryRecord>(snapshot.data()))
+    }
+    return [...byId.values()]
+  }
+  return readCollection<KarkunRegistryRecord>(db, FIRESTORE_COLLECTIONS.karkuns)
+}
+
+async function readConnectionsForClient(
+  db: ReturnType<typeof getFirestoreDb>,
+): Promise<AssignmentRecord[]> {
+  const scope = await resolveClientAuthScope()
+  if (scope.role === 'rukn' && scope.ruknId) {
+    const snap = await getDocs(
+      query(
+        collection(db, FIRESTORE_COLLECTIONS.connections),
+        where('ruknId', '==', scope.ruknId),
+      ),
+    )
+    return snap.docs.map((item) => stripMeta<AssignmentRecord>(item.data()))
+  }
+  return readCollection<AssignmentRecord>(db, FIRESTORE_COLLECTIONS.connections)
+}
+
+async function readRuknsForClient(db: ReturnType<typeof getFirestoreDb>): Promise<Rukn[]> {
+  const scope = await resolveClientAuthScope()
+  if (scope.role === 'rukn' && scope.ruknId) {
+    const own = await readDocSoft<Rukn>(db, FIRESTORE_COLLECTIONS.rukns, scope.ruknId)
+    return own ? [own] : []
+  }
+  return readCollection<Rukn>(db, FIRESTORE_COLLECTIONS.rukns)
+}
+
+async function readActivityLogsForClient(
+  db: ReturnType<typeof getFirestoreDb>,
+): Promise<ActivityLogEntry[]> {
+  const scope = await resolveClientAuthScope()
+  if (scope.role === 'rukn' && scope.ruknId) {
+    try {
+      const snap = await getDocs(
+        query(
+          collection(db, FIRESTORE_COLLECTIONS.activityLogs),
+          where('ruknId', '==', scope.ruknId),
+        ),
+      )
+      return snap.docs.map((item) => stripMeta<ActivityLogEntry>(item.data()))
+    } catch (error) {
+      if (isPermissionDeniedError(error)) {
+        console.warn('[firestore:hydrate] soft-skip activityLogs (permission-denied)')
+        return []
+      }
+      throw error
+    }
+  }
+  try {
+    return await readCollection<ActivityLogEntry>(db, FIRESTORE_COLLECTIONS.activityLogs)
+  } catch (error) {
+    if (isPermissionDeniedError(error)) {
+      console.warn('[firestore:hydrate] soft-skip activityLogs (permission-denied)')
+      return []
+    }
+    throw error
+  }
+}
+
+async function readFollowUpsForClient(
+  db: ReturnType<typeof getFirestoreDb>,
+): Promise<FollowUpRecord[]> {
+  const scope = await resolveClientAuthScope()
+  if (scope.role === 'rukn' && scope.ruknId) {
+    try {
+      const snap = await getDocs(
+        query(
+          collection(db, FIRESTORE_COLLECTIONS.followUps),
+          where('ruknId', '==', scope.ruknId),
+        ),
+      )
+      return snap.docs.map((item) => stripMeta<FollowUpRecord>(item.data()))
+    } catch (error) {
+      if (isPermissionDeniedError(error)) {
+        console.warn('[firestore:hydrate] soft-skip followUps (permission-denied)')
+        return []
+      }
+      throw error
+    }
+  }
+  try {
+    return await readCollection<FollowUpRecord>(db, FIRESTORE_COLLECTIONS.followUps)
+  } catch (error) {
+    if (isPermissionDeniedError(error)) {
+      console.warn('[firestore:hydrate] soft-skip followUps (permission-denied)')
+      return []
+    }
+    throw error
   }
 }
 
@@ -306,12 +494,12 @@ async function applyCriticalHydratePayload(input: {
 
 function applyBackgroundHydratePayload(input: {
   activityLogs: ActivityLogEntry[]
-  executionSnapshots: Awaited<ReturnType<typeof getDocs>>
+  executionSnapshots: { docs: Awaited<ReturnType<typeof getDocs>>['docs'] }
   followUps: FollowUpRecord[]
   communication: CommunicationState | null
-  complianceSnapshots: Awaited<ReturnType<typeof getDocs>>
+  complianceSnapshots: { docs: Awaited<ReturnType<typeof getDocs>>['docs'] }
   migrationVersion: { version: number | null } | null
-  settingsSnapshots: Awaited<ReturnType<typeof getDocs>>
+  settingsSnapshots: { docs: Awaited<ReturnType<typeof getDocs>>['docs'] }
 }): void {
   const {
     activityLogs,
@@ -435,11 +623,11 @@ function markConnectionRepositoriesFailed(caller: string, error: unknown): void 
 function readCriticalHydratePayload(db: ReturnType<typeof getFirestoreDb>) {
   return Promise.all([
     readCollection<CampaignListItem>(db, FIRESTORE_COLLECTIONS.campaigns),
-    readCollection<Rukn>(db, FIRESTORE_COLLECTIONS.rukns),
-    readCollection<KarkunRegistryRecord>(db, FIRESTORE_COLLECTIONS.karkuns),
-    readDoc<{ nextKarkunNum: number }>(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.karkunCounter),
-    readCollection<AssignmentRecord>(db, FIRESTORE_COLLECTIONS.connections),
-    readDoc<ConnectionMetaDoc>(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.connectionMeta),
+    readRuknsForClient(db),
+    readKarkunsForClient(db),
+    readDocSoft<{ nextKarkunNum: number }>(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.karkunCounter),
+    readConnectionsForClient(db),
+    readDocSoft<ConnectionMetaDoc>(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.connectionMeta),
   ]).then(
     ([campaigns, rukns, karkuns, karkunCounter, assignments, connectionMeta]) => ({
       campaigns,
@@ -454,13 +642,13 @@ function readCriticalHydratePayload(db: ReturnType<typeof getFirestoreDb>) {
 
 function readBackgroundHydratePayload(db: ReturnType<typeof getFirestoreDb>) {
   return Promise.all([
-    readCollection<ActivityLogEntry>(db, FIRESTORE_COLLECTIONS.activityLogs),
-    getDocs(collection(db, FIRESTORE_COLLECTIONS.executions)),
-    readCollection<FollowUpRecord>(db, FIRESTORE_COLLECTIONS.followUps),
-    readDoc<CommunicationState>(db, FIRESTORE_COLLECTIONS.communications, FIRESTORE_DOCS.communicationState),
-    getDocs(collection(db, FIRESTORE_COLLECTIONS.compliance)),
-    readDoc<{ version: number | null }>(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.migrationVersion),
-    getDocs(collection(db, FIRESTORE_COLLECTIONS.settings)),
+    readActivityLogsForClient(db),
+    getDocsSoft(collection(db, FIRESTORE_COLLECTIONS.executions), 'executions'),
+    readFollowUpsForClient(db),
+    readDocSoft<CommunicationState>(db, FIRESTORE_COLLECTIONS.communications, FIRESTORE_DOCS.communicationState),
+    getDocsSoft(collection(db, FIRESTORE_COLLECTIONS.compliance), 'compliance'),
+    readDocSoft<{ version: number | null }>(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.migrationVersion),
+    getDocsSoft(collection(db, FIRESTORE_COLLECTIONS.settings), 'settings'),
   ]).then(
     ([
       activityLogs,
@@ -601,18 +789,18 @@ async function hydrateFirestoreCachesOnce(): Promise<void> {
       settingsSnapshots,
     ] = await Promise.all([
       readCollection<CampaignListItem>(db, FIRESTORE_COLLECTIONS.campaigns),
-      readCollection<Rukn>(db, FIRESTORE_COLLECTIONS.rukns),
-      readCollection<KarkunRegistryRecord>(db, FIRESTORE_COLLECTIONS.karkuns),
-      readDoc<{ nextKarkunNum: number }>(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.karkunCounter),
-      readCollection<AssignmentRecord>(db, FIRESTORE_COLLECTIONS.connections),
-      readDoc<ConnectionMetaDoc>(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.connectionMeta),
-      readCollection<ActivityLogEntry>(db, FIRESTORE_COLLECTIONS.activityLogs),
-      getDocs(collection(db, FIRESTORE_COLLECTIONS.executions)),
-      readCollection<FollowUpRecord>(db, FIRESTORE_COLLECTIONS.followUps),
-      readDoc<CommunicationState>(db, FIRESTORE_COLLECTIONS.communications, FIRESTORE_DOCS.communicationState),
-      getDocs(collection(db, FIRESTORE_COLLECTIONS.compliance)),
-      readDoc<{ version: number | null }>(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.migrationVersion),
-      getDocs(collection(db, FIRESTORE_COLLECTIONS.settings)),
+      readRuknsForClient(db),
+      readKarkunsForClient(db),
+      readDocSoft<{ nextKarkunNum: number }>(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.karkunCounter),
+      readConnectionsForClient(db),
+      readDocSoft<ConnectionMetaDoc>(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.connectionMeta),
+      readActivityLogsForClient(db),
+      getDocsSoft(collection(db, FIRESTORE_COLLECTIONS.executions), 'executions'),
+      readFollowUpsForClient(db),
+      readDocSoft<CommunicationState>(db, FIRESTORE_COLLECTIONS.communications, FIRESTORE_DOCS.communicationState),
+      getDocsSoft(collection(db, FIRESTORE_COLLECTIONS.compliance), 'compliance'),
+      readDocSoft<{ version: number | null }>(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.migrationVersion),
+      getDocsSoft(collection(db, FIRESTORE_COLLECTIONS.settings), 'settings'),
     ])
 
     await applyCriticalHydratePayload({
@@ -726,7 +914,7 @@ export function startFirestoreSnapshotListeners(onRemoteChange: () => void): voi
   // startup already hydrated. Only subsequent remote changes refresh stores.
   const seenInitialSnapshot = new Set<string>()
 
-  const watch = (path: string, handler: () => void) => {
+  const watchCollection = (path: string, handler: () => void) => {
     snapshotUnsubscribers.push(
       onSnapshot(collection(db, path), () => {
         if (!seenInitialSnapshot.has(path)) {
@@ -748,15 +936,84 @@ export function startFirestoreSnapshotListeners(onRemoteChange: () => void): voi
     )
   }
 
-  watch(FIRESTORE_COLLECTIONS.connections, onRemoteChange)
-  watch(FIRESTORE_COLLECTIONS.karkuns, onRemoteChange)
-  watch(FIRESTORE_COLLECTIONS.rukns, onRemoteChange)
-  watch(FIRESTORE_COLLECTIONS.activityLogs, onRemoteChange)
-  watch(FIRESTORE_COLLECTIONS.followUps, onRemoteChange)
-  watch(FIRESTORE_COLLECTIONS.executions, onRemoteChange)
-  watch(FIRESTORE_COLLECTIONS.compliance, onRemoteChange)
-  watch(FIRESTORE_COLLECTIONS.communications, onRemoteChange)
-  watch(FIRESTORE_COLLECTIONS.settings, onRemoteChange)
+  const watchQuery = (label: string, q: Query, handler: () => void) => {
+    snapshotUnsubscribers.push(
+      onSnapshot(q, () => {
+        if (!seenInitialSnapshot.has(label)) {
+          seenInitialSnapshot.add(label)
+          traceIncidentStage('snapshot_listener:initial_suppressed', {
+            caller: 'onSnapshot',
+            sourceOfTruth: 'Snapshot Listener',
+            path: label,
+          })
+          return
+        }
+        traceIncidentStage('snapshot_listener:fired', {
+          caller: 'onSnapshot',
+          sourceOfTruth: 'Snapshot Listener',
+          path: label,
+        })
+        handler()
+      }),
+    )
+  }
+
+  void (async () => {
+    const scope = await resolveClientAuthScope()
+    if (scope.role === 'rukn' && scope.ruknId) {
+      // KC-0058.2 — listeners must match document-scoped rules (no unfiltered gets).
+      watchQuery(
+        `connections:rukn:${scope.ruknId}`,
+        query(
+          collection(db, FIRESTORE_COLLECTIONS.connections),
+          where('ruknId', '==', scope.ruknId),
+        ),
+        onRemoteChange,
+      )
+      watchQuery(
+        `karkuns:mine:${scope.ruknId}`,
+        query(
+          collection(db, FIRESTORE_COLLECTIONS.karkuns),
+          where('assignedRuknId', '==', scope.ruknId),
+        ),
+        onRemoteChange,
+      )
+      watchQuery(
+        'karkuns:available',
+        query(collection(db, FIRESTORE_COLLECTIONS.karkuns), where('assignedRuknId', '==', '')),
+        onRemoteChange,
+      )
+      watchQuery(
+        `activityLogs:rukn:${scope.ruknId}`,
+        query(
+          collection(db, FIRESTORE_COLLECTIONS.activityLogs),
+          where('ruknId', '==', scope.ruknId),
+        ),
+        onRemoteChange,
+      )
+      watchQuery(
+        `followUps:rukn:${scope.ruknId}`,
+        query(
+          collection(db, FIRESTORE_COLLECTIONS.followUps),
+          where('ruknId', '==', scope.ruknId),
+        ),
+        onRemoteChange,
+      )
+      watchCollection(FIRESTORE_COLLECTIONS.executions, onRemoteChange)
+      watchCollection(FIRESTORE_COLLECTIONS.compliance, onRemoteChange)
+      return
+    }
+
+    watchCollection(FIRESTORE_COLLECTIONS.connections, onRemoteChange)
+    watchCollection(FIRESTORE_COLLECTIONS.karkuns, onRemoteChange)
+    watchCollection(FIRESTORE_COLLECTIONS.rukns, onRemoteChange)
+    watchCollection(FIRESTORE_COLLECTIONS.activityLogs, onRemoteChange)
+    watchCollection(FIRESTORE_COLLECTIONS.followUps, onRemoteChange)
+    watchCollection(FIRESTORE_COLLECTIONS.executions, onRemoteChange)
+    watchCollection(FIRESTORE_COLLECTIONS.compliance, onRemoteChange)
+    watchCollection(FIRESTORE_COLLECTIONS.communications, onRemoteChange)
+    watchCollection(FIRESTORE_COLLECTIONS.settings, onRemoteChange)
+  })()
 }
 
 export function stopFirestoreSnapshotListeners(): void {
@@ -862,6 +1119,12 @@ export class KarkunFirestoreRepository implements KarkunRepository {
       nextKarkunNum: healedNext,
     }
 
+    // Snapshot ownership before cache overwrite (Rukn release must still write cleared docs).
+    const ownershipSnapshot = karkunCache.get().karkuns.map((karkun) => ({
+      id: karkun.id,
+      assignedRuknId: karkun.assignedRuknId,
+    }))
+
     kc004cTraceRegistry({
       caller: 'KarkunFirestoreRepository.saveState',
       phase: 'upsert-without-orphan-delete',
@@ -876,17 +1139,57 @@ export class KarkunFirestoreRepository implements KarkunRepository {
     karkunCache.set({ karkuns: [...healedState.karkuns], nextKarkunNum: healedState.nextKarkunNum })
     void queueWrite('karkuns', async () => {
       const db = getFirestoreDb()
+      const scope = await resolveClientAuthScope()
+      const isRuknClient = scope.role === 'rukn' && Boolean(scope.ruknId)
+
+      const previouslyMine = new Set(
+        ownershipSnapshot
+          .filter((row) => row.assignedRuknId === scope.ruknId)
+          .map((row) => row.id),
+      )
+
+      // KC-0058.2 — Rukn may only write own assigned docs (+ releases of previously owned).
+      const toWrite = isRuknClient
+        ? healedState.karkuns.filter(
+            (karkun) =>
+              karkun.assignedRuknId === scope.ruknId || previouslyMine.has(karkun.id),
+          )
+        : healedState.karkuns
+
       const batch = createBatch(db)
-      for (const karkun of healedState.karkuns) {
+      for (const karkun of toWrite) {
         batch.set(doc(db, FIRESTORE_COLLECTIONS.karkuns, karkun.id), sanitizeForFirestore(karkun))
       }
-      batch.set(doc(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.karkunCounter), sanitizeForFirestore({
-        nextKarkunNum: healedState.nextKarkunNum,
-      }))
-      await batch.commit()
-      return repositoryOk(undefined)
+      // Counter is administrator-owned; Rukn profile/connect must not touch it.
+      if (!isRuknClient) {
+        batch.set(
+          doc(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.karkunCounter),
+          sanitizeForFirestore({
+            nextKarkunNum: healedState.nextKarkunNum,
+          }),
+        )
+      }
+      if (toWrite.length === 0 && isRuknClient) {
+        return repositoryOk(undefined)
+      }
+      try {
+        await batch.commit()
+        return repositoryOk(undefined)
+      } catch (error) {
+        return mapFirestoreError(error)
+      }
     })
     return repositoryOk(undefined)
+  }
+
+  async upsertRecord(karkun: KarkunRegistryRecord): Promise<RepositoryResult<void>> {
+    const state = karkunCache.get()
+    const nextKarkuns = state.karkuns.some((item) => item.id === karkun.id)
+      ? state.karkuns.map((item) => (item.id === karkun.id ? karkun : item))
+      : [...state.karkuns, karkun]
+    karkunCache.set({ karkuns: nextKarkuns, nextKarkunNum: state.nextKarkunNum })
+    const db = getFirestoreDb()
+    return writeDoc(db, FIRESTORE_COLLECTIONS.karkuns, karkun.id, sanitizeForFirestore(karkun) as object)
   }
 
   clear(): RepositoryResult<void> {
