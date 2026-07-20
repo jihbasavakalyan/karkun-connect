@@ -9,7 +9,7 @@ import {
   isKarkunProfileComplete,
   getMissingMandatoryProfileFields,
 } from '../src/lib/karkunProfileCompletion'
-import { toOperatorAssignmentError } from '../src/lib/assignment/operatorFacingError'
+import { toOperatorAssignmentError, FRIENDLY_ASSIGNMENT_ERROR } from '../src/lib/assignment/operatorFacingError'
 import { FRIENDLY_DATA_ACCESS_ERROR } from '../src/repositories/errors'
 import { getCampaignConnectionMetrics } from '../src/services/metricsService'
 import { IntegrityScanner } from '../src/services/integrityScanner'
@@ -36,12 +36,12 @@ assert(
 )
 assert(
   toOperatorAssignmentError('You do not have permission to access this data.') ===
-    FRIENDLY_DATA_ACCESS_ERROR,
-  'legacy permission copy must be remapped',
+    FRIENDLY_ASSIGNMENT_ERROR,
+  'legacy permission copy must remap to assignment error (KC-0060.2)',
 )
 assert(
-  toOperatorAssignmentError('permission-denied') === FRIENDLY_DATA_ACCESS_ERROR,
-  'permission-denied must be remapped',
+  toOperatorAssignmentError('permission-denied') === FRIENDLY_ASSIGNMENT_ERROR,
+  'permission-denied must remap to assignment error (KC-0060.2)',
 )
 
 const now = new Date().toISOString()
@@ -121,5 +121,6 @@ assert(metrics.sourceOfTruth === 'MetricsService', 'metrics source must be Metri
 console.log('KC-0058.2 verify OK', {
   connected: metrics.connected,
   progressPct: metrics.progressPct,
-  friendlyErrorPreview: FRIENDLY_DATA_ACCESS_ERROR.split('\n')[0],
+  friendlyErrorPreview: FRIENDLY_ASSIGNMENT_ERROR.split('.')[0],
+  dataAccessErrorPreview: FRIENDLY_DATA_ACCESS_ERROR.split('\n')[0],
 })

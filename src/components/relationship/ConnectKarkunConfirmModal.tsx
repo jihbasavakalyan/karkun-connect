@@ -1,4 +1,5 @@
 import { Modal, ModalFormFooter, ModalFormGrid, ModalFormSection } from '@/components/common'
+import { OPTIONAL_PROFILE_UNAVAILABLE_WARNING } from '@/lib/assignment/operatorFacingError'
 import { fatherHusbandLabel } from '@/lib/relationshipPresentation'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
 
@@ -10,6 +11,16 @@ type ConnectKarkunConfirmModalProps = {
   loading?: boolean
   onClose: () => void
   onConfirm: () => void
+}
+
+/** Required for Confirm: identity + mobile (assignment validation). */
+export function hasRequiredConnectData(karkun: KarkunRegistryRecord): boolean {
+  return Boolean(karkun.id?.trim() && karkun.name?.trim() && karkun.mobile?.trim())
+}
+
+/** Optional profile fields shown under Additional Information. */
+export function hasOptionalAdditionalInfo(karkun: KarkunRegistryRecord): boolean {
+  return Boolean(karkun.area?.trim() || karkun.place?.trim())
 }
 
 export function ConnectKarkunConfirmModal({
@@ -25,6 +36,14 @@ export function ConnectKarkunConfirmModal({
     return null
   }
 
+  const canConfirm = hasRequiredConnectData(karkun)
+  const additionalAvailable = hasOptionalAdditionalInfo(karkun)
+  // KC-0060.2 — never treat FRIENDLY_DATA_ACCESS_ERROR as a connection blocker.
+  const legacyOptionalLoadError = Boolean(
+    error?.toLowerCase().includes('unable to load additional information'),
+  )
+  const blockingError = error && !legacyOptionalLoadError ? error : undefined
+
   return (
     <Modal
       isOpen={isOpen}
@@ -35,8 +54,9 @@ export function ConnectKarkunConfirmModal({
           onCancel={onClose}
           primaryLabel="Confirm Connection"
           onPrimaryClick={onConfirm}
+          primaryDisabled={!canConfirm}
           loading={loading}
-          error={error}
+          error={blockingError}
         />
       }
     >
@@ -72,13 +92,26 @@ export function ConnectKarkunConfirmModal({
         </ModalFormSection>
 
         <ModalFormSection title="Additional Information">
-          <ModalFormGrid>
-            <div>
-              <p className="text-sm text-secondary">Area</p>
-              <p className="break-words">{karkun.area || karkun.place}</p>
-            </div>
-          </ModalFormGrid>
+          {additionalAvailable ? (
+            <ModalFormGrid>
+              <div>
+                <p className="text-sm text-secondary">Area</p>
+                <p className="break-words">{karkun.area || karkun.place}</p>
+              </div>
+            </ModalFormGrid>
+          ) : null}
+          {!additionalAvailable || legacyOptionalLoadError ? (
+            <p className="text-sm text-amber-800" role="status">
+              {OPTIONAL_PROFILE_UNAVAILABLE_WARNING}
+            </p>
+          ) : null}
         </ModalFormSection>
+
+        {!canConfirm && (
+          <p className="text-sm text-red-600" role="alert">
+            Name and mobile are required before connecting.
+          </p>
+        )}
       </div>
     </Modal>
   )

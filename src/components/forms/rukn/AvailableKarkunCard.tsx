@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
+import { toOperatorAssignmentError } from '@/lib/assignment/operatorFacingError'
 import { ContactActionBar } from '@/components/common/ContactActionBar'
 import { Modal } from '@/components/common/Modal'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
@@ -20,7 +21,7 @@ export function AvailableKarkunCard({ karkun, ruknId }: AvailableKarkunCardProps
     void (async () => {
       const result = await assignKarkun(karkun.id, ruknId, 'Rukn')
       if (!result.success) {
-        setError(result.error)
+        setError(toOperatorAssignmentError(result.error, { karkunId: karkun.id, ruknId }))
         return
       }
       setConfirmOpen(false)

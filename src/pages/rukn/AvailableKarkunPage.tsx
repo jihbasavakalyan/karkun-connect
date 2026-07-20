@@ -33,6 +33,7 @@ export function AvailableKarkunPage() {
   const [query, setQuery] = useState('')
   const [pendingKarkun, setPendingKarkun] = useState<KarkunRegistryRecord | null>(null)
   const [error, setError] = useState('')
+  const [connectLoading, setConnectLoading] = useState(false)
   const [successMessage, setSuccessMessage] = useState('')
   const [planning, setPlanning] = useState<PlanningTarget | null>(null)
   const [showNewRequest, setShowNewRequest] = useState(false)
@@ -44,22 +45,29 @@ export function AvailableKarkunPage() {
   }, [availableKarkunan, query, peopleVersion, assignmentVersion])
 
   const handleConfirmConnect = () => {
-    if (!pendingKarkun || !ruknId) return
+    if (!pendingKarkun || !ruknId || connectLoading) return
+    setConnectLoading(true)
+    setError('')
     void (async () => {
-      const result = await assignKarkun(pendingKarkun.id, ruknId, 'Rukn')
-      if (!result.success) {
-        setError(toOperatorAssignmentError(result.error, { karkunId: pendingKarkun.id, ruknId }))
-        return
+      try {
+        const result = await assignKarkun(pendingKarkun.id, ruknId, 'Rukn')
+        if (!result.success) {
+          // KC-0060.2 — connection errors only; never block on optional profile copy.
+          setError(toOperatorAssignmentError(result.error, { karkunId: pendingKarkun.id, ruknId }))
+          return
+        }
+        const connected = pendingKarkun
+        setSuccessMessage(humanizeConnectionConfirmed(result.assignment?.assignmentNumber))
+        setPendingKarkun(null)
+        setError('')
+        setPlanning({
+          karkunId: connected.id,
+          karkunName: connected.name,
+          assignmentId: result.assignment?.assignmentId,
+        })
+      } finally {
+        setConnectLoading(false)
       }
-      const connected = pendingKarkun
-      setSuccessMessage(humanizeConnectionConfirmed(result.assignment?.assignmentNumber))
-      setPendingKarkun(null)
-      setError('')
-      setPlanning({
-        karkunId: connected.id,
-        karkunName: connected.name,
-        assignmentId: result.assignment?.assignmentId,
-      })
     })()
   }
 
@@ -142,7 +150,9 @@ export function AvailableKarkunPage() {
         isOpen={pendingKarkun !== null}
         karkun={pendingKarkun}
         error={error}
+        loading={connectLoading}
         onClose={() => {
+          if (connectLoading) return
           setPendingKarkun(null)
           setError('')
         }}
