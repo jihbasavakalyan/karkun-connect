@@ -55,14 +55,19 @@ function mapFirebaseUser(user: User): Promise<AuthUser | null> {
       customClaims: tokenResult.claims as Record<string, unknown>,
     })
 
-    // KC-0061 — App may resolve Rukn via phone master while JWT lacks role/ruknId.
-    // After claims are provisioned server-side, force-refresh once so Firestore sees them.
-    if (authUser?.role === 'rukn' && tokenResult.claims.role !== 'rukn') {
-      console.warn('[KC-0061] ID token missing rukn claims; force-refreshing', {
+    // KC-0061 Phase 2 — App may resolve Admin (email allowlist) or Rukn (phone master)
+    // while the JWT still lacks role claims. Firestore requires token.role for assign + hydrate.
+    const appRole = authUser?.role
+    const claimRole = tokenResult.claims.role
+    const claimsMatchAppRole =
+      (appRole === 'administrator' && claimRole === 'administrator') ||
+      (appRole === 'rukn' && claimRole === 'rukn')
+
+    if (authUser && !claimsMatchAppRole) {
+      console.warn('[KC-0061] ID token role claim mismatch; force-refreshing', {
         uid: user.uid,
-        appRole: authUser.role,
-        appRuknId: authUser.ruknId,
-        claimRole: tokenResult.claims.role ?? null,
+        appRole,
+        claimRole: claimRole ?? null,
       })
       const refreshed = await user.getIdTokenResult(true)
       authUser = resolveAuthUser({

@@ -325,11 +325,23 @@ export async function assignRukn(input: AssignInput): Promise<AssignmentResult> 
   const { connectStepEnter, connectStepExit, connectStepEarlyReturn, traceConnect } = await import(
     '@/lib/debug/kc0061ConnectTrace'
   )
+  const { ensureJwtRoleClaimPresent } = await import('@/lib/auth/ensureJwtRoleClaim')
   const serviceSpan = connectStepEnter('service.assignRukn', {
     ruknId: input.ruknId,
     karkunId: input.karkunId,
     assignedBy: input.assignedBy,
   })
+
+  // KC-0061 Phase 2 — shared Admin+Rukn gate: Firestore ASN allocate requires JWT role.
+  const claims = await ensureJwtRoleClaimPresent()
+  if (!claims.ok) {
+    connectStepEarlyReturn('service.assignRukn', 'missing_jwt_role_claim', {
+      error: claims.error,
+      forceRefreshed: claims.forceRefreshed,
+    })
+    connectStepExit(serviceSpan, 'service.assignRukn', { aborted: 'missing_jwt_role_claim' })
+    return { success: false, error: claims.error }
+  }
 
   const validateSpan = connectStepEnter('service.validateAssignInput')
   const validation = validateAssignInput(input)

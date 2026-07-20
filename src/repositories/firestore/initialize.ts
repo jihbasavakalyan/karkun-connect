@@ -70,6 +70,8 @@ function isTransientCriticalHydrateError(error: unknown): boolean {
 /**
  * Ensure the Auth ID token is available before the first critical Firestore read.
  * authStateReady can resolve a few ms before AuthProvider / Firestore attach the token.
+ *
+ * KC-0061 Phase 2 — if the token has no role claim, force-refresh once (shared Admin+Rukn fix).
  */
 async function ensureAuthTokenReadyForFirestore(forceRefresh = false): Promise<void> {
   const user = getFirebaseAuth().currentUser
@@ -78,26 +80,33 @@ async function ensureAuthTokenReadyForFirestore(forceRefresh = false): Promise<v
     return
   }
   markStartupLifecycle('auth.token.wait', { forceRefresh, uid: user.uid })
-  const tokenResult = await user.getIdTokenResult(forceRefresh)
-  const claimRole =
+  let tokenResult = await user.getIdTokenResult(forceRefresh)
+  let claimRole =
     typeof tokenResult.claims.role === 'string' ? tokenResult.claims.role : null
-  const claimRuknId =
+  let claimRuknId =
     typeof tokenResult.claims.ruknId === 'string' ? tokenResult.claims.ruknId : null
+
+  if (!claimRole && !forceRefresh) {
+    markStartupLifecycle('auth.token.missing_role_claim.refresh', { uid: user.uid })
+    tokenResult = await user.getIdTokenResult(true)
+    claimRole = typeof tokenResult.claims.role === 'string' ? tokenResult.claims.role : null
+    claimRuknId =
+      typeof tokenResult.claims.ruknId === 'string' ? tokenResult.claims.ruknId : null
+  }
+
   markStartupLifecycle('auth.token.ready', {
-    forceRefresh,
+    forceRefresh: forceRefresh || !claimRole,
     uid: user.uid,
     role: claimRole,
     ruknId: claimRuknId,
     issuedAt: tokenResult.issuedAtTime,
     authTime: tokenResult.authTime,
   })
-  // KC-0061 — dashboard hydrate + Connect both require JWT role claims.
   if (!claimRole) {
-    console.warn('[KC-0061] auth.token.ready without role claim — Firestore will deny critical ops', {
+    console.warn('[KC-0061] auth.token.ready without role claim after refresh — Firestore will deny', {
       uid: user.uid,
-      forceRefresh,
     })
-    markStartupLifecycle('auth.token.missing_role_claim', { uid: user.uid, forceRefresh })
+    markStartupLifecycle('auth.token.missing_role_claim', { uid: user.uid, forceRefresh: true })
   }
 }
 
