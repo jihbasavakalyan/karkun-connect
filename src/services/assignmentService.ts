@@ -322,8 +322,21 @@ function formatNames(ruknId: string, karkunId: string): { ruknName: string; kark
 const assignInFlightByKarkun = new Map<string, Promise<AssignmentResult>>()
 
 export async function assignRukn(input: AssignInput): Promise<AssignmentResult> {
+  const { connectStepEnter, connectStepExit, connectStepEarlyReturn, traceConnect } = await import(
+    '@/lib/debug/kc0061ConnectTrace'
+  )
+  const serviceSpan = connectStepEnter('service.assignRukn', {
+    ruknId: input.ruknId,
+    karkunId: input.karkunId,
+    assignedBy: input.assignedBy,
+  })
+
+  const validateSpan = connectStepEnter('service.validateAssignInput')
   const validation = validateAssignInput(input)
+  connectStepExit(validateSpan, 'service.validateAssignInput', { valid: validation.valid })
   if (!validation.valid) {
+    connectStepEarlyReturn('service.validateAssignInput', validation.error)
+    connectStepExit(serviceSpan, 'service.assignRukn', { aborted: 'validation', error: validation.error })
     return { success: false, error: validation.error }
   }
 
@@ -332,16 +345,20 @@ export async function assignRukn(input: AssignInput): Promise<AssignmentResult> 
     (record) => record.ruknId === input.ruknId,
   )
   if (existingSame) {
+    connectStepEarlyReturn('service.assignRukn', 'idempotent_existing_active', {
+      assignmentId: existingSame.assignmentId,
+    })
+    connectStepExit(serviceSpan, 'service.assignRukn', { idempotent: true })
     return { success: true, assignment: existingSame }
   }
 
   const inflight = assignInFlightByKarkun.get(input.karkunId)
   if (inflight) {
+    connectStepEarlyReturn('service.assignRukn', 'coalesced_inflight')
     return inflight
   }
 
   const work = (async (): Promise<AssignmentResult> => {
-    const { traceConnect } = await import('@/lib/debug/kc0061ConnectTrace')
     traceConnect('assign.start', {
       ruknId: input.ruknId,
       karkunId: input.karkunId,
@@ -354,6 +371,7 @@ export async function assignRukn(input: AssignInput): Promise<AssignmentResult> 
     )
     if (again) {
       traceConnect('assign.ok', { idempotent: true, assignmentId: again.assignmentId })
+      connectStepExit(serviceSpan, 'service.assignRukn', { idempotent: true })
       return { success: true, assignment: again }
     }
 
@@ -387,6 +405,10 @@ export async function assignRukn(input: AssignInput): Promise<AssignmentResult> 
         error,
       )
       traceConnect('assign.fail', { stage: 'create_or_append' }, error)
+      connectStepExit(serviceSpan, 'service.assignRukn', {
+        aborted: 'create_or_append',
+        error: error instanceof Error ? error.message : String(error),
+      })
       return {
         success: false,
         error:
@@ -432,6 +454,10 @@ export async function assignRukn(input: AssignInput): Promise<AssignmentResult> 
     traceConnect('assign.ok', {
       assignmentId: assignment.assignmentId,
       assignmentNumber: assignment.assignmentNumber,
+    })
+    connectStepExit(serviceSpan, 'service.assignRukn', {
+      success: true,
+      assignmentId: assignment.assignmentId,
     })
     return { success: true, assignment }
   })()

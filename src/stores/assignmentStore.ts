@@ -164,11 +164,34 @@ export function reloadAssignmentStoreFromPersistence(): void {
  * Module-level nextAssignmentSequence is updated as a cache only.
  */
 export async function generateAssignmentNumber(): Promise<string> {
-  const { traceConnect } = await import('@/lib/debug/kc0061ConnectTrace')
+  const {
+    connectStepEnter,
+    connectStepExit,
+    connectStepException,
+    traceConnect,
+  } = await import('@/lib/debug/kc0061ConnectTrace')
+  const storeSpan = connectStepEnter('store.generateAssignmentNumber')
+  const repoSpan = connectStepEnter('repo.allocateNextAssignmentNumber', {
+    firestorePath: 'settings/connectionMeta',
+    operation: 'runTransaction',
+  })
+  const fsSpan = connectStepEnter('firestore.connectionMeta.transaction', {
+    path: 'settings/connectionMeta',
+  })
   traceConnect('asn.allocate.start')
   const result = await getRepositories().connection.allocateNextAssignmentNumber()
   if (!result.ok) {
     // KC-0061 — preserve original repository error; do not remap here.
+    connectStepException('firestore.connectionMeta.transaction', result.error.cause ?? result.error, {
+      repositoryCode: result.error.code,
+      repositoryMessage: result.error.message,
+      path: 'settings/connectionMeta',
+      operation: 'runTransaction',
+    })
+    connectStepException('repo.allocateNextAssignmentNumber', result.error.cause ?? result.error, {
+      errorCode: result.error.code,
+      errorMessage: result.error.message,
+    })
     traceConnect(
       'asn.allocate.fail',
       {
@@ -179,6 +202,9 @@ export async function generateAssignmentNumber(): Promise<string> {
       },
       result.error.cause ?? result.error,
     )
+    connectStepExit(fsSpan, 'firestore.connectionMeta.transaction', { ok: false })
+    connectStepExit(repoSpan, 'repo.allocateNextAssignmentNumber', { ok: false })
+    connectStepExit(storeSpan, 'store.generateAssignmentNumber', { ok: false })
     throw Object.assign(new Error(result.error.message || 'Failed to allocate assignment number'), {
       cause: result.error.cause,
       code: result.error.code,
@@ -186,6 +212,18 @@ export async function generateAssignmentNumber(): Promise<string> {
     })
   }
   nextAssignmentSequence = result.data.nextSequence
+  connectStepExit(fsSpan, 'firestore.connectionMeta.transaction', {
+    ok: true,
+    assignmentNumber: result.data.assignmentNumber,
+  })
+  connectStepExit(repoSpan, 'repo.allocateNextAssignmentNumber', {
+    ok: true,
+    assignmentNumber: result.data.assignmentNumber,
+  })
+  connectStepExit(storeSpan, 'store.generateAssignmentNumber', {
+    ok: true,
+    assignmentNumber: result.data.assignmentNumber,
+  })
   traceConnect('asn.allocate.ok', {
     assignmentNumber: result.data.assignmentNumber,
     nextSequence: result.data.nextSequence,

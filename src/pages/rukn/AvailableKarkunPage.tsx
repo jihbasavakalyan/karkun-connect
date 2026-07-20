@@ -45,37 +45,70 @@ export function AvailableKarkunPage() {
   }, [availableKarkunan, query, peopleVersion, assignmentVersion])
 
   const handleConfirmConnect = () => {
-    if (!pendingKarkun || !ruknId || connectLoading) return
-    setConnectLoading(true)
-    setError('')
-    void (async () => {
-      const { traceConnect } = await import('@/lib/debug/kc0061ConnectTrace')
-      traceConnect('confirm.click', {
-        karkunId: pendingKarkun.id,
-        ruknId,
-      })
-      try {
-        const result = await assignKarkun(pendingKarkun.id, ruknId, 'Rukn')
-        if (!result.success) {
-          // KC-0061 — log original failure BEFORE operator remapping.
-          console.error('[KC-0061:connect] assign returned failure (raw)', result.error)
-          traceConnect('assign.fail', { stage: 'ui', rawError: result.error }, result.error)
-          setError(toOperatorAssignmentError(result.error, { karkunId: pendingKarkun.id, ruknId }))
+    void import('@/lib/debug/kc0061ConnectTrace').then(
+      ({
+        connectStepEnter,
+        connectStepExit,
+        connectStepEarlyReturn,
+        connectStepException,
+        traceConnect,
+      }) => {
+        const uiSpan = connectStepEnter('ui.handleConfirmConnect', {
+          karkunId: pendingKarkun?.id ?? null,
+          ruknId,
+          connectLoading,
+        })
+        if (!pendingKarkun || !ruknId || connectLoading) {
+          connectStepEarlyReturn('ui.handleConfirmConnect', 'missing_pending_or_loading', {
+            hasPending: Boolean(pendingKarkun),
+            hasRuknId: Boolean(ruknId),
+            connectLoading,
+          })
+          connectStepExit(uiSpan, 'ui.handleConfirmConnect', { aborted: true })
           return
         }
-        const connected = pendingKarkun
-        setSuccessMessage(humanizeConnectionConfirmed(result.assignment?.assignmentNumber))
-        setPendingKarkun(null)
+        setConnectLoading(true)
         setError('')
-        setPlanning({
-          karkunId: connected.id,
-          karkunName: connected.name,
-          assignmentId: result.assignment?.assignmentId,
-        })
-      } finally {
-        setConnectLoading(false)
-      }
-    })()
+        void (async () => {
+          traceConnect('confirm.click', {
+            karkunId: pendingKarkun.id,
+            ruknId,
+          })
+          try {
+            const result = await assignKarkun(pendingKarkun.id, ruknId, 'Rukn')
+            if (!result.success) {
+              console.error('[KC-0061:connect] assign returned failure (raw)', result.error)
+              traceConnect('assign.fail', { stage: 'ui', rawError: result.error }, result.error)
+              connectStepException('ui.toOperatorAssignmentError', result.error, {
+                beforeRemap: result.error,
+              })
+              const remapped = toOperatorAssignmentError(result.error, {
+                karkunId: pendingKarkun.id,
+                ruknId,
+              })
+              connectStepExit(uiSpan, 'ui.handleConfirmConnect', {
+                success: false,
+                remapped,
+              })
+              setError(remapped)
+              return
+            }
+            const connected = pendingKarkun
+            setSuccessMessage(humanizeConnectionConfirmed(result.assignment?.assignmentNumber))
+            setPendingKarkun(null)
+            setError('')
+            setPlanning({
+              karkunId: connected.id,
+              karkunName: connected.name,
+              assignmentId: result.assignment?.assignmentId,
+            })
+            connectStepExit(uiSpan, 'ui.handleConfirmConnect', { success: true })
+          } finally {
+            setConnectLoading(false)
+          }
+        })()
+      },
+    )
   }
 
   if (!ruknId) {

@@ -61,7 +61,21 @@ export function ModalFormFooter({
         <PrimaryButton
           type={primaryType}
           form={formId}
-          onClick={onPrimaryClick}
+          onClick={() => {
+            if (primaryLabel === 'Confirm Connection') {
+              void import('@/lib/debug/kc0061ConnectTrace').then(
+                ({ connectStepEnter, connectStepExit }) => {
+                  const span = connectStepEnter('ui.button.onClick', {
+                    primaryLabel,
+                    primaryDisabled,
+                    loading,
+                  })
+                  connectStepExit(span, 'ui.button.onClick', { invoked: true })
+                },
+              )
+            }
+            onPrimaryClick?.()
+          }}
           disabled={primaryDisabled || loading}
           loading={loading}
         >
