@@ -341,16 +341,28 @@ export async function assignRukn(input: AssignInput): Promise<AssignmentResult> 
   }
 
   const work = (async (): Promise<AssignmentResult> => {
+    const { traceConnect } = await import('@/lib/debug/kc0061ConnectTrace')
+    traceConnect('assign.start', {
+      ruknId: input.ruknId,
+      karkunId: input.karkunId,
+      assignedBy: input.assignedBy,
+    })
+
     // Re-check after awaiting any prior work / validation.
     const again = getActiveAssignmentsForKarkun(input.karkunId).find(
       (record) => record.ruknId === input.ruknId,
     )
     if (again) {
+      traceConnect('assign.ok', { idempotent: true, assignmentId: again.assignmentId })
       return { success: true, assignment: again }
     }
 
     let assignment
     try {
+      traceConnect('connection.write.start', {
+        repository: 'assignmentStore.appendAssignment',
+        firestorePath: 'connections/{assignmentId}',
+      })
       assignment = appendAssignment(
         await createAssignmentRecord({
           ruknId: input.ruknId,
@@ -360,7 +372,21 @@ export async function assignRukn(input: AssignInput): Promise<AssignmentResult> 
           remarks: input.remarks,
         }),
       )
+      traceConnect('connection.write.ok', {
+        assignmentId: assignment.assignmentId,
+        assignmentNumber: assignment.assignmentNumber,
+      })
     } catch (error) {
+      // KC-0061 — log ORIGINAL exception before returning operator-facing copy.
+      traceConnect(
+        'connection.write.fail',
+        {
+          repository: 'createAssignmentRecord/appendAssignment',
+          firestorePath: 'settings/connectionMeta + connections/{id}',
+        },
+        error,
+      )
+      traceConnect('assign.fail', { stage: 'create_or_append' }, error)
       return {
         success: false,
         error:
@@ -403,6 +429,10 @@ export async function assignRukn(input: AssignInput): Promise<AssignmentResult> 
       metadata: { assignmentNumber: assignment.assignmentNumber },
     })
 
+    traceConnect('assign.ok', {
+      assignmentId: assignment.assignmentId,
+      assignmentNumber: assignment.assignmentNumber,
+    })
     return { success: true, assignment }
   })()
 

@@ -49,10 +49,17 @@ export function AvailableKarkunPage() {
     setConnectLoading(true)
     setError('')
     void (async () => {
+      const { traceConnect } = await import('@/lib/debug/kc0061ConnectTrace')
+      traceConnect('confirm.click', {
+        karkunId: pendingKarkun.id,
+        ruknId,
+      })
       try {
         const result = await assignKarkun(pendingKarkun.id, ruknId, 'Rukn')
         if (!result.success) {
-          // KC-0060.2 — connection errors only; never block on optional profile copy.
+          // KC-0061 — log original failure BEFORE operator remapping.
+          console.error('[KC-0061:connect] assign returned failure (raw)', result.error)
+          traceConnect('assign.fail', { stage: 'ui', rawError: result.error }, result.error)
           setError(toOperatorAssignmentError(result.error, { karkunId: pendingKarkun.id, ruknId }))
           return
         }

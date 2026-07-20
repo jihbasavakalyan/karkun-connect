@@ -164,11 +164,32 @@ export function reloadAssignmentStoreFromPersistence(): void {
  * Module-level nextAssignmentSequence is updated as a cache only.
  */
 export async function generateAssignmentNumber(): Promise<string> {
+  const { traceConnect } = await import('@/lib/debug/kc0061ConnectTrace')
+  traceConnect('asn.allocate.start')
   const result = await getRepositories().connection.allocateNextAssignmentNumber()
   if (!result.ok) {
-    throw new Error(result.error.message || 'Failed to allocate assignment number')
+    // KC-0061 — preserve original repository error; do not remap here.
+    traceConnect(
+      'asn.allocate.fail',
+      {
+        repository: 'connection.allocateNextAssignmentNumber',
+        firestorePath: 'settings/connectionMeta',
+        errorCode: result.error.code,
+        errorMessage: result.error.message,
+      },
+      result.error.cause ?? result.error,
+    )
+    throw Object.assign(new Error(result.error.message || 'Failed to allocate assignment number'), {
+      cause: result.error.cause,
+      code: result.error.code,
+      repositoryError: result.error,
+    })
   }
   nextAssignmentSequence = result.data.nextSequence
+  traceConnect('asn.allocate.ok', {
+    assignmentNumber: result.data.assignmentNumber,
+    nextSequence: result.data.nextSequence,
+  })
   return result.data.assignmentNumber
 }
 

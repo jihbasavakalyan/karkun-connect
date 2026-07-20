@@ -79,13 +79,26 @@ async function ensureAuthTokenReadyForFirestore(forceRefresh = false): Promise<v
   }
   markStartupLifecycle('auth.token.wait', { forceRefresh, uid: user.uid })
   const tokenResult = await user.getIdTokenResult(forceRefresh)
+  const claimRole =
+    typeof tokenResult.claims.role === 'string' ? tokenResult.claims.role : null
+  const claimRuknId =
+    typeof tokenResult.claims.ruknId === 'string' ? tokenResult.claims.ruknId : null
   markStartupLifecycle('auth.token.ready', {
     forceRefresh,
     uid: user.uid,
-    role: typeof tokenResult.claims.role === 'string' ? tokenResult.claims.role : null,
+    role: claimRole,
+    ruknId: claimRuknId,
     issuedAt: tokenResult.issuedAtTime,
     authTime: tokenResult.authTime,
   })
+  // KC-0061 — dashboard hydrate + Connect both require JWT role claims.
+  if (!claimRole) {
+    console.warn('[KC-0061] auth.token.ready without role claim — Firestore will deny critical ops', {
+      uid: user.uid,
+      forceRefresh,
+    })
+    markStartupLifecycle('auth.token.missing_role_claim', { uid: user.uid, forceRefresh })
+  }
 }
 
 function ensureConnectionRepositoryReadable(): void {

@@ -46,15 +46,41 @@ function ensureFirebaseReady(): void {
 }
 
 function mapFirebaseUser(user: User): Promise<AuthUser | null> {
-  return user.getIdTokenResult().then((tokenResult) =>
-    resolveAuthUser({
+  return user.getIdTokenResult().then(async (tokenResult) => {
+    let authUser = resolveAuthUser({
       uid: user.uid,
       email: user.email,
       phoneNumber: user.phoneNumber,
       displayName: user.displayName,
       customClaims: tokenResult.claims as Record<string, unknown>,
-    }),
-  )
+    })
+
+    // KC-0061 — App may resolve Rukn via phone master while JWT lacks role/ruknId.
+    // After claims are provisioned server-side, force-refresh once so Firestore sees them.
+    if (authUser?.role === 'rukn' && tokenResult.claims.role !== 'rukn') {
+      console.warn('[KC-0061] ID token missing rukn claims; force-refreshing', {
+        uid: user.uid,
+        appRole: authUser.role,
+        appRuknId: authUser.ruknId,
+        claimRole: tokenResult.claims.role ?? null,
+      })
+      const refreshed = await user.getIdTokenResult(true)
+      authUser = resolveAuthUser({
+        uid: user.uid,
+        email: user.email,
+        phoneNumber: user.phoneNumber,
+        displayName: user.displayName,
+        customClaims: refreshed.claims as Record<string, unknown>,
+      })
+      console.info('[KC-0061] after token refresh', {
+        claimRole: refreshed.claims.role ?? null,
+        claimRuknId: refreshed.claims.ruknId ?? null,
+        resolvedRole: authUser?.role ?? null,
+      })
+    }
+
+    return authUser
+  })
 }
 
 async function finalizeLogin(user: User): Promise<LoginResult> {
