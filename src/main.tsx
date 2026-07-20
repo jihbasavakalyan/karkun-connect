@@ -75,8 +75,22 @@ async function runDeferredBootstrap(): Promise<void> {
   })
 }
 
+function publishBuildStamp(): void {
+  try {
+    if (typeof window === 'undefined') return
+    const stamp = {
+      sha: typeof __KC_BUILD_SHA__ !== 'undefined' ? __KC_BUILD_SHA__ : 'unknown',
+      time: typeof __KC_BUILD_TIME__ !== 'undefined' ? __KC_BUILD_TIME__ : 'unknown',
+    }
+    ;(window as Window & { __KC_BUILD__?: typeof stamp }).__KC_BUILD__ = stamp
+  } catch {
+    // ignore
+  }
+}
+
 function bootstrap(): void {
   installStartupRejectionLogging()
+  publishBuildStamp()
   logStartupTiming('react.mount.start')
 
   const root = document.getElementById('root')

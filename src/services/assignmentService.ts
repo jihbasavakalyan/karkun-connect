@@ -56,6 +56,23 @@ import {
   traceMutation,
   traceSequencedIncidentStage,
 } from '@/lib/incidentTraceCollector'
+import { ensureJwtRoleClaimPresent } from '@/lib/auth/ensureJwtRoleClaim'
+import {
+  connectStepEarlyReturn,
+  connectStepEnter,
+  connectStepExit,
+  traceConnect,
+} from '@/lib/debug/kc0061ConnectTrace'
+
+function publishLastAssign(payload: Record<string, unknown>): void {
+  try {
+    if (typeof window === 'undefined') return
+    ;(window as Window & { __KC0061_LAST_ASSIGN__?: Record<string, unknown> }).__KC0061_LAST_ASSIGN__ =
+      payload
+  } catch {
+    // ignore
+  }
+}
 
 function nowIso(): string {
   return new Date().toISOString()
@@ -322,18 +339,24 @@ function formatNames(ruknId: string, karkunId: string): { ruknName: string; kark
 const assignInFlightByKarkun = new Map<string, Promise<AssignmentResult>>()
 
 export async function assignRukn(input: AssignInput): Promise<AssignmentResult> {
-  const { connectStepEnter, connectStepExit, connectStepEarlyReturn, traceConnect } = await import(
-    '@/lib/debug/kc0061ConnectTrace'
-  )
-  const { ensureJwtRoleClaimPresent } = await import('@/lib/auth/ensureJwtRoleClaim')
   const serviceSpan = connectStepEnter('service.assignRukn', {
     ruknId: input.ruknId,
     karkunId: input.karkunId,
     assignedBy: input.assignedBy,
   })
 
-  // KC-0061 Phase 2 — shared Admin+Rukn gate: Firestore ASN allocate requires JWT role.
+  // KC-0061 — static import + always force-refresh before ASN allocate (T2 before T3).
   const claims = await ensureJwtRoleClaimPresent()
+  publishLastAssign({
+    stage: 'claims_gate',
+    at: Date.now(),
+    ruknId: input.ruknId,
+    karkunId: input.karkunId,
+    claimsOk: claims.ok,
+    forceRefreshed: claims.forceRefreshed,
+    timeline: claims.timeline,
+    buildSha: typeof __KC_BUILD_SHA__ !== 'undefined' ? __KC_BUILD_SHA__ : 'unknown',
+  })
   if (!claims.ok) {
     connectStepEarlyReturn('service.assignRukn', 'missing_jwt_role_claim', {
       error: claims.error,
@@ -417,6 +440,19 @@ export async function assignRukn(input: AssignInput): Promise<AssignmentResult> 
         error,
       )
       traceConnect('assign.fail', { stage: 'create_or_append' }, error)
+      publishLastAssign({
+        stage: 'assign_fail',
+        at: Date.now(),
+        ruknId: input.ruknId,
+        karkunId: input.karkunId,
+        code:
+          typeof error === 'object' && error && 'code' in error
+            ? String((error as { code: unknown }).code)
+            : undefined,
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        buildSha: typeof __KC_BUILD_SHA__ !== 'undefined' ? __KC_BUILD_SHA__ : 'unknown',
+      })
       connectStepExit(serviceSpan, 'service.assignRukn', {
         aborted: 'create_or_append',
         error: error instanceof Error ? error.message : String(error),
@@ -485,6 +521,11 @@ export async function assignRukn(input: AssignInput): Promise<AssignmentResult> 
 }
 
 export async function replaceAssignment(input: ReplaceInput): Promise<AssignmentResult> {
+  const claims = await ensureJwtRoleClaimPresent()
+  if (!claims.ok) {
+    return { success: false, error: claims.error }
+  }
+
   const validation = validateReplaceInput(input)
   if (!validation.valid) {
     return { success: false, error: validation.error }
@@ -568,6 +609,22 @@ export async function replaceAssignment(input: ReplaceInput): Promise<Assignment
  * Preserves assignmentId + assignmentNumber. Does not allocate ASN.
  */
 export async function transferAssignment(input: TransferInput): Promise<AssignmentResult> {
+  // KC-0061 — transfer writes connections/* under JWT role rules (no ASN path).
+  const claims = await ensureJwtRoleClaimPresent()
+  publishLastAssign({
+    stage: 'transfer_claims_gate',
+    at: Date.now(),
+    karkunId: input.karkunId,
+    targetRuknId: input.targetRuknId,
+    claimsOk: claims.ok,
+    forceRefreshed: claims.forceRefreshed,
+    timeline: claims.timeline,
+    buildSha: typeof __KC_BUILD_SHA__ !== 'undefined' ? __KC_BUILD_SHA__ : 'unknown',
+  })
+  if (!claims.ok) {
+    return { success: false, error: claims.error }
+  }
+
   const validation = validateTransferInput(input)
   if (!validation.valid) {
     return { success: false, error: validation.error }

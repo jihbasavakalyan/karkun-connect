@@ -175,10 +175,33 @@ export async function generateAssignmentNumber(): Promise<string> {
     firestorePath: 'settings/connectionMeta',
     operation: 'runTransaction',
   })
+  const t3TransactionStarted = Date.now()
   const fsSpan = connectStepEnter('firestore.connectionMeta.transaction', {
     path: 'settings/connectionMeta',
+    t3TransactionStarted,
   })
-  traceConnect('asn.allocate.start')
+  try {
+    if (typeof window !== 'undefined') {
+      const w = window as Window & {
+        __KC0061_LAST_ASSIGN__?: Record<string, unknown>
+        __KC0061_LAST_CLAIMS__?: { t2GetIdTokenResolved?: number }
+      }
+      const claims = w.__KC0061_LAST_CLAIMS__
+      w.__KC0061_LAST_ASSIGN__ = {
+        ...(w.__KC0061_LAST_ASSIGN__ ?? {}),
+        stage: 'asn_allocate_start',
+        t3TransactionStarted,
+        t2GetIdTokenResolved: claims?.t2GetIdTokenResolved ?? null,
+        t2BeforeT3:
+          typeof claims?.t2GetIdTokenResolved === 'number'
+            ? claims.t2GetIdTokenResolved <= t3TransactionStarted
+            : null,
+      }
+    }
+  } catch {
+    // ignore
+  }
+  traceConnect('asn.allocate.start', { t3TransactionStarted })
   const result = await getRepositories().connection.allocateNextAssignmentNumber()
   if (!result.ok) {
     // KC-0061 — preserve original repository error; do not remap here.
