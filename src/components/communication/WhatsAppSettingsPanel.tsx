@@ -77,10 +77,11 @@ export function WhatsAppSettingsPanel() {
           <PrimaryButton type="button" onClick={handleTest} disabled={testing}>
             {testing ? 'Testing…' : 'Connection Test'}
           </PrimaryButton>
-          <SecondaryButton type="button" disabled title="Sprint 16">
-            Configure (Sprint 16)
+          <SecondaryButton type="button" disabled title="Coming in next release">
+            Configure API
           </SecondaryButton>
         </div>
+        <p className="mt-2 text-xs text-secondary">WhatsApp API configuration — Coming in next release</p>
 
         {testResult && <p className="mt-3 text-sm text-secondary">{testResult}</p>}
       </section>

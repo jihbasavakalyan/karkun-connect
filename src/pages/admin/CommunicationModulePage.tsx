@@ -40,7 +40,7 @@ export function CommunicationModulePage() {
       {section === 'dashboard' && <CommunicationDashboard />}
       {section === 'daily-reports' && <DailyReportsPanel />}
       {section === 'individual' && <IndividualMessagesPanel />}
-      {section === 'broadcast' && <BroadcastComposerPanel recipients={[]} />}
+      {section === 'broadcast' && <BroadcastComposerPanel />}
       {section === 'templates' && <TemplateManagementPanel />}
       {section === 'scheduled' && <ScheduledMessagesPanel />}
       {section === 'automation' && <AutomationRulesPanel />}

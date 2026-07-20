@@ -1,41 +1,59 @@
 /**
- * KC-0059 — Daily Reports panel (Administrator → Arkaan).
- * Read-only preview / copy / export. Does not mutate dashboard state.
+ * KC-0060 — Daily Reports panel (Administrator → Arkaan).
+ * Generate is explicit (never a no-op). Copy/Export unlock after Generate.
+ * Send Daily Reports distributes the overall report to the permanent Arkaan group.
  */
 
 import { useCallback, useMemo, useState } from 'react'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import {
+  getArkaanRecipientGroup,
+  resolveArkaanRecipients,
+} from '@/lib/communication/arkaanRecipientGroup'
+import {
   copyDailyReportToClipboard,
   exportDailyReportText,
   generateDailyReportPreview,
   listDailyReportTemplates,
 } from '@/services/dailyReportService'
-import type { DailyReportTemplateId } from '@/types/dailyReport'
-import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
+import type { DailyReportPreview, DailyReportTemplateId } from '@/types/dailyReport'
+import { useCommunication } from '@/hooks/useCommunication'
 import { useRepositoryHydration } from '@/hooks/useRepositoryHydration'
+
+type GenerateStatus = 'idle' | 'ready'
+type SendStatus = 'idle' | 'sending' | 'queued' | 'error'
 
 export function DailyReportsPanel() {
   const isHydrated = useRepositoryHydration()
-  const { assignmentVersion } = useAssignmentEngine()
+  const { sendBroadcastMessage } = useCommunication()
   const templates = useMemo(() => listDailyReportTemplates(), [])
-  const [templateId, setTemplateId] = useState<DailyReportTemplateId>('daily-progress')
-  const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'error'>('idle')
-  const [generationTick, setGenerationTick] = useState(0)
+  const arkaanGroup = useMemo(() => getArkaanRecipientGroup(), [])
 
-  const preview = useMemo(() => {
-    void assignmentVersion
-    void generationTick
-    if (!isHydrated) {
-      return null
-    }
-    return generateDailyReportPreview(templateId)
-  }, [assignmentVersion, generationTick, isHydrated, templateId])
+  const [templateId, setTemplateId] = useState<DailyReportTemplateId>('daily-progress')
+  const [preview, setPreview] = useState<DailyReportPreview | null>(null)
+  const [generateStatus, setGenerateStatus] = useState<GenerateStatus>('idle')
+  const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'error'>('idle')
+  const [sendStatus, setSendStatus] = useState<SendStatus>('idle')
+  const [sendError, setSendError] = useState<string | null>(null)
+  const [sendQueuedCount, setSendQueuedCount] = useState(0)
 
   const handleGenerate = useCallback(() => {
+    const next = generateDailyReportPreview(templateId)
+    setPreview(next)
+    setGenerateStatus('ready')
     setCopyStatus('idle')
-    setGenerationTick((value) => value + 1)
+    setSendStatus('idle')
+    setSendError(null)
+  }, [templateId])
+
+  const handleSelectTemplate = useCallback((nextId: DailyReportTemplateId) => {
+    setTemplateId(nextId)
+    setPreview(null)
+    setGenerateStatus('idle')
+    setCopyStatus('idle')
+    setSendStatus('idle')
+    setSendError(null)
   }, [])
 
   const handleCopy = useCallback(async () => {
@@ -53,6 +71,37 @@ export function DailyReportsPanel() {
     exportDailyReportText(preview)
   }, [preview])
 
+  const handleSendToArkaan = useCallback(async () => {
+    if (!preview) return
+    const recipients = resolveArkaanRecipients()
+    if (recipients.length === 0) {
+      setSendStatus('error')
+      setSendError('Arkaan group has no active Rukns with mobile numbers.')
+      return
+    }
+
+    setSendStatus('sending')
+    setSendError(null)
+    try {
+      const result = await sendBroadcastMessage({
+        channel: 'whatsapp',
+        recipients,
+        message: preview.renderedBody,
+        templateId: preview.templateId,
+      })
+      if (result.success === 0) {
+        setSendStatus('error')
+        setSendError(result.failed[0]?.error ?? 'Unable to queue Daily Report for Arkaan.')
+        return
+      }
+      setSendQueuedCount(result.success)
+      setSendStatus('queued')
+    } catch (error) {
+      setSendStatus('error')
+      setSendError(error instanceof Error ? error.message : 'Unable to send Daily Report.')
+    }
+  }, [preview, sendBroadcastMessage])
+
   if (!isHydrated) {
     return (
       <p
@@ -64,6 +113,8 @@ export function DailyReportsPanel() {
     )
   }
 
+  const actionsEnabled = Boolean(preview)
+
   return (
     <div className="space-y-6">
       <section className="rounded-(--radius-card) border border-border bg-surface p-4 shadow-card sm:p-5">
@@ -71,14 +122,24 @@ export function DailyReportsPanel() {
           <div>
             <h2 className="text-lg font-semibold text-text-heading">Daily Progress Report</h2>
             <p className="mt-1 text-sm text-secondary">
-              Administrator → Arkaan · Urdu templates filled from live dashboard metrics
-              (read-only).
+              Administrator → Arkaan · Generate reads the latest dashboard metrics and refreshes
+              the preview.
             </p>
           </div>
           <PrimaryButton type="button" onClick={handleGenerate}>
             Generate
           </PrimaryButton>
         </div>
+
+        {generateStatus === 'ready' && preview ? (
+          <p className="mt-3 text-sm text-green-700" role="status">
+            Report generated · {new Date(preview.generatedAt).toLocaleString()}
+          </p>
+        ) : (
+          <p className="mt-3 text-sm text-secondary" role="status">
+            Select a template, then press Generate to refresh the preview.
+          </p>
+        )}
 
         {preview ? (
           <dl className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -143,10 +204,7 @@ export function DailyReportsPanel() {
               <li key={template.id}>
                 <button
                   type="button"
-                  onClick={() => {
-                    setTemplateId(template.id)
-                    setCopyStatus('idle')
-                  }}
+                  onClick={() => handleSelectTemplate(template.id)}
                   className={[
                     'h-full w-full rounded-lg border px-3 py-3 text-left transition',
                     selected
@@ -172,14 +230,14 @@ export function DailyReportsPanel() {
             <p className="text-xs text-secondary">
               {preview
                 ? `${preview.templateName} · generated ${new Date(preview.generatedAt).toLocaleString()}`
-                : 'Generate a report to preview'}
+                : 'Press Generate to create a preview'}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <SecondaryButton type="button" onClick={handleCopy} disabled={!preview}>
+            <SecondaryButton type="button" onClick={handleCopy} disabled={!actionsEnabled}>
               Copy
             </SecondaryButton>
-            <SecondaryButton type="button" onClick={handleExport} disabled={!preview}>
+            <SecondaryButton type="button" onClick={handleExport} disabled={!actionsEnabled}>
               Export
             </SecondaryButton>
           </div>
@@ -203,12 +261,63 @@ export function DailyReportsPanel() {
         >
           {preview?.renderedBody ?? '—'}
         </pre>
+      </section>
 
-        <p className="mt-3 text-xs text-secondary">
-          WhatsApp Business API delivery is future-ready via{' '}
-          <code className="rounded bg-surface-muted px-1">buildFutureWhatsAppPayload()</code> —
-          not enabled in this release.
+      <section className="rounded-(--radius-card) border border-border bg-surface p-4 shadow-card sm:p-5">
+        <h3 className="text-base font-semibold text-text-heading">Send Daily Reports</h3>
+        <p className="mt-1 text-sm text-secondary">
+          Generate the overall report, then send it to the permanent{' '}
+          <strong>{arkaanGroup.name}</strong> group (auto-resolved from Rukn Master).
         </p>
+
+        <div className="mt-4 rounded-lg border border-dashed border-border bg-surface-muted p-4">
+          <p className="text-sm font-medium text-text-heading">
+            {arkaanGroup.name} · {arkaanGroup.recipients.length} recipients
+          </p>
+          <p className="mt-1 text-xs text-secondary">
+            Permanent group · source: Rukn Master · no daily manual selection
+          </p>
+          {arkaanGroup.recipients.length > 0 ? (
+            <ul className="mt-2 max-h-28 space-y-1 overflow-y-auto text-xs text-secondary">
+              {arkaanGroup.recipients.slice(0, 8).map((recipient) => (
+                <li key={recipient.personId}>
+                  {recipient.name} · {recipient.mobile}
+                </li>
+              ))}
+              {arkaanGroup.recipients.length > 8 ? (
+                <li>…and {arkaanGroup.recipients.length - 8} more</li>
+              ) : null}
+            </ul>
+          ) : (
+            <p className="mt-2 text-sm text-secondary">No active Rukns with mobile numbers.</p>
+          )}
+        </div>
+
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <PrimaryButton
+            type="button"
+            onClick={handleSendToArkaan}
+            disabled={!actionsEnabled || sendStatus === 'sending' || arkaanGroup.recipients.length === 0}
+            loading={sendStatus === 'sending'}
+          >
+            Send to Arkaan Group
+          </PrimaryButton>
+          <SecondaryButton type="button" disabled title="Coming in next release">
+            Send personalized to every Rukn
+          </SecondaryButton>
+        </div>
+        <p className="mt-2 text-xs text-secondary">Personalized per-Rukn reports — Coming in next release</p>
+
+        {sendStatus === 'queued' ? (
+          <p className="mt-3 text-sm text-green-700" role="status">
+            Queued overall Daily Report for {sendQueuedCount} Arkaan recipients.
+          </p>
+        ) : null}
+        {sendStatus === 'error' && sendError ? (
+          <p className="mt-3 text-sm text-red-700" role="alert">
+            {sendError}
+          </p>
+        ) : null}
       </section>
     </div>
   )

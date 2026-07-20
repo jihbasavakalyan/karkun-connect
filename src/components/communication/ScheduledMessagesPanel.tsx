@@ -6,8 +6,20 @@ export function ScheduledMessagesPanel() {
   return (
     <div className="space-y-4">
       <p className="text-sm text-secondary">
-        Scheduled messaging is architected for Sprint 17. No messages can be scheduled in Sprint 15.
+        Scheduled messaging — Coming in next release. No messages can be scheduled yet.
       </p>
+
+      <div className="mt-3">
+        <button
+          type="button"
+          disabled
+          title="Coming in next release"
+          className="cursor-not-allowed rounded-lg border border-border bg-surface-muted px-4 py-2 text-sm font-medium text-secondary opacity-70"
+        >
+          Schedule message
+        </button>
+        <p className="mt-2 text-xs text-secondary">Coming in next release</p>
+      </div>
 
       {scheduledMessages.length === 0 ? (
         <p className="rounded-lg border border-dashed border-border bg-surface-muted p-6 text-center text-sm text-secondary">
