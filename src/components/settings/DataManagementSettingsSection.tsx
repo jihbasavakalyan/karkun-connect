@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { DangerZone } from '@/components/admin/DangerZone'
 import { DataIntegrityReportPanel } from '@/components/admin/DataIntegrityReportPanel'
+import { DuplicateResolutionWizard } from '@/components/admin/DuplicateResolutionWizard'
 import { DataMigrationWizard } from '@/components/migration/DataMigrationWizard'
 import { ROUTES } from '@/constants/routes'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
@@ -15,7 +16,7 @@ export function DataManagementSettingsSection() {
   return (
     <SettingsSection
       title="Data Management"
-      description="Exports, backups, integrity audit, and migration tools for administrators."
+      description="Exports, backups, integrity audit, duplicate resolution, and migration tools for administrators."
     >
       <SettingsRow label="Export Reports" hint="Use module reports for campaign exports">
         <Link to={ROUTES.ADMIN_EXECUTION}>
@@ -30,6 +31,9 @@ export function DataManagementSettingsSection() {
       </SettingsRow>
       <SettingsPlaceholder label="Restore Backup" note="Coming soon" />
 
+      <div className="pt-2">
+        <DuplicateResolutionWizard />
+      </div>
       <div className="pt-2">
         <DataIntegrityReportPanel />
       </div>

@@ -74,8 +74,8 @@ export function AdminHomePage() {
         >
           <h1 className="text-lg font-semibold text-text-heading">Unable to load campaign data</h1>
           <p className="mt-2 text-sm text-secondary">
-            Critical data hydration failed. Campaign metrics are not available until data loads
-            successfully.
+            Campaign metrics cannot load until critical Firestore reads succeed. This panel does not
+            change authentication or hydration — it only shows what failed.
           </p>
           {hydration.error ? (
             <p className="mt-2 text-xs text-secondary break-words">{hydration.error}</p>
@@ -83,12 +83,14 @@ export function AdminHomePage() {
           {firstFailure ? (
             <dl className="mt-3 space-y-1 rounded-lg border border-border bg-surface-muted px-3 py-2 text-xs text-secondary">
               <div>
-                <dt className="inline font-medium text-text-heading">Failing read: </dt>
-                <dd className="inline">{firstFailure.label}</dd>
-              </div>
-              <div>
                 <dt className="inline font-medium text-text-heading">Collection: </dt>
                 <dd className="inline">{firstFailure.collection}</dd>
+              </div>
+              <div>
+                <dt className="inline font-medium text-text-heading">Operation: </dt>
+                <dd className="inline">
+                  {firstFailure.label} · {firstFailure.firestoreApi} · {firstFailure.method}
+                </dd>
               </div>
               <div>
                 <dt className="inline font-medium text-text-heading">Exception: </dt>
@@ -105,12 +107,18 @@ export function AdminHomePage() {
                   </dd>
                 </div>
               ) : null}
+              <div>
+                <dt className="inline font-medium text-text-heading">Retry guidance: </dt>
+                <dd className="inline">
+                  Click Retry to reload after the Auth token refreshes. If this persists after login,
+                  confirm the account has a Firestore role claim, then try again.
+                </dd>
+              </div>
             </dl>
           ) : (
             <p className="mt-3 text-xs text-secondary">
-              Typical cause: Auth token not attached yet, or JWT missing role claim, causing a
-              critical collection read to return permission-denied. Retry reloads after token
-              refresh.
+              Retry guidance: reload after login so the Auth token can attach. Persistent
+              permission-denied usually means a missing JWT role claim — not a dashboard UI bug.
             </p>
           )}
           <div className="mt-4">

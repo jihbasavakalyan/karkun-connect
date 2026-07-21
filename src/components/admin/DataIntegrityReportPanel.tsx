@@ -107,6 +107,25 @@ export function DataIntegrityReportPanel() {
             </div>
           </div>
 
+          <div className="grid gap-3 sm:grid-cols-4 text-sm">
+            <div className="rounded-lg border border-border bg-surface px-3 py-2">
+              <p className="text-secondary">Duplicate Groups</p>
+              <p className="font-semibold text-text-heading">{report.summary.duplicateGroups}</p>
+            </div>
+            <div className="rounded-lg border border-border bg-surface px-3 py-2">
+              <p className="text-secondary">Needs Review</p>
+              <p className="font-semibold text-text-heading">{report.summary.needsReview}</p>
+            </div>
+            <div className="rounded-lg border border-border bg-surface px-3 py-2">
+              <p className="text-secondary">Resolved</p>
+              <p className="font-semibold text-text-heading">{report.summary.resolved}</p>
+            </div>
+            <div className="rounded-lg border border-border bg-surface px-3 py-2">
+              <p className="text-secondary">Archived</p>
+              <p className="font-semibold text-text-heading">{report.summary.archived}</p>
+            </div>
+          </div>
+
           <p className="text-xs text-secondary">
             Generated {new Date(report.generatedAt).toLocaleString('en-GB')} · Manual review only
           </p>

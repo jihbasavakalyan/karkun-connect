@@ -11,6 +11,7 @@ import { getAllAssignments } from '@/stores/assignmentStore'
 import { getPendingKarkunRequests } from '@/stores/karkunRequestStore'
 import { getCampaignLibrary } from '@/services/campaignService'
 import { getCampaignConnectionMetrics } from '@/services/metricsService'
+import { getDuplicateResolutionSummary } from '@/services/duplicateResolutionService'
 import type {
   IntegrityFinding,
   IntegrityMergeCandidate,
@@ -406,12 +407,14 @@ export function runIntegrityScan(): IntegrityReport {
   recommendations.push(
     `Dashboard Connections should show ${metrics.connected}/${metrics.total} (${metrics.progressPct}%). Raw connection docs=${metrics.connectionDocumentCount}.`,
   )
-  recommendations.push('KC-0068/KC-0069 integrity report is read-only. No automatic fixes are applied.')
+  recommendations.push('KC-0068/KC-0069/KC-0070 integrity report is read-only. No automatic fixes are applied.')
   if (mergeCandidates.length > 0) {
     recommendations.push(
       `${mergeCandidates.length} merge candidate group(s) listed for administrator review only.`,
     )
   }
+
+  const duplicateSummary = getDuplicateResolutionSummary()
 
   return {
     generatedAt: new Date().toISOString(),
@@ -426,6 +429,10 @@ export function runIntegrityScan(): IntegrityReport {
       remaining: metrics.remaining,
       total: metrics.total,
       progressPct: metrics.progressPct,
+      duplicateGroups: duplicateSummary.duplicateGroups,
+      needsReview: duplicateSummary.needsReview,
+      resolved: duplicateSummary.resolved,
+      archived: duplicateSummary.archived,
     },
     errors,
     warnings,

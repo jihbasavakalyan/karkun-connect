@@ -29,6 +29,11 @@ export type IntegrityReport = {
     remaining: number
     total: number
     progressPct: number
+    /** KC-0070 — duplicate resolution widget. */
+    duplicateGroups: number
+    needsReview: number
+    resolved: number
+    archived: number
   }
   errors: IntegrityFinding[]
   warnings: IntegrityFinding[]

@@ -44,6 +44,13 @@ export type KarkunRegistryRecord = {
   restoredAt?: string
   restoredBy?: string
   version?: number
+  /** KC-0070 — duplicate resolution archive metadata (optional; never hard-deletes). */
+  archiveKind?: 'standard' | 'duplicate_merge'
+  mergedInto?: string
+  mergedBy?: string
+  mergedAt?: string
+  mergeReason?: string
+  originalDocumentId?: string
 }
 
 export type KarkunRegistryFilters = {
