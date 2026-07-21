@@ -29,7 +29,7 @@ import type {
 } from '@/types/people.types'
 import type { ConflictResolution } from '@/types/dataMigration'
 import { DEFAULT_PLACE } from '@/types/people.types'
-import { persistPeopleRegistry } from '@/lib/peopleRegistryPersistence'
+import { persistPeopleRegistry, persistKarkunRecords } from '@/lib/peopleRegistryPersistence'
 import { getRepositories } from '@/repositories/provider'
 import {
   emitPeopleRegistryChange,
@@ -100,6 +100,46 @@ export function notifyPeopleRegistryChange(): void {
   })
 
   traceRegistryStage('6_after_notifyPeopleRegistryChange')
+}
+
+/**
+ * KC-0064 — Notify UI + persist only the karkun docs that changed (assign/disconnect sync).
+ * Does not rewrite the full registry or rukns collection.
+ */
+export async function notifyAndPersistKarkunRecords(
+  karkuns: readonly KarkunRegistryRecord[],
+): Promise<void> {
+  if (karkuns.length === 0) {
+    return
+  }
+  const before = getPeopleStatistics()
+  emitPeopleRegistryChange()
+  const after = getPeopleStatistics()
+
+  const operationId = createIncidentOperationId('people-registry-targeted-persist')
+  traceMutation({
+    operationId,
+    entity: 'people_registry',
+    field: 'assignedKarkuns',
+    before: before.assignedKarkuns,
+    after: after.assignedKarkuns,
+    caller: 'notifyAndPersistKarkunRecords',
+    reason: 'targeted karkun persist after assignment sync',
+    sourceOfTruth: 'Derived Calculation',
+    extras: { karkunIds: karkuns.map((karkun) => karkun.id) },
+  })
+  traceStoreSnapshot('people_registry', {
+    caller: 'notifyAndPersistKarkunRecords',
+    sourceOfTruth: 'Derived Calculation',
+    connectedCount: after.assignedKarkuns,
+    availableCount: after.unassignedKarkuns,
+    targetedCount: karkuns.length,
+  })
+
+  const result = await persistKarkunRecords(karkuns)
+  if (!result.ok) {
+    console.error('[notifyAndPersistKarkunRecords]', result.error)
+  }
 }
 
 function nowIso(): string {

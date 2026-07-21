@@ -1,21 +1,61 @@
 import { MOCK_KARKUN_REGISTRY } from '@/constants/mockKarkunRegistry'
 import { ruknMaster } from '@/data/ruknMaster'
 import { getRepositories } from '@/repositories/provider'
-import { unwrapRepository } from '@/repositories/errors'
+import { repositoryOk, unwrapRepository, type RepositoryResult } from '@/repositories/errors'
 import { notifyPeopleRegistryChange, syncNextKarkunNumFromRegistry } from '@/lib/peopleStore'
 import { kc004cTraceRegistry } from '@/lib/debug/kc004cRegistryTrace'
+import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
 
 export function hasPersistedKarkunRegistry(): boolean {
   const result = getRepositories().karkun.exists()
   return unwrapRepository(result, false)
 }
 
+/** Bulk path — full registry + all rukns (import, migration, profile edits). */
 export function persistPeopleRegistry(nextKarkunNum: number): void {
   getRepositories().karkun.saveState({
     karkuns: MOCK_KARKUN_REGISTRY,
     nextKarkunNum,
   })
   getRepositories().rukn.saveAll(ruknMaster)
+}
+
+/** KC-0064 — targeted karkun upsert only (assign / disconnect sync). No rukn rewrite. */
+export async function persistKarkunRecords(
+  karkuns: readonly KarkunRegistryRecord[],
+): Promise<RepositoryResult<void>> {
+  if (karkuns.length === 0) {
+    return repositoryOk(undefined)
+  }
+  const commit = getRepositories().karkun.commitKarkunDocuments
+  if (commit) {
+    const { connectStepEnter, connectStepExit, connectStepException } = await import(
+      '@/lib/debug/kc0061ConnectTrace'
+    )
+    const span = connectStepEnter('repo.karkun.commitDocuments', {
+      karkunIds: karkuns.map((karkun) => karkun.id),
+      count: karkuns.length,
+    })
+    const result = await commit(karkuns)
+    if (!result.ok) {
+      connectStepException('repo.karkun.commitDocuments', result.error.cause ?? result.error, {
+        errorCode: result.error.code,
+        errorMessage: result.error.message,
+      })
+      connectStepExit(span, 'repo.karkun.commitDocuments', { ok: false })
+      console.error('[peopleRegistryPersistence.persistKarkunRecords]', result.error)
+      return result
+    }
+    connectStepExit(span, 'repo.karkun.commitDocuments', { ok: true })
+    return result
+  }
+  for (const karkun of karkuns) {
+    const upsert = await getRepositories().karkun.upsertRecord(karkun)
+    if (!upsert.ok) {
+      return upsert
+    }
+  }
+  return repositoryOk(undefined)
 }
 
 export function loadPeopleRegistryFromPersistence(): {

@@ -107,6 +107,17 @@ export class RuknLocalRepository implements RuknRepository {
     })
   }
 
+  async commitRuknDocuments(rukns: readonly Rukn[]): Promise<RepositoryResult<void>> {
+    return tryRepository(() => {
+      const current = loadJsonFromStorage<Rukn[]>(STORAGE_KEYS.ruknMaster, [])
+      const byId = new Map(current.map((item) => [item.id, item]))
+      for (const rukn of rukns) {
+        byId.set(rukn.id, rukn)
+      }
+      saveJsonToStorage(STORAGE_KEYS.ruknMaster, [...byId.values()])
+    })
+  }
+
   clear(): RepositoryResult<void> {
     return tryRepository(() => removeFromStorage(STORAGE_KEYS.ruknMaster))
   }
@@ -136,6 +147,19 @@ export class KarkunLocalRepository implements KarkunRepository {
       const healedNext = Math.max(1, state.nextKarkunNum || 1, maxExisting + 1)
       saveJsonToStorage(STORAGE_KEYS.karkunRegistry, state.karkuns)
       saveJsonToStorage(STORAGE_KEYS.karkunNextId, healedNext)
+    })
+  }
+
+  async commitKarkunDocuments(
+    karkuns: readonly KarkunRegistryRecord[],
+  ): Promise<RepositoryResult<void>> {
+    return tryRepository(() => {
+      const current = loadJsonFromStorage<KarkunRegistryRecord[]>(STORAGE_KEYS.karkunRegistry, [])
+      const byId = new Map(current.map((item) => [item.id, item]))
+      for (const karkun of karkuns) {
+        byId.set(karkun.id, karkun)
+      }
+      saveJsonToStorage(STORAGE_KEYS.karkunRegistry, [...byId.values()])
     })
   }
 

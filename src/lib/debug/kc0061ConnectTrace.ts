@@ -17,6 +17,8 @@ export type ConnectStepName =
   | 'store.appendAssignment'
   | 'repo.connection.saveState'
   | 'repo.connection.commitDocuments'
+  | 'repo.karkun.commitDocuments'
+  | 'repo.rukn.commitDocuments'
   | 'ui.toOperatorAssignmentError'
 
 type StepRecord = {

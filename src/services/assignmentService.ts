@@ -1,3 +1,4 @@
+import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
 import { MOCK_KARKUN_REGISTRY, getKarkunById } from '@/constants/mockKarkunRegistry'
 import { getRuknById, ruknMaster } from '@/data/ruknMaster'
 import {
@@ -5,7 +6,7 @@ import {
   getCanonicalConnectedKarkunCount,
   getConnectedAssignmentsForRukn,
 } from '@/lib/connections/getConnectedKarkunsForRukn'
-import { getAllKarkuns, getCompatibleKarkunsForRukn, notifyPeopleRegistryChange } from '@/lib/peopleStore'
+import { getAllKarkuns, getCompatibleKarkunsForRukn, notifyAndPersistKarkunRecords, notifyPeopleRegistryChange } from '@/lib/peopleStore'
 import { logPeopleAudit } from '@/lib/peopleAuditLog'
 import { isValidMobileFormat, normalizeMobile } from '@/lib/mobileValidation'
 import { logActivity } from '@/stores/activityLogStore'
@@ -151,7 +152,31 @@ async function createAssignmentRecord(
   }
 }
 
-function syncKarkunRegistryFromAssignments(karkunId: string, options?: { notify?: boolean }): void {
+type KarkunAssignmentSyncSnapshot = {
+  assignmentStatus: KarkunRegistryRecord['assignmentStatus']
+  assignedRuknId: string
+  assignedRukn: string
+  assignmentDate: string | undefined
+  campaignStatus: KarkunRegistryRecord['campaignStatus']
+}
+
+function karkunAssignmentFieldsChanged(
+  before: KarkunAssignmentSyncSnapshot,
+  karkun: KarkunRegistryRecord,
+): boolean {
+  return (
+    before.assignmentStatus !== karkun.assignmentStatus ||
+    before.assignedRuknId !== karkun.assignedRuknId ||
+    before.assignedRukn !== karkun.assignedRukn ||
+    before.assignmentDate !== karkun.assignmentDate ||
+    before.campaignStatus !== karkun.campaignStatus
+  )
+}
+
+async function syncKarkunRegistryFromAssignments(
+  karkunId: string,
+  options?: { notify?: boolean },
+): Promise<void> {
   const karkun = MOCK_KARKUN_REGISTRY.find((k) => k.id === karkunId && !k.isArchived)
   if (!karkun) return
 
@@ -248,8 +273,8 @@ function syncKarkunRegistryFromAssignments(karkunId: string, options?: { notify?
       })
     }
 
-    if (options?.notify !== false) {
-      notifyPeopleRegistryChange()
+    if (options?.notify !== false && karkunAssignmentFieldsChanged(before, karkun)) {
+      await notifyAndPersistKarkunRecords([karkun])
     }
     return
   }
@@ -338,8 +363,8 @@ function syncKarkunRegistryFromAssignments(karkunId: string, options?: { notify?
     })
   }
 
-  if (options?.notify !== false) {
-    notifyPeopleRegistryChange()
+  if (options?.notify !== false && karkunAssignmentFieldsChanged(before, karkun)) {
+    await notifyAndPersistKarkunRecords([karkun])
   }
 }
 
@@ -511,7 +536,7 @@ export async function assignRukn(input: AssignInput): Promise<AssignmentResult> 
       }
     }
 
-    syncKarkunRegistryFromAssignments(input.karkunId)
+    await syncKarkunRegistryFromAssignments(input.karkunId)
 
     const { ruknName, karkunName } = formatNames(input.ruknId, input.karkunId)
 
@@ -610,7 +635,7 @@ export async function replaceAssignment(input: ReplaceInput): Promise<Assignment
     }
   }
 
-  syncKarkunRegistryFromAssignments(current.karkunId)
+  await syncKarkunRegistryFromAssignments(current.karkunId)
 
   let newAssignment
   try {
@@ -645,7 +670,7 @@ export async function replaceAssignment(input: ReplaceInput): Promise<Assignment
     }
   }
 
-  syncKarkunRegistryFromAssignments(input.newKarkunId)
+  await syncKarkunRegistryFromAssignments(input.newKarkunId)
 
   const previous = formatNames(input.ruknId, current.karkunId)
   const next = formatNames(input.ruknId, input.newKarkunId)
@@ -745,7 +770,7 @@ export async function transferAssignment(input: TransferInput): Promise<Assignme
       historyMarker,
     })
 
-    syncKarkunRegistryFromAssignments(input.karkunId)
+    await syncKarkunRegistryFromAssignments(input.karkunId)
 
     logPeopleAudit({
       personKind: 'karkun',
@@ -848,7 +873,7 @@ export async function removeAssignment(input: RemoveInput): Promise<AssignmentRe
     }
   }
 
-  syncKarkunRegistryFromAssignments(current.karkunId)
+  await syncKarkunRegistryFromAssignments(current.karkunId)
 
   const { ruknName, karkunName } = formatNames(input.ruknId, current.karkunId)
 

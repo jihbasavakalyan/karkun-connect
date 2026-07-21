@@ -71,6 +71,7 @@ import {
   settingsBroadcastDocId,
 } from '@/repositories/firestore/collections'
 import {
+  commitBatchSetDocuments,
   createBatch,
   mapFirestoreError,
   readCollection,
@@ -211,6 +212,28 @@ async function resolveClientAuthScope(): Promise<ClientAuthScope> {
   } catch {
     return { role: null, ruknId: null }
   }
+}
+
+type KarkunOwnershipRow = { id: string; assignedRuknId: string }
+
+/** KC-0058.2 / KC-0064 — shared Rukn write scoping for full and targeted karkun commits. */
+function filterKarkunsForClientWrite(
+  karkuns: readonly KarkunRegistryRecord[],
+  scope: ClientAuthScope,
+  ownershipSnapshot: readonly KarkunOwnershipRow[],
+): KarkunRegistryRecord[] {
+  const isRuknClient = scope.role === 'rukn' && Boolean(scope.ruknId)
+  if (!isRuknClient) {
+    return [...karkuns]
+  }
+  const previouslyMine = new Set(
+    ownershipSnapshot
+      .filter((row) => row.assignedRuknId === scope.ruknId)
+      .map((row) => row.id),
+  )
+  return karkuns.filter(
+    (karkun) => karkun.assignedRuknId === scope.ruknId || previouslyMine.has(karkun.id),
+  )
 }
 
 /**
@@ -1155,14 +1178,47 @@ export class RuknFirestoreRepository implements RuknRepository {
     ruknCache.set([...rukns])
     void queueWrite('rukns', async () => {
       const db = getFirestoreDb()
-      const batch = createBatch(db)
-      for (const rukn of rukns) {
-        batch.set(doc(db, FIRESTORE_COLLECTIONS.rukns, rukn.id), sanitizeForFirestore(rukn))
-      }
-      await batch.commit()
-      return repositoryOk(undefined)
+      const writes = rukns.map((rukn) => ({
+        path: FIRESTORE_COLLECTIONS.rukns,
+        id: rukn.id,
+        data: rukn,
+      }))
+      return commitBatchSetDocuments(db, writes)
     })
     return repositoryOk(undefined)
+  }
+
+  /** KC-0064 — awaited upsert of specific rukn docs (no full-collection rewrite). */
+  async commitRuknDocuments(rukns: readonly Rukn[]): Promise<RepositoryResult<void>> {
+    try {
+      if (rukns.length === 0) {
+        return repositoryOk(undefined)
+      }
+      const db = getFirestoreDb()
+      const cached = ruknCache.get()
+      const byId = new Map(cached.map((rukn) => [rukn.id, rukn]))
+      for (const rukn of rukns) {
+        byId.set(rukn.id, rukn)
+      }
+      trackPendingWrite()
+      try {
+        const writes = rukns.map((rukn) => ({
+          path: FIRESTORE_COLLECTIONS.rukns,
+          id: rukn.id,
+          data: rukn,
+        }))
+        const result = await commitBatchSetDocuments(db, writes)
+        if (!result.ok) {
+          return result
+        }
+      } finally {
+        markPendingWriteComplete()
+      }
+      ruknCache.set([...byId.values()])
+      return repositoryOk(undefined)
+    } catch (error) {
+      return mapFirestoreError(error)
+    }
   }
 
   clear(): RepositoryResult<void> {
@@ -1233,44 +1289,88 @@ export class KarkunFirestoreRepository implements KarkunRepository {
       const scope = await resolveClientAuthScope()
       const isRuknClient = scope.role === 'rukn' && Boolean(scope.ruknId)
 
-      const previouslyMine = new Set(
-        ownershipSnapshot
-          .filter((row) => row.assignedRuknId === scope.ruknId)
-          .map((row) => row.id),
-      )
+      const toWrite = filterKarkunsForClientWrite(healedState.karkuns, scope, ownershipSnapshot)
 
-      // KC-0058.2 — Rukn may only write own assigned docs (+ releases of previously owned).
-      const toWrite = isRuknClient
-        ? healedState.karkuns.filter(
-            (karkun) =>
-              karkun.assignedRuknId === scope.ruknId || previouslyMine.has(karkun.id),
-          )
-        : healedState.karkuns
-
-      const batch = createBatch(db)
-      for (const karkun of toWrite) {
-        batch.set(doc(db, FIRESTORE_COLLECTIONS.karkuns, karkun.id), sanitizeForFirestore(karkun))
-      }
-      // Counter is administrator-owned; Rukn profile/connect must not touch it.
-      if (!isRuknClient) {
-        batch.set(
-          doc(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.karkunCounter),
-          sanitizeForFirestore({
-            nextKarkunNum: healedState.nextKarkunNum,
-          }),
-        )
-      }
       if (toWrite.length === 0 && isRuknClient) {
         return repositoryOk(undefined)
       }
-      try {
-        await batch.commit()
-        return repositoryOk(undefined)
-      } catch (error) {
-        return mapFirestoreError(error)
+
+      const writes = toWrite.map((karkun) => ({
+        path: FIRESTORE_COLLECTIONS.karkuns,
+        id: karkun.id,
+        data: karkun,
+      }))
+      const batchResult = await commitBatchSetDocuments(db, writes)
+      if (!batchResult.ok) {
+        return batchResult
       }
+      // Counter is administrator-owned; Rukn profile/connect must not touch it.
+      if (!isRuknClient) {
+        const counterResult = await writeDoc(
+          db,
+          FIRESTORE_COLLECTIONS.settings,
+          FIRESTORE_DOCS.karkunCounter,
+          sanitizeForFirestore({
+            nextKarkunNum: healedState.nextKarkunNum,
+          }) as object,
+        )
+        if (!counterResult.ok) {
+          return counterResult
+        }
+      }
+      return repositoryOk(undefined)
     })
     return repositoryOk(undefined)
+  }
+
+  /** KC-0064 — awaited upsert of specific karkun docs (no karkunCounter / full registry). */
+  async commitKarkunDocuments(
+    karkuns: readonly KarkunRegistryRecord[],
+  ): Promise<RepositoryResult<void>> {
+    try {
+      if (karkuns.length === 0) {
+        return repositoryOk(undefined)
+      }
+      const db = getFirestoreDb()
+      const scope = await resolveClientAuthScope()
+      const ownershipSnapshot = karkunCache.get().karkuns.map((karkun) => ({
+        id: karkun.id,
+        assignedRuknId: karkun.assignedRuknId,
+      }))
+      const toWrite = filterKarkunsForClientWrite(karkuns, scope, ownershipSnapshot)
+      if (toWrite.length === 0) {
+        return repositoryOk(undefined)
+      }
+
+      const cached = karkunCache.get()
+      const byId = new Map(cached.karkuns.map((karkun) => [karkun.id, karkun]))
+      for (const karkun of toWrite) {
+        byId.set(karkun.id, karkun)
+      }
+
+      trackPendingWrite()
+      try {
+        const writes = toWrite.map((karkun) => ({
+          path: FIRESTORE_COLLECTIONS.karkuns,
+          id: karkun.id,
+          data: karkun,
+        }))
+        const result = await commitBatchSetDocuments(db, writes)
+        if (!result.ok) {
+          return result
+        }
+      } finally {
+        markPendingWriteComplete()
+      }
+
+      karkunCache.set({
+        karkuns: [...byId.values()],
+        nextKarkunNum: cached.nextKarkunNum,
+      })
+      return repositoryOk(undefined)
+    } catch (error) {
+      return mapFirestoreError(error)
+    }
   }
 
   async upsertRecord(karkun: KarkunRegistryRecord): Promise<RepositoryResult<void>> {

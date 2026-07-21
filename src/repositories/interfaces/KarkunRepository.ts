@@ -14,6 +14,12 @@ export interface KarkunRepository {
    * Prefer this over saveState when success must mean durable persistence.
    */
   upsertRecord(karkun: KarkunRegistryRecord): Promise<RepositoryResult<void>>
+  /**
+   * KC-0064 — Awaited upsert of specific karkun documents (no karkunCounter / full registry).
+   */
+  commitKarkunDocuments?(
+    karkuns: readonly KarkunRegistryRecord[],
+  ): Promise<RepositoryResult<void>>
   clear(): RepositoryResult<void>
   /** Cache/local-storage synchronous existence (may be empty before hydrate). */
   exists(): RepositoryResult<boolean>

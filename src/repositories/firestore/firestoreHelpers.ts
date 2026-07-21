@@ -14,6 +14,7 @@ import {
 import {
   FRIENDLY_DATA_ACCESS_ERROR,
   repositoryErr,
+  repositoryOk,
   type RepositoryErrorCode,
   type RepositoryResult,
 } from '@/repositories/errors'
@@ -147,6 +148,28 @@ export async function removeDoc(
 
 export function createBatch(db: Firestore): WriteBatch {
   return writeBatch(db)
+}
+
+/** KC-0064 — stay under Firestore's 500-op batch limit (bulk import/migration). */
+export const FIRESTORE_BATCH_CHUNK_SIZE = 450
+
+export async function commitBatchSetDocuments(
+  db: Firestore,
+  writes: ReadonlyArray<{ path: string; id: string; data: object }>,
+): Promise<RepositoryResult<void>> {
+  for (let index = 0; index < writes.length; index += FIRESTORE_BATCH_CHUNK_SIZE) {
+    const chunk = writes.slice(index, index + FIRESTORE_BATCH_CHUNK_SIZE)
+    const batch = createBatch(db)
+    for (const write of chunk) {
+      batch.set(doc(db, write.path, write.id), sanitizeForFirestore(write.data))
+    }
+    try {
+      await batch.commit()
+    } catch (error) {
+      return mapFirestoreError(error)
+    }
+  }
+  return repositoryOk(undefined)
 }
 
 export function reportConflict(
