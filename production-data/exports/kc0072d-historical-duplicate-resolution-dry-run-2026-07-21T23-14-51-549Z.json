@@ -1,0 +1,136 @@
+{
+  "ticket": "KC-0072D",
+  "generatedAt": "2026-07-21T23:14:51.549Z",
+  "projectId": "karkun-connect-75c68",
+  "mode": "dry-run",
+  "readOnly": true,
+  "pairsProcessed": 3,
+  "archived": 0,
+  "skipped": 0,
+  "dryRunWouldArchive": 3,
+  "pairs": [
+    {
+      "connectedId": "kr-495",
+      "duplicateId": "kr-494",
+      "mobile": "9606209716",
+      "name": "Bismilla",
+      "verificationPassed": true,
+      "failures": [],
+      "timestamp": "2026-07-21T23:14:51.549Z",
+      "connectedActiveConnections": 1,
+      "duplicateActiveConnections": 0,
+      "action": "DRY_RUN_WOULD_ARCHIVE",
+      "archivedId": "kr-494",
+      "preservedId": "kr-495",
+      "archivePayloadPreview": {
+        "isArchived": true,
+        "archivedAt": "2026-07-21T23:14:51.549Z",
+        "archivedBy": "KC-0072D",
+        "status": "inactive",
+        "archiveKind": "duplicate_merge",
+        "mergedInto": "kr-495",
+        "mergedBy": "KC-0072D",
+        "mergedAt": "2026-07-21T23:14:51.549Z",
+        "mergeReason": "KC-0072D historical duplicate resolution: keep kr-495, archive kr-494",
+        "originalDocumentId": "kr-494",
+        "updatedAt": "2026-07-21T23:14:51.549Z",
+        "updatedBy": "KC-0072D",
+        "version": 1,
+        "notes": "Software engineer\n[Archived Duplicate → kr-495] KC-0072D historical duplicate resolution: keep kr-495, archive kr-494"
+      }
+    },
+    {
+      "connectedId": "kr-497",
+      "duplicateId": "kr-496",
+      "mobile": "9738148593",
+      "name": "Shaik Haji",
+      "verificationPassed": true,
+      "failures": [],
+      "timestamp": "2026-07-21T23:14:51.549Z",
+      "connectedActiveConnections": 1,
+      "duplicateActiveConnections": 0,
+      "action": "DRY_RUN_WOULD_ARCHIVE",
+      "archivedId": "kr-496",
+      "preservedId": "kr-497",
+      "archivePayloadPreview": {
+        "isArchived": true,
+        "archivedAt": "2026-07-21T23:14:51.549Z",
+        "archivedBy": "KC-0072D",
+        "status": "inactive",
+        "archiveKind": "duplicate_merge",
+        "mergedInto": "kr-497",
+        "mergedBy": "KC-0072D",
+        "mergedAt": "2026-07-21T23:14:51.549Z",
+        "mergeReason": "KC-0072D historical duplicate resolution: keep kr-497, archive kr-496",
+        "originalDocumentId": "kr-496",
+        "updatedAt": "2026-07-21T23:14:51.549Z",
+        "updatedBy": "KC-0072D",
+        "version": 1,
+        "notes": "Indane Gas delivery person\n[Archived Duplicate → kr-497] KC-0072D historical duplicate resolution: keep kr-497, archive kr-496"
+      }
+    },
+    {
+      "connectedId": "kr-504",
+      "duplicateId": "kr-503",
+      "mobile": "9741397389",
+      "name": "Azhar Artist",
+      "verificationPassed": true,
+      "failures": [],
+      "timestamp": "2026-07-21T23:14:51.549Z",
+      "connectedActiveConnections": 1,
+      "duplicateActiveConnections": 0,
+      "action": "DRY_RUN_WOULD_ARCHIVE",
+      "archivedId": "kr-503",
+      "preservedId": "kr-504",
+      "archivePayloadPreview": {
+        "isArchived": true,
+        "archivedAt": "2026-07-21T23:14:51.549Z",
+        "archivedBy": "KC-0072D",
+        "status": "inactive",
+        "archiveKind": "duplicate_merge",
+        "mergedInto": "kr-504",
+        "mergedBy": "KC-0072D",
+        "mergedAt": "2026-07-21T23:14:51.549Z",
+        "mergeReason": "KC-0072D historical duplicate resolution: keep kr-504, archive kr-503",
+        "originalDocumentId": "kr-503",
+        "updatedAt": "2026-07-21T23:14:51.549Z",
+        "updatedBy": "KC-0072D",
+        "version": 1,
+        "notes": "Painter @Banglaw\n[Archived Duplicate → kr-504] KC-0072D historical duplicate resolution: keep kr-504, archive kr-503"
+      }
+    }
+  ],
+  "postValidation": {
+    "totalKarkunDocuments": 511,
+    "activeKarkunDocuments": 511,
+    "archivedKarkunDocuments": 0,
+    "uniqueActiveMobiles": 508,
+    "duplicateMobileGroups": 3,
+    "duplicateMobileGroupDetails": [
+      {
+        "mobile": "9606209716",
+        "ids": [
+          "kr-494",
+          "kr-495"
+        ]
+      },
+      {
+        "mobile": "9738148593",
+        "ids": [
+          "kr-496",
+          "kr-497"
+        ]
+      },
+      {
+        "mobile": "9741397389",
+        "ids": [
+          "kr-503",
+          "kr-504"
+        ]
+      }
+    ],
+    "connectionDocuments": 199,
+    "activeConnections": 146
+  },
+  "note": "Soft-archive only (archiveKind=duplicate_merge). Connected karkuns and Active connections untouched."
+}

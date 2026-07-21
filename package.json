@@ -51,6 +51,8 @@
     "admin:kc0050:dry": "node scripts/admin/repair-duplicate-karkun-orphans.mjs --dry-run",
     "admin:kc0050:apply": "node scripts/admin/repair-duplicate-karkun-orphans.mjs --apply",
     "admin:kc0069:duplicates": "node scripts/admin/kc0069-duplicate-verification-report.mjs",
+    "admin:kc0072d:dry": "node scripts/admin/kc0072d-resolve-historical-duplicates.mjs --dry-run",
+    "admin:kc0072d:apply": "node scripts/admin/kc0072d-resolve-historical-duplicates.mjs --apply",
     "verify:persistence": "npx vite-node scripts/verify-persistence.ts",
     "verify:guidance": "npx vite-node scripts/verify-guidance.ts",
     "verify:compliance": "npx vite-node scripts/verify-compliance-module.ts",

@@ -1,0 +1,69 @@
+{
+  "ticket": "KC-0072D",
+  "generatedAt": "2026-07-21T23:15:09.551Z",
+  "projectId": "karkun-connect-75c68",
+  "mode": "apply",
+  "readOnly": false,
+  "pairsProcessed": 3,
+  "archived": 3,
+  "skipped": 0,
+  "dryRunWouldArchive": 0,
+  "pairs": [
+    {
+      "connectedId": "kr-495",
+      "duplicateId": "kr-494",
+      "mobile": "9606209716",
+      "name": "Bismilla",
+      "verificationPassed": true,
+      "failures": [],
+      "timestamp": "2026-07-21T23:15:09.551Z",
+      "connectedActiveConnections": 1,
+      "duplicateActiveConnections": 0,
+      "action": "ARCHIVED_DUPLICATE",
+      "archivedId": "kr-494",
+      "preservedId": "kr-495",
+      "activityLogId": "activity-1784675710906-kc0072d-kr-494"
+    },
+    {
+      "connectedId": "kr-497",
+      "duplicateId": "kr-496",
+      "mobile": "9738148593",
+      "name": "Shaik Haji",
+      "verificationPassed": true,
+      "failures": [],
+      "timestamp": "2026-07-21T23:15:09.551Z",
+      "connectedActiveConnections": 1,
+      "duplicateActiveConnections": 0,
+      "action": "ARCHIVED_DUPLICATE",
+      "archivedId": "kr-496",
+      "preservedId": "kr-497",
+      "activityLogId": "activity-1784675711683-kc0072d-kr-496"
+    },
+    {
+      "connectedId": "kr-504",
+      "duplicateId": "kr-503",
+      "mobile": "9741397389",
+      "name": "Azhar Artist",
+      "verificationPassed": true,
+      "failures": [],
+      "timestamp": "2026-07-21T23:15:09.551Z",
+      "connectedActiveConnections": 1,
+      "duplicateActiveConnections": 0,
+      "action": "ARCHIVED_DUPLICATE",
+      "archivedId": "kr-503",
+      "preservedId": "kr-504",
+      "activityLogId": "activity-1784675712518-kc0072d-kr-503"
+    }
+  ],
+  "postValidation": {
+    "totalKarkunDocuments": 511,
+    "activeKarkunDocuments": 508,
+    "archivedKarkunDocuments": 3,
+    "uniqueActiveMobiles": 508,
+    "duplicateMobileGroups": 0,
+    "duplicateMobileGroupDetails": [],
+    "connectionDocuments": 199,
+    "activeConnections": 146
+  },
+  "note": "Soft-archive only (archiveKind=duplicate_merge). Connected karkuns and Active connections untouched."
+}
