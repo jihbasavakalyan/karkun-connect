@@ -1,0 +1,87 @@
+{
+  "ticket": "KC-0061-Phase-B",
+  "action": "reassign_not_delete",
+  "reason": "Both docs Active with different rukn/karkun; delete unsafe",
+  "kept": {
+    "id": "asgn-1784374802330-9vi5j",
+    "assignmentNumber": "ASN-000047",
+    "ruknId": "R027",
+    "karkunId": "kr-145"
+  },
+  "reassigned": {
+    "id": "asgn-1784375464448-cyd1y",
+    "from": "ASN-000047",
+    "to": "ASN-000086",
+    "ruknId": "R044",
+    "karkunId": "kr-008"
+  },
+  "nextSequence": {
+    "from": 86,
+    "to": 87
+  },
+  "before": {
+    "keep": {
+      "karkunId": "kr-145",
+      "assignmentId": "asgn-1784374802330-9vi5j",
+      "updatedAt": "2026-07-19T15:01:46.698Z",
+      "assignmentNumber": "ASN-000047",
+      "effectiveFrom": "2026-07-18",
+      "status": "Active",
+      "assignedBy": "Rukn",
+      "ruknId": "R027",
+      "createdAt": "2026-07-18T11:40:02.330Z",
+      "assignedDate": "2026-07-18"
+    },
+    "reassign": {
+      "assignmentId": "asgn-1784375464448-cyd1y",
+      "createdAt": "2026-07-18T11:51:04.448Z",
+      "status": "Active",
+      "effectiveFrom": "2026-07-18",
+      "karkunId": "kr-008",
+      "ruknId": "R044",
+      "assignedBy": "Rukn",
+      "updatedAt": "2026-07-19T15:15:54.748Z",
+      "assignedDate": "2026-07-18",
+      "assignmentNumber": "ASN-000047"
+    },
+    "meta": {
+      "asnRepairVersion": 1,
+      "activeIntegrityVersion": 0,
+      "nextSequence": 86
+    }
+  },
+  "after": {
+    "keep": {
+      "karkunId": "kr-145",
+      "assignmentId": "asgn-1784374802330-9vi5j",
+      "updatedAt": "2026-07-19T15:01:46.698Z",
+      "assignmentNumber": "ASN-000047",
+      "effectiveFrom": "2026-07-18",
+      "status": "Active",
+      "assignedBy": "Rukn",
+      "ruknId": "R027",
+      "createdAt": "2026-07-18T11:40:02.330Z",
+      "assignedDate": "2026-07-18"
+    },
+    "reassign": {
+      "assignmentId": "asgn-1784375464448-cyd1y",
+      "createdAt": "2026-07-18T11:51:04.448Z",
+      "status": "Active",
+      "effectiveFrom": "2026-07-18",
+      "karkunId": "kr-008",
+      "ruknId": "R044",
+      "assignedBy": "Rukn",
+      "assignedDate": "2026-07-18",
+      "assignmentNumber": "ASN-000086",
+      "remarks": "KC-0061 Phase B: reassigned from ASN-000047 (collision with asgn-1784374802330-9vi5j) to ASN-000086",
+      "updatedAt": "2026-07-20T22:57:39.214Z"
+    },
+    "meta": {
+      "asnRepairVersion": 1,
+      "activeIntegrityVersion": 0,
+      "nextSequence": 87
+    },
+    "asn047Count": 1,
+    "asn086Count": 1
+  }
+}

@@ -1,0 +1,59 @@
+{
+  "ticket": "KC-0058.4",
+  "generatedAt": "2026-07-19T20:22:00.000Z",
+  "commit": "9cbb1df",
+  "productionUrl": "https://karkun-connect-75c68.web.app/admin",
+  "uid": "VQkrDSDGoQUptRlyghtlFxmcJN03",
+  "email": "jihbasavakalyan1@gmail.com",
+  "reproducibility": {
+    "runs": 2,
+    "alwaysReproducible": true,
+    "intermittent": false,
+    "timingDependentWhichOpFinishesFirst": true,
+    "note": "All isAdministrator()-gated critical ops fail every run. Which FAIL is recorded as firstFailure varies by Promise.all completion order (connections vs karkunCounter). campaigns always PASS."
+  },
+  "authBeforeCritical": {
+    "authCurrentUserPresent": true,
+    "claimsRole": null,
+    "claimsKeys": [
+      "iss",
+      "aud",
+      "auth_time",
+      "user_id",
+      "sub",
+      "iat",
+      "exp",
+      "email",
+      "email_verified",
+      "firebase"
+    ],
+    "resolvedScopeRole": null,
+    "appAuthProviderRole": "administrator",
+    "note": "App AuthProvider resolves administrator via email allowlist; Firebase ID token has no custom claim role."
+  },
+  "firstFailureExamples": [
+    {
+      "run": 1,
+      "label": "critical.connections",
+      "method": "readConnectionsForClient()",
+      "api": "getDocs",
+      "collection": "connections",
+      "query": "collection(db, \"connections\")",
+      "errorCode": "permission-denied"
+    },
+    {
+      "run": 2,
+      "label": "critical.settings.karkunCounter",
+      "method": "readDoc(karkunCounter)",
+      "api": "getDoc",
+      "collection": "settings",
+      "query": "doc(db, \"settings\", \"karkunCounter\")",
+      "errorCode": "permission-denied"
+    }
+  ],
+  "ruleCorrelation": {
+    "required": "request.auth.token.role == 'administrator'",
+    "actual": null
+  },
+  "conclusion": "Authenticated user is signed in, but the Firebase ID token lacks custom claim role=administrator. Firestore rules that require isAdministrator() deny unfiltered critical reads. campaigns succeeds because it only requires isSignedIn()."
+}

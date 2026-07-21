@@ -1,0 +1,288 @@
+{
+  "ticket": "KC-0061-Phase2",
+  "generatedAt": "2026-07-20T22:25:29.260Z",
+  "adminReport": {
+    "label": "admin",
+    "uid": "VQkrDSDGoQUptRlyghtlFxmcJN03",
+    "firebaseProjectId": "karkun-connect-75c68",
+    "timeline": [
+      {
+        "step": "auth.createCustomToken",
+        "status": "ENTER",
+        "durationMs": 0
+      },
+      {
+        "step": "auth.createCustomToken",
+        "status": "EXIT",
+        "durationMs": 3
+      },
+      {
+        "step": "auth.signInWithCustomToken",
+        "status": "ENTER",
+        "durationMs": 3
+      },
+      {
+        "step": "auth.signInWithCustomToken",
+        "status": "EXIT",
+        "durationMs": 2169
+      },
+      {
+        "step": "auth.getIdTokenResult(forceRefresh)",
+        "status": "ENTER",
+        "durationMs": 2169
+      },
+      {
+        "step": "auth.getIdTokenResult(forceRefresh)",
+        "status": "EXIT",
+        "durationMs": 3153,
+        "role": "administrator",
+        "ruknId": null
+      },
+      {
+        "step": "firestore.getDoc(settings/connectionMeta)",
+        "status": "ENTER",
+        "durationMs": 3153,
+        "collection": "settings",
+        "document": "connectionMeta",
+        "operation": "get"
+      },
+      {
+        "step": "firestore.getDoc(settings/connectionMeta)",
+        "status": "EXIT",
+        "durationMs": 4111,
+        "exists": true,
+        "nextSequence": 82
+      },
+      {
+        "step": "firestore.runTransaction(settings/connectionMeta)",
+        "status": "ENTER",
+        "durationMs": 4111,
+        "collection": "settings",
+        "document": "connectionMeta",
+        "operation": "runTransaction/set(merge) no-op"
+      },
+      {
+        "step": "firestore.runTransaction(settings/connectionMeta)",
+        "status": "EXIT",
+        "durationMs": 4798,
+        "ok": true
+      },
+      {
+        "step": "firestore.setDoc(connections/{temp})",
+        "status": "ENTER",
+        "durationMs": 4798,
+        "collection": "connections",
+        "document": "kc0061p2-probe-admin-1784586323387",
+        "operation": "set",
+        "ruknId": "R001"
+      },
+      {
+        "step": "firestore.setDoc(connections/{temp})",
+        "status": "EXIT",
+        "durationMs": 5327,
+        "ok": true,
+        "tempId": "kc0061p2-probe-admin-1784586323387"
+      },
+      {
+        "step": "admin.cleanup(connections/{temp})",
+        "status": "EXIT",
+        "durationMs": 6312,
+        "tempId": "kc0061p2-probe-admin-1784586323387"
+      }
+    ],
+    "auth": {
+      "uid": "VQkrDSDGoQUptRlyghtlFxmcJN03",
+      "email": "jihbasavakalyan1@gmail.com",
+      "phone": null,
+      "role": "administrator",
+      "ruknId": null,
+      "tokenIssuedAt": "Mon, 20 Jul 2026 22:25:23 GMT",
+      "tokenExpiration": "Mon, 20 Jul 2026 23:25:23 GMT",
+      "authTime": "Mon, 20 Jul 2026 22:25:22 GMT",
+      "firebaseProjectId": "karkun-connect-75c68",
+      "claimKeys": [
+        "role",
+        "iss",
+        "aud",
+        "auth_time",
+        "user_id",
+        "sub",
+        "iat",
+        "exp",
+        "email",
+        "email_verified",
+        "firebase"
+      ]
+    },
+    "failures": [],
+    "firstFailure": null,
+    "totalMs": 6314
+  },
+  "ruknReport": {
+    "label": "rukn",
+    "uid": "50qc0gA3d8TBAOodwgtuXRMPoPp2",
+    "firebaseProjectId": "karkun-connect-75c68",
+    "timeline": [
+      {
+        "step": "auth.createCustomToken",
+        "status": "ENTER",
+        "durationMs": 0
+      },
+      {
+        "step": "auth.createCustomToken",
+        "status": "EXIT",
+        "durationMs": 2
+      },
+      {
+        "step": "auth.signInWithCustomToken",
+        "status": "ENTER",
+        "durationMs": 2
+      },
+      {
+        "step": "auth.signInWithCustomToken",
+        "status": "EXIT",
+        "durationMs": 1273
+      },
+      {
+        "step": "auth.getIdTokenResult(forceRefresh)",
+        "status": "ENTER",
+        "durationMs": 1273
+      },
+      {
+        "step": "auth.getIdTokenResult(forceRefresh)",
+        "status": "EXIT",
+        "durationMs": 2038,
+        "role": "rukn",
+        "ruknId": "R028"
+      },
+      {
+        "step": "firestore.getDoc(settings/connectionMeta)",
+        "status": "ENTER",
+        "durationMs": 2038,
+        "collection": "settings",
+        "document": "connectionMeta",
+        "operation": "get"
+      },
+      {
+        "step": "firestore.getDoc(settings/connectionMeta)",
+        "status": "EXIT",
+        "durationMs": 3028,
+        "exists": true,
+        "nextSequence": 82
+      },
+      {
+        "step": "firestore.runTransaction(settings/connectionMeta)",
+        "status": "ENTER",
+        "durationMs": 3028,
+        "collection": "settings",
+        "document": "connectionMeta",
+        "operation": "runTransaction/set(merge) no-op"
+      },
+      {
+        "step": "firestore.runTransaction(settings/connectionMeta)",
+        "status": "EXIT",
+        "durationMs": 3582,
+        "ok": true
+      },
+      {
+        "step": "firestore.setDoc(connections/{temp})",
+        "status": "ENTER",
+        "durationMs": 3582,
+        "collection": "connections",
+        "document": "kc0061p2-probe-rukn-1784586328485",
+        "operation": "set",
+        "ruknId": "R028"
+      },
+      {
+        "step": "firestore.setDoc(connections/{temp})",
+        "status": "EXIT",
+        "durationMs": 4046,
+        "ok": true,
+        "tempId": "kc0061p2-probe-rukn-1784586328485"
+      },
+      {
+        "step": "admin.cleanup(connections/{temp})",
+        "status": "EXIT",
+        "durationMs": 4356,
+        "tempId": "kc0061p2-probe-rukn-1784586328485"
+      }
+    ],
+    "auth": {
+      "uid": "50qc0gA3d8TBAOodwgtuXRMPoPp2",
+      "email": null,
+      "phone": "+917975818814",
+      "role": "rukn",
+      "ruknId": "R028",
+      "tokenIssuedAt": "Mon, 20 Jul 2026 22:25:29 GMT",
+      "tokenExpiration": "Mon, 20 Jul 2026 23:25:29 GMT",
+      "authTime": "Mon, 20 Jul 2026 22:25:27 GMT",
+      "firebaseProjectId": "karkun-connect-75c68",
+      "claimKeys": [
+        "role",
+        "ruknId",
+        "iss",
+        "aud",
+        "auth_time",
+        "user_id",
+        "sub",
+        "iat",
+        "exp",
+        "phone_number",
+        "firebase"
+      ]
+    },
+    "failures": [],
+    "firstFailure": null,
+    "totalMs": 4357
+  },
+  "comparison": {
+    "Authentication": {
+      "Admin": "OK",
+      "Rukn": "OK"
+    },
+    "JWTClaims": {
+      "Admin": "administrator",
+      "Rukn": "rukn/R028"
+    },
+    "connectionMetaGet": {
+      "Admin": "EXIT",
+      "Rukn": "EXIT"
+    },
+    "connectionMetaTxn": {
+      "Admin": "EXIT",
+      "Rukn": "EXIT"
+    },
+    "connectionsCreate": {
+      "Admin": "EXIT",
+      "Rukn": "EXIT"
+    },
+    "FailurePoint": {
+      "Admin": null,
+      "Rukn": null
+    },
+    "OriginalException": {
+      "Admin": null,
+      "Rukn": null
+    }
+  },
+  "rootCause": {
+    "bothFail": false,
+    "bothSucceed": true,
+    "sharedFirstFailure": null,
+    "adminOnlyFailure": null,
+    "ruknOnlyFailure": null,
+    "divergeAt": {
+      "admin": "none",
+      "rukn": "none"
+    },
+    "serverClaims": {
+      "admin": {
+        "role": "administrator"
+      },
+      "rukn": {
+        "role": "rukn",
+        "ruknId": "R028"
+      }
+    }
+  }
+}

@@ -1,0 +1,94 @@
+﻿{
+  "id": "dpl_8q8NZrutsueVK466yKo8WsgwcfGK",
+  "name": "karkun-connect",
+  "url": "karkun-connect-ccg9fenzx-jihbk.vercel.app",
+  "target": "production",
+  "readyState": "READY",
+  "createdAt": 1784585059686,
+  "aliases": [
+    "jihbasavakalyan.org",
+    "karkun-connect.vercel.app",
+    "karkun-connect-jihbk.vercel.app",
+    "karkun-connect-git-main-jihbk.vercel.app"
+  ],
+  "builds": [
+    {
+      "id": "bld_20cfxsi4g",
+      "deploymentId": "dpl_8q8NZrutsueVK466yKo8WsgwcfGK",
+      "entrypoint": ".",
+      "readyState": "READY",
+      "readyStateAt": 1784585059559,
+      "createdAt": 1784585059559,
+      "createdIn": "sfo1",
+      "use": "@vercel/vc-build",
+      "config": {
+        "framework": "vite",
+        "nodeVersion": "24.x",
+        "projectCreatedAt": 1783363962580,
+        "vercelConfig": {
+          "functions": {
+            "api/tts.ts": {
+              "includeFiles": "src/server/voice/**"
+            },
+            "api/stt.ts": {
+              "includeFiles": "src/server/voice/**"
+            }
+          },
+          "rewrites": [
+            {
+              "source": "/((?!api/|assets/).*)",
+              "destination": "/index.html"
+            }
+          ]
+        }
+      },
+      "middleware": [],
+      "output": [
+        {
+          "prerender": null,
+          "type": "lambda",
+          "path": "api/stt",
+          "digest": "prj_16kA2l3oa9MHEd5FFEwItsqLmWZz/98f002c92fdc4db961200ab15cd97b0cec2ddcd46080abb66703dae3f4ab0b86",
+          "mode": 49590,
+          "size": 3201467,
+          "lambda": {
+            "functionName": "team_YYT1pWpi8Y7Emloe4MJsyQ8t-a7803257325afd62e4a9ffdeb8f2d22f75",
+            "deployedTo": [
+              "iad1"
+            ],
+            "runtime": "nodejs24.x",
+            "memorySize": 2048,
+            "timeout": 300,
+            "layers": [
+              "arn:aws:lambda:AWS_REGION_PLACEHOLDER:977805900156:layer:vercel-rusty-runtime-nodejs-1_48_0-production-7619b4de39-AWS_ARCH_PLACEHOLDER:1"
+            ]
+          },
+          "edge": null
+        },
+        {
+          "prerender": null,
+          "type": "lambda",
+          "path": "api/tts",
+          "digest": "prj_16kA2l3oa9MHEd5FFEwItsqLmWZz/096bc0f59e50cc8aa50fcc27527432066f298f08489513a0d61b1116aa62c446",
+          "mode": 49590,
+          "size": 3201574,
+          "lambda": {
+            "functionName": "team_YYT1pWpi8Y7Emloe4MJsyQ8t-999d627d1c1628ef16cc3b89b8b4f60737",
+            "deployedTo": [
+              "iad1"
+            ],
+            "runtime": "nodejs24.x",
+            "memorySize": 2048,
+            "timeout": 300,
+            "layers": [
+              "arn:aws:lambda:AWS_REGION_PLACEHOLDER:977805900156:layer:vercel-rusty-runtime-nodejs-1_48_0-production-7619b4de39-AWS_ARCH_PLACEHOLDER:1"
+            ]
+          },
+          "edge": null
+        }
+      ],
+      "fingerprint": null
+    }
+  ],
+  "contextName": "jihbk"
+}

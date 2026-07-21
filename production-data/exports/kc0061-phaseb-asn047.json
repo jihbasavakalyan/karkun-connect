@@ -1,0 +1,84 @@
+{
+  "docs": {
+    "asgn-1784374802330-9vi5j": {
+      "exists": true,
+      "path": "connections/asgn-1784374802330-9vi5j",
+      "data": {
+        "karkunId": "kr-145",
+        "assignmentId": "asgn-1784374802330-9vi5j",
+        "updatedAt": "2026-07-19T15:01:46.698Z",
+        "assignmentNumber": "ASN-000047",
+        "effectiveFrom": "2026-07-18",
+        "status": "Active",
+        "assignedBy": "Rukn",
+        "ruknId": "R027",
+        "createdAt": "2026-07-18T11:40:02.330Z",
+        "assignedDate": "2026-07-18"
+      }
+    },
+    "asgn-1784375464448-cyd1y": {
+      "exists": true,
+      "path": "connections/asgn-1784375464448-cyd1y",
+      "data": {
+        "assignmentId": "asgn-1784375464448-cyd1y",
+        "createdAt": "2026-07-18T11:51:04.448Z",
+        "status": "Active",
+        "effectiveFrom": "2026-07-18",
+        "karkunId": "kr-008",
+        "ruknId": "R044",
+        "assignedBy": "Rukn",
+        "updatedAt": "2026-07-19T15:15:54.748Z",
+        "assignedDate": "2026-07-18",
+        "assignmentNumber": "ASN-000047"
+      }
+    }
+  },
+  "connectionMeta": {
+    "exists": true,
+    "path": "settings/connectionMeta",
+    "data": {
+      "asnRepairVersion": 1,
+      "activeIntegrityVersion": 0,
+      "nextSequence": 86
+    }
+  },
+  "asn047": [
+    {
+      "path": "connections/asgn-1784374802330-9vi5j",
+      "id": "asgn-1784374802330-9vi5j",
+      "data": {
+        "karkunId": "kr-145",
+        "assignmentId": "asgn-1784374802330-9vi5j",
+        "updatedAt": "2026-07-19T15:01:46.698Z",
+        "assignmentNumber": "ASN-000047",
+        "effectiveFrom": "2026-07-18",
+        "status": "Active",
+        "assignedBy": "Rukn",
+        "ruknId": "R027",
+        "createdAt": "2026-07-18T11:40:02.330Z",
+        "assignedDate": "2026-07-18"
+      }
+    },
+    {
+      "path": "connections/asgn-1784375464448-cyd1y",
+      "id": "asgn-1784375464448-cyd1y",
+      "data": {
+        "assignmentId": "asgn-1784375464448-cyd1y",
+        "createdAt": "2026-07-18T11:51:04.448Z",
+        "status": "Active",
+        "effectiveFrom": "2026-07-18",
+        "karkunId": "kr-008",
+        "ruknId": "R044",
+        "assignedBy": "Rukn",
+        "updatedAt": "2026-07-19T15:15:54.748Z",
+        "assignedDate": "2026-07-18",
+        "assignmentNumber": "ASN-000047"
+      }
+    }
+  ],
+  "asn047Count": 2,
+  "assignmentsCollection": {
+    "count": 0,
+    "docs": []
+  }
+}

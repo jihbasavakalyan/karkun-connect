@@ -1,0 +1,55 @@
+{
+  "subject": "Shamsheer Khan",
+  "answers": {
+    "1_request_exists": false,
+    "1_evidence": "settings/karkunRequests currently has only Musa qureshi (Pending). No Shamsheer request document remains. Submission is proven only via activityLogs.",
+    "2_status_approved": "Historically yes (via activity). Not present in request store now.",
+    "3_who_approved": "Administrator",
+    "4_when_approved": [
+      "2026-07-18T12:34:09.212Z (claimed kr-021)",
+      "2026-07-18T12:34:28.410Z (claimed kr-022 — duplicate approve)"
+    ],
+    "5_karkun_document_created": false,
+    "5_detail": "No karkuns doc named Shamsheer Khan. Approval reused existing IDs kr-021 (MOHAMMED KAIF) and kr-022 (MUBEEN PASHA).",
+    "6_firestore_document_id": null,
+    "6_claimed_ids_incorrectly": [
+      "kr-021",
+      "kr-022"
+    ],
+    "7_collection": "Would be karkuns; never successfully owned by Shamsheer. Requests live in settings/karkunRequests (array field).",
+    "8_repository_loads_it": false,
+    "9_in_memory_registry": false,
+    "10_if_present_why_hidden": "N/A — absent",
+    "11_disappeared_at_stage": "createKarkun ID allocation (nextKarkunNum lag → ID collision) during approveNewKarkunRequest; request row later lost from settings/karkunRequests full-document overwrite."
+  },
+  "rootCause": {
+    "primary": "karkunCounter.nextKarkunNum lag behind max kr-* (now 13 vs max 493) caused createKarkun to mint already-occupied IDs",
+    "secondary": "approveNewKarkunRequest does not verify minted id is free / name matches before assign",
+    "tertiary": "settings/karkunRequests saved as whole array — approved entries can vanish on later client persist",
+    "sameBatchVictims": [
+      "Mehboob Pasha→kr-013",
+      "Mateen→kr-015/017",
+      "Mohsin sir Chemistry→kr-016/018",
+      "Shahbaz Khan→kr-019",
+      "Shamsheer Khan→kr-021/022"
+    ]
+  },
+  "timeline": [
+    {
+      "t": "2026-07-18T11:40:46.754Z",
+      "event": "Request submitted by Asadulla Khan Zaki (R046)"
+    },
+    {
+      "t": "2026-07-18T12:34:09.212Z",
+      "event": "Admin approve logged for Shamsheer as kr-021; simultaneous assign log shows MOHAMMED KAIF connected on same assignment"
+    },
+    {
+      "t": "2026-07-18T12:34:28.410Z",
+      "event": "Second approve logged for Shamsheer as kr-022; simultaneous assign log shows MUBEEN PASHA"
+    },
+    {
+      "t": "now",
+      "event": "No Shamsheer in karkuns; request gone; kr-021/022 still seed names"
+    }
+  ]
+}

@@ -1,0 +1,174 @@
+{
+  "ticket": "KC-0061",
+  "validation": "KC-0061-final-validation",
+  "startedAt": "2026-07-21T06:36:38.664Z",
+  "steps": [
+    {
+      "id": 1,
+      "status": "PASS",
+      "at": "2026-07-21T06:36:44.168Z",
+      "uid": "VQkrDSDGoQUptRlyghtlFxmcJN03",
+      "email": "jihbasavakalyan1@gmail.com",
+      "role": "administrator"
+    },
+    {
+      "id": 2,
+      "status": "PASS",
+      "at": "2026-07-21T06:36:46.408Z",
+      "campaigns": 0,
+      "rukns": 49,
+      "karkuns": 493,
+      "karkunCounter": {
+        "nextKarkunNum": 494
+      },
+      "connections": 56,
+      "connectionMeta": {
+        "activeIntegrityVersion": 0,
+        "asnRepairVersion": 1,
+        "nextSequence": 90
+      }
+    },
+    {
+      "id": 3,
+      "status": "PASS",
+      "at": "2026-07-21T06:36:49.308Z",
+      "assignmentId": "asgn-1784615809094-q93wr",
+      "assignmentNumber": "ASN-000090",
+      "ruknId": "R001",
+      "karkunId": "kr-002"
+    },
+    {
+      "id": 4,
+      "status": "PASS",
+      "at": "2026-07-21T06:36:49.606Z",
+      "path": "connections/asgn-1784615809094-q93wr",
+      "data": {
+        "updatedAt": "2026-07-21T06:36:48.578Z",
+        "remarks": "KC-0061-final-validation",
+        "assignedBy": "Administrator",
+        "createdAt": "2026-07-21T06:36:48.578Z",
+        "ruknId": "R001",
+        "effectiveFrom": "2026-07-21",
+        "karkunId": "kr-002",
+        "status": "Active",
+        "assignmentNumber": "ASN-000090",
+        "assignedDate": "2026-07-21",
+        "assignmentId": "asgn-1784615809094-q93wr"
+      }
+    },
+    {
+      "id": 5,
+      "status": "PASS",
+      "at": "2026-07-21T06:36:49.607Z",
+      "assigned": "ASN-000090",
+      "baselineHighest": "ASN-000079"
+    },
+    {
+      "id": 6,
+      "status": "PASS",
+      "at": "2026-07-21T06:36:49.922Z",
+      "ruknId": "R001",
+      "before": 0,
+      "after": 1
+    },
+    {
+      "id": 7,
+      "status": "PASS",
+      "at": "2026-07-21T06:36:49.928Z",
+      "message": "Admin signed out"
+    },
+    {
+      "id": 8,
+      "status": "PASS",
+      "at": "2026-07-21T06:36:52.873Z",
+      "uid": "50qc0gA3d8TBAOodwgtuXRMPoPp2",
+      "phone": "+917975818814",
+      "role": "rukn",
+      "ruknId": "R028"
+    },
+    {
+      "id": 9,
+      "status": "PASS",
+      "at": "2026-07-21T06:36:55.897Z",
+      "assignmentId": "asgn-1784615815566-a4it2",
+      "assignmentNumber": "ASN-000091",
+      "ruknId": "R028",
+      "karkunId": "kr-004"
+    },
+    {
+      "id": 10,
+      "status": "PASS",
+      "at": "2026-07-21T06:36:57.245Z",
+      "ruknExists": true,
+      "karkunsAssigned": 2,
+      "karkunsUnassignedPool": 450,
+      "connections": 3,
+      "connectionMeta": {
+        "activeIntegrityVersion": 0,
+        "asnRepairVersion": 1,
+        "nextSequence": 92
+      }
+    },
+    {
+      "id": 11,
+      "status": "PASS",
+      "at": "2026-07-21T06:36:57.582Z",
+      "ruknId": "R028",
+      "connectedBefore": 2,
+      "connectedAfter": 3,
+      "nextSequenceBefore": 90,
+      "nextSequenceAfter": 92,
+      "adminAssignment": "ASN-000090",
+      "ruknAssignment": "ASN-000091"
+    },
+    {
+      "id": "summary",
+      "status": "PASS",
+      "at": "2026-07-21T06:36:57.583Z",
+      "message": "All 11 validation steps passed"
+    }
+  ],
+  "failures": [],
+  "recommendClose": true,
+  "finishedAt": "2026-07-21T06:36:57.583Z",
+  "adminAssignment": {
+    "assignmentId": "asgn-1784615809094-q93wr",
+    "assignmentNumber": "ASN-000090",
+    "nextSequence": 91,
+    "payload": {
+      "assignmentId": "asgn-1784615809094-q93wr",
+      "assignmentNumber": "ASN-000090",
+      "ruknId": "R001",
+      "karkunId": "kr-002",
+      "status": "Active",
+      "assignedBy": "Administrator",
+      "effectiveFrom": "2026-07-21",
+      "assignedDate": "2026-07-21",
+      "createdAt": "2026-07-21T06:36:48.578Z",
+      "updatedAt": "2026-07-21T06:36:48.578Z",
+      "remarks": "KC-0061-final-validation"
+    }
+  },
+  "ruknAssignment": {
+    "assignmentId": "asgn-1784615815566-a4it2",
+    "assignmentNumber": "ASN-000091",
+    "nextSequence": 92,
+    "payload": {
+      "assignmentId": "asgn-1784615815566-a4it2",
+      "assignmentNumber": "ASN-000091",
+      "ruknId": "R028",
+      "karkunId": "kr-004",
+      "status": "Active",
+      "assignedBy": "Rukn",
+      "effectiveFrom": "2026-07-21",
+      "assignedDate": "2026-07-21",
+      "createdAt": "2026-07-21T06:36:54.614Z",
+      "updatedAt": "2026-07-21T06:36:54.614Z",
+      "remarks": "KC-0061-final-validation"
+    }
+  },
+  "baseline": {
+    "highestAsn": "ASN-000079",
+    "nextSequence": 90
+  }
+}

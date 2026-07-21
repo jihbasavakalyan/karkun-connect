@@ -1,0 +1,20 @@
+{
+  "ticket": "KC-0058.6",
+  "generatedAt": "2026-07-19T20:59:00.000Z",
+  "hosting": "https://karkun-connect-75c68.web.app/admin",
+  "reproducible": true,
+  "storeResetAfterGoodMetrics": false,
+  "observedSequence": [
+    "AdminHomePage mounts while hydrationReady=false (progressive shell)",
+    "CampaignProgress: loading (metricsReady=false) — correct gate",
+    "Connections: ready value 0/0 — NOT gated on hydration (bug)",
+    "hydrateStoresFromRepositories → connected=46 remaining=447",
+    "CampaignProgress: ready 46/447",
+    "Connections: ready 46/493",
+    "Visits/Pending/FollowUps/Development/Intervention: loading until backgroundReady",
+    "background ready → those widgets fill"
+  ],
+  "firstGoodMetricsSource": "hydrateStoresFromRepositories.complete",
+  "architecture": "mixed",
+  "smallestFix": "Gate Connections (and other MetricsService-backed health KPIs) on the same metricsReady/isHydrated flag as Campaign Progress so pre-hydrate renders show Loading instead of 0/0."
+}
