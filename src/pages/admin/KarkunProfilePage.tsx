@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { ROUTES } from '@/constants/routes'
 import { changeKarkunRuknAssignment } from '@/lib/assignmentEngine'
-import { updateKarkun } from '@/lib/peopleStore'
+import { persistKarkunDurable, updateKarkun } from '@/lib/peopleStore'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { usePeopleStore } from '@/hooks/usePeopleStore'
 import { getCurrentBaitulMaalStatus, updateBaitulMaal } from '@/services/baitulMaalService'
@@ -179,6 +179,13 @@ function KarkunProfileForm({ karkun, karkunId }: KarkunProfileFormProps) {
     }
 
     void (async () => {
+      // KC-0075 — success only after durable Firestore write (same as ProfileCompletionReminder).
+      const durable = await persistKarkunDurable(karkunId)
+      if (!durable.success) {
+        setError(durable.error ?? 'Unable to save Karkun details. Please try again.')
+        return
+      }
+
       const assignmentResult = await changeKarkunRuknAssignment(karkunId, assignedRuknId)
       if (!assignmentResult.success) {
         setError(assignmentResult.error ?? 'Unable to update connection.')

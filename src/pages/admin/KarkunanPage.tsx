@@ -13,6 +13,7 @@ import {
   bulkSetKarkunStatus,
   createKarkun,
   importKarkunsFromRows,
+  persistKarkunDurable,
   updateKarkun,
 } from '@/lib/peopleStore'
 import {
@@ -134,16 +135,17 @@ function KarkunGenderSection({
     const payload = { ...values, gender }
     const { assignedRuknId, ...karkunPayload } = payload
 
-    const result = editingKarkun
-      ? updateKarkun(editingKarkun.id, karkunPayload, 'Administrator', options)
+    const editingId = editingKarkun?.id ?? null
+    const result = editingId
+      ? updateKarkun(editingId, karkunPayload, 'Administrator', options)
       : createKarkun(karkunPayload)
 
     if (!result.success) {
       if (result.needsMobileConfirm && result.existingOwner) {
         setMobileOwner(result.existingOwner)
-        setMobileConflictContext(editingKarkun ? 'edit' : 'add')
+        setMobileConflictContext(editingId ? 'edit' : 'add')
         // Overwrite confirm only applies to Edit; Add never overwrites.
-        setPendingFormValues(editingKarkun ? values : null)
+        setPendingFormValues(editingId ? values : null)
         setFormError('')
         return
       }
@@ -152,8 +154,17 @@ function KarkunGenderSection({
     }
 
     void (async () => {
-      if (editingKarkun && assignedRuknId !== undefined) {
-        const assignmentResult = await changeKarkunRuknAssignment(editingKarkun.id, assignedRuknId)
+      // KC-0075 — edit success only after durable Firestore write.
+      if (editingId) {
+        const durable = await persistKarkunDurable(editingId)
+        if (!durable.success) {
+          setFormError(durable.error ?? 'Unable to save Karkun. Please try again.')
+          return
+        }
+      }
+
+      if (editingId && assignedRuknId !== undefined) {
+        const assignmentResult = await changeKarkunRuknAssignment(editingId, assignedRuknId)
         if (!assignmentResult.success) {
           setFormError(assignmentResult.error ?? 'Unable to update connection.')
           return
