@@ -16,6 +16,7 @@ export type ConnectStepName =
   | 'firestore.connectionMeta.transaction'
   | 'store.appendAssignment'
   | 'repo.connection.saveState'
+  | 'repo.connection.commitDocuments'
   | 'ui.toOperatorAssignmentError'
 
 type StepRecord = {

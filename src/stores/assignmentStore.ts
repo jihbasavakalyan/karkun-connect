@@ -122,6 +122,47 @@ function saveAssignments(): void {
   persistAssignmentState(assignments, nextAssignmentSequence)
 }
 
+/** KC-0062 — Persist only affected connection docs (no connectionMeta / full-collection batch). */
+function persistAssignmentRecords(records: AssignmentRecord[]): void {
+  const commit = getRepositories().connection.commitConnectionDocuments
+  if (commit) {
+    traceRepositorySnapshot('assignment_repository', {
+      caller: 'assignmentStore.persistAssignmentRecords',
+      sourceOfTruth: 'Derived Calculation',
+      assignmentCount: records.length,
+      targetedIds: records.map((record) => record.assignmentId),
+    })
+    void (async () => {
+      const { connectStepEnter, connectStepExit, connectStepException } = await import(
+        '@/lib/debug/kc0061ConnectTrace'
+      )
+      const span = connectStepEnter('repo.connection.commitDocuments', {
+        assignmentIds: records.map((record) => record.assignmentId),
+        count: records.length,
+      })
+      try {
+        const result = await commit(records)
+        if (!result.ok) {
+          connectStepException('repo.connection.commitDocuments', result.error.cause ?? result.error, {
+            errorCode: result.error.code,
+            errorMessage: result.error.message,
+          })
+          connectStepExit(span, 'repo.connection.commitDocuments', { ok: false })
+          console.error('[assignmentStore.persistAssignmentRecords]', result.error)
+          return
+        }
+        connectStepExit(span, 'repo.connection.commitDocuments', { ok: true })
+      } catch (error) {
+        connectStepException('repo.connection.commitDocuments', error)
+        connectStepExit(span, 'repo.connection.commitDocuments', { ok: false })
+        console.error('[assignmentStore.persistAssignmentRecords]', error)
+      }
+    })()
+    return
+  }
+  saveAssignments()
+}
+
 /** Re-read assignments from repository (simulates page reload). */
 export function reloadAssignmentStoreFromPersistence(): void {
   const beforeCount = assignments.length
@@ -354,7 +395,7 @@ export function appendAssignment(record: AssignmentRecord): AssignmentRecord {
   assertUniqueAssignmentNumbers([record, ...assignments])
   assertAtMostOneActivePerKarkun([record, ...assignments])
   assignments.unshift(record)
-  saveAssignments()
+  persistAssignmentRecords([record])
   traceStoreSnapshot('assignment_store', {
     caller: 'appendAssignment',
     sourceOfTruth: 'Derived Calculation',
@@ -429,7 +470,6 @@ export function applyInPlaceTransfer(input: {
   assertUniqueAssignmentNumbers([input.historyMarker, ...assignments])
   assertAtMostOneActivePerKarkun(assignments)
   assignments.unshift(input.historyMarker)
-  saveAssignments()
   notifyAssignmentStoreChange()
   return record
 }
@@ -455,7 +495,7 @@ export function patchAssignmentRecord(
   if (!record) return undefined
   Object.assign(record, patch)
   record.updatedAt = patch.updatedAt ?? new Date().toISOString()
-  saveAssignments()
+  persistAssignmentRecords([record])
   notifyAssignmentStoreChange()
   return record
 }
@@ -497,7 +537,7 @@ export function updateAssignmentStatus(
   if (updates.endedDate !== undefined) record.endedDate = updates.endedDate
   record.updatedAt = updates.updatedAt ?? new Date().toISOString()
 
-  saveAssignments()
+  persistAssignmentRecords([record])
   notifyAssignmentStoreChange()
   return record
 }
