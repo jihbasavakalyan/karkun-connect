@@ -21,6 +21,7 @@ import { PendingKarkunRequestQueue } from '@/components/admin/PendingKarkunReque
 import { dashState03WidgetRender } from '@/lib/debug/kc00586DashboardStateProbe'
 import { AdminHealthKpiCard } from './AdminHealthKpiCard'
 import { resolveAdminHealthKpiPending } from './dashboardMetricReadiness'
+import { LiveActivityFeed } from './LiveActivityFeed'
 import { McProgressRing } from './McProgressRing'
 
 type AdminCommandCenterProps = {
@@ -190,7 +191,7 @@ export function AdminCommandCenter({
 }: AdminCommandCenterProps) {
   const { assignmentVersion } = useAssignmentEngine()
   const backgroundReady = useBackgroundHydration()
-  const [showAllActivity, setShowAllActivity] = useState(false)
+  const [systemHistoryOpen, setSystemHistoryOpen] = useState(false)
 
   const healthKpis = useMemo(() => {
     void assignmentVersion
@@ -285,11 +286,11 @@ export function AdminCommandCenter({
   const maleMetrics = useMemo(() => summarizeRukns(maleRukns), [maleRukns])
   const femaleMetrics = useMemo(() => summarizeRukns(femaleRukns), [femaleRukns])
 
-  const activity = useMemo(() => {
+  const systemHistory = useMemo(() => {
     void assignmentVersion
     if (!backgroundReady) return []
-    return buildAdminRecentActivityView(showAllActivity ? 20 : 8)
-  }, [assignmentVersion, showAllActivity, backgroundReady])
+    return buildAdminRecentActivityView(8)
+  }, [assignmentVersion, backgroundReady])
 
   return (
     <div className="exdash-stack">
@@ -389,47 +390,7 @@ export function AdminCommandCenter({
         )}
       </section>
 
-      <section className="exdash-panel exdash-history-panel" aria-label="Recent activity history">
-        <div className="exdash-section-head">
-          <h2 className="exdash-section-title">History</h2>
-          <Link to={ROUTES.ADMIN_COMMUNICATION} className="exdash-section-link">
-            Full log →
-          </Link>
-        </div>
-        {!backgroundReady ? (
-          <p className="exdash-muted" aria-busy="true">
-            Loading campaign data…
-          </p>
-        ) : activity.length === 0 ? (
-          <p className="exdash-muted">No recent campaign activity.</p>
-        ) : (
-          <>
-            <ul className="exdash-history-timeline">
-              {activity.map((item) => {
-                const tone = activityTone(item.message)
-                return (
-                  <li key={item.id} className={`exdash-history-item exdash-history-${tone}`}>
-                    <span className="exdash-history-dot" aria-hidden="true" />
-                    <div className="exdash-history-body">
-                      <p className="exdash-history-message">{item.message}</p>
-                      <p className="exdash-history-time">
-                        {new Date(item.timestamp).toLocaleString()}
-                      </p>
-                    </div>
-                  </li>
-                )
-              })}
-            </ul>
-            <button
-              type="button"
-              className="exdash-expand-btn"
-              onClick={() => setShowAllActivity((open) => !open)}
-            >
-              {showAllActivity ? 'Show less' : 'Show more history'}
-            </button>
-          </>
-        )}
-      </section>
+      <LiveActivityFeed ready={backgroundReady} limit={8} />
 
       {metricsReady ? (
         <section className="exdash-panel exdash-progress-aside" aria-label="Campaign progress summary">
@@ -462,6 +423,46 @@ export function AdminCommandCenter({
           </div>
         </section>
       ) : null}
+
+      <section className="exdash-system-history" aria-label="Recent system history">
+        <button
+          type="button"
+          className="exdash-system-history-toggle"
+          aria-expanded={systemHistoryOpen}
+          onClick={() => setSystemHistoryOpen((open) => !open)}
+        >
+          <span>
+            Recent System History ({systemHistory.length || 0})
+          </span>
+          <span aria-hidden="true">{systemHistoryOpen ? '▲ Collapse' : '▼ Expand'}</span>
+        </button>
+        {systemHistoryOpen ? (
+          !backgroundReady ? (
+            <p className="exdash-muted mt-2" aria-busy="true">
+              Loading…
+            </p>
+          ) : systemHistory.length === 0 ? (
+            <p className="exdash-muted mt-2">No system history yet.</p>
+          ) : (
+            <ul className="exdash-system-history-list">
+              {systemHistory.map((item) => (
+                <li
+                  key={item.id}
+                  className={`exdash-system-history-item exdash-history-${activityTone(item.message)}`}
+                >
+                  <span className="exdash-history-dot" aria-hidden="true" />
+                  <div>
+                    <p className="exdash-system-history-message">{item.message}</p>
+                    <p className="exdash-history-time">
+                      {new Date(item.timestamp).toLocaleString()}
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )
+        ) : null}
+      </section>
     </div>
   )
 }
