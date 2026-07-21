@@ -69,5 +69,6 @@ export type SettingsSectionId =
   | 'privacy'
   | 'campaign'
   | 'data'
+  | 'maintenance'
   | 'about'
   | 'integrations'

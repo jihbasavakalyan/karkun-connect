@@ -6,6 +6,7 @@ import { AppearanceSettingsSection } from './AppearanceSettingsSection'
 import { CampaignSettingsSection } from './CampaignSettingsSection'
 import { DataManagementSettingsSection } from './DataManagementSettingsSection'
 import { IntegrationsSettingsSection } from './IntegrationsSettingsSection'
+import { MaintenanceSettingsSection } from './MaintenanceSettingsSection'
 import { NotificationSettingsSection } from './NotificationSettingsSection'
 import { PrivacySettingsSection } from './PrivacySettingsSection'
 import { ProfileSettingsSection } from './ProfileSettingsSection'
@@ -25,6 +26,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'privacy', label: 'Privacy' },
   { id: 'campaign', label: 'Campaign', adminOnly: true },
   { id: 'data', label: 'Data', adminOnly: true },
+  { id: 'maintenance', label: 'Maintenance', adminOnly: true },
   { id: 'about', label: 'About' },
   { id: 'integrations', label: 'Integrations' },
 ]
@@ -78,6 +80,9 @@ export function SettingsExperience({ role }: SettingsExperienceProps) {
         ) : null}
         {resolvedActive === 'data' && role === 'administrator' ? (
           <DataManagementSettingsSection />
+        ) : null}
+        {resolvedActive === 'maintenance' && role === 'administrator' ? (
+          <MaintenanceSettingsSection />
         ) : null}
         {resolvedActive === 'about' ? <AboutSettingsSection role={role} /> : null}
         {resolvedActive === 'integrations' ? <IntegrationsSettingsSection /> : null}
