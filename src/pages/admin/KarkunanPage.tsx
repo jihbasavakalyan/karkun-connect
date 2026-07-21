@@ -265,10 +265,16 @@ function KarkunGenderSection({
           management.clearSelection()
         }}
         onUnassign={() => {
-          for (const id of management.selectedIds) {
-            adminUnassignKarkun(id)
-          }
-          management.clearSelection()
+          void (async () => {
+            for (const id of management.selectedIds) {
+              const result = await adminUnassignKarkun(id)
+              if (!result.success) {
+                setFormError(result.error ?? 'Unable to disconnect.')
+                return
+              }
+            }
+            management.clearSelection()
+          })()
         }}
         onMarkBaitulMaalPaid={() => setBulkBaitulMaalStatus('Paid')}
         onMarkBaitulMaalPending={() => setBulkBaitulMaalStatus('Pending')}

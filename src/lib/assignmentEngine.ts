@@ -124,11 +124,11 @@ function mapReleaseToReplacement(reason: ReleaseReason): ReplacementReason {
   return 'Other'
 }
 
-export function releaseKarkun(
+export async function releaseKarkun(
   karkunId: string,
   ruknId: string,
   releaseReason: ReleaseReason,
-): AssignKarkunResult {
+): Promise<AssignKarkunResult> {
   return removeAssignment({
     ruknId,
     karkunId,
@@ -155,14 +155,14 @@ export async function replaceKarkun(
   })
 }
 
-export function adminUnassignKarkun(
+export async function adminUnassignKarkun(
   karkunId: string,
   options?: {
     removalReason?: RemovalReason
     remarks?: string
     effectiveFrom?: string
   },
-): AssignKarkunResult {
+): Promise<AssignKarkunResult> {
   const active = getAllAssignments().find(
     (record) => record.karkunId === karkunId && record.status === 'Active',
   )

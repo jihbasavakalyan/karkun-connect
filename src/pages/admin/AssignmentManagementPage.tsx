@@ -194,13 +194,13 @@ export function AssignmentManagementPage() {
       .finally(() => setAssignLoading(false))
   }
 
-  const handleRemove = (input: {
+  const handleRemove = async (input: {
     effectiveFrom: string
     removalReason: import('@/types/assignment').RemovalReason
     remarks?: string
   }) => {
     if (!selectedRukn || !removingKarkun) return
-    const result = removeAssignment({
+    const result = await removeAssignment({
       ruknId: selectedRukn.id,
       karkunId: removingKarkun.id,
       effectiveFrom: input.effectiveFrom,

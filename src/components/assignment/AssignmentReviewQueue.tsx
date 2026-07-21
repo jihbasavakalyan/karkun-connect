@@ -72,8 +72,8 @@ export function AssignmentReviewQueue() {
     )
   }
 
-  const handleRelease = (request: AssignmentReviewRequest) => {
-    const result = removeAssignment({
+  const handleRelease = async (request: AssignmentReviewRequest) => {
+    const result = await removeAssignment({
       ruknId: request.ruknId,
       karkunId: request.karkunId,
       effectiveFrom: new Date().toISOString().slice(0, 10),

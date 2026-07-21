@@ -124,10 +124,10 @@ export function unarchiveRukn(ruknId: string, restoredBy = 'Administrator'): Arc
   return { ok: true, id: ruknId, kind: 'rukn' }
 }
 
-export function archiveAssignment(
+export async function archiveAssignment(
   assignmentId: string,
   archivedBy = 'Administrator',
-): ArchiveResult {
+): Promise<ArchiveResult> {
   const assignment = getAssignmentById(assignmentId)
   if (!assignment) return { ok: false, error: 'Assignment not found.' }
   if (assignment.isArchived) return { ok: false, error: 'Assignment is already archived.' }
@@ -139,12 +139,19 @@ export function archiveAssignment(
   }
 
   const patch = buildArchivePatch(archivedBy)
-  const updated = patchAssignmentRecord(assignmentId, {
-    ...patch,
-    updatedAt: nowIso(),
-    version: bumpVersion(assignment.version),
-  })
-  if (!updated) return { ok: false, error: 'Could not archive assignment.' }
+  try {
+    const updated = await patchAssignmentRecord(assignmentId, {
+      ...patch,
+      updatedAt: nowIso(),
+      version: bumpVersion(assignment.version),
+    })
+    if (!updated) return { ok: false, error: 'Could not archive assignment.' }
+  } catch (error) {
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : 'Could not archive assignment.',
+    }
+  }
 
   appendConnectionLedgerEntry({
     eventType: 'ARCHIVED',

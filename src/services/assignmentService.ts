@@ -78,6 +78,48 @@ function nowIso(): string {
   return new Date().toISOString()
 }
 
+const CONNECTION_PERSIST_USER_ERROR =
+  'Unable to save connection. Please try again. If the problem continues, contact Administrator.'
+
+function logOrphanedAsnOnPersistFailure(error: unknown): void {
+  if (
+    typeof error === 'object' &&
+    error !== null &&
+    'assignmentNumber' in error &&
+    typeof (error as { assignmentNumber: unknown }).assignmentNumber === 'string'
+  ) {
+    console.warn('[KC-0063] ASN allocated but connection doc not persisted', {
+      assignmentNumber: (error as { assignmentNumber: string }).assignmentNumber,
+      assignmentId:
+        'assignmentId' in error
+          ? (error as { assignmentId?: string }).assignmentId
+          : undefined,
+      code: 'code' in error ? (error as { code?: string }).code : undefined,
+    })
+  }
+}
+
+function operatorConnectionPersistError(error: unknown): string {
+  logOrphanedAsnOnPersistFailure(error)
+  if (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    (error as { code: unknown }).code === 'commit-timeout'
+  ) {
+    return 'Connection save timed out. Please try again.'
+  }
+  return CONNECTION_PERSIST_USER_ERROR
+}
+
+function isConnectionPersistFailure(error: unknown): boolean {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    ('repositoryError' in error || ('assignmentNumber' in error && 'assignmentId' in error))
+  )
+}
+
 async function createAssignmentRecord(
   input: Omit<
     AssignmentRecord,
@@ -416,7 +458,7 @@ export async function assignRukn(input: AssignInput): Promise<AssignmentResult> 
         repository: 'assignmentStore.appendAssignment',
         firestorePath: 'connections/{assignmentId}',
       })
-      assignment = appendAssignment(
+      assignment = await appendAssignment(
         await createAssignmentRecord({
           ruknId: input.ruknId,
           karkunId: input.karkunId,
@@ -457,6 +499,9 @@ export async function assignRukn(input: AssignInput): Promise<AssignmentResult> 
         aborted: 'create_or_append',
         error: error instanceof Error ? error.message : String(error),
       })
+      if (isConnectionPersistFailure(error)) {
+        return { success: false, error: operatorConnectionPersistError(error) }
+      }
       return {
         success: false,
         error:
@@ -538,19 +583,38 @@ export async function replaceAssignment(input: ReplaceInput): Promise<Assignment
     : getActiveAssignmentForRukn(input.ruknId))!
   const endedAt = input.effectiveFrom
   const timestamp = nowIso()
+  const priorCurrent = {
+    status: current.status,
+    replacementReason: current.replacementReason,
+    removalReason: current.removalReason,
+    remarks: current.remarks,
+    endedDate: current.endedDate,
+    updatedAt: current.updatedAt,
+  }
 
-  updateAssignmentStatus(current.assignmentId, 'Replaced', {
-    replacementReason: input.replacementReason,
-    remarks: input.remarks,
-    endedDate: endedAt,
-    updatedAt: timestamp,
-  })
+  try {
+    await updateAssignmentStatus(current.assignmentId, 'Replaced', {
+      replacementReason: input.replacementReason,
+      remarks: input.remarks,
+      endedDate: endedAt,
+      updatedAt: timestamp,
+    })
+  } catch (error) {
+    return {
+      success: false,
+      error: isConnectionPersistFailure(error)
+        ? operatorConnectionPersistError(error)
+        : error instanceof Error
+          ? error.message
+          : 'Unable to save connection replacement.',
+    }
+  }
 
   syncKarkunRegistryFromAssignments(current.karkunId)
 
   let newAssignment
   try {
-    newAssignment = appendAssignment(
+    newAssignment = await appendAssignment(
       await createAssignmentRecord({
         ruknId: input.ruknId,
         karkunId: input.newKarkunId,
@@ -560,10 +624,22 @@ export async function replaceAssignment(input: ReplaceInput): Promise<Assignment
       }),
     )
   } catch (error) {
+    try {
+      await updateAssignmentStatus(current.assignmentId, priorCurrent.status, {
+        replacementReason: priorCurrent.replacementReason,
+        removalReason: priorCurrent.removalReason,
+        remarks: priorCurrent.remarks,
+        endedDate: priorCurrent.endedDate,
+        updatedAt: priorCurrent.updatedAt,
+      })
+    } catch (revertError) {
+      console.error('[assignmentService.replaceAssignment] failed to revert Replaced status', revertError)
+    }
     return {
       success: false,
-      error:
-        error instanceof Error
+      error: isConnectionPersistFailure(error)
+        ? operatorConnectionPersistError(error)
+        : error instanceof Error
           ? error.message
           : 'This Karkun is already connected to a Rukn. Use Transfer to reassign.',
     }
@@ -741,7 +817,7 @@ export async function transferAssignment(input: TransferInput): Promise<Assignme
   }
 }
 
-export function removeAssignment(input: RemoveInput): AssignmentResult {
+export async function removeAssignment(input: RemoveInput): Promise<AssignmentResult> {
   const validation = validateRemoveInput(input)
   if (!validation.valid) {
     return { success: false, error: validation.error }
@@ -754,12 +830,23 @@ export function removeAssignment(input: RemoveInput): AssignmentResult {
     : getActiveAssignmentForRukn(input.ruknId))!
   const timestamp = nowIso()
 
-  updateAssignmentStatus(current.assignmentId, 'Unassigned', {
-    removalReason: input.removalReason,
-    remarks: input.remarks,
-    endedDate: input.effectiveFrom,
-    updatedAt: timestamp,
-  })
+  try {
+    await updateAssignmentStatus(current.assignmentId, 'Unassigned', {
+      removalReason: input.removalReason,
+      remarks: input.remarks,
+      endedDate: input.effectiveFrom,
+      updatedAt: timestamp,
+    })
+  } catch (error) {
+    return {
+      success: false,
+      error: isConnectionPersistFailure(error)
+        ? operatorConnectionPersistError(error)
+        : error instanceof Error
+          ? error.message
+          : 'Unable to disconnect.',
+    }
+  }
 
   syncKarkunRegistryFromAssignments(current.karkunId)
 

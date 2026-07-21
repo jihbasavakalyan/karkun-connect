@@ -1,6 +1,11 @@
 import type { AssignmentRecord, AssignmentStatus } from '@/types/assignment'
 import { getRepositories } from '@/repositories/provider'
-import { unwrapRepository } from '@/repositories/errors'
+import {
+  repositoryErr,
+  repositoryOk,
+  unwrapRepository,
+  type RepositoryResult,
+} from '@/repositories/errors'
 import { canonicalizeConnectionRecords } from '@/lib/connections/canonicalizeConnectionRecords'
 import {
   assertUniqueAssignmentNumbers,
@@ -122,8 +127,17 @@ function saveAssignments(): void {
   persistAssignmentState(assignments, nextAssignmentSequence)
 }
 
-/** KC-0062 — Persist only affected connection docs (no connectionMeta / full-collection batch). */
-function persistAssignmentRecords(records: AssignmentRecord[]): void {
+const PERSIST_COMMIT_TIMEOUT_MS = 15_000
+
+function persistCommitTimeoutError(): Error & { code: string } {
+  return Object.assign(new Error('Connection save timed out.'), { code: 'commit-timeout' })
+}
+
+/** KC-0063 — Await connection doc commit; reject on timeout instead of fire-and-forget. */
+async function persistAssignmentRecords(
+  records: AssignmentRecord[],
+  timeoutMs = PERSIST_COMMIT_TIMEOUT_MS,
+): Promise<RepositoryResult<void>> {
   const commit = getRepositories().connection.commitConnectionDocuments
   if (commit) {
     traceRepositorySnapshot('assignment_repository', {
@@ -132,35 +146,58 @@ function persistAssignmentRecords(records: AssignmentRecord[]): void {
       assignmentCount: records.length,
       targetedIds: records.map((record) => record.assignmentId),
     })
-    void (async () => {
-      const { connectStepEnter, connectStepExit, connectStepException } = await import(
-        '@/lib/debug/kc0061ConnectTrace'
-      )
-      const span = connectStepEnter('repo.connection.commitDocuments', {
-        assignmentIds: records.map((record) => record.assignmentId),
-        count: records.length,
-      })
-      try {
-        const result = await commit(records)
-        if (!result.ok) {
-          connectStepException('repo.connection.commitDocuments', result.error.cause ?? result.error, {
-            errorCode: result.error.code,
-            errorMessage: result.error.message,
-          })
-          connectStepExit(span, 'repo.connection.commitDocuments', { ok: false })
-          console.error('[assignmentStore.persistAssignmentRecords]', result.error)
-          return
-        }
-        connectStepExit(span, 'repo.connection.commitDocuments', { ok: true })
-      } catch (error) {
-        connectStepException('repo.connection.commitDocuments', error)
-        connectStepExit(span, 'repo.connection.commitDocuments', { ok: false })
-        console.error('[assignmentStore.persistAssignmentRecords]', error)
+    const { connectStepEnter, connectStepExit, connectStepException } = await import(
+      '@/lib/debug/kc0061ConnectTrace'
+    )
+    const span = connectStepEnter('repo.connection.commitDocuments', {
+      assignmentIds: records.map((record) => record.assignmentId),
+      count: records.length,
+    })
+    try {
+      const result = await Promise.race([
+        commit(records),
+        new Promise<RepositoryResult<void>>((resolve) => {
+          setTimeout(() => {
+            resolve(
+              repositoryErr(
+                'StorageFailure',
+                'Connection save timed out.',
+                persistCommitTimeoutError(),
+              ),
+            )
+          }, timeoutMs)
+        }),
+      ])
+      if (!result.ok) {
+        const errorCode =
+          typeof result.error.cause === 'object' &&
+          result.error.cause !== null &&
+          'code' in result.error.cause
+            ? String((result.error.cause as { code: unknown }).code)
+            : result.error.code
+        connectStepException('repo.connection.commitDocuments', result.error.cause ?? result.error, {
+          errorCode,
+          errorMessage: result.error.message,
+        })
+        connectStepExit(span, 'repo.connection.commitDocuments', { ok: false, errorCode })
+        console.error('[assignmentStore.persistAssignmentRecords]', result.error)
+        return result
       }
-    })()
-    return
+      connectStepExit(span, 'repo.connection.commitDocuments', { ok: true })
+      return result
+    } catch (error) {
+      connectStepException('repo.connection.commitDocuments', error)
+      connectStepExit(span, 'repo.connection.commitDocuments', { ok: false })
+      console.error('[assignmentStore.persistAssignmentRecords]', error)
+      return repositoryErr(
+        'Unexpected',
+        error instanceof Error ? error.message : 'Connection save failed.',
+        error,
+      )
+    }
   }
   saveAssignments()
+  return repositoryOk(undefined)
 }
 
 /** Re-read assignments from repository (simulates page reload). */
@@ -350,7 +387,7 @@ export function getAssignmentHistoryForKarkun(karkunId: string): AssignmentRecor
     .sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom))
 }
 
-export function appendAssignment(record: AssignmentRecord): AssignmentRecord {
+export async function appendAssignment(record: AssignmentRecord): Promise<AssignmentRecord> {
   if (assignments.some((item) => item.assignmentId === record.assignmentId)) {
     throw new Error(`Duplicate connection id ${record.assignmentId}`)
   }
@@ -395,7 +432,26 @@ export function appendAssignment(record: AssignmentRecord): AssignmentRecord {
   assertUniqueAssignmentNumbers([record, ...assignments])
   assertAtMostOneActivePerKarkun([record, ...assignments])
   assignments.unshift(record)
-  persistAssignmentRecords([record])
+
+  const persistResult = await persistAssignmentRecords([record])
+  if (!persistResult.ok) {
+    const index = assignments.findIndex((item) => item.assignmentId === record.assignmentId)
+    if (index >= 0) {
+      assignments.splice(index, 1)
+    }
+    throw Object.assign(new Error(persistResult.error.message || 'Connection save failed.'), {
+      code:
+        typeof persistResult.error.cause === 'object' &&
+        persistResult.error.cause !== null &&
+        'code' in persistResult.error.cause
+          ? String((persistResult.error.cause as { code: unknown }).code)
+          : persistResult.error.code,
+      repositoryError: persistResult.error,
+      assignmentNumber: record.assignmentNumber,
+      assignmentId: record.assignmentId,
+    })
+  }
+
   traceStoreSnapshot('assignment_store', {
     caller: 'appendAssignment',
     sourceOfTruth: 'Derived Calculation',
@@ -475,7 +531,7 @@ export function applyInPlaceTransfer(input: {
 }
 
 /** KC-0058 — patch non-status fields (e.g. soft-archive metadata) without changing lifecycle status. */
-export function patchAssignmentRecord(
+export async function patchAssignmentRecord(
   assignmentId: string,
   patch: Partial<
     Pick<
@@ -490,17 +546,44 @@ export function patchAssignmentRecord(
       | 'remarks'
     >
   >,
-): AssignmentRecord | undefined {
+): Promise<AssignmentRecord | undefined> {
   const record = assignments.find((item) => item.assignmentId === assignmentId)
   if (!record) return undefined
+
+  const snapshot = {
+    isArchived: record.isArchived,
+    archivedAt: record.archivedAt,
+    archivedBy: record.archivedBy,
+    restoredAt: record.restoredAt,
+    restoredBy: record.restoredBy,
+    version: record.version,
+    updatedAt: record.updatedAt,
+    remarks: record.remarks,
+  }
+
   Object.assign(record, patch)
   record.updatedAt = patch.updatedAt ?? new Date().toISOString()
-  persistAssignmentRecords([record])
+
+  const persistResult = await persistAssignmentRecords([record])
+  if (!persistResult.ok) {
+    Object.assign(record, snapshot)
+    throw Object.assign(new Error(persistResult.error.message || 'Connection save failed.'), {
+      code:
+        typeof persistResult.error.cause === 'object' &&
+        persistResult.error.cause !== null &&
+        'code' in persistResult.error.cause
+          ? String((persistResult.error.cause as { code: unknown }).code)
+          : persistResult.error.code,
+      repositoryError: persistResult.error,
+      assignmentId,
+    })
+  }
+
   notifyAssignmentStoreChange()
   return record
 }
 
-export function updateAssignmentStatus(
+export async function updateAssignmentStatus(
   assignmentId: string,
   status: AssignmentStatus,
   updates: Partial<
@@ -509,10 +592,19 @@ export function updateAssignmentStatus(
       'replacementReason' | 'removalReason' | 'remarks' | 'endedDate' | 'updatedAt'
     >
   >,
-): AssignmentRecord | undefined {
+): Promise<AssignmentRecord | undefined> {
   const record = assignments.find((item) => item.assignmentId === assignmentId)
   if (!record) {
     return undefined
+  }
+
+  const snapshot = {
+    status: record.status,
+    replacementReason: record.replacementReason,
+    removalReason: record.removalReason,
+    remarks: record.remarks,
+    endedDate: record.endedDate,
+    updatedAt: record.updatedAt,
   }
 
   const operationId = createIncidentOperationId('assignment-status-update')
@@ -531,13 +623,27 @@ export function updateAssignmentStatus(
   })
 
   record.status = status
-  if (updates.replacementReason !== undefined) record.replacementReason = updates.replacementReason
-  if (updates.removalReason !== undefined) record.removalReason = updates.removalReason
-  if (updates.remarks !== undefined) record.remarks = updates.remarks
-  if (updates.endedDate !== undefined) record.endedDate = updates.endedDate
+  if ('replacementReason' in updates) record.replacementReason = updates.replacementReason
+  if ('removalReason' in updates) record.removalReason = updates.removalReason
+  if ('remarks' in updates) record.remarks = updates.remarks
+  if ('endedDate' in updates) record.endedDate = updates.endedDate
   record.updatedAt = updates.updatedAt ?? new Date().toISOString()
 
-  persistAssignmentRecords([record])
+  const persistResult = await persistAssignmentRecords([record])
+  if (!persistResult.ok) {
+    Object.assign(record, snapshot)
+    throw Object.assign(new Error(persistResult.error.message || 'Connection save failed.'), {
+      code:
+        typeof persistResult.error.cause === 'object' &&
+        persistResult.error.cause !== null &&
+        'code' in persistResult.error.cause
+          ? String((persistResult.error.cause as { code: unknown }).code)
+          : persistResult.error.code,
+      repositoryError: persistResult.error,
+      assignmentId,
+    })
+  }
+
   notifyAssignmentStoreChange()
   return record
 }

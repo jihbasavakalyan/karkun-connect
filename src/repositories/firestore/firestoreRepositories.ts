@@ -1423,16 +1423,16 @@ export class ConnectionFirestoreRepository implements ConnectionRepository {
           sanitizeForFirestore(document),
         )
       }
-      connectionCache.set({
-        assignments: [...byId.values()],
-        nextSequence: cached.nextSequence,
-      })
       trackPendingWrite()
       try {
         await batch.commit()
       } finally {
         markPendingWriteComplete()
       }
+      connectionCache.set({
+        assignments: [...byId.values()],
+        nextSequence: cached.nextSequence,
+      })
       return repositoryOk(undefined)
     } catch (error) {
       return mapFirestoreError(error)
