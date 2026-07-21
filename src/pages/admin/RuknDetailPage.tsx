@@ -1,24 +1,41 @@
+import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { getRuknById } from '@/data/ruknMaster'
 import { getRuknAssignmentSummary } from '@/services/assignmentService'
 import { getAuditLogForPerson } from '@/lib/peopleAuditLog'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { ROUTES, adminAssignmentsPath } from '@/constants/routes'
 import { AssignmentHistoryTimeline } from '@/components/forms/assignment/AssignmentHistoryTimeline'
+import { ConnectedAssignmentDeskCard } from '@/components/forms/assignment/ConnectedAssignmentDeskCard'
+import { RemoveAssignmentModal } from '@/components/forms/assignment/RemoveAssignmentModal'
+import { TransferConnectionModal } from '@/components/forms/assignment/TransferConnectionModal'
 import { CommunicationActions } from '@/components/communication/CommunicationActions'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { useCommunication } from '@/hooks/useCommunication'
 import { getConnectionStatusLabel } from '@/lib/connectionLabels'
+import { changeKarkunRuknAssignment } from '@/lib/assignmentEngine'
+import {
+  toOperatorDisconnectError,
+  toOperatorTransferError,
+} from '@/lib/assignment/operatorFacingError'
 import { formatPersonStatus } from '@/types/people.types'
 import { EmptyState, PageHeader, PageShell, Icon } from '@/components/ui'
+
+type ModalMode = 'remove' | 'transfer' | null
 
 export function RuknDetailPage() {
   const { ruknId } = useParams<{ ruknId: string }>()
   const rukn = ruknId ? getRuknById(ruknId) : undefined
-  useAssignmentEngine()
+  const { removeAssignment, assignmentVersion } = useAssignmentEngine()
   const { sendIndividualMessage } = useCommunication()
+  void assignmentVersion
   const summary = ruknId ? getRuknAssignmentSummary(ruknId) : null
+
+  const [modalMode, setModalMode] = useState<ModalMode>(null)
+  const [removingKarkun, setRemovingKarkun] = useState<{ id: string; name: string } | null>(null)
+  const [actionError, setActionError] = useState('')
+  const [actionSuccess, setActionSuccess] = useState('')
+  const [transferLoading, setTransferLoading] = useState(false)
 
   if (!rukn) {
     return (
@@ -35,10 +52,74 @@ export function RuknDetailPage() {
 
   const mobileLabel = rukn.mobile.trim() ? rukn.mobile : 'Mobile Not Added'
   const auditLog = getAuditLogForPerson('rukn', rukn.id)
-  // Names follow canonical connected set (same count as Connected page / Dashboard).
-  const assignedKarkunNames = (summary?.activeAssignments ?? [])
-    .map((assignment) => getKarkunById(assignment.karkunId)?.name)
-    .filter((name): name is string => Boolean(name))
+  const activeAssignments = summary?.activeAssignments ?? []
+
+  const closeModal = () => {
+    setModalMode(null)
+    setActionError('')
+  }
+
+  const handleRemove = async (input: {
+    effectiveFrom: string
+    removalReason: import('@/types/assignment').RemovalReason
+    remarks?: string
+  }) => {
+    if (!removingKarkun) return
+    const result = await removeAssignment({
+      ruknId: rukn.id,
+      karkunId: removingKarkun.id,
+      effectiveFrom: input.effectiveFrom,
+      removalReason: input.removalReason,
+      remarks: input.remarks,
+      assignedBy: 'Administrator',
+    })
+    if (!result.success) {
+      setActionError(toOperatorDisconnectError(result.error))
+      return
+    }
+    setRemovingKarkun(null)
+    setActionSuccess('Disconnected successfully.')
+    closeModal()
+  }
+
+  const handleTransfer = async (input: {
+    newRuknId: string
+    effectiveFrom: string
+    transferReason: import('@/types/assignment').RemovalReason
+    remarks?: string
+  }) => {
+    if (!removingKarkun) {
+      setActionError('No Karkun selected for transfer.')
+      return
+    }
+    setTransferLoading(true)
+    setActionError('')
+    try {
+      const result = await changeKarkunRuknAssignment(
+        removingKarkun.id,
+        input.newRuknId,
+        'Administrator',
+        {
+          removalReason: input.transferReason,
+          remarks: input.remarks,
+          effectiveFrom: input.effectiveFrom,
+        },
+      )
+      if (!result.success) {
+        setActionError(toOperatorTransferError(result.error))
+        return
+      }
+      setRemovingKarkun(null)
+      setActionSuccess('Transferred successfully.')
+      closeModal()
+    } catch (error) {
+      setActionError(
+        toOperatorTransferError(error instanceof Error ? error.message : String(error)),
+      )
+    } finally {
+      setTransferLoading(false)
+    }
+  }
 
   return (
     <PageShell variant="narrow" className="max-w-4xl">
@@ -49,6 +130,12 @@ export function RuknDetailPage() {
         title={rukn.name}
         description={`${rukn.gender} · ${rukn.place} · ${mobileLabel}`}
       />
+
+      {actionSuccess ? (
+        <div className="ds-banner-success mb-4" role="status">
+          {actionSuccess}
+        </div>
+      ) : null}
 
       <section className="ds-section">
         <h2 className="ds-section-title">Contact</h2>
@@ -122,15 +209,13 @@ export function RuknDetailPage() {
           <dl className="mt-4 grid gap-4 sm:grid-cols-2 text-sm">
             <div>
               <dt className="text-secondary">Connection Status</dt>
-              <dd className="mt-1 font-medium text-text-heading">{getConnectionStatusLabel(summary.assignmentStatus)}</dd>
+              <dd className="mt-1 font-medium text-text-heading">
+                {getConnectionStatusLabel(summary.assignmentStatus)}
+              </dd>
             </div>
             <div>
-              <dt className="text-secondary">
-                Connected Karkuns ({summary.assignedKarkunCount})
-              </dt>
-              <dd className="mt-1 font-medium text-text-heading">
-                {assignedKarkunNames.length > 0 ? assignedKarkunNames.join(', ') : 'Not Connected'}
-              </dd>
+              <dt className="text-secondary">Connected Count</dt>
+              <dd className="mt-1 font-medium text-text-heading">{summary.assignedKarkunCount}</dd>
             </div>
             <div>
               <dt className="text-secondary">Connection Since</dt>
@@ -145,6 +230,35 @@ export function RuknDetailPage() {
               </dd>
             </div>
           </dl>
+
+          <div className="mt-6">
+            <h3 className="text-sm font-semibold text-text-heading">
+              Connected Karkuns ({summary.assignedKarkunCount})
+            </h3>
+            {activeAssignments.length > 0 ? (
+              <ul className="mt-3 space-y-2">
+                {activeAssignments.map((assignment) => (
+                  <ConnectedAssignmentDeskCard
+                    key={assignment.assignmentId}
+                    assignment={assignment}
+                    variant="detail"
+                    onTransfer={(karkun) => {
+                      setActionSuccess('')
+                      setRemovingKarkun(karkun)
+                      setModalMode('transfer')
+                    }}
+                    onDisconnect={(karkun) => {
+                      setActionSuccess('')
+                      setRemovingKarkun(karkun)
+                      setModalMode('remove')
+                    }}
+                  />
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-3 text-sm text-secondary">Not Connected</p>
+            )}
+          </div>
 
           <div className="mt-6">
             <AssignmentHistoryTimeline
@@ -174,6 +288,34 @@ export function RuknDetailPage() {
           </ul>
         </section>
       )}
+
+      <RemoveAssignmentModal
+        isOpen={modalMode === 'remove'}
+        rukn={rukn}
+        currentKarkunName={removingKarkun?.name ?? 'Unknown'}
+        error={actionError}
+        onClose={() => {
+          setRemovingKarkun(null)
+          closeModal()
+        }}
+        onSubmit={handleRemove}
+      />
+
+      <TransferConnectionModal
+        key={`transfer-${removingKarkun?.id ?? 'closed'}-${rukn.id}`}
+        isOpen={modalMode === 'transfer'}
+        karkunName={removingKarkun?.name ?? 'Unknown'}
+        currentRukn={rukn}
+        error={actionError}
+        loading={transferLoading}
+        onClose={() => {
+          if (transferLoading) return
+          setRemovingKarkun(null)
+          setActionError('')
+          closeModal()
+        }}
+        onSubmit={handleTransfer}
+      />
     </PageShell>
   )
 }

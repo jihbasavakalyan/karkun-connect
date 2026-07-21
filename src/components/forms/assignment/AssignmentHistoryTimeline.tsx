@@ -1,3 +1,4 @@
+import { useMemo, useState } from 'react'
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { getRuknById } from '@/data/ruknMaster'
 import { partitionConnectionPresentation } from '@/lib/connections/partitionConnectionPresentation'
@@ -24,6 +25,10 @@ function formatDate(iso: string): string {
     month: 'short',
     year: 'numeric',
   })
+}
+
+function dayKey(iso: string): string {
+  return new Date(iso).toISOString().slice(0, 10)
 }
 
 function HistoryCard({
@@ -83,6 +88,195 @@ function HistoryCard({
   )
 }
 
+function RemovedConnectionsGroup({
+  dateLabel,
+  records,
+  perspective,
+}: {
+  dateLabel: string
+  records: AssignmentRecord[]
+  perspective: 'rukn' | 'karkun'
+}) {
+  const [expanded, setExpanded] = useState(false)
+  const names = records.map((record) =>
+    perspective === 'rukn'
+      ? getKarkunById(record.karkunId)?.name ?? record.karkunId
+      : getRuknById(record.ruknId)?.name ?? record.ruknId,
+  )
+
+  return (
+    <li>
+      <article className="rounded-lg border border-border bg-surface-muted px-4 py-3">
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <div>
+            <p className="text-sm font-medium text-secondary">{dateLabel}</p>
+            <p className="mt-1 font-semibold text-text-heading">Connections Removed</p>
+            <p className="mt-1 text-sm text-secondary">
+              {records.length} Karkun{records.length === 1 ? '' : 's'}
+            </p>
+          </div>
+          <button
+            type="button"
+            className="text-sm font-semibold text-primary hover:underline"
+            aria-expanded={expanded}
+            onClick={() => setExpanded((value) => !value)}
+          >
+            {expanded ? '▲ Collapse' : '▼ Expand'}
+          </button>
+        </div>
+        {expanded ? (
+          <ul className="mt-3 space-y-1 border-t border-border/70 pt-3 text-sm text-text-heading">
+            {names.map((name, index) => (
+              <li key={`${records[index]!.assignmentId}-${name}`}>{name}</li>
+            ))}
+          </ul>
+        ) : null}
+      </article>
+    </li>
+  )
+}
+
+type HistoryItem =
+  | { kind: 'single'; record: AssignmentRecord }
+  | { kind: 'removed-group'; day: string; records: AssignmentRecord[] }
+
+function buildHistoryItems(
+  historical: AssignmentRecord[],
+  perspective: 'rukn' | 'karkun',
+): HistoryItem[] {
+  // KC-0068 — group consecutive same-day connection removals (presentation only).
+  const items: HistoryItem[] = []
+  let pendingGroup: AssignmentRecord[] = []
+  let pendingDay: string | null = null
+
+  const flushGroup = () => {
+    if (pendingGroup.length === 0) return
+    if (pendingGroup.length === 1) {
+      items.push({ kind: 'single', record: pendingGroup[0]! })
+    } else {
+      items.push({ kind: 'removed-group', day: pendingDay!, records: [...pendingGroup] })
+    }
+    pendingGroup = []
+    pendingDay = null
+  }
+
+  for (const record of historical) {
+    const isPlainRemoval =
+      perspective === 'rukn' &&
+      record.status === 'Unassigned' &&
+      record.removalReason !== 'Transferred'
+
+    if (isPlainRemoval) {
+      const key = dayKey(record.endedDate ?? record.updatedAt)
+      if (pendingDay === key) {
+        pendingGroup.push(record)
+      } else {
+        flushGroup()
+        pendingDay = key
+        pendingGroup = [record]
+      }
+      continue
+    }
+
+    flushGroup()
+    items.push({ kind: 'single', record })
+  }
+
+  flushGroup()
+  return items
+}
+
+function renderSingleHistoryItem(
+  record: AssignmentRecord,
+  perspective: 'rukn' | 'karkun',
+) {
+  const karkunName = getKarkunById(record.karkunId)?.name ?? record.karkunId
+  const ruknName = getRuknById(record.ruknId)?.name ?? record.ruknId
+
+  if (record.status === 'Replaced') {
+    return (
+      <HistoryCard
+        title={`Replaced — ${karkunName}`}
+        subtitle={`Replaced on ${formatDate(record.endedDate ?? record.updatedAt)}`}
+        assignmentNumber={record.assignmentNumber}
+        createdBy={record.assignedBy}
+        eventDate={record.endedDate ?? record.updatedAt}
+        reason={
+          record.replacementReason
+            ? getReplacementReasonLabel(record.replacementReason)
+            : undefined
+        }
+        remarks={record.remarks}
+      />
+    )
+  }
+
+  if (record.status === 'Unassigned') {
+    const isTransfer = record.removalReason === 'Transferred'
+    const survivingAsn =
+      record.remarks?.match(/Surviving connection:\s*(ASN-\d+)/i)?.[1] ??
+      record.assignmentNumber
+    return (
+      <HistoryCard
+        title={
+          isTransfer
+            ? `Transferred — ${perspective === 'rukn' ? karkunName : ruknName}`
+            : `Connection removed — ${perspective === 'rukn' ? karkunName : ruknName}`
+        }
+        subtitle={
+          isTransfer
+            ? `Transferred on ${formatDate(record.endedDate ?? record.updatedAt)}`
+            : `Removed on ${formatDate(record.endedDate ?? record.updatedAt)}`
+        }
+        assignmentNumber={survivingAsn || '—'}
+        createdBy={record.assignedBy}
+        eventDate={record.endedDate ?? record.updatedAt}
+        reason={
+          record.removalReason ? getRemovalReasonLabel(record.removalReason) : undefined
+        }
+        remarks={record.remarks}
+      />
+    )
+  }
+
+  if (record.status === 'Suspended') {
+    return (
+      <HistoryCard
+        title={`Suspended — ${perspective === 'rukn' ? karkunName : ruknName}`}
+        subtitle={`Since ${formatDate(record.effectiveFrom)}`}
+        assignmentNumber={record.assignmentNumber}
+        createdBy={record.assignedBy}
+        eventDate={record.effectiveFrom}
+        remarks={record.remarks}
+      />
+    )
+  }
+
+  if (record.status === 'Completed') {
+    return (
+      <HistoryCard
+        title={`Completed — ${perspective === 'rukn' ? karkunName : ruknName}`}
+        subtitle={`Completed on ${formatDate(record.endedDate ?? record.updatedAt)}`}
+        assignmentNumber={record.assignmentNumber}
+        createdBy={record.assignedBy}
+        eventDate={record.endedDate ?? record.updatedAt}
+        remarks={record.remarks}
+      />
+    )
+  }
+
+  return (
+    <HistoryCard
+      title={`${record.status} — ${perspective === 'rukn' ? karkunName : ruknName}`}
+      subtitle={`Updated ${formatDate(record.updatedAt || record.effectiveFrom)}`}
+      assignmentNumber={record.assignmentNumber}
+      createdBy={record.assignedBy}
+      eventDate={record.updatedAt || record.effectiveFrom}
+      remarks={record.remarks}
+    />
+  )
+}
+
 export function AssignmentHistoryTimeline({
   history,
   currentAssignment,
@@ -95,6 +289,10 @@ export function AssignmentHistoryTimeline({
     currentAssignment,
   })
   const visibleCurrent = showCurrent ? current : []
+  const historyItems = useMemo(
+    () => buildHistoryItems(historical, perspective),
+    [historical, perspective],
+  )
 
   if (visibleCurrent.length === 0 && historical.length === 0) {
     return (
@@ -145,109 +343,26 @@ export function AssignmentHistoryTimeline({
         </div>
       )}
 
-      {historical.length > 0 && (
+      {historyItems.length > 0 && (
         <div>
           <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-secondary">
             History
           </h3>
           <ul className="space-y-3">
-            {historical.map((record) => {
-              const karkunName = getKarkunById(record.karkunId)?.name ?? record.karkunId
-              const ruknName = getRuknById(record.ruknId)?.name ?? record.ruknId
-
-              if (record.status === 'Replaced') {
+            {historyItems.map((item) => {
+              if (item.kind === 'removed-group') {
                 return (
-                  <li key={record.assignmentId}>
-                    <HistoryCard
-                      title={`Replaced — ${karkunName}`}
-                      subtitle={`Replaced on ${formatDate(record.endedDate ?? record.updatedAt)}`}
-                      assignmentNumber={record.assignmentNumber}
-                      createdBy={record.assignedBy}
-                      eventDate={record.endedDate ?? record.updatedAt}
-                      reason={
-                        record.replacementReason
-                          ? getReplacementReasonLabel(record.replacementReason)
-                          : undefined
-                      }
-                      remarks={record.remarks}
-                    />
-                  </li>
-                )
-              }
-
-              if (record.status === 'Unassigned') {
-                const isTransfer = record.removalReason === 'Transferred'
-                const survivingAsn =
-                  record.remarks?.match(/Surviving connection:\s*(ASN-\d+)/i)?.[1] ??
-                  record.assignmentNumber
-                return (
-                  <li key={record.assignmentId}>
-                    <HistoryCard
-                      title={
-                        isTransfer
-                          ? `Transferred — ${perspective === 'rukn' ? karkunName : ruknName}`
-                          : `Connection removed — ${perspective === 'rukn' ? karkunName : ruknName}`
-                      }
-                      subtitle={
-                        isTransfer
-                          ? `Transferred on ${formatDate(record.endedDate ?? record.updatedAt)}`
-                          : `Removed on ${formatDate(record.endedDate ?? record.updatedAt)}`
-                      }
-                      assignmentNumber={survivingAsn || '—'}
-                      createdBy={record.assignedBy}
-                      eventDate={record.endedDate ?? record.updatedAt}
-                      reason={
-                        record.removalReason
-                          ? getRemovalReasonLabel(record.removalReason)
-                          : undefined
-                      }
-                      remarks={record.remarks}
-                    />
-                  </li>
-                )
-              }
-
-              if (record.status === 'Suspended') {
-                return (
-                  <li key={record.assignmentId}>
-                    <HistoryCard
-                      title={`Suspended — ${perspective === 'rukn' ? karkunName : ruknName}`}
-                      subtitle={`Since ${formatDate(record.effectiveFrom)}`}
-                      assignmentNumber={record.assignmentNumber}
-                      createdBy={record.assignedBy}
-                      eventDate={record.effectiveFrom}
-                      remarks={record.remarks}
-                    />
-                  </li>
-                )
-              }
-
-              if (record.status === 'Completed') {
-                return (
-                  <li key={record.assignmentId}>
-                    <HistoryCard
-                      title={`Completed — ${perspective === 'rukn' ? karkunName : ruknName}`}
-                      subtitle={`Completed on ${formatDate(record.endedDate ?? record.updatedAt)}`}
-                      assignmentNumber={record.assignmentNumber}
-                      createdBy={record.assignedBy}
-                      eventDate={record.endedDate ?? record.updatedAt}
-                      remarks={record.remarks}
-                    />
-                  </li>
-                )
-              }
-
-              // Non-Active unknown statuses — still history-only, never "Connected to".
-              return (
-                <li key={record.assignmentId}>
-                  <HistoryCard
-                    title={`${record.status} — ${perspective === 'rukn' ? karkunName : ruknName}`}
-                    subtitle={`Updated ${formatDate(record.updatedAt || record.effectiveFrom)}`}
-                    assignmentNumber={record.assignmentNumber}
-                    createdBy={record.assignedBy}
-                    eventDate={record.updatedAt || record.effectiveFrom}
-                    remarks={record.remarks}
+                  <RemovedConnectionsGroup
+                    key={`removed-${item.day}`}
+                    dateLabel={formatDate(item.day)}
+                    records={item.records}
+                    perspective={perspective}
                   />
+                )
+              }
+              return (
+                <li key={item.record.assignmentId}>
+                  {renderSingleHistoryItem(item.record, perspective)}
                 </li>
               )
             })}

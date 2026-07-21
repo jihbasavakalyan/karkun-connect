@@ -1,11 +1,13 @@
 /**
- * New Karkun request workflow (KC-018).
+ * New Karkun request workflow (KC-018 / KC-0068).
  * Rukn submits discovery requests; Admin approves into master registry + connection.
+ * Duplicate mobile checks are business-layer only — no persistence architecture changes.
  */
 
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { getRuknById } from '@/data/ruknMaster'
 import { assignKarkun } from '@/lib/assignmentEngine'
+import { findPossibleNameDuplicates } from '@/lib/nameMatching'
 import {
   createKarkun,
   findMobileOwner,
@@ -27,7 +29,11 @@ import {
 import type { NewKarkunRequest } from '@/types/karkunRequest.types'
 import type { PersonGender } from '@/types/people.types'
 import { DEFAULT_PLACE } from '@/types/people.types'
-import { ROUTES, ruknVisitPath } from '@/constants/routes'
+import {
+  ROUTES,
+  adminKarkunProfilePath,
+  ruknVisitPath,
+} from '@/constants/routes'
 
 export { subscribeToKarkunRequestStore, getPendingKarkunRequests, getAllKarkunRequests }
 
@@ -39,6 +45,17 @@ export type SubmitNewKarkunRequestInput = {
   remarks?: string
   requestingRuknId: string
   createdBy?: string
+  /** KC-0068 — required to proceed after a possible-name soft warning. */
+  acknowledgeNameWarning?: boolean
+}
+
+export type MobileDuplicateDetails = {
+  karkunId: string
+  name: string
+  mobile: string
+  viewRoute: string
+  connectRoute: string
+  adminViewRoute: string
 }
 
 export type SubmitNewKarkunRequestResult =
@@ -46,11 +63,38 @@ export type SubmitNewKarkunRequestResult =
   | {
       ok: false
       error: string
-      duplicate?: { karkunId: string; name: string; viewRoute: string; connectRoute: string }
+      code?: 'MOBILE_EXISTS' | 'PENDING_EXISTS' | 'NAME_WARNING' | 'VALIDATION'
+      duplicate?: MobileDuplicateDetails
+      nameMatches?: { id: string; name: string }[]
+    }
+
+export type ApproveNewKarkunRequestResult =
+  | { ok: true; request: NewKarkunRequest; karkunId: string }
+  | {
+      ok: false
+      error: string
+      code?: 'MOBILE_EXISTS' | 'VALIDATION'
+      duplicate?: MobileDuplicateDetails
     }
 
 function namesMatch(a: string, b: string): boolean {
   return a.trim().toLowerCase() === b.trim().toLowerCase()
+}
+
+function buildMobileDuplicate(
+  karkunId: string,
+  name: string,
+  mobile: string,
+): MobileDuplicateDetails {
+  const existing = getKarkunById(karkunId)
+  return {
+    karkunId,
+    name,
+    mobile: existing?.mobile?.trim() || normalizeMobile(mobile),
+    viewRoute: existing ? ruknVisitPath(karkunId) : ROUTES.RUKN_MY_KARKUN,
+    connectRoute: ROUTES.RUKN_AVAILABLE_KARKUN,
+    adminViewRoute: adminKarkunProfilePath(karkunId),
+  }
 }
 
 export function submitNewKarkunRequest(
@@ -58,24 +102,24 @@ export function submitNewKarkunRequest(
 ): SubmitNewKarkunRequestResult {
   const fullName = input.fullName.trim()
   if (!fullName) {
-    return { ok: false, error: 'Full name is required.' }
+    return { ok: false, error: 'Full name is required.', code: 'VALIDATION' }
   }
 
   const gender = normalizePersonGender(input.gender)
   if (!gender) {
-    return { ok: false, error: 'Gender is required.' }
+    return { ok: false, error: 'Gender is required.', code: 'VALIDATION' }
   }
 
   if (!input.mobile.trim()) {
-    return { ok: false, error: 'Mobile number is required.' }
+    return { ok: false, error: 'Mobile number is required.', code: 'VALIDATION' }
   }
   if (!isValidMobileFormat(input.mobile)) {
-    return { ok: false, error: formatMobileValidationError() }
+    return { ok: false, error: formatMobileValidationError(), code: 'VALIDATION' }
   }
 
   const rukn = getRuknById(input.requestingRuknId)
   if (!rukn || rukn.status !== 'active') {
-    return { ok: false, error: 'Rukn not found or inactive.' }
+    return { ok: false, error: 'Rukn not found or inactive.', code: 'VALIDATION' }
   }
 
   const ruknGender = normalizePersonGender(rukn.gender)
@@ -83,37 +127,50 @@ export function submitNewKarkunRequest(
     return {
       ok: false,
       error: `Gender mismatch: you can only request ${ruknGender} Karkuns.`,
+      code: 'VALIDATION',
     }
   }
 
+  // KC-0068 Check 1 — mobile already in Karkun registry (hard block).
   const owner = findMobileOwner(input.mobile)
   if (owner?.kind === 'karkun') {
-    const existing = getKarkunById(owner.id)
     return {
       ok: false,
-      error: 'This Karkun already exists.',
-      duplicate: {
-        karkunId: owner.id,
-        name: owner.name,
-        viewRoute: existing ? ruknVisitPath(owner.id) : ROUTES.RUKN_MY_KARKUN,
-        connectRoute: ROUTES.RUKN_AVAILABLE_KARKUN,
-      },
+      error: 'This mobile number already belongs to an existing Karkun.',
+      code: 'MOBILE_EXISTS',
+      duplicate: buildMobileDuplicate(owner.id, owner.name, input.mobile),
     }
   }
   if (owner?.kind === 'rukn') {
     return {
       ok: false,
       error: `This mobile number belongs to Rukn ${owner.name}.`,
+      code: 'VALIDATION',
     }
   }
 
+  // KC-0068 Check 2 — pending request with same mobile (hard block).
   const pendingSameMobile = getPendingKarkunRequests().find(
     (request) => normalizeMobile(request.mobile) === normalizeMobile(input.mobile),
   )
   if (pendingSameMobile) {
     return {
       ok: false,
-      error: 'A pending request already exists for this mobile number.',
+      error: 'A request for this mobile number already exists.',
+      code: 'PENDING_EXISTS',
+    }
+  }
+
+  // KC-0068 Check 3 — possible duplicate name (soft warning; not a reject).
+  if (!input.acknowledgeNameWarning) {
+    const nameMatches = findPossibleNameDuplicates(fullName, 'karkun')
+    if (nameMatches.length > 0) {
+      return {
+        ok: false,
+        error: 'Possible duplicate name found. Please verify before continuing.',
+        code: 'NAME_WARNING',
+        nameMatches,
+      }
     }
   }
 
@@ -147,27 +204,40 @@ export async function approveNewKarkunRequest(input: {
   requestId: string
   decidedBy: string
   decisionNotes?: string
-}): Promise<
-  { ok: true; request: NewKarkunRequest; karkunId: string } | { ok: false; error: string }
-> {
+}): Promise<ApproveNewKarkunRequestResult> {
   const pending = getPendingKarkunRequests().find((item) => item.id === input.requestId)
   if (!pending) {
-    return { ok: false, error: 'Pending request not found.' }
+    return { ok: false, error: 'Pending request not found.', code: 'VALIDATION' }
   }
 
-  // Resume path: prior approve may have created the Karkun but failed before closing the request.
+  // KC-0068 Feature 2 — re-validate duplicates before approval.
   const existingOwner = findMobileOwner(pending.mobile)
   let karkunId: string | undefined
 
   if (existingOwner?.kind === 'karkun') {
     const existing = getKarkunById(existingOwner.id)
-    if (!existing || !namesMatch(existing.name, pending.fullName)) {
+    // Resume path only: same name means prior approve created the record but request stayed open.
+    if (existing && namesMatch(existing.name, pending.fullName)) {
+      karkunId = existing.id
+    } else {
       return {
         ok: false,
-        error: 'This Karkun already exists. Reject this request or connect the existing record.',
+        error:
+          'This mobile number already belongs to an existing Karkun. Resolve the duplicate before approving.',
+        code: 'MOBILE_EXISTS',
+        duplicate: buildMobileDuplicate(
+          existingOwner.id,
+          existingOwner.name,
+          pending.mobile,
+        ),
       }
     }
-    karkunId = existing.id
+  } else if (existingOwner?.kind === 'rukn') {
+    return {
+      ok: false,
+      error: `This mobile number belongs to Rukn ${existingOwner.name}. Resolve the duplicate before approving.`,
+      code: 'VALIDATION',
+    }
   } else {
     const createResult = createKarkun(
       {
@@ -186,15 +256,26 @@ export async function approveNewKarkunRequest(input: {
       if (createResult.existingOwner?.kind === 'karkun') {
         return {
           ok: false,
-          error: 'This Karkun already exists. Reject this request or connect the existing record.',
+          error:
+            'This mobile number already belongs to an existing Karkun. Resolve the duplicate before approving.',
+          code: 'MOBILE_EXISTS',
+          duplicate: buildMobileDuplicate(
+            createResult.existingOwner.id,
+            createResult.existingOwner.name,
+            pending.mobile,
+          ),
         }
       }
-      return { ok: false, error: createResult.error ?? 'Could not create Karkun.' }
+      return {
+        ok: false,
+        error: createResult.error ?? 'Could not create Karkun.',
+        code: 'VALIDATION',
+      }
     }
 
     karkunId = createResult.karkunId
     if (!karkunId) {
-      return { ok: false, error: 'Karkun was created but no ID was returned.' }
+      return { ok: false, error: 'Karkun was created but no ID was returned.', code: 'VALIDATION' }
     }
 
     // Collision / overwrite guard — created row must match the approved request.
@@ -207,6 +288,7 @@ export async function approveNewKarkunRequest(input: {
       return {
         ok: false,
         error: 'Karkun creation did not persist correctly. Request left pending — retry approval.',
+        code: 'VALIDATION',
       }
     }
   }

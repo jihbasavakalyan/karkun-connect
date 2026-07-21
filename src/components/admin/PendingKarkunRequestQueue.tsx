@@ -1,8 +1,9 @@
 /**
- * Admin queue for Pending New Karkun requests (KC-018).
+ * Admin queue for Pending New Karkun requests (KC-018 / KC-0068).
  */
 
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import { FORM_INPUT_CLASS, FORM_LABEL_CLASS } from '@/components/ui/formStyles'
@@ -12,6 +13,7 @@ import {
   getPendingKarkunRequests,
   rejectNewKarkunRequest,
   subscribeToKarkunRequestStore,
+  type MobileDuplicateDetails,
 } from '@/services/karkunRequestService'
 import type { NewKarkunRequest } from '@/types/karkunRequest.types'
 
@@ -21,6 +23,7 @@ export function PendingKarkunRequestQueue() {
   const [notesById, setNotesById] = useState<Record<string, string>>({})
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
+  const [duplicate, setDuplicate] = useState<MobileDuplicateDetails | null>(null)
 
   useEffect(() => {
     return subscribeToKarkunRequestStore(() => setTick((value) => value + 1))
@@ -38,10 +41,12 @@ export function PendingKarkunRequestQueue() {
       })
       if (!result.ok) {
         setError(result.error)
+        setDuplicate(result.duplicate ?? null)
         setNotice('')
         return
       }
       setError('')
+      setDuplicate(null)
       setNotice(`Approved ${request.fullName} and connected to ${request.requestingRuknName}.`)
     })()
   }
@@ -54,10 +59,12 @@ export function PendingKarkunRequestQueue() {
     })
     if (!result.ok) {
       setError(result.error)
+      setDuplicate(null)
       setNotice('')
       return
     }
     setError('')
+    setDuplicate(null)
     setNotice(`Rejected request for ${request.fullName}.`)
   }
 
@@ -81,7 +88,25 @@ export function PendingKarkunRequestQueue() {
 
       {error ? (
         <div className="ds-banner-error mb-3" role="alert">
-          {error}
+          <p>{error}</p>
+          {duplicate ? (
+            <div className="mt-2 space-y-1 text-sm">
+              <p>
+                <span className="font-medium">Existing Name: </span>
+                {duplicate.name}
+              </p>
+              <p>
+                <span className="font-medium">Mobile Number: </span>
+                {duplicate.mobile}
+              </p>
+              <Link
+                to={duplicate.adminViewRoute}
+                className="inline-block font-semibold text-primary underline"
+              >
+                View Existing Record
+              </Link>
+            </div>
+          ) : null}
         </div>
       ) : null}
       {notice ? (

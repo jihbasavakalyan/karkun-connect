@@ -1,11 +1,14 @@
 /**
- * KC-0058 — IntegrityScanner (console/service only; no UI).
+ * KC-0058 / KC-0068 — IntegrityScanner (read-only; no automatic repairs).
  */
 
 import { MOCK_KARKUN_REGISTRY } from '@/constants/mockKarkunRegistry'
 import { ruknMaster } from '@/data/ruknMaster'
+import { namesPossiblyDuplicate, normalizePersonName } from '@/lib/nameMatching'
+import { normalizeMobile } from '@/lib/mobileValidation'
 import { getMaxKarkunNumFromRegistry, getNextKarkunNum, parseKarkunIdNum } from '@/lib/peopleStore'
 import { getAllAssignments } from '@/stores/assignmentStore'
+import { getPendingKarkunRequests } from '@/stores/karkunRequestStore'
 import { getCampaignLibrary } from '@/services/campaignService'
 import { getCampaignConnectionMetrics } from '@/services/metricsService'
 import type { IntegrityFinding, IntegrityReport } from '@/types/integrity.types'
@@ -219,12 +222,116 @@ export function runIntegrityScan(): IntegrityReport {
     )
   }
 
+  // KC-0068 — Duplicate mobile numbers in Karkun registry (non-archived).
+  checksRun += 1
+  const mobileOwners = new Map<string, { id: string; name: string }[]>()
+  for (const k of karkuns) {
+    if (k.isArchived) continue
+    const mobile = k.mobile?.trim()
+    if (!mobile) continue
+    const key = normalizeMobile(mobile)
+    if (!key) continue
+    const list = mobileOwners.get(key) ?? []
+    list.push({ id: k.id, name: k.name })
+    mobileOwners.set(key, list)
+  }
+  for (const [mobile, owners] of mobileOwners) {
+    if (owners.length > 1) {
+      errors.push(
+        finding(
+          'DUPLICATE_MOBILE',
+          'error',
+          `Duplicate mobile ${mobile} across ${owners.length} Karkuns`,
+          {
+            entityKind: 'karkun',
+            details: { mobile, owners },
+          },
+        ),
+      )
+    }
+  }
+
+  // KC-0068 — Missing mobile numbers on active Karkuns.
+  checksRun += 1
+  for (const k of karkuns) {
+    if (k.isArchived || k.status !== 'active') continue
+    if (!k.mobile?.trim()) {
+      warnings.push(
+        finding(
+          'MISSING_MOBILE',
+          'warning',
+          `Karkun ${k.name} (${k.id}) has no mobile number`,
+          { entityKind: 'karkun', entityId: k.id },
+        ),
+      )
+    }
+  }
+
+  // KC-0068 — Duplicate pending requests (same mobile).
+  checksRun += 1
+  const pending = getPendingKarkunRequests()
+  const pendingByMobile = new Map<string, string[]>()
+  for (const request of pending) {
+    const key = normalizeMobile(request.mobile)
+    if (!key) continue
+    const list = pendingByMobile.get(key) ?? []
+    list.push(request.id)
+    pendingByMobile.set(key, list)
+  }
+  for (const [mobile, requestIds] of pendingByMobile) {
+    if (requestIds.length > 1) {
+      errors.push(
+        finding(
+          'DUPLICATE_PENDING_REQUEST',
+          'error',
+          `Duplicate pending requests for mobile ${mobile} (${requestIds.length})`,
+          { details: { mobile, requestIds } },
+        ),
+      )
+    }
+  }
+
+  // KC-0068 — Possible duplicate names (warning only; names are not unique).
+  checksRun += 1
+  const activeKarkuns = karkuns.filter((k) => !k.isArchived)
+  const reportedNamePairs = new Set<string>()
+  for (let i = 0; i < activeKarkuns.length; i += 1) {
+    const left = activeKarkuns[i]!
+    for (let j = i + 1; j < activeKarkuns.length; j += 1) {
+      const right = activeKarkuns[j]!
+      if (!namesPossiblyDuplicate(left.name, right.name)) continue
+      const pairKey = [left.id, right.id].sort().join('|')
+      if (reportedNamePairs.has(pairKey)) continue
+      reportedNamePairs.add(pairKey)
+      warnings.push(
+        finding(
+          'POSSIBLE_DUPLICATE_NAME',
+          'warning',
+          `Possible duplicate name: "${left.name}" (${left.id}) ≈ "${right.name}" (${right.id})`,
+          {
+            entityKind: 'karkun',
+            details: {
+              left: { id: left.id, name: left.name, mobile: left.mobile },
+              right: { id: right.id, name: right.name, mobile: right.mobile },
+              normalized: normalizePersonName(left.name),
+            },
+          },
+        ),
+      )
+    }
+  }
+
   const recommendations: string[] = []
   if (errors.some((e) => e.code === 'COUNTER_DRIFT')) {
     recommendations.push('Run npm run admin:kc0056:repair-counter to heal karkunCounter.')
   }
   if (errors.some((e) => e.code.startsWith('DUPLICATE_'))) {
-    recommendations.push('Investigate duplicate IDs with admin repair scripts before approving new records.')
+    recommendations.push(
+      'Investigate duplicates manually. Do not auto-merge or auto-delete production records.',
+    )
+  }
+  if (errors.some((e) => e.code === 'DUPLICATE_MOBILE' || e.code === 'DUPLICATE_PENDING_REQUEST')) {
+    recommendations.push('Block new requests/approvals for duplicate mobiles until resolved.')
   }
   if (errors.some((e) => e.code === 'BROKEN_CONNECTION_MULTI_ACTIVE')) {
     recommendations.push('Resolve multi-Active connections before Transfer/Assign operations.')
@@ -237,12 +344,16 @@ export function runIntegrityScan(): IntegrityReport {
       'Dashboard Connected uses MetricsService.connected (canonical). Ensure Karkun registry is hydrated before reading KPIs.',
     )
   }
+  if (warnings.some((w) => w.code === 'POSSIBLE_DUPLICATE_NAME')) {
+    recommendations.push('Review possible duplicate names carefully — names alone are not unique keys.')
+  }
   if (errors.length === 0 && warnings.length === 0) {
     recommendations.push('Integrity scan clean — continue normal operations.')
   }
   recommendations.push(
     `Dashboard Connections should show ${metrics.connected}/${metrics.total} (${metrics.progressPct}%). Raw connection docs=${metrics.connectionDocumentCount}.`,
   )
+  recommendations.push('KC-0068 integrity report is read-only. No automatic fixes are applied.')
 
   return {
     generatedAt: new Date().toISOString(),

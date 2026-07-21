@@ -1,5 +1,5 @@
 /**
- * Rukn form to submit a discovered worker for Admin approval (KC-018).
+ * Rukn form to submit a discovered worker for Admin approval (KC-018 / KC-0068).
  */
 
 import { useEffect, useState } from 'react'
@@ -31,8 +31,11 @@ export function NewKarkunRequestModal({
   const [area, setArea] = useState('')
   const [remarks, setRemarks] = useState('')
   const [error, setError] = useState('')
+  const [nameWarning, setNameWarning] = useState(false)
+  const [nameMatches, setNameMatches] = useState<{ id: string; name: string }[]>([])
   const [duplicate, setDuplicate] = useState<{
     name: string
+    mobile: string
     viewRoute: string
     connectRoute: string
   } | null>(null)
@@ -50,6 +53,8 @@ export function NewKarkunRequestModal({
     setArea('')
     setRemarks('')
     setError('')
+    setNameWarning(false)
+    setNameMatches([])
     setDuplicate(null)
   }
 
@@ -58,7 +63,7 @@ export function NewKarkunRequestModal({
     onClose()
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = (acknowledgeNameWarning = false) => {
     const result = submitNewKarkunRequest({
       fullName,
       mobile,
@@ -66,11 +71,23 @@ export function NewKarkunRequestModal({
       area,
       remarks,
       requestingRuknId: ruknId,
+      acknowledgeNameWarning,
     })
 
     if (!result.ok) {
       setError(result.error)
-      setDuplicate(result.duplicate ?? null)
+      setDuplicate(
+        result.duplicate
+          ? {
+              name: result.duplicate.name,
+              mobile: result.duplicate.mobile,
+              viewRoute: result.duplicate.viewRoute,
+              connectRoute: result.duplicate.connectRoute,
+            }
+          : null,
+      )
+      setNameWarning(result.code === 'NAME_WARNING')
+      setNameMatches(result.nameMatches ?? [])
       return
     }
 
@@ -88,8 +105,8 @@ export function NewKarkunRequestModal({
       footer={
         <ModalFormFooter
           onCancel={handleClose}
-          primaryLabel="Submit"
-          onPrimaryClick={handleSubmit}
+          primaryLabel={nameWarning ? 'Continue anyway' : 'Submit'}
+          onPrimaryClick={() => handleSubmit(nameWarning)}
         />
       }
     >
@@ -100,20 +117,47 @@ export function NewKarkunRequestModal({
         </p>
 
         {error ? (
-          <div className="ds-banner-error" role="alert">
+          <div
+            className={
+              nameWarning
+                ? 'rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950'
+                : 'ds-banner-error'
+            }
+            role="alert"
+          >
             <p>{error}</p>
             {duplicate ? (
-              <div className="mt-3 flex flex-wrap gap-2">
-                <Link to={duplicate.viewRoute} className="text-sm font-semibold text-primary underline">
-                  View Existing
-                </Link>
-                <Link
-                  to={duplicate.connectRoute}
-                  className="text-sm font-semibold text-primary underline"
-                >
-                  Connect Existing
-                </Link>
+              <div className="mt-3 space-y-1 text-sm">
+                <p>
+                  <span className="font-medium">Existing Name: </span>
+                  {duplicate.name}
+                </p>
+                <p>
+                  <span className="font-medium">Mobile Number: </span>
+                  {duplicate.mobile}
+                </p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <Link
+                    to={duplicate.viewRoute}
+                    className="text-sm font-semibold text-primary underline"
+                  >
+                    View Existing Record
+                  </Link>
+                  <Link
+                    to={duplicate.connectRoute}
+                    className="text-sm font-semibold text-primary underline"
+                  >
+                    Connect Existing
+                  </Link>
+                </div>
               </div>
+            ) : null}
+            {nameWarning && nameMatches.length > 0 ? (
+              <ul className="mt-2 list-inside list-disc text-sm">
+                {nameMatches.slice(0, 5).map((match) => (
+                  <li key={match.id}>{match.name}</li>
+                ))}
+              </ul>
             ) : null}
           </div>
         ) : null}
@@ -126,7 +170,13 @@ export function NewKarkunRequestModal({
             id="new-karkun-name"
             className={FORM_INPUT_CLASS}
             value={fullName}
-            onChange={(event) => setFullName(event.target.value)}
+            onChange={(event) => {
+              setFullName(event.target.value)
+              setNameWarning(false)
+              setNameMatches([])
+              setError('')
+              setDuplicate(null)
+            }}
             autoComplete="name"
             required
           />
@@ -140,7 +190,13 @@ export function NewKarkunRequestModal({
             id="new-karkun-mobile"
             className={FORM_INPUT_CLASS}
             value={mobile}
-            onChange={(event) => setMobile(event.target.value)}
+            onChange={(event) => {
+              setMobile(event.target.value)
+              setNameWarning(false)
+              setNameMatches([])
+              setError('')
+              setDuplicate(null)
+            }}
             inputMode="numeric"
             autoComplete="tel"
             required

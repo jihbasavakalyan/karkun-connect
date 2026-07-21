@@ -1,12 +1,12 @@
 /**
- * KC-0053 — Single Connected Karkuns card for Admin Connection Desk.
- * Replaces the duplicate "Current Connections" timeline block for actives.
+ * KC-0053 / KC-0068 — Connected Karkun card for Admin Connection Desk and Rukn Detail.
  */
 
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
-import { adminAnnexure1Path } from '@/constants/routes'
+import { adminAnnexure1Path, adminKarkunProfilePath } from '@/constants/routes'
+import { getExecutionStatusForAssignment } from '@/lib/executionStatus'
 import { formatLastVisitLabel } from '@/lib/relationshipPresentation'
 import { getActiveFollowUpForKarkun } from '@/stores/followUpStore'
 import type { AssignmentRecord } from '@/types/assignment'
@@ -16,6 +16,8 @@ type ConnectedAssignmentDeskCardProps = {
   assignment: AssignmentRecord
   onTransfer: (karkun: { id: string; name: string }) => void
   onDisconnect: (karkun: { id: string; name: string }) => void
+  /** Compact Rukn Detail layout (name, since, progress, actions). */
+  variant?: 'desk' | 'detail'
 }
 
 function formatDate(iso: string): string {
@@ -30,6 +32,7 @@ export function ConnectedAssignmentDeskCard({
   assignment,
   onTransfer,
   onDisconnect,
+  variant = 'desk',
 }: ConnectedAssignmentDeskCardProps) {
   const [expanded, setExpanded] = useState(false)
   const karkun = getKarkunById(assignment.karkunId)
@@ -40,6 +43,48 @@ export function ConnectedAssignmentDeskCard({
     ? `${followUp.followUpDate}${followUp.purpose ? ` · ${followUp.purpose}` : ''}`
     : 'None scheduled'
   const status = assignment.status === 'Active' ? 'Connected' : assignment.status
+  const progress = getExecutionStatusForAssignment(assignment.assignmentId, assignment.karkunId)
+  const profilePath = adminKarkunProfilePath(assignment.karkunId)
+
+  if (variant === 'detail') {
+    return (
+      <li className="rounded-lg border border-border bg-surface-muted px-3 py-3">
+        <p className="font-semibold text-text-heading">{name}</p>
+        <dl className="mt-2 space-y-1 text-sm text-secondary">
+          <div>
+            <dt className="inline font-medium text-text-heading">Connected Since: </dt>
+            <dd className="inline">{formatDate(assignment.effectiveFrom)}</dd>
+          </div>
+          <div>
+            <dt className="inline font-medium text-text-heading">Progress: </dt>
+            <dd className="inline">{progress}</dd>
+          </div>
+        </dl>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <Link
+            to={profilePath}
+            className="inline-flex items-center rounded-md border border-border bg-surface px-3 py-1.5 text-sm font-medium text-text-heading hover:bg-surface-muted"
+          >
+            View Profile
+          </Link>
+          <SecondaryButton
+            type="button"
+            className="px-3 py-1.5 text-sm"
+            onClick={() => onTransfer({ id: assignment.karkunId, name })}
+          >
+            Transfer
+          </SecondaryButton>
+          <SecondaryButton
+            type="button"
+            className="px-3 py-1.5 text-sm"
+            onClick={() => onDisconnect({ id: assignment.karkunId, name })}
+          >
+            Disconnect
+          </SecondaryButton>
+        </div>
+      </li>
+    )
+  }
 
   return (
     <li className="rounded-lg border border-border bg-surface-muted px-3 py-3">
@@ -56,6 +101,10 @@ export function ConnectedAssignmentDeskCard({
               <dd className="inline">{formatDate(assignment.effectiveFrom)}</dd>
             </div>
             <div>
+              <dt className="inline font-medium text-text-heading">Progress: </dt>
+              <dd className="inline">{progress}</dd>
+            </div>
+            <div>
               <dt className="inline font-medium text-text-heading">Last visit: </dt>
               <dd className="inline">{lastVisit}</dd>
             </div>
@@ -70,6 +119,12 @@ export function ConnectedAssignmentDeskCard({
           </dl>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Link
+            to={profilePath}
+            className="inline-flex items-center rounded-md border border-border bg-surface px-3 py-1.5 text-sm font-medium text-text-heading hover:bg-surface-muted"
+          >
+            View Profile
+          </Link>
           <SecondaryButton
             type="button"
             className="px-3 py-1.5 text-sm"
