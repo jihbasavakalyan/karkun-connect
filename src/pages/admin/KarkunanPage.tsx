@@ -4,6 +4,7 @@ import type { PersonGender } from '@/types/karkun-registry.types'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
 import type { ImportSummary } from '@/types/people.types'
 import type { MobileLookupResult } from '@/lib/peopleStore'
+import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { useKarkunPeopleManagement } from '@/hooks/useKarkunPeopleManagement'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { adminUnassignKarkun, changeKarkunRuknAssignment } from '@/lib/assignmentEngine'
@@ -99,6 +100,8 @@ function KarkunGenderSection({
   const [formError, setFormError] = useState('')
   const [pendingFormValues, setPendingFormValues] = useState<PersonFormValues | null>(null)
   const [mobileOwner, setMobileOwner] = useState<MobileLookupResult | null>(null)
+  /** KC-0072C.2 — Add shows View Existing; Edit keeps overwrite confirm. */
+  const [mobileConflictContext, setMobileConflictContext] = useState<'add' | 'edit' | null>(null)
   const [importSummary, setImportSummary] = useState<ImportSummary | null>(null)
   const [bulkBaitulMaalStatus, setBulkBaitulMaalStatus] = useState<BaitulMaalStatus | null>(null)
   const [bulkIjtemaStatus, setBulkIjtemaStatus] = useState<IjtemaAttendanceStatus | null>(null)
@@ -109,12 +112,18 @@ function KarkunGenderSection({
   const openAddForm = useCallback(() => {
     setEditingKarkun(null)
     setFormError('')
+    setMobileOwner(null)
+    setPendingFormValues(null)
+    setMobileConflictContext(null)
     setIsFormOpen(true)
   }, [])
 
   const openEditForm = (karkun: KarkunRegistryRecord) => {
     setEditingKarkun(karkun)
     setFormError('')
+    setMobileOwner(null)
+    setPendingFormValues(null)
+    setMobileConflictContext(null)
     setIsFormOpen(true)
   }
 
@@ -131,8 +140,10 @@ function KarkunGenderSection({
 
     if (!result.success) {
       if (result.needsMobileConfirm && result.existingOwner) {
-        setPendingFormValues(values)
         setMobileOwner(result.existingOwner)
+        setMobileConflictContext(editingKarkun ? 'edit' : 'add')
+        // Overwrite confirm only applies to Edit; Add never overwrites.
+        setPendingFormValues(editingKarkun ? values : null)
         setFormError('')
         return
       }
@@ -154,14 +165,40 @@ function KarkunGenderSection({
       setFormError('')
       setPendingFormValues(null)
       setMobileOwner(null)
+      setMobileConflictContext(null)
     })()
   }
 
+  const clearMobileConflictDialog = () => {
+    setMobileOwner(null)
+    setPendingFormValues(null)
+    setMobileConflictContext(null)
+  }
+
   const confirmMobileOverwrite = () => {
-    if (!pendingFormValues) {
+    if (!pendingFormValues || mobileConflictContext !== 'edit') {
       return
     }
     handleFormSubmit(pendingFormValues, { confirmMobileOverwrite: true })
+  }
+
+  /** KC-0072C.2 — Add flow: open existing Karkun instead of creating a duplicate. */
+  const viewExistingKarkun = () => {
+    if (!mobileOwner || mobileOwner.kind !== 'karkun') {
+      clearMobileConflictDialog()
+      return
+    }
+    const existing = getKarkunById(mobileOwner.id)
+    clearMobileConflictDialog()
+    setIsFormOpen(false)
+    setEditingKarkun(null)
+    setFormError('')
+    if (!existing) {
+      return
+    }
+    // Narrow the table to the existing person, then open Edit.
+    management.updateFilter('search', existing.mobile.trim() || existing.name)
+    openEditForm(existing)
   }
 
   const handleAssignmentChange = (karkun: KarkunRegistryRecord, ruknId: string): boolean => {
@@ -353,26 +390,54 @@ function KarkunGenderSection({
           setIsFormOpen(false)
           setEditingKarkun(null)
           setFormError('')
+          setMobileOwner(null)
+          setPendingFormValues(null)
+          setMobileConflictContext(null)
         }}
         onSubmit={(values) => handleFormSubmit(values)}
       />
 
-      <ConfirmDialog
-        isOpen={Boolean(mobileOwner)}
-        title="Overwrite Mobile Number?"
-        message={
-          <>
-            This mobile number is already used by{' '}
-            <strong>{mobileOwner?.name}</strong> ({mobileOwner?.kind}). Continue?
-          </>
-        }
-        confirmLabel="Overwrite"
-        onConfirm={confirmMobileOverwrite}
-        onClose={() => {
-          setMobileOwner(null)
-          setPendingFormValues(null)
-        }}
-      />
+      {mobileConflictContext === 'add' ? (
+        <ConfirmDialog
+          isOpen={Boolean(mobileOwner)}
+          title="Karkun Already Exists"
+          message={
+            mobileOwner?.kind === 'karkun' ? (
+              <>
+                A Karkun named <strong>{mobileOwner.name}</strong> already uses this mobile number.
+                <br />
+                <br />
+                Duplicate Karkuns cannot be created.
+                <br />
+                If you intended to update this person, open the existing record instead.
+              </>
+            ) : (
+              <>
+                This mobile number is already used by{' '}
+                <strong>{mobileOwner?.name}</strong> ({mobileOwner?.kind}). Duplicate Karkuns cannot
+                be created.
+              </>
+            )
+          }
+          confirmLabel={mobileOwner?.kind === 'karkun' ? 'View Existing' : 'OK'}
+          onConfirm={mobileOwner?.kind === 'karkun' ? viewExistingKarkun : clearMobileConflictDialog}
+          onClose={clearMobileConflictDialog}
+        />
+      ) : (
+        <ConfirmDialog
+          isOpen={Boolean(mobileOwner) && mobileConflictContext === 'edit'}
+          title="Overwrite Mobile Number?"
+          message={
+            <>
+              This mobile number is already used by{' '}
+              <strong>{mobileOwner?.name}</strong> ({mobileOwner?.kind}). Continue?
+            </>
+          }
+          confirmLabel="Overwrite"
+          onConfirm={confirmMobileOverwrite}
+          onClose={clearMobileConflictDialog}
+        />
+      )}
 
       <ImportSummaryModal
         isOpen={Boolean(importSummary)}
