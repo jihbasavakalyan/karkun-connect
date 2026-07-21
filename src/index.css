@@ -1724,6 +1724,328 @@ html[data-theme='dark'] {
     @apply space-y-2.5 sm:space-y-3;
   }
 
+  /* ========== KC-0071 — Executive Dashboard (presentation only) ========== */
+  .exdash-page {
+    @apply space-y-4 bg-slate-100/80;
+  }
+
+  .exdash-hero {
+    @apply relative overflow-hidden rounded-3xl border border-emerald-900/20 p-5 text-white shadow-lg sm:p-7;
+    background: linear-gradient(145deg, #0f3d24 0%, #14532d 42%, #1b4332 100%);
+    box-shadow: 0 10px 28px -14px rgb(15 61 36 / 0.45);
+  }
+
+  .exdash-hero-top {
+    @apply flex flex-col gap-5 lg:flex-row lg:items-stretch lg:justify-between;
+  }
+
+  .exdash-hero-identity {
+    @apply min-w-0 flex-1;
+  }
+
+  .exdash-hero-eyebrow {
+    @apply text-xs font-semibold uppercase tracking-[0.16em] text-emerald-100/75;
+  }
+
+  .exdash-hero-title {
+    @apply mt-2 text-2xl font-semibold tracking-tight text-white sm:text-3xl;
+  }
+
+  .exdash-hero-date,
+  .exdash-hero-window,
+  .exdash-hero-caption {
+    @apply mt-1 text-sm text-emerald-50/80;
+  }
+
+  .exdash-hero-attention {
+    @apply mt-3 text-sm font-medium text-amber-100/90;
+  }
+
+  .exdash-hero-progress {
+    @apply flex min-w-[14rem] flex-col items-center gap-4 rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur-md sm:min-w-[22rem] sm:flex-row;
+  }
+
+  .exdash-hero-progress-title {
+    @apply text-sm font-semibold text-white;
+  }
+
+  .exdash-hero-metrics {
+    @apply mt-2 grid grid-cols-3 gap-3 text-center sm:text-left;
+  }
+
+  .exdash-hero-metrics dt {
+    @apply text-[11px] uppercase tracking-wide text-emerald-100/70;
+  }
+
+  .exdash-hero-metrics dd {
+    @apply text-base font-semibold text-white;
+  }
+
+  .exdash-progress-track {
+    @apply mt-3 h-2 w-full overflow-hidden rounded-full bg-white/15;
+  }
+
+  .exdash-progress-fill {
+    @apply h-full rounded-full bg-emerald-300;
+  }
+
+  .exdash-hero-actions {
+    @apply mt-5;
+  }
+
+  .exdash-hero .mc-quick-action {
+    @apply border-white/20 bg-white/10 text-white hover:bg-white/20;
+  }
+
+  .exdash-stack {
+    @apply space-y-4;
+  }
+
+  .exdash-panel {
+    @apply rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm sm:p-5;
+  }
+
+  .exdash-panel-emphasis {
+    @apply border-emerald-100 bg-emerald-50/30;
+  }
+
+  .exdash-section-head {
+    @apply mb-3 flex flex-wrap items-center justify-between gap-2;
+  }
+
+  .exdash-section-title {
+    @apply text-sm font-semibold uppercase tracking-[0.08em] text-slate-700;
+  }
+
+  .exdash-section-link {
+    @apply text-xs font-semibold text-emerald-800 no-underline hover:underline;
+  }
+
+  .exdash-section-meta,
+  .exdash-muted,
+  .exdash-pager-meta {
+    @apply text-xs text-slate-500;
+  }
+
+  .exdash-metric-grid {
+    @apply grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-6;
+  }
+
+  .exdash-metric-card {
+    @apply rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-3;
+  }
+
+  .exdash-metric-label {
+    @apply text-[11px] font-medium uppercase tracking-wide text-slate-500;
+  }
+
+  .exdash-metric-value {
+    @apply mt-1 text-xl font-semibold text-slate-900;
+  }
+
+  .exdash-metric-hint {
+    @apply mt-0.5 text-[11px] text-slate-500;
+  }
+
+  .exdash-health-grid {
+    @apply grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-6;
+  }
+
+  .exdash-rukn-grid {
+    @apply grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4;
+  }
+
+  .exdash-rukn-card {
+    @apply rounded-xl border border-slate-200 bg-white px-3 py-3 transition hover:border-emerald-300 hover:shadow-sm;
+  }
+
+  .exdash-rukn-card-top {
+    @apply flex items-start justify-between gap-2;
+  }
+
+  .exdash-rukn-name {
+    @apply truncate text-sm font-semibold text-slate-900;
+  }
+
+  .exdash-rukn-meta {
+    @apply mt-0.5 text-xs text-slate-500;
+  }
+
+  .exdash-status-badge {
+    @apply shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide;
+  }
+
+  .exdash-status-green {
+    @apply bg-emerald-50 text-emerald-800;
+  }
+
+  .exdash-status-amber {
+    @apply bg-amber-50 text-amber-800;
+  }
+
+  .exdash-status-red {
+    @apply bg-rose-50 text-rose-800;
+  }
+
+  .exdash-rukn-card-bottom {
+    @apply mt-3 flex items-center justify-between gap-2;
+  }
+
+  .exdash-rukn-progress {
+    @apply flex min-w-0 flex-1 items-center gap-2;
+  }
+
+  .exdash-rukn-progress-track {
+    @apply h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100;
+  }
+
+  .exdash-rukn-progress-fill {
+    @apply h-full rounded-full bg-emerald-600;
+  }
+
+  .exdash-rukn-pct {
+    @apply text-xs font-semibold text-slate-600;
+  }
+
+  .exdash-rukn-view {
+    @apply shrink-0 rounded-md border border-slate-200 px-2.5 py-1 text-xs font-semibold text-emerald-900 no-underline hover:border-emerald-300 hover:bg-emerald-50;
+  }
+
+  .exdash-pager {
+    @apply flex flex-wrap items-center justify-between gap-2;
+  }
+
+  .exdash-pager-btn {
+    @apply rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 disabled:cursor-not-allowed disabled:opacity-40;
+  }
+
+  .exdash-queue {
+    @apply space-y-2;
+  }
+
+  .exdash-queue-item {
+    @apply flex items-start gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5 no-underline transition hover:border-emerald-300;
+  }
+
+  .exdash-queue-rank {
+    @apply mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-600;
+  }
+
+  .exdash-queue-body {
+    @apply min-w-0 flex-1;
+  }
+
+  .exdash-queue-title {
+    @apply block text-sm font-semibold text-slate-900;
+  }
+
+  .exdash-queue-detail {
+    @apply mt-0.5 block text-xs text-slate-500;
+  }
+
+  .exdash-queue-badge {
+    @apply shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide;
+  }
+
+  .exdash-severity-critical {
+    @apply border-rose-200;
+  }
+
+  .exdash-severity-critical .exdash-queue-badge,
+  .exdash-queue-badge.exdash-severity-critical {
+    @apply bg-rose-50 text-rose-800;
+  }
+
+  .exdash-severity-attention {
+    @apply border-amber-200;
+  }
+
+  .exdash-severity-attention .exdash-queue-badge,
+  .exdash-queue-badge.exdash-severity-attention {
+    @apply bg-amber-50 text-amber-800;
+  }
+
+  .exdash-severity-watch {
+    @apply border-slate-200;
+  }
+
+  .exdash-severity-watch .exdash-queue-badge,
+  .exdash-queue-badge.exdash-severity-watch {
+    @apply bg-slate-100 text-slate-700;
+  }
+
+  .exdash-history-panel {
+    @apply border-dashed border-slate-300 bg-slate-50/70;
+  }
+
+  .exdash-history-timeline {
+    @apply relative space-y-3 before:absolute before:bottom-2 before:left-[0.55rem] before:top-2 before:w-px before:bg-slate-300;
+  }
+
+  .exdash-history-item {
+    @apply relative flex gap-3 pl-1;
+  }
+
+  .exdash-history-dot {
+    @apply relative z-[1] mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full ring-4 ring-slate-50;
+  }
+
+  .exdash-history-completed .exdash-history-dot {
+    @apply bg-emerald-500 ring-emerald-50;
+  }
+
+  .exdash-history-transfer .exdash-history-dot {
+    @apply bg-sky-500 ring-sky-50;
+  }
+
+  .exdash-history-pending .exdash-history-dot {
+    @apply bg-amber-500 ring-amber-50;
+  }
+
+  .exdash-history-critical .exdash-history-dot {
+    @apply bg-rose-500 ring-rose-50;
+  }
+
+  .exdash-history-idle .exdash-history-dot {
+    @apply bg-slate-400 ring-slate-100;
+  }
+
+  .exdash-history-body {
+    @apply min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2;
+  }
+
+  .exdash-history-message {
+    @apply text-sm text-slate-800;
+  }
+
+  .exdash-history-time {
+    @apply mt-1 text-[11px] text-slate-500;
+  }
+
+  .exdash-expand-btn {
+    @apply mt-3 text-xs font-semibold text-emerald-800 hover:underline;
+  }
+
+  .exdash-progress-aside {
+    @apply border-emerald-100;
+  }
+
+  .exdash-pulse-row {
+    @apply flex flex-wrap items-center gap-4;
+  }
+
+  .exdash-pulse-metrics {
+    @apply grid grid-cols-3 gap-4 text-sm;
+  }
+
+  .exdash-pulse-metrics dt {
+    @apply text-xs uppercase tracking-wide text-slate-500;
+  }
+
+  .exdash-pulse-metrics dd {
+    @apply text-base font-semibold text-slate-900;
+  }
+
   .acc-section-head {
     @apply mb-2 flex items-center justify-between gap-2;
   }

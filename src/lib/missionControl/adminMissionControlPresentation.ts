@@ -14,6 +14,7 @@ import { getAnnexure1ExecutionMetrics } from '@/services/annexure1Service'
 import { getFollowUpDashboardMetrics } from '@/services/followUpService'
 import { getCampaignConnectionMetrics } from '@/services/metricsService'
 import { getRecentActivity } from '@/stores/activityLogStore'
+import { ruknMaster } from '@/data/ruknMaster'
 import { adminRuknDetailPath, adminExecutionPath, adminCompliancePath, ROUTES } from '@/constants/routes'
 import { leaderboardStatus } from '@/components/mission-control/McProgressRing'
 import type { AdminMissionControlModel } from './buildAdminMissionControl'
@@ -250,6 +251,41 @@ export function buildAdminRuknPerformance(limit = 10): AdminRuknPerformanceView[
       route: adminRuknDetailPath(row.ruknId),
     }
   })
+}
+
+/** KC-0071 — all active Rukns for executive dashboard (presentation composition only). */
+export type AdminRuknGenderPerformanceView = AdminRuknPerformanceView & {
+  gender: 'Male' | 'Female'
+}
+
+export function buildAllActiveRuknPerformance(): AdminRuknGenderPerformanceView[] {
+  const activity = getRecentActivity(80)
+  const perfById = new Map(getTeamPerformanceRows().map((row) => [row.ruknId, row]))
+
+  return ruknMaster
+    .filter((rukn) => rukn.status === 'active' && !rukn.isArchived)
+    .map((rukn): AdminRuknGenderPerformanceView => {
+      const row = perfById.get(rukn.id)
+      const last = activity.find((entry) => entry.ruknId === rukn.id)
+      const completionPct = row?.completionPct ?? 0
+      const gender: 'Male' | 'Female' = rukn.gender === 'Female' ? 'Female' : 'Male'
+      return {
+        ruknId: rukn.id,
+        ruknName: rukn.name,
+        gender,
+        assignedKarkuns: row?.assignedKarkuns ?? 0,
+        pendingWork: row?.pendingWork ?? 0,
+        completionPct,
+        followUpPct: row?.followUpPct ?? 0,
+        visits: row?.visits ?? 0,
+        lastActivity: last
+          ? `${last.message} · ${new Date(last.timestamp).toLocaleString()}`
+          : null,
+        status: leaderboardStatus(completionPct),
+        route: adminRuknDetailPath(rukn.id),
+      }
+    })
+    .sort((a, b) => a.ruknName.localeCompare(b.ruknName))
 }
 
 export function buildAdminCampaignTrends(): AdminTrendItem[] {

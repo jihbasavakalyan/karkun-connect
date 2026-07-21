@@ -37,35 +37,34 @@ export function AdminMissionControlHero({
   ])
 
   return (
-    <header
-      className="mc-hero enterprise-gradient-hero mc-hero-admin-compact"
-      aria-label="Mission Control"
-    >
-      <div className="mc-hero-top">
-        <div className="mc-hero-identity">
-          <p className="mc-eyebrow">Campaign Command Center</p>
-          <h1 className="mc-hero-title mc-hero-title-admin">{model.campaignName}</h1>
-          <p className="mc-hero-attention">Where does the campaign need your attention?</p>
-          <p className="mc-hero-date">{model.currentDateLabel}</p>
+    <header className="exdash-hero mc-hero" aria-label="Campaign Hero">
+      <div className="exdash-hero-top">
+        <div className="exdash-hero-identity">
+          <p className="exdash-hero-eyebrow">Campaign Command Center</p>
+          <h1 className="exdash-hero-title">{model.campaignName}</h1>
+          <p className="exdash-hero-date">{model.currentDateLabel}</p>
           {formatCampaignWindowLabel() ? (
-            <p className="mc-caption">{formatCampaignWindowLabel()}</p>
+            <p className="exdash-hero-window">{formatCampaignWindowLabel()}</p>
           ) : null}
+          <p className="exdash-hero-attention">
+            Where does the campaign need your attention?
+          </p>
         </div>
 
-        <div className="mc-hero-progress-card mc-hero-progress-card-rich enterprise-glass">
+        <div className="exdash-hero-progress">
           {metricsReady ? (
             <>
               <McProgressRing
                 value={model.connectionProgress.pct}
-                size={88}
+                size={92}
                 stroke={9}
                 tone="green"
                 label={`${model.connectionProgress.pct}%`}
                 sublabel="Complete"
               />
-              <div className="mc-hero-progress-copy">
-                <p className="mc-panel-title">Campaign Progress</p>
-                <dl className="mc-progress-metrics">
+              <div className="exdash-hero-progress-copy">
+                <p className="exdash-hero-progress-title">Campaign Progress</p>
+                <dl className="exdash-hero-metrics">
                   <div>
                     <dt>Connected</dt>
                     <dd>{model.connectionProgress.connected}</dd>
@@ -80,35 +79,35 @@ export function AdminMissionControlHero({
                   </div>
                 </dl>
                 <div
-                  className="mc-progress-track mc-progress-track-lg"
+                  className="exdash-progress-track"
                   role="progressbar"
                   aria-valuenow={model.campaignProgressPct}
                   aria-valuemin={0}
                   aria-valuemax={100}
                 >
                   <div
-                    className="mc-progress-fill"
+                    className="exdash-progress-fill"
                     style={{ width: `${model.campaignProgressPct}%` }}
                   />
                 </div>
-                <p className="mc-caption">
+                <p className="exdash-hero-caption">
                   {model.dayLabel} · Momentum {model.campaignProgressPct}%
                 </p>
               </div>
             </>
           ) : (
-            <div className="mc-hero-progress-copy" aria-busy="true" aria-live="polite">
-              <p className="mc-panel-title">Campaign Progress</p>
-              <p className="mc-caption mt-2">Loading…</p>
-              <div className="mc-progress-track mc-progress-track-lg mt-3" aria-hidden="true">
-                <div className="mc-progress-fill" style={{ width: '28%', opacity: 0.45 }} />
+            <div className="exdash-hero-progress-copy" aria-busy="true" aria-live="polite">
+              <p className="exdash-hero-progress-title">Campaign Progress</p>
+              <p className="exdash-hero-caption mt-2">Loading…</p>
+              <div className="exdash-progress-track mt-3" aria-hidden="true">
+                <div className="exdash-progress-fill" style={{ width: '28%', opacity: 0.45 }} />
               </div>
             </div>
           )}
         </div>
       </div>
 
-      <MissionControlQuickActions actions={model.quickActions} />
+      <MissionControlQuickActions actions={model.quickActions} className="exdash-hero-actions" />
     </header>
   )
 }

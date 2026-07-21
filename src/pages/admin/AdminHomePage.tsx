@@ -2,9 +2,7 @@ import { useEffect, useMemo, useRef } from 'react'
 import {
   AdminCommandCenter,
   AdminMissionControlHero,
-  AskDigitalRafeeqCard,
 } from '@/components/mission-control'
-import { openDigitalRafeeqAssistant } from '@/features/digitalRafeeq/launcher'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import {
   useRepositoryHydration,
@@ -66,7 +64,7 @@ export function AdminHomePage() {
   // KC-0058.3 — never render fabricated 0/0/0% after critical hydrate failure.
   if (hydration.failed) {
     return (
-      <div className="cd-page cd-page-admin mc-page mc-page-admin-compact mc-page-admin-command">
+      <div className="cd-page cd-page-admin mc-page mc-page-admin-compact mc-page-admin-command exdash-page">
         <section
           className="enterprise-glass rounded-xl p-6"
           role="alert"
@@ -132,10 +130,9 @@ export function AdminHomePage() {
   }
 
   return (
-    <div className="cd-page cd-page-admin mc-page mc-page-admin-compact mc-page-admin-command">
+    <div className="cd-page cd-page-admin mc-page mc-page-admin-compact mc-page-admin-command exdash-page">
       <AdminMissionControlHero model={model} metricsReady={isHydrated} />
       <AdminCommandCenter model={model} snapshot={snapshot} metricsReady={isHydrated} />
-      <AskDigitalRafeeqCard compact onOpen={openDigitalRafeeqAssistant} />
     </div>
   )
 }
