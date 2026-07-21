@@ -17,6 +17,7 @@ import {
   dashState01MetricsReceived,
   dashState05RefreshTrigger,
 } from '@/lib/debug/kc00586DashboardStateProbe'
+import { kc00584GetReport } from '@/lib/debug/kc00584PermissionProbe'
 
 export function AdminHomePage() {
   const snapshot = useAdminCommandCenter()
@@ -57,6 +58,11 @@ export function AdminHomePage() {
     return next
   }, [snapshot, assignmentVersion, isHydrated])
 
+  // KC-0069 — surface first critical-read failure details (UI only; no hydrate redesign).
+  const probe = hydration.failed ? kc00584GetReport() : null
+  const firstFailure = probe?.firstFailure ?? null
+  const claimRole = probe?.authBeforeCritical?.claims.role ?? null
+
   // KC-0058.3 — never render fabricated 0/0/0% after critical hydrate failure.
   if (hydration.failed) {
     return (
@@ -74,6 +80,39 @@ export function AdminHomePage() {
           {hydration.error ? (
             <p className="mt-2 text-xs text-secondary break-words">{hydration.error}</p>
           ) : null}
+          {firstFailure ? (
+            <dl className="mt-3 space-y-1 rounded-lg border border-border bg-surface-muted px-3 py-2 text-xs text-secondary">
+              <div>
+                <dt className="inline font-medium text-text-heading">Failing read: </dt>
+                <dd className="inline">{firstFailure.label}</dd>
+              </div>
+              <div>
+                <dt className="inline font-medium text-text-heading">Collection: </dt>
+                <dd className="inline">{firstFailure.collection}</dd>
+              </div>
+              <div>
+                <dt className="inline font-medium text-text-heading">Exception: </dt>
+                <dd className="inline break-words">
+                  {firstFailure.errorCode ?? 'unknown'}
+                  {firstFailure.errorMessage ? ` — ${firstFailure.errorMessage}` : ''}
+                </dd>
+              </div>
+              {claimRole == null ? (
+                <div>
+                  <dt className="inline font-medium text-text-heading">Auth note: </dt>
+                  <dd className="inline">
+                    JWT role claim was missing at first critical read (token race or unset claims).
+                  </dd>
+                </div>
+              ) : null}
+            </dl>
+          ) : (
+            <p className="mt-3 text-xs text-secondary">
+              Typical cause: Auth token not attached yet, or JWT missing role claim, causing a
+              critical collection read to return permission-denied. Retry reloads after token
+              refresh.
+            </p>
+          )}
           <div className="mt-4">
             <PrimaryButton type="button" onClick={hydration.retry}>
               Retry

@@ -1,0 +1,266 @@
+{
+  "label": "KC-0050",
+  "dryRun": true,
+  "generatedAt": "2026-07-21T19:47:45.502Z",
+  "projectHint": "karkun-connect-75c68",
+  "baseline": {
+    "karkuns": 507,
+    "connections": 113,
+    "activeConnections": 79,
+    "followUps": 3,
+    "activityLogs": 195,
+    "executions": 11,
+    "compliance": 2
+  },
+  "plan": {
+    "beforeCount": 507,
+    "afterCount": 504,
+    "duplicateGroups": 3,
+    "deleteCount": 3,
+    "skippedGroups": 0,
+    "migrationsRequired": 3,
+    "nextKarkunNum": 508,
+    "activeConnectedDistinctKarkuns": 79,
+    "expectedDuplicateMobilesAfter": 0
+  },
+  "skipped": [],
+  "groups": [
+    {
+      "mobileKey": "9606209716",
+      "keepId": "kr-495",
+      "deleteIds": [
+        "kr-494"
+      ],
+      "reason": "active-connection-preferred",
+      "keepReferenced": true,
+      "keepActiveConnected": true,
+      "loserReferenceCounts": {
+        "kr-494": 6
+      },
+      "members": [
+        {
+          "id": "kr-494",
+          "mobile": "9606209716",
+          "createdAt": "2026-07-21T17:31:14.238Z",
+          "name": "Bismilla",
+          "refCount": 6,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-495",
+          "mobile": "9606209716",
+          "createdAt": "2026-07-21T17:31:29.730Z",
+          "name": "Bismilla",
+          "refCount": 4,
+          "activeConnected": true
+        }
+      ]
+    },
+    {
+      "mobileKey": "9738148593",
+      "keepId": "kr-497",
+      "deleteIds": [
+        "kr-496"
+      ],
+      "reason": "active-connection-preferred",
+      "keepReferenced": true,
+      "keepActiveConnected": true,
+      "loserReferenceCounts": {
+        "kr-496": 6
+      },
+      "members": [
+        {
+          "id": "kr-496",
+          "mobile": "9738148593",
+          "createdAt": "2026-07-21T17:31:37.267Z",
+          "name": "Shaik Haji",
+          "refCount": 6,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-497",
+          "mobile": "9738148593",
+          "createdAt": "2026-07-21T17:32:17.122Z",
+          "name": "Shaik Haji",
+          "refCount": 4,
+          "activeConnected": true
+        }
+      ]
+    },
+    {
+      "mobileKey": "9741397389",
+      "keepId": "kr-504",
+      "deleteIds": [
+        "kr-503"
+      ],
+      "reason": "active-connection-preferred",
+      "keepReferenced": true,
+      "keepActiveConnected": true,
+      "loserReferenceCounts": {
+        "kr-503": 6
+      },
+      "members": [
+        {
+          "id": "kr-503",
+          "mobile": "9741397389",
+          "createdAt": "2026-07-21T18:01:05.964Z",
+          "name": "Azhar Artist",
+          "refCount": 6,
+          "activeConnected": false
+        },
+        {
+          "id": "kr-504",
+          "mobile": "9741397389",
+          "createdAt": "2026-07-21T18:01:13.668Z",
+          "name": "Azhar Artist",
+          "refCount": 4,
+          "activeConnected": true
+        }
+      ]
+    }
+  ],
+  "migrations": [
+    {
+      "mobileKey": "9606209716",
+      "fromId": "kr-494",
+      "toId": "kr-495",
+      "referenceCount": 6,
+      "references": [
+        {
+          "collection": "connections",
+          "docId": "asgn-1784655085268-eyp4v",
+          "path": "karkunId",
+          "kind": "field"
+        },
+        {
+          "collection": "activityLogs",
+          "docId": "activity-1784655118786-8y8ou",
+          "path": "karkunId",
+          "kind": "field"
+        },
+        {
+          "collection": "activityLogs",
+          "docId": "activity-1784655118787-sq0r1",
+          "path": "karkunId",
+          "kind": "field"
+        },
+        {
+          "collection": "activityLogs",
+          "docId": "activity-1784657260167-32k7f",
+          "path": "karkunId",
+          "kind": "field"
+        },
+        {
+          "collection": "compliance",
+          "docId": "jihPortal",
+          "path": "record.registrations.kr-494",
+          "kind": "mapKey"
+        },
+        {
+          "collection": "compliance",
+          "docId": "jihPortal",
+          "path": "record.registrations.kr-494.karkunId",
+          "kind": "field"
+        }
+      ]
+    },
+    {
+      "mobileKey": "9738148593",
+      "fromId": "kr-496",
+      "toId": "kr-497",
+      "referenceCount": 6,
+      "references": [
+        {
+          "collection": "connections",
+          "docId": "asgn-1784655116301-k5zy2",
+          "path": "karkunId",
+          "kind": "field"
+        },
+        {
+          "collection": "activityLogs",
+          "docId": "activity-1784655147500-ts8u5",
+          "path": "karkunId",
+          "kind": "field"
+        },
+        {
+          "collection": "activityLogs",
+          "docId": "activity-1784655147501-9ocar",
+          "path": "karkunId",
+          "kind": "field"
+        },
+        {
+          "collection": "activityLogs",
+          "docId": "activity-1784657270436-nonv8",
+          "path": "karkunId",
+          "kind": "field"
+        },
+        {
+          "collection": "compliance",
+          "docId": "jihPortal",
+          "path": "record.registrations.kr-496",
+          "kind": "mapKey"
+        },
+        {
+          "collection": "compliance",
+          "docId": "jihPortal",
+          "path": "record.registrations.kr-496.karkunId",
+          "kind": "field"
+        }
+      ]
+    },
+    {
+      "mobileKey": "9741397389",
+      "fromId": "kr-503",
+      "toId": "kr-504",
+      "referenceCount": 6,
+      "references": [
+        {
+          "collection": "connections",
+          "docId": "asgn-1784656871427-ygi5k",
+          "path": "karkunId",
+          "kind": "field"
+        },
+        {
+          "collection": "activityLogs",
+          "docId": "activity-1784656874573-sgnn4",
+          "path": "karkunId",
+          "kind": "field"
+        },
+        {
+          "collection": "activityLogs",
+          "docId": "activity-1784656874574-prt22",
+          "path": "karkunId",
+          "kind": "field"
+        },
+        {
+          "collection": "activityLogs",
+          "docId": "activity-1784657311350-lvu65",
+          "path": "karkunId",
+          "kind": "field"
+        },
+        {
+          "collection": "compliance",
+          "docId": "jihPortal",
+          "path": "record.registrations.kr-503",
+          "kind": "mapKey"
+        },
+        {
+          "collection": "compliance",
+          "docId": "jihPortal",
+          "path": "record.registrations.kr-503.karkunId",
+          "kind": "field"
+        }
+      ]
+    }
+  ],
+  "deleteIds": [
+    "kr-494",
+    "kr-496",
+    "kr-503"
+  ],
+  "sampleDeleteIds": [
+    "kr-494",
+    "kr-496",
+    "kr-503"
+  ]
+}

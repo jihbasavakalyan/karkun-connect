@@ -19,6 +19,8 @@ type AssignmentHistoryTimelineProps = {
   showCurrent?: boolean
 }
 
+type HistoryTone = 'connected' | 'transfer' | 'removed' | 'replaced' | 'suspended' | 'completed' | 'other'
+
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-GB', {
     day: 'numeric',
@@ -31,6 +33,53 @@ function dayKey(iso: string): string {
   return new Date(iso).toISOString().slice(0, 10)
 }
 
+function toneMeta(tone: HistoryTone): { icon: string; label: string; className: string } {
+  switch (tone) {
+    case 'connected':
+      return {
+        icon: '🟢',
+        label: 'Connected',
+        className: 'border-l-emerald-500 bg-emerald-50/40 border-emerald-100',
+      }
+    case 'transfer':
+      return {
+        icon: '🔄',
+        label: 'Transfer',
+        className: 'border-l-sky-500 bg-sky-50/50 border-sky-100',
+      }
+    case 'removed':
+      return {
+        icon: '🔴',
+        label: 'Removed',
+        className: 'border-l-rose-500 bg-rose-50/40 border-rose-100',
+      }
+    case 'replaced':
+      return {
+        icon: '🟠',
+        label: 'Replaced',
+        className: 'border-l-orange-500 bg-orange-50/40 border-orange-100',
+      }
+    case 'suspended':
+      return {
+        icon: '⏸️',
+        label: 'Suspended',
+        className: 'border-l-amber-500 bg-amber-50/40 border-amber-100',
+      }
+    case 'completed':
+      return {
+        icon: '✅',
+        label: 'Completed',
+        className: 'border-l-slate-500 bg-slate-50 border-slate-200',
+      }
+    default:
+      return {
+        icon: '•',
+        label: 'Event',
+        className: 'border-l-slate-400 bg-slate-50/80 border-slate-200',
+      }
+  }
+}
+
 function HistoryCard({
   title,
   subtitle,
@@ -39,6 +88,7 @@ function HistoryCard({
   eventDate,
   reason,
   remarks,
+  tone,
   highlight,
 }: {
   title: string
@@ -48,15 +98,27 @@ function HistoryCard({
   eventDate: string
   reason?: string
   remarks?: string
+  tone: HistoryTone
   highlight?: boolean
 }) {
+  const meta = toneMeta(tone)
   return (
     <article
-      className={`rounded-lg border px-4 py-3 ${
-        highlight ? 'border-primary bg-primary/5' : 'border-border bg-surface-muted'
+      className={`relative rounded-md border border-l-4 px-4 py-3 shadow-none ${
+        highlight
+          ? 'border-primary/30 bg-primary/5 border-l-primary'
+          : meta.className
       }`}
     >
-      <p className="font-semibold text-text-heading">{title}</p>
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-base leading-none" aria-hidden>
+          {meta.icon}
+        </span>
+        <span className="rounded px-1.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-secondary">
+          {meta.label}
+        </span>
+      </div>
+      <p className="mt-1.5 font-semibold text-text-heading">{title}</p>
       <p className="mt-1 text-sm text-secondary">{subtitle}</p>
       <dl className="mt-3 space-y-1 text-sm text-secondary">
         <div className="flex gap-2">
@@ -103,14 +165,27 @@ function RemovedConnectionsGroup({
       ? getKarkunById(record.karkunId)?.name ?? record.karkunId
       : getRuknById(record.ruknId)?.name ?? record.ruknId,
   )
+  const meta = toneMeta('removed')
 
   return (
-    <li>
-      <article className="rounded-lg border border-border bg-surface-muted px-4 py-3">
+    <li className="relative pl-6">
+      <span
+        className="absolute left-[0.4rem] top-4 h-2.5 w-2.5 rounded-full bg-rose-500 ring-4 ring-rose-100"
+        aria-hidden
+      />
+      <article className={`rounded-md border border-l-4 px-4 py-3 shadow-none ${meta.className}`}>
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div>
-            <p className="text-sm font-medium text-secondary">{dateLabel}</p>
-            <p className="mt-1 font-semibold text-text-heading">Connections Removed</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-base leading-none" aria-hidden>
+                {meta.icon}
+              </span>
+              <span className="rounded px-1.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-secondary">
+                {meta.label}
+              </span>
+            </div>
+            <p className="mt-1.5 text-sm font-medium text-secondary">{dateLabel}</p>
+            <p className="mt-0.5 font-semibold text-text-heading">Connections Removed</p>
             <p className="mt-1 text-sm text-secondary">
               {records.length} Karkun{records.length === 1 ? '' : 's'}
             </p>
@@ -125,7 +200,7 @@ function RemovedConnectionsGroup({
           </button>
         </div>
         {expanded ? (
-          <ul className="mt-3 space-y-1 border-t border-border/70 pt-3 text-sm text-text-heading">
+          <ul className="mt-3 space-y-1 border-t border-rose-100 pt-3 text-sm text-text-heading">
             {names.map((name, index) => (
               <li key={`${records[index]!.assignmentId}-${name}`}>{name}</li>
             ))}
@@ -186,16 +261,28 @@ function buildHistoryItems(
   return items
 }
 
+function toneForRecord(record: AssignmentRecord): HistoryTone {
+  if (record.status === 'Active') return 'connected'
+  if (record.status === 'Replaced') return 'replaced'
+  if (record.status === 'Suspended') return 'suspended'
+  if (record.status === 'Completed') return 'completed'
+  if (record.status === 'Unassigned' && record.removalReason === 'Transferred') return 'transfer'
+  if (record.status === 'Unassigned') return 'removed'
+  return 'other'
+}
+
 function renderSingleHistoryItem(
   record: AssignmentRecord,
   perspective: 'rukn' | 'karkun',
 ) {
   const karkunName = getKarkunById(record.karkunId)?.name ?? record.karkunId
   const ruknName = getRuknById(record.ruknId)?.name ?? record.ruknId
+  const tone = toneForRecord(record)
 
   if (record.status === 'Replaced') {
     return (
       <HistoryCard
+        tone={tone}
         title={`Replaced — ${karkunName}`}
         subtitle={`Replaced on ${formatDate(record.endedDate ?? record.updatedAt)}`}
         assignmentNumber={record.assignmentNumber}
@@ -218,6 +305,7 @@ function renderSingleHistoryItem(
       record.assignmentNumber
     return (
       <HistoryCard
+        tone={tone}
         title={
           isTransfer
             ? `Transferred — ${perspective === 'rukn' ? karkunName : ruknName}`
@@ -242,6 +330,7 @@ function renderSingleHistoryItem(
   if (record.status === 'Suspended') {
     return (
       <HistoryCard
+        tone={tone}
         title={`Suspended — ${perspective === 'rukn' ? karkunName : ruknName}`}
         subtitle={`Since ${formatDate(record.effectiveFrom)}`}
         assignmentNumber={record.assignmentNumber}
@@ -255,6 +344,7 @@ function renderSingleHistoryItem(
   if (record.status === 'Completed') {
     return (
       <HistoryCard
+        tone={tone}
         title={`Completed — ${perspective === 'rukn' ? karkunName : ruknName}`}
         subtitle={`Completed on ${formatDate(record.endedDate ?? record.updatedAt)}`}
         assignmentNumber={record.assignmentNumber}
@@ -267,6 +357,7 @@ function renderSingleHistoryItem(
 
   return (
     <HistoryCard
+      tone={tone}
       title={`${record.status} — ${perspective === 'rukn' ? karkunName : ruknName}`}
       subtitle={`Updated ${formatDate(record.updatedAt || record.effectiveFrom)}`}
       assignmentNumber={record.assignmentNumber}
@@ -329,6 +420,7 @@ export function AssignmentHistoryTimeline({
                 <li key={record.assignmentId}>
                   <HistoryCard
                     highlight
+                    tone="connected"
                     title={title}
                     subtitle={`Since ${formatDate(record.effectiveFrom)}`}
                     assignmentNumber={record.assignmentNumber}
@@ -344,11 +436,11 @@ export function AssignmentHistoryTimeline({
       )}
 
       {historyItems.length > 0 && (
-        <div>
-          <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-secondary">
-            History
+        <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50/60 px-3 py-4">
+          <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-600">
+            Connection History
           </h3>
-          <ul className="space-y-3">
+          <ul className="relative space-y-3 before:absolute before:bottom-2 before:left-[0.7rem] before:top-2 before:w-px before:bg-slate-300">
             {historyItems.map((item) => {
               if (item.kind === 'removed-group') {
                 return (
@@ -361,7 +453,11 @@ export function AssignmentHistoryTimeline({
                 )
               }
               return (
-                <li key={item.record.assignmentId}>
+                <li key={item.record.assignmentId} className="relative pl-6">
+                  <span
+                    className="absolute left-[0.4rem] top-4 h-2.5 w-2.5 rounded-full bg-slate-400 ring-4 ring-slate-100"
+                    aria-hidden
+                  />
                   {renderSingleHistoryItem(item.record, perspective)}
                 </li>
               )

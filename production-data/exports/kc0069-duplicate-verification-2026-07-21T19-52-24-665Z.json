@@ -1,0 +1,275 @@
+{
+  "ticket": "KC-0069",
+  "generatedAt": "2026-07-21T19:52:24.663Z",
+  "projectId": "karkun-connect-75c68",
+  "readOnly": true,
+  "summary": {
+    "karkunDocuments": 507,
+    "connectionDocuments": 120,
+    "duplicateMobileGroups": 3,
+    "mergeCandidates": 3,
+    "verdict": "DATABASE_ISSUE_DISTINCT_DOCUMENTS"
+  },
+  "highlightedExamples": [
+    {
+      "mobileKey": "9606209716",
+      "original": {
+        "documentId": "kr-495",
+        "karkunId": "kr-495",
+        "name": "Bismilla",
+        "mobile": "9606209716",
+        "documentPath": "karkuns/kr-495",
+        "connectionStatus": "Connected (Active)"
+      },
+      "duplicate": [
+        {
+          "documentId": "kr-494",
+          "karkunId": "kr-494",
+          "name": "Bismilla",
+          "mobile": "9606209716",
+          "documentPath": "karkuns/kr-494",
+          "connectionStatus": "Unassigned"
+        }
+      ],
+      "reason": "Same normalized mobile on multiple karkuns/* documents",
+      "connectedRecord": [
+        "kr-495"
+      ],
+      "disconnectedRecord": [
+        "kr-494"
+      ],
+      "recommendation": "Keep kr-495 (Active). Review/archive kr-494 after migrating any lingering refs. Manual admin decision only — no auto-delete."
+    },
+    {
+      "mobileKey": "9738148593",
+      "original": {
+        "documentId": "kr-497",
+        "karkunId": "kr-497",
+        "name": "Shaik Haji",
+        "mobile": "9738148593",
+        "documentPath": "karkuns/kr-497",
+        "connectionStatus": "Connected (Active)"
+      },
+      "duplicate": [
+        {
+          "documentId": "kr-496",
+          "karkunId": "kr-496",
+          "name": "Shaik Haji",
+          "mobile": "9738148593",
+          "documentPath": "karkuns/kr-496",
+          "connectionStatus": "Unassigned"
+        }
+      ],
+      "reason": "Same normalized mobile on multiple karkuns/* documents",
+      "connectedRecord": [
+        "kr-497"
+      ],
+      "disconnectedRecord": [
+        "kr-496"
+      ],
+      "recommendation": "Keep kr-497 (Active). Review/archive kr-496 after migrating any lingering refs. Manual admin decision only — no auto-delete."
+    },
+    {
+      "mobileKey": "9741397389",
+      "original": {
+        "documentId": "kr-504",
+        "karkunId": "kr-504",
+        "name": "Azhar Artist",
+        "mobile": "9741397389",
+        "documentPath": "karkuns/kr-504",
+        "connectionStatus": "Connected (Active)"
+      },
+      "duplicate": [
+        {
+          "documentId": "kr-503",
+          "karkunId": "kr-503",
+          "name": "Azhar Artist",
+          "mobile": "9741397389",
+          "documentPath": "karkuns/kr-503",
+          "connectionStatus": "Unassigned"
+        }
+      ],
+      "reason": "Same normalized mobile on multiple karkuns/* documents",
+      "connectedRecord": [
+        "kr-504"
+      ],
+      "disconnectedRecord": [
+        "kr-503"
+      ],
+      "recommendation": "Keep kr-504 (Active). Review/archive kr-503 after migrating any lingering refs. Manual admin decision only — no auto-delete."
+    }
+  ],
+  "duplicateGroups": [
+    {
+      "mobileKey": "9606209716",
+      "count": 2,
+      "members": [
+        {
+          "documentId": "kr-494",
+          "karkunId": "kr-494",
+          "name": "Bismilla",
+          "mobile": "9606209716",
+          "documentPath": "karkuns/kr-494",
+          "connectionStatus": "Unassigned",
+          "assignedRuknId": "",
+          "createdAt": "2026-07-21T17:31:14.238Z"
+        },
+        {
+          "documentId": "kr-495",
+          "karkunId": "kr-495",
+          "name": "Bismilla",
+          "mobile": "9606209716",
+          "documentPath": "karkuns/kr-495",
+          "connectionStatus": "Connected (Active)",
+          "assignedRuknId": "R046",
+          "createdAt": "2026-07-21T17:31:29.730Z"
+        }
+      ],
+      "verdict": "OPTION_A_DISTINCT_FIRESTORE_DOCUMENTS"
+    },
+    {
+      "mobileKey": "9738148593",
+      "count": 2,
+      "members": [
+        {
+          "documentId": "kr-496",
+          "karkunId": "kr-496",
+          "name": "Shaik Haji",
+          "mobile": "9738148593",
+          "documentPath": "karkuns/kr-496",
+          "connectionStatus": "Unassigned",
+          "assignedRuknId": "",
+          "createdAt": "2026-07-21T17:31:37.267Z"
+        },
+        {
+          "documentId": "kr-497",
+          "karkunId": "kr-497",
+          "name": "Shaik Haji",
+          "mobile": "9738148593",
+          "documentPath": "karkuns/kr-497",
+          "connectionStatus": "Connected (Active)",
+          "assignedRuknId": "R046",
+          "createdAt": "2026-07-21T17:32:17.122Z"
+        }
+      ],
+      "verdict": "OPTION_A_DISTINCT_FIRESTORE_DOCUMENTS"
+    },
+    {
+      "mobileKey": "9741397389",
+      "count": 2,
+      "members": [
+        {
+          "documentId": "kr-503",
+          "karkunId": "kr-503",
+          "name": "Azhar Artist",
+          "mobile": "9741397389",
+          "documentPath": "karkuns/kr-503",
+          "connectionStatus": "Unassigned",
+          "assignedRuknId": "",
+          "createdAt": "2026-07-21T18:01:05.964Z"
+        },
+        {
+          "documentId": "kr-504",
+          "karkunId": "kr-504",
+          "name": "Azhar Artist",
+          "mobile": "9741397389",
+          "documentPath": "karkuns/kr-504",
+          "connectionStatus": "Connected (Active)",
+          "assignedRuknId": "R046",
+          "createdAt": "2026-07-21T18:01:13.668Z"
+        }
+      ],
+      "verdict": "OPTION_A_DISTINCT_FIRESTORE_DOCUMENTS"
+    }
+  ],
+  "mergeCandidates": [
+    {
+      "mobileKey": "9606209716",
+      "original": {
+        "documentId": "kr-495",
+        "karkunId": "kr-495",
+        "name": "Bismilla",
+        "mobile": "9606209716",
+        "documentPath": "karkuns/kr-495",
+        "connectionStatus": "Connected (Active)"
+      },
+      "duplicate": [
+        {
+          "documentId": "kr-494",
+          "karkunId": "kr-494",
+          "name": "Bismilla",
+          "mobile": "9606209716",
+          "documentPath": "karkuns/kr-494",
+          "connectionStatus": "Unassigned"
+        }
+      ],
+      "reason": "Same normalized mobile on multiple karkuns/* documents",
+      "connectedRecord": [
+        "kr-495"
+      ],
+      "disconnectedRecord": [
+        "kr-494"
+      ],
+      "recommendation": "Keep kr-495 (Active). Review/archive kr-494 after migrating any lingering refs. Manual admin decision only — no auto-delete."
+    },
+    {
+      "mobileKey": "9738148593",
+      "original": {
+        "documentId": "kr-497",
+        "karkunId": "kr-497",
+        "name": "Shaik Haji",
+        "mobile": "9738148593",
+        "documentPath": "karkuns/kr-497",
+        "connectionStatus": "Connected (Active)"
+      },
+      "duplicate": [
+        {
+          "documentId": "kr-496",
+          "karkunId": "kr-496",
+          "name": "Shaik Haji",
+          "mobile": "9738148593",
+          "documentPath": "karkuns/kr-496",
+          "connectionStatus": "Unassigned"
+        }
+      ],
+      "reason": "Same normalized mobile on multiple karkuns/* documents",
+      "connectedRecord": [
+        "kr-497"
+      ],
+      "disconnectedRecord": [
+        "kr-496"
+      ],
+      "recommendation": "Keep kr-497 (Active). Review/archive kr-496 after migrating any lingering refs. Manual admin decision only — no auto-delete."
+    },
+    {
+      "mobileKey": "9741397389",
+      "original": {
+        "documentId": "kr-504",
+        "karkunId": "kr-504",
+        "name": "Azhar Artist",
+        "mobile": "9741397389",
+        "documentPath": "karkuns/kr-504",
+        "connectionStatus": "Connected (Active)"
+      },
+      "duplicate": [
+        {
+          "documentId": "kr-503",
+          "karkunId": "kr-503",
+          "name": "Azhar Artist",
+          "mobile": "9741397389",
+          "documentPath": "karkuns/kr-503",
+          "connectionStatus": "Unassigned"
+        }
+      ],
+      "reason": "Same normalized mobile on multiple karkuns/* documents",
+      "connectedRecord": [
+        "kr-504"
+      ],
+      "disconnectedRecord": [
+        "kr-503"
+      ],
+      "recommendation": "Keep kr-504 (Active). Review/archive kr-503 after migrating any lingering refs. Manual admin decision only — no auto-delete."
+    }
+  ],
+  "note": "No automatic merge or delete. Administrator decides."
+}

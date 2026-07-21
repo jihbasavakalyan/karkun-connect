@@ -35,4 +35,16 @@ export type IntegrityReport = {
   recommendations: string[]
   /** Full MetricsService snapshot for forensic comparison with the dashboard. */
   metrics: CampaignConnectionMetrics
+  /** KC-0069 — read-only merge candidates; never auto-applied. */
+  mergeCandidates: IntegrityMergeCandidate[]
+}
+
+export type IntegrityMergeCandidate = {
+  mobile: string
+  original: { id: string; name: string; connectionStatus: string }
+  duplicate: { id: string; name: string; connectionStatus: string }[]
+  reason: string
+  connectedRecordIds: string[]
+  disconnectedRecordIds: string[]
+  recommendation: string
 }

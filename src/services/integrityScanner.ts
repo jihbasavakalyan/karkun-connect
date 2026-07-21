@@ -11,7 +11,11 @@ import { getAllAssignments } from '@/stores/assignmentStore'
 import { getPendingKarkunRequests } from '@/stores/karkunRequestStore'
 import { getCampaignLibrary } from '@/services/campaignService'
 import { getCampaignConnectionMetrics } from '@/services/metricsService'
-import type { IntegrityFinding, IntegrityReport } from '@/types/integrity.types'
+import type {
+  IntegrityFinding,
+  IntegrityMergeCandidate,
+  IntegrityReport,
+} from '@/types/integrity.types'
 
 function finding(
   code: string,
@@ -224,6 +228,7 @@ export function runIntegrityScan(): IntegrityReport {
 
   // KC-0068 — Duplicate mobile numbers in Karkun registry (non-archived).
   checksRun += 1
+  const mergeCandidates: IntegrityMergeCandidate[] = []
   const mobileOwners = new Map<string, { id: string; name: string }[]>()
   for (const k of karkuns) {
     if (k.isArchived) continue
@@ -248,6 +253,54 @@ export function runIntegrityScan(): IntegrityReport {
           },
         ),
       )
+      // KC-0069 — also flag as distinct document IDs (not a UI double-render).
+      errors.push(
+        finding(
+          'DUPLICATE_FIRESTORE_DOCUMENT_IDS',
+          'error',
+          `Distinct Karkun document IDs share mobile ${mobile}: ${owners.map((o) => o.id).join(', ')}`,
+          {
+            entityKind: 'karkun',
+            details: { mobile, documentIds: owners.map((o) => o.id) },
+          },
+        ),
+      )
+
+      const memberStatus = owners.map((owner) => {
+        const active = assignments.some(
+          (a) => a.karkunId === owner.id && a.status === 'Active',
+        )
+        return {
+          id: owner.id,
+          name: owner.name,
+          connectionStatus: active ? 'Connected (Active)' : 'Disconnected / no Active',
+          active,
+        }
+      })
+      const connected = memberStatus.filter((m) => m.active)
+      const disconnected = memberStatus.filter((m) => !m.active)
+      const original = connected[0] ?? memberStatus[0]!
+      const duplicate = memberStatus.filter((m) => m.id !== original.id)
+      mergeCandidates.push({
+        mobile,
+        original: {
+          id: original.id,
+          name: original.name,
+          connectionStatus: original.connectionStatus,
+        },
+        duplicate: duplicate.map((d) => ({
+          id: d.id,
+          name: d.name,
+          connectionStatus: d.connectionStatus,
+        })),
+        reason: 'Same mobile on multiple Karkun registry rows (distinct IDs)',
+        connectedRecordIds: connected.map((c) => c.id),
+        disconnectedRecordIds: disconnected.map((d) => d.id),
+        recommendation:
+          connected.length === 1
+            ? `Keep ${original.id}. Manually review/archive ${duplicate.map((d) => d.id).join(', ')}. No auto-delete.`
+            : `Manual review required for mobile ${mobile} before any merge.`,
+      })
     }
   }
 
@@ -353,7 +406,12 @@ export function runIntegrityScan(): IntegrityReport {
   recommendations.push(
     `Dashboard Connections should show ${metrics.connected}/${metrics.total} (${metrics.progressPct}%). Raw connection docs=${metrics.connectionDocumentCount}.`,
   )
-  recommendations.push('KC-0068 integrity report is read-only. No automatic fixes are applied.')
+  recommendations.push('KC-0068/KC-0069 integrity report is read-only. No automatic fixes are applied.')
+  if (mergeCandidates.length > 0) {
+    recommendations.push(
+      `${mergeCandidates.length} merge candidate group(s) listed for administrator review only.`,
+    )
+  }
 
   return {
     generatedAt: new Date().toISOString(),
@@ -373,6 +431,7 @@ export function runIntegrityScan(): IntegrityReport {
     warnings,
     recommendations,
     metrics,
+    mergeCandidates,
   }
 }
 
