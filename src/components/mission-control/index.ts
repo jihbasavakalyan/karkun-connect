@@ -8,7 +8,7 @@ export {
   resolveAdminHealthKpiPending,
   resolveDashboardMetricPending,
 } from './dashboardMetricReadiness'
-export { RuknMissionControlHero, PrimaryMissionCta } from './RuknMissionControlHero'
+export { RuknMissionControlHero, PrimaryMissionCta, RuknTodaysPriorityCard, RuknTodaysPriorityEmpty } from './RuknMissionControlHero'
 export { MissionControlKpiGrid } from './MissionControlKpiGrid'
 export { McProgressRing, leaderboardStatus } from './McProgressRing'
 export {

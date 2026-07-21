@@ -9,6 +9,8 @@ import {
   RuknMissionControlHero,
   RuknMissionControlPanels,
   RuknPriorityMissionList,
+  RuknTodaysPriorityCard,
+  RuknTodaysPriorityEmpty,
 } from '@/components/mission-control'
 import { RuknFloatingActionButton, RuknIjtemaAttendancePanel } from '@/components/home'
 import { ExecutionSuccessBanner } from '@/components/execution/ExecutionSuccessBanner'
@@ -19,9 +21,15 @@ import { useGuidance } from '@/hooks/useGuidance'
 import { buildRuknMissionControl } from '@/lib/missionControl/buildRuknMissionControl'
 import { resolveHomePrimaryWorkflow } from '@/lib/workflowPresentation'
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
+import { getRuknById } from '@/data/ruknMaster'
+import { getActiveCampaignName } from '@/services/campaignService'
 import { buildTelLink, buildWhatsAppLink } from '@/utils/personContactLinks'
 import { sortGuidanceByUrgency } from '@/lib/homePresentation'
 import { getGuidanceForRuknKarkuns } from '@/lib/guidance/guidanceEngine'
+import {
+  buildConnectedIntelligenceView,
+  buildDailyPriorityMission,
+} from '@/lib/relationshipIntelligencePresentation'
 import { useRuknCommandCenter } from '@/providers/RuknCommandCenterProvider'
 import { HomePageSkeleton } from '@/components/ui'
 
@@ -39,6 +47,11 @@ export function RuknHomePage() {
     () => (ruknId ? resolveHomePrimaryWorkflow(ruknId) : null),
     [ruknId, snapshot],
   )
+
+  const todaysPriority = useMemo(() => {
+    if (!ruknId) return null
+    return buildDailyPriorityMission(ruknId, 1)[0] ?? null
+  }, [ruknId, snapshot])
 
   if (!ruknId) {
     return <Navigate to={ROUTES.LOGIN} replace />
@@ -62,39 +75,70 @@ export function RuknHomePage() {
       : undefined
 
   const rafeeqLine = buildContextualRafeeqGuidance(ruknId)
+  const ruknName = getRuknById(ruknId)?.name ?? ''
+  const campaignName = snapshot.hero?.name || getActiveCampaignName() || model.missionTitle
+
+  const priorityKarkun = todaysPriority ? getKarkunById(todaysPriority.karkunId) : undefined
+  const priorityIntel = todaysPriority
+    ? buildConnectedIntelligenceView(todaysPriority.karkunId, ruknId)
+    : null
+  const priorityCallHref = priorityKarkun?.mobile ? buildTelLink(priorityKarkun.mobile) : null
+  const priorityWhatsAppHref =
+    priorityKarkun?.mobile || priorityKarkun?.whatsapp
+      ? buildWhatsAppLink(
+          priorityKarkun.whatsapp?.trim() ? priorityKarkun.whatsapp : priorityKarkun.mobile,
+        )
+      : null
 
   return (
     <div className="cd-page cd-page-rukn mc-page mc-page-rukn-compact mc-page-execution mc-page-onescreen">
       <ExecutionSuccessBanner />
 
-      {/* 1. Today's Mission — highest priority first */}
+      {/* 1. Mission Hero — KC-0074.1 */}
       <RuknMissionControlHero
         model={model}
         greeting={morningBrief.greeting}
         missionLine={morningBrief.mission}
+        ruknName={ruknName}
+        campaignName={campaignName}
       />
+
+      {/* 2. Today's Priority — KC-0074.1 */}
+      {todaysPriority && priorityKarkun ? (
+        <RuknTodaysPriorityCard
+          karkunName={todaysPriority.karkunName}
+          area={priorityKarkun.area || '—'}
+          statusLabel={todaysPriority.healthLabel}
+          lastActivity={priorityIntel?.lastContactLabel ?? priorityIntel?.recentActivity}
+          detailsRoute={todaysPriority.route}
+          callHref={priorityCallHref}
+          whatsappHref={priorityWhatsAppHref}
+        />
+      ) : (
+        <RuknTodaysPriorityEmpty />
+      )}
 
       {primaryLabel && primaryRoute ? (
         <PrimaryMissionCta label={primaryLabel} route={primaryRoute} />
       ) : null}
 
-      {/* 2. Priority Karkuns — one tap into visit */}
+      {/* 3. Priority Karkuns — one tap into visit */}
       <RuknPriorityMissionList ruknId={ruknId} model={model} />
 
-      {/* 3. Digital Rafeeq — supportive, subordinate */}
+      {/* 4. Digital Rafeeq — supportive, subordinate */}
       <AskDigitalRafeeqCard
         compact
         onOpen={openDigitalRafeeqAssistant}
         guidanceLine={rafeeqLine}
       />
 
-      {/* 4. Campaign Task Progress */}
+      {/* 5. Campaign Task Progress */}
       <RuknCampaignTaskTracker ruknId={ruknId} model={model} />
 
-      {/* 5. Development Summary */}
+      {/* 6. Development Summary */}
       <RuknDevelopmentSummary ruknId={ruknId} model={model} />
 
-      {/* 6. Everything else */}
+      {/* 7. Everything else */}
       <RuknIjtemaAttendancePanel ruknId={ruknId} />
       <RuknMissionControlPanels model={model} />
 
