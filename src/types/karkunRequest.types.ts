@@ -19,6 +19,8 @@ export type NewKarkunRequest = {
   decisionNotes?: string
   createdKarkunId?: string
   assignmentId?: string
+  /** KC-0072C — soft claim so parallel approvals cannot create twice (optional; additive). */
+  approvalClaimedAt?: string
   /** KC-0058 — soft archive / recovery metadata (optional; additive). */
   isArchived?: boolean
   archivedAt?: string

@@ -1,5 +1,5 @@
 /**
- * Admin queue for Pending New Karkun requests (KC-018 / KC-0068).
+ * Admin queue for Pending New Karkun requests (KC-018 / KC-0068 / KC-0072C).
  */
 
 import { useEffect, useState } from 'react'
@@ -24,6 +24,8 @@ export function PendingKarkunRequestQueue() {
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [duplicate, setDuplicate] = useState<MobileDuplicateDetails | null>(null)
+  /** KC-0072C — single-flight: at most one approve in progress per request id. */
+  const [approvingIds, setApprovingIds] = useState<Set<string>>(() => new Set())
 
   useEffect(() => {
     return subscribeToKarkunRequestStore(() => setTick((value) => value + 1))
@@ -33,25 +35,49 @@ export function PendingKarkunRequestQueue() {
   const decidedBy = user?.displayName ?? user?.uid ?? 'Administrator'
 
   const handleApprove = (request: NewKarkunRequest) => {
+    if (approvingIds.has(request.id)) {
+      return
+    }
+
+    setApprovingIds((current) => {
+      const next = new Set(current)
+      next.add(request.id)
+      return next
+    })
+    setError('')
+    setNotice('')
+    setDuplicate(null)
+
     void (async () => {
-      const result = await approveNewKarkunRequest({
-        requestId: request.id,
-        decidedBy,
-        decisionNotes: notesById[request.id],
-      })
-      if (!result.ok) {
-        setError(result.error)
-        setDuplicate(result.duplicate ?? null)
-        setNotice('')
-        return
+      try {
+        const result = await approveNewKarkunRequest({
+          requestId: request.id,
+          decidedBy,
+          decisionNotes: notesById[request.id],
+        })
+        if (!result.ok) {
+          setError(result.error)
+          setDuplicate(result.duplicate ?? null)
+          setNotice('')
+          return
+        }
+        setError('')
+        setDuplicate(null)
+        setNotice(`Approved ${request.fullName} and connected to ${request.requestingRuknName}.`)
+      } finally {
+        setApprovingIds((current) => {
+          const next = new Set(current)
+          next.delete(request.id)
+          return next
+        })
       }
-      setError('')
-      setDuplicate(null)
-      setNotice(`Approved ${request.fullName} and connected to ${request.requestingRuknName}.`)
     })()
   }
 
   const handleReject = (request: NewKarkunRequest) => {
+    if (approvingIds.has(request.id)) {
+      return
+    }
     const result = rejectNewKarkunRequest({
       requestId: request.id,
       decidedBy,
@@ -116,49 +142,62 @@ export function PendingKarkunRequestQueue() {
       ) : null}
 
       <ul className="space-y-3">
-        {pending.map((request) => (
-          <li key={request.id} className="rounded-2xl border border-border bg-surface px-4 py-3">
-            <div className="flex flex-wrap items-start justify-between gap-2">
-              <div className="min-w-0">
-                <p className="font-semibold text-text-heading">{request.fullName}</p>
-                <p className="text-sm text-secondary">
-                  {request.gender} · {request.mobile}
-                  {request.area ? ` · ${request.area}` : ''}
-                </p>
-                <p className="mt-1 text-xs text-secondary">
-                  Requested by {request.requestingRuknName}
-                </p>
-                {request.remarks ? (
-                  <p className="mt-1 text-sm text-text-heading">{request.remarks}</p>
-                ) : null}
+        {pending.map((request) => {
+          const isApproving = approvingIds.has(request.id)
+          return (
+            <li key={request.id} className="rounded-2xl border border-border bg-surface px-4 py-3">
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="font-semibold text-text-heading">{request.fullName}</p>
+                  <p className="text-sm text-secondary">
+                    {request.gender} · {request.mobile}
+                    {request.area ? ` · ${request.area}` : ''}
+                  </p>
+                  <p className="mt-1 text-xs text-secondary">
+                    Requested by {request.requestingRuknName}
+                  </p>
+                  {request.remarks ? (
+                    <p className="mt-1 text-sm text-text-heading">{request.remarks}</p>
+                  ) : null}
+                </div>
+                <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800">
+                  {isApproving ? 'Approving…' : 'Pending Approval'}
+                </span>
               </div>
-              <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800">
-                Pending Approval
-              </span>
-            </div>
 
-            <label className={`${FORM_LABEL_CLASS} mt-3`} htmlFor={`kreq-notes-${request.id}`}>
-              Notes (optional)
-            </label>
-            <input
-              id={`kreq-notes-${request.id}`}
-              className={FORM_INPUT_CLASS}
-              value={notesById[request.id] ?? ''}
-              onChange={(event) =>
-                setNotesById((current) => ({ ...current, [request.id]: event.target.value }))
-              }
-            />
+              <label className={`${FORM_LABEL_CLASS} mt-3`} htmlFor={`kreq-notes-${request.id}`}>
+                Notes (optional)
+              </label>
+              <input
+                id={`kreq-notes-${request.id}`}
+                className={FORM_INPUT_CLASS}
+                value={notesById[request.id] ?? ''}
+                disabled={isApproving}
+                onChange={(event) =>
+                  setNotesById((current) => ({ ...current, [request.id]: event.target.value }))
+                }
+              />
 
-            <div className="mt-3 flex flex-wrap gap-2">
-              <PrimaryButton type="button" onClick={() => handleApprove(request)}>
-                Approve
-              </PrimaryButton>
-              <SecondaryButton type="button" onClick={() => handleReject(request)}>
-                Reject
-              </SecondaryButton>
-            </div>
-          </li>
-        ))}
+              <div className="mt-3 flex flex-wrap gap-2">
+                <PrimaryButton
+                  type="button"
+                  disabled={isApproving}
+                  aria-busy={isApproving}
+                  onClick={() => handleApprove(request)}
+                >
+                  {isApproving ? 'Approving...' : 'Approve'}
+                </PrimaryButton>
+                <SecondaryButton
+                  type="button"
+                  disabled={isApproving}
+                  onClick={() => handleReject(request)}
+                >
+                  Reject
+                </SecondaryButton>
+              </div>
+            </li>
+          )
+        })}
       </ul>
     </section>
   )

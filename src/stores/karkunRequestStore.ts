@@ -71,9 +71,39 @@ export function resolveKarkunRequest(
     status,
     decidedBy,
     updatedAt: new Date().toISOString(),
+    approvalClaimedAt: undefined,
   })
   notify()
   return request
+}
+
+/** KC-0072C — claim a pending request for a single approval attempt (idempotent lock). */
+export function claimKarkunRequestApproval(id: string): NewKarkunRequest | undefined {
+  const request = requests.find((item) => item.id === id)
+  if (!request || request.status !== 'Pending Approval') {
+    return undefined
+  }
+  if (request.approvalClaimedAt) {
+    return undefined
+  }
+  request.approvalClaimedAt = new Date().toISOString()
+  request.updatedAt = request.approvalClaimedAt
+  notify()
+  return request
+}
+
+/** KC-0072C — release claim when approval fails so a retry can proceed. */
+export function releaseKarkunRequestApprovalClaim(id: string): void {
+  const request = requests.find((item) => item.id === id)
+  if (!request || request.status !== 'Pending Approval') {
+    return
+  }
+  if (!request.approvalClaimedAt) {
+    return
+  }
+  request.approvalClaimedAt = undefined
+  request.updatedAt = new Date().toISOString()
+  notify()
 }
 
 export function reloadKarkunRequestStoreFromPersistence(): void {
