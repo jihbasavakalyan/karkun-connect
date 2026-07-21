@@ -2,7 +2,7 @@ import { MOCK_KARKUN_REGISTRY } from '@/constants/mockKarkunRegistry'
 import { ruknMaster } from '@/data/ruknMaster'
 import { getRepositories } from '@/repositories/provider'
 import { repositoryOk, unwrapRepository, type RepositoryResult } from '@/repositories/errors'
-import { notifyPeopleRegistryChange, syncNextKarkunNumFromRegistry } from '@/lib/peopleStore'
+import { notifyPeopleRegistryUiOnly, syncNextKarkunNumFromRegistry } from '@/lib/peopleStore'
 import { kc004cTraceRegistry } from '@/lib/debug/kc004cRegistryTrace'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
 
@@ -116,7 +116,8 @@ export function loadPeopleRegistryFromPersistence(): {
   }
 
   if (mutated) {
-    notifyPeopleRegistryChange()
+    // KC-0067 — loading FROM persistence must not write the full registry back.
+    notifyPeopleRegistryUiOnly()
   }
 
   return {

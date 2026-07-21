@@ -10,7 +10,7 @@ import { reloadJihWebPortalStoreFromPersistence } from '@/stores/jihWebPortalSto
 import { reloadBroadcastListStoreFromPersistence } from '@/stores/broadcastListStore'
 import { reloadKarkunRequestStoreFromPersistence } from '@/stores/karkunRequestStore'
 import { loadPeopleRegistryFromPersistence } from '@/lib/peopleRegistryPersistence'
-import { getPeopleStatistics, notifyPeopleRegistryChange } from '@/lib/peopleStore'
+import { getPeopleStatistics, notifyPeopleRegistryUiOnly } from '@/lib/peopleStore'
 import { traceRegistryStage } from '@/lib/registryHydrationTrace'
 import { getAssignmentDashboardMetrics, syncAllKarkunRegistryFromAssignments } from '@/services/assignmentService'
 import { getAllAssignments } from '@/stores/assignmentStore'
@@ -104,14 +104,15 @@ export function hydrateStoresFromRepositories(): void {
     })
 
       traceRegistryStage('3_after_hydrateStoresFromRepositories_post_load')
-      notifyPeopleRegistryChange()
+      // KC-0067 — UI refresh only. Never echo hydrated state back via full saveState.
+      notifyPeopleRegistryUiOnly()
       kc004cTraceRegistry({
         caller: 'hydrateStoresFromRepositories',
-        phase: 'after-notifyPeopleRegistryChange',
+        phase: 'after-notifyPeopleRegistryUiOnly',
         after: MOCK_KARKUN_REGISTRY.length,
-        extra: { note: 'notify persists full MOCK via saveState upsert' },
+        extra: { note: 'KC-0067: hydrate notifies UI without persistPeopleRegistry/saveState' },
       })
-      traceRegistryStage('6_after_notifyPeopleRegistryChange_from_hydrateStores')
+      traceRegistryStage('6_after_notifyPeopleRegistryUiOnly_from_hydrateStores')
 
     const people = getPeopleStatistics()
     const assignmentMetrics = getAssignmentDashboardMetrics()

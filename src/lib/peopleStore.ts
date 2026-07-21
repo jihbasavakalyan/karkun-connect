@@ -65,7 +65,47 @@ function notifyPeopleChange(): void {
   savePeopleRegistry()
 }
 
-/** Notify subscribers after assignment-driven registry field updates. */
+/**
+ * KC-0067 — UI refresh only (hydration / load-from-persistence).
+ * Does NOT write Firestore. Use notifyPeopleRegistryChange for local edits that must persist.
+ */
+export function notifyPeopleRegistryUiOnly(): void {
+  const before = getPeopleStatistics()
+  emitPeopleRegistryChange()
+  const after = getPeopleStatistics()
+
+  const operationId = createIncidentOperationId('people-registry-ui-only')
+  traceMutation({
+    operationId,
+    entity: 'people_registry',
+    field: 'assignedKarkuns',
+    before: before.assignedKarkuns,
+    after: after.assignedKarkuns,
+    caller: 'notifyPeopleRegistryUiOnly',
+    reason: 'registry UI notify without persistence',
+    sourceOfTruth: 'Derived Calculation',
+  })
+  traceMutation({
+    operationId,
+    entity: 'people_registry',
+    field: 'unassignedKarkuns',
+    before: before.unassignedKarkuns,
+    after: after.unassignedKarkuns,
+    caller: 'notifyPeopleRegistryUiOnly',
+    reason: 'registry UI notify without persistence',
+    sourceOfTruth: 'Derived Calculation',
+  })
+  traceStoreSnapshot('people_registry', {
+    caller: 'notifyPeopleRegistryUiOnly',
+    sourceOfTruth: 'Derived Calculation',
+    connectedCount: after.assignedKarkuns,
+    availableCount: after.unassignedKarkuns,
+  })
+
+  traceRegistryStage('6_after_notifyPeopleRegistryUiOnly')
+}
+
+/** Notify subscribers and persist full registry (edits, import, migration, archive). */
 export function notifyPeopleRegistryChange(): void {
   const before = getPeopleStatistics()
   notifyPeopleChange()
