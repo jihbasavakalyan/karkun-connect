@@ -13,12 +13,26 @@ import {
   buildAllActiveRuknPerformance,
   type AdminRuknGenderPerformanceView,
 } from '@/lib/missionControl/adminMissionControlPresentation'
+import {
+  buildAppreciationDraft,
+  buildReminderDraft,
+  buildRuknMessageRecipient,
+  buildRuknMessageRecipients,
+  dashboardPerformanceBadge,
+  shouldOfferAppreciate,
+  shouldOfferReminder,
+} from '@/lib/missionControl/dashboardCommunicationDrafts'
 import type { AdminMissionControlModel } from '@/lib/missionControl/buildAdminMissionControl'
 import type { AdminCommandCenterSnapshot } from '@/types/campaignAutomation.types'
+import type { MessageRecipient } from '@/types/communication'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { useBackgroundHydration } from '@/hooks/useBackgroundHydration'
+import { useCommunication } from '@/hooks/useCommunication'
 import { PendingKarkunRequestQueue } from '@/components/admin/PendingKarkunRequestQueue'
+import { MessageComposerModal } from '@/components/communication/MessageComposerModal'
 import { dashState03WidgetRender } from '@/lib/debug/kc00586DashboardStateProbe'
+import { getRuknById } from '@/data/ruknMaster'
+import { buildTelLink } from '@/utils/personContactLinks'
 import { AdminHealthKpiCard } from './AdminHealthKpiCard'
 import { resolveAdminHealthKpiPending } from './dashboardMetricReadiness'
 import { LiveActivityFeed } from './LiveActivityFeed'
@@ -75,18 +89,48 @@ function activityTone(message: string): 'completed' | 'transfer' | 'pending' | '
   return 'idle'
 }
 
-function RuknPerformanceCard({ row }: { row: AdminRuknGenderPerformanceView }) {
+function RuknPerformanceCard({
+  row,
+  selected,
+  onToggleSelected,
+  onNotify,
+  onAppreciate,
+  onRemind,
+}: {
+  row: AdminRuknGenderPerformanceView
+  selected: boolean
+  onToggleSelected: (ruknId: string) => void
+  onNotify: (ruknId: string) => void
+  onAppreciate: (ruknId: string) => void
+  onRemind: (ruknId: string) => void
+}) {
+  const rukn = getRuknById(row.ruknId)
+  const tel = rukn?.mobile ? buildTelLink(rukn.mobile) : null
+  const canMessage = Boolean(rukn?.mobile?.trim())
+  const badge = dashboardPerformanceBadge(row.completionPct, row.assignedKarkuns)
+  const showAppreciate = shouldOfferAppreciate(row.completionPct, row.assignedKarkuns)
+  const showReminder = shouldOfferReminder(row.completionPct, row.assignedKarkuns)
+
   return (
-    <li className="exdash-rukn-card">
+    <li className={`exdash-rukn-card${selected ? ' exdash-rukn-card-selected' : ''}`}>
       <div className="exdash-rukn-card-top">
+        <label className="exdash-rukn-select">
+          <input
+            type="checkbox"
+            checked={selected}
+            onChange={() => onToggleSelected(row.ruknId)}
+            aria-label={`Select ${row.ruknName}`}
+          />
+        </label>
         <div className="min-w-0 flex-1">
           <p className="exdash-rukn-name">{row.ruknName}</p>
           <p className="exdash-rukn-meta">
-            {row.assignedKarkuns} connected · {row.pendingWork} pending
+            Connected: {row.assignedKarkuns}
+            {row.pendingWork > 0 ? ` · Pending: ${row.pendingWork}` : ''}
           </p>
         </div>
-        <span className={`exdash-status-badge exdash-status-${row.status.tone}`}>
-          {row.status.label}
+        <span className={`exdash-status-badge exdash-status-${badge.tone}`}>
+          {badge.icon} {badge.label}
         </span>
       </div>
       <div className="exdash-rukn-card-bottom">
@@ -99,9 +143,58 @@ function RuknPerformanceCard({ row }: { row: AdminRuknGenderPerformanceView }) {
           </div>
           <span className="exdash-rukn-pct">{row.completionPct}%</span>
         </div>
-        <Link to={row.route} className="exdash-rukn-view">
-          Quick View
+      </div>
+      <div className="exdash-rukn-actions" role="group" aria-label={`Actions for ${row.ruknName}`}>
+        <Link to={row.route} className="exdash-action-btn">
+          View
         </Link>
+        <button
+          type="button"
+          className="exdash-action-btn"
+          disabled={!canMessage}
+          onClick={() => onNotify(row.ruknId)}
+          title={canMessage ? 'Notify via Communication module' : 'No mobile number'}
+        >
+          Notify
+        </button>
+        {tel ? (
+          <a className="exdash-action-btn" href={tel}>
+            Call
+          </a>
+        ) : (
+          <button type="button" className="exdash-action-btn" disabled title="No mobile number">
+            Call
+          </button>
+        )}
+        <button
+          type="button"
+          className="exdash-action-btn"
+          disabled={!canMessage}
+          onClick={() => onNotify(row.ruknId)}
+          title={canMessage ? 'WhatsApp via Communication module' : 'No mobile number'}
+        >
+          WhatsApp
+        </button>
+        {showAppreciate ? (
+          <button
+            type="button"
+            className="exdash-action-btn exdash-action-accent"
+            disabled={!canMessage}
+            onClick={() => onAppreciate(row.ruknId)}
+          >
+            👏 Appreciate
+          </button>
+        ) : null}
+        {showReminder ? (
+          <button
+            type="button"
+            className="exdash-action-btn exdash-action-warn"
+            disabled={!canMessage}
+            onClick={() => onRemind(row.ruknId)}
+          >
+            🔔 Reminder
+          </button>
+        ) : null}
       </div>
     </li>
   )
@@ -110,9 +203,19 @@ function RuknPerformanceCard({ row }: { row: AdminRuknGenderPerformanceView }) {
 function PaginatedRuknGrid({
   rows,
   emptyLabel,
+  selectedIds,
+  onToggleSelected,
+  onNotify,
+  onAppreciate,
+  onRemind,
 }: {
   rows: AdminRuknGenderPerformanceView[]
   emptyLabel: string
+  selectedIds: Set<string>
+  onToggleSelected: (ruknId: string) => void
+  onNotify: (ruknId: string) => void
+  onAppreciate: (ruknId: string) => void
+  onRemind: (ruknId: string) => void
 }) {
   const [page, setPage] = useState(0)
   const totalPages = Math.max(1, Math.ceil(rows.length / RUKN_PAGE_SIZE))
@@ -127,7 +230,15 @@ function PaginatedRuknGrid({
     <div className="space-y-3">
       <ul className="exdash-rukn-grid">
         {slice.map((row) => (
-          <RuknPerformanceCard key={row.ruknId} row={row} />
+          <RuknPerformanceCard
+            key={row.ruknId}
+            row={row}
+            selected={selectedIds.has(row.ruknId)}
+            onToggleSelected={onToggleSelected}
+            onNotify={onNotify}
+            onAppreciate={onAppreciate}
+            onRemind={onRemind}
+          />
         ))}
       </ul>
       {totalPages > 1 ? (
@@ -191,7 +302,115 @@ export function AdminCommandCenter({
 }: AdminCommandCenterProps) {
   const { assignmentVersion } = useAssignmentEngine()
   const backgroundReady = useBackgroundHydration()
+  const { sendIndividualMessage, sendBroadcastMessage } = useCommunication()
   const [systemHistoryOpen, setSystemHistoryOpen] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set())
+  const [composerError, setComposerError] = useState('')
+  const [composer, setComposer] = useState<{
+    open: boolean
+    recipients: MessageRecipient[]
+    title: string
+    initialTemplateId?: string
+    initialMessage?: string
+  }>({ open: false, recipients: [], title: 'Compose WhatsApp Message' })
+
+  const toggleSelected = (ruknId: string) => {
+    setSelectedIds((current) => {
+      const next = new Set(current)
+      if (next.has(ruknId)) next.delete(ruknId)
+      else next.add(ruknId)
+      return next
+    })
+  }
+
+  const clearSelection = () => setSelectedIds(new Set())
+
+  const openComposer = (input: {
+    recipients: MessageRecipient[]
+    title: string
+    initialTemplateId?: string
+    initialMessage?: string
+  }) => {
+    if (input.recipients.length === 0) {
+      setComposerError('Selected Rukn(s) have no mobile number for WhatsApp.')
+      return
+    }
+    setComposerError('')
+    setComposer({ open: true, ...input })
+  }
+
+  const openNotify = (ruknId: string) => {
+    const recipient = buildRuknMessageRecipient(ruknId)
+    if (!recipient) {
+      setComposerError('This Rukn has no mobile number.')
+      return
+    }
+    openComposer({
+      recipients: [recipient],
+      title: `Notify ${recipient.name}`,
+      initialTemplateId: 'tpl-visit-reminder',
+    })
+  }
+
+  const openAppreciate = (ruknId: string) => {
+    const recipient = buildRuknMessageRecipient(ruknId)
+    if (!recipient) {
+      setComposerError('This Rukn has no mobile number.')
+      return
+    }
+    openComposer({
+      recipients: [recipient],
+      title: `Appreciate ${recipient.name}`,
+      initialTemplateId: 'tpl-thank-you',
+      initialMessage: buildAppreciationDraft(recipient.name),
+    })
+  }
+
+  const openRemind = (ruknId: string) => {
+    const recipient = buildRuknMessageRecipient(ruknId)
+    if (!recipient) {
+      setComposerError('This Rukn has no mobile number.')
+      return
+    }
+    openComposer({
+      recipients: [recipient],
+      title: `Remind ${recipient.name}`,
+      initialTemplateId: 'tpl-visit-reminder',
+      initialMessage: buildReminderDraft(recipient.name),
+    })
+  }
+
+  const openBulk = (mode: 'notify' | 'appreciate' | 'remind') => {
+    const ids = [...selectedIds]
+    const recipients = buildRuknMessageRecipients(ids)
+    if (recipients.length === 0) {
+      setComposerError('Selected Rukns have no mobile numbers.')
+      return
+    }
+    if (mode === 'appreciate') {
+      openComposer({
+        recipients,
+        title: `Appreciate ${recipients.length} Rukns`,
+        initialTemplateId: 'tpl-thank-you',
+        initialMessage: buildAppreciationDraft('dear brother / sister'),
+      })
+      return
+    }
+    if (mode === 'remind') {
+      openComposer({
+        recipients,
+        title: `Remind ${recipients.length} Rukns`,
+        initialTemplateId: 'tpl-visit-reminder',
+        initialMessage: buildReminderDraft('dear brother / sister'),
+      })
+      return
+    }
+    openComposer({
+      recipients,
+      title: `Notify ${recipients.length} Rukns`,
+      initialTemplateId: 'tpl-visit-reminder',
+    })
+  }
 
   const healthKpis = useMemo(() => {
     void assignmentVersion
@@ -369,7 +588,15 @@ export function AdminCommandCenter({
             Loading campaign data…
           </p>
         ) : (
-          <PaginatedRuknGrid rows={maleRukns} emptyLabel="No Male Rukns found." />
+          <PaginatedRuknGrid
+            rows={maleRukns}
+            emptyLabel="No Male Rukns found."
+            selectedIds={selectedIds}
+            onToggleSelected={toggleSelected}
+            onNotify={openNotify}
+            onAppreciate={openAppreciate}
+            onRemind={openRemind}
+          />
         )}
       </section>
 
@@ -386,9 +613,51 @@ export function AdminCommandCenter({
             Loading campaign data…
           </p>
         ) : (
-          <PaginatedRuknGrid rows={femaleRukns} emptyLabel="No Female Rukns found." />
+          <PaginatedRuknGrid
+            rows={femaleRukns}
+            emptyLabel="No Female Rukns found."
+            selectedIds={selectedIds}
+            onToggleSelected={toggleSelected}
+            onNotify={openNotify}
+            onAppreciate={openAppreciate}
+            onRemind={openRemind}
+          />
         )}
       </section>
+
+      {selectedIds.size > 0 ? (
+        <div className="exdash-bulk-bar" role="region" aria-label="Bulk Rukn communication">
+          <p className="exdash-bulk-count">{selectedIds.size} selected</p>
+          <div className="exdash-bulk-actions">
+            <button type="button" className="exdash-action-btn" onClick={() => openBulk('notify')}>
+              Notify Selected
+            </button>
+            <button
+              type="button"
+              className="exdash-action-btn exdash-action-accent"
+              onClick={() => openBulk('appreciate')}
+            >
+              Appreciate Selected
+            </button>
+            <button
+              type="button"
+              className="exdash-action-btn exdash-action-warn"
+              onClick={() => openBulk('remind')}
+            >
+              Reminder to Selected
+            </button>
+            <button type="button" className="exdash-action-btn" onClick={clearSelection}>
+              Clear
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      {composerError ? (
+        <p className="exdash-muted" role="alert">
+          {composerError}
+        </p>
+      ) : null}
 
       <LiveActivityFeed ready={backgroundReady} limit={8} />
 
@@ -463,6 +732,45 @@ export function AdminCommandCenter({
           )
         ) : null}
       </section>
+
+      <MessageComposerModal
+        isOpen={composer.open}
+        recipients={composer.recipients}
+        title={composer.title}
+        initialTemplateId={composer.initialTemplateId}
+        initialMessage={composer.initialMessage}
+        onClose={() => setComposer((current) => ({ ...current, open: false }))}
+        onSend={async (input) => {
+          if (composer.recipients.length === 1) {
+            const result = await sendIndividualMessage({
+              channel: 'whatsapp',
+              recipient: composer.recipients[0]!,
+              templateId: input.templateId,
+              message: input.message,
+            })
+            if (result.success) {
+              setComposer((current) => ({ ...current, open: false }))
+              return { success: true }
+            }
+            return { success: false, error: result.error ?? 'Send failed.' }
+          }
+          const result = await sendBroadcastMessage({
+            channel: 'whatsapp',
+            recipients: composer.recipients,
+            templateId: input.templateId,
+            message: input.message,
+          })
+          if (result.success > 0) {
+            clearSelection()
+            setComposer((current) => ({ ...current, open: false }))
+            return { success: true }
+          }
+          return {
+            success: false,
+            error: result.failed[0]?.error ?? 'Broadcast failed.',
+          }
+        }}
+      />
     </div>
   )
 }

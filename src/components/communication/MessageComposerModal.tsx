@@ -24,6 +24,8 @@ type MessageComposerModalProps = {
   onSend: (input: { templateId?: string; message: string }) => Promise<{ success: boolean; error?: string }>
   title?: string
   initialTemplateId?: string
+  /** Optional draft body (used when no template body, or as override when provided). */
+  initialMessage?: string
   contextVariables?: Record<string, string>
   /** Controls footer and whether official wording is editable. Default administrator. */
   role?: 'administrator' | 'rukn'
@@ -38,6 +40,7 @@ export function MessageComposerModal({
   onSend,
   title = 'Compose WhatsApp Message',
   initialTemplateId,
+  initialMessage,
   contextVariables,
   role = 'administrator',
   recommendedTemplateId,
@@ -48,12 +51,13 @@ export function MessageComposerModal({
 
   return (
     <MessageComposerModalContent
-      key={`${title}-${recipients.map((r) => r.personId).join(',')}-${initialTemplateId ?? ''}`}
+      key={`${title}-${recipients.map((r) => r.personId).join(',')}-${initialTemplateId ?? ''}-${initialMessage?.slice(0, 24) ?? ''}`}
       recipients={recipients}
       onClose={onClose}
       onSend={onSend}
       title={title}
       initialTemplateId={initialTemplateId}
+      initialMessage={initialMessage}
       contextVariables={contextVariables}
       role={role}
       recommendedTemplateId={recommendedTemplateId}
@@ -67,6 +71,7 @@ function MessageComposerModalContent({
   onSend,
   title = 'Compose WhatsApp Message',
   initialTemplateId,
+  initialMessage,
   contextVariables,
   role = 'administrator',
   recommendedTemplateId,
@@ -77,7 +82,9 @@ function MessageComposerModalContent({
   const startingTemplate = templates.find((item) => item.id === startingId)
 
   const [templateId, setTemplateId] = useState(startingId)
-  const [message, setMessage] = useState(startingTemplate?.body ?? '')
+  const [message, setMessage] = useState(
+    initialMessage?.trim() ? initialMessage : (startingTemplate?.body ?? ''),
+  )
   const [placeholders, setPlaceholders] = useState<Record<string, string>>(() => ({
     name: recipients[0]?.name ?? '',
     date: '',
