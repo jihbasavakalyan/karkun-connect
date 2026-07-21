@@ -20,6 +20,10 @@ export function ConfirmDialog({
   onConfirm,
   onClose,
 }: ConfirmDialogProps) {
+  if (!isOpen) {
+    return null
+  }
+
   return (
     <Modal isOpen={isOpen} title={title} onClose={onClose}>
       <div className="space-y-4">
@@ -28,7 +32,7 @@ export function ConfirmDialog({
           <SecondaryButton type="button" onClick={onClose}>
             Cancel
           </SecondaryButton>
-          <PrimaryButton type="button" onClick={onConfirm}>
+          <PrimaryButton type="button" autoFocus onClick={onConfirm}>
             {confirmLabel}
           </PrimaryButton>
         </div>

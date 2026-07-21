@@ -407,15 +407,17 @@ function KarkunGenderSection({
                 A Karkun named <strong>{mobileOwner.name}</strong> already uses this mobile number.
                 <br />
                 <br />
-                Duplicate Karkuns cannot be created.
+                Each mobile number can belong to only one Karkun.
                 <br />
                 If you intended to update this person, open the existing record instead.
               </>
             ) : (
               <>
                 This mobile number is already used by{' '}
-                <strong>{mobileOwner?.name}</strong> ({mobileOwner?.kind}). Duplicate Karkuns cannot
-                be created.
+                <strong>{mobileOwner?.name}</strong> ({mobileOwner?.kind}).
+                <br />
+                <br />
+                Each mobile number can belong to only one Karkun.
               </>
             )
           }
