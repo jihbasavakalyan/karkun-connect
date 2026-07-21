@@ -127,16 +127,16 @@ function saveAssignments(): void {
   persistAssignmentState(assignments, nextAssignmentSequence)
 }
 
-const PERSIST_COMMIT_TIMEOUT_MS = 15_000
+const PERSIST_COMMIT_SOFT_TIMEOUT_MS = 15_000
 
-function persistCommitTimeoutError(): Error & { code: string } {
-  return Object.assign(new Error('Connection save timed out.'), { code: 'commit-timeout' })
-}
-
-/** KC-0063 — Await connection doc commit; reject on timeout instead of fire-and-forget. */
+/**
+ * KC-0063 — Await connection doc commit (no fire-and-forget).
+ * KC-0065 — Soft timeout only logs; never fails or rolls back while commit is still in flight.
+ * Only a real commit rejection / repository error fails persistence.
+ */
 async function persistAssignmentRecords(
   records: AssignmentRecord[],
-  timeoutMs = PERSIST_COMMIT_TIMEOUT_MS,
+  softTimeoutMs = PERSIST_COMMIT_SOFT_TIMEOUT_MS,
 ): Promise<RepositoryResult<void>> {
   const commit = getRepositories().connection.commitConnectionDocuments
   if (commit) {
@@ -153,21 +153,20 @@ async function persistAssignmentRecords(
       assignmentIds: records.map((record) => record.assignmentId),
       count: records.length,
     })
+    let softTimedOut = false
+    let softTimer: ReturnType<typeof setTimeout> | undefined
     try {
-      const result = await Promise.race([
-        commit(records),
-        new Promise<RepositoryResult<void>>((resolve) => {
-          setTimeout(() => {
-            resolve(
-              repositoryErr(
-                'StorageFailure',
-                'Connection save timed out.',
-                persistCommitTimeoutError(),
-              ),
-            )
-          }, timeoutMs)
-        }),
-      ])
+      softTimer = setTimeout(() => {
+        softTimedOut = true
+        console.warn(
+          '[assignmentStore.persistAssignmentRecords] commit still pending after',
+          softTimeoutMs,
+          'ms — continuing to await Firestore completion',
+          { assignmentIds: records.map((record) => record.assignmentId) },
+        )
+      }, softTimeoutMs)
+
+      const result = await commit(records)
       if (!result.ok) {
         const errorCode =
           typeof result.error.cause === 'object' &&
@@ -178,22 +177,27 @@ async function persistAssignmentRecords(
         connectStepException('repo.connection.commitDocuments', result.error.cause ?? result.error, {
           errorCode,
           errorMessage: result.error.message,
+          softTimedOut,
         })
-        connectStepExit(span, 'repo.connection.commitDocuments', { ok: false, errorCode })
+        connectStepExit(span, 'repo.connection.commitDocuments', { ok: false, errorCode, softTimedOut })
         console.error('[assignmentStore.persistAssignmentRecords]', result.error)
         return result
       }
-      connectStepExit(span, 'repo.connection.commitDocuments', { ok: true })
+      connectStepExit(span, 'repo.connection.commitDocuments', { ok: true, softTimedOut })
       return result
     } catch (error) {
       connectStepException('repo.connection.commitDocuments', error)
-      connectStepExit(span, 'repo.connection.commitDocuments', { ok: false })
+      connectStepExit(span, 'repo.connection.commitDocuments', { ok: false, softTimedOut })
       console.error('[assignmentStore.persistAssignmentRecords]', error)
       return repositoryErr(
         'Unexpected',
         error instanceof Error ? error.message : 'Connection save failed.',
         error,
       )
+    } finally {
+      if (softTimer !== undefined) {
+        clearTimeout(softTimer)
+      }
     }
   }
   saveAssignments()
