@@ -48,6 +48,7 @@ import type { Annexure1FormState } from '@/types/annexure1.types'
 import type { MessageRecipient } from '@/types/communication'
 import { PageShell, StatusBadge } from '@/components/ui'
 import { ExecutionSuccessBanner } from '@/components/execution/ExecutionSuccessBanner'
+import { ConnectionQuickActionsPanel } from '@/components/execution/ConnectionQuickActionsPanel'
 import { KarkunWeeklyIjtemaSection } from '@/components/execution/KarkunWeeklyIjtemaSection'
 
 function sectionClass(): string {
@@ -248,6 +249,11 @@ export function ConnectionJourneyPage() {
       </div>
 
       <ExecutionSuccessBanner />
+
+      {/* KC-0083 — execution Quick Actions at top of detail */}
+      {!isAdminContext && authRuknId ? (
+        <ConnectionQuickActionsPanel karkunId={karkun.id} ruknId={authRuknId} />
+      ) : null}
 
       <RelationshipSummaryPanel
         karkunName={karkun.name}

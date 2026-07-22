@@ -4,6 +4,7 @@
  */
 
 import { getKarkunById, updateKarkunMeetingOutcomes } from '@/constants/mockKarkunRegistry'
+import { ruknVisitPath } from '@/constants/routes'
 import { getAssignedKarkunanForRukn } from '@/lib/assignmentEngine'
 import {
   buildFormFromDailyProgressOutcome,
@@ -333,4 +334,79 @@ export function baitulMaalLabel(state: BaitulMaalCampaignState): string {
     default:
       return '—'
   }
+}
+
+/** KC-0083 — compact follow-up lines derived from matrix pending states (no new persistence). */
+export type TodaysFocusItem = {
+  karkunId: string
+  karkunName: string
+  pendingLabel: string
+  route: string
+}
+
+export function buildTodaysFocusItems(ruknId: string, limit = 6): TodaysFocusItem[] {
+  const priorityRank = (label: string): number => {
+    if (label.startsWith('Visit')) return 0
+    if (label.startsWith('Registration')) return 1
+    if (label.startsWith('Weekly Ijtema')) return 2
+    return 3
+  }
+
+  const items: TodaysFocusItem[] = []
+  for (const row of buildCampaignMatrixRows(ruknId)) {
+    if (row.completed) continue
+    let pendingLabel = ''
+    if (!row.visitDone) pendingLabel = 'Visit Pending'
+    else if (row.jih !== 'registered') pendingLabel = 'Registration Pending'
+    else if (row.ijtema === 'Pending') pendingLabel = 'Weekly Ijtema Pending'
+    else if (row.baitulMaal !== 'committed') pendingLabel = 'Baitul Maal Pending'
+    else continue
+
+    items.push({
+      karkunId: row.karkunId,
+      karkunName: row.karkunName,
+      pendingLabel,
+      route: ruknVisitPath(row.karkunId),
+    })
+  }
+
+  return items
+    .sort((a, b) => priorityRank(a.pendingLabel) - priorityRank(b.pendingLabel))
+    .slice(0, limit)
+}
+
+export type MatrixStatusTone = 'done' | 'progress' | 'idle'
+
+export function jihStatusChip(state: JihAppMatrixState): { emoji: string; label: string; tone: MatrixStatusTone } {
+  switch (state) {
+    case 'registered':
+      return { emoji: '🟢', label: 'Registered', tone: 'done' }
+    case 'installed':
+      return { emoji: '🟡', label: 'Installed', tone: 'progress' }
+    case 'discussed':
+      return { emoji: '🟡', label: 'Discussed', tone: 'progress' }
+    default:
+      return { emoji: '⚪', label: 'Not Discussed', tone: 'idle' }
+  }
+}
+
+export function baitulMaalStatusChip(
+  state: BaitulMaalCampaignState,
+): { emoji: string; label: string; tone: MatrixStatusTone } {
+  switch (state) {
+    case 'committed':
+      return { emoji: '🟢', label: 'Committed', tone: 'done' }
+    case 'discussed':
+      return { emoji: '🟡', label: 'Discussed', tone: 'progress' }
+    default:
+      return { emoji: '⚪', label: 'Not Discussed', tone: 'idle' }
+  }
+}
+
+export function ijtemaStatusChip(
+  state: IjtemaAttendanceStatus | 'Pending',
+): { emoji: string; label: string; tone: MatrixStatusTone } {
+  if (state === 'Pending') return { emoji: '⚪', label: 'Pending', tone: 'idle' }
+  if (state === 'Present') return { emoji: '🟢', label: 'Present', tone: 'done' }
+  return { emoji: '🟡', label: state, tone: 'progress' }
 }

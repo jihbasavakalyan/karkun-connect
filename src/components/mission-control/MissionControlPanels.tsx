@@ -410,8 +410,8 @@ export function RuknDevelopmentSummary({
 export function RuknTodaysVisitQueue({ model }: RuknMissionControlPanelsProps) {
   if (model.todaysVisits.length === 0) return null
   return (
-    <section className="mc-panel mc-panel-compact" aria-label="Today's visit queue">
-      <h2 className="mc-panel-title">Today&apos;s Visit Queue</h2>
+    <section className="mc-panel mc-panel-compact" aria-label="Scheduled Visits">
+      <h2 className="mc-panel-title">Scheduled Visits</h2>
       <ul className="mc-priority-list mc-priority-list-compact">
         {model.todaysVisits.map((item) => (
           <li key={item.id}>
@@ -430,21 +430,16 @@ export function RuknMissionControlPanels({ model }: RuknMissionControlPanelsProp
   if (model.recentActivity.length === 0) return null
 
   return (
-    <details className="mc-panel mc-panel-compact mc-panel-wide mc-more-details">
-      <summary className="mc-more-summary">
-        <span className="mc-panel-title">Recent activity</span>
-        <span className="mc-more-hint">Optional</span>
-      </summary>
-      <div className="mc-more-body">
-        <ul className="mc-activity-list mc-activity-list-compact">
-          {model.recentActivity.slice(0, 3).map((item) => (
-            <li key={item.id}>
-              <p className="mc-activity-message">{item.message}</p>
-              <p className="mc-caption">{new Date(item.timestamp).toLocaleString()}</p>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </details>
+    <section className="mc-panel mc-panel-compact mc-panel-wide" aria-label="Recent Activity">
+      <h2 className="mc-panel-title">Recent Activity</h2>
+      <ul className="mc-activity-list mc-activity-list-compact mt-2">
+        {model.recentActivity.slice(0, 5).map((item) => (
+          <li key={item.id}>
+            <p className="mc-activity-message">{item.message}</p>
+            <p className="mc-caption">{new Date(item.timestamp).toLocaleString()}</p>
+          </li>
+        ))}
+      </ul>
+    </section>
   )
 }

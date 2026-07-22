@@ -9,6 +9,8 @@ type RuknMissionControlHeroProps = {
   /** KC-0074.1 — display-only identity from existing stores. */
   ruknName?: string
   campaignName?: string
+  /** KC-0083 — avoid duplicating Campaign Progress metrics. */
+  hideSummaryChips?: boolean
 }
 
 function kpiValue(model: RuknMissionControlModel, id: string): number | string {
@@ -25,6 +27,7 @@ export function RuknMissionControlHero({
   missionLine,
   ruknName,
   campaignName,
+  hideSummaryChips = false,
 }: RuknMissionControlHeroProps) {
   const connected = kpiValue(model, 'my-connected')
   const pending = kpiValue(model, 'pending')
@@ -60,14 +63,16 @@ export function RuknMissionControlHero({
         ) : null}
       </div>
 
-      <dl className="mc-mission-chips" aria-label="Mission summary">
-        {summaryChips.map((chip) => (
-          <div key={chip.id} className="mc-mission-chip">
-            <dt>{chip.label}</dt>
-            <dd>{chip.value}</dd>
-          </div>
-        ))}
-      </dl>
+      {!hideSummaryChips ? (
+        <dl className="mc-mission-chips" aria-label="Mission summary">
+          {summaryChips.map((chip) => (
+            <div key={chip.id} className="mc-mission-chip">
+              <dt>{chip.label}</dt>
+              <dd>{chip.value}</dd>
+            </div>
+          ))}
+        </dl>
+      ) : null}
     </header>
   )
 }

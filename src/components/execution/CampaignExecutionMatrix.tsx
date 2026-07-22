@@ -1,5 +1,5 @@
 /**
- * KC-0082 — Compact Campaign Execution Matrix (one-click cells).
+ * KC-0082/0083 — Campaign Execution Matrix with scannable status chips.
  */
 
 import { useEffect, useState } from 'react'
@@ -8,15 +8,17 @@ import { useAuth } from '@/hooks/useAuth'
 import { usePeopleStore } from '@/hooks/usePeopleStore'
 import { ruknVisitPath } from '@/constants/routes'
 import {
-  baitulMaalLabel,
+  baitulMaalStatusChip,
   buildCampaignMatrixRows,
   cycleBaitulMaalCampaignForKarkun,
   cycleIjtemaForKarkun,
   cycleJihAppForKarkun,
-  jihAppLabel,
+  ijtemaStatusChip,
+  jihStatusChip,
   saveMatrixRemarks,
   toggleVisitForKarkun,
   type CampaignMatrixRow,
+  type MatrixStatusTone,
 } from '@/lib/campaignExecutionMatrix'
 import { subscribeToAnnexure1Store } from '@/stores/annexure1Store'
 import { subscribeToIjtemaAttendanceStore } from '@/stores/ijtemaAttendanceStore'
@@ -26,19 +28,35 @@ type CampaignExecutionMatrixProps = {
   ruknId: string
 }
 
-const cellBtn =
-  'inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-border bg-surface px-2 text-sm font-semibold text-text-heading transition-colors active:bg-primary/10'
+const toneClass: Record<MatrixStatusTone, string> = {
+  done: 'border-emerald-200 bg-emerald-50 text-emerald-900',
+  progress: 'border-amber-200 bg-amber-50 text-amber-900',
+  idle: 'border-border bg-surface-muted text-secondary',
+}
 
-function VisitCell({
-  done,
-  onToggle,
+function StatusChip({
+  emoji,
+  label,
+  tone,
+  pressed,
+  onClick,
 }: {
-  done: boolean
-  onToggle: () => void
+  emoji: string
+  label: string
+  tone: MatrixStatusTone
+  pressed?: boolean
+  onClick: () => void
 }) {
   return (
-    <button type="button" className={cellBtn} onClick={onToggle} aria-pressed={done}>
-      {done ? '☑' : '☐'}
+    <button
+      type="button"
+      className={`inline-flex min-h-11 max-w-[7.5rem] items-center justify-center gap-1 rounded-lg border px-2 py-1.5 text-left text-[11px] font-semibold leading-tight transition-colors active:scale-[0.98] ${toneClass[tone]}`}
+      onClick={onClick}
+      aria-pressed={pressed}
+      title={label}
+    >
+      <span aria-hidden="true">{emoji}</span>
+      <span className="truncate">{label}</span>
     </button>
   )
 }
@@ -98,7 +116,7 @@ export function CampaignExecutionMatrix({ ruknId }: CampaignExecutionMatrixProps
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
 
       <div className="overflow-x-auto rounded-(--radius-card) border border-border bg-surface shadow-card">
-        <table className="w-full min-w-[36rem] border-collapse text-sm">
+        <table className="w-full min-w-[40rem] border-collapse text-sm">
           <thead>
             <tr className="border-b border-border bg-surface-muted text-left text-xs uppercase tracking-wide text-secondary">
               <th className="sticky left-0 z-10 bg-surface-muted px-3 py-2.5 font-semibold">
@@ -111,95 +129,92 @@ export function CampaignExecutionMatrix({ ruknId }: CampaignExecutionMatrixProps
             </tr>
           </thead>
           <tbody>
-            {rows.map((row) => (
-              <tr key={row.karkunId} className="border-b border-border last:border-b-0">
-                <td className="sticky left-0 z-10 bg-surface px-3 py-2 align-middle">
-                  <button
-                    type="button"
-                    className="text-left"
-                    onClick={() => openRemarks(row)}
-                  >
-                    <span className="block font-semibold text-primary">{row.karkunName}</span>
-                    {row.area ? (
-                      <span className="text-xs text-secondary">{row.area}</span>
-                    ) : null}
-                  </button>
-                  <Link
-                    to={ruknVisitPath(row.karkunId)}
-                    className="mt-0.5 block text-[10px] text-secondary hover:underline"
-                  >
-                    Details
-                  </Link>
-                </td>
-                <td className="px-2 py-2 text-center align-middle">
-                  <VisitCell
-                    done={row.visitDone}
-                    onToggle={() =>
-                      run(() =>
-                        toggleVisitForKarkun(row.karkunId, ruknId, user?.uid),
-                      )
-                    }
-                  />
-                </td>
-                <td className="px-2 py-2 text-center align-middle">
-                  <button
-                    type="button"
-                    className={`${cellBtn} min-w-[4.5rem] text-xs`}
-                    onClick={() =>
-                      run(() => {
-                        const result = cycleJihAppForKarkun(row.karkunId, ruknId)
-                        return result.success
-                          ? { success: true as const }
-                          : { success: false as const, error: result.error }
-                      })
-                    }
-                  >
-                    {row.jih === 'not_discussed' ? '☐' : `☑ ${jihAppLabel(row.jih)}`}
-                  </button>
-                </td>
-                <td className="px-2 py-2 text-center align-middle">
-                  <button
-                    type="button"
-                    className={`${cellBtn} min-w-[4.25rem] text-xs`}
-                    onClick={() =>
-                      run(() => {
-                        const result = cycleIjtemaForKarkun(
-                          row.karkunId,
-                          ruknId,
-                          user?.uid,
-                        )
-                        return result.success
-                          ? { success: true as const }
-                          : { success: false as const, error: result.error }
-                      })
-                    }
-                  >
-                    {row.ijtema === 'Pending' ? '☐' : `☑ ${row.ijtema}`}
-                  </button>
-                </td>
-                <td className="px-2 py-2 text-center align-middle">
-                  <button
-                    type="button"
-                    className={`${cellBtn} min-w-[4.5rem] text-xs`}
-                    onClick={() =>
-                      run(() => {
-                        const result = cycleBaitulMaalCampaignForKarkun(
-                          row.karkunId,
-                          user?.displayName ?? user?.uid ?? 'Rukn',
-                        )
-                        return result.success
-                          ? { success: true as const }
-                          : { success: false as const, error: result.error }
-                      })
-                    }
-                  >
-                    {row.baitulMaal === 'not_discussed'
-                      ? '☐'
-                      : `☑ ${baitulMaalLabel(row.baitulMaal)}`}
-                  </button>
-                </td>
-              </tr>
-            ))}
+            {rows.map((row) => {
+              const jih = jihStatusChip(row.jih)
+              const ijtema = ijtemaStatusChip(row.ijtema)
+              const baitul = baitulMaalStatusChip(row.baitulMaal)
+              return (
+                <tr key={row.karkunId} className="border-b border-border last:border-b-0">
+                  <td className="sticky left-0 z-10 bg-surface px-3 py-2 align-middle">
+                    <button type="button" className="text-left" onClick={() => openRemarks(row)}>
+                      <span className="block font-semibold text-primary">{row.karkunName}</span>
+                      {row.area ? (
+                        <span className="text-xs text-secondary">{row.area}</span>
+                      ) : null}
+                    </button>
+                    <Link
+                      to={ruknVisitPath(row.karkunId)}
+                      className="mt-0.5 block text-[10px] text-secondary hover:underline"
+                    >
+                      Details
+                    </Link>
+                  </td>
+                  <td className="px-2 py-2 text-center align-middle">
+                    <StatusChip
+                      emoji={row.visitDone ? '🟢' : '⚪'}
+                      label={row.visitDone ? 'Done' : 'Pending'}
+                      tone={row.visitDone ? 'done' : 'idle'}
+                      pressed={row.visitDone}
+                      onClick={() =>
+                        run(() => toggleVisitForKarkun(row.karkunId, ruknId, user?.uid))
+                      }
+                    />
+                  </td>
+                  <td className="px-2 py-2 text-center align-middle">
+                    <StatusChip
+                      emoji={jih.emoji}
+                      label={jih.label}
+                      tone={jih.tone}
+                      onClick={() =>
+                        run(() => {
+                          const result = cycleJihAppForKarkun(row.karkunId, ruknId)
+                          return result.success
+                            ? { success: true as const }
+                            : { success: false as const, error: result.error }
+                        })
+                      }
+                    />
+                  </td>
+                  <td className="px-2 py-2 text-center align-middle">
+                    <StatusChip
+                      emoji={ijtema.emoji}
+                      label={ijtema.label}
+                      tone={ijtema.tone}
+                      onClick={() =>
+                        run(() => {
+                          const result = cycleIjtemaForKarkun(
+                            row.karkunId,
+                            ruknId,
+                            user?.uid,
+                          )
+                          return result.success
+                            ? { success: true as const }
+                            : { success: false as const, error: result.error }
+                        })
+                      }
+                    />
+                  </td>
+                  <td className="px-2 py-2 text-center align-middle">
+                    <StatusChip
+                      emoji={baitul.emoji}
+                      label={baitul.label}
+                      tone={baitul.tone}
+                      onClick={() =>
+                        run(() => {
+                          const result = cycleBaitulMaalCampaignForKarkun(
+                            row.karkunId,
+                            user?.displayName ?? user?.uid ?? 'Rukn',
+                          )
+                          return result.success
+                            ? { success: true as const }
+                            : { success: false as const, error: result.error }
+                        })
+                      }
+                    />
+                  </td>
+                </tr>
+              )
+            })}
           </tbody>
         </table>
       </div>

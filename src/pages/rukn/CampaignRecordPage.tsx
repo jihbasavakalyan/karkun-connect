@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { getRuknCampaignRecordData } from '@/services/annexure1Service'
 import { canEditFollowUp, type FollowUpEditor } from '@/services/followUpService'
@@ -19,16 +19,25 @@ import { PageShell } from '@/components/ui'
 import { useAuth } from '@/hooks/useAuth'
 import { useRequiredRuknId } from '@/hooks/useRequiredRuknId'
 import { resolveHomePrimaryWorkflow } from '@/lib/workflowPresentation'
+import { RuknDevelopmentSummary } from '@/components/mission-control'
+import { buildRuknMissionControl } from '@/lib/missionControl/buildRuknMissionControl'
+import { useRuknCommandCenter } from '@/providers/RuknCommandCenterProvider'
 
 const RECENT_LIMIT = 3
 
 export function CampaignRecordPage() {
   const { user } = useAuth()
   const ruknId = useRequiredRuknId()
+  const snapshot = useRuknCommandCenter()
   const [, setVersion] = useState(0)
   const [showAllVisits, setShowAllVisits] = useState(false)
   const [showAllFollowUps, setShowAllFollowUps] = useState(false)
   const [editingFollowUp, setEditingFollowUp] = useState<EditFollowUpTarget | null>(null)
+
+  const missionModel = useMemo(
+    () => (ruknId ? buildRuknMissionControl(ruknId, snapshot) : null),
+    [ruknId, snapshot],
+  )
 
   useEffect(() => {
     const unsubAnnexure = subscribeToAnnexure1Store(() => setVersion((value) => value + 1))
@@ -88,6 +97,11 @@ export function CampaignRecordPage() {
           </div>
         ))}
       </section>
+
+      {/* KC-0083 — Development Summary moved off Home onto Campaign Record (insights) */}
+      {missionModel ? (
+        <RuknDevelopmentSummary ruknId={ruknId} model={missionModel} />
+      ) : null}
 
       <div className="record-cta">
         <Link to={nextVisit?.route ?? ROUTES.RUKN_MY_KARKUN} className="block w-full">

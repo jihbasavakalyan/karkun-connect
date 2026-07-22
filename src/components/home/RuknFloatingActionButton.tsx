@@ -20,6 +20,10 @@ type FabAction = {
   external?: boolean
 }
 
+/**
+ * KC-0083 — Quick Actions menu (no duplicate Record Visit CTA).
+ * Visit → Connected list; Ijtema Register; Search; Communication.
+ */
 export function RuknFloatingActionButton({
   nextAction,
   primaryCallHref,
@@ -51,20 +55,43 @@ export function RuknFloatingActionButton({
     }
   }, [open])
 
+  void nextAction
+  void primaryCallHref
+
   const actions: FabAction[] = [
-    { id: 'connect', label: 'Connect Karkun', icon: 'link', to: ROUTES.RUKN_AVAILABLE_KARKUN },
     {
       id: 'visit',
       label: 'Record Visit',
       icon: 'clipboard',
-      to: !nextAction.isCaughtUp ? nextAction.route : ROUTES.RUKN_MY_KARKUN,
+      to: ROUTES.RUKN_MY_KARKUN,
     },
-    primaryCallHref ? { id: 'call', label: 'Call', icon: 'phone', href: primaryCallHref } : null,
+    {
+      id: 'ijtema',
+      label: 'Weekly Ijtema Register',
+      icon: 'calendar',
+      to: ROUTES.RUKN_WEEKLY_IJTEMA,
+    },
+    {
+      id: 'search',
+      label: 'Search Karkun',
+      icon: 'search',
+      to: ROUTES.RUKN_AVAILABLE_KARKUN,
+    },
     primaryWhatsAppHref
-      ? { id: 'whatsapp', label: 'WhatsApp', icon: 'message', href: primaryWhatsAppHref, external: true }
-      : null,
-    { id: 'schedule', label: 'Schedule', icon: 'calendar', href: '#todays-schedule' },
-  ].filter(Boolean) as FabAction[]
+      ? {
+          id: 'communication',
+          label: 'Communication',
+          icon: 'message',
+          href: primaryWhatsAppHref,
+          external: true,
+        }
+      : {
+          id: 'communication',
+          label: 'Communication',
+          icon: 'message',
+          to: ROUTES.RUKN_MY_KARKUN,
+        },
+  ]
 
   return (
     <div ref={rootRef} className="rukn-fab-root">
