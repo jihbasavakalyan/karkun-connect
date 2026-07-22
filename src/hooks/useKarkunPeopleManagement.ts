@@ -17,6 +17,7 @@ const initialFilters: PeopleFilters = {
   gender: '',
   status: '',
   assignmentStatus: '',
+  registryLifecycle: 'active',
   jihPortalRegistration: '',
   jihPortalReporting: '',
   baitulMaalStatus: '',
@@ -27,6 +28,19 @@ const initialFilters: PeopleFilters = {
 }
 
 function matchesKarkunFilters(karkun: KarkunRegistryRecord, filters: PeopleFilters): boolean {
+  const lifecycle = filters.registryLifecycle || 'active'
+  if (lifecycle === 'active' && karkun.isArchived) {
+    return false
+  }
+  if (lifecycle === 'archived' && !karkun.isArchived) {
+    return false
+  }
+  if (lifecycle === 'needs_review') {
+    if (!karkun.needsReview || karkun.isArchived) {
+      return false
+    }
+  }
+
   if (filters.gender && karkun.gender !== filters.gender) {
     return false
   }
@@ -157,7 +171,7 @@ export function useKarkunPeopleManagement(sectionGender: PersonGender) {
   const [selectedIds, setSelectedIds] = useState<string[]>([])
 
   const allKarkuns = useMemo(
-    () => getAllKarkuns().filter((k) => k.gender === sectionGender),
+    () => getAllKarkuns(true).filter((k) => k.gender === sectionGender),
     // peopleVersion invalidates after mutable MOCK_KARKUN_REGISTRY hydrate
     // eslint-disable-next-line react-hooks/exhaustive-deps -- registry is module state
     [sectionGender, peopleVersion],

@@ -13,6 +13,8 @@ export type PeopleFilters = {
   gender: PersonGender | ''
   status: PersonStatus | ''
   assignmentStatus: '' | 'Assigned' | 'Unassigned'
+  /** KC-0076 — Active / Archived / Needs Review (Karkun registry). */
+  registryLifecycle: '' | 'active' | 'archived' | 'needs_review'
   jihPortalRegistration: '' | 'Not Registered' | 'Registered'
   jihPortalReporting: '' | 'Pending' | 'Submitted'
   baitulMaalStatus: '' | 'Pending' | 'Paid'
@@ -31,6 +33,11 @@ export type PeopleAuditAction =
   | 'unassign'
   | 'import'
   | 'annexure1_submit'
+  | 'review_flag'
+  | 'review_clear'
+  | 'review_notes'
+  | 'archive'
+  | 'delete'
 
 export type PeopleAuditEntry = {
   id: string

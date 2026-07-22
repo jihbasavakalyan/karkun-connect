@@ -10,6 +10,7 @@ const initialFilters: PeopleFilters = {
   gender: '',
   status: '',
   assignmentStatus: '',
+  registryLifecycle: '',
   jihPortalRegistration: '',
   jihPortalReporting: '',
   baitulMaalStatus: '',

@@ -1,4 +1,5 @@
 import { useMemo, useState, type FormEvent } from 'react'
+import { REGISTRY_LIFECYCLE_FILTER_OPTIONS } from '@/types/karkun-registry.types'
 import type { PeopleFilters } from '@/types/people.types'
 import {
   ASSIGNMENT_STATUS_FILTER_OPTIONS,
@@ -28,6 +29,7 @@ type PeopleFiltersBarProps = {
   onFilterChange: (key: keyof PeopleFilters, value: string) => void
   onClear: () => void
   showAssignmentFilters?: boolean
+  showRegistryLifecycleFilters?: boolean
   showJihPortalFilters?: boolean
   showBaitulMaalFilters?: boolean
   showIjtemaFilters?: boolean
@@ -50,6 +52,7 @@ function buildActiveFilterSummary(
   filters: PeopleFilters,
   config: {
     showAssignmentFilters: boolean
+    showRegistryLifecycleFilters: boolean
     showJihPortalFilters: boolean
     showBaitulMaalFilters: boolean
     showIjtemaFilters: boolean
@@ -59,6 +62,13 @@ function buildActiveFilterSummary(
   },
 ): { label: string; value: string }[] {
   const entries: { label: string; value: string }[] = []
+
+  if (config.showRegistryLifecycleFilters && filters.registryLifecycle) {
+    entries.push({
+      label: 'Registry',
+      value: labelForOption(REGISTRY_LIFECYCLE_FILTER_OPTIONS, filters.registryLifecycle),
+    })
+  }
 
   if (!config.hideGenderFilter && filters.gender) {
     entries.push({
@@ -138,6 +148,7 @@ export function PeopleFiltersBar({
   onFilterChange,
   onClear,
   showAssignmentFilters = false,
+  showRegistryLifecycleFilters = false,
   showJihPortalFilters = false,
   showBaitulMaalFilters = false,
   showIjtemaFilters = false,
@@ -151,6 +162,7 @@ export function PeopleFiltersBar({
 
     return buildActiveFilterSummary(filters, {
       showAssignmentFilters,
+      showRegistryLifecycleFilters,
       showJihPortalFilters,
       showBaitulMaalFilters,
       showIjtemaFilters,
@@ -161,6 +173,7 @@ export function PeopleFiltersBar({
   }, [
     filters,
     showAssignmentFilters,
+    showRegistryLifecycleFilters,
     showJihPortalFilters,
     showBaitulMaalFilters,
     showIjtemaFilters,
@@ -232,6 +245,26 @@ export function PeopleFiltersBar({
                 className={selectClassName}
               >
                 {GENDER_FILTER_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {showRegistryLifecycleFilters && (
+            <div className="flex flex-col gap-2">
+              <label htmlFor="filter-registry-lifecycle" className="text-sm font-medium text-secondary">
+                Registry
+              </label>
+              <select
+                id="filter-registry-lifecycle"
+                value={filters.registryLifecycle || 'active'}
+                onChange={(event) => onFilterChange('registryLifecycle', event.target.value)}
+                className={selectClassName}
+              >
+                {REGISTRY_LIFECYCLE_FILTER_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}
                   </option>

@@ -19,9 +19,11 @@ import { PersonContactActions } from '@/components/forms/people/PersonContactAct
 import { CommunicationActions } from '@/components/communication/CommunicationActions'
 import { useCommunication } from '@/hooks/useCommunication'
 import { RuknAssignmentSelect } from '@/components/forms/people/RuknAssignmentSelect'
+import { RegistryMaintenancePanel } from '@/components/admin/RegistryMaintenancePanel'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import { EmptyState, PageShell } from '@/components/ui'
+import { StatusBadge } from '@/components/ui/StatusBadge'
 import type { KarkunRegistryRecord, PersonGender, PersonStatus } from '@/types/karkun-registry.types'
 import type { IjtemaAttendanceStatus } from '@/types/ijtemaAttendance'
 import { DEFAULT_PLACE, getFatherHusbandLabel } from '@/types/people.types'
@@ -273,6 +275,11 @@ function KarkunProfileForm({ karkun, karkunId }: KarkunProfileFormProps) {
           <h1 className="mt-1 truncate text-xl font-semibold text-text-heading">
             {formatPersonNameForDisplay(name)}
           </h1>
+          {karkun.needsReview && !karkun.isArchived ? (
+            <div className="mt-1">
+              <StatusBadge variant="warning">🟡 Needs Review</StatusBadge>
+            </div>
+          ) : null}
         </div>
 
         <div className="flex shrink-0 gap-2">
@@ -428,6 +435,8 @@ function KarkunProfileForm({ karkun, karkunId }: KarkunProfileFormProps) {
           />
         </div>
       </section>
+
+      <RegistryMaintenancePanel karkun={karkun} karkunId={karkunId} />
 
       {error && <p className="text-sm text-red-600">{error}</p>}
     </form>

@@ -45,13 +45,46 @@ export type KarkunRegistryRecord = {
   restoredBy?: string
   version?: number
   /** KC-0070 — duplicate resolution archive metadata (optional; never hard-deletes). */
-  archiveKind?: 'standard' | 'duplicate_merge'
+  archiveKind?: 'standard' | 'duplicate_merge' | 'admin_delete'
   mergedInto?: string
   mergedBy?: string
   mergedAt?: string
   mergeReason?: string
   originalDocumentId?: string
+  /** KC-0076 — administrator registry review (optional; additive). */
+  needsReview?: boolean
+  reviewReason?: KarkunReviewReason
+  reviewNotes?: string
+  reviewedBy?: string
+  reviewedAt?: string
+  /** Set when archiveKind is admin_delete (controlled removal from active registry). */
+  deleteReason?: string
 }
+
+/** KC-0076 — reasons for Mark for Review. */
+export type KarkunReviewReason =
+  | 'Unknown Person'
+  | 'Duplicate Suspected'
+  | 'Incomplete Information'
+  | 'Incorrect Details'
+  | 'Other'
+
+export const KARKUN_REVIEW_REASON_OPTIONS: readonly KarkunReviewReason[] = [
+  'Unknown Person',
+  'Duplicate Suspected',
+  'Incomplete Information',
+  'Incorrect Details',
+  'Other',
+] as const
+
+/** Registry list lifecycle filter (Admin). */
+export type KarkunRegistryLifecycleFilter = '' | 'active' | 'archived' | 'needs_review'
+
+export const REGISTRY_LIFECYCLE_FILTER_OPTIONS = [
+  { value: 'active', label: 'Active' },
+  { value: 'archived', label: 'Archived' },
+  { value: 'needs_review', label: 'Needs Review' },
+] as const
 
 export type KarkunRegistryFilters = {
   campaignStatus: string

@@ -296,6 +296,7 @@ function KarkunGenderSection({
         onFilterChange={management.updateFilter}
         onClear={management.clearFilters}
         showAssignmentFilters
+        showRegistryLifecycleFilters
         showJihPortalFilters
         showBaitulMaalFilters
         showIjtemaFilters

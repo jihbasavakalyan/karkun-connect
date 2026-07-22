@@ -216,7 +216,17 @@ export function KarkunPeopleTable({
                 </td>
                 <td className={`${PEOPLE_TABLE_CELL_CLASS} text-secondary`}>{getConnectionStatusLabel(karkun.assignmentStatus)}</td>
                 <td className={PEOPLE_TABLE_CELL_CLASS}>
-                  <PersonStatusBadge status={karkun.status} />
+                  <div className="flex flex-col items-start gap-1">
+                    <PersonStatusBadge status={karkun.status} />
+                    {karkun.needsReview && !karkun.isArchived ? (
+                      <StatusBadge variant="warning">🟡 Needs Review</StatusBadge>
+                    ) : null}
+                    {karkun.isArchived ? (
+                      <StatusBadge variant="dormant">
+                        {karkun.archiveKind === 'admin_delete' ? 'Removed' : 'Archived'}
+                      </StatusBadge>
+                    ) : null}
+                  </div>
                 </td>
                 <td className={PEOPLE_TABLE_CELL_CLASS}>
                   <button
@@ -254,7 +264,12 @@ export function KarkunPeopleTable({
                   >
                     {formatPersonNameForDisplay(karkun.name)}
                   </Link>
-                  <PersonStatusBadge status={karkun.status} />
+                  <div className="flex flex-col items-end gap-1">
+                    <PersonStatusBadge status={karkun.status} />
+                    {karkun.needsReview && !karkun.isArchived ? (
+                      <StatusBadge variant="warning">🟡 Needs Review</StatusBadge>
+                    ) : null}
+                  </div>
                 </div>
                 <p className={`mt-1 ${PEOPLE_TABLE_MOBILE_CLASS}`}>{karkun.mobile}</p>
                 <dl className="mt-3 space-y-1 text-sm">
