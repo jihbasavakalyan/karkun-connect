@@ -92,6 +92,7 @@ Scripts validate routes, auth, data integrity, assignments, and compliance witho
 - [Repository Layer (M6.9)](./repository-layer.md)
 - [Product Experience Constitution (PX Constitution)](../architecture/product-experience-constitution.md)
 - [Workflow Automation Constitution](../architecture/workflow-automation-constitution.md)
+- [Communication Operating System (KC-0090)](../communication/README.md) — documentation-only product specification
 - [Testing Strategy](../testing/README.md)
 - [Database Conventions](../database/README.md) (future backend)
 

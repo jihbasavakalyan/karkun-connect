@@ -10,6 +10,7 @@ Central repository for all project documentation related to **Karkun Connect**.
 | [Administrator Guide](guides/administrator-guide.md) | Full admin campaign workflow |
 | [Rukn Guide](guides/rukn-guide.md) | Field supervisor workflow |
 | [Architecture Index](architecture/index.md) | System structure and data flow |
+| [Communication Operating System (KC-0090)](communication/README.md) | Product specification for Admin & Rukn communication workspaces |
 | [Operations (P1)](operations/README.md) | Production deployment and runbooks |
 | [Release Candidate](operations/release-candidate.md) | RC1 release notes and go-live |
 | [Pilot Checklist](pilot/basavakalyan-pilot-checklist.md) | Basavakalyan deployment checklist |
@@ -23,6 +24,7 @@ Central repository for all project documentation related to **Karkun Connect**.
 | `operations/` | Production deployment, security, and runbooks (P1) |
 | `pilot/` | Pilot deployment and checklists |
 | `architecture/` | Technical architecture and design |
+| `communication/` | **KC-0090** — Karkun Communication Operating System (product specification) |
 | `sprints/` | Sprint reports and release notes |
 | `concept/` | High-level vision, goals, and domain context |
 | `prd/` | Product requirements and feature specifications |
