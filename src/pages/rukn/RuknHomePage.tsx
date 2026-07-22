@@ -12,10 +12,10 @@ import {
   RuknTodaysPriorityCard,
   RuknTodaysPriorityEmpty,
 } from '@/components/mission-control'
-import { RuknFloatingActionButton, RuknIjtemaAttendancePanel } from '@/components/home'
+import { RuknFloatingActionButton } from '@/components/home'
 import { ExecutionSuccessBanner } from '@/components/execution/ExecutionSuccessBanner'
-import { RuknExecutionSummaryCards } from '@/components/execution/RuknExecutionSummaryCards'
-import { RuknExecutionWorkspace } from '@/components/execution/RuknExecutionWorkspace'
+import { CampaignExecutionProgressCard } from '@/components/execution/CampaignExecutionProgressCard'
+import { CampaignExecutionMatrix } from '@/components/execution/CampaignExecutionMatrix'
 import { openDigitalRafeeqAssistant } from '@/features/digitalRafeeq/launcher'
 import { buildContextualRafeeqGuidance } from '@/features/digitalRafeeq/companion/rafeeqUrduCopy'
 import { useRequiredRuknId } from '@/hooks/useRequiredRuknId'
@@ -32,6 +32,7 @@ import {
   buildConnectedIntelligenceView,
   buildDailyPriorityMission,
 } from '@/lib/relationshipIntelligencePresentation'
+import { isRuknPostCampaignMode } from '@/lib/campaignExecutionMatrix'
 import { useRuknCommandCenter } from '@/providers/RuknCommandCenterProvider'
 import { HomePageSkeleton } from '@/components/ui'
 
@@ -92,11 +93,12 @@ export function RuknHomePage() {
         )
       : null
 
+  const postCampaign = isRuknPostCampaignMode()
+
   return (
     <div className="cd-page cd-page-rukn mc-page mc-page-rukn-compact mc-page-execution mc-page-onescreen">
       <ExecutionSuccessBanner />
 
-      {/* 1. Mission Hero — KC-0074.1 */}
       <RuknMissionControlHero
         model={model}
         greeting={morningBrief.greeting}
@@ -105,7 +107,6 @@ export function RuknHomePage() {
         campaignName={campaignName}
       />
 
-      {/* 2. Today's Priority — KC-0074.1 */}
       {todaysPriority && priorityKarkun ? (
         <RuknTodaysPriorityCard
           karkunName={todaysPriority.karkunName}
@@ -124,30 +125,20 @@ export function RuknHomePage() {
         <PrimaryMissionCta label={primaryLabel} route={primaryRoute} />
       ) : null}
 
-      {/* KC-0080 — Daily Progress + Weekly Ijtema summaries */}
-      <RuknExecutionSummaryCards ruknId={ruknId} />
+      {/* KC-0082 — Campaign Progress + Execution Matrix */}
+      <CampaignExecutionProgressCard ruknId={ruknId} />
+      {!postCampaign ? <CampaignExecutionMatrix ruknId={ruknId} /> : null}
 
-      {/* KC-0080 — Per-Karkun update/edit workspace */}
-      <RuknExecutionWorkspace ruknId={ruknId} />
+      {!postCampaign ? <RuknPriorityMissionList ruknId={ruknId} model={model} /> : null}
 
-      {/* 3. Priority Karkuns — one tap into visit */}
-      <RuknPriorityMissionList ruknId={ruknId} model={model} />
-
-      {/* 4. Digital Rafeeq — supportive, subordinate */}
       <AskDigitalRafeeqCard
         compact
         onOpen={openDigitalRafeeqAssistant}
         guidanceLine={rafeeqLine}
       />
 
-      {/* 5. Campaign Task Progress */}
-      <RuknCampaignTaskTracker ruknId={ruknId} model={model} />
-
-      {/* 6. Development Summary */}
+      {!postCampaign ? <RuknCampaignTaskTracker ruknId={ruknId} model={model} /> : null}
       <RuknDevelopmentSummary ruknId={ruknId} model={model} />
-
-      {/* 7. Everything else */}
-      <RuknIjtemaAttendancePanel ruknId={ruknId} />
       <RuknMissionControlPanels model={model} />
 
       <RuknFloatingActionButton

@@ -85,6 +85,11 @@ const ConnectionJourneyPage = lazyWithChunkReload(() =>
 const RuknSettingsPage = lazyWithChunkReload(() =>
   import('@/pages/rukn/RuknSettingsPage').then((m) => ({ default: m.RuknSettingsPage })),
 )
+const WeeklyIjtemaRegisterPage = lazyWithChunkReload(() =>
+  import('@/pages/rukn/WeeklyIjtemaRegisterPage').then((m) => ({
+    default: m.WeeklyIjtemaRegisterPage,
+  })),
+)
 
 function LegacyKarkunProfileRedirect() {
   const { karkunId } = useParams<{ karkunId: string }>()
@@ -161,6 +166,7 @@ export function AppRouter() {
             <Route path="my-karkun" element={<MyKarkunPage />} />
             <Route path="visit/:karkunId" element={<ConnectionJourneyPage />} />
             <Route path="campaign-record" element={<CampaignRecordPage />} />
+            <Route path="weekly-ijtema" element={<WeeklyIjtemaRegisterPage />} />
             <Route path="settings" element={<RuknSettingsPage />} />
             <Route path="reports" element={<Navigate to={ROUTES.RUKN_CAMPAIGN_RECORD} replace />} />
             <Route path="tasks" element={<Navigate to={ROUTES.RUKN} replace />} />
