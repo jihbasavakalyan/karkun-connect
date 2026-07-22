@@ -6,6 +6,13 @@ import { Icon } from '@/components/ui/Icon'
 import { SchedulePickerModal } from '@/components/communication/SchedulePickerModal'
 import { PersonalizedBulkComposerModal } from '@/components/communication/PersonalizedBulkComposerModal'
 import {
+  EditableCommunicationComposerFields,
+  type ComposerMode,
+  refreshComposerTemplates,
+} from '@/components/communication/EditableCommunicationComposerFields'
+import { combineSubjectAndBody } from '@/lib/communication/combineSubjectAndBody'
+import {
+  applyTemplateVariables,
   composeWhatsAppMessage,
   listTemplates,
   resolveFooterMode,
@@ -13,7 +20,7 @@ import {
 import { scheduleWhatsAppMessage } from '@/services/schedulingService'
 import { buildWhatsAppLink } from '@/utils/personContactLinks'
 import type { MessageRecipient, MessageTemplate } from '@/types/communication'
-import { TEMPLATE_CATEGORY_LABELS, TEMPLATE_PLACEHOLDER_KEYS } from '@/types/communication'
+import { TEMPLATE_PLACEHOLDER_KEYS } from '@/types/communication'
 import type { PersonalizedBulkReport } from '@/lib/communication/personalizedBulkSend'
 
 const selectClassName =
@@ -99,12 +106,14 @@ function MessageComposerModalContent({
   role = 'administrator',
   recommendedTemplateId,
 }: Omit<MessageComposerModalProps, 'isOpen'>) {
-  const templates = listTemplates()
   const footerMode = resolveFooterMode(role)
   const startingId = initialTemplateId ?? recommendedTemplateId ?? ''
+  const [templates, setTemplates] = useState(() => listTemplates())
   const startingTemplate = templates.find((item) => item.id === startingId)
 
+  const [mode, setMode] = useState<ComposerMode>(startingId ? 'official' : 'custom')
   const [templateId, setTemplateId] = useState(startingId)
+  const [subject, setSubject] = useState(startingTemplate?.subject ?? '')
   const [message, setMessage] = useState(
     initialMessage?.trim() ? initialMessage : (startingTemplate?.body ?? ''),
   )
@@ -126,10 +135,13 @@ function MessageComposerModalContent({
   const selectedTemplate: MessageTemplate | undefined = templates.find(
     (item) => item.id === templateId,
   )
+  // KC-0077.2.1 — Administrators edit freely; Rukn keeps official wording locked.
   const isOfficialLocked = role === 'rukn' && Boolean(selectedTemplate?.isOfficial)
   const variableKeys = selectedTemplate?.variables.length
     ? selectedTemplate.variables
-    : TEMPLATE_PLACEHOLDER_KEYS.filter((key) => message.includes(`{${key}}`))
+    : TEMPLATE_PLACEHOLDER_KEYS.filter(
+        (key) => message.includes(`{${key}}`) || subject.includes(`{${key}}`),
+      )
 
   const mergedVariables = useMemo(
     () => ({
@@ -140,9 +152,17 @@ function MessageComposerModalContent({
     [placeholders, recipients, contextVariables],
   )
 
-  const composedMessage = useMemo(
+  const previewSubject = useMemo(
+    () => applyTemplateVariables(subject, mergedVariables).trim(),
+    [subject, mergedVariables],
+  )
+  const previewBody = useMemo(
     () => composeWhatsAppMessage(message, mergedVariables, footerMode),
     [message, mergedVariables, footerMode],
+  )
+  const composedMessage = useMemo(
+    () => combineSubjectAndBody(previewSubject, previewBody),
+    [previewSubject, previewBody],
   )
 
   const primaryRecipient = recipients[0]
@@ -154,12 +174,17 @@ function MessageComposerModalContent({
       )
     : null
 
+  const audience = primaryRecipient?.personKind ?? 'karkun'
+
   const handleTemplateChange = (id: string) => {
     setTemplateId(id)
+    setMode(id ? 'official' : 'custom')
     const template = templates.find((item) => item.id === id)
     if (template) {
+      setSubject(template.subject ?? '')
       setMessage(template.body)
     } else {
+      setSubject('')
       setMessage('')
     }
   }
@@ -212,34 +237,28 @@ function MessageComposerModalContent({
           )}
         </div>
 
-        <div className="flex flex-col gap-2">
-          <label htmlFor="composer-template" className="text-sm font-medium text-text-heading">
-            Template
-          </label>
-          <select
-            id="composer-template"
-            value={templateId}
-            onChange={(event) => handleTemplateChange(event.target.value)}
-            className={selectClassName}
-          >
-            <option value="">Custom message</option>
-            {templates.map((template) => (
-              <option key={template.id} value={template.id}>
-                {template.id === recommendedTemplateId ? '★ ' : ''}
-                {template.name} ({TEMPLATE_CATEGORY_LABELS[template.category]})
-                {template.isOfficial ? ' · Official' : ''}
-              </option>
-            ))}
-          </select>
-          {recommendedTemplateId && templateId === recommendedTemplateId ? (
-            <p className="text-xs text-primary">Digital Rafeeq recommendation selected.</p>
-          ) : null}
-          {role === 'rukn' ? (
-            <p className="text-xs text-secondary">
-              Official wording is locked. Fill placeholders, preview, then send.
-            </p>
-          ) : null}
-        </div>
+        <EditableCommunicationComposerFields
+          mode={mode}
+          onModeChange={setMode}
+          templateId={templateId}
+          templates={templates}
+          onTemplateChange={handleTemplateChange}
+          subject={subject}
+          onSubjectChange={setSubject}
+          message={message}
+          onMessageChange={setMessage}
+          isBodyLocked={isOfficialLocked}
+          audience={audience}
+          recommendedTemplateId={recommendedTemplateId}
+          roleHint={role}
+          onCustomTemplateSaved={(saved) => {
+            setTemplates(refreshComposerTemplates())
+            setTemplateId(saved.id)
+            setMode('official')
+            setSubject(saved.subject ?? '')
+            setMessage(saved.body)
+          }}
+        />
 
         {variableKeys.length > 0 && (
           <div className="grid gap-3 sm:grid-cols-2">
@@ -259,34 +278,27 @@ function MessageComposerModalContent({
           </div>
         )}
 
-        <div className="flex flex-col gap-2">
-          <label htmlFor="composer-message" className="text-sm font-medium text-text-heading">
-            Message {isOfficialLocked ? '(read-only official wording)' : ''}
-          </label>
-          <textarea
-            id="composer-message"
-            value={message}
-            onChange={(event) => setMessage(event.target.value)}
-            rows={6}
-            dir="auto"
-            readOnly={isOfficialLocked}
-            className={`${selectClassName} ${isOfficialLocked ? 'bg-surface-muted' : ''}`}
-            placeholder="Type your message..."
-          />
-          <p className="text-xs text-secondary">
-            {composedMessage.length} characters including footer (
-            {footerMode === 'official' ? 'Administrator' : 'Personal'})
-          </p>
-        </div>
-
-        {composedMessage && (
+        {composedMessage ? (
           <div className="rounded-lg border border-border bg-surface-muted p-3">
             <p className="text-xs font-medium uppercase tracking-wide text-secondary">Preview</p>
-            <p className="mt-2 whitespace-pre-wrap text-sm text-text-heading" dir="auto">
-              {composedMessage}
+            {previewSubject ? (
+              <div className="mt-2 border-b border-border pb-2">
+                <p className="text-xs text-secondary">Subject</p>
+                <p className="text-sm font-medium text-text-heading" dir="auto">
+                  {previewSubject}
+                </p>
+              </div>
+            ) : null}
+            <p className="mt-2 text-xs text-secondary">Message</p>
+            <p className="mt-1 whitespace-pre-wrap text-sm text-text-heading" dir="auto">
+              {previewBody}
+            </p>
+            <p className="mt-2 text-xs text-secondary">
+              {composedMessage.length} characters including footer (
+              {footerMode === 'official' ? 'Administrator' : 'Personal'})
             </p>
           </div>
-        )}
+        ) : null}
 
         {error && <p className="text-sm text-red-600">{error}</p>}
         {success && <p className="text-sm text-green-700">{success}</p>}

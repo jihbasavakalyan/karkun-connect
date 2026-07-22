@@ -1,19 +1,26 @@
 import { useMemo, useRef, useState } from 'react'
 import { Modal } from '@/components/common/Modal'
 import { CommunicationStatusBadge } from '@/components/communication/CommunicationStatusBadge'
+import {
+  EditableCommunicationComposerFields,
+  type ComposerMode,
+  refreshComposerTemplates,
+} from '@/components/communication/EditableCommunicationComposerFields'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
+import { combineSubjectAndBody } from '@/lib/communication/combineSubjectAndBody'
+import { buildMailMergeVariablesForRecipient } from '@/lib/communication/mailMergeEngine'
 import {
   previewPersonalizedMessages,
   runPersonalizedBulkSend,
   type PersonalizedBulkReport,
 } from '@/lib/communication/personalizedBulkSend'
-import { listTemplates, resolveFooterMode } from '@/services/templateService'
-import { TEMPLATE_CATEGORY_LABELS } from '@/types/communication'
+import {
+  applyTemplateVariables,
+  listTemplates,
+  resolveFooterMode,
+} from '@/services/templateService'
 import type { MessageRecipient } from '@/types/communication'
-
-const selectClassName =
-  'w-full rounded-lg border border-border bg-surface px-4 py-3 text-sm text-text-heading focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20'
 
 type PersonalizedBulkComposerModalProps = {
   isOpen: boolean
@@ -31,7 +38,7 @@ type Phase = 'compose' | 'preview' | 'sending' | 'report'
 
 /**
  * KC-0077.1 — Personalized bulk communication (mail merge).
- * One template → per-recipient merge → sendIndividualMessage loop.
+ * KC-0077.2.1 — Editable subject/body; templates are starting points only.
  */
 export function PersonalizedBulkComposerModal({
   isOpen,
@@ -68,12 +75,14 @@ function PersonalizedBulkComposerContent({
   initialMessage,
   role = 'administrator',
 }: Omit<PersonalizedBulkComposerModalProps, 'isOpen'>) {
-  const templates = listTemplates()
+  const [templates, setTemplates] = useState(() => listTemplates())
   const startingId = initialTemplateId ?? ''
   const startingTemplate = templates.find((item) => item.id === startingId)
 
   const [phase, setPhase] = useState<Phase>('compose')
+  const [mode, setMode] = useState<ComposerMode>(startingId ? 'official' : 'custom')
   const [templateId, setTemplateId] = useState(startingId)
+  const [subject, setSubject] = useState(startingTemplate?.subject ?? '')
   const [message, setMessage] = useState(
     initialMessage?.trim() ? initialMessage : (startingTemplate?.body ?? ''),
   )
@@ -83,6 +92,13 @@ function PersonalizedBulkComposerContent({
   const [error, setError] = useState('')
   const cancelRef = useRef({ cancelled: false })
 
+  /** Subject + body merged as one template string for the existing mail-merge send path. */
+  const templateForMerge = useMemo(
+    () => combineSubjectAndBody(subject, message),
+    [subject, message],
+  )
+
+  /** Body-only previews for UI; send still uses templateForMerge (subject + body). */
   const previews = useMemo(
     () => previewPersonalizedMessages(message, recipients, role),
     [message, recipients, role],
@@ -92,15 +108,30 @@ function PersonalizedBulkComposerContent({
   const selectedTemplate = templates.find((item) => item.id === templateId)
   const isOfficialLocked = role === 'rukn' && Boolean(selectedTemplate?.isOfficial)
 
+  const previewSubjectResolved = useMemo(() => {
+    if (!subject.trim() || !currentPreview) return ''
+    const vars = buildMailMergeVariablesForRecipient(currentPreview.recipient)
+    return applyTemplateVariables(subject, vars).trim()
+  }, [subject, currentPreview])
+
+  const audience =
+    recipients.every((r) => r.personKind === 'rukn')
+      ? 'rukn'
+      : recipients.every((r) => r.personKind === 'karkun')
+        ? 'karkun'
+        : 'all'
+
   const handleTemplateChange = (id: string) => {
     setTemplateId(id)
+    setMode(id ? 'official' : 'custom')
     const template = templates.find((item) => item.id === id)
+    setSubject(template?.subject ?? '')
     setMessage(template?.body ?? '')
   }
 
   const handleStartSend = () => {
-    if (!message.trim()) {
-      setError('Message template cannot be empty.')
+    if (!message.trim() && !subject.trim()) {
+      setError('Subject or message is required.')
       return
     }
     if (recipients.length === 0) {
@@ -113,7 +144,7 @@ function PersonalizedBulkComposerContent({
     void (async () => {
       const result = await runPersonalizedBulkSend({
         recipients,
-        templateBody: message,
+        templateBody: templateForMerge,
         templateId: templateId || undefined,
         role,
         signal: cancelRef.current,
@@ -137,8 +168,14 @@ function PersonalizedBulkComposerContent({
   const progressPct =
     progress.total > 0 ? Math.min(100, Math.round((progress.index / progress.total) * 100)) : 0
 
+  const canProceed = Boolean(templateForMerge.trim()) && recipients.length > 0
+
   return (
-    <Modal isOpen title={title ?? 'Personalized Send All'} onClose={phase === 'sending' ? () => undefined : onClose}>
+    <Modal
+      isOpen
+      title={title ?? 'Personalized Send All'}
+      onClose={phase === 'sending' ? () => undefined : onClose}
+    >
       <div className="space-y-4">
         <p className="text-sm text-secondary">
           {recipients.length} recipient{recipients.length === 1 ? '' : 's'} · each receives a
@@ -148,38 +185,27 @@ function PersonalizedBulkComposerContent({
 
         {phase === 'compose' ? (
           <>
-            <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium text-text-heading">Template</label>
-              <select
-                value={templateId}
-                onChange={(event) => handleTemplateChange(event.target.value)}
-                className={selectClassName}
-              >
-                <option value="">Custom message</option>
-                {templates.map((template) => (
-                  <option key={template.id} value={template.id}>
-                    {template.name} ({TEMPLATE_CATEGORY_LABELS[template.category]})
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium text-text-heading">
-                Message template {isOfficialLocked ? '(read-only)' : ''}
-              </label>
-              <textarea
-                value={message}
-                onChange={(event) => setMessage(event.target.value)}
-                rows={7}
-                dir="auto"
-                readOnly={isOfficialLocked}
-                className={`${selectClassName} ${isOfficialLocked ? 'bg-surface-muted' : ''}`}
-                placeholder="Use {{KarkunName}}, {{CampaignName}}, {{PendingAction}}…"
-              />
-              <p className="text-xs text-secondary">
-                Placeholders are merged per recipient before send. Unknown values become &quot;-&quot;.
-              </p>
-            </div>
+            <EditableCommunicationComposerFields
+              mode={mode}
+              onModeChange={setMode}
+              templateId={templateId}
+              templates={templates}
+              onTemplateChange={handleTemplateChange}
+              subject={subject}
+              onSubjectChange={setSubject}
+              message={message}
+              onMessageChange={setMessage}
+              isBodyLocked={isOfficialLocked}
+              audience={audience}
+              roleHint={role}
+              onCustomTemplateSaved={(saved) => {
+                setTemplates(refreshComposerTemplates())
+                setTemplateId(saved.id)
+                setMode('official')
+                setSubject(saved.subject ?? '')
+                setMessage(saved.body)
+              }}
+            />
             {error ? <p className="text-sm text-red-600">{error}</p> : null}
             <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
               <SecondaryButton type="button" onClick={onClose}>
@@ -191,15 +217,11 @@ function PersonalizedBulkComposerContent({
                   setPreviewIndex(0)
                   setPhase('preview')
                 }}
-                disabled={!message.trim() || recipients.length === 0}
+                disabled={!canProceed}
               >
                 Preview
               </SecondaryButton>
-              <PrimaryButton
-                type="button"
-                onClick={handleStartSend}
-                disabled={!message.trim() || recipients.length === 0}
-              >
+              <PrimaryButton type="button" onClick={handleStartSend} disabled={!canProceed}>
                 Send All
               </PrimaryButton>
             </div>
@@ -216,9 +238,18 @@ function PersonalizedBulkComposerContent({
             </div>
             <div className="max-h-64 overflow-y-auto rounded-lg border border-border bg-surface p-3">
               <p className="text-xs font-medium uppercase tracking-wide text-secondary">
-                Generated message
+                Preview (as recipient will receive)
               </p>
-              <p className="mt-2 whitespace-pre-wrap text-sm text-text-heading" dir="auto">
+              {previewSubjectResolved ? (
+                <div className="mt-2 border-b border-border pb-2">
+                  <p className="text-xs text-secondary">Subject</p>
+                  <p className="text-sm font-medium text-text-heading" dir="auto">
+                    {previewSubjectResolved}
+                  </p>
+                </div>
+              ) : null}
+              <p className="mt-2 text-xs text-secondary">Message</p>
+              <p className="mt-1 whitespace-pre-wrap text-sm text-text-heading" dir="auto">
                 {currentPreview.message}
               </p>
             </div>
