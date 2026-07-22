@@ -1,16 +1,27 @@
-import { useMemo, useState } from 'react'
+import { Suspense, useMemo, useState } from 'react'
+import { lazyWithChunkReload } from '@/lib/lazyWithChunkReload'
 import type { UserRole } from '@/types/auth.types'
 import type { SettingsSectionId } from '@/types/userPreferences.types'
 import { AboutSettingsSection } from './AboutSettingsSection'
 import { AppearanceSettingsSection } from './AppearanceSettingsSection'
 import { CampaignSettingsSection } from './CampaignSettingsSection'
-import { DataManagementSettingsSection } from './DataManagementSettingsSection'
 import { IntegrationsSettingsSection } from './IntegrationsSettingsSection'
-import { MaintenanceSettingsSection } from './MaintenanceSettingsSection'
 import { NotificationSettingsSection } from './NotificationSettingsSection'
 import { PrivacySettingsSection } from './PrivacySettingsSection'
 import { ProfileSettingsSection } from './ProfileSettingsSection'
 import { RafeeqSettingsSection } from './RafeeqSettingsSection'
+
+// KC-0078 — Defer xlsx migration wizard and registry scans until the section opens.
+const DataManagementSettingsSection = lazyWithChunkReload(() =>
+  import('./DataManagementSettingsSection').then((m) => ({
+    default: m.DataManagementSettingsSection,
+  })),
+)
+const MaintenanceSettingsSection = lazyWithChunkReload(() =>
+  import('./MaintenanceSettingsSection').then((m) => ({
+    default: m.MaintenanceSettingsSection,
+  })),
+)
 
 type NavItem = {
   id: SettingsSectionId
@@ -33,6 +44,14 @@ const NAV_ITEMS: NavItem[] = [
 
 type SettingsExperienceProps = {
   role: UserRole
+}
+
+function SettingsSectionFallback() {
+  return (
+    <p className="text-sm text-secondary" aria-busy="true">
+      Loading section…
+    </p>
+  )
 }
 
 export function SettingsExperience({ role }: SettingsExperienceProps) {
@@ -79,10 +98,14 @@ export function SettingsExperience({ role }: SettingsExperienceProps) {
           <CampaignSettingsSection />
         ) : null}
         {resolvedActive === 'data' && role === 'administrator' ? (
-          <DataManagementSettingsSection />
+          <Suspense fallback={<SettingsSectionFallback />}>
+            <DataManagementSettingsSection />
+          </Suspense>
         ) : null}
         {resolvedActive === 'maintenance' && role === 'administrator' ? (
-          <MaintenanceSettingsSection />
+          <Suspense fallback={<SettingsSectionFallback />}>
+            <MaintenanceSettingsSection />
+          </Suspense>
         ) : null}
         {resolvedActive === 'about' ? <AboutSettingsSection role={role} /> : null}
         {resolvedActive === 'integrations' ? <IntegrationsSettingsSection /> : null}
