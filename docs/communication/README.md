@@ -30,6 +30,7 @@
 | 10 | [09-shared-libraries.md](./09-shared-libraries.md) | Reusable libraries and packs |
 | 11 | [10-roadmap.md](./10-roadmap.md) | Phased future implementation |
 | 12 | [11-documentation-certification.md](./11-documentation-certification.md) | Completeness & consistency certification |
+| 13 | [KC-0091-CERTIFICATION.md](./KC-0091-CERTIFICATION.md) | Workspace foundation implementation certification |
 
 ### Quick paths
 

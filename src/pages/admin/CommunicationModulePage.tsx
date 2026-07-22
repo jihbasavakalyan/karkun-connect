@@ -2,7 +2,6 @@ import { useSearchParams } from 'react-router-dom'
 import {
   AutomationRulesPanel,
   BroadcastComposerPanel,
-  CommunicationDashboard,
   CommunicationSectionNav,
   DailyReportsPanel,
   DeliveryHistoryPanel,
@@ -14,6 +13,16 @@ import {
   TemplateManagementPanel,
   WhatsAppSettingsPanel,
 } from '@/components/communication'
+import {
+  AdminAudiencesPanel,
+  AdminDeliveryPlaceholderPanel,
+  AdminJourneysPanel,
+  AdminQueuePanel,
+  AdminReportsPlaceholderPanel,
+  AdminSettingsPlaceholderPanel,
+  AdminTemplatesPlaceholderPanel,
+} from '@/components/communication/cos/AdminCosPanels'
+import { MissionCenterPanel } from '@/components/communication/cos/MissionCenterPanel'
 import { ActiveCampaignSubtitle } from '@/components/layout/CampaignStatusBar'
 import {
   resolveCommunicationSection,
@@ -21,25 +30,37 @@ import {
 } from '@/lib/communicationNavigation'
 import { PageHeader, PageShell } from '@/components/ui'
 
+/**
+ * KC-0091 — Admin Communication Workspace foundation.
+ * COS sections are primary; Messaging Tools preserve existing panels.
+ */
 export function CommunicationModulePage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const section = resolveCommunicationSection(searchParams.get('section'))
 
   const setSection = (next: CommunicationSection) => {
-    setSearchParams(next === 'dashboard' ? {} : { section: next })
+    setSearchParams(next === 'mission-center' ? {} : { section: next })
   }
 
   return (
     <PageShell variant="wide">
       <PageHeader
-        title="Communication Center"
-        description="Campaign communication via WhatsApp Business Platform. Messages are queued through the backend — no credentials are stored in the browser."
+        title="Communication"
+        description="Mission-wide communication planning and management. Foundation workspace — messaging delivery is unchanged under Messaging Tools."
       />
       <ActiveCampaignSubtitle />
 
       <CommunicationSectionNav active={section} onChange={setSection} />
 
-      {section === 'dashboard' && <CommunicationDashboard />}
+      {section === 'mission-center' && <MissionCenterPanel />}
+      {section === 'queue' && <AdminQueuePanel />}
+      {section === 'audiences' && <AdminAudiencesPanel />}
+      {section === 'journeys' && <AdminJourneysPanel />}
+      {section === 'template-library' && <AdminTemplatesPlaceholderPanel />}
+      {section === 'delivery' && <AdminDeliveryPlaceholderPanel />}
+      {section === 'reports' && <AdminReportsPlaceholderPanel />}
+      {section === 'settings' && <AdminSettingsPlaceholderPanel />}
+
       {section === 'rukn' && <RuknCommunicationPanel />}
       {section === 'karkun' && <KarkunCommunicationPanel />}
       {section === 'daily-reports' && <DailyReportsPanel />}
@@ -50,7 +71,7 @@ export function CommunicationModulePage() {
       {section === 'automation' && <AutomationRulesPanel />}
       {section === 'history' && <DeliveryHistoryPanel />}
       {section === 'failed' && <FailedMessagesPanel />}
-      {section === 'settings' && <WhatsAppSettingsPanel />}
+      {section === 'tool-settings' && <WhatsAppSettingsPanel />}
     </PageShell>
   )
 }

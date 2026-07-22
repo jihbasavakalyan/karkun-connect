@@ -24,6 +24,8 @@ export const ROUTES = {
   RUKN: '/rukn',
   RUKN_AVAILABLE_KARKUN: '/rukn/available-karkun',
   RUKN_MY_KARKUN: '/rukn/my-karkun',
+  /** KC-0091 — Rukn Communication Workspace foundation */
+  RUKN_COMMUNICATION: '/rukn/communication',
   RUKN_CAMPAIGN_RECORD: '/rukn/campaign-record',
   RUKN_WEEKLY_IJTEMA: '/rukn/weekly-ijtema',
   RUKN_SETTINGS: '/rukn/settings',
@@ -33,6 +35,10 @@ export type AppRoute = (typeof ROUTES)[keyof typeof ROUTES]
 
 export function ruknVisitPath(karkunId: string): string {
   return `${ROUTES.RUKN}/visit/${karkunId}`
+}
+
+export function ruknCompanionPath(karkunId: string): string {
+  return `${ROUTES.RUKN_COMMUNICATION}/companion/${encodeURIComponent(karkunId)}`
 }
 
 export function adminAnnexure1Path(karkunId: string): string {

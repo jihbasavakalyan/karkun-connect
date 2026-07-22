@@ -79,6 +79,14 @@ const AvailableKarkunPage = lazyWithChunkReload(() =>
 const MyKarkunPage = lazyWithChunkReload(() =>
   import('@/pages/rukn/MyKarkunPage').then((m) => ({ default: m.MyKarkunPage })),
 )
+const RuknCommunicationPage = lazyWithChunkReload(() =>
+  import('@/pages/rukn/RuknCommunicationPage').then((m) => ({ default: m.RuknCommunicationPage })),
+)
+const CompanionWorkspacePage = lazyWithChunkReload(() =>
+  import('@/pages/rukn/CompanionWorkspacePage').then((m) => ({
+    default: m.CompanionWorkspacePage,
+  })),
+)
 const ConnectionJourneyPage = lazyWithChunkReload(() =>
   import('@/pages/rukn/ConnectionJourneyPage').then((m) => ({ default: m.ConnectionJourneyPage })),
 )
@@ -164,6 +172,8 @@ export function AppRouter() {
             <Route index element={<RuknHomePage />} />
             <Route path="available-karkun" element={<AvailableKarkunPage />} />
             <Route path="my-karkun" element={<MyKarkunPage />} />
+            <Route path="communication" element={<RuknCommunicationPage />} />
+            <Route path="communication/companion/:karkunId" element={<CompanionWorkspacePage />} />
             <Route path="visit/:karkunId" element={<ConnectionJourneyPage />} />
             <Route path="campaign-record" element={<CampaignRecordPage />} />
             <Route path="weekly-ijtema" element={<WeeklyIjtemaRegisterPage />} />

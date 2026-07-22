@@ -15,3 +15,8 @@ export { RuknCommunicationPanel } from '@/components/communication/RuknCommunica
 export { ScheduledMessagesPanel } from '@/components/communication/ScheduledMessagesPanel'
 export { TemplateManagementPanel } from '@/components/communication/TemplateManagementPanel'
 export { WhatsAppSettingsPanel } from '@/components/communication/WhatsAppSettingsPanel'
+export { MissionCenterPanel } from '@/components/communication/cos/MissionCenterPanel'
+export { DigitalRafeeqGuidancePanel } from '@/components/communication/cos/DigitalRafeeqGuidancePanel'
+export { MyConnectedKarkunsPanel } from '@/components/communication/cos/MyConnectedKarkunsPanel'
+export { CompanionWorkspaceView } from '@/components/communication/cos/CompanionWorkspaceView'
+export { RuknCommunicationSectionNav } from '@/components/communication/cos/RuknCommunicationSectionNav'
