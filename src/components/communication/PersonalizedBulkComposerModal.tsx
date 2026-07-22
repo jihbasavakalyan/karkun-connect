@@ -10,6 +10,7 @@ import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import { combineSubjectAndBody } from '@/lib/communication/combineSubjectAndBody'
 import { buildMailMergeVariablesForRecipient } from '@/lib/communication/mailMergeEngine'
+import { prepareWhatsAppLaunchWindows } from '@/lib/communication/whatsappWebLaunch'
 import {
   previewPersonalizedMessages,
   runPersonalizedBulkSend,
@@ -141,6 +142,8 @@ function PersonalizedBulkComposerContent({
     setError('')
     setPhase('sending')
     cancelRef.current.cancelled = false
+    // Pre-open tabs during the click handler so async merge can navigate them (popup-safe).
+    const launchWindows = prepareWhatsAppLaunchWindows(recipients.length)
     void (async () => {
       const result = await runPersonalizedBulkSend({
         recipients,
@@ -148,6 +151,7 @@ function PersonalizedBulkComposerContent({
         templateId: templateId || undefined,
         role,
         signal: cancelRef.current,
+        launchWindows,
         onProgress: (p) =>
           setProgress({
             index: p.index,

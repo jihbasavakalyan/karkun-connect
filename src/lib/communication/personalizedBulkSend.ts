@@ -1,10 +1,14 @@
 /**
  * KC-0077.1 — Personalized bulk send via existing sendIndividualMessage().
- * Continues on failure; skips missing mobile. No new delivery engine.
+ * KC-0077.2.2B — Launch WhatsApp Web per recipient before recording delivery history.
  */
 
 import { buildMailMergeVariablesForRecipient } from '@/lib/communication/mailMergeEngine'
 import { MAIL_MERGE_FALLBACK } from '@/lib/communication/mailMergeVariables'
+import {
+  closeWhatsAppLaunchWindow,
+  launchWhatsAppWebMessage,
+} from '@/lib/communication/whatsappWebLaunch'
 import { composeWhatsAppMessage, resolveFooterMode } from '@/services/templateService'
 import { sendIndividualMessage } from '@/services/communicationService'
 import type { MessageRecipient } from '@/types/communication'
@@ -35,13 +39,18 @@ export type PersonalizedBulkProgress = {
 
 export type RunPersonalizedBulkOptions = {
   recipients: MessageRecipient[]
-  /** Template body (before footer). */
+  /** Template body (before footer). May include subject + body (KC-0077.2.1). */
   templateBody: string
   templateId?: string
   role?: 'administrator' | 'rukn'
   actor?: string
   signal?: { cancelled: boolean }
   onProgress?: (progress: PersonalizedBulkProgress) => void
+  /**
+   * Pre-opened tabs from the Send All click handler (one per recipient).
+   * Navigated after merge so browsers do not block pop-ups mid-batch.
+   */
+  launchWindows?: (Window | null)[]
 }
 
 export function buildPersonalizedMessageForRecipient(
@@ -64,9 +73,19 @@ export function previewPersonalizedMessages(
   }))
 }
 
+function closeRemainingLaunchWindows(
+  launchWindows: (Window | null)[] | undefined,
+  fromIndex: number,
+): void {
+  if (!launchWindows) return
+  for (let index = fromIndex; index < launchWindows.length; index++) {
+    closeWhatsAppLaunchWindow(launchWindows[index])
+  }
+}
+
 /**
- * FOR EACH recipient: merge → sendIndividualMessage → continue.
- * Does not stop the batch on individual failures.
+ * FOR EACH recipient: merge → launch WhatsApp Web → sendIndividualMessage (history) → continue.
+ * Delivery history is recorded only after a successful WhatsApp launch.
  */
 export async function runPersonalizedBulkSend(
   options: RunPersonalizedBulkOptions,
@@ -82,7 +101,10 @@ export async function runPersonalizedBulkSend(
   const total = options.recipients.length
 
   for (let index = 0; index < total; index++) {
+    const launchWindow = options.launchWindows?.[index]
+
     if (options.signal?.cancelled) {
+      closeRemainingLaunchWindows(options.launchWindows, index)
       break
     }
 
@@ -95,6 +117,7 @@ export async function runPersonalizedBulkSend(
     })
 
     if (!recipient.mobile?.trim()) {
+      closeWhatsAppLaunchWindow(launchWindow)
       skipped++
       items.push({
         personId: recipient.personId,
@@ -109,6 +132,7 @@ export async function runPersonalizedBulkSend(
     try {
       message = buildPersonalizedMessageForRecipient(options.templateBody, recipient, role)
       if (!message.trim() || message.trim() === MAIL_MERGE_FALLBACK) {
+        closeWhatsAppLaunchWindow(launchWindow)
         skipped++
         items.push({
           personId: recipient.personId,
@@ -119,6 +143,7 @@ export async function runPersonalizedBulkSend(
         continue
       }
     } catch (error) {
+      closeWhatsAppLaunchWindow(launchWindow)
       failed++
       items.push({
         personId: recipient.personId,
@@ -129,7 +154,24 @@ export async function runPersonalizedBulkSend(
       continue
     }
 
-    // Do not interrupt a message already being sent — check cancel only between recipients.
+    const launch = launchWhatsAppWebMessage(recipient, message, launchWindow)
+    if (!launch.launched) {
+      failed++
+      items.push({
+        personId: recipient.personId,
+        personName: recipient.name,
+        outcome: 'failed',
+        reason: launch.reason ?? 'WhatsApp launch blocked',
+        messagePreview: message.slice(0, 120),
+      })
+      continue
+    }
+
+    // Brief pause between tabs so the browser can focus each WhatsApp window.
+    if (index < total - 1) {
+      await new Promise((resolve) => setTimeout(resolve, 400))
+    }
+
     const result = await sendIndividualMessage(
       {
         channel: 'whatsapp',
