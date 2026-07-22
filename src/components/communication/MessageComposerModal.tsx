@@ -4,6 +4,7 @@ import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import { Icon } from '@/components/ui/Icon'
 import { SchedulePickerModal } from '@/components/communication/SchedulePickerModal'
+import { PersonalizedBulkComposerModal } from '@/components/communication/PersonalizedBulkComposerModal'
 import {
   composeWhatsAppMessage,
   listTemplates,
@@ -13,6 +14,7 @@ import { scheduleWhatsAppMessage } from '@/services/schedulingService'
 import { buildWhatsAppLink } from '@/utils/personContactLinks'
 import type { MessageRecipient, MessageTemplate } from '@/types/communication'
 import { TEMPLATE_CATEGORY_LABELS, TEMPLATE_PLACEHOLDER_KEYS } from '@/types/communication'
+import type { PersonalizedBulkReport } from '@/lib/communication/personalizedBulkSend'
 
 const selectClassName =
   'w-full rounded-lg border border-border bg-surface px-4 py-3 text-base text-text-heading focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20'
@@ -31,6 +33,8 @@ type MessageComposerModalProps = {
   role?: 'administrator' | 'rukn'
   /** Digital Rafeeq recommended template id (highlighted). */
   recommendedTemplateId?: string
+  /** KC-0077.1 — after personalized bulk completes (multi-recipient). */
+  onBulkComplete?: (report: PersonalizedBulkReport) => void
 }
 
 export function MessageComposerModal({
@@ -44,9 +48,28 @@ export function MessageComposerModal({
   contextVariables,
   role = 'administrator',
   recommendedTemplateId,
+  onBulkComplete,
 }: MessageComposerModalProps) {
   if (!isOpen) {
     return null
+  }
+
+  // KC-0077.1 — multi-recipient = personalized mail-merge Send All (not identical broadcast).
+  if (recipients.length > 1) {
+    return (
+      <PersonalizedBulkComposerModal
+        isOpen={isOpen}
+        recipients={recipients}
+        onClose={onClose}
+        title={title}
+        initialTemplateId={initialTemplateId}
+        initialMessage={initialMessage}
+        role={role}
+        onComplete={(report) => {
+          onBulkComplete?.(report)
+        }}
+      />
+    )
   }
 
   return (

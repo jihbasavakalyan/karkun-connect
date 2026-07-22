@@ -1,5 +1,5 @@
-/**
- * KC-0060 — Broadcast composer with permanent Arkaan recipient group.
+﻿/**
+ * KC-0060 / KC-0077.1 — Arkaan group composer with personalized Send All (mail merge).
  */
 
 import { useMemo, useState } from 'react'
@@ -10,7 +10,6 @@ import {
   ARKAAN_GROUP_NAME,
   getArkaanRecipientGroup,
 } from '@/lib/communication/arkaanRecipientGroup'
-import { useCommunication } from '@/hooks/useCommunication'
 import type { MessageRecipient } from '@/types/communication'
 
 type BroadcastComposerPanelProps = {
@@ -19,7 +18,6 @@ type BroadcastComposerPanelProps = {
 }
 
 export function BroadcastComposerPanel({ recipients: recipientsProp }: BroadcastComposerPanelProps) {
-  const { sendBroadcastMessage } = useCommunication()
   const [composerOpen, setComposerOpen] = useState(false)
   const arkaanGroup = useMemo(() => getArkaanRecipientGroup(), [])
   const recipients = recipientsProp ?? arkaanGroup.recipients
@@ -29,7 +27,8 @@ export function BroadcastComposerPanel({ recipients: recipientsProp }: Broadcast
       <h2 className="text-lg font-semibold text-text-heading">Broadcast Messages</h2>
       <p className="mt-2 text-sm text-secondary">
         The permanent <strong>{ARKAAN_GROUP_NAME}</strong> group is resolved automatically from Rukn
-        Master. Administrators do not re-select Arkaan recipients each day.
+        Master. <strong>Send All</strong> personalizes each message (mail merge) using individual
+        delivery — not one identical broadcast body.
       </p>
 
       <div className="mt-4 rounded-lg border border-dashed border-border bg-surface-muted p-4">
@@ -38,7 +37,7 @@ export function BroadcastComposerPanel({ recipients: recipientsProp }: Broadcast
           {recipients.length === 1 ? '' : 's'} ready
         </p>
         <p className="mt-1 text-xs text-secondary">
-          Permanent group · source: Rukn Master · auto-resolved
+          Permanent group · source: Rukn Master · personalized Send All
         </p>
         {recipients.length === 0 ? (
           <p className="mt-2 text-sm text-secondary">
@@ -61,7 +60,7 @@ export function BroadcastComposerPanel({ recipients: recipientsProp }: Broadcast
           onClick={() => setComposerOpen(true)}
           disabled={recipients.length === 0}
         >
-          Compose Broadcast to Arkaan
+          Compose Personalized Send All
         </PrimaryButton>
         <SecondaryButton type="button" disabled title="Coming in next release">
           Custom recipient list
@@ -73,19 +72,9 @@ export function BroadcastComposerPanel({ recipients: recipientsProp }: Broadcast
         isOpen={composerOpen}
         recipients={recipients}
         onClose={() => setComposerOpen(false)}
-        onSend={async (input) => {
-          const result = await sendBroadcastMessage({
-            channel: 'whatsapp',
-            recipients,
-            templateId: input.templateId,
-            message: input.message,
-          })
-          if (result.success === 0 && result.failed.length > 0) {
-            return { success: false, error: result.failed[0]?.error ?? 'Broadcast failed.' }
-          }
-          return { success: true }
-        }}
-        title={`Broadcast to ${ARKAAN_GROUP_NAME} (${recipients.length})`}
+        onSend={async () => ({ success: true })}
+        onBulkComplete={() => setComposerOpen(false)}
+        title={`Personalized Send All · ${ARKAAN_GROUP_NAME} (${recipients.length})`}
       />
     </section>
   )

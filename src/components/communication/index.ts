@@ -10,7 +10,7 @@ export { DeliveryHistoryPanel } from '@/components/communication/DeliveryHistory
 export { FailedMessagesPanel } from '@/components/communication/FailedMessagesPanel'
 export { IndividualMessagesPanel } from '@/components/communication/IndividualMessagesPanel'
 export { KarkunCommunicationPanel } from '@/components/communication/KarkunCommunicationPanel'
-export { MessageComposerModal } from '@/components/communication/MessageComposerModal'
+export { PersonalizedBulkComposerModal } from '@/components/communication/PersonalizedBulkComposerModal'
 export { RuknCommunicationPanel } from '@/components/communication/RuknCommunicationPanel'
 export { ScheduledMessagesPanel } from '@/components/communication/ScheduledMessagesPanel'
 export { TemplateManagementPanel } from '@/components/communication/TemplateManagementPanel'

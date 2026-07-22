@@ -100,25 +100,46 @@ export function restoreTemplate(id: string, updatedBy = 'Administrator'): Messag
 }
 
 /**
- * Replace {name} and {{name}} placeholders.
- * Unresolved placeholders are left blank for WhatsApp cleanliness.
+ * Replace {name} / {{Name}} / {{Today'sDate}} placeholders.
+ * KC-0077.1 — unresolved placeholders render as "-" (never leave raw tokens).
  */
 export function applyTemplateVariables(
   body: string,
   variables: Record<string, string>,
 ): string {
+  const FALLBACK = '-'
+
+  const resolve = (rawKey: string): string => {
+    if (Object.prototype.hasOwnProperty.call(variables, rawKey)) {
+      const value = variables[rawKey]
+      if (typeof value === 'string' && value.trim()) return value
+      if (value === '') return FALLBACK
+    }
+    // Case-insensitive lookup for {{karkunname}} vs {{KarkunName}}
+    const lower = rawKey.toLowerCase()
+    for (const [key, value] of Object.entries(variables)) {
+      if (key.toLowerCase() === lower && typeof value === 'string' && value.trim()) {
+        return value
+      }
+    }
+    if (typeof console !== 'undefined' && typeof console.warn === 'function') {
+      console.warn(`[mail-merge] unresolved placeholder: ${rawKey}`)
+    }
+    return FALLBACK
+  }
+
   return body
-    .replace(/\{\{(\w+)\}\}/g, (_, key: string) => variables[key] ?? '')
-    .replace(/(?<!\{)\{(\w+)\}(?!\})/g, (_, key: string) => variables[key] ?? '')
+    .replace(/\{\{([A-Za-z][\w']*)\}\}/g, (_, key: string) => resolve(key))
+    .replace(/(?<!\{)\{([A-Za-z][\w']*)\}(?!\})/g, (_, key: string) => resolve(key))
 }
 
 export function extractTemplateVariables(body: string): string[] {
   const keys = new Set<string>()
-  for (const match of body.matchAll(/\{\{(\w+)\}\}/g)) {
-    keys.add(match[1])
+  for (const match of body.matchAll(/\{\{([A-Za-z][\w']*)\}\}/g)) {
+    keys.add(match[1]!)
   }
-  for (const match of body.matchAll(/(?<!\{)\{(\w+)\}(?!\})/g)) {
-    keys.add(match[1])
+  for (const match of body.matchAll(/(?<!\{)\{([A-Za-z][\w']*)\}(?!\})/g)) {
+    keys.add(match[1]!)
   }
   return [...keys]
 }

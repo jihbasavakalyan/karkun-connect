@@ -302,7 +302,7 @@ export function AdminCommandCenter({
 }: AdminCommandCenterProps) {
   const { assignmentVersion } = useAssignmentEngine()
   const backgroundReady = useBackgroundHydration()
-  const { sendIndividualMessage, sendBroadcastMessage } = useCommunication()
+  const { sendIndividualMessage } = useCommunication()
   const [systemHistoryOpen, setSystemHistoryOpen] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set())
   const [composerError, setComposerError] = useState('')
@@ -740,35 +740,24 @@ export function AdminCommandCenter({
         initialTemplateId={composer.initialTemplateId}
         initialMessage={composer.initialMessage}
         onClose={() => setComposer((current) => ({ ...current, open: false }))}
-        onSend={async (input) => {
-          if (composer.recipients.length === 1) {
-            const result = await sendIndividualMessage({
-              channel: 'whatsapp',
-              recipient: composer.recipients[0]!,
-              templateId: input.templateId,
-              message: input.message,
-            })
-            if (result.success) {
-              setComposer((current) => ({ ...current, open: false }))
-              return { success: true }
-            }
-            return { success: false, error: result.error ?? 'Send failed.' }
+        onBulkComplete={(report) => {
+          if (report.successfullySent > 0) {
+            clearSelection()
           }
-          const result = await sendBroadcastMessage({
+          setComposer((current) => ({ ...current, open: false }))
+        }}
+        onSend={async (input) => {
+          const result = await sendIndividualMessage({
             channel: 'whatsapp',
-            recipients: composer.recipients,
+            recipient: composer.recipients[0]!,
             templateId: input.templateId,
             message: input.message,
           })
-          if (result.success > 0) {
-            clearSelection()
+          if (result.success) {
             setComposer((current) => ({ ...current, open: false }))
             return { success: true }
           }
-          return {
-            success: false,
-            error: result.failed[0]?.error ?? 'Broadcast failed.',
-          }
+          return { success: false, error: result.error ?? 'Send failed.' }
         }}
       />
     </div>

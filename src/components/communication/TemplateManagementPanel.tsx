@@ -11,6 +11,7 @@ import {
   resolveTemplateAudience,
   type CommunicationAudience,
 } from '@/lib/communication/audiencePresentation'
+import { listMailMergeVariablesForAudience } from '@/lib/communication/mailMergeVariables'
 import {
   archiveTemplate,
   composeWhatsAppMessage,
@@ -36,6 +37,7 @@ export function TemplateManagementPanel() {
   const [, setVersion] = useState(0)
   const [showArchived, setShowArchived] = useState(false)
   const [audienceFilter, setAudienceFilter] = useState<CommunicationAudience | 'all'>('all')
+  const [editorAudience, setEditorAudience] = useState<'karkun' | 'rukn'>('karkun')
   const [editing, setEditing] = useState<MessageTemplate | 'new' | null>(null)
   const [name, setName] = useState('')
   const [category, setCategory] = useState<TemplateCategory>('custom')
@@ -300,17 +302,54 @@ export function TemplateManagementPanel() {
               />
             </div>
             <div className="flex flex-col gap-2 sm:col-span-2">
-              <label className="text-sm font-medium text-text-heading">Body</label>
+              <div className="flex flex-wrap items-end justify-between gap-2">
+                <label className="text-sm font-medium text-text-heading">Body</label>
+                <div className="flex flex-wrap items-center gap-2">
+                  <label htmlFor="insert-var-audience" className="text-xs text-secondary">
+                    Insert Variable
+                  </label>
+                  <select
+                    id="insert-var-audience"
+                    value={editorAudience}
+                    onChange={(event) =>
+                      setEditorAudience(event.target.value as 'karkun' | 'rukn')
+                    }
+                    className="rounded-lg border border-border bg-surface px-2 py-1.5 text-xs"
+                  >
+                    <option value="karkun">Karkun</option>
+                    <option value="rukn">Rukn</option>
+                  </select>
+                  <select
+                    defaultValue=""
+                    className="rounded-lg border border-border bg-surface px-2 py-1.5 text-xs"
+                    onChange={(event) => {
+                      const key = event.target.value
+                      if (!key) return
+                      setBody((current) => `${current}{{${key}}}`)
+                      event.target.value = ''
+                    }}
+                    aria-label="Insert mail-merge variable"
+                  >
+                    <option value="">Choose variable…</option>
+                    {listMailMergeVariablesForAudience(editorAudience).map((item) => (
+                      <option key={item.key} value={item.key}>
+                        {item.label} ({`{{${item.key}}}`})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
               <textarea
                 value={body}
                 onChange={(e) => setBody(e.target.value)}
                 rows={8}
                 dir="auto"
                 className={selectClassName}
-                placeholder="السلام علیکم {name} — use {date}, {time}, {venue}, {event}, {month}, {campaign}"
+                placeholder="السلام علیکم {{KarkunName}} — or legacy {name}, {campaign}"
               />
               <p className="text-xs text-secondary">
-                Do not include footer text — footers are appended automatically by role.
+                Do not include footer text — footers are appended automatically by role. Unknown
+                placeholders become &quot;-&quot; at send time.
               </p>
             </div>
             <div className="sm:col-span-2 rounded-lg border border-border bg-surface-muted p-3">

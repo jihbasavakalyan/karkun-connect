@@ -39,7 +39,6 @@ import {
 import type { PersonFormValues } from '@/components/forms/people'
 import { AssignKarkunModal } from '@/components/forms/assignment'
 import { MessageComposerModal } from '@/components/communication/MessageComposerModal'
-import { useCommunication } from '@/hooks/useCommunication'
 import { BaitulMaalBulkUpdateModal } from '@/components/forms/baitulMaal/BaitulMaalBulkUpdateModal'
 import { IjtemaAttendanceBulkUpdateModal } from '@/components/forms/ijtema/IjtemaAttendanceBulkUpdateModal'
 import type { BaitulMaalStatus } from '@/types/baitulMaal'
@@ -108,7 +107,6 @@ function KarkunGenderSection({
   const [bulkIjtemaStatus, setBulkIjtemaStatus] = useState<IjtemaAttendanceStatus | null>(null)
   const [assignmentErrors, setAssignmentErrors] = useState<Record<string, string>>({})
   const [bulkWhatsAppOpen, setBulkWhatsAppOpen] = useState(false)
-  const { sendBroadcastMessage } = useCommunication()
 
   const openAddForm = useCallback(() => {
     setEditingKarkun(null)
@@ -496,30 +494,14 @@ function KarkunGenderSection({
             whatsapp: karkun.whatsapp,
           }))}
         onClose={() => setBulkWhatsAppOpen(false)}
-        onSend={async (input) => {
-          const recipients = management.allFilteredRecords
-            .filter((karkun) => management.selectedIds.includes(karkun.id) && karkun.mobile.trim())
-            .map((karkun) => ({
-              personId: karkun.id,
-              personKind: 'karkun' as const,
-              name: karkun.name,
-              mobile: karkun.mobile,
-              whatsapp: karkun.whatsapp,
-            }))
-          const result = await sendBroadcastMessage({
-            channel: 'whatsapp',
-            recipients,
-            templateId: input.templateId,
-            message: input.message,
-          })
-          if (result.success > 0) {
+        onSend={async () => ({ success: true })}
+        onBulkComplete={(report) => {
+          if (report.successfullySent > 0) {
             management.clearSelection()
-            setBulkWhatsAppOpen(false)
-            return { success: true }
           }
-          return { success: false, error: result.failed[0]?.error ?? 'Broadcast failed.' }
+          setBulkWhatsAppOpen(false)
         }}
-        title={`Broadcast to ${management.selectedIds.length} Karkuns`}
+        title={`Personalized Send All · ${management.selectedIds.length} Karkuns`}
       />
     </div>
   )
