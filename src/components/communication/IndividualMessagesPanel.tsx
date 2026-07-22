@@ -12,16 +12,25 @@ import {
 import { listTemplates } from '@/services/templateService'
 import type { MessageRecipient, MessageRecipientKind } from '@/types/communication'
 
-export function IndividualMessagesPanel() {
+export function IndividualMessagesPanel({
+  lockedKind,
+  title = 'Individual Messages',
+}: {
+  /** KC-0077 — lock audience when embedded in Rukn / Karkun hubs. */
+  lockedKind?: MessageRecipientKind
+  title?: string
+} = {}) {
   const peopleVersion = usePeopleStore()
   const { sendIndividualMessage } = useCommunication()
-  const [kind, setKind] = useState<MessageRecipientKind>('karkun')
+  const [kind, setKind] = useState<MessageRecipientKind>(lockedKind ?? 'karkun')
   const [personId, setPersonId] = useState('')
   const [composerOpen, setComposerOpen] = useState(false)
   const [preferredTemplateId, setPreferredTemplateId] = useState<string | undefined>()
 
+  const effectiveKind = lockedKind ?? kind
+
   const options = useMemo(() => {
-    if (kind === 'karkun') {
+    if (effectiveKind === 'karkun') {
       return getAllKarkuns()
         .filter((k) => !k.isArchived && k.mobile.trim())
         .map((k) => ({ id: k.id, name: k.name, mobile: k.mobile, whatsapp: k.whatsapp }))
@@ -30,13 +39,13 @@ export function IndividualMessagesPanel() {
       .filter((r) => r.status === 'active' && r.mobile.trim())
       .map((r) => ({ id: r.id, name: r.name, mobile: r.mobile, whatsapp: r.whatsapp }))
     // eslint-disable-next-line react-hooks/exhaustive-deps -- registry is module state
-  }, [kind, peopleVersion])
+  }, [effectiveKind, peopleVersion])
 
   const selected = options.find((option) => option.id === personId)
   const recipient: MessageRecipient | null = selected
     ? {
         personId: selected.id,
-        personKind: kind,
+        personKind: effectiveKind,
         name: selected.name,
         mobile: selected.mobile,
         whatsapp: selected.whatsapp,
@@ -44,7 +53,7 @@ export function IndividualMessagesPanel() {
     : null
 
   const context =
-    kind === 'karkun' && personId
+    effectiveKind === 'karkun' && personId
       ? buildIndividualCommunicationContext(personId)
       : null
 
@@ -60,27 +69,36 @@ export function IndividualMessagesPanel() {
 
   return (
     <section className="rounded-(--radius-card) border border-border bg-surface p-4 shadow-card sm:p-6">
-      <h2 className="text-lg font-semibold text-text-heading">Individual Messages</h2>
+      <h2 className="text-lg font-semibold text-text-heading">{title}</h2>
       <p className="mt-2 text-sm text-secondary">
         Official Urdu WhatsApp templates with role-based footers. Placeholders are filled before
         send.
       </p>
 
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
-        <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium text-text-heading">Recipient type</label>
-          <select
-            value={kind}
-            onChange={(e) => {
-              setKind(e.target.value as MessageRecipientKind)
-              setPersonId('')
-            }}
-            className="w-full rounded-lg border border-border bg-surface px-4 py-3 text-sm"
-          >
-            <option value="karkun">Karkun</option>
-            <option value="rukn">Rukn</option>
-          </select>
-        </div>
+        {!lockedKind ? (
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium text-text-heading">Recipient type</label>
+            <select
+              value={kind}
+              onChange={(e) => {
+                setKind(e.target.value as MessageRecipientKind)
+                setPersonId('')
+              }}
+              className="w-full rounded-lg border border-border bg-surface px-4 py-3 text-sm"
+            >
+              <option value="karkun">Karkun</option>
+              <option value="rukn">Rukn</option>
+            </select>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium text-text-heading">Audience</label>
+            <p className="rounded-lg border border-border bg-surface-muted px-4 py-3 text-sm font-medium text-text-heading">
+              {lockedKind === 'rukn' ? 'Rukn' : 'Karkun'}
+            </p>
+          </div>
+        )}
         <div className="flex flex-col gap-2">
           <label className="text-sm font-medium text-text-heading">Select recipient</label>
           <select
@@ -174,7 +192,7 @@ export function IndividualMessagesPanel() {
         </div>
       )}
 
-      {kind === 'karkun' && (
+      {effectiveKind === 'karkun' && (
         <div className="mt-4">
           <h3 className="text-sm font-semibold text-text-heading">Quick Templates</h3>
           <div className="mt-2 flex flex-wrap gap-2">

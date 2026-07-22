@@ -6,6 +6,12 @@ import {
   OFFICIAL_MESSAGE_FOOTER,
 } from '@/data/communication/defaultTemplates'
 import {
+  AUDIENCE_FILTER_OPTIONS,
+  filterTemplatesByAudience,
+  resolveTemplateAudience,
+  type CommunicationAudience,
+} from '@/lib/communication/audiencePresentation'
+import {
   archiveTemplate,
   composeWhatsAppMessage,
   extractTemplateVariables,
@@ -29,6 +35,7 @@ const CATEGORIES = Object.keys(TEMPLATE_CATEGORY_LABELS) as TemplateCategory[]
 export function TemplateManagementPanel() {
   const [, setVersion] = useState(0)
   const [showArchived, setShowArchived] = useState(false)
+  const [audienceFilter, setAudienceFilter] = useState<CommunicationAudience | 'all'>('all')
   const [editing, setEditing] = useState<MessageTemplate | 'new' | null>(null)
   const [name, setName] = useState('')
   const [category, setCategory] = useState<TemplateCategory>('custom')
@@ -44,6 +51,20 @@ export function TemplateManagementPanel() {
 
   const templates = listTemplates({ includeArchived: showArchived }).filter((template) =>
     showArchived ? true : template.isActive !== false,
+  )
+
+  const filteredTemplates = useMemo(
+    () => filterTemplatesByAudience(templates, audienceFilter),
+    [templates, audienceFilter],
+  )
+
+  const ruknTemplates = useMemo(
+    () => filterTemplatesByAudience(filteredTemplates, 'rukn'),
+    [filteredTemplates],
+  )
+  const karkunTemplates = useMemo(
+    () => filterTemplatesByAudience(filteredTemplates, 'karkun'),
+    [filteredTemplates],
   )
 
   const openEditor = (template?: MessageTemplate) => {
@@ -111,6 +132,65 @@ export function TemplateManagementPanel() {
     }
   }
 
+  const renderTemplateList = (items: MessageTemplate[], heading: string) => {
+    if (items.length === 0) return null
+    return (
+      <div className="space-y-2">
+        <h3 className="text-sm font-semibold text-text-heading">{heading}</h3>
+        <ul className="space-y-2">
+          {items.map((template) => (
+            <li
+              key={template.id}
+              className="flex flex-wrap items-start justify-between gap-3 rounded-lg border border-border bg-surface p-4 shadow-card"
+            >
+              <div className="min-w-0">
+                <p className="font-semibold text-text-heading">
+                  {template.name}
+                  {template.isOfficial ? (
+                    <span className="ml-2 rounded-full bg-primary-muted px-2 py-0.5 text-[10px] font-semibold uppercase text-primary">
+                      Official
+                    </span>
+                  ) : null}
+                  {template.isActive === false ? (
+                    <span className="ml-2 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold uppercase text-amber-800">
+                      Archived
+                    </span>
+                  ) : null}
+                  <span className="ml-2 rounded-full bg-surface-muted px-2 py-0.5 text-[10px] font-semibold uppercase text-secondary">
+                    {resolveTemplateAudience(template) === 'rukn' ? 'Rukn' : 'Karkun'}
+                  </span>
+                </p>
+                <p className="mt-1 text-xs text-secondary">
+                  {TEMPLATE_CATEGORY_LABELS[template.category]} ·{' '}
+                  {template.variables.join(', ') || 'No variables'}
+                </p>
+                <p className="mt-2 line-clamp-3 whitespace-pre-wrap text-sm text-secondary" dir="auto">
+                  {template.body}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <SecondaryButton
+                  type="button"
+                  className="px-3 py-1.5 text-sm"
+                  onClick={() => openEditor(template)}
+                >
+                  Edit
+                </SecondaryButton>
+                <SecondaryButton
+                  type="button"
+                  className="px-3 py-1.5 text-sm"
+                  onClick={() => handleArchive(template)}
+                >
+                  {template.isActive === false ? 'Restore' : 'Archive'}
+                </SecondaryButton>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -133,6 +213,28 @@ export function TemplateManagementPanel() {
         </div>
       </div>
 
+      <div className="flex flex-wrap items-end gap-3">
+        <div className="flex flex-col gap-1">
+          <label htmlFor="template-audience" className="text-xs font-medium text-secondary">
+            Audience
+          </label>
+          <select
+            id="template-audience"
+            value={audienceFilter}
+            onChange={(event) =>
+              setAudienceFilter(event.target.value as CommunicationAudience | 'all')
+            }
+            className={selectClassName}
+          >
+            {AUDIENCE_FILTER_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
       <details className="rounded-lg border border-border bg-surface-muted/40 px-4 py-3 text-sm">
         <summary className="cursor-pointer font-medium text-text-heading">Footer policy</summary>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
@@ -147,53 +249,23 @@ export function TemplateManagementPanel() {
         </div>
       </details>
 
-      <ul className="space-y-2">
-        {templates.map((template) => (
-          <li
-            key={template.id}
-            className="flex flex-wrap items-start justify-between gap-3 rounded-lg border border-border bg-surface p-4 shadow-card"
-          >
-            <div className="min-w-0">
-              <p className="font-semibold text-text-heading">
-                {template.name}
-                {template.isOfficial ? (
-                  <span className="ml-2 rounded-full bg-primary-muted px-2 py-0.5 text-[10px] font-semibold uppercase text-primary">
-                    Official
-                  </span>
-                ) : null}
-                {template.isActive === false ? (
-                  <span className="ml-2 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold uppercase text-amber-800">
-                    Archived
-                  </span>
-                ) : null}
-              </p>
-              <p className="mt-1 text-xs text-secondary">
-                {TEMPLATE_CATEGORY_LABELS[template.category]} ·{' '}
-                {template.variables.join(', ') || 'No variables'}
-              </p>
-              <p className="mt-2 line-clamp-3 whitespace-pre-wrap text-sm text-secondary" dir="auto">
-                {template.body}
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <SecondaryButton
-                type="button"
-                className="px-3 py-1.5 text-sm"
-                onClick={() => openEditor(template)}
-              >
-                Edit
-              </SecondaryButton>
-              <SecondaryButton
-                type="button"
-                className="px-3 py-1.5 text-sm"
-                onClick={() => handleArchive(template)}
-              >
-                {template.isActive === false ? 'Restore' : 'Archive'}
-              </SecondaryButton>
-            </div>
-          </li>
-        ))}
-      </ul>
+      {audienceFilter === 'all' ? (
+        <div className="space-y-6">
+          {renderTemplateList(ruknTemplates, 'Rukn — Daily Mission, reminders, announcements')}
+          {renderTemplateList(karkunTemplates, 'Karkun — Visit, follow-up, appreciation')}
+        </div>
+      ) : (
+        renderTemplateList(
+          filteredTemplates,
+          audienceFilter === 'rukn' ? 'Rukn templates' : 'Karkun templates',
+        )
+      )}
+
+      {filteredTemplates.length === 0 ? (
+        <p className="rounded-lg border border-border bg-surface-muted p-6 text-center text-sm text-secondary">
+          No templates for this audience filter.
+        </p>
+      ) : null}
 
       {editing !== null && (
         <section className="rounded-(--radius-card) border border-primary/30 bg-surface p-4 shadow-card sm:p-6">

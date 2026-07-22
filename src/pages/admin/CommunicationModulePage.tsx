@@ -8,6 +8,8 @@ import {
   DeliveryHistoryPanel,
   FailedMessagesPanel,
   IndividualMessagesPanel,
+  KarkunCommunicationPanel,
+  RuknCommunicationPanel,
   ScheduledMessagesPanel,
   TemplateManagementPanel,
   WhatsAppSettingsPanel,
@@ -38,6 +40,8 @@ export function CommunicationModulePage() {
       <CommunicationSectionNav active={section} onChange={setSection} />
 
       {section === 'dashboard' && <CommunicationDashboard />}
+      {section === 'rukn' && <RuknCommunicationPanel />}
+      {section === 'karkun' && <KarkunCommunicationPanel />}
       {section === 'daily-reports' && <DailyReportsPanel />}
       {section === 'individual' && <IndividualMessagesPanel />}
       {section === 'broadcast' && <BroadcastComposerPanel />}
