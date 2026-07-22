@@ -1197,6 +1197,13 @@ export class RuknFirestoreRepository implements RuknRepository {
   saveAll(rukns: Rukn[]): RepositoryResult<void> {
     ruknCache.set([...rukns])
     void queueWrite('rukns', async () => {
+      const scope = await resolveClientAuthScope()
+      // KC-0086 — /rukns writes are administrator-only. Rukn clients must not
+      // attempt a full-collection rewrite (permission-denied + false Save failure).
+      if (scope.role === 'rukn') {
+        console.info('[KC-0086] Skipping rukn.saveAll for Rukn client')
+        return repositoryOk(undefined)
+      }
       const db = getFirestoreDb()
       const writes = rukns.map((rukn) => ({
         path: FIRESTORE_COLLECTIONS.rukns,

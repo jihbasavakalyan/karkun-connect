@@ -20,6 +20,10 @@ import {
 import { subscribeToAnnexure1Store } from '@/stores/annexure1Store'
 import { subscribeToIjtemaAttendanceStore } from '@/stores/ijtemaAttendanceStore'
 import { subscribeToBaitulMaalStore } from '@/stores/baitulMaalStore'
+import {
+  EXECUTION_PERSIST_FAILED_EVENT,
+  type ExecutionPersistFailedDetail,
+} from '@/lib/executionPersistEvents'
 
 type ConnectionQuickActionsPanelProps = {
   karkunId: string
@@ -41,10 +45,18 @@ export function ConnectionQuickActionsPanel({
     const a = subscribeToAnnexure1Store(() => setTick((v) => v + 1))
     const i = subscribeToIjtemaAttendanceStore(() => setTick((v) => v + 1))
     const b = subscribeToBaitulMaalStore(() => setTick((v) => v + 1))
+    const onPersistFailed = (event: Event) => {
+      const detail = (event as CustomEvent<ExecutionPersistFailedDetail>).detail
+      if (!detail) return
+      setSavedNote(false)
+      setError(`Save failed (${detail.label}): ${detail.message}`)
+    }
+    window.addEventListener(EXECUTION_PERSIST_FAILED_EVENT, onPersistFailed)
     return () => {
       a()
       i()
       b()
+      window.removeEventListener(EXECUTION_PERSIST_FAILED_EVENT, onPersistFailed)
     }
   }, [])
 
@@ -167,7 +179,14 @@ export function ConnectionQuickActionsPanel({
         type="button"
         className="mt-2 rounded-lg border border-border px-3 py-2 text-sm font-semibold text-text-heading"
         onClick={() => {
-          run(() => saveMatrixRemarks(karkunId, ruknId, remarks, user?.uid))
+          setError('')
+          setSavedNote(false)
+          const result = saveMatrixRemarks(karkunId, ruknId, remarks, user?.uid)
+          if (!result.success) {
+            setError(result.error)
+            return
+          }
+          setTick((v) => v + 1)
           setSavedNote(true)
         }}
       >

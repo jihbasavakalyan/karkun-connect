@@ -2,11 +2,15 @@
  * Featured Digital Rafeeq companion card — visual heart of Rukn Home (KC-009.1).
  * Brand heading stays "Digital Rafeeq"; conversation copy is natural Urdu.
  * KC-0083 — `mini` keeps a one-line recommendation + Play CTA.
+ * KC-0085 — mini Play speaks `guidanceLine` via cloud TTS (not open-drawer only).
  */
 
+import { useState } from 'react'
 import { Icon } from '@/components/ui/Icon'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { RAFEEQ_BRAND, RAFEEQ_SUBTITLE } from '@/features/digitalRafeeq/companion/rafeeqUrduCopy'
+import { speakRafeeqCloudText, stopCloudSpeech } from '@/features/digitalRafeeq/voice/cloudSpeechPlayback'
+import { TTS_ERROR_MESSAGE_URDU } from '@/features/digitalRafeeq/voice/ttsMessages'
 
 type AskDigitalRafeeqCardProps = {
   onOpen: () => void
@@ -26,7 +30,11 @@ export function AskDigitalRafeeqCard({
   featured = false,
   guidanceLine,
 }: AskDigitalRafeeqCardProps) {
+  const [playState, setPlayState] = useState<'idle' | 'loading' | 'error'>('idle')
+  const [playNotice, setPlayNotice] = useState('')
+
   if (mini) {
+    const line = (guidanceLine ?? RAFEEQ_SUBTITLE).trim()
     return (
       <section
         className="flex items-center justify-between gap-3 rounded-lg border border-border bg-surface px-3 py-2.5 shadow-card"
@@ -40,14 +48,38 @@ export function AskDigitalRafeeqCard({
           <p className="truncate text-sm text-secondary urdu-text" dir="rtl" lang="ur">
             {guidanceLine ?? RAFEEQ_SUBTITLE}
           </p>
+          {playNotice ? (
+            <p className="mt-1 text-xs text-red-600 urdu-text" dir="rtl" lang="ur">
+              {playNotice}
+            </p>
+          ) : null}
         </div>
         <PrimaryButton
           type="button"
           className="shrink-0 !min-h-10 !px-3 !py-2 text-sm"
-          onClick={onOpen}
-          disabled={!ready}
+          disabled={!ready || playState === 'loading' || !line}
+          aria-busy={playState === 'loading'}
+          onClick={() => {
+            void (async () => {
+              setPlayNotice('')
+              setPlayState('loading')
+              try {
+                await speakRafeeqCloudText(line)
+                setPlayState('idle')
+              } catch (error) {
+                stopCloudSpeech()
+                const message =
+                  error instanceof Error && 'userMessage' in error
+                    ? String((error as Error & { userMessage?: string }).userMessage)
+                    : TTS_ERROR_MESSAGE_URDU
+                setPlayNotice(message || TTS_ERROR_MESSAGE_URDU)
+                setPlayState('error')
+                window.setTimeout(() => setPlayState('idle'), 2400)
+              }
+            })()
+          }}
         >
-          Play
+          {playState === 'loading' ? '…' : 'Play'}
         </PrimaryButton>
       </section>
     )
