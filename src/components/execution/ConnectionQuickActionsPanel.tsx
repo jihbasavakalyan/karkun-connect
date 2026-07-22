@@ -22,6 +22,7 @@ import { subscribeToIjtemaAttendanceStore } from '@/stores/ijtemaAttendanceStore
 import { subscribeToBaitulMaalStore } from '@/stores/baitulMaalStore'
 import {
   EXECUTION_PERSIST_FAILED_EVENT,
+  confirmExecutionSaveFeedback,
   type ExecutionPersistFailedDetail,
 } from '@/lib/executionPersistEvents'
 
@@ -76,7 +77,10 @@ export function ConnectionQuickActionsPanel({
   const ijtema = ijtemaStatusChip(row.ijtema)
   const baitul = baitulMaalStatusChip(row.baitulMaal)
 
-  const run = (fn: () => { success: true } | { success: false; error: string }) => {
+  const run = (
+    fn: () => { success: true } | { success: false; error: string },
+    successMessage?: string,
+  ) => {
     setError('')
     setSavedNote(false)
     const result = fn()
@@ -85,6 +89,9 @@ export function ConnectionQuickActionsPanel({
       return
     }
     setTick((v) => v + 1)
+    if (successMessage) {
+      void confirmExecutionSaveFeedback(successMessage)
+    }
   }
 
   const actionClass =
@@ -101,7 +108,12 @@ export function ConnectionQuickActionsPanel({
         <button
           type="button"
           className={actionClass}
-          onClick={() => run(() => toggleVisitForKarkun(karkunId, ruknId, user?.uid))}
+          onClick={() =>
+            run(
+              () => toggleVisitForKarkun(karkunId, ruknId, user?.uid),
+              '✅ Visit recorded successfully',
+            )
+          }
           aria-pressed={row.visitDone}
         >
           <span>{row.visitDone ? '☑' : '☐'} Visit</span>
@@ -188,6 +200,7 @@ export function ConnectionQuickActionsPanel({
           }
           setTick((v) => v + 1)
           setSavedNote(true)
+          void confirmExecutionSaveFeedback('✅ Remarks saved successfully')
         }}
       >
         {savedNote ? 'Remarks saved' : 'Save Remarks'}

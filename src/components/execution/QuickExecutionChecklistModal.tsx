@@ -15,6 +15,7 @@ import {
   type QuickExecutionDraft,
   type VisitChecklist,
 } from '@/lib/quickExecutionChecklist'
+import { confirmExecutionSaveFeedback } from '@/lib/executionPersistEvents'
 import type { JourneyStageId } from '@/types/guidance'
 import type { IjtemaAttendanceStatus } from '@/types/ijtemaAttendance'
 
@@ -145,6 +146,7 @@ export function QuickExecutionChecklistModal({
       setError(result.error)
       return
     }
+    void confirmExecutionSaveFeedback('✅ Daily Progress saved successfully')
     onSaved?.()
     onClose()
   }

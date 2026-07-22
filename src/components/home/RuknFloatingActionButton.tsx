@@ -21,8 +21,8 @@ type FabAction = {
 }
 
 /**
- * KC-0083 — Quick Actions menu (no duplicate Record Visit CTA).
- * Visit → Connected list; Ijtema Register; Search; Communication.
+ * KC-0091.1 — Expanded "+" menu is communication-only: Call + WhatsApp.
+ * Primary floating stack on the right is unchanged (trigger + animation).
  */
 export function RuknFloatingActionButton({
   nextAction,
@@ -56,38 +56,33 @@ export function RuknFloatingActionButton({
   }, [open])
 
   void nextAction
-  void primaryCallHref
 
   const actions: FabAction[] = [
-    {
-      id: 'visit',
-      label: 'Record Visit',
-      icon: 'clipboard',
-      to: ROUTES.RUKN_MY_KARKUN,
-    },
-    {
-      id: 'ijtema',
-      label: 'Weekly Ijtema Register',
-      icon: 'calendar',
-      to: ROUTES.RUKN_WEEKLY_IJTEMA,
-    },
-    {
-      id: 'search',
-      label: 'Search Karkun',
-      icon: 'search',
-      to: ROUTES.RUKN_AVAILABLE_KARKUN,
-    },
+    primaryCallHref
+      ? {
+          id: 'call',
+          label: 'Call Karkun 📞',
+          icon: 'phone',
+          href: primaryCallHref,
+          external: false,
+        }
+      : {
+          id: 'call',
+          label: 'Call Karkun 📞',
+          icon: 'phone',
+          to: ROUTES.RUKN_MY_KARKUN,
+        },
     primaryWhatsAppHref
       ? {
-          id: 'communication',
-          label: 'Communication',
+          id: 'whatsapp',
+          label: 'WhatsApp Karkun 💬',
           icon: 'message',
           href: primaryWhatsAppHref,
           external: true,
         }
       : {
-          id: 'communication',
-          label: 'Communication',
+          id: 'whatsapp',
+          label: 'WhatsApp Karkun 💬',
           icon: 'message',
           to: ROUTES.RUKN_MY_KARKUN,
         },
@@ -96,7 +91,7 @@ export function RuknFloatingActionButton({
   return (
     <div ref={rootRef} className="rukn-fab-root">
       {open && (
-        <div className="rukn-fab-menu" role="menu" aria-label="Quick actions">
+        <div className="rukn-fab-menu" role="menu" aria-label="Communication shortcuts">
           {actions.map((action, index) => {
             const style = { animationDelay: `${index * 40}ms` }
             const className = 'rukn-fab-menu-item'
@@ -141,7 +136,7 @@ export function RuknFloatingActionButton({
         className={`rukn-fab-trigger ${open ? 'rukn-fab-trigger-open' : ''}`}
         aria-expanded={open}
         aria-haspopup="menu"
-        aria-label={open ? 'Close quick actions' : 'Open quick actions'}
+        aria-label={open ? 'Close communication shortcuts' : 'Open communication shortcuts'}
         onClick={() => setOpen((current) => !current)}
       >
         <span className="rukn-fab-icon" aria-hidden="true">

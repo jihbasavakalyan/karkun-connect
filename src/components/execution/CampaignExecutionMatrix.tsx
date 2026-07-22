@@ -25,6 +25,7 @@ import { subscribeToIjtemaAttendanceStore } from '@/stores/ijtemaAttendanceStore
 import { subscribeToBaitulMaalStore } from '@/stores/baitulMaalStore'
 import {
   EXECUTION_PERSIST_FAILED_EVENT,
+  confirmExecutionSaveFeedback,
   type ExecutionPersistFailedDetail,
 } from '@/lib/executionPersistEvents'
 
@@ -102,7 +103,10 @@ export function CampaignExecutionMatrix({ ruknId }: CampaignExecutionMatrixProps
 
   const refresh = () => setTick((v) => v + 1)
 
-  const run = (fn: () => { success: true } | { success: false; error: string }) => {
+  const run = (
+    fn: () => { success: true } | { success: false; error: string },
+    successMessage?: string,
+  ) => {
     setError('')
     const result = fn()
     if (!result.success) {
@@ -110,6 +114,9 @@ export function CampaignExecutionMatrix({ ruknId }: CampaignExecutionMatrixProps
       return
     }
     refresh()
+    if (successMessage) {
+      void confirmExecutionSaveFeedback(successMessage)
+    }
   }
 
   const openRemarks = (row: CampaignMatrixRow) => {
@@ -167,7 +174,10 @@ export function CampaignExecutionMatrix({ ruknId }: CampaignExecutionMatrixProps
                       tone={row.visitDone ? 'done' : 'idle'}
                       pressed={row.visitDone}
                       onClick={() =>
-                        run(() => toggleVisitForKarkun(row.karkunId, ruknId, user?.uid))
+                        run(
+                          () => toggleVisitForKarkun(row.karkunId, ruknId, user?.uid),
+                          '✅ Visit recorded successfully',
+                        )
                       }
                     />
                   </td>
@@ -261,6 +271,7 @@ export function CampaignExecutionMatrix({ ruknId }: CampaignExecutionMatrixProps
                 }
                 refresh()
                 setExpandedId(null)
+                void confirmExecutionSaveFeedback('✅ Remarks saved successfully')
               }}
             >
               Save Remarks

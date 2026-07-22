@@ -18,6 +18,11 @@ export function markPendingWriteComplete(): void {
   }
 }
 
+/** KC-0091.1 — used to confirm durable save before success toast. */
+export function getPendingWriteCount(): number {
+  return pendingWrites
+}
+
 export function beginTransferCommit(): void {
   transferCommitInFlight += 1
 }

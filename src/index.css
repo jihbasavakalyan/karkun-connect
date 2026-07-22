@@ -487,6 +487,21 @@ html[data-theme='dark'] {
     @apply shrink-0 text-sm font-semibold text-primary hover:underline;
   }
 
+  /* KC-0091.1 — durable save confirmation toast */
+  .execution-save-toast {
+    @apply fixed left-1/2 z-50 flex max-w-[min(92vw,24rem)] -translate-x-1/2 items-center gap-2 rounded-xl border border-green-200 bg-green-50 px-3.5 py-2.5 text-sm font-medium text-green-900 shadow-card;
+    top: calc(4.5rem + env(safe-area-inset-top, 0px));
+    animation: campaign-fade-in 0.2s ease-out both;
+  }
+
+  .execution-save-toast-icon {
+    @apply shrink-0 text-green-700;
+  }
+
+  .execution-save-toast-message {
+    @apply text-sm font-medium leading-snug;
+  }
+
   .visit-form-compact .space-y-4 {
     @apply space-y-3;
   }
@@ -1271,27 +1286,33 @@ html[data-theme='dark'] {
   }
 
   .rukn-fab-root {
-    @apply fixed z-30 flex flex-col items-end gap-3;
+    @apply fixed z-40 flex flex-col items-end gap-3;
+    /* KC-0091.1 — stack above Digital Rafeeq so expanded menu never covers it */
     right: calc(1rem + env(safe-area-inset-right, 0px));
-    bottom: calc(5.25rem + env(safe-area-inset-bottom, 0px));
+    bottom: calc(
+      5.25rem + var(--fab-size) + 0.85rem + env(safe-area-inset-bottom, 0px)
+    );
   }
 
   @media (min-width: 640px) {
     .rukn-fab-root {
       right: calc(1.5rem + env(safe-area-inset-right, 0px));
-      bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+      bottom: calc(
+        1.5rem + var(--fab-size) + 0.85rem + env(safe-area-inset-bottom, 0px)
+      );
     }
   }
 
   .digital-rafeeq-fab-root {
-    @apply fixed z-40 flex flex-col items-end gap-3;
+    @apply fixed z-30 flex flex-col items-end gap-3;
     right: calc(1rem + env(safe-area-inset-right, 0px));
     bottom: calc(var(--fab-gap) + env(safe-area-inset-bottom, 0px));
   }
 
+  /* KC-0091.1 — Rafeeq sits below the Quick Actions (+) stack on the same corner */
   .digital-rafeeq-fab-offset-rukn {
-    right: calc(var(--fab-right-rukn) + env(safe-area-inset-right, 0px));
-    bottom: calc(var(--fab-bottom-rukn) + env(safe-area-inset-bottom, 0px));
+    right: calc(1rem + env(safe-area-inset-right, 0px));
+    bottom: calc(5.25rem + env(safe-area-inset-bottom, 0px));
   }
 
   @media (min-width: 640px) {
@@ -1300,8 +1321,8 @@ html[data-theme='dark'] {
     }
 
     .digital-rafeeq-fab-offset-rukn {
-      right: calc(var(--fab-right-rukn) + 0.25rem + env(safe-area-inset-right, 0px));
-      bottom: calc(var(--fab-bottom-rukn) + 0.25rem + env(safe-area-inset-bottom, 0px));
+      right: calc(1.5rem + env(safe-area-inset-right, 0px));
+      bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
     }
   }
 
@@ -4030,9 +4051,9 @@ html[data-theme='dark'] {
   }
 
   .native-main {
+    /* KC-0091.1 — clear stacked Quick Actions (+) above Digital Rafeeq */
     padding-bottom: calc(
-      max(5.25rem, var(--fab-bottom-rukn) + var(--fab-size) + 0.75rem) +
-        env(safe-area-inset-bottom, 0px)
+      5.25rem + (var(--fab-size) * 2) + 1.5rem + env(safe-area-inset-bottom, 0px)
     );
   }
 
