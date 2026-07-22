@@ -18,6 +18,11 @@ const RUKN_TEMPLATE_CATEGORIES = new Set<TemplateCategory>([
   'assignments',
   'campaign-update',
   'emergency',
+  'assignment-management',
+  'execution-tracking',
+  'reporting-compliance',
+  'motivation-appreciation',
+  'administrative',
 ])
 
 /** Explicit Rukn-facing template ids (Admin → Rukn). */
@@ -43,10 +48,14 @@ const KARKUN_TEMPLATE_IDS = new Set([
   'tpl-eid-greeting',
   'tpl-ramadan-greeting',
   'tpl-muharram-greeting',
+  'tpl-pb-guidance-check-in',
+  'tpl-pb-guidance-encourage',
+  'tpl-pb-guidance-visit-invite',
 ])
 
 export function resolveTemplateAudience(template: MessageTemplate): CommunicationAudience {
   if (KARKUN_TEMPLATE_IDS.has(template.id)) return 'karkun'
+  if (template.category === 'personal-guidance') return 'karkun'
   if (RUKN_TEMPLATE_IDS.has(template.id)) return 'rukn'
   if (RUKN_TEMPLATE_CATEGORIES.has(template.category)) return 'rukn'
   return 'karkun'

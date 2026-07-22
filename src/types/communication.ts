@@ -25,6 +25,13 @@ export type TemplateCategory =
   | 'orientation'
   | 'development'
   | 'study'
+  /** KC-0077.2 — Workflow Communication Playbook */
+  | 'assignment-management'
+  | 'execution-tracking'
+  | 'reporting-compliance'
+  | 'motivation-appreciation'
+  | 'administrative'
+  | 'personal-guidance'
 
 /** Footer appended at send time — never editable by Rukn for official templates. */
 export type TemplateFooterMode = 'personal' | 'official'
@@ -172,7 +179,51 @@ export const TEMPLATE_CATEGORY_LABELS: Record<TemplateCategory, string> = {
   orientation: 'Orientation',
   development: 'Development',
   study: 'Islamic Study',
+  'assignment-management': 'Assignment Management',
+  'execution-tracking': 'Execution Tracking',
+  'reporting-compliance': 'Reporting & Compliance',
+  'motivation-appreciation': 'Motivation & Appreciation',
+  administrative: 'Administrative Communication',
+  'personal-guidance': 'Personal Guidance',
 }
+
+/** KC-0077.2 — Workflow sections for Template Management (ordered). */
+export const WORKFLOW_TEMPLATE_SECTIONS: {
+  id: TemplateCategory
+  label: string
+  description: string
+}[] = [
+  {
+    id: 'assignment-management',
+    label: '1. Assignment Management',
+    description: 'New assignments, transfers, and Amanah briefings for Rukns.',
+  },
+  {
+    id: 'execution-tracking',
+    label: '2. Execution Tracking',
+    description: 'Gentle reminders for first contact, visits, and daily progress.',
+  },
+  {
+    id: 'reporting-compliance',
+    label: '3. Reporting & Compliance',
+    description: 'Ijtema, annexure, and profile updates — explained with care.',
+  },
+  {
+    id: 'motivation-appreciation',
+    label: '4. Motivation & Appreciation',
+    description: 'Recognition, milestones, and Islamic encouragement.',
+  },
+  {
+    id: 'administrative',
+    label: '5. Administrative Communication',
+    description: 'Campaign lifecycle, meetings, training, and announcements.',
+  },
+  {
+    id: 'personal-guidance',
+    label: '6. Personal Guidance',
+    description: 'Warm companion-style guidance for individual journeys.',
+  },
+]
 
 export const TEMPLATE_PLACEHOLDER_KEYS = [
   'name',

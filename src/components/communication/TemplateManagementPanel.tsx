@@ -24,6 +24,7 @@ import { subscribeToCommunicationStore } from '@/stores/communicationStore'
 import {
   TEMPLATE_CATEGORY_LABELS,
   TEMPLATE_PLACEHOLDER_KEYS,
+  WORKFLOW_TEMPLATE_SECTIONS,
   type MessageTemplate,
   type TemplateCategory,
 } from '@/types/communication'
@@ -58,15 +59,6 @@ export function TemplateManagementPanel() {
   const filteredTemplates = useMemo(
     () => filterTemplatesByAudience(templates, audienceFilter),
     [templates, audienceFilter],
-  )
-
-  const ruknTemplates = useMemo(
-    () => filterTemplatesByAudience(filteredTemplates, 'rukn'),
-    [filteredTemplates],
-  )
-  const karkunTemplates = useMemo(
-    () => filterTemplatesByAudience(filteredTemplates, 'karkun'),
-    [filteredTemplates],
   )
 
   const openEditor = (template?: MessageTemplate) => {
@@ -134,11 +126,14 @@ export function TemplateManagementPanel() {
     }
   }
 
-  const renderTemplateList = (items: MessageTemplate[], heading: string) => {
+  const renderTemplateList = (items: MessageTemplate[], heading: string, description?: string) => {
     if (items.length === 0) return null
     return (
       <div className="space-y-2">
-        <h3 className="text-sm font-semibold text-text-heading">{heading}</h3>
+        <div>
+          <h3 className="text-sm font-semibold text-text-heading">{heading}</h3>
+          {description ? <p className="mt-0.5 text-xs text-secondary">{description}</p> : null}
+        </div>
         <ul className="space-y-2">
           {items.map((template) => (
             <li
@@ -163,7 +158,9 @@ export function TemplateManagementPanel() {
                   </span>
                 </p>
                 <p className="mt-1 text-xs text-secondary">
-                  {TEMPLATE_CATEGORY_LABELS[template.category]} ·{' '}
+                  {TEMPLATE_CATEGORY_LABELS[template.category]}
+                  {template.subject ? ` · ${template.subject}` : ''}
+                  {' · '}
                   {template.variables.join(', ') || 'No variables'}
                 </p>
                 <p className="mt-2 line-clamp-3 whitespace-pre-wrap text-sm text-secondary" dir="auto">
@@ -193,16 +190,22 @@ export function TemplateManagementPanel() {
     )
   }
 
+  const workflowSectionIds = new Set(WORKFLOW_TEMPLATE_SECTIONS.map((section) => section.id))
+  const legacyTemplates = filteredTemplates.filter(
+    (template) => !workflowSectionIds.has(template.category),
+  )
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-sm text-secondary">
-            Official WhatsApp templates (Version 1). Administrators may create, edit, archive,
-            categorize, and preview. Rukn cannot change official wording.
+            Digital Rafeeq Urdu Communication Playbook — workflow-based, motivating templates.
+            Administrators may create, edit, archive, categorize, and preview.
           </p>
           <p className="mt-1 text-xs text-secondary">
-            Placeholders: {TEMPLATE_PLACEHOLDER_KEYS.map((key) => `{${key}}`).join(' · ')}
+            Placeholders: {`{{RuknName}}`} · {`{{AssignedKarkunList}}`} ·{' '}
+            {TEMPLATE_PLACEHOLDER_KEYS.map((key) => `{${key}}`).join(' · ')}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -252,15 +255,38 @@ export function TemplateManagementPanel() {
       </details>
 
       {audienceFilter === 'all' ? (
-        <div className="space-y-6">
-          {renderTemplateList(ruknTemplates, 'Rukn — Daily Mission, reminders, announcements')}
-          {renderTemplateList(karkunTemplates, 'Karkun — Visit, follow-up, appreciation')}
+        <div className="space-y-8">
+          <div>
+            <h2 className="text-base font-semibold text-text-heading">
+              Workflow Communication Playbook
+            </h2>
+            <p className="mt-1 text-xs text-secondary">
+              Supportive Digital Rafeeq tone — encourage, appreciate, never accuse.
+            </p>
+          </div>
+          {WORKFLOW_TEMPLATE_SECTIONS.map((section) =>
+            renderTemplateList(
+              filteredTemplates.filter((template) => template.category === section.id),
+              section.label,
+              section.description,
+            ),
+          )}
+          {renderTemplateList(legacyTemplates, 'Legacy templates', 'Earlier KC-006 library (still available).')}
         </div>
       ) : (
-        renderTemplateList(
-          filteredTemplates,
-          audienceFilter === 'rukn' ? 'Rukn templates' : 'Karkun templates',
-        )
+        <div className="space-y-8">
+          {WORKFLOW_TEMPLATE_SECTIONS.map((section) =>
+            renderTemplateList(
+              filteredTemplates.filter((template) => template.category === section.id),
+              section.label,
+              section.description,
+            ),
+          )}
+          {renderTemplateList(
+            filteredTemplates.filter((template) => !workflowSectionIds.has(template.category)),
+            audienceFilter === 'rukn' ? 'Other Rukn templates' : 'Other Karkun templates',
+          )}
+        </div>
       )}
 
       {filteredTemplates.length === 0 ? (
