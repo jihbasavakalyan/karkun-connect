@@ -381,7 +381,15 @@ export class ExecutionLocalRepository implements ExecutionRepository {
   }
 
   saveAnnexureForms(forms: SubmittedMeetingForm[]): RepositoryResult<void> {
-    return tryRepository(() => saveJsonToStorage(STORAGE_KEYS.annexure1, forms))
+    // KC-0084 — merge dirty forms (stores persist dirty-only).
+    return tryRepository(() => {
+      const existing = loadJsonFromStorage<SubmittedMeetingForm[]>(STORAGE_KEYS.annexure1, [])
+      const byId = new Map(existing.map((form) => [form.id, form] as const))
+      for (const form of forms) {
+        byId.set(form.id, form)
+      }
+      saveJsonToStorage(STORAGE_KEYS.annexure1, [...byId.values()])
+    })
   }
 
   clearAnnexureForms(): RepositoryResult<void> {
@@ -438,8 +446,9 @@ export class ComplianceLocalRepository implements ComplianceRepository {
   }
 
   saveBaitulMaal(records: BaitulMaalRecord[]): RepositoryResult<void> {
+    // KC-0084 — merge dirty records (stores persist dirty-only).
     return tryRepository(() => {
-      const map = new Map<string, BaitulMaalRecord>()
+      const map = loadMapFromStorage<string, BaitulMaalRecord>(STORAGE_KEYS.baitulMaal)
       for (const record of records) {
         map.set(`${record.karkunId}:${record.monthKey}`, record)
       }
@@ -456,8 +465,9 @@ export class ComplianceLocalRepository implements ComplianceRepository {
   }
 
   saveIjtema(records: IjtemaAttendanceRecord[]): RepositoryResult<void> {
+    // KC-0084 — merge dirty records (stores persist dirty-only).
     return tryRepository(() => {
-      const map = new Map<string, IjtemaAttendanceRecord>()
+      const map = loadMapFromStorage<string, IjtemaAttendanceRecord>(STORAGE_KEYS.ijtema)
       for (const record of records) {
         map.set(`${record.karkunId}:${record.weekEndingDate}`, record)
       }

@@ -10,18 +10,22 @@ for (const record of unwrapRepository(getRepositories().compliance.loadBaitulMaa
 type BaitulMaalStoreListener = () => void
 const listeners = new Set<BaitulMaalStoreListener>()
 
-function persistBaitulMaalStore(): void {
-  getRepositories().compliance.saveBaitulMaal([...records.values()])
+function notifyListeners(): void {
+  listeners.forEach((listener) => listener())
+}
+
+/** KC-0084 — persist only dirty records (avoids batch permission failure on foreign docs). */
+function persistDirty(dirty: BaitulMaalRecord[]): void {
+  console.info('[KC-0084] Execution Update Requested', {
+    kind: 'baitulMaal',
+    count: dirty.length,
+  })
+  getRepositories().compliance.saveBaitulMaal(dirty)
 }
 
 export function subscribeToBaitulMaalStore(listener: BaitulMaalStoreListener): () => void {
   listeners.add(listener)
   return () => listeners.delete(listener)
-}
-
-function notifyBaitulMaalStoreChange(): void {
-  persistBaitulMaalStore()
-  listeners.forEach((listener) => listener())
 }
 
 function recordKey(karkunId: string, monthKey: string): string {
@@ -37,7 +41,8 @@ export function getBaitulMaalRecord(
 
 export function upsertBaitulMaalRecord(record: BaitulMaalRecord): BaitulMaalRecord {
   records.set(recordKey(record.karkunId, record.monthKey), record)
-  notifyBaitulMaalStoreChange()
+  persistDirty([record])
+  notifyListeners()
   return record
 }
 
@@ -50,11 +55,11 @@ export function reloadBaitulMaalStoreFromPersistence(): void {
   for (const record of unwrapRepository(getRepositories().compliance.loadBaitulMaal(), [])) {
     records.set(recordKey(record.karkunId, record.monthKey), record)
   }
-  listeners.forEach((listener) => listener())
+  notifyListeners()
 }
 
 export function clearBaitulMaalStore(): void {
   records.clear()
   getRepositories().compliance.clearBaitulMaal()
-  notifyBaitulMaalStoreChange()
+  notifyListeners()
 }

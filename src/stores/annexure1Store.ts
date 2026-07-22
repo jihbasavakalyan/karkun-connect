@@ -11,8 +11,17 @@ const submittedForms: SubmittedMeetingForm[] = unwrapRepository(
 type Annexure1StoreListener = () => void
 const listeners = new Set<Annexure1StoreListener>()
 
-function persistAnnexure1Store(): void {
-  getRepositories().execution.saveAnnexureForms(submittedForms)
+function notifyListeners(): void {
+  listeners.forEach((listener) => listener())
+}
+
+/** KC-0084 — persist only dirty forms (avoids batch permission failure on other Rukns' forms). */
+function persistDirty(dirty: SubmittedMeetingForm[]): void {
+  console.info('[KC-0084] Execution Update Requested', {
+    kind: 'annexure',
+    count: dirty.length,
+  })
+  getRepositories().execution.saveAnnexureForms(dirty)
 }
 
 export function subscribeToAnnexure1Store(listener: Annexure1StoreListener): () => void {
@@ -20,14 +29,10 @@ export function subscribeToAnnexure1Store(listener: Annexure1StoreListener): () 
   return () => listeners.delete(listener)
 }
 
-function notifyAnnexure1StoreChange(): void {
-  persistAnnexure1Store()
-  listeners.forEach((listener) => listener())
-}
-
 export function appendSubmittedForm(record: SubmittedMeetingForm): SubmittedMeetingForm {
   submittedForms.unshift(record)
-  notifyAnnexure1StoreChange()
+  persistDirty([record])
+  notifyListeners()
   return record
 }
 
@@ -64,7 +69,8 @@ export function updateSubmittedForm(record: SubmittedMeetingForm): SubmittedMeet
   } else {
     submittedForms.unshift(record)
   }
-  notifyAnnexure1StoreChange()
+  persistDirty([record])
+  notifyListeners()
   return record
 }
 
@@ -116,19 +122,21 @@ export function getSubmissionPeriodCounts(): {
 
 export function saveDraftRecord(record: SubmittedMeetingForm): SubmittedMeetingForm {
   submittedForms.unshift(record)
-  notifyAnnexure1StoreChange()
+  persistDirty([record])
+  notifyListeners()
   return record
 }
 
+/** KC-0084 — hydrate from cache only; never re-persist on reload. */
 export function reloadAnnexure1StoreFromPersistence(): void {
   const loaded = unwrapRepository(getRepositories().execution.loadAnnexureForms(), [])
   submittedForms.length = 0
   submittedForms.push(...loaded)
-  notifyAnnexure1StoreChange()
+  notifyListeners()
 }
 
 export function clearAnnexure1Store(): void {
   submittedForms.length = 0
   getRepositories().execution.clearAnnexureForms()
-  notifyAnnexure1StoreChange()
+  notifyListeners()
 }

@@ -32,6 +32,7 @@ let hydratingStores = false
 
 /** Re-hydrate in-memory stores from repository caches after remote Firestore updates. */
 export function hydrateStoresFromRepositories(): void {
+  console.info('[KC-0084] Reload Started')
   traceIncidentStage('hydrateStoresFromRepositories:start', {
     caller: 'hydrateStoresFromRepositories',
     sourceOfTruth: 'Derived Calculation',
@@ -167,6 +168,7 @@ export function hydrateStoresFromRepositories(): void {
       caller: 'hydrateStoresFromRepositories',
       sourceOfTruth: 'Derived Calculation',
     })
+    console.info('[KC-0084] Reload Complete')
   } finally {
     hydratingStores = false
   }

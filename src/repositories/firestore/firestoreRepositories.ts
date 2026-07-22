@@ -136,20 +136,40 @@ markRepositoryReadiness('assignment_repository', 'UNINITIALIZED', {
   sourceOfTruth: 'Firestore',
 })
 
+const KC0084_PERSIST_LABELS = new Set([
+  'compliance.ijtema',
+  'compliance.baitulMaal',
+  'executions.annexure',
+])
+
 async function queueWrite(label: string, work: () => Promise<RepositoryResult<void>>): Promise<void> {
+  const diag = KC0084_PERSIST_LABELS.has(label)
+  if (diag) {
+    console.info('[KC-0084] Repository Save Started', { label })
+  }
   trackPendingWrite()
   try {
+    if (diag) {
+      console.info('[KC-0084] Firestore Write Started', { label })
+    }
     const result = await work()
     if (!result.ok) {
       if (result.error.code === 'Duplicate') {
         recordFirestoreConflict(label, result.error.cause)
       } else {
-        // KC-0058.2 — never swallow permission / storage failures silently.
+        // KC-0058.2 / KC-0084 — never swallow permission / storage failures silently.
         console.error(`[firestore:queueWrite:${label}]`, result.error.code, result.error.message, result.error.cause)
+        const { emitExecutionPersistFailed } = await import('@/lib/executionPersistEvents')
+        emitExecutionPersistFailed(label, result.error)
       }
+    } else if (diag) {
+      console.info('[KC-0084] Firestore Write Success', { label })
+      console.info('[KC-0084] Repository Save Completed', { label })
     }
   } catch (error) {
     console.error(`[firestore:queueWrite:${label}:threw]`, error)
+    const { emitExecutionPersistFailed } = await import('@/lib/executionPersistEvents')
+    emitExecutionPersistFailed(label, error)
   } finally {
     markPendingWriteComplete()
   }
@@ -1654,7 +1674,12 @@ export class ExecutionFirestoreRepository implements ExecutionRepository {
   }
 
   saveAnnexureForms(forms: SubmittedMeetingForm[]): RepositoryResult<void> {
-    annexureCache.set([...forms])
+    // KC-0084 — merge dirty forms into cache; write only the dirty set to Firestore.
+    const merged = new Map(annexureCache.get().map((form) => [form.id, form] as const))
+    for (const form of forms) {
+      merged.set(form.id, form)
+    }
+    annexureCache.set([...merged.values()])
     void queueWrite('executions.annexure', async () => {
       const db = getFirestoreDb()
       const batch = createBatch(db)
@@ -1750,7 +1775,14 @@ export class ComplianceFirestoreRepository implements ComplianceRepository {
   }
 
   saveBaitulMaal(records: BaitulMaalRecord[]): RepositoryResult<void> {
-    baitulMaalCache.set([...records])
+    // KC-0084 — merge dirty records into cache; write only the dirty set to Firestore.
+    const merged = new Map(
+      baitulMaalCache.get().map((record) => [`${record.karkunId}:${record.monthKey}`, record] as const),
+    )
+    for (const record of records) {
+      merged.set(`${record.karkunId}:${record.monthKey}`, record)
+    }
+    baitulMaalCache.set([...merged.values()])
     void queueWrite('compliance.baitulMaal', async () => {
       const db = getFirestoreDb()
       const batch = createBatch(db)
@@ -1780,7 +1812,16 @@ export class ComplianceFirestoreRepository implements ComplianceRepository {
   }
 
   saveIjtema(records: IjtemaAttendanceRecord[]): RepositoryResult<void> {
-    ijtemaCache.set([...records])
+    // KC-0084 — merge dirty records into cache; write only the dirty set to Firestore.
+    const merged = new Map(
+      ijtemaCache
+        .get()
+        .map((record) => [`${record.karkunId}:${record.weekEndingDate}`, record] as const),
+    )
+    for (const record of records) {
+      merged.set(`${record.karkunId}:${record.weekEndingDate}`, record)
+    }
+    ijtemaCache.set([...merged.values()])
     void queueWrite('compliance.ijtema', async () => {
       const db = getFirestoreDb()
       const batch = createBatch(db)

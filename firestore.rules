@@ -117,9 +117,40 @@ service cloud.firestore {
       allow read, write: if isAdministrator();
     }
 
+    /**
+     * KC-0084 — Rukn may create/update ijtema & baitulMaal compliance docs for
+     * assigned Karkuns only. Docs are shaped as { _docType, record: { karkunId, ... } }.
+     * Admin retains full write. jihPortal and other non-record docs stay admin-only.
+     */
+    function complianceWriteRecord() {
+      return request.resource.data.record;
+    }
+
+    function ruknMayWriteComplianceRecord() {
+      return isRukn()
+        && request.resource.data.keys().hasAll(['record'])
+        && complianceWriteRecord().keys().hasAll(['karkunId'])
+        && karkunAssignedToRukn(complianceWriteRecord().karkunId)
+        && (
+          !complianceWriteRecord().keys().hasAll(['ruknId'])
+          || complianceWriteRecord().ruknId == null
+          || complianceWriteRecord().ruknId == ruknId()
+        );
+    }
+
     match /compliance/{docId} {
       allow read: if isAdministrator() || isRukn();
-      allow write: if isAdministrator();
+      allow create: if isAdministrator() || ruknMayWriteComplianceRecord();
+      allow update: if isAdministrator()
+        || (
+          ruknMayWriteComplianceRecord()
+          && (
+            !resource.data.keys().hasAll(['record'])
+            || !resource.data.record.keys().hasAll(['karkunId'])
+            || karkunAssignedToRukn(resource.data.record.karkunId)
+          )
+        );
+      allow delete: if isAdministrator();
     }
 
     // KC-0056 — karkunCounter.nextKarkunNum is monotonic (stale clients cannot lag it).

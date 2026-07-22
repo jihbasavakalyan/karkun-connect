@@ -23,6 +23,10 @@ import {
 import { subscribeToAnnexure1Store } from '@/stores/annexure1Store'
 import { subscribeToIjtemaAttendanceStore } from '@/stores/ijtemaAttendanceStore'
 import { subscribeToBaitulMaalStore } from '@/stores/baitulMaalStore'
+import {
+  EXECUTION_PERSIST_FAILED_EVENT,
+  type ExecutionPersistFailedDetail,
+} from '@/lib/executionPersistEvents'
 
 type CampaignExecutionMatrixProps = {
   ruknId: string
@@ -73,10 +77,17 @@ export function CampaignExecutionMatrix({ ruknId }: CampaignExecutionMatrixProps
     const a = subscribeToAnnexure1Store(() => setTick((v) => v + 1))
     const i = subscribeToIjtemaAttendanceStore(() => setTick((v) => v + 1))
     const b = subscribeToBaitulMaalStore(() => setTick((v) => v + 1))
+    const onPersistFailed = (event: Event) => {
+      const detail = (event as CustomEvent<ExecutionPersistFailedDetail>).detail
+      if (!detail) return
+      setError(`Save failed (${detail.label}): ${detail.message}`)
+    }
+    window.addEventListener(EXECUTION_PERSIST_FAILED_EVENT, onPersistFailed)
     return () => {
       a()
       i()
       b()
+      window.removeEventListener(EXECUTION_PERSIST_FAILED_EVENT, onPersistFailed)
     }
   }, [])
 
@@ -237,9 +248,18 @@ export function CampaignExecutionMatrix({ ruknId }: CampaignExecutionMatrixProps
               type="button"
               className="rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-white"
               onClick={() => {
-                run(() =>
-                  saveMatrixRemarks(expandedId, ruknId, remarksDraft, user?.uid),
+                setError('')
+                const result = saveMatrixRemarks(
+                  expandedId,
+                  ruknId,
+                  remarksDraft,
+                  user?.uid,
                 )
+                if (!result.success) {
+                  setError(result.error)
+                  return
+                }
+                refresh()
                 setExpandedId(null)
               }}
             >

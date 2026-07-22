@@ -17,8 +17,17 @@ for (const record of unwrapRepository(getRepositories().compliance.loadIjtema(),
 type IjtemaAttendanceStoreListener = () => void
 const listeners = new Set<IjtemaAttendanceStoreListener>()
 
-function persistIjtemaAttendanceStore(): void {
-  getRepositories().compliance.saveIjtema([...records.values()])
+function notifyListeners(): void {
+  listeners.forEach((listener) => listener())
+}
+
+/** KC-0084 — persist only dirty records (avoids batch permission failure on foreign docs). */
+function persistDirty(dirty: IjtemaAttendanceRecord[]): void {
+  console.info('[KC-0084] Execution Update Requested', {
+    kind: 'ijtema',
+    count: dirty.length,
+  })
+  getRepositories().compliance.saveIjtema(dirty)
 }
 
 export function subscribeToIjtemaAttendanceStore(
@@ -26,11 +35,6 @@ export function subscribeToIjtemaAttendanceStore(
 ): () => void {
   listeners.add(listener)
   return () => listeners.delete(listener)
-}
-
-function notifyIjtemaAttendanceStoreChange(): void {
-  persistIjtemaAttendanceStore()
-  listeners.forEach((listener) => listener())
 }
 
 function recordKey(karkunId: string, weekEndingDate: string): string {
@@ -48,7 +52,8 @@ export function upsertIjtemaAttendanceRecord(
   record: IjtemaAttendanceRecord,
 ): IjtemaAttendanceRecord {
   records.set(recordKey(record.karkunId, record.weekEndingDate), record)
-  notifyIjtemaAttendanceStoreChange()
+  persistDirty([record])
+  notifyListeners()
   return record
 }
 
@@ -62,11 +67,11 @@ export function reloadIjtemaAttendanceStoreFromPersistence(): void {
     const hydrated = hydrateRecord(record as IjtemaAttendanceRecord)
     records.set(recordKey(hydrated.karkunId, hydrated.weekEndingDate), hydrated)
   }
-  listeners.forEach((listener) => listener())
+  notifyListeners()
 }
 
 export function clearIjtemaAttendanceStore(): void {
   records.clear()
   getRepositories().compliance.clearIjtema()
-  notifyIjtemaAttendanceStoreChange()
+  notifyListeners()
 }
