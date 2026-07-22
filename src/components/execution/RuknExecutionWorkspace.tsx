@@ -1,12 +1,11 @@
 /**
- * KC-0080 — Per-Karkun execution workspace on Rukn Home.
- * Daily Progress + Weekly Ijtema one-tap update/edit.
+ * KC-0080 / KC-0081 — Per-Karkun execution workspace on Rukn Home.
+ * Opens Quick Execution Checklist for progress and Ijtema updates.
  */
 
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { DailyProgressUpdateModal } from '@/components/execution/DailyProgressUpdateModal'
-import { WeeklyIjtemaAttendanceModal } from '@/components/execution/WeeklyIjtemaAttendanceModal'
+import { QuickExecutionChecklistModal } from '@/components/execution/QuickExecutionChecklistModal'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import { ruknVisitPath } from '@/constants/routes'
@@ -17,6 +16,7 @@ import { resolveCurrentJourneyStage } from '@/lib/guidance/journeyEngine'
 import { getCurrentIjtemaAttendance } from '@/services/ijtemaAttendanceService'
 import { subscribeToAnnexure1Store } from '@/stores/annexure1Store'
 import { subscribeToIjtemaAttendanceStore } from '@/stores/ijtemaAttendanceStore'
+import { subscribeToDevelopmentAssessmentStore } from '@/stores/developmentAssessmentStore'
 import { getActiveAssignmentsForKarkun } from '@/stores/assignmentStore'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
 
@@ -32,12 +32,10 @@ function StageLabel({ karkun }: { karkun: KarkunRegistryRecord }) {
 
 function KarkunExecutionRow({
   karkun,
-  onProgress,
-  onIjtema,
+  onOpenChecklist,
 }: {
   karkun: KarkunRegistryRecord
-  onProgress: () => void
-  onIjtema: () => void
+  onOpenChecklist: () => void
 }) {
   const progress = getDailyProgressView(karkun.id)
   const ijtema = getCurrentIjtemaAttendance(karkun.id)
@@ -69,11 +67,19 @@ function KarkunExecutionRow({
           ) : null}
           <div className="mt-2">
             {progress.hasTodayProgress ? (
-              <SecondaryButton type="button" className="px-3 py-1.5 text-sm" onClick={onProgress}>
+              <SecondaryButton
+                type="button"
+                className="min-h-11 px-3 py-2 text-sm"
+                onClick={onOpenChecklist}
+              >
                 Edit Progress
               </SecondaryButton>
             ) : (
-              <PrimaryButton type="button" className="px-3 py-1.5 text-sm" onClick={onProgress}>
+              <PrimaryButton
+                type="button"
+                className="min-h-11 px-3 py-2 text-sm"
+                onClick={onOpenChecklist}
+              >
                 Update Progress
               </PrimaryButton>
             )}
@@ -92,11 +98,19 @@ function KarkunExecutionRow({
           ) : null}
           <div className="mt-2">
             {ijtema.status === 'Not recorded' ? (
-              <PrimaryButton type="button" className="px-3 py-1.5 text-sm" onClick={onIjtema}>
+              <PrimaryButton
+                type="button"
+                className="min-h-11 px-3 py-2 text-sm"
+                onClick={onOpenChecklist}
+              >
                 Record Attendance
               </PrimaryButton>
             ) : (
-              <SecondaryButton type="button" className="px-3 py-1.5 text-sm" onClick={onIjtema}>
+              <SecondaryButton
+                type="button"
+                className="min-h-11 px-3 py-2 text-sm"
+                onClick={onOpenChecklist}
+              >
                 Edit
               </SecondaryButton>
             )}
@@ -110,15 +124,16 @@ function KarkunExecutionRow({
 export function RuknExecutionWorkspace({ ruknId }: RuknExecutionWorkspaceProps) {
   const { assignmentVersion, getAssignedKarkunanForRukn } = useAssignmentEngine()
   const [storeTick, setStoreTick] = useState(0)
-  const [progressKarkun, setProgressKarkun] = useState<KarkunRegistryRecord | null>(null)
-  const [ijtemaKarkun, setIjtemaKarkun] = useState<KarkunRegistryRecord | null>(null)
+  const [activeKarkun, setActiveKarkun] = useState<KarkunRegistryRecord | null>(null)
 
   useEffect(() => {
     const unsubA = subscribeToAnnexure1Store(() => setStoreTick((v) => v + 1))
     const unsubI = subscribeToIjtemaAttendanceStore(() => setStoreTick((v) => v + 1))
+    const unsubD = subscribeToDevelopmentAssessmentStore(() => setStoreTick((v) => v + 1))
     return () => {
       unsubA()
       unsubI()
+      unsubD()
     }
   }, [])
 
@@ -143,33 +158,19 @@ export function RuknExecutionWorkspace({ ruknId }: RuknExecutionWorkspaceProps) 
           <li key={karkun.id}>
             <KarkunExecutionRow
               karkun={karkun}
-              onProgress={() => setProgressKarkun(karkun)}
-              onIjtema={() => setIjtemaKarkun(karkun)}
+              onOpenChecklist={() => setActiveKarkun(karkun)}
             />
           </li>
         ))}
       </ul>
 
-      {progressKarkun ? (
-        <DailyProgressUpdateModal
-          key={`progress-${progressKarkun.id}`}
+      {activeKarkun ? (
+        <QuickExecutionChecklistModal
+          key={`quick-${activeKarkun.id}-${storeTick}`}
           isOpen
-          karkunId={progressKarkun.id}
-          karkunName={progressKarkun.name}
+          karkunId={activeKarkun.id}
           ruknId={ruknId}
-          onClose={() => setProgressKarkun(null)}
-          onSaved={() => setStoreTick((v) => v + 1)}
-        />
-      ) : null}
-
-      {ijtemaKarkun ? (
-        <WeeklyIjtemaAttendanceModal
-          key={`ijtema-${ijtemaKarkun.id}`}
-          isOpen
-          karkunId={ijtemaKarkun.id}
-          karkunName={ijtemaKarkun.name}
-          ruknId={ruknId}
-          onClose={() => setIjtemaKarkun(null)}
+          onClose={() => setActiveKarkun(null)}
           onSaved={() => setStoreTick((v) => v + 1)}
         />
       ) : null}
