@@ -1,4 +1,5 @@
 import type { SubmittedMeetingForm } from '@/types/annexure1.types'
+import { isSubmissionDateOnDay } from '@/lib/dates/submissionDateDay'
 import { getRepositories } from '@/repositories/provider'
 import { unwrapRepository } from '@/repositories/errors'
 
@@ -42,6 +43,29 @@ export function getLatestSubmissionForKarkun(karkunId: string): SubmittedMeeting
   return submittedForms.find(
     (form) => form.karkunId === karkunId && form.status === 'submitted',
   )
+}
+
+/** KC-0080 — today's submitted progress for a Karkun (if any). */
+export function getTodaysSubmissionForKarkun(
+  karkunId: string,
+  dayIso = new Date().toISOString().slice(0, 10),
+): SubmittedMeetingForm | undefined {
+  return getSubmittedMeetingForms().find(
+    (form) =>
+      form.karkunId === karkunId && isSubmissionDateOnDay(form.submissionDate, dayIso),
+  )
+}
+
+/** KC-0080 — update an existing form in place (no duplicate append). */
+export function updateSubmittedForm(record: SubmittedMeetingForm): SubmittedMeetingForm {
+  const index = submittedForms.findIndex((form) => form.id === record.id)
+  if (index >= 0) {
+    submittedForms[index] = record
+  } else {
+    submittedForms.unshift(record)
+  }
+  notifyAnnexure1StoreChange()
+  return record
 }
 
 export function hasSubmittedAnnexureForAssignment(assignmentId: string): boolean {

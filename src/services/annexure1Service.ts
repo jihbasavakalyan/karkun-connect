@@ -14,7 +14,10 @@ import {
   appendSubmittedForm,
   getSubmissionPeriodCounts,
   getSubmittedMeetingForms,
+  getTodaysSubmissionForKarkun,
+  getLatestSubmissionForKarkun,
   saveDraftRecord,
+  updateSubmittedForm,
 } from '@/stores/annexure1Store'
 import { isSubmissionDateOnDay } from '@/lib/dates/submissionDateDay'
 import {
@@ -31,6 +34,7 @@ import type {
 } from '@/types/annexure1.types'
 import type { AssignmentRecord } from '@/types/assignment'
 import {
+  validateAnnexure1Form,
   resolveActiveAssignmentForAnnexure1,
   validateAnnexure1Submission,
   type Annexure1SubmissionContext,
@@ -187,6 +191,97 @@ export function submitAnnexure1(
   }
 
   return { success: true, submission: record }
+}
+
+/**
+ * KC-0080 — Daily Progress quick save from Rukn Home.
+ * Creates via submitAnnexure1 when no visit exists; otherwise updates today's
+ * (or latest) submission in place — never appends a duplicate.
+ */
+export function saveDailyProgress(
+  form: Annexure1FormState,
+  context: Annexure1SubmissionContext,
+): Annexure1SubmitResult {
+  const assignment = resolveActiveAssignmentForAnnexure1(context.karkunId, context.ruknId)
+  if (!assignment) {
+    return { success: false, error: 'No active assignment found.' }
+  }
+
+  const formCheck = validateAnnexure1Form(form)
+  if (!formCheck.valid) {
+    return { success: false, error: formCheck.error }
+  }
+
+  const todays = getTodaysSubmissionForKarkun(context.karkunId)
+  const latest = getLatestSubmissionForKarkun(context.karkunId)
+  const existing = todays ?? latest
+
+  if (!existing) {
+    return submitAnnexure1(form, context)
+  }
+
+  const timestamp = new Date().toISOString()
+  const updated: SubmittedMeetingForm = {
+    ...existing,
+    ...form,
+    visitDate: form.visitDate || existing.visitDate,
+    submittedAt: timestamp,
+    submissionDate: timestamp,
+    status: 'submitted',
+  }
+  updateSubmittedForm(updated)
+
+  updateKarkunMeetingOutcomes(context.karkunId, {
+    currentCommitment:
+      form.commitmentMade && form.commitmentDetails.trim()
+        ? form.commitmentDetails.trim()
+        : undefined,
+    jihAppRegistrationStatus: form.jihAppRegistrationStatus,
+    syncJihPortal: true,
+  })
+
+  updateKarkunVisitExecution(context.karkunId, {
+    visitDate: form.visitDate,
+    visitConducted: form.visitConducted === 'yes',
+  })
+
+  const followUpCreatedBy =
+    context.actorId?.trim() ||
+    (context.actorRole === 'rukn' ? context.ruknId : undefined) ||
+    assignment.ruknId
+
+  if (form.visitConducted === 'yes') {
+    const followUpRequired =
+      form.commitmentMade && form.followUpRequired === 'yes' ? 'yes' : 'no'
+    const followUpResult = handleFollowUpOnAnnexureSubmit(
+      assignment.assignmentId,
+      assignment.assignmentNumber,
+      assignment.ruknId,
+      context.karkunId,
+      updated.workerName,
+      updated.id,
+      followUpRequired,
+      followUpRequired === 'yes' ? form.followUpDate : '',
+      followUpRequired === 'yes' ? form.followUpPurpose : '',
+      undefined,
+      followUpCreatedBy,
+    )
+    if (followUpResult.error) {
+      return { success: false, error: followUpResult.error }
+    }
+  }
+
+  logActivity({
+    type: 'complete',
+    severity: 'INFO',
+    message: `Daily progress updated — ${updated.workerName}`,
+    ruknId: updated.ruknId,
+    karkunId: updated.karkunId,
+    assignmentId: updated.assignmentId,
+    actor: context.actorRole === 'rukn' ? 'Rukn' : 'Administrator',
+  })
+
+  return { success: true, submission: updated }
 }
 
 export function saveAnnexure1Draft(

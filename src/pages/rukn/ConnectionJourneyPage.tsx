@@ -48,6 +48,7 @@ import type { Annexure1FormState } from '@/types/annexure1.types'
 import type { MessageRecipient } from '@/types/communication'
 import { PageShell, StatusBadge } from '@/components/ui'
 import { ExecutionSuccessBanner } from '@/components/execution/ExecutionSuccessBanner'
+import { KarkunWeeklyIjtemaSection } from '@/components/execution/KarkunWeeklyIjtemaSection'
 
 function sectionClass(): string {
   return 'app-screen-block'
@@ -256,6 +257,15 @@ export function ConnectionJourneyPage() {
         nextAction={guidance?.nextAction}
         connectionNumber={activeAssignment.assignmentNumber}
       />
+
+      {/* KC-0080 — Weekly Ijtema on Karkun Detail */}
+      {!isAdminContext && authRuknId ? (
+        <KarkunWeeklyIjtemaSection
+          karkunId={karkun.id}
+          karkunName={karkun.name}
+          ruknId={authRuknId}
+        />
+      ) : null}
 
       {!isAdminContext ? <ProfileCompletionReminder karkunId={karkun.id} /> : null}
 

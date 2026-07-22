@@ -3,6 +3,7 @@ import {
   AdminCommandCenter,
   AdminMissionControlHero,
 } from '@/components/mission-control'
+import { AdminExecutionSummaryWidgets } from '@/components/execution/AdminExecutionSummaryWidgets'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import {
   useRepositoryHydration,
@@ -132,6 +133,7 @@ export function AdminHomePage() {
   return (
     <div className="cd-page cd-page-admin mc-page mc-page-admin-compact mc-page-admin-command exdash-page">
       <AdminMissionControlHero model={model} metricsReady={isHydrated} />
+      <AdminExecutionSummaryWidgets />
       <AdminCommandCenter model={model} snapshot={snapshot} metricsReady={isHydrated} />
     </div>
   )

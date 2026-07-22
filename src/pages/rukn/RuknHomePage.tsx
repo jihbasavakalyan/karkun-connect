@@ -14,6 +14,8 @@ import {
 } from '@/components/mission-control'
 import { RuknFloatingActionButton, RuknIjtemaAttendancePanel } from '@/components/home'
 import { ExecutionSuccessBanner } from '@/components/execution/ExecutionSuccessBanner'
+import { RuknExecutionSummaryCards } from '@/components/execution/RuknExecutionSummaryCards'
+import { RuknExecutionWorkspace } from '@/components/execution/RuknExecutionWorkspace'
 import { openDigitalRafeeqAssistant } from '@/features/digitalRafeeq/launcher'
 import { buildContextualRafeeqGuidance } from '@/features/digitalRafeeq/companion/rafeeqUrduCopy'
 import { useRequiredRuknId } from '@/hooks/useRequiredRuknId'
@@ -121,6 +123,12 @@ export function RuknHomePage() {
       {primaryLabel && primaryRoute ? (
         <PrimaryMissionCta label={primaryLabel} route={primaryRoute} />
       ) : null}
+
+      {/* KC-0080 — Daily Progress + Weekly Ijtema summaries */}
+      <RuknExecutionSummaryCards ruknId={ruknId} />
+
+      {/* KC-0080 — Per-Karkun update/edit workspace */}
+      <RuknExecutionWorkspace ruknId={ruknId} />
 
       {/* 3. Priority Karkuns — one tap into visit */}
       <RuknPriorityMissionList ruknId={ruknId} model={model} />

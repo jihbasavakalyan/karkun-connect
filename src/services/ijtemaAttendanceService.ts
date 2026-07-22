@@ -1,7 +1,9 @@
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { getAllKarkuns } from '@/lib/peopleStore'
+import { getAssignedKarkunanForRukn } from '@/lib/assignmentEngine'
 import { getActiveCampaign } from '@/services/campaignService'
 import {
+  getAllIjtemaAttendanceRecords,
   getIjtemaAttendanceRecord,
   upsertIjtemaAttendanceRecord,
 } from '@/stores/ijtemaAttendanceStore'
@@ -82,6 +84,53 @@ export function getIjtemaAttendanceForKarkun(
 
 export function getCurrentIjtemaAttendance(karkunId: string) {
   return getIjtemaAttendanceForKarkun(karkunId, getWeekEndingDate())
+}
+
+/** KC-0080 — latest N attendance records for a Karkun (newest first). */
+export function getIjtemaAttendanceHistory(
+  karkunId: string,
+  limit = 5,
+): IjtemaAttendanceRecord[] {
+  initializeIjtemaAttendanceCompliance()
+  return getAllIjtemaAttendanceRecords()
+    .filter((record) => record.karkunId === karkunId)
+    .map((record) => normalizeRecord(record)!)
+    .filter(Boolean)
+    .sort((a, b) => b.weekEndingDate.localeCompare(a.weekEndingDate))
+    .slice(0, limit)
+}
+
+/** KC-0080 — Ijtema metrics scoped to a Rukn's connected Karkuns. */
+export function getRuknIjtemaAttendanceMetrics(
+  ruknId: string,
+  weekEndingDate = getWeekEndingDate(),
+): IjtemaAttendanceDashboardMetrics {
+  initializeIjtemaAttendanceCompliance()
+  const connected = getAssignedKarkunanForRukn(ruknId)
+
+  let present = 0
+  let absent = 0
+  let excused = 0
+  let notRecorded = 0
+
+  for (const karkun of connected) {
+    const record = normalizeRecord(getIjtemaAttendanceRecord(karkun.id, weekEndingDate))
+    if (!record) {
+      notRecorded += 1
+      continue
+    }
+    if (record.status === 'Present') present += 1
+    if (record.status === 'Absent') absent += 1
+    if (record.status === 'Excused') excused += 1
+  }
+
+  return {
+    present,
+    absent,
+    excused,
+    notRecorded,
+    informed: excused,
+  }
 }
 
 export function updateIjtemaAttendance(
