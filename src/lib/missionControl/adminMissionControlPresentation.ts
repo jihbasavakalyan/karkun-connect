@@ -9,9 +9,14 @@ import {
   getTeamPerformanceRows,
   type TeamPerformanceRow,
 } from '@/lib/commandCenterPresentation'
+import { getBaitulMaalCampaignState } from '@/lib/campaignExecutionMatrix'
+import { getDailyProgressView } from '@/lib/dailyProgressPresentation'
+import { isJihRegistered } from '@/lib/guidance/journeyEngine'
 import { buildAdminRelationshipInsights } from '@/lib/relationshipIntelligencePresentation'
+import { getAllKarkuns } from '@/lib/peopleStore'
 import { getAnnexure1ExecutionMetrics } from '@/services/annexure1Service'
 import { getFollowUpDashboardMetrics } from '@/services/followUpService'
+import { getCurrentIjtemaAttendance } from '@/services/ijtemaAttendanceService'
 import { getCampaignConnectionMetrics } from '@/services/metricsService'
 import { getRecentActivity } from '@/stores/activityLogStore'
 import { ruknMaster } from '@/data/ruknMaster'
@@ -54,6 +59,103 @@ export type AdminActivityItem = {
   id: string
   message: string
   timestamp: string
+}
+
+export type CampaignAchievementMetric = {
+  id: string
+  label: string
+  current: number
+  total: number
+  /** Percentage with one decimal place (e.g. 39.8). */
+  pct: number
+}
+
+export type AdminCampaignAchievementProgress = {
+  metrics: CampaignAchievementMetric[]
+  /** Average of the five achievement percentages. */
+  overallPct: number
+}
+
+function achievementPct(current: number, total: number): number {
+  if (total <= 0) return 0
+  return Math.round((current / total) * 1000) / 10
+}
+
+function isVisitConducted(karkunId: string): boolean {
+  const progress = getDailyProgressView(karkunId)
+  return Boolean(
+    progress.hasTodayProgress ||
+      (progress.hasAnyProgress && progress.submission?.visitConducted === 'yes'),
+  )
+}
+
+/**
+ * Admin Hero — Campaign Achievement Progress.
+ * Reuses existing connection / visit / JIH / Weekly Ijtema / Baitul Maal sources only.
+ */
+export function buildAdminCampaignAchievementProgress(): AdminCampaignAchievementProgress {
+  const connections = getCampaignConnectionMetrics()
+  const eligible = getAllKarkuns()
+  const total = eligible.length
+
+  let visitConducted = 0
+  let appRegistered = 0
+  let ijtemaAgreed = 0
+  let baitulMaalCommitted = 0
+
+  for (const karkun of eligible) {
+    if (isVisitConducted(karkun.id)) visitConducted += 1
+    if (isJihRegistered(karkun)) appRegistered += 1
+    if (getCurrentIjtemaAttendance(karkun.id).status === 'Present') ijtemaAgreed += 1
+    if (getBaitulMaalCampaignState(karkun.id) === 'committed') baitulMaalCommitted += 1
+  }
+
+  const metrics: CampaignAchievementMetric[] = [
+    {
+      id: 'connected',
+      label: 'Connected',
+      current: connections.connected,
+      total,
+      pct: achievementPct(connections.connected, total),
+    },
+    {
+      id: 'visit',
+      label: 'Visit Conducted',
+      current: visitConducted,
+      total,
+      pct: achievementPct(visitConducted, total),
+    },
+    {
+      id: 'app',
+      label: 'App Registered',
+      current: appRegistered,
+      total,
+      pct: achievementPct(appRegistered, total),
+    },
+    {
+      id: 'ijtema',
+      label: 'Agreed for Weekly Ijtema',
+      current: ijtemaAgreed,
+      total,
+      pct: achievementPct(ijtemaAgreed, total),
+    },
+    {
+      id: 'baitul',
+      label: 'Baitul Maal Committed',
+      current: baitulMaalCommitted,
+      total,
+      pct: achievementPct(baitulMaalCommitted, total),
+    },
+  ]
+
+  const overallPct =
+    metrics.length === 0
+      ? 0
+      : Math.round(
+          (metrics.reduce((sum, metric) => sum + metric.pct, 0) / metrics.length) * 10,
+        ) / 10
+
+  return { metrics, overallPct }
 }
 
 function healthTone(value: number, invert = false): AdminHealthKpi['tone'] {
