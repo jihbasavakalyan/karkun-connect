@@ -172,7 +172,7 @@ export function EditableCommunicationComposerFields({
           }
           onClick={() => handleModeChange('official')}
         >
-          Official Template
+          Official Communication
         </SecondaryButton>
         <SecondaryButton
           type="button"
@@ -188,7 +188,7 @@ export function EditableCommunicationComposerFields({
       {mode === 'official' ? (
         <div className="flex flex-col gap-2">
           <label htmlFor="editable-composer-template" className="text-sm font-medium text-text-heading">
-            Template
+            Official Communication
           </label>
           <select
             id="editable-composer-template"
@@ -196,7 +196,7 @@ export function EditableCommunicationComposerFields({
             onChange={(event) => onTemplateChange(event.target.value)}
             className={selectClassName}
           >
-            <option value="">Choose a template…</option>
+            <option value="">Choose an Official Communication…</option>
             {templates.map((template) => (
               <option key={template.id} value={template.id}>
                 {template.id === recommendedTemplateId ? '★ ' : ''}
@@ -214,8 +214,8 @@ export function EditableCommunicationComposerFields({
             </p>
           ) : (
             <p className="text-xs text-secondary">
-              Official templates load as a starting point. Edit freely before sending — Save as New
-              never overwrites the playbook.
+              Official Communications load as a starting point. Edit freely before sending — Save as
+              Custom Communication never overwrites the approved library.
             </p>
           )}
         </div>
@@ -303,7 +303,7 @@ export function EditableCommunicationComposerFields({
             </SecondaryButton>
           ) : null}
           <SecondaryButton type="button" onClick={handleSaveAsNew}>
-            Save as New Template
+            Save as Custom Communication
           </SecondaryButton>
         </div>
       ) : null}

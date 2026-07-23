@@ -20,8 +20,8 @@ import {
   AdminQueuePanel,
   AdminReportsPlaceholderPanel,
   AdminSettingsPlaceholderPanel,
-  AdminTemplatesPlaceholderPanel,
 } from '@/components/communication/cos/AdminCosPanels'
+import { OfficialCommunicationsPanel } from '@/components/communication/cos/OfficialCommunicationsPanel'
 import { MissionCenterPanel } from '@/components/communication/cos/MissionCenterPanel'
 import { ActiveCampaignSubtitle } from '@/components/layout/CampaignStatusBar'
 import {
@@ -31,8 +31,8 @@ import {
 import { PageHeader, PageShell } from '@/components/ui'
 
 /**
- * KC-0091 — Admin Communication Workspace foundation.
- * COS sections are primary; Messaging Tools preserve existing panels.
+ * KC-0091 / KC-0099 — Admin Communication Workspace.
+ * Official Communication System is primary; Messaging Tools preserve delivery panels.
  */
 export function CommunicationModulePage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -46,7 +46,7 @@ export function CommunicationModulePage() {
     <PageShell variant="wide">
       <PageHeader
         title="Communication"
-        description="Mission-wide communication planning and management. Foundation workspace — messaging delivery is unchanged under Messaging Tools."
+        description="Official Communication System — respectful, mission-centric language for اقامتِ دین. Existing messaging delivery remains under Messaging Tools."
       />
       <ActiveCampaignSubtitle />
 
@@ -56,7 +56,7 @@ export function CommunicationModulePage() {
       {section === 'queue' && <AdminQueuePanel />}
       {section === 'audiences' && <AdminAudiencesPanel />}
       {section === 'journeys' && <AdminJourneysPanel />}
-      {section === 'template-library' && <AdminTemplatesPlaceholderPanel />}
+      {section === 'template-library' && <OfficialCommunicationsPanel />}
       {section === 'delivery' && <AdminDeliveryPlaceholderPanel />}
       {section === 'reports' && <AdminReportsPlaceholderPanel />}
       {section === 'settings' && <AdminSettingsPlaceholderPanel />}

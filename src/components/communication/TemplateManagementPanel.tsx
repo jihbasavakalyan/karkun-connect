@@ -200,11 +200,11 @@ export function TemplateManagementPanel() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-sm text-secondary">
-            Digital Rafeeq Urdu Communication Playbook — workflow-based, motivating templates.
-            Administrators may create, edit, archive, categorize, and preview.
+            Custom Communications and legacy playbook entries. Official Communications live in the
+            Communication Workspace library — approved language for اقامتِ دین.
           </p>
           <p className="mt-1 text-xs text-secondary">
-            Placeholders: {`{{RuknName}}`} · {`{{AssignedKarkunList}}`} ·{' '}
+            Auto variables: {`{{RuknName}}`} · {`{{KarkunWord}}`} · {`{{AssignedKarkunList}}`} ·{' '}
             {TEMPLATE_PLACEHOLDER_KEYS.map((key) => `{${key}}`).join(' · ')}
           </p>
         </div>
@@ -213,7 +213,7 @@ export function TemplateManagementPanel() {
             {showArchived ? 'Hide archived' : 'Show archived'}
           </SecondaryButton>
           <PrimaryButton type="button" onClick={() => openEditor()}>
-            New Template
+            Custom Communication
           </PrimaryButton>
         </div>
       </div>
@@ -298,7 +298,7 @@ export function TemplateManagementPanel() {
       {editing !== null && (
         <section className="rounded-(--radius-card) border border-primary/30 bg-surface p-4 shadow-card sm:p-6">
           <h3 className="text-lg font-semibold text-text-heading">
-            {editing !== 'new' && editing ? 'Edit Template' : 'New Template'}
+            {editing !== 'new' && editing ? 'Edit Custom Communication' : 'Custom Communication'}
           </h3>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-2 sm:col-span-2">
@@ -390,7 +390,7 @@ export function TemplateManagementPanel() {
           {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
           <div className="mt-4 flex flex-wrap gap-2">
             <PrimaryButton type="button" onClick={handleSave}>
-              Save Template
+              Save Communication
             </PrimaryButton>
             <SecondaryButton type="button" onClick={() => setEditing(null)}>
               Cancel

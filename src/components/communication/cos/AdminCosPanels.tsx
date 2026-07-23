@@ -83,8 +83,8 @@ export function AdminDeliveryPlaceholderPanel() {
 export function AdminTemplatesPlaceholderPanel() {
   return (
     <CosPlaceholderPanel
-      title="Templates"
-      description="Template Library for mission communication. Existing messaging templates remain under Messaging Tools until the COS library migrates them."
+      title="Official Communications"
+      description="Replaced by the Official Communication System — open Communication Workspace → Official Communications."
     />
   )
 }

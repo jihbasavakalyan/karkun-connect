@@ -200,13 +200,13 @@ export const WORKFLOW_TEMPLATE_SECTIONS: {
   },
   {
     id: 'execution-tracking',
-    label: '2. Execution Tracking',
-    description: 'Gentle reminders for first contact, visits, and daily progress.',
+    label: '2. Campaign Progress',
+    description: 'Encourage initiation and next campaign milestones with dignity.',
   },
   {
     id: 'reporting-compliance',
-    label: '3. Reporting & Compliance',
-    description: 'Ijtema, annexure, and profile updates — explained with care.',
+    label: '3. Reporting & Coordination',
+    description: 'Ijtema, annexure, and profile coordination — purpose-driven, never policing.',
   },
   {
     id: 'motivation-appreciation',

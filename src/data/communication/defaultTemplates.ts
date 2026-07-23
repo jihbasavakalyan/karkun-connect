@@ -8,6 +8,7 @@
 
 import type { MessageTemplate, TemplateCategory, TemplateFooterMode } from '@/types/communication'
 import { WORKFLOW_URDU_PLAYBOOK_TEMPLATES } from '@/data/communication/workflowUrduPlaybook'
+import { OFFICIAL_COMMUNICATION_LIBRARY } from '@/lib/communication/officialCommunicationLibrary'
 
 const now = new Date().toISOString()
 
@@ -257,6 +258,7 @@ JIH رجسٹریشن ابھی مکمل نہیں ہوئی۔ جب موقع ملے 
     ['name'],
   ),
   ...WORKFLOW_URDU_PLAYBOOK_TEMPLATES,
+  ...OFFICIAL_COMMUNICATION_LIBRARY,
 ]
 
 /** @deprecated Prefer OFFICIAL_WHATSAPP_TEMPLATES — kept as alias for store seed. */

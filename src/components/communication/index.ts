@@ -16,6 +16,7 @@ export { ScheduledMessagesPanel } from '@/components/communication/ScheduledMess
 export { TemplateManagementPanel } from '@/components/communication/TemplateManagementPanel'
 export { WhatsAppSettingsPanel } from '@/components/communication/WhatsAppSettingsPanel'
 export { MissionCenterPanel } from '@/components/communication/cos/MissionCenterPanel'
+export { OfficialCommunicationsPanel } from '@/components/communication/cos/OfficialCommunicationsPanel'
 export { DigitalRafeeqGuidancePanel } from '@/components/communication/cos/DigitalRafeeqGuidancePanel'
 export { MyConnectedKarkunsPanel } from '@/components/communication/cos/MyConnectedKarkunsPanel'
 export { CompanionWorkspaceView } from '@/components/communication/cos/CompanionWorkspaceView'

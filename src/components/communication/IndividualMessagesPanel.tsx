@@ -194,7 +194,7 @@ export function IndividualMessagesPanel({
 
       {effectiveKind === 'karkun' && (
         <div className="mt-4">
-          <h3 className="text-sm font-semibold text-text-heading">Quick Templates</h3>
+          <h3 className="text-sm font-semibold text-text-heading">Quick Official Communications</h3>
           <div className="mt-2 flex flex-wrap gap-2">
             {quickTemplates.map((template) => (
               <button

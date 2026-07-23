@@ -14,7 +14,7 @@ export function CommunicationDashboard() {
 
       <div className="grid gap-4 lg:grid-cols-2">
         <section className="rounded-(--radius-card) border border-border bg-surface p-4 shadow-card sm:p-5">
-          <h2 className="text-lg font-semibold text-text-heading">Top Templates</h2>
+          <h2 className="text-lg font-semibold text-text-heading">Top Official Communications</h2>
           {metrics.topTemplates.length === 0 ? (
             <p className="mt-3 text-sm text-secondary">No messages sent yet.</p>
           ) : (

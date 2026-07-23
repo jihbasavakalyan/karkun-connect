@@ -37,43 +37,59 @@ export const WORKFLOW_URDU_PLAYBOOK_TEMPLATES: MessageTemplate[] = [
   // ── 1. Assignment Management ──────────────────────────────────────────
   playbook(
     'tpl-pb-new-assignment',
-    'New Assignment (Amanah)',
+    'Assignment Issued',
     'assignment-management',
     'New Karkuns entrusted to the Rukn',
-    `السلام علیکم ورحمۃ اللہ {{RuknName}}
+    `السلام علیکم ورحمۃ اللہ وبرکاتہ
+{{RuknName}}
 
-آپ کی خدمت اور ذمہ داری کا دل سے شکریہ۔ اللہ آپ کے اس تعاون کو قبول فرمائے۔
+اللہ آپ کو صحت، توفیق اور حکمت عطا فرمائے۔
 
-{{CampaignName}} کے سلسلے میں آپ کے سپرد {{AssignedKarkunCount}} کارکن کیے گئے ہیں — یہ ایک امانت ہے، حکم نہیں۔
+{{CampaignName}} کے سلسلے میں آپ کے سپرد {{AssignedKarkunCount}} {{KarkunWord}} کیے گئے ہیں — یہ امانت اور ذمہ داری ہے۔
 
-آپ کے سپرد کردہ کارکنان:
+آپ کے سپرد کردہ {{KarkunWord}}:
 {{AssignedKarkunList}}
 
-جب موقع ملے تو پہلا نرم رابطہ ان شاء اللہ بہت مفید ثابت ہوگا۔
+یہ ذمہ داری اقامتِ دین کی اجتماعی کوشش کا حصہ ہے، اور مہم کا اگلا مرحلہ آپ کی رہنمائی اور باہمی تعاون سے آگے بڑھتا ہے۔
 
-اللہ اس امانت میں نیت، حکمت اور برکت عطا فرمائے۔`,
-    ['RuknName', 'CampaignName', 'AssignedKarkunCount', 'AssignedKarkunList'],
+ان شاء اللہ کارکن کنیکٹ پر مہم کی پیش رفت دیکھی جا سکتی ہے — یہ صرف ہم آہنگی اور اجتماعی نظر کا ذریعہ ہے۔
+
+اللہ اس امانت میں نیت، صبر اور برکت عطا فرمائے۔
+
+جزاکم اللہ خیراً`,
+    ['RuknName', 'CampaignName', 'AssignedKarkunCount', 'KarkunWord', 'AssignedKarkunList'],
   ),
   playbook(
     'tpl-pb-assignment-updated',
     'Assignment Updated',
     'assignment-management',
     'Updated assignment list for the Rukn',
-    `السلام علیکم {{RuknName}}
+    `السلام علیکم ورحمۃ اللہ وبرکاتہ
+{{RuknName}}
 
-آپ کی مسلسل توجہ اور تعاون قابلِ قدر ہے۔ جزاکم اللہ خیراً۔
+اللہ آپ کی خدمت کو قبول فرمائے اور آپ کو استقامت عطا کرے۔
 
-آپ کی سپردگی کی فہرست میں تازہ اپ ڈیٹ آ گئی ہے:
-کل سپرد شدہ: {{AssignedKarkunCount}}
+آپ کی سپردگی کی فہرست میں تازہ پیش رفت ہوئی ہے:
+کل سپرد شدہ: {{AssignedKarkunCount}} {{KarkunWord}}
 منسلک: {{ConnectedCount}}
 
 تازہ فہرست:
 {{AssignedKarkunList}}
 
-جب سہولت ہو تو نظرِ ثانی کر لیجیے — کوئی جلدی نہیں۔
+مہم کا اگلا مرحلہ اسی امانت کی روشنی میں آگے بڑھتا ہے — اقامتِ دین کی ذمہ داری اجتماعی کوشش سے پوری ہوتی ہے۔
 
-اللہ اس مشن میں آپ کی مدد فرمائے۔`,
-    ['RuknName', 'AssignedKarkunCount', 'ConnectedCount', 'AssignedKarkunList'],
+کارکن کنیکٹ مہم کی ہم آہنگی کے لیے معاون ہے۔
+
+اللہ آپ کے تعاون میں برکت دے۔
+
+جزاکم اللہ خیراً`,
+    [
+      'RuknName',
+      'AssignedKarkunCount',
+      'KarkunWord',
+      'ConnectedCount',
+      'AssignedKarkunList',
+    ],
   ),
   playbook(
     'tpl-pb-new-karkun-added',

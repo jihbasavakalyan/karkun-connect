@@ -69,6 +69,7 @@ function fillRuknPlaybookStats(vars: Record<string, string>, ruknId: string): vo
   setAliases(vars, 'AssignedKarkunCount', String(assignedCount))
   setAliases(vars, 'ConnectedCount', String(assignedCount))
   setAliases(vars, 'AssignedKarkunList', list)
+  setAliases(vars, 'KarkunWord', assignedCount === 1 ? 'کارکن' : 'کارکنان')
   setAliases(vars, 'PendingFirstContact', String(pendingFirstContact))
   setAliases(vars, 'PendingFollowUps', String(pendingFollowUps.length))
   setAliases(
