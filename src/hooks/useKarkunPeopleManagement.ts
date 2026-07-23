@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from 'react'
-import { getAllKarkuns } from '@/lib/peopleStore'
+import { getAllKarkuns, getAllMuttafiqeen } from '@/lib/peopleStore'
 import { subscribeToAssignments } from '@/lib/assignmentEngine'
 import { usePeopleStore } from '@/hooks/usePeopleStore'
 import { matchesJihPortalFilters } from '@/services/jihWebPortalService'
@@ -8,7 +8,11 @@ import { matchesIjtemaAttendanceFilters } from '@/services/ijtemaAttendanceServi
 import { subscribeToJihWebPortalStore } from '@/stores/jihWebPortalStore'
 import { subscribeToBaitulMaalStore } from '@/stores/baitulMaalStore'
 import { subscribeToIjtemaAttendanceStore } from '@/stores/ijtemaAttendanceStore'
-import type { KarkunRegistryRecord, PersonGender } from '@/types/karkun-registry.types'
+import type {
+  KarkunRegistryRecord,
+  PersonCategory,
+  PersonGender,
+} from '@/types/karkun-registry.types'
 import type { PeopleFilters, PeopleSortDirection, PeopleSortField } from '@/types/people.types'
 import { PEOPLE_PAGE_SIZE } from '@/types/people.types'
 
@@ -30,9 +34,6 @@ const initialFilters: PeopleFilters = {
 function matchesKarkunFilters(karkun: KarkunRegistryRecord, filters: PeopleFilters): boolean {
   const lifecycle = filters.registryLifecycle || 'active'
   if (lifecycle === 'active' && karkun.isArchived) {
-    return false
-  }
-  if (lifecycle === 'archived' && !karkun.isArchived) {
     return false
   }
   if (lifecycle === 'needs_review') {
@@ -138,7 +139,10 @@ function sortKarkuns(
   return sorted
 }
 
-export function useKarkunPeopleManagement(sectionGender: PersonGender) {
+export function useKarkunPeopleManagement(
+  sectionGender: PersonGender,
+  registryCategory: PersonCategory = 'Karkun',
+) {
   const peopleVersion = usePeopleStore()
   const [assignmentVersion, setAssignmentVersion] = useState(0)
   const [jihVersion, setJihVersion] = useState(0)
@@ -171,10 +175,14 @@ export function useKarkunPeopleManagement(sectionGender: PersonGender) {
   const [selectedIds, setSelectedIds] = useState<string[]>([])
 
   const allKarkuns = useMemo(
-    () => getAllKarkuns(true).filter((k) => k.gender === sectionGender),
+    () => {
+      const pool =
+        registryCategory === 'Muttafiq' ? getAllMuttafiqeen() : getAllKarkuns(true)
+      return pool.filter((k) => k.gender === sectionGender)
+    },
     // peopleVersion invalidates after mutable MOCK_KARKUN_REGISTRY hydrate
     // eslint-disable-next-line react-hooks/exhaustive-deps -- registry is module state
-    [sectionGender, peopleVersion],
+    [sectionGender, peopleVersion, registryCategory],
   )
 
   const filteredRecords = useMemo(() => {

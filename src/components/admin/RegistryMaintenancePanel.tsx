@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ConfirmDialog } from '@/components/forms/people/ConfirmDialog'
 import { InputField } from '@/components/forms/InputField'
@@ -6,14 +6,16 @@ import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { ROUTES } from '@/constants/routes'
+import { getPersonCategory, isSoftRemoved } from '@/lib/peopleClassification'
 import { persistKarkunDurable } from '@/lib/peopleStore'
 import {
-  archiveKarkunSafely,
   clearKarkunReview,
   deleteKarkunSafely,
   flagKarkunForReview,
-  getKarkunArchiveBlockers,
   getKarkunDeleteBlockers,
+  getMoveToMuttafiqeenBlockers,
+  moveToKarkunSafely,
+  moveToMuttafiqeenSafely,
   updateKarkunReviewNotes,
 } from '@/services/registryMaintenanceService'
 import {
@@ -31,7 +33,7 @@ type RegistryMaintenancePanelProps = {
 }
 
 /**
- * KC-0076 — Admin-only review / archive / controlled delete on Karkun profile.
+ * KC-0076 / KC-0101 — Admin review, classification moves, controlled delete.
  */
 export function RegistryMaintenancePanel({ karkun, karkunId }: RegistryMaintenancePanelProps) {
   const navigate = useNavigate()
@@ -40,14 +42,18 @@ export function RegistryMaintenancePanel({ karkun, karkunId }: RegistryMaintenan
   )
   const [reviewNotes, setReviewNotes] = useState(karkun.reviewNotes ?? '')
   const [deleteReason, setDeleteReason] = useState('')
+  const [reclassifyRemarks, setReclassifyRemarks] = useState('')
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
 
-  const archiveBlockers = useMemo(() => getKarkunArchiveBlockers(karkunId), [karkunId, karkun])
-  const deleteBlockers = useMemo(() => getKarkunDeleteBlockers(karkunId), [karkunId, karkun])
-  const canArchive = archiveBlockers.length === 0 && !karkun.isArchived
+  const category = getPersonCategory(karkun)
+  const softRemoved = isSoftRemoved(karkun)
+  const moveBlockers = getMoveToMuttafiqeenBlockers(karkunId)
+  const deleteBlockers = getKarkunDeleteBlockers(karkunId)
+  const canMoveToMuttafiqeen = moveBlockers.length === 0 && category === 'Karkun' && !softRemoved
+  const canMoveToKarkun = category === 'Muttafiq' && !softRemoved
   const canDelete = deleteBlockers.length === 0 && Boolean(deleteReason.trim())
 
   const runDurable = async (mutate: () => { success: boolean; error?: string }) => {
@@ -98,11 +104,25 @@ export function RegistryMaintenancePanel({ karkun, karkunId }: RegistryMaintenan
     })()
   }
 
-  const handleArchive = () => {
+  const handleMoveToMuttafiqeen = () => {
     void (async () => {
-      const ok = await runDurable(() => archiveKarkunSafely(karkunId, 'Administrator'))
+      const ok = await runDurable(() =>
+        moveToMuttafiqeenSafely(karkunId, 'Administrator', reclassifyRemarks || undefined),
+      )
       if (ok) {
-        setMessage('Karkun archived.')
+        setMessage('Moved to Muttafiqeen.')
+        navigate(ROUTES.ADMIN_MUTTAFIQEEN)
+      }
+    })()
+  }
+
+  const handleMoveToKarkun = () => {
+    void (async () => {
+      const ok = await runDurable(() =>
+        moveToKarkunSafely(karkunId, 'Administrator', reclassifyRemarks || undefined),
+      )
+      if (ok) {
+        setMessage('Moved to Karkun Registry.')
         navigate(ROUTES.ADMIN_KARKUN)
       }
     })()
@@ -115,11 +135,13 @@ export function RegistryMaintenancePanel({ karkun, karkunId }: RegistryMaintenan
         deleteKarkunSafely(karkunId, deleteReason, 'Administrator'),
       )
       if (ok) {
-        setMessage('Karkun removed from the registry.')
-        navigate(ROUTES.ADMIN_KARKUN)
+        setMessage('Person removed from the registry.')
+        navigate(category === 'Muttafiq' ? ROUTES.ADMIN_MUTTAFIQEEN : ROUTES.ADMIN_KARKUN)
       }
     })()
   }
+
+  const history = karkun.classificationHistory ?? []
 
   return (
     <section
@@ -128,18 +150,21 @@ export function RegistryMaintenancePanel({ karkun, karkunId }: RegistryMaintenan
     >
       <div className="flex flex-wrap items-center gap-2">
         <h2 className="text-sm font-semibold text-text-heading">Registry Maintenance</h2>
-        {karkun.needsReview && !karkun.isArchived ? (
-          <StatusBadge variant="warning">🟡 Needs Review</StatusBadge>
+        <StatusBadge variant={category === 'Muttafiq' ? 'dormant' : 'success'}>
+          {category}
+        </StatusBadge>
+        {karkun.needsReview && !softRemoved ? (
+          <StatusBadge variant="warning">Needs Review</StatusBadge>
         ) : null}
-        {karkun.isArchived ? (
+        {softRemoved ? (
           <StatusBadge variant="dormant">
-            {karkun.archiveKind === 'admin_delete' ? 'Removed' : 'Archived'}
+            {karkun.archiveKind === 'admin_delete' ? 'Removed' : 'Merged Duplicate'}
           </StatusBadge>
         ) : null}
       </div>
       <p className="mt-1 text-xs text-secondary">Administrator only — does not affect Rukn Home.</p>
 
-      {!karkun.isArchived ? (
+      {!softRemoved ? (
         <div className="mt-4 space-y-3 border-t border-border pt-4">
           <h3 className="text-sm font-medium text-text-heading">Mark for Review</h3>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -149,21 +174,21 @@ export function RegistryMaintenancePanel({ karkun, karkunId }: RegistryMaintenan
               </label>
               <select
                 id="review-reason"
+                className={selectClassName}
                 value={reviewReason}
                 onChange={(event) => setReviewReason(event.target.value as KarkunReviewReason)}
-                className={selectClassName}
                 disabled={busy}
               >
-                {KARKUN_REVIEW_REASON_OPTIONS.map((reason) => (
-                  <option key={reason} value={reason}>
-                    {reason}
+                {KARKUN_REVIEW_REASON_OPTIONS.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
                   </option>
                 ))}
               </select>
             </div>
             <InputField
               id="review-notes"
-              label="Administrator Notes (optional)"
+              label="Notes"
               value={reviewNotes}
               onValueChange={setReviewNotes}
               className="px-3 py-2 text-sm"
@@ -171,9 +196,14 @@ export function RegistryMaintenancePanel({ karkun, karkunId }: RegistryMaintenan
             />
           </div>
           <div className="flex flex-wrap gap-2">
-            <PrimaryButton type="button" className="px-4 py-2 text-sm" disabled={busy} onClick={handleFlagReview}>
-              {karkun.needsReview ? 'Update Review Flag' : 'Mark for Review'}
-            </PrimaryButton>
+            <SecondaryButton
+              type="button"
+              className="px-4 py-2 text-sm"
+              disabled={busy}
+              onClick={handleFlagReview}
+            >
+              Mark for Review
+            </SecondaryButton>
             {karkun.needsReview ? (
               <>
                 <SecondaryButton
@@ -195,7 +225,7 @@ export function RegistryMaintenancePanel({ karkun, karkunId }: RegistryMaintenan
               </>
             ) : null}
           </div>
-          {karkun.reviewedBy && karkun.reviewedAt ? (
+          {karkun.reviewedAt ? (
             <p className="text-xs text-secondary">
               Last review update: {karkun.reviewedBy} · {new Date(karkun.reviewedAt).toLocaleString()}
               {karkun.reviewReason ? ` · ${karkun.reviewReason}` : ''}
@@ -204,29 +234,79 @@ export function RegistryMaintenancePanel({ karkun, karkunId }: RegistryMaintenan
         </div>
       ) : null}
 
-      <div className="mt-4 space-y-3 border-t border-border pt-4">
-        <h3 className="text-sm font-medium text-text-heading">Archive</h3>
-        {canArchive ? (
-          <SecondaryButton type="button" className="px-4 py-2 text-sm" disabled={busy} onClick={handleArchive}>
-            Archive Karkun
-          </SecondaryButton>
-        ) : (
-          <div className="space-y-1">
-            <p className="text-sm text-secondary">Archive is unavailable.</p>
-            <ul className="list-disc pl-5 text-sm text-red-700">
-              {(karkun.isArchived ? ['Already archived.'] : archiveBlockers).map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </div>
+      {!softRemoved ? (
+        <div className="mt-4 space-y-3 border-t border-border pt-4">
+          <h3 className="text-sm font-medium text-text-heading">Classification</h3>
+          <p className="text-xs text-secondary">
+            Changing classification never deletes the person or creates a duplicate. History is
+            preserved.
+          </p>
+          <InputField
+            id="reclassify-remarks"
+            label="Remarks (optional)"
+            value={reclassifyRemarks}
+            onValueChange={setReclassifyRemarks}
+            className="px-3 py-2 text-sm"
+            disabled={busy}
+          />
+          {category === 'Karkun' ? (
+            canMoveToMuttafiqeen ? (
+              <SecondaryButton
+                type="button"
+                className="px-4 py-2 text-sm"
+                disabled={busy}
+                onClick={handleMoveToMuttafiqeen}
+              >
+                Move to Muttafiqeen
+              </SecondaryButton>
+            ) : (
+              <div className="space-y-1">
+                <p className="text-sm text-secondary">Move to Muttafiqeen is unavailable.</p>
+                <ul className="list-disc pl-5 text-sm text-red-700">
+                  {moveBlockers.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            )
+          ) : null}
+          {canMoveToKarkun ? (
+            <PrimaryButton
+              type="button"
+              className="px-4 py-2 text-sm"
+              disabled={busy}
+              onClick={handleMoveToKarkun}
+            >
+              Move to Karkun Registry
+            </PrimaryButton>
+          ) : null}
+        </div>
+      ) : null}
+
+      {history.length > 0 ? (
+        <div className="mt-4 space-y-2 border-t border-border pt-4">
+          <h3 className="text-sm font-medium text-text-heading">Classification History</h3>
+          <ul className="space-y-2 text-sm text-secondary">
+            {[...history].reverse().map((entry, index) => (
+              <li key={`${entry.changedAt}-${index}`} className="rounded-lg bg-surface-muted px-3 py-2">
+                <p className="text-text-heading">
+                  {entry.previousCategory} → {entry.newCategory}
+                </p>
+                <p className="text-xs">
+                  {entry.changedBy} · {new Date(entry.changedAt).toLocaleString()}
+                  {entry.remarks ? ` · ${entry.remarks}` : ''}
+                </p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
 
       <div className="mt-4 space-y-3 border-t border-border pt-4">
         <h3 className="text-sm font-medium text-text-heading">Delete</h3>
         <p className="text-xs text-secondary">
           Allowed only with no assignment, no connection, and no campaign history. Uses controlled
-          registry removal (soft-archive) — not available when history exists.
+          registry removal — not available when history exists.
         </p>
         {deleteBlockers.length > 0 ? (
           <ul className="list-disc pl-5 text-sm text-red-700">
@@ -269,7 +349,7 @@ export function RegistryMaintenancePanel({ karkun, karkunId }: RegistryMaintenan
         message={
           <div className="space-y-2">
             <p>
-              You are about to permanently delete this Karkun.
+              You are about to permanently remove this person from the active registry.
               <br />
               This action cannot be undone.
             </p>

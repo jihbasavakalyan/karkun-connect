@@ -7,9 +7,13 @@ import { SecondaryButton } from '@/components/ui/SecondaryButton'
 type KarkunPeopleActionBarProps = {
   onAddMale: () => void
   onAddFemale: () => void
-  onAssign: () => void
-  onImport: (file: File) => void
-  onExport: (format: ExportFormat) => void
+  onAssign?: () => void
+  onImport?: (file: File) => void
+  onExport?: (format: ExportFormat) => void
+  /** KC-0101 — registry labels (default Karkun). */
+  personLabel?: 'Karkun' | 'Muttafiq'
+  showAssign?: boolean
+  showImportExport?: boolean
 }
 
 const menuItemClassName =
@@ -21,12 +25,16 @@ export function KarkunPeopleActionBar({
   onAssign,
   onImport,
   onExport,
+  personLabel = 'Karkun',
+  showAssign = true,
+  showImportExport = true,
 }: KarkunPeopleActionBarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [addMenuOpen, setAddMenuOpen] = useState(false)
   const [moreMenuOpen, setMoreMenuOpen] = useState(false)
   const addMenuRef = useRef<HTMLDivElement>(null)
   const moreMenuRef = useRef<HTMLDivElement>(null)
+  const addLabel = personLabel === 'Muttafiq' ? 'Muttafiq' : 'Karkun'
 
   useEffect(() => {
     const handlePointerDown = (event: MouseEvent) => {
@@ -44,7 +52,7 @@ export function KarkunPeopleActionBar({
 
   const handleImportChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
-    if (file) {
+    if (file && onImport) {
       onImport(file)
       event.target.value = ''
     }
@@ -67,35 +75,40 @@ export function KarkunPeopleActionBar({
           className="px-4 py-2 text-sm"
           onClick={() => setAddMenuOpen((open) => !open)}
         >
-          + Add Karkun
+          + Add {addLabel}
         </PrimaryButton>
         {addMenuOpen && (
           <div className="absolute right-0 z-30 mt-2 min-w-[12rem] rounded-(--radius-card) border border-border bg-surface p-2 shadow-card sm:left-0 sm:right-auto">
             <p className="px-3 py-1 text-xs font-semibold uppercase tracking-wide text-secondary">
-              Add Karkun
+              Add {addLabel}
             </p>
             <button type="button" className={menuItemClassName} onClick={() => handleAdd('Male')}>
-              Male Karkun
+              Male {addLabel}
             </button>
             <button type="button" className={menuItemClassName} onClick={() => handleAdd('Female')}>
-              Female Karkun
+              Female {addLabel}
             </button>
           </div>
         )}
       </div>
 
-      <SecondaryButton type="button" className="px-4 py-2 text-sm" onClick={onAssign}>
-        Connect Karkun
-      </SecondaryButton>
+      {showAssign && onAssign ? (
+        <SecondaryButton type="button" className="px-4 py-2 text-sm" onClick={onAssign}>
+          Connect Karkun
+        </SecondaryButton>
+      ) : null}
 
-      <SecondaryButton
-        type="button"
-        className="px-4 py-2 text-sm"
-        onClick={() => fileInputRef.current?.click()}
-      >
-        Import
-      </SecondaryButton>
+      {showImportExport && onImport ? (
+        <SecondaryButton
+          type="button"
+          className="px-4 py-2 text-sm"
+          onClick={() => fileInputRef.current?.click()}
+        >
+          Import
+        </SecondaryButton>
+      ) : null}
 
+      {showImportExport && onExport ? (
       <div ref={moreMenuRef} className="relative">
         <SecondaryButton
           type="button"
@@ -129,15 +142,18 @@ export function KarkunPeopleActionBar({
           </div>
         )}
       </div>
+      ) : null}
 
+      {showImportExport && onImport ? (
       <input
         ref={fileInputRef}
         type="file"
         accept=".csv,.xls,.xlsx,.txt"
         className="hidden"
-        aria-label="Import Karkun file"
+        aria-label={`Import ${addLabel} file`}
         onChange={handleImportChange}
       />
+      ) : null}
     </div>
   )
 }

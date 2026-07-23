@@ -10,6 +10,17 @@ export type PersonGender = 'Male' | 'Female'
 
 export type PersonStatus = 'active' | 'inactive'
 
+/** KC-0101 — organizational classification on the single Person record. */
+export type PersonCategory = 'Karkun' | 'Muttafiq'
+
+export type ClassificationHistoryEntry = {
+  previousCategory: PersonCategory
+  newCategory: PersonCategory
+  changedBy: string
+  changedAt: string
+  remarks?: string
+}
+
 export type KarkunRegistryRecord = {
   id: string
   name: string
@@ -37,6 +48,13 @@ export type KarkunRegistryRecord = {
   jihAppRegistrationStatus: JihAppRegistrationStatus
   notes: string
   isArchived: boolean
+  /**
+   * KC-0101 — organizational classification (Karkun | Muttafiq).
+   * Optional for backward compatibility; resolve via getPersonCategory().
+   */
+  category?: PersonCategory
+  /** KC-0101 — append-only classification change history. */
+  classificationHistory?: ClassificationHistoryEntry[]
   /** KC-0058 — recovery metadata (optional; additive). */
   createdBy?: string
   archivedAt?: string
@@ -77,12 +95,11 @@ export const KARKUN_REVIEW_REASON_OPTIONS: readonly KarkunReviewReason[] = [
   'Other',
 ] as const
 
-/** Registry list lifecycle filter (Admin). */
-export type KarkunRegistryLifecycleFilter = '' | 'active' | 'archived' | 'needs_review'
+/** Registry list lifecycle filter (Admin). KC-0101 — Archive replaced by Muttafiqeen registry. */
+export type KarkunRegistryLifecycleFilter = '' | 'active' | 'needs_review'
 
 export const REGISTRY_LIFECYCLE_FILTER_OPTIONS = [
   { value: 'active', label: 'Active' },
-  { value: 'archived', label: 'Archived' },
   { value: 'needs_review', label: 'Needs Review' },
 ] as const
 

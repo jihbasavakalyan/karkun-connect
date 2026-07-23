@@ -11,6 +11,12 @@ import {
   type Rukn,
 } from '@/data/ruknMaster'
 import { findPossibleNameDuplicates } from '@/lib/nameMatching'
+import {
+  getPersonCategory,
+  isCampaignEligible,
+  isMuttafiq,
+  isSoftRemoved,
+} from '@/lib/peopleClassification'
 import { logPeopleAudit } from '@/lib/peopleAuditLog'
 import {
   formatMobileValidationError,
@@ -219,7 +225,8 @@ export function findMobileOwner(
   }
 
   for (const karkun of MOCK_KARKUN_REGISTRY) {
-    if (karkun.isArchived) {
+    // KC-0101 — uniqueness spans Karkuns and Muttafiqeen; only soft-removed are skipped.
+    if (isSoftRemoved(karkun)) {
       continue
     }
     if (exclude?.kind === 'karkun' && exclude.id === karkun.id) {
@@ -262,22 +269,41 @@ export function getAllRukns(): Rukn[] {
   return [...ruknMaster]
 }
 
+/**
+ * Campaign-eligible Karkun registry.
+ * KC-0101 — excludes Muttafiqeen and soft-removed records.
+ * `includeArchived` retained for callers that load then filter by lifecycle;
+ * soft-removed Karkuns are included only when includeArchived is true.
+ */
 export function getAllKarkuns(includeArchived = false): KarkunRegistryRecord[] {
-  return MOCK_KARKUN_REGISTRY.filter((k) => includeArchived || !k.isArchived)
+  return MOCK_KARKUN_REGISTRY.filter((k) => {
+    if (getPersonCategory(k) !== 'Karkun') return false
+    if (isSoftRemoved(k)) return includeArchived
+    if (!includeArchived && k.isArchived) return false
+    return true
+  })
+}
+
+/** KC-0101 — Muttafiqeen registry (non soft-removed). */
+export function getAllMuttafiqeen(): KarkunRegistryRecord[] {
+  return MOCK_KARKUN_REGISTRY.filter((k) => isMuttafiq(k))
 }
 
 export function getPeopleStatistics(): PeopleStatistics {
   const rukns = ruknMaster
   const karkuns = getAllKarkuns()
+  const muttafiqeen = getAllMuttafiqeen()
 
   const maleRukns = rukns.filter((r) => r.gender === 'Male').length
   const femaleRukns = rukns.filter((r) => r.gender === 'Female').length
   const maleKarkuns = karkuns.filter((k) => k.gender === 'Male').length
   const femaleKarkuns = karkuns.filter((k) => k.gender === 'Female').length
+  const maleMuttafiqeen = muttafiqeen.filter((k) => k.gender === 'Male').length
+  const femaleMuttafiqeen = muttafiqeen.filter((k) => k.gender === 'Female').length
   // KC-028A: Connected = canonical Active connections (not registry assignmentStatus alone).
   const assignedKarkuns = getCanonicalConnectedKarkunCount()
   const unassignedKarkuns = karkuns.filter(
-    (k) => !k.isArchived && k.assignmentStatus === 'Available',
+    (k) => isCampaignEligible(k) && k.assignmentStatus === 'Available',
   ).length
 
   const activeRukns = rukns.filter((r) => r.status === 'active').length
@@ -295,6 +321,10 @@ export function getPeopleStatistics(): PeopleStatistics {
     unassignedKarkuns,
     activeUsers: activeRukns + activeKarkuns,
     inactiveUsers: inactiveRukns + inactiveKarkuns,
+    totalMuttafiqeen: muttafiqeen.length,
+    maleMuttafiqeen,
+    femaleMuttafiqeen,
+    totalPeople: karkuns.length + muttafiqeen.length,
   }
 
   traceMetricSnapshot('people_registry_metrics', {
@@ -613,6 +643,7 @@ export function createKarkun(
     jihAppRegistrationStatus: 'Not Discussed',
     notes: input.notes?.trim() ?? '',
     isArchived: false,
+    category: 'Karkun',
   }
 
   syncKarkunCampaignStatus(karkun)
@@ -626,6 +657,80 @@ export function createKarkun(
     personId: id,
     personName: karkun.name,
     action: 'create',
+    updatedBy,
+  })
+
+  notifyPeopleChange()
+  return { success: true, karkunId: id }
+}
+
+/** KC-0101 — Add Muttafiq (same Person entity, category Muttafiq). */
+export function createMuttafiq(
+  input: PersonContactInput & { area?: string; address?: string },
+  updatedBy = 'Administrator',
+): PeopleMutationResult {
+  const mobileCheck = validateMobileForPerson(input.mobile)
+  if (!mobileCheck.success && !mobileCheck.needsMobileConfirm) {
+    return mobileCheck
+  }
+  if (mobileCheck.needsMobileConfirm) {
+    return mobileCheck
+  }
+
+  const allocation = allocateNextKarkunId()
+  if (!allocation.ok) {
+    return { success: false, error: allocation.error }
+  }
+
+  // Final collision guard — never overwrite an existing registry row.
+  if (karkunIdExistsInRegistry(allocation.id)) {
+    console.error(`[KC-0101] Refusing to create ${allocation.id}: already in registry`)
+    return {
+      success: false,
+      error: `Person ID ${allocation.id} is already in use. Retry allocation.`,
+    }
+  }
+
+  const timestamp = nowIso()
+  const id = allocation.id
+
+  const person: KarkunRegistryRecord = {
+    id,
+    name: input.name.trim(),
+    gender: input.gender,
+    mobile: normalizeMobile(input.mobile),
+    whatsapp: input.whatsapp?.trim() || undefined,
+    place: input.place.trim() || DEFAULT_PLACE,
+    status: input.status,
+    fatherHusbandName: input.fatherHusbandName?.trim() || undefined,
+    createdAt: timestamp,
+    updatedAt: timestamp,
+    updatedBy,
+    address: input.address?.trim() ?? '',
+    area: input.area?.trim() ?? '',
+    assignedRukn: '',
+    assignedRuknId: '',
+    assignmentStatus: 'Available',
+    campaignStatus: 'not_assigned',
+    visitStatus: 'none',
+    lastVisit: null,
+    commitment: null,
+    currentCommitment: '',
+    jihAppRegistrationStatus: 'Not Discussed',
+    notes: input.notes?.trim() ?? '',
+    isArchived: false,
+    category: 'Muttafiq',
+  }
+
+  MOCK_KARKUN_REGISTRY.push(person)
+
+  logPeopleAudit({
+    personKind: 'karkun',
+    personId: id,
+    personName: person.name,
+    action: 'create',
+    field: 'category',
+    newValue: 'Muttafiq',
     updatedBy,
   })
 
@@ -708,9 +813,10 @@ export function updateKarkun(
  * Success means Firestore (or local repo) accepted the write.
  */
 export async function persistKarkunDurable(id: string): Promise<PeopleMutationResult> {
-  const karkun = MOCK_KARKUN_REGISTRY.find((k) => k.id === id && !k.isArchived)
+  // KC-0101 — persist by id regardless of archive/classification (Move to Muttafiqeen, etc.).
+  const karkun = MOCK_KARKUN_REGISTRY.find((k) => k.id === id)
   if (!karkun) {
-    return { success: false, error: 'Karkun not found.' }
+    return { success: false, error: 'Person not found.' }
   }
   const result = await getRepositories().karkun.upsertRecord(karkun)
   if (!result.ok) {

@@ -13,8 +13,8 @@ export type PeopleFilters = {
   gender: PersonGender | ''
   status: PersonStatus | ''
   assignmentStatus: '' | 'Assigned' | 'Unassigned'
-  /** KC-0076 — Active / Archived / Needs Review (Karkun registry). */
-  registryLifecycle: '' | 'active' | 'archived' | 'needs_review'
+  /** KC-0076 / KC-0101 — Active / Needs Review (Karkun registry). */
+  registryLifecycle: '' | 'active' | 'needs_review'
   jihPortalRegistration: '' | 'Not Registered' | 'Registered'
   jihPortalReporting: '' | 'Pending' | 'Submitted'
   baitulMaalStatus: '' | 'Pending' | 'Paid'
@@ -38,6 +38,7 @@ export type PeopleAuditAction =
   | 'review_notes'
   | 'archive'
   | 'delete'
+  | 'reclassify'
 
 export type PeopleAuditEntry = {
   id: string
@@ -94,6 +95,11 @@ export type PeopleStatistics = {
   unassignedKarkuns: number
   activeUsers: number
   inactiveUsers: number
+  /** KC-0101 — Muttafiqeen registry totals (people reports). */
+  totalMuttafiqeen?: number
+  maleMuttafiqeen?: number
+  femaleMuttafiqeen?: number
+  totalPeople?: number
 }
 
 export type PersonContactInput = {

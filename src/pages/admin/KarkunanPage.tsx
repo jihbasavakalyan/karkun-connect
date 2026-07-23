@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useLocation } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import type { PersonGender } from '@/types/karkun-registry.types'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
 import type { ImportSummary } from '@/types/people.types'
 import type { MobileLookupResult } from '@/lib/peopleStore'
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
+import { ROUTES } from '@/constants/routes'
 import { useKarkunPeopleManagement } from '@/hooks/useKarkunPeopleManagement'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { adminUnassignKarkun, changeKarkunRuknAssignment } from '@/lib/assignmentEngine'
@@ -536,7 +537,7 @@ export function KarkunanPage() {
   return (
     <PageShell>
       <PageHeader
-        title="Karkun Management"
+        title="Karkun Registry"
         description="Manage Male and Female Karkun contacts, connections, and status separately."
         actions={
           <KarkunPeopleActionBar
@@ -548,6 +549,16 @@ export function KarkunanPage() {
           />
         }
       />
+
+      <div className="mb-4 flex flex-wrap items-center gap-3 text-sm">
+        <span className="text-secondary">People</span>
+        <span className="text-secondary">/</span>
+        <span className="font-medium text-text-heading">Karkuns</span>
+        <span className="text-secondary">/</span>
+        <Link to={ROUTES.ADMIN_MUTTAFIQEEN} className="text-primary hover:underline">
+          Muttafiqeen
+        </Link>
+      </div>
 
       <nav className="ds-tab-nav border-b border-border pb-px" aria-label="Karkun gender">
         {(['Male', 'Female'] as const).map((gender) => (

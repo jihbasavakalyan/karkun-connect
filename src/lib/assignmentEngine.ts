@@ -15,6 +15,7 @@ import {
   transferAssignment,
 } from '@/services/assignmentService'
 import { canAssignByGender } from '@/lib/peopleStore'
+import { isCampaignEligible } from '@/lib/peopleClassification'
 import { subscribeToAssignmentStore, getActiveAssignmentsForKarkun } from '@/stores/assignmentStore'
 import type { RemovalReason, ReplacementReason } from '@/types/assignment'
 import type { AssignedBy, ReleaseReason } from '@/types/assignment.types'
@@ -37,7 +38,7 @@ export function getAssignedKarkunanForRukn(ruknId: string): KarkunRegistryRecord
 export function getAvailableKarkunan(ruknId?: string): KarkunRegistryRecord[] {
   const available = MOCK_KARKUN_REGISTRY.filter(
     (karkun) =>
-      !karkun.isArchived &&
+      isCampaignEligible(karkun) &&
       karkun.status === 'active' &&
       karkun.assignmentStatus === 'Available' &&
       getActiveAssignmentsForKarkun(karkun.id).length === 0 &&
@@ -273,7 +274,7 @@ export function canAssignKarkun(karkunId: string): boolean {
   const karkun = getKarkunById(karkunId)
   return Boolean(
     karkun &&
-      !karkun.isArchived &&
+      isCampaignEligible(karkun) &&
       karkun.status === 'active' &&
       karkun.assignmentStatus === 'Available' &&
       getActiveAssignmentsForKarkun(karkunId).length === 0 &&

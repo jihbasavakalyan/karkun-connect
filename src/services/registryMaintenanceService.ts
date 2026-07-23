@@ -4,10 +4,18 @@
  */
 
 import { MOCK_KARKUN_REGISTRY } from '@/constants/mockKarkunRegistry'
+import { getPersonCategory, isSoftRemoved } from '@/lib/peopleClassification'
 import { logPeopleAudit } from '@/lib/peopleAuditLog'
 import { bumpVersion } from '@/lib/preservation/softDelete'
 import { notifyPeopleRegistryUiOnly } from '@/lib/peopleStore'
 import { archiveKarkun } from '@/services/archiveService'
+import {
+  moveToMuttafiqeen,
+  moveToKarkunRegistry,
+  getMoveToMuttafiqeenBlockers,
+} from '@/services/peopleClassificationService'
+
+export { getMoveToMuttafiqeenBlockers } from '@/services/peopleClassificationService'
 import { getSubmittedMeetingForms } from '@/stores/annexure1Store'
 import {
   getActiveAssignmentsForKarkun,
@@ -43,19 +51,9 @@ function hasCampaignHistory(karkunId: string): boolean {
   return false
 }
 
-/** Blockers for soft-archive (Feature 3). */
+/** Blockers for Move to Muttafiqeen (Feature 3 / KC-0101). */
 export function getKarkunArchiveBlockers(karkunId: string): string[] {
-  const karkun = findKarkun(karkunId)
-  if (!karkun) return ['Karkun not found.']
-  if (karkun.isArchived) return ['Karkun is already archived.']
-
-  const blockers: string[] = []
-  if (getActiveAssignmentsForKarkun(karkunId).length > 0) {
-    blockers.push('This Karkun has an active assignment. Disconnect first.')
-  } else if (hasActiveConnection(karkun)) {
-    blockers.push('This Karkun has an active connection to a Rukn. Disconnect first.')
-  }
-  return blockers
+  return getMoveToMuttafiqeenBlockers(karkunId)
 }
 
 /** Blockers for controlled delete (Feature 4). */
@@ -63,17 +61,17 @@ export function getKarkunDeleteBlockers(karkunId: string): string[] {
   const karkun = findKarkun(karkunId)
   if (!karkun) return ['Karkun not found.']
   if (karkun.isArchived && karkun.archiveKind === 'admin_delete') {
-    return ['This Karkun is already removed from the registry.']
+    return ['This person is already removed from the registry.']
   }
 
   const blockers: string[] = []
   if (getActiveAssignmentsForKarkun(karkunId).length > 0) {
-    blockers.push('This Karkun has an active assignment.')
+    blockers.push('This person has an active assignment.')
   } else if (hasActiveConnection(karkun)) {
-    blockers.push('This Karkun has an active connection.')
+    blockers.push('This person has an active connection.')
   }
   if (hasCampaignHistory(karkunId)) {
-    blockers.push('This Karkun has campaign / visit history and cannot be deleted.')
+    blockers.push('This person has campaign / visit history and cannot be deleted.')
   }
   return blockers
 }
@@ -86,8 +84,8 @@ export function flagKarkunForReview(
 ): RegistryMaintenanceResult {
   const karkun = findKarkun(karkunId)
   if (!karkun) return { success: false, error: 'Karkun not found.' }
-  if (karkun.isArchived) {
-    return { success: false, error: 'Cannot flag an archived Karkun for review.' }
+  if (isSoftRemoved(karkun) || (karkun.isArchived && getPersonCategory(karkun) !== 'Muttafiq')) {
+    return { success: false, error: 'Cannot flag a removed person for review.' }
   }
 
   karkun.needsReview = true
@@ -179,42 +177,47 @@ export function clearKarkunReview(
 
 /**
  * Soft-archive with connection/assignment validation.
- * Reuses archiveKarkun(); caller must await persistKarkunDurable.
+ * KC-0101 — organizational move to Muttafiqeen (replaces Archive for People Management).
+ * Caller must await persistKarkunDurable.
  */
 export function archiveKarkunSafely(
   karkunId: string,
   archivedBy = 'Administrator',
 ): RegistryMaintenanceResult {
-  const blockers = getKarkunArchiveBlockers(karkunId)
-  if (blockers.length > 0) {
+  return moveToMuttafiqeenSafely(karkunId, archivedBy)
+}
+
+/** KC-0101 — Move to Muttafiqeen (preferred API). */
+export function moveToMuttafiqeenSafely(
+  karkunId: string,
+  changedBy = 'Administrator',
+  remarks?: string,
+): RegistryMaintenanceResult {
+  const result = moveToMuttafiqeen(karkunId, changedBy, remarks)
+  if (!result.success) {
     return {
       success: false,
-      error: blockers.join(' '),
-      blockers,
+      error: result.error,
+      blockers: result.blockers,
     }
   }
+  return { success: true }
+}
 
-  const result = archiveKarkun(karkunId, archivedBy)
-  if (!result.ok) {
-    return { success: false, error: result.error }
+/** KC-0101 — Move Muttafiq back to Karkun Registry. */
+export function moveToKarkunSafely(
+  karkunId: string,
+  changedBy = 'Administrator',
+  remarks?: string,
+): RegistryMaintenanceResult {
+  const result = moveToKarkunRegistry(karkunId, changedBy, remarks)
+  if (!result.success) {
+    return {
+      success: false,
+      error: result.error,
+      blockers: result.blockers,
+    }
   }
-
-  const karkun = findKarkun(karkunId)
-  if (karkun) {
-    karkun.archiveKind = karkun.archiveKind ?? 'standard'
-    karkun.needsReview = false
-  }
-
-  logPeopleAudit({
-    personKind: 'karkun',
-    personId: karkunId,
-    personName: karkun?.name ?? karkunId,
-    action: 'archive',
-    field: 'archivedAt',
-    newValue: karkun?.archivedAt,
-    updatedBy: archivedBy,
-  })
-
   return { success: true }
 }
 

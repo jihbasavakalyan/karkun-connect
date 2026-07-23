@@ -31,6 +31,7 @@ import { unwrapRepository } from '@/repositories/errors'
 import { getNextKarkunNum, setNextKarkunNum } from '@/lib/peopleStore'
 import { kc004cTraceRegistry } from '@/lib/debug/kc004cRegistryTrace'
 import { shouldRefuseFullProductionSeed } from '@/lib/migration/repairDuplicateKarkunOrphans'
+import { migrateArchivedPeopleToMuttafiqeen } from '@/services/muttafiqeenMigrationService'
 
 export const PRODUCTION_MIGRATION_VERSION = 3
 
@@ -229,6 +230,9 @@ function adoptExistingProductionRegistry(
     getRepositories().settings.setMigrationVersion(MIGRATION_VERSION)
   }
 
+  // KC-0101 — restore legacy Archive into Muttafiqeen (idempotent).
+  migrateArchivedPeopleToMuttafiqeen({ persist: true })
+
   const summary = buildAdoptSummary()
   migrationCompleted = true
   lastMigrationSummary = summary
@@ -350,6 +354,9 @@ export async function runProductionDataMigration(
   const femaleKarkuns = migrateFemaleKarkunMaster()
 
   initializeComplianceDefaults()
+
+  // KC-0101 — normalize classification after seed.
+  migrateArchivedPeopleToMuttafiqeen({ persist: false })
 
   const stats = getPeopleStatistics()
   const summary: ProductionMigrationSummary = {

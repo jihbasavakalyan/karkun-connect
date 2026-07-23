@@ -28,8 +28,11 @@ type KarkunPeopleTableProps = {
   onToggleSelection: (id: string) => void
   onToggleSelectAll: () => void
   onEdit: (karkun: KarkunRegistryRecord) => void
-  onAssignmentChange: (karkun: KarkunRegistryRecord, ruknId: string) => boolean
+  onAssignmentChange?: (karkun: KarkunRegistryRecord, ruknId: string) => boolean
   assignmentErrors?: Record<string, string>
+  /** KC-0101 — hide connection controls for Muttafiqeen registry. */
+  showAssignmentControls?: boolean
+  emptyLabel?: string
 }
 
 function SortHeader({
@@ -76,6 +79,8 @@ export function KarkunPeopleTable({
   onEdit,
   onAssignmentChange,
   assignmentErrors = {},
+  showAssignmentControls = true,
+  emptyLabel = 'No Karkun match your search or filters.',
 }: KarkunPeopleTableProps) {
   const [pendingRukns, setPendingRukns] = useState<Record<string, string>>({})
 
@@ -101,6 +106,7 @@ export function KarkunPeopleTable({
   }
 
   const handleSaveAssignment = (karkun: KarkunRegistryRecord) => {
+    if (!onAssignmentChange) return
     const saved = onAssignmentChange(karkun, pendingValueFor(karkun))
     if (saved) {
       clearPending(karkun.id)
@@ -110,7 +116,7 @@ export function KarkunPeopleTable({
   if (records.length === 0) {
     return (
       <div className="ds-empty" role="status">
-        <p className="ds-empty-description">No Karkun match your search or filters.</p>
+        <p className="ds-empty-description">{emptyLabel}</p>
       </div>
     )
   }
@@ -149,8 +155,12 @@ export function KarkunPeopleTable({
                   onToggleSort={onToggleSort}
                 />
               </th>
-              <th className="px-4 py-3 font-semibold text-text-heading">Connected Rukn</th>
-              <th className="px-4 py-3 font-semibold text-text-heading">Connection</th>
+              {showAssignmentControls ? (
+                <>
+                  <th className="px-4 py-3 font-semibold text-text-heading">Connected Rukn</th>
+                  <th className="px-4 py-3 font-semibold text-text-heading">Connection</th>
+                </>
+              ) : null}
               <th className="px-4 py-3">
                 <SortHeader
                   label="Status"
@@ -185,6 +195,8 @@ export function KarkunPeopleTable({
                 <td className={`${PEOPLE_TABLE_CELL_CLASS} ${PEOPLE_TABLE_MOBILE_CLASS}`}>
                   {karkun.mobile}
                 </td>
+                {showAssignmentControls ? (
+                  <>
                 <td className={PEOPLE_TABLE_CELL_CLASS}>
                   <div className="flex flex-col gap-1.5">
                     <RuknAssignmentSelect
@@ -215,6 +227,8 @@ export function KarkunPeopleTable({
                   </div>
                 </td>
                 <td className={`${PEOPLE_TABLE_CELL_CLASS} text-secondary`}>{getConnectionStatusLabel(karkun.assignmentStatus)}</td>
+                  </>
+                ) : null}
                 <td className={PEOPLE_TABLE_CELL_CLASS}>
                   <div className="flex flex-col items-start gap-1">
                     <PersonStatusBadge status={karkun.status} />
@@ -223,7 +237,7 @@ export function KarkunPeopleTable({
                     ) : null}
                     {karkun.isArchived ? (
                       <StatusBadge variant="dormant">
-                        {karkun.archiveKind === 'admin_delete' ? 'Removed' : 'Archived'}
+                        {karkun.archiveKind === 'admin_delete' ? 'Removed' : 'Merged'}
                       </StatusBadge>
                     ) : null}
                   </div>
@@ -273,6 +287,8 @@ export function KarkunPeopleTable({
                 </div>
                 <p className={`mt-1 ${PEOPLE_TABLE_MOBILE_CLASS}`}>{karkun.mobile}</p>
                 <dl className="mt-3 space-y-1 text-sm">
+                  {showAssignmentControls ? (
+                    <>
                   <div className="flex flex-col gap-1">
                     <dt className="text-secondary">Connected Rukn</dt>
                     <dd className="flex flex-col gap-2">
@@ -306,6 +322,8 @@ export function KarkunPeopleTable({
                     <dt className="text-secondary">Connection</dt>
                     <dd className="font-medium">{getConnectionStatusLabel(karkun.assignmentStatus)}</dd>
                   </div>
+                    </>
+                  ) : null}
                 </dl>
                 <div className="mt-3 text-sm">
                   <button type="button" className="font-medium text-primary" onClick={() => onEdit(karkun)}>

@@ -11,6 +11,7 @@
 
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { preferNewestActive } from '@/lib/connections/activeConnectionIntegrity'
+import { isCampaignEligible } from '@/lib/peopleClassification'
 import { getActiveAssignmentsForRukn, getAllAssignments } from '@/stores/assignmentStore'
 import type { AssignmentRecord } from '@/types/assignment'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
@@ -18,7 +19,7 @@ import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
 function isCanonicalActiveConnection(record: AssignmentRecord): boolean {
   if (record.status !== 'Active') return false
   const karkun = getKarkunById(record.karkunId)
-  return Boolean(karkun && !karkun.isArchived)
+  return Boolean(karkun && isCampaignEligible(karkun))
 }
 
 function collectUniqueActiveByKarkun(records: readonly AssignmentRecord[]): AssignmentRecord[] {

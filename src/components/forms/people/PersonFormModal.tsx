@@ -21,6 +21,8 @@ type PersonFormModalProps = {
   onSubmit: (values: PersonFormValues) => void
   error?: string
   karkunId?: string
+  /** KC-0101 — display label for titles (default from kind). */
+  personLabel?: 'Karkun' | 'Muttafiq' | 'Rukn'
 }
 
 const selectClassName =
@@ -37,6 +39,7 @@ export function PersonFormModal({
   onSubmit,
   error,
   karkunId,
+  personLabel,
 }: PersonFormModalProps) {
   if (!isOpen) {
     return null
@@ -52,6 +55,7 @@ export function PersonFormModal({
       onSubmit={onSubmit}
       error={error}
       karkunId={karkunId}
+      personLabel={personLabel}
     />
   )
 }
@@ -64,6 +68,7 @@ function PersonFormModalContent({
   onSubmit,
   error,
   karkunId,
+  personLabel,
 }: Omit<PersonFormModalProps, 'isOpen'>) {
   const [name, setName] = useState(initialValues?.name ?? '')
   const [gender, setGender] = useState<PersonGender>(initialValues?.gender ?? 'Male')
@@ -89,16 +94,14 @@ function PersonFormModalContent({
     })
   }
 
-  const title =
-    mode === 'add'
-      ? kind === 'rukn'
-        ? 'Add Rukn'
-        : 'Add Karkun'
-      : kind === 'rukn'
-        ? 'Edit Rukn'
-        : 'Edit Karkun'
+  const resolvedLabel =
+    personLabel ?? (kind === 'rukn' ? 'Rukn' : 'Karkun')
 
-  const showConnectionSection = kind === 'karkun' && mode === 'edit' && Boolean(karkunId)
+  const title =
+    mode === 'add' ? `Add ${resolvedLabel}` : `Edit ${resolvedLabel}`
+
+  const showConnectionSection =
+    kind === 'karkun' && mode === 'edit' && Boolean(karkunId) && personLabel !== 'Muttafiq'
   const showAdditionalSection = kind === 'karkun'
 
   return (

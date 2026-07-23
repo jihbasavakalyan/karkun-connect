@@ -1,5 +1,6 @@
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { getRuknById } from '@/data/ruknMaster'
+import { isCampaignEligible } from '@/lib/peopleClassification'
 import {
   formatMobileValidationError,
   isValidMobileFormat,
@@ -52,8 +53,11 @@ export function validateRuknActive(ruknId: string): ValidationResult {
 
 export function validateKarkunActive(karkunId: string): ValidationResult {
   const karkun = getKarkunById(karkunId)
-  if (!karkun || karkun.isArchived) {
+  if (!karkun) {
     return { valid: false, error: 'Karkun not found.' }
+  }
+  if (!isCampaignEligible(karkun)) {
+    return { valid: false, error: 'Only Karkuns can participate in campaign connections.' }
   }
   if (karkun.status !== 'active') {
     return { valid: false, error: 'Cannot connect an inactive Karkun.' }
@@ -86,7 +90,7 @@ export function validateGenderMatch(ruknId: string, karkunId: string): Validatio
   if (!rukn) {
     return { valid: false, error: 'Rukn not found.' }
   }
-  if (!karkun || karkun.isArchived) {
+  if (!karkun || !isCampaignEligible(karkun)) {
     return { valid: false, error: 'Karkun not found.' }
   }
 
@@ -140,7 +144,7 @@ export function validateNoActiveAssignmentForRukn(ruknId: string): ValidationRes
 
 export function validateKarkunAvailable(karkunId: string): ValidationResult {
   const karkun = getKarkunById(karkunId)
-  if (!karkun || karkun.isArchived) {
+  if (!karkun || !isCampaignEligible(karkun)) {
     return { valid: false, error: 'Karkun not found.' }
   }
 

@@ -45,6 +45,9 @@ const HelpPage = lazyWithChunkReload(() =>
 const KarkunanPage = lazyWithChunkReload(() =>
   import('@/pages/admin/KarkunanPage').then((m) => ({ default: m.KarkunanPage })),
 )
+const MuttafiqeenPage = lazyWithChunkReload(() =>
+  import('@/pages/admin/MuttafiqeenPage').then((m) => ({ default: m.MuttafiqeenPage })),
+)
 const KarkunProfilePage = lazyWithChunkReload(() =>
   import('@/pages/admin/KarkunProfilePage').then((m) => ({ default: m.KarkunProfilePage })),
 )
@@ -135,6 +138,7 @@ export function AppRouter() {
             <Route path="rukn/:ruknId" element={<RuknDetailPage />} />
             <Route path="karkun" element={<KarkunanPage />} />
             <Route path="karkun/:karkunId" element={<KarkunProfilePage />} />
+            <Route path="muttafiqeen" element={<MuttafiqeenPage />} />
             <Route path="assignments" element={<AssignmentManagementPage />} />
             <Route path="annexure-1/:karkunId" element={<ConnectionJourneyPage />} />
             <Route path="execution" element={<ExecutionModulePage />} />

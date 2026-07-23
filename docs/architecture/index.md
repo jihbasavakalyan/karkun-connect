@@ -35,6 +35,8 @@ Karkun Connect is a single-page React application with role-based routing (Admin
 | `src/data/ruknMaster.ts` | 49 Rukn master records |
 | `src/data/production/` | Male/female karkun production seeds |
 | `src/lib/peopleStore.ts` | Rukn/Karkun registry operations |
+| `src/lib/peopleClassification.ts` | KC-0101 — Karkun / Muttafiq classification |
+| `docs/architecture/people-classification.md` | People classification model |
 | `src/lib/assignmentEngine.ts` | Assignment facade for UI |
 | `src/services/assignmentService.ts` | Assign/replace/remove logic |
 | `src/stores/assignmentStore.ts` | In-memory assignment records |
