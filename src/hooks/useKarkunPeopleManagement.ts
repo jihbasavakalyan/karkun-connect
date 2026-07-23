@@ -65,6 +65,8 @@ function matchesKarkunFilters(karkun: KarkunRegistryRecord, filters: PeopleFilte
       karkun.mobile,
       karkun.whatsapp ?? '',
       karkun.notes,
+      karkun.id,
+      karkun.registryNumber ?? '',
     ]
       .join(' ')
       .toLowerCase()
@@ -176,8 +178,9 @@ export function useKarkunPeopleManagement(
 
   const allKarkuns = useMemo(
     () => {
+      // Exclusive pools: Muttafiqeen never enter Karkun totals / lists and vice versa.
       const pool =
-        registryCategory === 'Muttafiq' ? getAllMuttafiqeen() : getAllKarkuns(true)
+        registryCategory === 'Muttafiq' ? getAllMuttafiqeen() : getAllKarkuns(false)
       return pool.filter((k) => k.gender === sectionGender)
     },
     // peopleVersion invalidates after mutable MOCK_KARKUN_REGISTRY hydrate

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import type { PersonGender } from '@/types/karkun-registry.types'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
@@ -13,10 +13,12 @@ import { toOperatorAssignmentError } from '@/lib/assignment/operatorFacingError'
 import {
   bulkSetKarkunStatus,
   createKarkun,
+  getAllKarkuns,
   importKarkunsFromRows,
   persistKarkunDurable,
   updateKarkun,
 } from '@/lib/peopleStore'
+import { usePeopleStore } from '@/hooks/usePeopleStore'
 import {
   exportKarkuns,
   parsePeopleImportFile,
@@ -560,7 +562,9 @@ export function KarkunanPage() {
         </Link>
       </div>
 
-      <nav className="ds-tab-nav border-b border-border pb-px" aria-label="Karkun gender">
+      <KarkunSummaryCards />
+
+      <nav className="ds-tab-nav mt-6 border-b border-border pb-px" aria-label="Karkun gender">
         {(['Male', 'Female'] as const).map((gender) => (
           <button
             key={gender}
@@ -577,14 +581,47 @@ export function KarkunanPage() {
         ))}
       </nav>
 
-      <KarkunGenderSection
-        key={activeGender}
-        gender={activeGender}
-        initialSearch={initialSearch}
-        shouldOpenAddForm={openAddForGender === activeGender}
-        onAddFormOpened={handleAddFormOpened}
-        onRegisterHandlers={registerSectionHandlers}
-      />
+      <div className="mt-6">
+        <KarkunGenderSection
+          key={activeGender}
+          gender={activeGender}
+          initialSearch={initialSearch}
+          shouldOpenAddForm={openAddForGender === activeGender}
+          onAddFormOpened={handleAddFormOpened}
+          onRegisterHandlers={registerSectionHandlers}
+        />
+      </div>
     </PageShell>
+  )
+}
+
+function KarkunSummaryCards() {
+  const peopleVersion = usePeopleStore()
+  const stats = useMemo(() => {
+    void peopleVersion
+    const all = getAllKarkuns()
+    return {
+      total: all.length,
+      male: all.filter((p) => p.gender === 'Male').length,
+      female: all.filter((p) => p.gender === 'Female').length,
+    }
+  }, [peopleVersion])
+
+  return (
+    <div className="grid gap-3 sm:grid-cols-3">
+      {[
+        { label: 'Total Karkuns', value: stats.total },
+        { label: 'Male', value: stats.male },
+        { label: 'Female', value: stats.female },
+      ].map((card) => (
+        <article
+          key={card.label}
+          className="rounded-(--radius-card) border border-border bg-surface p-4 shadow-card sm:p-6"
+        >
+          <p className="text-sm font-medium text-secondary">{card.label}</p>
+          <p className="mt-2 text-2xl font-semibold text-text-heading sm:text-3xl">{card.value}</p>
+        </article>
+      ))}
+    </div>
   )
 }

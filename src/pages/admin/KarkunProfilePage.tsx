@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { ROUTES } from '@/constants/routes'
 import { changeKarkunRuknAssignment } from '@/lib/assignmentEngine'
-import { getPersonCategory } from '@/lib/peopleClassification'
+import { getPersonCategory, getMuttafiqDisplayNumber } from '@/lib/peopleClassification'
 import { persistKarkunDurable, updateKarkun } from '@/lib/peopleStore'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { usePeopleStore } from '@/hooks/usePeopleStore'
@@ -287,6 +287,11 @@ function KarkunProfileForm({ karkun, karkunId }: KarkunProfileFormProps) {
           </h1>
           <div className="mt-1 flex flex-wrap items-center gap-2">
             <StatusBadge variant={isMuttafiq ? 'info' : 'connected'}>{category}</StatusBadge>
+            {isMuttafiq && getMuttafiqDisplayNumber(karkun) ? (
+              <span className="text-xs font-medium text-secondary">
+                {getMuttafiqDisplayNumber(karkun)}
+              </span>
+            ) : null}
             {karkun.needsReview && !karkun.isArchived ? (
               <StatusBadge variant="warning">Needs Review</StatusBadge>
             ) : null}

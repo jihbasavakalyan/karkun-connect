@@ -16,6 +16,7 @@ import {
   isCampaignEligible,
   isMuttafiq,
   isSoftRemoved,
+  allocateNextMuttafiqRegistryNumber,
 } from '@/lib/peopleClassification'
 import { logPeopleAudit } from '@/lib/peopleAuditLog'
 import {
@@ -720,6 +721,7 @@ export function createMuttafiq(
     notes: input.notes?.trim() ?? '',
     isArchived: false,
     category: 'Muttafiq',
+    registryNumber: allocateNextMuttafiqRegistryNumber(),
   }
 
   MOCK_KARKUN_REGISTRY.push(person)

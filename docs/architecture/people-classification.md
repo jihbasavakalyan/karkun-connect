@@ -14,10 +14,20 @@ Additive fields on `KarkunRegistryRecord`:
 | Field | Purpose |
 |-------|---------|
 | `category` | `'Karkun'` \| `'Muttafiq'` (optional for backward compatibility) |
+| `registryNumber` | Muttafiqeen **display** number (`MT-001`…). Never replaces Person / Firestore id (`kr-*`). |
 | `classificationHistory[]` | Append-only moves: previous/new category, admin, timestamp, remarks |
 
 Resolve category with `getPersonCategory()` (`src/lib/peopleClassification.ts`).  
 Campaign eligibility: `isCampaignEligible()` — Karkun only, never soft-removed.
+
+### Exclusive registries
+
+| Registry | Source | Counts |
+|----------|--------|--------|
+| Karkuns | `getAllKarkuns()` | `category === Karkun` only |
+| Muttafiqeen | `getAllMuttafiqeen()` | `category === Muttafiq` only |
+
+A person appears in **exactly one** registry at a time. Person document ids stay `kr-*` for both.
 
 ### Soft-removed (not Muttafiqeen)
 
@@ -56,7 +66,8 @@ Assignment, Connections, Connect, Connected, campaign dashboards, and campaign r
 2. Standard archives (`isArchived` and not soft-removed) → `category: 'Muttafiq'`, clear archive flags, preserve ID.
 3. Soft-removed duplicates/deletes are skipped.
 4. Unclassified active people → `category: 'Karkun'`.
-5. Safe to rerun; persists when changes occur.
+5. Muttafiqeen without `registryNumber` receive the next `MT-*` display number (idempotent; Person id unchanged).
+6. Safe to rerun; persists when changes occur.
 
 Invoked from `runProductionDataMigration` / adopt path after registry hydration.
 

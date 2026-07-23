@@ -6,6 +6,7 @@ import type { PersonStatus } from '@/types/karkun-registry.types'
 import { getConnectionStatusLabel } from '@/lib/connectionLabels'
 import { formatPersonStatus, type PeopleSortField } from '@/types/people.types'
 import { formatPersonNameForDisplay } from '@/utils/formatPersonDisplay'
+import { getMuttafiqDisplayNumber } from '@/lib/peopleClassification'
 import { RuknAssignmentSelect } from '@/components/forms/people/RuknAssignmentSelect'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
@@ -196,6 +197,9 @@ export function KarkunPeopleTable({
                   >
                     {formatPersonNameForDisplay(karkun.name)}
                   </Link>
+                  {getMuttafiqDisplayNumber(karkun) ? (
+                    <p className="mt-0.5 text-xs text-secondary">{getMuttafiqDisplayNumber(karkun)}</p>
+                  ) : null}
                 </td>
                 <td className={`${PEOPLE_TABLE_CELL_CLASS} ${PEOPLE_TABLE_MOBILE_CLASS}`}>
                   {karkun.mobile}
@@ -277,12 +281,19 @@ export function KarkunPeopleTable({
               />
               <div className="min-w-0 flex-1">
                 <div className="flex items-start justify-between gap-2">
-                  <Link
-                    to={adminKarkunProfilePath(karkun.id)}
-                    className={`${PEOPLE_TABLE_NAME_CLASS} hover:text-primary hover:underline`}
-                  >
-                    {formatPersonNameForDisplay(karkun.name)}
-                  </Link>
+                  <div className="min-w-0">
+                    <Link
+                      to={adminKarkunProfilePath(karkun.id)}
+                      className={`${PEOPLE_TABLE_NAME_CLASS} hover:text-primary hover:underline`}
+                    >
+                      {formatPersonNameForDisplay(karkun.name)}
+                    </Link>
+                    {getMuttafiqDisplayNumber(karkun) ? (
+                      <p className="mt-0.5 text-xs text-secondary">
+                        {getMuttafiqDisplayNumber(karkun)}
+                      </p>
+                    ) : null}
+                  </div>
                   <div className="flex flex-col items-end gap-1">
                     <PersonStatusBadge status={karkun.status} />
                     {karkun.needsReview && !karkun.isArchived ? (

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { MOCK_KARKUN_REGISTRY } from '@/constants/mockKarkunRegistry'
+import { getAllKarkuns } from '@/lib/peopleStore'
 import { usePeopleStore } from '@/hooks/usePeopleStore'
 import { KARKUN_REGISTRY_PAGE_SIZE } from '@/types/karkun-registry.types'
 import type { KarkunRegistryFilters, KarkunRegistryRecord } from '@/types/karkun-registry.types'
@@ -19,8 +19,8 @@ function matchesSearch(karkun: KarkunRegistryRecord, query: string): boolean {
   }
 
   const normalized = query.trim().toLowerCase()
-  return [karkun.name, karkun.mobile, karkun.area, karkun.assignedRukn].some((field) =>
-    field.toLowerCase().includes(normalized),
+  return [karkun.name, karkun.mobile, karkun.area, karkun.assignedRukn, karkun.id, karkun.registryNumber ?? ''].some(
+    (field) => field.toLowerCase().includes(normalized),
   )
 }
 
@@ -47,8 +47,8 @@ export function useKarkunRegistry() {
   const [currentPage, setCurrentPage] = useState(1)
 
   const filteredRecords = useMemo(() => {
-    return MOCK_KARKUN_REGISTRY.filter(
-      (karkun) => !karkun.isArchived && matchesSearch(karkun, searchQuery) && matchesFilters(karkun, filters),
+    return getAllKarkuns().filter(
+      (karkun) => matchesSearch(karkun, searchQuery) && matchesFilters(karkun, filters),
     )
     // eslint-disable-next-line react-hooks/exhaustive-deps -- registry is module state
   }, [searchQuery, filters, peopleVersion])

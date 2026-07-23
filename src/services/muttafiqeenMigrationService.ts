@@ -8,17 +8,19 @@
  * - Campaign/assignment/comms already exclude archived via `getAllKarkuns()` / `!isArchived`.
  *
  * Migration rules:
- * - standard / missing archiveKind + isArchived → category Muttafiq, clear isArchived (preserve ID).
+ * - standard / missing archiveKind + isArchived → category Muttafiq, clear isArchived (preserve Person ID).
  * - duplicate_merge / admin_delete → remain soft-removed (not Muttafiqeen).
- * - Already category Muttafiq → no-op (idempotent).
+ * - Already category Muttafiq → ensure MT-* registryNumber (display only; never changes Person ID).
  * - Active Karkuns without category → set category Karkun (normalize).
  */
 
 import { MOCK_KARKUN_REGISTRY } from '@/constants/mockKarkunRegistry'
 import {
   buildClassificationHistoryEntry,
+  ensureMuttafiqRegistryNumber,
   getPersonCategory,
   isSoftRemoved,
+  parseMuttafiqRegistryNum,
 } from '@/lib/peopleClassification'
 import { bumpVersion } from '@/lib/preservation/softDelete'
 import { getNextKarkunNum } from '@/lib/peopleStore'
@@ -30,6 +32,7 @@ export type MuttafiqeenMigrationSummary = {
   scanned: number
   restoredToMuttafiqeen: number
   normalizedKarkun: number
+  assignedRegistryNumbers: number
   skippedSoftRemoved: number
   skippedAlreadyClassified: number
   persisted: boolean
@@ -44,9 +47,7 @@ function nowIso(): string {
 function shouldRestoreToMuttafiq(person: KarkunRegistryRecord): boolean {
   if (isSoftRemoved(person)) return false
   if (person.category === 'Muttafiq' && !person.isArchived) return false
-  // Legacy standard archive (or archived without special kind)
   if (person.isArchived && !isSoftRemoved(person)) return true
-  // Explicit Muttafiq still carrying archive flag
   if (person.category === 'Muttafiq' && person.isArchived) return true
   return false
 }
@@ -62,6 +63,7 @@ export function migrateArchivedPeopleToMuttafiqeen(
   const at = nowIso()
   let restoredToMuttafiqeen = 0
   let normalizedKarkun = 0
+  let assignedRegistryNumbers = 0
   let skippedSoftRemoved = 0
   let skippedAlreadyClassified = 0
 
@@ -92,10 +94,29 @@ export function migrateArchivedPeopleToMuttafiqeen(
           at,
         }),
       ]
+      if (parseMuttafiqRegistryNum(person.registryNumber) == null) {
+        ensureMuttafiqRegistryNumber(person)
+        assignedRegistryNumbers += 1
+      } else {
+        ensureMuttafiqRegistryNumber(person)
+      }
       person.updatedAt = at
       person.updatedBy = changedBy
       person.version = bumpVersion(person.version)
       restoredToMuttafiqeen += 1
+      continue
+    }
+
+    if (getPersonCategory(person) === 'Muttafiq') {
+      const before = person.registryNumber
+      ensureMuttafiqRegistryNumber(person)
+      if (before !== person.registryNumber) {
+        assignedRegistryNumbers += 1
+        person.updatedAt = at
+        person.updatedBy = changedBy
+        person.version = bumpVersion(person.version)
+      }
+      skippedAlreadyClassified += 1
       continue
     }
 
@@ -108,24 +129,28 @@ export function migrateArchivedPeopleToMuttafiqeen(
     skippedAlreadyClassified += 1
   }
 
+  const mutated =
+    restoredToMuttafiqeen > 0 || normalizedKarkun > 0 || assignedRegistryNumbers > 0
+
   const summary: MuttafiqeenMigrationSummary = {
     scanned: MOCK_KARKUN_REGISTRY.length,
     restoredToMuttafiqeen,
     normalizedKarkun,
+    assignedRegistryNumbers,
     skippedSoftRemoved,
     skippedAlreadyClassified,
     persisted: false,
   }
 
-  if (options.persist !== false && (restoredToMuttafiqeen > 0 || normalizedKarkun > 0)) {
+  if (options.persist !== false && mutated) {
     persistPeopleRegistry(getNextKarkunNum())
     summary.persisted = true
     notifyPeopleRegistryUiOnly()
-  } else if (restoredToMuttafiqeen > 0 || normalizedKarkun > 0) {
+  } else if (mutated) {
     notifyPeopleRegistryUiOnly()
   }
 
-  if (restoredToMuttafiqeen > 0 || normalizedKarkun > 0) {
+  if (mutated) {
     console.info('[KC-0101] Muttafiqeen migration', summary)
   }
 

@@ -53,6 +53,11 @@ export type KarkunRegistryRecord = {
    * Optional for backward compatibility; resolve via getPersonCategory().
    */
   category?: PersonCategory
+  /**
+   * KC-0101 — Muttafiqeen registry display number (e.g. MT-001).
+   * Does not replace Person / Firestore document id (`kr-*`).
+   */
+  registryNumber?: string
   /** KC-0101 — append-only classification change history. */
   classificationHistory?: ClassificationHistoryEntry[]
   /** KC-0058 — recovery metadata (optional; additive). */

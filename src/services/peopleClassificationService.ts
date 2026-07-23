@@ -6,6 +6,7 @@
 import { MOCK_KARKUN_REGISTRY } from '@/constants/mockKarkunRegistry'
 import {
   buildClassificationHistoryEntry,
+  ensureMuttafiqRegistryNumber,
   getPersonCategory,
   isSoftRemoved,
 } from '@/lib/peopleClassification'
@@ -125,6 +126,7 @@ export function moveToMuttafiqeen(
   if (!person) return { success: false, error: 'Person not found.' }
 
   applyCategoryChange(person, 'Muttafiq', changedBy, remarks)
+  ensureMuttafiqRegistryNumber(person)
   person.needsReview = false
 
   // Clear pool assignment metadata when leaving campaign eligibility.
