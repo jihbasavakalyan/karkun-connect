@@ -1757,11 +1757,11 @@ html[data-theme='dark'] {
   }
 
   .exdash-hero-top {
-    @apply flex flex-col gap-5 lg:flex-row lg:items-stretch lg:justify-between;
+    @apply flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between lg:gap-6;
   }
 
   .exdash-hero-identity {
-    @apply min-w-0 flex-1;
+    @apply flex min-w-0 flex-1 flex-col justify-center;
   }
 
   .exdash-hero-eyebrow {
@@ -1783,11 +1783,19 @@ html[data-theme='dark'] {
   }
 
   .exdash-hero-progress {
-    @apply flex min-w-[14rem] flex-col items-center gap-4 rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur-md sm:min-w-[22rem] sm:flex-row;
+    @apply flex min-w-[14rem] flex-col items-center gap-4 rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur-md sm:min-w-[22rem] sm:flex-row sm:items-center sm:gap-5 sm:p-5;
   }
 
   .exdash-hero-progress-achievement {
-    @apply w-full max-w-3xl items-stretch sm:items-start;
+    @apply w-full max-w-3xl shrink-0 items-center;
+  }
+
+  .exdash-hero-achievement-ring {
+    @apply flex shrink-0 items-center justify-center self-center;
+  }
+
+  .exdash-hero-progress-copy {
+    @apply flex min-w-0 flex-1 flex-col gap-2.5;
   }
 
   .exdash-hero-progress-title {
@@ -1795,19 +1803,23 @@ html[data-theme='dark'] {
   }
 
   .exdash-hero-metrics {
-    @apply mt-2 grid grid-cols-3 gap-3 text-center sm:text-left;
+    @apply grid grid-cols-3 gap-3 text-center sm:text-left;
   }
 
   .exdash-hero-metrics-achievement {
-    @apply grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3;
+    @apply mt-0 grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-3;
+  }
+
+  .exdash-hero-metric-cell {
+    @apply min-w-0;
   }
 
   .exdash-hero-metrics-achievement dt {
-    @apply normal-case tracking-normal text-[11px] leading-snug text-emerald-100/80;
+    @apply text-xs font-medium normal-case leading-snug tracking-normal text-emerald-50/95;
   }
 
   .exdash-hero-metrics-achievement dd {
-    @apply text-sm font-semibold tabular-nums text-white sm:text-base;
+    @apply mt-0.5 text-base font-semibold tabular-nums leading-tight text-white sm:text-[1.05rem];
   }
 
   .exdash-hero-metrics dt {
@@ -1818,8 +1830,16 @@ html[data-theme='dark'] {
     @apply text-base font-semibold text-white;
   }
 
+  .exdash-hero-achievement-footer {
+    @apply mt-0.5 flex flex-col gap-1.5;
+  }
+
+  .exdash-hero-progress-achievement .exdash-hero-caption {
+    @apply mt-0 text-xs text-emerald-50/85 sm:text-sm;
+  }
+
   .exdash-progress-track {
-    @apply mt-3 h-2 w-full overflow-hidden rounded-full bg-white/15;
+    @apply mt-0 h-2 w-full overflow-hidden rounded-full bg-white/15;
   }
 
   .exdash-progress-fill {

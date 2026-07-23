@@ -105,49 +105,55 @@ export function AdminMissionControlHero({
         <div className="exdash-hero-progress exdash-hero-progress-achievement">
           {metricsReady && achievement ? (
             <>
-              <McProgressRing
-                value={ringValue}
-                size={92}
-                stroke={9}
-                tone="green"
-                label={`${overallPct}%`}
-                sublabel="Achievement"
-              />
+              <div className="exdash-hero-achievement-ring">
+                <McProgressRing
+                  value={ringValue}
+                  size={92}
+                  stroke={9}
+                  tone="green"
+                  label={`${overallPct}%`}
+                  sublabel="Achievement"
+                />
+              </div>
               <div className="exdash-hero-progress-copy">
                 <p className="exdash-hero-progress-title">Campaign Achievement Progress</p>
                 <dl className="exdash-hero-metrics exdash-hero-metrics-achievement">
                   {achievement.metrics.map((metric) => (
-                    <div key={metric.id}>
+                    <div key={metric.id} className="exdash-hero-metric-cell">
                       <dt>{metric.label}</dt>
                       <dd>{formatAchievementValue(metric.current, metric.total, metric.pct)}</dd>
                     </div>
                   ))}
                 </dl>
-                <div
-                  className="exdash-progress-track"
-                  role="progressbar"
-                  aria-valuenow={ringValue}
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                  aria-label={`Overall campaign achievement ${overallPct}%`}
-                >
+                <div className="exdash-hero-achievement-footer">
                   <div
-                    className="exdash-progress-fill"
-                    style={{ width: `${Math.max(0, Math.min(100, overallPct))}%` }}
-                  />
+                    className="exdash-progress-track"
+                    role="progressbar"
+                    aria-valuenow={ringValue}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-label={`Overall campaign achievement ${overallPct}%`}
+                  >
+                    <div
+                      className="exdash-progress-fill"
+                      style={{ width: `${Math.max(0, Math.min(100, overallPct))}%` }}
+                    />
+                  </div>
+                  <p className="exdash-hero-caption">
+                    Overall campaign progress · {overallPct}%
+                    {model.daysRemaining != null ? ` · ${model.daysRemaining} days left` : ''}
+                  </p>
                 </div>
-                <p className="exdash-hero-caption">
-                  Overall campaign progress · {overallPct}%
-                  {model.daysRemaining != null ? ` · ${model.daysRemaining} days left` : ''}
-                </p>
               </div>
             </>
           ) : (
             <div className="exdash-hero-progress-copy" aria-busy="true" aria-live="polite">
               <p className="exdash-hero-progress-title">Campaign Achievement Progress</p>
-              <p className="exdash-hero-caption mt-2">Loading…</p>
-              <div className="exdash-progress-track mt-3" aria-hidden="true">
-                <div className="exdash-progress-fill" style={{ width: '28%', opacity: 0.45 }} />
+              <p className="exdash-hero-caption">Loading…</p>
+              <div className="exdash-hero-achievement-footer">
+                <div className="exdash-progress-track" aria-hidden="true">
+                  <div className="exdash-progress-fill" style={{ width: '28%', opacity: 0.45 }} />
+                </div>
               </div>
             </div>
           )}
