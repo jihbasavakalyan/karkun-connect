@@ -1,4 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom'
+import { useEffect } from 'react'
 import { ROUTES } from '@/constants/routes'
 import { Logo } from '@/components/common/Logo'
 import { PortalAuthActions } from '@/components/layout/PortalAuthActions'
@@ -14,6 +15,16 @@ import { DigitalRafeeqLauncher } from '@/features/digitalRafeeq/launcher'
 import { ExecutionSaveToast } from '@/components/execution/ExecutionSaveToast'
 import { useKeyboardInset } from '@/hooks/useKeyboardInset'
 import { RuknCommandCenterProvider } from '@/providers/RuknCommandCenterProvider'
+import {
+  useRepositoryHydration,
+  useRepositoryHydrationStatus,
+} from '@/hooks/useRepositoryHydration'
+import { useAuth } from '@/hooks/useAuth'
+import { useRequiredRuknId } from '@/hooks/useRequiredRuknId'
+import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
+import { PrimaryButton } from '@/components/ui/PrimaryButton'
+import { HomePageSkeleton } from '@/components/ui'
+import { traceKc0100ConnectionConsistency } from '@/lib/debug/kc0100ConnectionConsistencyTrace'
 
 /** KC-0093 — Communication is primary workspace; Record remains route-only (workflow, not destination). */
 const navItems: { label: string; icon: IconName; to: string; end: boolean }[] = [
@@ -25,10 +36,75 @@ const navItems: { label: string; icon: IconName; to: string; end: boolean }[] = 
 ]
 
 export function RuknLayout() {
+  const { user } = useAuth()
+  const ruknId = useRequiredRuknId()
+  const isHydrated = useRepositoryHydration()
+  const hydration = useRepositoryHydrationStatus()
+  const { assignmentVersion } = useAssignmentEngine()
   const campaignName = getActiveCampaignName()
   const duration = formatActiveCampaignDuration()
   const timeline = getCampaignTimeline()
   useKeyboardInset()
+
+  // KC-0100 — trace Auth → counts whenever hydrate or assignments change.
+  useEffect(() => {
+    if (!isHydrated || !ruknId) return
+    traceKc0100ConnectionConsistency({
+      stage: 'rukn-layout.render',
+      authUser: user,
+      resolvedRuknId: ruknId,
+    })
+  }, [isHydrated, ruknId, user, assignmentVersion])
+
+  if (hydration.failed) {
+    return (
+      <div className="native-shell flex min-h-svh flex-col bg-surface-muted">
+        <header className="border-b border-border bg-surface pt-[env(safe-area-inset-top)]">
+          <div className="enterprise-gradient-hero px-3 py-2 text-white lg:px-4">
+            <div className="mx-auto flex max-w-5xl items-center justify-between gap-3">
+              <Logo size="sm" variant="light" />
+              <PortalAuthActions portalLabel="Rukn Portal" tone="on-dark" />
+            </div>
+          </div>
+        </header>
+        <main className="mx-auto w-full max-w-lg flex-1 px-4 py-8">
+          <section className="rounded-xl border border-border bg-surface p-6 shadow-card" role="alert">
+            <h1 className="text-lg font-semibold text-text-heading">Unable to load your connections</h1>
+            <p className="mt-2 text-sm text-secondary">
+              Your Rukn workspace cannot load connection data until authorization and Firestore reads
+              succeed. This prevents showing a false &quot;0 connected&quot; state.
+            </p>
+            {hydration.error ? (
+              <p className="mt-2 text-xs text-secondary break-words">{hydration.error}</p>
+            ) : null}
+            <div className="mt-4">
+              <PrimaryButton type="button" onClick={hydration.retry}>
+                Retry
+              </PrimaryButton>
+            </div>
+          </section>
+        </main>
+      </div>
+    )
+  }
+
+  if (!isHydrated) {
+    return (
+      <div className="native-shell flex min-h-svh flex-col bg-surface-muted">
+        <header className="border-b border-border bg-surface pt-[env(safe-area-inset-top)]">
+          <div className="enterprise-gradient-hero px-3 py-2 text-white lg:px-4">
+            <div className="mx-auto flex max-w-5xl items-center justify-between gap-3">
+              <Logo size="sm" variant="light" />
+              <PortalAuthActions portalLabel="Rukn Portal" tone="on-dark" />
+            </div>
+          </div>
+        </header>
+        <main className="mx-auto w-full max-w-5xl flex-1 px-3 py-3">
+          <HomePageSkeleton />
+        </main>
+      </div>
+    )
+  }
 
   return (
     <RuknCommandCenterProvider>

@@ -33,6 +33,8 @@ let backgroundHydrateScheduled = false
 let criticalHydrateSucceeded = false
 /** KC-0058.8 — at most one automatic startup-critical retry per page load. */
 let criticalHydrateRetryUsed = false
+/** KC-0100 — at most one empty-cache Rukn re-scope per page load. */
+let ruknRescopeAttempted = false
 
 const CRITICAL_HYDRATE_RETRY_DELAY_MS = 400
 
@@ -443,10 +445,14 @@ export async function refreshFirestoreAfterAuth(): Promise<void> {
         }
       }
     }
+    // KC-0100 — startup may have hydrated before JWT ruknId was available (empty scope).
+    // Re-scope when authenticated Rukn still has no own connections in cache.
+    await maybeRescopeHydrateAfterAuth()
     return
   }
 
   if (initialized || isRepositoryHydrationReady()) {
+    await maybeRescopeHydrateAfterAuth()
     return
   }
 
@@ -472,6 +478,90 @@ export async function refreshFirestoreAfterAuth(): Promise<void> {
     }
   } catch (error) {
     console.warn('[kc-firestore] post-auth hydrate failed', error)
+    if (!isRepositoryHydrationFailed()) {
+      markRepositoryHydrationFailed(error)
+    }
+  }
+}
+
+/**
+ * KC-0100 — If a Rukn JWT is present but the connection cache is empty, failed, or
+ * still holds another principal's rows, force a scoped rehydrate.
+ */
+async function maybeRescopeHydrateAfterAuth(): Promise<void> {
+  const user = getFirebaseAuth().currentUser
+  if (!user) return
+
+  const token = await user.getIdTokenResult(false)
+  const role = typeof token.claims.role === 'string' ? token.claims.role : null
+  const ruknId = typeof token.claims.ruknId === 'string' ? token.claims.ruknId : null
+  if (role !== 'rukn' || !ruknId) {
+    return
+  }
+
+  const connectionState = getRepositories().connection.loadState()
+  const assignments = connectionState.ok ? connectionState.data.assignments : []
+  const ownActive = assignments.filter(
+    (row) => row.ruknId === ruknId && row.status === 'Active',
+  ).length
+  const hasForeign = assignments.some((row) => row.ruknId !== ruknId)
+  const hydrationFailed = isRepositoryHydrationFailed()
+  const emptyCache = assignments.length === 0
+
+  const needsRescope =
+    hydrationFailed ||
+    hasForeign ||
+    (emptyCache && !ruknRescopeAttempted)
+
+  if (!needsRescope) {
+    void import('@/lib/debug/kc0100ConnectionConsistencyTrace').then(
+      ({ traceKc0100ConnectionConsistency }) => {
+        traceKc0100ConnectionConsistency({
+          stage: 'post-auth.rescope.skip',
+          claimRole: role,
+          claimRuknId: ruknId,
+          resolvedRuknId: ruknId,
+        })
+      },
+    )
+    return
+  }
+
+  ruknRescopeAttempted = true
+  console.info('[KC-0100] post-auth scoped rehydrate', {
+    ruknId,
+    cachedAssignments: assignments.length,
+    ownActive,
+    hasForeign,
+    hydrationFailed,
+    emptyCache,
+  })
+
+  try {
+    await ensureAuthTokenReadyForFirestore(true)
+    stopFirestoreSnapshotListeners()
+    const ok = await runHydrateAndRebuildCycle('post-auth-rukn-rescope')
+    if (ok) {
+      criticalHydrateSucceeded = true
+      attachSnapshotListeners()
+      markBackgroundHydrationReady()
+      markRepositoryHydrationReady()
+      initialized = true
+      void import('@/lib/debug/kc0100ConnectionConsistencyTrace').then(
+        ({ traceKc0100ConnectionConsistency }) => {
+          traceKc0100ConnectionConsistency({
+            stage: 'post-auth.rescope.complete',
+            claimRole: role,
+            claimRuknId: ruknId,
+            resolvedRuknId: ruknId,
+          })
+        },
+      )
+    } else if (!isRepositoryHydrationFailed()) {
+      markRepositoryHydrationFailed('Post-auth Rukn re-scope hydrate failed.')
+    }
+  } catch (error) {
+    console.warn('[KC-0100] post-auth Rukn re-scope hydrate failed', error)
     if (!isRepositoryHydrationFailed()) {
       markRepositoryHydrationFailed(error)
     }
@@ -533,6 +623,7 @@ export function resetRepositoryInitializationForTests(): void {
   backgroundHydrateScheduled = false
   criticalHydrateSucceeded = false
   criticalHydrateRetryUsed = false
+  ruknRescopeAttempted = false
   stopFirestoreSnapshotListeners()
   resetRepositoryHydrationReadyForTests()
   resetBackgroundHydrationReadyForTests()

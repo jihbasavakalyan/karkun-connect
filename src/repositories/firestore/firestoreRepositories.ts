@@ -271,10 +271,24 @@ async function resolveClientAuthScope(): Promise<ClientAuthScope> {
     const token = await user.getIdTokenResult()
     const role = typeof token.claims.role === 'string' ? token.claims.role : null
     const ruknId = typeof token.claims.ruknId === 'string' ? token.claims.ruknId : null
+    // KC-0100 — incomplete Rukn JWT must not fall through to admin-wide collection reads.
+    if (role === 'rukn' && !ruknId) {
+      console.error('[KC-0100] JWT role=rukn but ruknId claim missing — scoped reads will be empty', {
+        uid: user.uid,
+      })
+    }
     return { role, ruknId }
   } catch {
     return { role: null, ruknId: null }
   }
+}
+
+/** KC-0100 — Rukn without ruknId must not attempt unfiltered collection gets. */
+function isScopedRuknClient(scope: ClientAuthScope): scope is ClientAuthScope & {
+  role: 'rukn'
+  ruknId: string
+} {
+  return scope.role === 'rukn' && Boolean(scope.ruknId)
 }
 
 type KarkunOwnershipRow = { id: string; assignedRuknId: string }
@@ -307,7 +321,11 @@ async function readKarkunsForClient(
   db: ReturnType<typeof getFirestoreDb>,
 ): Promise<KarkunRegistryRecord[]> {
   const scope = await resolveClientAuthScope()
-  if (scope.role === 'rukn' && scope.ruknId) {
+  if (scope.role === 'rukn' && !scope.ruknId) {
+    console.error('[KC-0100] readKarkunsForClient blocked — missing ruknId claim')
+    return []
+  }
+  if (isScopedRuknClient(scope)) {
     const [mineSnap, availableSnap] = await Promise.all([
       getDocs(
         query(
@@ -323,6 +341,12 @@ async function readKarkunsForClient(
     for (const snapshot of [...mineSnap.docs, ...availableSnap.docs]) {
       byId.set(snapshot.id, stripMeta<KarkunRegistryRecord>(snapshot.data()))
     }
+    console.info('[KC-0100] readKarkunsForClient', {
+      ruknId: scope.ruknId,
+      mine: mineSnap.size,
+      available: availableSnap.size,
+      merged: byId.size,
+    })
     return [...byId.values()]
   }
   return readCollection<KarkunRegistryRecord>(db, FIRESTORE_COLLECTIONS.karkuns)
@@ -332,21 +356,36 @@ async function readConnectionsForClient(
   db: ReturnType<typeof getFirestoreDb>,
 ): Promise<AssignmentRecord[]> {
   const scope = await resolveClientAuthScope()
-  if (scope.role === 'rukn' && scope.ruknId) {
+  if (scope.role === 'rukn' && !scope.ruknId) {
+    console.error('[KC-0100] readConnectionsForClient blocked — missing ruknId claim')
+    return []
+  }
+  if (isScopedRuknClient(scope)) {
     const snap = await getDocs(
       query(
         collection(db, FIRESTORE_COLLECTIONS.connections),
         where('ruknId', '==', scope.ruknId),
       ),
     )
-    return snap.docs.map((item) => stripMeta<AssignmentRecord>(item.data()))
+    const rows = snap.docs.map((item) => stripMeta<AssignmentRecord>(item.data()))
+    const active = rows.filter((row) => row.status === 'Active').length
+    console.info('[KC-0100] readConnectionsForClient', {
+      ruknId: scope.ruknId,
+      total: rows.length,
+      active,
+    })
+    return rows
   }
   return readCollection<AssignmentRecord>(db, FIRESTORE_COLLECTIONS.connections)
 }
 
 async function readRuknsForClient(db: ReturnType<typeof getFirestoreDb>): Promise<Rukn[]> {
   const scope = await resolveClientAuthScope()
-  if (scope.role === 'rukn' && scope.ruknId) {
+  if (scope.role === 'rukn' && !scope.ruknId) {
+    console.error('[KC-0100] readRuknsForClient blocked — missing ruknId claim')
+    return []
+  }
+  if (isScopedRuknClient(scope)) {
     // Critical-path hard read — missing doc is empty; permission-denied must throw.
     const own = await readDoc<Rukn>(db, FIRESTORE_COLLECTIONS.rukns, scope.ruknId)
     return own ? [own] : []
@@ -358,7 +397,10 @@ async function readActivityLogsForClient(
   db: ReturnType<typeof getFirestoreDb>,
 ): Promise<ActivityLogEntry[]> {
   const scope = await resolveClientAuthScope()
-  if (scope.role === 'rukn' && scope.ruknId) {
+  if (scope.role === 'rukn' && !scope.ruknId) {
+    return []
+  }
+  if (isScopedRuknClient(scope)) {
     try {
       const snap = await getDocs(
         query(
@@ -390,7 +432,10 @@ async function readFollowUpsForClient(
   db: ReturnType<typeof getFirestoreDb>,
 ): Promise<FollowUpRecord[]> {
   const scope = await resolveClientAuthScope()
-  if (scope.role === 'rukn' && scope.ruknId) {
+  if (scope.role === 'rukn' && !scope.ruknId) {
+    return []
+  }
+  if (isScopedRuknClient(scope)) {
     try {
       const snap = await getDocs(
         query(

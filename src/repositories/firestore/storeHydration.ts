@@ -168,6 +168,16 @@ export function hydrateStoresFromRepositories(): void {
       caller: 'hydrateStoresFromRepositories',
       sourceOfTruth: 'Derived Calculation',
     })
+    // KC-0100 — post-rebuild consistency snapshot (Auth scope resolved by callers).
+    void import('@/lib/debug/kc0100ConnectionConsistencyTrace').then(
+      ({ traceKc0100ConnectionConsistency }) => {
+        const firstRuknId = getAllAssignments().find((row) => row.status === 'Active')?.ruknId ?? null
+        traceKc0100ConnectionConsistency({
+          stage: 'hydrateStoresFromRepositories.complete',
+          resolvedRuknId: firstRuknId,
+        })
+      },
+    )
     console.info('[KC-0084] Reload Complete')
   } finally {
     hydratingStores = false

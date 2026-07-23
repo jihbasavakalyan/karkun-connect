@@ -45,6 +45,9 @@ function ensureFirebaseReady(): void {
   }
 }
 
+export const MISSING_RUKN_JWT_CLAIMS_ERROR =
+  'Your Rukn access is not activated yet. Please contact your administrator to activate your account, then sign in again.'
+
 function mapFirebaseUser(user: User): Promise<AuthUser | null> {
   return user.getIdTokenResult().then(async (tokenResult) => {
     let authUser = resolveAuthUser({
@@ -59,15 +62,18 @@ function mapFirebaseUser(user: User): Promise<AuthUser | null> {
     // while the JWT still lacks role claims. Firestore requires token.role for assign + hydrate.
     const appRole = authUser?.role
     const claimRole = tokenResult.claims.role
+    const claimRuknId =
+      typeof tokenResult.claims.ruknId === 'string' ? tokenResult.claims.ruknId : null
     const claimsMatchAppRole =
       (appRole === 'administrator' && claimRole === 'administrator') ||
-      (appRole === 'rukn' && claimRole === 'rukn')
+      (appRole === 'rukn' && claimRole === 'rukn' && Boolean(claimRuknId))
 
     if (authUser && !claimsMatchAppRole) {
       console.warn('[KC-0061] ID token role claim mismatch; force-refreshing', {
         uid: user.uid,
         appRole,
         claimRole: claimRole ?? null,
+        claimRuknId,
       })
       const refreshed = await user.getIdTokenResult(true)
       authUser = resolveAuthUser({
@@ -82,6 +88,26 @@ function mapFirebaseUser(user: User): Promise<AuthUser | null> {
         claimRuknId: refreshed.claims.ruknId ?? null,
         resolvedRole: authUser?.role ?? null,
       })
+
+      // KC-0100 — phone→master can resolve a Rukn AuthUser while JWT still lacks ruknId.
+      // That path hydrates empty scoped data and shows Connected=0. Fail closed instead.
+      if (authUser?.role === 'rukn') {
+        const refreshedRuknId =
+          typeof refreshed.claims.ruknId === 'string' ? refreshed.claims.ruknId : null
+        if (refreshed.claims.role !== 'rukn' || !refreshedRuknId) {
+          console.error('[KC-0100] Rukn session rejected — JWT missing role/ruknId claims', {
+            uid: user.uid,
+            appRuknId: authUser.ruknId,
+            claimRole: refreshed.claims.role ?? null,
+            claimRuknId: refreshedRuknId,
+          })
+          return null
+        }
+        authUser = { ...authUser, ruknId: refreshedRuknId }
+      }
+    } else if (authUser?.role === 'rukn' && claimRuknId) {
+      // Single source of truth: JWT ruknId (must match Firestore connection.ruknId).
+      authUser = { ...authUser, ruknId: claimRuknId }
     }
 
     return authUser
@@ -89,12 +115,22 @@ function mapFirebaseUser(user: User): Promise<AuthUser | null> {
 }
 
 async function finalizeLogin(user: User): Promise<LoginResult> {
+  // Capture claims before any sign-out so we can distinguish missing Rukn claims.
+  const tokenBefore = await user.getIdTokenResult(false).catch(() => null)
   const authUser = await mapFirebaseUser(user)
   if (!authUser) {
+    const phone = user.phoneNumber
+    const missingRuknClaims =
+      Boolean(phone) &&
+      (!tokenBefore ||
+        tokenBefore.claims.role !== 'rukn' ||
+        typeof tokenBefore.claims.ruknId !== 'string')
     await signOut(getFirebaseAuth())
     return {
       success: false,
-      error: 'Your account is not authorized for Karkun Connect. Contact your administrator.',
+      error: missingRuknClaims
+        ? MISSING_RUKN_JWT_CLAIMS_ERROR
+        : 'Your account is not authorized for Karkun Connect. Contact your administrator.',
     }
   }
 
