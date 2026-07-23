@@ -77,10 +77,10 @@ export function RuknCommunicationPanel() {
             Broadcast to Arkaan
           </Link>
           <Link
-            to={adminCommunicationPath('templates')}
+            to={adminCommunicationPath('template-library')}
             className="inline-flex min-h-9 items-center rounded-lg border border-border bg-surface px-3 py-1.5 text-sm font-medium text-text-heading"
           >
-            Rukn Official Communications
+            Official Communications
           </Link>
         </div>
       </section>
