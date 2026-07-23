@@ -1,8 +1,14 @@
 /**
  * Natural Urdu companion copy for Digital Rafeeq (KC-009.1 / KC-012).
  * Brand name stays English: "Digital Rafeeq". Conversation is always Urdu.
+ * KC-0092C — during campaign mode, prefer Execution Matrix focus over stale commitment guidance.
  */
 
+import {
+  buildTodaysFocusItems,
+  isRuknPostCampaignMode,
+  type TodaysFocusItem,
+} from '@/lib/campaignExecutionMatrix'
 import { getGuidanceForRuknKarkuns } from '@/lib/guidance/guidanceEngine'
 import { sortGuidanceByUrgency } from '@/lib/homePresentation'
 import { getActivePlanForKarkun } from '@/stores/executionPlanStore'
@@ -53,7 +59,34 @@ function respectName(name: string): string {
   return `${trimmed} صاحب`
 }
 
+/** KC-0092C — Urdu line from the same pending matrix row Today's Focus uses. */
+function buildMatrixFocusGuidanceUrdu(focus: TodaysFocusItem): string {
+  const name = respectName(focus.karkunName)
+  switch (focus.pendingLabel) {
+    case 'Visit Pending':
+      return `${name} آپ کی ملاقات کے منتظر ہیں۔ آج ہی رابطہ مفید ہوگا۔`
+    case 'Registration Pending':
+      return `${name} کی JIH App رجسٹریشن میں مدد آج کا نرم اور مفید قدم ہو سکتا ہے۔`
+    case 'Weekly Ijtema Pending':
+      return `اگر مناسب سمجھیں تو ${name} کو ہفتہ وار اجتماع کی دعوت دینا مفید ہو سکتا ہے۔`
+    case 'Baitul Maal Pending':
+      return `${name} سے بیت المال کی گفتگو مکمل کرنا آج کا موزوں قدم ہے۔`
+    default:
+      return `اب ${name} سے ایک مختصر ملاقات مفید ہوگی۔`
+  }
+}
+
 export function buildContextualRafeeqGuidance(ruknId: string): string {
+  // KC-0092C — campaign Execution Matrix is the source of truth for Home recommendations.
+  // Reuses buildTodaysFocusItems (same rows as the Matrix); no extra Firestore reads.
+  if (!isRuknPostCampaignMode()) {
+    const focus = buildTodaysFocusItems(ruknId, 1)[0]
+    if (focus) {
+      return buildMatrixFocusGuidanceUrdu(focus)
+    }
+    return 'الحمد للہ — اس وقت مہم کے تمام اہم کام مکمل نظر آتے ہیں۔'
+  }
+
   const list = sortGuidanceByUrgency(getGuidanceForRuknKarkuns(ruknId))
   const top = list[0]
   if (!top) {
