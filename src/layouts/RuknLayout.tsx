@@ -15,13 +15,13 @@ import { ExecutionSaveToast } from '@/components/execution/ExecutionSaveToast'
 import { useKeyboardInset } from '@/hooks/useKeyboardInset'
 import { RuknCommandCenterProvider } from '@/providers/RuknCommandCenterProvider'
 
-/** KC-0091.2 — Comms removed from primary nav (duplicate of Connected/Home). Routes kept for later. */
+/** KC-0093 — Communication is primary workspace; Record remains route-only (workflow, not destination). */
 const navItems: { label: string; icon: IconName; to: string; end: boolean }[] = [
   { label: 'Home', icon: 'home', to: ROUTES.RUKN, end: true },
   { label: 'Connect', icon: 'search', to: ROUTES.RUKN_AVAILABLE_KARKUN, end: false },
   { label: 'Connected', icon: 'users', to: ROUTES.RUKN_MY_KARKUN, end: false },
+  { label: 'Communication', icon: 'message', to: ROUTES.RUKN_COMMUNICATION, end: false },
   { label: 'Ijtema', icon: 'calendar', to: ROUTES.RUKN_WEEKLY_IJTEMA, end: false },
-  { label: 'Record', icon: 'chart', to: ROUTES.RUKN_CAMPAIGN_RECORD, end: false },
 ]
 
 export function RuknLayout() {
