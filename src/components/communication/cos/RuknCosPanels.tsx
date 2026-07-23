@@ -1,5 +1,7 @@
 import { CosPlaceholderPanel } from '@/components/communication/cos/CosPlaceholderPanel'
 import { DigitalRafeeqGuidancePanel } from '@/components/communication/cos/DigitalRafeeqGuidancePanel'
+import { TodaysActionsPanel } from '@/components/communication/cos/TodaysActionsPanel'
+import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
 
 export function RuknConversationsPanel() {
   return (
@@ -10,22 +12,15 @@ export function RuknConversationsPanel() {
   )
 }
 
-export function RuknFollowUpsPanel() {
-  return (
-    <CosPlaceholderPanel
-      title="Follow-ups"
-      description="Promised next contacts across your Connected Karkuns."
-    >
-      <ul className="space-y-2 text-sm text-secondary">
-        <li className="rounded-lg border border-dashed border-border px-3 py-2">
-          Follow-up visit — placeholder
-        </li>
-        <li className="rounded-lg border border-dashed border-border px-3 py-2">
-          Ijtema reminder — placeholder
-        </li>
-      </ul>
-    </CosPlaceholderPanel>
-  )
+/** KC-0096 — Follow-ups tab hosts outcome-driven Today's Actions (tab label unchanged). */
+export function RuknFollowUpsPanel({
+  ruknId,
+  karkuns,
+}: {
+  ruknId: string
+  karkuns: KarkunRegistryRecord[]
+}) {
+  return <TodaysActionsPanel ruknId={ruknId} karkuns={karkuns} />
 }
 
 export function RuknCompanionLedgerPanel() {

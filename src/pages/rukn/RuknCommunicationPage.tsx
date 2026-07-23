@@ -21,9 +21,9 @@ import {
 } from '@/lib/ruknCommunicationNavigation'
 
 /**
- * KC-0091 / KC-0094 — Rukn Communication Workspace.
+ * KC-0091 / KC-0094 / KC-0096 — Rukn Communication Workspace.
  * Organized around Connected Karkuns — not channels.
- * Phase 1: My Connected Karkuns relationship intelligence.
+ * Phase 3: Follow-ups tab → outcome-driven Today's Actions.
  */
 export function RuknCommunicationPage() {
   const { user } = useAuth()
@@ -63,7 +63,9 @@ export function RuknCommunicationPage() {
           <MyConnectedKarkunsPanel ruknId={ruknId} karkuns={connected} />
         )}
         {section === 'conversations' && <RuknConversationsPanel />}
-        {section === 'follow-ups' && <RuknFollowUpsPanel />}
+        {section === 'follow-ups' && (
+          <RuknFollowUpsPanel ruknId={ruknId} karkuns={connected} />
+        )}
         {section === 'companion-ledger' && <RuknCompanionLedgerPanel />}
         {section === 'visit-planning' && <RuknVisitPlanningPanel />}
         {section === 'notes' && <RuknNotesPanel />}

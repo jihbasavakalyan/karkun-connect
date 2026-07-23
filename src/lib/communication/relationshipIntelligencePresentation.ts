@@ -431,3 +431,106 @@ export function buildMyConnectedKarkunsIntelligence(
         a.attentionRank - b.attentionRank || a.karkunName.localeCompare(b.karkunName),
     )
 }
+
+export type TodaysActionCard = {
+  karkunId: string
+  karkunName: string
+  /** Outcome-based explanation lines (why attention is needed). */
+  whyLines: string[]
+  suggestedAction: string
+  campaignObjective: string
+  priority: RecommendedActionView['priority']
+  attentionRank: number
+}
+
+function buildWhyAttentionLines(row: CampaignMatrixRow, pendingObjective: string): string[] {
+  const lines: string[] = []
+
+  if (pendingObjective === 'Visit') {
+    lines.push('No visit completed yet.')
+    lines.push('First campaign contact is still needed.')
+    return lines
+  }
+
+  if (row.visitDone) {
+    lines.push('Visit completed successfully.')
+  }
+
+  if (pendingObjective === 'JIH App') {
+    lines.push('JIH App registration is still pending.')
+    return lines
+  }
+
+  if (row.jih === 'registered') {
+    lines.push('JIH App registration is complete.')
+  }
+
+  if (pendingObjective === 'Weekly Ijtema') {
+    lines.push('Weekly Ijtema invitation is still pending.')
+    return lines
+  }
+
+  if (row.ijtema !== 'Pending') {
+    lines.push('Weekly Ijtema progress is recorded.')
+  }
+
+  if (pendingObjective === 'Baitul Maal') {
+    lines.push('Baitul Maal discussion is still pending.')
+    return lines
+  }
+
+  lines.push('Campaign attention is still useful for this Connected Karkun.')
+  return lines
+}
+
+function buildSuggestedActionCopy(pendingObjective: string, nextAction: string): string {
+  switch (pendingObjective) {
+    case 'Visit':
+      return 'Complete the first visit.'
+    case 'JIH App':
+      return 'Help complete JIH App registration.'
+    case 'Weekly Ijtema':
+      return 'Invite to Weekly Ijtema.'
+    case 'Baitul Maal':
+      return 'Discuss Baitul Maal contribution.'
+    default:
+      return nextAction.endsWith('.') ? nextAction : `${nextAction}.`
+  }
+}
+
+/**
+ * KC-0096 — Outcome-driven Today's Actions (Follow-ups tab content).
+ * Only Connected Karkuns with remaining campaign objectives; no manual tasks.
+ */
+export function buildTodaysActionCards(
+  ruknId: string,
+  karkuns: KarkunRegistryRecord[],
+): TodaysActionCard[] {
+  const rows = buildCampaignMatrixRows(ruknId)
+  const byId = new Map(rows.map((row) => [row.karkunId, row]))
+
+  return karkuns
+    .map((karkun) => {
+      const row = byId.get(karkun.id) ?? emptyMatrixRow(karkun)
+      const recommendation = buildRecommendedActionView(row)
+      if (recommendation.pendingObjective === 'None') return null
+
+      return {
+        karkunId: karkun.id,
+        karkunName: karkun.name,
+        whyLines: buildWhyAttentionLines(row, recommendation.pendingObjective),
+        suggestedAction: buildSuggestedActionCopy(
+          recommendation.pendingObjective,
+          recommendation.action,
+        ),
+        campaignObjective: recommendation.pendingObjective,
+        priority: recommendation.priority,
+        attentionRank: recommendation.attentionRank,
+      } satisfies TodaysActionCard
+    })
+    .filter((card): card is TodaysActionCard => card !== null)
+    .sort(
+      (a, b) =>
+        a.attentionRank - b.attentionRank || a.karkunName.localeCompare(b.karkunName),
+    )
+}
