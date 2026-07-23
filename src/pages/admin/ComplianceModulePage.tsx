@@ -5,6 +5,7 @@ import { ComplianceSummaryCards } from '@/components/compliance/ComplianceSummar
 import { ExecutionEmptyState } from '@/components/execution/ExecutionEmptyState'
 import { ActiveCampaignSubtitle } from '@/components/layout/CampaignStatusBar'
 import { adminKarkunProfilePath } from '@/constants/routes'
+import { useBusyAction } from '@/hooks/useBusyAction'
 import {
   COMPLIANCE_SECTIONS,
   getComplianceEmptyState,
@@ -141,11 +142,22 @@ function IjtemaRow({
   item: IjtemaAttendanceKarkunSummary
   onUpdated: () => void
 }) {
+  const { busy, busyKey, run } = useBusyAction()
+
   const markStatus = (status: IjtemaAttendanceStatus) => {
-    const result = updateIjtemaAttendance({ karkunId: item.karkunId, status })
-    if (result.success) {
-      onUpdated()
-    }
+    void run(
+      async () => {
+        const result = updateIjtemaAttendance({ karkunId: item.karkunId, status })
+        if (result.success) {
+          onUpdated()
+        }
+      },
+      {
+        key: `admin-ijtema:${item.karkunId}:${status}`,
+        waitForPendingWrites: true,
+        minMs: 350,
+      },
+    )
   }
 
   return (
@@ -160,27 +172,31 @@ function IjtemaRow({
             <PrimaryButton
               type="button"
               className={`w-full sm:w-auto ${ACTION_BUTTON_CLASS}`}
+              disabled={busy}
+              loading={busyKey === `admin-ijtema:${item.karkunId}:Present`}
               onClick={() => markStatus('Present')}
             >
-              Mark Present
+              {busyKey === `admin-ijtema:${item.karkunId}:Present` ? 'Saving…' : 'Mark Present'}
             </PrimaryButton>
           )}
           {item.status !== 'Excused' && (
             <SecondaryButton
               type="button"
               className={`w-full sm:w-auto ${ACTION_BUTTON_CLASS}`}
+              disabled={busy}
               onClick={() => markStatus('Excused')}
             >
-              Mark Excused
+              {busyKey === `admin-ijtema:${item.karkunId}:Excused` ? 'Saving…' : 'Mark Excused'}
             </SecondaryButton>
           )}
           {item.status !== 'Absent' && (
             <SecondaryButton
               type="button"
               className={`w-full sm:w-auto ${ACTION_BUTTON_CLASS}`}
+              disabled={busy}
               onClick={() => markStatus('Absent')}
             >
-              Mark Absent
+              {busyKey === `admin-ijtema:${item.karkunId}:Absent` ? 'Saving…' : 'Mark Absent'}
             </SecondaryButton>
           )}
           <ProfileLink karkunId={item.karkunId} />
@@ -197,25 +213,37 @@ function JihRegistrationRow({
   item: JihWebPortalKarkunSummary
   onUpdated: () => void
 }) {
+  const { busy, busyKey, run } = useBusyAction()
+
   const markRegistered = () => {
-    const result = updateJihRegistration({
-      karkunId: item.karkunId,
-      status: 'Registered',
-      registrationDate: item.registration.registrationDate ?? todayDate(),
-    })
-    if (result.success) {
-      onUpdated()
-    }
+    void run(
+      async () => {
+        const result = updateJihRegistration({
+          karkunId: item.karkunId,
+          status: 'Registered',
+          registrationDate: item.registration.registrationDate ?? todayDate(),
+        })
+        if (result.success) onUpdated()
+      },
+      { key: `admin-jih:${item.karkunId}:Registered`, waitForPendingWrites: true, minMs: 350 },
+    )
   }
 
   const markNotRegistered = () => {
-    const result = updateJihRegistration({
-      karkunId: item.karkunId,
-      status: 'Not Registered',
-    })
-    if (result.success) {
-      onUpdated()
-    }
+    void run(
+      async () => {
+        const result = updateJihRegistration({
+          karkunId: item.karkunId,
+          status: 'Not Registered',
+        })
+        if (result.success) onUpdated()
+      },
+      {
+        key: `admin-jih:${item.karkunId}:NotRegistered`,
+        waitForPendingWrites: true,
+        minMs: 350,
+      },
+    )
   }
 
   return (
@@ -229,18 +257,25 @@ function JihRegistrationRow({
             <PrimaryButton
               type="button"
               className={`w-full sm:w-auto ${ACTION_BUTTON_CLASS}`}
+              disabled={busy}
+              loading={busyKey === `admin-jih:${item.karkunId}:Registered`}
               onClick={markRegistered}
             >
-              Mark Registered
+              {busyKey === `admin-jih:${item.karkunId}:Registered`
+                ? 'Saving…'
+                : 'Mark Registered'}
             </PrimaryButton>
           )}
           {item.registration.status === 'Registered' && (
             <SecondaryButton
               type="button"
               className={`w-full sm:w-auto ${ACTION_BUTTON_CLASS}`}
+              disabled={busy}
               onClick={markNotRegistered}
             >
-              Mark Not Registered
+              {busyKey === `admin-jih:${item.karkunId}:NotRegistered`
+                ? 'Saving…'
+                : 'Mark Not Registered'}
             </SecondaryButton>
           )}
           <ProfileLink karkunId={item.karkunId} />
@@ -318,35 +353,46 @@ function BaitulMaalRow({
   item: BaitulMaalKarkunSummary
   onUpdated: () => void
 }) {
+  const { busy, busyKey, run } = useBusyAction()
+
   const markPaid = () => {
-    const result = updateBaitulMaal({
-      karkunId: item.karkunId,
-      status: 'Paid',
-      paymentDate: todayDate(),
-    })
-    if (result.success) {
-      onUpdated()
-    }
+    void run(
+      async () => {
+        const result = updateBaitulMaal({
+          karkunId: item.karkunId,
+          status: 'Paid',
+          paymentDate: todayDate(),
+        })
+        if (result.success) onUpdated()
+      },
+      { key: `admin-baitul:${item.karkunId}:Paid`, waitForPendingWrites: true, minMs: 350 },
+    )
   }
 
   const markPending = () => {
-    const result = updateBaitulMaal({
-      karkunId: item.karkunId,
-      status: 'Pending',
-    })
-    if (result.success) {
-      onUpdated()
-    }
+    void run(
+      async () => {
+        const result = updateBaitulMaal({
+          karkunId: item.karkunId,
+          status: 'Pending',
+        })
+        if (result.success) onUpdated()
+      },
+      { key: `admin-baitul:${item.karkunId}:Pending`, waitForPendingWrites: true, minMs: 350 },
+    )
   }
 
   const markExempt = () => {
-    const result = updateBaitulMaal({
-      karkunId: item.karkunId,
-      status: 'Exempt',
-    })
-    if (result.success) {
-      onUpdated()
-    }
+    void run(
+      async () => {
+        const result = updateBaitulMaal({
+          karkunId: item.karkunId,
+          status: 'Exempt',
+        })
+        if (result.success) onUpdated()
+      },
+      { key: `admin-baitul:${item.karkunId}:Exempt`, waitForPendingWrites: true, minMs: 350 },
+    )
   }
 
   const metaParts = [item.monthLabel]
@@ -365,27 +411,31 @@ function BaitulMaalRow({
             <PrimaryButton
               type="button"
               className={`w-full sm:w-auto ${ACTION_BUTTON_CLASS}`}
+              disabled={busy}
+              loading={busyKey === `admin-baitul:${item.karkunId}:Paid`}
               onClick={markPaid}
             >
-              Mark Paid
+              {busyKey === `admin-baitul:${item.karkunId}:Paid` ? 'Saving…' : 'Mark Paid'}
             </PrimaryButton>
           )}
           {item.status !== 'Exempt' && (
             <SecondaryButton
               type="button"
               className={`w-full sm:w-auto ${ACTION_BUTTON_CLASS}`}
+              disabled={busy}
               onClick={markExempt}
             >
-              Mark Exempt
+              {busyKey === `admin-baitul:${item.karkunId}:Exempt` ? 'Saving…' : 'Mark Exempt'}
             </SecondaryButton>
           )}
           {item.status !== 'Pending' && (
             <SecondaryButton
               type="button"
               className={`w-full sm:w-auto ${ACTION_BUTTON_CLASS}`}
+              disabled={busy}
               onClick={markPending}
             >
-              Mark Pending
+              {busyKey === `admin-baitul:${item.karkunId}:Pending` ? 'Saving…' : 'Mark Pending'}
             </SecondaryButton>
           )}
           <ProfileLink karkunId={item.karkunId} />

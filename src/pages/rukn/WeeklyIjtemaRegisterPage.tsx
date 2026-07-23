@@ -10,6 +10,7 @@ import { PageShell } from '@/components/ui'
 import { ROUTES } from '@/constants/routes'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { useAuth } from '@/hooks/useAuth'
+import { useBusyAction } from '@/hooks/useBusyAction'
 import { useRequiredRuknId } from '@/hooks/useRequiredRuknId'
 import {
   getCurrentIjtemaAttendance,
@@ -33,7 +34,7 @@ export function WeeklyIjtemaRegisterPage() {
   const [attendanceVersion, setAttendanceVersion] = useState(0)
   const [draft, setDraft] = useState<Record<string, DraftStatus>>({})
   const [message, setMessage] = useState('')
-  const [saving, setSaving] = useState(false)
+  const { busy: saving, run } = useBusyAction()
 
   useEffect(() => {
     return subscribeToIjtemaAttendanceStore(() => setAttendanceVersion((v) => v + 1))
@@ -80,34 +81,37 @@ export function WeeklyIjtemaRegisterPage() {
 
   const handleSave = () => {
     if (!ruknId) return
-    setSaving(true)
-    setMessage('')
-    let updated = 0
-    let error: string | undefined
+    void run(
+      async () => {
+        setMessage('')
+        let updated = 0
+        let error: string | undefined
 
-    for (const karkun of connected) {
-      const status = draft[karkun.id]
-      if (!status || status === 'Pending') continue
-      const result = updateIjtemaAttendance({
-        karkunId: karkun.id,
-        status,
-        updatedBy: user?.displayName ?? user?.uid ?? ruknId,
-        ruknId,
-      })
-      if (result.success) {
-        updated += 1
-      } else {
-        error = result.error
-        break
-      }
-    }
+        for (const karkun of connected) {
+          const status = draft[karkun.id]
+          if (!status || status === 'Pending') continue
+          const result = updateIjtemaAttendance({
+            karkunId: karkun.id,
+            status,
+            updatedBy: user?.displayName ?? user?.uid ?? ruknId,
+            ruknId,
+          })
+          if (result.success) {
+            updated += 1
+          } else {
+            error = result.error
+            break
+          }
+        }
 
-    setSaving(false)
-    if (error) {
-      setMessage(error)
-      return
-    }
-    setMessage(`Saved attendance for ${updated} Karkun${updated === 1 ? '' : 's'}.`)
+        if (error) {
+          setMessage(error)
+          return
+        }
+        setMessage(`Saved attendance for ${updated} Karkun${updated === 1 ? '' : 's'}.`)
+      },
+      { key: `ijtema-register:${ruknId}`, waitForPendingWrites: true, minMs: 400 },
+    )
   }
 
   const pendingCount = connected.filter((k) => {
@@ -182,6 +186,7 @@ export function WeeklyIjtemaRegisterPage() {
           fullWidth
           onClick={handleSave}
           disabled={saving || connected.length === 0}
+          loading={saving}
         >
           {saving ? 'Saving…' : 'Save Attendance'}
         </PrimaryButton>

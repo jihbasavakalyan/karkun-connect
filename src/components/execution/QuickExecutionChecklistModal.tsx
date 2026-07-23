@@ -7,6 +7,7 @@ import { Modal } from '@/components/common/Modal'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import { useAuth } from '@/hooks/useAuth'
+import { useBusyAction } from '@/hooks/useBusyAction'
 import {
   buildQuickExecutionSnapshot,
   QUICK_EXECUTION_JOURNEY_OPTIONS,
@@ -91,7 +92,7 @@ export function QuickExecutionChecklistModal({
   )
   const [initial] = useState<QuickExecutionDraft | null>(snapshot?.draft ?? null)
   const [error, setError] = useState('')
-  const [saving, setSaving] = useState(false)
+  const { busy: saving, run } = useBusyAction()
 
   if (!isOpen || !snapshot || !draft || !initial) return null
 
@@ -132,23 +133,30 @@ export function QuickExecutionChecklistModal({
   }
 
   const handleSave = () => {
-    setError('')
-    setSaving(true)
-    const result = saveQuickExecutionChecklist(
-      karkunId,
-      ruknId,
-      user?.uid,
-      initial,
-      draft,
+    void run(
+      async () => {
+        setError('')
+        const result = saveQuickExecutionChecklist(
+          karkunId,
+          ruknId,
+          user?.uid,
+          initial,
+          draft,
+        )
+        if (!result.success) {
+          setError(result.error)
+          return
+        }
+        await confirmExecutionSaveFeedback('✅ Daily Progress saved successfully')
+        onSaved?.()
+        onClose()
+      },
+      {
+        key: `quick-execution:${karkunId}`,
+        waitForPendingWrites: true,
+        minMs: 400,
+      },
     )
-    setSaving(false)
-    if (!result.success) {
-      setError(result.error)
-      return
-    }
-    void confirmExecutionSaveFeedback('✅ Daily Progress saved successfully')
-    onSaved?.()
-    onClose()
   }
 
   return (
@@ -162,7 +170,7 @@ export function QuickExecutionChecklistModal({
           <SecondaryButton type="button" onClick={onClose} disabled={saving}>
             Cancel
           </SecondaryButton>
-          <PrimaryButton type="button" onClick={handleSave} disabled={saving}>
+          <PrimaryButton type="button" onClick={handleSave} disabled={saving} loading={saving}>
             {saving ? 'Saving…' : 'Save'}
           </PrimaryButton>
         </div>

@@ -1,10 +1,11 @@
 /**
- * KC-0082/0083 — Campaign Execution Matrix with scannable status chips.
+ * KC-0082/0083 / KC-0098 — Campaign Execution Matrix with single-action protection.
  */
 
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
+import { useBusyAction } from '@/hooks/useBusyAction'
 import { usePeopleStore } from '@/hooks/usePeopleStore'
 import { ruknVisitPath } from '@/constants/routes'
 import {
@@ -44,24 +45,30 @@ function StatusChip({
   label,
   tone,
   pressed,
+  disabled,
+  busy,
   onClick,
 }: {
   emoji: string
   label: string
   tone: MatrixStatusTone
   pressed?: boolean
+  disabled?: boolean
+  busy?: boolean
   onClick: () => void
 }) {
   return (
     <button
       type="button"
-      className={`inline-flex min-h-11 max-w-[7.5rem] items-center justify-center gap-1 rounded-lg border px-2 py-1.5 text-left text-[11px] font-semibold leading-tight transition-colors active:scale-[0.98] ${toneClass[tone]}`}
+      disabled={disabled || busy}
+      className={`inline-flex min-h-11 max-w-[7.5rem] items-center justify-center gap-1 rounded-lg border px-2 py-1.5 text-left text-[11px] font-semibold leading-tight transition-colors active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 ${toneClass[tone]}`}
       onClick={onClick}
       aria-pressed={pressed}
-      title={label}
+      aria-busy={busy || undefined}
+      title={busy ? 'Saving…' : label}
     >
-      <span aria-hidden="true">{emoji}</span>
-      <span className="truncate">{label}</span>
+      <span aria-hidden="true">{busy ? '…' : emoji}</span>
+      <span className="truncate">{busy ? 'Saving…' : label}</span>
     </button>
   )
 }
@@ -69,6 +76,7 @@ function StatusChip({
 export function CampaignExecutionMatrix({ ruknId }: CampaignExecutionMatrixProps) {
   const { user } = useAuth()
   const peopleVersion = usePeopleStore()
+  const { busy, busyKey, run } = useBusyAction()
   const [tick, setTick] = useState(0)
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [remarksDraft, setRemarksDraft] = useState('')
@@ -103,20 +111,27 @@ export function CampaignExecutionMatrix({ ruknId }: CampaignExecutionMatrixProps
 
   const refresh = () => setTick((v) => v + 1)
 
-  const run = (
+  const runCell = (
+    key: string,
     fn: () => { success: true } | { success: false; error: string },
     successMessage?: string,
   ) => {
-    setError('')
-    const result = fn()
-    if (!result.success) {
-      setError(result.error)
-      return
-    }
-    refresh()
-    if (successMessage) {
-      void confirmExecutionSaveFeedback(successMessage)
-    }
+    void run(
+      async () => {
+        setError('')
+        const result = fn()
+        if (!result.success) {
+          setError(result.error)
+          return result
+        }
+        refresh()
+        if (successMessage) {
+          await confirmExecutionSaveFeedback(successMessage)
+        }
+        return result
+      },
+      { key, waitForPendingWrites: Boolean(successMessage), minMs: 400 },
+    )
   }
 
   const openRemarks = (row: CampaignMatrixRow) => {
@@ -128,7 +143,9 @@ export function CampaignExecutionMatrix({ ruknId }: CampaignExecutionMatrixProps
     <section className="space-y-2" aria-label="Campaign execution matrix">
       <div className="flex items-baseline justify-between gap-2">
         <h2 className="text-lg font-semibold text-text-heading">Execution Matrix</h2>
-        <p className="text-xs text-secondary">Tap a cell to update</p>
+        <p className="text-xs text-secondary">
+          {busy ? 'Saving…' : 'Tap a cell to update'}
+        </p>
       </div>
 
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
@@ -151,6 +168,7 @@ export function CampaignExecutionMatrix({ ruknId }: CampaignExecutionMatrixProps
               const jih = jihStatusChip(row.jih)
               const ijtema = ijtemaStatusChip(row.ijtema)
               const baitul = baitulMaalStatusChip(row.baitulMaal)
+              const rowBusy = busy
               return (
                 <tr key={row.karkunId} className="border-b border-border last:border-b-0">
                   <td className="sticky left-0 z-10 bg-surface px-3 py-2 align-middle">
@@ -173,8 +191,11 @@ export function CampaignExecutionMatrix({ ruknId }: CampaignExecutionMatrixProps
                       label={row.visitDone ? 'Done' : 'Pending'}
                       tone={row.visitDone ? 'done' : 'idle'}
                       pressed={row.visitDone}
+                      busy={busyKey === `matrix:${row.karkunId}:visit`}
+                      disabled={rowBusy}
                       onClick={() =>
-                        run(
+                        runCell(
+                          `matrix:${row.karkunId}:visit`,
                           () => toggleVisitForKarkun(row.karkunId, ruknId, user?.uid),
                           '✅ Visit recorded successfully',
                         )
@@ -186,8 +207,10 @@ export function CampaignExecutionMatrix({ ruknId }: CampaignExecutionMatrixProps
                       emoji={jih.emoji}
                       label={jih.label}
                       tone={jih.tone}
+                      busy={busyKey === `matrix:${row.karkunId}:jih`}
+                      disabled={rowBusy}
                       onClick={() =>
-                        run(() => {
+                        runCell(`matrix:${row.karkunId}:jih`, () => {
                           const result = cycleJihAppForKarkun(row.karkunId, ruknId)
                           return result.success
                             ? { success: true as const }
@@ -201,8 +224,10 @@ export function CampaignExecutionMatrix({ ruknId }: CampaignExecutionMatrixProps
                       emoji={ijtema.emoji}
                       label={ijtema.label}
                       tone={ijtema.tone}
+                      busy={busyKey === `matrix:${row.karkunId}:ijtema`}
+                      disabled={rowBusy}
                       onClick={() =>
-                        run(() => {
+                        runCell(`matrix:${row.karkunId}:ijtema`, () => {
                           const result = cycleIjtemaForKarkun(
                             row.karkunId,
                             ruknId,
@@ -220,8 +245,10 @@ export function CampaignExecutionMatrix({ ruknId }: CampaignExecutionMatrixProps
                       emoji={baitul.emoji}
                       label={baitul.label}
                       tone={baitul.tone}
+                      busy={busyKey === `matrix:${row.karkunId}:baitul`}
+                      disabled={rowBusy}
                       onClick={() =>
-                        run(() => {
+                        runCell(`matrix:${row.karkunId}:baitul`, () => {
                           const result = cycleBaitulMaalCampaignForKarkun(
                             row.karkunId,
                             user?.displayName ?? user?.uid ?? 'Rukn',
@@ -250,38 +277,50 @@ export function CampaignExecutionMatrix({ ruknId }: CampaignExecutionMatrixProps
             onChange={(e) => setRemarksDraft(e.target.value)}
             rows={2}
             dir="auto"
-            className="mt-2 w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm"
+            disabled={busy}
+            className="mt-2 w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm disabled:opacity-60"
             placeholder="Optional notes…"
           />
           <div className="mt-2 flex gap-2">
             <button
               type="button"
-              className="rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-white"
+              disabled={busy}
+              className="rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
               onClick={() => {
-                setError('')
-                const result = saveMatrixRemarks(
-                  expandedId,
-                  ruknId,
-                  remarksDraft,
-                  user?.uid,
+                void run(
+                  async () => {
+                    setError('')
+                    const result = saveMatrixRemarks(
+                      expandedId,
+                      ruknId,
+                      remarksDraft,
+                      user?.uid,
+                    )
+                    if (!result.success) {
+                      setError(result.error)
+                      return
+                    }
+                    refresh()
+                    setExpandedId(null)
+                    await confirmExecutionSaveFeedback('✅ Remarks saved successfully')
+                  },
+                  {
+                    key: `matrix:${expandedId}:remarks`,
+                    waitForPendingWrites: true,
+                    minMs: 400,
+                  },
                 )
-                if (!result.success) {
-                  setError(result.error)
-                  return
-                }
-                refresh()
-                setExpandedId(null)
-                void confirmExecutionSaveFeedback('✅ Remarks saved successfully')
               }}
             >
-              Save Remarks
+              {busyKey === `matrix:${expandedId}:remarks` ? 'Saving…' : 'Save Remarks'}
             </button>
             <button
               type="button"
-              className="rounded-lg border border-border px-3 py-2 text-sm"
+              disabled={busy}
+              className="rounded-lg border border-border px-3 py-2 text-sm font-medium text-secondary disabled:opacity-60"
               onClick={() => setExpandedId(null)}
             >
-              Close
+              Cancel
             </button>
           </div>
         </div>

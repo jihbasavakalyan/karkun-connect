@@ -8,6 +8,7 @@ import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { useAuth } from '@/hooks/useAuth'
+import { useBusyAction } from '@/hooks/useBusyAction'
 import {
   getFilterWeekEndingDate,
   getIjtemaAttendanceForKarkun,
@@ -37,7 +38,7 @@ export function RuknIjtemaAttendancePanel({ ruknId }: RuknIjtemaAttendancePanelP
   const [remarks, setRemarks] = useState<Record<string, string>>({})
   const [touchedIds, setTouchedIds] = useState<Set<string>>(() => new Set())
   const [message, setMessage] = useState('')
-  const [saving, setSaving] = useState(false)
+  const { busy: saving, run } = useBusyAction()
   const [expanded, setExpanded] = useState(false)
 
   useEffect(() => {
@@ -97,38 +98,41 @@ export function RuknIjtemaAttendancePanel({ ruknId }: RuknIjtemaAttendancePanelP
   }
 
   const handleSave = () => {
-    setSaving(true)
-    let updated = 0
-    let error: string | undefined
+    void run(
+      async () => {
+        let updated = 0
+        let error: string | undefined
 
-    for (const karkun of connected) {
-      const status = draft[karkun.id]
-      if (!status || status === 'Not recorded') continue
+        for (const karkun of connected) {
+          const status = draft[karkun.id]
+          if (!status || status === 'Not recorded') continue
 
-      const result = updateIjtemaAttendance({
-        karkunId: karkun.id,
-        weekEndingDate,
-        status,
-        remarks: remarks[karkun.id],
-        updatedBy: user?.displayName ?? user?.uid ?? ruknId,
-        ruknId,
-      })
+          const result = updateIjtemaAttendance({
+            karkunId: karkun.id,
+            weekEndingDate,
+            status,
+            remarks: remarks[karkun.id],
+            updatedBy: user?.displayName ?? user?.uid ?? ruknId,
+            ruknId,
+          })
 
-      if (result.success) {
-        updated += 1
-      } else {
-        error = result.error
-        break
-      }
-    }
+          if (result.success) {
+            updated += 1
+          } else {
+            error = result.error
+            break
+          }
+        }
 
-    setSaving(false)
-    if (error) {
-      setMessage(error)
-      return
-    }
-    setTouchedIds(new Set())
-    setMessage(`Saved attendance for ${updated} Karkun${updated === 1 ? '' : 's'}.`)
+        if (error) {
+          setMessage(error)
+          return
+        }
+        setTouchedIds(new Set())
+        setMessage(`Saved attendance for ${updated} Karkun${updated === 1 ? '' : 's'}.`)
+      },
+      { key: `home-ijtema:${ruknId}`, waitForPendingWrites: true, minMs: 400 },
+    )
   }
 
   const markAll = (status: IjtemaAttendanceStatus) => {
@@ -264,7 +268,12 @@ export function RuknIjtemaAttendancePanel({ ruknId }: RuknIjtemaAttendancePanelP
           </ul>
 
           <div className="mt-3 flex flex-wrap items-center gap-3">
-            <PrimaryButton type="button" disabled={saving || !canSave} onClick={handleSave}>
+            <PrimaryButton
+              type="button"
+              disabled={saving || !canSave}
+              loading={saving}
+              onClick={handleSave}
+            >
               {saving ? 'Saving…' : `Save attendance${dirtyCount > 0 ? ` (${dirtyCount})` : ''}`}
             </PrimaryButton>
             {message ? <p className="text-sm text-secondary">{message}</p> : null}

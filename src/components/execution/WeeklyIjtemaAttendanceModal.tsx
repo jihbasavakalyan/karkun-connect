@@ -7,6 +7,7 @@ import { Modal } from '@/components/common/Modal'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import { useAuth } from '@/hooks/useAuth'
+import { useBusyAction } from '@/hooks/useBusyAction'
 import {
   getCurrentIjtemaAttendance,
   updateIjtemaAttendance,
@@ -44,6 +45,7 @@ export function WeeklyIjtemaAttendanceModal({
   onSaved,
 }: WeeklyIjtemaAttendanceModalProps) {
   const { user } = useAuth()
+  const { busy: saving, run } = useBusyAction()
   const current = getCurrentIjtemaAttendance(karkunId)
   const hasRecord = current.status !== 'Not recorded'
 
@@ -52,7 +54,6 @@ export function WeeklyIjtemaAttendanceModal({
   )
   const [remarks, setRemarks] = useState(current.remarks ?? '')
   const [error, setError] = useState('')
-  const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     if (!isOpen) return
@@ -65,36 +66,39 @@ export function WeeklyIjtemaAttendanceModal({
   if (!isOpen) return null
 
   const handleSave = () => {
-    setError('')
-    setSaving(true)
-    const result = updateIjtemaAttendance({
-      karkunId,
-      status,
-      remarks,
-      updatedBy: user?.displayName ?? user?.uid ?? ruknId,
-      ruknId,
-    })
-    setSaving(false)
-    if (!result.success) {
-      setError(result.error)
-      return
-    }
-    onSaved?.()
-    onClose()
+    void run(
+      async () => {
+        setError('')
+        const result = updateIjtemaAttendance({
+          karkunId,
+          status,
+          remarks,
+          updatedBy: user?.displayName ?? user?.uid ?? ruknId,
+          ruknId,
+        })
+        if (!result.success) {
+          setError(result.error)
+          return
+        }
+        onSaved?.()
+        onClose()
+      },
+      { key: `ijtema-modal:${karkunId}`, waitForPendingWrites: true, minMs: 400 },
+    )
   }
 
   return (
     <Modal
       isOpen={isOpen}
       title={hasRecord ? 'Edit Attendance' : 'Record Attendance'}
-      onClose={onClose}
+      onClose={saving ? () => undefined : onClose}
       size="md"
       footer={
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <SecondaryButton type="button" onClick={onClose} disabled={saving}>
             Cancel
           </SecondaryButton>
-          <PrimaryButton type="button" onClick={handleSave} disabled={saving}>
+          <PrimaryButton type="button" onClick={handleSave} disabled={saving} loading={saving}>
             {saving ? 'Saving…' : 'Save Attendance'}
           </PrimaryButton>
         </div>
@@ -114,8 +118,9 @@ export function WeeklyIjtemaAttendanceModal({
               <button
                 key={option}
                 type="button"
+                disabled={saving}
                 className={[
-                  'rounded-lg border px-3 py-2 text-sm font-medium',
+                  'rounded-lg border px-3 py-2 text-sm font-medium disabled:opacity-60',
                   status === option
                     ? 'border-primary bg-primary/10 text-primary'
                     : 'border-border bg-surface text-text-heading',
@@ -135,7 +140,8 @@ export function WeeklyIjtemaAttendanceModal({
               <button
                 key={preset}
                 type="button"
-                className="rounded-full border border-border bg-surface-muted px-2.5 py-1 text-xs text-text-heading"
+                disabled={saving}
+                className="rounded-full border border-border bg-surface-muted px-2.5 py-1 text-xs text-text-heading disabled:opacity-60"
                 onClick={() => setRemarks(preset === 'Other' ? '' : preset)}
               >
                 {preset}
@@ -145,6 +151,7 @@ export function WeeklyIjtemaAttendanceModal({
           <input
             value={remarks}
             onChange={(event) => setRemarks(event.target.value)}
+            disabled={saving}
             className={fieldClass}
             placeholder="Optional remark…"
           />

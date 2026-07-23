@@ -5,6 +5,8 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
+import { useBusyAction } from '@/hooks/useBusyAction'
+import { usePeopleStore } from '@/hooks/usePeopleStore'
 import {
   applyTodaysCampaignProgress,
   buildCampaignMatrixRows,
@@ -15,7 +17,6 @@ import { confirmExecutionSaveFeedback } from '@/lib/executionPersistEvents'
 import { subscribeToAnnexure1Store } from '@/stores/annexure1Store'
 import { subscribeToBaitulMaalStore } from '@/stores/baitulMaalStore'
 import { subscribeToIjtemaAttendanceStore } from '@/stores/ijtemaAttendanceStore'
-import { usePeopleStore } from '@/hooks/usePeopleStore'
 
 type TodaysProgressCaptureProps = {
   ruknId: string
@@ -54,10 +55,10 @@ export function TodaysProgressCapture({
 }: TodaysProgressCaptureProps) {
   const { user } = useAuth()
   const peopleVersion = usePeopleStore()
+  const { busy: saving, run } = useBusyAction()
   const [tick, setTick] = useState(0)
   const [draft, setDraft] = useState<TodaysProgressDraft>(emptyDraft)
   const [baseline, setBaseline] = useState<TodaysProgressDraft>(emptyDraft)
-  const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [celebration, setCelebration] = useState<Celebration | null>(null)
 
@@ -108,29 +109,35 @@ export function TodaysProgressCapture({
   }
 
   async function handleSave() {
-    if (!dirty || saving) return
-    setSaving(true)
-    setError(null)
-    const result = applyTodaysCampaignProgress({
-      karkunId,
-      ruknId,
-      draft,
-      actorId: user?.uid,
-    })
-    if (!result.success) {
-      setError(result.error)
-      setSaving(false)
-      return
-    }
-    setCelebration({
-      beforePct: result.beforePct,
-      afterPct: result.afterPct,
-      nextObjective: result.nextObjective,
-    })
-    await confirmExecutionSaveFeedback(
-      `Alhamdulillah! ${karkunName.split(' ').slice(-2).join(' ') || karkunName} progressed today.`,
+    if (!dirty) return
+    await run(
+      async () => {
+        setError(null)
+        const result = applyTodaysCampaignProgress({
+          karkunId,
+          ruknId,
+          draft,
+          actorId: user?.uid,
+        })
+        if (!result.success) {
+          setError(result.error)
+          return
+        }
+        setCelebration({
+          beforePct: result.beforePct,
+          afterPct: result.afterPct,
+          nextObjective: result.nextObjective,
+        })
+        await confirmExecutionSaveFeedback(
+          `Alhamdulillah! ${karkunName.split(' ').slice(-2).join(' ') || karkunName} progressed today.`,
+        )
+      },
+      {
+        key: `todays-progress:${karkunId}`,
+        waitForPendingWrites: true,
+        minMs: 400,
+      },
     )
-    setSaving(false)
   }
 
   if (!matrixRow) {

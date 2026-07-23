@@ -3,6 +3,7 @@ import { Modal } from '@/components/common/Modal'
 import { InputField } from '@/components/forms/InputField'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
+import { useBusyAction } from '@/hooks/useBusyAction'
 import {
   bulkUpdateBaitulMaal,
   isBaitulMaalAmountEnabled,
@@ -52,27 +53,36 @@ function BaitulMaalBulkUpdateModalContent({
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().slice(0, 10))
   const [amount, setAmount] = useState('')
   const [error, setError] = useState('')
+  const { busy: saving, run } = useBusyAction()
   const amountEnabled = isBaitulMaalAmountEnabled()
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    setError('')
+    void run(
+      async () => {
+        setError('')
+        const result = bulkUpdateBaitulMaal({
+          karkunIds,
+          status,
+          paymentDate: status === 'Paid' ? paymentDate : undefined,
+          amount:
+            amountEnabled && amount.trim() ? Number(amount) : undefined,
+        })
 
-    const result = bulkUpdateBaitulMaal({
-      karkunIds,
-      status,
-      paymentDate: status === 'Paid' ? paymentDate : undefined,
-      amount:
-        amountEnabled && amount.trim() ? Number(amount) : undefined,
-    })
+        if (!result.success) {
+          setError(result.error)
+          return
+        }
 
-    if (!result.success) {
-      setError(result.error)
-      return
-    }
-
-    onComplete(karkunIds)
-    onClose()
+        onComplete(karkunIds)
+        onClose()
+      },
+      {
+        key: `baitul-bulk:${status}:${karkunIds.slice().sort().join(',')}`,
+        waitForPendingWrites: true,
+        minMs: 400,
+      },
+    )
   }
 
   const title =
@@ -83,7 +93,7 @@ function BaitulMaalBulkUpdateModalContent({
         : 'Mark Bait-ul-Maal as Pending'
 
   return (
-    <Modal isOpen title={title} onClose={onClose}>
+    <Modal isOpen title={title} onClose={saving ? () => undefined : onClose}>
       <form className="space-y-4" onSubmit={handleSubmit}>
         <p className="text-sm text-secondary">
           Update current month compliance for{' '}
@@ -99,6 +109,7 @@ function BaitulMaalBulkUpdateModalContent({
               value={paymentDate}
               onValueChange={setPaymentDate}
               required
+              disabled={saving}
             />
             {amountEnabled ? (
               <InputField
@@ -110,6 +121,7 @@ function BaitulMaalBulkUpdateModalContent({
                 value={amount}
                 onValueChange={setAmount}
                 placeholder="Same amount for all selected"
+                disabled={saving}
               />
             ) : null}
           </>
@@ -128,10 +140,12 @@ function BaitulMaalBulkUpdateModalContent({
         {error && <p className="text-sm text-red-600">{error}</p>}
 
         <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
-          <SecondaryButton type="button" onClick={onClose}>
+          <SecondaryButton type="button" onClick={onClose} disabled={saving}>
             Cancel
           </SecondaryButton>
-          <PrimaryButton type="submit">Apply to Selected</PrimaryButton>
+          <PrimaryButton type="submit" disabled={saving} loading={saving}>
+            {saving ? 'Saving…' : 'Apply to Selected'}
+          </PrimaryButton>
         </div>
       </form>
     </Modal>

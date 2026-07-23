@@ -142,7 +142,50 @@ const KC0084_PERSIST_LABELS = new Set([
   'executions.annexure',
 ])
 
+/** KC-0098 — in-flight Firestore write chains + trailing work per label. */
+const writeChains = new Map<string, Promise<void>>()
+const writeTrailingWork = new Map<string, () => Promise<RepositoryResult<void>>>()
+
+/** KC-0098 — dirty buffers so coalesced dumps never drop concurrent entity updates. */
+const pendingAnnexureDirty = new Map<string, SubmittedMeetingForm>()
+const pendingBaitulMaalDirty = new Map<string, BaitulMaalRecord>()
+const pendingIjtemaDirty = new Map<string, IjtemaAttendanceRecord>()
+
 async function queueWrite(label: string, work: () => Promise<RepositoryResult<void>>): Promise<void> {
+  // KC-0098 — coalesce concurrent identical-label dumps onto one in-flight chain.
+  // Latest scheduled work wins; callers that dump dirty sets should accumulate
+  // into module pending maps (annexure / ijtema / baitul) before queueWrite.
+  writeTrailingWork.set(label, work)
+  const existing = writeChains.get(label)
+  if (existing) {
+    return existing
+  }
+
+  const chain = (async () => {
+    try {
+      for (;;) {
+        const next = writeTrailingWork.get(label)
+        if (!next) break
+        writeTrailingWork.delete(label)
+        await executeQueuedWrite(label, next)
+      }
+    } finally {
+      writeChains.delete(label)
+      const leftover = writeTrailingWork.get(label)
+      if (leftover) {
+        void queueWrite(label, leftover)
+      }
+    }
+  })()
+
+  writeChains.set(label, chain)
+  return chain
+}
+
+async function executeQueuedWrite(
+  label: string,
+  work: () => Promise<RepositoryResult<void>>,
+): Promise<void> {
   const diag = KC0084_PERSIST_LABELS.has(label)
   if (diag) {
     console.info('[KC-0084] Repository Save Started', { label })
@@ -1685,12 +1728,18 @@ export class ExecutionFirestoreRepository implements ExecutionRepository {
     const merged = new Map(annexureCache.get().map((form) => [form.id, form] as const))
     for (const form of forms) {
       merged.set(form.id, form)
+      pendingAnnexureDirty.set(form.id, form)
     }
     annexureCache.set([...merged.values()])
     void queueWrite('executions.annexure', async () => {
+      const dirty = [...pendingAnnexureDirty.values()]
+      pendingAnnexureDirty.clear()
+      if (dirty.length === 0) {
+        return repositoryOk(undefined)
+      }
       const db = getFirestoreDb()
       const batch = createBatch(db)
-      for (const form of forms) {
+      for (const form of dirty) {
         batch.set(
           doc(db, FIRESTORE_COLLECTIONS.executions, executionAnnexureDocId(form.id)),
           sanitizeForFirestore(form),
@@ -1787,13 +1836,20 @@ export class ComplianceFirestoreRepository implements ComplianceRepository {
       baitulMaalCache.get().map((record) => [`${record.karkunId}:${record.monthKey}`, record] as const),
     )
     for (const record of records) {
-      merged.set(`${record.karkunId}:${record.monthKey}`, record)
+      const key = `${record.karkunId}:${record.monthKey}` as `${string}:${string}`
+      merged.set(key, record)
+      pendingBaitulMaalDirty.set(key, record)
     }
     baitulMaalCache.set([...merged.values()])
     void queueWrite('compliance.baitulMaal', async () => {
+      const dirty = [...pendingBaitulMaalDirty.values()]
+      pendingBaitulMaalDirty.clear()
+      if (dirty.length === 0) {
+        return repositoryOk(undefined)
+      }
       const db = getFirestoreDb()
       const batch = createBatch(db)
-      for (const record of records) {
+      for (const record of dirty) {
         batch.set(
           doc(
             db,
@@ -1826,13 +1882,20 @@ export class ComplianceFirestoreRepository implements ComplianceRepository {
         .map((record) => [`${record.karkunId}:${record.weekEndingDate}`, record] as const),
     )
     for (const record of records) {
-      merged.set(`${record.karkunId}:${record.weekEndingDate}`, record)
+      const key = `${record.karkunId}:${record.weekEndingDate}` as `${string}:${string}`
+      merged.set(key, record)
+      pendingIjtemaDirty.set(key, record)
     }
     ijtemaCache.set([...merged.values()])
     void queueWrite('compliance.ijtema', async () => {
+      const dirty = [...pendingIjtemaDirty.values()]
+      pendingIjtemaDirty.clear()
+      if (dirty.length === 0) {
+        return repositoryOk(undefined)
+      }
       const db = getFirestoreDb()
       const batch = createBatch(db)
-      for (const record of records) {
+      for (const record of dirty) {
         batch.set(
           doc(
             db,
