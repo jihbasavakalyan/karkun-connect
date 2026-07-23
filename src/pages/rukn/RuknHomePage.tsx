@@ -5,6 +5,7 @@ import { AskDigitalRafeeqCard, RuknMissionControlHero, RuknMissionControlPanels,
 import { RuknFloatingActionButton } from '@/components/home'
 import { ExecutionSuccessBanner } from '@/components/execution/ExecutionSuccessBanner'
 import { CampaignExecutionProgressCard } from '@/components/execution/CampaignExecutionProgressCard'
+import { RuknExecutionSummaryCards } from '@/components/execution/RuknExecutionSummaryCards'
 import { CampaignExecutionMatrix } from '@/components/execution/CampaignExecutionMatrix'
 import { RuknTodaysFocus } from '@/components/execution/RuknTodaysFocus'
 import { openDigitalRafeeqAssistant } from '@/features/digitalRafeeq/launcher'
@@ -62,7 +63,7 @@ export function RuknHomePage() {
     <div className="cd-page cd-page-rukn mc-page mc-page-rukn-compact mc-page-execution mc-page-onescreen">
       <ExecutionSuccessBanner />
 
-      {/* Section 1 — Mission Overview: Campaign Progress + Today's Recommendation */}
+      {/* Section 1 — Mission Overview: Progress → Summaries → Rafeeq (KC-0092B) */}
       <section className="space-y-3" aria-label="Mission Overview">
         <RuknMissionControlHero
           model={model}
@@ -73,6 +74,7 @@ export function RuknHomePage() {
           hideSummaryChips
         />
         <CampaignExecutionProgressCard ruknId={ruknId} />
+        {!postCampaign ? <RuknExecutionSummaryCards ruknId={ruknId} /> : null}
         <AskDigitalRafeeqCard
           mini
           onOpen={openDigitalRafeeqAssistant}
@@ -80,7 +82,7 @@ export function RuknHomePage() {
         />
       </section>
 
-      {/* Section 2 — Execution (primary workspace) */}
+      {/* Section 2 — Execution (primary workspace; matrix remains the only editor) */}
       {!postCampaign ? (
         <section className="mt-4 space-y-3" aria-label="Execution">
           <CampaignExecutionMatrix ruknId={ruknId} />
