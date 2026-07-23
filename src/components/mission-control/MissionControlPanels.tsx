@@ -105,11 +105,13 @@ export function AdminMissionControlPanels({ model }: AdminMissionControlPanelsPr
               {model.connectionProgress.connected}
               <span className="mc-panel-metric-soft"> / {model.connectionProgress.total}</span>
             </p>
-            <p className="mc-caption">Connected of campaign pool</p>
+            <p className="mc-caption">Connected of all campaign Karkuns</p>
             <div className="mc-progress-track mc-progress-track-lg mt-3">
               <div className="mc-progress-fill" style={{ width: `${model.connectionProgress.pct}%` }} />
             </div>
-            <p className="mc-caption mt-2">{model.connectionProgress.remaining} remaining</p>
+            <p className="mc-caption mt-2">
+              {model.connectionProgress.remaining} yet to connect
+            </p>
           </div>
         </div>
       </section>

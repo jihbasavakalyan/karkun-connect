@@ -30,7 +30,7 @@ export type CanonicalExclusion = {
 }
 
 export const DASHBOARD_CONNECTED_RULE =
-  'Dashboard Connections counts unique Active campaign-eligible Karkuns (category=Karkun, non-archived) — not raw Firestore/assignment document count. Muttafiqeen are excluded.'
+  'Dashboard Connected counts unique Active Connected Karkuns in the campaign (Muttafiqeen and archived people are excluded). This is not a raw connection-document count.'
 
 export function explainCanonicalExclusions(records: readonly AssignmentRecord[]): {
   included: AssignmentRecord[]

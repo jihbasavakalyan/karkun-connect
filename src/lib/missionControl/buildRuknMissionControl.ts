@@ -96,9 +96,9 @@ export function buildRuknMissionControl(
     kpis: [
       {
         id: 'pending',
-        label: 'Pending',
+        label: 'Pending Visits',
         value: execution.counts.pending,
-        hint: 'Visits waiting',
+        hint: 'Visits waiting to be recorded',
       },
       {
         id: 'today-target',

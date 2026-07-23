@@ -78,11 +78,16 @@ function summarizeRukns(rows: AdminRuknGenderPerformanceView[]): OverviewMetric[
 
   return [
     { id: 'rukns', label: 'Total Rukns', value: total },
-    { id: 'assigned', label: 'Assigned', value: assigned, hint: 'With connections' },
-    { id: 'connected', label: 'Connected', value: connected, hint: 'Active Karkuns' },
-    { id: 'pending', label: 'Pending', value: pending },
+    { id: 'assigned', label: 'Rukns with Connections', value: assigned, hint: 'At least one Connected Karkun' },
+    { id: 'connected', label: 'Connected', value: connected, hint: 'Active Connected Karkuns' },
+    {
+      id: 'pending',
+      label: 'Pending Work',
+      value: pending,
+      hint: 'Visits and tasks not yet completed',
+    },
     { id: 'progress', label: 'Average Progress', value: `${avg}%` },
-    { id: 'critical', label: 'Critical', value: critical },
+    { id: 'critical', label: 'Needs Attention', value: critical, hint: 'Rukns behind on progress' },
   ]
 }
 
@@ -132,7 +137,7 @@ function RuknPerformanceCard({
           <p className="exdash-rukn-name">{row.ruknName}</p>
           <p className="exdash-rukn-meta">
             Connected: {row.assignedKarkuns}
-            {row.pendingWork > 0 ? ` · Pending: ${row.pendingWork}` : ''}
+            {row.pendingWork > 0 ? ` · Pending work: ${row.pendingWork}` : ''}
           </p>
         </div>
         <span className={`exdash-status-badge exdash-status-${badge.tone}`}>
@@ -477,13 +482,19 @@ export function AdminCommandCenter({
     if (!backgroundReady) {
       return [
         { id: 'rukns', label: 'Total Rukns', value: '—' },
-        { id: 'assigned', label: 'Assigned', value: '—' },
+        { id: 'assigned', label: 'Rukns with Connections', value: '—' },
         {
           id: 'connected',
           label: 'Connected',
           value: metricsReady ? model.connectionProgress.connected : '—',
+          hint: 'Active Connected Karkuns',
         },
-        { id: 'pending', label: 'Pending', value: '—' },
+        {
+          id: 'pending',
+          label: 'Pending Work',
+          value: '—',
+          hint: 'Visits and tasks not yet completed',
+        },
         {
           id: 'progress',
           label: 'Average Progress',
@@ -491,8 +502,9 @@ export function AdminCommandCenter({
         },
         {
           id: 'critical',
-          label: 'Critical',
+          label: 'Needs Attention',
           value: metricsReady ? model.campaignHealth.criticalFollowUps : '—',
+          hint: 'Overdue follow-ups',
         },
       ] satisfies OverviewMetric[]
     }
@@ -502,7 +514,7 @@ export function AdminCommandCenter({
         ? {
             ...metric,
             value: metricsReady ? model.connectionProgress.connected : metric.value,
-            hint: 'Canonical connected',
+            hint: 'Active Connected Karkuns',
           }
         : metric,
     )
@@ -751,7 +763,7 @@ export function AdminCommandCenter({
                 <dd>{model.connectionProgress.connected}</dd>
               </div>
               <div>
-                <dt>Remaining</dt>
+                <dt>Yet to Connect</dt>
                 <dd>{model.connectionProgress.remaining}</dd>
               </div>
               <div>

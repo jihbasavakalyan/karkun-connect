@@ -70,7 +70,7 @@ export function AdminMissionControlHero({
                     <dd>{model.connectionProgress.connected}</dd>
                   </div>
                   <div>
-                    <dt>Remaining</dt>
+                    <dt>Yet to Connect</dt>
                     <dd>{model.connectionProgress.remaining}</dd>
                   </div>
                   <div>

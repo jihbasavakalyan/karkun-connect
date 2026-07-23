@@ -21,13 +21,13 @@ export type CampaignConnectionMetrics = {
   /** Soft-archived connection rows (isArchived). */
   archivedConnectionCount: number
   /**
-   * Dashboard "Connected" KPI — unique Active connections to non-archived Karkuns
-   * (KC-028A canonical definition).
+   * Dashboard "Connected" KPI — unique Active Connected Karkuns
+   * (campaign-eligible; excludes Muttafiqeen and archived people).
    */
   connected: number
-  /** Available (unconnected) Karkuns in the campaign pool. */
+  /** Dashboard "Yet to Connect" — Available (unconnected) Karkuns. */
   remaining: number
-  /** connected + remaining (campaign pool denominator). */
+  /** connected + remaining (Connected + Yet to Connect). */
   total: number
   /** Round((connected / total) * 100), or 0 when total is 0. */
   progressPct: number

@@ -162,16 +162,16 @@ export function buildAdminMissionControl(
     kpis: [
       {
         id: 'connected',
-        label: 'Connected Karkuns',
+        label: 'Connected',
         value: connected,
         hint: `${assignments.assignmentsToday} new today`,
         route: adminAssignmentsPath(),
       },
       {
         id: 'remaining',
-        label: 'Remaining Karkuns',
+        label: 'Yet to Connect',
         value: remaining,
-        hint: 'Available to connect',
+        hint: 'Karkuns waiting for a connection',
         route: adminAssignmentsPath(),
       },
       {
