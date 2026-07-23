@@ -4,22 +4,19 @@ import { PageShell } from '@/components/ui'
 import { ROUTES } from '@/constants/routes'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { useAuth } from '@/hooks/useAuth'
-import { useGuidance } from '@/hooks/useGuidance'
 import { useRequiredRuknId } from '@/hooks/useRequiredRuknId'
 import { ruknCommunicationPath } from '@/lib/ruknCommunicationNavigation'
 
 /**
- * KC-0091 — Companion Workspace for one Connected Karkun.
- * Placeholder relationship page — no messaging or persistence changes.
+ * KC-0091 / KC-0095 — Companion Workspace for one Connected Karkun.
+ * Mission-oriented relationship page — no messaging or new persistence.
  */
 export function CompanionWorkspacePage() {
   const { karkunId = '' } = useParams<{ karkunId: string }>()
   const { user } = useAuth()
   const ruknId = useRequiredRuknId()
   const { getAssignedKarkunanForRukn, assignmentVersion } = useAssignmentEngine()
-  const { getKarkunGuidance, version } = useGuidance(ruknId ?? '')
   void assignmentVersion
-  void version
 
   if (!ruknId) {
     return <Navigate to={ROUTES.LOGIN} replace />
@@ -48,8 +45,6 @@ export function CompanionWorkspacePage() {
     )
   }
 
-  const guidance = getKarkunGuidance(karkun.id)
-
   return (
     <PageShell variant="narrow" className="app-screen">
       <div className="mb-3">
@@ -60,7 +55,7 @@ export function CompanionWorkspacePage() {
           ← My Connected Karkuns
         </Link>
       </div>
-      <CompanionWorkspaceView karkun={karkun} guidance={guidance} />
+      <CompanionWorkspaceView ruknId={ruknId} karkun={karkun} />
     </PageShell>
   )
 }

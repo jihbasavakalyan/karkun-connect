@@ -1,20 +1,23 @@
 /**
- * KC-0094 — Relationship intelligence for Rukn Communication (My Connected Karkuns).
+ * KC-0094 / KC-0095 — Relationship intelligence for Communication + Companion Workspace.
  * Presentation only over Execution Matrix / Today's Focus — no new queries or engines.
  */
 
-import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import {
+  baitulMaalLabel,
   buildCampaignMatrixRows,
+  ijtemaStatusChip,
   isRuknPostCampaignMode,
+  jihAppLabel,
   type CampaignMatrixRow,
 } from '@/lib/campaignExecutionMatrix'
 import { getDailyProgressView } from '@/lib/dailyProgressPresentation'
+import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { getCurrentBaitulMaalStatus } from '@/services/baitulMaalService'
 import { getCurrentIjtemaAttendance } from '@/services/ijtemaAttendanceService'
+import { getCurrentMonthKey } from '@/services/jihWebPortalService'
 import { getLatestSubmissionForKarkun } from '@/stores/annexure1Store'
 import { getBaitulMaalRecord } from '@/stores/baitulMaalStore'
-import { getCurrentMonthKey } from '@/services/jihWebPortalService'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
 
 export type RelationshipJourneyStage =
@@ -45,6 +48,36 @@ export type ConnectedKarkunIntelligence = {
   attentionRank: number
 }
 
+export type CampaignObjectiveProgress = {
+  id: 'visit' | 'jih' | 'ijtema' | 'baitul'
+  label: string
+  completed: boolean
+  detail: string
+}
+
+export type MeaningfulActivity = {
+  id: string
+  label: string
+  dateLabel: string
+  at: number
+}
+
+export type RecommendedActionView = {
+  action: string
+  reason: string
+  priority: 'High' | 'Medium' | 'Low'
+  pendingObjective: string
+  attentionRank: number
+}
+
+export type CompanionWorkspaceModel = {
+  intelligence: ConnectedKarkunIntelligence
+  objectives: CampaignObjectiveProgress[]
+  activities: MeaningfulActivity[]
+  recommendation: RecommendedActionView
+  rafeeqGuidance: string
+}
+
 type InteractionCandidate = {
   label: string
   at: number
@@ -54,7 +87,6 @@ type InteractionCandidate = {
 function formatShortDate(isoOrDate: string): string {
   const parsed = new Date(isoOrDate)
   if (Number.isNaN(parsed.getTime())) {
-    // Already a display date (e.g. visitDate YYYY-MM-DD)
     const parts = isoOrDate.slice(0, 10).split('-')
     if (parts.length === 3) {
       const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]))
@@ -90,29 +122,15 @@ function pushCandidate(
   list.push({ label, at, dateLabel: formatShortDate(raw) })
 }
 
-/** Latest meaningful campaign activity — visit / JIH / Ijtema / Baitul Maal. */
-export function resolveLastMeaningfulInteraction(karkunId: string): {
-  label: string
-  dateLabel: string | null
-} {
+function collectMeaningfulInteractions(karkunId: string): InteractionCandidate[] {
   const candidates: InteractionCandidate[] = []
   const progress = getDailyProgressView(karkunId)
   const submission = getLatestSubmissionForKarkun(karkunId)
 
   if (submission?.visitConducted === 'yes') {
-    pushCandidate(
-      candidates,
-      'Visit completed',
-      submission.submittedAt,
-      submission.visitDate,
-    )
+    pushCandidate(candidates, 'Visit completed', submission.submittedAt, submission.visitDate)
   } else if (submission?.visitConducted === 'no') {
-    pushCandidate(
-      candidates,
-      'Visit attempted',
-      submission.submittedAt,
-      submission.visitDate,
-    )
+    pushCandidate(candidates, 'Visit attempted', submission.submittedAt, submission.visitDate)
   } else if (progress.hasAnyProgress && progress.submission) {
     pushCandidate(
       candidates,
@@ -124,7 +142,7 @@ export function resolveLastMeaningfulInteraction(karkunId: string): {
 
   const karkun = getKarkunById(karkunId)
   if (karkun?.jihAppRegistrationStatus === 'Registered') {
-    pushCandidate(candidates, 'JIH registered', karkun.updatedAt)
+    pushCandidate(candidates, 'JIH App registered', karkun.updatedAt)
   }
 
   const ijtema = getCurrentIjtemaAttendance(karkunId)
@@ -145,13 +163,35 @@ export function resolveLastMeaningfulInteraction(karkunId: string): {
     pushCandidate(candidates, 'Baitul Maal discussed', baitulAt)
   }
 
+  return candidates.sort((a, b) => b.at - a.at)
+}
+
+/** Latest meaningful campaign activity — visit / JIH / Ijtema / Baitul Maal. */
+export function resolveLastMeaningfulInteraction(karkunId: string): {
+  label: string
+  dateLabel: string | null
+} {
+  const candidates = collectMeaningfulInteractions(karkunId)
   if (candidates.length === 0) {
     return { label: 'No interaction yet', dateLabel: null }
   }
-
-  candidates.sort((a, b) => b.at - a.at)
   const top = candidates[0]!
   return { label: top.label, dateLabel: top.dateLabel }
+}
+
+/** Newest-first activity list for Companion Workspace. */
+export function listMeaningfulActivities(
+  karkunId: string,
+  limit = 8,
+): MeaningfulActivity[] {
+  return collectMeaningfulInteractions(karkunId)
+    .slice(0, limit)
+    .map((item, index) => ({
+      id: `${karkunId}-activity-${index}-${item.at}`,
+      label: item.label,
+      dateLabel: item.dateLabel,
+      at: item.at,
+    }))
 }
 
 /** Same priority order as buildTodaysFocusItems / Execution Matrix. */
@@ -239,6 +279,137 @@ export function buildConnectedKarkunIntelligence(
   }
 }
 
+function emptyMatrixRow(karkun: KarkunRegistryRecord): CampaignMatrixRow {
+  return {
+    karkunId: karkun.id,
+    karkunName: karkun.name,
+    area: karkun.area || '',
+    visitDone: false,
+    jih: 'not_discussed',
+    ijtema: 'Pending',
+    baitulMaal: 'not_discussed',
+    remarks: '',
+    completed: false,
+  }
+}
+
+export function getMatrixRowForKarkun(
+  ruknId: string,
+  karkun: KarkunRegistryRecord,
+): CampaignMatrixRow {
+  const row = buildCampaignMatrixRows(ruknId).find((item) => item.karkunId === karkun.id)
+  return row ?? emptyMatrixRow(karkun)
+}
+
+export function buildCampaignObjectiveProgress(
+  row: CampaignMatrixRow,
+): CampaignObjectiveProgress[] {
+  return [
+    {
+      id: 'visit',
+      label: 'Visit',
+      completed: row.visitDone,
+      detail: row.visitDone ? 'Completed' : 'Pending',
+    },
+    {
+      id: 'jih',
+      label: 'JIH App',
+      completed: row.jih === 'registered',
+      detail: jihAppLabel(row.jih),
+    },
+    {
+      id: 'ijtema',
+      label: 'Weekly Ijtema',
+      completed: row.ijtema !== 'Pending',
+      detail: ijtemaStatusChip(row.ijtema).label,
+    },
+    {
+      id: 'baitul',
+      label: 'Baitul Maal',
+      completed: row.baitulMaal === 'committed',
+      detail: baitulMaalLabel(row.baitulMaal),
+    },
+  ]
+}
+
+function recommendationReason(pendingObjective: string, nextAction: string): string {
+  switch (pendingObjective) {
+    case 'Visit':
+      return 'First campaign contact is still pending for this Connected Karkun.'
+    case 'JIH App':
+      return 'Visit progress is underway — JIH App registration is the next campaign objective.'
+    case 'Weekly Ijtema':
+      return 'Registration progress is complete — Weekly Ijtema invitation is the next objective.'
+    case 'Baitul Maal':
+      return 'Ijtema progress is recorded — Baitul Maal discussion is the remaining objective.'
+    case 'None':
+      return 'All campaign objectives for this Connected Karkun look complete.'
+    default:
+      return `${nextAction} is the highest-priority remaining campaign step.`
+  }
+}
+
+function recommendationPriority(attentionRank: number): RecommendedActionView['priority'] {
+  if (attentionRank <= 0) return 'High'
+  if (attentionRank <= 2) return 'Medium'
+  return 'Low'
+}
+
+/** KC-0095 — same Urdu model as Home / Communication, scoped to one Karkun. */
+export function buildKarkunRafeeqGuidance(
+  karkunName: string,
+  pendingObjective: string,
+): string {
+  const trimmed = karkunName.trim() || 'کارکن'
+  const name = /صاحب$|بیگم$|آپہ$/.test(trimmed) ? trimmed : `${trimmed} صاحب`
+
+  switch (pendingObjective) {
+    case 'Visit':
+      return `${name} آپ کی ملاقات کے منتظر ہیں۔ آج ہی رابطہ مفید ہوگا۔`
+    case 'JIH App':
+      return `${name} کی JIH App رجسٹریشن میں مدد آج کا نرم اور مفید قدم ہو سکتا ہے۔`
+    case 'Weekly Ijtema':
+      return `اگر مناسب سمجھیں تو ${name} کو ہفتہ وار اجتماع کی دعوت دینا مفید ہو سکتا ہے۔`
+    case 'Baitul Maal':
+      return `${name} سے بیت المال کی گفتگو مکمل کرنا آج کا موزوں قدم ہے۔`
+    case 'None':
+      return `الحمد للہ — ${name} کے مہم کے اہم کام مکمل نظر آتے ہیں۔`
+    default:
+      return `اب ${name} سے ایک مختصر ملاقات مفید ہوگی۔`
+  }
+}
+
+export function buildRecommendedActionView(row: CampaignMatrixRow): RecommendedActionView {
+  const { pendingObjective, nextAction, attentionRank } =
+    resolvePendingObjectiveAndAction(row)
+  return {
+    action: nextAction,
+    reason: recommendationReason(pendingObjective, nextAction),
+    priority: recommendationPriority(attentionRank),
+    pendingObjective,
+    attentionRank,
+  }
+}
+
+/** KC-0095 — full Companion Workspace model for one Connected Karkun. */
+export function buildCompanionWorkspaceModel(
+  ruknId: string,
+  karkun: KarkunRegistryRecord,
+): CompanionWorkspaceModel {
+  const postCampaign = isRuknPostCampaignMode()
+  const row = getMatrixRowForKarkun(ruknId, karkun)
+  const intelligence = buildConnectedKarkunIntelligence(row, postCampaign)
+  const recommendation = buildRecommendedActionView(row)
+
+  return {
+    intelligence,
+    objectives: buildCampaignObjectiveProgress(row),
+    activities: listMeaningfulActivities(karkun.id),
+    recommendation,
+    rafeeqGuidance: buildKarkunRafeeqGuidance(karkun.name, recommendation.pendingObjective),
+  }
+}
+
 /**
  * Intelligence cards for a Rukn's Connected Karkuns, ordered by who needs attention first.
  */
@@ -252,19 +423,7 @@ export function buildMyConnectedKarkunsIntelligence(
 
   return karkuns
     .map((karkun) => {
-      const row =
-        byId.get(karkun.id) ??
-        ({
-          karkunId: karkun.id,
-          karkunName: karkun.name,
-          area: karkun.area || '',
-          visitDone: false,
-          jih: 'not_discussed',
-          ijtema: 'Pending',
-          baitulMaal: 'not_discussed',
-          remarks: '',
-          completed: false,
-        } satisfies CampaignMatrixRow)
+      const row = byId.get(karkun.id) ?? emptyMatrixRow(karkun)
       return buildConnectedKarkunIntelligence(row, postCampaign)
     })
     .sort(
