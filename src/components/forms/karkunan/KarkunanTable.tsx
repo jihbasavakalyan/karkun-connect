@@ -47,7 +47,7 @@ export function KarkunanActionsMenu({ karkunId }: KarkunanActionsMenuProps) {
         <ActionItem label="Edit" />
         <ActionItem label="Assign" />
         <ActionItem label="Visit History" />
-        <ActionItem label="Archive" />
+        <ActionItem label="Move to Muttafiqeen" />
       </div>
     </details>
   )

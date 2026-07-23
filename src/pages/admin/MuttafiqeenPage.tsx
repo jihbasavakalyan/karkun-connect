@@ -5,6 +5,7 @@ import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
 import type { MobileLookupResult } from '@/lib/peopleStore'
 import { useKarkunPeopleManagement } from '@/hooks/useKarkunPeopleManagement'
 import {
+  bulkSetKarkunStatus,
   createMuttafiq,
   getAllMuttafiqeen,
   persistKarkunDurable,
@@ -12,6 +13,7 @@ import {
 } from '@/lib/peopleStore'
 import { usePeopleStore } from '@/hooks/usePeopleStore'
 import {
+  BulkActionsBar,
   ConfirmDialog,
   KarkunPeopleActionBar,
   KarkunPeopleTable,
@@ -139,7 +141,11 @@ function MuttafiqGenderSection({
   }
 
   return (
-    <div className="mt-4 space-y-4">
+    <div className="space-y-6">
+      <p className="text-sm text-secondary">
+        {gender} Muttafiqeen registry — {management.totalCount} members
+      </p>
+
       <PeopleFiltersBar
         filters={management.filters}
         onFilterChange={management.updateFilter}
@@ -149,16 +155,24 @@ function MuttafiqGenderSection({
         hideGenderFilter
       />
 
-      <div className="flex justify-end">
-        <button
-          type="button"
-          className="text-sm font-medium text-primary hover:underline"
-          onClick={() => setBulkWhatsAppOpen(true)}
-          disabled={management.selectedIds.length === 0}
-        >
-          Message selected ({management.selectedIds.length})
-        </button>
-      </div>
+      <BulkActionsBar
+        compact
+        selectedCount={management.selectedIds.length}
+        onActivate={() => {
+          bulkSetKarkunStatus(management.selectedIds, 'active')
+          management.clearSelection()
+        }}
+        onDeactivate={() => {
+          bulkSetKarkunStatus(management.selectedIds, 'inactive')
+          management.clearSelection()
+        }}
+        onSendWhatsApp={() => setBulkWhatsAppOpen(true)}
+        onClearSelection={management.clearSelection}
+      />
+
+      <p className="text-sm text-secondary">
+        Showing {management.records.length} of {management.totalRecords} filtered
+      </p>
 
       <KarkunPeopleTable
         records={management.records}
@@ -174,6 +188,7 @@ function MuttafiqGenderSection({
           setIsFormOpen(true)
         }}
         showAssignmentControls={false}
+        emptyTitle="No Muttafiqeen found"
         emptyLabel="No Muttafiqeen match your search or filters."
       />
 
@@ -216,15 +231,19 @@ function MuttafiqGenderSection({
 
       <ConfirmDialog
         isOpen={Boolean(mobileOwner)}
-        title={mobileConflictContext === 'add' ? 'Person Already Exists' : 'Overwrite Mobile Number?'}
+        title={
+          mobileConflictContext === 'add' ? 'Person Already Exists' : 'Overwrite Mobile Number?'
+        }
         message={
           <>
-            This mobile number is already used by <strong>{mobileOwner?.name}</strong> (
-            {mobileOwner?.kind}).
+            This mobile number is already used by <strong>{mobileOwner?.name}</strong>
+            {mobileOwner?.kind === 'rukn' ? ' (Rukn)' : ' in the People registry'}.
           </>
         }
         confirmLabel={mobileConflictContext === 'edit' ? 'Overwrite' : 'OK'}
-        onConfirm={mobileConflictContext === 'edit' ? confirmMobileOverwrite : clearMobileConflictDialog}
+        onConfirm={
+          mobileConflictContext === 'edit' ? confirmMobileOverwrite : clearMobileConflictDialog
+        }
         onClose={clearMobileConflictDialog}
       />
 
@@ -272,13 +291,13 @@ function MuttafiqeenSummaryCards() {
         { label: 'Male', value: stats.male },
         { label: 'Female', value: stats.female },
       ].map((card) => (
-        <div
+        <article
           key={card.label}
-          className="rounded-(--radius-card) border border-border bg-surface px-4 py-3 shadow-card"
+          className="rounded-(--radius-card) border border-border bg-surface p-4 shadow-card sm:p-6"
         >
-          <p className="text-xs font-medium uppercase tracking-wide text-secondary">{card.label}</p>
-          <p className="mt-1 text-2xl font-semibold text-text-heading">{card.value}</p>
-        </div>
+          <p className="text-sm font-medium text-secondary">{card.label}</p>
+          <p className="mt-2 text-2xl font-semibold text-text-heading sm:text-3xl">{card.value}</p>
+        </article>
       ))}
     </div>
   )
@@ -310,7 +329,7 @@ export function MuttafiqeenPage() {
     <PageShell>
       <PageHeader
         title="Muttafiqeen Registry"
-        description="People associated with Jamaat who are not active campaign Karkuns. Classification can change over time."
+        description="Manage Male and Female Muttafiq contacts separately. Classification can change over time."
         actions={
           <KarkunPeopleActionBar
             personLabel="Muttafiq"
@@ -325,16 +344,19 @@ export function MuttafiqeenPage() {
       <div className="mb-4 flex flex-wrap items-center gap-3 text-sm">
         <span className="text-secondary">People</span>
         <span className="text-secondary">/</span>
+        <span className="font-medium text-text-heading">Muttafiqeen</span>
+        <span className="text-secondary">/</span>
         <Link to={ROUTES.ADMIN_KARKUN} className="text-primary hover:underline">
           Karkuns
         </Link>
-        <span className="text-secondary">/</span>
-        <span className="font-medium text-text-heading">Muttafiqeen</span>
       </div>
 
       <MuttafiqeenSummaryCards />
 
-      <nav className="ds-tab-nav mt-4 border-b border-border pb-px" aria-label="Muttafiq gender">
+      <nav
+        className="ds-tab-nav mt-6 border-b border-border pb-px"
+        aria-label="Muttafiqeen gender"
+      >
         {(['Male', 'Female'] as const).map((gender) => (
           <button
             key={gender}
@@ -351,13 +373,15 @@ export function MuttafiqeenPage() {
         ))}
       </nav>
 
-      <MuttafiqGenderSection
-        key={activeGender}
-        gender={activeGender}
-        shouldOpenAddForm={openAddForGender === activeGender}
-        onAddFormOpened={handleAddFormOpened}
-        onRegisterHandlers={registerSectionHandlers}
-      />
+      <div className="mt-6">
+        <MuttafiqGenderSection
+          key={activeGender}
+          gender={activeGender}
+          shouldOpenAddForm={openAddForGender === activeGender}
+          onAddFormOpened={handleAddFormOpened}
+          onRegisterHandlers={registerSectionHandlers}
+        />
+      </div>
     </PageShell>
   )
 }

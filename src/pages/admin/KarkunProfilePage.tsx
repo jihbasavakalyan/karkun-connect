@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { ROUTES } from '@/constants/routes'
 import { changeKarkunRuknAssignment } from '@/lib/assignmentEngine'
+import { getPersonCategory } from '@/lib/peopleClassification'
 import { persistKarkunDurable, updateKarkun } from '@/lib/peopleStore'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { usePeopleStore } from '@/hooks/usePeopleStore'
@@ -123,6 +124,10 @@ function KarkunProfileForm({ karkun, karkunId }: KarkunProfileFormProps) {
   const navigate = useNavigate()
   const { sendIndividualMessage } = useCommunication()
   const initialCompliance = readComplianceState(karkunId)
+  const category = getPersonCategory(karkun)
+  const isMuttafiq = category === 'Muttafiq'
+  const registryHome = isMuttafiq ? ROUTES.ADMIN_MUTTAFIQEEN : ROUTES.ADMIN_KARKUN
+  const backLabel = isMuttafiq ? '← Back to Muttafiqeen' : '← Back to Karkuns'
 
   const [name, setName] = useState(karkun.name)
   const [gender, setGender] = useState<PersonGender>(karkun.gender)
@@ -158,7 +163,7 @@ function KarkunProfileForm({ karkun, karkunId }: KarkunProfileFormProps) {
   }
 
   const handleCancel = () => {
-    navigate(ROUTES.ADMIN_KARKUN)
+    navigate(registryHome)
   }
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -176,7 +181,7 @@ function KarkunProfileForm({ karkun, karkunId }: KarkunProfileFormProps) {
     })
 
     if (!karkunResult.success) {
-      setError(karkunResult.error ?? 'Unable to save Karkun details.')
+      setError(karkunResult.error ?? `Unable to save ${isMuttafiq ? 'Muttafiq' : 'Karkun'} details.`)
       return
     }
 
@@ -184,14 +189,19 @@ function KarkunProfileForm({ karkun, karkunId }: KarkunProfileFormProps) {
       // KC-0075 — success only after durable Firestore write (same as ProfileCompletionReminder).
       const durable = await persistKarkunDurable(karkunId)
       if (!durable.success) {
-        setError(durable.error ?? 'Unable to save Karkun details. Please try again.')
+        setError(
+          durable.error ??
+            `Unable to save ${isMuttafiq ? 'Muttafiq' : 'Karkun'} details. Please try again.`,
+        )
         return
       }
 
-      const assignmentResult = await changeKarkunRuknAssignment(karkunId, assignedRuknId)
-      if (!assignmentResult.success) {
-        setError(assignmentResult.error ?? 'Unable to update connection.')
-        return
+      if (!isMuttafiq) {
+        const assignmentResult = await changeKarkunRuknAssignment(karkunId, assignedRuknId)
+        if (!assignmentResult.success) {
+          setError(assignmentResult.error ?? 'Unable to update connection.')
+          return
+        }
       }
 
       finishProfileSave(karkunId)
@@ -259,7 +269,7 @@ function KarkunProfileForm({ karkun, karkunId }: KarkunProfileFormProps) {
       return
     }
 
-    navigate(ROUTES.ADMIN_KARKUN)
+    navigate(registryHome)
   }
 
   return (
@@ -267,19 +277,20 @@ function KarkunProfileForm({ karkun, karkunId }: KarkunProfileFormProps) {
       <div className="flex shrink-0 items-start justify-between gap-4">
         <div className="min-w-0">
           <Link
-            to={ROUTES.ADMIN_KARKUN}
+            to={registryHome}
             className="text-sm font-medium text-primary hover:underline"
           >
-            ← Back to Karkun
+            {backLabel}
           </Link>
           <h1 className="mt-1 truncate text-xl font-semibold text-text-heading">
             {formatPersonNameForDisplay(name)}
           </h1>
-          {karkun.needsReview && !karkun.isArchived ? (
-            <div className="mt-1">
-              <StatusBadge variant="warning">🟡 Needs Review</StatusBadge>
-            </div>
-          ) : null}
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            <StatusBadge variant={isMuttafiq ? 'info' : 'connected'}>{category}</StatusBadge>
+            {karkun.needsReview && !karkun.isArchived ? (
+              <StatusBadge variant="warning">Needs Review</StatusBadge>
+            ) : null}
+          </div>
         </div>
 
         <div className="flex shrink-0 gap-2">
@@ -305,17 +316,19 @@ function KarkunProfileForm({ karkun, karkunId }: KarkunProfileFormProps) {
             required
           />
 
-          <div className="flex flex-col gap-2">
-            <label htmlFor="profile-assigned-rukn" className="text-sm font-medium text-text-heading">
-              Connected Rukn
-            </label>
-            <RuknAssignmentSelect
-              karkunId={karkunId}
-              value={assignedRuknId}
-              compact
-              onChange={setAssignedRuknId}
-            />
-          </div>
+          {!isMuttafiq ? (
+            <div className="flex flex-col gap-2">
+              <label htmlFor="profile-assigned-rukn" className="text-sm font-medium text-text-heading">
+                Connected Rukn
+              </label>
+              <RuknAssignmentSelect
+                karkunId={karkunId}
+                value={assignedRuknId}
+                compact
+                onChange={setAssignedRuknId}
+              />
+            </div>
+          ) : null}
 
           <div className="flex flex-col gap-2">
             <label htmlFor="profile-gender" className="text-sm font-medium text-text-heading">
@@ -455,9 +468,10 @@ export function KarkunProfilePage() {
       <PageShell variant="narrow">
         <EmptyState
           icon="search"
-          title="Karkun not found"
-          description="This profile does not exist in the registry."
-          primaryAction={{ label: 'Back to Karkun', href: ROUTES.ADMIN_KARKUN }}
+          title="Person not found"
+          description="This profile does not exist in the People registry."
+          primaryAction={{ label: 'Back to Karkuns', href: ROUTES.ADMIN_KARKUN }}
+          secondaryAction={{ label: 'Muttafiqeen', href: ROUTES.ADMIN_MUTTAFIQEEN }}
         />
       </PageShell>
     )

@@ -32,6 +32,8 @@ type RegistryMaintenancePanelProps = {
   karkunId: string
 }
 
+type MoveConfirmKind = 'muttafiqeen' | 'karkun' | null
+
 /**
  * KC-0076 / KC-0101 — Admin review, classification moves, controlled delete.
  */
@@ -47,6 +49,7 @@ export function RegistryMaintenancePanel({ karkun, karkunId }: RegistryMaintenan
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
+  const [moveConfirm, setMoveConfirm] = useState<MoveConfirmKind>(null)
 
   const category = getPersonCategory(karkun)
   const softRemoved = isSoftRemoved(karkun)
@@ -104,20 +107,23 @@ export function RegistryMaintenancePanel({ karkun, karkunId }: RegistryMaintenan
     })()
   }
 
-  const handleMoveToMuttafiqeen = () => {
-    void (async () => {
-      const ok = await runDurable(() =>
-        moveToMuttafiqeenSafely(karkunId, 'Administrator', reclassifyRemarks || undefined),
-      )
-      if (ok) {
-        setMessage('Moved to Muttafiqeen.')
-        navigate(ROUTES.ADMIN_MUTTAFIQEEN)
-      }
-    })()
-  }
+  const handleConfirmMove = () => {
+    const kind = moveConfirm
+    setMoveConfirm(null)
+    if (!kind) return
 
-  const handleMoveToKarkun = () => {
     void (async () => {
+      if (kind === 'muttafiqeen') {
+        const ok = await runDurable(() =>
+          moveToMuttafiqeenSafely(karkunId, 'Administrator', reclassifyRemarks || undefined),
+        )
+        if (ok) {
+          setMessage('Moved to Muttafiqeen.')
+          navigate(ROUTES.ADMIN_MUTTAFIQEEN)
+        }
+        return
+      }
+
       const ok = await runDurable(() =>
         moveToKarkunSafely(karkunId, 'Administrator', reclassifyRemarks || undefined),
       )
@@ -150,7 +156,7 @@ export function RegistryMaintenancePanel({ karkun, karkunId }: RegistryMaintenan
     >
       <div className="flex flex-wrap items-center gap-2">
         <h2 className="text-sm font-semibold text-text-heading">Registry Maintenance</h2>
-        <StatusBadge variant={category === 'Muttafiq' ? 'dormant' : 'success'}>
+        <StatusBadge variant={category === 'Muttafiq' ? 'info' : 'connected'}>
           {category}
         </StatusBadge>
         {karkun.needsReview && !softRemoved ? (
@@ -255,7 +261,7 @@ export function RegistryMaintenancePanel({ karkun, karkunId }: RegistryMaintenan
                 type="button"
                 className="px-4 py-2 text-sm"
                 disabled={busy}
-                onClick={handleMoveToMuttafiqeen}
+                onClick={() => setMoveConfirm('muttafiqeen')}
               >
                 Move to Muttafiqeen
               </SecondaryButton>
@@ -275,7 +281,7 @@ export function RegistryMaintenancePanel({ karkun, karkunId }: RegistryMaintenan
               type="button"
               className="px-4 py-2 text-sm"
               disabled={busy}
-              onClick={handleMoveToKarkun}
+              onClick={() => setMoveConfirm('karkun')}
             >
               Move to Karkun Registry
             </PrimaryButton>
@@ -337,8 +343,59 @@ export function RegistryMaintenancePanel({ karkun, karkunId }: RegistryMaintenan
         )}
       </div>
 
-      {error ? <p className="mt-3 text-sm text-red-600">{error}</p> : null}
-      {message ? <p className="mt-3 text-sm text-emerald-700">{message}</p> : null}
+      {error ? (
+        <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
+          {error}
+        </p>
+      ) : null}
+      {message ? (
+        <p
+          className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800"
+          role="status"
+        >
+          {message}
+        </p>
+      ) : null}
+
+      <ConfirmDialog
+        isOpen={moveConfirm === 'muttafiqeen'}
+        title="Move to Muttafiqeen?"
+        confirmLabel="Move to Muttafiqeen"
+        onClose={() => setMoveConfirm(null)}
+        onConfirm={handleConfirmMove}
+        message={
+          <div className="space-y-2">
+            <p>
+              <strong>{karkun.name}</strong> will be classified as a Muttafiq and leave the Karkun
+              Registry.
+            </p>
+            <p className="text-secondary">
+              They will no longer be eligible for campaign assignment or connections. Profile and
+              history are preserved.
+            </p>
+          </div>
+        }
+      />
+
+      <ConfirmDialog
+        isOpen={moveConfirm === 'karkun'}
+        title="Move to Karkun Registry?"
+        confirmLabel="Move to Karkun Registry"
+        onClose={() => setMoveConfirm(null)}
+        onConfirm={handleConfirmMove}
+        message={
+          <div className="space-y-2">
+            <p>
+              <strong>{karkun.name}</strong> will be classified as a Karkun and leave the Muttafiqeen
+              Registry.
+            </p>
+            <p className="text-secondary">
+              They become eligible for campaign assignment and connections. Profile and history are
+              preserved.
+            </p>
+          </div>
+        }
+      />
 
       <ConfirmDialog
         isOpen={confirmDeleteOpen}

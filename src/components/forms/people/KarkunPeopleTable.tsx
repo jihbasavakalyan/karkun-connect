@@ -18,6 +18,7 @@ import {
   PEOPLE_TABLE_ROW_CLASS,
   PEOPLE_TABLE_WRAPPER_CLASS,
 } from '@/components/forms/people/peopleTableDisplay'
+import { EmptyState } from '@/components/ui/EmptyState'
 
 type KarkunPeopleTableProps = {
   records: KarkunRegistryRecord[]
@@ -32,6 +33,7 @@ type KarkunPeopleTableProps = {
   assignmentErrors?: Record<string, string>
   /** KC-0101 — hide connection controls for Muttafiqeen registry. */
   showAssignmentControls?: boolean
+  emptyTitle?: string
   emptyLabel?: string
 }
 
@@ -80,6 +82,7 @@ export function KarkunPeopleTable({
   onAssignmentChange,
   assignmentErrors = {},
   showAssignmentControls = true,
+  emptyTitle,
   emptyLabel = 'No Karkun match your search or filters.',
 }: KarkunPeopleTableProps) {
   const [pendingRukns, setPendingRukns] = useState<Record<string, string>>({})
@@ -115,9 +118,11 @@ export function KarkunPeopleTable({
 
   if (records.length === 0) {
     return (
-      <div className="ds-empty" role="status">
-        <p className="ds-empty-description">{emptyLabel}</p>
-      </div>
+      <EmptyState
+        icon="search"
+        title={emptyTitle ?? 'No results'}
+        description={emptyLabel}
+      />
     )
   }
 

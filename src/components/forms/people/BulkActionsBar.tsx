@@ -16,6 +16,8 @@ type BulkActionsBarProps = {
   onMarkJihReportPending?: () => void
   onSendWhatsApp?: () => void
   onClearSelection: () => void
+  /** KC-0101 UI — Muttafiqeen registry: status + messaging only. */
+  compact?: boolean
 }
 
 export function BulkActionsBar({
@@ -34,6 +36,7 @@ export function BulkActionsBar({
   onMarkJihReportPending,
   onSendWhatsApp,
   onClearSelection,
+  compact = false,
 }: BulkActionsBarProps) {
   if (selectedCount === 0) {
     return null
@@ -48,25 +51,27 @@ export function BulkActionsBar({
       <SecondaryButton type="button" className="min-h-10 px-3 py-2 text-sm" onClick={onDeactivate}>
         Deactivate
       </SecondaryButton>
-      <SecondaryButton
-        type="button"
-        className="min-h-10 cursor-not-allowed px-3 py-2 text-sm opacity-60"
-        disabled
-        title="Coming in Version 2"
-      >
-        Bulk Connect (Coming in Version 2)
-      </SecondaryButton>
-      {onUnassign && (
+      {!compact ? (
+        <SecondaryButton
+          type="button"
+          className="min-h-10 cursor-not-allowed px-3 py-2 text-sm opacity-60"
+          disabled
+          title="Coming in Version 2"
+        >
+          Bulk Connect (Coming in Version 2)
+        </SecondaryButton>
+      ) : null}
+      {!compact && onUnassign ? (
         <SecondaryButton type="button" className="min-h-10 px-3 py-2 text-sm" onClick={onUnassign}>
           Disconnect
         </SecondaryButton>
-      )}
-      {onMarkBaitulMaalPaid && (
+      ) : null}
+      {!compact && onMarkBaitulMaalPaid ? (
         <SecondaryButton type="button" className="min-h-10 px-3 py-2 text-sm" onClick={onMarkBaitulMaalPaid}>
           Mark Bait-ul-Maal Paid
         </SecondaryButton>
-      )}
-      {onMarkBaitulMaalPending && (
+      ) : null}
+      {!compact && onMarkBaitulMaalPending ? (
         <SecondaryButton
           type="button"
           className="min-h-10 px-3 py-2 text-sm"
@@ -74,33 +79,37 @@ export function BulkActionsBar({
         >
           Mark Bait-ul-Maal Pending
         </SecondaryButton>
-      )}
-      {onMarkIjtemaPresent && (
+      ) : null}
+      {!compact && onMarkIjtemaPresent ? (
         <SecondaryButton type="button" className="min-h-10 px-3 py-2 text-sm" onClick={onMarkIjtemaPresent}>
           Mark Ijtema Present
         </SecondaryButton>
-      )}
-      {onMarkIjtemaAbsent && (
+      ) : null}
+      {!compact && onMarkIjtemaAbsent ? (
         <SecondaryButton type="button" className="min-h-10 px-3 py-2 text-sm" onClick={onMarkIjtemaAbsent}>
           Mark Ijtema Absent
         </SecondaryButton>
-      )}
-      {onMarkIjtemaInformed && (
+      ) : null}
+      {!compact && onMarkIjtemaInformed ? (
         <SecondaryButton type="button" className="min-h-10 px-3 py-2 text-sm" onClick={onMarkIjtemaInformed}>
           Mark Ijtema Excused
         </SecondaryButton>
-      )}
-      {onMarkJihRegistered && (
+      ) : null}
+      {!compact && onMarkJihRegistered ? (
         <SecondaryButton type="button" className="min-h-10 px-3 py-2 text-sm" onClick={onMarkJihRegistered}>
           Mark JIH Registered
         </SecondaryButton>
-      )}
-      {onMarkJihNotRegistered && (
-        <SecondaryButton type="button" className="min-h-10 px-3 py-2 text-sm" onClick={onMarkJihNotRegistered}>
+      ) : null}
+      {!compact && onMarkJihNotRegistered ? (
+        <SecondaryButton
+          type="button"
+          className="min-h-10 px-3 py-2 text-sm"
+          onClick={onMarkJihNotRegistered}
+        >
           Mark JIH Not Registered
         </SecondaryButton>
-      )}
-      {onMarkJihReportSubmitted && (
+      ) : null}
+      {!compact && onMarkJihReportSubmitted ? (
         <SecondaryButton
           type="button"
           className="min-h-10 px-3 py-2 text-sm"
@@ -108,17 +117,21 @@ export function BulkActionsBar({
         >
           Mark Report Submitted
         </SecondaryButton>
-      )}
-      {onMarkJihReportPending && (
-        <SecondaryButton type="button" className="min-h-10 px-3 py-2 text-sm" onClick={onMarkJihReportPending}>
+      ) : null}
+      {!compact && onMarkJihReportPending ? (
+        <SecondaryButton
+          type="button"
+          className="min-h-10 px-3 py-2 text-sm"
+          onClick={onMarkJihReportPending}
+        >
           Mark Report Pending
         </SecondaryButton>
-      )}
-      {onSendWhatsApp && (
+      ) : null}
+      {onSendWhatsApp ? (
         <SecondaryButton type="button" className="min-h-10 px-3 py-2 text-sm" onClick={onSendWhatsApp}>
           Send WhatsApp
         </SecondaryButton>
-      )}
+      ) : null}
       <SecondaryButton type="button" className="min-h-10 px-3 py-2 text-sm" onClick={onClearSelection}>
         Clear
       </SecondaryButton>
