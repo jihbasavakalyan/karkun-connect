@@ -52,6 +52,12 @@ const SEVERITY_CLASS = {
   watch: 'exdash-severity-watch',
 } as const
 
+const ALERT_SEVERITY_CLASS = {
+  high: SEVERITY_CLASS.critical,
+  medium: SEVERITY_CLASS.attention,
+  low: SEVERITY_CLASS.watch,
+} as const
+
 type OverviewMetric = {
   id: string
   label: string
@@ -532,6 +538,70 @@ export function AdminCommandCenter({
             />
           ))}
         </ul>
+      </section>
+
+      <section className="exdash-panel" aria-label="Today's priorities">
+        <div className="exdash-section-head">
+          <h2 className="exdash-section-title">Today&apos;s Priorities</h2>
+          <span className="exdash-section-meta">
+            {model.todaysPriorities.length === 0
+              ? 'Clear'
+              : `${model.todaysPriorities.length} focus`}
+          </span>
+        </div>
+        {model.todaysPriorities.length === 0 ? (
+          <p className="exdash-muted">No mission priorities right now.</p>
+        ) : (
+          <ol className="exdash-queue">
+            {model.todaysPriorities.map((item, index) => (
+              <li key={item.id}>
+                <Link to={item.route} className="exdash-queue-item">
+                  <span className="exdash-queue-rank" aria-hidden="true">
+                    {index + 1}
+                  </span>
+                  <div className="exdash-queue-body">
+                    <span className="exdash-queue-title">{item.title}</span>
+                    <span className="exdash-queue-detail">{item.detail}</span>
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ol>
+        )}
+      </section>
+
+      <section className="exdash-panel" aria-label="Mission alerts">
+        <div className="exdash-section-head">
+          <h2 className="exdash-section-title">Mission Alerts</h2>
+          <span className="exdash-section-meta">
+            {snapshot.alerts.length === 0 ? 'Clear' : `${snapshot.alerts.length} active`}
+          </span>
+        </div>
+        {snapshot.alerts.length === 0 ? (
+          <p className="exdash-muted">No mission alerts right now.</p>
+        ) : (
+          <ol className="exdash-queue">
+            {snapshot.alerts.map((alert, index) => (
+              <li key={alert.id}>
+                <Link
+                  to={alert.route || adminExecutionPath()}
+                  className={`exdash-queue-item ${ALERT_SEVERITY_CLASS[alert.severity]}`}
+                >
+                  <span className="exdash-queue-rank" aria-hidden="true">
+                    {index + 1}
+                  </span>
+                  <div className="exdash-queue-body">
+                    <span className="exdash-queue-title">{alert.title}</span>
+                    <span className="exdash-queue-detail">{alert.message}</span>
+                  </div>
+                  <span className={`exdash-queue-badge ${ALERT_SEVERITY_CLASS[alert.severity]}`}>
+                    {alert.severity}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ol>
+        )}
       </section>
 
       {backgroundReady ? <PendingKarkunRequestQueue /> : null}

@@ -2,8 +2,9 @@ import { useEffect, useMemo, useRef } from 'react'
 import {
   AdminCommandCenter,
   AdminMissionControlHero,
+  AskDigitalRafeeqCard,
 } from '@/components/mission-control'
-import { AdminExecutionSummaryWidgets } from '@/components/execution/AdminExecutionSummaryWidgets'
+import { openDigitalRafeeqAssistant } from '@/features/digitalRafeeq/launcher'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import {
   useRepositoryHydration,
@@ -133,8 +134,8 @@ export function AdminHomePage() {
   return (
     <div className="cd-page cd-page-admin mc-page mc-page-admin-compact mc-page-admin-command exdash-page">
       <AdminMissionControlHero model={model} metricsReady={isHydrated} />
-      <AdminExecutionSummaryWidgets />
       <AdminCommandCenter model={model} snapshot={snapshot} metricsReady={isHydrated} />
+      <AskDigitalRafeeqCard compact onOpen={openDigitalRafeeqAssistant} />
     </div>
   )
 }
