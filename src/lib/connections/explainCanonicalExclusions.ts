@@ -1,18 +1,21 @@
 /**
  * KC-003 — Explain every repository row excluded from the Dashboard Connected KPI.
  *
- * Dashboard rule: unique Active Karkuns that exist and are not archived
- * (see getCanonicalConnectedAssignments). This is intentional — not assignment row count.
+ * Dashboard rule: unique Active campaign-eligible Karkuns
+ * (see getCanonicalConnectedAssignments / isCampaignEligible). This is intentional —
+ * not assignment row count. Muttafiqeen are excluded.
  */
 
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { preferNewestActive } from '@/lib/connections/activeConnectionIntegrity'
+import { isCampaignEligible } from '@/lib/peopleClassification'
 import type { AssignmentRecord, AssignmentStatus } from '@/types/assignment'
 
 export type CanonicalExclusionReason =
   | 'status_not_active'
   | 'karkun_missing'
   | 'karkun_archived'
+  | 'karkun_not_campaign_eligible'
   | 'duplicate_active_karkun'
 
 export type CanonicalExclusion = {
@@ -27,7 +30,7 @@ export type CanonicalExclusion = {
 }
 
 export const DASHBOARD_CONNECTED_RULE =
-  'Dashboard Connections counts unique Active Karkuns (non-archived, present in registry) — not raw Firestore/assignment document count.'
+  'Dashboard Connections counts unique Active campaign-eligible Karkuns (category=Karkun, non-archived) — not raw Firestore/assignment document count. Muttafiqeen are excluded.'
 
 export function explainCanonicalExclusions(records: readonly AssignmentRecord[]): {
   included: AssignmentRecord[]
@@ -74,14 +77,14 @@ export function explainCanonicalExclusions(records: readonly AssignmentRecord[])
       })
       continue
     }
-    if (karkun.isArchived) {
+    if (!isCampaignEligible(karkun)) {
       exclusions.push({
         assignmentId: record.assignmentId,
         assignmentNumber: record.assignmentNumber,
         karkunId: record.karkunId,
         ruknId: record.ruknId,
         status: record.status,
-        reason: 'karkun_archived',
+        reason: karkun.isArchived ? 'karkun_archived' : 'karkun_not_campaign_eligible',
       })
       continue
     }

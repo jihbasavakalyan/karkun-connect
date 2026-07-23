@@ -6,6 +6,7 @@ import {
   getCanonicalConnectedKarkunCount,
   getConnectedAssignmentsForRukn,
 } from '@/lib/connections/getConnectedKarkunsForRukn'
+import { isCampaignEligible } from '@/lib/peopleClassification'
 import { getAllKarkuns, getCompatibleKarkunsForRukn, notifyAndPersistKarkunRecords, notifyPeopleRegistryChange } from '@/lib/peopleStore'
 import { logPeopleAudit } from '@/lib/peopleAuditLog'
 import { isValidMobileFormat, normalizeMobile } from '@/lib/mobileValidation'
@@ -177,7 +178,8 @@ async function syncKarkunRegistryFromAssignments(
   karkunId: string,
   options?: { notify?: boolean },
 ): Promise<void> {
-  const karkun = MOCK_KARKUN_REGISTRY.find((k) => k.id === karkunId && !k.isArchived)
+  // KC-0103 — never sync campaign fields onto Muttafiqeen / soft-removed people.
+  const karkun = MOCK_KARKUN_REGISTRY.find((k) => k.id === karkunId && isCampaignEligible(k))
   if (!karkun) return
 
   const operationId = createIncidentOperationId('sync-karkun-registry')

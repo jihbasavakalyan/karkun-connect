@@ -2,7 +2,8 @@
  * KC-028A / KC-003 — Canonical connected-Karkun set.
  *
  * Source of truth: assignmentStore ↔ ConnectionRepository (Firestore `connections`).
- * Definition: Active assignment, unique by karkunId, Karkun exists and is not archived.
+ * Definition: Active assignment, unique by karkunId, Karkun exists and is campaign-eligible
+ * (category=Karkun; Muttafiqeen excluded).
  * When multiple Active rows exist for one Karkun, the newest is counted (integrity repair
  * should supersede the rest — see activeConnectionIntegrity).
  *
