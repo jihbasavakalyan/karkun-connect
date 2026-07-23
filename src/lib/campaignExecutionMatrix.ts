@@ -336,6 +336,197 @@ export function baitulMaalLabel(state: BaitulMaalCampaignState): string {
   }
 }
 
+/** KC-0097 Outcome Capture — milestones for one Connected Karkun (Today's Progress). */
+export type TodaysProgressDraft = {
+  visitCompleted: boolean
+  jihExplained: boolean
+  jihRegistered: boolean
+  weeklyIjtemaAttended: boolean
+  baitulMaalDiscussed: boolean
+}
+
+export function readTodaysProgressDraft(row: CampaignMatrixRow): TodaysProgressDraft {
+  return {
+    visitCompleted: row.visitDone,
+    jihExplained: row.jih !== 'not_discussed',
+    jihRegistered: row.jih === 'registered',
+    weeklyIjtemaAttended: row.ijtema === 'Present',
+    baitulMaalDiscussed: row.baitulMaal !== 'not_discussed',
+  }
+}
+
+function karkunObjectivePct(row: CampaignMatrixRow): number {
+  let done = 0
+  if (row.visitDone) done += 1
+  if (row.jih === 'registered') done += 1
+  if (row.ijtema !== 'Pending') done += 1
+  if (row.baitulMaal === 'committed' || row.baitulMaal === 'discussed') done += 1
+  return Math.round((done / 4) * 100)
+}
+
+function setJihAppAbsolute(
+  karkunId: string,
+  ruknId: string,
+  target: JihAppMatrixState,
+): { success: true } | { success: false; error: string } {
+  const statusMap: Record<JihAppMatrixState, JihAppRegistrationStatus> = {
+    not_discussed: 'Not Discussed',
+    discussed: 'Recommended',
+    installed: 'Recommended',
+    registered: 'Registered',
+  }
+  updateKarkunMeetingOutcomes(karkunId, {
+    jihAppRegistrationStatus: statusMap[target],
+    syncJihPortal: true,
+  })
+  if (target === 'installed') {
+    const exists = getCommitmentsForKarkun(karkunId).some((c) =>
+      /jih app installed/i.test(c.text),
+    )
+    if (!exists) {
+      const assignmentId = getActiveAssignmentsForKarkun(karkunId)[0]?.assignmentId
+      createCommitment({
+        karkunId,
+        ruknId,
+        assignmentId,
+        text: JIH_INSTALLED_COMMITMENT,
+        targetDate: new Date().toISOString().slice(0, 10),
+        createdBy: 'Rukn',
+        source: 'manual',
+      })
+    }
+  }
+  return { success: true }
+}
+
+function setBaitulDiscussedAbsolute(
+  karkunId: string,
+  updatedBy?: string,
+): { success: true } | { success: false; error: string } {
+  const current = getBaitulMaalCampaignState(karkunId)
+  if (current === 'committed' || current === 'discussed') {
+    return { success: true }
+  }
+  const result = updateBaitulMaal({
+    karkunId,
+    status: 'Pending',
+    remarks: BAITUL_DISCUSSED,
+    updatedBy: updatedBy ?? 'Rukn',
+  })
+  return result.success ? { success: true } : { success: false, error: result.error }
+}
+
+function setIjtemaPresentAbsolute(
+  karkunId: string,
+  ruknId: string,
+  actorId?: string,
+): { success: true } | { success: false; error: string } {
+  const current = getCurrentIjtemaAttendance(karkunId)
+  if (current.status === 'Present') {
+    return { success: true }
+  }
+  const result = updateIjtemaAttendance({
+    karkunId,
+    status: 'Present',
+    updatedBy: actorId ?? ruknId,
+    ruknId,
+  })
+  return result.success ? { success: true } : { success: false, error: result.error }
+}
+
+export type TodaysProgressApplyResult = {
+  success: true
+  beforePct: number
+  afterPct: number
+  nextObjective: string
+  nextAction: string
+}
+
+/**
+ * KC-0097 — Apply Today's Progress in one save (forward-only).
+ * Infers visit when later milestones advance. Reuses existing Matrix services.
+ */
+export function applyTodaysCampaignProgress(input: {
+  karkunId: string
+  ruknId: string
+  draft: TodaysProgressDraft
+  actorId?: string
+}): TodaysProgressApplyResult | { success: false; error: string } {
+  const { karkunId, ruknId, actorId } = input
+  const beforeRows = buildCampaignMatrixRows(ruknId)
+  const beforeRow = beforeRows.find((r) => r.karkunId === karkunId)
+  if (!beforeRow) {
+    return { success: false, error: 'Connected Karkun not found.' }
+  }
+  const beforePct = karkunObjectivePct(beforeRow)
+
+  // Infer everything possible — never ask the volunteer to confirm.
+  const draft: TodaysProgressDraft = { ...input.draft }
+  if (draft.jihRegistered || draft.jihExplained || draft.weeklyIjtemaAttended || draft.baitulMaalDiscussed) {
+    draft.visitCompleted = true
+  }
+  if (draft.jihRegistered) {
+    draft.jihExplained = true
+  }
+
+  if (draft.visitCompleted && !beforeRow.visitDone) {
+    const visit = toggleVisitForKarkun(karkunId, ruknId, actorId)
+    if (!visit.success) return visit
+  }
+
+  const currentJih = getJihAppMatrixState(karkunId)
+  if (draft.jihRegistered && currentJih !== 'registered') {
+    const jih = setJihAppAbsolute(karkunId, ruknId, 'registered')
+    if (!jih.success) return jih
+  } else if (draft.jihExplained && currentJih === 'not_discussed') {
+    const jih = setJihAppAbsolute(karkunId, ruknId, 'discussed')
+    if (!jih.success) return jih
+  }
+
+  if (draft.weeklyIjtemaAttended) {
+    const ijtema = setIjtemaPresentAbsolute(karkunId, ruknId, actorId)
+    if (!ijtema.success) return ijtema
+  }
+
+  if (draft.baitulMaalDiscussed) {
+    const baitul = setBaitulDiscussedAbsolute(karkunId, actorId ?? ruknId)
+    if (!baitul.success) return baitul
+  }
+
+  const afterRow =
+    buildCampaignMatrixRows(ruknId).find((r) => r.karkunId === karkunId) ?? beforeRow
+  const afterPct = karkunObjectivePct(afterRow)
+  const pending = (() => {
+    if (!afterRow.visitDone) {
+      return { objective: 'First Visit', action: 'Complete the first visit.' }
+    }
+    if (afterRow.jih === 'not_discussed') {
+      return { objective: 'JIH App Explanation', action: 'Explain the JIH App.' }
+    }
+    if (afterRow.jih !== 'registered') {
+      return { objective: 'JIH App Registration', action: 'Help complete JIH App registration.' }
+    }
+    if (afterRow.ijtema === 'Pending') {
+      return {
+        objective: 'Weekly Ijtema Participation',
+        action: 'Invite to Weekly Ijtema.',
+      }
+    }
+    if (afterRow.baitulMaal === 'not_discussed') {
+      return { objective: 'Baitul Maal Discussion', action: 'Introduce Baitul Maal.' }
+    }
+    return { objective: 'Campaign Complete', action: 'Keep regular contact.' }
+  })()
+
+  return {
+    success: true,
+    beforePct,
+    afterPct,
+    nextObjective: pending.objective,
+    nextAction: pending.action,
+  }
+}
+
 /** KC-0083 — compact follow-up lines derived from matrix pending states (no new persistence). */
 export type TodaysFocusItem = {
   karkunId: string

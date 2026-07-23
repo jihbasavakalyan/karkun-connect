@@ -1,9 +1,10 @@
 /**
  * KC-0095 / KC-0097 — Companion Workspace for one Connected Karkun.
- * Layout polish only — same Matrix intelligence model.
+ * Outcome Capture (Today's Progress) + Matrix-driven intelligence.
  */
 
 import { useEffect, useMemo, useState } from 'react'
+import { TodaysProgressCapture } from '@/components/communication/cos/TodaysProgressCapture'
 import { Icon } from '@/components/ui/Icon'
 import { usePeopleStore } from '@/hooks/usePeopleStore'
 import {
@@ -146,17 +147,14 @@ export function CompanionWorkspaceView({ ruknId, karkun }: CompanionWorkspaceVie
               WhatsApp unavailable
             </span>
           )}
-          <button
-            type="button"
-            disabled
-            title="Coming in a future release"
-            className="inline-flex min-h-11 flex-1 cursor-not-allowed items-center justify-center gap-1.5 rounded-lg border border-dashed border-border px-3 text-xs font-semibold text-secondary opacity-80"
-          >
-            <Icon name="file-text" size="sm" />
-            Record Visit
-          </button>
         </div>
       </section>
+
+      <TodaysProgressCapture
+        ruknId={ruknId}
+        karkunId={karkun.id}
+        karkunName={karkun.name}
+      />
 
       {/* Today's Recommendation */}
       <section
@@ -194,7 +192,7 @@ export function CompanionWorkspaceView({ ruknId, karkun }: CompanionWorkspaceVie
         aria-label="Campaign progress"
       >
         <h2 className="text-sm font-semibold text-text-heading">Campaign Progress</h2>
-        <p className="mt-1 text-xs text-secondary">Overview only · update in Execution Matrix</p>
+        <p className="mt-1 text-xs text-secondary">Updates automatically when you save Today&apos;s Progress</p>
         <ul className="mt-3 grid gap-2 sm:grid-cols-2">
           {objectives.map((objective) => (
             <li
