@@ -1,10 +1,20 @@
+/**
+ * KC-0094 — My Connected Karkuns with campaign relationship intelligence.
+ * Reuses Execution Matrix / Today's Focus — no new queries.
+ */
+
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { JourneyStageBadge } from '@/components/guidance'
 import { EmptyState } from '@/components/ui'
-import { useGuidance } from '@/hooks/useGuidance'
-import { formatLastVisitLabel } from '@/lib/relationshipPresentation'
+import { Icon } from '@/components/ui/Icon'
+import { usePeopleStore } from '@/hooks/usePeopleStore'
+import { buildMyConnectedKarkunsIntelligence } from '@/lib/communication/relationshipIntelligencePresentation'
 import { ruknCompanionPath } from '@/lib/ruknCommunicationNavigation'
 import { ROUTES } from '@/constants/routes'
+import { subscribeToAnnexure1Store } from '@/stores/annexure1Store'
+import { subscribeToIjtemaAttendanceStore } from '@/stores/ijtemaAttendanceStore'
+import { subscribeToBaitulMaalStore } from '@/stores/baitulMaalStore'
+import { buildTelLink, buildWhatsAppLink } from '@/utils/personContactLinks'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
 
 type MyConnectedKarkunsPanelProps = {
@@ -12,13 +22,43 @@ type MyConnectedKarkunsPanelProps = {
   karkuns: KarkunRegistryRecord[]
 }
 
-/**
- * KC-0091 — Person-first Connected Karkuns list for Rukn Communication.
- * Uses live connection data; COS fields (follow-up, etc.) use gentle placeholders.
- */
+function statusToneClass(status: string): string {
+  switch (status) {
+    case 'Needs Visit':
+    case 'Needs Follow-up':
+      return 'text-amber-800'
+    case 'High Engagement':
+    case 'Campaign Complete':
+      return 'text-emerald-800'
+    default:
+      return 'text-text-heading'
+  }
+}
+
 export function MyConnectedKarkunsPanel({ ruknId, karkuns }: MyConnectedKarkunsPanelProps) {
-  const { getKarkunGuidance, version } = useGuidance(ruknId)
-  void version
+  const peopleVersion = usePeopleStore()
+  const [tick, setTick] = useState(0)
+
+  useEffect(() => {
+    const a = subscribeToAnnexure1Store(() => setTick((v) => v + 1))
+    const i = subscribeToIjtemaAttendanceStore(() => setTick((v) => v + 1))
+    const b = subscribeToBaitulMaalStore(() => setTick((v) => v + 1))
+    return () => {
+      a()
+      i()
+      b()
+    }
+  }, [])
+
+  void tick
+  void peopleVersion
+
+  const cards = useMemo(
+    () => buildMyConnectedKarkunsIntelligence(ruknId, karkuns),
+    [ruknId, karkuns, tick, peopleVersion],
+  )
+
+  const byId = useMemo(() => new Map(karkuns.map((k) => [k.id, k])), [karkuns])
 
   if (karkuns.length === 0) {
     return (
@@ -31,51 +71,109 @@ export function MyConnectedKarkunsPanel({ ruknId, karkuns }: MyConnectedKarkunsP
     )
   }
 
+  const needingAttention = cards.filter((c) => c.pendingObjective !== 'None').length
+
   return (
     <section className="space-y-3" aria-label="My Connected Karkuns">
       <p className="text-sm text-secondary">
-        {karkuns.length} Connected Karkun{karkuns.length === 1 ? '' : 's'} · tap to open Companion
-        Workspace
+        {needingAttention > 0
+          ? `${needingAttention} need attention today · ${cards.length} Connected`
+          : `${cards.length} Connected · campaign objectives on track`}
       </p>
       <ul className="grid gap-3 sm:grid-cols-2">
-        {karkuns.map((karkun) => {
-          const guidance = getKarkunGuidance(karkun.id)
-          const lastInteraction = formatLastVisitLabel(karkun.id) || 'No interaction recorded'
+        {cards.map((card) => {
+          const karkun = byId.get(card.karkunId)
+          const tel = karkun?.mobile ? buildTelLink(karkun.mobile) : null
+          const whatsapp =
+            karkun?.mobile || karkun?.whatsapp
+              ? buildWhatsAppLink(
+                  karkun.whatsapp?.trim() ? karkun.whatsapp : karkun.mobile,
+                )
+              : null
+
           return (
-            <li key={karkun.id}>
-              <Link
-                to={ruknCompanionPath(karkun.id)}
-                className="block rounded-(--radius-card) border border-border bg-surface p-4 shadow-card transition-colors hover:border-primary/40 hover:bg-surface-muted"
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <h3 className="text-base font-semibold text-text-heading">{karkun.name}</h3>
-                  {guidance ? (
-                    <JourneyStageBadge stageId={guidance.currentStage} variant="rukn" />
-                  ) : null}
-                </div>
-                <dl className="mt-3 grid gap-1.5 text-sm">
+            <li key={card.karkunId}>
+              <article className="rounded-(--radius-card) border border-border bg-surface p-4 shadow-card">
+                <h3 className="text-base font-semibold text-text-heading">{card.karkunName}</h3>
+
+                <dl className="mt-3 grid gap-2 text-sm">
                   <div className="flex justify-between gap-2">
-                    <dt className="text-secondary">Current journey</dt>
-                    <dd className="text-right font-medium text-text-heading">
-                      {guidance?.stageLabel ?? '—'}
+                    <dt className="text-secondary">Journey</dt>
+                    <dd className="text-right font-medium text-text-heading">{card.journeyStage}</dd>
+                  </div>
+                  <div className="flex justify-between gap-2">
+                    <dt className="text-secondary">Last Interaction</dt>
+                    <dd className="text-right text-text-heading">
+                      <span className="block">{card.lastInteractionLabel}</span>
+                      {card.lastInteractionDateLabel ? (
+                        <span className="text-xs text-secondary">
+                          {card.lastInteractionDateLabel}
+                        </span>
+                      ) : null}
                     </dd>
                   </div>
                   <div className="flex justify-between gap-2">
-                    <dt className="text-secondary">Last interaction</dt>
-                    <dd className="text-right text-text-heading">{lastInteraction}</dd>
+                    <dt className="text-secondary">Next Action</dt>
+                    <dd className="text-right font-medium text-primary">{card.nextAction}</dd>
                   </div>
                   <div className="flex justify-between gap-2">
-                    <dt className="text-secondary">Next follow-up</dt>
-                    <dd className="text-right text-text-heading">Placeholder</dd>
+                    <dt className="text-secondary">Pending Objective</dt>
+                    <dd className="text-right font-medium text-text-heading">
+                      {card.pendingObjective}
+                    </dd>
                   </div>
                   <div className="flex justify-between gap-2">
-                    <dt className="text-secondary">Status</dt>
-                    <dd className="text-right font-medium capitalize text-text-heading">
-                      {karkun.status || guidance?.health?.level || 'active'}
+                    <dt className="text-secondary">Relationship Status</dt>
+                    <dd
+                      className={`text-right font-medium ${statusToneClass(card.relationshipStatus)}`}
+                    >
+                      {card.relationshipStatus}
                     </dd>
                   </div>
                 </dl>
-              </Link>
+
+                <div
+                  className="mt-4 flex flex-wrap gap-2"
+                  role="toolbar"
+                  aria-label={`Actions for ${card.karkunName}`}
+                >
+                  {tel ? (
+                    <a
+                      href={tel}
+                      className="inline-flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-lg border border-border bg-surface-muted px-3 text-xs font-semibold text-text-heading hover:bg-surface"
+                    >
+                      <Icon name="phone" size="sm" />
+                      Call
+                    </a>
+                  ) : (
+                    <span className="inline-flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-lg border border-dashed border-border px-3 text-xs text-secondary">
+                      Call unavailable
+                    </span>
+                  )}
+                  {whatsapp ? (
+                    <a
+                      href={whatsapp}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-lg border border-border bg-surface-muted px-3 text-xs font-semibold text-text-heading hover:bg-surface"
+                    >
+                      <Icon name="message" size="sm" />
+                      WhatsApp
+                    </a>
+                  ) : (
+                    <span className="inline-flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-lg border border-dashed border-border px-3 text-xs text-secondary">
+                      WhatsApp unavailable
+                    </span>
+                  )}
+                  <Link
+                    to={ruknCompanionPath(card.karkunId)}
+                    className="inline-flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-lg border border-primary/30 bg-primary-muted px-3 text-xs font-semibold text-primary hover:border-primary/50"
+                  >
+                    <Icon name="users" size="sm" />
+                    Open Companion
+                  </Link>
+                </div>
+              </article>
             </li>
           )
         })}

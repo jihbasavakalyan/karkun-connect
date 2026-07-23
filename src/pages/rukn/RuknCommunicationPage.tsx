@@ -21,8 +21,9 @@ import {
 } from '@/lib/ruknCommunicationNavigation'
 
 /**
- * KC-0091 — Rukn Communication Workspace foundation.
+ * KC-0091 / KC-0094 — Rukn Communication Workspace.
  * Organized around Connected Karkuns — not channels.
+ * Phase 1: My Connected Karkuns relationship intelligence.
  */
 export function RuknCommunicationPage() {
   const { user } = useAuth()
@@ -52,7 +53,7 @@ export function RuknCommunicationPage() {
     <PageShell variant="narrow" className="app-screen">
       <PageHeader
         title="Communication"
-        description="Relationship communication with your Connected Karkuns."
+        description="Who needs your attention today — relationship intelligence for Connected Karkuns."
       />
 
       <RuknCommunicationSectionNav active={section} onChange={setSection} />
