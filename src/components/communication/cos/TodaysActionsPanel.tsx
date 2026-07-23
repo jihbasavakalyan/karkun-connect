@@ -1,6 +1,6 @@
 /**
- * KC-0096 — Today's Actions (Follow-ups tab).
- * Outcome-driven list from Execution Matrix — no manual tasks or completion workflow.
+ * KC-0096 / KC-0097 — Today's Actions (Follow-ups tab).
+ * Outcome-driven list — presentation polish only; same Matrix priority engine.
  */
 
 import { useEffect, useMemo, useState } from 'react'
@@ -60,8 +60,9 @@ export function TodaysActionsPanel({ ruknId, karkuns }: TodaysActionsPanelProps)
     return (
       <section className="space-y-3" aria-label="Today's Actions">
         <h2 className="text-base font-semibold text-text-heading">Today&apos;s Actions</h2>
-        <p className="text-sm text-secondary">
-          Connect with a Karkun first — actions appear automatically from campaign progress.
+        <p className="text-sm leading-relaxed text-secondary">
+          Connect with a Karkun first. Suggested actions appear automatically from campaign
+          progress — nothing extra to track.
         </p>
         <Link
           to={ruknCommunicationPath()}
@@ -79,9 +80,12 @@ export function TodaysActionsPanel({ ruknId, karkuns }: TodaysActionsPanelProps)
         className="rounded-(--radius-card) border border-emerald-200 bg-emerald-50/60 p-5 shadow-card"
         aria-label="Today's Actions"
       >
-        <h2 className="text-base font-semibold text-emerald-900">Excellent!</h2>
-        <p className="mt-2 text-sm text-emerald-900/90">
-          All Connected Karkuns are currently progressing well.
+        <h2 className="text-lg font-semibold text-emerald-900">Excellent!</h2>
+        <p className="mt-2 text-sm leading-relaxed text-emerald-900/90">
+          Everyone is currently progressing well.
+        </p>
+        <p className="mt-2 text-sm leading-relaxed text-emerald-900/80">
+          Take this opportunity to strengthen relationships and continue regular contact.
         </p>
         <Link
           to={ruknCommunicationPath()}
@@ -97,9 +101,9 @@ export function TodaysActionsPanel({ ruknId, karkuns }: TodaysActionsPanelProps)
     <section className="space-y-3" aria-label="Today's Actions">
       <div>
         <h2 className="text-base font-semibold text-text-heading">Today&apos;s Actions</h2>
-        <p className="mt-1 text-sm text-secondary">
+        <p className="mt-1 text-sm leading-relaxed text-secondary">
           {actions.length} Connected Karkun{actions.length === 1 ? '' : 's'} need attention —
-          generated from campaign progress
+          suggested from campaign progress
         </p>
       </div>
 
@@ -119,36 +123,43 @@ export function TodaysActionsPanel({ ruknId, karkuns }: TodaysActionsPanelProps)
               <article className="rounded-(--radius-card) border border-border bg-surface p-4 shadow-card">
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <h3 className="text-base font-semibold text-text-heading">{card.karkunName}</h3>
-                  <span
-                    className={`rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${priorityToneClass(card.priority)}`}
-                  >
-                    {card.priority}
-                  </span>
+                  <div className="text-right">
+                    <span
+                      className={`inline-block rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${priorityToneClass(card.priority)}`}
+                    >
+                      {card.priority}
+                    </span>
+                    <p className="mt-1 max-w-[11rem] text-[11px] leading-snug text-secondary">
+                      {card.priorityGuidance}
+                    </p>
+                  </div>
                 </div>
 
-                <div className="mt-3">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-secondary">
-                    Needs attention because
-                  </p>
-                  <ul className="mt-1.5 space-y-1 text-sm text-text-heading">
-                    {card.whyLines.map((line) => (
-                      <li key={line}>{line}</li>
-                    ))}
-                  </ul>
+                <div className="mt-4 space-y-3 text-sm">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-secondary">
+                      Reason
+                    </p>
+                    <p className="mt-1 leading-relaxed text-text-heading">{card.reason}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-secondary">
+                      Suggested Action
+                    </p>
+                    <p className="mt-1 font-medium leading-relaxed text-primary">
+                      {card.suggestedAction}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-secondary">
+                      Expected Campaign Outcome
+                    </p>
+                    <p className="mt-1 leading-relaxed text-text-heading">{card.expectedOutcome}</p>
+                    <p className="mt-1 text-xs text-secondary">
+                      Campaign Objective: {card.campaignObjective}
+                    </p>
+                  </div>
                 </div>
-
-                <dl className="mt-3 grid gap-2 text-sm">
-                  <div className="flex justify-between gap-2">
-                    <dt className="text-secondary">Suggested Action</dt>
-                    <dd className="text-right font-medium text-primary">{card.suggestedAction}</dd>
-                  </div>
-                  <div className="flex justify-between gap-2">
-                    <dt className="text-secondary">Campaign Objective</dt>
-                    <dd className="text-right font-medium text-text-heading">
-                      {card.campaignObjective}
-                    </dd>
-                  </div>
-                </dl>
 
                 <div
                   className="mt-4 flex flex-wrap gap-2"

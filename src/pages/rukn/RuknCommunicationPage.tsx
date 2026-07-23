@@ -53,7 +53,7 @@ export function RuknCommunicationPage() {
     <PageShell variant="narrow" className="app-screen">
       <PageHeader
         title="Communication"
-        description="Who needs your attention today — relationship intelligence for Connected Karkuns."
+        description="Who needs your attention today — clear next steps for Connected Karkuns."
       />
 
       <RuknCommunicationSectionNav active={section} onChange={setSection} />

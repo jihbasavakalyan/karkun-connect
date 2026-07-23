@@ -1,6 +1,6 @@
 /**
- * KC-0094 — My Connected Karkuns with campaign relationship intelligence.
- * Reuses Execution Matrix / Today's Focus — no new queries.
+ * KC-0094 / KC-0097 — My Connected Karkuns relationship intelligence.
+ * Presentation polish — same Matrix priority engine.
  */
 
 import { useEffect, useMemo, useState } from 'react'
@@ -8,7 +8,11 @@ import { Link } from 'react-router-dom'
 import { EmptyState } from '@/components/ui'
 import { Icon } from '@/components/ui/Icon'
 import { usePeopleStore } from '@/hooks/usePeopleStore'
-import { buildMyConnectedKarkunsIntelligence } from '@/lib/communication/relationshipIntelligencePresentation'
+import {
+  buildMyConnectedKarkunsIntelligence,
+  buildRecommendationNarrative,
+  formatRelationshipStatusLabel,
+} from '@/lib/communication/relationshipIntelligencePresentation'
 import { ruknCompanionPath } from '@/lib/ruknCommunicationNavigation'
 import { ROUTES } from '@/constants/routes'
 import { subscribeToAnnexure1Store } from '@/stores/annexure1Store'
@@ -24,10 +28,9 @@ type MyConnectedKarkunsPanelProps = {
 
 function statusToneClass(status: string): string {
   switch (status) {
-    case 'Needs Visit':
-    case 'Needs Follow-up':
+    case 'Needs Attention':
       return 'text-amber-800'
-    case 'High Engagement':
+    case 'On Track':
     case 'Campaign Complete':
       return 'text-emerald-800'
     default:
@@ -65,7 +68,7 @@ export function MyConnectedKarkunsPanel({ ruknId, karkuns }: MyConnectedKarkunsP
       <EmptyState
         icon="users"
         title="No Connected Karkuns yet"
-        description="Connect with a Karkun to open relationship communication."
+        description="Connect with a Karkun to begin relationship guidance."
         primaryAction={{ label: 'Connect Karkun', href: ROUTES.RUKN_AVAILABLE_KARKUN }}
       />
     )
@@ -75,10 +78,10 @@ export function MyConnectedKarkunsPanel({ ruknId, karkuns }: MyConnectedKarkunsP
 
   return (
     <section className="space-y-3" aria-label="My Connected Karkuns">
-      <p className="text-sm text-secondary">
+      <p className="text-sm leading-relaxed text-secondary">
         {needingAttention > 0
-          ? `${needingAttention} need attention today · ${cards.length} Connected`
-          : `${cards.length} Connected · campaign objectives on track`}
+          ? `${needingAttention} need attention · ${cards.length} Connected`
+          : `Excellent progress. ${cards.length} Connected · all campaign objectives on track`}
       </p>
       <ul className="grid gap-3 sm:grid-cols-2">
         {cards.map((card) => {
@@ -90,15 +93,20 @@ export function MyConnectedKarkunsPanel({ ruknId, karkuns }: MyConnectedKarkunsP
                   karkun.whatsapp?.trim() ? karkun.whatsapp : karkun.mobile,
                 )
               : null
+          const statusLabel = formatRelationshipStatusLabel(card.relationshipStatus)
+          const narrative = buildRecommendationNarrative(card.karkunName, card.pendingObjective)
+          const objectiveLabel =
+            card.pendingObjective === 'None' ? 'Campaign Complete' : card.pendingObjective
 
           return (
             <li key={card.karkunId}>
               <article className="rounded-(--radius-card) border border-border bg-surface p-4 shadow-card">
                 <h3 className="text-base font-semibold text-text-heading">{card.karkunName}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-secondary">{narrative}</p>
 
                 <dl className="mt-3 grid gap-2 text-sm">
                   <div className="flex justify-between gap-2">
-                    <dt className="text-secondary">Journey</dt>
+                    <dt className="text-secondary">Journey Stage</dt>
                     <dd className="text-right font-medium text-text-heading">{card.journeyStage}</dd>
                   </div>
                   <div className="flex justify-between gap-2">
@@ -113,21 +121,17 @@ export function MyConnectedKarkunsPanel({ ruknId, karkuns }: MyConnectedKarkunsP
                     </dd>
                   </div>
                   <div className="flex justify-between gap-2">
-                    <dt className="text-secondary">Next Action</dt>
+                    <dt className="text-secondary">Suggested Action</dt>
                     <dd className="text-right font-medium text-primary">{card.nextAction}</dd>
                   </div>
                   <div className="flex justify-between gap-2">
-                    <dt className="text-secondary">Pending Objective</dt>
-                    <dd className="text-right font-medium text-text-heading">
-                      {card.pendingObjective}
-                    </dd>
+                    <dt className="text-secondary">Campaign Objective</dt>
+                    <dd className="text-right font-medium text-text-heading">{objectiveLabel}</dd>
                   </div>
                   <div className="flex justify-between gap-2">
                     <dt className="text-secondary">Relationship Status</dt>
-                    <dd
-                      className={`text-right font-medium ${statusToneClass(card.relationshipStatus)}`}
-                    >
-                      {card.relationshipStatus}
+                    <dd className={`text-right font-medium ${statusToneClass(statusLabel)}`}>
+                      {statusLabel}
                     </dd>
                   </div>
                 </dl>

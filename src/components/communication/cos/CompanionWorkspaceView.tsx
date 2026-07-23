@@ -1,12 +1,18 @@
 /**
- * KC-0095 — Companion Workspace for one Connected Karkun.
- * Mission-oriented relationship view — no messaging, no new storage.
+ * KC-0095 / KC-0097 — Companion Workspace for one Connected Karkun.
+ * Layout polish only — same Matrix intelligence model.
  */
 
 import { useEffect, useMemo, useState } from 'react'
 import { Icon } from '@/components/ui/Icon'
 import { usePeopleStore } from '@/hooks/usePeopleStore'
-import { buildCompanionWorkspaceModel } from '@/lib/communication/relationshipIntelligencePresentation'
+import {
+  buildCompanionWorkspaceModel,
+  buildRecommendationNarrative,
+  expectedCampaignOutcome,
+  formatRelationshipStatusLabel,
+  priorityGuidanceLabel,
+} from '@/lib/communication/relationshipIntelligencePresentation'
 import { subscribeToAnnexure1Store } from '@/stores/annexure1Store'
 import { subscribeToIjtemaAttendanceStore } from '@/stores/ijtemaAttendanceStore'
 import { subscribeToBaitulMaalStore } from '@/stores/baitulMaalStore'
@@ -21,10 +27,9 @@ type CompanionWorkspaceViewProps = {
 
 function statusToneClass(status: string): string {
   switch (status) {
-    case 'Needs Visit':
-    case 'Needs Follow-up':
+    case 'Needs Attention':
       return 'text-amber-800'
-    case 'High Engagement':
+    case 'On Track':
     case 'Campaign Complete':
       return 'text-emerald-800'
     default:
@@ -72,6 +77,13 @@ export function CompanionWorkspaceView({ ruknId, karkun }: CompanionWorkspaceVie
     karkun.mobile || karkun.whatsapp
       ? buildWhatsAppLink(karkun.whatsapp?.trim() ? karkun.whatsapp : karkun.mobile)
       : null
+  const statusLabel = formatRelationshipStatusLabel(intelligence.relationshipStatus)
+  const narrative = buildRecommendationNarrative(
+    karkun.name,
+    recommendation.pendingObjective,
+  )
+  const outcome = expectedCampaignOutcome(recommendation.pendingObjective)
+  const priorityHint = priorityGuidanceLabel(recommendation.priority)
 
   return (
     <div className="space-y-4">
@@ -97,9 +109,7 @@ export function CompanionWorkspaceView({ ruknId, karkun }: CompanionWorkspaceVie
           </div>
           <div className="flex justify-between gap-2 sm:block">
             <dt className="text-secondary">Relationship Status</dt>
-            <dd className={`font-medium ${statusToneClass(intelligence.relationshipStatus)}`}>
-              {intelligence.relationshipStatus}
-            </dd>
+            <dd className={`font-medium ${statusToneClass(statusLabel)}`}>{statusLabel}</dd>
           </div>
         </dl>
 
@@ -139,14 +149,43 @@ export function CompanionWorkspaceView({ ruknId, karkun }: CompanionWorkspaceVie
           <button
             type="button"
             disabled
-            title="Record Visit will be available in a future release"
+            title="Coming in a future release"
             className="inline-flex min-h-11 flex-1 cursor-not-allowed items-center justify-center gap-1.5 rounded-lg border border-dashed border-border px-3 text-xs font-semibold text-secondary opacity-80"
           >
             <Icon name="file-text" size="sm" />
             Record Visit
           </button>
         </div>
-        <p className="mt-2 text-[11px] text-secondary">Record Visit is a placeholder in this phase.</p>
+      </section>
+
+      {/* Today's Recommendation */}
+      <section
+        className="rounded-(--radius-card) border border-border bg-surface p-4 shadow-card sm:p-5"
+        aria-label="Today's recommendation"
+      >
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <h2 className="text-sm font-semibold text-text-heading">Today&apos;s Recommendation</h2>
+          <div className="text-right">
+            <span
+              className={`inline-block rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${priorityToneClass(recommendation.priority)}`}
+            >
+              {recommendation.priority}
+            </span>
+            <p className="mt-1 max-w-[12rem] text-[11px] leading-snug text-secondary">
+              {priorityHint}
+            </p>
+          </div>
+        </div>
+        <p className="mt-3 text-sm leading-relaxed text-secondary">{narrative}</p>
+        <p className="mt-3 text-base font-semibold text-primary">{recommendation.action}</p>
+        <p className="mt-2 text-sm leading-relaxed text-text-heading">{outcome}</p>
+        {recommendation.pendingObjective !== 'None' ? (
+          <p className="mt-2 text-xs text-secondary">
+            Campaign Objective: {recommendation.pendingObjective}
+          </p>
+        ) : (
+          <p className="mt-2 text-sm font-medium text-emerald-800">Excellent progress.</p>
+        )}
       </section>
 
       {/* Campaign Progress — read-only */}
@@ -155,9 +194,7 @@ export function CompanionWorkspaceView({ ruknId, karkun }: CompanionWorkspaceVie
         aria-label="Campaign progress"
       >
         <h2 className="text-sm font-semibold text-text-heading">Campaign Progress</h2>
-        <p className="mt-1 text-xs text-secondary">
-          Read-only overview · edit in Execution Matrix
-        </p>
+        <p className="mt-1 text-xs text-secondary">Overview only · update in Execution Matrix</p>
         <ul className="mt-3 grid gap-2 sm:grid-cols-2">
           {objectives.map((objective) => (
             <li
@@ -175,7 +212,7 @@ export function CompanionWorkspaceView({ ruknId, karkun }: CompanionWorkspaceVie
                     objective.completed ? 'text-emerald-800' : 'text-secondary'
                   }`}
                 >
-                  {objective.completed ? 'Done' : 'Pending'}
+                  {objective.completed ? 'Complete' : 'Needs Attention'}
                 </span>
               </div>
               <p className="mt-0.5 text-xs text-secondary">{objective.detail}</p>
@@ -191,7 +228,9 @@ export function CompanionWorkspaceView({ ruknId, karkun }: CompanionWorkspaceVie
       >
         <h2 className="text-sm font-semibold text-text-heading">Latest Activity</h2>
         {activities.length === 0 ? (
-          <p className="mt-2 text-sm text-secondary">No meaningful activity recorded yet.</p>
+          <p className="mt-2 text-sm leading-relaxed text-secondary">
+            No activity yet — a first visit is a natural next step.
+          </p>
         ) : (
           <ol className="mt-3 divide-y divide-border">
             {activities.map((activity) => (
@@ -204,50 +243,6 @@ export function CompanionWorkspaceView({ ruknId, karkun }: CompanionWorkspaceVie
         )}
       </section>
 
-      {/* Next Recommended Action */}
-      <section
-        className="rounded-(--radius-card) border border-border bg-surface p-4 shadow-card sm:p-5"
-        aria-label="Next recommended action"
-      >
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-sm font-semibold text-text-heading">Next Recommended Action</h2>
-          <span
-            className={`rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${priorityToneClass(recommendation.priority)}`}
-          >
-            {recommendation.priority} priority
-          </span>
-        </div>
-        <p className="mt-3 text-base font-semibold text-primary">{recommendation.action}</p>
-        <p className="mt-1 text-sm text-secondary">{recommendation.reason}</p>
-        {recommendation.pendingObjective !== 'None' ? (
-          <p className="mt-2 text-xs text-secondary">
-            Pending objective: {recommendation.pendingObjective}
-          </p>
-        ) : null}
-      </section>
-
-      {/* Notes — placeholder */}
-      <section
-        className="rounded-(--radius-card) border border-dashed border-border bg-surface p-4 sm:p-5"
-        aria-label="Notes"
-      >
-        <h2 className="text-sm font-semibold text-text-heading">Notes</h2>
-        <p className="mt-2 text-sm text-secondary">
-          Notes will be available in a future release.
-        </p>
-      </section>
-
-      {/* Relationship Timeline — placeholder */}
-      <section
-        className="rounded-(--radius-card) border border-dashed border-border bg-surface p-4 sm:p-5"
-        aria-label="Relationship timeline"
-      >
-        <h2 className="text-sm font-semibold text-text-heading">Relationship Timeline</h2>
-        <p className="mt-2 text-sm text-secondary">
-          Relationship timeline will be available in a future release.
-        </p>
-      </section>
-
       {/* Digital Rafeeq — contextual */}
       <section
         className="rounded-(--radius-card) border border-border bg-surface p-4 shadow-card sm:p-5"
@@ -257,8 +252,29 @@ export function CompanionWorkspaceView({ ruknId, karkun }: CompanionWorkspaceVie
           {RAFEEQ_BRAND}
         </p>
         <h2 className="mt-1 text-sm font-semibold text-text-heading">Guidance for this Karkun</h2>
-        <p className="mt-2 text-sm text-text-heading urdu-text" dir="rtl" lang="ur">
+        <p className="mt-2 text-sm leading-relaxed text-text-heading urdu-text" dir="rtl" lang="ur">
           {rafeeqGuidance}
+        </p>
+      </section>
+
+      {/* Future placeholders */}
+      <section
+        className="rounded-(--radius-card) border border-dashed border-border bg-surface p-4 sm:p-5"
+        aria-label="Notes"
+      >
+        <h2 className="text-sm font-semibold text-text-heading">Notes</h2>
+        <p className="mt-2 text-sm leading-relaxed text-secondary">
+          Notes will be available in a future release.
+        </p>
+      </section>
+
+      <section
+        className="rounded-(--radius-card) border border-dashed border-border bg-surface p-4 sm:p-5"
+        aria-label="Relationship timeline"
+      >
+        <h2 className="text-sm font-semibold text-text-heading">Relationship Timeline</h2>
+        <p className="mt-2 text-sm leading-relaxed text-secondary">
+          Relationship timeline will be available in a future release.
         </p>
       </section>
     </div>

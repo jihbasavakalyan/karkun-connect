@@ -272,8 +272,8 @@ export function buildConnectedKarkunIntelligence(
     journeyStage: resolveCampaignJourneyStage(row, postCampaign),
     lastInteractionLabel: last.label,
     lastInteractionDateLabel: last.dateLabel,
-    nextAction,
-    pendingObjective,
+    nextAction: buildSuggestedActionCopy(pendingObjective, nextAction),
+    pendingObjective: pendingObjective === 'None' ? 'None' : pendingObjective,
     relationshipStatus: resolveRelationshipStatus(row, pendingObjective),
     attentionRank,
   }
@@ -335,17 +335,17 @@ export function buildCampaignObjectiveProgress(
 function recommendationReason(pendingObjective: string, nextAction: string): string {
   switch (pendingObjective) {
     case 'Visit':
-      return 'First campaign contact is still pending for this Connected Karkun.'
+      return 'A first visit will open the campaign journey with this Connected Karkun.'
     case 'JIH App':
-      return 'Visit progress is underway — JIH App registration is the next campaign objective.'
+      return 'The visit is complete. Helping with JIH App registration is the next campaign milestone.'
     case 'Weekly Ijtema':
-      return 'Registration progress is complete — Weekly Ijtema invitation is the next objective.'
+      return 'JIH App progress is complete. An invitation to Weekly Ijtema is the next campaign milestone.'
     case 'Baitul Maal':
-      return 'Ijtema progress is recorded — Baitul Maal discussion is the remaining objective.'
+      return 'Weekly Ijtema progress is recorded. Introducing Baitul Maal is the next campaign milestone.'
     case 'None':
-      return 'All campaign objectives for this Connected Karkun look complete.'
+      return 'Excellent progress. All campaign objectives for this Connected Karkun are on track.'
     default:
-      return `${nextAction} is the highest-priority remaining campaign step.`
+      return `${nextAction} is the next campaign milestone.`
   }
 }
 
@@ -353,6 +353,89 @@ function recommendationPriority(attentionRank: number): RecommendedActionView['p
   if (attentionRank <= 0) return 'High'
   if (attentionRank <= 2) return 'Medium'
   return 'Low'
+}
+
+/** KC-0097 — presentation-only priority guidance (engine unchanged). */
+export function priorityGuidanceLabel(priority: RecommendedActionView['priority']): string {
+  switch (priority) {
+    case 'High':
+      return 'Needs attention today.'
+    case 'Medium':
+      return 'Plan this during your next interaction.'
+    case 'Low':
+      return 'Continue regular engagement.'
+  }
+}
+
+/** KC-0097 — consistent relationship status wording across COS surfaces. */
+export function formatRelationshipStatusLabel(status: RelationshipStatusLabel): string {
+  switch (status) {
+    case 'Needs Visit':
+    case 'Needs Follow-up':
+      return 'Needs Attention'
+    case 'High Engagement':
+      return 'On Track'
+    case 'Campaign Complete':
+      return 'Campaign Complete'
+    case 'On Track':
+      return 'On Track'
+  }
+}
+
+export function expectedCampaignOutcome(pendingObjective: string): string {
+  switch (pendingObjective) {
+    case 'Visit':
+      return 'Starts the campaign journey with this Connected Karkun.'
+    case 'JIH App':
+      return 'Moves the campaign journey to the next objective.'
+    case 'Weekly Ijtema':
+      return 'Moves the campaign journey to the next objective.'
+    case 'Baitul Maal':
+      return 'Moves the campaign journey toward campaign completion.'
+    case 'None':
+      return 'Keep regular contact and continue strengthening the relationship.'
+    default:
+      return 'Moves the campaign journey to the next objective.'
+  }
+}
+
+export function buildSuggestedActionCopy(pendingObjective: string, nextAction: string): string {
+  switch (pendingObjective) {
+    case 'Visit':
+      return 'Complete the first visit.'
+    case 'JIH App':
+      return 'Help complete JIH App registration.'
+    case 'Weekly Ijtema':
+      return 'Invite to Weekly Ijtema.'
+    case 'Baitul Maal':
+      return 'Introduce Baitul Maal.'
+    case 'None':
+      return 'Keep regular contact.'
+    default:
+      return nextAction.endsWith('.') ? nextAction : `${nextAction}.`
+  }
+}
+
+/** Single narrative: why + what (volunteer-friendly). */
+export function buildRecommendationNarrative(
+  karkunName: string,
+  pendingObjective: string,
+): string {
+  const name = karkunName.trim() || 'This Connected Karkun'
+  switch (pendingObjective) {
+    case 'Visit':
+      return `${name} is ready for a first visit. Completing it opens the campaign journey.`
+    case 'JIH App':
+      return `${name} has completed the visit. Helping with JIH App registration is the next campaign milestone.`
+    case 'Weekly Ijtema':
+      return `${name} has completed JIH App progress. An invitation to Weekly Ijtema is the next campaign milestone.`
+    case 'Baitul Maal':
+      return `${name} has Weekly Ijtema progress recorded. Introducing Baitul Maal is the next campaign milestone.`
+    case 'None':
+      return `Excellent progress. ${name} is currently on track — keep regular contact.`
+    default:
+      return `${name} needs attention for the next campaign milestone.`
+  }
 }
 
 /** KC-0095 — same Urdu model as Home / Communication, scoped to one Karkun. */
@@ -383,7 +466,7 @@ export function buildRecommendedActionView(row: CampaignMatrixRow): RecommendedA
   const { pendingObjective, nextAction, attentionRank } =
     resolvePendingObjectiveAndAction(row)
   return {
-    action: nextAction,
+    action: buildSuggestedActionCopy(pendingObjective, nextAction),
     reason: recommendationReason(pendingObjective, nextAction),
     priority: recommendationPriority(attentionRank),
     pendingObjective,
@@ -435,11 +518,14 @@ export function buildMyConnectedKarkunsIntelligence(
 export type TodaysActionCard = {
   karkunId: string
   karkunName: string
-  /** Outcome-based explanation lines (why attention is needed). */
-  whyLines: string[]
+  /** Concise reason narrative (why this appears). */
+  reason: string
   suggestedAction: string
+  /** What campaign progress this helps complete. */
+  expectedOutcome: string
   campaignObjective: string
   priority: RecommendedActionView['priority']
+  priorityGuidance: string
   attentionRank: number
 }
 
@@ -448,7 +534,6 @@ function buildWhyAttentionLines(row: CampaignMatrixRow, pendingObjective: string
 
   if (pendingObjective === 'Visit') {
     lines.push('No visit completed yet.')
-    lines.push('First campaign contact is still needed.')
     return lines
   }
 
@@ -471,7 +556,7 @@ function buildWhyAttentionLines(row: CampaignMatrixRow, pendingObjective: string
   }
 
   if (row.ijtema !== 'Pending') {
-    lines.push('Weekly Ijtema progress is recorded.')
+    lines.push('Weekly Ijtema attendance completed.')
   }
 
   if (pendingObjective === 'Baitul Maal') {
@@ -479,27 +564,11 @@ function buildWhyAttentionLines(row: CampaignMatrixRow, pendingObjective: string
     return lines
   }
 
-  lines.push('Campaign attention is still useful for this Connected Karkun.')
   return lines
 }
 
-function buildSuggestedActionCopy(pendingObjective: string, nextAction: string): string {
-  switch (pendingObjective) {
-    case 'Visit':
-      return 'Complete the first visit.'
-    case 'JIH App':
-      return 'Help complete JIH App registration.'
-    case 'Weekly Ijtema':
-      return 'Invite to Weekly Ijtema.'
-    case 'Baitul Maal':
-      return 'Discuss Baitul Maal contribution.'
-    default:
-      return nextAction.endsWith('.') ? nextAction : `${nextAction}.`
-  }
-}
-
 /**
- * KC-0096 — Outcome-driven Today's Actions (Follow-ups tab content).
+ * KC-0096 / KC-0097 — Outcome-driven Today's Actions (Follow-ups tab content).
  * Only Connected Karkuns with remaining campaign objectives; no manual tasks.
  */
 export function buildTodaysActionCards(
@@ -515,16 +584,21 @@ export function buildTodaysActionCards(
       const recommendation = buildRecommendedActionView(row)
       if (recommendation.pendingObjective === 'None') return null
 
+      const whyLines = buildWhyAttentionLines(row, recommendation.pendingObjective)
+      const reason =
+        whyLines.length > 0
+          ? whyLines.join(' ')
+          : buildRecommendationNarrative(karkun.name, recommendation.pendingObjective)
+
       return {
         karkunId: karkun.id,
         karkunName: karkun.name,
-        whyLines: buildWhyAttentionLines(row, recommendation.pendingObjective),
-        suggestedAction: buildSuggestedActionCopy(
-          recommendation.pendingObjective,
-          recommendation.action,
-        ),
+        reason,
+        suggestedAction: recommendation.action,
+        expectedOutcome: expectedCampaignOutcome(recommendation.pendingObjective),
         campaignObjective: recommendation.pendingObjective,
         priority: recommendation.priority,
+        priorityGuidance: priorityGuidanceLabel(recommendation.priority),
         attentionRank: recommendation.attentionRank,
       } satisfies TodaysActionCard
     })
