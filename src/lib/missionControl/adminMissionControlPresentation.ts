@@ -10,9 +10,11 @@ import {
   type TeamPerformanceRow,
 } from '@/lib/commandCenterPresentation'
 import { getBaitulMaalCampaignState } from '@/lib/campaignExecutionMatrix'
+import { getCanonicalConnectedAssignments } from '@/lib/connections/getConnectedKarkunsForRukn'
 import { getDailyProgressView } from '@/lib/dailyProgressPresentation'
 import { isJihRegistered } from '@/lib/guidance/journeyEngine'
 import { buildAdminRelationshipInsights } from '@/lib/relationshipIntelligencePresentation'
+import { isCampaignEligible } from '@/lib/peopleClassification'
 import { getAllKarkuns } from '@/lib/peopleStore'
 import { getAnnexure1ExecutionMetrics } from '@/services/annexure1Service'
 import { getFollowUpDashboardMetrics } from '@/services/followUpService'
@@ -91,19 +93,26 @@ function isVisitConducted(karkunId: string): boolean {
 
 /**
  * Admin Hero — Campaign Achievement Progress.
+ * Denominator is Karkun Registry only (category = Karkun / isCampaignEligible).
+ * Muttafiqeen are excluded from every metric and from overall progress.
  * Reuses existing connection / visit / JIH / Weekly Ijtema / Baitul Maal sources only.
  */
 export function buildAdminCampaignAchievementProgress(): AdminCampaignAchievementProgress {
-  const connections = getCampaignConnectionMetrics()
-  const eligible = getAllKarkuns()
+  // Match Karkun Registry (not People Registry = Karkuns + Muttafiqeen).
+  const eligible = getAllKarkuns().filter(isCampaignEligible)
   const total = eligible.length
+  const connectedIds = new Set(
+    getCanonicalConnectedAssignments().map((row) => row.karkunId),
+  )
 
+  let connected = 0
   let visitConducted = 0
   let appRegistered = 0
   let ijtemaAgreed = 0
   let baitulMaalCommitted = 0
 
   for (const karkun of eligible) {
+    if (connectedIds.has(karkun.id)) connected += 1
     if (isVisitConducted(karkun.id)) visitConducted += 1
     if (isJihRegistered(karkun)) appRegistered += 1
     if (getCurrentIjtemaAttendance(karkun.id).status === 'Present') ijtemaAgreed += 1
@@ -114,9 +123,9 @@ export function buildAdminCampaignAchievementProgress(): AdminCampaignAchievemen
     {
       id: 'connected',
       label: 'Connected',
-      current: connections.connected,
+      current: connected,
       total,
-      pct: achievementPct(connections.connected, total),
+      pct: achievementPct(connected, total),
     },
     {
       id: 'visit',
