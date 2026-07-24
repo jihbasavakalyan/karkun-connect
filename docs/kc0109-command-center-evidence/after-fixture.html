@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>KC-0109 After — Campaign Operations Command Center</title>
+  <style>
+    body { margin: 0; font-family: ui-sans-serif, system-ui, sans-serif; background: #f1f5f9; color: #0f172a; }
+    .page { max-width: 960px; margin: 0 auto; padding: 1rem 1.25rem 2rem; display: grid; gap: 0.85rem; }
+    .panel { background: #fff; border: 1px solid #e2e8f0; border-radius: 1rem; padding: 0.85rem 1rem; box-shadow: 0 1px 2px rgb(15 23 42 / 0.05); }
+    .hero { background: linear-gradient(135deg, #0f766e, #134e4a); color: #ecfdf5; border-radius: 1rem; padding: 1rem 1.15rem; }
+    .hero h1 { margin: 0; font-size: 1.45rem; text-align: right; }
+    .hero p { margin: 0.35rem 0 0; opacity: 0.85; font-size: 0.85rem; text-align: right; }
+    .section-title { margin: 0; font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 700; }
+    .sky { color: #0369a1; } .amber { color: #b45309; } .rose { color: #e11d48; } .slate { color: #475569; } .teal { color: #0f766e; }
+    .sub { margin: 0.2rem 0 0.55rem; color: #64748b; font-size: 0.85rem; }
+    .grid { display: grid; gap: 0.6rem; grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 0.55rem; }
+    .metric { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.75rem; padding: 0.65rem; }
+    .metric span { display: block; font-size: 0.65rem; letter-spacing: 0.06em; text-transform: uppercase; color: #64748b; font-weight: 700; }
+    .metric strong { display: block; margin-top: 0.2rem; font-size: 1.35rem; }
+    .row { display: flex; justify-content: space-between; gap: 0.75rem; align-items: center; border: 1px solid #f1f5f9; border-radius: 0.75rem; padding: 0.6rem 0.75rem; margin-top: 0.45rem; }
+    .badge { border-radius: 999px; padding: 0.15rem 0.55rem; font-size: 0.7rem; font-weight: 700; background: #fff1f2; color: #9f1239; }
+    .muted { color: #64748b; font-size: 0.8rem; }
+    .modules { color: #64748b; font-size: 0.72rem; margin-top: 0.2rem; }
+    .label { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #94a3b8; margin: 0.25rem 0; }
+    @media (max-width: 720px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  </style>
+</head>
+<body>
+  <div class="page" id="admin-dashboard-after" aria-label="Admin Dashboard After">
+    <header class="hero">
+      <h1 dir="rtl">کیمپین آپریشنز</h1>
+      <p>Campaign Operations · banner + quick actions only</p>
+    </header>
+
+    <section class="panel" aria-label="Campaign Health">
+      <h2 class="section-title sky">1 · Campaign Health</h2>
+      <p class="sub">Percentages only · Visits · Weekly Ijtema · Monthly Baitul Maal · App Registration</p>
+      <div class="grid">
+        <div class="metric"><span>Visits</span><strong>68%</strong></div>
+        <div class="metric"><span>Weekly Ijtema</span><strong>72%</strong></div>
+        <div class="metric"><span>Monthly Baitul Maal</span><strong>61%</strong></div>
+        <div class="metric"><span>App Registration</span><strong>54%</strong></div>
+      </div>
+    </section>
+
+    <section class="panel" aria-label="Today's Mission">
+      <h2 class="section-title amber">2 · Today's Mission</h2>
+      <p class="sub">Actionable operational items only</p>
+      <div class="row"><div><strong>Pending Weekly Ijtema submissions</strong><div class="muted">5 Rukns still need to submit attendance</div></div><span class="badge">5</span></div>
+      <div class="row"><div><strong>Pending Monthly Baitul Maal submissions</strong><div class="muted">6 Rukns still need to submit completion</div></div><span class="badge">6</span></div>
+      <div class="row"><div><strong>Overdue visits</strong><div class="muted">12 visit reports still outstanding</div></div><span class="badge">12</span></div>
+      <div class="row"><div><strong>Pending app registrations</strong><div class="muted">18 eligible Karkuns not yet registered</div></div><span class="badge">18</span></div>
+    </section>
+
+    <section class="panel" aria-label="Top Priority Rukns">
+      <h2 class="section-title rose">3 · Top Priority Rukns</h2>
+      <p class="sub">Equal weight · Visits / Weekly Ijtema / Monthly Baitul Maal / App Registration</p>
+      <div class="row">
+        <div>
+          <strong>Yusuf Ali</strong>
+          <div class="modules">V 19% · I 40% · B 25% · A 33%</div>
+        </div>
+        <span class="badge">29%</span>
+      </div>
+      <div class="row">
+        <div>
+          <strong>Ayesha Noor</strong>
+          <div class="modules">V 28% · I 50% · B 30% · A 40%</div>
+        </div>
+        <span class="badge">37%</span>
+      </div>
+      <div class="row">
+        <div>
+          <strong>Abdullah Khan</strong>
+          <div class="modules">V 42% · I 55% · B 48% · A 50%</div>
+        </div>
+        <span class="badge">49%</span>
+      </div>
+    </section>
+
+    <section class="panel" aria-label="Progress Trends">
+      <h2 class="section-title slate">4 · Progress Trends</h2>
+      <div class="row"><div><strong>Daily visits</strong><div class="muted">4 submissions today</div></div><strong>4</strong></div>
+      <div class="row"><div><strong>Weekly completion</strong><div class="muted">21 this week</div></div><strong>21</strong></div>
+      <div class="row"><div><strong>Follow-up progress</strong><div class="muted">8 still pending</div></div><strong>14/22</strong></div>
+    </section>
+
+    <section class="panel" aria-label="Activity Timeline">
+      <h2 class="section-title teal">5 · Activity Timeline</h2>
+      <p class="sub">Merged Live Activity + System History</p>
+      <div class="row"><div><strong>Bilal Ahmed</strong><div class="muted">Visited Ahmad Khan</div></div><span class="muted">Today 10:12</span></div>
+      <div class="row"><div><strong>Campaign team</strong><div class="muted">Meeting form submitted for ASN-014</div></div><span class="muted">Today 09:48</span></div>
+    </section>
+
+    <p class="label">After · KC-0109 Scope 1 Campaign Operations Command Center IA</p>
+  </div>
+</body>
+</html>

@@ -95,11 +95,19 @@ assert(kpiCard.includes('Attendance'), 'dashboard KPI shows attendance')
 assert(kpiCard.includes('Submission'), 'dashboard KPI shows submission')
 assert(kpiCard.includes('Pending'), 'dashboard KPI shows pending')
 
+const ops = readFileSync(
+  resolve('src/lib/missionControl/campaignOperationsCommandCenter.ts'),
+  'utf8',
+)
+assert(ops.includes('getWeeklyIjtemaDashboardKpi'), 'Campaign Health reuses Weekly Ijtema KPI')
+assert(ops.includes('Present ÷ Assigned'), 'Weekly Ijtema Present÷Assigned contract')
+
 const command = readFileSync(
   resolve('src/components/mission-control/AdminCommandCenter.tsx'),
   'utf8',
 )
-assert(command.includes('WeeklyIjtemaDashboardKpiCard'), 'dashboard mounts Weekly Ijtema KPI')
+assert(command.includes('CampaignHealthPanel'), 'dashboard mounts Campaign Health (includes Weekly Ijtema %)')
+assert(!command.includes('WeeklyIjtemaDashboardKpiCard'), 'no duplicate Weekly Ijtema KPI card on dashboard')
 
 const routes = readFileSync(resolve('src/constants/routes.ts'), 'utf8')
 assert(routes.includes('ADMIN_WEEKLY_IJTEMA'), 'admin weekly ijtema route constant present')

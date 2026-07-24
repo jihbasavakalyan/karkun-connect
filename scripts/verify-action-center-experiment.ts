@@ -142,6 +142,12 @@ assert(
   'interventions still built from existing helper',
 )
 assert(
+  readFileSync(resolve('src/components/mission-control/AdminCommandCenter.tsx'), 'utf8').includes(
+    'buildTodaysMissionOperationalItems',
+  ),
+  "Today's Mission uses operational item contract",
+)
+assert(
   readFileSync(resolve('src/components/mission-control/AdminOpsThreeColumnLayout.tsx'), 'utf8')
     .includes('Immediate Priorities'),
   'previous three-column implementation preserved',

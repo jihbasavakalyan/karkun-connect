@@ -1,6 +1,6 @@
 /**
- * KC-0071 — Administrator Executive Dashboard (presentation only).
- * Reuses existing mission-control data helpers — no new queries or calculations engines.
+ * KC-0109 Scope 1 — Campaign Operations Command Center (presentation / IA only).
+ * Reuses existing mission-control data helpers — no new queries or calculation engines.
  */
 
 import { useEffect, useMemo, useState } from 'react'
@@ -11,14 +11,17 @@ import { ROUTES } from '@/constants/routes'
 import {
   buildAdminCampaignHealthKpis,
   buildAdminInterventionQueue,
-  buildAdminRecentActivityView,
-  buildAllActiveRuknPerformance,
-  type AdminRuknGenderPerformanceView,
 } from '@/lib/missionControl/adminMissionControlPresentation'
 import {
   USE_ADMIN_ACTION_CENTER_EXPERIMENT,
-  buildAdminActionCenterItems,
 } from '@/lib/missionControl/adminDashboardOpsExperiment'
+import {
+  buildCampaignOperationsHealthMetrics,
+  buildCampaignOperationsTrends,
+  buildTodaysMissionOperationalItems,
+  buildTopPriorityRukns,
+  type TopPriorityRuknView,
+} from '@/lib/missionControl/campaignOperationsCommandCenter'
 import { AdminActionCenter } from './AdminActionCenter'
 import { AdminOpsThreeColumnLayout } from './AdminOpsThreeColumnLayout'
 import {
@@ -42,9 +45,13 @@ import { dashState03WidgetRender } from '@/lib/debug/kc00586DashboardStateProbe'
 import { getRuknById } from '@/data/ruknMaster'
 import { buildTelLink } from '@/utils/personContactLinks'
 import { resolveAdminHealthKpiPending } from './dashboardMetricReadiness'
-import { LiveActivityFeed } from './LiveActivityFeed'
-import { WeeklyIjtemaDashboardKpiCard } from './WeeklyIjtemaDashboardKpiCard'
-import { MonthlyBaitulMaalDashboardKpiCard } from './MonthlyBaitulMaalDashboardKpiCard'
+import { CampaignHealthPanel } from './CampaignHealthPanel'
+import { ProgressTrendsPanel } from './ProgressTrendsPanel'
+import { ActivityTimeline } from './ActivityTimeline'
+import { subscribeToWeeklyIjtemaStore } from '@/stores/weeklyIjtemaStore'
+import { subscribeToMonthlyBaitulMaalStore } from '@/stores/monthlyBaitulMaalStore'
+import { subscribeToAnnexure1Store } from '@/stores/annexure1Store'
+import { subscribeToJihWebPortalStore } from '@/stores/jihWebPortalStore'
 
 type AdminCommandCenterProps = {
   model: AdminMissionControlModel
@@ -52,51 +59,9 @@ type AdminCommandCenterProps = {
   metricsReady?: boolean
 }
 
-const RUKN_PAGE_SIZE = 8
+const PRIORITY_PAGE_SIZE = 8
 
-type OverviewMetric = {
-  id: string
-  label: string
-  value: string | number
-  hint?: string
-}
-
-function summarizeRukns(rows: AdminRuknGenderPerformanceView[]): OverviewMetric[] {
-  const total = rows.length
-  const assigned = rows.filter((r) => r.assignedKarkuns > 0).length
-  const connected = rows.reduce((sum, r) => sum + r.assignedKarkuns, 0)
-  const pending = rows.reduce((sum, r) => sum + r.pendingWork, 0)
-  const avg =
-    total === 0
-      ? 0
-      : Math.round(rows.reduce((sum, r) => sum + r.completionPct, 0) / total)
-  const critical = rows.filter((r) => r.status.tone === 'red' && r.assignedKarkuns > 0).length
-
-  return [
-    { id: 'rukns', label: 'Total Rukns', value: total },
-    { id: 'assigned', label: 'Rukns with Connections', value: assigned, hint: 'At least one Connected Karkun' },
-    { id: 'connected', label: 'Connected', value: connected, hint: 'Active Connected Karkuns' },
-    {
-      id: 'pending',
-      label: 'Pending Work',
-      value: pending,
-      hint: 'Visits and tasks not yet completed',
-    },
-    { id: 'progress', label: 'Average Progress', value: `${avg}%` },
-    { id: 'critical', label: 'Needs Attention', value: critical, hint: 'Rukns behind on progress' },
-  ]
-}
-
-function activityTone(message: string): 'completed' | 'transfer' | 'pending' | 'critical' | 'idle' {
-  const lower = message.toLowerCase()
-  if (/transfer|transferred/.test(lower)) return 'transfer'
-  if (/critical|overdue|fail|denied|error/.test(lower)) return 'critical'
-  if (/pending|await|due/.test(lower)) return 'pending'
-  if (/complete|completed|approved|connected|assign|archiv/.test(lower)) return 'completed'
-  return 'idle'
-}
-
-function RuknPerformanceCard({
+function PriorityRuknCard({
   row,
   selected,
   onToggleSelected,
@@ -104,7 +69,7 @@ function RuknPerformanceCard({
   onAppreciate,
   onRemind,
 }: {
-  row: AdminRuknGenderPerformanceView
+  row: TopPriorityRuknView
   selected: boolean
   onToggleSelected: (ruknId: string) => void
   onNotify: (ruknId: string) => void
@@ -114,9 +79,9 @@ function RuknPerformanceCard({
   const rukn = getRuknById(row.ruknId)
   const tel = rukn?.mobile ? buildTelLink(rukn.mobile) : null
   const canMessage = Boolean(rukn?.mobile?.trim())
-  const badge = dashboardPerformanceBadge(row.completionPct, row.assignedKarkuns)
-  const showAppreciate = shouldOfferAppreciate(row.completionPct, row.assignedKarkuns)
-  const showReminder = shouldOfferReminder(row.completionPct, row.assignedKarkuns)
+  const badge = dashboardPerformanceBadge(row.priorityScore, row.assignedKarkuns)
+  const showAppreciate = shouldOfferAppreciate(row.priorityScore, row.assignedKarkuns)
+  const showReminder = shouldOfferReminder(row.priorityScore, row.assignedKarkuns)
 
   return (
     <li className={`exdash-rukn-card${selected ? ' exdash-rukn-card-selected' : ''}`}>
@@ -132,8 +97,12 @@ function RuknPerformanceCard({
         <div className="min-w-0 flex-1">
           <p className="exdash-rukn-name">{row.ruknName}</p>
           <p className="exdash-rukn-meta">
-            Connected: {row.assignedKarkuns}
+            Priority score: {row.priorityScore}% · Connected: {row.assignedKarkuns}
             {row.pendingWork > 0 ? ` · Pending work: ${row.pendingWork}` : ''}
+          </p>
+          <p className="exdash-rukn-modules">
+            V {row.modulePct.visits}% · I {row.modulePct.weeklyIjtema}% · B{' '}
+            {row.modulePct.monthlyBaitulMaal}% · A {row.modulePct.appRegistration}%
           </p>
         </div>
         <span className={`exdash-status-badge exdash-status-${badge.tone}`}>
@@ -145,10 +114,10 @@ function RuknPerformanceCard({
           <div className="exdash-rukn-progress-track">
             <div
               className="exdash-rukn-progress-fill"
-              style={{ width: `${Math.max(0, Math.min(100, row.completionPct))}%` }}
+              style={{ width: `${Math.max(0, Math.min(100, row.priorityScore))}%` }}
             />
           </div>
-          <span className="exdash-rukn-pct">{row.completionPct}%</span>
+          <span className="exdash-rukn-pct">{row.priorityScore}%</span>
         </div>
       </div>
       <div className="exdash-rukn-actions" role="group" aria-label={`Actions for ${row.ruknName}`}>
@@ -207,17 +176,15 @@ function RuknPerformanceCard({
   )
 }
 
-function PaginatedRuknGrid({
+function PaginatedPriorityGrid({
   rows,
-  emptyLabel,
   selectedIds,
   onToggleSelected,
   onNotify,
   onAppreciate,
   onRemind,
 }: {
-  rows: AdminRuknGenderPerformanceView[]
-  emptyLabel: string
+  rows: TopPriorityRuknView[]
   selectedIds: Set<string>
   onToggleSelected: (ruknId: string) => void
   onNotify: (ruknId: string) => void
@@ -225,19 +192,19 @@ function PaginatedRuknGrid({
   onRemind: (ruknId: string) => void
 }) {
   const [page, setPage] = useState(0)
-  const totalPages = Math.max(1, Math.ceil(rows.length / RUKN_PAGE_SIZE))
+  const totalPages = Math.max(1, Math.ceil(rows.length / PRIORITY_PAGE_SIZE))
   const safePage = Math.min(page, totalPages - 1)
-  const slice = rows.slice(safePage * RUKN_PAGE_SIZE, safePage * RUKN_PAGE_SIZE + RUKN_PAGE_SIZE)
+  const slice = rows.slice(safePage * PRIORITY_PAGE_SIZE, safePage * PRIORITY_PAGE_SIZE + PRIORITY_PAGE_SIZE)
 
   if (rows.length === 0) {
-    return <p className="exdash-muted">{emptyLabel}</p>
+    return <p className="exdash-muted">No active Rukns with assignments.</p>
   }
 
   return (
     <div className="space-y-3">
       <ul className="exdash-rukn-grid">
         {slice.map((row) => (
-          <RuknPerformanceCard
+          <PriorityRuknCard
             key={row.ruknId}
             row={row}
             selected={selectedIds.has(row.ruknId)}
@@ -259,7 +226,7 @@ function PaginatedRuknGrid({
             Previous
           </button>
           <span className="exdash-pager-meta">
-            Page {safePage + 1} of {totalPages} · {rows.length} Rukns
+            Page {safePage + 1} of {totalPages} · {rows.length} priority Rukns
           </span>
           <button
             type="button"
@@ -271,7 +238,7 @@ function PaginatedRuknGrid({
           </button>
         </div>
       ) : (
-        <p className="exdash-pager-meta">{rows.length} Rukns</p>
+        <p className="exdash-pager-meta">{rows.length} priority Rukns</p>
       )}
     </div>
   )
@@ -298,35 +265,6 @@ function ExdashSectionTitle({
   )
 }
 
-function OverviewMetricGrid({
-  metrics,
-  title,
-  icon,
-  tone,
-}: {
-  metrics: OverviewMetric[]
-  title: string
-  icon: IconName
-  tone: SectionTone
-}) {
-  return (
-    <section className="exdash-panel" aria-label={title}>
-      <div className="exdash-section-head">
-        <ExdashSectionTitle title={title} icon={icon} tone={tone} />
-      </div>
-      <ul className="exdash-metric-grid">
-        {metrics.map((metric) => (
-          <li key={metric.id} className="exdash-metric-card">
-            <p className="exdash-metric-label">{metric.label}</p>
-            <p className="exdash-metric-value">{metric.value}</p>
-            {metric.hint ? <p className="exdash-metric-hint">{metric.hint}</p> : null}
-          </li>
-        ))}
-      </ul>
-    </section>
-  )
-}
-
 export function AdminCommandCenter({
   model,
   snapshot,
@@ -338,7 +276,7 @@ export function AdminCommandCenter({
   const [searchParams] = useSearchParams()
   const showAllTasks =
     USE_ADMIN_ACTION_CENTER_EXPERIMENT && searchParams.get('view') === 'all-tasks'
-  const [systemHistoryOpen, setSystemHistoryOpen] = useState(false)
+  const [moduleTick, setModuleTick] = useState(0)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set())
   const [composerError, setComposerError] = useState('')
   const [composer, setComposer] = useState<{
@@ -348,6 +286,18 @@ export function AdminCommandCenter({
     initialTemplateId?: string
     initialMessage?: string
   }>({ open: false, recipients: [], title: 'Compose WhatsApp Message' })
+
+  useEffect(() => {
+    const unsubs = [
+      subscribeToWeeklyIjtemaStore(() => setModuleTick((v) => v + 1)),
+      subscribeToMonthlyBaitulMaalStore(() => setModuleTick((v) => v + 1)),
+      subscribeToAnnexure1Store(() => setModuleTick((v) => v + 1)),
+      subscribeToJihWebPortalStore(() => setModuleTick((v) => v + 1)),
+    ]
+    return () => {
+      for (const unsub of unsubs) unsub()
+    }
+  }, [])
 
   const toggleSelected = (ruknId: string) => {
     setSelectedIds((current) => {
@@ -447,6 +397,7 @@ export function AdminCommandCenter({
     })
   }
 
+  // Retain legacy health KPI probe wiring (KC-0058.6) without rendering duplicate surfaces.
   const healthKpis = useMemo(() => {
     void assignmentVersion
     return buildAdminCampaignHealthKpis(model)
@@ -479,15 +430,6 @@ export function AdminCommandCenter({
     return buildAdminInterventionQueue(snapshot)
   }, [snapshot, assignmentVersion, backgroundReady])
 
-  const actionCenterItems = useMemo(
-    () =>
-      buildAdminActionCenterItems({
-        alerts: snapshot.alerts,
-        interventions,
-      }),
-    [snapshot.alerts, interventions],
-  )
-
   useEffect(() => {
     dashState03WidgetRender(
       'InterventionQueue',
@@ -496,166 +438,97 @@ export function AdminCommandCenter({
     )
   }, [interventions, backgroundReady])
 
-  const allRukns = useMemo(() => {
+  const missionItems = useMemo(() => {
     void assignmentVersion
+    void moduleTick
     if (!backgroundReady) return []
-    return buildAllActiveRuknPerformance()
-  }, [assignmentVersion, backgroundReady])
+    return buildTodaysMissionOperationalItems()
+  }, [assignmentVersion, moduleTick, backgroundReady])
 
-  const maleRukns = useMemo(
-    () => allRukns.filter((row) => row.gender === 'Male'),
-    [allRukns],
-  )
-  const femaleRukns = useMemo(
-    () => allRukns.filter((row) => row.gender === 'Female'),
-    [allRukns],
-  )
+  const campaignHealth = useMemo(() => {
+    void assignmentVersion
+    void moduleTick
+    if (!metricsReady || !backgroundReady) return []
+    return buildCampaignOperationsHealthMetrics()
+  }, [assignmentVersion, moduleTick, metricsReady, backgroundReady])
 
-  const collectiveMetrics = useMemo(() => {
-    if (!backgroundReady) {
-      return [
-        { id: 'rukns', label: 'Total Rukns', value: '—' },
-        { id: 'assigned', label: 'Rukns with Connections', value: '—' },
-        {
-          id: 'connected',
-          label: 'Connected',
-          value: metricsReady ? model.connectionProgress.connected : '—',
-          hint: 'Active Connected Karkuns',
-        },
-        {
-          id: 'pending',
-          label: 'Pending Work',
-          value: '—',
-          hint: 'Visits and tasks not yet completed',
-        },
-        {
-          id: 'progress',
-          label: 'Average Progress',
-          value: metricsReady ? `${model.connectionProgress.pct}%` : '—',
-        },
-        {
-          id: 'critical',
-          label: 'Needs Attention',
-          value: metricsReady ? model.campaignHealth.criticalFollowUps : '—',
-          hint: 'Overdue follow-ups',
-        },
-      ] satisfies OverviewMetric[]
-    }
-    const base = summarizeRukns(allRukns)
-    return base.map((metric) =>
-      metric.id === 'connected'
-        ? {
-            ...metric,
-            value: metricsReady ? model.connectionProgress.connected : metric.value,
-            hint: 'Active Connected Karkuns',
-          }
-        : metric,
+  useEffect(() => {
+    dashState03WidgetRender(
+      'CampaignHealth',
+      metricsReady && backgroundReady ? 'ready' : 'loading',
+      {
+        metrics: campaignHealth.map((metric) => ({
+          id: metric.id,
+          pct: metric.pct,
+          current: metric.current,
+          total: metric.total,
+        })),
+      },
     )
-  }, [allRukns, backgroundReady, metricsReady, model])
+  }, [campaignHealth, metricsReady, backgroundReady])
 
-  const maleMetrics = useMemo(() => summarizeRukns(maleRukns), [maleRukns])
-  const femaleMetrics = useMemo(() => summarizeRukns(femaleRukns), [femaleRukns])
+  const priorityRukns = useMemo(() => {
+    void assignmentVersion
+    void moduleTick
+    if (!backgroundReady) return []
+    return buildTopPriorityRukns(24)
+  }, [assignmentVersion, moduleTick, backgroundReady])
 
-  const systemHistory = useMemo(() => {
+  const trends = useMemo(() => {
     void assignmentVersion
     if (!backgroundReady) return []
-    return buildAdminRecentActivityView(8)
+    return buildCampaignOperationsTrends()
   }, [assignmentVersion, backgroundReady])
 
   return (
     <div className="exdash-stack">
       {showAllTasks ? (
         <AdminActionCenter
-          items={actionCenterItems}
+          items={missionItems}
           backgroundReady={backgroundReady}
           variant="full"
         />
       ) : (
         <>
+          {/* 1. Campaign Health */}
+          <CampaignHealthPanel
+            metrics={campaignHealth}
+            ready={metricsReady && backgroundReady}
+          />
+
+          {/* 2. Today's Mission */}
           {USE_ADMIN_ACTION_CENTER_EXPERIMENT ? (
-            <>
-              <AdminActionCenter items={actionCenterItems} backgroundReady={backgroundReady} />
-              <WeeklyIjtemaDashboardKpiCard />
-              <MonthlyBaitulMaalDashboardKpiCard />
-              {backgroundReady ? <PendingKarkunRequestQueue /> : null}
-              <OverviewMetricGrid
-                title="Collective Overview"
-                metrics={collectiveMetrics}
-                icon="chart"
-                tone="slate"
-              />
-            </>
+            <AdminActionCenter items={missionItems} backgroundReady={backgroundReady} />
           ) : (
-            <>
-              <OverviewMetricGrid
-                title="Collective Overview"
-                metrics={collectiveMetrics}
-                icon="chart"
-                tone="slate"
-              />
-              <AdminOpsThreeColumnLayout
-                model={model}
-                snapshot={snapshot}
-                interventions={interventions}
-                backgroundReady={backgroundReady}
-              />
-              <WeeklyIjtemaDashboardKpiCard />
-              <MonthlyBaitulMaalDashboardKpiCard />
-              {backgroundReady ? <PendingKarkunRequestQueue /> : null}
-            </>
+            <AdminOpsThreeColumnLayout
+              model={model}
+              snapshot={snapshot}
+              interventions={interventions}
+              backgroundReady={backgroundReady}
+            />
           )}
 
-          <OverviewMetricGrid
-            title="Male Overview"
-            metrics={maleMetrics}
-            icon="users"
-            tone="sky"
-          />
-          <section className="exdash-panel" aria-label="Male Rukn performance">
-            <div className="exdash-section-head">
-              <ExdashSectionTitle title="Male Rukn Performance" icon="users" tone="sky" />
-              <Link to={ROUTES.ADMIN_RUKN} className="exdash-section-link">
-                All Rukns →
-              </Link>
-            </div>
-            {!backgroundReady ? (
-              <p className="exdash-muted" aria-busy="true">
-                Loading campaign data…
-              </p>
-            ) : (
-              <PaginatedRuknGrid
-                rows={maleRukns}
-                emptyLabel="No Male Rukns found."
-                selectedIds={selectedIds}
-                onToggleSelected={toggleSelected}
-                onNotify={openNotify}
-                onAppreciate={openAppreciate}
-                onRemind={openRemind}
-              />
-            )}
-          </section>
+          {backgroundReady ? <PendingKarkunRequestQueue /> : null}
 
-          <OverviewMetricGrid
-            title="Female Overview"
-            metrics={femaleMetrics}
-            icon="users"
-            tone="violet"
-          />
-          <section className="exdash-panel" aria-label="Female Rukn performance">
+          {/* 3. Top Priority Rukns */}
+          <section className="exdash-panel" aria-label="Top Priority Rukns">
             <div className="exdash-section-head">
-              <ExdashSectionTitle title="Female Rukn Performance" icon="users" tone="violet" />
+              <ExdashSectionTitle title="Top Priority Rukns" icon="users" tone="rose" />
               <Link to={ROUTES.ADMIN_RUKN} className="exdash-section-link">
                 All Rukns →
               </Link>
             </div>
+            <p className="exdash-action-center-sub">
+              Ranked by equal weight across Visits, Weekly Ijtema, Monthly Baitul Maal, and App
+              Registration (lowest score first).
+            </p>
             {!backgroundReady ? (
               <p className="exdash-muted" aria-busy="true">
                 Loading campaign data…
               </p>
             ) : (
-              <PaginatedRuknGrid
-                rows={femaleRukns}
-                emptyLabel="No Female Rukns found."
+              <PaginatedPriorityGrid
+                rows={priorityRukns}
                 selectedIds={selectedIds}
                 onToggleSelected={toggleSelected}
                 onNotify={openNotify}
@@ -699,47 +572,11 @@ export function AdminCommandCenter({
             </p>
           ) : null}
 
-          <LiveActivityFeed ready={backgroundReady} limit={8} />
+          {/* 4. Progress Trends */}
+          <ProgressTrendsPanel trends={trends} ready={backgroundReady} />
 
-          <section className="exdash-system-history" aria-label="Recent system history">
-            <button
-              type="button"
-              className="exdash-system-history-toggle"
-              aria-expanded={systemHistoryOpen}
-              onClick={() => setSystemHistoryOpen((open) => !open)}
-            >
-              <span>
-                Recent System History ({systemHistory.length || 0})
-              </span>
-              <span aria-hidden="true">{systemHistoryOpen ? '▲ Collapse' : '▼ Expand'}</span>
-            </button>
-            {systemHistoryOpen ? (
-              !backgroundReady ? (
-                <p className="exdash-muted mt-2" aria-busy="true">
-                  Loading…
-                </p>
-              ) : systemHistory.length === 0 ? (
-                <p className="exdash-muted mt-2">No system history yet.</p>
-              ) : (
-                <ul className="exdash-system-history-list">
-                  {systemHistory.map((item) => (
-                    <li
-                      key={item.id}
-                      className={`exdash-system-history-item exdash-history-${activityTone(item.message)}`}
-                    >
-                      <span className="exdash-history-dot" aria-hidden="true" />
-                      <div>
-                        <p className="exdash-system-history-message">{item.message}</p>
-                        <p className="exdash-history-time">
-                          {new Date(item.timestamp).toLocaleString()}
-                        </p>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )
-            ) : null}
-          </section>
+          {/* 5. Activity Timeline */}
+          <ActivityTimeline ready={backgroundReady} limit={12} />
         </>
       )}
 

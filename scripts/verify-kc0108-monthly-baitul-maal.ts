@@ -129,12 +129,21 @@ const kpiCard = readFileSync(
 assert(kpiCard.includes('Completion'), 'dashboard KPI shows completion')
 assert(kpiCard.includes('Submitted'), 'dashboard KPI shows submitted')
 
+const ops = readFileSync(
+  resolve('src/lib/missionControl/campaignOperationsCommandCenter.ts'),
+  'utf8',
+)
+assert(ops.includes('getMonthlyBaitulMaalDashboardKpi'), 'Campaign Health reuses Monthly Baitul Maal KPI')
+assert(ops.includes('getWeeklyIjtemaDashboardKpi'), 'Weekly Ijtema KPI still wired into Campaign Health')
+assert(ops.includes('Contributed ÷ Assigned'), 'Monthly Baitul Maal Contributed÷Assigned contract')
+
 const command = readFileSync(
   resolve('src/components/mission-control/AdminCommandCenter.tsx'),
   'utf8',
 )
-assert(command.includes('MonthlyBaitulMaalDashboardKpiCard'), 'dashboard mounts Baitul Maal KPI')
-assert(command.includes('WeeklyIjtemaDashboardKpiCard'), 'Weekly Ijtema KPI still mounted')
+assert(command.includes('CampaignHealthPanel'), 'dashboard mounts Campaign Health (includes Baitul Maal %)')
+assert(!command.includes('MonthlyBaitulMaalDashboardKpiCard'), 'no duplicate Baitul Maal KPI card on dashboard')
+assert(!command.includes('WeeklyIjtemaDashboardKpiCard'), 'Weekly Ijtema KPI card still not duplicated')
 
 const routes = readFileSync(resolve('src/constants/routes.ts'), 'utf8')
 assert(routes.includes('ADMIN_MONTHLY_BAITUL_MAAL'), 'admin baitul maal route present')

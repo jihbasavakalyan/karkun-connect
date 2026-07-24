@@ -2,6 +2,9 @@ export { AskDigitalRafeeqCard } from './AskDigitalRafeeqCard'
 export { AdminMissionControlHero } from './AdminMissionControlHero'
 export { AdminCommandCenter } from './AdminCommandCenter'
 export { LiveActivityFeed } from './LiveActivityFeed'
+export { ActivityTimeline } from './ActivityTimeline'
+export { CampaignHealthPanel } from './CampaignHealthPanel'
+export { ProgressTrendsPanel } from './ProgressTrendsPanel'
 export { AdminHealthKpiCard } from './AdminHealthKpiCard'
 export {
   ADMIN_HEALTH_KPI_READINESS,
