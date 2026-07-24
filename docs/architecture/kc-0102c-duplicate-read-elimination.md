@@ -122,15 +122,30 @@ Critical hydrate peer set unchanged (6 parallel reads).
 
 ## 8. Git / deploy / manual verification
 
-*(Filled after commit + push.)*
-
 | Item | Value |
 |------|-------|
-| Commit hash | _pending_ |
-| Commit message | `feat(performance): eliminate duplicate dashboard startup reads (KC-0102C)` |
-| Push | _pending_ |
-| Manual verification | _pending_ |
-| Rollback | Revert the commit; restores settings `getDocs` + Pending remount sync |
+| Feature commit | `583bc867bd106517b2d3eae3cdfb63faa3613564` |
+| Feature message | `feat(performance): eliminate duplicate dashboard startup reads (KC-0102C)` |
+| Build-fix commit | `5a347fbb395c28c126a8f2640644b32816b6caf9` |
+| Build-fix message | `fix(build): exclude vitest unit tests from production tsc build` |
+| Push | Confirmed — `main` → `origin/main` (`faf8180..5a347fb`) |
+| Production deploy | `https://karkun-connect-qcoa981dq-jihbk.vercel.app` **Ready** (alias `karkun-connect.vercel.app`) |
+| Rollback | `git revert 5a347fb 583bc86` (restore settings `getDocs` + Pending remount sync; re-include tests in tsc if needed) |
+
+### Manual verification results
+
+| Check | Result |
+|-------|--------|
+| Prod deploy build | First push failed (`vitest` in `tsc -b`); fixed by excluding `*.test.ts`; redeploy **Ready** |
+| Prod login URL loads | `https://karkun-connect.vercel.app/login` served (deploy Ready) |
+| Admin cold load (auth smoke, Vite + prod Firebase) | `/admin` · `hydration=ready` · Campaign Health present · no page errors · no “Unable to load” |
+| Rukn cold load (same) | `/rukn` · `hydration=ready` · portal + campaign progress present · bottom nav present · no page errors |
+| Dashboard data correctness | Connection/progress widgets rendered with real counts (not fail panel) |
+| Pending Queue / Campaign Health / Mission | Admin home rendered command-center sections without hydrate failure |
+| Navigation | Admin sidebar + Rukn portal chrome visible |
+| Console/page errors | None in smoke capture |
+
+**Note:** Unrelated auth/claims WIP files remain uncommitted on the working tree and were **not** included in this push.
 
 ---
 
