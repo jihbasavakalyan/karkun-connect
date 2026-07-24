@@ -52,6 +52,27 @@
 - `npx tsc -b --pretty false` (app build)
 - Evidence fixtures: `docs/kc-0102e-evidence/`
 
-## Rollback
+## Git / deploy
 
-Revert the KC-0102E commit. If live `campaigns/campaign-active.endDate` was patched, set it back to prior value (`2026-07-26`).
+| Field | Value |
+|-------|-------|
+| Commit | `473d207` |
+| Message | `feat(dashboard): restore executive command center metrics (KC-0102E)` |
+| Push | `origin/main` |
+| Deploy | Vercel production Ready — `https://karkun-connect.vercel.app` (`dpl_FtCzuvThAfYcx56392rr4WCxEfik`) |
+
+## Production manual verification (2026-07-25)
+
+Verified on deployed Admin dashboard after custom-token Admin sign-in:
+
+| Check | Result |
+|-------|--------|
+| Campaign window | `18 Jul 2026 – 2 Aug 2026` |
+| Campaign Progress / Connected / Remaining / Days Left | Present (242 / 255 / 8) |
+| Collective Overview | Present |
+| Male / Female Rukns | Present |
+| Campaign Health | Present (unchanged contract) |
+| Today's Mission | Present |
+| Console | Only pre-existing SVG path attribute warnings (icon `d`), no app regressions |
+
+Firestore `campaigns` collection was empty — duration comes from `mockMissions` seed (`2026-08-02`).
