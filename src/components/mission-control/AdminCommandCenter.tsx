@@ -5,6 +5,8 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { Icon } from '@/components/ui/Icon'
+import type { IconName } from '@/design-system/iconNames'
 import { ROUTES, adminExecutionPath } from '@/constants/routes'
 import {
   buildAdminCampaignHealthKpis,
@@ -281,17 +283,42 @@ function PaginatedRuknGrid({
   )
 }
 
+type SectionTone = 'sky' | 'amber' | 'rose' | 'violet' | 'slate' | 'teal'
+
+function ExdashSectionTitle({
+  title,
+  icon,
+  tone,
+}: {
+  title: string
+  icon: IconName
+  tone: SectionTone
+}) {
+  return (
+    <h2 className={`exdash-section-title exdash-section-title-${tone}`}>
+      <span className={`exdash-section-icon exdash-section-icon-${tone}`} aria-hidden="true">
+        <Icon name={icon} size="sm" />
+      </span>
+      {title}
+    </h2>
+  )
+}
+
 function OverviewMetricGrid({
   metrics,
   title,
+  icon,
+  tone,
 }: {
   metrics: OverviewMetric[]
   title: string
+  icon: IconName
+  tone: SectionTone
 }) {
   return (
     <section className="exdash-panel" aria-label={title}>
       <div className="exdash-section-head">
-        <h2 className="exdash-section-title">{title}</h2>
+        <ExdashSectionTitle title={title} icon={icon} tone={tone} />
       </div>
       <ul className="exdash-metric-grid">
         {metrics.map((metric) => (
@@ -531,11 +558,16 @@ export function AdminCommandCenter({
 
   return (
     <div className="exdash-stack">
-      <OverviewMetricGrid title="Collective Overview" metrics={collectiveMetrics} />
+      <OverviewMetricGrid
+        title="Collective Overview"
+        metrics={collectiveMetrics}
+        icon="chart"
+        tone="slate"
+      />
 
       <section className="exdash-panel" aria-label="Campaign health">
         <div className="exdash-section-head">
-          <h2 className="exdash-section-title">Campaign Health</h2>
+          <ExdashSectionTitle title="Campaign Health" icon="pulse-healthy" tone="sky" />
           <Link to={adminExecutionPath()} className="exdash-section-link">
             Overview →
           </Link>
@@ -554,7 +586,7 @@ export function AdminCommandCenter({
 
       <section className="exdash-panel" aria-label="Today's priorities">
         <div className="exdash-section-head">
-          <h2 className="exdash-section-title">Today&apos;s Priorities</h2>
+          <ExdashSectionTitle title="Today's Priorities" icon="flag" tone="amber" />
           <span className="exdash-section-meta">
             {model.todaysPriorities.length === 0
               ? 'Clear'
@@ -584,7 +616,7 @@ export function AdminCommandCenter({
 
       <section className="exdash-panel" aria-label="Mission alerts">
         <div className="exdash-section-head">
-          <h2 className="exdash-section-title">Mission Alerts</h2>
+          <ExdashSectionTitle title="Mission Alerts" icon="warning" tone="rose" />
           <span className="exdash-section-meta">
             {snapshot.alerts.length === 0 ? 'Clear' : `${snapshot.alerts.length} active`}
           </span>
@@ -597,7 +629,7 @@ export function AdminCommandCenter({
               <li key={alert.id}>
                 <Link
                   to={alert.route || adminExecutionPath()}
-                  className={`exdash-queue-item ${ALERT_SEVERITY_CLASS[alert.severity]}`}
+                  className="exdash-queue-item"
                 >
                   <span className="exdash-queue-rank" aria-hidden="true">
                     {index + 1}
@@ -618,9 +650,9 @@ export function AdminCommandCenter({
 
       {backgroundReady ? <PendingKarkunRequestQueue /> : null}
 
-      <section className="exdash-panel exdash-panel-emphasis" aria-label="Intervention queue">
+      <section className="exdash-panel" aria-label="Intervention queue">
         <div className="exdash-section-head">
-          <h2 className="exdash-section-title">Intervention Queue</h2>
+          <ExdashSectionTitle title="Intervention Queue" icon="bell" tone="rose" />
           <span className="exdash-section-meta">
             {!backgroundReady
               ? 'Loading'
@@ -639,7 +671,7 @@ export function AdminCommandCenter({
           <ol className="exdash-queue">
             {interventions.map((item, index) => (
               <li key={item.id}>
-                <Link to={item.route} className={`exdash-queue-item ${SEVERITY_CLASS[item.severity]}`}>
+                <Link to={item.route} className="exdash-queue-item">
                   <span className="exdash-queue-rank" aria-hidden="true">
                     {index + 1}
                   </span>
@@ -657,10 +689,15 @@ export function AdminCommandCenter({
         )}
       </section>
 
-      <OverviewMetricGrid title="Male Overview" metrics={maleMetrics} />
+      <OverviewMetricGrid
+        title="Male Overview"
+        metrics={maleMetrics}
+        icon="users"
+        tone="sky"
+      />
       <section className="exdash-panel" aria-label="Male Rukn performance">
         <div className="exdash-section-head">
-          <h2 className="exdash-section-title">Male Rukn Performance</h2>
+          <ExdashSectionTitle title="Male Rukn Performance" icon="users" tone="sky" />
           <Link to={ROUTES.ADMIN_RUKN} className="exdash-section-link">
             All Rukns →
           </Link>
@@ -682,10 +719,15 @@ export function AdminCommandCenter({
         )}
       </section>
 
-      <OverviewMetricGrid title="Female Overview" metrics={femaleMetrics} />
+      <OverviewMetricGrid
+        title="Female Overview"
+        metrics={femaleMetrics}
+        icon="users"
+        tone="violet"
+      />
       <section className="exdash-panel" aria-label="Female Rukn performance">
         <div className="exdash-section-head">
-          <h2 className="exdash-section-title">Female Rukn Performance</h2>
+          <ExdashSectionTitle title="Female Rukn Performance" icon="users" tone="violet" />
           <Link to={ROUTES.ADMIN_RUKN} className="exdash-section-link">
             All Rukns →
           </Link>
@@ -744,9 +786,9 @@ export function AdminCommandCenter({
       <LiveActivityFeed ready={backgroundReady} limit={8} />
 
       {metricsReady ? (
-        <section className="exdash-panel exdash-progress-aside" aria-label="Campaign progress summary">
+        <section className="exdash-panel" aria-label="Campaign progress summary">
           <div className="exdash-section-head">
-            <h2 className="exdash-section-title">Campaign Pulse</h2>
+            <ExdashSectionTitle title="Campaign Pulse" icon="chart" tone="teal" />
           </div>
           <div className="exdash-pulse-row">
             <McProgressRing

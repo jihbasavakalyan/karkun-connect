@@ -4,6 +4,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { Icon } from '@/components/ui/Icon'
 import { ROUTES } from '@/constants/routes'
 import { buildLiveActivityFeed } from '@/lib/missionControl/liveActivityFeedPresentation'
 import { subscribeToActivityLog } from '@/stores/activityLogStore'
@@ -36,7 +37,12 @@ export function LiveActivityFeed({ limit = 8, ready = true }: LiveActivityFeedPr
     <section className="exdash-feed" aria-label="Live activity feed">
       <div className="exdash-section-head">
         <div>
-          <h2 className="exdash-section-title">Live Activity</h2>
+          <h2 className="exdash-section-title exdash-section-title-teal">
+            <span className="exdash-section-icon exdash-section-icon-teal" aria-hidden="true">
+              <Icon name="refresh" size="sm" />
+            </span>
+            Live Activity
+          </h2>
           <p className="exdash-feed-subtitle">What Arkaan are doing in the field</p>
         </div>
         <span className="exdash-feed-live" aria-hidden="true">
