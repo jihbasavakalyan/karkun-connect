@@ -1880,6 +1880,51 @@ html[data-theme='dark'] {
     max-height: 22rem;
   }
 
+  /* Action Center experiment — unified urgency queue (presentation only). */
+  .exdash-action-center-head {
+    @apply min-w-0 flex-1;
+  }
+
+  .exdash-action-center-sub {
+    @apply mt-1 text-sm text-slate-500;
+  }
+
+  .exdash-action-list {
+    @apply m-0 flex list-none flex-col gap-2 p-0;
+  }
+
+  .exdash-action-row {
+    @apply flex flex-col gap-3 rounded-xl border border-slate-100 bg-slate-50/60 px-3 py-2.5 sm:flex-row sm:items-center;
+  }
+
+  .exdash-action-dot {
+    @apply h-2.5 w-2.5 shrink-0 rounded-full;
+  }
+
+  .exdash-action-dot-critical {
+    @apply bg-rose-500;
+  }
+
+  .exdash-action-dot-high {
+    @apply bg-amber-500;
+  }
+
+  .exdash-action-dot-medium {
+    @apply bg-sky-500;
+  }
+
+  .exdash-action-body {
+    @apply min-w-0 flex-1;
+  }
+
+  .exdash-action-title-row {
+    @apply flex flex-wrap items-center gap-2;
+  }
+
+  .exdash-action-cta {
+    @apply shrink-0 self-start rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 no-underline transition hover:border-slate-300 hover:bg-slate-50 sm:self-auto;
+  }
+
   .exdash-panel {
     @apply rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5;
   }
