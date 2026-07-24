@@ -4,6 +4,8 @@
 
 Karkun Connect persists application data through **Firestore repositories** when `VITE_REPOSITORY_PROVIDER=firestore`. Repository interfaces are unchanged; stores continue to call `getRepositories()` without knowing whether data lives in localStorage or Cloud Firestore.
 
+**Policy:** All Firestore work must comply with [KC-ARCH-001 — Reliability & Persistence Standard](./kc-arch-001-reliability-persistence.md).
+
 ## Architecture
 
 ```
@@ -115,6 +117,7 @@ Run from Admin tooling or programmatically after switching provider mode.
 
 ```bash
 npm run verify:firestore
+npm run verify:reliability
 npm run verify:rc1
 ```
 

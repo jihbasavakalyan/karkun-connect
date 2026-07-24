@@ -151,8 +151,14 @@ Entity IDs (karkun `id`, assignment `assignmentNumber`, form `id`, etc.) are own
 
 ```bash
 npm run verify:repositories   # repository round-trips and provider wiring
+npm run verify:reliability    # KC-ARCH-001 reliability layer contracts
 npm run verify:rc1            # full RC1 regression suite (includes repositories)
 ```
+
+## Policy
+
+All repository and Firestore work must comply with
+[KC-ARCH-001 — Reliability & Persistence Standard](./kc-arch-001-reliability-persistence.md).
 
 ## Related Files
 
@@ -165,4 +171,8 @@ src/repositories/
   storageKeys.ts
   interfaces/
   local/localRepositories.ts
+  firestore/firestoreRepositories.ts
+src/lib/reliability/
+  persistErrors.ts
+  guidanceStateMerge.ts
 ```

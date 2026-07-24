@@ -52,6 +52,7 @@ import { subscribeToWeeklyIjtemaStore } from '@/stores/weeklyIjtemaStore'
 import { subscribeToMonthlyBaitulMaalStore } from '@/stores/monthlyBaitulMaalStore'
 import { subscribeToAnnexure1Store } from '@/stores/annexure1Store'
 import { subscribeToJihWebPortalStore } from '@/stores/jihWebPortalStore'
+import { subscribeToFollowUpStore } from '@/stores/followUpStore'
 
 type AdminCommandCenterProps = {
   model: AdminMissionControlModel
@@ -293,6 +294,7 @@ export function AdminCommandCenter({
       subscribeToMonthlyBaitulMaalStore(() => setModuleTick((v) => v + 1)),
       subscribeToAnnexure1Store(() => setModuleTick((v) => v + 1)),
       subscribeToJihWebPortalStore(() => setModuleTick((v) => v + 1)),
+      subscribeToFollowUpStore(() => setModuleTick((v) => v + 1)),
     ]
     return () => {
       for (const unsub of unsubs) unsub()
@@ -476,9 +478,10 @@ export function AdminCommandCenter({
 
   const trends = useMemo(() => {
     void assignmentVersion
+    void moduleTick
     if (!backgroundReady) return []
     return buildCampaignOperationsTrends()
-  }, [assignmentVersion, backgroundReady])
+  }, [assignmentVersion, moduleTick, backgroundReady])
 
   return (
     <div className="exdash-stack">

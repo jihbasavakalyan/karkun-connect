@@ -101,8 +101,14 @@ service cloud.firestore {
 
     match /executions/{docId} {
       allow read: if isAdministrator() || isRukn();
-      allow create: if isAdministrator() || (isRukn() && request.resource.data.ruknId == ruknId());
-      allow update: if isAdministrator() || (isRukn() && resource.data.ruknId == ruknId());
+      // KC reliability — shared guidance blob (docId == 'guidance') is written by Rukns
+      // during execution actions but has no top-level ruknId. Annexure docs keep ruknId scoping.
+      allow create: if isAdministrator()
+        || (isRukn() && docId == 'guidance')
+        || (isRukn() && request.resource.data.ruknId == ruknId());
+      allow update: if isAdministrator()
+        || (isRukn() && docId == 'guidance')
+        || (isRukn() && resource.data.ruknId == ruknId());
       allow delete: if isAdministrator();
     }
 

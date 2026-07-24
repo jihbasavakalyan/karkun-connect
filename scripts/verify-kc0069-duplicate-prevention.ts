@@ -1,11 +1,12 @@
 /**
  * KC-0069 — Verify KC-0068 duplicate prevention business rules (in-memory, no Firestore).
  */
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { findMobileOwner } from '@/lib/peopleStore'
 import { normalizeMobile } from '@/lib/mobileValidation'
 import { getPendingKarkunRequests } from '@/stores/karkunRequestStore'
 import { findPossibleNameDuplicates } from '@/lib/nameMatching'
-import { submitNewKarkunRequest } from '@/services/karkunRequestService'
 
 function assert(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error(message)
@@ -13,7 +14,7 @@ function assert(condition: unknown, message: string): asserts condition {
 
 function main() {
   // Check 1 path exists: submit rejects when findMobileOwner finds karkun.
-  const source = submitNewKarkunRequest.toString()
+  const source = readFileSync(resolve('src/services/karkunRequestService.ts'), 'utf8')
   assert(source.includes('acknowledgeNameWarning'), 'NAME_WARNING acknowledge path present')
   assert(
     source.includes('This mobile number already belongs to an existing Karkun.'),

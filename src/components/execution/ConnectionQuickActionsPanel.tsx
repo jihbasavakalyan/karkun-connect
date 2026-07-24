@@ -51,6 +51,7 @@ export function ConnectionQuickActionsPanel({
       const detail = (event as CustomEvent<ExecutionPersistFailedDetail>).detail
       if (!detail) return
       setSavedNote(false)
+      // detail.message is already operator-safe via toOperatorPersistError.
       setError(`Save failed (${detail.label}): ${detail.message}`)
     }
     window.addEventListener(EXECUTION_PERSIST_FAILED_EVENT, onPersistFailed)

@@ -5,6 +5,9 @@
     },
     "api/stt.ts": {
       "includeFiles": "src/server/voice/**"
+    },
+    "api/rukn-claims-provision.ts": {
+      "includeFiles": "src/server/ruknClaims/**"
     }
   },
   "rewrites": [

@@ -1,9 +1,13 @@
 /**
  * KC-0084 / KC-0091.1 — Surface durable execution write outcomes to the UI.
  * Success feedback waits for pending Firestore writes (no optimistic toast).
+ *
+ * Persist failures use the shared reliability mapper so write denials never
+ * show "Unable to load additional information" (read-path copy).
  */
 
 import { getPendingWriteCount } from '@/repositories/firestore/offlineSync'
+import { toOperatorPersistError } from '@/lib/reliability/persistErrors'
 
 export const EXECUTION_PERSIST_FAILED_EVENT = 'kc-execution-persist-failed'
 export const EXECUTION_SAVE_SUCCESS_EVENT = 'kc-execution-save-success'
@@ -18,15 +22,7 @@ export type ExecutionSaveSuccessDetail = {
 }
 
 export function emitExecutionPersistFailed(label: string, error: unknown): void {
-  const message =
-    error instanceof Error
-      ? error.message
-      : typeof error === 'object' &&
-          error !== null &&
-          'message' in error &&
-          typeof (error as { message: unknown }).message === 'string'
-        ? (error as { message: string }).message
-        : String(error)
+  const message = toOperatorPersistError(label, error)
 
   console.error('[KC-0084] Firestore Write Failed', { label, message, error })
 

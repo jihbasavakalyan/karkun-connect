@@ -31,6 +31,24 @@ export function PendingKarkunRequestQueue() {
     return subscribeToKarkunRequestStore(() => setTick((value) => value + 1))
   }, [])
 
+  useEffect(() => {
+    // KC-0102.0 — ensure Admin queue reflects server blob after background hydrate.
+    void (async () => {
+      try {
+        const { syncKarkunRequestStoreFromServer } = await import('@/stores/karkunRequestStore')
+        await syncKarkunRequestStoreFromServer()
+        const pendingCount = getPendingKarkunRequests().length
+        console.info('[KC-0102.0] Admin Approval Queue refresh', {
+          path: 'settings/karkunRequests',
+          adminQueryResultCount: pendingCount,
+          dashboardPendingCount: pendingCount,
+        })
+      } catch (error) {
+        console.warn('[KC-0102.0] Admin queue sync failed', error)
+      }
+    })()
+  }, [])
+
   const pending = getPendingKarkunRequests()
   const decidedBy = user?.displayName ?? user?.uid ?? 'Administrator'
 

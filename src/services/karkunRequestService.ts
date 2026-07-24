@@ -23,7 +23,7 @@ import {
 } from '@/lib/mobileValidation'
 import { logActivity } from '@/stores/activityLogStore'
 import {
-  appendKarkunRequest,
+  appendKarkunRequestDurable,
   claimKarkunRequestApproval,
   getPendingKarkunRequests,
   getAllKarkunRequests,
@@ -32,8 +32,9 @@ import {
   reloadKarkunRequestStoreFromPersistence,
   resolveKarkunRequest,
   subscribeToKarkunRequestStore,
+  syncKarkunRequestStoreFromServer,
 } from '@/stores/karkunRequestStore'
-import { getRepositories } from '@/repositories/provider'
+import { getRepositories, getRepositoryProviderMode } from '@/repositories/provider'
 import { unwrapRepository } from '@/repositories/errors'
 import type { NewKarkunRequest } from '@/types/karkunRequest.types'
 import type { PersonGender } from '@/types/people.types'
@@ -147,9 +148,9 @@ function alreadyProcessedResult(): ApproveNewKarkunRequestResult {
   }
 }
 
-export function submitNewKarkunRequest(
+export async function submitNewKarkunRequest(
   input: SubmitNewKarkunRequestInput,
-): SubmitNewKarkunRequestResult {
+): Promise<SubmitNewKarkunRequestResult> {
   const fullName = input.fullName.trim()
   if (!fullName) {
     return { ok: false, error: 'Full name is required.', code: 'VALIDATION' }
@@ -177,6 +178,18 @@ export function submitNewKarkunRequest(
     return {
       ok: false,
       error: `Gender mismatch: you can only request ${ruknGender} Karkuns.`,
+      code: 'VALIDATION',
+    }
+  }
+
+  // KC-0102.0 — sync pending list before duplicate checks / write.
+  try {
+    await syncKarkunRequestStoreFromServer()
+  } catch (error) {
+    console.error('[KC-0102.0] sync before submit failed', error)
+    return {
+      ok: false,
+      error: 'Could not sync existing requests. Please try again.',
       code: 'VALIDATION',
     }
   }
@@ -225,7 +238,7 @@ export function submitNewKarkunRequest(
   }
 
   const now = new Date().toISOString()
-  const request = appendKarkunRequest({
+  const draft = {
     id: `kreq-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
     fullName,
     mobile: normalizeMobile(input.mobile),
@@ -234,10 +247,42 @@ export function submitNewKarkunRequest(
     remarks: input.remarks?.trim() ?? '',
     requestingRuknId: rukn.id,
     requestingRuknName: rukn.name,
-    status: 'Pending Approval',
+    status: 'Pending Approval' as const,
     createdAt: now,
     updatedAt: now,
     createdBy: input.createdBy?.trim() || rukn.name,
+  }
+
+  console.info('[KC-0102.0] submitNewKarkunRequest writing', {
+    requestId: draft.id,
+    path: 'settings/karkunRequests',
+    requestingRuknId: draft.requestingRuknId,
+    adminPendingBefore: getPendingKarkunRequests().length,
+  })
+
+  let request: NewKarkunRequest
+  try {
+    request = await appendKarkunRequestDurable(draft)
+  } catch (error) {
+    console.error('[KC-0102.0] submit write failed', {
+      requestId: draft.id,
+      path: 'settings/karkunRequests',
+      error,
+    })
+    return {
+      ok: false,
+      error: 'Request could not be saved. Please try again.',
+      code: 'VALIDATION',
+    }
+  }
+
+  const pendingAfter = getPendingKarkunRequests().length
+  console.info('[KC-0102.0] submitNewKarkunRequest success', {
+    requestId: request.id,
+    path: 'settings/karkunRequests',
+    writeSuccess: true,
+    adminQueryPendingCount: pendingAfter,
+    inStore: Boolean(getKarkunRequestById(request.id)),
   })
 
   logActivity({
@@ -255,8 +300,13 @@ async function approveNewKarkunRequestOnce(input: {
   decidedBy: string
   decisionNotes?: string
 }): Promise<ApproveNewKarkunRequestResult> {
-  // Refresh from durable settings cache before claiming (helps multi-tab once synced).
-  reloadKarkunRequestStoreFromPersistence()
+  // KC-0102.0 — refresh from server before claim (multi-client merge).
+  try {
+    await syncKarkunRequestStoreFromServer()
+  } catch (error) {
+    console.warn('[KC-0102.0] sync before approve failed; using cache', error)
+    reloadKarkunRequestStoreFromPersistence()
+  }
 
   const existing = getKarkunRequestById(input.requestId)
   if (!existing || existing.status !== 'Pending Approval') {
@@ -371,6 +421,13 @@ async function approveNewKarkunRequestOnce(input: {
       return alreadyProcessedResult()
     }
 
+    if (getRepositoryProviderMode() === 'firestore') {
+      const { awaitKarkunRequestsPersist } = await import(
+        '@/repositories/firestore/firestoreRepositories'
+      )
+      await awaitKarkunRequestsPersist()
+    }
+
     logActivity({
       type: 'assign',
       message: `Approved new Karkun ${claimed.fullName} (${karkunId}) and connected to ${claimed.requestingRuknName}.`,
@@ -426,6 +483,15 @@ export function rejectNewKarkunRequest(input: {
     message: `Rejected new Karkun request for ${resolved.fullName}.`,
     ruknId: resolved.requestingRuknId,
     actor: 'Administrator',
+  })
+
+  // Fire-and-forget merge flush (reject stays sync for UI).
+  void import('@/repositories/provider').then(async ({ getRepositoryProviderMode }) => {
+    if (getRepositoryProviderMode() !== 'firestore') return
+    const { awaitKarkunRequestsPersist } = await import(
+      '@/repositories/firestore/firestoreRepositories'
+    )
+    await awaitKarkunRequestsPersist()
   })
 
   return { ok: true, request: resolved }

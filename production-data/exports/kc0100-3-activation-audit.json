@@ -1,0 +1,1125 @@
+{
+  "summary": {
+    "ticket": "KC-0100.2",
+    "generatedAt": "2026-07-24T18:36:51.865Z",
+    "projectId": "karkun-connect-75c68",
+    "mode": "audit",
+    "totalActiveRukns": 49,
+    "firebaseAuthUsers": 42,
+    "correctlyProvisionedBefore": 37,
+    "correctlyProvisioned": 37,
+    "claimsRepaired": 0,
+    "claimsWouldRepair": 4,
+    "missingAuthUsers": 8,
+    "duplicateAuthPhones": 0,
+    "duplicateMasterMobiles": 0,
+    "failedRepairs": 0,
+    "skipped": 0
+  },
+  "duplicateMasterMobiles": [],
+  "missingAuthUsers": [
+    {
+      "status": "missing_auth",
+      "ruknId": "R001",
+      "name": "Ruqia Tahaniyat",
+      "mobile": "+918095788236",
+      "authUsers": [],
+      "claimOwners": [],
+      "reason": "No Firebase Auth user with matching phone"
+    },
+    {
+      "status": "missing_auth",
+      "ruknId": "R010",
+      "name": "Shahida Banu Qureshi",
+      "mobile": "+919986022289",
+      "authUsers": [],
+      "claimOwners": [],
+      "reason": "No Firebase Auth user with matching phone"
+    },
+    {
+      "status": "missing_auth",
+      "ruknId": "R014",
+      "name": "Syeda Amatul Azeez Kokab",
+      "mobile": "+916366346489",
+      "authUsers": [],
+      "claimOwners": [],
+      "reason": "No Firebase Auth user with matching phone"
+    },
+    {
+      "status": "missing_auth",
+      "ruknId": "R017",
+      "name": "Shah Jahan Begum",
+      "mobile": "+917411172327",
+      "authUsers": [],
+      "claimOwners": [],
+      "reason": "No Firebase Auth user with matching phone"
+    },
+    {
+      "status": "missing_auth",
+      "ruknId": "R021",
+      "name": "Qyamuddin Baagh",
+      "mobile": "+917975422103",
+      "authUsers": [],
+      "claimOwners": [],
+      "reason": "No Firebase Auth user with matching phone"
+    },
+    {
+      "status": "missing_auth",
+      "ruknId": "R025",
+      "name": "Bushra Fathima",
+      "mobile": "+917019400343",
+      "authUsers": [],
+      "claimOwners": [],
+      "reason": "No Firebase Auth user with matching phone"
+    },
+    {
+      "status": "missing_auth",
+      "ruknId": "R042",
+      "name": "Ishrat Khanum",
+      "mobile": "+917795661980",
+      "authUsers": [],
+      "claimOwners": [],
+      "reason": "No Firebase Auth user with matching phone"
+    },
+    {
+      "status": "missing_auth",
+      "ruknId": "R049",
+      "name": "Mujahid Pasha Qureshi",
+      "mobile": "+919742319121",
+      "authUsers": [],
+      "claimOwners": [],
+      "reason": "No Firebase Auth user with matching phone"
+    }
+  ],
+  "duplicateAuthUsers": [],
+  "repairCandidates": [
+    {
+      "ruknId": "R002",
+      "name": "Amir Khan",
+      "mobile": "+919035668228",
+      "uid": "poxNVuCYbLOaWKPAx1UT5HhzYPw2",
+      "status": "missing_claims",
+      "expected": {
+        "role": "rukn",
+        "ruknId": "R002"
+      },
+      "actual": {
+        "role": null,
+        "ruknId": null
+      },
+      "reason": "Expected role \"rukn\", actual null"
+    },
+    {
+      "ruknId": "R024",
+      "name": "Abdul Khader Er",
+      "mobile": "+919916811010",
+      "uid": "UQ0ygkRaRhfAprEe3kGzVKmv9Rj1",
+      "status": "missing_claims",
+      "expected": {
+        "role": "rukn",
+        "ruknId": "R024"
+      },
+      "actual": {
+        "role": null,
+        "ruknId": null
+      },
+      "reason": "Expected role \"rukn\", actual null"
+    },
+    {
+      "ruknId": "R026",
+      "name": "Syed Sher Ali",
+      "mobile": "+918123738051",
+      "uid": "IUP8qiPLPVYJ5rAFAiDhwhpKeLC2",
+      "status": "missing_claims",
+      "expected": {
+        "role": "rukn",
+        "ruknId": "R026"
+      },
+      "actual": {
+        "role": null,
+        "ruknId": null
+      },
+      "reason": "Expected role \"rukn\", actual null"
+    },
+    {
+      "ruknId": "R031",
+      "name": "Abdul Khaleel Gobre",
+      "mobile": "+919986791928",
+      "uid": "mb6mchoFdiR9dz6OtrbEHLq05Hr1",
+      "status": "missing_claims",
+      "expected": {
+        "role": "rukn",
+        "ruknId": "R031"
+      },
+      "actual": {
+        "role": null,
+        "ruknId": null
+      },
+      "reason": "Expected role \"rukn\", actual null"
+    }
+  ],
+  "repairs": [
+    {
+      "uid": "poxNVuCYbLOaWKPAx1UT5HhzYPw2",
+      "ruknId": "R002",
+      "name": "Amir Khan",
+      "mobile": "+919035668228",
+      "before": {},
+      "after": {
+        "role": "rukn",
+        "ruknId": "R002"
+      },
+      "status": "missing_claims",
+      "applied": false
+    },
+    {
+      "uid": "UQ0ygkRaRhfAprEe3kGzVKmv9Rj1",
+      "ruknId": "R024",
+      "name": "Abdul Khader Er",
+      "mobile": "+919916811010",
+      "before": {},
+      "after": {
+        "role": "rukn",
+        "ruknId": "R024"
+      },
+      "status": "missing_claims",
+      "applied": false
+    },
+    {
+      "uid": "IUP8qiPLPVYJ5rAFAiDhwhpKeLC2",
+      "ruknId": "R026",
+      "name": "Syed Sher Ali",
+      "mobile": "+918123738051",
+      "before": {},
+      "after": {
+        "role": "rukn",
+        "ruknId": "R026"
+      },
+      "status": "missing_claims",
+      "applied": false
+    },
+    {
+      "uid": "mb6mchoFdiR9dz6OtrbEHLq05Hr1",
+      "ruknId": "R031",
+      "name": "Abdul Khaleel Gobre",
+      "mobile": "+919986791928",
+      "before": {},
+      "after": {
+        "role": "rukn",
+        "ruknId": "R031"
+      },
+      "status": "missing_claims",
+      "applied": false
+    }
+  ],
+  "failedRepairs": [],
+  "correctlyProvisionedSample": [
+    {
+      "ruknId": "R003",
+      "name": "Mohd Minhajuddin",
+      "mobile": "+919844918585",
+      "uid": "Q3ZnJxo7HrYN1kXwFR41HdyamvC3"
+    },
+    {
+      "ruknId": "R004",
+      "name": "Syeda Zainab Ghazala",
+      "mobile": "+917019044178",
+      "uid": "fPFDmgWAnrU0W7bvFcjXbgce5E73"
+    },
+    {
+      "ruknId": "R005",
+      "name": "Shoukat Begum",
+      "mobile": "+918073594303",
+      "uid": "YFYQkuhPw8UkpgeCOIF0elFZAI23"
+    },
+    {
+      "ruknId": "R006",
+      "name": "Md Ehtesham Akhtar",
+      "mobile": "+918050348195",
+      "uid": "kbwDfZ3Arxd36kXQQOMuqGjyWsu2"
+    },
+    {
+      "ruknId": "R007",
+      "name": "Ruksana Tahsin",
+      "mobile": "+918095513141",
+      "uid": "ld6AKXjZtOYMaQUZv0aPoKz9MGT2"
+    }
+  ],
+  "allRows": [
+    {
+      "status": "missing_auth",
+      "ruknId": "R001",
+      "name": "Ruqia Tahaniyat",
+      "mobile": "+918095788236",
+      "authUsers": [],
+      "claimOwners": [],
+      "reason": "No Firebase Auth user with matching phone"
+    },
+    {
+      "status": "missing_claims",
+      "ruknId": "R002",
+      "name": "Amir Khan",
+      "mobile": "+919035668228",
+      "uid": "poxNVuCYbLOaWKPAx1UT5HhzYPw2",
+      "authUsers": [
+        {
+          "uid": "poxNVuCYbLOaWKPAx1UT5HhzYPw2",
+          "phoneNumber": "+919035668228",
+          "email": null,
+          "disabled": false,
+          "claims": null
+        }
+      ],
+      "expected": {
+        "role": "rukn",
+        "ruknId": "R002"
+      },
+      "actual": {
+        "role": null,
+        "ruknId": null
+      },
+      "reason": "Expected role \"rukn\", actual null"
+    },
+    {
+      "status": "ok",
+      "ruknId": "R003",
+      "name": "Mohd Minhajuddin",
+      "mobile": "+919844918585",
+      "authUsers": [
+        {
+          "uid": "Q3ZnJxo7HrYN1kXwFR41HdyamvC3",
+          "phoneNumber": "+919844918585",
+          "email": null,
+          "disabled": false,
+          "claims": {
+            "role": "rukn",
+            "ruknId": "R003"
+          }
+        }
+      ],
+      "reason": null
+    },
+    {
+      "status": "ok",
+      "ruknId": "R004",
+      "name": "Syeda Zainab Ghazala",
+      "mobile": "+917019044178",
+      "authUsers": [
+        {
+          "uid": "fPFDmgWAnrU0W7bvFcjXbgce5E73",
+          "phoneNumber": "+917019044178",
+          "email": null,
+          "disabled": false,
+          "claims": {
+            "role": "rukn",
+            "ruknId": "R004"
+          }
+        }
+      ],
+      "reason": null
+    },
+    {
+      "status": "ok",
+      "ruknId": "R005",
+      "name": "Shoukat Begum",
+      "mobile": "+918073594303",
+      "authUsers": [
+        {
+          "uid": "YFYQkuhPw8UkpgeCOIF0elFZAI23",
+          "phoneNumber": "+918073594303",
+          "email": null,
+          "disabled": false,
+          "claims": {
+            "role": "rukn",
+            "ruknId": "R005"
+          }
+        }
+      ],
+      "reason": null
+    },
+    {
+      "status": "ok",
+      "ruknId": "R006",
+      "name": "Md Ehtesham Akhtar",
+      "mobile": "+918050348195",
+      "authUsers": [
+        {
+          "uid": "kbwDfZ3Arxd36kXQQOMuqGjyWsu2",
+          "phoneNumber": "+918050348195",
+          "email": null,
+          "disabled": false,
+          "claims": {
+            "role": "rukn",
+            "ruknId": "R006"
+          }
+        }
+      ],
+      "reason": null
+    },
+    {
+      "status": "ok",
+      "ruknId": "R007",
+      "name": "Ruksana Tahsin",
+      "mobile": "+918095513141",
+      "authUsers": [
+        {
+          "uid": "ld6AKXjZtOYMaQUZv0aPoKz9MGT2",
+          "phoneNumber": "+918095513141",
+          "email": null,
+          "disabled": false,
+          "claims": {
+            "role": "rukn",
+            "ruknId": "R007"
+          }
+        }
+      ],
+      "reason": null
+    },
+    {
+      "status": "ok",
+      "ruknId": "R008",
+      "name": "Zulfiqar Ahmed",
+      "mobile": "+919448256432",
+      "authUsers": [
+        {
+          "uid": "l1bh5bswhZW5K3hLnBUzjxFBAJl2",
+          "phoneNumber": "+919448256432",
+          "email": null,
+          "disabled": false,
+          "claims": {
+            "role": "rukn",
+            "ruknId": "R008"
+          }
+        }
+      ],
+      "reason": null
+    },
+    {
+      "status": "ok",
+      "ruknId": "R009",
+      "name": "Muhammad Faruq",
+      "mobile": "+919341892372",
+      "authUsers": [
+        {
+          "uid": "lAR9kTTciuPEy1udv7a8p5Zn2Qq1",
+          "phoneNumber": "+919341892372",
+          "email": null,
+          "disabled": false,
+          "claims": {
+            "role": "rukn",
+            "ruknId": "R009"
+          }
+        }
+      ],
+      "reason": null
+    },
+    {
+      "status": "missing_auth",
+      "ruknId": "R010",
+      "name": "Shahida Banu Qureshi",
+      "mobile": "+919986022289",
+      "authUsers": [],
+      "claimOwners": [],
+      "reason": "No Firebase Auth user with matching phone"
+    },
+    {
+      "status": "ok",
+      "ruknId": "R011",
+      "name": "Mohammad Faizuddin (Imran)",
+      "mobile": "+918050555893",
+      "authUsers": [
+        {
+          "uid": "OdH37Ypn9XW3xWsje3hyaktKWC52",
+          "phoneNumber": "+918050555893",
+          "email": null,
+          "disabled": false,
+          "claims": {
+            "role": "rukn",
+            "ruknId": "R011"
+          }
+        }
+      ],
+      "reason": null
+    },
+    {
+      "status": "ok",
+      "ruknId": "R012",
+      "name": "Syeda Sumaiya Parveen",
+      "mobile": "+918050206664",
+      "authUsers": [
+        {
+          "uid": "Mfc5ZGP5FzV8lLvnz37svE4w1fi2",
+          "phoneNumber": "+918050206664",
+          "email": null,
+          "disabled": false,
+          "claims": {
+            "role": "rukn",
+            "ruknId": "R012"
+          }
+        }
+      ],
+      "reason": null
+    },
+    {
+      "status": "ok",
+      "ruknId": "R013",
+      "name": "Tafheemuddin",
+      "mobile": "+919036965907",
+      "authUsers": [
+        {
+          "uid": "T1HtVc4LsbPQOZC3V8KFs6gSu692",
+          "phoneNumber": "+919036965907",
+          "email": null,
+          "disabled": false,
+          "claims": {
+            "role": "rukn",
+            "ruknId": "R013"
+          }
+        }
+      ],
+      "reason": null
+    },
+    {
+      "status": "missing_auth",
+      "ruknId": "R014",
+      "name": "Syeda Amatul Azeez Kokab",
+      "mobile": "+916366346489",
+      "authUsers": [],
+      "claimOwners": [],
+      "reason": "No Firebase Auth user with matching phone"
+    },
+    {
+      "status": "ok",
+      "ruknId": "R015",
+      "name": "Farzana Nazmi",
+      "mobile": "+916362493266",
+      "authUsers": [
+        {
+          "uid": "SA7HyX5lRgdLnAARbO7KlvePxEK2",
+          "phoneNumber": "+916362493266",
+          "email": null,
+          "disabled": false,
+          "claims": {
+            "role": "rukn",
+            "ruknId": "R015"
+          }
+        }
+      ],
+      "reason": null
+    },
+    {
+      "status": "ok",
+      "ruknId": "R016",
+      "name": "Shamsunnisa",
+      "mobile": "+919036255250",
+      "authUsers": [
+        {
+          "uid": "lb6S6yLm1HZlrHPsYQNxDtxtvrn2",
+          "phoneNumber": "+919036255250",
+          "email": null,
+          "disabled": false,
+          "claims": {
+            "role": "rukn",
+            "ruknId": "R016"
+          }
+        }
+      ],
+      "reason": null
+    },
+    {
+      "status": "missing_auth",
+      "ruknId": "R017",
+      "name": "Shah Jahan Begum",
+      "mobile": "+917411172327",
+      "authUsers": [],
+      "claimOwners": [],
+      "reason": "No Firebase Auth user with matching phone"
+    },
+    {
+      "status": "ok",
+      "ruknId": "R018",
+      "name": "Md Yousufuddin",
+      "mobile": "+919035563469",
+      "authUsers": [
+        {
+          "uid": "bLyTEwWBuqZh7C1GwO9R8lWk6GD2",
+          "phoneNumber": "+919035563469",
+          "email": null,
+          "disabled": false,
+          "claims": {
+            "role": "rukn",
+            "ruknId": "R018"
+          }
+        }
+      ],
+      "reason": null
+    },
+    {
+      "status": "ok",
+      "ruknId": "R019",
+      "name": "Mohammed Nayeemuddin",
+      "mobile": "+919448350164",
+      "authUsers": [
+        {
+          "uid": "jIHi94j88EPjpBgkFr3B7aZGZHX2",
+          "phoneNumber": "+919448350164",
+          "email": null,
+          "disabled": false,
+          "claims": {
+            "role": "rukn",
+            "ruknId": "R019"
+          }
+        }
+      ],
+      "reason": null
+    },
+    {
+      "status": "ok",
+      "ruknId": "R020",
+      "name": "Mohammad Aslam",
+      "mobile": "+919019668306",
+      "authUsers": [
+        {
+          "uid": "lJSPo3RaRMUg7e8qoAt1jdCYAoo2",
+          "phoneNumber": "+919019668306",
+          "email": null,
+          "disabled": false,
+          "claims": {
+            "role": "rukn",
+            "ruknId": "R020"
+          }
+        }
+      ],
+      "reason": null
+    },
+    {
+      "status": "missing_auth",
+      "ruknId": "R021",
+      "name": "Qyamuddin Baagh",
+      "mobile": "+917975422103",
+      "authUsers": [],
+      "claimOwners": [],
+      "reason": "No Firebase Auth user with matching phone"
+    },
+    {
+      "status": "ok",
+      "ruknId": "R022",
+      "name": "Mohammed Alauddin",
+      "mobile": "+919590437221",
+      "authUsers": [
+        {
+          "uid": "5kv4nXCFYYXyVh5s6TrTzpjIUmD2",
+          "phoneNumber": "+919590437221",
+          "email": null,
+          "disabled": false,
+          "claims": {
+            "role": "rukn",
+            "ruknId": "R022"
+          }
+        }
+      ],
+      "reason": null
+    },
+    {
+      "status": "ok",
+      "ruknId": "R023",
+      "name": "Syeda Atiya Rabi",
+      "mobile": "+917760992286",
+      "authUsers": [
+        {
+          "uid": "KXklwhm3q5MCe9i897lV4uABd1l1",
+          "phoneNumber": "+917760992286",
+          "email": null,
+          "disabled": false,
+          "claims": {
+            "role": "rukn",
+            "ruknId": "R023"
+          }
+        }
+      ],
+      "reason": null
+    },
+    {
+      "status": "missing_claims",
+      "ruknId": "R024",
+      "name": "Abdul Khader Er",
+      "mobile": "+919916811010",
+      "uid": "UQ0ygkRaRhfAprEe3kGzVKmv9Rj1",
+      "authUsers": [
+        {
+          "uid": "UQ0ygkRaRhfAprEe3kGzVKmv9Rj1",
+          "phoneNumber": "+919916811010",
+          "email": null,
+          "disabled": false,
+          "claims": null
+        }
+      ],
+      "expected": {
+        "role": "rukn",
+        "ruknId": "R024"
+      },
+      "actual": {
+        "role": null,
+        "ruknId": null
+      },
+      "reason": "Expected role \"rukn\", actual null"
+    },
+    {
+      "status": "missing_auth",
+      "ruknId": "R025",
+      "name": "Bushra Fathima",
+      "mobile": "+917019400343",
+      "authUsers": [],
+      "claimOwners": [],
+      "reason": "No Firebase Auth user with matching phone"
+    },
+    {
+      "status": "missing_claims",
+      "ruknId": "R026",
+      "name": "Syed Sher Ali",
+      "mobile": "+918123738051",
+      "uid": "IUP8qiPLPVYJ5rAFAiDhwhpKeLC2",
+      "authUsers": [
+        {
+          "uid": "IUP8qiPLPVYJ5rAFAiDhwhpKeLC2",
+          "phoneNumber": "+918123738051",
+          "email": null,
+          "disabled": false,
+          "claims": null
+        }
+      ],
+      "expected": {
+        "role": "rukn",
+        "ruknId": "R026"
+      },
+      "actual": {
+        "role": null,
+        "ruknId": null
+      },
+      "reason": "Expected role \"rukn\", actual null"
+    },
+    {
+      "status": "ok",
+      "ruknId": "R027",
+      "name": "Riyaz Patel",
+      "mobile": "+919108296672",
+      "authUsers": [
+        {
+          "uid": "W6Gj3kf4I9dh4QmCbThHUOtjDQH2",
+          "phoneNumber": "+919108296672",
+          "email": null,
+          "disabled": false,
+          "claims": {
+            "role": "rukn",
+            "ruknId": "R027"
+          }
+        }
+      ],
+      "reason": null
+    },
+    {
+      "status": "ok",
+      "ruknId": "R028",
+      "name": "Salma Naaz",
+      "mobile": "+917975818814",
+      "authUsers": [
+        {
+          "uid": "50qc0gA3d8TBAOodwgtuXRMPoPp2",
+          "phoneNumber": "+917975818814",
+          "email": null,
+          "disabled": false,
+          "claims": {
+            "role": "rukn",
+            "ruknId": "R028"
+          }
+        }
+      ],
+      "reason": null
+    },
+    {
+      "status": "ok",
+      "ruknId": "R029",
+      "name": "Zeenat Anjum",
+      "mobile": "+919353787515",
+      "authUsers": [
+        {
+          "uid": "YoQJr4i3meOmM78gQkr2S25gVof2",
+          "phoneNumber": "+919353787515",
+          "email": null,
+          "disabled": false,
+          "claims": {
+            "role": "rukn",
+            "ruknId": "R029"
+          }
+        }
+      ],
+      "reason": null
+    },
+    {
+      "status": "ok",
+      "ruknId": "R030",
+      "name": "Shahla Anjum",
+      "mobile": "+918951225700",
+      "authUsers": [
+        {
+          "uid": "7kD3U7Uu2oTn61miIAFZSe3tvd62",
+          "phoneNumber": "+918951225700",
+          "email": null,
+          "disabled": false,
+          "claims": {
+            "role": "rukn",
+            "ruknId": "R030"
+          }
+        }
+      ],
+      "reason": null
+    },
+    {
+      "status": "missing_claims",
+      "ruknId": "R031",
+      "name": "Abdul Khaleel Gobre",
+      "mobile": "+919986791928",
+      "uid": "mb6mchoFdiR9dz6OtrbEHLq05Hr1",
+      "authUsers": [
+        {
+          "uid": "mb6mchoFdiR9dz6OtrbEHLq05Hr1",
+          "phoneNumber": "+919986791928",
+          "email": null,
+          "disabled": false,
+          "claims": null
+        }
+      ],
+      "expected": {
+        "role": "rukn",
+        "ruknId": "R031"
+      },
+      "actual": {
+        "role": null,
+        "ruknId": null
+      },
+      "reason": "Expected role \"rukn\", actual null"
+    },
+    {
+      "status": "ok",
+      "ruknId": "R032",
+      "name": "Mir Mukaram Ali Jamadar",
+      "mobile": "+919242962265",
+      "authUsers": [
+        {
+          "uid": "UWrYXzyJy0e1cPDWGd9gOVJl16w2",
+          "phoneNumber": "+919242962265",
+          "email": null,
+          "disabled": false,
+          "claims": {
+            "role": "rukn",
+            "ruknId": "R032"
+          }
+        }
+      ],
+      "reason": null
+    },
+    {
+      "status": "ok",
+      "ruknId": "R033",
+      "name": "Ayesha Siddiqa",
+      "mobile": "+919380018424",
+      "authUsers": [
+        {
+          "uid": "6fuXPX9zG8gOvIHKZ4ZetaZoIu02",
+          "phoneNumber": "+919380018424",
+          "email": null,
+          "disabled": false,
+          "claims": {
+            "role": "rukn",
+            "ruknId": "R033"
+          }
+        }
+      ],
+      "reason": null
+    },
+    {
+      "status": "ok",
+      "ruknId": "R034",
+      "name": "Fazeelat Saleha",
+      "mobile": "+919379596338",
+      "authUsers": [
+        {
+          "uid": "cy95y56sXWf14Xhk7r4baVLcXs43",
+          "phoneNumber": "+919379596338",
+          "email": null,
+          "disabled": false,
+          "claims": {
+            "role": "rukn",
+            "ruknId": "R034"
+          }
+        }
+      ],
+      "reason": null
+    },
+    {
+      "status": "ok",
+      "ruknId": "R035",
+      "name": "Md Arafat Ahmad",
+      "mobile": "+919632017069",
+      "authUsers": [
+        {
+          "uid": "cXBK1zP0HUO60dbXugzUQngrHgD2",
+          "phoneNumber": "+919632017069",
+          "email": null,
+          "disabled": false,
+          "claims": {
+            "role": "rukn",
+            "ruknId": "R035"
+          }
+        }
+      ],
+      "reason": null
+    },
+    {
+      "status": "ok",
+      "ruknId": "R036",
+      "name": "Moulvi Abdul Qadir",
+      "mobile": "+918073828545",
+      "authUsers": [
+        {
+          "uid": "UUpIYATZcZbiRYvmGlbBj6XVkXS2",
+          "phoneNumber": "+918073828545",
+          "email": null,
+          "disabled": false,
+          "claims": {
+            "role": "rukn",
+            "ruknId": "R036"
+          }
+        }
+      ],
+      "reason": null
+    },
+    {
+      "status": "ok",
+      "ruknId": "R037",
+      "name": "Shaheen Tabassum",
+      "mobile": "+919449028481",
+      "authUsers": [
+        {
+          "uid": "fx7EfC8H1KPAd7WVFg0UIUb9Aps2",
+          "phoneNumber": "+919449028481",
+          "email": null,
+          "disabled": false,
+          "claims": {
+            "role": "rukn",
+            "ruknId": "R037"
+          }
+        }
+      ],
+      "reason": null
+    },
+    {
+      "status": "ok",
+      "ruknId": "R038",
+      "name": "M Althaf Amjad",
+      "mobile": "+919845563350",
+      "authUsers": [
+        {
+          "uid": "TOiFphjqegZQZSEjQQFGXhM3w7J2",
+          "phoneNumber": "+919845563350",
+          "email": null,
+          "disabled": false,
+          "claims": {
+            "role": "rukn",
+            "ruknId": "R038"
+          }
+        }
+      ],
+      "reason": null
+    },
+    {
+      "status": "ok",
+      "ruknId": "R039",
+      "name": "Nadira Begum",
+      "mobile": "+919035683558",
+      "authUsers": [
+        {
+          "uid": "IICR5iPzXEXUsUCJR5HAt1uCgXT2",
+          "phoneNumber": "+919035683558",
+          "email": null,
+          "disabled": false,
+          "claims": {
+            "role": "rukn",
+            "ruknId": "R039"
+          }
+        }
+      ],
+      "reason": null
+    },
+    {
+      "status": "ok",
+      "ruknId": "R040",
+      "name": "Mohammed Ghulam Rasool",
+      "mobile": "+919900934197",
+      "authUsers": [
+        {
+          "uid": "zGvkp8bOQhhJJ6OXsfJ7cam6Dj83",
+          "phoneNumber": "+919900934197",
+          "email": null,
+          "disabled": false,
+          "claims": {
+            "role": "rukn",
+            "ruknId": "R040"
+          }
+        }
+      ],
+      "reason": null
+    },
+    {
+      "status": "ok",
+      "ruknId": "R041",
+      "name": "Aejaz Ahmed Gobre",
+      "mobile": "+918867477283",
+      "authUsers": [
+        {
+          "uid": "7LHNDTkWN8NWVBJrJqDdciwuyB93",
+          "phoneNumber": "+918867477283",
+          "email": null,
+          "disabled": false,
+          "claims": {
+            "role": "rukn",
+            "ruknId": "R041"
+          }
+        }
+      ],
+      "reason": null
+    },
+    {
+      "status": "missing_auth",
+      "ruknId": "R042",
+      "name": "Ishrat Khanum",
+      "mobile": "+917795661980",
+      "authUsers": [],
+      "claimOwners": [],
+      "reason": "No Firebase Auth user with matching phone"
+    },
+    {
+      "status": "ok",
+      "ruknId": "R043",
+      "name": "Sabiha Sultana",
+      "mobile": "+919845725162",
+      "authUsers": [
+        {
+          "uid": "qVyfhytdfncEDkiXgDZru3UdqAm1",
+          "phoneNumber": "+919845725162",
+          "email": null,
+          "disabled": false,
+          "claims": {
+            "role": "rukn",
+            "ruknId": "R043"
+          }
+        }
+      ],
+      "reason": null
+    },
+    {
+      "status": "ok",
+      "ruknId": "R044",
+      "name": "Izhar ul Haque",
+      "mobile": "+918884073582",
+      "authUsers": [
+        {
+          "uid": "XQrJ8z0tjAOMfKfwwKZMQfNiLYf1",
+          "phoneNumber": "+918884073582",
+          "email": null,
+          "disabled": false,
+          "claims": {
+            "role": "rukn",
+            "ruknId": "R044"
+          }
+        }
+      ],
+      "reason": null
+    },
+    {
+      "status": "ok",
+      "ruknId": "R045",
+      "name": "Yasmin Sultana",
+      "mobile": "+917795767086",
+      "authUsers": [
+        {
+          "uid": "WD80Jt5BtTTKVId2izT8B1mQ3o02",
+          "phoneNumber": "+917795767086",
+          "email": null,
+          "disabled": false,
+          "claims": {
+            "role": "rukn",
+            "ruknId": "R045"
+          }
+        }
+      ],
+      "reason": null
+    },
+    {
+      "status": "ok",
+      "ruknId": "R046",
+      "name": "Asadulla Khan Zaki",
+      "mobile": "+917019951060",
+      "authUsers": [
+        {
+          "uid": "mrqb8icMYsSxff2VUK4rQT3ooDt2",
+          "phoneNumber": "+917019951060",
+          "email": null,
+          "disabled": false,
+          "claims": {
+            "role": "rukn",
+            "ruknId": "R046"
+          }
+        }
+      ],
+      "reason": null
+    },
+    {
+      "status": "ok",
+      "ruknId": "R047",
+      "name": "Mubashira Begum",
+      "mobile": "+916361767037",
+      "authUsers": [
+        {
+          "uid": "g9EdWfwVWiVg4mjhXuibmPO7Lmm1",
+          "phoneNumber": "+916361767037",
+          "email": null,
+          "disabled": false,
+          "claims": {
+            "role": "rukn",
+            "ruknId": "R047"
+          }
+        }
+      ],
+      "reason": null
+    },
+    {
+      "status": "ok",
+      "ruknId": "R048",
+      "name": "Rahmat Khanam",
+      "mobile": "+919972048281",
+      "authUsers": [
+        {
+          "uid": "xiHLiXGzWug8jIse9mHjDe22h3u2",
+          "phoneNumber": "+919972048281",
+          "email": null,
+          "disabled": false,
+          "claims": {
+            "role": "rukn",
+            "ruknId": "R048"
+          }
+        }
+      ],
+      "reason": null
+    },
+    {
+      "status": "missing_auth",
+      "ruknId": "R049",
+      "name": "Mujahid Pasha Qureshi",
+      "mobile": "+919742319121",
+      "authUsers": [],
+      "claimOwners": [],
+      "reason": "No Firebase Auth user with matching phone"
+    }
+  ]
+}

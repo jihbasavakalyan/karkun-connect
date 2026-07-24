@@ -1,0 +1,39 @@
+---
+description: KC-ARCH-001 — mandatory Reliability & Persistence Standard for all modules
+alwaysApply: true
+---
+
+# KC-ARCH-001 — Reliability & Persistence Standard
+
+**Mandatory architecture policy.** Full text: `docs/architecture/kc-arch-001-reliability-persistence.md`
+
+Every implementation prompt should assume:
+
+> Implementation must comply with KC-ARCH-001 — Reliability & Persistence Standard.
+
+## Do
+
+- Await durable writes before success UI (`awaitQueuedWrite`, `confirmExecutionSaveFeedback`)
+- Prefer per-entity Firestore docs with `ruknId`; else transactional merge; never LWW full replace on shared blobs
+- Flush **latest cache** at queue execute time — never stale closed-over snapshots
+- Ship schema + repository + `firestore.rules` together
+- Map write failures with `toOperatorPersistError` / `formatPersistFailureBanner`
+- Reuse `src/lib/reliability/*` and existing queue/merge helpers — no new persistence patterns
+- Loading + success + failure + retry for every user-visible async path; no silent failures
+- Assume concurrent Admins/Rukns; never wipe another user's data
+- Emit structured write logs: module, operation, result, error code
+
+## Do not
+
+- Fire-and-forget for user-visible saves, then claim success
+- Reuse `FRIENDLY_DATA_ACCESS_ERROR` ("Unable to load additional information") for writes
+- Invent feature-specific persist/retry/error stacks
+- Leave Security Rules misaligned with document shape
+
+## Shared utilities
+
+- `src/lib/reliability/persistErrors.ts`
+- `src/lib/reliability/guidanceStateMerge.ts`
+- `awaitQueuedWrite` in `src/repositories/firestore/firestoreRepositories.ts`
+- `src/lib/executionPersistEvents.ts`
+- Verify: `npm run verify:reliability`

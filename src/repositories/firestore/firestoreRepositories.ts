@@ -24,6 +24,7 @@ import {
   onSnapshot,
   query,
   runTransaction,
+  serverTimestamp,
   where,
   type DocumentData,
   type Query,
@@ -88,8 +89,15 @@ import {
   removeDoc,
   sanitizeForFirestore,
   stripMeta,
+  withMeta,
   writeDoc,
 } from '@/repositories/firestore/firestoreHelpers'
+import {
+  countPendingKarkunRequests,
+  mergeKarkunRequestsById,
+} from '@/lib/karkunRequestMerge'
+import { mergeGuidanceState } from '@/lib/reliability/guidanceStateMerge'
+import { toOperatorPersistError } from '@/lib/reliability/persistErrors'
 import { markPendingWriteComplete, recordFirestoreConflict, trackPendingWrite } from '@/repositories/firestore/offlineSync'
 import {
   markRepositoryReadiness,
@@ -1276,6 +1284,27 @@ export function startFirestoreSnapshotListeners(onRemoteChange: () => void): voi
       )
       watchCollection(FIRESTORE_COLLECTIONS.executions, onRemoteChange)
       watchCollection(FIRESTORE_COLLECTIONS.compliance, onRemoteChange)
+      // KC-0102.0 — Rukn must observe New Karkun request blob updates (Admin writes / peer submits).
+      snapshotUnsubscribers.push(
+        onSnapshot(doc(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.karkunRequests), () => {
+          const label = 'settings:karkunRequests'
+          if (!seenInitialSnapshot.has(label)) {
+            seenInitialSnapshot.add(label)
+            traceIncidentStage('snapshot_listener:initial_suppressed', {
+              caller: 'onSnapshot',
+              sourceOfTruth: 'Snapshot Listener',
+              path: label,
+            })
+            return
+          }
+          traceIncidentStage('snapshot_listener:fired', {
+            caller: 'onSnapshot',
+            sourceOfTruth: 'Snapshot Listener',
+            path: label,
+          })
+          onRemoteChange()
+        }),
+      )
       return
     }
 
@@ -1894,16 +1923,83 @@ export class ExecutionFirestoreRepository implements ExecutionRepository {
       commitments: [...state.commitments],
       timelineEvents: [...state.timelineEvents],
     })
-    void queueWrite('executions.guidance', async () => {
-      const db = getFirestoreDb()
-      return writeDoc(db, FIRESTORE_COLLECTIONS.executions, FIRESTORE_DOCS.guidanceState, state)
-    })
+    // Read cache at flush time (not closed-over args) + transactional merge.
+    void queueWrite('executions.guidance', async () => writeMergedGuidanceState())
     return repositoryOk(undefined)
   }
 
   clearGuidanceState(): RepositoryResult<void> {
     guidanceCache.set({ commitments: [], timelineEvents: [] })
     return repositoryOk(undefined)
+  }
+}
+
+/**
+ * Await any in-flight / trailing queued write for a label.
+ * Prefer this over per-module await helpers so durable UX is consistent.
+ */
+export async function awaitQueuedWrite(label: string): Promise<void> {
+  const chain = writeChains.get(label)
+  if (chain) {
+    await chain
+  }
+}
+
+/** @deprecated Prefer awaitQueuedWrite('settings.karkunRequests') */
+export async function awaitKarkunRequestsPersist(): Promise<void> {
+  return awaitQueuedWrite('settings.karkunRequests')
+}
+
+/**
+ * KC reliability — transactional merge for shared executions/guidance blob.
+ * Always flushes guidanceCache (latest), never a stale closed-over snapshot.
+ */
+async function writeMergedGuidanceState(): Promise<RepositoryResult<void>> {
+  const path = `${FIRESTORE_COLLECTIONS.executions}/${FIRESTORE_DOCS.guidanceState}`
+  const local = guidanceCache.get()
+  try {
+    const db = getFirestoreDb()
+    const ref = doc(db, FIRESTORE_COLLECTIONS.executions, FIRESTORE_DOCS.guidanceState)
+    const merged = await runTransaction(db, async (transaction) => {
+      const snapshot = await transaction.get(ref)
+      const remote = snapshot.exists()
+        ? stripMeta<GuidanceState>(snapshot.data() as DocumentData)
+        : { commitments: [], timelineEvents: [] }
+      const next = mergeGuidanceState(
+        {
+          commitments: Array.isArray(remote.commitments) ? remote.commitments : [],
+          timelineEvents: Array.isArray(remote.timelineEvents) ? remote.timelineEvents : [],
+        },
+        {
+          commitments: [...local.commitments],
+          timelineEvents: [...local.timelineEvents],
+        },
+      )
+      transaction.set(ref, {
+        ...withMeta(sanitizeForFirestore(next)),
+        _serverTime: serverTimestamp(),
+      })
+      console.info('[reliability] executions.guidance merge write', {
+        path,
+        localCommitments: local.commitments.length,
+        remoteCommitments: Array.isArray(remote.commitments) ? remote.commitments.length : 0,
+        mergedCommitments: next.commitments.length,
+        mergedTimeline: next.timelineEvents.length,
+      })
+      return next
+    })
+    guidanceCache.set({
+      commitments: [...merged.commitments],
+      timelineEvents: [...merged.timelineEvents],
+    })
+    return repositoryOk(undefined)
+  } catch (error) {
+    console.error('[reliability] executions.guidance merge write failed', {
+      path,
+      error,
+      operatorMessage: toOperatorPersistError('executions.guidance', error),
+    })
+    return mapFirestoreError(error)
   }
 }
 
@@ -1916,7 +2012,14 @@ export class CommunicationFirestoreRepository implements CommunicationRepository
     communicationCache.set(state)
     void queueWrite('communications', async () => {
       const db = getFirestoreDb()
-      return writeDoc(db, FIRESTORE_COLLECTIONS.communications, FIRESTORE_DOCS.communicationState, state)
+      // Flush latest cache — not a stale closed-over snapshot.
+      const latest = communicationCache.get() ?? state
+      return writeDoc(
+        db,
+        FIRESTORE_COLLECTIONS.communications,
+        FIRESTORE_DOCS.communicationState,
+        latest,
+      )
     })
     return repositoryOk(undefined)
   }
@@ -2329,18 +2432,84 @@ export class SettingsFirestoreRepository implements SettingsRepository {
 
   saveKarkunRequests(requests: NewKarkunRequest[]): RepositoryResult<void> {
     karkunRequestCache.set([...requests])
-    void queueWrite('settings.karkunRequests', async () => {
-      const db = getFirestoreDb()
-      return writeDoc(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.karkunRequests, {
-        requests,
-      })
-    })
+    void queueWrite('settings.karkunRequests', async () =>
+      writeMergedKarkunRequests(karkunRequestCache.get()),
+    )
     return repositoryOk(undefined)
   }
 
   clearKarkunRequests(): RepositoryResult<void> {
     karkunRequestCache.set([])
     return repositoryOk(undefined)
+  }
+}
+
+/**
+ * KC-0102.0 — Pull latest `settings/karkunRequests` into cache (no store persist).
+ * Returns pending count for diagnostics.
+ */
+export async function refreshKarkunRequestCacheFromServer(): Promise<{
+  path: string
+  total: number
+  pending: number
+}> {
+  const path = `${FIRESTORE_COLLECTIONS.settings}/${FIRESTORE_DOCS.karkunRequests}`
+  const db = getFirestoreDb()
+  const data = await readDoc<{ requests?: NewKarkunRequest[] }>(
+    db,
+    FIRESTORE_COLLECTIONS.settings,
+    FIRESTORE_DOCS.karkunRequests,
+  )
+  const requests = Array.isArray(data?.requests) ? data.requests : []
+  karkunRequestCache.set([...requests])
+  const pending = countPendingKarkunRequests(requests)
+  console.info('[KC-0102.0] karkunRequests server refresh', {
+    path,
+    total: requests.length,
+    pending,
+  })
+  return { path, total: requests.length, pending }
+}
+
+/**
+ * KC-0102.0 — Transactional merge write so concurrent Rukn/Admin clients cannot wipe peers.
+ */
+async function writeMergedKarkunRequests(
+  local: NewKarkunRequest[],
+): Promise<RepositoryResult<void>> {
+  const path = `${FIRESTORE_COLLECTIONS.settings}/${FIRESTORE_DOCS.karkunRequests}`
+  try {
+    const db = getFirestoreDb()
+    const ref = doc(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.karkunRequests)
+    const merged = await runTransaction(db, async (transaction) => {
+      const snapshot = await transaction.get(ref)
+      const remoteRaw = snapshot.exists()
+        ? (stripMeta<{ requests?: NewKarkunRequest[] }>(snapshot.data() as DocumentData).requests ??
+          [])
+        : []
+      const remote = Array.isArray(remoteRaw) ? remoteRaw : []
+      const next = mergeKarkunRequestsById(remote, local)
+      transaction.set(ref, {
+        ...withMeta(sanitizeForFirestore({ requests: next })),
+        _serverTime: serverTimestamp(),
+      })
+      console.info('[KC-0102.0] karkunRequests merge write', {
+        path,
+        localCount: local.length,
+        remoteCount: remote.length,
+        mergedCount: next.length,
+        localPending: countPendingKarkunRequests(local),
+        remotePending: countPendingKarkunRequests(remote),
+        mergedPending: countPendingKarkunRequests(next),
+        localIds: local.map((r) => r.id),
+      })
+      return next
+    })
+    karkunRequestCache.set([...merged])
+    return repositoryOk(undefined)
+  } catch (error) {
+    console.error('[KC-0102.0] karkunRequests merge write failed', { path, error })
+    return mapFirestoreError(error)
   }
 }
 

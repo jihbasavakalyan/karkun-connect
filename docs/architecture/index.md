@@ -60,6 +60,7 @@ Karkun Connect is a single-page React application with role-based routing (Admin
 - Firebase Authentication via `authenticationService` (M7)
 - Session cached in `authSession.ts`; Firebase handles token persistence
 - Role-based home redirect: `/admin` or `/rukn`
+- Rukn OTP + JWT claims: [rukn-authentication.md](./rukn-authentication.md); activation audit [KC-0100.3](./kc-0100-3-activation-reliability.md)
 
 ## Assignment Invariants
 
@@ -88,6 +89,7 @@ Scripts validate routes, auth, data integrity, assignments, and compliance witho
 
 ## Related Documents
 
+- [**KC-ARCH-001 — Reliability & Persistence Standard**](./kc-arch-001-reliability-persistence.md) (mandatory for all modules)
 - [Data Preservation & Recovery (KC-0058)](./DATA_PRESERVATION.md)
 - [Firestore Backend (M8)](./firestore.md)
 - [Authentication (M7)](./authentication.md)

@@ -3,8 +3,9 @@
  */
 
 import type { NewKarkunRequest, KarkunRequestStatus } from '@/types/karkunRequest.types'
-import { getRepositories } from '@/repositories/provider'
+import { getRepositories, getRepositoryProviderMode } from '@/repositories/provider'
 import { unwrapRepository } from '@/repositories/errors'
+import { countPendingKarkunRequests } from '@/lib/karkunRequestMerge'
 
 const requests: NewKarkunRequest[] = unwrapRepository(
   getRepositories().settings.loadKarkunRequests(),
@@ -43,7 +44,51 @@ export function getKarkunRequestById(id: string): NewKarkunRequest | undefined {
 export function appendKarkunRequest(request: NewKarkunRequest): NewKarkunRequest {
   requests.unshift(request)
   notify()
+  console.info('[KC-0102.0] appendKarkunRequest', {
+    requestId: request.id,
+    path: 'settings/karkunRequests',
+    storeTotal: requests.length,
+    storePending: countPendingKarkunRequests(requests),
+    status: request.status,
+    requestingRuknId: request.requestingRuknId,
+  })
   return request
+}
+
+/**
+ * KC-0102.0 — Sync from server, append, await merge write, reload merged cache into store.
+ */
+export async function appendKarkunRequestDurable(
+  request: NewKarkunRequest,
+): Promise<NewKarkunRequest> {
+  await syncKarkunRequestStoreFromServer()
+  requests.unshift(request)
+  persist()
+  console.info('[KC-0102.0] appendKarkunRequestDurable queued', {
+    requestId: request.id,
+    path: 'settings/karkunRequests',
+    storeTotal: requests.length,
+    storePending: countPendingKarkunRequests(requests),
+  })
+
+  if (getRepositoryProviderMode() === 'firestore') {
+    const { awaitKarkunRequestsPersist } = await import(
+      '@/repositories/firestore/firestoreRepositories'
+    )
+    await awaitKarkunRequestsPersist()
+    reloadKarkunRequestStoreFromPersistence()
+    console.info('[KC-0102.0] appendKarkunRequestDurable persisted', {
+      requestId: request.id,
+      path: 'settings/karkunRequests',
+      storeTotal: requests.length,
+      storePending: countPendingKarkunRequests(requests),
+      writeSuccess: true,
+    })
+  } else {
+    listeners.forEach((listener) => listener())
+  }
+
+  return getKarkunRequestById(request.id) ?? request
 }
 
 export function updateKarkunRequest(
@@ -110,7 +155,25 @@ export function reloadKarkunRequestStoreFromPersistence(): void {
   const loaded = unwrapRepository(getRepositories().settings.loadKarkunRequests(), [])
   requests.length = 0
   requests.push(...loaded)
+  console.info('[KC-0102.0] reloadKarkunRequestStoreFromPersistence', {
+    path: 'settings/karkunRequests',
+    total: requests.length,
+    pending: countPendingKarkunRequests(requests),
+  })
   listeners.forEach((listener) => listener())
+}
+
+/** KC-0102.0 — Pull Firestore doc into cache then into the in-memory store. */
+export async function syncKarkunRequestStoreFromServer(): Promise<void> {
+  if (getRepositoryProviderMode() !== 'firestore') {
+    reloadKarkunRequestStoreFromPersistence()
+    return
+  }
+  const { refreshKarkunRequestCacheFromServer } = await import(
+    '@/repositories/firestore/firestoreRepositories'
+  )
+  await refreshKarkunRequestCacheFromServer()
+  reloadKarkunRequestStoreFromPersistence()
 }
 
 export function clearKarkunRequestStore(): void {

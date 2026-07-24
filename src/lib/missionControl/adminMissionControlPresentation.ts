@@ -17,6 +17,10 @@ import { buildAdminRelationshipInsights } from '@/lib/relationshipIntelligencePr
 import { isCampaignEligible } from '@/lib/peopleClassification'
 import { getAllKarkuns } from '@/lib/peopleStore'
 import { getAnnexure1ExecutionMetrics } from '@/services/annexure1Service'
+import {
+  getDashboardConnectionProgressPct,
+  getDashboardVisitMetrics,
+} from '@/services/dashboardMetricsService'
 import { getFollowUpDashboardMetrics } from '@/services/followUpService'
 import { getCurrentIjtemaAttendance } from '@/services/ijtemaAttendanceService'
 import { getCampaignConnectionMetrics } from '@/services/metricsService'
@@ -401,21 +405,21 @@ export function buildAllActiveRuknPerformance(): AdminRuknGenderPerformanceView[
 
 export function buildAdminCampaignTrends(): AdminTrendItem[] {
   const intelligence = getCampaignIntelligenceData()
-  const annexure = getAnnexure1ExecutionMetrics()
+  const visits = getDashboardVisitMetrics()
   const followUps = getFollowUpDashboardMetrics()
-  const overview = getCampaignProgressOverview()
+  const connectionProgress = getDashboardConnectionProgressPct()
 
   return [
     {
       id: 'daily-visits',
       label: 'Daily visits',
-      value: String(annexure.submittedToday),
+      value: String(visits.submittedToday),
       detail: intelligence.dailyTrend,
     },
     {
       id: 'weekly-completion',
       label: 'Weekly completion',
-      value: String(annexure.submittedThisWeek),
+      value: String(visits.submittedThisWeek),
       detail: intelligence.weeklyTrend,
     },
     {
@@ -429,8 +433,8 @@ export function buildAdminCampaignTrends(): AdminTrendItem[] {
     },
     {
       id: 'engagement',
-      label: 'Active engagement',
-      value: `${overview.coverage}%`,
+      label: 'Connection progress',
+      value: `${connectionProgress}%`,
       detail: intelligence.completionForecast,
     },
   ]

@@ -21,6 +21,7 @@ sequenceDiagram
   participant Auth as authenticationService
   participant Identity as ruknIdentityService
   participant FB as Firebase Auth
+  participant API as rukn-claims-provision
   participant Master as Rukn Master
 
   UI->>Auth: sendOtp(mobile)
@@ -44,10 +45,22 @@ sequenceDiagram
       Auth->>FB: signOut
       Auth-->>UI: Authentication could not be verified
     else match
+      Auth->>Auth: finalizeLogin (JWT claims check)
+      alt missing/wrong claims
+        Auth->>API: POST /api/rukn-claims-provision
+        API->>FB: setCustomUserClaims(role,ruknId)
+        Auth->>FB: force-refresh ID token
+      end
       Auth-->>UI: session created, redirect /rukn
     end
   end
 ```
+
+## KC-0100.3 — Automatic claim provisioning
+
+After phone OTP, if the ID token lacks valid `role=rukn` / `ruknId` claims, the client requests server-side Admin provisioning (`/api/rukn-claims-provision`), force-refreshes the JWT, and re-runs the KC-0100 fail-closed gate. Claims are never invented on the client.
+
+Full audit report: [kc-0100-3-activation-reliability.md](./kc-0100-3-activation-reliability.md).
 
 ## Sequence — Administrator Login (unchanged)
 

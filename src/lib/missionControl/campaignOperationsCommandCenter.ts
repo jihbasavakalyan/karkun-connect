@@ -15,7 +15,6 @@ import { ruknMaster } from '@/data/ruknMaster'
 import { isJihRegistered } from '@/lib/guidance/journeyEngine'
 import { getAssignedKarkunanForRukn } from '@/lib/assignmentEngine'
 import { isCampaignEligible } from '@/lib/peopleClassification'
-import { getAllKarkuns } from '@/lib/peopleStore'
 import { getTeamPerformanceRows } from '@/lib/commandCenterPresentation'
 import { leaderboardStatus } from '@/components/mission-control/McProgressRing'
 import {
@@ -31,7 +30,12 @@ import {
   buildLiveActivityFeed,
   type LiveActivityFeedItem,
 } from '@/lib/missionControl/liveActivityFeedPresentation'
-import { getAnnexure1ExecutionMetrics } from '@/services/annexure1Service'
+import {
+  getDashboardAppRegistrationMetrics,
+  getDashboardHealthSlices,
+  getDashboardVisitMetrics,
+  getDashboardVisitMetricsForRukn,
+} from '@/services/dashboardMetricsService'
 import { getMonthlyBaitulMaalDashboardKpi, getMonthlyBaitulMaalReport } from '@/services/monthlyBaitulMaalService'
 import { getWeeklyIjtemaDashboardKpi, getWeeklyIjtemaReport } from '@/services/weeklyIjtemaService'
 import { getRecentActivity } from '@/stores/activityLogStore'
@@ -70,59 +74,36 @@ function pct(current: number, total: number): number {
 }
 
 /**
- * Campaign Health metric contract (KC-0109):
- * - Visits = Completed ÷ Planned
+ * Campaign Health metric contract (KC-0109 / KC-0101.B):
+ * - Visits = Completed ÷ Planned (canonical Connected + annexure)
  * - Weekly Ijtema = Present ÷ Assigned
  * - Monthly Baitul Maal = Contributed ÷ Assigned
  * - App Registration = Registered ÷ Eligible
+ * All slices come from DashboardMetricsService so Priority / Mission cannot diverge.
  */
 export function buildCampaignOperationsHealthMetrics(): CampaignHealthMetric[] {
-  const annexure = getAnnexure1ExecutionMetrics()
-  // Visits = Completed ÷ Planned (Annexure1 visitCompletionRate source).
-  const plannedVisits = Math.max(annexure.pendingReports + annexure.totalSubmitted, 0)
-  const completedVisits = Math.min(annexure.totalSubmitted, plannedVisits)
+  const slices = getDashboardHealthSlices()
+  const routes: Record<CampaignHealthMetricId, string> = {
+    visits: adminExecutionPath('completed-today'),
+    'weekly-ijtema': adminWeeklyIjtemaPath(),
+    'monthly-baitul-maal': adminMonthlyBaitulMaalPath(),
+    'app-registration': adminCompliancePath('jih-portal'),
+  }
+  const labels: Record<CampaignHealthMetricId, string> = {
+    visits: 'Visits',
+    'weekly-ijtema': 'Weekly Ijtema',
+    'monthly-baitul-maal': 'Monthly Baitul Maal',
+    'app-registration': 'App Registration',
+  }
 
-  const ijtema = getWeeklyIjtemaDashboardKpi()
-  const baitul = getMonthlyBaitulMaalDashboardKpi()
-
-  // App Registration = Registered ÷ Eligible (campaign-eligible Karkun Registry).
-  const eligible = getAllKarkuns().filter(isCampaignEligible)
-  const registered = eligible.filter(isJihRegistered).length
-
-  return [
-    {
-      id: 'visits',
-      label: 'Visits',
-      current: completedVisits,
-      total: plannedVisits,
-      pct: plannedVisits > 0 ? annexure.visitCompletionRate : 0,
-      route: adminExecutionPath('completed-today'),
-    },
-    {
-      id: 'weekly-ijtema',
-      label: 'Weekly Ijtema',
-      current: ijtema.present,
-      total: ijtema.totalAssigned,
-      pct: pct(ijtema.present, ijtema.totalAssigned),
-      route: adminWeeklyIjtemaPath(),
-    },
-    {
-      id: 'monthly-baitul-maal',
-      label: 'Monthly Baitul Maal',
-      current: baitul.contributed,
-      total: baitul.totalAssigned,
-      pct: pct(baitul.contributed, baitul.totalAssigned),
-      route: adminMonthlyBaitulMaalPath(),
-    },
-    {
-      id: 'app-registration',
-      label: 'App Registration',
-      current: registered,
-      total: eligible.length,
-      pct: pct(registered, eligible.length),
-      route: adminCompliancePath('jih-portal'),
-    },
-  ]
+  return slices.map((slice) => ({
+    id: slice.id,
+    label: labels[slice.id],
+    current: slice.current,
+    total: slice.total,
+    pct: slice.pct,
+    route: routes[slice.id],
+  }))
 }
 
 /**
@@ -132,9 +113,8 @@ export function buildTodaysMissionOperationalItems(): AdminActionCenterItem[] {
   const items: AdminActionCenterItem[] = []
   const ijtema = getWeeklyIjtemaDashboardKpi()
   const baitul = getMonthlyBaitulMaalDashboardKpi()
-  const annexure = getAnnexure1ExecutionMetrics()
-  const eligible = getAllKarkuns().filter(isCampaignEligible)
-  const pendingApp = eligible.filter((k) => !isJihRegistered(k)).length
+  const visits = getDashboardVisitMetrics()
+  const app = getDashboardAppRegistrationMetrics()
 
   const push = (
     id: string,
@@ -180,30 +160,31 @@ export function buildTodaysMissionOperationalItems(): AdminActionCenterItem[] {
 
   push(
     'mission-overdue-visits',
-    annexure.pendingReports >= 10 ? 'critical' : 'high',
+    visits.pending >= 10 ? 'critical' : 'high',
     'Overdue visits',
-    `${annexure.pendingReports} visit report${annexure.pendingReports === 1 ? '' : 's'} still outstanding`,
+    `${visits.pending} connected Karkun${visits.pending === 1 ? '' : 's'} still need a visit report`,
     'Open',
     adminExecutionPath('pending'),
-    annexure.pendingReports,
+    visits.pending,
   )
 
   push(
     'mission-pending-app-registration',
-    pendingApp >= 10 ? 'high' : 'medium',
+    app.pending >= 10 ? 'high' : 'medium',
     'Pending app registrations',
-    `${pendingApp} eligible Karkun${pendingApp === 1 ? '' : 's'} not yet registered`,
+    `${app.pending} eligible Karkun${app.pending === 1 ? '' : 's'} not yet registered`,
     'Complete',
     adminCompliancePath('jih-portal'),
-    pendingApp,
+    app.pending,
   )
 
   const rank: Record<ActionCenterSeverity, number> = { critical: 0, high: 1, medium: 2 }
   return items.sort((a, b) => rank[a.severity] - rank[b.severity])
 }
 
-function modulePctOrNeutral(current: number, total: number, moduleActive: boolean): number {
-  if (!moduleActive) return 100
+/** Inactive modules contribute 0% (matches Campaign Health — never synthetic 100%). */
+function modulePctOrZero(current: number, total: number, moduleActive: boolean): number {
+  if (!moduleActive) return 0
   return pct(current, total)
 }
 
@@ -234,17 +215,17 @@ export function buildTopPriorityRukns(limit = 12): TopPriorityRuknView[] {
     if (assigned.length === 0) continue
 
     const perf = perfById.get(rukn.id)
-    const visitsPct = perf?.completionPct ?? 0
+    const visitsPct = getDashboardVisitMetricsForRukn(rukn.id).pct
 
     const ijtemaRow = ijtemaById.get(rukn.id)
-    const weeklyIjtemaPct = modulePctOrNeutral(
+    const weeklyIjtemaPct = modulePctOrZero(
       ijtemaRow?.present ?? 0,
       ijtemaRow?.assigned ?? assigned.length,
       Boolean(ijtemaKpi.eventId),
     )
 
     const baitulRow = baitulById.get(rukn.id)
-    const monthlyBaitulMaalPct = modulePctOrNeutral(
+    const monthlyBaitulMaalPct = modulePctOrZero(
       baitulRow?.contributed ?? 0,
       baitulRow?.assigned ?? assigned.length,
       Boolean(baitulKpi.cycleId),

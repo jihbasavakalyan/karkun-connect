@@ -31,6 +31,7 @@ export function NewKarkunRequestModal({
   const [area, setArea] = useState('')
   const [remarks, setRemarks] = useState('')
   const [error, setError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
   const [nameWarning, setNameWarning] = useState(false)
   const [nameMatches, setNameMatches] = useState<{ id: string; name: string }[]>([])
   const [duplicate, setDuplicate] = useState<{
@@ -64,36 +65,45 @@ export function NewKarkunRequestModal({
   }
 
   const handleSubmit = (acknowledgeNameWarning = false) => {
-    const result = submitNewKarkunRequest({
-      fullName,
-      mobile,
-      gender,
-      area,
-      remarks,
-      requestingRuknId: ruknId,
-      acknowledgeNameWarning,
-    })
+    if (submitting) return
+    setSubmitting(true)
+    setError('')
+    void (async () => {
+      try {
+        const result = await submitNewKarkunRequest({
+          fullName,
+          mobile,
+          gender,
+          area,
+          remarks,
+          requestingRuknId: ruknId,
+          acknowledgeNameWarning,
+        })
 
-    if (!result.ok) {
-      setError(result.error)
-      setDuplicate(
-        result.duplicate
-          ? {
-              name: result.duplicate.name,
-              mobile: result.duplicate.mobile,
-              viewRoute: result.duplicate.viewRoute,
-              connectRoute: result.duplicate.connectRoute,
-            }
-          : null,
-      )
-      setNameWarning(result.code === 'NAME_WARNING')
-      setNameMatches(result.nameMatches ?? [])
-      return
-    }
+        if (!result.ok) {
+          setError(result.error)
+          setDuplicate(
+            result.duplicate
+              ? {
+                  name: result.duplicate.name,
+                  mobile: result.duplicate.mobile,
+                  viewRoute: result.duplicate.viewRoute,
+                  connectRoute: result.duplicate.connectRoute,
+                }
+              : null,
+          )
+          setNameWarning(result.code === 'NAME_WARNING')
+          setNameMatches(result.nameMatches ?? [])
+          return
+        }
 
-    reset()
-    onSubmitted()
-    onClose()
+        reset()
+        onSubmitted()
+        onClose()
+      } finally {
+        setSubmitting(false)
+      }
+    })()
   }
 
   return (
@@ -105,7 +115,10 @@ export function NewKarkunRequestModal({
       footer={
         <ModalFormFooter
           onCancel={handleClose}
-          primaryLabel={nameWarning ? 'Continue anyway' : 'Submit'}
+          primaryLabel={
+            submitting ? 'Submitting…' : nameWarning ? 'Continue anyway' : 'Submit'
+          }
+          primaryDisabled={submitting}
           onPrimaryClick={() => handleSubmit(nameWarning)}
         />
       }

@@ -396,6 +396,10 @@ export function getAnnexure1ExecutionMetrics(): Annexure1ExecutionMetrics {
   const followUpMetrics = getFollowUpDashboardMetrics()
   const periodCounts = getSubmissionPeriodCounts()
   const totalActive = activeAssignments.length || 1
+  // Unique assignments with ≥1 form (never form-count / active-count — can exceed 100%).
+  const uniqueSubmittedAssignments = activeAssignments.filter((assignment) =>
+    submittedAssignmentIds.has(assignment.assignmentId),
+  ).length
   const totalSubmitted = submittedForms.length
 
   return {
@@ -408,7 +412,7 @@ export function getAnnexure1ExecutionMetrics(): Annexure1ExecutionMetrics {
     submittedThisWeek: periodCounts.submittedThisWeek,
     submittedThisMonth: periodCounts.submittedThisMonth,
     totalSubmitted,
-    visitCompletionRate: Math.round((totalSubmitted / totalActive) * 100),
+    visitCompletionRate: Math.round((uniqueSubmittedAssignments / totalActive) * 100),
     reportSubmissionRate: Math.round(
       ((activeAssignments.length - pendingReports) / totalActive) * 100,
     ),

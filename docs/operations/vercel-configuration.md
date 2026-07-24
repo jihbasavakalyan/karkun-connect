@@ -28,7 +28,8 @@ Apply to **Preview** (staging) first; promote to **Production** after P2 sign-of
 | `VITE_FIREBASE_APP_ID` | `1:123:web:abc` | |
 | `VITE_REPOSITORY_PROVIDER` | `firestore` | **Required** for production |
 | `VITE_ADMIN_EMAILS` | `admin@jih.org` | Bootstrap only; remove after claims |
-| `GOOGLE_TTS_CREDENTIALS_JSON` | service-account JSON (one line) | **KC-019** Digital Rafeeq TTS (server-only) |
+| `GOOGLE_TTS_CREDENTIALS_JSON` | service-account JSON (one line) | **KC-019** Digital Rafeeq TTS/STT (server-only). Also usable by **KC-0100.3** claim provisioning if `FIREBASE_SERVICE_ACCOUNT_JSON` is unset. |
+| `FIREBASE_SERVICE_ACCOUNT_JSON` | service-account JSON (one line) | **KC-0100.3** `POST /api/rukn-claims-provision` (preferred). Required for automatic Rukn claim provisioning after first OTP. |
 
 Never set Google credentials with a `VITE_` prefix.
 Copy from `.env.staging.example` — never commit filled values.

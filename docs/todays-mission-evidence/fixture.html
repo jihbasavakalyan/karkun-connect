@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Today's Mission — presentation fixture</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: ui-sans-serif, system-ui, sans-serif;
+      }
+      body {
+        margin: 0;
+        background: #f8fafc;
+        color: #0f172a;
+      }
+      .page {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 1.25rem;
+      }
+      .exdash-panel {
+        border-radius: 1rem;
+        border: 1px solid #e2e8f0;
+        background: #fff;
+        padding: 0.75rem 1rem;
+        box-shadow: 0 1px 2px rgb(15 23 42 / 0.05);
+      }
+      .exdash-section-head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+      }
+      .exdash-section-title {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin: 0;
+        font-size: 0.875rem;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #92400e;
+      }
+      .exdash-section-icon {
+        display: inline-flex;
+        height: 1.75rem;
+        width: 1.75rem;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0.5rem;
+        background: #fffbeb;
+        color: #b45309;
+      }
+      .exdash-action-center-sub {
+        margin: 0.125rem 0 0;
+        font-size: 0.875rem;
+        color: #64748b;
+        text-transform: none;
+        letter-spacing: normal;
+        font-weight: 400;
+      }
+      .exdash-section-meta {
+        font-size: 0.75rem;
+        color: #64748b;
+      }
+      .exdash-action-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.375rem;
+      }
+      .exdash-action-row {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        border-radius: 0.5rem;
+        border: 1px solid #f1f5f9;
+        background: rgb(248 250 252 / 0.6);
+        padding: 0.5rem 0.625rem;
+      }
+      @media (min-width: 640px) {
+        .exdash-action-row {
+          flex-direction: row;
+          align-items: center;
+          gap: 0.75rem;
+        }
+      }
+      .exdash-action-dot {
+        height: 0.625rem;
+        width: 0.625rem;
+        border-radius: 9999px;
+        flex-shrink: 0;
+      }
+      .exdash-action-dot-critical { background: #f43f5e; }
+      .exdash-action-dot-high { background: #f59e0b; }
+      .exdash-action-dot-medium { background: #0ea5e9; }
+      .exdash-action-body { min-width: 0; flex: 1; }
+      .exdash-action-title-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .exdash-queue-title {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #0f172a;
+      }
+      .exdash-queue-detail {
+        display: block;
+        font-size: 0.8125rem;
+        color: #64748b;
+      }
+      .exdash-queue-badge {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 9999px;
+        padding: 0.125rem 0.5rem;
+        font-size: 0.6875rem;
+        font-weight: 600;
+      }
+      .exdash-severity-critical { background: #ffe4e6; color: #9f1239; }
+      .exdash-severity-attention { background: #ffedd5; color: #9a3412; }
+      .exdash-severity-watch { background: #e0f2fe; color: #075985; }
+      .exdash-action-cta {
+        align-self: flex-start;
+        border-radius: 0.5rem;
+        border: 1px solid #e2e8f0;
+        background: #fff;
+        padding: 0.375rem 0.75rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #334155;
+        text-decoration: none;
+      }
+      .exdash-action-footer {
+        margin-top: 0.75rem;
+        padding-top: 0.5rem;
+        border-top: 1px solid #f1f5f9;
+        display: flex;
+        justify-content: flex-end;
+      }
+      .exdash-section-link {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #0f766e;
+        text-decoration: none;
+      }
+      .label {
+        margin: 0 0 0.75rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: #64748b;
+      }
+      .stack { display: grid; gap: 1.5rem; }
+    </style>
+  </head>
+  <body>
+    <div class="page stack">
+      <div>
+        <p class="label">Dashboard · compact (top 5)</p>
+        <section class="exdash-panel exdash-action-center" aria-label="Today's Mission">
+          <div class="exdash-section-head">
+            <div>
+              <h2 class="exdash-section-title">
+                <span class="exdash-section-icon" aria-hidden="true">⚑</span>
+                Today's Mission
+              </h2>
+              <p class="exdash-action-center-sub">Tasks requiring your attention today</p>
+            </div>
+            <span class="exdash-section-meta">5 of 8</span>
+          </div>
+          <ol class="exdash-action-list">
+            <li class="exdash-action-row">
+              <span class="exdash-action-dot exdash-action-dot-critical" aria-label="Critical"></span>
+              <div class="exdash-action-body">
+                <div class="exdash-action-title-row">
+                  <span class="exdash-queue-title">Overdue Follow-ups</span>
+                  <span class="exdash-queue-badge exdash-severity-critical">5</span>
+                </div>
+                <span class="exdash-queue-detail">5 follow-ups are past due.</span>
+              </div>
+              <a class="exdash-action-cta" href="#">View</a>
+            </li>
+            <li class="exdash-action-row">
+              <span class="exdash-action-dot exdash-action-dot-high" aria-label="High"></span>
+              <div class="exdash-action-body">
+                <div class="exdash-action-title-row">
+                  <span class="exdash-queue-title">Weekly Ijtema Pending</span>
+                  <span class="exdash-queue-badge exdash-severity-attention">23</span>
+                </div>
+                <span class="exdash-queue-detail">23 attendance records need updating.</span>
+              </div>
+              <a class="exdash-action-cta" href="#">Open</a>
+            </li>
+            <li class="exdash-action-row">
+              <span class="exdash-action-dot exdash-action-dot-high" aria-label="High"></span>
+              <div class="exdash-action-body">
+                <div class="exdash-action-title-row">
+                  <span class="exdash-queue-title">Monthly Baitul Maal</span>
+                  <span class="exdash-queue-badge exdash-severity-attention">17</span>
+                </div>
+                <span class="exdash-queue-detail">17 members have not been marked this month.</span>
+              </div>
+              <a class="exdash-action-cta" href="#">Review</a>
+            </li>
+            <li class="exdash-action-row">
+              <span class="exdash-action-dot exdash-action-dot-medium" aria-label="Medium"></span>
+              <div class="exdash-action-body">
+                <div class="exdash-action-title-row">
+                  <span class="exdash-queue-title">App Registration</span>
+                  <span class="exdash-queue-badge exdash-severity-watch">8</span>
+                </div>
+                <span class="exdash-queue-detail">8 registrations are pending.</span>
+              </div>
+              <a class="exdash-action-cta" href="#">Complete</a>
+            </li>
+            <li class="exdash-action-row">
+              <span class="exdash-action-dot exdash-action-dot-medium" aria-label="Medium"></span>
+              <div class="exdash-action-body">
+                <div class="exdash-action-title-row">
+                  <span class="exdash-queue-title">Visit Reports</span>
+                  <span class="exdash-queue-badge exdash-severity-watch">12</span>
+                </div>
+                <span class="exdash-queue-detail">12 reports awaiting submission.</span>
+              </div>
+              <a class="exdash-action-cta" href="#">Open</a>
+            </li>
+          </ol>
+          <div class="exdash-action-footer">
+            <a class="exdash-section-link" href="#all">View All Tasks →</a>
+          </div>
+        </section>
+      </div>
+
+      <div id="all">
+        <p class="label">All Tasks · complete queue</p>
+        <section class="exdash-panel" aria-label="All Tasks">
+          <div class="exdash-section-head">
+            <div>
+              <h2 class="exdash-section-title">
+                <span class="exdash-section-icon" aria-hidden="true">⚑</span>
+                All Tasks
+              </h2>
+              <p class="exdash-action-center-sub">Complete operational queue, ordered by urgency.</p>
+            </div>
+            <span class="exdash-section-meta">8 tasks</span>
+          </div>
+          <ol class="exdash-action-list">
+            <li class="exdash-action-row">
+              <span class="exdash-action-dot exdash-action-dot-critical"></span>
+              <div class="exdash-action-body">
+                <div class="exdash-action-title-row">
+                  <span class="exdash-queue-title">Overdue Follow-ups</span>
+                  <span class="exdash-queue-badge exdash-severity-critical">5</span>
+                </div>
+                <span class="exdash-queue-detail">5 follow-ups are past due.</span>
+              </div>
+              <a class="exdash-action-cta" href="#">View</a>
+            </li>
+            <li class="exdash-action-row">
+              <span class="exdash-action-dot exdash-action-dot-critical"></span>
+              <div class="exdash-action-body">
+                <div class="exdash-action-title-row">
+                  <span class="exdash-queue-title">Inactive Rukn Support</span>
+                  <span class="exdash-queue-badge exdash-severity-critical">3</span>
+                </div>
+                <span class="exdash-queue-detail">3 Rukns need intervention.</span>
+              </div>
+              <a class="exdash-action-cta" href="#">Resolve</a>
+            </li>
+            <li class="exdash-action-row">
+              <span class="exdash-action-dot exdash-action-dot-high"></span>
+              <div class="exdash-action-body">
+                <div class="exdash-action-title-row">
+                  <span class="exdash-queue-title">Weekly Ijtema Pending</span>
+                  <span class="exdash-queue-badge exdash-severity-attention">23</span>
+                </div>
+                <span class="exdash-queue-detail">23 attendance records need updating.</span>
+              </div>
+              <a class="exdash-action-cta" href="#">Open</a>
+            </li>
+            <li class="exdash-action-row">
+              <span class="exdash-action-dot exdash-action-dot-high"></span>
+              <div class="exdash-action-body">
+                <div class="exdash-action-title-row">
+                  <span class="exdash-queue-title">Monthly Baitul Maal</span>
+                  <span class="exdash-queue-badge exdash-severity-attention">17</span>
+                </div>
+                <span class="exdash-queue-detail">17 members have not been marked this month.</span>
+              </div>
+              <a class="exdash-action-cta" href="#">Review</a>
+            </li>
+            <li class="exdash-action-row">
+              <span class="exdash-action-dot exdash-action-dot-medium"></span>
+              <div class="exdash-action-body">
+                <div class="exdash-action-title-row">
+                  <span class="exdash-queue-title">App Registration</span>
+                  <span class="exdash-queue-badge exdash-severity-watch">8</span>
+                </div>
+                <span class="exdash-queue-detail">8 registrations are pending.</span>
+              </div>
+              <a class="exdash-action-cta" href="#">Complete</a>
+            </li>
+            <li class="exdash-action-row">
+              <span class="exdash-action-dot exdash-action-dot-medium"></span>
+              <div class="exdash-action-body">
+                <div class="exdash-action-title-row">
+                  <span class="exdash-queue-title">Visit Reports</span>
+                  <span class="exdash-queue-badge exdash-severity-watch">12</span>
+                </div>
+                <span class="exdash-queue-detail">12 reports awaiting submission.</span>
+              </div>
+              <a class="exdash-action-cta" href="#">Open</a>
+            </li>
+            <li class="exdash-action-row">
+              <span class="exdash-action-dot exdash-action-dot-medium"></span>
+              <div class="exdash-action-body">
+                <div class="exdash-action-title-row">
+                  <span class="exdash-queue-title">Profile Completeness</span>
+                </div>
+                <span class="exdash-queue-detail">Connected profiles still missing fields.</span>
+              </div>
+              <a class="exdash-action-cta" href="#">View</a>
+            </li>
+            <li class="exdash-action-row">
+              <span class="exdash-action-dot exdash-action-dot-medium"></span>
+              <div class="exdash-action-body">
+                <div class="exdash-action-title-row">
+                  <span class="exdash-queue-title">Weekly Report Reminder</span>
+                </div>
+                <span class="exdash-queue-detail">Pending weekly summaries from field.</span>
+              </div>
+              <a class="exdash-action-cta" href="#">Open</a>
+            </li>
+          </ol>
+          <div class="exdash-action-footer">
+            <a class="exdash-section-link" href="#">← Back to Dashboard</a>
+          </div>
+        </section>
+      </div>
+    </div>
+  </body>
+</html>
