@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>KC-0102E Executive Metrics — After</title>
+    <style>
+      :root {
+        --ink: #0f172a;
+        --muted: #64748b;
+        --panel: #fff;
+        --line: #e2e8f0;
+        --sky: #0ea5e9;
+        --violet: #7c3aed;
+        --green: #16a34a;
+        --bg: #f1f5f9;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: "Segoe UI", system-ui, sans-serif;
+        background: linear-gradient(180deg, #ecfdf5 0%, var(--bg) 40%);
+        color: var(--ink);
+        padding: 1.25rem;
+      }
+      .stack { display: grid; gap: 1rem; max-width: 1100px; margin: 0 auto; }
+      .hero {
+        border-radius: 1rem;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        background: var(--panel);
+      }
+      .banner {
+        background: linear-gradient(135deg, #065f46, #0f766e);
+        color: #ecfdf5;
+        padding: 1.25rem 1.5rem;
+        text-align: right;
+        direction: rtl;
+      }
+      .banner h1 { margin: 0; font-size: 1.75rem; }
+      .banner p { margin: 0.35rem 0 0; opacity: 0.92; }
+      .hero-body { display: flex; gap: 1.25rem; padding: 1.25rem 1.5rem; align-items: center; flex-wrap: wrap; }
+      .ring {
+        width: 92px; height: 92px; border-radius: 999px;
+        background: conic-gradient(var(--green) 42%, #e2e8f0 0);
+        display: grid; place-items: center;
+      }
+      .ring span {
+        width: 70px; height: 70px; border-radius: 999px; background: #fff;
+        display: grid; place-items: center; font-weight: 700; color: var(--green);
+      }
+      .metrics { display: flex; gap: 1.25rem; }
+      .metrics div { min-width: 4.5rem; }
+      .metrics dt { font-size: 0.75rem; color: var(--muted); margin: 0; }
+      .metrics dd { margin: 0.15rem 0 0; font-size: 1.25rem; font-weight: 700; }
+      .track { height: 8px; background: #e2e8f0; border-radius: 999px; margin-top: 0.75rem; overflow: hidden; }
+      .fill { height: 100%; width: 48%; background: var(--green); }
+      .actions { display: flex; gap: 0.5rem; flex-wrap: wrap; padding: 0 1.5rem 1.25rem; }
+      .actions button {
+        border: 1px solid var(--line); background: #f8fafc; border-radius: 0.5rem;
+        padding: 0.45rem 0.75rem; font-weight: 600;
+      }
+      .panel {
+        background: var(--panel); border: 1px solid var(--line); border-radius: 1rem; padding: 1rem 1.15rem;
+      }
+      .panel h2 { margin: 0 0 0.85rem; font-size: 1.05rem; }
+      .grid {
+        list-style: none; margin: 0; padding: 0;
+        display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.75rem;
+      }
+      .card {
+        border: 1px solid var(--line); border-radius: 0.75rem; padding: 0.75rem;
+        background: #f8fafc;
+      }
+      .card .label { margin: 0; font-size: 0.75rem; color: var(--muted); }
+      .card .value { margin: 0.25rem 0 0; font-size: 1.35rem; font-weight: 700; }
+      .sky h2 { color: #0369a1; }
+      .violet h2 { color: #6d28d9; }
+      .health .bars { display: grid; gap: 0.55rem; }
+      .health .row { display: grid; grid-template-columns: 9rem 1fr 3rem; gap: 0.5rem; align-items: center; font-size: 0.9rem; }
+      .mission li { margin: 0.35rem 0; }
+      @media (max-width: 720px) {
+        .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .metrics { flex-wrap: wrap; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="stack" id="after-fixture">
+      <header class="hero" aria-label="Campaign Hero">
+        <div class="banner">
+          <h1>فعال کارکن، فعال جماعت</h1>
+          <p>18 Jul 2026 – 2 Aug 2026</p>
+          <p>Friday, 24 Jul 2026</p>
+          <p>Status · Active · Day 7 of 16</p>
+        </div>
+        <div class="hero-body">
+          <div class="ring" aria-hidden="true"><span>42%</span></div>
+          <div>
+            <p style="margin:0;font-weight:700">Campaign Progress</p>
+            <dl class="metrics">
+              <div><dt>Connected</dt><dd>128</dd></div>
+              <div><dt>Remaining</dt><dd>176</dd></div>
+              <div><dt>Days Left</dt><dd>9</dd></div>
+            </dl>
+            <div class="track"><div class="fill"></div></div>
+            <p style="margin:0.4rem 0 0;color:var(--muted);font-size:0.85rem">Day 7 of 16 · Momentum 48%</p>
+          </div>
+        </div>
+        <div class="actions">
+          <button type="button">Connections</button>
+          <button type="button">Execution</button>
+          <button type="button">Compliance</button>
+          <button type="button">Follow-up</button>
+          <button type="button">Communication</button>
+        </div>
+      </header>
+
+      <section class="panel" aria-label="Collective Overview">
+        <h2>Collective Overview</h2>
+        <ul class="grid">
+          <li class="card"><p class="label">Total Rukns</p><p class="value">42</p></li>
+          <li class="card"><p class="label">Assigned</p><p class="value">38</p></li>
+          <li class="card"><p class="label">Connected</p><p class="value">128</p></li>
+          <li class="card"><p class="label">Pending</p><p class="value">64</p></li>
+          <li class="card"><p class="label">Average Progress</p><p class="value">47%</p><div class="track"><div class="fill" style="width:47%"></div></div></li>
+          <li class="card"><p class="label">Critical</p><p class="value">5</p></li>
+        </ul>
+      </section>
+
+      <section class="panel sky" aria-label="Male Rukns">
+        <h2>Male Rukns</h2>
+        <ul class="grid">
+          <li class="card"><p class="label">Total</p><p class="value">28</p></li>
+          <li class="card"><p class="label">Assigned</p><p class="value">25</p></li>
+          <li class="card"><p class="label">Connected</p><p class="value">86</p></li>
+          <li class="card"><p class="label">Pending</p><p class="value">41</p></li>
+          <li class="card"><p class="label">Connection %</p><p class="value">89%</p><div class="track"><div class="fill" style="width:89%"></div></div></li>
+          <li class="card"><p class="label">Progress</p><p class="value">49%</p><div class="track"><div class="fill" style="width:49%"></div></div></li>
+        </ul>
+      </section>
+
+      <section class="panel violet" aria-label="Female Rukns">
+        <h2>Female Rukns</h2>
+        <ul class="grid">
+          <li class="card"><p class="label">Total</p><p class="value">14</p></li>
+          <li class="card"><p class="label">Assigned</p><p class="value">13</p></li>
+          <li class="card"><p class="label">Connected</p><p class="value">42</p></li>
+          <li class="card"><p class="label">Pending</p><p class="value">23</p></li>
+          <li class="card"><p class="label">Connection %</p><p class="value">93%</p><div class="track"><div class="fill" style="width:93%"></div></div></li>
+          <li class="card"><p class="label">Progress</p><p class="value">44%</p><div class="track"><div class="fill" style="width:44%"></div></div></li>
+        </ul>
+      </section>
+
+      <section class="panel health" aria-label="Campaign Health">
+        <h2>Campaign Health</h2>
+        <div class="bars">
+          <div class="row"><span>Visits</span><div class="track"><div class="fill" style="width:55%"></div></div><strong>55%</strong></div>
+          <div class="row"><span>Weekly Ijtema</span><div class="track"><div class="fill" style="width:62%"></div></div><strong>62%</strong></div>
+          <div class="row"><span>Monthly Baitul Maal</span><div class="track"><div class="fill" style="width:48%"></div></div><strong>48%</strong></div>
+          <div class="row"><span>App Registration</span><div class="track"><div class="fill" style="width:71%"></div></div><strong>71%</strong></div>
+        </div>
+      </section>
+
+      <section class="panel" aria-label="Today's Mission">
+        <h2>Today's Mission</h2>
+        <ul class="mission">
+          <li>Overdue visits — 6</li>
+          <li>Pending Weekly Ijtema submissions — 4</li>
+          <li>Pending Monthly Baitul Maal submissions — 3</li>
+        </ul>
+      </section>
+    </div>
+  </body>
+</html>

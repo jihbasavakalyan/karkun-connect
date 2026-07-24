@@ -1,6 +1,7 @@
 /**
- * KC-0109 Scope 1 — Campaign Operations Command Center (presentation / IA only).
- * Reuses existing mission-control data helpers — no new queries or calculation engines.
+ * Campaign Operations Command Center (presentation / IA only).
+ * KC-0102E restores executive overview surfaces without new queries or calculation engines.
+ * Preserves KC-0102A readiness, KC-0102B coalescing, and KC-0102C read elimination.
  */
 
 import { useEffect, useMemo, useState } from 'react'
@@ -11,6 +12,8 @@ import { ROUTES } from '@/constants/routes'
 import {
   buildAdminCampaignHealthKpis,
   buildAdminInterventionQueue,
+  buildAllActiveRuknPerformance,
+  type AdminRuknGenderPerformanceView,
 } from '@/lib/missionControl/adminMissionControlPresentation'
 import {
   USE_ADMIN_ACTION_CENTER_EXPERIMENT,
@@ -250,6 +253,15 @@ function PaginatedPriorityGrid({
 
 type SectionTone = 'sky' | 'amber' | 'rose' | 'violet' | 'slate' | 'teal'
 
+type OverviewMetric = {
+  id: string
+  label: string
+  value: string | number
+  hint?: string
+  /** Optional 0–100 progress fill under the value (presentation only). */
+  progressPct?: number
+}
+
 function ExdashSectionTitle({
   title,
   icon,
@@ -266,6 +278,102 @@ function ExdashSectionTitle({
       </span>
       {title}
     </h2>
+  )
+}
+
+/** KC-0102E — Collective Overview KPIs from existing Rukn performance rows. */
+function summarizeCollectiveRukns(rows: AdminRuknGenderPerformanceView[]): OverviewMetric[] {
+  const total = rows.length
+  const assigned = rows.filter((r) => r.assignedKarkuns > 0).length
+  const connected = rows.reduce((sum, r) => sum + r.assignedKarkuns, 0)
+  const pending = rows.reduce((sum, r) => sum + r.pendingWork, 0)
+  const avg =
+    total === 0 ? 0 : Math.round(rows.reduce((sum, r) => sum + r.completionPct, 0) / total)
+  const critical = rows.filter((r) => r.status.tone === 'red' && r.assignedKarkuns > 0).length
+
+  return [
+    { id: 'rukns', label: 'Total Rukns', value: total },
+    { id: 'assigned', label: 'Assigned', value: assigned, hint: 'At least one Connected Karkun' },
+    { id: 'connected', label: 'Connected', value: connected, hint: 'Active Connected Karkuns' },
+    { id: 'pending', label: 'Pending', value: pending, hint: 'Visits and tasks not yet completed' },
+    { id: 'progress', label: 'Average Progress', value: `${avg}%`, progressPct: avg },
+    { id: 'critical', label: 'Critical', value: critical, hint: 'Rukns behind on progress' },
+  ]
+}
+
+/** KC-0102E — Male/Female Rukn connection summary from existing performance rows. */
+function summarizeGenderRukns(rows: AdminRuknGenderPerformanceView[]): OverviewMetric[] {
+  const total = rows.length
+  const assigned = rows.filter((r) => r.assignedKarkuns > 0).length
+  const connected = rows.reduce((sum, r) => sum + r.assignedKarkuns, 0)
+  const pending = rows.reduce((sum, r) => sum + r.pendingWork, 0)
+  const connectionPct = total === 0 ? 0 : Math.round((assigned / total) * 100)
+  const progressPct =
+    total === 0 ? 0 : Math.round(rows.reduce((sum, r) => sum + r.completionPct, 0) / total)
+
+  return [
+    { id: 'total', label: 'Total', value: total },
+    { id: 'assigned', label: 'Assigned', value: assigned },
+    { id: 'connected', label: 'Connected', value: connected },
+    { id: 'pending', label: 'Pending', value: pending },
+    {
+      id: 'connection-pct',
+      label: 'Connection %',
+      value: `${connectionPct}%`,
+      progressPct: connectionPct,
+      hint: 'Rukns with at least one Connected Karkun',
+    },
+    {
+      id: 'progress',
+      label: 'Progress',
+      value: `${progressPct}%`,
+      progressPct,
+      hint: 'Average completion across Rukns',
+    },
+  ]
+}
+
+function OverviewMetricGrid({
+  metrics,
+  title,
+  icon,
+  tone,
+}: {
+  metrics: OverviewMetric[]
+  title: string
+  icon: IconName
+  tone: SectionTone
+}) {
+  return (
+    <section className="exdash-panel" aria-label={title}>
+      <div className="exdash-section-head">
+        <ExdashSectionTitle title={title} icon={icon} tone={tone} />
+      </div>
+      <ul className="exdash-metric-grid">
+        {metrics.map((metric) => (
+          <li key={metric.id} className="exdash-metric-card">
+            <p className="exdash-metric-label">{metric.label}</p>
+            <p className="exdash-metric-value">{metric.value}</p>
+            {typeof metric.progressPct === 'number' ? (
+              <div
+                className="exdash-progress-track"
+                role="progressbar"
+                aria-valuenow={metric.progressPct}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-label={`${metric.label} ${metric.progressPct}%`}
+              >
+                <div
+                  className="exdash-progress-fill"
+                  style={{ width: `${Math.max(0, Math.min(100, metric.progressPct))}%` }}
+                />
+              </div>
+            ) : null}
+            {metric.hint ? <p className="exdash-metric-hint">{metric.hint}</p> : null}
+          </li>
+        ))}
+      </ul>
+    </section>
   )
 }
 
@@ -495,6 +603,74 @@ export function AdminCommandCenter({
     return buildCampaignOperationsTrends()
   }, [assignmentVersion, moduleTick, backgroundReady])
 
+  // KC-0102E — executive overview metrics from existing presentation helpers only.
+  const allRukns = useMemo(() => {
+    void assignmentVersion
+    void moduleTick
+    if (!backgroundReady) return []
+    return buildAllActiveRuknPerformance()
+  }, [assignmentVersion, moduleTick, backgroundReady])
+
+  const maleRukns = useMemo(
+    () => allRukns.filter((row) => row.gender === 'Male'),
+    [allRukns],
+  )
+  const femaleRukns = useMemo(
+    () => allRukns.filter((row) => row.gender === 'Female'),
+    [allRukns],
+  )
+
+  const collectiveMetrics = useMemo(() => {
+    if (!backgroundReady) {
+      return [
+        { id: 'rukns', label: 'Total Rukns', value: '—' },
+        { id: 'assigned', label: 'Assigned', value: '—' },
+        { id: 'connected', label: 'Connected', value: '—' },
+        { id: 'pending', label: 'Pending', value: '—' },
+        { id: 'progress', label: 'Average Progress', value: '—' },
+        { id: 'critical', label: 'Critical', value: '—' },
+      ] satisfies OverviewMetric[]
+    }
+    const base = summarizeCollectiveRukns(allRukns)
+    return base.map((metric) =>
+      metric.id === 'connected'
+        ? {
+            ...metric,
+            value: metricsReady ? model.connectionProgress.connected : metric.value,
+            hint: 'Active Connected Karkuns',
+          }
+        : metric,
+    )
+  }, [allRukns, backgroundReady, metricsReady, model.connectionProgress.connected])
+
+  const maleMetrics = useMemo(() => {
+    if (!backgroundReady) {
+      return [
+        { id: 'total', label: 'Total', value: '—' },
+        { id: 'assigned', label: 'Assigned', value: '—' },
+        { id: 'connected', label: 'Connected', value: '—' },
+        { id: 'pending', label: 'Pending', value: '—' },
+        { id: 'connection-pct', label: 'Connection %', value: '—' },
+        { id: 'progress', label: 'Progress', value: '—' },
+      ] satisfies OverviewMetric[]
+    }
+    return summarizeGenderRukns(maleRukns)
+  }, [backgroundReady, maleRukns])
+
+  const femaleMetrics = useMemo(() => {
+    if (!backgroundReady) {
+      return [
+        { id: 'total', label: 'Total', value: '—' },
+        { id: 'assigned', label: 'Assigned', value: '—' },
+        { id: 'connected', label: 'Connected', value: '—' },
+        { id: 'pending', label: 'Pending', value: '—' },
+        { id: 'connection-pct', label: 'Connection %', value: '—' },
+        { id: 'progress', label: 'Progress', value: '—' },
+      ] satisfies OverviewMetric[]
+    }
+    return summarizeGenderRukns(femaleRukns)
+  }, [backgroundReady, femaleRukns])
+
   return (
     <div className="exdash-stack">
       {showAllTasks ? (
@@ -507,7 +683,36 @@ export function AdminCommandCenter({
         </WidgetErrorBoundary>
       ) : (
         <>
-          {/* 1. Campaign Health — per-metric readiness (KC-0102A) */}
+          {/* KC-0102E — Executive Collective Overview (before Campaign Health) */}
+          <WidgetErrorBoundary title="Collective Overview">
+            <OverviewMetricGrid
+              title="Collective Overview"
+              metrics={collectiveMetrics}
+              icon="chart"
+              tone="slate"
+            />
+          </WidgetErrorBoundary>
+
+          {/* KC-0102E — Male / Female Rukn connection summaries */}
+          <WidgetErrorBoundary title="Male Rukns">
+            <OverviewMetricGrid
+              title="Male Rukns"
+              metrics={maleMetrics}
+              icon="users"
+              tone="sky"
+            />
+          </WidgetErrorBoundary>
+
+          <WidgetErrorBoundary title="Female Rukns">
+            <OverviewMetricGrid
+              title="Female Rukns"
+              metrics={femaleMetrics}
+              icon="users"
+              tone="violet"
+            />
+          </WidgetErrorBoundary>
+
+          {/* Campaign Health — per-metric readiness (KC-0102A); unchanged contract */}
           <WidgetErrorBoundary title="Campaign Health">
             <CampaignHealthPanel
               metrics={campaignHealth}
@@ -516,7 +721,7 @@ export function AdminCommandCenter({
             />
           </WidgetErrorBoundary>
 
-          {/* 2. Today's Mission */}
+          {/* Today's Mission — unchanged */}
           <WidgetErrorBoundary title="Today's Mission">
             {USE_ADMIN_ACTION_CENTER_EXPERIMENT ? (
               <AdminActionCenter items={missionItems} backgroundReady={backgroundReady} />
@@ -545,7 +750,7 @@ export function AdminCommandCenter({
             )}
           </WidgetErrorBoundary>
 
-          {/* 3. Top Priority Rukns */}
+          {/* Top Priority Rukns */}
           <WidgetErrorBoundary title="Top Priority Rukns">
             <section className="exdash-panel" aria-label="Top Priority Rukns">
               <div className="exdash-section-head">
@@ -609,12 +814,12 @@ export function AdminCommandCenter({
             </p>
           ) : null}
 
-          {/* 4. Progress Trends */}
+          {/* Progress Trends */}
           <WidgetErrorBoundary title="Progress Trends">
             <ProgressTrendsPanel trends={trends} ready={backgroundReady} />
           </WidgetErrorBoundary>
 
-          {/* 5. Activity Timeline */}
+          {/* Activity Timeline */}
           <WidgetErrorBoundary title="Activity Timeline">
             <ActivityTimeline ready={backgroundReady} limit={12} />
           </WidgetErrorBoundary>

@@ -1,7 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { AdminMissionControlModel } from '@/lib/missionControl/buildAdminMissionControl'
 import { formatCampaignWindowLabel } from '@/lib/missionControl/buildAdminMissionControl'
-import { buildCampaignOperationsHealthMetrics } from '@/lib/missionControl/campaignOperationsCommandCenter'
 import { dashState03WidgetRender } from '@/lib/debug/kc00586DashboardStateProbe'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { usePeopleStore } from '@/hooks/usePeopleStore'
@@ -10,6 +9,8 @@ import { subscribeToAnnexure1Store } from '@/stores/annexure1Store'
 import { subscribeToJihWebPortalStore } from '@/stores/jihWebPortalStore'
 import { subscribeToWeeklyIjtemaStore } from '@/stores/weeklyIjtemaStore'
 import { subscribeToMonthlyBaitulMaalStore } from '@/stores/monthlyBaitulMaalStore'
+import { getCampaignTimeline } from '@/services/campaignService'
+import { McProgressRing } from './McProgressRing'
 import { MissionControlQuickActions } from './MissionControlQuickActions'
 
 type MissionControlHeroProps = {
@@ -18,6 +19,10 @@ type MissionControlHeroProps = {
   metricsReady?: boolean
 }
 
+/**
+ * KC-0102E — Restore executive campaign hero metrics (presentation only).
+ * Preserves KC-0102B coalesced store ticks.
+ */
 export function AdminMissionControlHero({
   model,
   metricsReady = true,
@@ -26,6 +31,15 @@ export function AdminMissionControlHero({
   const { assignmentVersion } = useAssignmentEngine()
   const [complianceTick, setComplianceTick] = useState(0)
   const campaignWindow = formatCampaignWindowLabel()
+  const timeline = getCampaignTimeline()
+  const statusLabel =
+    timeline?.status === 'active'
+      ? 'Active'
+      : timeline?.status === 'upcoming'
+        ? 'Upcoming'
+        : timeline?.status === 'completed'
+          ? 'Completed'
+          : null
 
   useEffect(() => {
     // KC-0102B — coalesce compliance store storms into one hero tick.
@@ -45,42 +59,30 @@ export function AdminMissionControlHero({
     }
   }, [])
 
-  const health = useMemo(() => {
-    if (!metricsReady) return null
-    void peopleVersion
-    void assignmentVersion
-    void complianceTick
-    return buildCampaignOperationsHealthMetrics()
-  }, [metricsReady, peopleVersion, assignmentVersion, complianceTick])
+  // Keep store subscriptions warm so progress/momentum stay live after hydrate.
+  void peopleVersion
+  void assignmentVersion
+  void complianceTick
 
-  // KC-0058.6 — Campaign Progress widget render evidence (now Campaign Health contract).
+  // KC-0058.6 — Campaign Progress widget render evidence.
   useEffect(() => {
-    dashState03WidgetRender(
-      'CampaignProgress',
-      metricsReady && health ? 'ready' : 'loading',
-      {
-        connected: model.connectionProgress.connected,
-        remaining: model.connectionProgress.remaining,
-        total: model.connectionProgress.total,
-        pct: model.connectionProgress.pct,
-        metricsReady,
-        campaignHealth: health
-          ? health.map((metric) => ({
-              id: metric.id,
-              current: metric.current,
-              total: metric.total,
-              pct: metric.pct,
-            }))
-          : null,
-      },
-    )
+    dashState03WidgetRender('CampaignProgress', metricsReady ? 'ready' : 'loading', {
+      connected: model.connectionProgress.connected,
+      remaining: model.connectionProgress.remaining,
+      total: model.connectionProgress.total,
+      pct: model.connectionProgress.pct,
+      campaignProgressPct: model.campaignProgressPct,
+      daysRemaining: model.daysRemaining,
+      metricsReady,
+    })
   }, [
     metricsReady,
-    health,
     model.connectionProgress.connected,
     model.connectionProgress.remaining,
     model.connectionProgress.total,
     model.connectionProgress.pct,
+    model.campaignProgressPct,
+    model.daysRemaining,
   ])
 
   return (
@@ -89,19 +91,69 @@ export function AdminMissionControlHero({
         <h1 className="exdash-hero-title">{model.campaignName}</h1>
         {campaignWindow ? <p className="exdash-hero-window">{campaignWindow}</p> : null}
         <p className="exdash-hero-date">{model.currentDateLabel}</p>
+        {statusLabel ? (
+          <p className="exdash-hero-caption" style={{ marginTop: '0.35rem', opacity: 0.9 }}>
+            Status · {statusLabel}
+            {timeline?.dayLabel ? ` · ${timeline.dayLabel}` : ''}
+          </p>
+        ) : null}
       </div>
 
       <div className="exdash-hero-top">
-        <div className="exdash-hero-progress-copy">
-          <p className="exdash-hero-progress-title">Campaign Operations</p>
-          <p className="exdash-hero-caption">
-            {metricsReady
-              ? `Operational view · ${model.connectionProgress.connected} connected`
-              : 'Loading…'}
-            {metricsReady && model.daysRemaining != null
-              ? ` · ${model.daysRemaining} days left`
-              : ''}
-          </p>
+        <div className="exdash-hero-progress">
+          {metricsReady ? (
+            <>
+              <McProgressRing
+                value={model.connectionProgress.pct}
+                size={92}
+                stroke={9}
+                tone="green"
+                label={`${model.connectionProgress.pct}%`}
+                sublabel="Complete"
+              />
+              <div className="exdash-hero-progress-copy">
+                <p className="exdash-hero-progress-title">Campaign Progress</p>
+                <dl className="exdash-hero-metrics">
+                  <div>
+                    <dt>Connected</dt>
+                    <dd>{model.connectionProgress.connected}</dd>
+                  </div>
+                  <div>
+                    <dt>Remaining</dt>
+                    <dd>{model.connectionProgress.remaining}</dd>
+                  </div>
+                  <div>
+                    <dt>Days Left</dt>
+                    <dd>{model.daysRemaining ?? '—'}</dd>
+                  </div>
+                </dl>
+                <div
+                  className="exdash-progress-track"
+                  role="progressbar"
+                  aria-valuenow={model.campaignProgressPct}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-label={`Campaign momentum ${model.campaignProgressPct}%`}
+                >
+                  <div
+                    className="exdash-progress-fill"
+                    style={{ width: `${Math.max(0, Math.min(100, model.campaignProgressPct))}%` }}
+                  />
+                </div>
+                <p className="exdash-hero-caption">
+                  {model.dayLabel} · Momentum {model.campaignProgressPct}%
+                </p>
+              </div>
+            </>
+          ) : (
+            <div className="exdash-hero-progress-copy" aria-busy="true" aria-live="polite">
+              <p className="exdash-hero-progress-title">Campaign Progress</p>
+              <p className="exdash-hero-caption">Loading…</p>
+              <div className="exdash-progress-track" aria-hidden="true">
+                <div className="exdash-progress-fill" style={{ width: '28%', opacity: 0.45 }} />
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

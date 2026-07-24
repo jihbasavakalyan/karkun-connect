@@ -1,9 +1,9 @@
 /**
- * Dashboard information architecture contract — KC-0109 Scope 1.
+ * Dashboard information architecture contract — KC-0109 Scope 1 + KC-0102E restore.
  * Run: npx vite-node scripts/verify-dashboard-ia-structure.ts
  *
- * Order: Campaign Health → Today's Mission → Top Priority Rukns → Progress Trends → Activity Timeline
- * Previous three-column layout is retained in AdminOpsThreeColumnLayout.
+ * Order (KC-0102E): Collective Overview → Male/Female Rukns → Campaign Health →
+ * Today's Mission → Top Priority Rukns → Progress Trends → Activity Timeline
  */
 
 import { readFileSync } from 'node:fs'
@@ -45,22 +45,31 @@ const ccHero = readFileSync(
   'utf8',
 )
 const css = readFileSync(resolve('src/index.css'), 'utf8')
+const mockMissions = readFileSync(resolve('src/constants/mockMissions.ts'), 'utf8')
 
-assert(!hero.includes('Campaign Command Center'), 'Hero has no Campaign Command Center')
-assert(!command.includes('Campaign Command Center'), 'Command center has no Campaign Command Center')
+assert(!hero.includes('Campaign Command Center'), 'Hero has no Campaign Command Center eyebrow')
+assert(!command.includes('Campaign Command Center'), 'Command center has no Campaign Command Center eyebrow')
 assert(!ccHero.includes('Campaign Command Center'), 'legacy hero has no Campaign Command Center')
 assert(hero.includes('exdash-hero-banner'), 'Urdu campaign banner present')
 assert(hero.includes('dir="rtl"'), 'banner is RTL for Urdu title')
-assert(!hero.includes('Campaign Achievement Progress'), 'achievement progress moved out of Hero')
+assert(hero.includes('Campaign Progress'), 'KC-0102E — Campaign Progress restored in hero')
+assert(hero.includes('Days Left'), 'KC-0102E — Days Left restored in hero')
+assert(hero.includes('McProgressRing'), 'KC-0102E — progress ring restored')
+assert(hero.includes('MissionControlQuickActions'), 'quick actions preserved')
+assert(!hero.includes('Campaign Achievement Progress'), 'achievement progress not in Hero')
+assert(command.includes('Collective Overview'), 'KC-0102E — Collective Overview restored')
+assert(command.includes('Male Rukns'), 'KC-0102E — Male Rukn summary restored')
+assert(command.includes('Female Rukns'), 'KC-0102E — Female Rukn summary restored')
+assert(command.includes('buildAllActiveRuknPerformance'), 'gender summaries reuse existing data helper')
 assert(command.includes('Campaign Health'), 'Campaign Health section present')
 assert(command.includes('Top Priority Rukns'), 'Top Priority Rukns section present')
 assert(command.includes('Progress Trends'), 'Progress Trends section present')
 assert(command.includes('ActivityTimeline'), 'Activity Timeline mounted')
-assert(!command.includes('Collective Overview'), 'Collective Overview removed (no duplicate surfaces)')
 assert(!command.includes('LiveActivityFeed'), 'Live Activity merged into Activity Timeline')
 assert(!command.includes('Recent System History'), 'System History merged into Activity Timeline')
 assert(!command.includes('WeeklyIjtemaDashboardKpiCard'), 'Weekly Ijtema KPI card not duplicated on dashboard')
 assert(!command.includes('MonthlyBaitulMaalDashboardKpiCard'), 'Baitul Maal KPI card not duplicated on dashboard')
+assert(mockMissions.includes("endDate: '2026-08-02'"), 'campaign end date seed is 2 Aug 2026')
 
 assert(
   experiment.includes('USE_ADMIN_ACTION_CENTER_EXPERIMENT = true'),
@@ -102,14 +111,21 @@ assert(css.includes('exdash-action-center'), 'Action Center styles present')
 assert(css.includes('exdash-action-center-compact'), 'compact mission card styles present')
 assert(css.includes('exdash-action-footer'), 'mission footer styles present')
 assert(css.includes('exdash-health-pct-grid'), 'Campaign Health percentage grid styles present')
+assert(css.includes('exdash-metric-grid'), 'executive metric grid styles present')
 
 const returnIdx = command.indexOf('return (')
-const healthJsxIdx = command.indexOf('<CampaignHealthPanel', returnIdx)
+const collectiveIdx = command.indexOf('Collective Overview', returnIdx)
+const maleIdx = command.indexOf('Male Rukns', collectiveIdx)
+const femaleIdx = command.indexOf('Female Rukns', maleIdx)
+const healthJsxIdx = command.indexOf('<CampaignHealthPanel', femaleIdx)
 const missionMarkerIdx = command.indexOf("Today's Mission", healthJsxIdx)
 const priorityJsxIdx = command.indexOf('Top Priority Rukns', healthJsxIdx)
 const trendsJsxIdx = command.indexOf('<ProgressTrendsPanel', healthJsxIdx)
 const timelineJsxIdx = command.indexOf('<ActivityTimeline', healthJsxIdx)
-assert(healthJsxIdx > returnIdx, 'Campaign Health rendered in JSX')
+assert(collectiveIdx > returnIdx, 'Collective Overview rendered in JSX')
+assert(maleIdx > collectiveIdx, 'Male Rukns after Collective Overview')
+assert(femaleIdx > maleIdx, 'Female Rukns after Male Rukns')
+assert(healthJsxIdx > femaleIdx, 'Campaign Health after Female Rukns')
 assert(missionMarkerIdx > healthJsxIdx, "Today's Mission after Campaign Health")
 assert(priorityJsxIdx > missionMarkerIdx, 'Top Priority Rukns after Today\'s Mission')
 assert(trendsJsxIdx > priorityJsxIdx, 'Progress Trends after Top Priority Rukns')
@@ -125,4 +141,4 @@ assert(
   'Help no longer renders icon name string beside label',
 )
 
-console.log('Dashboard IA structure verification passed (KC-0109 Scope 1).')
+console.log('Dashboard IA structure verification passed (KC-0109 + KC-0102E).')

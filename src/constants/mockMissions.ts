@@ -123,7 +123,7 @@ export const MOCK_CAMPAIGNS: CampaignListItem[] = [
     name: 'فعال کارکن، فعال جماعت',
     status: 'active',
     startDate: '2026-07-18',
-    endDate: '2026-07-26',
+    endDate: '2026-08-02',
     theme: 'Activate every Karkun and integrate them into Jamaat work.',
     objective:
       'Ensure every connected Karkun is contacted, visited, engaged, and integrated into Jamaat activities during the campaign.',
