@@ -31,6 +31,16 @@ const AdminWeeklyIjtemaReportPage = lazyWithChunkReload(() =>
     default: m.AdminWeeklyIjtemaReportPage,
   })),
 )
+const AdminMonthlyBaitulMaalPage = lazyWithChunkReload(() =>
+  import('@/pages/admin/AdminMonthlyBaitulMaalPage').then((m) => ({
+    default: m.AdminMonthlyBaitulMaalPage,
+  })),
+)
+const AdminMonthlyBaitulMaalReportPage = lazyWithChunkReload(() =>
+  import('@/pages/admin/AdminMonthlyBaitulMaalReportPage').then((m) => ({
+    default: m.AdminMonthlyBaitulMaalReportPage,
+  })),
+)
 const ExecutionModulePage = lazyWithChunkReload(() =>
   import('@/pages/admin/ExecutionModulePage').then((m) => ({ default: m.ExecutionModulePage })),
 )
@@ -109,6 +119,11 @@ const WeeklyIjtemaRegisterPage = lazyWithChunkReload(() =>
     default: m.WeeklyIjtemaRegisterPage,
   })),
 )
+const RuknMonthlyBaitulMaalPage = lazyWithChunkReload(() =>
+  import('@/pages/rukn/RuknMonthlyBaitulMaalPage').then((m) => ({
+    default: m.RuknMonthlyBaitulMaalPage,
+  })),
+)
 
 function LegacyKarkunProfileRedirect() {
   const { karkunId } = useParams<{ karkunId: string }>()
@@ -153,6 +168,11 @@ export function AppRouter() {
             <Route path="compliance" element={<ComplianceModulePage />} />
             <Route path="weekly-ijtema" element={<AdminWeeklyIjtemaPage />} />
             <Route path="weekly-ijtema/:eventId/report" element={<AdminWeeklyIjtemaReportPage />} />
+            <Route path="baitul-maal" element={<AdminMonthlyBaitulMaalPage />} />
+            <Route
+              path="baitul-maal/:cycleId/report"
+              element={<AdminMonthlyBaitulMaalReportPage />}
+            />
             <Route
               path="review"
               element={<Navigate to={`${ROUTES.ADMIN_EXECUTION}?section=reports`} replace />}
@@ -191,6 +211,7 @@ export function AppRouter() {
             <Route path="visit/:karkunId" element={<ConnectionJourneyPage />} />
             <Route path="campaign-record" element={<CampaignRecordPage />} />
             <Route path="weekly-ijtema" element={<WeeklyIjtemaRegisterPage />} />
+            <Route path="baitul-maal" element={<RuknMonthlyBaitulMaalPage />} />
             <Route path="settings" element={<RuknSettingsPage />} />
             <Route path="reports" element={<Navigate to={ROUTES.RUKN_CAMPAIGN_RECORD} replace />} />
             <Route path="tasks" element={<Navigate to={ROUTES.RUKN} replace />} />

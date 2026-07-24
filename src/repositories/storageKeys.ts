@@ -17,6 +17,8 @@ export const STORAGE_KEYS = {
   ijtema: 'karkun-connect.ijtema',
   weeklyIjtemaEvents: 'karkun-connect.weekly-ijtema-events',
   weeklyIjtemaSubmissions: 'karkun-connect.weekly-ijtema-submissions',
+  monthlyBaitulMaalCycles: 'karkun-connect.monthly-baitul-maal-cycles',
+  monthlyBaitulMaalSubmissions: 'karkun-connect.monthly-baitul-maal-submissions',
   jihPortal: 'karkun-connect.jih-portal',
   broadcastLists: 'karkun-connect.broadcast-lists',
   migrationBackups: 'karkun-connect.migration.backups',

@@ -15,6 +15,8 @@ export const ROUTES = {
   ADMIN_COMPLIANCE: '/admin/compliance',
   /** KC-0107 — Weekly Ijtema Attendance Management */
   ADMIN_WEEKLY_IJTEMA: '/admin/weekly-ijtema',
+  /** KC-0108 — Monthly Baitul Maal Completion Management */
+  ADMIN_MONTHLY_BAITUL_MAAL: '/admin/baitul-maal',
   /** Legacy path — redirects to Execution Reports tab */
   ADMIN_REVIEW: '/admin/review',
   ADMIN_FOLLOW_UP: '/admin/follow-up',
@@ -31,6 +33,8 @@ export const ROUTES = {
   RUKN_COMMUNICATION: '/rukn/communication',
   RUKN_CAMPAIGN_RECORD: '/rukn/campaign-record',
   RUKN_WEEKLY_IJTEMA: '/rukn/weekly-ijtema',
+  /** KC-0108 — Rukn Monthly Baitul Maal completion */
+  RUKN_MONTHLY_BAITUL_MAAL: '/rukn/baitul-maal',
   RUKN_SETTINGS: '/rukn/settings',
 } as const
 
@@ -104,4 +108,14 @@ export function adminWeeklyIjtemaPath(): string {
 /** KC-0107 — Admin Weekly Ijtema report for an event. */
 export function adminWeeklyIjtemaReportPath(eventId: string): string {
   return `${ROUTES.ADMIN_WEEKLY_IJTEMA}/${encodeURIComponent(eventId)}/report`
+}
+
+/** KC-0108 — Admin Monthly Baitul Maal management. */
+export function adminMonthlyBaitulMaalPath(): string {
+  return ROUTES.ADMIN_MONTHLY_BAITUL_MAAL
+}
+
+/** KC-0108 — Admin Monthly Baitul Maal report for a cycle. */
+export function adminMonthlyBaitulMaalReportPath(cycleId: string): string {
+  return `${ROUTES.ADMIN_MONTHLY_BAITUL_MAAL}/${encodeURIComponent(cycleId)}/report`
 }

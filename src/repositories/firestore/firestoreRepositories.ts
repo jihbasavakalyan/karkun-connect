@@ -8,6 +8,10 @@ import type { CommunicationState } from '@/repositories/interfaces/Communication
 import type { BaitulMaalRecord } from '@/types/baitulMaal'
 import type { IjtemaAttendanceRecord } from '@/types/ijtemaAttendance'
 import type { WeeklyIjtemaEvent, WeeklyIjtemaSubmission } from '@/types/weeklyIjtema'
+import type {
+  MonthlyBaitulMaalCycle,
+  MonthlyBaitulMaalSubmission,
+} from '@/types/monthlyBaitulMaal'
 import type { JihPortalState } from '@/repositories/interfaces/ComplianceRepository'
 import type { Rukn } from '@/data/ruknMaster'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
@@ -69,6 +73,8 @@ import {
   complianceIjtemaDocId,
   complianceWeeklyIjtemaEventDocId,
   complianceWeeklyIjtemaSubmissionDocId,
+  complianceMonthlyBaitulMaalCycleDocId,
+  complianceMonthlyBaitulMaalSubmissionDocId,
   executionAnnexureDocId,
   settingsBackupDocId,
   settingsBroadcastDocId,
@@ -120,6 +126,8 @@ const baitulMaalCache = new SyncCache<BaitulMaalRecord[]>([])
 const ijtemaCache = new SyncCache<IjtemaAttendanceRecord[]>([])
 const weeklyIjtemaEventCache = new SyncCache<WeeklyIjtemaEvent[]>([])
 const weeklyIjtemaSubmissionCache = new SyncCache<WeeklyIjtemaSubmission[]>([])
+const monthlyBaitulMaalCycleCache = new SyncCache<MonthlyBaitulMaalCycle[]>([])
+const monthlyBaitulMaalSubmissionCache = new SyncCache<MonthlyBaitulMaalSubmission[]>([])
 const jihPortalCache = new SyncCache<JihPortalState>({ registrations: {}, monthlyReports: {} })
 const migrationVersionCache = new SyncCache<number | null>(null)
 const broadcastCache = new SyncCache<BroadcastListRecord[]>([])
@@ -147,6 +155,8 @@ const KC0084_PERSIST_LABELS = new Set([
   'compliance.baitulMaal',
   'compliance.weeklyIjtemaEvents',
   'compliance.weeklyIjtemaSubmissions',
+  'compliance.monthlyBaitulMaalCycles',
+  'compliance.monthlyBaitulMaalSubmissions',
   'executions.annexure',
 ])
 
@@ -160,6 +170,8 @@ const pendingBaitulMaalDirty = new Map<string, BaitulMaalRecord>()
 const pendingIjtemaDirty = new Map<string, IjtemaAttendanceRecord>()
 const pendingWeeklyIjtemaEventDirty = new Map<string, WeeklyIjtemaEvent>()
 const pendingWeeklyIjtemaSubmissionDirty = new Map<string, WeeklyIjtemaSubmission>()
+const pendingMonthlyBaitulMaalCycleDirty = new Map<string, MonthlyBaitulMaalCycle>()
+const pendingMonthlyBaitulMaalSubmissionDirty = new Map<string, MonthlyBaitulMaalSubmission>()
 
 async function queueWrite(label: string, work: () => Promise<RepositoryResult<void>>): Promise<void> {
   // KC-0098 — coalesce concurrent identical-label dumps onto one in-flight chain.
@@ -684,6 +696,8 @@ function applyBackgroundHydratePayload(input: {
   const ijtema: IjtemaAttendanceRecord[] = []
   const weeklyIjtemaEvents: WeeklyIjtemaEvent[] = []
   const weeklyIjtemaSubmissions: WeeklyIjtemaSubmission[] = []
+  const monthlyBaitulMaalCycles: MonthlyBaitulMaalCycle[] = []
+  const monthlyBaitulMaalSubmissions: MonthlyBaitulMaalSubmission[] = []
   let jihPortal: JihPortalState | null = null
   for (const snapshot of complianceSnapshots.docs) {
     const data = snapshot.data() as DocumentRecord
@@ -695,6 +709,10 @@ function applyBackgroundHydratePayload(input: {
       weeklyIjtemaEvents.push(data.record as WeeklyIjtemaEvent)
     } else if (data._docType === 'weeklyIjtemaSubmission') {
       weeklyIjtemaSubmissions.push(data.record as WeeklyIjtemaSubmission)
+    } else if (data._docType === 'monthlyBaitulMaalCycle') {
+      monthlyBaitulMaalCycles.push(data.record as MonthlyBaitulMaalCycle)
+    } else if (data._docType === 'monthlyBaitulMaalSubmission') {
+      monthlyBaitulMaalSubmissions.push(data.record as MonthlyBaitulMaalSubmission)
     } else if (data._docType === 'jihPortal') {
       jihPortal = normalizeJihPortalState(data.record)
     }
@@ -703,6 +721,8 @@ function applyBackgroundHydratePayload(input: {
   ijtemaCache.set(ijtema)
   weeklyIjtemaEventCache.set(weeklyIjtemaEvents)
   weeklyIjtemaSubmissionCache.set(weeklyIjtemaSubmissions)
+  monthlyBaitulMaalCycleCache.set(monthlyBaitulMaalCycles)
+  monthlyBaitulMaalSubmissionCache.set(monthlyBaitulMaalSubmissions)
   if (jihPortal) {
     jihPortalCache.set(jihPortal)
   }
@@ -1125,6 +1145,8 @@ type DocumentRecord = {
     | 'jihPortal'
     | 'weeklyIjtemaEvent'
     | 'weeklyIjtemaSubmission'
+    | 'monthlyBaitulMaalCycle'
+    | 'monthlyBaitulMaalSubmission'
   record: unknown
 }
 
@@ -1288,6 +1310,8 @@ export function subscribeToFirestoreCacheChanges(listener: () => void): () => vo
     ijtemaCache.subscribe(listener),
     weeklyIjtemaEventCache.subscribe(listener),
     weeklyIjtemaSubmissionCache.subscribe(listener),
+    monthlyBaitulMaalCycleCache.subscribe(listener),
+    monthlyBaitulMaalSubmissionCache.subscribe(listener),
     jihPortalCache.subscribe(listener),
     activityLogCache.subscribe(listener),
     broadcastCache.subscribe(listener),
@@ -2076,6 +2100,92 @@ export class ComplianceFirestoreRepository implements ComplianceRepository {
     return repositoryOk(undefined)
   }
 
+  loadMonthlyBaitulMaalCycles(): RepositoryResult<MonthlyBaitulMaalCycle[]> {
+    return repositoryOk([...monthlyBaitulMaalCycleCache.get()])
+  }
+
+  saveMonthlyBaitulMaalCycles(cycles: MonthlyBaitulMaalCycle[]): RepositoryResult<void> {
+    const merged = new Map(
+      monthlyBaitulMaalCycleCache.get().map((cycle) => [cycle.id, cycle] as const),
+    )
+    for (const cycle of cycles) {
+      merged.set(cycle.id, cycle)
+      pendingMonthlyBaitulMaalCycleDirty.set(cycle.id, cycle)
+    }
+    monthlyBaitulMaalCycleCache.set([...merged.values()])
+    void queueWrite('compliance.monthlyBaitulMaalCycles', async () => {
+      const dirty = [...pendingMonthlyBaitulMaalCycleDirty.values()]
+      pendingMonthlyBaitulMaalCycleDirty.clear()
+      if (dirty.length === 0) {
+        return repositoryOk(undefined)
+      }
+      const db = getFirestoreDb()
+      const batch = createBatch(db)
+      for (const cycle of dirty) {
+        batch.set(
+          doc(
+            db,
+            FIRESTORE_COLLECTIONS.compliance,
+            complianceMonthlyBaitulMaalCycleDocId(cycle.id),
+          ),
+          sanitizeForFirestore({ _docType: 'monthlyBaitulMaalCycle', record: cycle }),
+        )
+      }
+      await batch.commit()
+      return repositoryOk(undefined)
+    })
+    return repositoryOk(undefined)
+  }
+
+  clearMonthlyBaitulMaalCycles(): RepositoryResult<void> {
+    monthlyBaitulMaalCycleCache.set([])
+    return repositoryOk(undefined)
+  }
+
+  loadMonthlyBaitulMaalSubmissions(): RepositoryResult<MonthlyBaitulMaalSubmission[]> {
+    return repositoryOk([...monthlyBaitulMaalSubmissionCache.get()])
+  }
+
+  saveMonthlyBaitulMaalSubmissions(
+    submissions: MonthlyBaitulMaalSubmission[],
+  ): RepositoryResult<void> {
+    const merged = new Map(
+      monthlyBaitulMaalSubmissionCache.get().map((item) => [item.id, item] as const),
+    )
+    for (const submission of submissions) {
+      merged.set(submission.id, submission)
+      pendingMonthlyBaitulMaalSubmissionDirty.set(submission.id, submission)
+    }
+    monthlyBaitulMaalSubmissionCache.set([...merged.values()])
+    void queueWrite('compliance.monthlyBaitulMaalSubmissions', async () => {
+      const dirty = [...pendingMonthlyBaitulMaalSubmissionDirty.values()]
+      pendingMonthlyBaitulMaalSubmissionDirty.clear()
+      if (dirty.length === 0) {
+        return repositoryOk(undefined)
+      }
+      const db = getFirestoreDb()
+      const batch = createBatch(db)
+      for (const submission of dirty) {
+        batch.set(
+          doc(
+            db,
+            FIRESTORE_COLLECTIONS.compliance,
+            complianceMonthlyBaitulMaalSubmissionDocId(submission.eventId, submission.ruknId),
+          ),
+          sanitizeForFirestore({ _docType: 'monthlyBaitulMaalSubmission', record: submission }),
+        )
+      }
+      await batch.commit()
+      return repositoryOk(undefined)
+    })
+    return repositoryOk(undefined)
+  }
+
+  clearMonthlyBaitulMaalSubmissions(): RepositoryResult<void> {
+    monthlyBaitulMaalSubmissionCache.set([])
+    return repositoryOk(undefined)
+  }
+
   loadJihPortal(): RepositoryResult<JihPortalState> {
     const state = jihPortalCache.get()
     return repositoryOk({
@@ -2249,6 +2359,8 @@ export async function clearAllFirestoreCachesForTests(): Promise<void> {
   ijtemaCache.reset([])
   weeklyIjtemaEventCache.reset([])
   weeklyIjtemaSubmissionCache.reset([])
+  monthlyBaitulMaalCycleCache.reset([])
+  monthlyBaitulMaalSubmissionCache.reset([])
   jihPortalCache.reset({ registrations: {}, monthlyReports: {} })
   migrationVersionCache.reset(null)
   broadcastCache.reset([])

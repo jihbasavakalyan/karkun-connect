@@ -2,10 +2,11 @@ import type {
   CreateWeeklyIjtemaEventInput,
   SaveWeeklyIjtemaSubmissionInput,
   WeeklyIjtemaKarkunMark,
-  WeeklyIjtemaMarkStatus,
 } from '@/types/weeklyIjtema'
+import { validateAssignedMarksComplete } from '@/lib/campaignCycle/validation'
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
+const ALLOWED = ['Present', 'Absent'] as const
 
 export function validateCreateWeeklyIjtemaEvent(
   input: CreateWeeklyIjtemaEventInput,
@@ -26,28 +27,12 @@ export function validateWeeklyIjtemaMarks(
   marks: WeeklyIjtemaKarkunMark[],
   assignedKarkunIds: string[],
 ): { valid: true } | { valid: false; error: string } {
-  if (assignedKarkunIds.length === 0) {
-    return { valid: false, error: 'No assigned Karkuns to mark.' }
-  }
-
-  const byId = new Map(marks.map((mark) => [mark.karkunId, mark]))
-  for (const karkunId of assignedKarkunIds) {
-    const mark = byId.get(karkunId)
-    if (!mark || !isWeeklyIjtemaMarkStatus(mark.status)) {
-      return {
-        valid: false,
-        error: 'Please mark attendance for all assigned Karkuns before submitting.',
-      }
-    }
-  }
-
-  for (const mark of marks) {
-    if (!assignedKarkunIds.includes(mark.karkunId)) {
-      return { valid: false, error: 'Attendance includes a Karkun that is not assigned.' }
-    }
-  }
-
-  return { valid: true }
+  return validateAssignedMarksComplete(
+    marks,
+    assignedKarkunIds,
+    ALLOWED,
+    'Please mark attendance for all assigned Karkuns before submitting.',
+  )
 }
 
 export function validateSaveWeeklyIjtemaSubmission(
@@ -61,8 +46,4 @@ export function validateSaveWeeklyIjtemaSubmission(
     return { valid: false, error: 'Rukn is required.' }
   }
   return validateWeeklyIjtemaMarks(input.marks, assignedKarkunIds)
-}
-
-function isWeeklyIjtemaMarkStatus(value: string): value is WeeklyIjtemaMarkStatus {
-  return value === 'Present' || value === 'Absent'
 }

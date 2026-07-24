@@ -1,6 +1,10 @@
 import type { BaitulMaalRecord } from '@/types/baitulMaal'
 import type { IjtemaAttendanceRecord } from '@/types/ijtemaAttendance'
 import type { JihMonthlyReport, JihWebPortalRegistration } from '@/types/jihWebPortal'
+import type {
+  MonthlyBaitulMaalCycle,
+  MonthlyBaitulMaalSubmission,
+} from '@/types/monthlyBaitulMaal'
 import type { WeeklyIjtemaEvent, WeeklyIjtemaSubmission } from '@/types/weeklyIjtema'
 import type { RepositoryResult } from '@/repositories/errors'
 
@@ -24,6 +28,16 @@ export interface ComplianceRepository {
   loadWeeklyIjtemaSubmissions(): RepositoryResult<WeeklyIjtemaSubmission[]>
   saveWeeklyIjtemaSubmissions(submissions: WeeklyIjtemaSubmission[]): RepositoryResult<void>
   clearWeeklyIjtemaSubmissions(): RepositoryResult<void>
+  /** KC-0108 — Monthly Baitul Maal cycles (Admin-managed). */
+  loadMonthlyBaitulMaalCycles(): RepositoryResult<MonthlyBaitulMaalCycle[]>
+  saveMonthlyBaitulMaalCycles(cycles: MonthlyBaitulMaalCycle[]): RepositoryResult<void>
+  clearMonthlyBaitulMaalCycles(): RepositoryResult<void>
+  /** KC-0108 — Rukn submissions belonging to a monthly cycle. */
+  loadMonthlyBaitulMaalSubmissions(): RepositoryResult<MonthlyBaitulMaalSubmission[]>
+  saveMonthlyBaitulMaalSubmissions(
+    submissions: MonthlyBaitulMaalSubmission[],
+  ): RepositoryResult<void>
+  clearMonthlyBaitulMaalSubmissions(): RepositoryResult<void>
   loadJihPortal(): RepositoryResult<JihPortalState>
   saveJihPortal(state: JihPortalState): RepositoryResult<void>
   clearJihPortal(): RepositoryResult<void>

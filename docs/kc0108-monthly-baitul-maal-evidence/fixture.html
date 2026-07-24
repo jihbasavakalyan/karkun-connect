@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>KC-0108 Monthly Baitul Maal Screenshots</title>
+  <style>
+    body { margin: 0; font-family: ui-sans-serif, system-ui, sans-serif; background: #f8fafc; color: #0f172a; }
+    .page { max-width: 880px; margin: 0 auto; padding: 1.25rem; display: grid; gap: 2rem; }
+    .label { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #64748b; margin: 0 0 0.5rem; }
+    .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 1rem; padding: 1rem 1.1rem; box-shadow: 0 1px 2px rgb(15 23 42 / 0.05); }
+    h1 { margin: 0; font-size: 1.35rem; }
+    h2 { margin: 0; font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; color: #b45309; }
+    .sub { margin: 0.25rem 0 0; color: #64748b; font-size: 0.875rem; }
+    .grid { display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); margin-top: 0.75rem; }
+    .metric { border: 1px solid #f1f5f9; border-radius: 0.75rem; padding: 0.75rem; background: #f8fafc; }
+    .metric strong { display: block; font-size: 1.35rem; margin-top: 0.2rem; }
+    .metric span { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: #64748b; font-weight: 700; }
+    .row { display: flex; justify-content: space-between; gap: 1rem; align-items: center; border: 1px solid #f1f5f9; border-radius: 0.75rem; padding: 0.75rem; margin-top: 0.5rem; }
+    .badge { border-radius: 999px; padding: 0.2rem 0.65rem; font-size: 0.75rem; font-weight: 700; background: #fffbeb; color: #92400e; }
+    .btn { border: 1px solid #e2e8f0; background: #fff; border-radius: 0.6rem; padding: 0.45rem 0.8rem; font-size: 0.8rem; font-weight: 700; }
+    .btn-primary { background: #b45309; color: #fff; border-color: #b45309; }
+    .btn-selected { border-color: #b45309; background: #fef3c7; color: #92400e; }
+    table { width: 100%; border-collapse: collapse; margin-top: 0.75rem; font-size: 0.875rem; }
+    th, td { text-align: left; padding: 0.5rem; border-bottom: 1px solid #e2e8f0; }
+    th { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: #64748b; }
+    .karkun { border: 1px solid #e2e8f0; border-radius: 0.75rem; padding: 0.75rem; margin-top: 0.5rem; }
+    .actions { display: flex; gap: 0.5rem; margin-top: 0.5rem; flex-wrap: wrap; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <section>
+      <p class="label">1 · Admin Cycle Management</p>
+      <div class="card" id="admin-mgmt" aria-label="Admin Monthly Baitul Maal Management">
+        <h1>Monthly Baitul Maal</h1>
+        <p class="sub">Create monthly cycles, open or close submission, and review completion reports.</p>
+        <div style="margin-top:1rem;border:1px solid #e2e8f0;border-radius:0.85rem;padding:0.85rem;">
+          <h2 style="color:#64748b">Create Monthly Cycle</h2>
+          <div class="grid">
+            <div><span>Month</span><strong style="font-size:1rem">2026-07</strong></div>
+            <div><span>Title</span><strong style="font-size:1rem">Baitul Maal — Jul 2026</strong></div>
+            <div><span>Deadline</span><strong style="font-size:1rem">01 Aug 23:59</strong></div>
+          </div>
+          <div style="margin-top:0.75rem"><button class="btn btn-primary">Create & Open Cycle</button></div>
+        </div>
+        <div class="row">
+          <div>
+            <strong>Baitul Maal — Jul 2026</strong>
+            <div class="sub">Jul 2026 · Deadline 1 Aug, 23:59</div>
+          </div>
+          <span class="badge">Open</span>
+        </div>
+        <div class="actions">
+          <button class="btn">Close Cycle</button>
+          <button class="btn">View Monthly Report</button>
+          <button class="btn">Reopen Cycle</button>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <p class="label">2 · Rukn Submission Screen</p>
+      <div class="card" id="rukn-submission" aria-label="Rukn Baitul Maal Submission">
+        <h1>Monthly Baitul Maal</h1>
+        <p class="sub">Mark Contributed or Pending for assigned Karkuns. No amounts.</p>
+        <div style="margin-top:0.75rem;border:1px solid #e2e8f0;border-radius:0.75rem;padding:0.75rem;">
+          <strong>Baitul Maal — Jul 2026</strong>
+          <div class="sub">Jul 2026 · Open</div>
+        </div>
+        <p class="sub" style="margin-top:0.75rem">4 assigned · 0 unmarked</p>
+        <div class="karkun">
+          <strong>Ahmad Khan</strong>
+          <div class="actions">
+            <button class="btn btn-selected">✓ Contributed</button>
+            <button class="btn">✗ Pending</button>
+          </div>
+        </div>
+        <div class="karkun">
+          <strong>Bilal Ahmed</strong>
+          <div class="actions">
+            <button class="btn">✓ Contributed</button>
+            <button class="btn btn-selected">✗ Pending</button>
+          </div>
+        </div>
+        <div style="margin-top:0.85rem"><button class="btn btn-primary" style="width:100%">Submit</button></div>
+      </div>
+    </section>
+
+    <section>
+      <p class="label">3 · Monthly Report</p>
+      <div class="card" id="monthly-report" aria-label="Monthly Baitul Maal Report">
+        <h1>Monthly Summary</h1>
+        <p class="sub">Baitul Maal — Jul 2026 · Jul 2026</p>
+        <div class="grid">
+          <div class="metric"><span>Contributed</span><strong>41</strong></div>
+          <div class="metric"><span>Pending</span><strong>8</strong></div>
+          <div class="metric"><span>Completion %</span><strong>84%</strong></div>
+          <div class="metric"><span>Total Assigned</span><strong>49</strong></div>
+          <div class="metric"><span>Rukns Submitted</span><strong>42</strong></div>
+          <div class="metric"><span>Rukns Pending</span><strong>7</strong></div>
+        </div>
+        <h2 style="margin-top:1rem;color:#64748b">Rukn-wise Completion %</h2>
+        <table>
+          <thead><tr><th>Rukn</th><th>Assigned</th><th>Contributed</th><th>Pending</th><th>Completion %</th><th>Submission</th></tr></thead>
+          <tbody>
+            <tr><td>Rukn Ali</td><td>12</td><td>11</td><td>1</td><td>92%</td><td>Submitted</td></tr>
+            <tr><td>Rukn Fatima</td><td>8</td><td>7</td><td>1</td><td>88%</td><td>Submitted</td></tr>
+            <tr><td>Rukn Omar</td><td>9</td><td>—</td><td>—</td><td>—</td><td>Pending</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <p class="label">4 · Dashboard KPI</p>
+      <div class="card" id="dashboard-kpi" aria-label="Baitul Maal Dashboard KPI">
+        <div style="display:flex;justify-content:space-between;gap:1rem;align-items:flex-start">
+          <div>
+            <h2>Baitul Maal</h2>
+            <p class="sub">Baitul Maal — Jul 2026 · Jul 2026 · Open</p>
+          </div>
+          <a href="#" style="color:#b45309;font-weight:700;text-decoration:none">Report →</a>
+        </div>
+        <div class="grid">
+          <div class="metric"><span>Completion</span><strong>84%</strong><div class="sub">41 contributed · 8 pending</div></div>
+          <div class="metric"><span>Submitted</span><strong>42 / 49</strong><div class="sub">Rukns submitted</div></div>
+          <div class="metric"><span>Pending</span><strong>7</strong><div class="sub">Rukns</div></div>
+        </div>
+      </div>
+    </section>
+  </div>
+</body>
+</html>

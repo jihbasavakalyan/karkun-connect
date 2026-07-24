@@ -10,6 +10,10 @@ import type {
 import type { BaitulMaalRecord } from '@/types/baitulMaal'
 import type { IjtemaAttendanceRecord } from '@/types/ijtemaAttendance'
 import type { WeeklyIjtemaEvent, WeeklyIjtemaSubmission } from '@/types/weeklyIjtema'
+import type {
+  MonthlyBaitulMaalCycle,
+  MonthlyBaitulMaalSubmission,
+} from '@/types/monthlyBaitulMaal'
 import type { JihPortalState } from '@/repositories/interfaces/ComplianceRepository'
 import type { Rukn } from '@/data/ruknMaster'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
@@ -522,6 +526,56 @@ export class ComplianceLocalRepository implements ComplianceRepository {
 
   clearWeeklyIjtemaSubmissions(): RepositoryResult<void> {
     return tryRepository(() => removeFromStorage(STORAGE_KEYS.weeklyIjtemaSubmissions))
+  }
+
+  loadMonthlyBaitulMaalCycles(): RepositoryResult<MonthlyBaitulMaalCycle[]> {
+    return tryRepository(() => [
+      ...loadMapFromStorage<string, MonthlyBaitulMaalCycle>(
+        STORAGE_KEYS.monthlyBaitulMaalCycles,
+      ).values(),
+    ])
+  }
+
+  saveMonthlyBaitulMaalCycles(cycles: MonthlyBaitulMaalCycle[]): RepositoryResult<void> {
+    return tryRepository(() => {
+      const map = loadMapFromStorage<string, MonthlyBaitulMaalCycle>(
+        STORAGE_KEYS.monthlyBaitulMaalCycles,
+      )
+      for (const cycle of cycles) {
+        map.set(cycle.id, cycle)
+      }
+      saveMapToStorage(STORAGE_KEYS.monthlyBaitulMaalCycles, map)
+    })
+  }
+
+  clearMonthlyBaitulMaalCycles(): RepositoryResult<void> {
+    return tryRepository(() => removeFromStorage(STORAGE_KEYS.monthlyBaitulMaalCycles))
+  }
+
+  loadMonthlyBaitulMaalSubmissions(): RepositoryResult<MonthlyBaitulMaalSubmission[]> {
+    return tryRepository(() => [
+      ...loadMapFromStorage<string, MonthlyBaitulMaalSubmission>(
+        STORAGE_KEYS.monthlyBaitulMaalSubmissions,
+      ).values(),
+    ])
+  }
+
+  saveMonthlyBaitulMaalSubmissions(
+    submissions: MonthlyBaitulMaalSubmission[],
+  ): RepositoryResult<void> {
+    return tryRepository(() => {
+      const map = loadMapFromStorage<string, MonthlyBaitulMaalSubmission>(
+        STORAGE_KEYS.monthlyBaitulMaalSubmissions,
+      )
+      for (const submission of submissions) {
+        map.set(submission.id, submission)
+      }
+      saveMapToStorage(STORAGE_KEYS.monthlyBaitulMaalSubmissions, map)
+    })
+  }
+
+  clearMonthlyBaitulMaalSubmissions(): RepositoryResult<void> {
+    return tryRepository(() => removeFromStorage(STORAGE_KEYS.monthlyBaitulMaalSubmissions))
   }
 
   loadJihPortal(): RepositoryResult<JihPortalState> {

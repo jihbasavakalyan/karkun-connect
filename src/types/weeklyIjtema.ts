@@ -1,27 +1,25 @@
 /**
  * KC-0107 — Weekly Ijtema Attendance Management (event-based model).
  * Attendance records belong to a Weekly Ijtema event — not Person/Karkun docs.
+ * Lifecycle (open/deadline/lock/reopen) is shared via campaignCycle.
  */
+
+import type { CampaignCycleBase } from '@/lib/campaignCycle/lifecycle'
+import {
+  canRuknEditCycle,
+  defaultSubmissionDeadline as sharedDefaultDeadline,
+  formatCycleDateLabel,
+  isCycleDeadlinePassed,
+} from '@/lib/campaignCycle/lifecycle'
 
 export type WeeklyIjtemaEventStatus = 'Open' | 'Closed'
 
 /** Version-1 statuses only. No Excused / remarks / reasons. */
 export type WeeklyIjtemaMarkStatus = 'Present' | 'Absent'
 
-export type WeeklyIjtemaEvent = {
-  id: string
-  title: string
+export type WeeklyIjtemaEvent = CampaignCycleBase & {
   meetingDate: string
   status: WeeklyIjtemaEventStatus
-  /** ISO datetime — Rukn edits allowed until this deadline while event is Open. */
-  submissionDeadline: string
-  createdAt: string
-  createdBy: string
-  updatedAt: string
-  updatedBy: string
-  /** Set when Admin reopens a previously closed event. */
-  reopenedAt?: string
-  reopenedBy?: string
 }
 
 export type WeeklyIjtemaKarkunMark = {
@@ -104,34 +102,25 @@ export function defaultWeeklyIjtemaTitle(): string {
   return 'Weekly Ijtema'
 }
 
-/** Default deadline = meeting date + 24 hours (end of next calendar day noon-safe). */
+/** Default deadline = meeting date + 24 hours (shared cycle helper). */
 export function defaultSubmissionDeadline(meetingDate: string): string {
-  const date = new Date(`${meetingDate}T23:59:59`)
-  date.setDate(date.getDate() + 1)
-  return date.toISOString()
+  return sharedDefaultDeadline(meetingDate)
 }
 
 export function isWeeklyIjtemaDeadlinePassed(
   event: Pick<WeeklyIjtemaEvent, 'submissionDeadline'>,
   now = new Date(),
 ): boolean {
-  return now.getTime() > new Date(event.submissionDeadline).getTime()
+  return isCycleDeadlinePassed(event, now)
 }
 
 export function canRuknEditWeeklyIjtema(
   event: WeeklyIjtemaEvent,
   now = new Date(),
 ): boolean {
-  if (event.status !== 'Open') return false
-  return !isWeeklyIjtemaDeadlinePassed(event, now)
+  return canRuknEditCycle(event, now)
 }
 
 export function formatWeeklyIjtemaMeetingLabel(meetingDate: string): string {
-  const date = new Date(`${meetingDate}T12:00:00`)
-  return date.toLocaleDateString('en-GB', {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  })
+  return formatCycleDateLabel(meetingDate)
 }

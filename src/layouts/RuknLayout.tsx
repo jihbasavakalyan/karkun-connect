@@ -33,6 +33,7 @@ const navItems: { label: string; icon: IconName; to: string; end: boolean }[] = 
   { label: 'Connected', icon: 'users', to: ROUTES.RUKN_MY_KARKUN, end: false },
   { label: 'Communication', icon: 'message', to: ROUTES.RUKN_COMMUNICATION, end: false },
   { label: 'Ijtema', icon: 'calendar', to: ROUTES.RUKN_WEEKLY_IJTEMA, end: false },
+  { label: 'Baitul Maal', icon: 'check', to: ROUTES.RUKN_MONTHLY_BAITUL_MAAL, end: false },
 ]
 
 export function RuknLayout() {

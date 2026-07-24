@@ -44,6 +44,7 @@ import { buildTelLink } from '@/utils/personContactLinks'
 import { resolveAdminHealthKpiPending } from './dashboardMetricReadiness'
 import { LiveActivityFeed } from './LiveActivityFeed'
 import { WeeklyIjtemaDashboardKpiCard } from './WeeklyIjtemaDashboardKpiCard'
+import { MonthlyBaitulMaalDashboardKpiCard } from './MonthlyBaitulMaalDashboardKpiCard'
 
 type AdminCommandCenterProps = {
   model: AdminMissionControlModel
@@ -575,6 +576,7 @@ export function AdminCommandCenter({
             <>
               <AdminActionCenter items={actionCenterItems} backgroundReady={backgroundReady} />
               <WeeklyIjtemaDashboardKpiCard />
+              <MonthlyBaitulMaalDashboardKpiCard />
               {backgroundReady ? <PendingKarkunRequestQueue /> : null}
               <OverviewMetricGrid
                 title="Collective Overview"
@@ -598,6 +600,7 @@ export function AdminCommandCenter({
                 backgroundReady={backgroundReady}
               />
               <WeeklyIjtemaDashboardKpiCard />
+              <MonthlyBaitulMaalDashboardKpiCard />
               {backgroundReady ? <PendingKarkunRequestQueue /> : null}
             </>
           )}

@@ -49,6 +49,19 @@ export function complianceWeeklyIjtemaSubmissionDocId(eventId: string, ruknId: s
   return `weeklyIjtemaSubmission_${eventId}_${ruknId}`
 }
 
+/** KC-0108 — Monthly Baitul Maal cycle document. */
+export function complianceMonthlyBaitulMaalCycleDocId(cycleId: string): string {
+  return `monthlyBaitulMaalCycle_${cycleId}`
+}
+
+/** KC-0108 — Rukn submission for a Monthly Baitul Maal cycle. */
+export function complianceMonthlyBaitulMaalSubmissionDocId(
+  cycleId: string,
+  ruknId: string,
+): string {
+  return `monthlyBaitulMaalSubmission_${cycleId}_${ruknId}`
+}
+
 export function settingsBackupDocId(backupId: string): string {
   return `backup_${backupId}`
 }

@@ -148,11 +148,20 @@ service cloud.firestore {
         && complianceWriteRecord().ruknId == ruknId();
     }
 
+    function ruknMayWriteMonthlyBaitulMaalSubmission() {
+      return isRukn()
+        && request.resource.data._docType == 'monthlyBaitulMaalSubmission'
+        && request.resource.data.keys().hasAll(['record'])
+        && complianceWriteRecord().keys().hasAll(['ruknId', 'eventId'])
+        && complianceWriteRecord().ruknId == ruknId();
+    }
+
     match /compliance/{docId} {
       allow read: if isAdministrator() || isRukn();
       allow create: if isAdministrator()
         || ruknMayWriteComplianceRecord()
-        || ruknMayWriteWeeklyIjtemaSubmission();
+        || ruknMayWriteWeeklyIjtemaSubmission()
+        || ruknMayWriteMonthlyBaitulMaalSubmission();
       allow update: if isAdministrator()
         || (
           ruknMayWriteComplianceRecord()
@@ -164,6 +173,14 @@ service cloud.firestore {
         )
         || (
           ruknMayWriteWeeklyIjtemaSubmission()
+          && (
+            !resource.data.keys().hasAll(['record'])
+            || !resource.data.record.keys().hasAll(['ruknId'])
+            || resource.data.record.ruknId == ruknId()
+          )
+        )
+        || (
+          ruknMayWriteMonthlyBaitulMaalSubmission()
           && (
             !resource.data.keys().hasAll(['record'])
             || !resource.data.record.keys().hasAll(['ruknId'])

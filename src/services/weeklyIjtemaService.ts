@@ -1,10 +1,20 @@
 /**
  * KC-0107 — Weekly Ijtema Attendance Management service.
  * Event-based model: attendance belongs to a Weekly Ijtema event.
+ * Open / deadline / lock / reopen reuse shared campaignCycle lifecycle.
  */
 
-import { ruknMaster } from '@/data/ruknMaster'
 import { getAssignedKarkunanForRukn } from '@/lib/assignmentEngine'
+import {
+  applyCycleStatusChange,
+  canRuknEditCycle,
+  createCycleId,
+  cycleReadOnlyReason,
+  defaultSubmissionDeadline,
+  isCycleDeadlinePassed,
+  nowIso,
+} from '@/lib/campaignCycle/lifecycle'
+import { buildBinaryCycleReport } from '@/lib/campaignCycle/report'
 import {
   getAllWeeklyIjtemaEvents,
   getWeeklyIjtemaEvent,
@@ -20,38 +30,13 @@ import type {
   WeeklyIjtemaDashboardKpi,
   WeeklyIjtemaEvent,
   WeeklyIjtemaReport,
-  WeeklyIjtemaRuknReportRow,
   WeeklyIjtemaSubmission,
 } from '@/types/weeklyIjtema'
-import {
-  canRuknEditWeeklyIjtema,
-  defaultSubmissionDeadline,
-  defaultWeeklyIjtemaTitle,
-  isWeeklyIjtemaDeadlinePassed,
-} from '@/types/weeklyIjtema'
+import { defaultWeeklyIjtemaTitle } from '@/types/weeklyIjtema'
 import {
   validateCreateWeeklyIjtemaEvent,
   validateSaveWeeklyIjtemaSubmission,
 } from '@/validation/weeklyIjtemaValidation'
-
-function nowIso(): string {
-  return new Date().toISOString()
-}
-
-function createId(prefix: string): string {
-  return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`
-}
-
-function activeRuknsWithAssignments(): { ruknId: string; ruknName: string; assigned: number }[] {
-  return ruknMaster
-    .filter((rukn) => rukn.status === 'active' && !rukn.isArchived)
-    .map((rukn) => ({
-      ruknId: rukn.id,
-      ruknName: rukn.name,
-      assigned: getAssignedKarkunanForRukn(rukn.id).length,
-    }))
-    .filter((row) => row.assigned > 0)
-}
 
 export function listWeeklyIjtemaEvents(): WeeklyIjtemaEvent[] {
   return getAllWeeklyIjtemaEvents()
@@ -78,7 +63,7 @@ export function createWeeklyIjtemaEvent(
   const timestamp = nowIso()
   const actor = input.createdBy ?? 'Administrator'
   const event: WeeklyIjtemaEvent = {
-    id: createId('wij'),
+    id: createCycleId('wij'),
     title: input.title?.trim() || defaultWeeklyIjtemaTitle(),
     meetingDate: input.meetingDate,
     status: 'Open',
@@ -100,21 +85,11 @@ export function setWeeklyIjtemaEventStatus(
     return { success: false, error: 'Weekly Ijtema event not found.' }
   }
 
-  const timestamp = nowIso()
   const actor = input.updatedBy ?? 'Administrator'
-  const next: WeeklyIjtemaEvent = {
-    ...existing,
-    status: input.status,
-    updatedAt: timestamp,
-    updatedBy: actor,
+  return {
+    success: true,
+    event: upsertWeeklyIjtemaEvent(applyCycleStatusChange(existing, input.status, actor)),
   }
-
-  if (input.status === 'Open' && existing.status === 'Closed') {
-    next.reopenedAt = timestamp
-    next.reopenedBy = actor
-  }
-
-  return { success: true, event: upsertWeeklyIjtemaEvent(next) }
 }
 
 export function openWeeklyIjtemaAttendance(eventId: string, updatedBy?: string) {
@@ -137,8 +112,8 @@ export function getRuknWeeklyIjtemaWorkspace(eventId: string, ruknId: string) {
 
   const assigned = getAssignedKarkunanForRukn(ruknId)
   const submission = getWeeklyIjtemaSubmission(eventId, ruknId)
-  const editable = canRuknEditWeeklyIjtema(event)
-  const deadlinePassed = isWeeklyIjtemaDeadlinePassed(event)
+  const editable = canRuknEditCycle(event)
+  const deadlinePassed = isCycleDeadlinePassed(event)
 
   return {
     success: true as const,
@@ -147,13 +122,11 @@ export function getRuknWeeklyIjtemaWorkspace(eventId: string, ruknId: string) {
     submission,
     editable,
     deadlinePassed,
-    readOnlyReason: !editable
-      ? event.status === 'Closed'
-        ? 'Attendance is closed by Admin.'
-        : deadlinePassed
-          ? 'Submission deadline has passed. Attendance is read-only.'
-          : 'Attendance is not editable.'
-      : null,
+    readOnlyReason: cycleReadOnlyReason(event, {
+      closed: 'Attendance is closed by Admin.',
+      deadline: 'Submission deadline has passed. Attendance is read-only.',
+      fallback: 'Attendance is not editable.',
+    }),
   }
 }
 
@@ -164,7 +137,7 @@ export function saveWeeklyIjtemaSubmission(
   if (!event) {
     return { success: false, error: 'Weekly Ijtema event not found.' }
   }
-  if (!canRuknEditWeeklyIjtema(event)) {
+  if (!canRuknEditCycle(event)) {
     return {
       success: false,
       error:
@@ -203,59 +176,31 @@ export function saveWeeklyIjtemaSubmission(
 }
 
 function buildReportForEvent(event: WeeklyIjtemaEvent): WeeklyIjtemaReport {
-  const ruknRowsBase = activeRuknsWithAssignments()
-  const submissions = getWeeklyIjtemaSubmissionsForEvent(event.id)
-  const byRukn = new Map(submissions.map((item) => [item.ruknId, item]))
+  const binary = buildBinaryCycleReport(
+    getWeeklyIjtemaSubmissionsForEvent(event.id),
+    'Present',
+    'Absent',
+  )
 
-  let present = 0
-  let absent = 0
-  let totalAssigned = 0
-  let ruknsSubmitted = 0
-
-  const ruknRows: WeeklyIjtemaRuknReportRow[] = ruknRowsBase.map((row) => {
-    totalAssigned += row.assigned
-    const submission = byRukn.get(row.ruknId)
-    if (!submission) {
-      return {
-        ruknId: row.ruknId,
-        ruknName: row.ruknName,
-        assigned: row.assigned,
-        present: 0,
-        absent: 0,
-        attendancePct: 0,
-        submitted: false,
-      }
-    }
-
-    ruknsSubmitted += 1
-    const rowPresent = submission.marks.filter((mark) => mark.status === 'Present').length
-    const rowAbsent = submission.marks.filter((mark) => mark.status === 'Absent').length
-    present += rowPresent
-    absent += rowAbsent
-    const marked = rowPresent + rowAbsent
-    return {
+  return {
+    event,
+    present: binary.positive,
+    absent: binary.negative,
+    attendancePct: binary.completionPct,
+    totalAssigned: binary.totalAssigned,
+    ruknsSubmitted: binary.ruknsSubmitted,
+    ruknsPending: binary.ruknsPending,
+    ruknsTotal: binary.ruknsTotal,
+    ruknRows: binary.ruknRows.map((row) => ({
       ruknId: row.ruknId,
       ruknName: row.ruknName,
       assigned: row.assigned,
-      present: rowPresent,
-      absent: rowAbsent,
-      attendancePct: marked === 0 ? 0 : Math.round((rowPresent / marked) * 100),
-      submitted: true,
-      submittedAt: submission.submittedAt,
-    }
-  })
-
-  const markedTotal = present + absent
-  return {
-    event,
-    present,
-    absent,
-    attendancePct: markedTotal === 0 ? 0 : Math.round((present / markedTotal) * 100),
-    totalAssigned,
-    ruknsSubmitted,
-    ruknsPending: Math.max(ruknRows.length - ruknsSubmitted, 0),
-    ruknsTotal: ruknRows.length,
-    ruknRows: ruknRows.sort((a, b) => a.ruknName.localeCompare(b.ruknName)),
+      present: row.positive,
+      absent: row.negative,
+      attendancePct: row.completionPct,
+      submitted: row.submitted,
+      submittedAt: row.submittedAt,
+    })),
   }
 }
 
