@@ -39,7 +39,7 @@ function official(
 export const OFFICIAL_COMMUNICATION_LIBRARY: MessageTemplate[] = [
   official(
     'tpl-oc-assignment-issued',
-    'Assignment Issued',
+    'Connection Issued',
     'assignment-management',
     'New amanah entrusted to the Rukn',
     `السلام علیکم ورحمۃ اللہ وبرکاتہ
@@ -69,7 +69,7 @@ export const OFFICIAL_COMMUNICATION_LIBRARY: MessageTemplate[] = [
   ),
   official(
     'tpl-oc-assignment-updated',
-    'Assignment Updated',
+    'Connection Updated',
     'assignment-management',
     'Updated amanah list for the Rukn',
     `السلام علیکم ورحمۃ اللہ وبرکاتہ
@@ -101,7 +101,7 @@ export const OFFICIAL_COMMUNICATION_LIBRARY: MessageTemplate[] = [
   ),
   official(
     'tpl-oc-assignment-acknowledged',
-    'Assignment Acknowledged',
+    'Connection Acknowledged',
     'assignment-management',
     'Appreciation for acknowledging the amanah',
     `السلام علیکم ورحمۃ اللہ وبرکاتہ

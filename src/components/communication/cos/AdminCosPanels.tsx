@@ -24,7 +24,7 @@ export function AdminQueuePanel() {
 export function AdminAudiencesPanel() {
   return (
     <CosPlaceholderPanel
-      title="Audiences"
+      title="Audience"
       description="Static, dynamic, and hybrid groups for mission-wide communication. Configuration arrives in a later sprint."
     >
       <ul className="grid gap-2 sm:grid-cols-3 text-sm">

@@ -45,7 +45,7 @@ export function KarkunanActionsMenu({ karkunId }: KarkunanActionsMenuProps) {
       <div className="absolute right-0 z-10 mt-2 min-w-[180px] rounded-(--radius-card) border border-border bg-surface p-2 shadow-card">
         <ActionItem label="View Profile" to={adminKarkunProfilePath(karkunId)} />
         <ActionItem label="Edit" />
-        <ActionItem label="Assign" />
+        <ActionItem label="Connect" />
         <ActionItem label="Visit History" />
         <ActionItem label="Move to Muttafiqeen" />
       </div>

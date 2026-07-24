@@ -14,6 +14,15 @@ const REASONS: AssignmentReviewReason[] = [
   'Other',
 ]
 
+const REASON_DISPLAY_LABELS: Record<AssignmentReviewReason, string> = {
+  'Needs attention': 'Needs attention',
+  'Unable to continue': 'Unable to continue',
+  'Wrong assignment': 'Wrong connection',
+  'Shifted area': 'Shifted area',
+  'Personal reason': 'Personal reason',
+  Other: 'Other',
+}
+
 type RequestReviewModalProps = {
   isOpen: boolean
   karkunName: string
@@ -65,7 +74,7 @@ export function RequestReviewModal({
           >
             {REASONS.map((option) => (
               <option key={option} value={option}>
-                {option}
+                {REASON_DISPLAY_LABELS[option]}
               </option>
             ))}
           </select>

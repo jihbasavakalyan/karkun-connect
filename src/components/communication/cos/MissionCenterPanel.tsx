@@ -59,7 +59,7 @@ export function MissionCenterPanel() {
           to={adminCommunicationPath('audiences')}
           className="font-medium text-primary hover:underline"
         >
-          Manage Audiences →
+          Manage Audience →
         </Link>
       </div>
     </div>

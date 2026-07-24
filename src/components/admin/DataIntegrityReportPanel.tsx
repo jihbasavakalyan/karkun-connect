@@ -73,7 +73,7 @@ export function DataIntegrityReportPanel() {
           <h3 className="text-base font-semibold text-text-heading">Data Integrity Report</h3>
           <p className="mt-1 text-sm text-secondary">
             Read-only scan for duplicate Firestore document IDs, mobiles, pending requests, internal
-            IDs, ASNs, possible names, missing mobiles, orphan connections, and invalid assignments.
+            IDs, ASNs, possible names, missing mobiles, orphan connections, and invalid connections.
             Merge candidates are listed for review only — no automatic fixes.
           </p>
         </div>

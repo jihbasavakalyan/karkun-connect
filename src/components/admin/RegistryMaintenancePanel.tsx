@@ -311,7 +311,7 @@ export function RegistryMaintenancePanel({ karkun, karkunId }: RegistryMaintenan
       <div className="mt-4 space-y-3 border-t border-border pt-4">
         <h3 className="text-sm font-medium text-text-heading">Delete</h3>
         <p className="text-xs text-secondary">
-          Allowed only with no assignment, no connection, and no campaign history. Uses controlled
+          Allowed only with no connection and no campaign history. Uses controlled
           registry removal — not available when history exists.
         </p>
         {deleteBlockers.length > 0 ? (
@@ -370,7 +370,7 @@ export function RegistryMaintenancePanel({ karkun, karkunId }: RegistryMaintenan
               Registry.
             </p>
             <p className="text-secondary">
-              They will no longer be eligible for campaign assignment or connections. Profile and
+              They will no longer be eligible for campaign connections. Profile and
               history are preserved.
             </p>
           </div>
@@ -390,7 +390,7 @@ export function RegistryMaintenancePanel({ karkun, karkunId }: RegistryMaintenan
               Registry.
             </p>
             <p className="text-secondary">
-              They become eligible for campaign assignment and connections. Profile and history are
+              They become eligible for campaign connections. Profile and history are
               preserved.
             </p>
           </div>

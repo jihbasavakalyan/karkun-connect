@@ -425,7 +425,7 @@ export function CampaignListsPage() {
     <PageShell>
       <PageHeader
         title="Campaign Lists"
-        description="Reach the right Karkuns fast — dynamic lists update automatically, broadcast lists are yours to curate."
+        description="Reach the right Karkuns fast — dynamic lists update automatically, saved lists are yours to curate."
       />
 
       <nav className="ds-tab-nav" aria-label="Campaign list types">
@@ -437,7 +437,7 @@ export function CampaignListsPage() {
           className={tabClass(tab === 'broadcast')}
           onClick={() => setTab('broadcast')}
         >
-          Broadcast Lists
+          Saved Lists
         </button>
       </nav>
 

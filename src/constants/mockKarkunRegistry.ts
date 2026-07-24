@@ -63,7 +63,7 @@ export function getRegistryFilterOptions() {
 }
 
 export function resolveAssignedRuknName(ruknId: string): string {
-  return getRuknById(ruknId)?.name ?? 'Unassigned'
+  return getRuknById(ruknId)?.name ?? 'Not Connected'
 }
 
 export { adminKarkunProfilePath } from '@/constants/routes'

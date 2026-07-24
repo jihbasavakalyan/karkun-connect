@@ -153,7 +153,7 @@ export function ConnectedAssignmentDeskCard({
       {expanded ? (
         <div className="mt-3 rounded-md border border-border/70 bg-surface px-3 py-2 text-sm text-secondary">
           <p>
-            <span className="font-medium text-text-heading">Assignment ID: </span>
+            <span className="font-medium text-text-heading">Connection ID: </span>
             {assignment.assignmentId}
           </p>
           <p className="mt-1">

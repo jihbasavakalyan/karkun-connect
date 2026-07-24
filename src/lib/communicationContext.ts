@@ -66,7 +66,7 @@ export function buildIndividualCommunicationContext(
   return {
     karkunId,
     karkunName: karkun.name,
-    assignedRuknName: rukn?.name ?? 'Unassigned',
+    assignedRuknName: rukn?.name ?? 'Not Connected',
     journeyStage: JOURNEY_STAGE_LABELS[journey.currentStage],
     lastVisit: latestVisit?.submittedAt?.slice(0, 10) ?? karkun.lastVisit?.slice(0, 10) ?? 'None',
     lastIjtema:

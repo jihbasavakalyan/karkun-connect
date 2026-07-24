@@ -11,10 +11,10 @@ export function validateAssignedMarksComplete(
   marks: CycleMarkLike[],
   assignedKarkunIds: string[],
   allowedStatuses: readonly string[],
-  incompleteMessage = 'Please mark all assigned Karkuns before submitting.',
+  incompleteMessage = 'Please mark all connected Karkuns before submitting.',
 ): { valid: true } | { valid: false; error: string } {
   if (assignedKarkunIds.length === 0) {
-    return { valid: false, error: 'No assigned Karkuns to mark.' }
+    return { valid: false, error: 'No connected Karkuns to mark.' }
   }
 
   const byId = new Map(marks.map((mark) => [mark.karkunId, mark]))
@@ -27,7 +27,7 @@ export function validateAssignedMarksComplete(
 
   for (const mark of marks) {
     if (!assignedKarkunIds.includes(mark.karkunId)) {
-      return { valid: false, error: 'Submission includes a Karkun that is not assigned.' }
+      return { valid: false, error: 'Submission includes a Karkun that is not connected.' }
     }
   }
 
