@@ -1760,8 +1760,12 @@ html[data-theme='dark'] {
     box-shadow: 0 10px 28px -14px rgb(15 61 36 / 0.45);
   }
 
+  .exdash-hero-banner {
+    @apply w-full;
+  }
+
   .exdash-hero-top {
-    @apply flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between lg:gap-6;
+    @apply mt-5 flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between lg:gap-6;
   }
 
   .exdash-hero-identity {

@@ -60,7 +60,7 @@ export function CommandCenterHero({ hero }: CommandCenterHeroProps) {
   if (!hero) {
     return (
       <section className="cc-card-sm text-center">
-        <h1 className="text-base font-bold text-text-heading">Campaign Command Center</h1>
+        <h1 className="text-base font-bold text-text-heading">No active campaign</h1>
         <p className="mt-0.5 text-xs text-secondary">No active campaign configured.</p>
         <Link
           to={ROUTES.ADMIN_CAMPAIGN}

@@ -35,10 +35,8 @@ import { MessageComposerModal } from '@/components/communication/MessageComposer
 import { dashState03WidgetRender } from '@/lib/debug/kc00586DashboardStateProbe'
 import { getRuknById } from '@/data/ruknMaster'
 import { buildTelLink } from '@/utils/personContactLinks'
-import { AdminHealthKpiCard } from './AdminHealthKpiCard'
 import { resolveAdminHealthKpiPending } from './dashboardMetricReadiness'
 import { LiveActivityFeed } from './LiveActivityFeed'
-import { McProgressRing } from './McProgressRing'
 
 type AdminCommandCenterProps = {
   model: AdminMissionControlModel
@@ -565,28 +563,9 @@ export function AdminCommandCenter({
         tone="slate"
       />
 
-      <section className="exdash-panel" aria-label="Campaign health">
+      <section className="exdash-panel" aria-label="Immediate priorities">
         <div className="exdash-section-head">
-          <ExdashSectionTitle title="Campaign Health" icon="pulse-healthy" tone="sky" />
-          <Link to={adminExecutionPath()} className="exdash-section-link">
-            Overview →
-          </Link>
-        </div>
-        <ul className="exdash-health-grid" aria-label="Campaign health KPIs">
-          {healthKpis.map((kpi) => (
-            <AdminHealthKpiCard
-              key={kpi.id}
-              kpi={kpi}
-              metricsReady={metricsReady}
-              backgroundReady={backgroundReady}
-            />
-          ))}
-        </ul>
-      </section>
-
-      <section className="exdash-panel" aria-label="Today's priorities">
-        <div className="exdash-section-head">
-          <ExdashSectionTitle title="Today's Priorities" icon="flag" tone="amber" />
+          <ExdashSectionTitle title="Immediate Priorities" icon="flag" tone="amber" />
           <span className="exdash-section-meta">
             {model.todaysPriorities.length === 0
               ? 'Clear'
@@ -614,9 +593,9 @@ export function AdminCommandCenter({
         )}
       </section>
 
-      <section className="exdash-panel" aria-label="Mission alerts">
+      <section className="exdash-panel" aria-label="Attention required">
         <div className="exdash-section-head">
-          <ExdashSectionTitle title="Mission Alerts" icon="warning" tone="rose" />
+          <ExdashSectionTitle title="Attention Required" icon="warning" tone="rose" />
           <span className="exdash-section-meta">
             {snapshot.alerts.length === 0 ? 'Clear' : `${snapshot.alerts.length} active`}
           </span>
@@ -648,11 +627,9 @@ export function AdminCommandCenter({
         )}
       </section>
 
-      {backgroundReady ? <PendingKarkunRequestQueue /> : null}
-
-      <section className="exdash-panel" aria-label="Intervention queue">
+      <section className="exdash-panel" aria-label="Pending actions">
         <div className="exdash-section-head">
-          <ExdashSectionTitle title="Intervention Queue" icon="bell" tone="rose" />
+          <ExdashSectionTitle title="Pending Actions" icon="bell" tone="rose" />
           <span className="exdash-section-meta">
             {!backgroundReady
               ? 'Loading'
@@ -688,6 +665,8 @@ export function AdminCommandCenter({
           </ol>
         )}
       </section>
+
+      {backgroundReady ? <PendingKarkunRequestQueue /> : null}
 
       <OverviewMetricGrid
         title="Male Overview"
@@ -784,38 +763,6 @@ export function AdminCommandCenter({
       ) : null}
 
       <LiveActivityFeed ready={backgroundReady} limit={8} />
-
-      {metricsReady ? (
-        <section className="exdash-panel" aria-label="Campaign progress summary">
-          <div className="exdash-section-head">
-            <ExdashSectionTitle title="Campaign Pulse" icon="chart" tone="teal" />
-          </div>
-          <div className="exdash-pulse-row">
-            <McProgressRing
-              value={model.connectionProgress.pct}
-              size={72}
-              stroke={8}
-              tone="green"
-              label={`${model.connectionProgress.pct}%`}
-              sublabel="Complete"
-            />
-            <dl className="exdash-pulse-metrics">
-              <div>
-                <dt>Connected</dt>
-                <dd>{model.connectionProgress.connected}</dd>
-              </div>
-              <div>
-                <dt>Yet to Connect</dt>
-                <dd>{model.connectionProgress.remaining}</dd>
-              </div>
-              <div>
-                <dt>Days left</dt>
-                <dd>{model.daysRemaining ?? '—'}</dd>
-              </div>
-            </dl>
-          </div>
-        </section>
-      ) : null}
 
       <section className="exdash-system-history" aria-label="Recent system history">
         <button

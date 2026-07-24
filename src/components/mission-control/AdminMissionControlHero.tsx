@@ -29,6 +29,7 @@ export function AdminMissionControlHero({
   const peopleVersion = usePeopleStore()
   const { assignmentVersion } = useAssignmentEngine()
   const [complianceTick, setComplianceTick] = useState(0)
+  const campaignWindow = formatCampaignWindowLabel()
 
   useEffect(() => {
     const unsubAnnexure = subscribeToAnnexure1Store(() => setComplianceTick((v) => v + 1))
@@ -89,19 +90,13 @@ export function AdminMissionControlHero({
 
   return (
     <header className="exdash-hero mc-hero" aria-label="Campaign Hero">
-      <div className="exdash-hero-top">
-        <div className="exdash-hero-identity">
-          <p className="exdash-hero-eyebrow">Campaign Command Center</p>
-          <h1 className="exdash-hero-title">{model.campaignName}</h1>
-          <p className="exdash-hero-date">{model.currentDateLabel}</p>
-          {formatCampaignWindowLabel() ? (
-            <p className="exdash-hero-window">{formatCampaignWindowLabel()}</p>
-          ) : null}
-          <p className="exdash-hero-attention">
-            Where does the campaign need your attention?
-          </p>
-        </div>
+      <div className="exdash-hero-banner" dir="rtl" lang="ur">
+        <h1 className="exdash-hero-title">{model.campaignName}</h1>
+        {campaignWindow ? <p className="exdash-hero-window">{campaignWindow}</p> : null}
+        <p className="exdash-hero-date">{model.currentDateLabel}</p>
+      </div>
 
+      <div className="exdash-hero-top">
         <div className="exdash-hero-progress exdash-hero-progress-achievement">
           {metricsReady && achievement ? (
             <>

@@ -93,7 +93,9 @@ export function AdminSidebar({ collapsed, onToggle }: AdminSidebarProps) {
               ].join(' ')
             }
           >
-            <span aria-hidden="true">{helpItem.icon}</span>
+            <span aria-hidden="true">
+              <Icon name={helpItem.icon} size="lg" className="text-current" />
+            </span>
             {!collapsed && <span>{helpItem.label}</span>}
           </NavLink>
         )}
