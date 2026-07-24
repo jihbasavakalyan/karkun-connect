@@ -19,19 +19,26 @@ assert(handler.includes('administrator'), 'blocks administrator claim path')
 assert(handler.includes('status === \'active\''), 'requires Active Rukn Master')
 assert(!handler.includes('createUser'), 'must not create Auth users')
 
+const admin = readFileSync(resolve(root, 'src/server/ruknClaims/firebaseAdmin.ts'), 'utf8')
+assert(admin.includes('FIREBASE_SERVICE_ACCOUNT_JSON'), 'prefers dedicated Auth SA env')
+assert(admin.includes('project_id !== EXPECTED_PROJECT') || admin.includes('does not match expected'), 'rejects project mismatch')
+
 const api = readFileSync(resolve(root, 'api/rukn-claims-provision.ts'), 'utf8')
 assert(api.includes('handleRuknClaimsProvision'), 'Vercel API wires provision handler')
 
 const client = readFileSync(resolve(root, 'src/lib/auth/requestRuknClaimsProvision.ts'), 'utf8')
 assert(client.includes('/api/rukn-claims-provision'), 'client calls provision API')
 assert(client.includes('Authorization'), 'client sends Bearer token')
+assert(client.includes('X-KC-Trace-Id') || client.includes('traceId'), 'client correlating KC-0100.5 trace')
 
 const auth = readFileSync(resolve(root, 'src/services/authenticationService.ts'), 'utf8')
 assert(auth.includes('requestRuknClaimsProvision'), 'OTP finalizeLogin requests provision')
 assert(auth.includes('[KC-0100.3] attempting auto claim provision after OTP'), 'logs provision attempt')
-assert(auth.includes('getIdToken(true)'), 'force-refreshes JWT after provision')
+assert(auth.includes('getIdTokenResult(true)') || auth.includes('getIdToken(true)'), 'force-refreshes JWT after provision')
 assert(auth.includes('MISSING_RUKN_JWT_CLAIMS_ERROR'), 'fail-closed message preserved')
 assert(auth.includes('[KC-0100] Rukn session rejected'), 'KC-0100 JWT gate unchanged')
+assert(auth.includes('claimsProvisionInFlight'), 'defers subscribe sign-out during provision')
+assert(auth.includes('logAuthTrace'), 'KC-0100.5 pipeline trace present')
 assert(
   auth.includes('attempting claim repair after JWT/Master mismatch'),
   'repairs wrong claims without bypass',
@@ -45,3 +52,4 @@ assert(pkg.includes('"firebase-admin"'), 'firebase-admin available for Vercel ru
 assert(pkg.includes('verify:kc0100.3'), 'npm verify script present')
 
 console.log('KC-0100.3 verify-kc0100-3-activation-reliability: OK')
+
