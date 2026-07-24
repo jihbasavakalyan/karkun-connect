@@ -37,6 +37,15 @@ assert(command.includes('Collective Overview'), 'Collective Overview present')
 assert(command.includes('Immediate Priorities'), 'Immediate Priorities present')
 assert(command.includes('Attention Required'), 'Attention Required present')
 assert(command.includes('Pending Actions'), 'Pending Actions present')
+assert(command.includes('exdash-ops-command'), 'operational sections use command-center grid')
+assert(command.includes('exdash-ops-column'), 'each operational section is a column')
+assert(command.includes('exdash-ops-column-body'), 'each column has independent scroll body')
+assert(
+  /grid-cols-1[\s\S]*md:grid-cols-2[\s\S]*xl:grid-cols-3/.test(
+    readFileSync(resolve('src/index.css'), 'utf8'),
+  ),
+  'ops grid is 1 / 2 / 3 columns by breakpoint',
+)
 
 const collectiveIdx = command.indexOf('Collective Overview')
 const immediateIdx = command.indexOf('Immediate Priorities')

@@ -563,108 +563,116 @@ export function AdminCommandCenter({
         tone="slate"
       />
 
-      <section className="exdash-panel" aria-label="Immediate priorities">
-        <div className="exdash-section-head">
-          <ExdashSectionTitle title="Immediate Priorities" icon="flag" tone="amber" />
-          <span className="exdash-section-meta">
-            {model.todaysPriorities.length === 0
-              ? 'Clear'
-              : `${model.todaysPriorities.length} focus`}
-          </span>
-        </div>
-        {model.todaysPriorities.length === 0 ? (
-          <p className="exdash-muted">No mission priorities right now.</p>
-        ) : (
-          <ol className="exdash-queue">
-            {model.todaysPriorities.map((item, index) => (
-              <li key={item.id}>
-                <Link to={item.route} className="exdash-queue-item">
-                  <span className="exdash-queue-rank" aria-hidden="true">
-                    {index + 1}
-                  </span>
-                  <div className="exdash-queue-body">
-                    <span className="exdash-queue-title">{item.title}</span>
-                    <span className="exdash-queue-detail">{item.detail}</span>
-                  </div>
-                </Link>
-              </li>
-            ))}
-          </ol>
-        )}
-      </section>
-
-      <section className="exdash-panel" aria-label="Attention required">
-        <div className="exdash-section-head">
-          <ExdashSectionTitle title="Attention Required" icon="warning" tone="rose" />
-          <span className="exdash-section-meta">
-            {snapshot.alerts.length === 0 ? 'Clear' : `${snapshot.alerts.length} active`}
-          </span>
-        </div>
-        {snapshot.alerts.length === 0 ? (
-          <p className="exdash-muted">No mission alerts right now.</p>
-        ) : (
-          <ol className="exdash-queue">
-            {snapshot.alerts.map((alert, index) => (
-              <li key={alert.id}>
-                <Link
-                  to={alert.route || adminExecutionPath()}
-                  className="exdash-queue-item"
-                >
-                  <span className="exdash-queue-rank" aria-hidden="true">
-                    {index + 1}
-                  </span>
-                  <div className="exdash-queue-body">
-                    <span className="exdash-queue-title">{alert.title}</span>
-                    <span className="exdash-queue-detail">{alert.message}</span>
-                  </div>
-                  <span className={`exdash-queue-badge ${ALERT_SEVERITY_CLASS[alert.severity]}`}>
-                    {alert.severity}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ol>
-        )}
-      </section>
-
-      <section className="exdash-panel" aria-label="Pending actions">
-        <div className="exdash-section-head">
-          <ExdashSectionTitle title="Pending Actions" icon="bell" tone="rose" />
-          <span className="exdash-section-meta">
-            {!backgroundReady
-              ? 'Loading'
-              : interventions.length === 0
+      <div className="exdash-ops-command" aria-label="Operational command center">
+        <section className="exdash-panel exdash-ops-column" aria-label="Immediate priorities">
+          <div className="exdash-section-head">
+            <ExdashSectionTitle title="Immediate Priorities" icon="flag" tone="amber" />
+            <span className="exdash-section-meta">
+              {model.todaysPriorities.length === 0
                 ? 'Clear'
-                : `${interventions.length} prioritized`}
-          </span>
-        </div>
-        {!backgroundReady ? (
-          <p className="exdash-muted" aria-busy="true">
-            Loading campaign data…
-          </p>
-        ) : interventions.length === 0 ? (
-          <p className="exdash-muted">No urgent interventions right now.</p>
-        ) : (
-          <ol className="exdash-queue">
-            {interventions.map((item, index) => (
-              <li key={item.id}>
-                <Link to={item.route} className="exdash-queue-item">
-                  <span className="exdash-queue-rank" aria-hidden="true">
-                    {index + 1}
-                  </span>
-                  <div className="exdash-queue-body">
-                    <span className="exdash-queue-title">{item.title}</span>
-                    <span className="exdash-queue-detail">{item.detail}</span>
-                  </div>
-                  <span className={`exdash-queue-badge ${SEVERITY_CLASS[item.severity]}`}>
-                    {item.severity}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ol>
-        )}
-      </section>
+                : `${model.todaysPriorities.length} focus`}
+            </span>
+          </div>
+          <div className="exdash-ops-column-body">
+            {model.todaysPriorities.length === 0 ? (
+              <p className="exdash-muted">No mission priorities right now.</p>
+            ) : (
+              <ol className="exdash-queue">
+                {model.todaysPriorities.map((item, index) => (
+                  <li key={item.id}>
+                    <Link to={item.route} className="exdash-queue-item">
+                      <span className="exdash-queue-rank" aria-hidden="true">
+                        {index + 1}
+                      </span>
+                      <div className="exdash-queue-body">
+                        <span className="exdash-queue-title">{item.title}</span>
+                        <span className="exdash-queue-detail">{item.detail}</span>
+                      </div>
+                    </Link>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </div>
+        </section>
+
+        <section className="exdash-panel exdash-ops-column" aria-label="Attention required">
+          <div className="exdash-section-head">
+            <ExdashSectionTitle title="Attention Required" icon="warning" tone="rose" />
+            <span className="exdash-section-meta">
+              {snapshot.alerts.length === 0 ? 'Clear' : `${snapshot.alerts.length} active`}
+            </span>
+          </div>
+          <div className="exdash-ops-column-body">
+            {snapshot.alerts.length === 0 ? (
+              <p className="exdash-muted">No mission alerts right now.</p>
+            ) : (
+              <ol className="exdash-queue">
+                {snapshot.alerts.map((alert, index) => (
+                  <li key={alert.id}>
+                    <Link
+                      to={alert.route || adminExecutionPath()}
+                      className="exdash-queue-item"
+                    >
+                      <span className="exdash-queue-rank" aria-hidden="true">
+                        {index + 1}
+                      </span>
+                      <div className="exdash-queue-body">
+                        <span className="exdash-queue-title">{alert.title}</span>
+                        <span className="exdash-queue-detail">{alert.message}</span>
+                      </div>
+                      <span className={`exdash-queue-badge ${ALERT_SEVERITY_CLASS[alert.severity]}`}>
+                        {alert.severity}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </div>
+        </section>
+
+        <section className="exdash-panel exdash-ops-column" aria-label="Pending actions">
+          <div className="exdash-section-head">
+            <ExdashSectionTitle title="Pending Actions" icon="bell" tone="rose" />
+            <span className="exdash-section-meta">
+              {!backgroundReady
+                ? 'Loading'
+                : interventions.length === 0
+                  ? 'Clear'
+                  : `${interventions.length} prioritized`}
+            </span>
+          </div>
+          <div className="exdash-ops-column-body">
+            {!backgroundReady ? (
+              <p className="exdash-muted" aria-busy="true">
+                Loading campaign data…
+              </p>
+            ) : interventions.length === 0 ? (
+              <p className="exdash-muted">No urgent interventions right now.</p>
+            ) : (
+              <ol className="exdash-queue">
+                {interventions.map((item, index) => (
+                  <li key={item.id}>
+                    <Link to={item.route} className="exdash-queue-item">
+                      <span className="exdash-queue-rank" aria-hidden="true">
+                        {index + 1}
+                      </span>
+                      <div className="exdash-queue-body">
+                        <span className="exdash-queue-title">{item.title}</span>
+                        <span className="exdash-queue-detail">{item.detail}</span>
+                      </div>
+                      <span className={`exdash-queue-badge ${SEVERITY_CLASS[item.severity]}`}>
+                        {item.severity}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </div>
+        </section>
+      </div>
 
       {backgroundReady ? <PendingKarkunRequestQueue /> : null}
 
