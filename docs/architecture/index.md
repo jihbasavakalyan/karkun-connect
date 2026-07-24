@@ -1,5 +1,20 @@
 # Architecture Index — Karkun Connect 1.0 RC1
 
+## Product architecture (canonical)
+
+**Karkun Connect is a Campaign Operating System.**
+
+| Document | Role |
+|----------|------|
+| [**Campaign Operating System — Product Architecture Baseline (KC-0104)**](./campaign-operating-system-product-architecture.md) | Permanent product domains, capability ownership, terminology, and principles |
+| [KC-0103A — People Capability Audit](./kc-0103a-people-capability-audit.md) | People domain evidence |
+| [KC-0103B — People Ownership Validation](./kc-0103b-people-ownership-validation.md) | Ownership / terminology validation |
+| [KC-0103C — Operations Capability Audit](./kc-0103c-operations-capability-audit.md) | Operations domain evidence |
+| [KC-0103D — Engagement Capability Audit](./kc-0103d-engagement-capability-audit.md) | Engagement domain evidence |
+| [KC-0103E — Reporting & Executive Visibility Audit](./kc-0103e-reporting-executive-audit.md) | Dashboard / reporting evidence |
+
+Future implementation must align with KC-0104. Engineering gates: [KC-ARCH-009](./kc-arch-009-feature-impact.md) · [KC-ARCH-001](./kc-arch-001-reliability-persistence.md).
+
 ## Overview
 
 Karkun Connect is a single-page React application with role-based routing (Administrator / Rukn). All data is in-memory for RC1; production master records load via client-side migration on boot.
@@ -89,6 +104,7 @@ Scripts validate routes, auth, data integrity, assignments, and compliance witho
 
 ## Related Documents
 
+- [**KC-0104 — Campaign Operating System Product Architecture Baseline**](./campaign-operating-system-product-architecture.md) (canonical product architecture)
 - [**KC-ARCH-001 — Reliability & Persistence Standard**](./kc-arch-001-reliability-persistence.md) (mandatory for all modules)
 - [**KC-ARCH-009 — Feature Impact & Regression Prevention Framework**](./kc-arch-009-feature-impact.md) (mandatory gate before every change)
 - [**KC-0101 — Dashboard Bootstrap Investigation**](./kc-0101-dashboard-bootstrap-investigation.md) (read-only RCA)
