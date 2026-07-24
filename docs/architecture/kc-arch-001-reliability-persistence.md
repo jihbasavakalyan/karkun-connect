@@ -127,6 +127,7 @@ A feature is **not complete** unless:
 
 ## Related docs
 
+- [KC-ARCH-009 — Feature Impact & Regression Prevention](./kc-arch-009-feature-impact.md)
 - [Repository layer](./repository-layer.md)
 - [Firestore](./firestore.md)
 - [Data preservation](./DATA_PRESERVATION.md)

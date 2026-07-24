@@ -5,6 +5,7 @@ import { buildCampaignOperationsHealthMetrics } from '@/lib/missionControl/campa
 import { dashState03WidgetRender } from '@/lib/debug/kc00586DashboardStateProbe'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { usePeopleStore } from '@/hooks/usePeopleStore'
+import { createCoalescedNotifier } from '@/lib/dashboard/coalesceStoreNotifications'
 import { subscribeToAnnexure1Store } from '@/stores/annexure1Store'
 import { subscribeToJihWebPortalStore } from '@/stores/jihWebPortalStore'
 import { subscribeToWeeklyIjtemaStore } from '@/stores/weeklyIjtemaStore'
@@ -27,11 +28,16 @@ export function AdminMissionControlHero({
   const campaignWindow = formatCampaignWindowLabel()
 
   useEffect(() => {
-    const unsubAnnexure = subscribeToAnnexure1Store(() => setComplianceTick((v) => v + 1))
-    const unsubIjtema = subscribeToWeeklyIjtemaStore(() => setComplianceTick((v) => v + 1))
-    const unsubBaitul = subscribeToMonthlyBaitulMaalStore(() => setComplianceTick((v) => v + 1))
-    const unsubJih = subscribeToJihWebPortalStore(() => setComplianceTick((v) => v + 1))
+    // KC-0102B — coalesce compliance store storms into one hero tick.
+    const coalesced = createCoalescedNotifier(() => {
+      setComplianceTick((v) => v + 1)
+    })
+    const unsubAnnexure = subscribeToAnnexure1Store(coalesced.bump)
+    const unsubIjtema = subscribeToWeeklyIjtemaStore(coalesced.bump)
+    const unsubBaitul = subscribeToMonthlyBaitulMaalStore(coalesced.bump)
+    const unsubJih = subscribeToJihWebPortalStore(coalesced.bump)
     return () => {
+      coalesced.dispose()
       unsubAnnexure()
       unsubIjtema()
       unsubBaitul()

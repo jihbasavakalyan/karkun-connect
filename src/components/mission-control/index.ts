@@ -6,9 +6,12 @@ export { ActivityTimeline } from './ActivityTimeline'
 export { CampaignHealthPanel } from './CampaignHealthPanel'
 export { ProgressTrendsPanel } from './ProgressTrendsPanel'
 export { AdminHealthKpiCard } from './AdminHealthKpiCard'
+export { WidgetErrorBoundary } from './WidgetErrorBoundary'
 export {
   ADMIN_HEALTH_KPI_READINESS,
+  CAMPAIGN_HEALTH_METRIC_READINESS,
   resolveAdminHealthKpiPending,
+  resolveCampaignHealthMetricPending,
   resolveDashboardMetricPending,
 } from './dashboardMetricReadiness'
 export { RuknMissionControlHero, PrimaryMissionCta, RuknTodaysPriorityCard, RuknTodaysPriorityEmpty } from './RuknMissionControlHero'

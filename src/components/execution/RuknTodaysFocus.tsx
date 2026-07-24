@@ -5,6 +5,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { buildTodaysFocusItems } from '@/lib/campaignExecutionMatrix'
+import { createCoalescedNotifier } from '@/lib/dashboard/coalesceStoreNotifications'
 import { subscribeToAnnexure1Store } from '@/stores/annexure1Store'
 import { subscribeToIjtemaAttendanceStore } from '@/stores/ijtemaAttendanceStore'
 import { subscribeToBaitulMaalStore } from '@/stores/baitulMaalStore'
@@ -19,10 +20,12 @@ export function RuknTodaysFocus({ ruknId }: RuknTodaysFocusProps) {
   const [tick, setTick] = useState(0)
 
   useEffect(() => {
-    const a = subscribeToAnnexure1Store(() => setTick((v) => v + 1))
-    const i = subscribeToIjtemaAttendanceStore(() => setTick((v) => v + 1))
-    const b = subscribeToBaitulMaalStore(() => setTick((v) => v + 1))
+    const coalesced = createCoalescedNotifier(() => setTick((v) => v + 1))
+    const a = subscribeToAnnexure1Store(coalesced.bump)
+    const i = subscribeToIjtemaAttendanceStore(coalesced.bump)
+    const b = subscribeToBaitulMaalStore(coalesced.bump)
     return () => {
+      coalesced.dispose()
       a()
       i()
       b()

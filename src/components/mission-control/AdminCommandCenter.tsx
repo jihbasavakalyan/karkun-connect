@@ -42,12 +42,15 @@ import { useCommunication } from '@/hooks/useCommunication'
 import { PendingKarkunRequestQueue } from '@/components/admin/PendingKarkunRequestQueue'
 import { MessageComposerModal } from '@/components/communication/MessageComposerModal'
 import { dashState03WidgetRender } from '@/lib/debug/kc00586DashboardStateProbe'
+import { createCoalescedNotifier } from '@/lib/dashboard/coalesceStoreNotifications'
 import { getRuknById } from '@/data/ruknMaster'
 import { buildTelLink } from '@/utils/personContactLinks'
 import { resolveAdminHealthKpiPending } from './dashboardMetricReadiness'
 import { CampaignHealthPanel } from './CampaignHealthPanel'
 import { ProgressTrendsPanel } from './ProgressTrendsPanel'
 import { ActivityTimeline } from './ActivityTimeline'
+import { WidgetErrorBoundary } from './WidgetErrorBoundary'
+import { CardSkeleton } from '@/components/ui'
 import { subscribeToWeeklyIjtemaStore } from '@/stores/weeklyIjtemaStore'
 import { subscribeToMonthlyBaitulMaalStore } from '@/stores/monthlyBaitulMaalStore'
 import { subscribeToAnnexure1Store } from '@/stores/annexure1Store'
@@ -289,14 +292,19 @@ export function AdminCommandCenter({
   }>({ open: false, recipients: [], title: 'Compose WhatsApp Message' })
 
   useEffect(() => {
+    // KC-0102B — coalesce module store storms into one tick per logical transition.
+    const coalesced = createCoalescedNotifier(() => {
+      setModuleTick((v) => v + 1)
+    })
     const unsubs = [
-      subscribeToWeeklyIjtemaStore(() => setModuleTick((v) => v + 1)),
-      subscribeToMonthlyBaitulMaalStore(() => setModuleTick((v) => v + 1)),
-      subscribeToAnnexure1Store(() => setModuleTick((v) => v + 1)),
-      subscribeToJihWebPortalStore(() => setModuleTick((v) => v + 1)),
-      subscribeToFollowUpStore(() => setModuleTick((v) => v + 1)),
+      subscribeToWeeklyIjtemaStore(coalesced.bump),
+      subscribeToMonthlyBaitulMaalStore(coalesced.bump),
+      subscribeToAnnexure1Store(coalesced.bump),
+      subscribeToJihWebPortalStore(coalesced.bump),
+      subscribeToFollowUpStore(coalesced.bump),
     ]
     return () => {
+      coalesced.dispose()
       for (const unsub of unsubs) unsub()
     }
   }, [])
@@ -450,14 +458,16 @@ export function AdminCommandCenter({
   const campaignHealth = useMemo(() => {
     void assignmentVersion
     void moduleTick
-    if (!metricsReady || !backgroundReady) return []
+    // KC-0102A — build as soon as critical hydrate lands so Visits can unlock;
+    // background metric cards stay pending via CampaignHealthPanel gates.
+    if (!metricsReady) return []
     return buildCampaignOperationsHealthMetrics()
-  }, [assignmentVersion, moduleTick, metricsReady, backgroundReady])
+  }, [assignmentVersion, moduleTick, metricsReady])
 
   useEffect(() => {
     dashState03WidgetRender(
       'CampaignHealth',
-      metricsReady && backgroundReady ? 'ready' : 'loading',
+      metricsReady ? 'ready' : 'loading',
       {
         metrics: campaignHealth.map((metric) => ({
           id: metric.id,
@@ -465,6 +475,8 @@ export function AdminCommandCenter({
           current: metric.current,
           total: metric.total,
         })),
+        metricsReady,
+        backgroundReady,
       },
     )
   }, [campaignHealth, metricsReady, backgroundReady])
@@ -486,60 +498,82 @@ export function AdminCommandCenter({
   return (
     <div className="exdash-stack">
       {showAllTasks ? (
-        <AdminActionCenter
-          items={missionItems}
-          backgroundReady={backgroundReady}
-          variant="full"
-        />
+        <WidgetErrorBoundary title="All tasks">
+          <AdminActionCenter
+            items={missionItems}
+            backgroundReady={backgroundReady}
+            variant="full"
+          />
+        </WidgetErrorBoundary>
       ) : (
         <>
-          {/* 1. Campaign Health */}
-          <CampaignHealthPanel
-            metrics={campaignHealth}
-            ready={metricsReady && backgroundReady}
-          />
-
-          {/* 2. Today's Mission */}
-          {USE_ADMIN_ACTION_CENTER_EXPERIMENT ? (
-            <AdminActionCenter items={missionItems} backgroundReady={backgroundReady} />
-          ) : (
-            <AdminOpsThreeColumnLayout
-              model={model}
-              snapshot={snapshot}
-              interventions={interventions}
+          {/* 1. Campaign Health — per-metric readiness (KC-0102A) */}
+          <WidgetErrorBoundary title="Campaign Health">
+            <CampaignHealthPanel
+              metrics={campaignHealth}
+              metricsReady={metricsReady}
               backgroundReady={backgroundReady}
             />
-          )}
+          </WidgetErrorBoundary>
 
-          {backgroundReady ? <PendingKarkunRequestQueue /> : null}
-
-          {/* 3. Top Priority Rukns */}
-          <section className="exdash-panel" aria-label="Top Priority Rukns">
-            <div className="exdash-section-head">
-              <ExdashSectionTitle title="Top Priority Rukns" icon="users" tone="rose" />
-              <Link to={ROUTES.ADMIN_RUKN} className="exdash-section-link">
-                All Rukns →
-              </Link>
-            </div>
-            <p className="exdash-action-center-sub">
-              Ranked by equal weight across Visits, Weekly Ijtema, Monthly Baitul Maal, and App
-              Registration (lowest score first).
-            </p>
-            {!backgroundReady ? (
-              <p className="exdash-muted" aria-busy="true">
-                Loading campaign data…
-              </p>
+          {/* 2. Today's Mission */}
+          <WidgetErrorBoundary title="Today's Mission">
+            {USE_ADMIN_ACTION_CENTER_EXPERIMENT ? (
+              <AdminActionCenter items={missionItems} backgroundReady={backgroundReady} />
             ) : (
-              <PaginatedPriorityGrid
-                rows={priorityRukns}
-                selectedIds={selectedIds}
-                onToggleSelected={toggleSelected}
-                onNotify={openNotify}
-                onAppreciate={openAppreciate}
-                onRemind={openRemind}
+              <AdminOpsThreeColumnLayout
+                model={model}
+                snapshot={snapshot}
+                interventions={interventions}
+                backgroundReady={backgroundReady}
               />
             )}
-          </section>
+          </WidgetErrorBoundary>
+
+          <WidgetErrorBoundary title="Pending Karkun requests" compact>
+            {backgroundReady ? (
+              <PendingKarkunRequestQueue />
+            ) : (
+              <section className="exdash-panel" aria-label="Pending Karkun requests" aria-busy="true">
+                <div className="exdash-section-head">
+                  <ExdashSectionTitle title="Pending requests" icon="users" tone="amber" />
+                  <span className="exdash-section-meta">Loading</span>
+                </div>
+                <p className="exdash-muted">Loading pending requests…</p>
+                <CardSkeleton count={1} />
+              </section>
+            )}
+          </WidgetErrorBoundary>
+
+          {/* 3. Top Priority Rukns */}
+          <WidgetErrorBoundary title="Top Priority Rukns">
+            <section className="exdash-panel" aria-label="Top Priority Rukns">
+              <div className="exdash-section-head">
+                <ExdashSectionTitle title="Top Priority Rukns" icon="users" tone="rose" />
+                <Link to={ROUTES.ADMIN_RUKN} className="exdash-section-link">
+                  All Rukns →
+                </Link>
+              </div>
+              <p className="exdash-action-center-sub">
+                Ranked by equal weight across Visits, Weekly Ijtema, Monthly Baitul Maal, and App
+                Registration (lowest score first).
+              </p>
+              {!backgroundReady ? (
+                <p className="exdash-muted" aria-busy="true">
+                  Loading campaign data…
+                </p>
+              ) : (
+                <PaginatedPriorityGrid
+                  rows={priorityRukns}
+                  selectedIds={selectedIds}
+                  onToggleSelected={toggleSelected}
+                  onNotify={openNotify}
+                  onAppreciate={openAppreciate}
+                  onRemind={openRemind}
+                />
+              )}
+            </section>
+          </WidgetErrorBoundary>
 
           {selectedIds.size > 0 ? (
             <div className="exdash-bulk-bar" role="region" aria-label="Bulk Rukn communication">
@@ -576,10 +610,14 @@ export function AdminCommandCenter({
           ) : null}
 
           {/* 4. Progress Trends */}
-          <ProgressTrendsPanel trends={trends} ready={backgroundReady} />
+          <WidgetErrorBoundary title="Progress Trends">
+            <ProgressTrendsPanel trends={trends} ready={backgroundReady} />
+          </WidgetErrorBoundary>
 
           {/* 5. Activity Timeline */}
-          <ActivityTimeline ready={backgroundReady} limit={12} />
+          <WidgetErrorBoundary title="Activity Timeline">
+            <ActivityTimeline ready={backgroundReady} limit={12} />
+          </WidgetErrorBoundary>
         </>
       )}
 

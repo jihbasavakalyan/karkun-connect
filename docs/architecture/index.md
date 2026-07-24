@@ -60,7 +60,7 @@ Karkun Connect is a single-page React application with role-based routing (Admin
 - Firebase Authentication via `authenticationService` (M7)
 - Session cached in `authSession.ts`; Firebase handles token persistence
 - Role-based home redirect: `/admin` or `/rukn`
-- Rukn OTP + JWT claims: [rukn-authentication.md](./rukn-authentication.md); activation audit [KC-0100.3](./kc-0100-3-activation-reliability.md)
+- Rukn OTP + JWT claims: [rukn-authentication.md](./rukn-authentication.md); activation audit [KC-0100.3](./kc-0100-3-activation-reliability.md); production trace [KC-0100.5](./kc-0100-5-production-auth-trace.md)
 
 ## Assignment Invariants
 
@@ -90,6 +90,12 @@ Scripts validate routes, auth, data integrity, assignments, and compliance witho
 ## Related Documents
 
 - [**KC-ARCH-001 — Reliability & Persistence Standard**](./kc-arch-001-reliability-persistence.md) (mandatory for all modules)
+- [**KC-ARCH-009 — Feature Impact & Regression Prevention Framework**](./kc-arch-009-feature-impact.md) (mandatory gate before every change)
+- [**KC-0101 — Dashboard Bootstrap Investigation**](./kc-0101-dashboard-bootstrap-investigation.md) (read-only RCA)
+- [**KC-0101.1 — Production Bootstrap Timing Certification**](./kc-0101-1-bootstrap-timing-certification.md) (timings; CONDITIONAL GO for Phase A–B)
+- [**KC-0102A — Dashboard Readiness UX**](./kc-0102a-dashboard-readiness-ux.md) (Phase A complete; presentation only)
+- [**KC-0102B — Dashboard Snapshot Coalescing**](./kc-0102b-dashboard-snapshot-coalescing.md) (Phase B complete; render orchestration only)
+- [**KC-0102C — Dashboard Duplicate Read Elimination**](./kc-0102c-duplicate-read-elimination.md) (Phase C complete; duplicate reads only)
 - [Data Preservation & Recovery (KC-0058)](./DATA_PRESERVATION.md)
 - [Firestore Backend (M8)](./firestore.md)
 - [Authentication (M7)](./authentication.md)

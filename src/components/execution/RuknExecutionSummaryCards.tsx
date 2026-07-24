@@ -5,6 +5,7 @@
 
 import { useEffect, useState } from 'react'
 import { buildCampaignMatrixRows } from '@/lib/campaignExecutionMatrix'
+import { createCoalescedNotifier } from '@/lib/dashboard/coalesceStoreNotifications'
 import { subscribeToAnnexure1Store } from '@/stores/annexure1Store'
 import { subscribeToIjtemaAttendanceStore } from '@/stores/ijtemaAttendanceStore'
 import { subscribeToBaitulMaalStore } from '@/stores/baitulMaalStore'
@@ -36,10 +37,12 @@ export function RuknExecutionSummaryCards({ ruknId }: RuknExecutionSummaryCardsP
   const [tick, setTick] = useState(0)
 
   useEffect(() => {
-    const unsubA = subscribeToAnnexure1Store(() => setTick((v) => v + 1))
-    const unsubI = subscribeToIjtemaAttendanceStore(() => setTick((v) => v + 1))
-    const unsubB = subscribeToBaitulMaalStore(() => setTick((v) => v + 1))
+    const coalesced = createCoalescedNotifier(() => setTick((v) => v + 1))
+    const unsubA = subscribeToAnnexure1Store(coalesced.bump)
+    const unsubI = subscribeToIjtemaAttendanceStore(coalesced.bump)
+    const unsubB = subscribeToBaitulMaalStore(coalesced.bump)
     return () => {
+      coalesced.dispose()
       unsubA()
       unsubI()
       unsubB()

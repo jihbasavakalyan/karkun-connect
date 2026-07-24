@@ -32,21 +32,12 @@ export function PendingKarkunRequestQueue() {
   }, [])
 
   useEffect(() => {
-    // KC-0102.0 — ensure Admin queue reflects server blob after background hydrate.
-    void (async () => {
-      try {
-        const { syncKarkunRequestStoreFromServer } = await import('@/stores/karkunRequestStore')
-        await syncKarkunRequestStoreFromServer()
-        const pendingCount = getPendingKarkunRequests().length
-        console.info('[KC-0102.0] Admin Approval Queue refresh', {
-          path: 'settings/karkunRequests',
-          adminQueryResultCount: pendingCount,
-          dashboardPendingCount: pendingCount,
-        })
-      } catch (error) {
-        console.warn('[KC-0102.0] Admin queue sync failed', error)
-      }
-    })()
+    // KC-0102C — background hydrate already applied settings/karkunRequests into
+    // cache + store. Remount sync getDoc removed (verified duplicate of Phase C).
+    // Live updates continue via settings onSnapshot → hydrate cycle.
+    void import('@/stores/karkunRequestStore').then(({ reloadKarkunRequestStoreFromPersistence }) => {
+      reloadKarkunRequestStoreFromPersistence()
+    })
   }, [])
 
   const pending = getPendingKarkunRequests()

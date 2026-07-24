@@ -36,15 +36,20 @@ const navItems: { label: string; icon: IconName; to: string; end: boolean }[] = 
   { label: 'Baitul Maal', icon: 'check', to: ROUTES.RUKN_MONTHLY_BAITUL_MAAL, end: false },
 ]
 
+/**
+ * KC-0102A — Progressive Rukn shell: header + bottom nav always render.
+ * Main content waits on critical hydrate (anti fake-zero). Failures stay inline
+ * in main so navigation remains available.
+ */
 export function RuknLayout() {
   const { user } = useAuth()
   const ruknId = useRequiredRuknId()
   const isHydrated = useRepositoryHydration()
   const hydration = useRepositoryHydrationStatus()
   const { assignmentVersion } = useAssignmentEngine()
-  const campaignName = getActiveCampaignName()
-  const duration = formatActiveCampaignDuration()
-  const timeline = getCampaignTimeline()
+  const campaignName = isHydrated ? getActiveCampaignName() : 'Loading campaign…'
+  const duration = isHydrated ? formatActiveCampaignDuration() : ''
+  const timeline = isHydrated ? getCampaignTimeline() : null
   useKeyboardInset()
 
   // KC-0100 — trace Auth → counts whenever hydrate or assignments change.
@@ -57,58 +62,7 @@ export function RuknLayout() {
     })
   }, [isHydrated, ruknId, user, assignmentVersion])
 
-  if (hydration.failed) {
-    return (
-      <div className="native-shell flex min-h-svh flex-col bg-surface-muted">
-        <header className="border-b border-border bg-surface pt-[env(safe-area-inset-top)]">
-          <div className="enterprise-gradient-hero px-3 py-2 text-white lg:px-4">
-            <div className="mx-auto flex max-w-5xl items-center justify-between gap-3">
-              <Logo size="sm" variant="light" />
-              <PortalAuthActions portalLabel="Rukn Portal" tone="on-dark" />
-            </div>
-          </div>
-        </header>
-        <main className="mx-auto w-full max-w-lg flex-1 px-4 py-8">
-          <section className="rounded-xl border border-border bg-surface p-6 shadow-card" role="alert">
-            <h1 className="text-lg font-semibold text-text-heading">Unable to load your connections</h1>
-            <p className="mt-2 text-sm text-secondary">
-              Your Rukn workspace cannot load connection data until authorization and Firestore reads
-              succeed. This prevents showing a false &quot;0 connected&quot; state.
-            </p>
-            {hydration.error ? (
-              <p className="mt-2 text-xs text-secondary break-words">{hydration.error}</p>
-            ) : null}
-            <div className="mt-4">
-              <PrimaryButton type="button" onClick={hydration.retry}>
-                Retry
-              </PrimaryButton>
-            </div>
-          </section>
-        </main>
-      </div>
-    )
-  }
-
-  if (!isHydrated) {
-    return (
-      <div className="native-shell flex min-h-svh flex-col bg-surface-muted">
-        <header className="border-b border-border bg-surface pt-[env(safe-area-inset-top)]">
-          <div className="enterprise-gradient-hero px-3 py-2 text-white lg:px-4">
-            <div className="mx-auto flex max-w-5xl items-center justify-between gap-3">
-              <Logo size="sm" variant="light" />
-              <PortalAuthActions portalLabel="Rukn Portal" tone="on-dark" />
-            </div>
-          </div>
-        </header>
-        <main className="mx-auto w-full max-w-5xl flex-1 px-3 py-3">
-          <HomePageSkeleton />
-        </main>
-      </div>
-    )
-  }
-
   return (
-    <RuknCommandCenterProvider>
     <div className="native-shell flex min-h-svh flex-col bg-surface-muted">
       <header className="border-b border-border bg-surface pt-[env(safe-area-inset-top)]">
         <div className="enterprise-gradient-hero px-3 py-2 text-white lg:px-4">
@@ -124,14 +78,36 @@ export function RuknLayout() {
                   {timeline.dayLabel}
                 </EnterpriseBadge>
               )}
-              <p className="text-xs text-white/80">{duration}</p>
+              {duration ? <p className="text-xs text-white/80">{duration}</p> : null}
             </div>
           </div>
         </div>
       </header>
 
       <main className="native-main mx-auto w-full max-w-5xl flex-1 px-3 py-3 lg:px-6 lg:py-5">
-        <Outlet />
+        {hydration.failed ? (
+          <section className="rounded-xl border border-border bg-surface p-6 shadow-card" role="alert">
+            <h1 className="text-lg font-semibold text-text-heading">Unable to load your connections</h1>
+            <p className="mt-2 text-sm text-secondary">
+              Your Rukn workspace cannot load connection data until authorization and Firestore reads
+              succeed. This prevents showing a false &quot;0 connected&quot; state.
+            </p>
+            {hydration.error ? (
+              <p className="mt-2 text-xs text-secondary break-words">{hydration.error}</p>
+            ) : null}
+            <div className="mt-4">
+              <PrimaryButton type="button" onClick={hydration.retry}>
+                Retry
+              </PrimaryButton>
+            </div>
+          </section>
+        ) : !isHydrated ? (
+          <HomePageSkeleton />
+        ) : (
+          <RuknCommandCenterProvider>
+            <Outlet />
+          </RuknCommandCenterProvider>
+        )}
       </main>
 
       <nav
@@ -164,6 +140,5 @@ export function RuknLayout() {
       <ExecutionSaveToast />
       <DigitalRafeeqLauncher role="rukn" offsetClassName="digital-rafeeq-fab-offset-rukn" />
     </div>
-    </RuknCommandCenterProvider>
   )
 }

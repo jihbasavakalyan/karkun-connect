@@ -15,6 +15,7 @@ import {
   releaseKarkun,
   subscribeToAssignments,
 } from '@/lib/assignmentEngine'
+import { createCoalescedNotifier } from '@/lib/dashboard/coalesceStoreNotifications'
 import { subscribeToPeopleStore } from '@/lib/peopleRegistryEvents'
 import {
   getAssignmentDashboardMetrics,
@@ -33,10 +34,14 @@ export function useAssignmentEngine() {
   useEffect(() => {
     // Available Karkun lists read the people registry; bump version on both
     // assignment writes and registry hydrate/import so memos do not stay empty.
-    const bump = () => setVersion((current) => current + 1)
-    const unsubscribeAssignments = subscribeToAssignments(bump)
-    const unsubscribePeople = subscribeToPeopleStore(bump)
+    // KC-0102B — coalesce assignment+people bursts into one version tick.
+    const coalesced = createCoalescedNotifier(() => {
+      setVersion((current) => current + 1)
+    })
+    const unsubscribeAssignments = subscribeToAssignments(coalesced.bump)
+    const unsubscribePeople = subscribeToPeopleStore(coalesced.bump)
     return () => {
+      coalesced.dispose()
       unsubscribeAssignments()
       unsubscribePeople()
     }

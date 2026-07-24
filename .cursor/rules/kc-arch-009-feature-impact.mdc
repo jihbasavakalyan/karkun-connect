@@ -1,0 +1,64 @@
+---
+description: KC-ARCH-009 — mandatory Feature Impact & Regression Prevention gate before every change
+alwaysApply: true
+---
+
+# KC-ARCH-009 — Feature Impact & Regression Prevention Framework
+
+**Mandatory engineering governance.** Full text: `docs/architecture/kc-arch-009-feature-impact.md`
+
+Every implementation prompt should assume:
+
+> Implementation must comply with KC-ARCH-009 — Feature Impact & Regression Prevention Framework.  
+> Do not begin coding until Phases 0–3 and the Go/No-Go checklist are complete.
+
+## Hard gates
+
+1. **No coding** until Phases 0–3 + Go/No-Go are completed (in the conversation or linked artifact).
+2. **No deploy** if Phase 5 certification is `NOT READY`.
+3. **No ticket close** until Phase 6 post-deploy verification is recorded.
+4. Creating this standard itself must not change application functionality.
+
+## Before any code (Phases 0–3)
+
+### Phase 0 — Root cause & impact
+
+- Classify request: New Feature | Enhancement | Bug Fix | Refactor | Migration | Performance | Infrastructure | Configuration
+- For bugs: prove root cause as Architecture | Environment/Config | Data | Authentication | Infrastructure | Implementation | Operations/User State | Unknown
+- **STOP** if evidence is insufficient — no speculative fixes
+- Produce an **Impact Matrix** (UI, pages, components, hooks, services, repositories, Firestore, authz, session, bootstrap, dashboard, metrics, campaign/automation, notifications, voice, API, caching, persistence, routing, state, background, performance, monitoring, logging, security, dependencies)
+
+### Phase 1 — Regression risk
+
+- Score impacted areas LOW / MEDIUM / HIGH across integrity, persistence, auth, bootstrap, dashboard, repos, Firestore, concurrency, async, races, performance, cache, UI, navigation, API, security, monitoring, logging
+- For every HIGH: Why, Impact, Mitigation, Verification, Rollback
+- If issue is Configuration / Infrastructure / Data / Onboarding / Operational: recommend ops action — **do not recommend code**
+
+### Phase 2 — Implementation plan
+
+- Strategy, files (+/−), repos/services/collections, migrations, API/public interface changes, order, commits, rollback, success criteria
+- Reuse architecture/services/repos; minimize scope; one responsibility per commit; preserve contracts; follow KC-ARCH-001+
+
+### Phase 3 — Verification plan
+
+- Define unit/integration/regression, cold start, hard refresh, fresh login, logout/login, repo/Firestore/auth/dashboard/performance, production smoke
+- Require objective evidence (logs, API, Firestore, claims, traces, totals, screenshots)
+- Reject “looks fixed / should work / probably resolved”
+
+### Go / No-Go (answer before coding)
+
+Answer all checklist items in `docs/architecture/kc-arch-009-feature-impact.md`.  
+For every **YES**: Impact, Mitigation, Regression Tests.
+
+## After coding (Phases 4–6)
+
+- **Phase 4:** Audit no regressions (workflows, dashboard, bootstrap, auth, Firestore, repos, persistence, API, performance, console/runtime, no infinite loading). List workflows tested.
+- **Phase 5:** Certify `READY` | `READY WITH KNOWN LIMITATIONS` | `NOT READY` (deploy banned if NOT READY).
+- **Phase 6:** Post-deploy verify Admin/Rukn login, dashboard, hard refresh, cold start, logout/login, new/existing user, Firestore, repos, campaign, assignments, metrics, auth, claims, API, performance — expected vs actual.
+
+## Permanent rules
+
+- Think → Prove → Reuse → Measure → Verify → Certify
+- Evidence-driven only; no speculation
+- Operational/configuration problems ≠ code fixes
+- Keep architecture deterministic, observable, maintainable, regression-resistant

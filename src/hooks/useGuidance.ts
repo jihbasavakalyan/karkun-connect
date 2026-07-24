@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { createCoalescedNotifier } from '@/lib/dashboard/coalesceStoreNotifications'
 import { subscribeToGuidanceStore } from '@/stores/guidanceStore'
 import { subscribeToAssignments } from '@/lib/assignmentEngine'
 import { subscribeToPeopleStore } from '@/lib/peopleRegistryEvents'
@@ -11,11 +12,15 @@ export function useGuidance(ruknId?: string) {
 
   useEffect(() => {
     // KC-0100 — morning brief reads connected Karkuns; refresh on assignment + registry hydrate.
-    const bump = () => setVersion((current) => current + 1)
-    const unsubGuidance = subscribeToGuidanceStore(bump)
-    const unsubAssignments = subscribeToAssignments(bump)
-    const unsubPeople = subscribeToPeopleStore(bump)
+    // KC-0102B — coalesce guidance/assignment/people bursts into one version tick.
+    const coalesced = createCoalescedNotifier(() => {
+      setVersion((current) => current + 1)
+    })
+    const unsubGuidance = subscribeToGuidanceStore(coalesced.bump)
+    const unsubAssignments = subscribeToAssignments(coalesced.bump)
+    const unsubPeople = subscribeToPeopleStore(coalesced.bump)
     return () => {
+      coalesced.dispose()
       unsubGuidance()
       unsubAssignments()
       unsubPeople()

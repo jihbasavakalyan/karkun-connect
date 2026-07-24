@@ -17,6 +17,7 @@ import {
   saveMatrixRemarks,
   toggleVisitForKarkun,
 } from '@/lib/campaignExecutionMatrix'
+import { createCoalescedNotifier } from '@/lib/dashboard/coalesceStoreNotifications'
 import { subscribeToAnnexure1Store } from '@/stores/annexure1Store'
 import { subscribeToIjtemaAttendanceStore } from '@/stores/ijtemaAttendanceStore'
 import { subscribeToBaitulMaalStore } from '@/stores/baitulMaalStore'
@@ -44,9 +45,10 @@ export function ConnectionQuickActionsPanel({
   const [savedNote, setSavedNote] = useState(false)
 
   useEffect(() => {
-    const a = subscribeToAnnexure1Store(() => setTick((v) => v + 1))
-    const i = subscribeToIjtemaAttendanceStore(() => setTick((v) => v + 1))
-    const b = subscribeToBaitulMaalStore(() => setTick((v) => v + 1))
+    const coalesced = createCoalescedNotifier(() => setTick((v) => v + 1))
+    const a = subscribeToAnnexure1Store(coalesced.bump)
+    const i = subscribeToIjtemaAttendanceStore(coalesced.bump)
+    const b = subscribeToBaitulMaalStore(coalesced.bump)
     const onPersistFailed = (event: Event) => {
       const detail = (event as CustomEvent<ExecutionPersistFailedDetail>).detail
       if (!detail) return
@@ -56,6 +58,7 @@ export function ConnectionQuickActionsPanel({
     }
     window.addEventListener(EXECUTION_PERSIST_FAILED_EVENT, onPersistFailed)
     return () => {
+      coalesced.dispose()
       a()
       i()
       b()

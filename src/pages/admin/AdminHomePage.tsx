@@ -4,6 +4,7 @@ import {
   AdminMissionControlHero,
   AskDigitalRafeeqCard,
 } from '@/components/mission-control'
+import { WidgetErrorBoundary } from '@/components/mission-control/WidgetErrorBoundary'
 import { openDigitalRafeeqAssistant } from '@/features/digitalRafeeq/launcher'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { useAuth } from '@/hooks/useAuth'
@@ -85,8 +86,12 @@ export function AdminHomePage() {
   if (permissionDeniedWhileAuthInitializing) {
     return (
       <div className="cd-page cd-page-admin mc-page mc-page-admin-compact mc-page-admin-command exdash-page">
-        <AdminMissionControlHero model={model} metricsReady={false} />
-        <AdminCommandCenter model={model} snapshot={snapshot} metricsReady={false} />
+        <WidgetErrorBoundary title="Campaign Hero">
+          <AdminMissionControlHero model={model} metricsReady={false} />
+        </WidgetErrorBoundary>
+        <WidgetErrorBoundary title="Command Center">
+          <AdminCommandCenter model={model} snapshot={snapshot} metricsReady={false} />
+        </WidgetErrorBoundary>
         <AskDigitalRafeeqCard compact onOpen={openDigitalRafeeqAssistant} />
       </div>
     )
@@ -162,9 +167,15 @@ export function AdminHomePage() {
 
   return (
     <div className="cd-page cd-page-admin mc-page mc-page-admin-compact mc-page-admin-command exdash-page">
-      <AdminMissionControlHero model={model} metricsReady={isHydrated} />
-      <AdminCommandCenter model={model} snapshot={snapshot} metricsReady={isHydrated} />
-      <AskDigitalRafeeqCard compact onOpen={openDigitalRafeeqAssistant} />
+      <WidgetErrorBoundary title="Campaign Hero">
+        <AdminMissionControlHero model={model} metricsReady={isHydrated} />
+      </WidgetErrorBoundary>
+      <WidgetErrorBoundary title="Command Center">
+        <AdminCommandCenter model={model} snapshot={snapshot} metricsReady={isHydrated} />
+      </WidgetErrorBoundary>
+      <WidgetErrorBoundary title="Ask Digital Rafeeq" compact>
+        <AskDigitalRafeeqCard compact onOpen={openDigitalRafeeqAssistant} />
+      </WidgetErrorBoundary>
     </div>
   )
 }

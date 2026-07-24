@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ROUTES, adminCompliancePath } from '@/constants/routes'
 import { buildCampaignDailyProgressSummary } from '@/lib/dailyProgressPresentation'
+import { createCoalescedNotifier } from '@/lib/dashboard/coalesceStoreNotifications'
 import { getIjtemaAttendanceDashboardMetrics } from '@/services/ijtemaAttendanceService'
 import { subscribeToAnnexure1Store } from '@/stores/annexure1Store'
 import { subscribeToIjtemaAttendanceStore } from '@/stores/ijtemaAttendanceStore'
@@ -23,9 +24,11 @@ export function AdminExecutionSummaryWidgets() {
   const [tick, setTick] = useState(0)
 
   useEffect(() => {
-    const unsubA = subscribeToAnnexure1Store(() => setTick((v) => v + 1))
-    const unsubI = subscribeToIjtemaAttendanceStore(() => setTick((v) => v + 1))
+    const coalesced = createCoalescedNotifier(() => setTick((v) => v + 1))
+    const unsubA = subscribeToAnnexure1Store(coalesced.bump)
+    const unsubI = subscribeToIjtemaAttendanceStore(coalesced.bump)
     return () => {
+      coalesced.dispose()
       unsubA()
       unsubI()
     }

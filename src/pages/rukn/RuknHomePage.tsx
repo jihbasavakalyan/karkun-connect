@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { Navigate } from 'react-router-dom'
 import { ROUTES } from '@/constants/routes'
 import { AskDigitalRafeeqCard, RuknMissionControlHero, RuknMissionControlPanels, RuknTodaysVisitQueue } from '@/components/mission-control'
+import { WidgetErrorBoundary } from '@/components/mission-control/WidgetErrorBoundary'
 import { RuknFloatingActionButton } from '@/components/home'
 import { ExecutionSuccessBanner } from '@/components/execution/ExecutionSuccessBanner'
 import { CampaignExecutionProgressCard } from '@/components/execution/CampaignExecutionProgressCard'
@@ -26,6 +27,7 @@ import { HomePageSkeleton } from '@/components/ui'
 /**
  * KC-0083 — Execution Dashboard in three sections:
  * 1) Mission Overview  2) Execution  3) Follow-up
+ * KC-0102A — Section error isolation; layout progressive shell is in RuknLayout.
  */
 export function RuknHomePage() {
   const ruknId = useRequiredRuknId()
@@ -64,37 +66,43 @@ export function RuknHomePage() {
       <ExecutionSuccessBanner />
 
       {/* Section 1 — Mission Overview: Progress → Summaries → Rafeeq (KC-0092B) */}
-      <section className="space-y-3" aria-label="Mission Overview">
-        <RuknMissionControlHero
-          model={model}
-          greeting={morningBrief.greeting}
-          missionLine={morningBrief.mission}
-          ruknName={ruknName}
-          campaignName={campaignName}
-          hideSummaryChips
-        />
-        <CampaignExecutionProgressCard ruknId={ruknId} />
-        {!postCampaign ? <RuknExecutionSummaryCards ruknId={ruknId} /> : null}
-        <AskDigitalRafeeqCard
-          mini
-          onOpen={openDigitalRafeeqAssistant}
-          guidanceLine={rafeeqLine}
-        />
-      </section>
+      <WidgetErrorBoundary title="Mission Overview">
+        <section className="space-y-3" aria-label="Mission Overview">
+          <RuknMissionControlHero
+            model={model}
+            greeting={morningBrief.greeting}
+            missionLine={morningBrief.mission}
+            ruknName={ruknName}
+            campaignName={campaignName}
+            hideSummaryChips
+          />
+          <CampaignExecutionProgressCard ruknId={ruknId} />
+          {!postCampaign ? <RuknExecutionSummaryCards ruknId={ruknId} /> : null}
+          <AskDigitalRafeeqCard
+            mini
+            onOpen={openDigitalRafeeqAssistant}
+            guidanceLine={rafeeqLine}
+          />
+        </section>
+      </WidgetErrorBoundary>
 
       {/* Section 2 — Execution (primary workspace; matrix remains the only editor) */}
       {!postCampaign ? (
-        <section className="mt-4 space-y-3" aria-label="Execution">
-          <CampaignExecutionMatrix ruknId={ruknId} />
-        </section>
+        <WidgetErrorBoundary title="Execution">
+          <section className="mt-4 space-y-3" aria-label="Execution">
+            <CampaignExecutionMatrix ruknId={ruknId} />
+          </section>
+        </WidgetErrorBoundary>
       ) : null}
 
       {/* Section 3 — Follow-up */}
-      <section className="mt-4 space-y-3" aria-label="Follow-up">
-        {!postCampaign ? <RuknTodaysFocus ruknId={ruknId} /> : null}
-        <RuknTodaysVisitQueue model={model} />
-        <RuknMissionControlPanels model={model} />
-      </section>
+      <WidgetErrorBoundary title="Follow-up">
+        <section className="mt-4 space-y-3" aria-label="Follow-up">
+          {!postCampaign ? <RuknTodaysFocus ruknId={ruknId} /> : null}
+          <RuknTodaysVisitQueue model={model} />
+          <RuknMissionControlPanels model={model} />
+        </section>
+      </WidgetErrorBoundary>
 
       <RuknFloatingActionButton
         nextAction={snapshot.nextAction}

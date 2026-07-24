@@ -665,7 +665,12 @@ function applyBackgroundHydratePayload(input: {
   communication: CommunicationState | null
   complianceSnapshots: { docs: Awaited<ReturnType<typeof getDocs>>['docs'] }
   migrationVersion: { version: number | null } | null
-  settingsSnapshots: { docs: Awaited<ReturnType<typeof getDocs>>['docs'] }
+  /**
+   * KC-0102C — settings/karkunRequests only.
+   * Critical already loaded karkunCounter + connectionMeta; migrationVersion is
+   * soft-read separately. Full settings collection getDocs was a verified duplicate.
+   */
+  karkunRequestsDoc: { requests?: NewKarkunRequest[] } | null
 }): void {
   const {
     activityLogs,
@@ -674,7 +679,7 @@ function applyBackgroundHydratePayload(input: {
     communication,
     complianceSnapshots,
     migrationVersion,
-    settingsSnapshots,
+    karkunRequestsDoc,
   } = input
 
   activityLogCache.set(activityLogs)
@@ -745,33 +750,11 @@ function applyBackgroundHydratePayload(input: {
     },
   })
 
-  const broadcastLists: BroadcastListRecord[] = []
-  let backupIndex: MigrationBackupIndexEntry[] = []
-  let karkunRequests: NewKarkunRequest[] = []
-  const backupMap = new Map<string, DatasetBackup>()
-  for (const snapshot of settingsSnapshots.docs) {
-    if (snapshot.id.startsWith('broadcast_')) {
-      broadcastLists.push(stripMeta<BroadcastListRecord>(snapshot.data() as DocumentData))
-      continue
-    }
-    if (snapshot.id.startsWith('backup_')) {
-      const backup = stripMeta<DatasetBackup>(snapshot.data() as DocumentData)
-      if (backup.id) {
-        backupMap.set(backup.id, backup)
-      }
-      continue
-    }
-    if (snapshot.id === FIRESTORE_DOCS.backupIndex) {
-      backupIndex = (snapshot.data() as { entries: MigrationBackupIndexEntry[] }).entries ?? []
-    }
-    if (snapshot.id === FIRESTORE_DOCS.karkunRequests) {
-      karkunRequests =
-        (snapshot.data() as { requests: NewKarkunRequest[] }).requests ?? []
-    }
-  }
-  broadcastCache.set(broadcastLists)
-  backupIndexCache.set(backupIndex)
-  backupCache.set(backupMap)
+  // KC-0102C — production settings has no broadcast_*/backup_* docs; caches stay empty
+  // unless written in-session via settings repository APIs.
+  const karkunRequests = Array.isArray(karkunRequestsDoc?.requests)
+    ? karkunRequestsDoc.requests
+    : []
   karkunRequestCache.set(karkunRequests)
 }
 
@@ -916,6 +899,8 @@ function readCriticalHydratePayload(db: ReturnType<typeof getFirestoreDb>) {
 }
 
 function readBackgroundHydratePayload(db: ReturnType<typeof getFirestoreDb>) {
+  // KC-0102C — do not getDocs(settings): critical already read karkunCounter +
+  // connectionMeta; migrationVersion is soft-read here; only karkunRequests is new.
   return Promise.all([
     readActivityLogsForClient(db),
     getDocsSoft(collection(db, FIRESTORE_COLLECTIONS.executions), 'executions'),
@@ -923,7 +908,11 @@ function readBackgroundHydratePayload(db: ReturnType<typeof getFirestoreDb>) {
     readDocSoft<CommunicationState>(db, FIRESTORE_COLLECTIONS.communications, FIRESTORE_DOCS.communicationState),
     getDocsSoft(collection(db, FIRESTORE_COLLECTIONS.compliance), 'compliance'),
     readDocSoft<{ version: number | null }>(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.migrationVersion),
-    getDocsSoft(collection(db, FIRESTORE_COLLECTIONS.settings), 'settings'),
+    readDocSoft<{ requests?: NewKarkunRequest[] }>(
+      db,
+      FIRESTORE_COLLECTIONS.settings,
+      FIRESTORE_DOCS.karkunRequests,
+    ),
   ]).then(
     ([
       activityLogs,
@@ -932,7 +921,7 @@ function readBackgroundHydratePayload(db: ReturnType<typeof getFirestoreDb>) {
       communication,
       complianceSnapshots,
       migrationVersion,
-      settingsSnapshots,
+      karkunRequestsDoc,
     ]) => ({
       activityLogs,
       executionSnapshots,
@@ -940,7 +929,7 @@ function readBackgroundHydratePayload(db: ReturnType<typeof getFirestoreDb>) {
       communication,
       complianceSnapshots,
       migrationVersion,
-      settingsSnapshots,
+      karkunRequestsDoc,
     }),
   )
 }
@@ -1061,7 +1050,7 @@ async function hydrateFirestoreCachesOnce(): Promise<void> {
       communication,
       complianceSnapshots,
       migrationVersion,
-      settingsSnapshots,
+      karkunRequestsDoc,
     ] = await Promise.all([
       readCollection<CampaignListItem>(db, FIRESTORE_COLLECTIONS.campaigns),
       readRuknsForClient(db),
@@ -1076,7 +1065,12 @@ async function hydrateFirestoreCachesOnce(): Promise<void> {
       readDocSoft<CommunicationState>(db, FIRESTORE_COLLECTIONS.communications, FIRESTORE_DOCS.communicationState),
       getDocsSoft(collection(db, FIRESTORE_COLLECTIONS.compliance), 'compliance'),
       readDocSoft<{ version: number | null }>(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.migrationVersion),
-      getDocsSoft(collection(db, FIRESTORE_COLLECTIONS.settings), 'settings'),
+      // KC-0102C — targeted settings doc (not full settings collection).
+      readDocSoft<{ requests?: NewKarkunRequest[] }>(
+        db,
+        FIRESTORE_COLLECTIONS.settings,
+        FIRESTORE_DOCS.karkunRequests,
+      ),
     ])
 
     await applyCriticalHydratePayload({
@@ -1094,7 +1088,7 @@ async function hydrateFirestoreCachesOnce(): Promise<void> {
       communication,
       complianceSnapshots,
       migrationVersion,
-      settingsSnapshots,
+      karkunRequestsDoc,
     })
     traceIncidentStage('hydrateFirestoreCachesOnce:complete', {
       caller: 'hydrateFirestoreCachesOnce',
