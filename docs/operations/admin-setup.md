@@ -52,7 +52,18 @@ await getAuth().setCustomUserClaims(uid, {
 
 ### Bulk Claim Script
 
-For 49 Rukns, prepare CSV: `email_or_phone, ruknId, role` and run Admin SDK batch script before pilot.
+Audit and repair Active Rukn JWT claims (KC-0100.2):
+
+```bash
+npm run admin:kc0100:claims:audit   # report only
+npm run admin:kc0100:claims:dry     # show repairs without writing
+npm run admin:kc0100:claims:apply   # idempotent repair of missing/wrong claims
+```
+
+Reports are written under `production-data/exports/kc0100-rukn-claims-audit-*.json`.
+Does not create Auth users, does not modify Admin accounts, and does not bypass KC-0100 fail-closed login.
+
+For one-off claims, prepare CSV: `email_or_phone, ruknId, role` and run Admin SDK batch script before pilot.
 
 ## Verify Setup
 

@@ -14,6 +14,10 @@ import {
 import { RecaptchaVerifier } from 'firebase/auth'
 import { mapFirebaseAuthError, isOfflineError } from '@/lib/auth/authErrors'
 import { resolveAuthUser, toE164IndianPhone } from '@/lib/auth/roleResolver'
+import {
+  formatRuknClaimsValidationFailure,
+  validateRuknJwtClaimsAgainstMaster,
+} from '@/lib/auth/ruknClaimsValidation'
 import { getFirebaseAuth, isFirebaseConfigured } from '@/lib/firebase/firebase'
 import { logRuknAuthAttempt } from '@/services/ruknAuthAttemptLogger'
 import {
@@ -114,7 +118,10 @@ function mapFirebaseUser(user: User): Promise<AuthUser | null> {
   })
 }
 
-async function finalizeLogin(user: User): Promise<LoginResult> {
+async function finalizeLogin(
+  user: User,
+  expectedRukn?: Pick<Rukn, 'id' | 'mobile' | 'name'>,
+): Promise<LoginResult> {
   // Capture claims before any sign-out so we can distinguish missing Rukn claims.
   const tokenBefore = await user.getIdTokenResult(false).catch(() => null)
   const authUser = await mapFirebaseUser(user)
@@ -125,12 +132,87 @@ async function finalizeLogin(user: User): Promise<LoginResult> {
       (!tokenBefore ||
         tokenBefore.claims.role !== 'rukn' ||
         typeof tokenBefore.claims.ruknId !== 'string')
+
+    // KC-0100.2 — first-OTP / claims-mismatch safeguard: log exact expected vs actual.
+    // Does not provision claims (Admin SDK only); preserves KC-0100 fail-closed.
+    if (expectedRukn && missingRuknClaims) {
+      const validation = validateRuknJwtClaimsAgainstMaster(
+        {
+          ruknId: expectedRukn.id,
+          mobile: expectedRukn.mobile,
+          name: expectedRukn.name,
+        },
+        {
+          uid: user.uid,
+          phoneNumber: user.phoneNumber,
+          role: tokenBefore?.claims.role ?? null,
+          ruknId: tokenBefore?.claims.ruknId ?? null,
+        },
+      )
+      console.error('[KC-0100.2] Rukn claims validation failed after OTP', {
+        uid: user.uid,
+        phone: user.phoneNumber,
+        expectedRuknId: expectedRukn.id,
+        expectedMobile: expectedRukn.mobile,
+        reasons: validation.reasons,
+        expected: validation.expected,
+        actual: validation.actual,
+        detail: formatRuknClaimsValidationFailure(validation),
+      })
+      logRuknAuthAttempt({
+        mobile: expectedRukn.mobile,
+        result: 'otp_failed',
+        registered: true,
+        otpOutcome: 'failure',
+        detail: `claims_validation: ${formatRuknClaimsValidationFailure(validation)}`,
+      })
+    }
+
     await signOut(getFirebaseAuth())
     return {
       success: false,
       error: missingRuknClaims
         ? MISSING_RUKN_JWT_CLAIMS_ERROR
         : 'Your account is not authorized for Karkun Connect. Contact your administrator.',
+    }
+  }
+
+  // KC-0100.2 — successful OTP path: confirm JWT claims match Rukn Master identity.
+  if (expectedRukn && authUser.role === 'rukn') {
+    const tokenAfter = await user.getIdTokenResult(false).catch(() => null)
+    const validation = validateRuknJwtClaimsAgainstMaster(
+      {
+        ruknId: expectedRukn.id,
+        mobile: expectedRukn.mobile,
+        name: expectedRukn.name,
+      },
+      {
+        uid: user.uid,
+        phoneNumber: user.phoneNumber,
+        role: tokenAfter?.claims.role ?? authUser.role,
+        ruknId: tokenAfter?.claims.ruknId ?? authUser.ruknId ?? null,
+      },
+    )
+    if (!validation.ok) {
+      console.error('[KC-0100.2] Rukn claims mismatch after successful mapFirebaseUser', {
+        uid: user.uid,
+        reasons: validation.reasons,
+        expected: validation.expected,
+        actual: validation.actual,
+        detail: formatRuknClaimsValidationFailure(validation),
+      })
+      logRuknAuthAttempt({
+        mobile: expectedRukn.mobile,
+        result: 'otp_failed',
+        registered: true,
+        otpOutcome: 'failure',
+        detail: `claims_validation: ${formatRuknClaimsValidationFailure(validation)}`,
+      })
+      await signOut(getFirebaseAuth())
+      return {
+        success: false,
+        error: MISSING_RUKN_JWT_CLAIMS_ERROR,
+      }
     }
   }
 
@@ -311,7 +393,7 @@ export const authenticationService = {
 
       otpSession = null
       resetRecaptcha()
-      const loginResult = await finalizeLogin(result.user)
+      const loginResult = await finalizeLogin(result.user, expectedRukn)
       if (loginResult.success) {
         logRuknAuthAttempt({
           mobile: expectedRukn.mobile,
@@ -319,7 +401,8 @@ export const authenticationService = {
           registered: true,
           otpOutcome: 'success',
         })
-      } else {
+      } else if (!loginResult.error?.includes('not activated yet')) {
+        // Missing-claims path already logged structured [KC-0100.2] + claims_validation detail.
         logRuknAuthAttempt({
           mobile: expectedRukn.mobile,
           result: 'otp_failed',
