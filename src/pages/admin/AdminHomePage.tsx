@@ -6,6 +6,7 @@ import {
 } from '@/components/mission-control'
 import { openDigitalRafeeqAssistant } from '@/features/digitalRafeeq/launcher'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
+import { useAuth } from '@/hooks/useAuth'
 import {
   useRepositoryHydration,
   useRepositoryHydrationStatus,
@@ -18,14 +19,18 @@ import {
   dashState05RefreshTrigger,
 } from '@/lib/debug/kc00586DashboardStateProbe'
 import { kc00584GetReport } from '@/lib/debug/kc00584PermissionProbe'
+import { markStartupLifecycle } from '@/lib/startupLifecycleTrace'
+import { logStartupTiming } from '@/lib/startupDiagnostics'
 
 export function AdminHomePage() {
   const snapshot = useAdminCommandCenter()
   const isHydrated = useRepositoryHydration()
   const hydration = useRepositoryHydrationStatus()
+  const { isInitializing } = useAuth()
   const { assignmentVersion } = useAssignmentEngine()
   const prevHydrated = useRef(isHydrated)
   const prevAssignmentVersion = useRef(assignmentVersion)
+  const dashboardRenderedLogged = useRef(false)
 
   // KC-0058.6 — detect hydration / assignment refresh triggers that remount metrics.
   useEffect(() => {
@@ -58,10 +63,34 @@ export function AdminHomePage() {
     return next
   }, [snapshot, assignmentVersion, isHydrated])
 
+  useEffect(() => {
+    if (!isHydrated || dashboardRenderedLogged.current) return
+    dashboardRenderedLogged.current = true
+    markStartupLifecycle('dashboard.rendered', { role: 'administrator' })
+    logStartupTiming('dashboard.rendered', { role: 'administrator' })
+  }, [isHydrated])
+
   // KC-0069 — surface first critical-read failure details (UI only; no hydrate redesign).
   const probe = hydration.failed ? kc00584GetReport() : null
   const firstFailure = probe?.firstFailure ?? null
   const claimRole = probe?.authBeforeCritical?.claims.role ?? null
+  const permissionDeniedWhileAuthInitializing =
+    hydration.failed &&
+    isInitializing &&
+    (firstFailure?.errorCode === 'permission-denied' ||
+      /permission-denied|insufficient permissions/i.test(hydration.error ?? ''))
+
+  // While Auth is still initializing, do not show a hard production error for a
+  // transient permission-denied (claims race). Keep the normal loading shell.
+  if (permissionDeniedWhileAuthInitializing) {
+    return (
+      <div className="cd-page cd-page-admin mc-page mc-page-admin-compact mc-page-admin-command exdash-page">
+        <AdminMissionControlHero model={model} metricsReady={false} />
+        <AdminCommandCenter model={model} snapshot={snapshot} metricsReady={false} />
+        <AskDigitalRafeeqCard compact onOpen={openDigitalRafeeqAssistant} />
+      </div>
+    )
+  }
 
   // KC-0058.3 — never render fabricated 0/0/0% after critical hydrate failure.
   if (hydration.failed) {

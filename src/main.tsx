@@ -9,7 +9,6 @@ async function runDeferredBootstrap(): Promise<void> {
   const { initializeRepositories } = await import('@/repositories/firestore/initialize')
   const {
     markRepositoryHydrationFailed,
-    markRepositoryHydrationReady,
     isRepositoryHydrationReady,
     isRepositoryHydrationFailed,
   } = await import('@/repositories/hydrationReady')
@@ -17,11 +16,8 @@ async function runDeferredBootstrap(): Promise<void> {
     logStartupTiming('initializeRepositories.start')
     await initializeRepositories()
     logStartupTiming('initializeRepositories.success')
-    // Local provider marks ready inside initializeRepositories; firestore path
-    // marks ready only after critical hydrate succeeds.
-    if (!isRepositoryHydrationReady() && !isRepositoryHydrationFailed()) {
-      markRepositoryHydrationReady()
-    }
+    // Ready is marked only after critical hydrate succeeds (or local provider).
+    // Do not force-ready when startup deferred for unsigned-in Auth (claims race fix).
   } catch (error) {
     console.error('[bootstrap] repository initialization failed', error)
     logStartupTiming('initializeRepositories.failed', {

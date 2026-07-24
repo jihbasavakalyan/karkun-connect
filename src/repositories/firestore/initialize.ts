@@ -1,7 +1,12 @@
 import { getRepositories, getRepositoryProviderMode } from '@/repositories/provider'
 import { enableFirestorePersistence } from '@/lib/firebase/firestore'
 import { getFirebaseAuth } from '@/lib/firebase/firebase'
+import {
+  ensureJwtRoleClaimPresent,
+  MISSING_JWT_ROLE_CLAIM_ERROR,
+} from '@/lib/auth/ensureJwtRoleClaim'
 import { markStartupLifecycle } from '@/lib/startupLifecycleTrace'
+import { logStartupTiming } from '@/lib/startupDiagnostics'
 import {
   beginPhasedStartupHydrate,
   hydrateFirestoreCaches,
@@ -38,6 +43,8 @@ let ruknRescopeAttempted = false
 
 const CRITICAL_HYDRATE_RETRY_DELAY_MS = 400
 
+type StartupHydrateOutcome = 'hydrated' | 'deferred'
+
 function getErrorCode(error: unknown): string | null {
   if (error && typeof error === 'object' && 'code' in error) {
     const code = (error as { code?: unknown }).code
@@ -64,52 +71,81 @@ function isTransientCriticalHydrateError(error: unknown): boolean {
     return true
   }
   const message = error instanceof Error ? error.message : String(error ?? '')
-  return /permission-denied|Missing or insufficient permissions|unavailable|deadline|unauthenticated/i.test(
-    message,
+  return (
+    /permission-denied|Missing or insufficient permissions|unavailable|deadline|unauthenticated/i.test(
+      message,
+    ) || message.includes(MISSING_JWT_ROLE_CLAIM_ERROR)
   )
 }
 
 /**
- * Ensure the Auth ID token is available before the first critical Firestore read.
- * authStateReady can resolve a few ms before AuthProvider / Firestore attach the token.
+ * Ensure Auth ID token + custom role claims are attached before the first critical
+ * Firestore read.
  *
- * KC-0061 Phase 2 — if the token has no role claim, force-refresh once (shared Admin+Rukn fix).
+ * Root cause (intermittent "Unable to load campaign data"):
+ * authStateReady / getIdTokenResult(false) can report a user (and even show claims)
+ * a few ms before Firestore's Auth credential carries request.auth.token.role.
+ * Critical getDocs then fail with permission-denied; refresh/retry succeeds.
+ *
+ * Contract: reuse ensureJwtRoleClaimPresent (always getIdToken(true) + require role),
+ * same gate as Admin/Rukn assign — do not start protected reads without claims.
  */
-async function ensureAuthTokenReadyForFirestore(forceRefresh = false): Promise<void> {
+async function ensureAuthTokenReadyForFirestore(_forceRefresh = false): Promise<void> {
   const user = getFirebaseAuth().currentUser
   if (!user) {
-    markStartupLifecycle('auth.token.skip', { reason: 'no-currentUser', forceRefresh })
+    markStartupLifecycle('auth.token.skip', { reason: 'no-currentUser' })
+    logStartupTiming('auth.token.skip', { reason: 'no-currentUser' })
     return
   }
-  markStartupLifecycle('auth.token.wait', { forceRefresh, uid: user.uid })
-  let tokenResult = await user.getIdTokenResult(forceRefresh)
-  let claimRole =
-    typeof tokenResult.claims.role === 'string' ? tokenResult.claims.role : null
-  let claimRuknId =
-    typeof tokenResult.claims.ruknId === 'string' ? tokenResult.claims.ruknId : null
 
-  if (!claimRole && !forceRefresh) {
-    markStartupLifecycle('auth.token.missing_role_claim.refresh', { uid: user.uid })
-    tokenResult = await user.getIdTokenResult(true)
-    claimRole = typeof tokenResult.claims.role === 'string' ? tokenResult.claims.role : null
-    claimRuknId =
-      typeof tokenResult.claims.ruknId === 'string' ? tokenResult.claims.ruknId : null
-  }
+  markStartupLifecycle('auth.ready', { uid: user.uid })
+  logStartupTiming('auth.ready', { uid: user.uid })
+  markStartupLifecycle('auth.token.wait', { forceRefresh: true, uid: user.uid })
 
-  markStartupLifecycle('auth.token.ready', {
-    forceRefresh: forceRefresh || !claimRole,
+  const claims = await ensureJwtRoleClaimPresent()
+  markStartupLifecycle('auth.token.refreshed', {
     uid: user.uid,
-    role: claimRole,
-    ruknId: claimRuknId,
-    issuedAt: tokenResult.issuedAtTime,
-    authTime: tokenResult.authTime,
+    forceRefreshed: claims.forceRefreshed,
+    ok: claims.ok,
   })
-  if (!claimRole) {
-    console.warn('[KC-0061] auth.token.ready without role claim after refresh — Firestore will deny', {
+  logStartupTiming('auth.token.refreshed', {
+    uid: user.uid,
+    ok: claims.ok,
+    forceRefreshed: claims.forceRefreshed,
+  })
+
+  if (!claims.ok) {
+    console.warn('[KC-0061] auth claims unavailable after force-refresh — deferring protected reads', {
       uid: user.uid,
+      error: claims.error,
     })
-    markStartupLifecycle('auth.token.missing_role_claim', { uid: user.uid, forceRefresh: true })
+    markStartupLifecycle('auth.claims.missing', {
+      uid: user.uid,
+      forceRefreshed: true,
+      error: claims.error,
+    })
+    const err = new Error(claims.error) as Error & { code?: string }
+    err.code = 'unauthenticated'
+    throw err
   }
+
+  markStartupLifecycle('auth.claims.available', {
+    uid: user.uid,
+    role: claims.role,
+    ruknId: claims.ruknId,
+  })
+  logStartupTiming('auth.claims.available', {
+    uid: user.uid,
+    role: claims.role,
+    ruknId: claims.ruknId,
+  })
+  // Keep legacy labels for KC-0061 verify scripts.
+  markStartupLifecycle('auth.token.ready', {
+    forceRefresh: true,
+    uid: user.uid,
+    role: claims.role,
+    ruknId: claims.ruknId,
+  })
 }
 
 function ensureConnectionRepositoryReadable(): void {
@@ -342,12 +378,25 @@ async function runCriticalHydrateRetry(firstError: unknown): Promise<void> {
   markRepositoryHydrationReady()
 }
 
-async function runStartupLifecycle(): Promise<void> {
+async function runStartupLifecycle(): Promise<StartupHydrateOutcome> {
   markStartupLifecycle('auth.authStateReady.wait')
+  logStartupTiming('auth.authStateReady.wait')
   await getFirebaseAuth().authStateReady()
   markStartupLifecycle('auth.authStateReady')
-  // KC-0058.8 — close the authStateReady → first getDocs token-attachment gap.
-  await ensureAuthTokenReadyForFirestore(false)
+  logStartupTiming('auth.authStateReady')
+
+  // No signed-in user yet — do not issue protected reads (would permission-deny and
+  // poison hydrationReady.failed before AuthProvider finishes login).
+  if (!getFirebaseAuth().currentUser) {
+    markStartupLifecycle('auth.no_user.defer_hydrate')
+    logStartupTiming('auth.no_user.defer_hydrate')
+    return 'deferred'
+  }
+
+  // Always force-refresh + require role claims before critical getDocs.
+  await ensureAuthTokenReadyForFirestore(true)
+  markStartupLifecycle('repository.initialized')
+  logStartupTiming('repository.initialized')
 
   try {
     await runPhasedStartupHydrate()
@@ -369,6 +418,8 @@ async function runStartupLifecycle(): Promise<void> {
       throw retryError
     }
   }
+
+  return 'hydrated'
 }
 
 function scheduleSnapshotRefresh(): void {
@@ -457,7 +508,7 @@ export async function refreshFirestoreAfterAuth(): Promise<void> {
   }
 
   try {
-    await ensureAuthTokenReadyForFirestore(false)
+    await ensureAuthTokenReadyForFirestore(true)
     const ok = await runHydrateAndRebuildCycle('post-auth')
     if (ok) {
       criticalHydrateSucceeded = true
@@ -586,17 +637,31 @@ export async function initializeRepositories(): Promise<void> {
   initializeInFlight = (async () => {
     try {
       markStartupLifecycle('initializeRepositories.start')
+      logStartupTiming('initializeRepositories.start')
       await enableFirestorePersistence()
-      await runStartupLifecycle()
+      const outcome = await runStartupLifecycle()
+
+      if (outcome === 'deferred') {
+        // AuthProvider.refreshFirestoreAfterAuth will hydrate after login.
+        markStartupLifecycle('initializeRepositories.deferred', {
+          reason: 'no_current_user',
+        })
+        logStartupTiming('initializeRepositories.deferred', { reason: 'no_current_user' })
+        return
+      }
 
       initialized = true
       markStartupLifecycle('initializeRepositories.complete', {
         criticalHydrateSucceeded: true,
       })
+      logStartupTiming('initializeRepositories.complete')
     } catch (error) {
       criticalHydrateSucceeded = false
       markStartupLifecycle('initializeRepositories.failed', {
         error: error instanceof Error ? error.message : String(error),
+      })
+      logStartupTiming('initializeRepositories.failed', {
+        message: error instanceof Error ? error.message : String(error),
       })
       // Do not mark background ready — critical contract failed.
       if (!isRepositoryHydrationFailed()) {

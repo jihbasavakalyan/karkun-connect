@@ -29,7 +29,7 @@ const auth = readFileSync(resolve('src/services/authenticationService.ts'), 'utf
 assert(auth.includes('ID token missing rukn claims'), 'force-refresh when JWT lacks rukn role')
 
 const init = readFileSync(resolve('src/repositories/firestore/initialize.ts'), 'utf8')
-assert(init.includes('auth.token.missing_role_claim'), 'dashboard startup logs missing role claim')
+assert(init.includes('auth.claims.missing') || init.includes('auth.claims.available'), 'dashboard startup logs claim availability')
 
 const provision = readFileSync(
   resolve('scripts/admin/kc0061-provision-rukn-claims.mjs'),

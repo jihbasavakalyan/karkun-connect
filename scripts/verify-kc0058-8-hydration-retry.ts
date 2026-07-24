@@ -16,8 +16,9 @@ const initializeSource = readFileSync(
 )
 
 assert(
-  initializeSource.includes('ensureAuthTokenReadyForFirestore'),
-  'must wait for auth token before critical hydrate',
+  initializeSource.includes('ensureAuthTokenReadyForFirestore') &&
+    initializeSource.includes('ensureJwtRoleClaimPresent'),
+  'must wait for auth token + JWT role claims before critical hydrate',
 )
 assert(
   initializeSource.includes('isTransientCriticalHydrateError'),

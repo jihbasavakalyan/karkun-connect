@@ -23,7 +23,13 @@ const auth = readFileSync(resolve('src/services/authenticationService.ts'), 'utf
 assert(auth.includes('claimsMatchAppRole'), 'Admin+Rukn claim mismatch refresh')
 
 const init = readFileSync(resolve('src/repositories/firestore/initialize.ts'), 'utf8')
-assert(init.includes('auth.token.missing_role_claim.refresh'), 'hydrate force-refresh when claim missing')
+assert(init.includes('ensureJwtRoleClaimPresent'), 'hydrate must reuse JWT role claim gate')
+assert(init.includes('auth.claims.available'), 'hydrate must mark claims available before reads')
+assert(init.includes('auth.no_user.defer_hydrate'), 'must defer hydrate when no signed-in user')
+assert(
+  init.includes('auth.token.ready') || init.includes('auth.claims.available'),
+  'hydrate force-refresh / claims ready markers present',
+)
 
 const assign = readFileSync(resolve('src/services/assignmentService.ts'), 'utf8')
 assert(assign.includes('ensureJwtRoleClaimPresent'), 'assignRukn gated on JWT role')

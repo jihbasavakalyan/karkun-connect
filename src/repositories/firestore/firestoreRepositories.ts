@@ -94,6 +94,7 @@ import {
   kc00584ProbeCriticalOp,
 } from '@/lib/debug/kc00584PermissionProbe'
 import { kc004cTraceRegistry } from '@/lib/debug/kc004cRegistryTrace'
+import { markStartupLifecycle } from '@/lib/startupLifecycleTrace'
 
 type ConnectionMetaDoc = {
   nextSequence?: number
@@ -762,6 +763,10 @@ function readCriticalHydratePayload(db: ReturnType<typeof getFirestoreDb>) {
   return (async () => {
     const scope = await resolveClientAuthScope()
     await kc00584CaptureAuthBeforeCritical(scope)
+    markStartupLifecycle('firestore.first_critical_read.start', {
+      role: scope.role,
+      ruknId: scope.ruknId,
+    })
 
     const [
       campaigns,
@@ -849,6 +854,10 @@ function readCriticalHydratePayload(db: ReturnType<typeof getFirestoreDb>) {
           ),
       }),
     ])
+
+    markStartupLifecycle('firestore.first_critical_read.complete', {
+      connectionCount: Array.isArray(assignments) ? assignments.length : 0,
+    })
 
     return {
       campaigns,
