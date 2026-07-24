@@ -9,6 +9,7 @@ import type {
 } from '@/repositories/interfaces/CommunicationRepository'
 import type { BaitulMaalRecord } from '@/types/baitulMaal'
 import type { IjtemaAttendanceRecord } from '@/types/ijtemaAttendance'
+import type { WeeklyIjtemaEvent, WeeklyIjtemaSubmission } from '@/types/weeklyIjtema'
 import type { JihPortalState } from '@/repositories/interfaces/ComplianceRepository'
 import type { Rukn } from '@/data/ruknMaster'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
@@ -477,6 +478,50 @@ export class ComplianceLocalRepository implements ComplianceRepository {
 
   clearIjtema(): RepositoryResult<void> {
     return tryRepository(() => removeFromStorage(STORAGE_KEYS.ijtema))
+  }
+
+  loadWeeklyIjtemaEvents(): RepositoryResult<WeeklyIjtemaEvent[]> {
+    return tryRepository(() => [
+      ...loadMapFromStorage<string, WeeklyIjtemaEvent>(STORAGE_KEYS.weeklyIjtemaEvents).values(),
+    ])
+  }
+
+  saveWeeklyIjtemaEvents(events: WeeklyIjtemaEvent[]): RepositoryResult<void> {
+    return tryRepository(() => {
+      const map = loadMapFromStorage<string, WeeklyIjtemaEvent>(STORAGE_KEYS.weeklyIjtemaEvents)
+      for (const event of events) {
+        map.set(event.id, event)
+      }
+      saveMapToStorage(STORAGE_KEYS.weeklyIjtemaEvents, map)
+    })
+  }
+
+  clearWeeklyIjtemaEvents(): RepositoryResult<void> {
+    return tryRepository(() => removeFromStorage(STORAGE_KEYS.weeklyIjtemaEvents))
+  }
+
+  loadWeeklyIjtemaSubmissions(): RepositoryResult<WeeklyIjtemaSubmission[]> {
+    return tryRepository(() => [
+      ...loadMapFromStorage<string, WeeklyIjtemaSubmission>(
+        STORAGE_KEYS.weeklyIjtemaSubmissions,
+      ).values(),
+    ])
+  }
+
+  saveWeeklyIjtemaSubmissions(submissions: WeeklyIjtemaSubmission[]): RepositoryResult<void> {
+    return tryRepository(() => {
+      const map = loadMapFromStorage<string, WeeklyIjtemaSubmission>(
+        STORAGE_KEYS.weeklyIjtemaSubmissions,
+      )
+      for (const submission of submissions) {
+        map.set(submission.id, submission)
+      }
+      saveMapToStorage(STORAGE_KEYS.weeklyIjtemaSubmissions, map)
+    })
+  }
+
+  clearWeeklyIjtemaSubmissions(): RepositoryResult<void> {
+    return tryRepository(() => removeFromStorage(STORAGE_KEYS.weeklyIjtemaSubmissions))
   }
 
   loadJihPortal(): RepositoryResult<JihPortalState> {

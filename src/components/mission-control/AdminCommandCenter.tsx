@@ -4,7 +4,7 @@
  */
 
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { Icon } from '@/components/ui/Icon'
 import type { IconName } from '@/design-system/iconNames'
 import { ROUTES } from '@/constants/routes'
@@ -43,6 +43,7 @@ import { getRuknById } from '@/data/ruknMaster'
 import { buildTelLink } from '@/utils/personContactLinks'
 import { resolveAdminHealthKpiPending } from './dashboardMetricReadiness'
 import { LiveActivityFeed } from './LiveActivityFeed'
+import { WeeklyIjtemaDashboardKpiCard } from './WeeklyIjtemaDashboardKpiCard'
 
 type AdminCommandCenterProps = {
   model: AdminMissionControlModel
@@ -333,6 +334,9 @@ export function AdminCommandCenter({
   const { assignmentVersion } = useAssignmentEngine()
   const backgroundReady = useBackgroundHydration()
   const { sendIndividualMessage } = useCommunication()
+  const [searchParams] = useSearchParams()
+  const showAllTasks =
+    USE_ADMIN_ACTION_CENTER_EXPERIMENT && searchParams.get('view') === 'all-tasks'
   const [systemHistoryOpen, setSystemHistoryOpen] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set())
   const [composerError, setComposerError] = useState('')
@@ -559,161 +563,182 @@ export function AdminCommandCenter({
 
   return (
     <div className="exdash-stack">
-      <OverviewMetricGrid
-        title="Collective Overview"
-        metrics={collectiveMetrics}
-        icon="chart"
-        tone="slate"
-      />
-
-      {USE_ADMIN_ACTION_CENTER_EXPERIMENT ? (
-        <AdminActionCenter items={actionCenterItems} backgroundReady={backgroundReady} />
-      ) : (
-        <AdminOpsThreeColumnLayout
-          model={model}
-          snapshot={snapshot}
-          interventions={interventions}
+      {showAllTasks ? (
+        <AdminActionCenter
+          items={actionCenterItems}
           backgroundReady={backgroundReady}
+          variant="full"
         />
-      )}
-
-      {backgroundReady ? <PendingKarkunRequestQueue /> : null}
-
-      <OverviewMetricGrid
-        title="Male Overview"
-        metrics={maleMetrics}
-        icon="users"
-        tone="sky"
-      />
-      <section className="exdash-panel" aria-label="Male Rukn performance">
-        <div className="exdash-section-head">
-          <ExdashSectionTitle title="Male Rukn Performance" icon="users" tone="sky" />
-          <Link to={ROUTES.ADMIN_RUKN} className="exdash-section-link">
-            All Rukns →
-          </Link>
-        </div>
-        {!backgroundReady ? (
-          <p className="exdash-muted" aria-busy="true">
-            Loading campaign data…
-          </p>
-        ) : (
-          <PaginatedRuknGrid
-            rows={maleRukns}
-            emptyLabel="No Male Rukns found."
-            selectedIds={selectedIds}
-            onToggleSelected={toggleSelected}
-            onNotify={openNotify}
-            onAppreciate={openAppreciate}
-            onRemind={openRemind}
-          />
-        )}
-      </section>
-
-      <OverviewMetricGrid
-        title="Female Overview"
-        metrics={femaleMetrics}
-        icon="users"
-        tone="violet"
-      />
-      <section className="exdash-panel" aria-label="Female Rukn performance">
-        <div className="exdash-section-head">
-          <ExdashSectionTitle title="Female Rukn Performance" icon="users" tone="violet" />
-          <Link to={ROUTES.ADMIN_RUKN} className="exdash-section-link">
-            All Rukns →
-          </Link>
-        </div>
-        {!backgroundReady ? (
-          <p className="exdash-muted" aria-busy="true">
-            Loading campaign data…
-          </p>
-        ) : (
-          <PaginatedRuknGrid
-            rows={femaleRukns}
-            emptyLabel="No Female Rukns found."
-            selectedIds={selectedIds}
-            onToggleSelected={toggleSelected}
-            onNotify={openNotify}
-            onAppreciate={openAppreciate}
-            onRemind={openRemind}
-          />
-        )}
-      </section>
-
-      {selectedIds.size > 0 ? (
-        <div className="exdash-bulk-bar" role="region" aria-label="Bulk Rukn communication">
-          <p className="exdash-bulk-count">{selectedIds.size} selected</p>
-          <div className="exdash-bulk-actions">
-            <button type="button" className="exdash-action-btn" onClick={() => openBulk('notify')}>
-              Notify Selected
-            </button>
-            <button
-              type="button"
-              className="exdash-action-btn exdash-action-accent"
-              onClick={() => openBulk('appreciate')}
-            >
-              Appreciate Selected
-            </button>
-            <button
-              type="button"
-              className="exdash-action-btn exdash-action-warn"
-              onClick={() => openBulk('remind')}
-            >
-              Reminder to Selected
-            </button>
-            <button type="button" className="exdash-action-btn" onClick={clearSelection}>
-              Clear
-            </button>
-          </div>
-        </div>
-      ) : null}
-
-      {composerError ? (
-        <p className="exdash-muted" role="alert">
-          {composerError}
-        </p>
-      ) : null}
-
-      <LiveActivityFeed ready={backgroundReady} limit={8} />
-
-      <section className="exdash-system-history" aria-label="Recent system history">
-        <button
-          type="button"
-          className="exdash-system-history-toggle"
-          aria-expanded={systemHistoryOpen}
-          onClick={() => setSystemHistoryOpen((open) => !open)}
-        >
-          <span>
-            Recent System History ({systemHistory.length || 0})
-          </span>
-          <span aria-hidden="true">{systemHistoryOpen ? '▲ Collapse' : '▼ Expand'}</span>
-        </button>
-        {systemHistoryOpen ? (
-          !backgroundReady ? (
-            <p className="exdash-muted mt-2" aria-busy="true">
-              Loading…
-            </p>
-          ) : systemHistory.length === 0 ? (
-            <p className="exdash-muted mt-2">No system history yet.</p>
+      ) : (
+        <>
+          {USE_ADMIN_ACTION_CENTER_EXPERIMENT ? (
+            <>
+              <AdminActionCenter items={actionCenterItems} backgroundReady={backgroundReady} />
+              <WeeklyIjtemaDashboardKpiCard />
+              {backgroundReady ? <PendingKarkunRequestQueue /> : null}
+              <OverviewMetricGrid
+                title="Collective Overview"
+                metrics={collectiveMetrics}
+                icon="chart"
+                tone="slate"
+              />
+            </>
           ) : (
-            <ul className="exdash-system-history-list">
-              {systemHistory.map((item) => (
-                <li
-                  key={item.id}
-                  className={`exdash-system-history-item exdash-history-${activityTone(item.message)}`}
+            <>
+              <OverviewMetricGrid
+                title="Collective Overview"
+                metrics={collectiveMetrics}
+                icon="chart"
+                tone="slate"
+              />
+              <AdminOpsThreeColumnLayout
+                model={model}
+                snapshot={snapshot}
+                interventions={interventions}
+                backgroundReady={backgroundReady}
+              />
+              <WeeklyIjtemaDashboardKpiCard />
+              {backgroundReady ? <PendingKarkunRequestQueue /> : null}
+            </>
+          )}
+
+          <OverviewMetricGrid
+            title="Male Overview"
+            metrics={maleMetrics}
+            icon="users"
+            tone="sky"
+          />
+          <section className="exdash-panel" aria-label="Male Rukn performance">
+            <div className="exdash-section-head">
+              <ExdashSectionTitle title="Male Rukn Performance" icon="users" tone="sky" />
+              <Link to={ROUTES.ADMIN_RUKN} className="exdash-section-link">
+                All Rukns →
+              </Link>
+            </div>
+            {!backgroundReady ? (
+              <p className="exdash-muted" aria-busy="true">
+                Loading campaign data…
+              </p>
+            ) : (
+              <PaginatedRuknGrid
+                rows={maleRukns}
+                emptyLabel="No Male Rukns found."
+                selectedIds={selectedIds}
+                onToggleSelected={toggleSelected}
+                onNotify={openNotify}
+                onAppreciate={openAppreciate}
+                onRemind={openRemind}
+              />
+            )}
+          </section>
+
+          <OverviewMetricGrid
+            title="Female Overview"
+            metrics={femaleMetrics}
+            icon="users"
+            tone="violet"
+          />
+          <section className="exdash-panel" aria-label="Female Rukn performance">
+            <div className="exdash-section-head">
+              <ExdashSectionTitle title="Female Rukn Performance" icon="users" tone="violet" />
+              <Link to={ROUTES.ADMIN_RUKN} className="exdash-section-link">
+                All Rukns →
+              </Link>
+            </div>
+            {!backgroundReady ? (
+              <p className="exdash-muted" aria-busy="true">
+                Loading campaign data…
+              </p>
+            ) : (
+              <PaginatedRuknGrid
+                rows={femaleRukns}
+                emptyLabel="No Female Rukns found."
+                selectedIds={selectedIds}
+                onToggleSelected={toggleSelected}
+                onNotify={openNotify}
+                onAppreciate={openAppreciate}
+                onRemind={openRemind}
+              />
+            )}
+          </section>
+
+          {selectedIds.size > 0 ? (
+            <div className="exdash-bulk-bar" role="region" aria-label="Bulk Rukn communication">
+              <p className="exdash-bulk-count">{selectedIds.size} selected</p>
+              <div className="exdash-bulk-actions">
+                <button type="button" className="exdash-action-btn" onClick={() => openBulk('notify')}>
+                  Notify Selected
+                </button>
+                <button
+                  type="button"
+                  className="exdash-action-btn exdash-action-accent"
+                  onClick={() => openBulk('appreciate')}
                 >
-                  <span className="exdash-history-dot" aria-hidden="true" />
-                  <div>
-                    <p className="exdash-system-history-message">{item.message}</p>
-                    <p className="exdash-history-time">
-                      {new Date(item.timestamp).toLocaleString()}
-                    </p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )
-        ) : null}
-      </section>
+                  Appreciate Selected
+                </button>
+                <button
+                  type="button"
+                  className="exdash-action-btn exdash-action-warn"
+                  onClick={() => openBulk('remind')}
+                >
+                  Reminder to Selected
+                </button>
+                <button type="button" className="exdash-action-btn" onClick={clearSelection}>
+                  Clear
+                </button>
+              </div>
+            </div>
+          ) : null}
+
+          {composerError ? (
+            <p className="exdash-muted" role="alert">
+              {composerError}
+            </p>
+          ) : null}
+
+          <LiveActivityFeed ready={backgroundReady} limit={8} />
+
+          <section className="exdash-system-history" aria-label="Recent system history">
+            <button
+              type="button"
+              className="exdash-system-history-toggle"
+              aria-expanded={systemHistoryOpen}
+              onClick={() => setSystemHistoryOpen((open) => !open)}
+            >
+              <span>
+                Recent System History ({systemHistory.length || 0})
+              </span>
+              <span aria-hidden="true">{systemHistoryOpen ? '▲ Collapse' : '▼ Expand'}</span>
+            </button>
+            {systemHistoryOpen ? (
+              !backgroundReady ? (
+                <p className="exdash-muted mt-2" aria-busy="true">
+                  Loading…
+                </p>
+              ) : systemHistory.length === 0 ? (
+                <p className="exdash-muted mt-2">No system history yet.</p>
+              ) : (
+                <ul className="exdash-system-history-list">
+                  {systemHistory.map((item) => (
+                    <li
+                      key={item.id}
+                      className={`exdash-system-history-item exdash-history-${activityTone(item.message)}`}
+                    >
+                      <span className="exdash-history-dot" aria-hidden="true" />
+                      <div>
+                        <p className="exdash-system-history-message">{item.message}</p>
+                        <p className="exdash-history-time">
+                          {new Date(item.timestamp).toLocaleString()}
+                        </p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )
+            ) : null}
+          </section>
+        </>
+      )}
 
       <MessageComposerModal
         isOpen={composer.open}

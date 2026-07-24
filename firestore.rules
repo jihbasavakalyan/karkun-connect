@@ -118,9 +118,11 @@ service cloud.firestore {
     }
 
     /**
-     * KC-0084 — Rukn may create/update ijtema & baitulMaal compliance docs for
-     * assigned Karkuns only. Docs are shaped as { _docType, record: { karkunId, ... } }.
-     * Admin retains full write. jihPortal and other non-record docs stay admin-only.
+     * Compliance docs:
+     * - Legacy ijtema / baitulMaal: Rukn may write assigned-karkun records (KC-0084).
+     * - KC-0107 weeklyIjtemaEvent: Admin only.
+     * - KC-0107 weeklyIjtemaSubmission: Rukn may write own ruknId submission.
+     * - jihPortal: Admin only.
      */
     function complianceWriteRecord() {
       return request.resource.data.record;
@@ -138,9 +140,19 @@ service cloud.firestore {
         );
     }
 
+    function ruknMayWriteWeeklyIjtemaSubmission() {
+      return isRukn()
+        && request.resource.data._docType == 'weeklyIjtemaSubmission'
+        && request.resource.data.keys().hasAll(['record'])
+        && complianceWriteRecord().keys().hasAll(['ruknId', 'eventId'])
+        && complianceWriteRecord().ruknId == ruknId();
+    }
+
     match /compliance/{docId} {
       allow read: if isAdministrator() || isRukn();
-      allow create: if isAdministrator() || ruknMayWriteComplianceRecord();
+      allow create: if isAdministrator()
+        || ruknMayWriteComplianceRecord()
+        || ruknMayWriteWeeklyIjtemaSubmission();
       allow update: if isAdministrator()
         || (
           ruknMayWriteComplianceRecord()
@@ -148,6 +160,14 @@ service cloud.firestore {
             !resource.data.keys().hasAll(['record'])
             || !resource.data.record.keys().hasAll(['karkunId'])
             || karkunAssignedToRukn(resource.data.record.karkunId)
+          )
+        )
+        || (
+          ruknMayWriteWeeklyIjtemaSubmission()
+          && (
+            !resource.data.keys().hasAll(['record'])
+            || !resource.data.record.keys().hasAll(['ruknId'])
+            || resource.data.record.ruknId == ruknId()
           )
         );
       allow delete: if isAdministrator();

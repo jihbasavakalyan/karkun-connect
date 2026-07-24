@@ -1880,21 +1880,29 @@ html[data-theme='dark'] {
     max-height: 22rem;
   }
 
-  /* Action Center experiment — unified urgency queue (presentation only). */
+  /* Action Center / Today's Mission — unified urgency queue (presentation only). */
   .exdash-action-center-head {
     @apply min-w-0 flex-1;
   }
 
   .exdash-action-center-sub {
-    @apply mt-1 text-sm text-slate-500;
+    @apply mt-0.5 text-sm text-slate-500;
+  }
+
+  .exdash-action-center-compact {
+    @apply p-3 sm:p-4;
+  }
+
+  .exdash-action-center-compact .exdash-section-head {
+    @apply mb-2;
   }
 
   .exdash-action-list {
-    @apply m-0 flex list-none flex-col gap-2 p-0;
+    @apply m-0 flex list-none flex-col gap-1.5 p-0;
   }
 
   .exdash-action-row {
-    @apply flex flex-col gap-3 rounded-xl border border-slate-100 bg-slate-50/60 px-3 py-2.5 sm:flex-row sm:items-center;
+    @apply flex flex-col gap-2 rounded-lg border border-slate-100 bg-slate-50/60 px-2.5 py-2 sm:flex-row sm:items-center sm:gap-3;
   }
 
   .exdash-action-dot {
@@ -1923,6 +1931,10 @@ html[data-theme='dark'] {
 
   .exdash-action-cta {
     @apply shrink-0 self-start rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 no-underline transition hover:border-slate-300 hover:bg-slate-50 sm:self-auto;
+  }
+
+  .exdash-action-footer {
+    @apply mt-3 flex justify-end border-t border-slate-100 pt-2;
   }
 
   .exdash-panel {

@@ -23,6 +23,14 @@ const CampaignsPage = lazyWithChunkReload(() =>
 const ComplianceModulePage = lazyWithChunkReload(() =>
   import('@/pages/admin/ComplianceModulePage').then((m) => ({ default: m.ComplianceModulePage })),
 )
+const AdminWeeklyIjtemaPage = lazyWithChunkReload(() =>
+  import('@/pages/admin/AdminWeeklyIjtemaPage').then((m) => ({ default: m.AdminWeeklyIjtemaPage })),
+)
+const AdminWeeklyIjtemaReportPage = lazyWithChunkReload(() =>
+  import('@/pages/admin/AdminWeeklyIjtemaReportPage').then((m) => ({
+    default: m.AdminWeeklyIjtemaReportPage,
+  })),
+)
 const ExecutionModulePage = lazyWithChunkReload(() =>
   import('@/pages/admin/ExecutionModulePage').then((m) => ({ default: m.ExecutionModulePage })),
 )
@@ -143,6 +151,8 @@ export function AppRouter() {
             <Route path="annexure-1/:karkunId" element={<ConnectionJourneyPage />} />
             <Route path="execution" element={<ExecutionModulePage />} />
             <Route path="compliance" element={<ComplianceModulePage />} />
+            <Route path="weekly-ijtema" element={<AdminWeeklyIjtemaPage />} />
+            <Route path="weekly-ijtema/:eventId/report" element={<AdminWeeklyIjtemaReportPage />} />
             <Route
               path="review"
               element={<Navigate to={`${ROUTES.ADMIN_EXECUTION}?section=reports`} replace />}

@@ -6,6 +6,7 @@ import { reloadGuidanceStoreFromPersistence } from '@/stores/guidanceStore'
 import { reloadCommunicationStoreFromPersistence } from '@/stores/communicationStore'
 import { reloadBaitulMaalStoreFromPersistence } from '@/stores/baitulMaalStore'
 import { reloadIjtemaAttendanceStoreFromPersistence } from '@/stores/ijtemaAttendanceStore'
+import { reloadWeeklyIjtemaStoreFromPersistence } from '@/stores/weeklyIjtemaStore'
 import { reloadJihWebPortalStoreFromPersistence } from '@/stores/jihWebPortalStore'
 import { reloadBroadcastListStoreFromPersistence } from '@/stores/broadcastListStore'
 import { reloadKarkunRequestStoreFromPersistence } from '@/stores/karkunRequestStore'
@@ -72,6 +73,7 @@ export function hydrateStoresFromRepositories(): void {
     reloadCommunicationStoreFromPersistence()
     reloadBaitulMaalStoreFromPersistence()
     reloadIjtemaAttendanceStoreFromPersistence()
+    reloadWeeklyIjtemaStoreFromPersistence()
     reloadJihWebPortalStoreFromPersistence()
     reloadBroadcastListStoreFromPersistence()
     reloadKarkunRequestStoreFromPersistence()

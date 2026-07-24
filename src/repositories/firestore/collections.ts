@@ -39,6 +39,16 @@ export function complianceIjtemaDocId(karkunId: string, weekEndingDate: string):
   return `ijtema_${karkunId}_${weekEndingDate}`
 }
 
+/** KC-0107 — Weekly Ijtema event document. */
+export function complianceWeeklyIjtemaEventDocId(eventId: string): string {
+  return `weeklyIjtemaEvent_${eventId}`
+}
+
+/** KC-0107 — Rukn submission for a Weekly Ijtema event. */
+export function complianceWeeklyIjtemaSubmissionDocId(eventId: string, ruknId: string): string {
+  return `weeklyIjtemaSubmission_${eventId}_${ruknId}`
+}
+
 export function settingsBackupDocId(backupId: string): string {
   return `backup_${backupId}`
 }

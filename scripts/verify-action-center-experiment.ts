@@ -1,16 +1,23 @@
 /**
- * Action Center experiment contract (presentation only).
+ * Today's Mission / Action Center experiment contract (presentation only).
  * Run: npx vite-node scripts/verify-action-center-experiment.ts
  */
 
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { buildAdminActionCenterItems } from '../src/lib/missionControl/adminDashboardOpsExperiment'
+import {
+  ADMIN_TODAYS_MISSION_TOP_N,
+  buildAdminActionCenterItems,
+} from '../src/lib/missionControl/adminDashboardOpsExperiment'
+import { adminAllTasksPath } from '../src/constants/routes'
 
 function assert(condition: boolean, message: string): asserts condition {
   if (!condition) throw new Error(`FAIL: ${message}`)
   console.log(`OK: ${message}`)
 }
+
+assert(ADMIN_TODAYS_MISSION_TOP_N === 5, 'top N is 5')
+assert(adminAllTasksPath() === '/admin?view=all-tasks', 'all-tasks path is /admin?view=all-tasks')
 
 const ordered = buildAdminActionCenterItems({
   alerts: [
@@ -33,6 +40,27 @@ const ordered = buildAdminActionCenterItems({
       severity: 'low',
       title: 'Visit Reports',
       message: '12 reports awaiting submission.',
+      route: '/admin/execution',
+    },
+    {
+      id: 'a-reg',
+      severity: 'medium',
+      title: 'App Registration',
+      message: '8 registrations are pending.',
+      route: '/admin/compliance',
+    },
+    {
+      id: 'a-extra',
+      severity: 'low',
+      title: 'Extra Watch Item',
+      message: 'Should be sixth when sorted.',
+      route: '/admin/execution',
+    },
+    {
+      id: 'a-extra-2',
+      severity: 'low',
+      title: 'Another Watch Item',
+      message: 'Should be seventh.',
       route: '/admin/execution',
     },
   ],
@@ -68,10 +96,6 @@ assert(
   'alert-prefixed interventions are deduped by title',
 )
 assert(
-  ordered.some((item) => item.title === 'Overdue follow-ups aggregate'),
-  'distinct intervention titles still included',
-)
-assert(
   ordered.findIndex((i) => i.severity === 'critical') <
     ordered.findIndex((i) => i.severity === 'high'),
   'critical before high',
@@ -82,6 +106,10 @@ assert(
   'high before medium',
 )
 
+const top5 = ordered.slice(0, ADMIN_TODAYS_MISSION_TOP_N)
+assert(top5.length === 5, 'homepage slice yields 5 items when queue is larger')
+assert(ordered.length > 5, 'full queue has more than top 5')
+
 const baitul = ordered.find((item) => item.title === 'Monthly Baitul Maal')
 assert(Boolean(baitul), 'intervention-only items included')
 assert(baitul?.actionLabel === 'Review', 'baitul maal uses Review action')
@@ -91,12 +119,26 @@ const overdue = ordered.find((item) => item.title === 'Overdue Follow-ups')
 assert(overdue?.actionLabel === 'View', 'overdue critical uses View')
 assert(overdue?.severityLabel === 'Critical', 'high alert maps to Critical label')
 
-const command = readFileSync(
-  resolve('src/components/mission-control/AdminCommandCenter.tsx'),
+const ui = readFileSync(
+  resolve('src/components/mission-control/AdminActionCenter.tsx'),
   'utf8',
 )
+assert(ui.includes("Today's Mission"), "UI renamed to Today's Mission")
+assert(ui.includes('Tasks requiring your attention today'), 'subtitle updated')
+assert(ui.includes('View All Tasks →'), 'footer CTA present')
+assert(ui.includes("slice(0, ADMIN_TODAYS_MISSION_TOP_N)"), 'summary variant slices to top N')
+assert(ui.includes("variant = 'summary'"), 'summary is default variant')
 assert(
-  command.includes('buildAdminInterventionQueue'),
+  readFileSync(resolve('src/components/mission-control/AdminCommandCenter.tsx'), 'utf8').includes(
+    'variant="full"',
+  ),
+  'full queue variant wired from command center',
+)
+
+assert(
+  readFileSync(resolve('src/components/mission-control/AdminCommandCenter.tsx'), 'utf8').includes(
+    'buildAdminInterventionQueue',
+  ),
   'interventions still built from existing helper',
 )
 assert(

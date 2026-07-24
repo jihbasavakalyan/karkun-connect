@@ -13,6 +13,8 @@ export const ROUTES = {
   ADMIN_RUKN_MASTER: '/admin/rukn',
   ADMIN_EXECUTION: '/admin/execution',
   ADMIN_COMPLIANCE: '/admin/compliance',
+  /** KC-0107 — Weekly Ijtema Attendance Management */
+  ADMIN_WEEKLY_IJTEMA: '/admin/weekly-ijtema',
   /** Legacy path — redirects to Execution Reports tab */
   ADMIN_REVIEW: '/admin/review',
   ADMIN_FOLLOW_UP: '/admin/follow-up',
@@ -87,4 +89,19 @@ export function adminCompliancePath(section?: string, status?: string): string {
 
 export function adminCommunicationPath(section?: string): string {
   return section ? `${ROUTES.ADMIN_COMMUNICATION}?section=${section}` : ROUTES.ADMIN_COMMUNICATION
+}
+
+/** Presentation: full operational task queue from Today's Mission footer. */
+export function adminAllTasksPath(): string {
+  return `${ROUTES.ADMIN}?view=all-tasks`
+}
+
+/** KC-0107 — Admin Weekly Ijtema management. */
+export function adminWeeklyIjtemaPath(): string {
+  return ROUTES.ADMIN_WEEKLY_IJTEMA
+}
+
+/** KC-0107 — Admin Weekly Ijtema report for an event. */
+export function adminWeeklyIjtemaReportPath(eventId: string): string {
+  return `${ROUTES.ADMIN_WEEKLY_IJTEMA}/${encodeURIComponent(eventId)}/report`
 }

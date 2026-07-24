@@ -18,6 +18,7 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   { id: 'assignments', label: 'Connections', icon: 'link', to: ROUTES.ADMIN_ASSIGNMENTS },
   { id: 'execution', label: 'Execution', icon: 'file-text', to: ROUTES.ADMIN_EXECUTION },
   { id: 'compliance', label: 'Compliance', icon: 'check', to: ROUTES.ADMIN_COMPLIANCE },
+  { id: 'weekly-ijtema', label: 'Weekly Ijtema', icon: 'clipboard', to: ROUTES.ADMIN_WEEKLY_IJTEMA },
   { id: 'follow-up', label: 'Follow-up', icon: 'refresh', to: ROUTES.ADMIN_FOLLOW_UP },
   { id: 'communication', label: 'Communication', icon: 'megaphone', to: ROUTES.ADMIN_COMMUNICATION },
   { id: 'lists', label: 'Lists', icon: 'clipboard', to: ROUTES.ADMIN_LISTS },

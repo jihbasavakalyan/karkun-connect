@@ -5,6 +5,9 @@
  */
 export const USE_ADMIN_ACTION_CENTER_EXPERIMENT = true
 
+/** Compact homepage shows only the highest-urgency tasks. */
+export const ADMIN_TODAYS_MISSION_TOP_N = 5
+
 export type ActionCenterSeverity = 'critical' | 'high' | 'medium'
 
 export type AdminActionCenterItem = {
