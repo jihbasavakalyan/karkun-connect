@@ -121,7 +121,7 @@ export function IndividualMessagesPanel({
           <h3 className="text-sm font-semibold text-text-heading">Karkun context</h3>
           <dl className="mt-2 grid gap-2 text-sm sm:grid-cols-2">
             <div>
-              <dt className="text-secondary">Assigned Rukn</dt>
+              <dt className="text-secondary">Connected Rukn</dt>
               <dd className="font-medium text-text-heading">{context.assignedRuknName}</dd>
             </div>
             <div>

@@ -34,7 +34,7 @@ export function RuknMissionControlHero({
   const completedToday = kpiValue(model, 'completed-today')
 
   const summaryChips = [
-    { id: 'assigned', label: 'Assigned Karkuns', value: connected },
+    { id: 'assigned', label: 'Connected Karkuns', value: connected },
     { id: 'connected', label: 'Connected', value: connected },
     { id: 'pending', label: 'Pending Visits', value: pending },
     { id: 'completed-today', label: 'Completed Today', value: completedToday },
@@ -156,7 +156,7 @@ export function RuknTodaysPriorityEmpty() {
   return (
     <section className="mc-panel mc-panel-compact" aria-label="Today's Priority">
       <h2 className="mc-panel-title">Today&apos;s Priority</h2>
-      <p className="mc-caption">✅ All assigned Karkuns are up to date.</p>
+      <p className="mc-caption">✅ All connected Karkuns are up to date.</p>
     </section>
   )
 }
