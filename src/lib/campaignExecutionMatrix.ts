@@ -11,6 +11,7 @@ import {
   getDailyProgressView,
 } from '@/lib/dailyProgressPresentation'
 import { getWeeklyIjtemaCurrentAttendanceView } from '@/lib/operations/weeklyIjtemaReadAdapter'
+import { markWeeklyIjtemaAttendance } from '@/lib/operations/weeklyIjtemaWriteAdapter'
 import { saveDailyProgress } from '@/services/annexure1Service'
 import {
   getCurrentBaitulMaalStatus,
@@ -18,10 +19,6 @@ import {
 } from '@/services/baitulMaalService'
 import { getCampaignTimeline } from '@/services/campaignService'
 import { createCommitment } from '@/services/guidanceService'
-import {
-  getCurrentIjtemaAttendance,
-  updateIjtemaAttendance,
-} from '@/services/ijtemaAttendanceService'
 import { getActiveAssignmentsForKarkun } from '@/stores/assignmentStore'
 import { getCommitmentsForKarkun } from '@/stores/guidanceStore'
 import { createInitialAnnexure1FormState } from '@/types/annexure1.types'
@@ -223,8 +220,8 @@ export function cycleIjtemaForKarkun(
   ruknId: string,
   actorId?: string,
 ): { success: true; next: IjtemaAttendanceStatus } | { success: false; error: string } {
-  // KC-0110.5 — write-workflow seed read; presentation uses weeklyIjtemaReadAdapter.
-  const current = getCurrentIjtemaAttendance(karkunId)
+  // KC-0110.6 — seed from canonical read adapter; write via write adapter.
+  const current = getWeeklyIjtemaCurrentAttendanceView(karkunId)
   const cycle: IjtemaAttendanceStatus[] = ['Present', 'Absent', 'Excused']
   let next: IjtemaAttendanceStatus
   if (current.status === 'Not recorded') {
@@ -233,7 +230,7 @@ export function cycleIjtemaForKarkun(
     const idx = cycle.indexOf(current.status as IjtemaAttendanceStatus)
     next = cycle[(idx + 1) % cycle.length]!
   }
-  const result = updateIjtemaAttendance({
+  const result = markWeeklyIjtemaAttendance({
     karkunId,
     status: next,
     updatedBy: actorId ?? ruknId,
@@ -426,12 +423,12 @@ function setIjtemaPresentAbsolute(
   ruknId: string,
   actorId?: string,
 ): { success: true } | { success: false; error: string } {
-  // KC-0110.5 — write-workflow seed read; presentation uses weeklyIjtemaReadAdapter.
-  const current = getCurrentIjtemaAttendance(karkunId)
+  // KC-0110.6 — seed from canonical read adapter; write via write adapter.
+  const current = getWeeklyIjtemaCurrentAttendanceView(karkunId)
   if (current.status === 'Present') {
     return { success: true }
   }
-  const result = updateIjtemaAttendance({
+  const result = markWeeklyIjtemaAttendance({
     karkunId,
     status: 'Present',
     updatedBy: actorId ?? ruknId,

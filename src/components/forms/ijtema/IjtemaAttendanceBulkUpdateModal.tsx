@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { Modal } from '@/components/common/Modal'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
-import { bulkUpdateIjtemaAttendance } from '@/services/ijtemaAttendanceService'
+import { bulkMarkWeeklyIjtemaAttendance } from '@/lib/operations/weeklyIjtemaWriteAdapter'
 import type { IjtemaAttendanceStatus } from '@/types/ijtemaAttendance'
 
 type IjtemaAttendanceBulkUpdateModalProps = {
@@ -55,7 +55,8 @@ function IjtemaAttendanceBulkUpdateModalContent({
     event.preventDefault()
     setError('')
 
-    const result = bulkUpdateIjtemaAttendance({
+    // KC-0110.6 — People bulk writes through the canonical write adapter.
+    const result = bulkMarkWeeklyIjtemaAttendance({
       karkunIds,
       status,
       remarks: remarks.trim() || undefined,

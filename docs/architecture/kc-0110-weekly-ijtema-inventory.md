@@ -303,41 +303,40 @@ Each step must preserve current behaviour until its cutover flag/adapter is read
 | Mission / Top Priority | Event/Cycle | Event/Cycle | ✅ Canonical |
 | Matrix (`buildCampaignMatrixRows`) | Legacy `getCurrentIjtemaAttendance` | Canonical read adapter | ✅ KC-0110.2 |
 | Journey (`KarkunWeeklyIjtemaSection`) | Legacy | Canonical read adapter (+ legacy fallback) | ✅ KC-0110.2 |
-| Journey modal / Matrix cell **writes** | Legacy `updateIjtemaAttendance` / `cycleIjtemaForKarkun` | Legacy (unchanged) | Pending write cutover |
+| Journey modal / Matrix cell **writes** | Legacy `updateIjtemaAttendance` | Canonical write adapter (+ legacy dual-write) | ✅ KC-0110.6 |
 | Compliance (`ComplianceModulePage` ijtema + `ComplianceSummaryCards`) | Legacy | Canonical read adapter | ✅ KC-0110.3 |
-| Compliance Ijtema **writes** | Legacy `updateIjtemaAttendance` | Legacy (unchanged) | Pending write cutover |
+| Compliance Ijtema **writes** | Legacy `updateIjtemaAttendance` | Canonical write adapter (+ legacy dual-write) | ✅ KC-0110.6 |
 | People (profile + list filters via `useKarkunPeopleManagement`) | Legacy | Canonical read adapter | ✅ KC-0110.4 |
-| People profile / bulk **writes** | Legacy `updateIjtemaAttendance` / `bulkUpdateIjtemaAttendance` | Legacy (unchanged) | Pending write cutover |
-| Cos / automation / Rafeeq ops | Legacy | Legacy | Deferred (out of 0110.2–.5 read cutover scope) |
-| Writes (Matrix / Journey / Compliance / People) | Legacy | Legacy | Pending |
+| People profile / bulk **writes** | Legacy | Canonical write adapter (+ legacy dual-write) | ✅ KC-0110.6 |
+| Cos / automation / Rafeeq ops | Legacy | Legacy | Deferred (read rewiring later) |
+| Writes (Matrix / Journey / Compliance / People / checklist / home panel) | Legacy | Canonical write adapter | ✅ KC-0110.6 |
 
-**Adapter:** `src/lib/operations/weeklyIjtemaReadAdapter.ts`  
-- `getWeeklyIjtemaCurrentAttendanceView` — prefers open/current event mark; else legacy  
-- `getWeeklyIjtemaAttendanceHistoryView` — merges event marks + legacy history  
-- `getWeeklyIjtemaAttendanceSummariesView` / `getWeeklyIjtemaDashboardMetricsView` — Compliance list + cards (KC-0110.3); summaries use a single mark index  
-- `getWeeklyIjtemaAttendanceForWeekView` / `matchesWeeklyIjtemaAttendanceFiltersView` — People filters (KC-0110.4)  
-- DEV diagnostics: `localStorage.kc.debug.weeklyIjtemaReads=1` logs Canonical Event vs Legacy Fallback (KC-0110.5)
+**Read adapter:** `src/lib/operations/weeklyIjtemaReadAdapter.ts`  
+**Write adapter:** `src/lib/operations/weeklyIjtemaWriteAdapter.ts`  
+- `markWeeklyIjtemaAttendance` / `bulkMarkWeeklyIjtemaAttendance` — single write entry  
+- Canonical: `upsertWeeklyIjtemaKarkunMark` / `removeWeeklyIjtemaKarkunMark` on open event  
+- Full Rukn register submit: `saveWeeklyIjtemaSubmission` (unchanged)  
+- Legacy `updateIjtemaAttendance` / `bulkUpdateIjtemaAttendance` — compatibility only (Excused, no open event, dual-write)
 
-### 5.2 Read validation status (KC-0110.5)
+### 5.2 Read / write status (KC-0110.5–.6)
 
 | Area | Status |
 |------|--------|
-| Matrix Reads | ✅ |
-| Journey Reads | ✅ |
-| Compliance Reads | ✅ |
-| People Reads | ✅ |
-| Read Validation | ✅ |
-| Write Migration | Pending |
+| Reads | ✅ |
+| Writes | ✅ |
+| Legacy Service | Compatibility Only |
+| Retirement | Pending |
 
-### Write Cutover Readiness
+### Canonical Source of Truth
 
-- **Single canonical read path** established for Matrix, Journey, Compliance, and People presentation via `weeklyIjtemaReadAdapter`.
-- **Legacy services retained only for writes** on those surfaces (`updateIjtemaAttendance`, `bulkUpdateIjtemaAttendance`, Matrix cycle helpers, Journey attendance modal save).
-- **No remaining known legacy *presentation* read consumers** on Matrix / Journey / Compliance / People.
-- **Approved write-workflow seed reads** (legacy, intentional until write cutover):
-  - `cycleIjtemaForKarkun` / `setIjtemaPresentAbsolute` in `campaignExecutionMatrix.ts`
-  - `WeeklyIjtemaAttendanceModal` form seed
-- **Deferred legacy reads** (not part of 0110.2–.5; later consumer rewiring): Cos / automation / Rafeeq / home panels / mission-control strips / communication context — see inventory §1 Legacy table.
+**Event/Cycle (`weeklyIjtema*`) is the sole operational source of truth for Weekly Ijtema attendance** after KC-0110.6.  
+Presentation reads go through `weeklyIjtemaReadAdapter`. Operator writes go through `weeklyIjtemaWriteAdapter` (Present/Absent on the open event). Legacy `ijtemaAttendance*` remains compatibility-only (Excused, historical weeks without a matching open event, dual-write sync for deferred Cos readers) until retirement (KC-0110.7).
+
+### Write Cutover Readiness (superseded by KC-0110.6)
+
+- Single canonical **read** path: Matrix / Journey / Compliance / People.  
+- Single canonical **write** path: `markWeeklyIjtemaAttendance` / `bulkMarkWeeklyIjtemaAttendance`.  
+- Legacy write APIs retained only as compatibility / dual-write helpers — no new product callers.
 
 ---
 
@@ -382,3 +381,6 @@ People profile Weekly Ijtema display and People list Ijtema filters read through
 ## 8.3 KC-0110.5 notes
 
 Read validation complete for Matrix / Journey / Compliance / People. Adapter adds DEV-only source logging and a bulk mark index for Compliance summaries. No write, Firestore, or KPI changes.
+## 8.4 KC-0110.6 notes
+
+Write cutover: Matrix / Journey modal / Compliance / People profile+bulk / checklist / Rukn home Ijtema panel use `weeklyIjtemaWriteAdapter`. Present/Absent upsert into the open event submission; Excused and no-open-event paths remain on legacy compatibility. Dual-write keeps legacy in sync for deferred Cos readers. `saveWeeklyIjtemaSubmission` (full Rukn register) unchanged.

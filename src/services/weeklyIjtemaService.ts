@@ -180,6 +180,138 @@ export function saveWeeklyIjtemaSubmission(
   return { success: true, submission: upsertWeeklyIjtemaSubmission(submission) }
 }
 
+/** Open event only — used by write cutover (KC-0110.6). */
+export function getOpenWeeklyIjtemaEvent(): WeeklyIjtemaEvent | undefined {
+  return getAllWeeklyIjtemaEvents().find((event) => event.status === 'Open')
+}
+
+export type UpsertWeeklyIjtemaKarkunMarkInput = {
+  eventId: string
+  ruknId: string
+  ruknName: string
+  karkunId: string
+  karkunName: string
+  status: 'Present' | 'Absent'
+  submittedBy: string
+}
+
+/**
+ * KC-0110.6 — Canonical single-mark upsert (partial submission allowed).
+ * Full-register submit remains `saveWeeklyIjtemaSubmission` (all assigned required).
+ */
+export function upsertWeeklyIjtemaKarkunMark(
+  input: UpsertWeeklyIjtemaKarkunMarkInput,
+): { success: true; submission: WeeklyIjtemaSubmission } | { success: false; error: string } {
+  const event = getWeeklyIjtemaEvent(input.eventId)
+  if (!event) {
+    return { success: false, error: 'Weekly Ijtema event not found.' }
+  }
+  if (!canRuknEditCycle(event)) {
+    return {
+      success: false,
+      error:
+        event.status === 'Closed'
+          ? 'Attendance is closed. Ask Admin to reopen if a correction is required.'
+          : 'Submission deadline has passed. Attendance is read-only.',
+    }
+  }
+
+  const assigned = getAssignedKarkunanForRukn(input.ruknId)
+  const assignedIds = assigned.map((karkun) => karkun.id)
+  if (!assignedIds.includes(input.karkunId)) {
+    return { success: false, error: 'Karkun is not assigned to this Rukn.' }
+  }
+  if (input.status !== 'Present' && input.status !== 'Absent') {
+    return { success: false, error: 'Attendance status must be Present or Absent.' }
+  }
+
+  const timestamp = nowIso()
+  const existing = getWeeklyIjtemaSubmission(input.eventId, input.ruknId)
+  const marks = [...(existing?.marks ?? [])]
+  const nextMark = {
+    karkunId: input.karkunId,
+    karkunName: input.karkunName,
+    status: input.status,
+  }
+  const index = marks.findIndex((mark) => mark.karkunId === input.karkunId)
+  if (index >= 0) {
+    marks[index] = nextMark
+  } else {
+    marks.push(nextMark)
+  }
+
+  for (const mark of marks) {
+    if (!assignedIds.includes(mark.karkunId)) {
+      return { success: false, error: 'Submission includes a Karkun that is not assigned.' }
+    }
+    if (mark.status !== 'Present' && mark.status !== 'Absent') {
+      return { success: false, error: 'Attendance status must be Present or Absent.' }
+    }
+  }
+
+  const submission: WeeklyIjtemaSubmission = {
+    id: existing?.id ?? `${input.eventId}:${input.ruknId}`,
+    eventId: input.eventId,
+    ruknId: input.ruknId,
+    ruknName: input.ruknName,
+    marks,
+    submittedAt: existing?.submittedAt ?? timestamp,
+    submittedBy: existing?.submittedBy ?? input.submittedBy,
+    updatedAt: timestamp,
+    updatedBy: input.submittedBy,
+  }
+
+  return { success: true, submission: upsertWeeklyIjtemaSubmission(submission) }
+}
+
+export type RemoveWeeklyIjtemaKarkunMarkInput = {
+  eventId: string
+  ruknId: string
+  ruknName: string
+  karkunId: string
+  submittedBy: string
+}
+
+/** Remove a karkun mark from an open-event submission (e.g. Excused via legacy). */
+export function removeWeeklyIjtemaKarkunMark(
+  input: RemoveWeeklyIjtemaKarkunMarkInput,
+): { success: true; submission: WeeklyIjtemaSubmission | null } | { success: false; error: string } {
+  const event = getWeeklyIjtemaEvent(input.eventId)
+  if (!event) {
+    return { success: false, error: 'Weekly Ijtema event not found.' }
+  }
+  if (!canRuknEditCycle(event)) {
+    return {
+      success: false,
+      error:
+        event.status === 'Closed'
+          ? 'Attendance is closed. Ask Admin to reopen if a correction is required.'
+          : 'Submission deadline has passed. Attendance is read-only.',
+    }
+  }
+
+  const existing = getWeeklyIjtemaSubmission(input.eventId, input.ruknId)
+  if (!existing) {
+    return { success: true, submission: null }
+  }
+
+  const marks = existing.marks.filter((mark) => mark.karkunId !== input.karkunId)
+  if (marks.length === existing.marks.length) {
+    return { success: true, submission: existing }
+  }
+
+  const timestamp = nowIso()
+  const submission: WeeklyIjtemaSubmission = {
+    ...existing,
+    ruknName: input.ruknName || existing.ruknName,
+    marks,
+    updatedAt: timestamp,
+    updatedBy: input.submittedBy,
+  }
+
+  return { success: true, submission: upsertWeeklyIjtemaSubmission(submission) }
+}
+
 function buildReportForEvent(event: WeeklyIjtemaEvent): WeeklyIjtemaReport {
   const binary = buildBinaryCycleReport(
     getWeeklyIjtemaSubmissionsForEvent(event.id),

@@ -24,7 +24,7 @@ import {
   getWeeklyIjtemaAttendanceSummariesView,
   getWeeklyIjtemaDashboardMetricsView,
 } from '@/lib/operations/weeklyIjtemaReadAdapter'
-import { updateIjtemaAttendance } from '@/services/ijtemaAttendanceService'
+import { markWeeklyIjtemaAttendance } from '@/lib/operations/weeklyIjtemaWriteAdapter'
 import {
   getAllJihWebPortalSummaries,
   getJihWebPortalDashboardMetrics,
@@ -148,7 +148,8 @@ function IjtemaRow({
   const markStatus = (status: IjtemaAttendanceStatus) => {
     void run(
       async () => {
-        const result = updateIjtemaAttendance({ karkunId: item.karkunId, status })
+        // KC-0110.6 — Compliance writes Weekly Ijtema through the canonical write adapter.
+        const result = markWeeklyIjtemaAttendance({ karkunId: item.karkunId, status })
         if (result.success) {
           onUpdated()
         }

@@ -4,6 +4,11 @@
  * Not the Campaign Health source of truth — do not extend for new executive KPIs.
  * Prefer weeklyIjtemaService (event/cycle). Inventory:
  * docs/architecture/kc-0110-weekly-ijtema-inventory.md
+ *
+ * KC-0110.6 — WRITE PATH DEPRECATED for new callers.
+ * Use `markWeeklyIjtemaAttendance` / `bulkMarkWeeklyIjtemaAttendance`
+ * (`@/lib/operations/weeklyIjtemaWriteAdapter`). These functions remain as a
+ * compatibility layer (Excused, no open event, dual-write sync).
  */
 
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
@@ -144,6 +149,7 @@ export function getRuknIjtemaAttendanceMetrics(
 export function updateIjtemaAttendance(
   input: UpdateIjtemaAttendanceInput,
 ): { success: true; record: IjtemaAttendanceRecord } | { success: false; error: string } {
+  // KC-0110.6 — compatibility write only; prefer markWeeklyIjtemaAttendance.
   initializeIjtemaAttendanceCompliance()
   const weekEndingDate = input.weekEndingDate ?? getWeekEndingDate()
   const status = normalizeIjtemaAttendanceStatus(input.status)
@@ -184,6 +190,7 @@ export function updateIjtemaAttendance(
 export function bulkUpdateIjtemaAttendance(
   input: BulkUpdateIjtemaAttendanceInput,
 ): { success: true; updated: number } | { success: false; error: string } {
+  // KC-0110.6 — compatibility write only; prefer bulkMarkWeeklyIjtemaAttendance.
   initializeIjtemaAttendanceCompliance()
   const weekEndingDate = input.weekEndingDate ?? getWeekEndingDate()
   const validation = validateBulkIjtemaAttendanceInput({ ...input, weekEndingDate })

@@ -12,8 +12,8 @@ import { useBusyAction } from '@/hooks/useBusyAction'
 import {
   getFilterWeekEndingDate,
   getIjtemaAttendanceForKarkun,
-  updateIjtemaAttendance,
 } from '@/services/ijtemaAttendanceService'
+import { markWeeklyIjtemaAttendance } from '@/lib/operations/weeklyIjtemaWriteAdapter'
 import { subscribeToIjtemaAttendanceStore } from '@/stores/ijtemaAttendanceStore'
 import {
   formatWeekLabel,
@@ -107,7 +107,7 @@ export function RuknIjtemaAttendancePanel({ ruknId }: RuknIjtemaAttendancePanelP
           const status = draft[karkun.id]
           if (!status || status === 'Not recorded') continue
 
-          const result = updateIjtemaAttendance({
+          const result = markWeeklyIjtemaAttendance({
             karkunId: karkun.id,
             weekEndingDate,
             status,

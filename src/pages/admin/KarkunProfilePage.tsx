@@ -9,7 +9,7 @@ import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { usePeopleStore } from '@/hooks/usePeopleStore'
 import { getCurrentBaitulMaalStatus, updateBaitulMaal } from '@/services/baitulMaalService'
 import { getWeeklyIjtemaCurrentAttendanceView } from '@/lib/operations/weeklyIjtemaReadAdapter'
-import { updateIjtemaAttendance } from '@/services/ijtemaAttendanceService'
+import { markWeeklyIjtemaAttendance } from '@/lib/operations/weeklyIjtemaWriteAdapter'
 import {
   getCurrentMonthReportingStatus,
   getRegistrationForKarkun,
@@ -251,7 +251,8 @@ function KarkunProfileForm({ karkun, karkunId }: KarkunProfileFormProps) {
     }
 
     if (ijtemaStatus !== null) {
-      const ijtemaResult = updateIjtemaAttendance({
+      // KC-0110.6 — People writes Weekly Ijtema through the canonical write adapter.
+      const ijtemaResult = markWeeklyIjtemaAttendance({
         karkunId,
         status: ijtemaStatus,
       })
