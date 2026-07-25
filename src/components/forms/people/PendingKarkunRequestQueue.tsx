@@ -1,6 +1,6 @@
 /**
- * People queue for Pending New Karkun requests (KC-018 / KC-0068 / KC-0072C / KC-0107).
- * Canonical owner: People (Karkuns). Dashboard only launches here.
+ * Pending New Karkun requests queue (KC-018 / KC-0068 / KC-0072C / KC-0107 / KC-0115).
+ * Canonical owner: Karkun module. Dashboard only launches here.
  */
 
 import { useEffect, useState } from 'react'
@@ -115,7 +115,7 @@ export function PendingKarkunRequestQueue() {
           <h2 className="mc-panel-title">Pending Karkun Requests</h2>
         </div>
         <p className="text-sm text-secondary">
-          No pending requests. New Karkun intake is owned by People.
+          No pending requests. New Karkun intake is owned by the Karkun module.
         </p>
       </section>
     )
@@ -131,7 +131,7 @@ export function PendingKarkunRequestQueue() {
         <div>
           <h2 className="mc-panel-title">Pending Karkun Requests</h2>
           <p className="mt-1 text-xs text-secondary">
-            People workflow — approve or reject New Karkun intake.
+            Karkun workflow — approve or reject New Karkun intake.
           </p>
         </div>
         <span className="text-sm font-semibold text-primary">{pending.length}</span>

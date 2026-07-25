@@ -1,7 +1,7 @@
 /**
- * KC-0106 / KC-0107 — Executive Dashboard launch surface for Pending Karkun Requests.
- * Shows count + urgency and navigates into People (canonical owner).
- * Does not host Approve / Reject — People owns that workflow.
+ * KC-0106 / KC-0107 — Dashboard launch surface for Pending Karkun Requests.
+ * Shows count + urgency and navigates into Karkun (canonical owner).
+ * Does not host Approve / Reject — Karkun owns that workflow.
  */
 
 import { useEffect, useState } from 'react'
@@ -45,7 +45,7 @@ export function PendingKarkunRequestsLaunchPanel({
             Pending Karkun Requests
           </h2>
           <p className="exdash-action-center-sub">
-            Launch into People — intake approval is owned by People.
+            Launch into Karkun — intake approval is owned by the Karkun module.
           </p>
         </div>
         <span className="exdash-section-meta">{urgencyLabel}</span>
@@ -72,12 +72,12 @@ export function PendingKarkunRequestsLaunchPanel({
             </div>
             <span className="exdash-queue-detail">
               {needsAttention
-                ? 'Review and decide Approve or Reject in People.'
+                ? 'Review and decide Approve or Reject in Karkun.'
                 : 'New field intake will appear here when Rukns submit requests.'}
             </span>
           </div>
           <Link to={adminKarkunPendingRequestsPath()} className="exdash-action-cta">
-            {needsAttention ? 'Review in People →' : 'Open People →'}
+            {needsAttention ? 'Review in Karkun →' : 'Open Karkun →'}
           </Link>
         </div>
       )}

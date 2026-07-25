@@ -11,21 +11,24 @@ export const ROUTES = {
   ADMIN_ASSIGNMENTS: '/admin/assignments',
   ADMIN_KARKUNAN: '/admin/karkun',
   ADMIN_RUKN_MASTER: '/admin/rukn',
-  /** KC-0113.1 — Operations workspace (Work Queue / Execute / Review) */
+  /** KC-0115 — Activities hub (extensible operational workspace) */
+  ADMIN_ACTIVITIES: '/admin/activities',
+  /** KC-0113.1 / KC-0115 — Follow-up / Campaign Execution / Review (legacy Operations path kept) */
   ADMIN_OPERATIONS: '/admin/operations',
-  /** Legacy — redirects to Operations Execute tab */
+  /** Legacy — redirects to Activities → Campaign Execution */
   ADMIN_EXECUTION: '/admin/execution',
-  /** Legacy — redirects to Operations Review tab */
+  /** Legacy — redirects to Review tab */
   ADMIN_COMPLIANCE: '/admin/compliance',
-  /** KC-0107 — Weekly Ijtema Attendance Management */
+  /** KC-0107 — Weekly Ijtema Attendance Management (under Activities) */
   ADMIN_WEEKLY_IJTEMA: '/admin/weekly-ijtema',
-  /** KC-0108 — Monthly Baitul Maal Completion Management */
+  /** KC-0108 — Monthly Baitul Maal Completion Management (under Activities) */
   ADMIN_MONTHLY_BAITUL_MAAL: '/admin/baitul-maal',
-  /** Legacy path — redirects to Operations Execute → Reports */
+  /** Legacy path — redirects to Campaign Execution → Reports */
   ADMIN_REVIEW: '/admin/review',
-  /** Legacy — redirects to Operations Work Queue tab */
+  /** Legacy — redirects to Activities → Follow-up */
   ADMIN_FOLLOW_UP: '/admin/follow-up',
   ADMIN_COMMUNICATION: '/admin/communication',
+  /** KC-0115 — Saved Lists lives under Communication (route unchanged) */
   ADMIN_LISTS: '/admin/lists',
   ADMIN_SETTINGS: '/admin/settings',
   ADMIN_HELP: '/admin/help',
@@ -95,12 +98,12 @@ export function adminOperationsPath(
   return `${ROUTES.ADMIN_OPERATIONS}?${params.toString()}`
 }
 
-/** Canonical deep link into Operations → Execute (legacy `/admin/execution` still redirects). */
+/** Canonical deep link into Activities → Campaign Execution. */
 export function adminExecutionPath(section?: string): string {
   return adminOperationsPath('execute', section ? { section } : undefined)
 }
 
-/** Canonical deep link into Operations → Review (legacy `/admin/compliance` still redirects). */
+/** Canonical deep link into Review (legacy `/admin/compliance` still redirects). */
 export function adminCompliancePath(section?: string, status?: string): string {
   return adminOperationsPath('review', {
     section,
@@ -108,9 +111,14 @@ export function adminCompliancePath(section?: string, status?: string): string {
   })
 }
 
-/** Canonical deep link into Operations → Work Queue (legacy `/admin/follow-up` still redirects). */
+/** Canonical deep link into Activities → Follow-up. */
 export function adminFollowUpPath(section?: string): string {
   return adminOperationsPath('queue', section ? { section } : undefined)
+}
+
+/** KC-0115 — Activities hub landing. */
+export function adminActivitiesPath(): string {
+  return ROUTES.ADMIN_ACTIVITIES
 }
 
 export function adminCommunicationPath(section?: string): string {
@@ -122,7 +130,7 @@ export function adminAllTasksPath(): string {
   return `${ROUTES.ADMIN}?view=all-tasks`
 }
 
-/** KC-0107 — People owns New Karkun intake; Dashboard launches here. */
+/** KC-0107 — Karkun owns New Karkun intake; Dashboard launches here. */
 export function adminKarkunPendingRequestsPath(): string {
   return `${ROUTES.ADMIN_KARKUN}?queue=pending-requests`
 }

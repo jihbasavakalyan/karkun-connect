@@ -5,7 +5,14 @@ export {
   adminRuknDetailPath,
   type AppRoute,
 } from './routes'
-export { ADMIN_NAV_ITEMS, type AdminNavItem } from './adminNavigation'
+export {
+  ADMIN_NAV_ITEMS,
+  flattenAdminNavItems,
+  isAdminNavGroup,
+  type AdminNavEntry,
+  type AdminNavGroup,
+  type AdminNavItem,
+} from './adminNavigation'
 export {
   submitMeetingForm,
   saveDraftMeetingForm,

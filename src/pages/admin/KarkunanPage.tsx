@@ -548,29 +548,29 @@ export function KarkunanPage() {
   return (
     <PageShell>
       <PageHeader
-        title="People"
-        description="People overview, Karkun and Muttafiqeen registries, and occasional approval actions."
+        title="Karkun"
+        description="Overview, Karkun and Muttafiqeen registries, and pending approval requests."
       />
 
       <div className="mb-4 flex flex-wrap items-center gap-3 text-sm">
-        <span className="font-medium text-text-heading">People</span>
+        <span className="font-medium text-text-heading">Karkun</span>
         <span className="text-secondary">/</span>
         <Link to={ROUTES.ADMIN_MUTTAFIQEEN} className="text-primary hover:underline">
           Muttafiqeen page
         </Link>
       </div>
 
-      {/* KC-0114 — People Overview first */}
-      <section aria-labelledby="people-overview-heading">
-        <h2 id="people-overview-heading" className="text-lg font-semibold text-text-heading">
-          People Overview
+      {/* KC-0115 — Overview first */}
+      <section aria-labelledby="karkun-overview-heading">
+        <h2 id="karkun-overview-heading" className="text-lg font-semibold text-text-heading">
+          Overview
         </h2>
         <div className="mt-3">
           <KarkunSummaryCards />
         </div>
       </section>
 
-      {/* KC-0114 — Karkun Registry is the primary daily working area */}
+      {/* KC-0115 — Karkun Registry */}
       <section className="mt-10" aria-labelledby="karkun-registry-heading">
         <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
           <div>
@@ -619,7 +619,7 @@ export function KarkunanPage() {
         </div>
       </section>
 
-      {/* KC-0114 — Muttafiqeen Registry after Karkun Registry */}
+      {/* KC-0115 — Muttafiqeen Registry */}
       <section className="mt-10" aria-labelledby="muttafiqeen-registry-heading">
         <h2 id="muttafiqeen-registry-heading" className="text-lg font-semibold text-text-heading">
           Muttafiqeen Registry
@@ -629,16 +629,33 @@ export function KarkunanPage() {
         </div>
       </section>
 
-      {/* KC-0114 — Approval requests last (occasional admin actions) */}
-      <section className="mt-10" aria-labelledby="pending-approvals-heading">
-        <h2 id="pending-approvals-heading" className="text-lg font-semibold text-text-heading">
-          New Karkun Approval Requests
+      {/* KC-0115 — Pending Requests (Karkun + Muttafiq presentation) */}
+      <section className="mt-10" aria-labelledby="pending-requests-heading">
+        <h2 id="pending-requests-heading" className="text-lg font-semibold text-text-heading">
+          Pending Requests
         </h2>
         <p className="mt-1 text-sm text-secondary">
           Occasional administrative actions — keep the registries above as the daily workspace.
         </p>
-        <div className="mt-4">
-          <PendingKarkunRequestQueue />
+
+        <div className="mt-6 space-y-8">
+          <div>
+            <h3 className="text-base font-semibold text-text-heading">New Karkun Requests</h3>
+            <div className="mt-3">
+              <PendingKarkunRequestQueue />
+            </div>
+          </div>
+
+          <div id="pending-muttafiq-requests">
+            <h3 className="text-base font-semibold text-text-heading">New Muttafiq Requests</h3>
+            <p className="mt-1 text-sm text-secondary">
+              Muttafiq classification continues through the existing registry workflow — no separate intake
+              queue is active in V1.
+            </p>
+            <div className="mt-3 rounded-(--radius-card) border border-border bg-surface-muted px-4 py-5 text-sm text-secondary">
+              No pending Muttafiq requests.
+            </div>
+          </div>
         </div>
       </section>
     </PageShell>

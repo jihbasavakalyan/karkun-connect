@@ -1,3 +1,4 @@
+export { ActivitiesHubPage } from './ActivitiesHubPage'
 export { AdminHomePage } from './AdminHomePage'
 export { AssignmentManagementPage } from './AssignmentManagementPage'
 export { CampaignListsPage } from './CampaignListsPage'

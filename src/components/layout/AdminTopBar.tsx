@@ -3,7 +3,7 @@ import type { FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Logo } from '@/components/common/Logo'
 import { Icon } from '@/components/ui/Icon'
-import { ADMIN_NAV_ITEMS } from '@/constants/adminNavigation'
+import { ADMIN_NAV_ITEMS, flattenAdminNavItems } from '@/constants/adminNavigation'
 import { ROUTES } from '@/constants/routes'
 import {
   formatActiveCampaignDuration,
@@ -103,7 +103,7 @@ export function AdminTopBar({ alertCount = 0, onMenuToggle }: AdminTopBarProps) 
       </div>
 
       <nav className="flex gap-2 overflow-x-auto border-t border-border px-4 py-2 lg:hidden" aria-label="Admin mobile navigation">
-        {ADMIN_NAV_ITEMS.map((item) => (
+        {flattenAdminNavItems(ADMIN_NAV_ITEMS.filter((entry) => entry.id !== 'help')).map((item) => (
           <Link
             key={item.id}
             to={item.to}

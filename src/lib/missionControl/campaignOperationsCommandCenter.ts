@@ -137,13 +137,13 @@ export function buildTodaysMissionOperationalItems(): AdminActionCenterItem[] {
     })
   }
 
-  // KC-0107 — People owns intake; Dashboard Mission only launches into People.
+  // KC-0107 — Karkun owns intake; Dashboard Mission only launches into Karkun.
   push(
     'mission-pending-karkun-requests',
     pendingKarkunRequests >= 5 ? 'high' : 'medium',
     'Pending Karkun Requests',
-    `${pendingKarkunRequests} New Karkun request${pendingKarkunRequests === 1 ? '' : 's'} awaiting People review`,
-    'Review in People',
+    `${pendingKarkunRequests} New Karkun request${pendingKarkunRequests === 1 ? '' : 's'} awaiting Karkun review`,
+    'Review in Karkun',
     adminKarkunPendingRequestsPath(),
     pendingKarkunRequests,
   )

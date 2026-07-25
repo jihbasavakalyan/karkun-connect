@@ -23,6 +23,9 @@ const CampaignsPage = lazyWithChunkReload(() =>
 const OperationsPage = lazyWithChunkReload(() =>
   import('@/pages/admin/OperationsPage').then((m) => ({ default: m.OperationsPage })),
 )
+const ActivitiesHubPage = lazyWithChunkReload(() =>
+  import('@/pages/admin/ActivitiesHubPage').then((m) => ({ default: m.ActivitiesHubPage })),
+)
 const AdminWeeklyIjtemaPage = lazyWithChunkReload(() =>
   import('@/pages/admin/AdminWeeklyIjtemaPage').then((m) => ({ default: m.AdminWeeklyIjtemaPage })),
 )
@@ -164,8 +167,9 @@ export function AppRouter() {
             <Route path="muttafiqeen" element={<MuttafiqeenPage />} />
             <Route path="assignments" element={<AssignmentManagementPage />} />
             <Route path="annexure-1/:karkunId" element={<ConnectionJourneyPage />} />
+            <Route path="activities" element={<ActivitiesHubPage />} />
             <Route path="operations" element={<OperationsPage />} />
-            {/* KC-0113.1 — Legacy module routes redirect into Operations tabs */}
+            {/* KC-0113.1 / KC-0115 — Legacy module routes redirect into Activities tabs */}
             <Route path="execution" element={<LegacyOperationsTabRedirect tab="execute" />} />
             <Route path="compliance" element={<LegacyOperationsTabRedirect tab="review" />} />
             <Route path="follow-up" element={<LegacyOperationsTabRedirect tab="queue" />} />

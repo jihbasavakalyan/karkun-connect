@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import { adminKarkunProfilePath } from '@/constants/routes'
+import { Link } from 'react-router-dom'
+import { adminKarkunProfilePath, ROUTES } from '@/constants/routes'
 import { ContactActionBar } from '@/components/common/ContactActionBar'
 import { Modal } from '@/components/common/Modal'
 import { MessageComposerModal } from '@/components/communication/MessageComposerModal'
@@ -424,10 +425,17 @@ export function CampaignListsPage() {
   return (
     <PageShell>
       <PageHeader
-        title="Campaign Lists"
+        title="Saved Lists"
         description="Reach the right Karkuns fast — dynamic lists update automatically, saved lists are yours to curate."
       />
 
+      <div className="mb-4 flex flex-wrap items-center gap-3 text-sm">
+        <Link to={ROUTES.ADMIN_COMMUNICATION} className="text-primary hover:underline">
+          Communication
+        </Link>
+        <span className="text-secondary">/</span>
+        <span className="font-medium text-text-heading">Saved Lists</span>
+      </div>
       <nav className="ds-tab-nav" aria-label="Campaign list types">
         <button type="button" className={tabClass(tab === 'dynamic')} onClick={() => setTab('dynamic')}>
           Dynamic Lists

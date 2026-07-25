@@ -61,35 +61,35 @@ export function HelpPage() {
             </li>
             <li>
               Open{' '}
-              <Link to={ROUTES.ADMIN_OPERATIONS} className="font-medium text-primary hover:underline">
-                Operations
+              <Link to={ROUTES.ADMIN_ACTIVITIES} className="font-medium text-primary hover:underline">
+                Activities
               </Link>{' '}
-              for the work queue, execution, and review in one place
+              for Weekly Ijtema, Monthly Baitul Maal, Follow-up, and Campaign Execution
             </li>
             <li>
-              Work the queue under{' '}
+              Work follow-ups under{' '}
               <Link to={adminFollowUpPath()} className="font-medium text-primary hover:underline">
-                Operations → Work Queue
+                Activities → Follow-up
               </Link>
             </li>
             <li>
               Execute visits under{' '}
               <Link to={adminExecutionPath()} className="font-medium text-primary hover:underline">
-                Operations → Execute
+                Activities → Campaign Execution
               </Link>
             </li>
             <li>
-              Verify compliance under{' '}
+              Verify completion under{' '}
               <Link to={adminCompliancePath()} className="font-medium text-primary hover:underline">
-                Operations → Review
+                Activities → Review
               </Link>
             </li>
             <li>
               View submitted visit reports under{' '}
               <Link to={adminExecutionPath('reports')} className="font-medium text-primary hover:underline">
-                Operations → Execute → Reports
+                Activities → Campaign Execution → Reports
               </Link>{' '}
-              (not Campaign Lists)
+              (not Saved Lists)
             </li>
             <li>
               Send messages under{' '}
@@ -98,7 +98,7 @@ export function HelpPage() {
               </Link>{' '}
               — start from{' '}
               <Link to={ROUTES.ADMIN_LISTS} className="font-medium text-primary hover:underline">
-                Campaign Lists
+                Saved Lists
               </Link>{' '}
               or Karkun bulk actions for broadcasts
             </li>

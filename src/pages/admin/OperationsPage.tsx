@@ -1,7 +1,7 @@
 /**
- * KC-0113.1 — Operations workspace.
- * Embeds existing Follow-up / Execution / Compliance modules as tabs.
- * No workflow or engine changes.
+ * KC-0113.1 / KC-0115 — Activities deep workspace (Follow-up / Campaign Execution / Review).
+ * Embeds existing modules as tabs. No workflow or engine changes.
+ * Primary entry is via Activities nav; this route keeps deep links working.
  */
 
 import { useSearchParams } from 'react-router-dom'
@@ -18,6 +18,22 @@ import {
 } from '@/lib/operationsNavigation'
 
 const MODULE_PARAM_KEYS = ['section', 'status', 'view'] as const
+
+const TAB_HEADERS: Record<OperationsTab, { title: string; description: string }> = {
+  queue: {
+    title: 'Follow-up',
+    description: 'Pending and completed follow-up work for connected Karkuns.',
+  },
+  execute: {
+    title: 'Campaign Execution',
+    description:
+      'Execute campaign work across pending connections, visits, app registration, Weekly Ijtema, Baitul Maal, and overall progress.',
+  },
+  review: {
+    title: 'Review',
+    description: 'Verify completion across Weekly Ijtema, portal registration, reporting, and Baitul Maal.',
+  },
+}
 
 function readStoredTabParams(tab: OperationsTab): URLSearchParams {
   try {
@@ -41,7 +57,7 @@ function writeStoredTabParams(tab: OperationsTab, params: URLSearchParams): void
   }
 }
 
-function OperationsTabNav({
+function ActivitiesTabNav({
   active,
   onChange,
 }: {
@@ -49,7 +65,7 @@ function OperationsTabNav({
   onChange: (tab: OperationsTab) => void
 }) {
   return (
-    <nav className="ds-tab-nav" aria-label="Operations sections">
+    <nav className="ds-tab-nav" aria-label="Activities sections">
       {OPERATIONS_TABS.map((tab) => (
         <button
           key={tab.id}
@@ -67,6 +83,7 @@ function OperationsTabNav({
 export function OperationsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const activeTab = resolveOperationsTab(searchParams.get('tab'))
+  const header = TAB_HEADERS[activeTab]
 
   const setTab = (nextTab: OperationsTab) => {
     if (nextTab === activeTab) return
@@ -84,12 +101,9 @@ export function OperationsPage() {
 
   return (
     <PageShell>
-      <PageHeader
-        title="Operations"
-        description="See pending work, execute actions, and verify completion in one place."
-      />
+      <PageHeader title={header.title} description={header.description} />
       <ActiveCampaignSubtitle />
-      <OperationsTabNav active={activeTab} onChange={setTab} />
+      <ActivitiesTabNav active={activeTab} onChange={setTab} />
 
       <div className="mt-4">
         {activeTab === 'queue' ? <FollowUpDevelopmentModulePage embedded /> : null}

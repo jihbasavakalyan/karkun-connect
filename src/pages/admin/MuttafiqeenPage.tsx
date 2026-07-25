@@ -387,12 +387,12 @@ export function MuttafiqeenPage() {
       />
 
       <div className="mb-4 flex flex-wrap items-center gap-3 text-sm">
-        <span className="text-secondary">People</span>
+        <span className="text-secondary">Karkun</span>
         <span className="text-secondary">/</span>
         <span className="font-medium text-text-heading">Muttafiqeen</span>
         <span className="text-secondary">/</span>
         <Link to={ROUTES.ADMIN_KARKUN} className="text-primary hover:underline">
-          People
+          Karkun
         </Link>
       </div>
 
