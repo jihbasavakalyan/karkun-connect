@@ -21,10 +21,10 @@ import {
   updateBaitulMaal,
 } from '@/services/baitulMaalService'
 import {
-  getAllIjtemaAttendanceSummaries,
-  getIjtemaAttendanceDashboardMetrics,
-  updateIjtemaAttendance,
-} from '@/services/ijtemaAttendanceService'
+  getWeeklyIjtemaAttendanceSummariesView,
+  getWeeklyIjtemaDashboardMetricsView,
+} from '@/lib/operations/weeklyIjtemaReadAdapter'
+import { updateIjtemaAttendance } from '@/services/ijtemaAttendanceService'
 import {
   getAllJihWebPortalSummaries,
   getJihWebPortalDashboardMetrics,
@@ -34,6 +34,7 @@ import {
 import { subscribeToBaitulMaalStore } from '@/stores/baitulMaalStore'
 import { subscribeToIjtemaAttendanceStore } from '@/stores/ijtemaAttendanceStore'
 import { subscribeToJihWebPortalStore } from '@/stores/jihWebPortalStore'
+import { subscribeToWeeklyIjtemaStore } from '@/stores/weeklyIjtemaStore'
 import type { BaitulMaalKarkunSummary } from '@/types/baitulMaal'
 import type { IjtemaAttendanceKarkunSummary, IjtemaAttendanceStatus } from '@/types/ijtemaAttendance'
 import type { JihWebPortalKarkunSummary } from '@/types/jihWebPortal'
@@ -461,10 +462,14 @@ export function ComplianceModulePage() {
     const unsubJih = subscribeToJihWebPortalStore(() => setDataVersion((value) => value + 1))
     const unsubBaitulMaal = subscribeToBaitulMaalStore(() => setDataVersion((value) => value + 1))
     const unsubIjtema = subscribeToIjtemaAttendanceStore(() => setDataVersion((value) => value + 1))
+    const unsubWeeklyIjtema = subscribeToWeeklyIjtemaStore(() =>
+      setDataVersion((value) => value + 1),
+    )
     return () => {
       unsubJih()
       unsubBaitulMaal()
       unsubIjtema()
+      unsubWeeklyIjtema()
     }
   }, [])
 
@@ -496,7 +501,10 @@ export function ComplianceModulePage() {
 
   switch (activeSection) {
     case 'ijtema': {
-      const items = filterIjtemaItems(getAllIjtemaAttendanceSummaries(), effectiveStatus)
+      // KC-0110.3
+      // Compliance reads Weekly Ijtema through the canonical adapter.
+      // Legacy write path retained until write cutover.
+      const items = filterIjtemaItems(getWeeklyIjtemaAttendanceSummariesView(), effectiveStatus)
       listContent =
         items.length === 0 ? (
           <ExecutionEmptyState {...emptyState} />
@@ -555,7 +563,7 @@ export function ComplianceModulePage() {
       listContent = null
   }
 
-  void getIjtemaAttendanceDashboardMetrics()
+  void getWeeklyIjtemaDashboardMetricsView()
   void getJihWebPortalDashboardMetrics()
   void getBaitulMaalDashboardMetrics()
 

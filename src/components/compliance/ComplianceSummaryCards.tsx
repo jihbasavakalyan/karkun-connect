@@ -3,11 +3,14 @@ import { Link } from 'react-router-dom'
 import { adminCompliancePath } from '@/constants/routes'
 import { getComplianceStatusStyle } from '@/lib/complianceStatusStyles'
 import { getBaitulMaalDashboardMetrics } from '@/services/baitulMaalService'
-import { getIjtemaAttendanceDashboardMetrics } from '@/services/ijtemaAttendanceService'
+import {
+  getWeeklyIjtemaDashboardMetricsView,
+} from '@/lib/operations/weeklyIjtemaReadAdapter'
 import { getJihWebPortalDashboardMetrics } from '@/services/jihWebPortalService'
 import { subscribeToBaitulMaalStore } from '@/stores/baitulMaalStore'
 import { subscribeToIjtemaAttendanceStore } from '@/stores/ijtemaAttendanceStore'
 import { subscribeToJihWebPortalStore } from '@/stores/jihWebPortalStore'
+import { subscribeToWeeklyIjtemaStore } from '@/stores/weeklyIjtemaStore'
 
 type SummaryCard = {
   key: string
@@ -24,10 +27,12 @@ export function ComplianceSummaryCards() {
     const unsubJih = subscribeToJihWebPortalStore(() => setVersion((value) => value + 1))
     const unsubBaitulMaal = subscribeToBaitulMaalStore(() => setVersion((value) => value + 1))
     const unsubIjtema = subscribeToIjtemaAttendanceStore(() => setVersion((value) => value + 1))
+    const unsubWeeklyIjtema = subscribeToWeeklyIjtemaStore(() => setVersion((value) => value + 1))
     return () => {
       unsubJih()
       unsubBaitulMaal()
       unsubIjtema()
+      unsubWeeklyIjtema()
     }
   }, [])
 
@@ -35,7 +40,10 @@ export function ComplianceSummaryCards() {
 
   const jih = getJihWebPortalDashboardMetrics()
   const baitulMaal = getBaitulMaalDashboardMetrics()
-  const ijtema = getIjtemaAttendanceDashboardMetrics()
+  // KC-0110.3
+  // Compliance reads Weekly Ijtema through the canonical adapter.
+  // Legacy write path retained until write cutover.
+  const ijtema = getWeeklyIjtemaDashboardMetricsView()
 
   const cards: SummaryCard[] = [
     { key: 'ijtema-present', label: 'Ijtema Present', count: ijtema.present, section: 'ijtema', status: 'Present' },

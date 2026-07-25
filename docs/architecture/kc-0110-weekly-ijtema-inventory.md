@@ -304,13 +304,16 @@ Each step must preserve current behaviour until its cutover flag/adapter is read
 | Matrix (`buildCampaignMatrixRows`) | Legacy `getCurrentIjtemaAttendance` | Canonical read adapter | ✅ KC-0110.2 |
 | Journey (`KarkunWeeklyIjtemaSection`) | Legacy | Canonical read adapter (+ legacy fallback) | ✅ KC-0110.2 |
 | Journey modal / Matrix cell **writes** | Legacy `updateIjtemaAttendance` / `cycleIjtemaForKarkun` | Legacy (unchanged) | Pending write cutover (0110.4) |
-| Compliance | Legacy | Legacy | Pending |
+| Compliance (`ComplianceModulePage` ijtema + `ComplianceSummaryCards`) | Legacy | Canonical read adapter | ✅ KC-0110.3 |
+| Compliance Ijtema **writes** | Legacy `updateIjtemaAttendance` | Legacy (unchanged) | Pending write cutover |
 | People (profile / bulk / filters) | Legacy | Legacy | Pending |
 | Cos / automation / Rafeeq ops | Legacy | Legacy | Pending |
+| Writes (Matrix / Journey / Compliance) | Legacy | Legacy | Pending |
 
 **Adapter:** `src/lib/operations/weeklyIjtemaReadAdapter.ts`  
 - `getWeeklyIjtemaCurrentAttendanceView` — prefers open/current event mark; else legacy  
 - `getWeeklyIjtemaAttendanceHistoryView` — merges event marks + legacy history  
+- `getWeeklyIjtemaAttendanceSummariesView` / `getWeeklyIjtemaDashboardMetricsView` — Compliance list + cards (KC-0110.3)  
 
 ---
 
@@ -343,3 +346,7 @@ Each step must preserve current behaviour until its cutover flag/adapter is read
 ## 8. KC-0110.2 notes
 
 Read-only adapter alignment shipped for Matrix + Journey presentation. Write paths remain on legacy until KC-0110.4.
+
+## 8.1 KC-0110.3 notes
+
+Compliance Ijtema list and summary cards read through the canonical adapter. Mark Present/Absent/Excused on Compliance still writes legacy `ijtema_*` until write cutover.

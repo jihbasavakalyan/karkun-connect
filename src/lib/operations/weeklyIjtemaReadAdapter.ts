@@ -10,10 +10,13 @@
 
 import {
   formatWeekLabel,
+  type IjtemaAttendanceDashboardMetrics,
+  type IjtemaAttendanceKarkunSummary,
   type IjtemaAttendanceRecord,
   type IjtemaAttendanceStatus,
 } from '@/types/ijtemaAttendance'
 import { formatCycleDateLabel } from '@/lib/campaignCycle/lifecycle'
+import { getAllKarkuns } from '@/lib/peopleStore'
 import {
   getCurrentIjtemaAttendance,
   getIjtemaAttendanceHistory,
@@ -136,4 +139,49 @@ export function describeWeeklyIjtemaEventLabel(eventId: string | undefined): str
   const event = getWeeklyIjtemaEventById(eventId)
   if (!event) return null
   return `${event.title} · ${formatWeekLabel(event.meetingDate)}`
+}
+
+/**
+ * KC-0110.3 — Compliance list rows: one summary per active Karkun from the
+ * current attendance view (canonical mark preferred; else legacy).
+ */
+export function getWeeklyIjtemaAttendanceSummariesView(): IjtemaAttendanceKarkunSummary[] {
+  return getAllKarkuns().map((karkun) => {
+    const attendance = getWeeklyIjtemaCurrentAttendanceView(karkun.id)
+    return {
+      karkunId: karkun.id,
+      karkunName: karkun.name,
+      weekEndingDate: attendance.weekEndingDate,
+      weekLabel: attendance.weekLabel,
+      status: attendance.status,
+      remarks: attendance.remarks,
+    }
+  })
+}
+
+/**
+ * KC-0110.3 — Compliance summary counts from the same current-attendance view
+ * used by list rows (keeps cards and filters aligned).
+ */
+export function getWeeklyIjtemaDashboardMetricsView(): IjtemaAttendanceDashboardMetrics {
+  let present = 0
+  let absent = 0
+  let excused = 0
+  let notRecorded = 0
+
+  for (const karkun of getAllKarkuns()) {
+    const status = getWeeklyIjtemaCurrentAttendanceView(karkun.id).status
+    if (status === 'Present') present += 1
+    else if (status === 'Absent') absent += 1
+    else if (status === 'Excused') excused += 1
+    else notRecorded += 1
+  }
+
+  return {
+    present,
+    absent,
+    excused,
+    notRecorded,
+    informed: excused,
+  }
 }
