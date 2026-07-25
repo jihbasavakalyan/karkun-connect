@@ -10,6 +10,7 @@
 
 import {
   formatWeekLabel,
+  getWeekEndingDate,
   type IjtemaAttendanceDashboardMetrics,
   type IjtemaAttendanceKarkunSummary,
   type IjtemaAttendanceRecord,
@@ -19,6 +20,8 @@ import { formatCycleDateLabel } from '@/lib/campaignCycle/lifecycle'
 import { getAllKarkuns } from '@/lib/peopleStore'
 import {
   getCurrentIjtemaAttendance,
+  getFilterWeekEndingDate,
+  getIjtemaAttendanceForKarkun,
   getIjtemaAttendanceHistory,
 } from '@/services/ijtemaAttendanceService'
 import {
@@ -184,4 +187,72 @@ export function getWeeklyIjtemaDashboardMetricsView(): IjtemaAttendanceDashboard
     notRecorded,
     informed: excused,
   }
+}
+
+/**
+ * KC-0110.4 — Attendance for a specific week ending date (People filters).
+ * Prefers a canonical event whose meetingDate matches; for the current week
+ * ending, reuses the current-attendance view; else legacy week record.
+ */
+export function getWeeklyIjtemaAttendanceForWeekView(
+  karkunId: string,
+  weekEndingDate: string,
+): WeeklyIjtemaCurrentAttendanceView {
+  const eventByDate = getAllWeeklyIjtemaEvents().find(
+    (event) => event.meetingDate === weekEndingDate,
+  )
+  if (eventByDate) {
+    const mark = findCanonicalMark(eventByDate, karkunId)
+    if (mark) {
+      return {
+        karkunId,
+        status: mark.status,
+        weekEndingDate: eventByDate.meetingDate,
+        weekLabel: formatCycleDateLabel(eventByDate.meetingDate),
+        source: 'canonical',
+        eventId: eventByDate.id,
+        meetingDate: eventByDate.meetingDate,
+      }
+    }
+  }
+
+  if (weekEndingDate === getWeekEndingDate()) {
+    return getWeeklyIjtemaCurrentAttendanceView(karkunId)
+  }
+
+  const legacy = getIjtemaAttendanceForKarkun(karkunId, weekEndingDate)
+  return {
+    karkunId,
+    status: legacy.status,
+    weekEndingDate: legacy.weekEndingDate,
+    weekLabel: legacy.weekLabel,
+    remarks: legacy.remarks,
+    source: 'legacy',
+  }
+}
+
+/**
+ * KC-0110.4 — People list Ijtema filters (same semantics as legacy matcher).
+ */
+export function matchesWeeklyIjtemaAttendanceFiltersView(
+  karkunId: string,
+  statusFilter: string,
+  weekFilter: string,
+): boolean {
+  const hasStatusFilter = Boolean(statusFilter)
+  const hasWeekFilter = Boolean(weekFilter)
+
+  if (!hasStatusFilter && !hasWeekFilter) {
+    return true
+  }
+
+  const weekEndingDate = getFilterWeekEndingDate(weekFilter)
+  const attendance = getWeeklyIjtemaAttendanceForWeekView(karkunId, weekEndingDate)
+  const normalizedFilter = statusFilter === 'Informed' ? 'Excused' : statusFilter
+
+  if (hasStatusFilter && attendance.status !== normalizedFilter) {
+    return false
+  }
+
+  return true
 }

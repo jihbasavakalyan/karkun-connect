@@ -8,7 +8,8 @@ import { persistKarkunDurable, updateKarkun } from '@/lib/peopleStore'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { usePeopleStore } from '@/hooks/usePeopleStore'
 import { getCurrentBaitulMaalStatus, updateBaitulMaal } from '@/services/baitulMaalService'
-import { getCurrentIjtemaAttendance, updateIjtemaAttendance } from '@/services/ijtemaAttendanceService'
+import { getWeeklyIjtemaCurrentAttendanceView } from '@/lib/operations/weeklyIjtemaReadAdapter'
+import { updateIjtemaAttendance } from '@/services/ijtemaAttendanceService'
 import {
   getCurrentMonthReportingStatus,
   getRegistrationForKarkun,
@@ -99,7 +100,10 @@ function IjtemaStatusField({
 }
 
 function readComplianceState(karkunId: string) {
-  const ijtema = getCurrentIjtemaAttendance(karkunId)
+  // KC-0110.4
+  // People reads Weekly Ijtema through the canonical adapter.
+  // Legacy write path retained until write migration.
+  const ijtema = getWeeklyIjtemaCurrentAttendanceView(karkunId)
   const registration = getRegistrationForKarkun(karkunId)
   const monthly = getCurrentMonthReportingStatus(karkunId)
   const baitulMaal = getCurrentBaitulMaalStatus(karkunId)

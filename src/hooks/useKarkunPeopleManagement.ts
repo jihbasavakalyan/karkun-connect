@@ -4,10 +4,11 @@ import { subscribeToAssignments } from '@/lib/assignmentEngine'
 import { usePeopleStore } from '@/hooks/usePeopleStore'
 import { matchesJihPortalFilters } from '@/services/jihWebPortalService'
 import { matchesBaitulMaalFilters } from '@/services/baitulMaalService'
-import { matchesIjtemaAttendanceFilters } from '@/services/ijtemaAttendanceService'
+import { matchesWeeklyIjtemaAttendanceFiltersView } from '@/lib/operations/weeklyIjtemaReadAdapter'
 import { subscribeToJihWebPortalStore } from '@/stores/jihWebPortalStore'
 import { subscribeToBaitulMaalStore } from '@/stores/baitulMaalStore'
 import { subscribeToIjtemaAttendanceStore } from '@/stores/ijtemaAttendanceStore'
+import { subscribeToWeeklyIjtemaStore } from '@/stores/weeklyIjtemaStore'
 import type {
   KarkunRegistryRecord,
   PersonCategory,
@@ -97,7 +98,10 @@ function matchesKarkunFilters(karkun: KarkunRegistryRecord, filters: PeopleFilte
   }
 
   if (
-    !matchesIjtemaAttendanceFilters(
+    // KC-0110.4
+    // People reads Weekly Ijtema through the canonical adapter.
+    // Legacy write path retained until write migration.
+    !matchesWeeklyIjtemaAttendanceFiltersView(
       karkun.id,
       filters.ijtemaAttendanceStatus,
       filters.ijtemaWeek,
@@ -162,11 +166,15 @@ export function useKarkunPeopleManagement(
     const unsubIjtema = subscribeToIjtemaAttendanceStore(() =>
       setIjtemaVersion((value) => value + 1),
     )
+    const unsubWeeklyIjtema = subscribeToWeeklyIjtemaStore(() =>
+      setIjtemaVersion((value) => value + 1),
+    )
     return () => {
       unsubAssignments()
       unsubJih()
       unsubBaitulMaal()
       unsubIjtema()
+      unsubWeeklyIjtema()
     }
   }, [])
 

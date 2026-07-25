@@ -303,17 +303,19 @@ Each step must preserve current behaviour until its cutover flag/adapter is read
 | Mission / Top Priority | Event/Cycle | Event/Cycle | ✅ Canonical |
 | Matrix (`buildCampaignMatrixRows`) | Legacy `getCurrentIjtemaAttendance` | Canonical read adapter | ✅ KC-0110.2 |
 | Journey (`KarkunWeeklyIjtemaSection`) | Legacy | Canonical read adapter (+ legacy fallback) | ✅ KC-0110.2 |
-| Journey modal / Matrix cell **writes** | Legacy `updateIjtemaAttendance` / `cycleIjtemaForKarkun` | Legacy (unchanged) | Pending write cutover (0110.4) |
+| Journey modal / Matrix cell **writes** | Legacy `updateIjtemaAttendance` / `cycleIjtemaForKarkun` | Legacy (unchanged) | Pending write cutover |
 | Compliance (`ComplianceModulePage` ijtema + `ComplianceSummaryCards`) | Legacy | Canonical read adapter | ✅ KC-0110.3 |
 | Compliance Ijtema **writes** | Legacy `updateIjtemaAttendance` | Legacy (unchanged) | Pending write cutover |
-| People (profile / bulk / filters) | Legacy | Legacy | Pending |
+| People (profile + list filters via `useKarkunPeopleManagement`) | Legacy | Canonical read adapter | ✅ KC-0110.4 |
+| People profile / bulk **writes** | Legacy `updateIjtemaAttendance` / `bulkUpdateIjtemaAttendance` | Legacy (unchanged) | Pending write cutover |
 | Cos / automation / Rafeeq ops | Legacy | Legacy | Pending |
-| Writes (Matrix / Journey / Compliance) | Legacy | Legacy | Pending |
+| Writes (Matrix / Journey / Compliance / People) | Legacy | Legacy | Pending |
 
 **Adapter:** `src/lib/operations/weeklyIjtemaReadAdapter.ts`  
 - `getWeeklyIjtemaCurrentAttendanceView` — prefers open/current event mark; else legacy  
 - `getWeeklyIjtemaAttendanceHistoryView` — merges event marks + legacy history  
 - `getWeeklyIjtemaAttendanceSummariesView` / `getWeeklyIjtemaDashboardMetricsView` — Compliance list + cards (KC-0110.3)  
+- `getWeeklyIjtemaAttendanceForWeekView` / `matchesWeeklyIjtemaAttendanceFiltersView` — People filters (KC-0110.4)  
 
 ---
 
@@ -350,3 +352,7 @@ Read-only adapter alignment shipped for Matrix + Journey presentation. Write pat
 ## 8.1 KC-0110.3 notes
 
 Compliance Ijtema list and summary cards read through the canonical adapter. Mark Present/Absent/Excused on Compliance still writes legacy `ijtema_*` until write cutover.
+
+## 8.2 KC-0110.4 notes
+
+People profile Weekly Ijtema display and People list Ijtema filters read through the canonical adapter. Profile save and bulk mark actions still write legacy until write cutover.
