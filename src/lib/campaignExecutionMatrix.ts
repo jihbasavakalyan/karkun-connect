@@ -82,8 +82,10 @@ export function getJihAppMatrixState(karkunId: string): JihAppMatrixState {
 }
 
 /**
- * Legacy-only campaign state — used by write seed paths until KC-0112.5.
+ * Legacy-only campaign state — used by write seed paths until write cutover.
  * Presentation reads use getMonthlyBaitulMaalCampaignStateView (KC-0112.2).
+ *
+ * KC-0112.5 — Approved exception: write workflow seed read (not presentation).
  */
 export function getBaitulMaalCampaignState(karkunId: string): BaitulMaalCampaignState {
   const record = getCurrentBaitulMaalStatus(karkunId)

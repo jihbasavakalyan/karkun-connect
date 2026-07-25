@@ -1,11 +1,12 @@
 /**
- * KC-0112.2 / KC-0112.3 / KC-0112.4 — Monthly Baitul Maal canonical read adapter.
+ * KC-0112.2–0112.5 — Monthly Baitul Maal canonical read adapter.
  *
  * Presentation/read abstraction only. Prefers the cycle SoR
  * (`monthlyBaitulMaal*`); falls back to legacy per-Karkun `baitulMaal*`
  * when no mark exists for the requested month. No persistence,
  * caching, or writes.
  *
+ * Dev diagnostics: set localStorage `kc.debug.monthlyBaitReads=1` (DEV only).
  * Inventory: docs/architecture/kc-0112-monthly-baitul-maal-inventory.md
  */
 
@@ -67,6 +68,8 @@ export type MonthlyBaitulMaalComplianceStatusView = {
   markStatus?: MonthlyBaitulMaalMarkStatus
 }
 
+type LegacyComplianceStatus = ReturnType<typeof getBaitulMaalStatusForKarkun>
+
 const BAITUL_DISCUSSED = 'Campaign: Discussed'
 const BAITUL_COMMITTED = 'Campaign: Committed'
 
@@ -74,6 +77,26 @@ type CanonicalMark = {
   status: MonthlyBaitulMaalMarkStatus
   ruknId: string
   updatedAt: string
+}
+
+/** KC-0112.5 — DEV-only; enable via localStorage `kc.debug.monthlyBaitReads=1`. */
+function isMonthlyBaitulMaalReadDebugEnabled(): boolean {
+  if (!import.meta.env.DEV) return false
+  try {
+    return globalThis.localStorage?.getItem('kc.debug.monthlyBaitReads') === '1'
+  } catch {
+    return false
+  }
+}
+
+function logMonthlyBaitulMaalRead(
+  operation: string,
+  source: MonthlyBaitulMaalReadSource,
+  detail?: Record<string, unknown>,
+): void {
+  if (!isMonthlyBaitulMaalReadDebugEnabled()) return
+  const label = source === 'canonical' ? 'Canonical Cycle' : 'Legacy Fallback'
+  console.debug(`[KC-0112.5] Monthly Baitul Maal ${operation}: ${label}`, detail ?? '')
 }
 
 function findCanonicalMark(
@@ -94,7 +117,7 @@ function findCanonicalMark(
   return null
 }
 
-/** One pass over submissions — used by bulk Compliance reads. */
+/** One pass over submissions — used by bulk Compliance/People-aligned reads. */
 function buildCanonicalMarkIndex(cycle: MonthlyBaitulMaalCycle): Map<string, CanonicalMark> {
   const index = new Map<string, CanonicalMark>()
   for (const submission of getMonthlyBaitulMaalSubmissionsForCycle(cycle.id)) {
@@ -153,7 +176,7 @@ export function getMonthlyBaitulMaalCampaignStateView(
   const cycle = getCurrentMonthlyBaitulMaalCycle()
   const mark = cycle ? findCanonicalMark(cycle, karkunId) : null
   if (mark?.status === 'Contributed' && cycle) {
-    return {
+    const view: MonthlyBaitulMaalCampaignStateView = {
       karkunId,
       state: 'committed',
       source: 'canonical',
@@ -161,9 +184,15 @@ export function getMonthlyBaitulMaalCampaignStateView(
       monthKey: cycle.monthKey,
       markStatus: 'Contributed',
     }
+    logMonthlyBaitulMaalRead('campaignState', view.source, {
+      karkunId,
+      cycleId: cycle.id,
+      monthKey: cycle.monthKey,
+    })
+    return view
   }
 
-  return {
+  const view: MonthlyBaitulMaalCampaignStateView = {
     karkunId,
     state: legacyCampaignState(karkunId),
     source: 'legacy',
@@ -171,13 +200,18 @@ export function getMonthlyBaitulMaalCampaignStateView(
     monthKey: cycle?.monthKey,
     markStatus: mark?.status,
   }
+  logMonthlyBaitulMaalRead('campaignState', view.source, {
+    karkunId,
+    cycleId: cycle?.id ?? null,
+    markStatus: mark?.status ?? null,
+  })
+  return view
 }
 
 function viewFromLegacyCompliance(
   karkunId: string,
-  monthKey: string,
+  legacy: LegacyComplianceStatus,
 ): MonthlyBaitulMaalComplianceStatusView {
-  const legacy = getBaitulMaalStatusForKarkun(karkunId, monthKey)
   return {
     karkunId,
     monthKey: legacy.monthKey,
@@ -199,7 +233,7 @@ function viewFromCanonicalCompliance(
   karkunId: string,
   cycle: MonthlyBaitulMaalCycle,
   mark: CanonicalMark,
-  legacy: ReturnType<typeof getBaitulMaalStatusForKarkun>,
+  legacy: LegacyComplianceStatus,
 ): MonthlyBaitulMaalComplianceStatusView {
   return {
     karkunId,
@@ -221,7 +255,7 @@ function viewFromCanonicalCompliance(
 }
 
 /**
- * KC-0112.3 — Compliance status for a Karkun/month.
+ * KC-0112.3 — Compliance / People status for a Karkun/month.
  * Cycle mark for that monthKey wins; otherwise legacy Paid/Pending/Exempt.
  */
 export function getMonthlyBaitulMaalComplianceStatusView(
@@ -234,10 +268,24 @@ export function getMonthlyBaitulMaalComplianceStatusView(
   if (cycle) {
     const mark = findCanonicalMark(cycle, karkunId)
     if (mark) {
-      return viewFromCanonicalCompliance(karkunId, cycle, mark, legacy)
+      const view = viewFromCanonicalCompliance(karkunId, cycle, mark, legacy)
+      logMonthlyBaitulMaalRead('complianceStatus', view.source, {
+        karkunId,
+        monthKey,
+        cycleId: cycle.id,
+        markStatus: mark.status,
+      })
+      return view
     }
   }
-  return viewFromLegacyCompliance(karkunId, monthKey)
+
+  const view = viewFromLegacyCompliance(karkunId, legacy)
+  logMonthlyBaitulMaalRead('complianceStatus', view.source, {
+    karkunId,
+    monthKey,
+    cycleId: cycle?.id ?? null,
+  })
+  return view
 }
 
 /**
@@ -251,11 +299,14 @@ export function getMonthlyBaitulMaalSummariesView(
   const cycle = findCycleForMonthKey(monthKey)
   const markIndex = cycle ? buildCanonicalMarkIndex(cycle) : null
   const { month, year } = parseMonthKey(monthKey)
+  let canonicalCount = 0
+  let legacyCount = 0
 
-  return getAllKarkuns().map((karkun) => {
+  const summaries = getAllKarkuns().map((karkun) => {
     const legacy = getBaitulMaalStatusForKarkun(karkun.id, monthKey)
     const mark = markIndex?.get(karkun.id)
     if (cycle && mark) {
+      canonicalCount += 1
       const status = complianceStatusFromCanonical(mark.status)
       return {
         karkunId: karkun.id,
@@ -274,6 +325,7 @@ export function getMonthlyBaitulMaalSummariesView(
       }
     }
 
+    legacyCount += 1
     return {
       karkunId: karkun.id,
       karkunName: karkun.name,
@@ -290,6 +342,17 @@ export function getMonthlyBaitulMaalSummariesView(
       recordedBy: legacy.recordedBy,
     }
   })
+
+  if (isMonthlyBaitulMaalReadDebugEnabled()) {
+    console.debug('[KC-0112.5] Monthly Baitul Maal summaries:', {
+      monthKey,
+      cycleId: cycle?.id ?? null,
+      canonical: canonicalCount,
+      legacyFallback: legacyCount,
+    })
+  }
+
+  return summaries
 }
 
 /**
