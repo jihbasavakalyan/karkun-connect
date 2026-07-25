@@ -75,7 +75,7 @@ export function getComplianceEmptyState(
       case 'jih-registration':
         return {
           title: 'No Pending Registrations',
-          message: 'All assigned Karkuns are registered.',
+          message: 'All connected Karkuns are registered.',
         }
       case 'monthly-reporting':
         return { title: 'No Pending Reports', message: 'Everything has been submitted.' }

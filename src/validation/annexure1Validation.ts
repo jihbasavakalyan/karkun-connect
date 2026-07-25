@@ -44,7 +44,7 @@ export function validateActiveAssignmentExists(
 ): Annexure1ValidationResult {
   const assignment = resolveActiveAssignmentForAnnexure1(karkunId, ruknId)
   if (!assignment) {
-    return { valid: false, error: 'No active assignment found.' }
+    return { valid: false, error: 'No active connection found.' }
   }
   return { valid: true }
 }
@@ -54,21 +54,21 @@ export function validateAnnexure1SubmissionContext(
 ): Annexure1ValidationResult {
   const assignment = resolveActiveAssignmentForAnnexure1(context.karkunId, context.ruknId)
   if (!assignment) {
-    return { valid: false, error: 'No active assignment found.' }
+    return { valid: false, error: 'No active connection found.' }
   }
 
   if (assignment.karkunId !== context.karkunId) {
-    return { valid: false, error: 'Assigned Karkun does not match this assignment.' }
+    return { valid: false, error: 'Connected Karkun does not match this connection.' }
   }
 
   if (context.actorRole === 'rukn' && assignment.ruknId !== context.ruknId) {
-    return { valid: false, error: 'Assigned Rukn does not match your account.' }
+    return { valid: false, error: 'Connected Rukn does not match your account.' }
   }
 
   const karkun = getKarkunById(context.karkunId)
   const rukn = getRuknById(assignment.ruknId)
   if (!karkun || !rukn) {
-    return { valid: false, error: 'Assignment references invalid records.' }
+    return { valid: false, error: 'Connection references invalid records.' }
   }
 
   if (rukn.status !== 'active') {

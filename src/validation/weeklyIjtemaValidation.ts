@@ -53,7 +53,7 @@ export function validateWeeklyIjtemaMarks(
     marks,
     assignedKarkunIds,
     ALLOWED,
-    'Please mark attendance for all assigned Karkuns before submitting.',
+    'Please mark attendance for all connected Karkuns before submitting.',
   )
 }
 

@@ -74,7 +74,7 @@ export function CampaignExecutionProgressCard({ ruknId }: CampaignExecutionProgr
           Campaign period has ended. Focus on recurring attendance and operational follow-up.
         </p>
         <div className="mt-3 grid grid-cols-3 gap-2">
-          <Metric label="Assigned" value={summary.assigned} />
+          <Metric label="Connected" value={summary.assigned} />
           <Metric label="Ijtema Done" value={summary.ijtemaRecorded} />
           <Metric label="Pending" value={Math.max(0, summary.assigned - summary.ijtemaRecorded)} />
         </div>
@@ -102,7 +102,7 @@ export function CampaignExecutionProgressCard({ ruknId }: CampaignExecutionProgr
         />
       </div>
       <div className="mt-3 grid grid-cols-3 gap-2">
-        <Metric label="Assigned Karkuns" value={summary.assigned} />
+        <Metric label="Connected Karkuns" value={summary.assigned} />
         <Metric label="Completed" value={summary.completed} />
         <Metric label="Pending" value={summary.pending} />
       </div>

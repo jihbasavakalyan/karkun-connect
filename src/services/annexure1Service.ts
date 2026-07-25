@@ -204,7 +204,7 @@ export function saveDailyProgress(
 ): Annexure1SubmitResult {
   const assignment = resolveActiveAssignmentForAnnexure1(context.karkunId, context.ruknId)
   if (!assignment) {
-    return { success: false, error: 'No active assignment found.' }
+    return { success: false, error: 'No active connection found.' }
   }
 
   const formCheck = validateAnnexure1Form(form)
@@ -290,11 +290,11 @@ export function saveAnnexure1Draft(
 ): Annexure1DraftResult {
   const assignment = resolveActiveAssignmentForAnnexure1(context.karkunId, context.ruknId)
   if (!assignment) {
-    return { success: false, error: 'No active assignment found.' }
+    return { success: false, error: 'No active connection found.' }
   }
 
   if (context.actorRole === 'rukn' && assignment.ruknId !== context.ruknId) {
-    return { success: false, error: 'Assigned Rukn does not match your account.' }
+    return { success: false, error: 'Connected Rukn does not match your account.' }
   }
 
   const record = createSubmissionRecord(assignment, context.karkunId, form, 'draft')
@@ -491,7 +491,7 @@ export function getPerformanceMetricsFromAnnexure1() {
       id: 'perf-pending',
       label: 'Pending Visits',
       value: metrics.pendingReports,
-      trend: 'Active assignments',
+      trend: 'Active connections',
     },
     {
       id: 'perf-followups-pending',

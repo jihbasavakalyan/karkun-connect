@@ -51,7 +51,7 @@ export function AdminExecutionSummaryWidgets() {
           </Link>
         </div>
         <div className="mt-3 grid grid-cols-3 gap-2">
-          <MetricCell label="Assigned" value={daily.assigned} />
+          <MetricCell label="Connected" value={daily.assigned} />
           <MetricCell label="Updated" value={daily.updatedToday} />
           <MetricCell label="Pending" value={daily.pending} />
         </div>

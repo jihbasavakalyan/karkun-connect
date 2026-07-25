@@ -829,7 +829,7 @@ export async function transferAssignment(input: TransferInput): Promise<Assignme
     if (confirmed.assignmentNumber !== current.assignmentNumber) {
       return {
         success: false,
-        error: 'Transfer changed Assignment Number unexpectedly. Contact Administrator.',
+        error: 'Transfer changed Connection Number unexpectedly. Contact Administrator.',
       }
     }
 

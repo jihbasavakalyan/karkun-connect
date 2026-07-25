@@ -15,7 +15,7 @@ export const COMMUNICATION_SECTION_GROUPS = [
     sections: [
       { id: 'mission-center', label: 'Mission Center' },
       { id: 'queue', label: 'Communication Queue' },
-      { id: 'audiences', label: 'Audiences' },
+      { id: 'audiences', label: 'Audience' },
       { id: 'journeys', label: 'Journeys' },
       { id: 'template-library', label: 'Official Communications' },
       { id: 'delivery', label: 'Delivery Center' },
@@ -35,7 +35,7 @@ export const COMMUNICATION_SECTION_GROUPS = [
       { id: 'templates', label: 'Custom Communications' },
       { id: 'scheduled', label: 'Scheduled Messages' },
       { id: 'automation', label: 'Automation Rules' },
-      { id: 'history', label: 'Delivery History' },
+      { id: 'history', label: 'Message History' },
       { id: 'failed', label: 'Failed Messages' },
       { id: 'tool-settings', label: 'WhatsApp Settings' },
     ] as const,

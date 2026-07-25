@@ -204,7 +204,7 @@ function PaginatedPriorityGrid({
   const slice = rows.slice(safePage * PRIORITY_PAGE_SIZE, safePage * PRIORITY_PAGE_SIZE + PRIORITY_PAGE_SIZE)
 
   if (rows.length === 0) {
-    return <p className="exdash-muted">No active Rukns with assignments.</p>
+    return <p className="exdash-muted">No active Rukns with connections.</p>
   }
 
   return (
@@ -293,7 +293,7 @@ function summarizeCollectiveRukns(rows: AdminRuknGenderPerformanceView[]): Overv
 
   return [
     { id: 'rukns', label: 'Total Rukns', value: total },
-    { id: 'assigned', label: 'Assigned', value: assigned, hint: 'At least one Connected Karkun' },
+    { id: 'assigned', label: 'With Connections', value: assigned, hint: 'At least one Connected Karkun' },
     { id: 'connected', label: 'Connected', value: connected, hint: 'Active Connected Karkuns' },
     { id: 'pending', label: 'Pending', value: pending, hint: 'Visits and tasks not yet completed' },
     { id: 'progress', label: 'Average Progress', value: `${avg}%`, progressPct: avg },
@@ -313,7 +313,7 @@ function summarizeGenderRukns(rows: AdminRuknGenderPerformanceView[]): OverviewM
 
   return [
     { id: 'total', label: 'Total', value: total },
-    { id: 'assigned', label: 'Assigned', value: assigned },
+    { id: 'assigned', label: 'With Connections', value: assigned },
     { id: 'connected', label: 'Connected', value: connected },
     { id: 'pending', label: 'Pending', value: pending },
     {
@@ -624,7 +624,7 @@ export function AdminCommandCenter({
     if (!backgroundReady) {
       return [
         { id: 'rukns', label: 'Total Rukns', value: '—' },
-        { id: 'assigned', label: 'Assigned', value: '—' },
+        { id: 'assigned', label: 'With Connections', value: '—' },
         { id: 'connected', label: 'Connected', value: '—' },
         { id: 'pending', label: 'Pending', value: '—' },
         { id: 'progress', label: 'Average Progress', value: '—' },
@@ -647,7 +647,7 @@ export function AdminCommandCenter({
     if (!backgroundReady) {
       return [
         { id: 'total', label: 'Total', value: '—' },
-        { id: 'assigned', label: 'Assigned', value: '—' },
+        { id: 'assigned', label: 'With Connections', value: '—' },
         { id: 'connected', label: 'Connected', value: '—' },
         { id: 'pending', label: 'Pending', value: '—' },
         { id: 'connection-pct', label: 'Connection %', value: '—' },
@@ -661,7 +661,7 @@ export function AdminCommandCenter({
     if (!backgroundReady) {
       return [
         { id: 'total', label: 'Total', value: '—' },
-        { id: 'assigned', label: 'Assigned', value: '—' },
+        { id: 'assigned', label: 'With Connections', value: '—' },
         { id: 'connected', label: 'Connected', value: '—' },
         { id: 'pending', label: 'Pending', value: '—' },
         { id: 'connection-pct', label: 'Connection %', value: '—' },
@@ -735,16 +735,16 @@ export function AdminCommandCenter({
             )}
           </WidgetErrorBoundary>
 
-          <WidgetErrorBoundary title="Pending Karkun requests" compact>
+          <WidgetErrorBoundary title="Pending Karkun Requests" compact>
             {backgroundReady ? (
               <PendingKarkunRequestQueue />
             ) : (
-              <section className="exdash-panel" aria-label="Pending Karkun requests" aria-busy="true">
+              <section className="exdash-panel" aria-label="Pending Karkun Requests" aria-busy="true">
                 <div className="exdash-section-head">
-                  <ExdashSectionTitle title="Pending requests" icon="users" tone="amber" />
+                  <ExdashSectionTitle title="Pending Karkun Requests" icon="users" tone="amber" />
                   <span className="exdash-section-meta">Loading</span>
                 </div>
-                <p className="exdash-muted">Loading pending requests…</p>
+                <p className="exdash-muted">Loading pending Karkun requests…</p>
                 <CardSkeleton count={1} />
               </section>
             )}

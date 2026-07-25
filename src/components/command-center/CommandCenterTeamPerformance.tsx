@@ -62,7 +62,7 @@ export function CommandCenterTeamPerformance() {
               {(
                 [
                   ['ruknName', 'Rukn'],
-                  ['assignedKarkuns', 'Asgn'],
+                  ['assignedKarkuns', 'Conn'],
                   ['pendingWork', 'Pend'],
                   ['completionPct', 'Done'],
                   ['visits', 'Vis'],
