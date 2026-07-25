@@ -455,6 +455,9 @@ export function getTodaysMeetingAssignments() {
 }
 
 export function getCampaignHealthFromAnnexure1() {
+  // KC-0111 — LEGACY overall score (avg of visit/report/follow-up rates).
+  // Not executive Campaign Health — prefer getDashboardHealthSlices.
+  // Inventory: docs/architecture/kc-0111-campaign-health-inventory.md
   const metrics = getAnnexure1ExecutionMetrics()
   const overallScore = Math.round(
     (metrics.visitCompletionRate + metrics.reportSubmissionRate + metrics.followUpCompletionRate) /

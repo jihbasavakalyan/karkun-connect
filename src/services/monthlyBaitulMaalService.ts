@@ -1,6 +1,10 @@
 /**
  * KC-0108 — Monthly Baitul Maal completion service.
  * Reuses shared campaignCycle lifecycle from KC-0107.
+ *
+ * KC-0111 — Campaign Health Monthly Baitul Maal slice uses
+ * getMonthlyBaitulMaalDashboardKpi (contributed÷totalAssigned).
+ * Inventory: docs/architecture/kc-0111-campaign-health-inventory.md
  */
 
 import { getAssignedKarkunanForRukn } from '@/lib/assignmentEngine'

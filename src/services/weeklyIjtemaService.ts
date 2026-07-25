@@ -7,6 +7,9 @@
  * Campaign Health / Mission / Top Priority must use this service
  * (`getWeeklyIjtemaDashboardKpi`). Do not replace with ijtemaAttendance*.
  * Inventory: docs/architecture/kc-0110-weekly-ijtema-inventory.md
+ *
+ * KC-0111 — Health slice uses present÷totalAssigned from this KPI
+ * (not marked-only attendancePct). See kc-0111-campaign-health-inventory.md.
  */
 
 import { getAssignedKarkunanForRukn } from '@/lib/assignmentEngine'

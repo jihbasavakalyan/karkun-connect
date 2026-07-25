@@ -9,6 +9,7 @@
 | [**Campaign Operating System — Product Architecture Baseline (KC-0104)**](./campaign-operating-system-product-architecture.md) | Permanent product domains, capability ownership, terminology, and principles |
 | [KC-0109 — Operations Model Consolidation](./operations-model-consolidation.md) | Canonical Operations execution model and incremental migration plan |
 | [KC-0110 — Weekly Ijtema Track Inventory](./kc-0110-weekly-ijtema-inventory.md) | Dual-track inventory and consolidation sequence for Weekly Ijtema |
+| [KC-0111 — Campaign Health Inventory](./kc-0111-campaign-health-inventory.md) | Campaign Health calculators, duplicates, and migration order |
 | [KC-0103A — People Capability Audit](./kc-0103a-people-capability-audit.md) | People domain evidence |
 | [KC-0103B — People Ownership Validation](./kc-0103b-people-ownership-validation.md) | Ownership / terminology validation |
 | [KC-0103C — Operations Capability Audit](./kc-0103c-operations-capability-audit.md) | Operations domain evidence |

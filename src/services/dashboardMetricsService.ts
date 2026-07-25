@@ -5,6 +5,11 @@
  * must derive Visits / App Registration (and related pending counts) from here
  * so cards cannot contradict each other.
  *
+ * KC-0111 — CANONICAL Campaign Health aggregation path.
+ * Four slices: Visits / Weekly Ijtema / Monthly Baitul Maal / App Registration.
+ * Do not replace with getCampaignHealthFromAnnexure1 or legacy IJ/BM metrics.
+ * Inventory: docs/architecture/kc-0111-campaign-health-inventory.md
+ *
  * Connections / Connected remain owned by MetricsService (KC-0058.1).
  * Weekly Ijtema / Monthly Baitul Maal KPIs remain owned by their module services;
  * this facade only normalizes inactive-module policy for dashboard display.
