@@ -7,6 +7,7 @@
 | Document | Role |
 |----------|------|
 | [**Campaign Operating System — Product Architecture Baseline (KC-0104)**](./campaign-operating-system-product-architecture.md) | Permanent product domains, capability ownership, terminology, and principles |
+| [KC-0109 — Operations Model Consolidation](./operations-model-consolidation.md) | Canonical Operations execution model and incremental migration plan |
 | [KC-0103A — People Capability Audit](./kc-0103a-people-capability-audit.md) | People domain evidence |
 | [KC-0103B — People Ownership Validation](./kc-0103b-people-ownership-validation.md) | Ownership / terminology validation |
 | [KC-0103C — Operations Capability Audit](./kc-0103c-operations-capability-audit.md) | Operations domain evidence |
