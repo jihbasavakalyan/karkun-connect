@@ -48,6 +48,7 @@ import { IjtemaAttendanceBulkUpdateModal } from '@/components/forms/ijtema/Ijtem
 import type { BaitulMaalStatus } from '@/types/baitulMaal'
 import type { IjtemaAttendanceStatus } from '@/types/ijtemaAttendance'
 import { PageHeader, PageShell } from '@/components/ui'
+import { MuttafiqeenRegistryPanel } from '@/pages/admin/MuttafiqeenPage'
 
 type GenderTab = PersonGender
 
@@ -547,9 +548,39 @@ export function KarkunanPage() {
   return (
     <PageShell>
       <PageHeader
-        title="Karkuns"
-        description="People registry — contacts, Connections, and Pending Karkun Requests."
-        actions={
+        title="People"
+        description="People overview, Karkun and Muttafiqeen registries, and occasional approval actions."
+      />
+
+      <div className="mb-4 flex flex-wrap items-center gap-3 text-sm">
+        <span className="font-medium text-text-heading">People</span>
+        <span className="text-secondary">/</span>
+        <Link to={ROUTES.ADMIN_MUTTAFIQEEN} className="text-primary hover:underline">
+          Muttafiqeen page
+        </Link>
+      </div>
+
+      {/* KC-0114 — People Overview first */}
+      <section aria-labelledby="people-overview-heading">
+        <h2 id="people-overview-heading" className="text-lg font-semibold text-text-heading">
+          People Overview
+        </h2>
+        <div className="mt-3">
+          <KarkunSummaryCards />
+        </div>
+      </section>
+
+      {/* KC-0114 — Karkun Registry is the primary daily working area */}
+      <section className="mt-10" aria-labelledby="karkun-registry-heading">
+        <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 id="karkun-registry-heading" className="text-lg font-semibold text-text-heading">
+              Karkun Registry
+            </h2>
+            <p className="mt-1 text-sm text-secondary">
+              Primary working list for contacts, Connections, and bulk actions.
+            </p>
+          </div>
           <KarkunPeopleActionBar
             onAddMale={() => requestAddKarkun('Male')}
             onAddFemale={() => requestAddKarkun('Female')}
@@ -557,52 +588,59 @@ export function KarkunanPage() {
             onImport={(file) => sectionHandlersRef.current?.handleImport(file)}
             onExport={(format) => sectionHandlersRef.current?.handleExport(format)}
           />
-        }
-      />
+        </div>
 
-      <div className="mb-4 flex flex-wrap items-center gap-3 text-sm">
-        <span className="text-secondary">People</span>
-        <span className="text-secondary">/</span>
-        <span className="font-medium text-text-heading">Karkuns</span>
-        <span className="text-secondary">/</span>
-        <Link to={ROUTES.ADMIN_MUTTAFIQEEN} className="text-primary hover:underline">
-          Muttafiqeen
-        </Link>
-      </div>
+        <nav className="ds-tab-nav border-b border-border pb-px" aria-label="Karkun gender">
+          {(['Male', 'Female'] as const).map((gender) => (
+            <button
+              key={gender}
+              type="button"
+              className={`ds-tab border-b-2 rounded-none px-4 ${
+                activeGender === gender
+                  ? 'border-primary text-primary ds-tab-active'
+                  : 'border-transparent'
+              }`}
+              onClick={() => setActiveGender(gender)}
+            >
+              {gender} Karkuns
+            </button>
+          ))}
+        </nav>
 
-      <KarkunSummaryCards />
+        <div className="mt-6">
+          <KarkunGenderSection
+            key={activeGender}
+            gender={activeGender}
+            initialSearch={initialSearch}
+            shouldOpenAddForm={openAddForGender === activeGender}
+            onAddFormOpened={handleAddFormOpened}
+            onRegisterHandlers={registerSectionHandlers}
+          />
+        </div>
+      </section>
 
-      <div className="mt-6">
-        <PendingKarkunRequestQueue />
-      </div>
+      {/* KC-0114 — Muttafiqeen Registry after Karkun Registry */}
+      <section className="mt-10" aria-labelledby="muttafiqeen-registry-heading">
+        <h2 id="muttafiqeen-registry-heading" className="text-lg font-semibold text-text-heading">
+          Muttafiqeen Registry
+        </h2>
+        <div className="mt-4">
+          <MuttafiqeenRegistryPanel />
+        </div>
+      </section>
 
-      <nav className="ds-tab-nav mt-6 border-b border-border pb-px" aria-label="Karkun gender">
-        {(['Male', 'Female'] as const).map((gender) => (
-          <button
-            key={gender}
-            type="button"
-            className={`ds-tab border-b-2 rounded-none px-4 ${
-              activeGender === gender
-                ? 'border-primary text-primary ds-tab-active'
-                : 'border-transparent'
-            }`}
-            onClick={() => setActiveGender(gender)}
-          >
-            {gender} Karkuns
-          </button>
-        ))}
-      </nav>
-
-      <div className="mt-6">
-        <KarkunGenderSection
-          key={activeGender}
-          gender={activeGender}
-          initialSearch={initialSearch}
-          shouldOpenAddForm={openAddForGender === activeGender}
-          onAddFormOpened={handleAddFormOpened}
-          onRegisterHandlers={registerSectionHandlers}
-        />
-      </div>
+      {/* KC-0114 — Approval requests last (occasional admin actions) */}
+      <section className="mt-10" aria-labelledby="pending-approvals-heading">
+        <h2 id="pending-approvals-heading" className="text-lg font-semibold text-text-heading">
+          New Karkun Approval Requests
+        </h2>
+        <p className="mt-1 text-sm text-secondary">
+          Occasional administrative actions — keep the registries above as the daily workspace.
+        </p>
+        <div className="mt-4">
+          <PendingKarkunRequestQueue />
+        </div>
+      </section>
     </PageShell>
   )
 }

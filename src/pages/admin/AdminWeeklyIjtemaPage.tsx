@@ -9,6 +9,7 @@ import { Modal, ModalFormFooter } from '@/components/common'
 import { PageHeader, PageShell } from '@/components/ui'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
+import { GenerateCampaignReportButton } from '@/components/reporting/GenerateCampaignReportButton'
 import { ROUTES, adminWeeklyIjtemaReportPath } from '@/constants/routes'
 import { useAuth } from '@/hooks/useAuth'
 import { useBusyAction } from '@/hooks/useBusyAction'
@@ -230,7 +231,8 @@ export function AdminWeeklyIjtemaPage() {
     <PageShell>
       <PageHeader
         title="Weekly Ijtema"
-        description="Create meetings, open or close attendance, and review weekly reports."
+        description="Create meetings, open or close attendance, and generate the Campaign Report for leadership review."
+        actions={<GenerateCampaignReportButton size="sm" />}
       />
 
       <section className="rounded-xl border border-border bg-surface p-4 shadow-card sm:p-5">
@@ -381,7 +383,7 @@ export function AdminWeeklyIjtemaPage() {
                     to={adminWeeklyIjtemaReportPath(event.id)}
                     className="inline-flex min-h-10 items-center rounded-lg border border-border px-3 text-sm font-semibold text-text-heading hover:bg-surface-muted"
                   >
-                    View Weekly Report
+                    View Attendance Report
                   </Link>
                 </div>
               </li>
