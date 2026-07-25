@@ -303,7 +303,8 @@ function MuttafiqeenSummaryCards() {
   )
 }
 
-export function MuttafiqeenPage() {
+/** KC-0114 — Muttafiqeen registry block (reusable on People page). */
+export function MuttafiqeenRegistryPanel({ showActions = true }: { showActions?: boolean }) {
   const [activeGender, setActiveGender] = useState<GenderTab>('Male')
   const sectionHandlersRef = useRef<MuttafiqSectionHandlers | null>(null)
   const [openAddForGender, setOpenAddForGender] = useState<PersonGender | null>(null)
@@ -326,11 +327,12 @@ export function MuttafiqeenPage() {
   }
 
   return (
-    <PageShell>
-      <PageHeader
-        title="Muttafiqeen Registry"
-        description="Manage Male and Female Muttafiq contacts separately. Classification can change over time."
-        actions={
+    <div>
+      {showActions ? (
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm text-secondary">
+            Manage Male and Female Muttafiq contacts. Classification can change over time.
+          </p>
           <KarkunPeopleActionBar
             personLabel="Muttafiq"
             showAssign={false}
@@ -338,18 +340,8 @@ export function MuttafiqeenPage() {
             onAddMale={() => requestAdd('Male')}
             onAddFemale={() => requestAdd('Female')}
           />
-        }
-      />
-
-      <div className="mb-4 flex flex-wrap items-center gap-3 text-sm">
-        <span className="text-secondary">People</span>
-        <span className="text-secondary">/</span>
-        <span className="font-medium text-text-heading">Muttafiqeen</span>
-        <span className="text-secondary">/</span>
-        <Link to={ROUTES.ADMIN_KARKUN} className="text-primary hover:underline">
-          Karkuns
-        </Link>
-      </div>
+        </div>
+      ) : null}
 
       <MuttafiqeenSummaryCards />
 
@@ -382,6 +374,29 @@ export function MuttafiqeenPage() {
           onRegisterHandlers={registerSectionHandlers}
         />
       </div>
+    </div>
+  )
+}
+
+export function MuttafiqeenPage() {
+  return (
+    <PageShell>
+      <PageHeader
+        title="Muttafiqeen Registry"
+        description="Manage Male and Female Muttafiq contacts separately. Classification can change over time."
+      />
+
+      <div className="mb-4 flex flex-wrap items-center gap-3 text-sm">
+        <span className="text-secondary">People</span>
+        <span className="text-secondary">/</span>
+        <span className="font-medium text-text-heading">Muttafiqeen</span>
+        <span className="text-secondary">/</span>
+        <Link to={ROUTES.ADMIN_KARKUN} className="text-primary hover:underline">
+          People
+        </Link>
+      </div>
+
+      <MuttafiqeenRegistryPanel />
     </PageShell>
   )
 }

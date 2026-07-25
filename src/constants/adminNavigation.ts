@@ -13,7 +13,7 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   { id: 'dashboard', label: 'Executive Dashboard', icon: 'home', to: ROUTES.ADMIN, end: true },
   { id: 'campaign', label: 'Campaign', icon: 'chart', to: ROUTES.ADMIN_CAMPAIGN },
   { id: 'rukn', label: 'Rukn', icon: 'user', to: ROUTES.ADMIN_RUKN },
-  { id: 'karkun', label: 'Karkuns', icon: 'users', to: ROUTES.ADMIN_KARKUN },
+  { id: 'karkun', label: 'People', icon: 'users', to: ROUTES.ADMIN_KARKUN },
   { id: 'muttafiqeen', label: 'Muttafiqeen', icon: 'users', to: ROUTES.ADMIN_MUTTAFIQEEN },
   { id: 'assignments', label: 'Connections', icon: 'link', to: ROUTES.ADMIN_ASSIGNMENTS },
   // KC-0113.1 — Execution / Follow-up / Compliance consolidated into Operations

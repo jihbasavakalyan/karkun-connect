@@ -6,6 +6,7 @@ import {
   CampaignsListPanel,
   CreateCampaignButton,
 } from '@/components/dashboard/CampaignsListPanel'
+import { GenerateCampaignReportButton } from '@/components/reporting/GenerateCampaignReportButton'
 import { PageHeader, PageShell } from '@/components/ui'
 
 export function CampaignsPage() {
@@ -17,7 +18,12 @@ export function CampaignsPage() {
       <PageHeader
         title="Campaign"
         description="Campaign planning and monitoring for your local Jamaat."
-        actions={<CreateCampaignButton />}
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            <GenerateCampaignReportButton size="sm" />
+            <CreateCampaignButton />
+          </div>
+        }
       />
       <ActiveCampaignSubtitle />
 
