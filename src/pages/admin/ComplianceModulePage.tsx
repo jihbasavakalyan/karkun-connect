@@ -1,3 +1,10 @@
+/**
+ * KC-0082 — Admin Compliance module.
+ *
+ * KC-0112.3
+ * Compliance reads Monthly Baitul Maal through the canonical adapter.
+ * Legacy write path retained until write migration.
+ */
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { ComplianceListRow } from '@/components/compliance/ComplianceListRow'
@@ -15,11 +22,11 @@ import {
   resolveComplianceViewFilter,
   type ComplianceSection,
 } from '@/lib/complianceNavigation'
+import { updateBaitulMaal } from '@/services/baitulMaalService'
 import {
-  getAllBaitulMaalSummaries,
-  getBaitulMaalDashboardMetrics,
-  updateBaitulMaal,
-} from '@/services/baitulMaalService'
+  getMonthlyBaitulMaalDashboardMetricsView,
+  getMonthlyBaitulMaalSummariesView,
+} from '@/lib/operations/monthlyBaitulMaalReadAdapter'
 import {
   getWeeklyIjtemaAttendanceSummariesView,
   getWeeklyIjtemaDashboardMetricsView,
@@ -34,6 +41,7 @@ import {
 import { subscribeToBaitulMaalStore } from '@/stores/baitulMaalStore'
 import { subscribeToIjtemaAttendanceStore } from '@/stores/ijtemaAttendanceStore'
 import { subscribeToJihWebPortalStore } from '@/stores/jihWebPortalStore'
+import { subscribeToMonthlyBaitulMaalStore } from '@/stores/monthlyBaitulMaalStore'
 import { subscribeToWeeklyIjtemaStore } from '@/stores/weeklyIjtemaStore'
 import type { BaitulMaalKarkunSummary } from '@/types/baitulMaal'
 import type { IjtemaAttendanceKarkunSummary, IjtemaAttendanceStatus } from '@/types/ijtemaAttendance'
@@ -462,6 +470,10 @@ export function ComplianceModulePage() {
   useEffect(() => {
     const unsubJih = subscribeToJihWebPortalStore(() => setDataVersion((value) => value + 1))
     const unsubBaitulMaal = subscribeToBaitulMaalStore(() => setDataVersion((value) => value + 1))
+    // KC-0112.3: Compliance BM list refreshes when canonical cycle submissions change.
+    const unsubMonthlyBaitulMaal = subscribeToMonthlyBaitulMaalStore(() =>
+      setDataVersion((value) => value + 1),
+    )
     const unsubIjtema = subscribeToIjtemaAttendanceStore(() => setDataVersion((value) => value + 1))
     const unsubWeeklyIjtema = subscribeToWeeklyIjtemaStore(() =>
       setDataVersion((value) => value + 1),
@@ -469,6 +481,7 @@ export function ComplianceModulePage() {
     return () => {
       unsubJih()
       unsubBaitulMaal()
+      unsubMonthlyBaitulMaal()
       unsubIjtema()
       unsubWeeklyIjtema()
     }
@@ -547,7 +560,10 @@ export function ComplianceModulePage() {
       break
     }
     case 'baitul-maal': {
-      const items = filterBaitulMaalItems(getAllBaitulMaalSummaries(), effectiveStatus)
+      // KC-0112.3
+      // Compliance reads Monthly Baitul Maal through the canonical adapter.
+      // Legacy write path retained until write migration.
+      const items = filterBaitulMaalItems(getMonthlyBaitulMaalSummariesView(), effectiveStatus)
       listContent =
         items.length === 0 ? (
           <ExecutionEmptyState {...emptyState} />
@@ -566,7 +582,7 @@ export function ComplianceModulePage() {
 
   void getWeeklyIjtemaDashboardMetricsView()
   void getJihWebPortalDashboardMetrics()
-  void getBaitulMaalDashboardMetrics()
+  void getMonthlyBaitulMaalDashboardMetricsView()
 
   const filterLabel = statusFilter || (isPendingView ? getPendingStatusLabel(activeSection) : '')
 
