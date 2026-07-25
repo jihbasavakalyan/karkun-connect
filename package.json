@@ -41,6 +41,7 @@
     "verify:kc0100": "npx vite-node scripts/verify-kc0100-connection-consistency.ts",
     "verify:kc0100.2": "npx vite-node scripts/verify-kc0100-claims-reconciliation.ts",
     "verify:kc0100.3": "npx vite-node scripts/verify-kc0100-3-activation-reliability.ts",
+    "verify:kc0100.5": "npx vite-node scripts/verify-kc0100-5-activation-trace.ts",
     "verify:kc0102.0": "npx vite-node scripts/verify-kc0102-0-karkun-approval.ts",
     "verify:kc0101b": "npx vite-node scripts/verify-kc0101b-dashboard-integrity.ts",
     "verify:reliability": "npx vite-node scripts/verify-reliability-layer.ts",

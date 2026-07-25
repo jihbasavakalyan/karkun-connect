@@ -15,6 +15,12 @@ import { RecaptchaVerifier } from 'firebase/auth'
 import { mapFirebaseAuthError, isOfflineError } from '@/lib/auth/authErrors'
 import { resolveAuthUser, toE164IndianPhone } from '@/lib/auth/roleResolver'
 import {
+  errorFields,
+  logAuthTrace,
+  newAuthTraceId,
+  summarizeClaims,
+} from '@/lib/auth/authPipelineTrace'
+import {
   formatRuknClaimsValidationFailure,
   validateRuknJwtClaimsAgainstMaster,
 } from '@/lib/auth/ruknClaimsValidation'
@@ -43,11 +49,21 @@ type OtpSession = {
 let recaptchaVerifier: RecaptchaVerifier | null = null
 let otpSession: OtpSession | null = null
 let rememberMePreference = true
+/** KC-0100.5 — while OTP finalizeLogin provisions claims, do not sign out from subscribe. */
+let claimsProvisionInFlight = 0
 
 function ensureFirebaseReady(): void {
   if (!isFirebaseConfigured()) {
     throw new Error('Firebase authentication is not configured.')
   }
+}
+
+function beginClaimsProvisionLock(): void {
+  claimsProvisionInFlight += 1
+}
+
+function endClaimsProvisionLock(): void {
+  claimsProvisionInFlight = Math.max(0, claimsProvisionInFlight - 1)
 }
 
 export const MISSING_RUKN_JWT_CLAIMS_ERROR =
@@ -123,58 +139,168 @@ async function finalizeLogin(
   user: User,
   expectedRukn?: Pick<Rukn, 'id' | 'mobile' | 'name'>,
 ): Promise<LoginResult> {
-  // Capture claims before any sign-out so we can distinguish missing Rukn claims.
-  let tokenBefore = await user.getIdTokenResult(false).catch(() => null)
-  let authUser = await mapFirebaseUser(user)
-
-  // KC-0100.3 — if OTP resolved a Rukn in Master but JWT lacks claims, request
-  // server-side Admin provisioning once, then force-refresh and retry mapFirebaseUser.
-  // Still fail-closed if provisioning/refresh does not yield valid JWT claims.
+  const traceId = newAuthTraceId()
   const phone = user.phoneNumber
-  let missingRuknClaims =
-    Boolean(phone) &&
-    (!tokenBefore ||
-      tokenBefore.claims.role !== 'rukn' ||
-      typeof tokenBefore.claims.ruknId !== 'string')
-
-  if (!authUser && expectedRukn && missingRuknClaims) {
-    console.info('[KC-0100.3] attempting auto claim provision after OTP', {
+  beginClaimsProvisionLock()
+  try {
+    logAuthTrace(traceId, {
+      step: 1,
+      name: 'otp_verification_success',
+      status: 'success',
       uid: user.uid,
-      expectedRuknId: expectedRukn.id,
-      phone: user.phoneNumber,
+      phone,
+      ruknId: expectedRukn?.id ?? null,
     })
-    const provision = await requestRuknClaimsProvision(user)
-    if (provision.ok) {
-      await user.getIdToken(true)
-      tokenBefore = await user.getIdTokenResult(true).catch(() => null)
-      authUser = await mapFirebaseUser(user)
-      missingRuknClaims =
-        Boolean(phone) &&
-        (!tokenBefore ||
-          tokenBefore.claims.role !== 'rukn' ||
-          typeof tokenBefore.claims.ruknId !== 'string')
-      console.info('[KC-0100.3] after auto provision', {
-        uid: user.uid,
-        provisionedRuknId: provision.ruknId,
-        alreadyProvisioned: provision.alreadyProvisioned,
-        resolvedRole: authUser?.role ?? null,
-        claimRole: tokenBefore?.claims.role ?? null,
-        claimRuknId: tokenBefore?.claims.ruknId ?? null,
-      })
-    } else {
-      console.error('[KC-0100.3] auto claim provision failed', {
+    logAuthTrace(traceId, {
+      step: 2,
+      name: 'firebase_auth_user_uid',
+      status: 'success',
+      uid: user.uid,
+      phone,
+      ruknId: expectedRukn?.id ?? null,
+    })
+
+    let tokenBefore = await user.getIdTokenResult(false).catch(() => null)
+    logAuthTrace(traceId, {
+      step: 3,
+      name: 'id_token_generated',
+      status: tokenBefore ? 'success' : 'failure',
+      uid: user.uid,
+      phone,
+      ruknId: expectedRukn?.id ?? null,
+      claimsBefore: summarizeClaims(
+        tokenBefore ? (tokenBefore.claims as Record<string, unknown>) : null,
+      ),
+    })
+
+    let authUser = await mapFirebaseUser(user)
+
+    let missingRuknClaims =
+      Boolean(phone) &&
+      (!tokenBefore ||
+        tokenBefore.claims.role !== 'rukn' ||
+        typeof tokenBefore.claims.ruknId !== 'string')
+
+    if (!authUser && expectedRukn && missingRuknClaims) {
+      console.info('[KC-0100.3] attempting auto claim provision after OTP', {
         uid: user.uid,
         expectedRuknId: expectedRukn.id,
-        error: provision.error,
-        status: provision.status,
+        phone: user.phoneNumber,
+        traceId,
       })
+      const provision = await requestRuknClaimsProvision(user, {
+        traceId,
+        expectedRuknId: expectedRukn.id,
+      })
+      if (provision.ok) {
+        const refreshed = await user.getIdTokenResult(true)
+        tokenBefore = refreshed
+        logAuthTrace(traceId, {
+          step: 12,
+          name: 'client_force_refresh_getIdToken',
+          status: 'success',
+          uid: user.uid,
+          phone,
+          ruknId: provision.ruknId,
+          claimsAfter: summarizeClaims(refreshed.claims as Record<string, unknown>),
+        })
+        logAuthTrace(traceId, {
+          step: 13,
+          name: 'decoded_jwt_after_refresh',
+          status:
+            refreshed.claims.role === 'rukn' && typeof refreshed.claims.ruknId === 'string'
+              ? 'success'
+              : 'failure',
+          uid: user.uid,
+          phone,
+          ruknId: typeof refreshed.claims.ruknId === 'string' ? refreshed.claims.ruknId : null,
+          claimsAfter: summarizeClaims(refreshed.claims as Record<string, unknown>),
+        })
+        authUser = await mapFirebaseUser(user)
+        missingRuknClaims =
+          Boolean(phone) &&
+          (!tokenBefore ||
+            tokenBefore.claims.role !== 'rukn' ||
+            typeof tokenBefore.claims.ruknId !== 'string')
+        console.info('[KC-0100.3] after auto provision', {
+          uid: user.uid,
+          provisionedRuknId: provision.ruknId,
+          alreadyProvisioned: provision.alreadyProvisioned,
+          resolvedRole: authUser?.role ?? null,
+          claimRole: tokenBefore?.claims.role ?? null,
+          claimRuknId: tokenBefore?.claims.ruknId ?? null,
+          traceId,
+        })
+      } else {
+        console.error('[KC-0100.3] auto claim provision failed', {
+          uid: user.uid,
+          expectedRuknId: expectedRukn.id,
+          error: provision.error,
+          status: provision.status,
+          traceId,
+        })
+      }
     }
-  }
 
-  if (!authUser) {
-    // KC-0100.2 — first-OTP / claims-mismatch safeguard: log exact expected vs actual.
-    if (expectedRukn && missingRuknClaims) {
-      const validation = validateRuknJwtClaimsAgainstMaster(
+    if (!authUser) {
+      logAuthTrace(traceId, {
+        step: 14,
+        name: 'kc0100_activation_guard',
+        status: 'failure',
+        uid: user.uid,
+        phone,
+        ruknId: expectedRukn?.id ?? null,
+        claimsBefore: summarizeClaims(
+          tokenBefore ? (tokenBefore.claims as Record<string, unknown>) : null,
+        ),
+        error: missingRuknClaims ? MISSING_RUKN_JWT_CLAIMS_ERROR : 'not authorized',
+      })
+      if (expectedRukn && missingRuknClaims) {
+        const validation = validateRuknJwtClaimsAgainstMaster(
+          {
+            ruknId: expectedRukn.id,
+            mobile: expectedRukn.mobile,
+            name: expectedRukn.name,
+          },
+          {
+            uid: user.uid,
+            phoneNumber: user.phoneNumber,
+            role: tokenBefore?.claims.role ?? null,
+            ruknId: tokenBefore?.claims.ruknId ?? null,
+          },
+        )
+        console.error('[KC-0100.2] Rukn claims validation failed after OTP', {
+          uid: user.uid,
+          phone: user.phoneNumber,
+          expectedRuknId: expectedRukn.id,
+          expectedMobile: expectedRukn.mobile,
+          reasons: validation.reasons,
+          expected: validation.expected,
+          actual: validation.actual,
+          detail: formatRuknClaimsValidationFailure(validation),
+          traceId,
+        })
+        logRuknAuthAttempt({
+          mobile: expectedRukn.mobile,
+          result: 'otp_failed',
+          registered: true,
+          otpOutcome: 'failure',
+          detail: `claims_validation: ${formatRuknClaimsValidationFailure(validation)}`,
+        })
+      }
+
+      await signOut(getFirebaseAuth())
+      return {
+        success: false,
+        error: missingRuknClaims
+          ? MISSING_RUKN_JWT_CLAIMS_ERROR
+          : 'Your account is not authorized for Karkun Connect. Contact your administrator.',
+      }
+    }
+
+    if (expectedRukn && authUser.role === 'rukn') {
+      let tokenAfter = await user.getIdTokenResult(false).catch(() => null)
+      let validation = validateRuknJwtClaimsAgainstMaster(
         {
           ruknId: expectedRukn.id,
           mobile: expectedRukn.mobile,
@@ -183,111 +309,128 @@ async function finalizeLogin(
         {
           uid: user.uid,
           phoneNumber: user.phoneNumber,
-          role: tokenBefore?.claims.role ?? null,
-          ruknId: tokenBefore?.claims.ruknId ?? null,
+          role: tokenAfter?.claims.role ?? authUser.role,
+          ruknId: tokenAfter?.claims.ruknId ?? authUser.ruknId ?? null,
         },
       )
-      console.error('[KC-0100.2] Rukn claims validation failed after OTP', {
-        uid: user.uid,
-        phone: user.phoneNumber,
-        expectedRuknId: expectedRukn.id,
-        expectedMobile: expectedRukn.mobile,
-        reasons: validation.reasons,
-        expected: validation.expected,
-        actual: validation.actual,
-        detail: formatRuknClaimsValidationFailure(validation),
-      })
-      logRuknAuthAttempt({
-        mobile: expectedRukn.mobile,
-        result: 'otp_failed',
-        registered: true,
-        otpOutcome: 'failure',
-        detail: `claims_validation: ${formatRuknClaimsValidationFailure(validation)}`,
-      })
-    }
 
-    await signOut(getFirebaseAuth())
-    return {
-      success: false,
-      error: missingRuknClaims
-        ? MISSING_RUKN_JWT_CLAIMS_ERROR
-        : 'Your account is not authorized for Karkun Connect. Contact your administrator.',
-    }
-  }
+      if (!validation.ok) {
+        console.info('[KC-0100.3] attempting claim repair after JWT/Master mismatch', {
+          uid: user.uid,
+          expectedRuknId: expectedRukn.id,
+          reasons: validation.reasons,
+          traceId,
+        })
+        const provision = await requestRuknClaimsProvision(user, {
+          traceId,
+          expectedRuknId: expectedRukn.id,
+        })
+        if (provision.ok) {
+          tokenAfter = await user.getIdTokenResult(true).catch(() => null)
+          logAuthTrace(traceId, {
+            step: 12,
+            name: 'client_force_refresh_getIdToken',
+            status: tokenAfter ? 'success' : 'failure',
+            uid: user.uid,
+            phone,
+            ruknId: provision.ruknId,
+            claimsAfter: summarizeClaims(
+              tokenAfter ? (tokenAfter.claims as Record<string, unknown>) : null,
+            ),
+          })
+          const repaired = await mapFirebaseUser(user)
+          if (repaired?.role === 'rukn') {
+            authUser = repaired
+            validation = validateRuknJwtClaimsAgainstMaster(
+              {
+                ruknId: expectedRukn.id,
+                mobile: expectedRukn.mobile,
+                name: expectedRukn.name,
+              },
+              {
+                uid: user.uid,
+                phoneNumber: user.phoneNumber,
+                role: tokenAfter?.claims.role ?? authUser.role,
+                ruknId: tokenAfter?.claims.ruknId ?? authUser.ruknId ?? null,
+              },
+            )
+          }
+        }
+      }
 
-  // KC-0100.2 — successful OTP path: confirm JWT claims match Rukn Master identity.
-  if (expectedRukn && authUser.role === 'rukn') {
-    let tokenAfter = await user.getIdTokenResult(false).catch(() => null)
-    let validation = validateRuknJwtClaimsAgainstMaster(
-      {
-        ruknId: expectedRukn.id,
-        mobile: expectedRukn.mobile,
-        name: expectedRukn.name,
-      },
-      {
-        uid: user.uid,
-        phoneNumber: user.phoneNumber,
-        role: tokenAfter?.claims.role ?? authUser.role,
-        ruknId: tokenAfter?.claims.ruknId ?? authUser.ruknId ?? null,
-      },
-    )
-
-    // KC-0100.3 — wrong/stale claims: re-provision from Master phone, then re-validate.
-    if (!validation.ok) {
-      console.info('[KC-0100.3] attempting claim repair after JWT/Master mismatch', {
-        uid: user.uid,
-        expectedRuknId: expectedRukn.id,
-        reasons: validation.reasons,
-      })
-      const provision = await requestRuknClaimsProvision(user)
-      if (provision.ok) {
-        await user.getIdToken(true)
-        tokenAfter = await user.getIdTokenResult(true).catch(() => null)
-        const repaired = await mapFirebaseUser(user)
-        if (repaired?.role === 'rukn') {
-          authUser = repaired
-          validation = validateRuknJwtClaimsAgainstMaster(
-            {
-              ruknId: expectedRukn.id,
-              mobile: expectedRukn.mobile,
-              name: expectedRukn.name,
-            },
-            {
-              uid: user.uid,
-              phoneNumber: user.phoneNumber,
-              role: tokenAfter?.claims.role ?? authUser.role,
-              ruknId: tokenAfter?.claims.ruknId ?? authUser.ruknId ?? null,
-            },
-          )
+      if (!validation.ok) {
+        logAuthTrace(traceId, {
+          step: 14,
+          name: 'kc0100_activation_guard',
+          status: 'failure',
+          uid: user.uid,
+          phone,
+          ruknId: expectedRukn.id,
+          error: formatRuknClaimsValidationFailure(validation),
+        })
+        console.error('[KC-0100.2] Rukn claims mismatch after successful mapFirebaseUser', {
+          uid: user.uid,
+          reasons: validation.reasons,
+          expected: validation.expected,
+          actual: validation.actual,
+          detail: formatRuknClaimsValidationFailure(validation),
+          traceId,
+        })
+        logRuknAuthAttempt({
+          mobile: expectedRukn.mobile,
+          result: 'otp_failed',
+          registered: true,
+          otpOutcome: 'failure',
+          detail: `claims_validation: ${formatRuknClaimsValidationFailure(validation)}`,
+        })
+        await signOut(getFirebaseAuth())
+        return {
+          success: false,
+          error: MISSING_RUKN_JWT_CLAIMS_ERROR,
         }
       }
     }
 
-    if (!validation.ok) {
-      console.error('[KC-0100.2] Rukn claims mismatch after successful mapFirebaseUser', {
-        uid: user.uid,
-        reasons: validation.reasons,
-        expected: validation.expected,
-        actual: validation.actual,
-        detail: formatRuknClaimsValidationFailure(validation),
-      })
-      logRuknAuthAttempt({
-        mobile: expectedRukn.mobile,
-        result: 'otp_failed',
-        registered: true,
-        otpOutcome: 'failure',
-        detail: `claims_validation: ${formatRuknClaimsValidationFailure(validation)}`,
-      })
-      await signOut(getFirebaseAuth())
-      return {
-        success: false,
-        error: MISSING_RUKN_JWT_CLAIMS_ERROR,
-      }
-    }
-  }
+    logAuthTrace(traceId, {
+      step: 14,
+      name: 'kc0100_activation_guard',
+      status: 'success',
+      uid: user.uid,
+      phone,
+      ruknId: authUser.ruknId ?? expectedRukn?.id ?? null,
+      claimsAfter: {
+        role: authUser.role,
+        ruknId: authUser.ruknId ?? null,
+      },
+    })
+    logAuthTrace(traceId, {
+      step: 15,
+      name: 'dashboard_routing',
+      status: 'success',
+      uid: user.uid,
+      phone,
+      ruknId: authUser.ruknId ?? expectedRukn?.id ?? null,
+      detail: { role: authUser.role, home: authUser.role === 'rukn' ? '/rukn' : '/admin' },
+    })
 
-  return { success: true, user: authUser }
+    return { success: true, user: authUser }
+  } catch (error) {
+    const err = errorFields(error)
+    logAuthTrace(traceId, {
+      step: 14,
+      name: 'kc0100_activation_guard',
+      status: 'failure',
+      uid: user.uid,
+      phone,
+      ruknId: expectedRukn?.id ?? null,
+      ...err,
+    })
+    throw error
+  } finally {
+    endClaimsProvisionLock()
+  }
 }
+
 
 function getRecaptchaVerifier(): RecaptchaVerifier {
   ensureFirebaseReady()
@@ -334,6 +477,14 @@ export const authenticationService = {
       try {
         const authUser = await mapFirebaseUser(firebaseUser)
         if (!authUser) {
+          // KC-0100.5 — do not race-sign-out while finalizeLogin is provisioning claims.
+          if (claimsProvisionInFlight > 0) {
+            console.info('[KC-0100.5] deferring subscribe sign-out during claims provision', {
+              uid: firebaseUser.uid,
+              claimsProvisionInFlight,
+            })
+            return
+          }
           await signOut(auth)
           listener(null)
           return
