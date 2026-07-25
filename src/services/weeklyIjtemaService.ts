@@ -30,10 +30,12 @@ import {
   getWeeklyIjtemaSubmissionsForEvent,
   upsertWeeklyIjtemaEvent,
   upsertWeeklyIjtemaSubmission,
+  deleteWeeklyIjtemaEvent as deleteWeeklyIjtemaEventFromStore,
 } from '@/stores/weeklyIjtemaStore'
 import type {
   CreateWeeklyIjtemaEventInput,
   SaveWeeklyIjtemaSubmissionInput,
+  UpdateWeeklyIjtemaEventInput,
   UpdateWeeklyIjtemaEventStatusInput,
   WeeklyIjtemaDashboardKpi,
   WeeklyIjtemaEvent,
@@ -44,6 +46,7 @@ import { defaultWeeklyIjtemaTitle } from '@/types/weeklyIjtema'
 import {
   validateCreateWeeklyIjtemaEvent,
   validateSaveWeeklyIjtemaSubmission,
+  validateUpdateWeeklyIjtemaEvent,
 } from '@/validation/weeklyIjtemaValidation'
 
 export function listWeeklyIjtemaEvents(): WeeklyIjtemaEvent[] {
@@ -83,6 +86,51 @@ export function createWeeklyIjtemaEvent(
   }
 
   return { success: true, event: upsertWeeklyIjtemaEvent(event) }
+}
+
+export function updateWeeklyIjtemaEvent(
+  input: UpdateWeeklyIjtemaEventInput,
+): { success: true; event: WeeklyIjtemaEvent } | { success: false; error: string } {
+  const validation = validateUpdateWeeklyIjtemaEvent(input)
+  if (!validation.valid) {
+    return { success: false, error: validation.error }
+  }
+
+  const existing = getWeeklyIjtemaEvent(input.eventId)
+  if (!existing) {
+    return { success: false, error: 'Weekly Ijtema event not found.' }
+  }
+
+  const actor = input.updatedBy ?? 'Administrator'
+  const timestamp = nowIso()
+  let next: WeeklyIjtemaEvent = {
+    ...existing,
+    title: input.title?.trim() || existing.title,
+    meetingDate: input.meetingDate,
+    submissionDeadline:
+      input.submissionDeadline || defaultSubmissionDeadline(input.meetingDate),
+    updatedAt: timestamp,
+    updatedBy: actor,
+  }
+
+  if (input.status && input.status !== existing.status) {
+    next = applyCycleStatusChange(next, input.status, actor)
+  }
+
+  return { success: true, event: upsertWeeklyIjtemaEvent(next) }
+}
+
+/** KC-0113.2 — Cascade-delete meeting + attendance submissions. */
+export function deleteWeeklyIjtemaEvent(
+  eventId: string,
+): { success: true } | { success: false; error: string } {
+  const existing = getWeeklyIjtemaEvent(eventId)
+  if (!existing) {
+    return { success: false, error: 'Weekly Ijtema event not found.' }
+  }
+
+  deleteWeeklyIjtemaEventFromStore(eventId)
+  return { success: true }
 }
 
 export function setWeeklyIjtemaEventStatus(

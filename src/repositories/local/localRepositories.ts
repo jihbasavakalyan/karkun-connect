@@ -504,6 +504,14 @@ export class ComplianceLocalRepository implements ComplianceRepository {
     return tryRepository(() => removeFromStorage(STORAGE_KEYS.weeklyIjtemaEvents))
   }
 
+  deleteWeeklyIjtemaEvent(eventId: string): RepositoryResult<void> {
+    return tryRepository(() => {
+      const map = loadMapFromStorage<string, WeeklyIjtemaEvent>(STORAGE_KEYS.weeklyIjtemaEvents)
+      map.delete(eventId)
+      saveMapToStorage(STORAGE_KEYS.weeklyIjtemaEvents, map)
+    })
+  }
+
   loadWeeklyIjtemaSubmissions(): RepositoryResult<WeeklyIjtemaSubmission[]> {
     return tryRepository(() => [
       ...loadMapFromStorage<string, WeeklyIjtemaSubmission>(
@@ -526,6 +534,20 @@ export class ComplianceLocalRepository implements ComplianceRepository {
 
   clearWeeklyIjtemaSubmissions(): RepositoryResult<void> {
     return tryRepository(() => removeFromStorage(STORAGE_KEYS.weeklyIjtemaSubmissions))
+  }
+
+  deleteWeeklyIjtemaSubmissionsForEvent(eventId: string): RepositoryResult<void> {
+    return tryRepository(() => {
+      const map = loadMapFromStorage<string, WeeklyIjtemaSubmission>(
+        STORAGE_KEYS.weeklyIjtemaSubmissions,
+      )
+      for (const [id, submission] of map) {
+        if (submission.eventId === eventId) {
+          map.delete(id)
+        }
+      }
+      saveMapToStorage(STORAGE_KEYS.weeklyIjtemaSubmissions, map)
+    })
   }
 
   loadMonthlyBaitulMaalCycles(): RepositoryResult<MonthlyBaitulMaalCycle[]> {

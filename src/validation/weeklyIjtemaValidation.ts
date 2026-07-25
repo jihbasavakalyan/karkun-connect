@@ -1,6 +1,7 @@
 import type {
   CreateWeeklyIjtemaEventInput,
   SaveWeeklyIjtemaSubmissionInput,
+  UpdateWeeklyIjtemaEventInput,
   WeeklyIjtemaKarkunMark,
 } from '@/types/weeklyIjtema'
 import { validateAssignedMarksComplete } from '@/lib/campaignCycle/validation'
@@ -19,6 +20,27 @@ export function validateCreateWeeklyIjtemaEvent(
     if (Number.isNaN(deadline.getTime())) {
       return { valid: false, error: 'Submission deadline is invalid.' }
     }
+  }
+  return { valid: true }
+}
+
+export function validateUpdateWeeklyIjtemaEvent(
+  input: UpdateWeeklyIjtemaEventInput,
+): { valid: true } | { valid: false; error: string } {
+  if (!input.eventId.trim()) {
+    return { valid: false, error: 'Meeting is required.' }
+  }
+  if (!input.meetingDate || !DATE_RE.test(input.meetingDate)) {
+    return { valid: false, error: 'Meeting date is required (YYYY-MM-DD).' }
+  }
+  if (input.submissionDeadline) {
+    const deadline = new Date(input.submissionDeadline)
+    if (Number.isNaN(deadline.getTime())) {
+      return { valid: false, error: 'Submission deadline is invalid.' }
+    }
+  }
+  if (input.status && input.status !== 'Open' && input.status !== 'Closed') {
+    return { valid: false, error: 'Status must be Open or Closed.' }
   }
   return { valid: true }
 }

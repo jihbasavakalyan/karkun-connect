@@ -24,10 +24,14 @@ export interface ComplianceRepository {
   loadWeeklyIjtemaEvents(): RepositoryResult<WeeklyIjtemaEvent[]>
   saveWeeklyIjtemaEvents(events: WeeklyIjtemaEvent[]): RepositoryResult<void>
   clearWeeklyIjtemaEvents(): RepositoryResult<void>
+  /** KC-0113.2 — Remove one event document (cascade handled by caller). */
+  deleteWeeklyIjtemaEvent(eventId: string): RepositoryResult<void>
   /** KC-0107 — Rukn submissions belonging to an event. */
   loadWeeklyIjtemaSubmissions(): RepositoryResult<WeeklyIjtemaSubmission[]>
   saveWeeklyIjtemaSubmissions(submissions: WeeklyIjtemaSubmission[]): RepositoryResult<void>
   clearWeeklyIjtemaSubmissions(): RepositoryResult<void>
+  /** KC-0113.2 — Remove all submissions for one event (cascade with event delete). */
+  deleteWeeklyIjtemaSubmissionsForEvent(eventId: string): RepositoryResult<void>
   /** KC-0108 — Monthly Baitul Maal cycles (Admin-managed). */
   loadMonthlyBaitulMaalCycles(): RepositoryResult<MonthlyBaitulMaalCycle[]>
   saveMonthlyBaitulMaalCycles(cycles: MonthlyBaitulMaalCycle[]): RepositoryResult<void>
