@@ -30,7 +30,7 @@ export function validateFollowUpPurpose(purpose: string): FollowUpValidationResu
 export function validateActiveAssignmentForFollowUp(assignmentId: string): FollowUpValidationResult {
   const assignment = getAssignmentById(assignmentId)
   if (!assignment || assignment.status !== 'Active') {
-    return { valid: false, error: 'Follow-ups can only be created for active assignments.' }
+    return { valid: false, error: 'Follow-ups can only be created for active connections.' }
   }
   return { valid: true }
 }
@@ -42,7 +42,7 @@ export function validateNoActiveFollowUpForAssignment(
   if (pending) {
     return {
       valid: false,
-      error: 'This assignment already has an active follow-up. Complete it before creating another.',
+      error: 'This connection already has an active follow-up. Complete it before creating another.',
     }
   }
   return { valid: true }

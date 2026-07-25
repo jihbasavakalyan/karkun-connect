@@ -156,7 +156,7 @@ export function OfficialCommunicationsPanel() {
 
         {suggestInitiation ? (
           <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
-            Suggested: Campaign Initiation Pending — this Rukn has an assignment with no campaign
+            Suggested: Campaign Initiation Pending — this Rukn has a connection with no campaign
             progress yet.
             <SecondaryButton
               type="button"

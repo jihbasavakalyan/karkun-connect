@@ -10,7 +10,7 @@
 import { FRIENDLY_DATA_ACCESS_ERROR } from '@/repositories/errors'
 
 export const FRIENDLY_ASSIGNMENT_ERROR =
-  'Unable to complete assignment. Please try again. If the problem continues, contact Administrator.'
+  'Unable to complete connection. Please try again. If the problem continues, contact Administrator.'
 
 const FRIENDLY_TRANSFER_ERROR =
   'Unable to complete transfer. Please try again. If the problem continues, contact Administrator.'
@@ -25,8 +25,10 @@ function looksLikeInternalDiagnostic(message: string): boolean {
   const lower = message.toLowerCase()
   return (
     lower.includes('duplicate assignment number') ||
+    lower.includes('duplicate connection number') ||
     lower.includes('asn-') ||
     lower.includes('assignment id') ||
+    lower.includes('connection id') ||
     lower.includes('asgn-') ||
     lower.includes('assertunique') ||
     lower.includes('stack') ||

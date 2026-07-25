@@ -66,7 +66,7 @@ export function AdminMonthlyBaitulMaalReportPage() {
         <MetricCard label="Contributed" value={String(report.contributed)} />
         <MetricCard label="Pending" value={String(report.pending)} />
         <MetricCard label="Completion %" value={`${report.completionPct}%`} />
-        <MetricCard label="Total Assigned" value={String(report.totalAssigned)} />
+        <MetricCard label="Total Connected" value={String(report.totalAssigned)} />
         <MetricCard label="Rukns Submitted" value={String(report.ruknsSubmitted)} />
         <MetricCard label="Rukns Pending" value={String(report.ruknsPending)} />
         <MetricCard label="Status" value={cycle.status} />
@@ -77,14 +77,14 @@ export function AdminMonthlyBaitulMaalReportPage() {
           Rukn-wise Completion %
         </h2>
         {report.ruknRows.length === 0 ? (
-          <p className="mt-3 text-sm text-secondary">No Rukns with assigned Karkuns.</p>
+          <p className="mt-3 text-sm text-secondary">No Rukns with connected Karkuns.</p>
         ) : (
           <div className="mt-3 overflow-x-auto">
             <table className="min-w-full text-left text-sm">
               <thead className="border-b border-border text-xs uppercase tracking-wide text-secondary">
                 <tr>
                   <th className="px-2 py-2 font-semibold">Rukn</th>
-                  <th className="px-2 py-2 font-semibold">Assigned</th>
+                  <th className="px-2 py-2 font-semibold">Connected</th>
                   <th className="px-2 py-2 font-semibold">Contributed</th>
                   <th className="px-2 py-2 font-semibold">Pending</th>
                   <th className="px-2 py-2 font-semibold">Completion %</th>

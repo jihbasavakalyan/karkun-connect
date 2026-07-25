@@ -104,7 +104,7 @@ export function WeeklyIjtemaRegisterPage() {
         const marks = workspace.assigned.map((karkun) => {
           const status = draft[karkun.id]
           if (status !== 'Present' && status !== 'Absent') {
-            setMessage('Please mark attendance for all assigned Karkuns before submitting.')
+            setMessage('Please mark attendance for all connected Karkuns before submitting.')
             return null
           }
           return {
@@ -140,7 +140,7 @@ export function WeeklyIjtemaRegisterPage() {
       <header className="app-screen-header">
         <h1 className="app-screen-title">Weekly Ijtema</h1>
         <p className="app-screen-subtitle">
-          Mark Present (حاضر) or Absent (غیر حاضر) for assigned Karkuns.
+          Mark Present (حاضر) or Absent (غیر حاضر) for connected Karkuns.
         </p>
       </header>
 
@@ -193,7 +193,7 @@ export function WeeklyIjtemaRegisterPage() {
 
           {workspace.assigned.length === 0 ? (
             <p className="rounded-lg border border-border bg-surface p-4 text-sm text-secondary">
-              No assigned Karkuns yet. Connect Karkuns to record attendance.
+              No connected Karkuns yet. Connect Karkuns to record attendance.
             </p>
           ) : (
             <ul className="space-y-3">
@@ -235,7 +235,7 @@ export function WeeklyIjtemaRegisterPage() {
 
           {!allMarked && workspace.assigned.length > 0 ? (
             <p className="mt-3 text-sm text-amber-700" role="status">
-              Please mark attendance for all assigned Karkuns before submitting.
+              Please mark attendance for all connected Karkuns before submitting.
             </p>
           ) : null}
 

@@ -129,12 +129,12 @@ export async function archiveAssignment(
   archivedBy = 'Administrator',
 ): Promise<ArchiveResult> {
   const assignment = getAssignmentById(assignmentId)
-  if (!assignment) return { ok: false, error: 'Assignment not found.' }
-  if (assignment.isArchived) return { ok: false, error: 'Assignment is already archived.' }
+  if (!assignment) return { ok: false, error: 'Connection not found.' }
+  if (assignment.isArchived) return { ok: false, error: 'Connection is already archived.' }
   if (assignment.status === 'Active') {
     return {
       ok: false,
-      error: 'Cannot archive an Active assignment. Disconnect/remove it first, then archive.',
+      error: 'Cannot archive an Active connection. Disconnect/remove it first, then archive.',
     }
   }
 
@@ -145,11 +145,11 @@ export async function archiveAssignment(
       updatedAt: nowIso(),
       version: bumpVersion(assignment.version),
     })
-    if (!updated) return { ok: false, error: 'Could not archive assignment.' }
+    if (!updated) return { ok: false, error: 'Could not archive connection.' }
   } catch (error) {
     return {
       ok: false,
-      error: error instanceof Error ? error.message : 'Could not archive assignment.',
+      error: error instanceof Error ? error.message : 'Could not archive connection.',
     }
   }
 
@@ -164,7 +164,7 @@ export async function archiveAssignment(
   })
   logActivity({
     type: 'complete',
-    message: `Archived assignment ${assignmentId}.`,
+    message: `Archived connection ${assignmentId}.`,
     assignmentId,
     ruknId: assignment.ruknId,
     karkunId: assignment.karkunId,

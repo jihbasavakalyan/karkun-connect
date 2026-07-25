@@ -150,7 +150,7 @@ export function RuknExecutionWorkspace({ ruknId }: RuknExecutionWorkspaceProps) 
     <section className="space-y-3" aria-label="Execution workspace">
       <div className="flex items-baseline justify-between gap-2">
         <h2 className="text-lg font-semibold text-text-heading">My Karkuns</h2>
-        <p className="text-xs text-secondary">{connected.length} assigned</p>
+        <p className="text-xs text-secondary">{connected.length} connected</p>
       </div>
 
       <ul className="space-y-3">

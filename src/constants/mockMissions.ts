@@ -33,7 +33,7 @@ export const ADMIN_MISSION_QUEUE: AdminMission[] = [
   {
     id: 'admin-m2',
     type: 'assign-karkunan',
-    title: 'Assign Karkunan',
+    title: 'Connect Karkunan',
     estimatedTime: '15 Minutes',
     status: 'pending',
   },

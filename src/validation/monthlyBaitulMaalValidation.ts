@@ -31,7 +31,7 @@ export function validateMonthlyBaitulMaalMarks(
     marks,
     assignedKarkunIds,
     ALLOWED,
-    'Please mark contribution status for all assigned Karkuns before submitting.',
+    'Please mark contribution status for all connected Karkuns before submitting.',
   )
 }
 

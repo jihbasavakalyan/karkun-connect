@@ -65,7 +65,7 @@ export function RequestReviewModal({
           >
             {REASONS.map((option) => (
               <option key={option} value={option}>
-                {option}
+                {option === 'Wrong assignment' ? 'Wrong connection' : option}
               </option>
             ))}
           </select>

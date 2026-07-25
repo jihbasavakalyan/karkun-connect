@@ -106,7 +106,7 @@ export function RuknMonthlyBaitulMaalPage() {
           const status = draft[karkun.id]
           if (status !== 'Contributed' && status !== 'Pending') {
             setMessage(
-              'Please mark contribution status for all assigned Karkuns before submitting.',
+              'Please mark contribution status for all connected Karkuns before submitting.',
             )
             return null
           }
@@ -145,7 +145,7 @@ export function RuknMonthlyBaitulMaalPage() {
       <header className="app-screen-header">
         <h1 className="app-screen-title">Monthly Baitul Maal</h1>
         <p className="app-screen-subtitle">
-          Mark Contributed or Pending for assigned Karkuns. No amounts are recorded.
+          Mark Contributed or Pending for connected Karkuns. No amounts are recorded.
         </p>
       </header>
 
@@ -198,7 +198,7 @@ export function RuknMonthlyBaitulMaalPage() {
 
           {workspace.assigned.length === 0 ? (
             <p className="rounded-lg border border-border bg-surface p-4 text-sm text-secondary">
-              No assigned Karkuns yet.
+              No connected Karkuns yet.
             </p>
           ) : (
             <ul className="space-y-3">
@@ -237,7 +237,7 @@ export function RuknMonthlyBaitulMaalPage() {
 
           {!allMarked && workspace.assigned.length > 0 ? (
             <p className="mt-3 text-sm text-amber-700" role="status">
-              Please mark contribution status for all assigned Karkuns before submitting.
+              Please mark contribution status for all connected Karkuns before submitting.
             </p>
           ) : null}
 

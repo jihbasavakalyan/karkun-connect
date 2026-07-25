@@ -115,7 +115,10 @@ export function buildMailMergeVariablesForRecipient(
     const guidance = getKarkunGuidance(recipient.personId)
     const nextFollowUp = getNextFollowUpForKarkun(recipient.personId)
     const ruknName = orFallback(
-      context?.assignedRuknName === 'Unassigned' ? undefined : context?.assignedRuknName,
+      context?.assignedRuknName === 'Unassigned' ||
+      context?.assignedRuknName === 'Not Connected'
+        ? undefined
+        : context?.assignedRuknName,
     )
 
     setAliases(vars, 'KarkunName', orFallback(karkun?.name ?? recipient.name))

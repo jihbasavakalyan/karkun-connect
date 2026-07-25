@@ -66,7 +66,7 @@ export function getKarkunDeleteBlockers(karkunId: string): string[] {
 
   const blockers: string[] = []
   if (getActiveAssignmentsForKarkun(karkunId).length > 0) {
-    blockers.push('This person has an active assignment.')
+    blockers.push('This person has an active connection.')
   } else if (hasActiveConnection(karkun)) {
     blockers.push('This person has an active connection.')
   }
