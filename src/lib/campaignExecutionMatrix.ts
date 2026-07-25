@@ -223,6 +223,7 @@ export function cycleIjtemaForKarkun(
   ruknId: string,
   actorId?: string,
 ): { success: true; next: IjtemaAttendanceStatus } | { success: false; error: string } {
+  // KC-0110.5 — write-workflow seed read; presentation uses weeklyIjtemaReadAdapter.
   const current = getCurrentIjtemaAttendance(karkunId)
   const cycle: IjtemaAttendanceStatus[] = ['Present', 'Absent', 'Excused']
   let next: IjtemaAttendanceStatus
@@ -425,6 +426,7 @@ function setIjtemaPresentAbsolute(
   ruknId: string,
   actorId?: string,
 ): { success: true } | { success: false; error: string } {
+  // KC-0110.5 — write-workflow seed read; presentation uses weeklyIjtemaReadAdapter.
   const current = getCurrentIjtemaAttendance(karkunId)
   if (current.status === 'Present') {
     return { success: true }

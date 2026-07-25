@@ -46,6 +46,7 @@ export function WeeklyIjtemaAttendanceModal({
 }: WeeklyIjtemaAttendanceModalProps) {
   const { user } = useAuth()
   const { busy: saving, run } = useBusyAction()
+  // KC-0110.5 — write-workflow form seed; Journey presentation uses weeklyIjtemaReadAdapter.
   const current = getCurrentIjtemaAttendance(karkunId)
   const hasRecord = current.status !== 'Not recorded'
 
