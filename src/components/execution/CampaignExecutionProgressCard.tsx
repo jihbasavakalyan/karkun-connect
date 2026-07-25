@@ -14,6 +14,7 @@ import { createCoalescedNotifier } from '@/lib/dashboard/coalesceStoreNotificati
 import { subscribeToAnnexure1Store } from '@/stores/annexure1Store'
 import { subscribeToIjtemaAttendanceStore } from '@/stores/ijtemaAttendanceStore'
 import { subscribeToBaitulMaalStore } from '@/stores/baitulMaalStore'
+import { subscribeToMonthlyBaitulMaalStore } from '@/stores/monthlyBaitulMaalStore'
 import { usePeopleStore } from '@/hooks/usePeopleStore'
 
 type CampaignExecutionProgressCardProps = {
@@ -38,11 +39,14 @@ export function CampaignExecutionProgressCard({ ruknId }: CampaignExecutionProgr
     const a = subscribeToAnnexure1Store(coalesced.bump)
     const i = subscribeToIjtemaAttendanceStore(coalesced.bump)
     const b = subscribeToBaitulMaalStore(coalesced.bump)
+    // KC-0112.2: progress card refreshes when canonical cycle submissions change.
+    const m = subscribeToMonthlyBaitulMaalStore(coalesced.bump)
     return () => {
       coalesced.dispose()
       a()
       i()
       b()
+      m()
     }
   }, [])
 

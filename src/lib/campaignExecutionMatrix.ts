@@ -1,6 +1,10 @@
 /**
  * KC-0082 — Campaign Execution Matrix helpers.
  * Presentation + one-click updates over existing visit / JIH / Ijtema / Baitul Maal services.
+ *
+ * KC-0112.2
+ * Reads Monthly Baitul Maal through the canonical adapter.
+ * Legacy service retained until write migration.
  */
 
 import { getKarkunById, updateKarkunMeetingOutcomes } from '@/constants/mockKarkunRegistry'
@@ -10,6 +14,7 @@ import {
   buildFormFromDailyProgressOutcome,
   getDailyProgressView,
 } from '@/lib/dailyProgressPresentation'
+import { getMonthlyBaitulMaalCampaignStateView } from '@/lib/operations/monthlyBaitulMaalReadAdapter'
 import { getWeeklyIjtemaCurrentAttendanceView } from '@/lib/operations/weeklyIjtemaReadAdapter'
 import { markWeeklyIjtemaAttendance } from '@/lib/operations/weeklyIjtemaWriteAdapter'
 import { saveDailyProgress } from '@/services/annexure1Service'
@@ -76,6 +81,10 @@ export function getJihAppMatrixState(karkunId: string): JihAppMatrixState {
   return 'not_discussed'
 }
 
+/**
+ * Legacy-only campaign state — used by write seed paths until KC-0112.5.
+ * Presentation reads use getMonthlyBaitulMaalCampaignStateView (KC-0112.2).
+ */
 export function getBaitulMaalCampaignState(karkunId: string): BaitulMaalCampaignState {
   const record = getCurrentBaitulMaalStatus(karkunId)
   if (record.status === 'Paid' || record.status === 'Exempt') return 'committed'
@@ -103,7 +112,10 @@ export function buildCampaignMatrixRows(ruknId: string): CampaignMatrixRow[] {
     const ijtemaRaw = getWeeklyIjtemaCurrentAttendanceView(karkun.id)
     const ijtema: IjtemaAttendanceStatus | 'Pending' =
       ijtemaRaw.status === 'Not recorded' ? 'Pending' : ijtemaRaw.status
-    const baitulMaal = getBaitulMaalCampaignState(karkun.id)
+    // KC-0112.2
+    // Reads Monthly Baitul Maal through the canonical adapter.
+    // Legacy service retained until write migration.
+    const baitulMaal = getMonthlyBaitulMaalCampaignStateView(karkun.id).state
     const completed =
       visitDone && jih === 'registered' && ijtema !== 'Pending' && baitulMaal === 'committed'
 

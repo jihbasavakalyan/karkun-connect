@@ -25,6 +25,7 @@ import { subscribeToAnnexure1Store } from '@/stores/annexure1Store'
 import { subscribeToIjtemaAttendanceStore } from '@/stores/ijtemaAttendanceStore'
 import { subscribeToWeeklyIjtemaStore } from '@/stores/weeklyIjtemaStore'
 import { subscribeToBaitulMaalStore } from '@/stores/baitulMaalStore'
+import { subscribeToMonthlyBaitulMaalStore } from '@/stores/monthlyBaitulMaalStore'
 import { createCoalescedNotifier } from '@/lib/dashboard/coalesceStoreNotifications'
 import {
   EXECUTION_PERSIST_FAILED_EVENT,
@@ -91,6 +92,8 @@ export function CampaignExecutionMatrix({ ruknId }: CampaignExecutionMatrixProps
     // KC-0110.2: Matrix Ijtema chips also refresh when canonical event submissions change.
     const w = subscribeToWeeklyIjtemaStore(coalesced.bump)
     const b = subscribeToBaitulMaalStore(coalesced.bump)
+    // KC-0112.2: Matrix BM chips also refresh when canonical cycle submissions change.
+    const m = subscribeToMonthlyBaitulMaalStore(coalesced.bump)
     const onPersistFailed = (event: Event) => {
       const detail = (event as CustomEvent<ExecutionPersistFailedDetail>).detail
       if (!detail) return
@@ -104,6 +107,7 @@ export function CampaignExecutionMatrix({ ruknId }: CampaignExecutionMatrixProps
       i()
       w()
       b()
+      m()
       window.removeEventListener(EXECUTION_PERSIST_FAILED_EVENT, onPersistFailed)
     }
   }, [])

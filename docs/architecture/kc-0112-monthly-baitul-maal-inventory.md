@@ -22,9 +22,9 @@ Monthly Baitul Maal has **two live Systems of Record** — the same dual-track p
 | **Canonical (cycle)** | `monthlyBaitulMaal*` | `Contributed` / `Pending` (no amounts) | **Yes** — Campaign Health / Mission / module pages |
 | **Legacy (per-Karkun)** | `baitulMaal*` | `Paid` / `Pending` / `Exempt` (+ optional amount) | **No** — supporting / debt |
 
-**Critical fact:** An operator can mark Baitul Maal on Matrix / Compliance / People (legacy) without affecting Campaign Health, and can submit on `/rukn/baitul-maal` (canonical) without updating Matrix “committed.” **There is no sync.**
+**Critical fact:** An operator can mark Baitul Maal on Matrix / Compliance / People (legacy) without affecting Campaign Health, and can submit on `/rukn/baitul-maal` (canonical) without updating Matrix “committed” **until KC-0112.2** (Matrix / Journey presentation now prefer canonical Contributed). Writes still use legacy until KC-0112.5. **There is no sync.**
 
-**Gap vs Weekly Ijtema (KC-0110):** No `monthlyBaitulMaalReadAdapter` / write adapter yet. Matrix, Cos, Compliance, People, and Automation still consume **legacy only**. Health already uses the cycle KPI via `dashboardMetricsService`.
+**KC-0112.2:** `monthlyBaitulMaalReadAdapter` introduced. Matrix / Journey / read-only summary presentation prefer canonical Contributed with legacy fallback. Compliance, People, Cos, Automation, and writes remain on **legacy**.
 
 ---
 
@@ -90,7 +90,7 @@ Monthly Baitul Maal has **two live Systems of Record** — the same dual-track p
 | People profile | `/admin/karkunan/:id` | get/update current status | **Legacy** |
 | People bulk | `/admin/karkunan` | `bulkUpdateBaitulMaal` | **Legacy** |
 | People filters | `useKarkunPeopleManagement` | `matchesBaitulMaalFilters` | **Legacy** |
-| Matrix + quick actions | Rukn home / Journey | `cycleBaitulMaalCampaignForKarkun` → `updateBaitulMaal` | **Legacy** |
+| Matrix + quick actions | Rukn home / Journey | **Reads:** adapter (`getMonthlyBaitulMaalCampaignStateView`). **Writes:** `cycleBaitulMaalCampaignForKarkun` → `updateBaitulMaal` | **Adapter** (reads) · **Legacy** (writes) |
 | Cos progress capture | Cos panels | matrix discussed → legacy write | **Legacy** |
 | Automation | Admin reminders | legacy metrics / summaries → Compliance | **Legacy** |
 | Communication / Rafeeq | templates, ops answers | legacy status | **Legacy** |
@@ -115,6 +115,7 @@ Monthly Baitul Maal has **two live Systems of Record** — the same dual-track p
 
 | Item | Role | Status |
 |------|------|--------|
+| `monthlyBaitulMaalReadAdapter` | Cycle preferred; legacy fallback for Matrix / Journey presentation | **Adapter** (KC-0112.2) |
 | `ComplianceRepositoryAdapter` `loadBaitulMaal` | Runtime API over legacy repo only | **Adapter** (does **not** bridge tracks) |
 | Admin nav “Baitul Maal” → `/admin/baitul-maal` | Points to cycle module | **Adapter** (routing) |
 | `MonthlyBaitulMaalDashboardKpiCard` | Cycle KPI card | **Dead** (no page import) |
@@ -218,14 +219,32 @@ Mirror KC-0110. Do **not** change Health formulas without a product decision.
 | Step | Focus | Risk |
 |------|-------|------|
 | **KC-0112.1** | This inventory (+ annotations) | None |
-| **KC-0112.2** | Read adapter (cycle preferred; legacy fallback) | Low |
-| **KC-0112.3** | Consumer read migration (Matrix / Cos / Compliance / People / Automation) | Medium |
+| **KC-0112.2** | Read adapter + Matrix / Journey / summary presentation reads | Low |
+| **KC-0112.3** | Remaining consumer read migration (Compliance / People / Cos / Automation) | Medium |
 | **KC-0112.4** | Read validation & observability | Low |
 | **KC-0112.5** | Canonical write cutover (Matrix / Compliance / People when cycle open) | Medium–High |
 | **KC-0112.6** | Legacy retirement (dead UI + unused helpers; retain Excused-like safeguards if any) | Medium |
 | **KC-0112.7** | Production certification | — |
 
 **Vocabulary work (any phase):** Separate “Contributed (cycle)” vs “Committed (campaign conversation)” vs “Paid (legacy compliance).”
+
+---
+
+## 5.1 KC-0112.2 migration tracker
+
+| Consumer | Previous Source | Current Source | Status |
+|----------|-----------------|----------------|--------|
+| Health | Canonical | Canonical | ✅ |
+| Mission | Canonical | Canonical | ✅ |
+| Matrix | Legacy | Adapter | ✅ |
+| Journey (Quick Actions) | Legacy | Adapter | ✅ |
+| Read-only summaries (progress / focus / summary cards) | Legacy | Adapter | ✅ |
+| Compliance | Legacy | Legacy | Pending |
+| People | Legacy | Legacy | Pending |
+| Cos / Automation | Legacy | Legacy | Pending |
+| Writes | Legacy | Legacy | Pending |
+
+**Adapter rule:** Canonical `Contributed` → Matrix `committed`. Cycle `Pending` does not invent campaign “discussed”; falls through to legacy Paid/Exempt/remarks. Write seed (`getBaitulMaalCampaignState`) stays legacy-only until KC-0112.5.
 
 ---
 
@@ -259,6 +278,7 @@ Mirror KC-0110. Do **not** change Health formulas without a product decision.
 - `src/stores/monthlyBaitulMaalStore.ts`
 - `src/types/monthlyBaitulMaal.ts`
 - `src/validation/monthlyBaitulMaalValidation.ts`
+- `src/lib/operations/monthlyBaitulMaalReadAdapter.ts` (KC-0112.2)
 - `src/pages/admin/AdminMonthlyBaitulMaalPage.tsx`
 - `src/pages/admin/AdminMonthlyBaitulMaalReportPage.tsx`
 - `src/pages/rukn/RuknMonthlyBaitulMaalPage.tsx`
@@ -269,8 +289,6 @@ Mirror KC-0110. Do **not** change Health formulas without a product decision.
 - `src/services/baitulMaalService.ts`
 - `src/stores/baitulMaalStore.ts`
 - `src/types/baitulMaal.ts`
-- `src/lib/campaignExecutionMatrix.ts`
+- `src/lib/campaignExecutionMatrix.ts` (presentation reads via adapter; writes still legacy)
 - `src/pages/admin/ComplianceModulePage.tsx`
 - `src/services/campaignAutomationEngine.ts`
-
-**Stop after KC-0112.1 inventory.**
