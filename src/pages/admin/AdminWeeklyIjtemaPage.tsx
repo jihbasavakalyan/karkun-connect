@@ -1,21 +1,27 @@
 /**
  * KC-0107 — Admin Weekly Ijtema Management.
+ * KC-0113.2 — Deduped meeting cards; Edit/Delete reuse create form + cascade delete.
  */
 
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { Modal, ModalFormFooter } from '@/components/common'
 import { PageHeader, PageShell } from '@/components/ui'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import { ROUTES, adminWeeklyIjtemaReportPath } from '@/constants/routes'
 import { useAuth } from '@/hooks/useAuth'
 import { useBusyAction } from '@/hooks/useBusyAction'
+import { uniqueWeeklyIjtemaMeetingsForDisplay } from '@/lib/weeklyIjtemaPresentation'
 import {
   closeWeeklyIjtemaAttendance,
   createWeeklyIjtemaEvent,
+  deleteWeeklyIjtemaEvent,
+  getWeeklyIjtemaEventById,
   listWeeklyIjtemaEvents,
   openWeeklyIjtemaAttendance,
   reopenWeeklyIjtemaAttendance,
+  updateWeeklyIjtemaEvent,
 } from '@/services/weeklyIjtemaService'
 import { subscribeToWeeklyIjtemaStore } from '@/stores/weeklyIjtemaStore'
 import {
@@ -23,6 +29,7 @@ import {
   defaultWeeklyIjtemaTitle,
   formatWeeklyIjtemaMeetingLabel,
   type WeeklyIjtemaEvent,
+  type WeeklyIjtemaEventStatus,
 } from '@/types/weeklyIjtema'
 
 function todayDate(): string {
@@ -41,34 +48,102 @@ function fromDatetimeLocalValue(value: string): string {
   return Number.isNaN(date.getTime()) ? value : date.toISOString()
 }
 
+function isSuccessMessage(message: string): boolean {
+  const lower = message.toLowerCase()
+  return (
+    lower.includes('created') ||
+    lower.includes('updated') ||
+    lower.includes('deleted') ||
+    lower.includes('opened') ||
+    lower.includes('closed') ||
+    lower.includes('reopened')
+  )
+}
+
 export function AdminWeeklyIjtemaPage() {
   const { user } = useAuth()
   const [version, setVersion] = useState(0)
+  const [editingEventId, setEditingEventId] = useState<string | null>(null)
   const [meetingDate, setMeetingDate] = useState(todayDate)
   const [title, setTitle] = useState(defaultWeeklyIjtemaTitle())
+  const [status, setStatus] = useState<WeeklyIjtemaEventStatus>('Open')
   const [deadlineLocal, setDeadlineLocal] = useState(() =>
     toDatetimeLocalValue(defaultSubmissionDeadline(todayDate())),
   )
   const [message, setMessage] = useState('')
+  const [pendingDelete, setPendingDelete] = useState<WeeklyIjtemaEvent | null>(null)
   const { busy, run } = useBusyAction()
 
   useEffect(() => subscribeToWeeklyIjtemaStore(() => setVersion((v) => v + 1)), [])
 
-  useEffect(() => {
-    setDeadlineLocal(toDatetimeLocalValue(defaultSubmissionDeadline(meetingDate)))
-  }, [meetingDate])
-
   const events = useMemo(() => {
     void version
-    return listWeeklyIjtemaEvents()
+    return uniqueWeeklyIjtemaMeetingsForDisplay(listWeeklyIjtemaEvents())
   }, [version])
 
   const actor = user?.displayName ?? user?.uid ?? 'Administrator'
+  const isEditing = Boolean(editingEventId)
 
-  const handleCreate = () => {
+  const resetForm = () => {
+    const nextDate = todayDate()
+    setEditingEventId(null)
+    setMeetingDate(nextDate)
+    setTitle(defaultWeeklyIjtemaTitle())
+    setStatus('Open')
+    setDeadlineLocal(toDatetimeLocalValue(defaultSubmissionDeadline(nextDate)))
+  }
+
+  const startEdit = (event: WeeklyIjtemaEvent) => {
+    setEditingEventId(event.id)
+    setMeetingDate(event.meetingDate)
+    setTitle(event.title)
+    setStatus(event.status)
+    setDeadlineLocal(toDatetimeLocalValue(event.submissionDeadline))
+    setMessage('')
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const startEditById = (eventId: string, notice?: string) => {
+    const event = getWeeklyIjtemaEventById(eventId)
+    if (!event) {
+      setMessage(notice || 'Meeting not found.')
+      return
+    }
+    startEdit(event)
+    if (notice) setMessage(notice)
+  }
+
+  const onMeetingDateChange = (nextDate: string) => {
+    setMeetingDate(nextDate)
+    if (!editingEventId) {
+      setDeadlineLocal(toDatetimeLocalValue(defaultSubmissionDeadline(nextDate)))
+    }
+  }
+
+  const handleSubmit = () => {
     void run(
       async () => {
         setMessage('')
+        if (editingEventId) {
+          const result = updateWeeklyIjtemaEvent({
+            eventId: editingEventId,
+            meetingDate,
+            title,
+            submissionDeadline: fromDatetimeLocalValue(deadlineLocal),
+            status,
+            updatedBy: actor,
+          })
+          if (!result.success) {
+            setMessage(result.error)
+            return
+          }
+          setMessage(
+            `Updated ${result.event.title} for ${formatWeeklyIjtemaMeetingLabel(result.event.meetingDate)}.`,
+          )
+          resetForm()
+          return
+        }
+
         const result = createWeeklyIjtemaEvent({
           meetingDate,
           title,
@@ -76,12 +151,27 @@ export function AdminWeeklyIjtemaPage() {
           createdBy: actor,
         })
         if (!result.success) {
+          // KC-0113.3 — Switch into Edit for the canonical meeting on that date.
+          if (result.existingEventId) {
+            startEditById(
+              result.existingEventId,
+              result.error,
+            )
+            return
+          }
           setMessage(result.error)
           return
         }
-        setMessage(`Created ${result.event.title} for ${formatWeeklyIjtemaMeetingLabel(result.event.meetingDate)}.`)
+        setMessage(
+          `Created ${result.event.title} for ${formatWeeklyIjtemaMeetingLabel(result.event.meetingDate)}.`,
+        )
+        resetForm()
       },
-      { key: 'weekly-ijtema-create', waitForPendingWrites: true, minMs: 300 },
+      {
+        key: editingEventId ? `weekly-ijtema-update:${editingEventId}` : 'weekly-ijtema-create',
+        waitForPendingWrites: true,
+        minMs: 300,
+      },
     )
   }
 
@@ -114,6 +204,28 @@ export function AdminWeeklyIjtemaPage() {
     )
   }
 
+  const confirmDelete = () => {
+    if (!pendingDelete) return
+    const event = pendingDelete
+    void run(
+      async () => {
+        setMessage('')
+        const result = deleteWeeklyIjtemaEvent(event.id)
+        if (!result.success) {
+          setMessage(result.error)
+          setPendingDelete(null)
+          return
+        }
+        if (editingEventId === event.id) {
+          resetForm()
+        }
+        setPendingDelete(null)
+        setMessage(`Deleted ${event.title} for ${formatWeeklyIjtemaMeetingLabel(event.meetingDate)}.`)
+      },
+      { key: `weekly-ijtema-delete:${event.id}`, waitForPendingWrites: true, minMs: 250 },
+    )
+  }
+
   return (
     <PageShell>
       <PageHeader
@@ -123,7 +235,7 @@ export function AdminWeeklyIjtemaPage() {
 
       <section className="rounded-xl border border-border bg-surface p-4 shadow-card sm:p-5">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-secondary">
-          Create Weekly Ijtema
+          {isEditing ? 'Edit Weekly Ijtema' : 'Create Weekly Ijtema'}
         </h2>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <label className="block text-sm">
@@ -132,7 +244,7 @@ export function AdminWeeklyIjtemaPage() {
               type="date"
               className="w-full rounded-lg border border-border bg-surface px-3 py-2"
               value={meetingDate}
-              onChange={(event) => setMeetingDate(event.target.value)}
+              onChange={(event) => onMeetingDateChange(event.target.value)}
             />
           </label>
           <label className="block text-sm">
@@ -156,17 +268,35 @@ export function AdminWeeklyIjtemaPage() {
               Default is Meeting Date + 24 hours. Rukns can edit until this deadline while Open.
             </span>
           </label>
+          {isEditing ? (
+            <label className="block text-sm">
+              <span className="mb-1 block text-secondary">Status</span>
+              <select
+                className="w-full rounded-lg border border-border bg-surface px-3 py-2"
+                value={status}
+                onChange={(event) => setStatus(event.target.value as WeeklyIjtemaEventStatus)}
+              >
+                <option value="Open">Open</option>
+                <option value="Closed">Closed</option>
+              </select>
+            </label>
+          ) : null}
         </div>
-        <div className="mt-4">
-          <PrimaryButton type="button" onClick={handleCreate} disabled={busy} loading={busy}>
-            Create & Open Attendance
+        <div className="mt-4 flex flex-wrap gap-2">
+          <PrimaryButton type="button" onClick={handleSubmit} disabled={busy} loading={busy}>
+            {isEditing ? 'Save Changes' : 'Create & Open Attendance'}
           </PrimaryButton>
+          {isEditing ? (
+            <SecondaryButton type="button" onClick={resetForm} disabled={busy}>
+              Cancel Edit
+            </SecondaryButton>
+          ) : null}
         </div>
       </section>
 
       {message ? (
         <p
-          className={`mt-3 text-sm ${message.toLowerCase().includes('created') || message.toLowerCase().includes('opened') || message.toLowerCase().includes('closed') || message.toLowerCase().includes('reopened') ? 'text-green-700' : 'text-red-600'}`}
+          className={`mt-3 text-sm ${isSuccessMessage(message) ? 'text-green-700' : 'text-red-600'}`}
           role="status"
         >
           {message}
@@ -216,6 +346,20 @@ export function AdminWeeklyIjtemaPage() {
                   </span>
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">
+                  <SecondaryButton
+                    type="button"
+                    onClick={() => startEdit(event)}
+                    disabled={busy}
+                  >
+                    Edit
+                  </SecondaryButton>
+                  <SecondaryButton
+                    type="button"
+                    onClick={() => setPendingDelete(event)}
+                    disabled={busy}
+                  >
+                    Delete
+                  </SecondaryButton>
                   {event.status === 'Closed' ? (
                     <SecondaryButton
                       type="button"
@@ -251,6 +395,35 @@ export function AdminWeeklyIjtemaPage() {
           ← Back to Dashboard
         </Link>
       </p>
+
+      <Modal
+        isOpen={Boolean(pendingDelete)}
+        title="Delete Weekly Ijtema meeting?"
+        onClose={busy ? () => undefined : () => setPendingDelete(null)}
+        size="md"
+        footer={
+          <ModalFormFooter
+            onCancel={() => setPendingDelete(null)}
+            primaryLabel="Delete Meeting"
+            onPrimaryClick={confirmDelete}
+            loading={busy}
+          />
+        }
+      >
+        <div className="space-y-3 text-sm text-secondary">
+          <p>Delete this Weekly Ijtema meeting?</p>
+          <p>This action cannot be undone.</p>
+          {pendingDelete ? (
+            <p className="font-medium text-text-heading">
+              {pendingDelete.title} · {formatWeeklyIjtemaMeetingLabel(pendingDelete.meetingDate)}
+            </p>
+          ) : null}
+          <p>
+            Associated attendance submissions for this meeting will also be deleted so records are
+            not orphaned.
+          </p>
+        </div>
+      </Modal>
     </PageShell>
   )
 }

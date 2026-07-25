@@ -8,7 +8,7 @@ import {
   buildOrphanVisitQueueItems,
   buildPriorityScheduleNotes,
 } from '@/lib/missionControl/missionControlPresentation'
-import { adminRuknDetailPath, ROUTES, adminCompliancePath, adminExecutionPath } from '@/constants/routes'
+import { adminRuknDetailPath, ROUTES, adminCompliancePath, adminExecutionPath, adminFollowUpPath } from '@/constants/routes'
 import { McProgressRing, leaderboardStatus } from './McProgressRing'
 import { buildDailyPriorityMission } from '@/lib/relationshipIntelligencePresentation'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
@@ -84,7 +84,7 @@ export function AdminMissionControlPanels({ model }: AdminMissionControlPanelsPr
       id: 'development',
       label: 'Development Follow-ups',
       count: model.todaysPriorities.filter((item) => /develop|tarbiyah|follow/i.test(item.title + item.detail)).length,
-      route: ROUTES.ADMIN_FOLLOW_UP,
+      route: adminFollowUpPath(),
     },
   ].sort((a, b) => b.count - a.count)
 

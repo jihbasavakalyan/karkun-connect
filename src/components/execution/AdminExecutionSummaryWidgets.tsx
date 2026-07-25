@@ -4,7 +4,7 @@
 
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ROUTES, adminCompliancePath } from '@/constants/routes'
+import { adminExecutionPath, adminCompliancePath } from '@/constants/routes'
 import { buildCampaignDailyProgressSummary } from '@/lib/dailyProgressPresentation'
 import { createCoalescedNotifier } from '@/lib/dashboard/coalesceStoreNotifications'
 import { getIjtemaAttendanceDashboardMetrics } from '@/services/ijtemaAttendanceService'
@@ -46,7 +46,7 @@ export function AdminExecutionSummaryWidgets() {
       <div className="rounded-(--radius-card) border border-border bg-surface p-4 shadow-card">
         <div className="flex items-center justify-between gap-2">
           <h2 className="text-sm font-semibold text-text-heading">Daily Progress</h2>
-          <Link to={ROUTES.ADMIN_EXECUTION} className="text-xs font-medium text-primary hover:underline">
+          <Link to={adminExecutionPath()} className="text-xs font-medium text-primary hover:underline">
             Execution
           </Link>
         </div>

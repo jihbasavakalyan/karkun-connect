@@ -7,6 +7,10 @@ import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { getConnectedKarkunIdsForRukn } from '@/lib/connections/getConnectedKarkunsForRukn'
 import { getGuidanceForRuknKarkuns } from '@/lib/guidance/guidanceEngine'
 import { isJihRegistered } from '@/lib/guidance/journeyEngine'
+/**
+ * KC-0112.7 TODO — home mission presentation still on legacy BM metrics.
+ * Prefer adapter / cycle KPI when rewiring.
+ */
 import { getRuknBaitulMaalMetrics } from '@/services/baitulMaalService'
 import { getDevelopmentAssessment } from '@/stores/developmentAssessmentStore'
 import type { RuknMissionControlModel } from './buildRuknMissionControl'

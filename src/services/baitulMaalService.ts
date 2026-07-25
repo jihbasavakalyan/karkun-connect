@@ -1,3 +1,11 @@
+/**
+ * KC-0112.7 — LEGACY Monthly Baitul Maal compatibility track (per-Karkun month records).
+ * Dual-write target + Exempt vocabulary + deferred Cos / Automation / Rafeeq readers.
+ * Not the Campaign Health source of truth — do not extend for new executive KPIs.
+ * Ops reads/writes: `monthlyBaitulMaalReadAdapter` / `monthlyBaitulMaalWriteAdapter`.
+ * Inventory: docs/architecture/kc-0112-monthly-baitul-maal-inventory.md
+ */
+
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { getAllKarkuns } from '@/lib/peopleStore'
 import { getActiveCampaign } from '@/services/campaignService'
@@ -77,10 +85,6 @@ export function getDaysUntilMonthClose(date = new Date()): number {
 export function initializeBaitulMaalCompliance(): void {
   if (initialized) return
   initialized = true
-}
-
-export function resetBaitulMaalComplianceInitialization(): void {
-  initialized = false
 }
 
 function resolveCampaignFields(
@@ -342,31 +346,6 @@ export function getAllBaitulMaalSummaries(
       recordedBy: compliance.recordedBy,
     }
   })
-}
-
-export function matchesBaitulMaalFilters(
-  karkunId: string,
-  statusFilter: string,
-  monthFilter: string,
-  yearFilter: string,
-): boolean {
-  initializeBaitulMaalCompliance()
-
-  const hasPeriodFilter = Boolean(monthFilter || yearFilter)
-  const hasStatusFilter = Boolean(statusFilter)
-
-  if (!hasPeriodFilter && !hasStatusFilter) {
-    return true
-  }
-
-  const monthKey = getFilterMonthKey(monthFilter, yearFilter)
-  const compliance = getBaitulMaalStatusForKarkun(karkunId, monthKey)
-
-  if (hasStatusFilter && compliance.status !== statusFilter) {
-    return false
-  }
-
-  return true
 }
 
 export function ensureBaitulMaalRecord(karkunId: string): void {

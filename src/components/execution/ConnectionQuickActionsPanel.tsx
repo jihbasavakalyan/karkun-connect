@@ -1,5 +1,9 @@
 /**
  * KC-0083 / KC-0098 — Compact Quick Actions with single-action protection.
+ *
+ * KC-0112.2
+ * Reads Monthly Baitul Maal through the canonical adapter (via matrix rows).
+ * Legacy service retained until write migration.
  */
 
 import { useEffect, useState } from 'react'
@@ -21,6 +25,7 @@ import { createCoalescedNotifier } from '@/lib/dashboard/coalesceStoreNotificati
 import { subscribeToAnnexure1Store } from '@/stores/annexure1Store'
 import { subscribeToIjtemaAttendanceStore } from '@/stores/ijtemaAttendanceStore'
 import { subscribeToBaitulMaalStore } from '@/stores/baitulMaalStore'
+import { subscribeToMonthlyBaitulMaalStore } from '@/stores/monthlyBaitulMaalStore'
 import {
   EXECUTION_PERSIST_FAILED_EVENT,
   confirmExecutionSaveFeedback,
@@ -49,6 +54,8 @@ export function ConnectionQuickActionsPanel({
     const a = subscribeToAnnexure1Store(coalesced.bump)
     const i = subscribeToIjtemaAttendanceStore(coalesced.bump)
     const b = subscribeToBaitulMaalStore(coalesced.bump)
+    // KC-0112.2: Journey BM chips refresh when canonical cycle submissions change.
+    const m = subscribeToMonthlyBaitulMaalStore(coalesced.bump)
     const onPersistFailed = (event: Event) => {
       const detail = (event as CustomEvent<ExecutionPersistFailedDetail>).detail
       if (!detail) return
@@ -62,6 +69,7 @@ export function ConnectionQuickActionsPanel({
       a()
       i()
       b()
+      m()
       window.removeEventListener(EXECUTION_PERSIST_FAILED_EVENT, onPersistFailed)
     }
   }, [])
@@ -185,6 +193,7 @@ export function ConnectionQuickActionsPanel({
               const result = cycleBaitulMaalCampaignForKarkun(
                 karkunId,
                 user?.displayName ?? user?.uid ?? 'Rukn',
+                ruknId,
               )
               return result.success
                 ? { success: true as const }

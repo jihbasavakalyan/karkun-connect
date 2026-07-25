@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { ActiveCampaignSubtitle } from '@/components/layout/CampaignStatusBar'
-import { ROUTES, adminAnnexure1Path } from '@/constants/routes'
+import { adminAnnexure1Path, adminExecutionPath } from '@/constants/routes'
 import { ExecutionEmptyState } from '@/components/execution/ExecutionEmptyState'
 import { ExecutionRecordsPanel } from '@/components/execution/ExecutionRecordsPanel'
 import { ExecutionStatusBadge } from '@/components/execution/ExecutionStatusBadge'
@@ -149,7 +149,7 @@ const EMPTY_STATES: Record<
   },
 }
 
-export function ExecutionModulePage() {
+export function ExecutionModulePage({ embedded = false }: { embedded?: boolean } = {}) {
   useAssignmentEngine()
   const [, setVersion] = useState(0)
   const [searchParams, setSearchParams] = useSearchParams()
@@ -168,22 +168,30 @@ export function ExecutionModulePage() {
   const filteredItems = filterActiveItems(activeItems, activeSection)
 
   const setSection = (section: ExecutionSection) => {
-    setSearchParams({ section })
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev)
+      next.set('section', section)
+      return next
+    })
   }
 
   const sectionLabel = sections.find((item) => item.id === activeSection)?.label ?? 'Execution'
 
-  return (
-    <PageShell>
-      <PageHeader title="Execution" description="What requires action today." />
-      <ActiveCampaignSubtitle />
+  const body = (
+    <>
+      {!embedded ? (
+        <>
+          <PageHeader title="Execution" description="What requires action today." />
+          <ActiveCampaignSubtitle />
+        </>
+      ) : null}
 
       <ExecutionSuccessBanner />
 
       <section className="ds-section">
         <h2 className="ds-section-title">Execution Summary</h2>
         <div className="mt-4">
-          <ExecutionSummaryCards counts={counts} linkBase={ROUTES.ADMIN_EXECUTION} />
+          <ExecutionSummaryCards counts={counts} linkBase={adminExecutionPath()} />
         </div>
       </section>
 
@@ -197,7 +205,7 @@ export function ExecutionModulePage() {
             <p className="text-sm text-secondary">
               Submitted visit records. No separate reporting required.
             </p>
-            <ReportGuidanceCard route="/admin/execution?section=reports" role="administrator" />
+            <ReportGuidanceCard route={adminExecutionPath('reports')} role="administrator" />
             <div className="mt-4">
               <ExecutionRecordsPanel />
             </div>
@@ -229,6 +237,9 @@ export function ExecutionModulePage() {
           </ul>
         )}
       </section>
-    </PageShell>
+    </>
   )
+
+  if (embedded) return body
+  return <PageShell>{body}</PageShell>
 }

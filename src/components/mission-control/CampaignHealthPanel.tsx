@@ -2,6 +2,8 @@
  * KC-0109 — Campaign Health panel (percentages only).
  * KC-0102A — Per-metric readiness: critical slices unlock at metricsReady;
  * background slices wait on backgroundReady without blanking the whole panel.
+ * KC-0111 — Canonical executive Health UI (four slices via dashboardMetricsService).
+ * Inventory: docs/architecture/kc-0111-campaign-health-inventory.md
  */
 
 import { Link } from 'react-router-dom'

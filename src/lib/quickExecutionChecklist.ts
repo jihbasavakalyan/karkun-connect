@@ -19,10 +19,8 @@ import {
 import { saveDailyProgress } from '@/services/annexure1Service'
 import { setDevelopmentIndicator } from '@/services/developmentAssessmentService'
 import { createCommitment } from '@/services/guidanceService'
-import {
-  getCurrentIjtemaAttendance,
-  updateIjtemaAttendance,
-} from '@/services/ijtemaAttendanceService'
+import { getWeeklyIjtemaCurrentAttendanceView } from '@/lib/operations/weeklyIjtemaReadAdapter'
+import { markWeeklyIjtemaAttendance } from '@/lib/operations/weeklyIjtemaWriteAdapter'
 import { getActiveAssignmentsForKarkun } from '@/stores/assignmentStore'
 import { getCommitmentsForKarkun } from '@/stores/guidanceStore'
 import { createInitialAnnexure1FormState } from '@/types/annexure1.types'
@@ -76,7 +74,7 @@ export function buildQuickExecutionSnapshot(
   const assignmentId = getActiveAssignmentsForKarkun(karkunId)[0]?.assignmentId
   const { currentStage } = resolveCurrentJourneyStage(karkun, assignmentId)
   const progress = getDailyProgressView(karkunId)
-  const ijtema = getCurrentIjtemaAttendance(karkunId)
+  const ijtema = getWeeklyIjtemaCurrentAttendanceView(karkunId)
   const jihStatus = karkun.jihAppRegistrationStatus
   const hasInstalledCommitment = getCommitmentsForKarkun(karkunId).some((c) =>
     /jih app installed/i.test(c.text),
@@ -262,7 +260,7 @@ export function saveQuickExecutionChecklist(
   }
 
   if (draft.ijtema !== initial.ijtema && draft.ijtema) {
-    const result = updateIjtemaAttendance({
+    const result = markWeeklyIjtemaAttendance({
       karkunId,
       status: draft.ijtema,
       remarks: draft.remarks.trim() || undefined,
@@ -307,7 +305,7 @@ export function saveQuickExecutionChecklist(
 
   if (draft.journey.participation && !hasParticipationSignal(karkun)) {
     if (draft.ijtema !== 'Present') {
-      const result = updateIjtemaAttendance({
+      const result = markWeeklyIjtemaAttendance({
         karkunId,
         status: 'Present',
         updatedBy: actorId ?? ruknId,

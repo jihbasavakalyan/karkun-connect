@@ -2155,6 +2155,20 @@ export class ComplianceFirestoreRepository implements ComplianceRepository {
     return repositoryOk(undefined)
   }
 
+  deleteWeeklyIjtemaEvent(eventId: string): RepositoryResult<void> {
+    const next = weeklyIjtemaEventCache.get().filter((event) => event.id !== eventId)
+    weeklyIjtemaEventCache.set(next)
+    pendingWeeklyIjtemaEventDirty.delete(eventId)
+    void queueWrite('compliance.weeklyIjtemaEvents', async () => {
+      return removeDoc(
+        getFirestoreDb(),
+        FIRESTORE_COLLECTIONS.compliance,
+        complianceWeeklyIjtemaEventDocId(eventId),
+      )
+    })
+    return repositoryOk(undefined)
+  }
+
   loadWeeklyIjtemaSubmissions(): RepositoryResult<WeeklyIjtemaSubmission[]> {
     return repositoryOk([...weeklyIjtemaSubmissionCache.get()])
   }
@@ -2194,6 +2208,38 @@ export class ComplianceFirestoreRepository implements ComplianceRepository {
 
   clearWeeklyIjtemaSubmissions(): RepositoryResult<void> {
     weeklyIjtemaSubmissionCache.set([])
+    return repositoryOk(undefined)
+  }
+
+  deleteWeeklyIjtemaSubmissionsForEvent(eventId: string): RepositoryResult<void> {
+    const toDelete = weeklyIjtemaSubmissionCache
+      .get()
+      .filter((submission) => submission.eventId === eventId)
+    const next = weeklyIjtemaSubmissionCache
+      .get()
+      .filter((submission) => submission.eventId !== eventId)
+    weeklyIjtemaSubmissionCache.set(next)
+    for (const submission of toDelete) {
+      pendingWeeklyIjtemaSubmissionDirty.delete(submission.id)
+    }
+    if (toDelete.length === 0) {
+      return repositoryOk(undefined)
+    }
+    void queueWrite('compliance.weeklyIjtemaSubmissions', async () => {
+      const db = getFirestoreDb()
+      const batch = createBatch(db)
+      for (const submission of toDelete) {
+        batch.delete(
+          doc(
+            db,
+            FIRESTORE_COLLECTIONS.compliance,
+            complianceWeeklyIjtemaSubmissionDocId(submission.eventId, submission.ruknId),
+          ),
+        )
+      }
+      await batch.commit()
+      return repositoryOk(undefined)
+    })
     return repositoryOk(undefined)
   }
 

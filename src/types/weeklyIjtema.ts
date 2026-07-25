@@ -84,6 +84,15 @@ export type CreateWeeklyIjtemaEventInput = {
   createdBy?: string
 }
 
+export type UpdateWeeklyIjtemaEventInput = {
+  eventId: string
+  meetingDate: string
+  title?: string
+  submissionDeadline?: string
+  status?: WeeklyIjtemaEventStatus
+  updatedBy?: string
+}
+
 export type UpdateWeeklyIjtemaEventStatusInput = {
   eventId: string
   status: WeeklyIjtemaEventStatus

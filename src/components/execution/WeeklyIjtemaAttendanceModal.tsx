@@ -8,10 +8,8 @@ import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import { useAuth } from '@/hooks/useAuth'
 import { useBusyAction } from '@/hooks/useBusyAction'
-import {
-  getCurrentIjtemaAttendance,
-  updateIjtemaAttendance,
-} from '@/services/ijtemaAttendanceService'
+import { getWeeklyIjtemaCurrentAttendanceView } from '@/lib/operations/weeklyIjtemaReadAdapter'
+import { markWeeklyIjtemaAttendance } from '@/lib/operations/weeklyIjtemaWriteAdapter'
 import type { IjtemaAttendanceStatus } from '@/types/ijtemaAttendance'
 
 const fieldClass =
@@ -46,7 +44,8 @@ export function WeeklyIjtemaAttendanceModal({
 }: WeeklyIjtemaAttendanceModalProps) {
   const { user } = useAuth()
   const { busy: saving, run } = useBusyAction()
-  const current = getCurrentIjtemaAttendance(karkunId)
+  // KC-0110.6 — form seed + save via canonical adapters.
+  const current = getWeeklyIjtemaCurrentAttendanceView(karkunId)
   const hasRecord = current.status !== 'Not recorded'
 
   const [status, setStatus] = useState<IjtemaAttendanceStatus>(
@@ -57,7 +56,7 @@ export function WeeklyIjtemaAttendanceModal({
 
   useEffect(() => {
     if (!isOpen) return
-    const next = getCurrentIjtemaAttendance(karkunId)
+    const next = getWeeklyIjtemaCurrentAttendanceView(karkunId)
     setStatus(next.status === 'Not recorded' ? 'Present' : next.status)
     setRemarks(next.remarks ?? '')
     setError('')
@@ -69,7 +68,7 @@ export function WeeklyIjtemaAttendanceModal({
     void run(
       async () => {
         setError('')
-        const result = updateIjtemaAttendance({
+        const result = markWeeklyIjtemaAttendance({
           karkunId,
           status,
           remarks,

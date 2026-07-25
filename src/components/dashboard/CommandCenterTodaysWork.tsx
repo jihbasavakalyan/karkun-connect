@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { ROUTES } from '@/constants/routes'
+import { adminExecutionPath } from '@/constants/routes'
 import { ExecutionSummaryCards } from '@/components/execution/ExecutionSummaryCards'
 import { getExecutionDashboardData } from '@/lib/executionStatus'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
@@ -26,12 +26,12 @@ export function CommandCenterTodaysWork() {
     <section className="rounded-(--radius-card) border border-border bg-surface p-6 shadow-card">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-lg font-semibold text-text-heading">Today&apos;s Execution</h2>
-        <Link to={ROUTES.ADMIN_EXECUTION} className="text-sm font-medium text-primary hover:underline">
+        <Link to={adminExecutionPath()} className="text-sm font-medium text-primary hover:underline">
           Open Execution
         </Link>
       </div>
       <div className="mt-4">
-        <ExecutionSummaryCards counts={counts} linkBase={ROUTES.ADMIN_EXECUTION} />
+        <ExecutionSummaryCards counts={counts} linkBase={adminExecutionPath()} />
       </div>
     </section>
   )

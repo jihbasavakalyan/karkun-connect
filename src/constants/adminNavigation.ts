@@ -16,8 +16,8 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   { id: 'karkun', label: 'Karkuns', icon: 'users', to: ROUTES.ADMIN_KARKUN },
   { id: 'muttafiqeen', label: 'Muttafiqeen', icon: 'users', to: ROUTES.ADMIN_MUTTAFIQEEN },
   { id: 'assignments', label: 'Connections', icon: 'link', to: ROUTES.ADMIN_ASSIGNMENTS },
-  { id: 'execution', label: 'Execution', icon: 'file-text', to: ROUTES.ADMIN_EXECUTION },
-  { id: 'compliance', label: 'Compliance', icon: 'check', to: ROUTES.ADMIN_COMPLIANCE },
+  // KC-0113.1 — Execution / Follow-up / Compliance consolidated into Operations
+  { id: 'operations', label: 'Operations', icon: 'clipboard', to: ROUTES.ADMIN_OPERATIONS },
   { id: 'weekly-ijtema', label: 'Weekly Ijtema', icon: 'clipboard', to: ROUTES.ADMIN_WEEKLY_IJTEMA },
   {
     id: 'baitul-maal',
@@ -25,7 +25,6 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     icon: 'check',
     to: ROUTES.ADMIN_MONTHLY_BAITUL_MAAL,
   },
-  { id: 'follow-up', label: 'Follow-up', icon: 'refresh', to: ROUTES.ADMIN_FOLLOW_UP },
   { id: 'communication', label: 'Communication', icon: 'megaphone', to: ROUTES.ADMIN_COMMUNICATION },
   { id: 'lists', label: 'Lists', icon: 'clipboard', to: ROUTES.ADMIN_LISTS },
   { id: 'settings', label: 'Settings', icon: 'settings', to: ROUTES.ADMIN_SETTINGS },

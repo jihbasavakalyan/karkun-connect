@@ -2,12 +2,18 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { adminCompliancePath } from '@/constants/routes'
 import { getComplianceStatusStyle } from '@/lib/complianceStatusStyles'
-import { getBaitulMaalDashboardMetrics } from '@/services/baitulMaalService'
-import { getIjtemaAttendanceDashboardMetrics } from '@/services/ijtemaAttendanceService'
+import {
+  getMonthlyBaitulMaalDashboardMetricsView,
+} from '@/lib/operations/monthlyBaitulMaalReadAdapter'
+import {
+  getWeeklyIjtemaDashboardMetricsView,
+} from '@/lib/operations/weeklyIjtemaReadAdapter'
 import { getJihWebPortalDashboardMetrics } from '@/services/jihWebPortalService'
 import { subscribeToBaitulMaalStore } from '@/stores/baitulMaalStore'
 import { subscribeToIjtemaAttendanceStore } from '@/stores/ijtemaAttendanceStore'
 import { subscribeToJihWebPortalStore } from '@/stores/jihWebPortalStore'
+import { subscribeToMonthlyBaitulMaalStore } from '@/stores/monthlyBaitulMaalStore'
+import { subscribeToWeeklyIjtemaStore } from '@/stores/weeklyIjtemaStore'
 
 type SummaryCard = {
   key: string
@@ -23,19 +29,32 @@ export function ComplianceSummaryCards() {
   useEffect(() => {
     const unsubJih = subscribeToJihWebPortalStore(() => setVersion((value) => value + 1))
     const unsubBaitulMaal = subscribeToBaitulMaalStore(() => setVersion((value) => value + 1))
+    // KC-0112.3: Compliance BM cards refresh when canonical cycle submissions change.
+    const unsubMonthlyBaitulMaal = subscribeToMonthlyBaitulMaalStore(() =>
+      setVersion((value) => value + 1),
+    )
     const unsubIjtema = subscribeToIjtemaAttendanceStore(() => setVersion((value) => value + 1))
+    const unsubWeeklyIjtema = subscribeToWeeklyIjtemaStore(() => setVersion((value) => value + 1))
     return () => {
       unsubJih()
       unsubBaitulMaal()
+      unsubMonthlyBaitulMaal()
       unsubIjtema()
+      unsubWeeklyIjtema()
     }
   }, [])
 
   void setVersion
 
   const jih = getJihWebPortalDashboardMetrics()
-  const baitulMaal = getBaitulMaalDashboardMetrics()
-  const ijtema = getIjtemaAttendanceDashboardMetrics()
+  // KC-0112.3
+  // Compliance reads Monthly Baitul Maal through the canonical adapter.
+  // Legacy write path retained until write migration.
+  const baitulMaal = getMonthlyBaitulMaalDashboardMetricsView()
+  // KC-0110.3
+  // Compliance reads Weekly Ijtema through the canonical adapter.
+  // Legacy write path retained until write cutover.
+  const ijtema = getWeeklyIjtemaDashboardMetricsView()
 
   const cards: SummaryCard[] = [
     { key: 'ijtema-present', label: 'Ijtema Present', count: ijtema.present, section: 'ijtema', status: 'Present' },

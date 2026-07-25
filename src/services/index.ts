@@ -92,7 +92,6 @@ export {
   getBaitulMaalDashboardMetrics,
   getRuknBaitulMaalMetrics,
   getAllBaitulMaalSummaries,
-  matchesBaitulMaalFilters,
   getFilterMonthKey,
   isBaitulMaalAmountEnabled,
   setBaitulMaalAmountEnabled,
@@ -115,7 +114,6 @@ export {
   bulkUpdateIjtemaAttendance,
   getIjtemaAttendanceDashboardMetrics,
   getAllIjtemaAttendanceSummaries,
-  matchesIjtemaAttendanceFilters,
   getFilterWeekEndingDate,
 } from './ijtemaAttendanceService'
 

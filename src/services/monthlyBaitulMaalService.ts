@@ -1,6 +1,18 @@
 /**
  * KC-0108 — Monthly Baitul Maal completion service.
  * Reuses shared campaignCycle lifecycle from KC-0107.
+ *
+ * KC-0112 — CANONICAL Monthly Baitul Maal execution track (cycle/submission).
+ * Campaign Health / Mission / Top Priority must use this service
+ * (`getMonthlyBaitulMaalDashboardKpi`). Do not replace with baitulMaal*.
+ * Inventory: docs/architecture/kc-0112-monthly-baitul-maal-inventory.md
+ *
+ * KC-0111 — Health slice uses contributed÷totalAssigned from this KPI
+ * (not marked-only completionPct). See kc-0111-campaign-health-inventory.md.
+ *
+ * KC-0112.6
+ * Canonical Monthly Baitul Maal write path (single-mark upsert / remove).
+ * Legacy updates retained only for documented compatibility (via write adapter).
  */
 
 import { getAssignedKarkunanForRukn } from '@/lib/assignmentEngine'
@@ -180,6 +192,138 @@ export function saveMonthlyBaitulMaalSubmission(
     })),
     submittedAt: existing?.submittedAt ?? timestamp,
     submittedBy: existing?.submittedBy ?? input.submittedBy,
+    updatedAt: timestamp,
+    updatedBy: input.submittedBy,
+  }
+
+  return { success: true, submission: upsertMonthlyBaitulMaalSubmission(submission) }
+}
+
+/** Open cycle only — used by write cutover (KC-0112.6). */
+export function getOpenMonthlyBaitulMaalCycle(): MonthlyBaitulMaalCycle | undefined {
+  return getAllMonthlyBaitulMaalCycles().find((cycle) => cycle.status === 'Open')
+}
+
+export type UpsertMonthlyBaitulMaalKarkunMarkInput = {
+  cycleId: string
+  ruknId: string
+  ruknName: string
+  karkunId: string
+  karkunName: string
+  status: 'Contributed' | 'Pending'
+  submittedBy: string
+}
+
+/**
+ * KC-0112.6 — Canonical single-mark upsert (partial submission allowed).
+ * Full-register submit remains `saveMonthlyBaitulMaalSubmission` (all assigned required).
+ */
+export function upsertMonthlyBaitulMaalKarkunMark(
+  input: UpsertMonthlyBaitulMaalKarkunMarkInput,
+): { success: true; submission: MonthlyBaitulMaalSubmission } | { success: false; error: string } {
+  const cycle = getMonthlyBaitulMaalCycle(input.cycleId)
+  if (!cycle) {
+    return { success: false, error: 'Baitul Maal cycle not found.' }
+  }
+  if (!canRuknEditCycle(cycle)) {
+    return {
+      success: false,
+      error:
+        cycle.status === 'Closed'
+          ? 'Cycle is closed. Ask Admin to reopen if a correction is required.'
+          : 'Submission deadline has passed. Records are read-only.',
+    }
+  }
+
+  const assigned = getAssignedKarkunanForRukn(input.ruknId)
+  const assignedIds = assigned.map((karkun) => karkun.id)
+  if (!assignedIds.includes(input.karkunId)) {
+    return { success: false, error: 'Karkun is not assigned to this Rukn.' }
+  }
+  if (input.status !== 'Contributed' && input.status !== 'Pending') {
+    return { success: false, error: 'Contribution status must be Contributed or Pending.' }
+  }
+
+  const timestamp = nowIso()
+  const existing = getMonthlyBaitulMaalSubmission(input.cycleId, input.ruknId)
+  const marks = [...(existing?.marks ?? [])]
+  const nextMark = {
+    karkunId: input.karkunId,
+    karkunName: input.karkunName,
+    status: input.status,
+  }
+  const index = marks.findIndex((mark) => mark.karkunId === input.karkunId)
+  if (index >= 0) {
+    marks[index] = nextMark
+  } else {
+    marks.push(nextMark)
+  }
+
+  for (const mark of marks) {
+    if (!assignedIds.includes(mark.karkunId)) {
+      return { success: false, error: 'Submission includes a Karkun that is not assigned.' }
+    }
+    if (mark.status !== 'Contributed' && mark.status !== 'Pending') {
+      return { success: false, error: 'Contribution status must be Contributed or Pending.' }
+    }
+  }
+
+  const submission: MonthlyBaitulMaalSubmission = {
+    id: existing?.id ?? `${input.cycleId}:${input.ruknId}`,
+    eventId: input.cycleId,
+    ruknId: input.ruknId,
+    ruknName: input.ruknName,
+    marks,
+    submittedAt: existing?.submittedAt ?? timestamp,
+    submittedBy: existing?.submittedBy ?? input.submittedBy,
+    updatedAt: timestamp,
+    updatedBy: input.submittedBy,
+  }
+
+  return { success: true, submission: upsertMonthlyBaitulMaalSubmission(submission) }
+}
+
+export type RemoveMonthlyBaitulMaalKarkunMarkInput = {
+  cycleId: string
+  ruknId: string
+  ruknName: string
+  karkunId: string
+  submittedBy: string
+}
+
+/** Remove a karkun mark from an open-cycle submission (e.g. Exempt / not discussed). */
+export function removeMonthlyBaitulMaalKarkunMark(
+  input: RemoveMonthlyBaitulMaalKarkunMarkInput,
+): { success: true; submission: MonthlyBaitulMaalSubmission | null } | { success: false; error: string } {
+  const cycle = getMonthlyBaitulMaalCycle(input.cycleId)
+  if (!cycle) {
+    return { success: false, error: 'Baitul Maal cycle not found.' }
+  }
+  if (!canRuknEditCycle(cycle)) {
+    return {
+      success: false,
+      error:
+        cycle.status === 'Closed'
+          ? 'Cycle is closed. Ask Admin to reopen if a correction is required.'
+          : 'Submission deadline has passed. Records are read-only.',
+    }
+  }
+
+  const existing = getMonthlyBaitulMaalSubmission(input.cycleId, input.ruknId)
+  if (!existing) {
+    return { success: true, submission: null }
+  }
+
+  const marks = existing.marks.filter((mark) => mark.karkunId !== input.karkunId)
+  if (marks.length === existing.marks.length) {
+    return { success: true, submission: existing }
+  }
+
+  const timestamp = nowIso()
+  const submission: MonthlyBaitulMaalSubmission = {
+    ...existing,
+    ruknName: input.ruknName || existing.ruknName,
+    marks,
     updatedAt: timestamp,
     updatedBy: input.submittedBy,
   }

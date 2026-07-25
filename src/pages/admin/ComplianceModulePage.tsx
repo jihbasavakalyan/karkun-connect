@@ -1,3 +1,14 @@
+/**
+ * KC-0082 — Admin Compliance module.
+ *
+ * KC-0112.3
+ * Compliance reads Monthly Baitul Maal through the canonical adapter.
+ * Legacy write path retained until write migration.
+ *
+ * KC-0112.6
+ * Canonical Monthly Baitul Maal write path.
+ * Legacy updates retained only for documented compatibility.
+ */
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { ComplianceListRow } from '@/components/compliance/ComplianceListRow'
@@ -15,16 +26,16 @@ import {
   resolveComplianceViewFilter,
   type ComplianceSection,
 } from '@/lib/complianceNavigation'
+import { updateMonthlyBaitulMaalContribution } from '@/lib/operations/monthlyBaitulMaalWriteAdapter'
 import {
-  getAllBaitulMaalSummaries,
-  getBaitulMaalDashboardMetrics,
-  updateBaitulMaal,
-} from '@/services/baitulMaalService'
+  getMonthlyBaitulMaalDashboardMetricsView,
+  getMonthlyBaitulMaalSummariesView,
+} from '@/lib/operations/monthlyBaitulMaalReadAdapter'
 import {
-  getAllIjtemaAttendanceSummaries,
-  getIjtemaAttendanceDashboardMetrics,
-  updateIjtemaAttendance,
-} from '@/services/ijtemaAttendanceService'
+  getWeeklyIjtemaAttendanceSummariesView,
+  getWeeklyIjtemaDashboardMetricsView,
+} from '@/lib/operations/weeklyIjtemaReadAdapter'
+import { markWeeklyIjtemaAttendance } from '@/lib/operations/weeklyIjtemaWriteAdapter'
 import {
   getAllJihWebPortalSummaries,
   getJihWebPortalDashboardMetrics,
@@ -34,6 +45,8 @@ import {
 import { subscribeToBaitulMaalStore } from '@/stores/baitulMaalStore'
 import { subscribeToIjtemaAttendanceStore } from '@/stores/ijtemaAttendanceStore'
 import { subscribeToJihWebPortalStore } from '@/stores/jihWebPortalStore'
+import { subscribeToMonthlyBaitulMaalStore } from '@/stores/monthlyBaitulMaalStore'
+import { subscribeToWeeklyIjtemaStore } from '@/stores/weeklyIjtemaStore'
 import type { BaitulMaalKarkunSummary } from '@/types/baitulMaal'
 import type { IjtemaAttendanceKarkunSummary, IjtemaAttendanceStatus } from '@/types/ijtemaAttendance'
 import type { JihWebPortalKarkunSummary } from '@/types/jihWebPortal'
@@ -147,7 +160,8 @@ function IjtemaRow({
   const markStatus = (status: IjtemaAttendanceStatus) => {
     void run(
       async () => {
-        const result = updateIjtemaAttendance({ karkunId: item.karkunId, status })
+        // KC-0110.6 — Compliance writes Weekly Ijtema through the canonical write adapter.
+        const result = markWeeklyIjtemaAttendance({ karkunId: item.karkunId, status })
         if (result.success) {
           onUpdated()
         }
@@ -358,7 +372,7 @@ function BaitulMaalRow({
   const markPaid = () => {
     void run(
       async () => {
-        const result = updateBaitulMaal({
+        const result = updateMonthlyBaitulMaalContribution({
           karkunId: item.karkunId,
           status: 'Paid',
           paymentDate: todayDate(),
@@ -372,7 +386,7 @@ function BaitulMaalRow({
   const markPending = () => {
     void run(
       async () => {
-        const result = updateBaitulMaal({
+        const result = updateMonthlyBaitulMaalContribution({
           karkunId: item.karkunId,
           status: 'Pending',
         })
@@ -385,7 +399,7 @@ function BaitulMaalRow({
   const markExempt = () => {
     void run(
       async () => {
-        const result = updateBaitulMaal({
+        const result = updateMonthlyBaitulMaalContribution({
           karkunId: item.karkunId,
           status: 'Exempt',
         })
@@ -445,7 +459,7 @@ function BaitulMaalRow({
   )
 }
 
-export function ComplianceModulePage() {
+export function ComplianceModulePage({ embedded = false }: { embedded?: boolean } = {}) {
   const [dataVersion, setDataVersion] = useState(0)
   const [searchParams, setSearchParams] = useSearchParams()
   const activeSection = resolveComplianceSection(searchParams.get('section'))
@@ -460,11 +474,20 @@ export function ComplianceModulePage() {
   useEffect(() => {
     const unsubJih = subscribeToJihWebPortalStore(() => setDataVersion((value) => value + 1))
     const unsubBaitulMaal = subscribeToBaitulMaalStore(() => setDataVersion((value) => value + 1))
+    // KC-0112.3: Compliance BM list refreshes when canonical cycle submissions change.
+    const unsubMonthlyBaitulMaal = subscribeToMonthlyBaitulMaalStore(() =>
+      setDataVersion((value) => value + 1),
+    )
     const unsubIjtema = subscribeToIjtemaAttendanceStore(() => setDataVersion((value) => value + 1))
+    const unsubWeeklyIjtema = subscribeToWeeklyIjtemaStore(() =>
+      setDataVersion((value) => value + 1),
+    )
     return () => {
       unsubJih()
       unsubBaitulMaal()
+      unsubMonthlyBaitulMaal()
       unsubIjtema()
+      unsubWeeklyIjtema()
     }
   }, [])
 
@@ -474,19 +497,31 @@ export function ComplianceModulePage() {
     COMPLIANCE_SECTIONS.find((section) => section.id === activeSection)?.label ?? 'Compliance'
 
   const setSection = (section: ComplianceSection) => {
-    if (statusFilter) {
-      setSearchParams({ section, status: statusFilter })
-      return
-    }
-    if (viewAll) {
-      setSearchParams({ section, view: 'all' })
-      return
-    }
-    setSearchParams({ section })
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev)
+      next.set('section', section)
+      if (statusFilter) {
+        next.set('status', statusFilter)
+      } else {
+        next.delete('status')
+      }
+      if (viewAll) {
+        next.set('view', 'all')
+      } else {
+        next.delete('view')
+      }
+      return next
+    })
   }
 
   const clearStatusFilter = () => {
-    setSearchParams({ section: activeSection, view: 'all' })
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev)
+      next.set('section', activeSection)
+      next.delete('status')
+      next.set('view', 'all')
+      return next
+    })
   }
 
   void dataVersion
@@ -496,7 +531,10 @@ export function ComplianceModulePage() {
 
   switch (activeSection) {
     case 'ijtema': {
-      const items = filterIjtemaItems(getAllIjtemaAttendanceSummaries(), effectiveStatus)
+      // KC-0110.3
+      // Compliance reads Weekly Ijtema through the canonical adapter.
+      // Legacy write path retained until write cutover.
+      const items = filterIjtemaItems(getWeeklyIjtemaAttendanceSummariesView(), effectiveStatus)
       listContent =
         items.length === 0 ? (
           <ExecutionEmptyState {...emptyState} />
@@ -538,7 +576,10 @@ export function ComplianceModulePage() {
       break
     }
     case 'baitul-maal': {
-      const items = filterBaitulMaalItems(getAllBaitulMaalSummaries(), effectiveStatus)
+      // KC-0112.3
+      // Compliance reads Monthly Baitul Maal through the canonical adapter.
+      // Legacy write path retained until write migration.
+      const items = filterBaitulMaalItems(getMonthlyBaitulMaalSummariesView(), effectiveStatus)
       listContent =
         items.length === 0 ? (
           <ExecutionEmptyState {...emptyState} />
@@ -555,16 +596,23 @@ export function ComplianceModulePage() {
       listContent = null
   }
 
-  void getIjtemaAttendanceDashboardMetrics()
+  void getWeeklyIjtemaDashboardMetricsView()
   void getJihWebPortalDashboardMetrics()
-  void getBaitulMaalDashboardMetrics()
+  void getMonthlyBaitulMaalDashboardMetricsView()
 
   const filterLabel = statusFilter || (isPendingView ? getPendingStatusLabel(activeSection) : '')
 
-  return (
-    <PageShell>
-      <PageHeader title="Compliance" description="What compliance work needs my attention today." />
-      <ActiveCampaignSubtitle />
+  const body = (
+    <>
+      {!embedded ? (
+        <>
+          <PageHeader
+            title="Compliance"
+            description="What compliance work needs my attention today."
+          />
+          <ActiveCampaignSubtitle />
+        </>
+      ) : null}
 
       <section className="ds-section">
         <h2 className="ds-section-title">Compliance Summary</h2>
@@ -573,7 +621,7 @@ export function ComplianceModulePage() {
         </div>
       </section>
 
-      <ComplianceGuidanceCard route="/admin/compliance" />
+      <ComplianceGuidanceCard route="/admin/operations?tab=review" />
 
       <ComplianceSectionNav
         active={activeSection}
@@ -603,6 +651,9 @@ export function ComplianceModulePage() {
         </div>
         <div className="mt-4">{listContent}</div>
       </section>
-    </PageShell>
+    </>
   )
+
+  if (embedded) return body
+  return <PageShell>{body}</PageShell>
 }

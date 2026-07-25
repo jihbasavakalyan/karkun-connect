@@ -9,6 +9,10 @@ import type {
   DigitalRafeeqIntent,
   DigitalRafeeqResponse,
 } from '@/runtime/service'
+/**
+ * KC-0112.7 TODO — Rafeeq contextual guidance still on legacy BM reminders.
+ * Prefer adapter metrics / cycle KPI when rewiring.
+ */
 import { buildBaitulMaalGuidanceReminders } from '@/services/baitulMaalService'
 
 export type ContextualSurface =

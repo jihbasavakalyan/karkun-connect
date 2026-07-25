@@ -5,7 +5,7 @@ import { SecondaryButton } from '@/components/ui/SecondaryButton'
 const quickActions = [
   { id: 'open-rukn', label: 'Open Rukn', to: ROUTES.ADMIN_RUKN },
   { id: 'open-karkun', label: 'Open Karkun', to: ROUTES.ADMIN_KARKUN },
-  { id: 'start-execution', label: 'Start Execution', to: ROUTES.ADMIN_EXECUTION },
+  { id: 'start-execution', label: 'Start Execution', to: adminExecutionPath() },
   { id: 'review-reports', label: 'Execution Reports', to: adminExecutionPath('reports') },
 ] as const
 

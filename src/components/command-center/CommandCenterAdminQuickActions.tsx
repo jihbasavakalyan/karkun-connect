@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { ROUTES, adminCompliancePath, adminExecutionPath } from '@/constants/routes'
+import { ROUTES, adminCompliancePath, adminExecutionPath, adminFollowUpPath } from '@/constants/routes'
 import type { IconName } from '@/design-system/iconNames'
 import { Icon } from '@/components/ui/Icon'
 import { EnterpriseSectionHeader } from '@/components/enterprise'
@@ -11,8 +11,8 @@ const ADMIN_ACTIONS: { id: string; label: string; icon: IconName; to: string }[]
   { id: 'compliance', label: 'Compliance', icon: 'check', to: adminCompliancePath('ijtema') },
   { id: 'campaign', label: 'Campaign', icon: 'chart', to: ROUTES.ADMIN_CAMPAIGN },
   { id: 'search', label: 'Search', icon: 'search', to: ROUTES.ADMIN_KARKUN },
-  { id: 'export', label: 'Export', icon: 'export', to: ROUTES.ADMIN_EXECUTION },
-  { id: 'follow-up', label: 'Follow-up', icon: 'refresh', to: ROUTES.ADMIN_FOLLOW_UP },
+  { id: 'export', label: 'Export', icon: 'export', to: adminExecutionPath('reports') },
+  { id: 'follow-up', label: 'Follow-up', icon: 'refresh', to: adminFollowUpPath() },
 ]
 
 export function CommandCenterAdminQuickActions() {

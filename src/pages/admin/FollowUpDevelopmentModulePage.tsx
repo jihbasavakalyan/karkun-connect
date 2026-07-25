@@ -111,7 +111,9 @@ function FollowUpList({
   )
 }
 
-export function FollowUpDevelopmentModulePage() {
+export function FollowUpDevelopmentModulePage({
+  embedded = false,
+}: { embedded?: boolean } = {}) {
   const [, setVersion] = useState(0)
   const [searchParams, setSearchParams] = useSearchParams()
   const sectionParam = searchParams.get('section')
@@ -127,20 +129,28 @@ export function FollowUpDevelopmentModulePage() {
   void setVersion
 
   const setSection = (section: FollowUpSection) => {
-    setSearchParams({ section })
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev)
+      next.set('section', section)
+      return next
+    })
   }
 
   const handleComplete = (followUpId: string) => {
     completeFollowUpById(followUpId)
   }
 
-  return (
-    <PageShell>
-      <PageHeader
-        title="Follow-up"
-        description="Simple follow-ups created from a visit when another interaction is needed."
-      />
-      <ActiveCampaignSubtitle />
+  const body = (
+    <>
+      {!embedded ? (
+        <>
+          <PageHeader
+            title="Follow-up"
+            description="Simple follow-ups created from a visit when another interaction is needed."
+          />
+          <ActiveCampaignSubtitle />
+        </>
+      ) : null}
 
       <ExecutionSuccessBanner />
       <SectionNav active={activeSection} onChange={setSection} />
@@ -189,6 +199,9 @@ export function FollowUpDevelopmentModulePage() {
           </div>
         </section>
       )}
-    </PageShell>
+    </>
   )
+
+  if (embedded) return body
+  return <PageShell>{body}</PageShell>
 }

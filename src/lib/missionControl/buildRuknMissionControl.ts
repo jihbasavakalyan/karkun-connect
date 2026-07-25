@@ -6,6 +6,10 @@ import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { getConnectedKarkunIdsForRukn } from '@/lib/connections/getConnectedKarkunsForRukn'
 import { getGuidanceForRuknKarkuns } from '@/lib/guidance/guidanceEngine'
 import { buildRuknExecutionSummary } from '@/lib/executionStatus'
+/**
+ * KC-0112.7 TODO — Rukn mission snapshot still on legacy BM metrics.
+ * Prefer getRukn-scoped cycle KPI / adapter when rewiring.
+ */
 import { getRuknBaitulMaalMetrics } from '@/services/baitulMaalService'
 import { getCurrentIjtemaAttendance } from '@/services/ijtemaAttendanceService'
 import { getDevelopmentAssessment } from '@/stores/developmentAssessmentStore'

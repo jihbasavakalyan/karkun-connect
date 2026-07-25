@@ -50,6 +50,14 @@ const CARD_CONFIG: {
   { key: 'completedToday', section: 'completed-today', statusStyle: 'Completed' },
 ]
 
+/** Append/replace `section` whether `linkBase` is a path or already has a query string. */
+function hrefForSection(linkBase: string, section: string): string {
+  const [pathname, search = ''] = linkBase.split('?')
+  const params = new URLSearchParams(search)
+  params.set('section', section)
+  return `${pathname}?${params.toString()}`
+}
+
 export function ExecutionSummaryCards({
   counts,
   linkBase,
@@ -94,7 +102,7 @@ export function ExecutionSummaryCards({
         return (
           <li key={key}>
             {linkBase ? (
-              <Link to={`${linkBase}?section=${section}`} className="block">
+              <Link to={hrefForSection(linkBase, section)} className="block">
                 {content}
               </Link>
             ) : (

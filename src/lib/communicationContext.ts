@@ -7,6 +7,13 @@ import { getRuknById } from '@/data/ruknMaster'
 import { getCurrentAssignmentForKarkun } from '@/lib/assignmentEngine'
 import { resolveCurrentJourneyStage } from '@/lib/guidance/journeyEngine'
 import { JOURNEY_STAGE_LABELS } from '@/types/guidance'
+/**
+ * KC-0110.7 TODO — Cos / communication still on legacy current-week attendance.
+ * Prefer getWeeklyIjtemaCurrentAttendanceView when rewiring.
+ *
+ * KC-0112.7 TODO — Cos / communication still on legacy Baitul Maal status.
+ * Prefer getMonthlyBaitulMaalComplianceStatusView when rewiring.
+ */
 import { getCurrentIjtemaAttendance } from '@/services/ijtemaAttendanceService'
 import { getCurrentBaitulMaalStatus } from '@/services/baitulMaalService'
 import { getLatestSubmissionForKarkun } from '@/stores/annexure1Store'

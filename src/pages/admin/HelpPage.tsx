@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { APP_VERSION } from '@/constants/app'
-import { ROUTES, adminExecutionPath } from '@/constants/routes'
+import { ROUTES, adminExecutionPath, adminFollowUpPath, adminCompliancePath } from '@/constants/routes'
 import { getActiveCampaignName, formatActiveCampaignDuration } from '@/services/campaignService'
 import { PageHeader, PageShell } from '@/components/ui'
 
@@ -60,27 +60,34 @@ export function HelpPage() {
               </Link>
             </li>
             <li>
-              Monitor visit execution under{' '}
-              <Link to={ROUTES.ADMIN_EXECUTION} className="font-medium text-primary hover:underline">
-                Execution
+              Open{' '}
+              <Link to={ROUTES.ADMIN_OPERATIONS} className="font-medium text-primary hover:underline">
+                Operations
+              </Link>{' '}
+              for the work queue, execution, and review in one place
+            </li>
+            <li>
+              Work the queue under{' '}
+              <Link to={adminFollowUpPath()} className="font-medium text-primary hover:underline">
+                Operations → Work Queue
               </Link>
             </li>
             <li>
-              Track compliance under{' '}
-              <Link to={ROUTES.ADMIN_COMPLIANCE} className="font-medium text-primary hover:underline">
-                Compliance
+              Execute visits under{' '}
+              <Link to={adminExecutionPath()} className="font-medium text-primary hover:underline">
+                Operations → Execute
               </Link>
             </li>
             <li>
-              Review follow-ups under{' '}
-              <Link to={ROUTES.ADMIN_FOLLOW_UP} className="font-medium text-primary hover:underline">
-                Follow-up
+              Verify compliance under{' '}
+              <Link to={adminCompliancePath()} className="font-medium text-primary hover:underline">
+                Operations → Review
               </Link>
             </li>
             <li>
               View submitted visit reports under{' '}
               <Link to={adminExecutionPath('reports')} className="font-medium text-primary hover:underline">
-                Execution → Reports
+                Operations → Execute → Reports
               </Link>{' '}
               (not Campaign Lists)
             </li>

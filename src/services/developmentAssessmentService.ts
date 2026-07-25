@@ -3,6 +3,9 @@
  *
  * Holistic Rukn assessment indicators. Monthly Bait-ul-Maal may inform the
  * default observation but never auto-advances Development stage.
+ *
+ * KC-0112.7 TODO — settlement hint still on legacy Paid/Exempt.
+ * Prefer getMonthlyBaitulMaalComplianceStatusView (Paid via Contributed) when rewiring.
  */
 
 import { isBaitulMaalSettledThisMonth } from '@/services/baitulMaalService'

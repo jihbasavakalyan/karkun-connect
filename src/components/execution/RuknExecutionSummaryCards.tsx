@@ -9,6 +9,7 @@ import { createCoalescedNotifier } from '@/lib/dashboard/coalesceStoreNotificati
 import { subscribeToAnnexure1Store } from '@/stores/annexure1Store'
 import { subscribeToIjtemaAttendanceStore } from '@/stores/ijtemaAttendanceStore'
 import { subscribeToBaitulMaalStore } from '@/stores/baitulMaalStore'
+import { subscribeToMonthlyBaitulMaalStore } from '@/stores/monthlyBaitulMaalStore'
 import { usePeopleStore } from '@/hooks/usePeopleStore'
 
 type RuknExecutionSummaryCardsProps = {
@@ -41,11 +42,14 @@ export function RuknExecutionSummaryCards({ ruknId }: RuknExecutionSummaryCardsP
     const unsubA = subscribeToAnnexure1Store(coalesced.bump)
     const unsubI = subscribeToIjtemaAttendanceStore(coalesced.bump)
     const unsubB = subscribeToBaitulMaalStore(coalesced.bump)
+    // KC-0112.2: summary cards refresh when canonical cycle submissions change.
+    const unsubM = subscribeToMonthlyBaitulMaalStore(coalesced.bump)
     return () => {
       coalesced.dispose()
       unsubA()
       unsubI()
       unsubB()
+      unsubM()
     }
   }, [])
 

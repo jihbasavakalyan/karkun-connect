@@ -1,6 +1,13 @@
 /**
  * KC-0082 — Campaign Execution Matrix helpers.
  * Presentation + one-click updates over existing visit / JIH / Ijtema / Baitul Maal services.
+ *
+ * KC-0112.2
+ * Reads Monthly Baitul Maal through the canonical adapter.
+ *
+ * KC-0112.6
+ * Canonical Monthly Baitul Maal write path.
+ * Legacy updates retained only for documented compatibility.
  */
 
 import { getKarkunById, updateKarkunMeetingOutcomes } from '@/constants/mockKarkunRegistry'
@@ -10,17 +17,14 @@ import {
   buildFormFromDailyProgressOutcome,
   getDailyProgressView,
 } from '@/lib/dailyProgressPresentation'
+import { getMonthlyBaitulMaalCampaignStateView } from '@/lib/operations/monthlyBaitulMaalReadAdapter'
+import { updateMonthlyBaitulMaalContribution } from '@/lib/operations/monthlyBaitulMaalWriteAdapter'
+import { getWeeklyIjtemaCurrentAttendanceView } from '@/lib/operations/weeklyIjtemaReadAdapter'
+import { markWeeklyIjtemaAttendance } from '@/lib/operations/weeklyIjtemaWriteAdapter'
 import { saveDailyProgress } from '@/services/annexure1Service'
-import {
-  getCurrentBaitulMaalStatus,
-  updateBaitulMaal,
-} from '@/services/baitulMaalService'
+import { getCurrentBaitulMaalStatus } from '@/services/baitulMaalService'
 import { getCampaignTimeline } from '@/services/campaignService'
 import { createCommitment } from '@/services/guidanceService'
-import {
-  getCurrentIjtemaAttendance,
-  updateIjtemaAttendance,
-} from '@/services/ijtemaAttendanceService'
 import { getActiveAssignmentsForKarkun } from '@/stores/assignmentStore'
 import { getCommitmentsForKarkun } from '@/stores/guidanceStore'
 import { createInitialAnnexure1FormState } from '@/types/annexure1.types'
@@ -78,6 +82,13 @@ export function getJihAppMatrixState(karkunId: string): JihAppMatrixState {
   return 'not_discussed'
 }
 
+/**
+ * Legacy campaign-state helper — Paid/Exempt/remarks vocabulary.
+ *
+ * KC-0112.7 TODO — deferred Cos / achievement builders still call this.
+ * Presentation + Matrix writes use adapters; prefer
+ * getMonthlyBaitulMaalCampaignStateView when rewiring remaining callers.
+ */
 export function getBaitulMaalCampaignState(karkunId: string): BaitulMaalCampaignState {
   const record = getCurrentBaitulMaalStatus(karkunId)
   if (record.status === 'Paid' || record.status === 'Exempt') return 'committed'
@@ -99,10 +110,16 @@ export function buildCampaignMatrixRows(ruknId: string): CampaignMatrixRow[] {
         (progress.hasAnyProgress && progress.submission?.visitConducted === 'yes'),
     )
     const jih = getJihAppMatrixState(karkun.id)
-    const ijtemaRaw = getCurrentIjtemaAttendance(karkun.id)
+    // KC-0110.2:
+    // Reads Weekly Ijtema through the canonical Event/Cycle adapter.
+    // Legacy service retained for compatibility until retirement.
+    const ijtemaRaw = getWeeklyIjtemaCurrentAttendanceView(karkun.id)
     const ijtema: IjtemaAttendanceStatus | 'Pending' =
       ijtemaRaw.status === 'Not recorded' ? 'Pending' : ijtemaRaw.status
-    const baitulMaal = getBaitulMaalCampaignState(karkun.id)
+    // KC-0112.2
+    // Reads Monthly Baitul Maal through the canonical adapter.
+    // Legacy service retained until write migration.
+    const baitulMaal = getMonthlyBaitulMaalCampaignStateView(karkun.id).state
     const completed =
       visitDone && jih === 'registered' && ijtema !== 'Pending' && baitulMaal === 'committed'
 
@@ -219,7 +236,8 @@ export function cycleIjtemaForKarkun(
   ruknId: string,
   actorId?: string,
 ): { success: true; next: IjtemaAttendanceStatus } | { success: false; error: string } {
-  const current = getCurrentIjtemaAttendance(karkunId)
+  // KC-0110.6 — seed from canonical read adapter; write via write adapter.
+  const current = getWeeklyIjtemaCurrentAttendanceView(karkunId)
   const cycle: IjtemaAttendanceStatus[] = ['Present', 'Absent', 'Excused']
   let next: IjtemaAttendanceStatus
   if (current.status === 'Not recorded') {
@@ -228,7 +246,7 @@ export function cycleIjtemaForKarkun(
     const idx = cycle.indexOf(current.status as IjtemaAttendanceStatus)
     next = cycle[(idx + 1) % cycle.length]!
   }
-  const result = updateIjtemaAttendance({
+  const result = markWeeklyIjtemaAttendance({
     karkunId,
     status: next,
     updatedBy: actorId ?? ruknId,
@@ -242,17 +260,21 @@ export function cycleIjtemaForKarkun(
 export function cycleBaitulMaalCampaignForKarkun(
   karkunId: string,
   updatedBy?: string,
+  ruknId?: string,
 ): { success: true; next: BaitulMaalCampaignState } | { success: false; error: string } {
-  const current = getBaitulMaalCampaignState(karkunId)
+  // KC-0112.6 — seed from canonical read adapter; write via write adapter.
+  const current = getMonthlyBaitulMaalCampaignStateView(karkunId).state
   const order: BaitulMaalCampaignState[] = ['not_discussed', 'discussed', 'committed']
   const next = order[(order.indexOf(current) + 1) % order.length]!
+  const actor = updatedBy ?? 'Rukn'
 
   if (next === 'not_discussed') {
-    const result = updateBaitulMaal({
+    const result = updateMonthlyBaitulMaalContribution({
       karkunId,
       status: 'Pending',
       remarks: '',
-      updatedBy: updatedBy ?? 'Rukn',
+      updatedBy: actor,
+      ruknId,
     })
     return result.success
       ? { success: true, next }
@@ -260,23 +282,25 @@ export function cycleBaitulMaalCampaignForKarkun(
   }
 
   if (next === 'discussed') {
-    const result = updateBaitulMaal({
+    const result = updateMonthlyBaitulMaalContribution({
       karkunId,
       status: 'Pending',
       remarks: BAITUL_DISCUSSED,
-      updatedBy: updatedBy ?? 'Rukn',
+      updatedBy: actor,
+      ruknId,
     })
     return result.success
       ? { success: true, next }
       : { success: false, error: result.error }
   }
 
-  // Committed — campaign conversation complete (payment gateway out of scope).
-  const result = updateBaitulMaal({
+  // Committed — campaign conversation complete (also Contributed on open cycle).
+  const result = updateMonthlyBaitulMaalContribution({
     karkunId,
     status: 'Pending',
     remarks: BAITUL_COMMITTED,
-    updatedBy: updatedBy ?? 'Rukn',
+    updatedBy: actor,
+    ruknId,
   })
   return result.success
     ? { success: true, next }
@@ -402,16 +426,19 @@ function setJihAppAbsolute(
 function setBaitulDiscussedAbsolute(
   karkunId: string,
   updatedBy?: string,
+  ruknId?: string,
 ): { success: true } | { success: false; error: string } {
-  const current = getBaitulMaalCampaignState(karkunId)
+  // KC-0112.6 — seed from canonical read adapter; write via write adapter.
+  const current = getMonthlyBaitulMaalCampaignStateView(karkunId).state
   if (current === 'committed' || current === 'discussed') {
     return { success: true }
   }
-  const result = updateBaitulMaal({
+  const result = updateMonthlyBaitulMaalContribution({
     karkunId,
     status: 'Pending',
     remarks: BAITUL_DISCUSSED,
     updatedBy: updatedBy ?? 'Rukn',
+    ruknId,
   })
   return result.success ? { success: true } : { success: false, error: result.error }
 }
@@ -421,11 +448,12 @@ function setIjtemaPresentAbsolute(
   ruknId: string,
   actorId?: string,
 ): { success: true } | { success: false; error: string } {
-  const current = getCurrentIjtemaAttendance(karkunId)
+  // KC-0110.6 — seed from canonical read adapter; write via write adapter.
+  const current = getWeeklyIjtemaCurrentAttendanceView(karkunId)
   if (current.status === 'Present') {
     return { success: true }
   }
-  const result = updateIjtemaAttendance({
+  const result = markWeeklyIjtemaAttendance({
     karkunId,
     status: 'Present',
     updatedBy: actorId ?? ruknId,
@@ -489,7 +517,7 @@ export function applyTodaysCampaignProgress(input: {
   }
 
   if (draft.baitulMaalDiscussed) {
-    const baitul = setBaitulDiscussedAbsolute(karkunId, actorId ?? ruknId)
+    const baitul = setBaitulDiscussedAbsolute(karkunId, actorId ?? ruknId, ruknId)
     if (!baitul.success) return baitul
   }
 

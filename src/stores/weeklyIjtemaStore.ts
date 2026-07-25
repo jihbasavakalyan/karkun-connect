@@ -51,6 +51,20 @@ export function upsertWeeklyIjtemaEvent(event: WeeklyIjtemaEvent): WeeklyIjtemaE
   return event
 }
 
+/** KC-0113.2 — Delete event and cascade attendance submissions (no orphans). */
+export function deleteWeeklyIjtemaEvent(eventId: string): void {
+  events.delete(eventId)
+  for (const [id, submission] of [...submissions.entries()]) {
+    if (submission.eventId === eventId) {
+      submissions.delete(id)
+    }
+  }
+  const repo = getRepositories().compliance
+  repo.deleteWeeklyIjtemaSubmissionsForEvent(eventId)
+  repo.deleteWeeklyIjtemaEvent(eventId)
+  notify()
+}
+
 export function getWeeklyIjtemaSubmission(
   eventId: string,
   ruknId: string,

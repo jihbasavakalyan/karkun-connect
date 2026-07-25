@@ -3,7 +3,7 @@
  * Run: npx vite-node scripts/verify-kc0108-monthly-baitul-maal.ts
  */
 
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { clearWeeklyIjtemaStore } from '../src/stores/weeklyIjtemaStore'
 import { clearMonthlyBaitulMaalStore } from '../src/stores/monthlyBaitulMaalStore'
@@ -122,12 +122,8 @@ assert(
   'incomplete submit message',
 )
 
-const kpiCard = readFileSync(
-  resolve('src/components/mission-control/MonthlyBaitulMaalDashboardKpiCard.tsx'),
-  'utf8',
-)
-assert(kpiCard.includes('Completion'), 'dashboard KPI shows completion')
-assert(kpiCard.includes('Submitted'), 'dashboard KPI shows submitted')
+const kpiCardPath = resolve('src/components/mission-control/MonthlyBaitulMaalDashboardKpiCard.tsx')
+assert(!existsSync(kpiCardPath), 'orphan MonthlyBaitulMaalDashboardKpiCard retired (KC-0112.7)')
 
 const ops = readFileSync(
   resolve('src/lib/missionControl/campaignOperationsCommandCenter.ts'),

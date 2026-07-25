@@ -12,9 +12,7 @@ import {
   adminWeeklyIjtemaPath,
 } from '@/constants/routes'
 import { ruknMaster } from '@/data/ruknMaster'
-import { isJihRegistered } from '@/lib/guidance/journeyEngine'
 import { getAssignedKarkunanForRukn } from '@/lib/assignmentEngine'
-import { isCampaignEligible } from '@/lib/peopleClassification'
 import { getTeamPerformanceRows } from '@/lib/commandCenterPresentation'
 import { leaderboardStatus } from '@/components/mission-control/McProgressRing'
 import {
@@ -32,6 +30,8 @@ import {
 } from '@/lib/missionControl/liveActivityFeedPresentation'
 import {
   getDashboardAppRegistrationMetrics,
+  getDashboardAppRegistrationMetricsForRukn,
+  getDashboardHealthModulePct,
   getDashboardHealthSlices,
   getDashboardVisitMetrics,
   getDashboardVisitMetricsForRukn,
@@ -68,13 +68,8 @@ export type TopPriorityRuknView = AdminRuknGenderPerformanceView & {
   }
 }
 
-function pct(current: number, total: number): number {
-  if (total <= 0) return 0
-  return Math.round((current / total) * 100)
-}
-
 /**
- * Campaign Health metric contract (KC-0109 / KC-0101.B):
+ * Campaign Health metric contract (KC-0109 / KC-0101.B / KC-0111.1):
  * - Visits = Completed ÷ Planned (canonical Connected + annexure)
  * - Weekly Ijtema = Present ÷ Assigned
  * - Monthly Baitul Maal = Contributed ÷ Assigned
@@ -82,6 +77,7 @@ function pct(current: number, total: number): number {
  * All slices come from DashboardMetricsService so Priority / Mission cannot diverge.
  */
 export function buildCampaignOperationsHealthMetrics(): CampaignHealthMetric[] {
+  // KC-0111.1 — presentation adapter only; arithmetic lives in dashboardMetricsService.
   const slices = getDashboardHealthSlices()
   const routes: Record<CampaignHealthMetricId, string> = {
     visits: adminExecutionPath('completed-today'),
@@ -182,12 +178,6 @@ export function buildTodaysMissionOperationalItems(): AdminActionCenterItem[] {
   return items.sort((a, b) => rank[a.severity] - rank[b.severity])
 }
 
-/** Inactive modules contribute 0% (matches Campaign Health — never synthetic 100%). */
-function modulePctOrZero(current: number, total: number, moduleActive: boolean): number {
-  if (!moduleActive) return 0
-  return pct(current, total)
-}
-
 /**
  * Top Priority Rukns — equal weight across Visits / Weekly Ijtema / Monthly Baitul Maal / App Registration.
  * Lower score = higher operational priority.
@@ -215,25 +205,24 @@ export function buildTopPriorityRukns(limit = 12): TopPriorityRuknView[] {
     if (assigned.length === 0) continue
 
     const perf = perfById.get(rukn.id)
+    // KC-0111.1 — module % from dashboardMetricsService Health engines.
     const visitsPct = getDashboardVisitMetricsForRukn(rukn.id).pct
 
     const ijtemaRow = ijtemaById.get(rukn.id)
-    const weeklyIjtemaPct = modulePctOrZero(
+    const weeklyIjtemaPct = getDashboardHealthModulePct(
       ijtemaRow?.present ?? 0,
       ijtemaRow?.assigned ?? assigned.length,
       Boolean(ijtemaKpi.eventId),
     )
 
     const baitulRow = baitulById.get(rukn.id)
-    const monthlyBaitulMaalPct = modulePctOrZero(
+    const monthlyBaitulMaalPct = getDashboardHealthModulePct(
       baitulRow?.contributed ?? 0,
       baitulRow?.assigned ?? assigned.length,
       Boolean(baitulKpi.cycleId),
     )
 
-    const eligibleAssigned = assigned.filter(isCampaignEligible)
-    const registered = eligibleAssigned.filter(isJihRegistered).length
-    const appRegistrationPct = pct(registered, eligibleAssigned.length || assigned.length)
+    const appRegistrationPct = getDashboardAppRegistrationMetricsForRukn(rukn.id).pct
 
     const priorityScore = Math.round(
       (visitsPct + weeklyIjtemaPct + monthlyBaitulMaalPct + appRegistrationPct) / 4,
