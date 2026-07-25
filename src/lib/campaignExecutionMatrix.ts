@@ -10,6 +10,7 @@ import {
   buildFormFromDailyProgressOutcome,
   getDailyProgressView,
 } from '@/lib/dailyProgressPresentation'
+import { getWeeklyIjtemaCurrentAttendanceView } from '@/lib/operations/weeklyIjtemaReadAdapter'
 import { saveDailyProgress } from '@/services/annexure1Service'
 import {
   getCurrentBaitulMaalStatus,
@@ -99,7 +100,10 @@ export function buildCampaignMatrixRows(ruknId: string): CampaignMatrixRow[] {
         (progress.hasAnyProgress && progress.submission?.visitConducted === 'yes'),
     )
     const jih = getJihAppMatrixState(karkun.id)
-    const ijtemaRaw = getCurrentIjtemaAttendance(karkun.id)
+    // KC-0110.2:
+    // Reads Weekly Ijtema through the canonical Event/Cycle adapter.
+    // Legacy service retained for compatibility until retirement.
+    const ijtemaRaw = getWeeklyIjtemaCurrentAttendanceView(karkun.id)
     const ijtema: IjtemaAttendanceStatus | 'Pending' =
       ijtemaRaw.status === 'Not recorded' ? 'Pending' : ijtemaRaw.status
     const baitulMaal = getBaitulMaalCampaignState(karkun.id)

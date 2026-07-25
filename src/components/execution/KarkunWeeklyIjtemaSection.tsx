@@ -11,10 +11,11 @@ import {
   type IjtemaAttendanceStatus,
 } from '@/types/ijtemaAttendance'
 import {
-  getCurrentIjtemaAttendance,
-  getIjtemaAttendanceHistory,
-} from '@/services/ijtemaAttendanceService'
+  getWeeklyIjtemaAttendanceHistoryView,
+  getWeeklyIjtemaCurrentAttendanceView,
+} from '@/lib/operations/weeklyIjtemaReadAdapter'
 import { subscribeToIjtemaAttendanceStore } from '@/stores/ijtemaAttendanceStore'
+import { subscribeToWeeklyIjtemaStore } from '@/stores/weeklyIjtemaStore'
 
 type KarkunWeeklyIjtemaSectionProps = {
   karkunId: string
@@ -31,12 +32,20 @@ export function KarkunWeeklyIjtemaSection({
   const [modalOpen, setModalOpen] = useState(false)
 
   useEffect(() => {
-    return subscribeToIjtemaAttendanceStore(() => setTick((v) => v + 1))
+    // KC-0110.2:
+    // Reads Weekly Ijtema through the canonical Event/Cycle adapter.
+    // Legacy service retained for compatibility until retirement.
+    const legacyUnsub = subscribeToIjtemaAttendanceStore(() => setTick((v) => v + 1))
+    const canonicalUnsub = subscribeToWeeklyIjtemaStore(() => setTick((v) => v + 1))
+    return () => {
+      legacyUnsub()
+      canonicalUnsub()
+    }
   }, [])
 
   void tick
-  const current = getCurrentIjtemaAttendance(karkunId)
-  const history = getIjtemaAttendanceHistory(karkunId, 5)
+  const current = getWeeklyIjtemaCurrentAttendanceView(karkunId)
+  const history = getWeeklyIjtemaAttendanceHistoryView(karkunId, 5)
   const hasRecord = current.status !== 'Not recorded'
 
   return (
@@ -44,7 +53,10 @@ export function KarkunWeeklyIjtemaSection({
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <h2 className="text-base font-semibold text-text-heading">Weekly Ijtema</h2>
-          <p className="mt-0.5 text-xs text-secondary">Week ending {current.weekLabel}</p>
+          <p className="mt-0.5 text-xs text-secondary">
+            {current.source === 'canonical' ? 'Meeting ' : 'Week ending '}
+            {current.weekLabel}
+          </p>
         </div>
         {hasRecord ? (
           <SecondaryButton type="button" className="px-3 py-1.5 text-sm" onClick={() => setModalOpen(true)}>
@@ -78,13 +90,13 @@ export function KarkunWeeklyIjtemaSection({
           <p className="mt-2 text-sm text-secondary">No attendance recorded yet.</p>
         ) : (
           <ul className="mt-2 divide-y divide-border">
-            {history.map((record) => (
+            {history.map((row) => (
               <li
-                key={`${record.karkunId}-${record.weekEndingDate}`}
+                key={`${row.karkunId}-${row.weekEndingDate}-${row.status}`}
                 className="flex items-center justify-between gap-2 py-2 text-sm"
               >
-                <span className="text-secondary">{formatWeekLabel(record.weekEndingDate)}</span>
-                <span className="font-medium text-text-heading">{record.status}</span>
+                <span className="text-secondary">{formatWeekLabel(row.weekEndingDate)}</span>
+                <span className="font-medium text-text-heading">{row.status}</span>
               </li>
             ))}
           </ul>

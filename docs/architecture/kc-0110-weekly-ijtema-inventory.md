@@ -295,6 +295,25 @@ Each step must preserve current behaviour until its cutover flag/adapter is read
 
 ---
 
+## 5.1 Migration tracker (KC-0110.2+)
+
+| Consumer | Previous Source | Current Source | Status |
+|----------|-----------------|----------------|--------|
+| Dashboard / Campaign Health | Event/Cycle | Event/Cycle | ✅ Canonical |
+| Mission / Top Priority | Event/Cycle | Event/Cycle | ✅ Canonical |
+| Matrix (`buildCampaignMatrixRows`) | Legacy `getCurrentIjtemaAttendance` | Canonical read adapter | ✅ KC-0110.2 |
+| Journey (`KarkunWeeklyIjtemaSection`) | Legacy | Canonical read adapter (+ legacy fallback) | ✅ KC-0110.2 |
+| Journey modal / Matrix cell **writes** | Legacy `updateIjtemaAttendance` / `cycleIjtemaForKarkun` | Legacy (unchanged) | Pending write cutover (0110.4) |
+| Compliance | Legacy | Legacy | Pending |
+| People (profile / bulk / filters) | Legacy | Legacy | Pending |
+| Cos / automation / Rafeeq ops | Legacy | Legacy | Pending |
+
+**Adapter:** `src/lib/operations/weeklyIjtemaReadAdapter.ts`  
+- `getWeeklyIjtemaCurrentAttendanceView` — prefers open/current event mark; else legacy  
+- `getWeeklyIjtemaAttendanceHistoryView` — merges event marks + legacy history  
+
+---
+
 ## 6. Verification (this ticket)
 
 | Check | Result |
@@ -318,3 +337,9 @@ Each step must preserve current behaviour until its cutover flag/adapter is read
 - No Monthly Baitul Maal work (KC-0111)  
 
 **Stop after KC-0110 Phase 1 inventory.**
+
+---
+
+## 8. KC-0110.2 notes
+
+Read-only adapter alignment shipped for Matrix + Journey presentation. Write paths remain on legacy until KC-0110.4.
