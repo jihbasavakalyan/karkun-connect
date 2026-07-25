@@ -28,6 +28,8 @@ import {
   ROUTES,
   adminAssignmentsPath,
   adminExecutionPath,
+  adminCompliancePath,
+  adminFollowUpPath,
 } from '@/constants/routes'
 
 export type MissionControlKpi = {
@@ -202,9 +204,9 @@ export function buildAdminMissionControl(
     ],
     quickActions: [
       { id: 'connect', label: 'Connections', route: ROUTES.ADMIN_ASSIGNMENTS },
-      { id: 'execution', label: 'Execution', route: ROUTES.ADMIN_EXECUTION },
-      { id: 'compliance', label: 'Compliance', route: ROUTES.ADMIN_COMPLIANCE },
-      { id: 'follow-up', label: 'Follow-up', route: ROUTES.ADMIN_FOLLOW_UP },
+      { id: 'execution', label: 'Execute', route: adminExecutionPath() },
+      { id: 'compliance', label: 'Review', route: adminCompliancePath() },
+      { id: 'follow-up', label: 'Work Queue', route: adminFollowUpPath() },
       { id: 'communication', label: 'Communication', route: ROUTES.ADMIN_COMMUNICATION },
     ],
     connectionProgress: {

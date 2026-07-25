@@ -30,7 +30,7 @@ import { getCurrentIjtemaAttendance } from '@/services/ijtemaAttendanceService'
 import { getCampaignConnectionMetrics } from '@/services/metricsService'
 import { getRecentActivity } from '@/stores/activityLogStore'
 import { ruknMaster } from '@/data/ruknMaster'
-import { adminRuknDetailPath, adminExecutionPath, adminCompliancePath, ROUTES } from '@/constants/routes'
+import { adminRuknDetailPath, adminExecutionPath, adminCompliancePath, adminFollowUpPath } from '@/constants/routes'
 import { leaderboardStatus } from '@/components/mission-control/McProgressRing'
 import type { AdminMissionControlModel } from './buildAdminMissionControl'
 import type { AdminCommandCenterSnapshot } from '@/types/campaignAutomation.types'
@@ -241,7 +241,7 @@ export function buildAdminCampaignHealthKpis(
           : followUpsDue > 0
             ? 'amber'
             : 'green',
-      route: ROUTES.ADMIN_FOLLOW_UP,
+      route: adminFollowUpPath(),
     },
     {
       id: 'development',
@@ -249,7 +249,7 @@ export function buildAdminCampaignHealthKpis(
       value: `${execution}%`,
       hint: 'Execution progress',
       tone: healthTone(execution),
-      route: ROUTES.ADMIN_FOLLOW_UP,
+      route: adminFollowUpPath(),
     },
   ]
 }
@@ -286,7 +286,7 @@ export function buildAdminInterventionQueue(
       severity: 'critical',
       title: 'Overdue follow-ups',
       detail: `${overdue.items.length} follow-up${overdue.items.length === 1 ? '' : 's'} past due`,
-      route: overdue.items[0]?.route || ROUTES.ADMIN_FOLLOW_UP,
+      route: overdue.items[0]?.route || adminFollowUpPath(),
     })
   }
 

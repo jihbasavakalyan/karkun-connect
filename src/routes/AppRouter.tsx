@@ -1,6 +1,6 @@
 import { Suspense } from 'react'
-import { BrowserRouter, Navigate, Route, Routes, useParams } from 'react-router-dom'
-import { ROUTES } from '@/constants/routes'
+import { BrowserRouter, Navigate, Route, Routes, useParams, useSearchParams } from 'react-router-dom'
+import { ROUTES, adminOperationsPath } from '@/constants/routes'
 import { ScrollToTop } from '@/components/ux/ScrollToTop'
 import { RoutePageFallback } from '@/components/ux/RoutePageFallback'
 import { AdminLayout } from '@/layouts/AdminLayout'
@@ -20,8 +20,8 @@ const CampaignSetupPage = lazyWithChunkReload(() =>
 const CampaignsPage = lazyWithChunkReload(() =>
   import('@/pages/admin/CampaignsPage').then((m) => ({ default: m.CampaignsPage })),
 )
-const ComplianceModulePage = lazyWithChunkReload(() =>
-  import('@/pages/admin/ComplianceModulePage').then((m) => ({ default: m.ComplianceModulePage })),
+const OperationsPage = lazyWithChunkReload(() =>
+  import('@/pages/admin/OperationsPage').then((m) => ({ default: m.OperationsPage })),
 )
 const AdminWeeklyIjtemaPage = lazyWithChunkReload(() =>
   import('@/pages/admin/AdminWeeklyIjtemaPage').then((m) => ({ default: m.AdminWeeklyIjtemaPage })),
@@ -39,14 +39,6 @@ const AdminMonthlyBaitulMaalPage = lazyWithChunkReload(() =>
 const AdminMonthlyBaitulMaalReportPage = lazyWithChunkReload(() =>
   import('@/pages/admin/AdminMonthlyBaitulMaalReportPage').then((m) => ({
     default: m.AdminMonthlyBaitulMaalReportPage,
-  })),
-)
-const ExecutionModulePage = lazyWithChunkReload(() =>
-  import('@/pages/admin/ExecutionModulePage').then((m) => ({ default: m.ExecutionModulePage })),
-)
-const FollowUpDevelopmentModulePage = lazyWithChunkReload(() =>
-  import('@/pages/admin/FollowUpDevelopmentModulePage').then((m) => ({
-    default: m.FollowUpDevelopmentModulePage,
   })),
 )
 const CommunicationModulePage = lazyWithChunkReload(() =>
@@ -130,6 +122,14 @@ function LegacyKarkunProfileRedirect() {
   return <Navigate to={`${ROUTES.ADMIN_KARKUN}/${karkunId ?? ''}`} replace />
 }
 
+/** KC-0113.1 — Preserve query params when redirecting legacy module URLs into Operations tabs. */
+function LegacyOperationsTabRedirect({ tab }: { tab: 'queue' | 'execute' | 'review' }) {
+  const [searchParams] = useSearchParams()
+  const next = new URLSearchParams(searchParams)
+  next.set('tab', tab)
+  return <Navigate to={`${ROUTES.ADMIN_OPERATIONS}?${next.toString()}`} replace />
+}
+
 export function AppRouter() {
   return (
     <BrowserRouter>
@@ -164,8 +164,11 @@ export function AppRouter() {
             <Route path="muttafiqeen" element={<MuttafiqeenPage />} />
             <Route path="assignments" element={<AssignmentManagementPage />} />
             <Route path="annexure-1/:karkunId" element={<ConnectionJourneyPage />} />
-            <Route path="execution" element={<ExecutionModulePage />} />
-            <Route path="compliance" element={<ComplianceModulePage />} />
+            <Route path="operations" element={<OperationsPage />} />
+            {/* KC-0113.1 — Legacy module routes redirect into Operations tabs */}
+            <Route path="execution" element={<LegacyOperationsTabRedirect tab="execute" />} />
+            <Route path="compliance" element={<LegacyOperationsTabRedirect tab="review" />} />
+            <Route path="follow-up" element={<LegacyOperationsTabRedirect tab="queue" />} />
             <Route path="weekly-ijtema" element={<AdminWeeklyIjtemaPage />} />
             <Route path="weekly-ijtema/:eventId/report" element={<AdminWeeklyIjtemaReportPage />} />
             <Route path="baitul-maal" element={<AdminMonthlyBaitulMaalPage />} />
@@ -175,9 +178,13 @@ export function AppRouter() {
             />
             <Route
               path="review"
-              element={<Navigate to={`${ROUTES.ADMIN_EXECUTION}?section=reports`} replace />}
+              element={
+                <Navigate
+                  to={adminOperationsPath('execute', { section: 'reports' })}
+                  replace
+                />
+              }
             />
-            <Route path="follow-up" element={<FollowUpDevelopmentModulePage />} />
             <Route path="communication" element={<CommunicationModulePage />} />
             <Route path="lists" element={<CampaignListsPage />} />
             <Route path="settings" element={<SettingsPage />} />
@@ -188,7 +195,12 @@ export function AppRouter() {
             <Route path="campaigns" element={<Navigate to={ROUTES.ADMIN_CAMPAIGN} replace />} />
             <Route
               path="reviews"
-              element={<Navigate to={`${ROUTES.ADMIN_EXECUTION}?section=reports`} replace />}
+              element={
+                <Navigate
+                  to={adminOperationsPath('execute', { section: 'reports' })}
+                  replace
+                />
+              }
             />
             <Route path="karkunan" element={<Navigate to={ROUTES.ADMIN_KARKUN} replace />} />
             <Route path="karkunan/:karkunId" element={<LegacyKarkunProfileRedirect />} />

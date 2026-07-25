@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ROUTES, adminCompliancePath } from '@/constants/routes'
+import { adminCompliancePath } from '@/constants/routes'
 import { getComplianceStatusStyle } from '@/lib/complianceStatusStyles'
 import { getJihWebPortalDashboardMetrics } from '@/services/jihWebPortalService'
 import { subscribeToJihWebPortalStore } from '@/stores/jihWebPortalStore'
@@ -80,7 +80,7 @@ export function CommandCenterJihWebPortalMetrics() {
     <section className="rounded-(--radius-card) border border-border bg-surface p-4 shadow-card sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-lg font-semibold text-text-heading">JIH Web Portal</h2>
-        <Link to={ROUTES.ADMIN_COMPLIANCE} className="text-sm font-medium text-primary hover:underline">
+        <Link to={adminCompliancePath()} className="text-sm font-medium text-primary hover:underline">
           Open Compliance
         </Link>
       </div>

@@ -1,4 +1,4 @@
-import { adminAssignmentsPath, adminKarkunProfilePath, ROUTES } from '@/constants/routes'
+import { adminAssignmentsPath, adminKarkunProfilePath, adminExecutionPath, adminCompliancePath, adminFollowUpPath, ROUTES } from '@/constants/routes'
 import { getAllRukns } from '@/lib/peopleStore'
 import { getGuidanceForRuknKarkuns } from '@/lib/guidance/guidanceEngine'
 import { JOURNEY_STAGE_LABELS } from '@/types/guidance'
@@ -56,7 +56,7 @@ export function buildAdminCoachingSnapshot(): AdminCoachingSnapshot {
       title: 'First visits needed',
       description: `${visitBottleneck} connected Karkun${visitBottleneck === 1 ? '' : 's'} are waiting for a first meeting.`,
       count: visitBottleneck,
-      route: ROUTES.ADMIN_EXECUTION,
+      route: adminExecutionPath(),
       tone: 'support',
     })
   }
@@ -67,7 +67,7 @@ export function buildAdminCoachingSnapshot(): AdminCoachingSnapshot {
       title: 'JIH registration support',
       description: `${jihBottleneck} Karkun${jihBottleneck === 1 ? '' : 's'} at ${JOURNEY_STAGE_LABELS['jih-registration']} — coaching can help.`,
       count: jihBottleneck,
-      route: `${ROUTES.ADMIN_COMPLIANCE}?section=jih-portal`,
+      route: adminCompliancePath('jih-portal'),
       tone: 'support',
     })
   }
@@ -78,7 +78,7 @@ export function buildAdminCoachingSnapshot(): AdminCoachingSnapshot {
       title: 'Overdue commitments',
       description: `${overdueCommitments} agreed next step${overdueCommitments === 1 ? '' : 's'} need follow-through.`,
       count: overdueCommitments,
-      route: ROUTES.ADMIN_FOLLOW_UP,
+      route: adminFollowUpPath(),
       tone: 'opportunity',
     })
   }

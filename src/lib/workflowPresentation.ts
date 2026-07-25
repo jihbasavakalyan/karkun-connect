@@ -3,7 +3,7 @@
  * Uses existing guidance urgency ordering only — no engine changes.
  */
 
-import { ROUTES, ruknVisitPath } from '@/constants/routes'
+import { ROUTES, adminExecutionPath, adminFollowUpPath, ruknVisitPath } from '@/constants/routes'
 import { sortGuidanceByUrgency } from '@/lib/homePresentation'
 import { getGuidanceForRuknKarkuns } from '@/lib/guidance/guidanceEngine'
 
@@ -64,8 +64,8 @@ export function resolvePostVisitWorkflowDestination(options: {
   if (isAdminContext) {
     return {
       route: followUpRequired
-        ? `${ROUTES.ADMIN_FOLLOW_UP}?section=follow-ups`
-        : `${ROUTES.ADMIN_EXECUTION}?section=pending`,
+        ? adminFollowUpPath('follow-ups')
+        : adminExecutionPath('pending'),
       state: { successMessage: baseMessage },
     }
   }

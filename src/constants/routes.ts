@@ -11,14 +11,19 @@ export const ROUTES = {
   ADMIN_ASSIGNMENTS: '/admin/assignments',
   ADMIN_KARKUNAN: '/admin/karkun',
   ADMIN_RUKN_MASTER: '/admin/rukn',
+  /** KC-0113.1 — Operations workspace (Work Queue / Execute / Review) */
+  ADMIN_OPERATIONS: '/admin/operations',
+  /** Legacy — redirects to Operations Execute tab */
   ADMIN_EXECUTION: '/admin/execution',
+  /** Legacy — redirects to Operations Review tab */
   ADMIN_COMPLIANCE: '/admin/compliance',
   /** KC-0107 — Weekly Ijtema Attendance Management */
   ADMIN_WEEKLY_IJTEMA: '/admin/weekly-ijtema',
   /** KC-0108 — Monthly Baitul Maal Completion Management */
   ADMIN_MONTHLY_BAITUL_MAAL: '/admin/baitul-maal',
-  /** Legacy path — redirects to Execution Reports tab */
+  /** Legacy path — redirects to Operations Execute → Reports */
   ADMIN_REVIEW: '/admin/review',
+  /** Legacy — redirects to Operations Work Queue tab */
   ADMIN_FOLLOW_UP: '/admin/follow-up',
   ADMIN_COMMUNICATION: '/admin/communication',
   ADMIN_LISTS: '/admin/lists',
@@ -75,20 +80,37 @@ export function adminAssignmentsPath(options?: {
   return query ? `${ROUTES.ADMIN_ASSIGNMENTS}?${query}` : ROUTES.ADMIN_ASSIGNMENTS
 }
 
-export function adminExecutionPath(section?: string): string {
-  return section ? `${ROUTES.ADMIN_EXECUTION}?section=${section}` : ROUTES.ADMIN_EXECUTION
+export function adminOperationsPath(
+  tab: 'queue' | 'execute' | 'review' = 'queue',
+  options?: { section?: string; status?: string },
+): string {
+  const params = new URLSearchParams()
+  params.set('tab', tab)
+  if (options?.section) {
+    params.set('section', options.section)
+  }
+  if (options?.status) {
+    params.set('status', options.status)
+  }
+  return `${ROUTES.ADMIN_OPERATIONS}?${params.toString()}`
 }
 
+/** Canonical deep link into Operations → Execute (legacy `/admin/execution` still redirects). */
+export function adminExecutionPath(section?: string): string {
+  return adminOperationsPath('execute', section ? { section } : undefined)
+}
+
+/** Canonical deep link into Operations → Review (legacy `/admin/compliance` still redirects). */
 export function adminCompliancePath(section?: string, status?: string): string {
-  const params = new URLSearchParams()
-  if (section) {
-    params.set('section', section)
-  }
-  if (status) {
-    params.set('status', status)
-  }
-  const query = params.toString()
-  return query ? `${ROUTES.ADMIN_COMPLIANCE}?${query}` : ROUTES.ADMIN_COMPLIANCE
+  return adminOperationsPath('review', {
+    section,
+    status,
+  })
+}
+
+/** Canonical deep link into Operations → Work Queue (legacy `/admin/follow-up` still redirects). */
+export function adminFollowUpPath(section?: string): string {
+  return adminOperationsPath('queue', section ? { section } : undefined)
 }
 
 export function adminCommunicationPath(section?: string): string {

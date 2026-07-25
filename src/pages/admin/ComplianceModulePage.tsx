@@ -459,7 +459,7 @@ function BaitulMaalRow({
   )
 }
 
-export function ComplianceModulePage() {
+export function ComplianceModulePage({ embedded = false }: { embedded?: boolean } = {}) {
   const [dataVersion, setDataVersion] = useState(0)
   const [searchParams, setSearchParams] = useSearchParams()
   const activeSection = resolveComplianceSection(searchParams.get('section'))
@@ -497,19 +497,31 @@ export function ComplianceModulePage() {
     COMPLIANCE_SECTIONS.find((section) => section.id === activeSection)?.label ?? 'Compliance'
 
   const setSection = (section: ComplianceSection) => {
-    if (statusFilter) {
-      setSearchParams({ section, status: statusFilter })
-      return
-    }
-    if (viewAll) {
-      setSearchParams({ section, view: 'all' })
-      return
-    }
-    setSearchParams({ section })
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev)
+      next.set('section', section)
+      if (statusFilter) {
+        next.set('status', statusFilter)
+      } else {
+        next.delete('status')
+      }
+      if (viewAll) {
+        next.set('view', 'all')
+      } else {
+        next.delete('view')
+      }
+      return next
+    })
   }
 
   const clearStatusFilter = () => {
-    setSearchParams({ section: activeSection, view: 'all' })
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev)
+      next.set('section', activeSection)
+      next.delete('status')
+      next.set('view', 'all')
+      return next
+    })
   }
 
   void dataVersion
@@ -590,10 +602,17 @@ export function ComplianceModulePage() {
 
   const filterLabel = statusFilter || (isPendingView ? getPendingStatusLabel(activeSection) : '')
 
-  return (
-    <PageShell>
-      <PageHeader title="Compliance" description="What compliance work needs my attention today." />
-      <ActiveCampaignSubtitle />
+  const body = (
+    <>
+      {!embedded ? (
+        <>
+          <PageHeader
+            title="Compliance"
+            description="What compliance work needs my attention today."
+          />
+          <ActiveCampaignSubtitle />
+        </>
+      ) : null}
 
       <section className="ds-section">
         <h2 className="ds-section-title">Compliance Summary</h2>
@@ -602,7 +621,7 @@ export function ComplianceModulePage() {
         </div>
       </section>
 
-      <ComplianceGuidanceCard route="/admin/compliance" />
+      <ComplianceGuidanceCard route="/admin/operations?tab=review" />
 
       <ComplianceSectionNav
         active={activeSection}
@@ -632,6 +651,9 @@ export function ComplianceModulePage() {
         </div>
         <div className="mt-4">{listContent}</div>
       </section>
-    </PageShell>
+    </>
   )
+
+  if (embedded) return body
+  return <PageShell>{body}</PageShell>
 }
