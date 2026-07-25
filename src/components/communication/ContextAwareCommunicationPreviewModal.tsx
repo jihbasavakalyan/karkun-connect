@@ -1,6 +1,7 @@
 /**
- * KC-0118 — Communication Preview modal (Phase 1).
- * Review → optional edit → choose channel → Send / Cancel.
+ * KC-0118 / KC-0119 — Communication Preview modal.
+ * Editorial Validator → Review / Edit / Revalidate → Channel → Send / Cancel.
+ * Logic lives in CommunicationEngine services — not hardcoded here.
  */
 
 import { useState } from 'react'
@@ -8,9 +9,11 @@ import { Modal } from '@/components/common/Modal'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import { FORM_LABEL_CLASS } from '@/components/ui/formStyles'
+import { useAuth } from '@/hooks/useAuth'
 import {
-  getDeliveryPort,
   recipientTypeLabel,
+  revalidateContextAwareMessage,
+  sendContextAwareCommunication,
   type ContextAwareDeliveryChannel,
   type GeneratedCommunication,
 } from '@/lib/communication/contextAware'
@@ -19,20 +22,24 @@ type ContextAwareCommunicationPreviewModalProps = {
   isOpen: boolean
   draft: GeneratedCommunication | null
   onClose: () => void
+  onDraftChange?: (draft: GeneratedCommunication) => void
 }
 
 export function ContextAwareCommunicationPreviewModal({
   isOpen,
   draft,
   onClose,
+  onDraftChange,
 }: ContextAwareCommunicationPreviewModalProps) {
+  const { user } = useAuth()
   const draftKey = draft
-    ? `${draft.context}|${draft.audienceLabel}|${draft.message.length}|${draft.recipients.map((r) => r.personId).join(',')}`
+    ? `${draft.context}|${draft.audienceLabel}|${draft.generatedMessage.length}|${draft.recipients.map((r) => r.personId).join(',')}`
     : ''
   const [message, setMessage] = useState(draft?.message ?? '')
   const [channel, setChannel] = useState<ContextAwareDeliveryChannel>(
     draft?.defaultChannel ?? 'whatsapp',
   )
+  const [editorial, setEditorial] = useState(draft?.editorial ?? null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
@@ -42,11 +49,13 @@ export function ContextAwareCommunicationPreviewModal({
     setSyncedKey(draftKey)
     setMessage(draft.message)
     setChannel(draft.defaultChannel)
+    setEditorial(draft.editorial)
     setError('')
     setNotice('')
   }
 
-  if (!draft) return null
+  if (!draft || !editorial) return null
+
   const recipientSummary =
     draft.recipients.length === 0
       ? draft.audienceLabel
@@ -54,27 +63,43 @@ export function ContextAwareCommunicationPreviewModal({
         ? `${draft.recipients[0].name} (${draft.recipients[0].mobile || 'no mobile'})`
         : `${draft.audienceLabel} — ${draft.recipients.length} recipients`
 
+  const handleRevalidate = () => {
+    const next = revalidateContextAwareMessage(draft, message)
+    setEditorial(next.editorial)
+    onDraftChange?.(next)
+    setError('')
+    setNotice(
+      next.editorial.ok
+        ? 'Editorial Approved — message is ready to send.'
+        : 'Editorial Review Required — see failed rules below.',
+    )
+  }
+
   const handleSend = () => {
     setError('')
     setNotice('')
+    const validated = revalidateContextAwareMessage(draft, message)
+    setEditorial(validated.editorial)
+    onDraftChange?.(validated)
+    if (!validated.editorial.ok) {
+      setError('Editorial Review Required — fix the listed rules, then Revalidate before Send.')
+      return
+    }
+
     setBusy(true)
-    const port = getDeliveryPort(channel)
-    void port
-      .deliver({
-        channel,
-        recipients: draft.recipients,
-        message,
-        context: draft.context,
-      })
-      .then((result) => {
-        if (!result.ok && result.status !== 'prepared') {
-          setError(result.detail)
+    void sendContextAwareCommunication({
+      draft: validated,
+      message,
+      channel,
+      sentBy: user?.displayName?.trim() || user?.email || user?.phone || 'Administrator',
+    })
+      .then(({ delivery }) => {
+        if (!delivery.ok && delivery.status !== 'prepared') {
+          setError(delivery.detail)
           return
         }
-        setNotice(result.detail)
-        if (result.status === 'launched' || result.status === 'prepared') {
-          window.setTimeout(() => onClose(), 700)
-        }
+        setNotice(`${delivery.detail} History recorded.`)
+        window.setTimeout(() => onClose(), 800)
       })
       .catch((err: unknown) => {
         setError(err instanceof Error ? err.message : 'Send failed.')
@@ -93,11 +118,14 @@ export function ContextAwareCommunicationPreviewModal({
           <SecondaryButton type="button" onClick={onClose} disabled={busy}>
             Cancel
           </SecondaryButton>
+          <SecondaryButton type="button" onClick={handleRevalidate} disabled={busy}>
+            Revalidate
+          </SecondaryButton>
           <PrimaryButton
             type="button"
             onClick={handleSend}
             loading={busy}
-            disabled={busy || !message.trim()}
+            disabled={busy || !message.trim() || !editorial.ok}
           >
             Send
           </PrimaryButton>
@@ -105,6 +133,29 @@ export function ContextAwareCommunicationPreviewModal({
       }
     >
       <div className="space-y-4 text-sm" dir="auto">
+        <div
+          className={[
+            'rounded-lg border px-3 py-2',
+            editorial.ok
+              ? 'border-primary/30 bg-primary-muted/40 text-primary'
+              : 'border-error-border bg-error-bg text-error',
+          ].join(' ')}
+          role="status"
+        >
+          <p className="font-semibold">{editorial.status}</p>
+          {!editorial.ok ? (
+            <ul className="mt-2 list-disc space-y-1 ps-5">
+              {editorial.failedRules.map((rule) => (
+                <li key={rule.id}>
+                  <span className="font-medium">{rule.label}:</span> {rule.detail}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-1 text-xs opacity-90">Editorial Validator passed all rules.</p>
+          )}
+        </div>
+
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
             <p className={FORM_LABEL_CLASS}>Recipient</p>
@@ -140,11 +191,11 @@ export function ContextAwareCommunicationPreviewModal({
           </div>
           {channel === 'sms' ? (
             <p className="mt-1 text-xs text-secondary">
-              SMS gateway is prepared for a later phase — Send will mark the message as prepared.
+              SMS gateway is prepared for a later phase — Send will mark the message as Prepared.
             </p>
           ) : (
             <p className="mt-1 text-xs text-secondary">
-              Phase 1 opens WhatsApp Web / wa.me with this message (not WhatsApp Business API).
+              Opens WhatsApp Web / wa.me with this message (not WhatsApp Business API).
             </p>
           )}
         </div>
@@ -161,14 +212,17 @@ export function ContextAwareCommunicationPreviewModal({
         ) : null}
 
         <div>
-          <label htmlFor="kc0118-generated-message" className={FORM_LABEL_CLASS}>
+          <label htmlFor="kc0119-generated-message" className={FORM_LABEL_CLASS}>
             Generated Message
           </label>
-          <p className="mt-0.5 text-xs text-secondary">Edit Message (optional)</p>
+          <p className="mt-0.5 text-xs text-secondary">Edit Message (optional), then Revalidate</p>
           <textarea
-            id="kc0118-generated-message"
+            id="kc0119-generated-message"
             value={message}
-            onChange={(event) => setMessage(event.target.value)}
+            onChange={(event) => {
+              setMessage(event.target.value)
+              setNotice('')
+            }}
             rows={14}
             className="mt-2 w-full rounded-lg border border-border bg-surface px-3 py-2 font-[inherit] text-base leading-relaxed text-text-heading focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
             dir="rtl"

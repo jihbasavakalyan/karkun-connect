@@ -43,6 +43,7 @@ export function useContextAwareCommunication() {
       isOpen={open}
       draft={draft}
       onClose={closeCommunication}
+      onDraftChange={setDraft}
     />
   )
 

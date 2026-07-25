@@ -49,6 +49,11 @@ const CommunicationModulePage = lazyWithChunkReload(() =>
     default: m.CommunicationModulePage,
   })),
 )
+const ContextAwareCommunicationHistoryPage = lazyWithChunkReload(() =>
+  import('@/pages/admin/ContextAwareCommunicationHistoryPage').then((m) => ({
+    default: m.ContextAwareCommunicationHistoryPage,
+  })),
+)
 const CampaignListsPage = lazyWithChunkReload(() =>
   import('@/pages/admin/CampaignListsPage').then((m) => ({ default: m.CampaignListsPage })),
 )
@@ -190,6 +195,10 @@ export function AppRouter() {
               }
             />
             <Route path="communication" element={<CommunicationModulePage />} />
+            <Route
+              path="communication-history"
+              element={<ContextAwareCommunicationHistoryPage />}
+            />
             <Route path="lists" element={<CampaignListsPage />} />
             <Route path="settings" element={<SettingsPage />} />
             <Route path="help" element={<HelpPage />} />

@@ -1,19 +1,21 @@
 /**
- * KC-0118 — Context-Aware Communication Engine (Phase 1).
- * Determines why / who / what from operational context — no template browsing.
+ * KC-0118 / KC-0119 — MessageComposer step of the Communication Engine.
+ * Builds Urdu body from context + pending matters, then runs EditorialValidator.
  */
 
 import type { MessageRecipient } from '@/types/communication'
+import { resolveCommunicationContextFromMissionItemId } from './contextResolver'
+import { validateEditorialMessage } from './editorialValidator'
 import {
   buildContextAwareUrduMessage,
   CONTEXT_TYPE_LABELS,
   recipientTypeLabel,
 } from './messageBuilder'
+import { aggregatePendingMatters, pendingMatter } from './pendingMatterAggregator'
 import type {
   CommunicationContextId,
   ContextAwareCommunicationInput,
   ContextAwareDeliveryChannel,
-  ContextAwarePendingMatter,
   GeneratedCommunication,
 } from './types'
 
@@ -23,7 +25,7 @@ export function composeContextAwareCommunication(
   input: ContextAwareCommunicationInput,
 ): GeneratedCommunication {
   const recipients = dedupeRecipients(input.recipients)
-  const pendingMatters = input.pendingMatters.filter((matter) => matter.label.trim())
+  const pendingMatters = aggregatePendingMatters(input.pendingMatters)
   const audienceLabel =
     input.audienceLabel?.trim() ||
     (recipients.length === 1
@@ -38,6 +40,10 @@ export function composeContextAwareCommunication(
     pendingMatters,
   })
 
+  const editorial = validateEditorialMessage(message, {
+    pendingMatterCount: pendingMatters.length,
+  })
+
   return {
     context: input.context,
     communicationTypeLabel: CONTEXT_TYPE_LABELS[input.context],
@@ -45,34 +51,21 @@ export function composeContextAwareCommunication(
     recipients,
     audienceLabel,
     pendingMatters,
+    generatedMessage: message,
     message,
     defaultChannel: 'whatsapp',
     supportedChannels: [...SUPPORTED_CHANNELS],
+    editorial,
   }
 }
 
+export { pendingMatter }
+
+/** @deprecated Prefer resolveCommunicationContextFromMissionItemId */
 export function communicationContextFromMissionItemId(
   itemId: string,
 ): CommunicationContextId | null {
-  if (itemId.includes('visit')) return 'pending-visits'
-  if (itemId.includes('weekly-ijtema') || itemId.includes('ijtema')) {
-    return 'pending-weekly-ijtema'
-  }
-  if (itemId.includes('baitul') || itemId.includes('maal')) return 'pending-baitul-maal'
-  if (itemId.includes('app-registration') || itemId.includes('jih')) {
-    return 'pending-jih-registration'
-  }
-  if (itemId.includes('follow-up')) return 'follow-up-pending'
-  if (itemId.includes('assignment')) return 'new-assignment'
-  if (itemId.includes('activity') || itemId.includes('no-activity')) return 'no-activity'
-  return null
-}
-
-export function pendingMatter(
-  id: string,
-  label: string,
-): ContextAwarePendingMatter {
-  return { id, label }
+  return resolveCommunicationContextFromMissionItemId(itemId)
 }
 
 function dedupeRecipients(recipients: MessageRecipient[]): MessageRecipient[] {

@@ -28,6 +28,8 @@ export const ROUTES = {
   /** Legacy — redirects to Activities → Follow-up */
   ADMIN_FOLLOW_UP: '/admin/follow-up',
   ADMIN_COMMUNICATION: '/admin/communication',
+  /** KC-0119 — Context-aware Communication History */
+  ADMIN_COMMUNICATION_HISTORY: '/admin/communication-history',
   /** KC-0115 — Saved Lists lives under Communication (route unchanged) */
   ADMIN_LISTS: '/admin/lists',
   ADMIN_SETTINGS: '/admin/settings',

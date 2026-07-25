@@ -73,6 +73,12 @@ export const ADMIN_NAV_ITEMS: AdminNavEntry[] = [
         icon: 'clipboard',
         to: ROUTES.ADMIN_LISTS,
       },
+      {
+        id: 'communication-history',
+        label: 'History',
+        icon: 'file-text',
+        to: ROUTES.ADMIN_COMMUNICATION_HISTORY,
+      },
     ],
   },
   { id: 'settings', label: 'Settings', icon: 'settings', to: ROUTES.ADMIN_SETTINGS },

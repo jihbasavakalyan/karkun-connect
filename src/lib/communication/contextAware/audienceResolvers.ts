@@ -17,11 +17,10 @@ import {
   getWeeklyIjtemaReport,
 } from '@/services/weeklyIjtemaService'
 import type { MessageRecipient } from '@/types/communication'
-import { composeContextAwareCommunication, pendingMatter } from './engine'
+import { pendingMatter } from './pendingMatterAggregator'
 import type {
   CommunicationContextId,
   ContextAwareCommunicationInput,
-  GeneratedCommunication,
 } from './types'
 
 function ruknRecipient(ruknId: string): MessageRecipient | null {
@@ -50,17 +49,6 @@ export function buildContextAwareInput(
   }
 
   return resolveAudienceForContext(context)
-}
-
-export function generateContextAwareCommunication(
-  context: CommunicationContextId,
-  options?: {
-    recipients?: MessageRecipient[]
-    pendingMatters?: ContextAwareCommunicationInput['pendingMatters']
-    audienceLabel?: string
-  },
-): GeneratedCommunication {
-  return composeContextAwareCommunication(buildContextAwareInput(context, options))
 }
 
 function defaultMattersForContext(

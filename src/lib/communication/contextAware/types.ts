@@ -34,6 +34,24 @@ export type ContextAwareCommunicationInput = {
   audienceLabel?: string
 }
 
+/** KC-0119 — Editorial Validator result attached to generated drafts. */
+export type EditorialValidationResult = {
+  ok: boolean
+  status: 'Editorial Approved' | 'Editorial Review Required'
+  failedRules: Array<{
+    id: string
+    label: string
+    passed: boolean
+    detail: string
+  }>
+  allRules: Array<{
+    id: string
+    label: string
+    passed: boolean
+    detail: string
+  }>
+}
+
 export type GeneratedCommunication = {
   context: CommunicationContextId
   communicationTypeLabel: string
@@ -41,10 +59,35 @@ export type GeneratedCommunication = {
   recipients: MessageRecipient[]
   audienceLabel: string
   pendingMatters: ContextAwarePendingMatter[]
-  /** Generated Urdu body (editorial standard). */
+  /** Original generated Urdu body (before optional edit). */
+  generatedMessage: string
+  /** Current message body (same as generated until edited). */
   message: string
   defaultChannel: ContextAwareDeliveryChannel
   supportedChannels: ContextAwareDeliveryChannel[]
+  /** KC-0119 — Editorial Validator result for the current message. */
+  editorial: EditorialValidationResult
+}
+
+export type ContextAwareHistoryStatus = 'Prepared' | 'Sent' | 'Failed'
+
+export type ContextAwareHistoryRecord = {
+  id: string
+  timestamp: string
+  campaign: string
+  context: CommunicationContextId
+  contextLabel: string
+  recipientType: ContextAwareRecipientType
+  recipientCount: number
+  recipientNames: string[]
+  channel: ContextAwareDeliveryChannel
+  generatedMessage: string
+  finalMessage: string
+  edited: boolean
+  sentBy: string
+  status: ContextAwareHistoryStatus
+  editorialStatus: EditorialValidationResult['status']
+  deliveryDetail?: string
 }
 
 export type ContextAwareDeliveryRequest = {
