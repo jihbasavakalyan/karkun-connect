@@ -60,6 +60,15 @@ Master go-live checklist for Basavakalyan pilot. P2 adds staging validation and 
 - [ ] `npm run verify:production` passed
 - [ ] Smoke test completed (see [Smoke Test](smoke-test.md))
 
+## Campaign Report PDF (Urdu) — KC-0114
+
+- [ ] Urdu text renders correctly (Noto Naskh Arabic embedded)
+- [ ] No broken Unicode characters / missing glyph boxes
+- [ ] RTL layout verified (headings, paragraphs, tables)
+- [ ] Tables aligned correctly for Urdu presentation
+- [ ] PDF suitable for printing (official Jamaat meeting use)
+- [ ] Footer shows رپورٹ کی تاریخ، تیار کرنے کا وقت، صفحہ نمبر
+
 ## Monitoring & Backup
 
 - [ ] Firestore daily export scheduled

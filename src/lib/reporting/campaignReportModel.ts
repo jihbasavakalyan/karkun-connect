@@ -100,8 +100,13 @@ function pair(completed: number, total: number): CampaignReportMetricPair {
   return { completed: safeCompleted, total: safeTotal, pending, pct }
 }
 
+import {
+  URDU_CRITICAL_REASONS,
+  URDU_REPORT,
+} from './campaignReportUrdu'
+
 function formatPair(metric: CampaignReportMetricPair): string {
-  return `${metric.completed} / ${metric.total} (${metric.pct}%)`
+  return `${metric.completed} / ${metric.total} (${metric.pct}٪)`
 }
 
 function averagePct(values: number[]): number {
@@ -112,22 +117,22 @@ function averagePct(values: number[]): number {
 function criticalReasonsFor(row: Omit<CampaignReportRuknRow, 'criticalReasons'>): string[] {
   const reasons: string[] = []
   if (row.assignedKarkuns === 0 || row.connections.completed === 0) {
-    reasons.push('No connected Karkuns')
+    reasons.push(URDU_CRITICAL_REASONS.noConnections)
   }
   if (row.visits.total > 0 && row.visits.pct < 40) {
-    reasons.push('Low visit completion')
+    reasons.push(URDU_CRITICAL_REASONS.lowVisits)
   }
   if (row.weeklyIjtema.total > 0 && row.weeklyIjtema.pct < 40) {
-    reasons.push('Low Weekly Ijtema attendance')
+    reasons.push(URDU_CRITICAL_REASONS.lowWeeklyIjtema)
   }
   if (row.appRegistration.total > 0 && row.appRegistration.pct < 40) {
-    reasons.push('Low App Registration')
+    reasons.push(URDU_CRITICAL_REASONS.lowAppRegistration)
   }
   if (row.baitulMaal.total > 0 && row.baitulMaal.pct < 40) {
-    reasons.push('Low Baitul Maal progress')
+    reasons.push(URDU_CRITICAL_REASONS.lowBaitulMaal)
   }
   if (row.overallPct < 40 && row.assignedKarkuns > 0) {
-    reasons.push('Low overall campaign progress')
+    reasons.push(URDU_CRITICAL_REASONS.lowOverall)
   }
   return reasons
 }
@@ -142,43 +147,45 @@ function buildRecommendations(input: {
 
   if (executive.visits.pending > 0) {
     lines.push(
-      `Immediate follow-up: ${executive.visits.pending} visit report${executive.visits.pending === 1 ? '' : 's'} still pending.`,
+      `فوری پیروی: ${executive.visits.pending} ملاقات کی رپورٹ ابھی زیر التواء ہے۔`,
     )
   }
   if (executive.weeklyIjtema.pending > 0) {
     lines.push(
-      `Before the next Weekly Ijtema: close ${executive.weeklyIjtema.pending} outstanding attendance mark${executive.weeklyIjtema.pending === 1 ? '' : 's'}.`,
+      `اگلے ہفتہ وار اجتماع سے پہلے: ${executive.weeklyIjtema.pending} حاضری کے اندراجات مکمل کیجیے۔`,
     )
   }
   if (executive.connectionPct < 70) {
     lines.push(
-      `Connection coverage is ${executive.connectionPct}% — prioritise Remaining Connects (${executive.connected.pending}).`,
+      `رابطوں کی کوریج ${executive.connectionPct}٪ ہے — باقی رابطے (${executive.connected.pending}) کو ترجیح دیجیے۔`,
     )
   }
   if (critical.length > 0) {
     const names = critical
       .slice(0, 5)
       .map((row) => row.ruknName)
-      .join(', ')
-    lines.push(`Low-performing Rukns requiring attention: ${names}.`)
+      .join('، ')
+    lines.push(`کم کارکردگی والے ارکان جن پر توجہ درکار ہے: ${names}۔`)
   }
   if (topOverall) {
     lines.push(
-      `Campaign strength: ${topOverall.ruknName} leads overall progress at ${topOverall.overallPct}%.`,
+      `مہم کی طاقت: ${topOverall.ruknName} مجموعی پیش رفت میں ${topOverall.overallPct}٪ کے ساتھ نمایاں ہیں۔`,
     )
   }
   if (executive.appRegistration.pending > 0) {
     lines.push(
-      `Priority action: complete ${executive.appRegistration.pending} pending JIH Reporting App registration${executive.appRegistration.pending === 1 ? '' : 's'}.`,
+      `ترجیحی اقدام: ${executive.appRegistration.pending} زیر التواء جے آئی ایچ رپورٹنگ ایپ رجسٹریشن مکمل کیجیے۔`,
     )
   }
   if (executive.baitulMaal.pending > 0) {
     lines.push(
-      `Priority action: complete ${executive.baitulMaal.pending} pending Baitul Maal commitment${executive.baitulMaal.pending === 1 ? '' : 's'}.`,
+      `ترجیحی اقدام: ${executive.baitulMaal.pending} زیر التواء بیت المال کے اندراجات مکمل کیجیے۔`,
     )
   }
   if (lines.length === 0) {
-    lines.push('Campaign metrics are healthy. Maintain current execution rhythm into the next Weekly Ijtema.')
+    lines.push(
+      'مہم کے اعداد و شمار اطمینان بخش ہیں۔ اگلے ہفتہ وار اجتماع تک موجودہ رفتار برقرار رکھیے۔',
+    )
   }
   return lines.slice(0, 8)
 }
@@ -308,12 +315,16 @@ export function buildCampaignReportModel(input?: {
   }
 
   const topPerformers = [
-    pickTop('Connections', (row) => row.connections.pct, (row) => formatPair(row.connections)),
-    pickTop('Visits', (row) => row.visits.pct, (row) => formatPair(row.visits)),
-    pickTop('App Registration', (row) => row.appRegistration.pct, (row) => formatPair(row.appRegistration)),
-    pickTop('Weekly Ijtema', (row) => row.weeklyIjtema.pct, (row) => formatPair(row.weeklyIjtema)),
-    pickTop('Baitul Maal', (row) => row.baitulMaal.pct, (row) => formatPair(row.baitulMaal)),
-    pickTop('Overall Campaign Progress', (row) => row.overallPct, (row) => `${row.overallPct}%`),
+    pickTop(URDU_REPORT.topCategories.connections, (row) => row.connections.pct, (row) => formatPair(row.connections)),
+    pickTop(URDU_REPORT.topCategories.visits, (row) => row.visits.pct, (row) => formatPair(row.visits)),
+    pickTop(
+      URDU_REPORT.topCategories.appRegistration,
+      (row) => row.appRegistration.pct,
+      (row) => formatPair(row.appRegistration),
+    ),
+    pickTop(URDU_REPORT.topCategories.weeklyIjtema, (row) => row.weeklyIjtema.pct, (row) => formatPair(row.weeklyIjtema)),
+    pickTop(URDU_REPORT.topCategories.baitulMaal, (row) => row.baitulMaal.pct, (row) => formatPair(row.baitulMaal)),
+    pickTop(URDU_REPORT.topCategories.overall, (row) => row.overallPct, (row) => `${row.overallPct}٪`),
   ].filter((item): item is CampaignReportTopPerformer => Boolean(item))
 
   const criticalRukns = ruknRows
@@ -323,7 +334,7 @@ export function buildCampaignReportModel(input?: {
   const duration =
     campaign?.startDate && campaign?.endDate
       ? `${formatCampaignDate(campaign.startDate)} – ${formatCampaignDate(campaign.endDate)}`
-      : 'Not set'
+      : URDU_REPORT.status.notSet
 
   const executive: CampaignReportModel['executive'] = {
     totalRukns: activeRukns.length,
@@ -341,37 +352,42 @@ export function buildCampaignReportModel(input?: {
 
   const topOverall = [...withAssigned].sort((a, b) => b.overallPct - a.overallPct)[0]
 
+  const reportDate = now.toLocaleDateString('ur-PK', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  })
+  const generatedOn = now.toLocaleString('ur-PK', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+
+  const campaignStatus = campaign?.status
+    ? campaign.status === 'active'
+      ? `${URDU_REPORT.status.active}${timeline?.dayLabel ? ` · ${timeline.dayLabel}` : ''}`
+      : URDU_REPORT.status.archived
+    : URDU_REPORT.status.none
+
   return {
     cover: {
-      campaignName: campaign?.name?.trim() || 'Active Campaign',
+      campaignName: campaign?.name?.trim() || 'فعال مہم',
       campaignDuration: duration,
-      organization: input?.organization?.trim() || 'Jamaat-e-Islami Hind · Basavakalyan',
-      reportDate: now.toLocaleDateString('en-GB', {
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric',
-      }),
-      generatedOn: now.toLocaleString('en-GB', {
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      }),
-      generatedBy: input?.generatedBy?.trim() || 'Administrator',
-      campaignStatus: campaign?.status
-        ? campaign.status === 'active'
-          ? `Active${timeline?.dayLabel ? ` · ${timeline.dayLabel}` : ''}`
-          : campaign.status
-        : 'No active campaign',
+      organization: input?.organization?.trim() || URDU_REPORT.organizationDefault,
+      reportDate,
+      generatedOn,
+      generatedBy: input?.generatedBy?.trim() || 'منتظم',
+      campaignStatus,
     },
     executive,
     achievement: [
-      { label: 'Connections', metric: connectedMetric },
-      { label: 'Visits', metric: visitsMetric },
-      { label: 'App Registration', metric: appMetric },
-      { label: 'Weekly Ijtema', metric: wiMetric },
-      { label: 'Baitul Maal', metric: bmMetric },
+      { label: URDU_REPORT.achievementAreas.connections, metric: connectedMetric },
+      { label: URDU_REPORT.achievementAreas.visits, metric: visitsMetric },
+      { label: URDU_REPORT.achievementAreas.appRegistration, metric: appMetric },
+      { label: URDU_REPORT.achievementAreas.weeklyIjtema, metric: wiMetric },
+      { label: URDU_REPORT.achievementAreas.baitulMaal, metric: bmMetric },
     ],
     maleRukns,
     femaleRukns,
@@ -388,11 +404,11 @@ export function buildCampaignReportModel(input?: {
     criticalRukns,
     topPerformers,
     statistics: [
-      { label: 'Connections', metric: connectedMetric },
-      { label: 'Visits', metric: visitsMetric },
-      { label: 'App Registration', metric: appMetric },
-      { label: 'Weekly Ijtema', metric: wiMetric },
-      { label: 'Baitul Maal', metric: bmMetric },
+      { label: URDU_REPORT.achievementAreas.connections, metric: connectedMetric },
+      { label: URDU_REPORT.achievementAreas.visits, metric: visitsMetric },
+      { label: URDU_REPORT.achievementAreas.appRegistration, metric: appMetric },
+      { label: URDU_REPORT.achievementAreas.weeklyIjtema, metric: wiMetric },
+      { label: URDU_REPORT.achievementAreas.baitulMaal, metric: bmMetric },
     ],
     recommendations: buildRecommendations({
       critical: criticalRukns,
