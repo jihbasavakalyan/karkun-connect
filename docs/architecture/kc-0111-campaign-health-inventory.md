@@ -222,4 +222,24 @@ Order **lowest risk → highest risk**. Each step is independently deployable an
 - `src/services/campaignAutomationEngine.ts` (`healthScore`)
 - `src/services/ijtemaAttendanceService.ts` / `baitulMaalService.ts`
 
-**Stop after KC-0111 inventory.**
+---
+
+## Consolidation Progress (KC-0111.1)
+
+| Slice | Status | Canonical engine |
+|--------|--------|------------------|
+| Visits | ✅ | `getDashboardVisitMetrics` / `visitMetricsFromAssignments` |
+| Weekly Ijtema | ✅ | `getDashboardWeeklyIjtemaHealthSlice` (Present ÷ Assigned) |
+| Monthly Baitul Maal | ✅ | `getDashboardMonthlyBaitulMaalHealthSlice` (Contributed ÷ Assigned) |
+| App Registration | ✅ | `getDashboardAppRegistrationMetrics` (+ ForRukn helper) |
+
+**Public contract preserved:** `getDashboardHealthSlices()` shape unchanged; `CampaignHealthPanel` unchanged.
+
+**Redirected identical arithmetic:** Top Priority now uses `getDashboardHealthModulePct`, `getDashboardVisitMetricsForRukn`, and `getDashboardAppRegistrationMetricsForRukn` instead of local pct / inline JIH filters.
+
+**Intentionally not folded into Health slices (not identical behaviour):**
+- Module KPI `attendancePct` / `completionPct` (marked-only) — report cards
+- Annexure `getCampaignHealthFromAnnexure1` — legacy overall (deferred 0111.5+)
+- Cos / automation legacy IJ/BM readers — deferred 0111.3–.4
+
+**Stop after KC-0111 inventory.** → **KC-0111.1 engine consolidation complete for the four Health slices.**
