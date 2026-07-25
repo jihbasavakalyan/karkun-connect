@@ -32,6 +32,9 @@ import {
   upsertWeeklyIjtemaSubmission,
   deleteWeeklyIjtemaEvent as deleteWeeklyIjtemaEventFromStore,
 } from '@/stores/weeklyIjtemaStore'
+import {
+  pickCanonicalWeeklyIjtemaMeeting,
+} from '@/lib/weeklyIjtemaPresentation'
 import type {
   CreateWeeklyIjtemaEventInput,
   SaveWeeklyIjtemaSubmissionInput,
@@ -57,6 +60,14 @@ export function getWeeklyIjtemaEventById(eventId: string): WeeklyIjtemaEvent | u
   return getWeeklyIjtemaEvent(eventId)
 }
 
+/** KC-0113.3 — Canonical meeting for a date (Open preferred, else latest updatedAt). */
+export function getWeeklyIjtemaEventByMeetingDate(
+  meetingDate: string,
+): WeeklyIjtemaEvent | undefined {
+  const matches = getAllWeeklyIjtemaEvents().filter((event) => event.meetingDate === meetingDate)
+  return pickCanonicalWeeklyIjtemaMeeting(matches)
+}
+
 /** Prefer the latest Open event; otherwise the most recent meeting. */
 export function getCurrentWeeklyIjtemaEvent(): WeeklyIjtemaEvent | undefined {
   const events = getAllWeeklyIjtemaEvents()
@@ -65,10 +76,23 @@ export function getCurrentWeeklyIjtemaEvent(): WeeklyIjtemaEvent | undefined {
 
 export function createWeeklyIjtemaEvent(
   input: CreateWeeklyIjtemaEventInput,
-): { success: true; event: WeeklyIjtemaEvent } | { success: false; error: string } {
+):
+  | { success: true; event: WeeklyIjtemaEvent }
+  | { success: false; error: string; existingEventId?: string } {
   const validation = validateCreateWeeklyIjtemaEvent(input)
   if (!validation.valid) {
     return { success: false, error: validation.error }
+  }
+
+  // KC-0113.3 — One Weekly Ijtema meeting per meetingDate.
+  const existing = getWeeklyIjtemaEventByMeetingDate(input.meetingDate)
+  if (existing) {
+    return {
+      success: false,
+      error:
+        'A Weekly Ijtema meeting already exists for this date. Edit the existing meeting instead.',
+      existingEventId: existing.id,
+    }
   }
 
   const timestamp = nowIso()
@@ -99,6 +123,17 @@ export function updateWeeklyIjtemaEvent(
   const existing = getWeeklyIjtemaEvent(input.eventId)
   if (!existing) {
     return { success: false, error: 'Weekly Ijtema event not found.' }
+  }
+
+  // KC-0113.3 — Do not move a meeting onto another date that already has a meeting.
+  if (input.meetingDate !== existing.meetingDate) {
+    const conflict = getWeeklyIjtemaEventByMeetingDate(input.meetingDate)
+    if (conflict && conflict.id !== input.eventId) {
+      return {
+        success: false,
+        error: 'A Weekly Ijtema meeting already exists for this date.',
+      }
+    }
   }
 
   const actor = input.updatedBy ?? 'Administrator'

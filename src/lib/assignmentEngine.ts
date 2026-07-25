@@ -4,7 +4,6 @@ import {
   getCanonicalConnectedKarkunCount,
   getConnectedKarkunsForRukn,
 } from '@/lib/connections/getConnectedKarkunsForRukn'
-import { isValidMobileFormat, normalizeMobile } from '@/lib/mobileValidation'
 import {
   assignRukn,
   getAllAssignments,
@@ -15,8 +14,11 @@ import {
   transferAssignment,
 } from '@/services/assignmentService'
 import { canAssignByGender } from '@/lib/peopleStore'
-import { isCampaignEligible } from '@/lib/peopleClassification'
-import { subscribeToAssignmentStore, getActiveAssignmentsForKarkun } from '@/stores/assignmentStore'
+import {
+  filterKarkunsSelectableForConnection,
+  isKarkunSelectableForConnection,
+} from '@/lib/connectionEligibility'
+import { subscribeToAssignmentStore } from '@/stores/assignmentStore'
 import type { RemovalReason, ReplacementReason } from '@/types/assignment'
 import type { AssignedBy, ReleaseReason } from '@/types/assignment.types'
 import type { AssignmentRecord, AssignmentResult } from '@/types/assignment'
@@ -36,15 +38,7 @@ export function getAssignedKarkunanForRukn(ruknId: string): KarkunRegistryRecord
 }
 
 export function getAvailableKarkunan(ruknId?: string): KarkunRegistryRecord[] {
-  const available = MOCK_KARKUN_REGISTRY.filter(
-    (karkun) =>
-      isCampaignEligible(karkun) &&
-      karkun.status === 'active' &&
-      karkun.assignmentStatus === 'Available' &&
-      getActiveAssignmentsForKarkun(karkun.id).length === 0 &&
-      karkun.mobile.trim() &&
-      isValidMobileFormat(normalizeMobile(karkun.mobile)),
-  )
+  const available = filterKarkunsSelectableForConnection(MOCK_KARKUN_REGISTRY)
 
   if (!ruknId) {
     return available
@@ -272,15 +266,7 @@ export function getCompletedAssignmentHistoryForRukn(ruknId: string) {
 
 export function canAssignKarkun(karkunId: string): boolean {
   const karkun = getKarkunById(karkunId)
-  return Boolean(
-    karkun &&
-      isCampaignEligible(karkun) &&
-      karkun.status === 'active' &&
-      karkun.assignmentStatus === 'Available' &&
-      getActiveAssignmentsForKarkun(karkunId).length === 0 &&
-      karkun.mobile.trim() &&
-      isValidMobileFormat(normalizeMobile(karkun.mobile)),
-  )
+  return Boolean(karkun && isKarkunSelectableForConnection(karkun))
 }
 
 export {

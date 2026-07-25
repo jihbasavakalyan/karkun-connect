@@ -3,7 +3,9 @@ import { ensureRegistration } from '@/services/jihWebPortalService'
 import { ensureBaitulMaalRecord } from '@/services/baitulMaalService'
 import { ensureIjtemaAttendanceRecord } from '@/services/ijtemaAttendanceService'
 import { getCanonicalConnectedKarkunCount } from '@/lib/connections/getConnectedKarkunsForRukn'
-import { getActiveAssignmentsForKarkun } from '@/stores/assignmentStore'
+import {
+  filterKarkunsSelectableForConnection,
+} from '@/lib/connectionEligibility'
 import {
   getNextRuknId,
   getRuknById,
@@ -885,12 +887,8 @@ export function getCompatibleKarkunsForRukn(ruknId: string): KarkunRegistryRecor
   if (!rukn || !ruknGender) {
     return []
   }
-  return getAllKarkuns().filter(
-    (k) =>
-      k.status === 'active' &&
-      normalizePersonGender(k.gender) === ruknGender &&
-      k.assignmentStatus === 'Available' &&
-      getActiveAssignmentsForKarkun(k.id).length === 0,
+  return filterKarkunsSelectableForConnection(getAllKarkuns()).filter(
+    (k) => normalizePersonGender(k.gender) === ruknGender,
   )
 }
 

@@ -7,6 +7,8 @@
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { getRuknById } from '@/data/ruknMaster'
 import { assignKarkun } from '@/lib/assignmentEngine'
+import { KARKUN_ALREADY_CONNECTED_MESSAGE } from '@/lib/connectionEligibility'
+import { getActiveAssignmentsForKarkun } from '@/stores/assignmentStore'
 import { findPossibleNameDuplicates } from '@/lib/nameMatching'
 import {
   createKarkun,
@@ -398,6 +400,15 @@ async function approveNewKarkunRequestOnce(input: {
 
     if (!karkunId) {
       return { ok: false, error: 'Could not resolve Karkun for approval.', code: 'VALIDATION' }
+    }
+
+    // KC-0113.3 — Never approve a connection onto an already-connected Karkun.
+    if (getActiveAssignmentsForKarkun(karkunId).length > 0) {
+      return {
+        ok: false,
+        error: KARKUN_ALREADY_CONNECTED_MESSAGE,
+        code: 'VALIDATION',
+      }
     }
 
     const assignResult = await assignKarkun(karkunId, claimed.requestingRuknId, 'Administrator')

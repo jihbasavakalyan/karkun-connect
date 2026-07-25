@@ -17,6 +17,7 @@ import {
   closeWeeklyIjtemaAttendance,
   createWeeklyIjtemaEvent,
   deleteWeeklyIjtemaEvent,
+  getWeeklyIjtemaEventById,
   listWeeklyIjtemaEvents,
   openWeeklyIjtemaAttendance,
   reopenWeeklyIjtemaAttendance,
@@ -102,6 +103,16 @@ export function AdminWeeklyIjtemaPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
+  const startEditById = (eventId: string, notice?: string) => {
+    const event = getWeeklyIjtemaEventById(eventId)
+    if (!event) {
+      setMessage(notice || 'Meeting not found.')
+      return
+    }
+    startEdit(event)
+    if (notice) setMessage(notice)
+  }
+
   const onMeetingDateChange = (nextDate: string) => {
     setMeetingDate(nextDate)
     if (!editingEventId) {
@@ -140,6 +151,14 @@ export function AdminWeeklyIjtemaPage() {
           createdBy: actor,
         })
         if (!result.success) {
+          // KC-0113.3 — Switch into Edit for the canonical meeting on that date.
+          if (result.existingEventId) {
+            startEditById(
+              result.existingEventId,
+              result.error,
+            )
+            return
+          }
           setMessage(result.error)
           return
         }

@@ -1,11 +1,11 @@
 /**
- * KC-0113.2 — Weekly Ijtema admin presentation helpers.
+ * KC-0113.2 / KC-0113.3 — Weekly Ijtema admin presentation helpers.
  * Presentation-only; does not change adapters or repositories.
  */
 
 import type { WeeklyIjtemaEvent } from '@/types/weeklyIjtema'
 
-function preferWeeklyIjtemaMeeting(
+export function preferWeeklyIjtemaMeeting(
   current: WeeklyIjtemaEvent,
   candidate: WeeklyIjtemaEvent,
 ): WeeklyIjtemaEvent {
@@ -14,12 +14,20 @@ function preferWeeklyIjtemaMeeting(
   return candidate.updatedAt >= current.updatedAt ? candidate : current
 }
 
+/** Canonical meeting for a date: Open preferred, else latest updatedAt. */
+export function pickCanonicalWeeklyIjtemaMeeting(
+  events: WeeklyIjtemaEvent[],
+): WeeklyIjtemaEvent | undefined {
+  if (events.length === 0) return undefined
+  return events.reduce((best, event) => preferWeeklyIjtemaMeeting(best, event))
+}
+
 /**
- * Render exactly one card per meeting.
+ * Render exactly one card per meetingDate.
  *
- * Root cause of duplicates: Create allows multiple events for the same
- * `meetingDate` (distinct canonical ids). The list previously rendered all of them.
- * Prefer Open status, then newest `updatedAt`. React keys use the chosen event id.
+ * Root cause of duplicates: Create allowed multiple events for the same
+ * meetingDate (distinct ids). Prefer Open, then newest updatedAt.
+ * When storage still has duplicates, warn once per render call for investigation.
  */
 export function uniqueWeeklyIjtemaMeetingsForDisplay(
   events: WeeklyIjtemaEvent[],
@@ -29,15 +37,26 @@ export function uniqueWeeklyIjtemaMeetingsForDisplay(
     byId.set(event.id, event)
   }
 
-  const byMeetingDate = new Map<string, WeeklyIjtemaEvent>()
+  const byMeetingDate = new Map<string, WeeklyIjtemaEvent[]>()
   for (const event of byId.values()) {
-    const existing = byMeetingDate.get(event.meetingDate)
-    if (!existing) {
-      byMeetingDate.set(event.meetingDate, event)
-      continue
-    }
-    byMeetingDate.set(event.meetingDate, preferWeeklyIjtemaMeeting(existing, event))
+    const group = byMeetingDate.get(event.meetingDate) ?? []
+    group.push(event)
+    byMeetingDate.set(event.meetingDate, group)
   }
 
-  return [...byMeetingDate.values()].sort((a, b) => b.meetingDate.localeCompare(a.meetingDate))
+  const unique: WeeklyIjtemaEvent[] = []
+  for (const [meetingDate, group] of byMeetingDate) {
+    if (group.length > 1) {
+      console.warn('[KC-0113.3] Duplicate Weekly Ijtema meetings for meetingDate', {
+        meetingDate,
+        count: group.length,
+        eventIds: group.map((event) => event.id),
+        statuses: group.map((event) => event.status),
+      })
+    }
+    const canonical = pickCanonicalWeeklyIjtemaMeeting(group)
+    if (canonical) unique.push(canonical)
+  }
+
+  return unique.sort((a, b) => b.meetingDate.localeCompare(a.meetingDate))
 }

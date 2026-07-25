@@ -14,6 +14,7 @@ import type {
   RestoreInput,
   TransferInput,
 } from '@/types/assignment'
+import { KARKUN_ALREADY_CONNECTED_MESSAGE } from '@/lib/connectionEligibility'
 import {
   getActiveAssignmentForRukn,
   getActiveAssignmentsForKarkun,
@@ -151,7 +152,7 @@ export function validateKarkunAvailable(karkunId: string): ValidationResult {
   if (getActiveAssignmentsForKarkun(karkunId).length > 0) {
     return {
       valid: false,
-      error: 'This Karkun is already connected to a Rukn. Use Transfer to reassign.',
+      error: KARKUN_ALREADY_CONNECTED_MESSAGE,
     }
   }
 
