@@ -20,7 +20,7 @@ export function ProgressTrendsPanel({ trends, ready = true }: ProgressTrendsPane
           </span>
           Progress Trends
         </h2>
-        <span className="exdash-section-meta">Latest periods</span>
+        <span className="exdash-section-meta">Derived analytics</span>
       </div>
 
       {!ready ? (

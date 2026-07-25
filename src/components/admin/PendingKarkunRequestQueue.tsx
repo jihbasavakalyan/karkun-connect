@@ -1,5 +1,6 @@
 /**
  * Admin queue for Pending New Karkun requests (KC-018 / KC-0068 / KC-0072C).
+ * KC-0106 — Primary workflow lives in People (Karkuns). Dashboard only launches here.
  */
 
 import { useEffect, useState } from 'react'
@@ -105,19 +106,34 @@ export function PendingKarkunRequestQueue() {
 
   if (pending.length === 0) {
     return (
-      <section className="mc-panel mc-panel-compact acc-section" aria-label="Pending Karkun Requests">
+      <section
+        id="pending-karkun-requests"
+        className="mc-panel mc-panel-compact acc-section"
+        aria-label="Pending Karkun Requests"
+      >
         <div className="acc-section-head">
           <h2 className="mc-panel-title">Pending Karkun Requests</h2>
         </div>
-        <p className="text-sm text-secondary">No pending requests.</p>
+        <p className="text-sm text-secondary">
+          No pending requests. New Karkun intake is owned by People.
+        </p>
       </section>
     )
   }
 
   return (
-    <section className="mc-panel mc-panel-compact acc-section" aria-label="Pending Karkun Requests">
+    <section
+      id="pending-karkun-requests"
+      className="mc-panel mc-panel-compact acc-section"
+      aria-label="Pending Karkun Requests"
+    >
       <div className="acc-section-head">
-        <h2 className="mc-panel-title">Pending Karkun Requests</h2>
+        <div>
+          <h2 className="mc-panel-title">Pending Karkun Requests</h2>
+          <p className="mt-1 text-xs text-secondary">
+            People workflow — approve or reject New Karkun intake.
+          </p>
+        </div>
         <span className="text-sm font-semibold text-primary">{pending.length}</span>
       </div>
 

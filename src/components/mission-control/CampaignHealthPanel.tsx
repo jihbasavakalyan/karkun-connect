@@ -2,6 +2,7 @@
  * KC-0109 — Campaign Health panel (percentages only).
  * KC-0102A — Per-metric readiness: critical slices unlock at metricsReady;
  * background slices wait on backgroundReady without blanking the whole panel.
+ * KC-0106 — Derived executive summary; module links launch Operations (no editing).
  */
 
 import { Link } from 'react-router-dom'
@@ -83,7 +84,7 @@ export function CampaignHealthPanel({
           Campaign Health
         </h2>
         <span className="exdash-section-meta">
-          {allReady ? 'Live completion' : anyReady ? 'Partial' : 'Loading'}
+          {allReady ? 'Derived summary' : anyReady ? 'Partial' : 'Loading'}
         </span>
       </div>
 
