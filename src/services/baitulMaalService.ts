@@ -1,3 +1,11 @@
+/**
+ * KC-0112 — LEGACY Monthly Baitul Maal track (per-Karkun month records).
+ * Still used by Compliance, Matrix, Connection Journey, People, Cos, automation.
+ * Not the Campaign Health source of truth — do not extend for new executive KPIs.
+ * Prefer monthlyBaitulMaalService (cycle/submission). Inventory:
+ * docs/architecture/kc-0112-monthly-baitul-maal-inventory.md
+ */
+
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { getAllKarkuns } from '@/lib/peopleStore'
 import { getActiveCampaign } from '@/services/campaignService'

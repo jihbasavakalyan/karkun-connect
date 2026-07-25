@@ -18,6 +18,10 @@
  * (marked-only attendancePct / completionPct for reports). Health uses assigned
  * denominators via the engines below.
  *
+ * KC-0112 — Monthly Baitul Maal Health slice reads the canonical cycle track only
+ * (`getMonthlyBaitulMaalDashboardKpi`). Do not wire legacy baitulMaal* into Health.
+ * Inventory: docs/architecture/kc-0112-monthly-baitul-maal-inventory.md
+ *
  * Complies with KC-ARCH-001 — single shared aggregation, no mock values.
  */
 
@@ -199,6 +203,7 @@ export function getDashboardWeeklyIjtemaHealthSlice(): DashboardHealthSlice {
  * Canonical Campaign Health calculation — Monthly Baitul Maal slice.
  * Contributed ÷ Assigned on current cycle (not marked-only completionPct).
  * All consumers should use dashboardMetricsService.
+ * KC-0112 — data from canonical monthlyBaitulMaal* cycle track only.
  */
 export function getDashboardMonthlyBaitulMaalHealthSlice(): DashboardHealthSlice {
   const baitul = getMonthlyBaitulMaalDashboardKpi()
