@@ -308,8 +308,8 @@ Each step must preserve current behaviour until its cutover flag/adapter is read
 | Compliance Ijtema **writes** | Legacy `updateIjtemaAttendance` | Canonical write adapter (+ legacy dual-write) | ✅ KC-0110.6 |
 | People (profile + list filters via `useKarkunPeopleManagement`) | Legacy | Canonical read adapter | ✅ KC-0110.4 |
 | People profile / bulk **writes** | Legacy | Canonical write adapter (+ legacy dual-write) | ✅ KC-0110.6 |
-| Cos / automation / Rafeeq ops | Legacy | Legacy | Deferred (read rewiring later) |
-| Writes (Matrix / Journey / Compliance / People / checklist / home panel) | Legacy | Canonical write adapter | ✅ KC-0110.6 |
+| Cos / automation / Rafeeq / home strips | Legacy | Legacy | TODO — deferred reader rewiring |
+| Operational writes (Matrix / Journey / Compliance / People / checklist) | Legacy | Canonical write adapter | ✅ KC-0110.6 |
 
 **Read adapter:** `src/lib/operations/weeklyIjtemaReadAdapter.ts`  
 **Write adapter:** `src/lib/operations/weeklyIjtemaWriteAdapter.ts`  
@@ -318,25 +318,30 @@ Each step must preserve current behaviour until its cutover flag/adapter is read
 - Full Rukn register submit: `saveWeeklyIjtemaSubmission` (unchanged)  
 - Legacy `updateIjtemaAttendance` / `bulkUpdateIjtemaAttendance` — compatibility only (Excused, no open event, dual-write)
 
-### 5.2 Read / write status (KC-0110.5–.6)
+### 5.2 Migration status (KC-0110.7)
 
 | Area | Status |
 |------|--------|
 | Reads | ✅ |
 | Writes | ✅ |
 | Legacy Service | Compatibility Only |
-| Retirement | Pending |
+| Retirement | ✅ Dead paths removed; compatibility retained |
 
 ### Canonical Source of Truth
 
-**Event/Cycle (`weeklyIjtema*`) is the sole operational source of truth for Weekly Ijtema attendance** after KC-0110.6.  
-Presentation reads go through `weeklyIjtemaReadAdapter`. Operator writes go through `weeklyIjtemaWriteAdapter` (Present/Absent on the open event). Legacy `ijtemaAttendance*` remains compatibility-only (Excused, historical weeks without a matching open event, dual-write sync for deferred Cos readers) until retirement (KC-0110.7).
+**Event/Cycle (`weeklyIjtema*`) is the sole operational source of truth for Weekly Ijtema attendance.**
 
-### Write Cutover Readiness (superseded by KC-0110.6)
-
-- Single canonical **read** path: Matrix / Journey / Compliance / People.  
-- Single canonical **write** path: `markWeeklyIjtemaAttendance` / `bulkMarkWeeklyIjtemaAttendance`.  
-- Legacy write APIs retained only as compatibility / dual-write helpers — no new product callers.
+```text
+Canonical Event/Cycle (weeklyIjtema*)
+        │
+        ▼
+WeeklyIjtemaReadAdapter
+        │
+WeeklyIjtemaWriteAdapter
+        │
+        ▼
+Operational Source of Truth
+```
 
 ---
 
@@ -384,3 +389,64 @@ Read validation complete for Matrix / Journey / Compliance / People. Adapter add
 ## 8.4 KC-0110.6 notes
 
 Write cutover: Matrix / Journey modal / Compliance / People profile+bulk / checklist / Rukn home Ijtema panel use `weeklyIjtemaWriteAdapter`. Present/Absent upsert into the open event submission; Excused and no-open-event paths remain on legacy compatibility. Dual-write keeps legacy in sync for deferred Cos readers. `saveWeeklyIjtemaSubmission` (full Rukn register) unchanged.
+
+## 8.5 KC-0110.7 notes
+
+Legacy retirement: removed dead helpers (`getRuknIjtemaAttendanceMetrics`, `matchesIjtemaAttendanceFilters`, `resetIjtemaAttendanceComplianceInitialization`), unreachable UI (`RuknIjtemaAttendancePanel`, `WeeklyIjtemaDashboardKpiCard`). Compatibility dual-write / Excused / historical fallback retained. Deferred Cos/automation readers marked TODO.
+
+## Migration Complete
+
+### Canonical Source of Truth
+
+Event/Cycle (`weeklyIjtemaEvent_*` + `weeklyIjtemaSubmission_*`) via:
+
+```text
+Canonical Event/Cycle
+        │
+        ▼
+WeeklyIjtemaReadAdapter
+        │
+WeeklyIjtemaWriteAdapter
+        │
+        ▼
+Operational Source of Truth
+```
+
+Campaign Health / Mission / Top Priority already consumed Event/Cycle KPIs; Matrix / Journey / Compliance / People now share the same operational path through the adapters.
+
+### Remaining compatibility paths (intentional)
+
+| Path | Reason | Action |
+|------|--------|--------|
+| `updateIjtemaAttendance` / `bulkUpdateIjtemaAttendance` | Dual-write + Excused + no-open-event / historical week | Keep — documented |
+| Read-adapter legacy fallback | Excused + weeks without event marks | Keep — documented |
+| `ijtemaAttendanceStore` + ComplianceRepository `load/saveIjtema` | Persistence for compatibility records | Keep — no schema removal |
+| `ensureIjtemaAttendanceRecord` | No-op historical call sites (people / migration) | Keep — safeguard |
+| Cos / automation / Rafeeq / mission strips / communication context | Still legacy readers | Leave TODO — future rewiring |
+| `journeyEngine` store selector | Participation signal | Leave TODO — future rewiring |
+
+### Intentional legacy retained
+
+- Excused (event model is Present/Absent only)
+- Historical week fallback when no matching open-event mark
+- Dual-write sync so deferred Cos readers stay consistent until rewired
+- Firestore `ijtema_*` docs (no collection deletion in this ticket)
+
+### Retirement decisions (removed)
+
+| Reference | Reason | Action |
+|-----------|--------|--------|
+| `getRuknIjtemaAttendanceMetrics` | Zero callers | Removed |
+| `matchesIjtemaAttendanceFilters` | Superseded by adapter; zero callers | Removed |
+| `resetIjtemaAttendanceComplianceInitialization` | Zero callers | Removed |
+| `RuknIjtemaAttendancePanel` | Unreachable UI (barrel-only) | Removed |
+| `WeeklyIjtemaDashboardKpiCard` | Orphan file; zero imports | Removed |
+
+### Known future work
+
+1. Rewire Cos / automation / Rafeeq / mission-control strips / communication / journeyEngine to read adapters or Event KPI.
+2. Turn off dual-write once deferred readers are migrated.
+3. Retire `ijtema_*` Firestore docs under a dedicated KC-ARCH-001 durability ticket (not this phase).
+4. Optionally map Excused into the event model if product requires it on Health.
+
+**KC-0110 Weekly Ijtema consolidation is complete for operational Matrix / Journey / Compliance / People read+write paths.**

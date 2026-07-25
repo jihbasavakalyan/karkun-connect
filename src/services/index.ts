@@ -115,7 +115,6 @@ export {
   bulkUpdateIjtemaAttendance,
   getIjtemaAttendanceDashboardMetrics,
   getAllIjtemaAttendanceSummaries,
-  matchesIjtemaAttendanceFilters,
   getFilterWeekEndingDate,
 } from './ijtemaAttendanceService'
 

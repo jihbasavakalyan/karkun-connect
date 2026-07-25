@@ -41,6 +41,10 @@ import {
   getBaitulMaalDashboardMetrics,
   getAllBaitulMaalSummaries,
 } from '@/services/baitulMaalService'
+/**
+ * KC-0110.7 TODO — automation still on legacy summaries/metrics.
+ * Prefer weeklyIjtemaReadAdapter / getWeeklyIjtemaDashboardKpi when rewiring.
+ */
 import {
   getAllIjtemaAttendanceSummaries,
   getIjtemaAttendanceDashboardMetrics,

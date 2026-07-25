@@ -1,19 +1,22 @@
 /**
- * KC-0110 — LEGACY Weekly Ijtema track (per-Karkun week records).
- * Still used by Compliance, Matrix, Connection Journey, and People surfaces.
- * Not the Campaign Health source of truth — do not extend for new executive KPIs.
- * Prefer weeklyIjtemaService (event/cycle). Inventory:
- * docs/architecture/kc-0110-weekly-ijtema-inventory.md
+ * KC-0110.7 — LEGACY Weekly Ijtema compatibility track (per-Karkun week records).
  *
- * KC-0110.6 — WRITE PATH DEPRECATED for new callers.
- * Use `markWeeklyIjtemaAttendance` / `bulkMarkWeeklyIjtemaAttendance`
- * (`@/lib/operations/weeklyIjtemaWriteAdapter`). These functions remain as a
- * compatibility layer (Excused, no open event, dual-write sync).
+ * Operational SoT is Event/Cycle (`weeklyIjtema*` + read/write adapters).
+ * This module remains for:
+ * - Excused status (not in event mark model)
+ * - Historical week records / read-adapter fallback
+ * - Dual-write sync from `weeklyIjtemaWriteAdapter`
+ * - Deferred Cos / automation / mission-strip readers (future rewiring)
+ *
+ * Do not add new product callers. Prefer:
+ * - `markWeeklyIjtemaAttendance` / `bulkMarkWeeklyIjtemaAttendance`
+ * - `getWeeklyIjtemaCurrentAttendanceView` (and related read helpers)
+ *
+ * Inventory: docs/architecture/kc-0110-weekly-ijtema-inventory.md
  */
 
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { getAllKarkuns } from '@/lib/peopleStore'
-import { getAssignedKarkunanForRukn } from '@/lib/assignmentEngine'
 import { getActiveCampaign } from '@/services/campaignService'
 import {
   getAllIjtemaAttendanceRecords,
@@ -59,14 +62,11 @@ export function initializeIjtemaAttendanceCompliance(): void {
   initialized = true
 }
 
-export function resetIjtemaAttendanceComplianceInitialization(): void {
-  initialized = false
-}
-
 export function getFilterWeekEndingDate(weekFilter: string, date = new Date()): string {
   return weekFilter || getWeekEndingDate(date)
 }
 
+/** Compatibility read — preferred via weeklyIjtemaReadAdapter. */
 export function getIjtemaAttendanceForKarkun(
   karkunId: string,
   weekEndingDate: string,
@@ -95,11 +95,12 @@ export function getIjtemaAttendanceForKarkun(
   }
 }
 
+/** Compatibility read — preferred via weeklyIjtemaReadAdapter. */
 export function getCurrentIjtemaAttendance(karkunId: string) {
   return getIjtemaAttendanceForKarkun(karkunId, getWeekEndingDate())
 }
 
-/** KC-0080 — latest N attendance records for a Karkun (newest first). */
+/** Compatibility history — preferred via weeklyIjtemaReadAdapter. */
 export function getIjtemaAttendanceHistory(
   karkunId: string,
   limit = 5,
@@ -113,43 +114,10 @@ export function getIjtemaAttendanceHistory(
     .slice(0, limit)
 }
 
-/** KC-0080 — Ijtema metrics scoped to a Rukn's connected Karkuns. */
-export function getRuknIjtemaAttendanceMetrics(
-  ruknId: string,
-  weekEndingDate = getWeekEndingDate(),
-): IjtemaAttendanceDashboardMetrics {
-  initializeIjtemaAttendanceCompliance()
-  const connected = getAssignedKarkunanForRukn(ruknId)
-
-  let present = 0
-  let absent = 0
-  let excused = 0
-  let notRecorded = 0
-
-  for (const karkun of connected) {
-    const record = normalizeRecord(getIjtemaAttendanceRecord(karkun.id, weekEndingDate))
-    if (!record) {
-      notRecorded += 1
-      continue
-    }
-    if (record.status === 'Present') present += 1
-    if (record.status === 'Absent') absent += 1
-    if (record.status === 'Excused') excused += 1
-  }
-
-  return {
-    present,
-    absent,
-    excused,
-    notRecorded,
-    informed: excused,
-  }
-}
-
+/** Compatibility write — call only from weeklyIjtemaWriteAdapter. */
 export function updateIjtemaAttendance(
   input: UpdateIjtemaAttendanceInput,
 ): { success: true; record: IjtemaAttendanceRecord } | { success: false; error: string } {
-  // KC-0110.6 — compatibility write only; prefer markWeeklyIjtemaAttendance.
   initializeIjtemaAttendanceCompliance()
   const weekEndingDate = input.weekEndingDate ?? getWeekEndingDate()
   const status = normalizeIjtemaAttendanceStatus(input.status)
@@ -187,10 +155,10 @@ export function updateIjtemaAttendance(
   return { success: true, record }
 }
 
+/** Compatibility bulk write — call only from weeklyIjtemaWriteAdapter. */
 export function bulkUpdateIjtemaAttendance(
   input: BulkUpdateIjtemaAttendanceInput,
 ): { success: true; updated: number } | { success: false; error: string } {
-  // KC-0110.6 — compatibility write only; prefer bulkMarkWeeklyIjtemaAttendance.
   initializeIjtemaAttendanceCompliance()
   const weekEndingDate = input.weekEndingDate ?? getWeekEndingDate()
   const validation = validateBulkIjtemaAttendanceInput({ ...input, weekEndingDate })
@@ -216,6 +184,10 @@ export function bulkUpdateIjtemaAttendance(
   return { success: true, updated }
 }
 
+/**
+ * KC-0110.7 TODO — rewire Cos / command-center / automation to
+ * `getWeeklyIjtemaDashboardMetricsView` (or event KPI) before retirement.
+ */
 export function getIjtemaAttendanceDashboardMetrics(
   weekEndingDate = getWeekEndingDate(),
 ): IjtemaAttendanceDashboardMetrics {
@@ -248,6 +220,9 @@ export function getIjtemaAttendanceDashboardMetrics(
   }
 }
 
+/**
+ * KC-0110.7 TODO — rewire campaignAutomationEngine to adapter summaries.
+ */
 export function getAllIjtemaAttendanceSummaries(
   weekEndingDate = getWeekEndingDate(),
 ): IjtemaAttendanceKarkunSummary[] {
@@ -269,32 +244,7 @@ export function getAllIjtemaAttendanceSummaries(
   })
 }
 
-export function matchesIjtemaAttendanceFilters(
-  karkunId: string,
-  statusFilter: string,
-  weekFilter: string,
-): boolean {
-  initializeIjtemaAttendanceCompliance()
-
-  const hasStatusFilter = Boolean(statusFilter)
-  const hasWeekFilter = Boolean(weekFilter)
-
-  if (!hasStatusFilter && !hasWeekFilter) {
-    return true
-  }
-
-  const weekEndingDate = getFilterWeekEndingDate(weekFilter)
-  const attendance = getIjtemaAttendanceForKarkun(karkunId, weekEndingDate)
-  const normalizedFilter =
-    statusFilter === 'Informed' ? 'Excused' : statusFilter
-
-  if (hasStatusFilter && attendance.status !== normalizedFilter) {
-    return false
-  }
-
-  return true
-}
-
+/** No-op hook retained for people/migration call sites (historical safeguard). */
 export function ensureIjtemaAttendanceRecord(karkunId: string): void {
   initializeIjtemaAttendanceCompliance()
   void karkunId
