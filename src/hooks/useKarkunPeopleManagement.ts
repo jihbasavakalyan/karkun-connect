@@ -1,12 +1,18 @@
+/**
+ * KC-0112.4
+ * People reads Monthly Baitul Maal through the canonical adapter.
+ * Legacy write path retained until write migration.
+ */
 import { useMemo, useState, useEffect } from 'react'
 import { getAllKarkuns, getAllMuttafiqeen } from '@/lib/peopleStore'
 import { subscribeToAssignments } from '@/lib/assignmentEngine'
 import { usePeopleStore } from '@/hooks/usePeopleStore'
 import { matchesJihPortalFilters } from '@/services/jihWebPortalService'
-import { matchesBaitulMaalFilters } from '@/services/baitulMaalService'
+import { matchesMonthlyBaitulMaalFiltersView } from '@/lib/operations/monthlyBaitulMaalReadAdapter'
 import { matchesWeeklyIjtemaAttendanceFiltersView } from '@/lib/operations/weeklyIjtemaReadAdapter'
 import { subscribeToJihWebPortalStore } from '@/stores/jihWebPortalStore'
 import { subscribeToBaitulMaalStore } from '@/stores/baitulMaalStore'
+import { subscribeToMonthlyBaitulMaalStore } from '@/stores/monthlyBaitulMaalStore'
 import { subscribeToIjtemaAttendanceStore } from '@/stores/ijtemaAttendanceStore'
 import { subscribeToWeeklyIjtemaStore } from '@/stores/weeklyIjtemaStore'
 import type {
@@ -87,7 +93,10 @@ function matchesKarkunFilters(karkun: KarkunRegistryRecord, filters: PeopleFilte
   }
 
   if (
-    !matchesBaitulMaalFilters(
+    // KC-0112.4
+    // People reads Monthly Baitul Maal through the canonical adapter.
+    // Legacy write path retained until write migration.
+    !matchesMonthlyBaitulMaalFiltersView(
       karkun.id,
       filters.baitulMaalStatus,
       filters.baitulMaalMonth,
@@ -163,6 +172,10 @@ export function useKarkunPeopleManagement(
     const unsubBaitulMaal = subscribeToBaitulMaalStore(() =>
       setBaitulMaalVersion((value) => value + 1),
     )
+    // KC-0112.4: People BM filters refresh when canonical cycle submissions change.
+    const unsubMonthlyBaitulMaal = subscribeToMonthlyBaitulMaalStore(() =>
+      setBaitulMaalVersion((value) => value + 1),
+    )
     const unsubIjtema = subscribeToIjtemaAttendanceStore(() =>
       setIjtemaVersion((value) => value + 1),
     )
@@ -173,6 +186,7 @@ export function useKarkunPeopleManagement(
       unsubAssignments()
       unsubJih()
       unsubBaitulMaal()
+      unsubMonthlyBaitulMaal()
       unsubIjtema()
       unsubWeeklyIjtema()
     }

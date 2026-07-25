@@ -24,7 +24,7 @@ Monthly Baitul Maal has **two live Systems of Record** — the same dual-track p
 
 **Critical fact:** An operator can mark Baitul Maal on Matrix / Compliance / People (legacy) without affecting Campaign Health, and can submit on `/rukn/baitul-maal` (canonical) without updating Matrix “committed” **until KC-0112.2** (Matrix / Journey presentation now prefer canonical Contributed). Writes still use legacy until KC-0112.5. **There is no sync.**
 
-**KC-0112.2 / KC-0112.3:** `monthlyBaitulMaalReadAdapter` serves Matrix / Journey / summaries and Compliance list + cards. People, Cos, Automation, and writes remain on **legacy**.
+**KC-0112.2–0112.4:** `monthlyBaitulMaalReadAdapter` serves Matrix / Journey / summaries, Compliance, and People (filters + profile display). Cos, Automation, and writes remain on **legacy**.
 
 ---
 
@@ -87,9 +87,9 @@ Monthly Baitul Maal has **two live Systems of Record** — the same dual-track p
 |----------|-----------------|---------|--------|
 | Compliance section `baitul-maal` | `/admin/compliance` | **Reads:** adapter summaries. **Writes:** `updateBaitulMaal` | **Adapter** (reads) · **Legacy** (writes) |
 | `ComplianceSummaryCards` | Compliance | adapter dashboard metrics view | **Adapter** (KC-0112.3) |
-| People profile | `/admin/karkunan/:id` | get/update current status | **Legacy** |
-| People bulk | `/admin/karkunan` | `bulkUpdateBaitulMaal` | **Legacy** |
-| People filters | `useKarkunPeopleManagement` | `matchesBaitulMaalFilters` | **Legacy** |
+| People profile | `/admin/karkunan/:id` | **Reads:** adapter status view. **Writes:** `updateBaitulMaal` | **Adapter** (reads) · **Legacy** (writes) |
+| People bulk | `/admin/karkunan` | `bulkUpdateBaitulMaal` | **Legacy** (writes only — out of 0112.4) |
+| People filters | `useKarkunPeopleManagement` | `matchesMonthlyBaitulMaalFiltersView` | **Adapter** (KC-0112.4) |
 | Matrix + quick actions | Rukn home / Journey | **Reads:** adapter (`getMonthlyBaitulMaalCampaignStateView`). **Writes:** `cycleBaitulMaalCampaignForKarkun` → `updateBaitulMaal` | **Adapter** (reads) · **Legacy** (writes) |
 | Cos progress capture | Cos panels | matrix discussed → legacy write | **Legacy** |
 | Automation | Admin reminders | legacy metrics / summaries → Compliance | **Legacy** |
@@ -221,8 +221,8 @@ Mirror KC-0110. Do **not** change Health formulas without a product decision.
 | **KC-0112.1** | This inventory (+ annotations) | None |
 | **KC-0112.2** | Read adapter + Matrix / Journey / summary presentation reads | Low |
 | **KC-0112.3** | Compliance read migration (list + summary cards) | Low |
-| **KC-0112.4** | People / Cos / Automation read migration | Medium |
-| **KC-0112.5** | Read validation & observability | Low |
+| **KC-0112.4** | People read migration (filters + profile display) | Low |
+| **KC-0112.5** | Cos / Automation read migration + read validation & observability | Medium |
 | **KC-0112.6** | Canonical write cutover (Matrix / Compliance / People when cycle open) | Medium–High |
 | **KC-0112.7** | Legacy retirement (dead UI + unused helpers; retain Excused-like safeguards if any) | Medium |
 | **KC-0112.8** | Production certification | — |
@@ -241,17 +241,22 @@ Mirror KC-0110. Do **not** change Health formulas without a product decision.
 | Journey (Quick Actions) | Legacy | Adapter | ✅ KC-0112.2 |
 | Read-only summaries (progress / focus / summary cards) | Legacy | Adapter | ✅ KC-0112.2 |
 | Compliance | Legacy | Adapter | ✅ KC-0112.3 |
-| People | Legacy | Legacy | Pending |
+| People | Legacy | Adapter | ✅ KC-0112.4 |
 | Cos / Automation | Legacy | Legacy | Pending |
 | Writes | Legacy | Legacy | Pending |
 
 **Adapter rules**
 - **Matrix / Journey (KC-0112.2):** Canonical `Contributed` → Matrix `committed`. Cycle `Pending` does not invent campaign “discussed”; falls through to legacy Paid/Exempt/remarks. Write seed (`getBaitulMaalCampaignState`) stays legacy-only until KC-0112.5.
 - **Compliance (KC-0112.3):** Cycle mark for the requested `monthKey` wins. `Contributed` → Compliance `Paid`; cycle `Pending` → `Pending`. `Exempt` remains legacy-only. List + summary cards share `getMonthlyBaitulMaalSummariesView` / `getMonthlyBaitulMaalDashboardMetricsView`. Writes still `updateBaitulMaal`.
+- **People (KC-0112.4):** Filters via `matchesMonthlyBaitulMaalFiltersView`; profile Paid checkbox seeds from `getMonthlyBaitulMaalComplianceStatusView`. Bulk / profile writes still `updateBaitulMaal` / `bulkUpdateBaitulMaal`.
 
 ### KC-0112.3 notes
 
 Compliance Baitul Maal list and summary cards read through the canonical adapter. Mark Paid/Pending/Exempt on Compliance still writes legacy `baitulMaal_*` until write cutover.
+
+### KC-0112.4 notes
+
+People list filters and profile contribution display read through the canonical adapter. Profile save and People bulk Mark Paid/Pending still write legacy until write cutover.
 
 ---
 

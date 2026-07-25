@@ -1,5 +1,5 @@
 /**
- * KC-0112.2 / KC-0112.3 — Monthly Baitul Maal canonical read adapter.
+ * KC-0112.2 / KC-0112.3 / KC-0112.4 — Monthly Baitul Maal canonical read adapter.
  *
  * Presentation/read abstraction only. Prefers the cycle SoR
  * (`monthlyBaitulMaal*`); falls back to legacy per-Karkun `baitulMaal*`
@@ -15,6 +15,7 @@ import {
   getBaitulMaalStatusForKarkun,
   getCurrentBaitulMaalStatus,
   getDaysUntilMonthClose,
+  getFilterMonthKey,
   initializeBaitulMaalCompliance,
   parseMonthKey,
 } from '@/services/baitulMaalService'
@@ -338,4 +339,31 @@ export function getMonthlyBaitulMaalDashboardMetricsView(
     campaignName: campaign?.name,
     campaignTrendLabel,
   }
+}
+
+/**
+ * KC-0112.4 — People list Baitul Maal filters (same semantics as legacy matcher).
+ * Uses Compliance status view so Contributed↔Paid / cycle Pending↔Pending align.
+ */
+export function matchesMonthlyBaitulMaalFiltersView(
+  karkunId: string,
+  statusFilter: string,
+  monthFilter: string,
+  yearFilter: string,
+): boolean {
+  const hasPeriodFilter = Boolean(monthFilter || yearFilter)
+  const hasStatusFilter = Boolean(statusFilter)
+
+  if (!hasPeriodFilter && !hasStatusFilter) {
+    return true
+  }
+
+  const monthKey = getFilterMonthKey(monthFilter, yearFilter)
+  const compliance = getMonthlyBaitulMaalComplianceStatusView(karkunId, monthKey)
+
+  if (hasStatusFilter && compliance.status !== statusFilter) {
+    return false
+  }
+
+  return true
 }

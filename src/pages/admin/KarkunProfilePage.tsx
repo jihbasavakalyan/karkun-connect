@@ -7,7 +7,8 @@ import { getPersonCategory, getMuttafiqDisplayNumber } from '@/lib/peopleClassif
 import { persistKarkunDurable, updateKarkun } from '@/lib/peopleStore'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { usePeopleStore } from '@/hooks/usePeopleStore'
-import { getCurrentBaitulMaalStatus, updateBaitulMaal } from '@/services/baitulMaalService'
+import { updateBaitulMaal } from '@/services/baitulMaalService'
+import { getMonthlyBaitulMaalComplianceStatusView } from '@/lib/operations/monthlyBaitulMaalReadAdapter'
 import { getWeeklyIjtemaCurrentAttendanceView } from '@/lib/operations/weeklyIjtemaReadAdapter'
 import { markWeeklyIjtemaAttendance } from '@/lib/operations/weeklyIjtemaWriteAdapter'
 import {
@@ -106,7 +107,10 @@ function readComplianceState(karkunId: string) {
   const ijtema = getWeeklyIjtemaCurrentAttendanceView(karkunId)
   const registration = getRegistrationForKarkun(karkunId)
   const monthly = getCurrentMonthReportingStatus(karkunId)
-  const baitulMaal = getCurrentBaitulMaalStatus(karkunId)
+  // KC-0112.4
+  // People reads Monthly Baitul Maal through the canonical adapter.
+  // Legacy write path retained until write migration.
+  const baitulMaal = getMonthlyBaitulMaalComplianceStatusView(karkunId)
 
   const ijtemaStatus: IjtemaAttendanceStatus | null =
     ijtema.status === 'Not recorded' ? null : ijtema.status
