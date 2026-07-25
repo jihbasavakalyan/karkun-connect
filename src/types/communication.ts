@@ -179,7 +179,7 @@ export const TEMPLATE_CATEGORY_LABELS: Record<TemplateCategory, string> = {
   orientation: 'Orientation',
   development: 'Development',
   study: 'Islamic Study',
-  'assignment-management': 'Assignment Management',
+  'assignment-management': 'Connection Management',
   'execution-tracking': 'Execution Tracking',
   'reporting-compliance': 'Reporting & Compliance',
   'motivation-appreciation': 'Motivation & Appreciation',
@@ -195,8 +195,8 @@ export const WORKFLOW_TEMPLATE_SECTIONS: {
 }[] = [
   {
     id: 'assignment-management',
-    label: '1. Assignment Management',
-    description: 'New assignments, transfers, and Amanah briefings for Rukns.',
+    label: '1. Connection Management',
+    description: 'New connections, transfers, and Amanah briefings for Rukns.',
   },
   {
     id: 'execution-tracking',

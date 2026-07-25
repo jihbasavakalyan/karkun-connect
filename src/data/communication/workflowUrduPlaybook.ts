@@ -34,10 +34,10 @@ function playbook(
 
 /** Admin → Rukn workflow library (KC-0077.2). */
 export const WORKFLOW_URDU_PLAYBOOK_TEMPLATES: MessageTemplate[] = [
-  // ── 1. Assignment Management ──────────────────────────────────────────
+  // ── 1. Connection Management ──────────────────────────────────────────
   playbook(
     'tpl-pb-new-assignment',
-    'Assignment Issued',
+    'Connection Issued',
     'assignment-management',
     'New Karkuns entrusted to the Rukn',
     `السلام علیکم ورحمۃ اللہ وبرکاتہ
@@ -61,9 +61,9 @@ export const WORKFLOW_URDU_PLAYBOOK_TEMPLATES: MessageTemplate[] = [
   ),
   playbook(
     'tpl-pb-assignment-updated',
-    'Assignment Updated',
+    'Connection Updated',
     'assignment-management',
-    'Updated assignment list for the Rukn',
+    'Updated connection list for the Rukn',
     `السلام علیکم ورحمۃ اللہ وبرکاتہ
 {{RuknName}}
 
@@ -142,7 +142,7 @@ export const WORKFLOW_URDU_PLAYBOOK_TEMPLATES: MessageTemplate[] = [
   ),
   playbook(
     'tpl-pb-assigned-karkuns-briefing',
-    'Your Assigned Karkuns (Briefing)',
+    'Your Connected Karkuns (Briefing)',
     'assignment-management',
     'Personal briefing — not a report',
     `السلام علیکم {{RuknName}}
@@ -433,7 +433,7 @@ export const WORKFLOW_URDU_PLAYBOOK_TEMPLATES: MessageTemplate[] = [
   ),
   playbook(
     'tpl-pb-assignment-completed',
-    'Assigned Work Completed',
+    'Connected Work Completed',
     'motivation-appreciation',
     'Celebrate completion of entrusted work',
     `السلام علیکم {{RuknName}}

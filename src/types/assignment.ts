@@ -165,8 +165,8 @@ export const REMOVAL_REASON_OPTIONS: RemovalReason[] = [
 ]
 
 const REASON_DISPLAY_LABELS: Partial<Record<string, string>> = {
-  'Wrong Assignment': 'Incorrect Assignment',
-  'Incorrect Assignment': 'Incorrect Assignment',
+  'Wrong Assignment': 'Wrong Connection',
+  'Incorrect Assignment': 'Incorrect Connection',
 }
 
 export function getReplacementReasonLabel(reason: ReplacementReason | string): string {
