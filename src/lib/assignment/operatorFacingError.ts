@@ -25,8 +25,10 @@ function looksLikeInternalDiagnostic(message: string): boolean {
   const lower = message.toLowerCase()
   return (
     lower.includes('duplicate assignment number') ||
+    lower.includes('duplicate connection number') ||
     lower.includes('asn-') ||
     lower.includes('assignment id') ||
+    lower.includes('connection id') ||
     lower.includes('asgn-') ||
     lower.includes('assertunique') ||
     lower.includes('stack') ||
