@@ -7,7 +7,6 @@ export { CommandCenterActiveCampaign } from './CommandCenterActiveCampaign'
 export { CommandCenterTodaysWork } from './CommandCenterTodaysWork'
 export { CommandCenterQuickActions } from './CommandCenterQuickActions'
 export { CommandCenterIjtemaAttendanceMetrics } from './CommandCenterIjtemaAttendanceMetrics'
-export { CommandCenterBaitulMaalMetrics } from './CommandCenterBaitulMaalMetrics'
 export { CommandCenterJihWebPortalMetrics } from './CommandCenterJihWebPortalMetrics'
 export { RecentActivityPanel } from './RecentActivityPanel'
 export {

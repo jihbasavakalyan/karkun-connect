@@ -83,13 +83,11 @@ export function getJihAppMatrixState(karkunId: string): JihAppMatrixState {
 }
 
 /**
- * Legacy-only campaign state — retained for absolute Cos seed helpers that still
- * need Paid/Exempt/remarks without adapter Contributed promotion until Cos migrates.
- * Presentation reads use getMonthlyBaitulMaalCampaignStateView (KC-0112.2).
+ * Legacy campaign-state helper — Paid/Exempt/remarks vocabulary.
  *
- * KC-0112.5 — Approved exception: write workflow seed read (not presentation).
- * KC-0112.6 — Matrix cycle seed prefers the read adapter; this helper remains for
- *             Cos checklist absolute writes that still talk legacy vocabulary.
+ * KC-0112.7 TODO — deferred Cos / achievement builders still call this.
+ * Presentation + Matrix writes use adapters; prefer
+ * getMonthlyBaitulMaalCampaignStateView when rewiring remaining callers.
  */
 export function getBaitulMaalCampaignState(karkunId: string): BaitulMaalCampaignState {
   const record = getCurrentBaitulMaalStatus(karkunId)

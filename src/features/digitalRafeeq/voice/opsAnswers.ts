@@ -8,6 +8,10 @@ import { getTeamPerformanceRows } from '@/lib/commandCenterPresentation'
 import { getGuidanceForRuknKarkuns } from '@/lib/guidance/guidanceEngine'
 import { sortGuidanceByUrgency } from '@/lib/homePresentation'
 import { getAssignmentDashboardMetrics } from '@/services/assignmentService'
+/**
+ * KC-0112.7 TODO — Rafeeq ops answers still on legacy BM metrics.
+ * Prefer monthlyBaitulMaalReadAdapter / cycle KPI when rewiring.
+ */
 import { getBaitulMaalDashboardMetrics, getRuknBaitulMaalMetrics } from '@/services/baitulMaalService'
 import { getCurrentIjtemaAttendance, getIjtemaAttendanceDashboardMetrics } from '@/services/ijtemaAttendanceService'
 import { getJihWebPortalDashboardMetrics } from '@/services/jihWebPortalService'

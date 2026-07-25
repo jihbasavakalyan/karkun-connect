@@ -10,6 +10,9 @@ import { JOURNEY_STAGE_LABELS } from '@/types/guidance'
 /**
  * KC-0110.7 TODO — Cos / communication still on legacy current-week attendance.
  * Prefer getWeeklyIjtemaCurrentAttendanceView when rewiring.
+ *
+ * KC-0112.7 TODO — Cos / communication still on legacy Baitul Maal status.
+ * Prefer getMonthlyBaitulMaalComplianceStatusView when rewiring.
  */
 import { getCurrentIjtemaAttendance } from '@/services/ijtemaAttendanceService'
 import { getCurrentBaitulMaalStatus } from '@/services/baitulMaalService'

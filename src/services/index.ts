@@ -92,7 +92,6 @@ export {
   getBaitulMaalDashboardMetrics,
   getRuknBaitulMaalMetrics,
   getAllBaitulMaalSummaries,
-  matchesBaitulMaalFilters,
   getFilterMonthKey,
   isBaitulMaalAmountEnabled,
   setBaitulMaalAmountEnabled,

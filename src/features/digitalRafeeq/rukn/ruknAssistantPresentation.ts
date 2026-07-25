@@ -6,6 +6,10 @@
  */
 
 import type { DigitalRafeeqResponse } from '@/runtime/service'
+/**
+ * KC-0112.7 TODO — Rafeeq Rukn assistant still on legacy BM reminders.
+ * Prefer adapter metrics / cycle KPI when rewiring.
+ */
 import { buildBaitulMaalGuidanceReminders } from '@/services/baitulMaalService'
 import type {
   RuknAssistantRecommendationItem,

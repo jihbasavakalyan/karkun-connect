@@ -12,6 +12,10 @@ import {
   formatCampaignDate,
   getCampaignTimeline,
 } from '@/services/campaignService'
+/**
+ * KC-0112.7 TODO — mission-control strips still on legacy BM metrics.
+ * Prefer getMonthlyBaitulMaalDashboardMetricsView / cycle KPI when rewiring.
+ */
 import { getBaitulMaalDashboardMetrics } from '@/services/baitulMaalService'
 import { getIjtemaAttendanceDashboardMetrics } from '@/services/ijtemaAttendanceService'
 import { getJihWebPortalDashboardMetrics } from '@/services/jihWebPortalService'

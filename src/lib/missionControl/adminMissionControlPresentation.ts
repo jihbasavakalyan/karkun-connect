@@ -9,6 +9,10 @@ import {
   getTeamPerformanceRows,
   type TeamPerformanceRow,
 } from '@/lib/commandCenterPresentation'
+/**
+ * KC-0112.7 TODO — achievement strips still use legacy campaign-state helper.
+ * Prefer getMonthlyBaitulMaalCampaignStateView when rewiring.
+ */
 import { getBaitulMaalCampaignState } from '@/lib/campaignExecutionMatrix'
 import { getCanonicalConnectedAssignments } from '@/lib/connections/getConnectedKarkunsForRukn'
 import { getDailyProgressView } from '@/lib/dailyProgressPresentation'

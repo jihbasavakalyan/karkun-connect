@@ -24,7 +24,7 @@ Monthly Baitul Maal has **two live Systems of Record** — the same dual-track p
 
 **Critical fact:** An operator can mark Baitul Maal on Matrix / Compliance / People (legacy) without affecting Campaign Health, and can submit on `/rukn/baitul-maal` (canonical) without updating Matrix “committed” **until KC-0112.2** (Matrix / Journey presentation now prefer canonical Contributed). Writes still use legacy until KC-0112.5. **There is no sync.**
 
-**KC-0112.2–0112.6:** Canonical read + write adapters serve Matrix / Journey / Compliance / People. Dual-write keeps Cos / Automation / Exempt on legacy. Retirement pending.
+**KC-0112.2–0112.7:** Canonical read + write adapters serve Matrix / Journey / Compliance / People. Dead legacy UI/helpers removed. Dual-write + Exempt + deferred Cos/Automation/Rafeeq retained and documented.
 
 ---
 
@@ -115,13 +115,10 @@ Monthly Baitul Maal has **two live Systems of Record** — the same dual-track p
 
 | Item | Role | Status |
 |------|------|--------|
-| `monthlyBaitulMaalReadAdapter` | Cycle preferred; legacy fallback for Matrix / Journey presentation | **Adapter** (KC-0112.2) |
+| `monthlyBaitulMaalReadAdapter` | Cycle preferred; legacy fallback | **Adapter** (KC-0112.2–0112.5) |
+| `monthlyBaitulMaalWriteAdapter` | Open-cycle write + dual-write | **Adapter** (KC-0112.6) |
 | `ComplianceRepositoryAdapter` `loadBaitulMaal` | Runtime API over legacy repo only | **Adapter** (does **not** bridge tracks) |
 | Admin nav “Baitul Maal” → `/admin/baitul-maal` | Points to cycle module | **Adapter** (routing) |
-| `MonthlyBaitulMaalDashboardKpiCard` | Cycle KPI card | **Dead** (no page import) |
-| `CommandCenterBaitulMaalMetrics` | Legacy metrics | **Dead** |
-| `RuknBaitulMaalPanel` | Legacy Rukn panel | **Dead** |
-| `AdminOperationalHealthPanel` BM | Legacy compliance | **Dead** UI |
 
 ---
 
@@ -224,8 +221,8 @@ Mirror KC-0110. Do **not** change Health formulas without a product decision.
 | **KC-0112.4** | People read migration (filters + profile display) | Low |
 | **KC-0112.5** | Read validation & observability | Low |
 | **KC-0112.6** | Canonical write cutover (Matrix / Compliance / People + dual-write) | Medium–High |
-| **KC-0112.7** | Legacy retirement (+ Cos / Automation redirect if still legacy) | Medium |
-| **KC-0112.8** | Production certification | — |
+| **KC-0112.7** | Legacy retirement (dead UI + unused helpers) + production certification | Low |
+| **KC-0112.8** | Production durability certification (Firestore collection retirement) | — |
 
 **Vocabulary work (any phase):** Separate “Contributed (cycle)” vs “Committed (campaign conversation)” vs “Paid (legacy compliance).”
 
@@ -245,6 +242,7 @@ Mirror KC-0110. Do **not** change Health formulas without a product decision.
 | Cos / Automation | Legacy | Legacy | Pending (deferred reads) |
 | Writes | Legacy | Canonical write adapter (+ legacy dual-write) | ✅ KC-0112.6 |
 | Read validation | — | — | ✅ KC-0112.5 |
+| Legacy retirement | — | Dead code removed; compatibility documented | ✅ KC-0112.7 |
 
 **Adapter rules**
 - **Matrix / Journey (KC-0112.2):** Canonical `Contributed` → Matrix `committed`. Cycle `Pending` does not invent campaign “discussed”; falls through to legacy Paid/Exempt/remarks.
@@ -342,17 +340,98 @@ Operational writes (Matrix cycle, Journey, Compliance Mark Paid/Pending/Exempt, 
 - Canonical read path established for Matrix, Journey, Compliance, and People.
 - Canonical write path established for operational entry points with documented dual-write.
 - Legacy retained for Exempt vocabulary, closed/historical cycles, dual-write compatibility, and deferred Cos/Automation readers.
-- Next: KC-0112.7 legacy retirement (turn off dual-write once deferred readers migrate).
 
 ---
 
-## 6. Explicit non-actions (this ticket)
+## 5.5 KC-0112.7 — Legacy retirement & production certification
+
+### Migration Complete
+
+Canonical Monthly Baitul Maal is the operational SoR for Matrix / Journey / Compliance / People:
+
+```text
+Canonical Monthly Bait Cycle
+            │
+            ▼
+MonthlyBaitulMaalReadAdapter
+            │
+MonthlyBaitulMaalWriteAdapter
+            │
+            ▼
+Operational Source of Truth
+(+ legacy dual-write for deferred readers)
+```
+
+Campaign Health / Mission / Top Priority already consume cycle KPI. Ops surfaces share the same path through the adapters.
+
+### Deferred Integrations
+
+| Consumer | Legacy dependency | Prefer when rewiring |
+|----------|-------------------|----------------------|
+| Cos / communication context | `getCurrentBaitulMaalStatus` | Compliance status / campaign-state view |
+| Cos relationship intelligence | `getCurrentBaitulMaalStatus` + store record | Adapter views |
+| Automation engine | `getAllBaitulMaalSummaries` / dashboard metrics | Adapter summaries / cycle KPI |
+| Rafeeq ops answers + contextual | legacy metrics / guidance reminders | Adapter / cycle KPI |
+| Mission-control / command-center strips | `getBaitulMaalDashboardMetrics` / `getRuknBaitulMaalMetrics` | Cycle KPI / adapter metrics |
+| Achievement builders | `getBaitulMaalCampaignState` | `getMonthlyBaitulMaalCampaignStateView` |
+| Development assessment hint | `isBaitulMaalSettledThisMonth` | Compliance status view (Paid via Contributed) |
+
+### Retirement Decisions
+
+**Removed (KC-0112.7)**
+
+| Reference | Reason | Action |
+|-----------|--------|--------|
+| `matchesBaitulMaalFilters` | Superseded by adapter; zero callers | Removed |
+| `resetBaitulMaalComplianceInitialization` | Zero callers | Removed |
+| `RuknBaitulMaalPanel` | Unreachable UI (barrel-only) | Removed |
+| `CommandCenterBaitulMaalMetrics` | Unreachable UI (barrel-only) | Removed |
+| `MonthlyBaitulMaalDashboardKpiCard` | Orphan file; Health already covers KPI | Removed |
+
+**Retained for compatibility**
+
+| Path | Reason | Action |
+|------|--------|--------|
+| `updateBaitulMaal` / `bulkUpdateBaitulMaal` | Dual-write + Exempt + no-open-cycle / historical month | Keep — documented |
+| Read-adapter legacy fallback | Exempt + months without cycle marks | Keep — documented |
+| `baitulMaalStore` + ComplianceRepository `load/saveBaitulMaal` | Persistence for compatibility records | Keep — no schema removal |
+| `ensureBaitulMaalRecord` | People / migration safeguards | Keep |
+| `isBaitulMaalAmountEnabled` / amount fields | Legacy Paid optional amount UX | Keep |
+| Deferred readers (table above) | Still live consumers | Leave TODO — future rewiring |
+
+### Production Certification
+
+| Check | Status |
+|-------|--------|
+| Single canonical read architecture | ✅ |
+| Single canonical write architecture | ✅ |
+| Dashboard unaffected (Health still cycle KPI) | ✅ |
+| Campaign Health unaffected | ✅ |
+| Compliance unaffected (adapter reads + write adapter) | ✅ |
+| People unaffected | ✅ |
+| Matrix unaffected | ✅ |
+| Journey unaffected | ✅ |
+| No duplicate contribution records (dual-write updates same month key / cycle mark) | ✅ |
+| No lost writes (canonical + dual-write / legacy fallback) | ✅ |
+| Legacy retained only where documented | ✅ |
+
+### Known future work
+
+1. Rewire Cos / Automation / Rafeeq / mission-control strips / communication / achievement builders to adapters or cycle KPI.
+2. Turn off dual-write once deferred readers are migrated.
+3. Retire `baitulMaal_*` Firestore docs under a dedicated KC-ARCH-001 durability ticket (KC-0112.8).
+4. Optionally fold Exempt into the cycle model if product requires it on Health.
+
+**KC-0112 Monthly Baitul Maal consolidation is complete for operational Matrix / Journey / Compliance / People read+write paths.**
+
+---
+
+## 6. Explicit non-actions (inventory / retirement tickets)
 
 - No calculation / KPI formula changes  
-- No Firestore / repository changes  
-- No UI / route changes  
-- No read or write migration  
-- No Campaign Health / Dashboard behaviour changes  
+- No Firestore / repository redesign  
+- No removal of documented compatibility layers  
+- No Cos / Automation migration in this phase  
 
 ---
 
@@ -384,10 +463,9 @@ Operational writes (Matrix cycle, Journey, Compliance Mark Paid/Pending/Exempt, 
 - `src/services/dashboardMetricsService.ts` (BM Health slice)
 - `src/lib/missionControl/campaignOperationsCommandCenter.ts`
 
-### Legacy
-- `src/services/baitulMaalService.ts`
+### Legacy (compatibility)
+- `src/services/baitulMaalService.ts` (dual-write / Exempt / deferred readers)
 - `src/stores/baitulMaalStore.ts`
 - `src/types/baitulMaal.ts`
-- `src/lib/campaignExecutionMatrix.ts` (presentation reads via adapter; writes still legacy)
-- `src/pages/admin/ComplianceModulePage.tsx`
-- `src/services/campaignAutomationEngine.ts`
+- `src/lib/campaignExecutionMatrix.ts` (ops via adapters; `getBaitulMaalCampaignState` deferred)
+- `src/services/campaignAutomationEngine.ts` (deferred reader)

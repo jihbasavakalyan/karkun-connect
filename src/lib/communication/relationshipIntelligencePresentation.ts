@@ -13,6 +13,10 @@ import {
 } from '@/lib/campaignExecutionMatrix'
 import { getDailyProgressView } from '@/lib/dailyProgressPresentation'
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
+/**
+ * KC-0112.7 TODO — Cos relationship intelligence still on legacy BM status/record.
+ * Prefer getMonthlyBaitulMaalComplianceStatusView / campaign-state view when rewiring.
+ */
 import { getCurrentBaitulMaalStatus } from '@/services/baitulMaalService'
 import { getCurrentIjtemaAttendance } from '@/services/ijtemaAttendanceService'
 import { getCurrentMonthKey } from '@/services/jihWebPortalService'
