@@ -1,6 +1,6 @@
 /**
- * KC-0106 — Executive Dashboard launch surface for Pending Karkun Requests.
- * Shows count + urgency and navigates into People (Karkuns).
+ * KC-0106 / KC-0107 — Executive Dashboard launch surface for Pending Karkun Requests.
+ * Shows count + urgency and navigates into People (canonical owner).
  * Does not host Approve / Reject — People owns that workflow.
  */
 
@@ -45,7 +45,7 @@ export function PendingKarkunRequestsLaunchPanel({
             Pending Karkun Requests
           </h2>
           <p className="exdash-action-center-sub">
-            Launch into People — intake approval is owned by the Karkun registry.
+            Launch into People — intake approval is owned by People.
           </p>
         </div>
         <span className="exdash-section-meta">{urgencyLabel}</span>

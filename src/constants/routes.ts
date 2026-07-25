@@ -100,7 +100,7 @@ export function adminAllTasksPath(): string {
   return `${ROUTES.ADMIN}?view=all-tasks`
 }
 
-/** KC-0106 — People owns New Karkun intake; Dashboard launches here. */
+/** KC-0107 — People owns New Karkun intake; Dashboard launches here. */
 export function adminKarkunPendingRequestsPath(): string {
   return `${ROUTES.ADMIN_KARKUN}?queue=pending-requests`
 }

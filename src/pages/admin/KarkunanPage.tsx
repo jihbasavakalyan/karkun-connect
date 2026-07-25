@@ -41,7 +41,7 @@ import {
 } from '@/components/forms/people'
 import type { PersonFormValues } from '@/components/forms/people'
 import { AssignKarkunModal } from '@/components/forms/assignment'
-import { PendingKarkunRequestQueue } from '@/components/admin/PendingKarkunRequestQueue'
+import { PendingKarkunRequestQueue } from '@/components/forms/people'
 import { MessageComposerModal } from '@/components/communication/MessageComposerModal'
 import { BaitulMaalBulkUpdateModal } from '@/components/forms/baitulMaal/BaitulMaalBulkUpdateModal'
 import { IjtemaAttendanceBulkUpdateModal } from '@/components/forms/ijtema/IjtemaAttendanceBulkUpdateModal'
@@ -547,8 +547,8 @@ export function KarkunanPage() {
   return (
     <PageShell>
       <PageHeader
-        title="Karkun Registry"
-        description="Manage Male and Female Karkun contacts, connections, and status separately."
+        title="Karkuns"
+        description="People registry — contacts, Connections, and Pending Karkun Requests."
         actions={
           <KarkunPeopleActionBar
             onAddMale={() => requestAddKarkun('Male')}

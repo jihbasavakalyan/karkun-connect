@@ -125,8 +125,8 @@ export function NewKarkunRequestModal({
     >
       <div className="space-y-4">
         <p className="text-sm text-secondary">
-          Submit a worker who is not yet in the registry. An administrator must approve before
-          they are added and connected.
+          Submit a worker who is not yet in the registry. People (Admin) must approve before they
+          are added and Connected.
         </p>
 
         {error ? (

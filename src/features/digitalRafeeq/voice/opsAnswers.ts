@@ -20,8 +20,10 @@ import {
   adminAssignmentsPath,
   adminCompliancePath,
   adminExecutionPath,
+  adminKarkunPendingRequestsPath,
   ruknVisitPath,
 } from '@/constants/routes'
+import { getPendingKarkunRequests } from '@/services/karkunRequestService'
 
 export type OpsAnswerAction = {
   id: string
@@ -99,6 +101,32 @@ function answerAdminQuery(
   const baitulMaal = getBaitulMaalDashboardMetrics()
   const jih = getJihWebPortalDashboardMetrics()
   const team = getTeamPerformanceRows()
+  const pendingKarkunRequests = getPendingKarkunRequests().length
+
+  if (
+    matches(query, [
+      /pending.?karkun.?request|new karkun.?request|approve.?karkun|karkun.?approval/,
+      /زیر التوا|کارکن درخواست|منظوری/,
+    ])
+  ) {
+    return {
+      text: companionReply(
+        pendingKarkunRequests === 0
+          ? 'اس وقت کوئی Pending Karkun Request نہیں ہے۔'
+          : `People میں ${pendingKarkunRequests} Pending Karkun Request${
+              pendingKarkunRequests === 1 ? '' : 's'
+            } زیر التوا ہیں۔`,
+        'منظوری یا مستردی کا مکمل عمل People میں ہوتا ہے۔',
+      ),
+      actions: [
+        {
+          id: 'people-pending',
+          label: 'People میں دیکھیں',
+          route: adminKarkunPendingRequestsPath(),
+        },
+      ],
+    }
+  }
 
   if (
     matches(query, [

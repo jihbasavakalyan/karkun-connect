@@ -24,6 +24,7 @@ import {
   ROUTES,
   adminAssignmentsPath,
   adminExecutionPath,
+  adminKarkunPendingRequestsPath,
 } from '@/constants/routes'
 
 export type MissionControlKpi = {
@@ -197,6 +198,7 @@ export function buildAdminMissionControl(
       },
     ],
     quickActions: [
+      { id: 'people-pending', label: 'Pending Karkun Requests', route: adminKarkunPendingRequestsPath() },
       { id: 'connect', label: 'Connections', route: ROUTES.ADMIN_ASSIGNMENTS },
       { id: 'execution', label: 'Execution', route: ROUTES.ADMIN_EXECUTION },
       { id: 'compliance', label: 'Compliance', route: ROUTES.ADMIN_COMPLIANCE },
