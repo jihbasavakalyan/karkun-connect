@@ -412,7 +412,7 @@ export async function appendAssignment(record: AssignmentRecord): Promise<Assign
       (item) => item.karkunId === record.karkunId && item.status === 'Active',
     )
     if (existingActive) {
-      throw new Error('This Karkun is already connected to a Rukn. Use Transfer to reassign.')
+      throw new Error('This Karkun is already connected to a Rukn. Use Transfer to reconnect.')
     }
   }
 

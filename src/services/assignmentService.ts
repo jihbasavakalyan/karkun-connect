@@ -534,7 +534,7 @@ export async function assignRukn(input: AssignInput): Promise<AssignmentResult> 
         error:
           error instanceof Error
             ? error.message
-            : 'This Karkun is already connected to a Rukn. Use Transfer to reassign.',
+            : 'This Karkun is already connected to a Rukn. Use Transfer to reconnect.',
       }
     }
 
@@ -668,7 +668,7 @@ export async function replaceAssignment(input: ReplaceInput): Promise<Assignment
         ? operatorConnectionPersistError(error)
         : error instanceof Error
           ? error.message
-          : 'This Karkun is already connected to a Rukn. Use Transfer to reassign.',
+          : 'This Karkun is already connected to a Rukn. Use Transfer to reconnect.',
     }
   }
 
@@ -829,7 +829,7 @@ export async function transferAssignment(input: TransferInput): Promise<Assignme
     if (confirmed.assignmentNumber !== current.assignmentNumber) {
       return {
         success: false,
-        error: 'Transfer changed Assignment Number unexpectedly. Contact Administrator.',
+        error: 'Transfer changed Connection Number unexpectedly. Contact Administrator.',
       }
     }
 

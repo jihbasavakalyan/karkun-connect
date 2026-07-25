@@ -51,7 +51,7 @@ export function getMoveToMuttafiqeenBlockers(personId: string): string[] {
 
   const blockers: string[] = []
   if (getActiveAssignmentsForKarkun(personId).length > 0) {
-    blockers.push('This Karkun has an active assignment. Disconnect first.')
+    blockers.push('This Karkun has an active connection. Disconnect first.')
   } else if (hasActiveConnection(person)) {
     blockers.push('This Karkun has an active connection to a Rukn. Disconnect first.')
   }
