@@ -2,6 +2,11 @@
  * KC-0107 — Weekly Ijtema Attendance Management service.
  * Event-based model: attendance belongs to a Weekly Ijtema event.
  * Open / deadline / lock / reopen reuse shared campaignCycle lifecycle.
+ *
+ * KC-0110 — CANONICAL Weekly Ijtema execution track.
+ * Campaign Health / Mission / Top Priority must use this service
+ * (`getWeeklyIjtemaDashboardKpi`). Do not replace with ijtemaAttendance*.
+ * Inventory: docs/architecture/kc-0110-weekly-ijtema-inventory.md
  */
 
 import { getAssignedKarkunanForRukn } from '@/lib/assignmentEngine'

@@ -1,3 +1,11 @@
+/**
+ * KC-0110 — LEGACY Weekly Ijtema track (per-Karkun week records).
+ * Still used by Compliance, Matrix, Connection Journey, and People surfaces.
+ * Not the Campaign Health source of truth — do not extend for new executive KPIs.
+ * Prefer weeklyIjtemaService (event/cycle). Inventory:
+ * docs/architecture/kc-0110-weekly-ijtema-inventory.md
+ */
+
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { getAllKarkuns } from '@/lib/peopleStore'
 import { getAssignedKarkunanForRukn } from '@/lib/assignmentEngine'
