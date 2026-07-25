@@ -110,7 +110,7 @@ export function runIntegrityScan(): IntegrityReport {
   for (const [id, count] of seenAsgn) {
     if (count > 1) {
       errors.push(
-        finding('DUPLICATE_ASSIGNMENT_ID', 'error', `Duplicate assignmentId ${id}`, {
+        finding('DUPLICATE_ASSIGNMENT_ID', 'error', `Duplicate connection id ${id}`, {
           entityKind: 'assignment',
           entityId: id,
         }),
@@ -120,7 +120,7 @@ export function runIntegrityScan(): IntegrityReport {
   for (const [asn, count] of seenAsn) {
     if (count > 1) {
       errors.push(
-        finding('DUPLICATE_ASN', 'error', `Duplicate assignment number ${asn}`, {
+        finding('DUPLICATE_ASN', 'error', `Duplicate connection number ${asn}`, {
           entityKind: 'assignment',
           details: { asn, count },
         }),
@@ -130,14 +130,14 @@ export function runIntegrityScan(): IntegrityReport {
 
   // 5. Broken connections / invalid refs / orphans
   checksRun += 1
-  let activePerKarkun = new Map<string, string[]>()
+  const activePerKarkun = new Map<string, string[]>()
   for (const a of assignments) {
     if (!karkunIds.has(a.karkunId)) {
       errors.push(
         finding(
           'MISSING_KARKUN_REF',
           'error',
-          `Assignment ${a.assignmentId} references missing Karkun ${a.karkunId}`,
+          `Connection ${a.assignmentId} references missing Karkun ${a.karkunId}`,
           { entityKind: 'assignment', entityId: a.assignmentId, details: { karkunId: a.karkunId } },
         ),
       )
@@ -147,7 +147,7 @@ export function runIntegrityScan(): IntegrityReport {
         finding(
           'MISSING_RUKN_REF',
           'error',
-          `Assignment ${a.assignmentId} references missing Rukn ${a.ruknId}`,
+          `Connection ${a.assignmentId} references missing Rukn ${a.ruknId}`,
           { entityKind: 'assignment', entityId: a.assignmentId, details: { ruknId: a.ruknId } },
         ),
       )
@@ -163,7 +163,7 @@ export function runIntegrityScan(): IntegrityReport {
         finding(
           'ORPHAN_UNASSIGNED_META',
           'warning',
-          `Unassigned assignment ${a.assignmentId} missing endedDate`,
+          `Not Connected connection ${a.assignmentId} missing endedDate`,
           { entityKind: 'assignment', entityId: a.assignmentId },
         ),
       )
@@ -388,10 +388,10 @@ export function runIntegrityScan(): IntegrityReport {
     recommendations.push('Block new requests/approvals for duplicate mobiles until resolved.')
   }
   if (errors.some((e) => e.code === 'BROKEN_CONNECTION_MULTI_ACTIVE')) {
-    recommendations.push('Resolve multi-Active connections before Transfer/Assign operations.')
+    recommendations.push('Resolve multi-Active connections before Transfer/Connect operations.')
   }
   if (errors.some((e) => e.code === 'MISSING_KARKUN_REF' || e.code === 'MISSING_RUKN_REF')) {
-    recommendations.push('Repair or archive orphan assignments that reference missing people.')
+    recommendations.push('Repair or archive orphan connections that reference missing people.')
   }
   if (warnings.some((w) => w.code === 'CANONICAL_CONNECTED_ZERO_WITH_ACTIVE_ROWS')) {
     recommendations.push(

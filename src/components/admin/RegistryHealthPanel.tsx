@@ -243,8 +243,6 @@ export function RegistryHealthPanel() {
               <StatCard label="Archived" value={report.summary.archived} />
               <StatCard label="Connected" value={report.summary.connected} />
               <StatCard label="Available" value={report.summary.available} />
-              <StatCard label="Assigned" value={report.summary.assigned} />
-              <StatCard label="Unassigned" value={report.summary.unassigned} />
               <StatCard label="Male" value={report.summary.male} />
               <StatCard label="Female" value={report.summary.female} />
               <StatCard label="Pending Requests" value={report.summary.pendingRequests} />
@@ -277,7 +275,7 @@ export function RegistryHealthPanel() {
                 value={report.duplicateChecks.duplicateRegistryIds}
               />
               <StatCard
-                label="Duplicate active assignments"
+                label="Duplicate connection IDs / numbers"
                 value={report.duplicateChecks.duplicateActiveAssignments}
               />
               <StatCard
@@ -320,7 +318,7 @@ export function RegistryHealthPanel() {
                 }
               />
               <CheckRow
-                label={`Assigned count == Active Assignment count (${report.consistency.assignedCount} / ${report.consistency.activeAssignmentCount})`}
+                label={`Connected status count == Active Connection count (${report.consistency.assignedCount} / ${report.consistency.activeAssignmentCount})`}
                 passed={report.consistency.assignedEqualsActiveAssignments}
                 count={
                   Math.abs(
