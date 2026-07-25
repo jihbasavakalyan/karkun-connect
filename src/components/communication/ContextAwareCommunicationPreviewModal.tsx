@@ -1,0 +1,184 @@
+/**
+ * KC-0118 — Communication Preview modal (Phase 1).
+ * Review → optional edit → choose channel → Send / Cancel.
+ */
+
+import { useState } from 'react'
+import { Modal } from '@/components/common/Modal'
+import { PrimaryButton } from '@/components/ui/PrimaryButton'
+import { SecondaryButton } from '@/components/ui/SecondaryButton'
+import { FORM_LABEL_CLASS } from '@/components/ui/formStyles'
+import {
+  getDeliveryPort,
+  recipientTypeLabel,
+  type ContextAwareDeliveryChannel,
+  type GeneratedCommunication,
+} from '@/lib/communication/contextAware'
+
+type ContextAwareCommunicationPreviewModalProps = {
+  isOpen: boolean
+  draft: GeneratedCommunication | null
+  onClose: () => void
+}
+
+export function ContextAwareCommunicationPreviewModal({
+  isOpen,
+  draft,
+  onClose,
+}: ContextAwareCommunicationPreviewModalProps) {
+  const draftKey = draft
+    ? `${draft.context}|${draft.audienceLabel}|${draft.message.length}|${draft.recipients.map((r) => r.personId).join(',')}`
+    : ''
+  const [message, setMessage] = useState(draft?.message ?? '')
+  const [channel, setChannel] = useState<ContextAwareDeliveryChannel>(
+    draft?.defaultChannel ?? 'whatsapp',
+  )
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const [notice, setNotice] = useState('')
+  const [syncedKey, setSyncedKey] = useState(draftKey)
+
+  if (draft && draftKey !== syncedKey) {
+    setSyncedKey(draftKey)
+    setMessage(draft.message)
+    setChannel(draft.defaultChannel)
+    setError('')
+    setNotice('')
+  }
+
+  if (!draft) return null
+  const recipientSummary =
+    draft.recipients.length === 0
+      ? draft.audienceLabel
+      : draft.recipients.length === 1
+        ? `${draft.recipients[0].name} (${draft.recipients[0].mobile || 'no mobile'})`
+        : `${draft.audienceLabel} — ${draft.recipients.length} recipients`
+
+  const handleSend = () => {
+    setError('')
+    setNotice('')
+    setBusy(true)
+    const port = getDeliveryPort(channel)
+    void port
+      .deliver({
+        channel,
+        recipients: draft.recipients,
+        message,
+        context: draft.context,
+      })
+      .then((result) => {
+        if (!result.ok && result.status !== 'prepared') {
+          setError(result.detail)
+          return
+        }
+        setNotice(result.detail)
+        if (result.status === 'launched' || result.status === 'prepared') {
+          window.setTimeout(() => onClose(), 700)
+        }
+      })
+      .catch((err: unknown) => {
+        setError(err instanceof Error ? err.message : 'Send failed.')
+      })
+      .finally(() => setBusy(false))
+  }
+
+  return (
+    <Modal
+      isOpen={isOpen}
+      title="Communication Preview"
+      onClose={onClose}
+      size="lg"
+      footer={
+        <div className="flex flex-wrap justify-end gap-2">
+          <SecondaryButton type="button" onClick={onClose} disabled={busy}>
+            Cancel
+          </SecondaryButton>
+          <PrimaryButton
+            type="button"
+            onClick={handleSend}
+            loading={busy}
+            disabled={busy || !message.trim()}
+          >
+            Send
+          </PrimaryButton>
+        </div>
+      }
+    >
+      <div className="space-y-4 text-sm" dir="auto">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <p className={FORM_LABEL_CLASS}>Recipient</p>
+            <p className="mt-1 font-medium text-text-heading">{recipientSummary}</p>
+            <p className="mt-0.5 text-xs text-secondary">
+              Type: {recipientTypeLabel(draft.recipientType)}
+            </p>
+          </div>
+          <div>
+            <p className={FORM_LABEL_CLASS}>Communication Type</p>
+            <p className="mt-1 font-medium text-text-heading">{draft.communicationTypeLabel}</p>
+          </div>
+        </div>
+
+        <div>
+          <p className={FORM_LABEL_CLASS}>Delivery Channel</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {draft.supportedChannels.map((option) => (
+              <button
+                key={option}
+                type="button"
+                onClick={() => setChannel(option)}
+                className={[
+                  'rounded-md border px-3 py-1.5 text-sm font-medium transition-colors',
+                  channel === option
+                    ? 'border-primary bg-primary-muted text-primary'
+                    : 'border-border bg-surface text-secondary hover:border-primary/30',
+                ].join(' ')}
+              >
+                {option === 'whatsapp' ? 'WhatsApp' : 'SMS'}
+              </button>
+            ))}
+          </div>
+          {channel === 'sms' ? (
+            <p className="mt-1 text-xs text-secondary">
+              SMS gateway is prepared for a later phase — Send will mark the message as prepared.
+            </p>
+          ) : (
+            <p className="mt-1 text-xs text-secondary">
+              Phase 1 opens WhatsApp Web / wa.me with this message (not WhatsApp Business API).
+            </p>
+          )}
+        </div>
+
+        {draft.pendingMatters.length > 0 ? (
+          <div>
+            <p className={FORM_LABEL_CLASS}>Pending Matters</p>
+            <ul className="mt-1 list-disc space-y-0.5 ps-5 text-secondary">
+              {draft.pendingMatters.slice(0, 8).map((matter) => (
+                <li key={matter.id}>{matter.label}</li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+
+        <div>
+          <label htmlFor="kc0118-generated-message" className={FORM_LABEL_CLASS}>
+            Generated Message
+          </label>
+          <p className="mt-0.5 text-xs text-secondary">Edit Message (optional)</p>
+          <textarea
+            id="kc0118-generated-message"
+            value={message}
+            onChange={(event) => setMessage(event.target.value)}
+            rows={14}
+            className="mt-2 w-full rounded-lg border border-border bg-surface px-3 py-2 font-[inherit] text-base leading-relaxed text-text-heading focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+            dir="rtl"
+            lang="ur"
+          />
+        </div>
+
+        {error ? <p className="text-sm text-error">{error}</p> : null}
+        {notice ? <p className="text-sm text-primary">{notice}</p> : null}
+      </div>
+    </Modal>
+  )
+}

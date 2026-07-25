@@ -16,6 +16,9 @@ import { subscribeToFollowUpStore } from '@/stores/followUpStore'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import { PageHeader, PageShell } from '@/components/ui'
+import { useContextAwareCommunication } from '@/hooks/useContextAwareCommunication'
+import { pendingMatter } from '@/lib/communication/contextAware'
+import { buildRuknMessageRecipient } from '@/lib/missionControl/dashboardCommunicationDrafts'
 
 const sections = [
   { id: 'follow-ups', label: 'Pending Follow-ups' },
@@ -57,12 +60,14 @@ function FollowUpList({
   emptyMessage,
   showActions,
   onComplete,
+  onNotify,
 }: {
   records: FollowUpRecord[]
   emptyTitle: string
   emptyMessage: string
   showActions: boolean
   onComplete: (followUpId: string) => void
+  onNotify?: (record: FollowUpRecord) => void
 }) {
   if (records.length === 0) {
     return <ExecutionEmptyState title={emptyTitle} message={emptyMessage} />
@@ -95,6 +100,16 @@ function FollowUpList({
                   Open Connection
                 </PrimaryButton>
               </Link>
+              {onNotify ? (
+                <SecondaryButton
+                  type="button"
+                  fullWidth
+                  className="px-4 py-2 text-sm"
+                  onClick={() => onNotify(item)}
+                >
+                  Notify
+                </SecondaryButton>
+              ) : null}
               <SecondaryButton
                 type="button"
                 fullWidth
@@ -116,6 +131,7 @@ export function FollowUpDevelopmentModulePage({
 }: { embedded?: boolean } = {}) {
   const [, setVersion] = useState(0)
   const [searchParams, setSearchParams] = useSearchParams()
+  const { openCommunication, previewModal } = useContextAwareCommunication()
   const sectionParam = searchParams.get('section')
   const activeSection: FollowUpSection =
     sections.some((item) => item.id === sectionParam)
@@ -138,6 +154,21 @@ export function FollowUpDevelopmentModulePage({
 
   const handleComplete = (followUpId: string) => {
     completeFollowUpById(followUpId)
+  }
+
+  const handleNotify = (record: FollowUpRecord) => {
+    const recipient = buildRuknMessageRecipient(record.ruknId)
+    if (!recipient) return
+    openCommunication({
+      context: 'follow-up-pending',
+      recipients: [recipient],
+      pendingMatters: [
+        pendingMatter(
+          record.followUpId,
+          `${record.karkunName}: ${record.purpose || 'پیروی'} (${record.followUpDate})`,
+        ),
+      ],
+    })
   }
 
   const body = (
@@ -165,6 +196,7 @@ export function FollowUpDevelopmentModulePage({
               emptyMessage="You're all caught up."
               showActions
               onComplete={handleComplete}
+              onNotify={handleNotify}
             />
           </div>
         </section>
@@ -180,6 +212,7 @@ export function FollowUpDevelopmentModulePage({
               emptyMessage="No follow-ups are scheduled for today."
               showActions
               onComplete={handleComplete}
+              onNotify={handleNotify}
             />
           </div>
         </section>
@@ -199,6 +232,7 @@ export function FollowUpDevelopmentModulePage({
           </div>
         </section>
       )}
+      {previewModal}
     </>
   )
 

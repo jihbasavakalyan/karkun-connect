@@ -1,3 +1,4 @@
+export { ContextAwareCommunicationPreviewModal } from '@/components/communication/ContextAwareCommunicationPreviewModal'
 export { AutomationRulesPanel } from '@/components/communication/AutomationRulesPanel'
 export { BroadcastComposerPanel } from '@/components/communication/BroadcastComposerPanel'
 export { CommunicationActions } from '@/components/communication/CommunicationActions'

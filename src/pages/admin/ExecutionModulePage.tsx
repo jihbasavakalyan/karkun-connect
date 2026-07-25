@@ -17,8 +17,12 @@ import { subscribeToAnnexure1Store } from '@/stores/annexure1Store'
 import { subscribeToFollowUpStore } from '@/stores/followUpStore'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
+import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import { PageHeader, PageShell } from '@/components/ui'
 import { ReportGuidanceCard } from '@/features/digitalRafeeq/contextual'
+import { useContextAwareCommunication } from '@/hooks/useContextAwareCommunication'
+import { pendingMatter } from '@/lib/communication/contextAware'
+import { buildRuknMessageRecipient } from '@/lib/missionControl/dashboardCommunicationDrafts'
 
 const sections = [
   { id: 'pending', label: 'Pending Execution' },
@@ -56,7 +60,13 @@ function ExecutionSectionNav({
   )
 }
 
-function AssignmentRow({ item }: { item: ExecutionAssignmentItem }) {
+function AssignmentRow({
+  item,
+  onNotify,
+}: {
+  item: ExecutionAssignmentItem
+  onNotify?: (item: ExecutionAssignmentItem) => void
+}) {
   const actionLabel = getAnnexureActionLabel(item.status)
 
   return (
@@ -70,11 +80,23 @@ function AssignmentRow({ item }: { item: ExecutionAssignmentItem }) {
           {item.area} · Rukn: {item.ruknName} · {item.assignmentNumber}
         </p>
       </div>
-      <Link to={adminAnnexure1Path(item.karkunId)} className="shrink-0">
-        <PrimaryButton type="button" className="w-full px-4 py-2 text-sm sm:w-auto">
-          {actionLabel}
-        </PrimaryButton>
-      </Link>
+      <div className="flex shrink-0 flex-col gap-2 sm:w-48">
+        <Link to={adminAnnexure1Path(item.karkunId)}>
+          <PrimaryButton type="button" fullWidth className="px-4 py-2 text-sm">
+            {actionLabel}
+          </PrimaryButton>
+        </Link>
+        {onNotify ? (
+          <SecondaryButton
+            type="button"
+            fullWidth
+            className="px-4 py-2 text-sm"
+            onClick={() => onNotify(item)}
+          >
+            Notify
+          </SecondaryButton>
+        ) : null}
+      </div>
     </li>
   )
 }
@@ -154,6 +176,7 @@ export function ExecutionModulePage({ embedded = false }: { embedded?: boolean }
   const [, setVersion] = useState(0)
   const [searchParams, setSearchParams] = useSearchParams()
   const activeSection = resolveSection(searchParams.get('section'))
+  const { openCommunication, previewModal } = useContextAwareCommunication()
 
   useEffect(() => {
     const unsubAnnexure = subscribeToAnnexure1Store(() => setVersion((value) => value + 1))
@@ -172,6 +195,23 @@ export function ExecutionModulePage({ embedded = false }: { embedded?: boolean }
       const next = new URLSearchParams(prev)
       next.set('section', section)
       return next
+    })
+  }
+
+  const handleNotify = (item: ExecutionAssignmentItem) => {
+    const recipient = buildRuknMessageRecipient(item.ruknId)
+    if (!recipient) return
+    const context =
+      item.status === 'Follow-up Required' ? 'follow-up-pending' : 'pending-visits'
+    openCommunication({
+      context,
+      recipients: [recipient],
+      pendingMatters: [
+        pendingMatter(
+          item.assignmentId,
+          `${item.karkunName}: ${item.status === 'Follow-up Required' ? 'پیروی' : 'ملاقات'} زیر التواء`,
+        ),
+      ],
     })
   }
 
@@ -232,11 +272,12 @@ export function ExecutionModulePage({ embedded = false }: { embedded?: boolean }
         ) : (
           <ul className="mt-4 space-y-3">
             {filteredItems.map((item) => (
-              <AssignmentRow key={item.assignmentId} item={item} />
+              <AssignmentRow key={item.assignmentId} item={item} onNotify={handleNotify} />
             ))}
           </ul>
         )}
       </section>
+      {previewModal}
     </>
   )
 

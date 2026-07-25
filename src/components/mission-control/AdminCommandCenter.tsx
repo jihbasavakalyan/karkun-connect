@@ -44,6 +44,12 @@ import { useBackgroundHydration } from '@/hooks/useBackgroundHydration'
 import { useCommunication } from '@/hooks/useCommunication'
 import { PendingKarkunRequestsLaunchPanel } from './PendingKarkunRequestsLaunchPanel'
 import { MessageComposerModal } from '@/components/communication/MessageComposerModal'
+import { useContextAwareCommunication } from '@/hooks/useContextAwareCommunication'
+import {
+  communicationContextFromMissionItemId,
+  pendingMatter,
+} from '@/lib/communication/contextAware'
+import type { AdminActionCenterItem } from '@/lib/missionControl/adminDashboardOpsExperiment'
 import { dashState03WidgetRender } from '@/lib/debug/kc00586DashboardStateProbe'
 import { createCoalescedNotifier } from '@/lib/dashboard/coalesceStoreNotifications'
 import { getRuknById } from '@/data/ruknMaster'
@@ -385,6 +391,7 @@ export function AdminCommandCenter({
   const { assignmentVersion } = useAssignmentEngine()
   const backgroundReady = useBackgroundHydration()
   const { sendIndividualMessage } = useCommunication()
+  const { openCommunication, previewModal } = useContextAwareCommunication()
   const [searchParams] = useSearchParams()
   const showAllTasks =
     USE_ADMIN_ACTION_CENTER_EXPERIMENT && searchParams.get('view') === 'all-tasks'
@@ -448,11 +455,24 @@ export function AdminCommandCenter({
       setComposerError('This Rukn has no mobile number.')
       return
     }
-    openComposer({
+    setComposerError('')
+    openCommunication({
+      context: 'no-activity',
       recipients: [recipient],
-      title: `Notify ${recipient.name}`,
-      initialTemplateId: 'tpl-visit-reminder',
+      pendingMatters: [
+        pendingMatter('progress', `${recipient.name}: مہم کی پیش رفت توجہ طلب ہے`),
+      ],
     })
+  }
+
+  const openMissionNotify = (item: AdminActionCenterItem) => {
+    const context = communicationContextFromMissionItemId(item.id)
+    if (!context) {
+      setComposerError('No communication context for this task.')
+      return
+    }
+    setComposerError('')
+    openCommunication({ context })
   }
 
   const openAppreciate = (ruknId: string) => {
@@ -508,10 +528,13 @@ export function AdminCommandCenter({
       })
       return
     }
-    openComposer({
+    openCommunication({
+      context: 'no-activity',
       recipients,
-      title: `Notify ${recipients.length} Rukns`,
-      initialTemplateId: 'tpl-visit-reminder',
+      pendingMatters: [
+        pendingMatter('bulk', `${recipients.length} ارکان: پیش رفت کی صورتِ حال توجہ طلب ہے`),
+      ],
+      audienceLabel: `${recipients.length} Rukns`,
     })
   }
 
@@ -679,6 +702,7 @@ export function AdminCommandCenter({
             items={missionItems}
             backgroundReady={backgroundReady}
             variant="full"
+            onNotify={openMissionNotify}
           />
         </WidgetErrorBoundary>
       ) : (
@@ -724,7 +748,11 @@ export function AdminCommandCenter({
           {/* Today's Mission — unchanged */}
           <WidgetErrorBoundary title="Today's Mission">
             {USE_ADMIN_ACTION_CENTER_EXPERIMENT ? (
-              <AdminActionCenter items={missionItems} backgroundReady={backgroundReady} />
+              <AdminActionCenter
+                items={missionItems}
+                backgroundReady={backgroundReady}
+                onNotify={openMissionNotify}
+              />
             ) : (
               <AdminOpsThreeColumnLayout
                 model={model}
@@ -842,6 +870,7 @@ export function AdminCommandCenter({
           return { success: false, error: result.error ?? 'Send failed.' }
         }}
       />
+      {previewModal}
     </div>
   )
 }

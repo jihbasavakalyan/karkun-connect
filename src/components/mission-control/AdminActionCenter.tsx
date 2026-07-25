@@ -51,12 +51,15 @@ type AdminActionCenterProps = {
   backgroundReady: boolean
   /** summary = top N on homepage; full = complete operational queue */
   variant?: 'summary' | 'full'
+  /** KC-0118 — Context-aware Notify (opens Communication Preview). */
+  onNotify?: (item: AdminActionCenterItem) => void
 }
 
 export function AdminActionCenter({
   items,
   backgroundReady,
   variant = 'summary',
+  onNotify,
 }: AdminActionCenterProps) {
   const isSummary = variant === 'summary'
   const visibleItems = isSummary ? items.slice(0, ADMIN_TODAYS_MISSION_TOP_N) : items
@@ -112,9 +115,20 @@ export function AdminActionCenter({
                 </div>
                 <span className="exdash-queue-detail">{item.description}</span>
               </div>
-              <Link to={item.route} className="exdash-action-cta">
-                {item.actionLabel}
-              </Link>
+              <div className="flex shrink-0 flex-col gap-1.5 sm:items-end">
+                <Link to={item.route} className="exdash-action-cta">
+                  {item.actionLabel}
+                </Link>
+                {onNotify ? (
+                  <button
+                    type="button"
+                    className="exdash-action-cta"
+                    onClick={() => onNotify(item)}
+                  >
+                    Notify
+                  </button>
+                ) : null}
+              </div>
             </li>
           ))}
         </ol>
