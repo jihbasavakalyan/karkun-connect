@@ -4,6 +4,10 @@
  * KC-0112.3
  * Compliance reads Monthly Baitul Maal through the canonical adapter.
  * Legacy write path retained until write migration.
+ *
+ * KC-0112.6
+ * Canonical Monthly Baitul Maal write path.
+ * Legacy updates retained only for documented compatibility.
  */
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
@@ -22,7 +26,7 @@ import {
   resolveComplianceViewFilter,
   type ComplianceSection,
 } from '@/lib/complianceNavigation'
-import { updateBaitulMaal } from '@/services/baitulMaalService'
+import { updateMonthlyBaitulMaalContribution } from '@/lib/operations/monthlyBaitulMaalWriteAdapter'
 import {
   getMonthlyBaitulMaalDashboardMetricsView,
   getMonthlyBaitulMaalSummariesView,
@@ -368,7 +372,7 @@ function BaitulMaalRow({
   const markPaid = () => {
     void run(
       async () => {
-        const result = updateBaitulMaal({
+        const result = updateMonthlyBaitulMaalContribution({
           karkunId: item.karkunId,
           status: 'Paid',
           paymentDate: todayDate(),
@@ -382,7 +386,7 @@ function BaitulMaalRow({
   const markPending = () => {
     void run(
       async () => {
-        const result = updateBaitulMaal({
+        const result = updateMonthlyBaitulMaalContribution({
           karkunId: item.karkunId,
           status: 'Pending',
         })
@@ -395,7 +399,7 @@ function BaitulMaalRow({
   const markExempt = () => {
     void run(
       async () => {
-        const result = updateBaitulMaal({
+        const result = updateMonthlyBaitulMaalContribution({
           karkunId: item.karkunId,
           status: 'Exempt',
         })

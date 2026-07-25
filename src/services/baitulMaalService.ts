@@ -1,9 +1,14 @@
 /**
  * KC-0112 — LEGACY Monthly Baitul Maal track (per-Karkun month records).
- * Still used by Compliance, Matrix, Connection Journey, People, Cos, automation.
+ * Still used by deferred Cos / Automation readers and as dual-write target.
  * Not the Campaign Health source of truth — do not extend for new executive KPIs.
- * Prefer monthlyBaitulMaalService (cycle/submission). Inventory:
- * docs/architecture/kc-0112-monthly-baitul-maal-inventory.md
+ * Prefer monthlyBaitulMaalService (cycle/submission) + write adapter for ops writes.
+ * Inventory: docs/architecture/kc-0112-monthly-baitul-maal-inventory.md
+ *
+ * KC-0112.6
+ * Canonical Monthly Baitul Maal write path is `monthlyBaitulMaalWriteAdapter`.
+ * Legacy updates retained only for documented compatibility (Exempt, no open cycle,
+ * dual-write, deferred integrations).
  */
 
 import { getKarkunById } from '@/constants/mockKarkunRegistry'

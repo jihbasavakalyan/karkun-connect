@@ -4,7 +4,10 @@
  *
  * KC-0112.2
  * Reads Monthly Baitul Maal through the canonical adapter.
- * Legacy service retained until write migration.
+ *
+ * KC-0112.6
+ * Canonical Monthly Baitul Maal write path.
+ * Legacy updates retained only for documented compatibility.
  */
 
 import { getKarkunById, updateKarkunMeetingOutcomes } from '@/constants/mockKarkunRegistry'
@@ -15,13 +18,11 @@ import {
   getDailyProgressView,
 } from '@/lib/dailyProgressPresentation'
 import { getMonthlyBaitulMaalCampaignStateView } from '@/lib/operations/monthlyBaitulMaalReadAdapter'
+import { updateMonthlyBaitulMaalContribution } from '@/lib/operations/monthlyBaitulMaalWriteAdapter'
 import { getWeeklyIjtemaCurrentAttendanceView } from '@/lib/operations/weeklyIjtemaReadAdapter'
 import { markWeeklyIjtemaAttendance } from '@/lib/operations/weeklyIjtemaWriteAdapter'
 import { saveDailyProgress } from '@/services/annexure1Service'
-import {
-  getCurrentBaitulMaalStatus,
-  updateBaitulMaal,
-} from '@/services/baitulMaalService'
+import { getCurrentBaitulMaalStatus } from '@/services/baitulMaalService'
 import { getCampaignTimeline } from '@/services/campaignService'
 import { createCommitment } from '@/services/guidanceService'
 import { getActiveAssignmentsForKarkun } from '@/stores/assignmentStore'
@@ -82,10 +83,13 @@ export function getJihAppMatrixState(karkunId: string): JihAppMatrixState {
 }
 
 /**
- * Legacy-only campaign state — used by write seed paths until write cutover.
+ * Legacy-only campaign state — retained for absolute Cos seed helpers that still
+ * need Paid/Exempt/remarks without adapter Contributed promotion until Cos migrates.
  * Presentation reads use getMonthlyBaitulMaalCampaignStateView (KC-0112.2).
  *
  * KC-0112.5 — Approved exception: write workflow seed read (not presentation).
+ * KC-0112.6 — Matrix cycle seed prefers the read adapter; this helper remains for
+ *             Cos checklist absolute writes that still talk legacy vocabulary.
  */
 export function getBaitulMaalCampaignState(karkunId: string): BaitulMaalCampaignState {
   const record = getCurrentBaitulMaalStatus(karkunId)
@@ -258,17 +262,21 @@ export function cycleIjtemaForKarkun(
 export function cycleBaitulMaalCampaignForKarkun(
   karkunId: string,
   updatedBy?: string,
+  ruknId?: string,
 ): { success: true; next: BaitulMaalCampaignState } | { success: false; error: string } {
-  const current = getBaitulMaalCampaignState(karkunId)
+  // KC-0112.6 — seed from canonical read adapter; write via write adapter.
+  const current = getMonthlyBaitulMaalCampaignStateView(karkunId).state
   const order: BaitulMaalCampaignState[] = ['not_discussed', 'discussed', 'committed']
   const next = order[(order.indexOf(current) + 1) % order.length]!
+  const actor = updatedBy ?? 'Rukn'
 
   if (next === 'not_discussed') {
-    const result = updateBaitulMaal({
+    const result = updateMonthlyBaitulMaalContribution({
       karkunId,
       status: 'Pending',
       remarks: '',
-      updatedBy: updatedBy ?? 'Rukn',
+      updatedBy: actor,
+      ruknId,
     })
     return result.success
       ? { success: true, next }
@@ -276,23 +284,25 @@ export function cycleBaitulMaalCampaignForKarkun(
   }
 
   if (next === 'discussed') {
-    const result = updateBaitulMaal({
+    const result = updateMonthlyBaitulMaalContribution({
       karkunId,
       status: 'Pending',
       remarks: BAITUL_DISCUSSED,
-      updatedBy: updatedBy ?? 'Rukn',
+      updatedBy: actor,
+      ruknId,
     })
     return result.success
       ? { success: true, next }
       : { success: false, error: result.error }
   }
 
-  // Committed — campaign conversation complete (payment gateway out of scope).
-  const result = updateBaitulMaal({
+  // Committed — campaign conversation complete (also Contributed on open cycle).
+  const result = updateMonthlyBaitulMaalContribution({
     karkunId,
     status: 'Pending',
     remarks: BAITUL_COMMITTED,
-    updatedBy: updatedBy ?? 'Rukn',
+    updatedBy: actor,
+    ruknId,
   })
   return result.success
     ? { success: true, next }
@@ -418,16 +428,19 @@ function setJihAppAbsolute(
 function setBaitulDiscussedAbsolute(
   karkunId: string,
   updatedBy?: string,
+  ruknId?: string,
 ): { success: true } | { success: false; error: string } {
-  const current = getBaitulMaalCampaignState(karkunId)
+  // KC-0112.6 — seed from canonical read adapter; write via write adapter.
+  const current = getMonthlyBaitulMaalCampaignStateView(karkunId).state
   if (current === 'committed' || current === 'discussed') {
     return { success: true }
   }
-  const result = updateBaitulMaal({
+  const result = updateMonthlyBaitulMaalContribution({
     karkunId,
     status: 'Pending',
     remarks: BAITUL_DISCUSSED,
     updatedBy: updatedBy ?? 'Rukn',
+    ruknId,
   })
   return result.success ? { success: true } : { success: false, error: result.error }
 }
@@ -506,7 +519,7 @@ export function applyTodaysCampaignProgress(input: {
   }
 
   if (draft.baitulMaalDiscussed) {
-    const baitul = setBaitulDiscussedAbsolute(karkunId, actorId ?? ruknId)
+    const baitul = setBaitulDiscussedAbsolute(karkunId, actorId ?? ruknId, ruknId)
     if (!baitul.success) return baitul
   }
 

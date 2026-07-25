@@ -7,7 +7,7 @@ import { getPersonCategory, getMuttafiqDisplayNumber } from '@/lib/peopleClassif
 import { persistKarkunDurable, updateKarkun } from '@/lib/peopleStore'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { usePeopleStore } from '@/hooks/usePeopleStore'
-import { updateBaitulMaal } from '@/services/baitulMaalService'
+import { updateMonthlyBaitulMaalContribution } from '@/lib/operations/monthlyBaitulMaalWriteAdapter'
 import { getMonthlyBaitulMaalComplianceStatusView } from '@/lib/operations/monthlyBaitulMaalReadAdapter'
 import { getWeeklyIjtemaCurrentAttendanceView } from '@/lib/operations/weeklyIjtemaReadAdapter'
 import { markWeeklyIjtemaAttendance } from '@/lib/operations/weeklyIjtemaWriteAdapter'
@@ -267,7 +267,7 @@ function KarkunProfileForm({ karkun, karkunId }: KarkunProfileFormProps) {
       }
     }
 
-    const baitulMaalResult = updateBaitulMaal({
+    const baitulMaalResult = updateMonthlyBaitulMaalContribution({
       karkunId,
       status: baitulMaalPaid ? 'Paid' : 'Pending',
       paymentDate: baitulMaalPaid ? todayDate() : undefined,

@@ -264,6 +264,7 @@ export function CampaignExecutionMatrix({ ruknId }: CampaignExecutionMatrixProps
                           const result = cycleBaitulMaalCampaignForKarkun(
                             row.karkunId,
                             user?.displayName ?? user?.uid ?? 'Rukn',
+                            ruknId,
                           )
                           return result.success
                             ? { success: true as const }

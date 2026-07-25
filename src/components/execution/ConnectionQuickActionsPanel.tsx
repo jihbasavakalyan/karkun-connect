@@ -193,6 +193,7 @@ export function ConnectionQuickActionsPanel({
               const result = cycleBaitulMaalCampaignForKarkun(
                 karkunId,
                 user?.displayName ?? user?.uid ?? 'Rukn',
+                ruknId,
               )
               return result.success
                 ? { success: true as const }

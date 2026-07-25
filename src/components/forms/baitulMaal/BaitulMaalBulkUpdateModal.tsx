@@ -1,13 +1,16 @@
+/**
+ * KC-0112.6
+ * Canonical Monthly Baitul Maal write path.
+ * Legacy updates retained only for documented compatibility.
+ */
 import { useState, type FormEvent } from 'react'
 import { Modal } from '@/components/common/Modal'
 import { InputField } from '@/components/forms/InputField'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import { useBusyAction } from '@/hooks/useBusyAction'
-import {
-  bulkUpdateBaitulMaal,
-  isBaitulMaalAmountEnabled,
-} from '@/services/baitulMaalService'
+import { bulkUpdateMonthlyBaitulMaalContribution } from '@/lib/operations/monthlyBaitulMaalWriteAdapter'
+import { isBaitulMaalAmountEnabled } from '@/services/baitulMaalService'
 import type { BaitulMaalStatus } from '@/types/baitulMaal'
 
 type BaitulMaalBulkUpdateModalProps = {
@@ -61,7 +64,7 @@ function BaitulMaalBulkUpdateModalContent({
     void run(
       async () => {
         setError('')
-        const result = bulkUpdateBaitulMaal({
+        const result = bulkUpdateMonthlyBaitulMaalContribution({
           karkunIds,
           status,
           paymentDate: status === 'Paid' ? paymentDate : undefined,
