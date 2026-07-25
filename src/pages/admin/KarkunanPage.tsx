@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import type { PersonGender } from '@/types/karkun-registry.types'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
 import type { ImportSummary } from '@/types/people.types'
@@ -41,6 +41,7 @@ import {
 } from '@/components/forms/people'
 import type { PersonFormValues } from '@/components/forms/people'
 import { AssignKarkunModal } from '@/components/forms/assignment'
+import { PendingKarkunRequestQueue } from '@/components/forms/people'
 import { MessageComposerModal } from '@/components/communication/MessageComposerModal'
 import { BaitulMaalBulkUpdateModal } from '@/components/forms/baitulMaal/BaitulMaalBulkUpdateModal'
 import { IjtemaAttendanceBulkUpdateModal } from '@/components/forms/ijtema/IjtemaAttendanceBulkUpdateModal'
@@ -512,11 +513,18 @@ function KarkunGenderSection({
 
 export function KarkunanPage() {
   const location = useLocation()
+  const [searchParams] = useSearchParams()
   const initialSearch =
     (location.state as { searchQuery?: string } | null)?.searchQuery?.trim() ?? ''
   const [activeGender, setActiveGender] = useState<GenderTab>('Male')
   const sectionHandlersRef = useRef<KarkunSectionHandlers | null>(null)
   const [openAddForGender, setOpenAddForGender] = useState<PersonGender | null>(null)
+
+  useEffect(() => {
+    if (searchParams.get('queue') !== 'pending-requests') return
+    const target = document.getElementById('pending-karkun-requests')
+    target?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [searchParams])
 
   const registerSectionHandlers = useCallback((handlers: KarkunSectionHandlers | null) => {
     sectionHandlersRef.current = handlers
@@ -539,8 +547,8 @@ export function KarkunanPage() {
   return (
     <PageShell>
       <PageHeader
-        title="Karkun Registry"
-        description="Manage Male and Female Karkun contacts, connections, and status separately."
+        title="Karkuns"
+        description="People registry — contacts, Connections, and Pending Karkun Requests."
         actions={
           <KarkunPeopleActionBar
             onAddMale={() => requestAddKarkun('Male')}
@@ -563,6 +571,10 @@ export function KarkunanPage() {
       </div>
 
       <KarkunSummaryCards />
+
+      <div className="mt-6">
+        <PendingKarkunRequestQueue />
+      </div>
 
       <nav className="ds-tab-nav mt-6 border-b border-border pb-px" aria-label="Karkun gender">
         {(['Male', 'Female'] as const).map((gender) => (

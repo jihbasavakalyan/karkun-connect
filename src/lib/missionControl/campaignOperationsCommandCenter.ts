@@ -7,6 +7,7 @@
 import {
   adminCompliancePath,
   adminExecutionPath,
+  adminKarkunPendingRequestsPath,
   adminMonthlyBaitulMaalPath,
   adminRuknDetailPath,
   adminWeeklyIjtemaPath,
@@ -38,6 +39,7 @@ import {
 } from '@/services/dashboardMetricsService'
 import { getMonthlyBaitulMaalDashboardKpi, getMonthlyBaitulMaalReport } from '@/services/monthlyBaitulMaalService'
 import { getWeeklyIjtemaDashboardKpi, getWeeklyIjtemaReport } from '@/services/weeklyIjtemaService'
+import { getPendingKarkunRequests } from '@/services/karkunRequestService'
 import { getRecentActivity } from '@/stores/activityLogStore'
 
 export type CampaignHealthMetricId =
@@ -111,6 +113,7 @@ export function buildTodaysMissionOperationalItems(): AdminActionCenterItem[] {
   const baitul = getMonthlyBaitulMaalDashboardKpi()
   const visits = getDashboardVisitMetrics()
   const app = getDashboardAppRegistrationMetrics()
+  const pendingKarkunRequests = getPendingKarkunRequests().length
 
   const push = (
     id: string,
@@ -133,6 +136,17 @@ export function buildTodaysMissionOperationalItems(): AdminActionCenterItem[] {
       count,
     })
   }
+
+  // KC-0107 — People owns intake; Dashboard Mission only launches into People.
+  push(
+    'mission-pending-karkun-requests',
+    pendingKarkunRequests >= 5 ? 'high' : 'medium',
+    'Pending Karkun Requests',
+    `${pendingKarkunRequests} New Karkun request${pendingKarkunRequests === 1 ? '' : 's'} awaiting People review`,
+    'Review in People',
+    adminKarkunPendingRequestsPath(),
+    pendingKarkunRequests,
+  )
 
   push(
     'mission-pending-weekly-ijtema',

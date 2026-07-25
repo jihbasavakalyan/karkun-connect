@@ -277,7 +277,7 @@ export function RegistryHealthPanel() {
                 value={report.duplicateChecks.duplicateRegistryIds}
               />
               <StatCard
-                label="Duplicate active connection docs"
+                label="Duplicate connection IDs / numbers"
                 value={report.duplicateChecks.duplicateActiveAssignments}
               />
               <StatCard
@@ -320,7 +320,7 @@ export function RegistryHealthPanel() {
                 }
               />
               <CheckRow
-                label={`Connected (status) count == Active Connection count (${report.consistency.assignedCount} / ${report.consistency.activeAssignmentCount})`}
+                label={`Connected status count == Active Connection count (${report.consistency.assignedCount} / ${report.consistency.activeAssignmentCount})`}
                 passed={report.consistency.assignedEqualsActiveAssignments}
                 count={
                   Math.abs(

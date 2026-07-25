@@ -63,5 +63,5 @@ export function exportAssignmentHistory(records?: AssignmentRecord[]): void {
   const sorted = [...data].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
   const csv = rowsToCsv(EXPORT_HEADERS, sorted.map(recordToRow))
   const dateStamp = new Date().toISOString().slice(0, 10)
-  downloadFile(csv, `assignment-history-${dateStamp}.csv`)
+  downloadFile(csv, `connection-history-${dateStamp}.csv`)
 }

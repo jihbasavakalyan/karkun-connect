@@ -42,7 +42,7 @@ import type { MessageRecipient } from '@/types/communication'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { useBackgroundHydration } from '@/hooks/useBackgroundHydration'
 import { useCommunication } from '@/hooks/useCommunication'
-import { PendingKarkunRequestQueue } from '@/components/admin/PendingKarkunRequestQueue'
+import { PendingKarkunRequestsLaunchPanel } from './PendingKarkunRequestsLaunchPanel'
 import { MessageComposerModal } from '@/components/communication/MessageComposerModal'
 import { dashState03WidgetRender } from '@/lib/debug/kc00586DashboardStateProbe'
 import { createCoalescedNotifier } from '@/lib/dashboard/coalesceStoreNotifications'
@@ -53,7 +53,6 @@ import { CampaignHealthPanel } from './CampaignHealthPanel'
 import { ProgressTrendsPanel } from './ProgressTrendsPanel'
 import { ActivityTimeline } from './ActivityTimeline'
 import { WidgetErrorBoundary } from './WidgetErrorBoundary'
-import { CardSkeleton } from '@/components/ui'
 import { subscribeToWeeklyIjtemaStore } from '@/stores/weeklyIjtemaStore'
 import { subscribeToMonthlyBaitulMaalStore } from '@/stores/monthlyBaitulMaalStore'
 import { subscribeToAnnexure1Store } from '@/stores/annexure1Store'
@@ -348,6 +347,7 @@ function OverviewMetricGrid({
     <section className="exdash-panel" aria-label={title}>
       <div className="exdash-section-head">
         <ExdashSectionTitle title={title} icon={icon} tone={tone} />
+        <span className="exdash-section-meta">Executive summary</span>
       </div>
       <ul className="exdash-metric-grid">
         {metrics.map((metric) => (
@@ -736,21 +736,10 @@ export function AdminCommandCenter({
           </WidgetErrorBoundary>
 
           <WidgetErrorBoundary title="Pending Karkun Requests" compact>
-            {backgroundReady ? (
-              <PendingKarkunRequestQueue />
-            ) : (
-              <section className="exdash-panel" aria-label="Pending Karkun Requests" aria-busy="true">
-                <div className="exdash-section-head">
-                  <ExdashSectionTitle title="Pending Karkun Requests" icon="users" tone="amber" />
-                  <span className="exdash-section-meta">Loading</span>
-                </div>
-                <p className="exdash-muted">Loading pending Karkun requests…</p>
-                <CardSkeleton count={1} />
-              </section>
-            )}
+            <PendingKarkunRequestsLaunchPanel backgroundReady={backgroundReady} />
           </WidgetErrorBoundary>
 
-          {/* Top Priority Rukns */}
+          {/* Top Priority Rukns — launch surface (KC-0106) */}
           <WidgetErrorBoundary title="Top Priority Rukns">
             <section className="exdash-panel" aria-label="Top Priority Rukns">
               <div className="exdash-section-head">
@@ -760,8 +749,8 @@ export function AdminCommandCenter({
                 </Link>
               </div>
               <p className="exdash-action-center-sub">
-                Ranked by equal weight across Visits, Weekly Ijtema, Monthly Baitul Maal, and App
-                Registration (lowest score first).
+                Launch surface — open a Rukn to act. Ranked by equal weight across Visits, Weekly
+                Ijtema, Monthly Baitul Maal, and App Registration (lowest score first).
               </p>
               {!backgroundReady ? (
                 <p className="exdash-muted" aria-busy="true">

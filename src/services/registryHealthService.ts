@@ -99,7 +99,7 @@ function runRegistryConsistencyChecks(): IntegrityFinding[] {
         finding(
           'CONNECTED_WITHOUT_ACTIVE_CONNECTION',
           'error',
-          `Karkun ${k.name} (${k.id}) is Assigned but has no Active connection`,
+          `Karkun ${k.name} (${k.id}) is Connected but has no Active connection`,
           { entityKind: 'karkun', entityId: k.id },
         ),
       )
@@ -385,14 +385,14 @@ function buildIntegrityCheckResults(
     },
     {
       id: 'assignment-karkun',
-      label: 'Every Assignment references an existing Karkun',
+      label: 'Every Connection references an existing Karkun',
       passed: missingKarkun === 0,
       count: missingKarkun,
       severity: 'critical',
     },
     {
       id: 'assignment-rukn',
-      label: 'Every Assignment references an existing Rukn',
+      label: 'Every Connection references an existing Rukn',
       passed: missingRukn === 0,
       count: missingRukn,
       severity: 'critical',
@@ -406,7 +406,7 @@ function buildIntegrityCheckResults(
     },
     {
       id: 'no-orphan-assignments',
-      label: 'No orphan assignments',
+      label: 'No orphan connections',
       passed: missingKarkun === 0 && missingRukn === 0,
       count: missingKarkun + missingRukn,
       severity: 'critical',

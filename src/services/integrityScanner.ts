@@ -110,7 +110,7 @@ export function runIntegrityScan(): IntegrityReport {
   for (const [id, count] of seenAsgn) {
     if (count > 1) {
       errors.push(
-        finding('DUPLICATE_ASSIGNMENT_ID', 'error', `Duplicate assignmentId ${id}`, {
+        finding('DUPLICATE_ASSIGNMENT_ID', 'error', `Duplicate connection id ${id}`, {
           entityKind: 'assignment',
           entityId: id,
         }),
@@ -130,7 +130,7 @@ export function runIntegrityScan(): IntegrityReport {
 
   // 5. Broken connections / invalid refs / orphans
   checksRun += 1
-  let activePerKarkun = new Map<string, string[]>()
+  const activePerKarkun = new Map<string, string[]>()
   for (const a of assignments) {
     if (!karkunIds.has(a.karkunId)) {
       errors.push(

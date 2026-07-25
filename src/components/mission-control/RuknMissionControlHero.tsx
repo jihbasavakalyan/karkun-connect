@@ -156,7 +156,7 @@ export function RuknTodaysPriorityEmpty() {
   return (
     <section className="mc-panel mc-panel-compact" aria-label="Today's Priority">
       <h2 className="mc-panel-title">Today&apos;s Priority</h2>
-            <p className="mc-caption">✅ All connected Karkuns are up to date.</p>
+      <p className="mc-caption">✅ All connected Karkuns are up to date.</p>
     </section>
   )
 }

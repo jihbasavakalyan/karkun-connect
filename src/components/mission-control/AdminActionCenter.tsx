@@ -1,6 +1,7 @@
 /**
- * Today's Mission — compact primary execution hub for the Admin dashboard.
+ * Today's Mission — compact executive summary + launch hub for the Admin dashboard.
  * Presentation only; reuses existing alert + intervention queue data.
+ * KC-0106 — Not a system of record; launches into owning modules.
  */
 
 import { Link } from 'react-router-dom'
@@ -61,7 +62,7 @@ export function AdminActionCenter({
   const visibleItems = isSummary ? items.slice(0, ADMIN_TODAYS_MISSION_TOP_N) : items
   const title = isSummary ? "Today's Mission" : 'All Tasks'
   const subtitle = isSummary
-    ? 'Tasks requiring your attention today'
+    ? 'Executive summary — launch into owning modules'
     : 'Complete operational queue, ordered by urgency.'
 
   return (
@@ -80,7 +81,7 @@ export function AdminActionCenter({
             : items.length === 0
               ? 'Clear'
               : isSummary
-                ? `${Math.min(items.length, ADMIN_TODAYS_MISSION_TOP_N)} of ${items.length}`
+                ? `Summary · ${Math.min(items.length, ADMIN_TODAYS_MISSION_TOP_N)} of ${items.length}`
                 : `${items.length} tasks`}
         </span>
       </div>

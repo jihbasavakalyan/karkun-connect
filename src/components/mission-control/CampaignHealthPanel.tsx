@@ -4,6 +4,7 @@
  * background slices wait on backgroundReady without blanking the whole panel.
  * KC-0111 — Canonical executive Health UI (four slices via dashboardMetricsService).
  * Inventory: docs/architecture/kc-0111-campaign-health-inventory.md
+ * KC-0106 — Derived executive summary; module links launch Operations (no editing).
  */
 
 import { Link } from 'react-router-dom'
@@ -85,7 +86,7 @@ export function CampaignHealthPanel({
           Campaign Health
         </h2>
         <span className="exdash-section-meta">
-          {allReady ? 'Live completion' : anyReady ? 'Partial' : 'Loading'}
+          {allReady ? 'Derived summary' : anyReady ? 'Partial' : 'Loading'}
         </span>
       </div>
 

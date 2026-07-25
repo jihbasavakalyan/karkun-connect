@@ -162,7 +162,7 @@ export async function adminUnassignKarkun(
     (record) => record.karkunId === karkunId && record.status === 'Active',
   )
   if (!active) {
-    return { success: false, error: 'Karkun is not currently assigned.' }
+    return { success: false, error: 'Karkun is not currently connected.' }
   }
   return removeAssignment({
     ruknId: active.ruknId,

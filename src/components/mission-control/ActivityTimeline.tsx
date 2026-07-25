@@ -40,7 +40,9 @@ export function ActivityTimeline({ limit = 12, ready = true }: ActivityTimelineP
             </span>
             Activity Timeline
           </h2>
-          <p className="exdash-feed-subtitle">Field activity and system events, newest first</p>
+          <p className="exdash-feed-subtitle">
+            Derived feed — field activity and system events, newest first
+          </p>
         </div>
         <span className="exdash-feed-live" aria-hidden="true">
           ● Live
