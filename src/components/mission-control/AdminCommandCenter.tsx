@@ -27,6 +27,8 @@ import {
 } from '@/lib/missionControl/campaignOperationsCommandCenter'
 import { AdminActionCenter } from './AdminActionCenter'
 import { AdminOpsThreeColumnLayout } from './AdminOpsThreeColumnLayout'
+import { NextBestActionsPanel } from './NextBestActionsPanel'
+import { runPriorityEngine, type PriorityItem } from '@/lib/priorityIntelligence'
 import {
   buildAppreciationDraft,
   buildReminderDraft,
@@ -475,6 +477,24 @@ export function AdminCommandCenter({
     openCommunication({ context })
   }
 
+  /** KC-0120 — Notify from Priority Intelligence (same Communication Preview path). */
+  const openPriorityNotify = (item: PriorityItem) => {
+    const context = item.recommendedAction.communicationContext
+    if (!context) {
+      setComposerError('No communication context for this priority.')
+      return
+    }
+    setComposerError('')
+    const recipients =
+      item.responsibleRuknIds && item.responsibleRuknIds.length > 0
+        ? buildRuknMessageRecipients(item.responsibleRuknIds)
+        : undefined
+    openCommunication({
+      context,
+      recipients: recipients && recipients.length > 0 ? recipients : undefined,
+    })
+  }
+
   const openAppreciate = (ruknId: string) => {
     const recipient = buildRuknMessageRecipient(ruknId)
     if (!recipient) {
@@ -584,6 +604,14 @@ export function AdminCommandCenter({
     void moduleTick
     if (!backgroundReady) return []
     return buildTodaysMissionOperationalItems()
+  }, [assignmentVersion, moduleTick, backgroundReady])
+
+  /** KC-0120 — Priority Intelligence Engine (read-only; no UI-owned rules). */
+  const priorityItems = useMemo(() => {
+    void assignmentVersion
+    void moduleTick
+    if (!backgroundReady) return []
+    return runPriorityEngine().priorities
   }, [assignmentVersion, moduleTick, backgroundReady])
 
   const campaignHealth = useMemo(() => {
@@ -761,6 +789,15 @@ export function AdminCommandCenter({
                 backgroundReady={backgroundReady}
               />
             )}
+          </WidgetErrorBoundary>
+
+          {/* KC-0120 — Next Best Actions from Priority Intelligence Engine */}
+          <WidgetErrorBoundary title="Next Best Actions">
+            <NextBestActionsPanel
+              priorities={priorityItems}
+              backgroundReady={backgroundReady}
+              onNotify={openPriorityNotify}
+            />
           </WidgetErrorBoundary>
 
           <WidgetErrorBoundary title="Pending Karkun Requests" compact>
