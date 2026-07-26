@@ -6,6 +6,7 @@
 import { Link } from 'react-router-dom'
 import { Icon } from '@/components/ui/Icon'
 import type { IconName } from '@/design-system/iconNames'
+import { adminMissionWorkspacePath } from '@/constants/routes'
 import type {
   PriorityItem,
   PrioritySeverity,
@@ -110,6 +111,12 @@ export function NextBestActionsPanel({
           })}
         </ol>
       )}
+
+      <div className="exdash-action-footer">
+        <Link to={adminMissionWorkspacePath()} className="exdash-section-link">
+          Open Mission Workspace →
+        </Link>
+      </div>
     </section>
   )
 }

@@ -54,6 +54,11 @@ const ContextAwareCommunicationHistoryPage = lazyWithChunkReload(() =>
     default: m.ContextAwareCommunicationHistoryPage,
   })),
 )
+const MissionWorkspacePage = lazyWithChunkReload(() =>
+  import('@/pages/admin/MissionWorkspacePage').then((m) => ({
+    default: m.MissionWorkspacePage,
+  })),
+)
 const CampaignListsPage = lazyWithChunkReload(() =>
   import('@/pages/admin/CampaignListsPage').then((m) => ({ default: m.CampaignListsPage })),
 )
@@ -199,6 +204,7 @@ export function AppRouter() {
               path="communication-history"
               element={<ContextAwareCommunicationHistoryPage />}
             />
+            <Route path="mission-workspace" element={<MissionWorkspacePage />} />
             <Route path="lists" element={<CampaignListsPage />} />
             <Route path="settings" element={<SettingsPage />} />
             <Route path="help" element={<HelpPage />} />

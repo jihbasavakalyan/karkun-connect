@@ -38,6 +38,12 @@ export function isAdminNavGroup(entry: AdminNavEntry): entry is AdminNavGroup {
  */
 export const ADMIN_NAV_ITEMS: AdminNavEntry[] = [
   { id: 'dashboard', label: 'Dashboard', icon: 'home', to: ROUTES.ADMIN, end: true },
+  {
+    id: 'mission-workspace',
+    label: 'Mission Workspace',
+    icon: 'flag',
+    to: ROUTES.ADMIN_MISSION_WORKSPACE,
+  },
   { id: 'campaign', label: 'Campaign', icon: 'chart', to: ROUTES.ADMIN_CAMPAIGN },
   { id: 'rukn', label: 'Rukn', icon: 'user', to: ROUTES.ADMIN_RUKN },
   { id: 'karkun', label: 'Karkun', icon: 'users', to: ROUTES.ADMIN_KARKUN },

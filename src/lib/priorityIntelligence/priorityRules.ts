@@ -150,6 +150,23 @@ export function evaluatePriorityRules(): PriorityRuleSignal[] {
     })
   }
 
+  const newAssignmentRuknIds = listRuknsWithRecentAssignments()
+  if (newAssignmentRuknIds.length > 0) {
+    const count = newAssignmentRuknIds.length
+    const severity = severityForCount(count, { high: 5, medium: 1 })
+    signals.push({
+      id: 'priority-new-assignment',
+      severity,
+      reason: `${count} Rukn${count === 1 ? '' : 's'} have new assignment activity to review.`,
+      affectedCount: count,
+      affectedPeopleLabel: `${count} Rukn${count === 1 ? '' : 's'}`,
+      responsiblePersonLabel: 'Rukns with new assignments',
+      responsibleRuknIds: newAssignmentRuknIds,
+      context: 'new-assignment',
+      rank: severityRank(severity) * 100 + Math.min(count, 99),
+    })
+  }
+
   return signals.sort((a, b) => a.rank - b.rank || b.affectedCount - a.affectedCount)
 }
 
@@ -158,6 +175,21 @@ function severityRank(severity: PrioritySeverity): number {
   if (severity === 'High') return 1
   if (severity === 'Medium') return 2
   return 3
+}
+
+const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000
+
+/** Rukns with recent assign activity (last 7 days) — Priority + Mission Workspace. */
+export function listRuknsWithRecentAssignments(): string[] {
+  const cutoff = Date.now() - SEVEN_DAYS_MS
+  const recent = getRecentActivity(300)
+  const ids = new Set<string>()
+  for (const entry of recent) {
+    if (entry.type !== 'assign' || !entry.ruknId) continue
+    const ts = Date.parse(entry.timestamp)
+    if (Number.isFinite(ts) && ts >= cutoff) ids.add(entry.ruknId)
+  }
+  return [...ids]
 }
 
 /** Shared inactive-Rukn signal for Priority Engine (and Notify audience). */

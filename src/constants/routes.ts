@@ -30,6 +30,8 @@ export const ROUTES = {
   ADMIN_COMMUNICATION: '/admin/communication',
   /** KC-0119 — Context-aware Communication History */
   ADMIN_COMMUNICATION_HISTORY: '/admin/communication-history',
+  /** KC-0121 — Mission Workspace (unified operational work queue) */
+  ADMIN_MISSION_WORKSPACE: '/admin/mission-workspace',
   /** KC-0115 — Saved Lists lives under Communication (route unchanged) */
   ADMIN_LISTS: '/admin/lists',
   ADMIN_SETTINGS: '/admin/settings',
@@ -130,6 +132,11 @@ export function adminCommunicationPath(section?: string): string {
 /** Presentation: full operational task queue from Today's Mission footer. */
 export function adminAllTasksPath(): string {
   return `${ROUTES.ADMIN}?view=all-tasks`
+}
+
+/** KC-0121 — Mission Workspace unified work queue. */
+export function adminMissionWorkspacePath(): string {
+  return ROUTES.ADMIN_MISSION_WORKSPACE
 }
 
 /** KC-0107 — Karkun owns New Karkun intake; Dashboard launches here. */

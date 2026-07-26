@@ -4,7 +4,7 @@
 
 export { resolveNextBestAction } from './nextBestActionResolver'
 export { getPriorityRafeeqExposure, runPriorityEngine } from './priorityEngine'
-export { evaluatePriorityRules, listRuknsWithoutRecentActivity } from './priorityRules'
+export { evaluatePriorityRules, listRuknsWithoutRecentActivity, listRuknsWithRecentAssignments } from './priorityRules'
 export { buildPriorityRecommendations } from './recommendationBuilder'
 export type {
   NextBestAction,

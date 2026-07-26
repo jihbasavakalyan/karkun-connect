@@ -4,6 +4,7 @@
  */
 
 import {
+  adminAssignmentsPath,
   adminCompliancePath,
   adminExecutionPath,
   adminFollowUpPath,
@@ -90,6 +91,14 @@ function recommendationForSignal(signal: PriorityRuleSignal): PriorityRecommende
         label: 'Review',
         recommendation: 'Review New Karkun requests in the Karkun module.',
         route: adminKarkunPendingRequestsPath(),
+      }
+    case 'priority-new-assignment':
+      return {
+        kind: 'review',
+        label: 'Review',
+        recommendation: 'Review New Assignments in Connections.',
+        communicationContext: 'new-assignment',
+        route: adminAssignmentsPath(),
       }
     default:
       return {
