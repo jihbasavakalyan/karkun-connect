@@ -38,6 +38,7 @@ export function RuknMonthlyBaitulMaalPage() {
   const [storeVersion, setStoreVersion] = useState(0)
   const [selectedCycleId, setSelectedCycleId] = useState<string | null>(null)
   const [draft, setDraft] = useState<Record<string, DraftStatus>>({})
+  const [draftSeedKey, setDraftSeedKey] = useState('')
   const [message, setMessage] = useState('')
   const { busy: saving, run } = useBusyAction()
 
@@ -65,20 +66,24 @@ export function RuknMonthlyBaitulMaalPage() {
   }, [ruknId, currentCycle, assignmentVersion, storeVersion])
 
   const assignedKey = workspace?.assigned.map((k) => k.id).join('|') ?? ''
-
-  useEffect(() => {
+  const submissionUpdatedAt = workspace?.submission?.updatedAt ?? ''
+  const cycleId = currentCycle?.id ?? ''
+  // Seed only when cycle / roster / saved submission identity changes — not on storeVersion
+  // hydrate notifies (KC-BUG-0124 mirrors KC-BUG-0122 Weekly Ijtema).
+  const nextSeedKey = ruknId && cycleId ? `${cycleId}|${assignedKey}|${submissionUpdatedAt}` : ''
+  if (nextSeedKey !== draftSeedKey) {
+    setDraftSeedKey(nextSeedKey)
     if (!workspace) {
       setDraft({})
-      return
+    } else {
+      const next: Record<string, DraftStatus> = {}
+      for (const karkun of workspace.assigned) {
+        const existing = workspace.submission?.marks.find((mark) => mark.karkunId === karkun.id)
+        next[karkun.id] = existing?.status ?? 'Unmarked'
+      }
+      setDraft(next)
     }
-    const next: Record<string, DraftStatus> = {}
-    for (const karkun of workspace.assigned) {
-      const existing = workspace.submission?.marks.find((mark) => mark.karkunId === karkun.id)
-      next[karkun.id] = existing?.status ?? 'Unmarked'
-    }
-    setDraft(next)
-    setMessage('')
-  }, [assignedKey, workspace?.cycle.id, workspace?.submission?.updatedAt, storeVersion])
+  }
 
   if (!ruknId) {
     return <Navigate to={ROUTES.LOGIN} replace />
@@ -134,6 +139,15 @@ export function RuknMonthlyBaitulMaalPage() {
           setMessage(result.error)
           return
         }
+
+        // KC-BUG-0124 / KC-ARCH-001 — await durable write before success (Weekly Ijtema parity).
+        try {
+          const { awaitQueuedWrite } = await import('@/repositories/firestore/firestoreRepositories')
+          await awaitQueuedWrite('compliance.monthlyBaitulMaalSubmissions')
+        } catch {
+          // local provider has no queue
+        }
+
         setMessage('Baitul Maal status submitted successfully.')
       },
       { key: `monthly-baitul-maal-submit:${ruknId}`, waitForPendingWrites: true, minMs: 400 },

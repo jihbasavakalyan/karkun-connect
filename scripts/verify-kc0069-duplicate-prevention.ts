@@ -17,7 +17,7 @@ function main() {
   const source = readFileSync(resolve('src/services/karkunRequestService.ts'), 'utf8')
   assert(source.includes('acknowledgeNameWarning'), 'NAME_WARNING acknowledge path present')
   assert(
-    source.includes('This mobile number already belongs to an existing Karkun.'),
+    source.includes('Existing Person Found'),
     'KC-0068 mobile exists message present',
   )
   assert(

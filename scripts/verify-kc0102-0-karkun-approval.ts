@@ -33,7 +33,7 @@ assert(service.includes('syncKarkunRequestStoreFromServer'), 'submit syncs befor
 assert(service.includes('appendKarkunRequestDurable'), 'submit uses durable append')
 assert(service.includes('[KC-0102.0]'), 'diagnostics present')
 assert(
-  service.includes('This mobile number already belongs to an existing Karkun.'),
+  service.includes('Existing Person Found'),
   'KC-0068 mobile message preserved',
 )
 

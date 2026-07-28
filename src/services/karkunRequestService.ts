@@ -8,6 +8,7 @@ import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { getRuknById } from '@/data/ruknMaster'
 import { assignKarkun } from '@/lib/assignmentEngine'
 import { KARKUN_ALREADY_CONNECTED_MESSAGE } from '@/lib/connectionEligibility'
+import { resolveExistingPersonRelationship } from '@/lib/existingPersonResolution'
 import { getActiveAssignmentsForKarkun } from '@/stores/assignmentStore'
 import { findPossibleNameDuplicates } from '@/lib/nameMatching'
 import {
@@ -42,11 +43,6 @@ import { unwrapRepository } from '@/repositories/errors'
 import type { NewKarkunRequest, PeopleRequestKind } from '@/types/karkunRequest.types'
 import type { PersonGender } from '@/types/people.types'
 import { DEFAULT_PLACE } from '@/types/people.types'
-import {
-  ROUTES,
-  adminKarkunProfilePath,
-  ruknVisitPath,
-} from '@/constants/routes'
 
 export { subscribeToKarkunRequestStore, getPendingKarkunRequests, getAllKarkunRequests }
 
@@ -71,12 +67,24 @@ export type MobileDuplicateDetails = {
   viewRoute: string
   connectRoute: string
   adminViewRoute: string
-  /** KC-0123 — enriched lookup for Admin / Rukn. */
+  /** KC-0123 / KC-BUG-0124 — enriched relationship graph. */
   category?: string
   status?: string
   connectedToRuknId?: string
   connectedToRuknName?: string
   assignmentStatus?: string
+  campaignStatus?: string
+  ward?: string
+  area?: string
+  connectedSince?: string
+  connectionStatus?: 'Already Connected' | 'Not Connected'
+  assignmentId?: string
+  assignmentNumber?: string
+  attachedConnectionId?: string
+  journeyRoute?: string
+  connectionRoute?: string
+  eligibleToConnect?: boolean
+  lookupFailedStep?: string
 }
 
 export type SubmitNewKarkunRequestResult =
@@ -110,21 +118,31 @@ function buildMobileDuplicate(
   name: string,
   mobile: string,
 ): MobileDuplicateDetails {
-  const existing = getKarkunById(karkunId)
-  const active = getActiveAssignmentsForKarkun(karkunId)[0]
-  const connectedRukn = active ? getRuknById(active.ruknId) : undefined
+  const graph = resolveExistingPersonRelationship(karkunId, name, mobile)
   return {
-    karkunId,
-    name: existing?.name ?? name,
-    mobile: existing?.mobile?.trim() || normalizeMobile(mobile),
-    viewRoute: existing ? ruknVisitPath(karkunId) : ROUTES.RUKN_MY_KARKUN,
-    connectRoute: ROUTES.RUKN_AVAILABLE_KARKUN,
-    adminViewRoute: adminKarkunProfilePath(karkunId),
-    category: existing?.category ?? 'Karkun',
-    status: existing?.status,
-    connectedToRuknId: active?.ruknId ?? existing?.assignedRuknId,
-    connectedToRuknName: connectedRukn?.name ?? existing?.assignedRukn,
-    assignmentStatus: existing?.assignmentStatus,
+    karkunId: graph.personId || karkunId,
+    name: graph.name,
+    mobile: graph.mobile,
+    viewRoute: graph.viewRoute,
+    connectRoute: graph.connectRoute,
+    adminViewRoute: graph.adminViewRoute,
+    category: graph.registry || undefined,
+    status: graph.personStatus || undefined,
+    connectedToRuknId: graph.responsibleRuknId || undefined,
+    connectedToRuknName: graph.responsibleRuknName || undefined,
+    assignmentStatus: graph.assignmentStatus || undefined,
+    campaignStatus: graph.campaignStatus || undefined,
+    ward: graph.ward || undefined,
+    area: graph.area || undefined,
+    connectedSince: graph.connectedSince || undefined,
+    connectionStatus: graph.connectionStatus,
+    assignmentId: graph.assignmentId || undefined,
+    assignmentNumber: graph.assignmentNumber || undefined,
+    attachedConnectionId: graph.attachedConnectionId || undefined,
+    journeyRoute: graph.journeyRoute,
+    connectionRoute: graph.connectionRoute,
+    eligibleToConnect: graph.eligibleToConnect,
+    lookupFailedStep: graph.lookupFailedStep,
   }
 }
 
@@ -215,11 +233,14 @@ export async function submitNewKarkunRequest(
   // KC-0068 Check 1 — mobile already in Karkun registry (hard block).
   const owner = findMobileOwner(input.mobile)
   if (owner?.kind === 'karkun') {
+    const duplicate = buildMobileDuplicate(owner.id, owner.name, input.mobile)
     return {
       ok: false,
-      error: 'This mobile number already belongs to an existing Karkun.',
+      error: duplicate.lookupFailedStep
+        ? `Existing person lookup failed at: ${duplicate.lookupFailedStep}.`
+        : 'Existing Person Found — this mobile already belongs to a registry record.',
       code: 'MOBILE_EXISTS',
-      duplicate: buildMobileDuplicate(owner.id, owner.name, input.mobile),
+      duplicate,
     }
   }
   if (owner?.kind === 'rukn') {
@@ -446,25 +467,15 @@ async function approveNewKarkunRequestOnce(input: {
         return { ok: true, request: resolvedExisting, karkunId }
       }
 
-      const person = getKarkunById(karkunId)
-      const other = activeAssignments[0]!
-      const otherRukn = getRuknById(other.ruknId)
       return {
         ok: false,
         error: KARKUN_ALREADY_CONNECTED_MESSAGE,
         code: 'VALIDATION',
-        duplicate: person
-          ? buildMobileDuplicate(person.id, person.name, person.mobile)
-          : {
-              karkunId,
-              name: claimed.fullName,
-              mobile: claimed.mobile,
-              viewRoute: ROUTES.RUKN_MY_KARKUN,
-              connectRoute: ROUTES.RUKN_AVAILABLE_KARKUN,
-              adminViewRoute: adminKarkunProfilePath(karkunId),
-              connectedToRuknId: other.ruknId,
-              connectedToRuknName: otherRukn?.name,
-            },
+        duplicate: buildMobileDuplicate(
+          karkunId,
+          getKarkunById(karkunId)?.name ?? claimed.fullName,
+          getKarkunById(karkunId)?.mobile ?? claimed.mobile,
+        ),
       }
     }
 

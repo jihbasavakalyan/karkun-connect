@@ -3,12 +3,15 @@
  */
 
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
 import { Modal, ModalFormFooter } from '@/components/common'
+import { ExistingPersonFoundPanel } from '@/components/relationship/ExistingPersonFoundPanel'
 import { FORM_INPUT_CLASS, FORM_LABEL_CLASS } from '@/components/ui/formStyles'
 import { getRuknById } from '@/data/ruknMaster'
 import { normalizePersonGender } from '@/lib/peopleStore'
-import { submitNewMuttafiqRequest } from '@/services/karkunRequestService'
+import {
+  submitNewMuttafiqRequest,
+  type MobileDuplicateDetails,
+} from '@/services/karkunRequestService'
 import type { PersonGender } from '@/types/people.types'
 
 type NewMuttafiqRequestModalProps = {
@@ -33,15 +36,7 @@ export function NewMuttafiqRequestModal({
   const [remarks, setRemarks] = useState('')
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
-  const [duplicate, setDuplicate] = useState<{
-    name: string
-    mobile: string
-    category?: string
-    connectedToRuknName?: string
-    status?: string
-    adminViewRoute: string
-    viewRoute: string
-  } | null>(null)
+  const [duplicate, setDuplicate] = useState<MobileDuplicateDetails | null>(null)
 
   const reset = () => {
     setFullName('')
@@ -74,19 +69,7 @@ export function NewMuttafiqRequestModal({
         })
         if (!result.ok) {
           setError(result.error)
-          setDuplicate(
-            result.duplicate
-              ? {
-                  name: result.duplicate.name,
-                  mobile: result.duplicate.mobile,
-                  category: result.duplicate.category,
-                  connectedToRuknName: result.duplicate.connectedToRuknName,
-                  status: result.duplicate.status,
-                  adminViewRoute: result.duplicate.adminViewRoute,
-                  viewRoute: result.duplicate.viewRoute,
-                }
-              : null,
-          )
+          setDuplicate(result.duplicate ?? null)
           return
         }
         reset()
@@ -164,21 +147,7 @@ export function NewMuttafiqRequestModal({
         {error ? (
           <div className="ds-banner-error" role="alert">
             <p>{error}</p>
-            {duplicate ? (
-              <div className="mt-2 space-y-1 text-sm">
-                <p className="font-semibold">Existing person</p>
-                <p>Name: {duplicate.name}</p>
-                <p>Mobile: {duplicate.mobile}</p>
-                {duplicate.category ? <p>Registry: {duplicate.category}</p> : null}
-                {duplicate.connectedToRuknName ? (
-                  <p>Connected To: {duplicate.connectedToRuknName}</p>
-                ) : null}
-                {duplicate.status ? <p>Status: {duplicate.status}</p> : null}
-                <Link to={duplicate.viewRoute} className="font-semibold text-primary underline">
-                  Open Profile
-                </Link>
-              </div>
-            ) : null}
+            {duplicate ? <ExistingPersonFoundPanel duplicate={duplicate} /> : null}
           </div>
         ) : null}
       </div>

@@ -216,6 +216,41 @@ function mergeWeeklyIjtemaEventsPreferLocal(
   return [...merged.values()]
 }
 
+/** KC-BUG-0124 — same prefer-local + dirty overlay as Weekly Ijtema (KC-BUG-0122). */
+function mergeMonthlyBaitulMaalSubmissionsPreferLocal(
+  remote: MonthlyBaitulMaalSubmission[],
+  local: MonthlyBaitulMaalSubmission[],
+): MonthlyBaitulMaalSubmission[] {
+  const merged = new Map(remote.map((item) => [item.id, item] as const))
+  for (const item of local) {
+    const existing = merged.get(item.id)
+    if (!existing || item.updatedAt > existing.updatedAt) {
+      merged.set(item.id, item)
+    }
+  }
+  for (const item of pendingMonthlyBaitulMaalSubmissionDirty.values()) {
+    merged.set(item.id, item)
+  }
+  return [...merged.values()]
+}
+
+function mergeMonthlyBaitulMaalCyclesPreferLocal(
+  remote: MonthlyBaitulMaalCycle[],
+  local: MonthlyBaitulMaalCycle[],
+): MonthlyBaitulMaalCycle[] {
+  const merged = new Map(remote.map((item) => [item.id, item] as const))
+  for (const item of local) {
+    const existing = merged.get(item.id)
+    if (!existing || item.updatedAt > existing.updatedAt) {
+      merged.set(item.id, item)
+    }
+  }
+  for (const item of pendingMonthlyBaitulMaalCycleDirty.values()) {
+    merged.set(item.id, item)
+  }
+  return [...merged.values()]
+}
+
 async function queueWrite(label: string, work: () => Promise<RepositoryResult<void>>): Promise<void> {
   // KC-0098 — coalesce concurrent identical-label dumps onto one in-flight chain.
   // Latest scheduled work wins; callers that dump dirty sets should accumulate
@@ -777,8 +812,18 @@ function applyBackgroundHydratePayload(input: {
       weeklyIjtemaSubmissionCache.get(),
     ),
   )
-  monthlyBaitulMaalCycleCache.set(monthlyBaitulMaalCycles)
-  monthlyBaitulMaalSubmissionCache.set(monthlyBaitulMaalSubmissions)
+  monthlyBaitulMaalCycleCache.set(
+    mergeMonthlyBaitulMaalCyclesPreferLocal(
+      monthlyBaitulMaalCycles,
+      monthlyBaitulMaalCycleCache.get(),
+    ),
+  )
+  monthlyBaitulMaalSubmissionCache.set(
+    mergeMonthlyBaitulMaalSubmissionsPreferLocal(
+      monthlyBaitulMaalSubmissions,
+      monthlyBaitulMaalSubmissionCache.get(),
+    ),
+  )
   if (jihPortal) {
     jihPortalCache.set(jihPortal)
   }
@@ -2311,8 +2356,8 @@ export class ComplianceFirestoreRepository implements ComplianceRepository {
     }
     monthlyBaitulMaalCycleCache.set([...merged.values()])
     void queueWrite('compliance.monthlyBaitulMaalCycles', async () => {
+      // Snapshot dirty at write start — keep until commit succeeds (KC-BUG-0124).
       const dirty = [...pendingMonthlyBaitulMaalCycleDirty.values()]
-      pendingMonthlyBaitulMaalCycleDirty.clear()
       if (dirty.length === 0) {
         return repositoryOk(undefined)
       }
@@ -2329,6 +2374,12 @@ export class ComplianceFirestoreRepository implements ComplianceRepository {
         )
       }
       await batch.commit()
+      for (const cycle of dirty) {
+        const pending = pendingMonthlyBaitulMaalCycleDirty.get(cycle.id)
+        if (pending && pending.updatedAt === cycle.updatedAt) {
+          pendingMonthlyBaitulMaalCycleDirty.delete(cycle.id)
+        }
+      }
       return repositoryOk(undefined)
     })
     return repositoryOk(undefined)
@@ -2355,8 +2406,8 @@ export class ComplianceFirestoreRepository implements ComplianceRepository {
     }
     monthlyBaitulMaalSubmissionCache.set([...merged.values()])
     void queueWrite('compliance.monthlyBaitulMaalSubmissions', async () => {
+      // Snapshot dirty at write start — keep until commit succeeds (KC-BUG-0124).
       const dirty = [...pendingMonthlyBaitulMaalSubmissionDirty.values()]
-      pendingMonthlyBaitulMaalSubmissionDirty.clear()
       if (dirty.length === 0) {
         return repositoryOk(undefined)
       }
@@ -2373,6 +2424,12 @@ export class ComplianceFirestoreRepository implements ComplianceRepository {
         )
       }
       await batch.commit()
+      for (const submission of dirty) {
+        const pending = pendingMonthlyBaitulMaalSubmissionDirty.get(submission.id)
+        if (pending && pending.updatedAt === submission.updatedAt) {
+          pendingMonthlyBaitulMaalSubmissionDirty.delete(submission.id)
+        }
+      }
       return repositoryOk(undefined)
     })
     return repositoryOk(undefined)
