@@ -77,10 +77,6 @@ export function ConnectionJourneyPage() {
   const { getKarkunGuidance, version: guidanceVersion } = useGuidance(guidanceRuknId)
   const [, setGuidanceTick] = useState(0)
 
-  if (!isAdminContext && !authRuknId) {
-    return <Navigate to={ROUTES.LOGIN} replace />
-  }
-
   const karkun = karkunId ? getKarkunById(karkunId) : undefined
   const actorRole = user?.role === 'administrator' ? 'administrator' : 'rukn'
   const activeAssignment = karkunId
@@ -116,6 +112,10 @@ export function ConnectionJourneyPage() {
     }, 80)
     return () => window.clearTimeout(timer)
   }, [location.hash, karkunId])
+
+  if (!isAdminContext && !authRuknId) {
+    return <Navigate to={ROUTES.LOGIN} replace />
+  }
 
   if (!karkun) {
     return (
@@ -167,13 +167,16 @@ export function ConnectionJourneyPage() {
     templateId?: string
     message: string
   }) => {
-    const result = await sendIndividualMessage({
-      channel: 'whatsapp',
-      recipient,
-      templateId,
-      message,
-      linkedAssignmentId: activeAssignment.assignmentId,
-    })
+    const result = await sendIndividualMessage(
+      {
+        channel: 'whatsapp',
+        recipient,
+        templateId,
+        message,
+        linkedAssignmentId: activeAssignment.assignmentId,
+      },
+      'Rukn',
+    )
     return result.success ? { success: true } : { success: false, error: result.error }
   }
 

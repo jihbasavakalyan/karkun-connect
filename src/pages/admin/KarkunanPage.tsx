@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useLocation, useSearchParams } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import type { PersonGender } from '@/types/karkun-registry.types'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
 import type { ImportSummary } from '@/types/people.types'
@@ -41,14 +41,12 @@ import {
 } from '@/components/forms/people'
 import type { PersonFormValues } from '@/components/forms/people'
 import { AssignKarkunModal } from '@/components/forms/assignment'
-import { PendingKarkunRequestQueue } from '@/components/forms/people'
 import { MessageComposerModal } from '@/components/communication/MessageComposerModal'
 import { BaitulMaalBulkUpdateModal } from '@/components/forms/baitulMaal/BaitulMaalBulkUpdateModal'
 import { IjtemaAttendanceBulkUpdateModal } from '@/components/forms/ijtema/IjtemaAttendanceBulkUpdateModal'
 import type { BaitulMaalStatus } from '@/types/baitulMaal'
 import type { IjtemaAttendanceStatus } from '@/types/ijtemaAttendance'
 import { PageHeader, PageShell } from '@/components/ui'
-import { MuttafiqeenRegistryPanel } from '@/pages/admin/MuttafiqeenPage'
 
 type GenderTab = PersonGender
 
@@ -514,18 +512,11 @@ function KarkunGenderSection({
 
 export function KarkunanPage() {
   const location = useLocation()
-  const [searchParams] = useSearchParams()
   const initialSearch =
     (location.state as { searchQuery?: string } | null)?.searchQuery?.trim() ?? ''
   const [activeGender, setActiveGender] = useState<GenderTab>('Male')
   const sectionHandlersRef = useRef<KarkunSectionHandlers | null>(null)
   const [openAddForGender, setOpenAddForGender] = useState<PersonGender | null>(null)
-
-  useEffect(() => {
-    if (searchParams.get('queue') !== 'pending-requests') return
-    const target = document.getElementById('pending-karkun-requests')
-    target?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }, [searchParams])
 
   const registerSectionHandlers = useCallback((handlers: KarkunSectionHandlers | null) => {
     sectionHandlersRef.current = handlers
@@ -549,7 +540,7 @@ export function KarkunanPage() {
     <PageShell>
       <PageHeader
         title="Karkun"
-        description="Overview, Karkun and Muttafiqeen registries, and pending approval requests."
+        description="Karkun registry — overview and working list. Intake and approvals live in Inbox."
       />
 
       <div className="mb-4 flex flex-wrap items-center gap-3 text-sm">
@@ -616,46 +607,6 @@ export function KarkunanPage() {
             onAddFormOpened={handleAddFormOpened}
             onRegisterHandlers={registerSectionHandlers}
           />
-        </div>
-      </section>
-
-      {/* KC-0115 — Muttafiqeen Registry */}
-      <section className="mt-10" aria-labelledby="muttafiqeen-registry-heading">
-        <h2 id="muttafiqeen-registry-heading" className="text-lg font-semibold text-text-heading">
-          Muttafiqeen Registry
-        </h2>
-        <div className="mt-4">
-          <MuttafiqeenRegistryPanel />
-        </div>
-      </section>
-
-      {/* KC-0115 — Pending Requests (Karkun + Muttafiq presentation) */}
-      <section className="mt-10" aria-labelledby="pending-requests-heading">
-        <h2 id="pending-requests-heading" className="text-lg font-semibold text-text-heading">
-          Pending Requests
-        </h2>
-        <p className="mt-1 text-sm text-secondary">
-          Occasional administrative actions — keep the registries above as the daily workspace.
-        </p>
-
-        <div className="mt-6 space-y-8">
-          <div>
-            <h3 className="text-base font-semibold text-text-heading">New Karkun Requests</h3>
-            <div className="mt-3">
-              <PendingKarkunRequestQueue />
-            </div>
-          </div>
-
-          <div id="pending-muttafiq-requests">
-            <h3 className="text-base font-semibold text-text-heading">New Muttafiq Requests</h3>
-            <p className="mt-1 text-sm text-secondary">
-              Muttafiq classification continues through the existing registry workflow — no separate intake
-              queue is active in V1.
-            </p>
-            <div className="mt-3 rounded-(--radius-card) border border-border bg-surface-muted px-4 py-5 text-sm text-secondary">
-              No pending Muttafiq requests.
-            </div>
-          </div>
         </div>
       </section>
     </PageShell>

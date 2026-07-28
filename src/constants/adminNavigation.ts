@@ -44,6 +44,7 @@ export const ADMIN_NAV_ITEMS: AdminNavEntry[] = [
     icon: 'flag',
     to: ROUTES.ADMIN_MISSION_WORKSPACE,
   },
+  { id: 'inbox', label: 'Inbox', icon: 'message', to: ROUTES.ADMIN_INBOX },
   { id: 'campaign', label: 'Campaign', icon: 'chart', to: ROUTES.ADMIN_CAMPAIGN },
   { id: 'rukn', label: 'Rukn', icon: 'user', to: ROUTES.ADMIN_RUKN },
   { id: 'karkun', label: 'Karkun', icon: 'users', to: ROUTES.ADMIN_KARKUN },

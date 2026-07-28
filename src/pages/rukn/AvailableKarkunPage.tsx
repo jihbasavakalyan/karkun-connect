@@ -10,6 +10,7 @@ import {
   ConnectKarkunConfirmModal,
   KarkunSearchField,
   NewKarkunRequestModal,
+  NewMuttafiqRequestModal,
 } from '@/components/relationship'
 import { EmptyState, PageShell } from '@/components/ui'
 import { PlanningConversationModal } from '@/features/digitalRafeeq/planning'
@@ -37,6 +38,7 @@ export function AvailableKarkunPage() {
   const [successMessage, setSuccessMessage] = useState('')
   const [planning, setPlanning] = useState<PlanningTarget | null>(null)
   const [showNewRequest, setShowNewRequest] = useState(false)
+  const [showNewMuttafiq, setShowNewMuttafiq] = useState(false)
 
   const filtered = useMemo(() => {
     void peopleVersion
@@ -136,7 +138,7 @@ export function AvailableKarkunPage() {
         sticky
       />
 
-      <div className="connect-add-karkun">
+      <div className="connect-add-karkun flex flex-wrap gap-2">
         <button
           type="button"
           className="connect-add-karkun-button"
@@ -147,6 +149,17 @@ export function AvailableKarkunPage() {
           }}
         >
           ➕ Add New Karkun
+        </button>
+        <button
+          type="button"
+          className="connect-add-karkun-button"
+          onClick={() => {
+            setShowNewMuttafiq(true)
+            setError('')
+            setSuccessMessage('')
+          }}
+        >
+          ➕ Add Muttafiq
         </button>
       </div>
 
@@ -205,6 +218,15 @@ export function AvailableKarkunPage() {
         onClose={() => setShowNewRequest(false)}
         onSubmitted={() =>
           setSuccessMessage('Request submitted for administrator approval.')
+        }
+      />
+
+      <NewMuttafiqRequestModal
+        isOpen={showNewMuttafiq}
+        ruknId={ruknId}
+        onClose={() => setShowNewMuttafiq(false)}
+        onSubmitted={() =>
+          setSuccessMessage('Muttafiq request submitted for administrator approval.')
         }
       />
 

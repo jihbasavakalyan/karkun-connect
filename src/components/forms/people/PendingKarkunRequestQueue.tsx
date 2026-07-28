@@ -9,8 +9,9 @@ import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import { FORM_INPUT_CLASS, FORM_LABEL_CLASS } from '@/components/ui/formStyles'
 import { useAuth } from '@/hooks/useAuth'
+import { ROUTES } from '@/constants/routes'
 import {
-  approveNewKarkunRequest,
+  approvePeopleIntakeRequest,
   getPendingKarkunRequests,
   rejectNewKarkunRequest,
   subscribeToKarkunRequestStore,
@@ -60,7 +61,7 @@ export function PendingKarkunRequestQueue() {
 
     void (async () => {
       try {
-        const result = await approveNewKarkunRequest({
+        const result = await approvePeopleIntakeRequest({
           requestId: request.id,
           decidedBy,
           decisionNotes: notesById[request.id],
@@ -142,20 +143,48 @@ export function PendingKarkunRequestQueue() {
           <p>{error}</p>
           {duplicate ? (
             <div className="mt-2 space-y-1 text-sm">
+              <p className="font-semibold">Existing Karkun</p>
               <p>
-                <span className="font-medium">Existing Name: </span>
+                <span className="font-medium">Name: </span>
                 {duplicate.name}
               </p>
               <p>
-                <span className="font-medium">Mobile Number: </span>
+                <span className="font-medium">Mobile: </span>
                 {duplicate.mobile}
               </p>
-              <Link
-                to={duplicate.adminViewRoute}
-                className="inline-block font-semibold text-primary underline"
-              >
-                View Existing Record
-              </Link>
+              {duplicate.category ? (
+                <p>
+                  <span className="font-medium">Current Registry: </span>
+                  {duplicate.category}
+                </p>
+              ) : null}
+              {duplicate.connectedToRuknName || duplicate.connectedToRuknId ? (
+                <p>
+                  <span className="font-medium">Connected To / Responsible Rukn: </span>
+                  {duplicate.connectedToRuknName || duplicate.connectedToRuknId}
+                </p>
+              ) : null}
+              {duplicate.status || duplicate.assignmentStatus ? (
+                <p>
+                  <span className="font-medium">Current Status: </span>
+                  {[duplicate.status, duplicate.assignmentStatus].filter(Boolean).join(' · ')}
+                </p>
+              ) : null}
+              <div className="mt-2 flex flex-wrap gap-3">
+                <Link
+                  to={duplicate.adminViewRoute}
+                  className="inline-block font-semibold text-primary underline"
+                >
+                  Open Profile
+                </Link>
+                <Link
+                  to={ROUTES.ADMIN_ASSIGNMENTS}
+                  className="inline-block font-semibold text-primary underline"
+                >
+                  View Connection
+                </Link>
+                <span className="text-xs text-secondary">Request Transfer (coming soon)</span>
+              </div>
             </div>
           ) : null}
         </div>

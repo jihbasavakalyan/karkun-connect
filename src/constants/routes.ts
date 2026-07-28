@@ -32,6 +32,8 @@ export const ROUTES = {
   ADMIN_COMMUNICATION_HISTORY: '/admin/communication-history',
   /** KC-0121 — Mission Workspace (unified operational work queue) */
   ADMIN_MISSION_WORKSPACE: '/admin/mission-workspace',
+  /** KC-0123 — Unified Inbox (people intake + Rukn communications) */
+  ADMIN_INBOX: '/admin/inbox',
   /** KC-0115 — Saved Lists lives under Communication (route unchanged) */
   ADMIN_LISTS: '/admin/lists',
   ADMIN_SETTINGS: '/admin/settings',
@@ -139,9 +141,9 @@ export function adminMissionWorkspacePath(): string {
   return ROUTES.ADMIN_MISSION_WORKSPACE
 }
 
-/** KC-0107 — Karkun owns New Karkun intake; Dashboard launches here. */
+/** KC-0123 — People intake lives in Unified Inbox. */
 export function adminKarkunPendingRequestsPath(): string {
-  return `${ROUTES.ADMIN_KARKUN}?queue=pending-requests`
+  return `${ROUTES.ADMIN_INBOX}?folder=pending`
 }
 
 /** KC-0107 — Admin Weekly Ijtema management. */

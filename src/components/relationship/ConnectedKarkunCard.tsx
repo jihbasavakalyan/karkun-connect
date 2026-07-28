@@ -14,6 +14,9 @@ import {
 } from '@/lib/relationshipIntelligencePresentation'
 import { scheduleWhatsAppMessage } from '@/services/schedulingService'
 import { submitAssignmentReviewRequest } from '@/services/assignmentReviewService'
+import { submitKarkunToMuttafiqConversionRequest } from '@/services/karkunRequestService'
+import { getPersonCategory } from '@/lib/peopleClassification'
+import { useAuth } from '@/hooks/useAuth'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
 import type { AssignmentReviewReason } from '@/types/assignmentReview.types'
 import { ProfileCompletionReminder } from './ProfileCompletionReminder'
@@ -28,12 +31,14 @@ type ConnectedKarkunCardProps = {
 }
 
 export function ConnectedKarkunCard({ karkun, ruknId, visitPath }: ConnectedKarkunCardProps) {
+  const { user } = useAuth()
   const { getKarkunGuidance, version } = useGuidance(ruknId)
   const [reviewOpen, setReviewOpen] = useState(false)
   const [reviewError, setReviewError] = useState('')
   const [reviewNotice, setReviewNotice] = useState('')
   const [scheduleOpen, setScheduleOpen] = useState(false)
   const [scheduleNotice, setScheduleNotice] = useState('')
+  const [conversionBusy, setConversionBusy] = useState(false)
 
   void version
   const guidance = getKarkunGuidance(karkun.id)
@@ -77,6 +82,30 @@ export function ConnectedKarkunCard({ karkun, ruknId, visitPath }: ConnectedKark
     setReviewOpen(false)
     setReviewNotice('Review request sent to Administrator. Ownership is unchanged.')
   }
+
+  const handleConversionRequest = () => {
+    if (conversionBusy) return
+    setConversionBusy(true)
+    setReviewError('')
+    void (async () => {
+      try {
+        const result = await submitKarkunToMuttafiqConversionRequest({
+          personId: karkun.id,
+          requestingRuknId: ruknId,
+          createdBy: user?.displayName ?? user?.uid ?? ruknId,
+        })
+        if (!result.ok) {
+          setReviewError(result.error)
+          return
+        }
+        setReviewNotice('Conversion request sent to Admin Inbox.')
+      } finally {
+        setConversionBusy(false)
+      }
+    })()
+  }
+
+  const canRequestConversion = getPersonCategory(karkun) === 'Karkun'
 
   const handleSchedule = (scheduledForIso: string) => {
     scheduleWhatsAppMessage({
@@ -156,6 +185,17 @@ export function ConnectedKarkunCard({ karkun, ruknId, visitPath }: ConnectedKark
             <Icon name="flag" size="sm" />
             Review
           </button>
+          {canRequestConversion ? (
+            <button
+              type="button"
+              className="connected-action"
+              disabled={conversionBusy}
+              onClick={handleConversionRequest}
+            >
+              <Icon name="users" size="sm" />
+              {conversionBusy ? '…' : 'To Muttafiq'}
+            </button>
+          ) : null}
         </div>
 
         <div className="connected-activity">
@@ -181,6 +221,11 @@ export function ConnectedKarkunCard({ karkun, ruknId, visitPath }: ConnectedKark
         ) : null}
         {reviewNotice ? (
           <p className="connected-notice connected-notice-amber">{reviewNotice}</p>
+        ) : null}
+        {reviewError && !reviewOpen ? (
+          <p className="connected-notice connected-notice-amber" role="alert">
+            {reviewError}
+          </p>
         ) : null}
       </article>
 

@@ -12,6 +12,7 @@ import { getActiveAssignmentsForKarkun } from '@/stores/assignmentStore'
 import { findPossibleNameDuplicates } from '@/lib/nameMatching'
 import {
   createKarkun,
+  createMuttafiq,
   findMobileOwner,
   normalizePersonGender,
   persistKarkunDurable,
@@ -38,7 +39,7 @@ import {
 } from '@/stores/karkunRequestStore'
 import { getRepositories, getRepositoryProviderMode } from '@/repositories/provider'
 import { unwrapRepository } from '@/repositories/errors'
-import type { NewKarkunRequest } from '@/types/karkunRequest.types'
+import type { NewKarkunRequest, PeopleRequestKind } from '@/types/karkunRequest.types'
 import type { PersonGender } from '@/types/people.types'
 import { DEFAULT_PLACE } from '@/types/people.types'
 import {
@@ -59,6 +60,8 @@ export type SubmitNewKarkunRequestInput = {
   createdBy?: string
   /** KC-0068 — required to proceed after a possible-name soft warning. */
   acknowledgeNameWarning?: boolean
+  /** KC-0123 — defaults to new_karkun. */
+  kind?: PeopleRequestKind
 }
 
 export type MobileDuplicateDetails = {
@@ -68,6 +71,12 @@ export type MobileDuplicateDetails = {
   viewRoute: string
   connectRoute: string
   adminViewRoute: string
+  /** KC-0123 — enriched lookup for Admin / Rukn. */
+  category?: string
+  status?: string
+  connectedToRuknId?: string
+  connectedToRuknName?: string
+  assignmentStatus?: string
 }
 
 export type SubmitNewKarkunRequestResult =
@@ -102,13 +111,20 @@ function buildMobileDuplicate(
   mobile: string,
 ): MobileDuplicateDetails {
   const existing = getKarkunById(karkunId)
+  const active = getActiveAssignmentsForKarkun(karkunId)[0]
+  const connectedRukn = active ? getRuknById(active.ruknId) : undefined
   return {
     karkunId,
-    name,
+    name: existing?.name ?? name,
     mobile: existing?.mobile?.trim() || normalizeMobile(mobile),
     viewRoute: existing ? ruknVisitPath(karkunId) : ROUTES.RUKN_MY_KARKUN,
     connectRoute: ROUTES.RUKN_AVAILABLE_KARKUN,
     adminViewRoute: adminKarkunProfilePath(karkunId),
+    category: existing?.category ?? 'Karkun',
+    status: existing?.status,
+    connectedToRuknId: active?.ruknId ?? existing?.assignedRuknId,
+    connectedToRuknName: connectedRukn?.name ?? existing?.assignedRukn,
+    assignmentStatus: existing?.assignmentStatus,
   }
 }
 
@@ -250,6 +266,7 @@ export async function submitNewKarkunRequest(
     requestingRuknId: rukn.id,
     requestingRuknName: rukn.name,
     status: 'Pending Approval' as const,
+    kind: (input.kind ?? 'new_karkun') as PeopleRequestKind,
     createdAt: now,
     updatedAt: now,
     createdBy: input.createdBy?.trim() || rukn.name,
@@ -402,12 +419,52 @@ async function approveNewKarkunRequestOnce(input: {
       return { ok: false, error: 'Could not resolve Karkun for approval.', code: 'VALIDATION' }
     }
 
-    // KC-0113.3 — Never approve a connection onto an already-connected Karkun.
-    if (getActiveAssignmentsForKarkun(karkunId).length > 0) {
+    // KC-0123 — Already connected to requesting Rukn: complete approval without re-assign.
+    // Connected to another Rukn: surface rich lookup (do not leave a silent forever-Pending).
+    const activeAssignments = getActiveAssignmentsForKarkun(karkunId)
+    if (activeAssignments.length > 0) {
+      const toRequester = activeAssignments.find(
+        (assignment) => assignment.ruknId === claimed.requestingRuknId,
+      )
+      if (toRequester) {
+        const resolvedExisting = resolveKarkunRequest(claimed.id, 'Approved', input.decidedBy, {
+          decisionNotes:
+            input.decisionNotes?.trim() ||
+            'Already connected to requesting Rukn — approval completed without duplicate connection.',
+          createdKarkunId: karkunId,
+          assignmentId: toRequester.assignmentId,
+        })
+        if (!resolvedExisting) {
+          return alreadyProcessedResult()
+        }
+        if (getRepositoryProviderMode() === 'firestore') {
+          const { awaitKarkunRequestsPersist } = await import(
+            '@/repositories/firestore/firestoreRepositories'
+          )
+          await awaitKarkunRequestsPersist()
+        }
+        return { ok: true, request: resolvedExisting, karkunId }
+      }
+
+      const person = getKarkunById(karkunId)
+      const other = activeAssignments[0]!
+      const otherRukn = getRuknById(other.ruknId)
       return {
         ok: false,
         error: KARKUN_ALREADY_CONNECTED_MESSAGE,
         code: 'VALIDATION',
+        duplicate: person
+          ? buildMobileDuplicate(person.id, person.name, person.mobile)
+          : {
+              karkunId,
+              name: claimed.fullName,
+              mobile: claimed.mobile,
+              viewRoute: ROUTES.RUKN_MY_KARKUN,
+              connectRoute: ROUTES.RUKN_AVAILABLE_KARKUN,
+              adminViewRoute: adminKarkunProfilePath(karkunId),
+              connectedToRuknId: other.ruknId,
+              connectedToRuknName: otherRukn?.name,
+            },
       }
     }
 
@@ -507,3 +564,199 @@ export function rejectNewKarkunRequest(input: {
 
   return { ok: true, request: resolved }
 }
+
+/** KC-0123 — Rukn submits New Muttafiq intake (independent of Add Karkun). */
+export async function submitNewMuttafiqRequest(
+  input: SubmitNewKarkunRequestInput,
+): Promise<SubmitNewKarkunRequestResult> {
+  return submitNewKarkunRequest({ ...input, kind: 'new_muttafiq' })
+}
+
+/** KC-0123 — Rukn requests Karkun → Muttafiq conversion (identity preserved). */
+export async function submitKarkunToMuttafiqConversionRequest(input: {
+  personId: string
+  requestingRuknId: string
+  remarks?: string
+  createdBy?: string
+}): Promise<SubmitNewKarkunRequestResult> {
+  const person = getKarkunById(input.personId)
+  if (!person) {
+    return { ok: false, error: 'Person not found.', code: 'VALIDATION' }
+  }
+  const rukn = getRuknById(input.requestingRuknId)
+  if (!rukn || rukn.status !== 'active') {
+    return { ok: false, error: 'Rukn not found or inactive.', code: 'VALIDATION' }
+  }
+
+  const pendingSame = getPendingKarkunRequests().find(
+    (request) =>
+      request.kind === 'karkun_to_muttafiq' && request.sourcePersonId === input.personId,
+  )
+  if (pendingSame) {
+    return {
+      ok: false,
+      error: 'A conversion request for this person already exists.',
+      code: 'PENDING_EXISTS',
+    }
+  }
+
+  try {
+    await syncKarkunRequestStoreFromServer()
+  } catch {
+    // continue with cache
+  }
+
+  const now = new Date().toISOString()
+  const request = await appendKarkunRequestDurable({
+    id: `creq-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    fullName: person.name,
+    mobile: normalizeMobile(person.mobile),
+    gender: normalizePersonGender(person.gender) ?? 'Male',
+    area: person.area ?? '',
+    remarks: input.remarks?.trim() ?? '',
+    requestingRuknId: rukn.id,
+    requestingRuknName: rukn.name,
+    status: 'Pending Approval',
+    kind: 'karkun_to_muttafiq',
+    sourcePersonId: person.id,
+    previousCategory: 'Karkun',
+    createdAt: now,
+    updatedAt: now,
+    createdBy: input.createdBy?.trim() || rukn.name,
+  })
+
+  logActivity({
+    type: 'complete',
+    message: `Conversion request: ${person.name} Karkun → Muttafiq by ${rukn.name}.`,
+    ruknId: rukn.id,
+    karkunId: person.id,
+    actor: 'Rukn',
+  })
+
+  return { ok: true, request }
+}
+
+/**
+ * KC-0123 — Approve non-karkun intake kinds (Muttafiq create / conversion).
+ * New Karkun continues to use approveNewKarkunRequest.
+ */
+export async function approvePeopleIntakeRequest(input: {
+  requestId: string
+  decidedBy: string
+  decisionNotes?: string
+}): Promise<ApproveNewKarkunRequestResult> {
+  try {
+    await syncKarkunRequestStoreFromServer()
+  } catch {
+    reloadKarkunRequestStoreFromPersistence()
+  }
+
+  const existing = getKarkunRequestById(input.requestId)
+  if (!existing || existing.status !== 'Pending Approval') {
+    return alreadyProcessedResult()
+  }
+
+  const kind = existing.kind ?? 'new_karkun'
+  if (kind === 'new_karkun') {
+    return approveNewKarkunRequest(input)
+  }
+
+  const claimed = claimKarkunRequestApproval(input.requestId)
+  if (!claimed) {
+    return alreadyProcessedResult()
+  }
+
+  try {
+    if (kind === 'new_muttafiq') {
+      const createResult = createMuttafiq(
+        {
+          name: claimed.fullName,
+          gender: claimed.gender,
+          mobile: claimed.mobile,
+          place: DEFAULT_PLACE,
+          status: 'active',
+          area: claimed.area,
+          notes: claimed.remarks,
+        },
+        input.decidedBy || 'Administrator',
+      )
+      if (!createResult.success || !createResult.karkunId) {
+        return {
+          ok: false,
+          error: createResult.error ?? 'Could not create Muttafiq.',
+          code: 'VALIDATION',
+        }
+      }
+      const durable = await persistKarkunDurable(createResult.karkunId)
+      if (!durable.success) {
+        return {
+          ok: false,
+          error: durable.error || 'Muttafiq could not be saved durably.',
+          code: 'VALIDATION',
+        }
+      }
+
+      let assignmentId: string | undefined
+      const assignResult = await assignKarkun(
+        createResult.karkunId,
+        claimed.requestingRuknId,
+        'Administrator',
+      )
+      if (assignResult.success) {
+        assignmentId = assignResult.assignment?.assignmentId
+      }
+
+      const resolved = resolveKarkunRequest(claimed.id, 'Approved', input.decidedBy, {
+        decisionNotes: input.decisionNotes?.trim() || undefined,
+        createdKarkunId: createResult.karkunId,
+        assignmentId,
+      })
+      if (!resolved) return alreadyProcessedResult()
+      if (getRepositoryProviderMode() === 'firestore') {
+        const { awaitKarkunRequestsPersist } = await import(
+          '@/repositories/firestore/firestoreRepositories'
+        )
+        await awaitKarkunRequestsPersist()
+      }
+      return { ok: true, request: resolved, karkunId: createResult.karkunId }
+    }
+
+    if (kind === 'karkun_to_muttafiq') {
+      const personId = claimed.sourcePersonId
+      if (!personId) {
+        return { ok: false, error: 'Conversion request is missing source person.', code: 'VALIDATION' }
+      }
+      const { convertKarkunToMuttafiqPreservingIdentity } = await import(
+        '@/lib/peopleLifecycle/conversionService'
+      )
+      const converted = await convertKarkunToMuttafiqPreservingIdentity(
+        personId,
+        input.decidedBy || 'Administrator',
+        input.decisionNotes,
+      )
+      if (!converted.success) {
+        return { ok: false, error: converted.error ?? 'Conversion failed.', code: 'VALIDATION' }
+      }
+      const resolved = resolveKarkunRequest(claimed.id, 'Approved', input.decidedBy, {
+        decisionNotes: input.decisionNotes?.trim() || undefined,
+        createdKarkunId: personId,
+      })
+      if (!resolved) return alreadyProcessedResult()
+      if (getRepositoryProviderMode() === 'firestore') {
+        const { awaitKarkunRequestsPersist } = await import(
+          '@/repositories/firestore/firestoreRepositories'
+        )
+        await awaitKarkunRequestsPersist()
+      }
+      return { ok: true, request: resolved, karkunId: personId }
+    }
+
+    return { ok: false, error: 'Unknown request kind.', code: 'VALIDATION' }
+  } finally {
+    const current = getKarkunRequestById(input.requestId)
+    if (current?.status === 'Pending Approval') {
+      releaseKarkunRequestApprovalClaim(input.requestId)
+    }
+  }
+}
+

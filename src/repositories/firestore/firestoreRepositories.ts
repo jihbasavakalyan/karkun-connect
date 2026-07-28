@@ -2555,14 +2555,16 @@ export async function refreshKarkunRequestCacheFromServer(): Promise<{
     FIRESTORE_DOCS.karkunRequests,
   )
   const requests = Array.isArray(data?.requests) ? data.requests : []
-  karkunRequestCache.set([...requests])
-  const pending = countPendingKarkunRequests(requests)
+  // KC-0123 — merge with cache so in-memory Approved is not wiped by stale Pending.
+  const merged = mergeKarkunRequestsById(requests, karkunRequestCache.get())
+  karkunRequestCache.set([...merged])
+  const pending = countPendingKarkunRequests(merged)
   console.info('[KC-0102.0] karkunRequests server refresh', {
     path,
-    total: requests.length,
+    total: merged.length,
     pending,
   })
-  return { path, total: requests.length, pending }
+  return { path, total: merged.length, pending }
 }
 
 /**

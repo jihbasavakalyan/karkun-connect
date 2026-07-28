@@ -2,7 +2,7 @@
  * Rukn form to submit a discovered worker for Admin approval (KC-018 / KC-0068).
  */
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Modal, ModalFormFooter } from '@/components/common'
 import { FORM_INPUT_CLASS, FORM_LABEL_CLASS } from '@/components/ui/formStyles'
@@ -27,7 +27,8 @@ export function NewKarkunRequestModal({
   const ruknGender = normalizePersonGender(getRuknById(ruknId)?.gender) ?? 'Male'
   const [fullName, setFullName] = useState('')
   const [mobile, setMobile] = useState('')
-  const [gender, setGender] = useState<PersonGender>(ruknGender)
+  const [genderOverride, setGenderOverride] = useState<PersonGender | null>(null)
+  const gender = genderOverride ?? ruknGender
   const [area, setArea] = useState('')
   const [remarks, setRemarks] = useState('')
   const [error, setError] = useState('')
@@ -39,18 +40,17 @@ export function NewKarkunRequestModal({
     mobile: string
     viewRoute: string
     connectRoute: string
+    category?: string
+    status?: string
+    assignmentStatus?: string
+    connectedToRuknName?: string
+    connectedToRuknId?: string
   } | null>(null)
-
-  useEffect(() => {
-    if (isOpen) {
-      setGender(ruknGender)
-    }
-  }, [isOpen, ruknGender])
 
   const reset = () => {
     setFullName('')
     setMobile('')
-    setGender(ruknGender)
+    setGenderOverride(null)
     setArea('')
     setRemarks('')
     setError('')
@@ -89,6 +89,11 @@ export function NewKarkunRequestModal({
                   mobile: result.duplicate.mobile,
                   viewRoute: result.duplicate.viewRoute,
                   connectRoute: result.duplicate.connectRoute,
+                  category: result.duplicate.category,
+                  status: result.duplicate.status,
+                  assignmentStatus: result.duplicate.assignmentStatus,
+                  connectedToRuknName: result.duplicate.connectedToRuknName,
+                  connectedToRuknId: result.duplicate.connectedToRuknId,
                 }
               : null,
           )
@@ -141,27 +146,47 @@ export function NewKarkunRequestModal({
             <p>{error}</p>
             {duplicate ? (
               <div className="mt-3 space-y-1 text-sm">
+                <p className="font-semibold">Existing Karkun</p>
                 <p>
-                  <span className="font-medium">Existing Name: </span>
+                  <span className="font-medium">Name: </span>
                   {duplicate.name}
                 </p>
                 <p>
-                  <span className="font-medium">Mobile Number: </span>
+                  <span className="font-medium">Mobile: </span>
                   {duplicate.mobile}
                 </p>
+                {duplicate.category ? (
+                  <p>
+                    <span className="font-medium">Current Registry: </span>
+                    {duplicate.category}
+                  </p>
+                ) : null}
+                {duplicate.connectedToRuknName || duplicate.connectedToRuknId ? (
+                  <p>
+                    <span className="font-medium">Connected To / Responsible Rukn: </span>
+                    {duplicate.connectedToRuknName || duplicate.connectedToRuknId}
+                  </p>
+                ) : null}
+                {duplicate.status || duplicate.assignmentStatus ? (
+                  <p>
+                    <span className="font-medium">Current Status: </span>
+                    {[duplicate.status, duplicate.assignmentStatus].filter(Boolean).join(' · ')}
+                  </p>
+                ) : null}
                 <div className="mt-2 flex flex-wrap gap-2">
                   <Link
                     to={duplicate.viewRoute}
                     className="text-sm font-semibold text-primary underline"
                   >
-                    View Existing Record
+                    Open Profile
                   </Link>
                   <Link
                     to={duplicate.connectRoute}
                     className="text-sm font-semibold text-primary underline"
                   >
-                    Connect Existing
+                    View Connection
                   </Link>
+                  <span className="text-xs text-secondary">Request Transfer (coming soon)</span>
                 </div>
               </div>
             ) : null}
@@ -224,7 +249,7 @@ export function NewKarkunRequestModal({
             id="new-karkun-gender"
             className={FORM_INPUT_CLASS}
             value={gender}
-            onChange={(event) => setGender(event.target.value as PersonGender)}
+            onChange={(event) => setGenderOverride(event.target.value as PersonGender)}
           >
             <option value="Male">Male</option>
             <option value="Female">Female</option>
