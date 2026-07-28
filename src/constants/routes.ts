@@ -146,6 +146,11 @@ export function adminKarkunPendingRequestsPath(): string {
   return `${ROUTES.ADMIN_INBOX}?folder=pending`
 }
 
+/** KC-0124 — Canonical 360° Person Profile (Karkun + Muttafiq). */
+export function adminPersonProfilePath(personId: string): string {
+  return adminKarkunProfilePath(personId)
+}
+
 /** KC-0107 — Admin Weekly Ijtema management. */
 export function adminWeeklyIjtemaPath(): string {
   return ROUTES.ADMIN_WEEKLY_IJTEMA

@@ -13,6 +13,7 @@ import {
 import { PortalAuthActions } from '@/components/layout/PortalAuthActions'
 import type { CampaignTimelineStatus } from '@/services/campaignService'
 import { EnterpriseBadge } from '@/components/enterprise'
+import { resolveUniquePersonProfilePath } from '@/lib/personProfile'
 
 type AdminTopBarProps = {
   alertCount?: number
@@ -35,7 +36,14 @@ export function AdminTopBar({ alertCount = 0, onMenuToggle }: AdminTopBarProps) 
 
   const handleSearch = (event: FormEvent) => {
     event.preventDefault()
-    navigate(ROUTES.ADMIN_KARKUN, { state: { searchQuery: query.trim() } })
+    const trimmed = query.trim()
+    if (!trimmed) return
+    const profilePath = resolveUniquePersonProfilePath(trimmed)
+    if (profilePath) {
+      navigate(profilePath)
+      return
+    }
+    navigate(ROUTES.ADMIN_KARKUN, { state: { searchQuery: trimmed } })
   }
 
   return (

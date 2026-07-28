@@ -27,6 +27,7 @@ import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import { EmptyState, PageShell } from '@/components/ui'
 import { StatusBadge } from '@/components/ui/StatusBadge'
+import { Person360Overview } from '@/components/personProfile/Person360Overview'
 import type { KarkunRegistryRecord, PersonGender, PersonStatus } from '@/types/karkun-registry.types'
 import type { IjtemaAttendanceStatus } from '@/types/ijtemaAttendance'
 import { DEFAULT_PLACE, getFatherHusbandLabel } from '@/types/people.types'
@@ -492,7 +493,10 @@ export function KarkunProfilePage() {
   }
 
   return (
-    <PageShell variant="narrow" className="max-w-4xl overflow-hidden">
+    <PageShell className="max-w-5xl overflow-hidden">
+      <div className="mb-6">
+        <Person360Overview personId={karkunId} />
+      </div>
       <KarkunProfileForm key={karkunId} karkun={karkun} karkunId={karkunId} />
     </PageShell>
   )

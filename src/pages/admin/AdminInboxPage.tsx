@@ -3,7 +3,7 @@
  */
 
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { PageShell } from '@/components/ui'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
@@ -41,10 +41,14 @@ const KINDS: { id: InboxItemKind | 'all'; label: string }[] = [
 
 export function AdminInboxPage() {
   const { user } = useAuth()
+  const [searchParams] = useSearchParams()
   const [tick, setTick] = useState(0)
-  const [folder, setFolder] = useState<InboxFolder | 'all'>('pending')
+  const [folder, setFolder] = useState<InboxFolder | 'all'>(
+    () => (searchParams.get('folder') as InboxFolder | null) ?? 'pending',
+  )
   const [kind, setKind] = useState<InboxItemKind | 'all'>('all')
-  const [query, setQuery] = useState('')
+  const [queryDraft, setQueryDraft] = useState<string | null>(null)
+  const query = queryDraft ?? (searchParams.get('query') ?? '')
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [busyId, setBusyId] = useState<string | null>(null)
@@ -139,7 +143,7 @@ export function AdminInboxPage() {
           <input
             className={FORM_INPUT_CLASS}
             value={query}
-            onChange={(event) => setQuery(event.target.value)}
+            onChange={(event) => setQueryDraft(event.target.value)}
             placeholder="Search name, sender, status…"
           />
         </label>

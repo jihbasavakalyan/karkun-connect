@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { CommunicationStatusBadge } from '@/components/communication/CommunicationStatusBadge'
 import {
   AUDIENCE_FILTER_OPTIONS,
@@ -8,6 +9,8 @@ import {
   filterHistoryByStatus,
   type CommunicationAudience,
 } from '@/lib/communication/audiencePresentation'
+import { adminPersonProfilePath } from '@/lib/personProfile'
+import { adminRuknDetailPath } from '@/constants/routes'
 import { formatHistoryTimestamp } from '@/services/historyService'
 import { useCommunication } from '@/hooks/useCommunication'
 import type { MessageDeliveryStatus } from '@/types/communication'
@@ -147,7 +150,23 @@ export function DeliveryHistoryPanel() {
               {filtered.map((record) => (
                 <tr key={record.id} className="border-b border-border last:border-b-0">
                   <td className="px-4 py-3">
-                    <p className="font-medium text-text-heading">{record.recipient.name}</p>
+                    {record.recipient.personKind === 'karkun' && record.recipient.personId ? (
+                      <Link
+                        to={adminPersonProfilePath(record.recipient.personId)}
+                        className="font-medium text-primary hover:underline"
+                      >
+                        {record.recipient.name}
+                      </Link>
+                    ) : record.recipient.personKind === 'rukn' && record.recipient.personId ? (
+                      <Link
+                        to={adminRuknDetailPath(record.recipient.personId)}
+                        className="font-medium text-primary hover:underline"
+                      >
+                        {record.recipient.name}
+                      </Link>
+                    ) : (
+                      <p className="font-medium text-text-heading">{record.recipient.name}</p>
+                    )}
                     <p className="text-xs text-secondary">{record.recipient.mobile}</p>
                   </td>
                   <td className="px-4 py-3 capitalize text-secondary">

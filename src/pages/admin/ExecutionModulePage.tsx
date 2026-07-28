@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { ActiveCampaignSubtitle } from '@/components/layout/CampaignStatusBar'
-import { adminAnnexure1Path, adminExecutionPath } from '@/constants/routes'
+import { adminAnnexure1Path, adminExecutionPath, adminKarkunProfilePath } from '@/constants/routes'
 import { ExecutionEmptyState } from '@/components/execution/ExecutionEmptyState'
 import { ExecutionRecordsPanel } from '@/components/execution/ExecutionRecordsPanel'
 import { ExecutionStatusBadge } from '@/components/execution/ExecutionStatusBadge'
@@ -73,7 +73,14 @@ function AssignmentRow({
     <li className="flex flex-col gap-3 rounded-lg border border-border bg-surface-muted px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
-          <p className="font-semibold text-text-heading">{item.karkunName}</p>
+          <p className="font-semibold text-text-heading">
+            <Link
+              to={adminKarkunProfilePath(item.karkunId)}
+              className="hover:text-primary hover:underline"
+            >
+              {item.karkunName}
+            </Link>
+          </p>
           <ExecutionStatusBadge status={item.status} />
         </div>
         <p className="mt-1 text-sm text-secondary">
@@ -107,7 +114,14 @@ function CompletedTodayRow({ form }: { form: SubmittedMeetingForm }) {
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
           <p className="font-semibold text-text-heading">
-            {form.workerName} · {form.visitDate}
+            <Link
+              to={adminKarkunProfilePath(form.karkunId)}
+              className="hover:text-primary hover:underline"
+            >
+              {form.workerName}
+            </Link>
+            {' · '}
+            {form.visitDate}
           </p>
           <ExecutionStatusBadge status="Completed" />
         </div>
@@ -115,11 +129,18 @@ function CompletedTodayRow({ form }: { form: SubmittedMeetingForm }) {
           {form.assignmentNumber} · Rukn: {form.assignedRukn}
         </p>
       </div>
-      <Link to={adminAnnexure1Path(form.karkunId)} className="shrink-0">
-        <PrimaryButton type="button" className="w-full px-4 py-2 text-sm sm:w-auto">
-          View Submission
-        </PrimaryButton>
-      </Link>
+      <div className="flex shrink-0 flex-col gap-2 sm:items-end">
+        <Link to={adminKarkunProfilePath(form.karkunId)} className="shrink-0">
+          <SecondaryButton type="button" className="w-full px-4 py-2 text-sm sm:w-auto">
+            Open Profile
+          </SecondaryButton>
+        </Link>
+        <Link to={adminAnnexure1Path(form.karkunId)} className="shrink-0">
+          <PrimaryButton type="button" className="w-full px-4 py-2 text-sm sm:w-auto">
+            View Submission
+          </PrimaryButton>
+        </Link>
+      </div>
     </li>
   )
 }

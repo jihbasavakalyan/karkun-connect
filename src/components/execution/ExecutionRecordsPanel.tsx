@@ -1,9 +1,10 @@
 import { Link } from 'react-router-dom'
-import { adminAnnexure1Path } from '@/constants/routes'
+import { adminAnnexure1Path, adminKarkunProfilePath } from '@/constants/routes'
 import { ExecutionEmptyState } from '@/components/execution/ExecutionEmptyState'
 import { ExecutionStatusBadge } from '@/components/execution/ExecutionStatusBadge'
 import { getSubmittedMeetingForms } from '@/stores/annexure1Store'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
+import { SecondaryButton } from '@/components/ui/SecondaryButton'
 
 export function ExecutionRecordsPanel() {
   const executionRecords = getSubmittedMeetingForms()
@@ -40,11 +41,18 @@ export function ExecutionRecordsPanel() {
                 : `Not conducted: ${form.notConductedReason}`}
             </p>
           </div>
-          <Link to={adminAnnexure1Path(form.karkunId)} className="shrink-0">
-            <PrimaryButton type="button" className="w-full px-4 py-2 text-sm sm:w-auto">
-              View Submission
-            </PrimaryButton>
-          </Link>
+          <div className="flex shrink-0 flex-col gap-2 sm:items-end">
+            <Link to={adminKarkunProfilePath(form.karkunId)} className="shrink-0">
+              <SecondaryButton type="button" className="w-full px-4 py-2 text-sm sm:w-auto">
+                Open Profile
+              </SecondaryButton>
+            </Link>
+            <Link to={adminAnnexure1Path(form.karkunId)} className="shrink-0">
+              <PrimaryButton type="button" className="w-full px-4 py-2 text-sm sm:w-auto">
+                View Submission
+              </PrimaryButton>
+            </Link>
+          </div>
         </li>
       ))}
     </ul>

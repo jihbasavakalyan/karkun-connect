@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { ActiveCampaignSubtitle } from '@/components/layout/CampaignStatusBar'
-import { adminAnnexure1Path } from '@/constants/routes'
+import { adminAnnexure1Path, adminKarkunProfilePath } from '@/constants/routes'
 import { ExecutionEmptyState } from '@/components/execution/ExecutionEmptyState'
 import { ExecutionStatusBadge } from '@/components/execution/ExecutionStatusBadge'
 import { ExecutionSuccessBanner } from '@/components/execution/ExecutionSuccessBanner'
@@ -82,7 +82,14 @@ function FollowUpList({
         >
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <p className="font-semibold text-text-heading">{item.karkunName}</p>
+              <p className="font-semibold text-text-heading">
+                <Link
+                  to={adminKarkunProfilePath(item.karkunId)}
+                  className="hover:text-primary hover:underline"
+                >
+                  {item.karkunName}
+                </Link>
+              </p>
               <ExecutionStatusBadge
                 status={item.status === 'Completed' ? 'Completed' : 'Follow-up Required'}
               />
@@ -95,10 +102,15 @@ function FollowUpList({
 
           {showActions && (
             <div className="flex shrink-0 flex-col gap-2 sm:w-48">
-              <Link to={adminAnnexure1Path(item.karkunId)}>
+              <Link to={adminKarkunProfilePath(item.karkunId)}>
                 <PrimaryButton type="button" fullWidth className="px-4 py-2 text-sm">
-                  Open Connection
+                  Open Profile
                 </PrimaryButton>
+              </Link>
+              <Link to={adminAnnexure1Path(item.karkunId)}>
+                <SecondaryButton type="button" fullWidth className="px-4 py-2 text-sm">
+                  Open Connection
+                </SecondaryButton>
               </Link>
               {onNotify ? (
                 <SecondaryButton
