@@ -13,6 +13,10 @@ import { useBusyAction } from '@/hooks/useBusyAction'
 import { useRequiredRuknId } from '@/hooks/useRequiredRuknId'
 import { getRuknById } from '@/data/ruknMaster'
 import {
+  EXECUTION_PERSIST_FAILED_EVENT,
+  type ExecutionPersistFailedDetail,
+} from '@/lib/executionPersistEvents'
+import {
   getCurrentWeeklyIjtemaEvent,
   getRuknWeeklyIjtemaWorkspace,
   listWeeklyIjtemaEvents,
@@ -43,6 +47,22 @@ export function WeeklyIjtemaRegisterPage() {
 
   useEffect(() => subscribeToWeeklyIjtemaStore(() => setStoreVersion((v) => v + 1)), [])
 
+  useEffect(() => {
+    const onPersistFailed = (event: Event) => {
+      const detail = (event as CustomEvent<ExecutionPersistFailedDetail>).detail
+      if (!detail) return
+      if (
+        detail.label !== 'compliance.weeklyIjtemaSubmissions' &&
+        detail.label !== 'compliance.weeklyIjtemaEvents'
+      ) {
+        return
+      }
+      setMessage(`Save failed: ${detail.message}`)
+    }
+    window.addEventListener(EXECUTION_PERSIST_FAILED_EVENT, onPersistFailed)
+    return () => window.removeEventListener(EXECUTION_PERSIST_FAILED_EVENT, onPersistFailed)
+  }, [])
+
   const events = useMemo(() => {
     void storeVersion
     return listWeeklyIjtemaEvents()
@@ -65,20 +85,28 @@ export function WeeklyIjtemaRegisterPage() {
   }, [ruknId, currentEvent, assignmentVersion, storeVersion])
 
   const assignedKey = workspace?.assigned.map((k) => k.id).join('|') ?? ''
+  const submissionUpdatedAt = workspace?.submission?.updatedAt ?? ''
+  const eventId = currentEvent?.id ?? ''
 
+  // Seed draft from server when meeting / roster / saved submission changes.
+  // Intentionally omit storeVersion — hydrate notifies must not wipe in-progress marks (KC-BUG-0122).
   useEffect(() => {
-    if (!workspace) {
+    if (!ruknId || !eventId) {
+      setDraft({})
+      return
+    }
+    const result = getRuknWeeklyIjtemaWorkspace(eventId, ruknId)
+    if (!result.success) {
       setDraft({})
       return
     }
     const next: Record<string, DraftStatus> = {}
-    for (const karkun of workspace.assigned) {
-      const existing = workspace.submission?.marks.find((mark) => mark.karkunId === karkun.id)
+    for (const karkun of result.assigned) {
+      const existing = result.submission?.marks.find((mark) => mark.karkunId === karkun.id)
       next[karkun.id] = existing?.status ?? 'Unmarked'
     }
     setDraft(next)
-    setMessage('')
-  }, [assignedKey, workspace?.event.id, workspace?.submission?.updatedAt, storeVersion])
+  }, [assignedKey, eventId, submissionUpdatedAt, ruknId])
 
   if (!ruknId) {
     return <Navigate to={ROUTES.LOGIN} replace />
@@ -129,6 +157,15 @@ export function WeeklyIjtemaRegisterPage() {
           setMessage(result.error)
           return
         }
+
+        // KC-BUG-0122 / KC-ARCH-001 — await durable write before success.
+        try {
+          const { awaitQueuedWrite } = await import('@/repositories/firestore/firestoreRepositories')
+          await awaitQueuedWrite('compliance.weeklyIjtemaSubmissions')
+        } catch {
+          // local provider has no queue
+        }
+
         setMessage('Attendance submitted successfully.')
       },
       { key: `weekly-ijtema-submit:${ruknId}`, waitForPendingWrites: true, minMs: 400 },

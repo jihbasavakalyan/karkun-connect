@@ -181,6 +181,41 @@ const pendingWeeklyIjtemaSubmissionDirty = new Map<string, WeeklyIjtemaSubmissio
 const pendingMonthlyBaitulMaalCycleDirty = new Map<string, MonthlyBaitulMaalCycle>()
 const pendingMonthlyBaitulMaalSubmissionDirty = new Map<string, MonthlyBaitulMaalSubmission>()
 
+/** KC-BUG-0122 — keep newer local / dirty Weekly Ijtema rows across snapshot hydrate. */
+function mergeWeeklyIjtemaSubmissionsPreferLocal(
+  remote: WeeklyIjtemaSubmission[],
+  local: WeeklyIjtemaSubmission[],
+): WeeklyIjtemaSubmission[] {
+  const merged = new Map(remote.map((item) => [item.id, item] as const))
+  for (const item of local) {
+    const existing = merged.get(item.id)
+    if (!existing || item.updatedAt > existing.updatedAt) {
+      merged.set(item.id, item)
+    }
+  }
+  for (const item of pendingWeeklyIjtemaSubmissionDirty.values()) {
+    merged.set(item.id, item)
+  }
+  return [...merged.values()]
+}
+
+function mergeWeeklyIjtemaEventsPreferLocal(
+  remote: WeeklyIjtemaEvent[],
+  local: WeeklyIjtemaEvent[],
+): WeeklyIjtemaEvent[] {
+  const merged = new Map(remote.map((item) => [item.id, item] as const))
+  for (const item of local) {
+    const existing = merged.get(item.id)
+    if (!existing || item.updatedAt > existing.updatedAt) {
+      merged.set(item.id, item)
+    }
+  }
+  for (const item of pendingWeeklyIjtemaEventDirty.values()) {
+    merged.set(item.id, item)
+  }
+  return [...merged.values()]
+}
+
 async function queueWrite(label: string, work: () => Promise<RepositoryResult<void>>): Promise<void> {
   // KC-0098 — coalesce concurrent identical-label dumps onto one in-flight chain.
   // Latest scheduled work wins; callers that dump dirty sets should accumulate
@@ -732,8 +767,16 @@ function applyBackgroundHydratePayload(input: {
   }
   baitulMaalCache.set(baitulMaal)
   ijtemaCache.set(ijtema)
-  weeklyIjtemaEventCache.set(weeklyIjtemaEvents)
-  weeklyIjtemaSubmissionCache.set(weeklyIjtemaSubmissions)
+  // KC-BUG-0122 — never drop in-flight / newer local Weekly Ijtema writes on snapshot hydrate.
+  weeklyIjtemaEventCache.set(
+    mergeWeeklyIjtemaEventsPreferLocal(weeklyIjtemaEvents, weeklyIjtemaEventCache.get()),
+  )
+  weeklyIjtemaSubmissionCache.set(
+    mergeWeeklyIjtemaSubmissionsPreferLocal(
+      weeklyIjtemaSubmissions,
+      weeklyIjtemaSubmissionCache.get(),
+    ),
+  )
   monthlyBaitulMaalCycleCache.set(monthlyBaitulMaalCycles)
   monthlyBaitulMaalSubmissionCache.set(monthlyBaitulMaalSubmissions)
   if (jihPortal) {
@@ -2128,7 +2171,6 @@ export class ComplianceFirestoreRepository implements ComplianceRepository {
     weeklyIjtemaEventCache.set([...merged.values()])
     void queueWrite('compliance.weeklyIjtemaEvents', async () => {
       const dirty = [...pendingWeeklyIjtemaEventDirty.values()]
-      pendingWeeklyIjtemaEventDirty.clear()
       if (dirty.length === 0) {
         return repositoryOk(undefined)
       }
@@ -2145,6 +2187,12 @@ export class ComplianceFirestoreRepository implements ComplianceRepository {
         )
       }
       await batch.commit()
+      for (const event of dirty) {
+        const pending = pendingWeeklyIjtemaEventDirty.get(event.id)
+        if (pending && pending.updatedAt === event.updatedAt) {
+          pendingWeeklyIjtemaEventDirty.delete(event.id)
+        }
+      }
       return repositoryOk(undefined)
     })
     return repositoryOk(undefined)
@@ -2183,8 +2231,8 @@ export class ComplianceFirestoreRepository implements ComplianceRepository {
     }
     weeklyIjtemaSubmissionCache.set([...merged.values()])
     void queueWrite('compliance.weeklyIjtemaSubmissions', async () => {
+      // Snapshot of dirty at write start — keep map until commit succeeds (KC-BUG-0122).
       const dirty = [...pendingWeeklyIjtemaSubmissionDirty.values()]
-      pendingWeeklyIjtemaSubmissionDirty.clear()
       if (dirty.length === 0) {
         return repositoryOk(undefined)
       }
@@ -2201,6 +2249,12 @@ export class ComplianceFirestoreRepository implements ComplianceRepository {
         )
       }
       await batch.commit()
+      for (const submission of dirty) {
+        const pending = pendingWeeklyIjtemaSubmissionDirty.get(submission.id)
+        if (pending && pending.updatedAt === submission.updatedAt) {
+          pendingWeeklyIjtemaSubmissionDirty.delete(submission.id)
+        }
+      }
       return repositoryOk(undefined)
     })
     return repositoryOk(undefined)
