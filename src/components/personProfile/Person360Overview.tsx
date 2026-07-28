@@ -1,10 +1,12 @@
 /**
- * KC-0124 — 360° Person Profile overview (campaign journey surface).
+ * KC-0124 / KC-0126 — 360° Person Profile overview (campaign journey surface).
+ * Presentation polish only — profile data unchanged.
  */
 
 import { Link } from 'react-router-dom'
 import { buildPerson360Profile } from '@/lib/personProfile'
 import { formatPersonNameForDisplay } from '@/utils/formatPersonDisplay'
+import { UI_LABELS } from '@/lib/uiTerminology'
 
 type Person360OverviewProps = {
   personId: string
@@ -24,8 +26,8 @@ export function Person360Overview({ personId }: Person360OverviewProps) {
     profile
 
   return (
-    <div className="space-y-4">
-      <section className="rounded-(--radius-card) border border-border bg-surface p-4 shadow-card">
+    <div className="person-360 space-y-5">
+      <section className="person-360-card rounded-(--radius-card) border border-border bg-surface p-4 shadow-card sm:p-5">
         <div className="flex flex-wrap items-start gap-4">
           <div
             className="flex size-16 shrink-0 items-center justify-center rounded-full bg-primary/10 text-lg font-semibold text-primary"
@@ -37,10 +39,10 @@ export function Person360Overview({ personId }: Person360OverviewProps) {
             <p className="text-xs font-semibold uppercase tracking-wide text-secondary">
               360° Person Profile
             </p>
-            <h2 className="truncate text-xl font-semibold text-text-heading">
+            <h2 className="truncate text-xl font-semibold text-text-heading sm:text-2xl">
               {formatPersonNameForDisplay(header.name)}
             </h2>
-            <dl className="mt-2 grid gap-1 text-sm text-secondary sm:grid-cols-2">
+            <dl className="mt-3 grid gap-2 text-sm text-secondary sm:grid-cols-2">
               <div>
                 <dt className="inline font-medium text-text-heading">Mobile: </dt>
                 <dd className="inline">{header.mobile || '—'}</dd>
@@ -54,11 +56,15 @@ export function Person360Overview({ personId }: Person360OverviewProps) {
                 <dd className="inline">{header.registry}</dd>
               </div>
               <div>
-                <dt className="inline font-medium text-text-heading">Campaign Status: </dt>
+                <dt className="inline font-medium text-text-heading">
+                  {UI_LABELS.campaignSituation}:{' '}
+                </dt>
                 <dd className="inline">{header.campaignStatus || '—'}</dd>
               </div>
               <div>
-                <dt className="inline font-medium text-text-heading">Connected Rukn: </dt>
+                <dt className="inline font-medium text-text-heading">
+                  {UI_LABELS.connectedRukn}:{' '}
+                </dt>
                 <dd className="inline">{header.connectedRuknName}</dd>
               </div>
               <div>
@@ -94,13 +100,13 @@ export function Person360Overview({ personId }: Person360OverviewProps) {
         </div>
       </section>
 
-      <section className="rounded-(--radius-card) border border-border bg-surface p-4 shadow-card">
-        <h3 className="text-sm font-semibold text-text-heading">Campaign Status</h3>
-        <ul className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+      <section className="person-360-card rounded-(--radius-card) border border-border bg-surface p-4 shadow-card sm:p-5">
+        <h3 className="text-sm font-semibold text-text-heading">{UI_LABELS.campaignSituation}</h3>
+        <ul className="mt-3 grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
           {campaignStatus.map((item) => (
             <li
               key={item.id}
-              className={`rounded-lg border px-3 py-2 text-sm ${toneClass(item.tone)}`}
+              className={`rounded-lg border px-3 py-2.5 text-sm ${toneClass(item.tone)}`}
             >
               <p className="font-semibold">{item.label}</p>
               <p className="mt-0.5 opacity-90">{item.value}</p>
@@ -109,14 +115,14 @@ export function Person360Overview({ personId }: Person360OverviewProps) {
         </ul>
       </section>
 
-      <section className="rounded-(--radius-card) border border-border bg-surface p-4 shadow-card">
+      <section className="person-360-card rounded-(--radius-card) border border-border bg-surface p-4 shadow-card sm:p-5">
         <h3 className="text-sm font-semibold text-text-heading">Campaign Journey</h3>
         <ol className="mt-3 flex flex-wrap gap-2">
           {journeyStages.map((stage) => (
             <li
               key={stage.id}
               className={[
-                'rounded-full border px-3 py-1 text-xs font-semibold',
+                'rounded-full border px-3 py-1.5 text-xs font-semibold',
                 stage.current
                   ? 'border-primary bg-primary/10 text-primary'
                   : stage.complete
@@ -130,28 +136,28 @@ export function Person360Overview({ personId }: Person360OverviewProps) {
         </ol>
       </section>
 
-      <section className="rounded-(--radius-card) border border-border bg-surface p-4 shadow-card">
-        <h3 className="text-sm font-semibold text-text-heading">Responsibility</h3>
-        <dl className="mt-2 grid gap-1 text-sm sm:grid-cols-3">
+      <section className="person-360-card rounded-(--radius-card) border border-border bg-surface p-4 shadow-card sm:p-5">
+        <h3 className="text-sm font-semibold text-text-heading">{UI_LABELS.responsibility}</h3>
+        <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-3">
           <div>
             <dt className="text-secondary">Responsible Rukn</dt>
-            <dd className="font-medium text-text-heading">
+            <dd className="mt-0.5 font-medium text-text-heading">
               {responsibility.responsibleRuknName}
             </dd>
           </div>
           <div>
             <dt className="text-secondary">Connected Since</dt>
-            <dd className="font-medium text-text-heading">{responsibility.connectedSince}</dd>
+            <dd className="mt-0.5 font-medium text-text-heading">{responsibility.connectedSince}</dd>
           </div>
           <div>
-            <dt className="text-secondary">Connection Status</dt>
-            <dd className="font-medium text-text-heading">
+            <dt className="text-secondary">{UI_LABELS.connection}</dt>
+            <dd className="mt-0.5 font-medium text-text-heading">
               {responsibility.connectionStatus}
             </dd>
           </div>
         </dl>
         {responsibility.assignmentHistory.length > 0 ? (
-          <ul className="mt-3 space-y-2 border-t border-border pt-3">
+          <ul className="mt-4 space-y-2.5 border-t border-border pt-3">
             {responsibility.assignmentHistory.slice(0, 5).map((row) => (
               <li key={row.assignmentId} className="text-sm text-secondary">
                 <span className="font-medium text-text-heading">{row.ruknName}</span>
@@ -162,49 +168,48 @@ export function Person360Overview({ personId }: Person360OverviewProps) {
             ))}
           </ul>
         ) : (
-          <p className="mt-2 text-sm text-secondary">No assignment history yet.</p>
+          <p className="mt-3 text-sm text-secondary">No assignment history yet.</p>
         )}
       </section>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <section className="rounded-(--radius-card) border border-border bg-surface p-4 shadow-card">
+      <div className="grid gap-5 lg:grid-cols-2">
+        <section className="person-360-card rounded-(--radius-card) border border-border bg-surface p-4 shadow-card sm:p-5">
           <h3 className="text-sm font-semibold text-text-heading">Timeline</h3>
           <p className="mt-1 text-xs text-secondary">Newest first</p>
           {timeline.length === 0 ? (
             <p className="mt-3 text-sm text-secondary">No timeline events yet.</p>
           ) : (
-            <ul className="mt-3 max-h-80 space-y-2 overflow-y-auto">
+            <ul className="person-360-timeline mt-3 max-h-80 space-y-3 overflow-y-auto pe-1">
               {timeline.slice(0, 25).map((row) => (
-                <li key={row.id} className="border-b border-border/60 pb-2 text-sm last:border-0">
+                <li key={row.id} className="border-b border-border/60 pb-3 text-sm last:border-0">
                   <p className="font-medium text-text-heading">{row.activity}</p>
-                  <p className="text-xs text-secondary">
-                    {row.date.slice(0, 16).replace('T', ' ')} · {row.actor} · {row.module} ·{' '}
-                    {row.status}
+                  <p className="mt-0.5 text-xs text-secondary">
+                    {row.date}
+                    {row.actor ? ` · ${row.actor}` : ''}
+                    {row.module ? ` · ${row.module}` : ''}
                   </p>
+                  {row.status ? <p className="mt-1 text-secondary">{row.status}</p> : null}
                 </li>
               ))}
             </ul>
           )}
         </section>
 
-        <section className="rounded-(--radius-card) border border-border bg-surface p-4 shadow-card">
-          <h3 className="text-sm font-semibold text-text-heading">Communication</h3>
-          <p className="mt-1 text-xs text-secondary">
-            Messages, reminders, and inbox activity
-          </p>
+        <section className="person-360-card rounded-(--radius-card) border border-border bg-surface p-4 shadow-card sm:p-5">
+          <h3 className="text-sm font-semibold text-text-heading">Communication history</h3>
           {communications.length === 0 ? (
             <p className="mt-3 text-sm text-secondary">No communication history yet.</p>
           ) : (
-            <ul className="mt-3 max-h-80 space-y-2 overflow-y-auto">
-              {communications.map((row) => (
-                <li key={row.id} className="border-b border-border/60 pb-2 text-sm last:border-0">
+            <ul className="mt-3 max-h-80 space-y-3 overflow-y-auto pe-1">
+              {communications.slice(0, 20).map((row) => (
+                <li key={row.id} className="border-b border-border/60 pb-3 text-sm last:border-0">
                   <p className="font-medium text-text-heading">{row.title}</p>
-                  <p className="text-xs text-secondary">
-                    {row.sentAt.slice(0, 16).replace('T', ' ')} · {row.actor} · {row.status}
+                  <p className="mt-0.5 text-xs text-secondary">
+                    {row.sentAt}
+                    {row.actor ? ` · ${row.actor}` : ''}
+                    {row.status ? ` · ${row.status}` : ''}
                   </p>
-                  {row.preview ? (
-                    <p className="mt-0.5 text-xs text-secondary">{row.preview}</p>
-                  ) : null}
+                  {row.preview ? <p className="mt-1 text-secondary">{row.preview}</p> : null}
                 </li>
               ))}
             </ul>

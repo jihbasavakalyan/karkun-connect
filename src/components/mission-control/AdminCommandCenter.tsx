@@ -182,7 +182,7 @@ function PriorityRuknCard({
             disabled={!canMessage}
             onClick={() => onRemind(row.ruknId)}
           >
-            🔔 Reminder
+            🔔 Guidance
           </button>
         ) : null}
       </div>
@@ -853,7 +853,7 @@ export function AdminCommandCenter({
                   className="exdash-action-btn exdash-action-warn"
                   onClick={() => openBulk('remind')}
                 >
-                  Reminder to Selected
+                  Guidance to Selected
                 </button>
                 <button type="button" className="exdash-action-btn" onClick={clearSelection}>
                   Clear

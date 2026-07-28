@@ -201,9 +201,9 @@ export function ContextAwareCommunicationPreviewModal({
         </div>
 
         {draft.pendingMatters.length > 0 ? (
-          <div>
-            <p className={FORM_LABEL_CLASS}>Pending Matters</p>
-            <ul className="mt-1 list-disc space-y-0.5 ps-5 text-secondary">
+          <div className="comm-pending-panel">
+            <p className={FORM_LABEL_CLASS}>Pending responsibilities</p>
+            <ul className="mt-2 list-disc space-y-1.5 ps-5 text-secondary">
               {draft.pendingMatters.slice(0, 8).map((matter) => (
                 <li key={matter.id}>{matter.label}</li>
               ))}
@@ -216,6 +216,12 @@ export function ContextAwareCommunicationPreviewModal({
             Generated Message
           </label>
           <p className="mt-0.5 text-xs text-secondary">Edit Message (optional), then Revalidate</p>
+          <div className="wa-preview mt-2">
+            <p className="wa-preview-label">WhatsApp preview</p>
+            <div className="wa-preview-bubble" dir="rtl" lang="ur">
+              <p className="wa-preview-body whitespace-pre-wrap">{message}</p>
+            </div>
+          </div>
           <textarea
             id="kc0119-generated-message"
             value={message}
@@ -223,8 +229,8 @@ export function ContextAwareCommunicationPreviewModal({
               setMessage(event.target.value)
               setNotice('')
             }}
-            rows={14}
-            className="mt-2 w-full rounded-lg border border-border bg-surface px-3 py-2 font-[inherit] text-base leading-relaxed text-text-heading focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+            rows={10}
+            className="mt-3 w-full rounded-lg border border-border bg-surface px-3 py-2 font-[inherit] text-base leading-relaxed text-text-heading focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
             dir="rtl"
             lang="ur"
           />

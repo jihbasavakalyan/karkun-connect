@@ -93,7 +93,7 @@ export function AdminMissionControlHero({
         <p className="exdash-hero-date">{model.currentDateLabel}</p>
         {statusLabel ? (
           <p className="exdash-hero-caption" style={{ marginTop: '0.35rem', opacity: 0.9 }}>
-            Status · {statusLabel}
+            Campaign situation · {statusLabel}
             {timeline?.dayLabel ? ` · ${timeline.dayLabel}` : ''}
           </p>
         ) : null}
@@ -109,13 +109,13 @@ export function AdminMissionControlHero({
                 stroke={9}
                 tone="green"
                 label={`${model.connectionProgress.pct}%`}
-                sublabel="Complete"
+                sublabel="Progress"
               />
               <div className="exdash-hero-progress-copy">
                 <p className="exdash-hero-progress-title">Campaign Progress</p>
                 <dl className="exdash-hero-metrics">
                   <div>
-                    <dt>Connected</dt>
+                    <dt>Connected Karkuns</dt>
                     <dd>{model.connectionProgress.connected}</dd>
                   </div>
                   <div>
