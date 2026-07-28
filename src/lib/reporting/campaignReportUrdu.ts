@@ -20,11 +20,11 @@ export const URDU_REPORT = {
 
   sections: {
     cover: 'سرورق',
-    executive: 'مہم کا خلاصہ',
+    executive: 'خلاصۂ ذمہ داریاں',
     achievement: 'مجموعی کارکردگی',
     malePerformance: 'ارکان کی کارکردگی (مرد)',
     femalePerformance: 'ارکان کی کارکردگی (خواتین)',
-    pending: 'زیر التواء کام',
+    pending: 'امور زیر التواء',
     critical: 'خصوصی توجہ کے مستحق ارکان',
     topPerformers: 'نمایاں کارکردگی',
     statistics: 'مجموعی اعداد و شمار',
@@ -36,8 +36,8 @@ export const URDU_REPORT = {
     maleRukns: 'مرد ارکان',
     femaleRukns: 'خواتین ارکان',
     totalKarkuns: 'کل کارکن',
-    connectedKarkuns: 'مربوط کارکن',
-    connectionPct: 'رابطے کی شرح',
+    connectedKarkuns: 'منسلک کارکنان',
+    connectionPct: 'منسلک ہونے کی شرح',
     visits: 'ملاقاتیں',
     appRegistration: 'جے آئی ایچ رپورٹنگ ایپ',
     weeklyIjtema: 'ہفتہ وار اجتماع',
@@ -48,7 +48,7 @@ export const URDU_REPORT = {
   columns: {
     rukn: 'رکن',
     assigned: 'کل کارکن',
-    connected: 'مربوط کارکن',
+    connected: 'منسلک کارکنان',
     visits: 'ملاقات',
     appRegistration: 'جے آئی ایچ رپورٹنگ ایپ',
     weeklyIjtema: 'ہفتہ وار اجتماع',
@@ -66,7 +66,7 @@ export const URDU_REPORT = {
   },
 
   achievementAreas: {
-    connections: 'رابطے',
+    connections: 'منسلک کارکنان',
     visits: 'ملاقاتیں',
     appRegistration: 'جے آئی ایچ رپورٹنگ ایپ',
     weeklyIjtema: 'ہفتہ وار اجتماع',
@@ -74,7 +74,7 @@ export const URDU_REPORT = {
   },
 
   topCategories: {
-    connections: 'رابطے',
+    connections: 'منسلک کارکنان',
     visits: 'ملاقاتیں',
     appRegistration: 'جے آئی ایچ رپورٹنگ ایپ',
     weeklyIjtema: 'ہفتہ وار اجتماع',
@@ -84,7 +84,7 @@ export const URDU_REPORT = {
 
   empty: {
     noRukns: 'اس سیکشن میں کوئی رکن موجود نہیں۔',
-    noPending: 'کسی رکن کے پاس زیر التواء کام نہیں۔',
+    noPending: 'کسی رکن کے پاس امور زیر التواء نہیں۔',
     noCritical: 'خصوصی توجہ کے مستحق کوئی رکن نہیں ملا۔',
   },
 
@@ -107,7 +107,7 @@ export const URDU_REPORT = {
 } as const
 
 export const URDU_CRITICAL_REASONS = {
-  noConnections: 'کوئی مربوط کارکن نہیں',
+  noConnections: 'کوئی منسلک کارکن نہیں',
   lowVisits: 'ملاقاتوں کی تکمیل کم ہے',
   lowWeeklyIjtema: 'ہفتہ وار اجتماع کی حاضری کم ہے',
   lowAppRegistration: 'ایپ رجسٹریشن کم ہے',

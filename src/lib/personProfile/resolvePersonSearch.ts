@@ -5,7 +5,7 @@
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { getAllKarkuns, getAllMuttafiqeen } from '@/lib/peopleStore'
 import { mobilesMatch, normalizeMobile } from '@/lib/mobileValidation'
-import { matchesKarkunRegistrySearch } from '@/lib/relationshipPresentation'
+import { matchesKarkunRegistrySearch } from '@/lib/peopleSearch'
 import { adminPersonProfilePath } from './ProfilePresenter'
 
 export type PersonSearchHit = {

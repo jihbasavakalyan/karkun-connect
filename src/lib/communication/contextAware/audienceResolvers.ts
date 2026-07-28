@@ -1,6 +1,7 @@
 /**
- * KC-0118 — Resolve recipients + pending matters from operational stores.
+ * KC-0118 / KC-0125 — Resolve recipients + pending matters from operational stores.
  * Read-only; no Firestore writes.
+ * Pending matter labels use approved editorial copy (specific, not bare counts).
  */
 
 import { getRuknById } from '@/data/ruknMaster'
@@ -18,6 +19,8 @@ import {
 } from '@/services/weeklyIjtemaService'
 import type { MessageRecipient } from '@/types/communication'
 import { pendingMatter } from './pendingMatterAggregator'
+import { approvedDefaultMatterLabel } from './messageBuilder'
+import { APPROVED_ACTIVITY_LABELS } from './approvedEditorialCopy'
 import type {
   CommunicationContextId,
   ContextAwareCommunicationInput,
@@ -42,8 +45,7 @@ export function buildContextAwareInput(
       recipientType: kind === 'karkun' ? 'karkun' : 'rukn',
       recipients: options.recipients,
       pendingMatters:
-        options.pendingMatters ??
-        defaultMattersForContext(context, options.recipients.length),
+        options.pendingMatters ?? defaultMattersForContext(context),
       audienceLabel: options.audienceLabel,
     }
   }
@@ -53,26 +55,8 @@ export function buildContextAwareInput(
 
 function defaultMattersForContext(
   context: CommunicationContextId,
-  count: number,
 ): ContextAwareCommunicationInput['pendingMatters'] {
-  const n = String(Math.max(count, 1))
-  switch (context) {
-    case 'pending-visits':
-      return [pendingMatter('visits', `${n} ملاقاتیں زیر التواء ہیں`)]
-    case 'pending-weekly-ijtema':
-      return [pendingMatter('ijtema', `${n} ہفتہ وار اجتماع کی حاضری زیر التواء ہے`)]
-    case 'pending-jih-registration':
-      return [pendingMatter('jih', `${n} جے آئی ایچ رپورٹنگ ایپ اندراج زیر التواء ہیں`)]
-    case 'pending-baitul-maal':
-      return [pendingMatter('bm', `${n} بیت المال کی تکمیل زیر التواء ہے`)]
-    case 'follow-up-pending':
-      return [pendingMatter('fu', `${n} پیروی کے امور زیر التواء ہیں`)]
-    case 'new-assignment':
-      return [pendingMatter('asn', 'نئی سپردگی کی تفصیلات توجہ طلب ہیں')]
-    case 'no-activity':
-    default:
-      return [pendingMatter('activity', 'پیش رفت کی صورتِ حال توجہ طلب ہے')]
-  }
+  return [pendingMatter(context, approvedDefaultMatterLabel(context))]
 }
 
 function resolveAudienceForContext(context: CommunicationContextId): ContextAwareCommunicationInput {
@@ -94,7 +78,7 @@ function resolveAudienceForContext(context: CommunicationContextId): ContextAwar
         context,
         recipientType: 'rukn',
         recipients: [],
-        pendingMatters: defaultMattersForContext(context, 0),
+        pendingMatters: defaultMattersForContext(context),
       }
   }
 }
@@ -112,7 +96,11 @@ function resolvePendingVisits(): ContextAwareCommunicationInput {
 
   const matters = [...byRukn.entries()].map(([ruknId, count]) => {
     const name = getRuknById(ruknId)?.name ?? ruknId
-    return pendingMatter(`visit:${ruknId}`, `${name}: ${count} ملاقاتیں زیر التواء`)
+    const visitLabel =
+      count === 1
+        ? `${name}: ${APPROVED_ACTIVITY_LABELS.visitPending}`
+        : `${name}: ${count} ملاقاتیں باقی ہیں۔`
+    return pendingMatter(`visit:${ruknId}`, visitLabel)
   })
 
   return {
@@ -120,7 +108,7 @@ function resolvePendingVisits(): ContextAwareCommunicationInput {
     recipientType: 'rukn',
     recipients,
     pendingMatters:
-      matters.length > 0 ? matters : defaultMattersForContext('pending-visits', pending.length),
+      matters.length > 0 ? matters : defaultMattersForContext('pending-visits'),
   }
 }
 
@@ -137,7 +125,7 @@ function resolvePendingFollowUpsAudience(): ContextAwareCommunicationInput {
   const matters = pending.slice(0, 12).map((item) =>
     pendingMatter(
       item.followUpId,
-      `${item.karkunName}: ${item.purpose || 'پیروی'} (${item.followUpDate})`,
+      `${item.karkunName}: ${item.purpose || APPROVED_ACTIVITY_LABELS.followUpPending}`,
     ),
   )
 
@@ -146,9 +134,7 @@ function resolvePendingFollowUpsAudience(): ContextAwareCommunicationInput {
     recipientType: 'rukn',
     recipients,
     pendingMatters:
-      matters.length > 0
-        ? matters
-        : defaultMattersForContext('follow-up-pending', pending.length),
+      matters.length > 0 ? matters : defaultMattersForContext('follow-up-pending'),
   }
 }
 
@@ -161,7 +147,10 @@ function resolvePendingWeeklyIjtema(): ContextAwareCommunicationInput {
     .filter((item): item is MessageRecipient => Boolean(item))
 
   const matters = pendingRows.slice(0, 12).map((row) =>
-    pendingMatter(`wi:${row.ruknId}`, `${row.ruknName}: ہفتہ وار اجتماع کی حاضری زیر التواء`),
+    pendingMatter(
+      `wi:${row.ruknId}`,
+      `${row.ruknName}: ${APPROVED_ACTIVITY_LABELS.ijtemaPending}`,
+    ),
   )
 
   return {
@@ -171,7 +160,7 @@ function resolvePendingWeeklyIjtema(): ContextAwareCommunicationInput {
     pendingMatters:
       matters.length > 0
         ? matters
-        : defaultMattersForContext('pending-weekly-ijtema', kpi.ruknsPending ?? 0),
+        : defaultMattersForContext('pending-weekly-ijtema'),
   }
 }
 
@@ -184,7 +173,10 @@ function resolvePendingBaitulMaal(): ContextAwareCommunicationInput {
     .filter((item): item is MessageRecipient => Boolean(item))
 
   const matters = pendingRows.slice(0, 12).map((row) =>
-    pendingMatter(`bm:${row.ruknId}`, `${row.ruknName}: بیت المال کی تکمیل زیر التواء`),
+    pendingMatter(
+      `bm:${row.ruknId}`,
+      `${row.ruknName}: ${APPROVED_ACTIVITY_LABELS.baitulPending}`,
+    ),
   )
 
   return {
@@ -194,7 +186,7 @@ function resolvePendingBaitulMaal(): ContextAwareCommunicationInput {
     pendingMatters:
       matters.length > 0
         ? matters
-        : defaultMattersForContext('pending-baitul-maal', kpi.ruknsPending ?? 0),
+        : defaultMattersForContext('pending-baitul-maal'),
   }
 }
 
@@ -204,7 +196,10 @@ function resolvePendingJihRegistration(): ContextAwareCommunicationInput {
     context: 'pending-jih-registration',
     recipientType: 'rukn',
     recipients: [],
-    pendingMatters: defaultMattersForContext('pending-jih-registration', app.pending ?? 0),
-    audienceLabel: 'ارکان (جے آئی ایچ اندراج)',
+    pendingMatters: defaultMattersForContext('pending-jih-registration'),
+    audienceLabel:
+      app.pending > 0
+        ? `ارکان (جے آئی ایچ اندراج — ${app.pending} زیر التواء)`
+        : 'ارکان (جے آئی ایچ اندراج)',
   }
 }

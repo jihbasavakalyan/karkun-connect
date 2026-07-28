@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Rukn Home Assistant card sections (KC-009.1) — Urdu companion copy.
  */
 
@@ -45,7 +45,7 @@ export function RuknAssistantCard({
         <h3 className="cd-block-title">آج کی رابطہ فہرست</h3>
         <ul className="cd-caption-list">
           <li>
-            <span className="cd-supporting">مربوط کارکن — </span>
+            <span className="cd-supporting">منسلک کارکن — </span>
             {viewModel.connectQueue.connectedKarkuns}
           </li>
           <li>

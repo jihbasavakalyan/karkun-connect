@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Contextual guidance presentation (KC-006 Sprint 6.4).
  *
  * Maps DigitalRafeeqService responses into workflow-specific guidance cards.
@@ -210,7 +210,7 @@ export function buildExecutionGuidanceView(
   const suggestedNextKarkun = nextKarkunRec
     ? `اگلا رابطہ ${String(nextKarkunRec.metadata?.karkunName)} صاحب سے کرنا مناسب ہو سکتا ہے۔`
     : response.knowledgeSummary?.availableDomains.includes('karkun')
-      ? 'اپنے مربوط کارکنان میں سے اگلا مناسب رابطہ منتخب کیجیے۔'
+      ? 'اپنے منسلک کارکنان میں سے اگلا مناسب رابطہ منتخب کیجیے۔'
       : null
 
   const followUp = recommendations.find(

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Rukn Home Assistant — presentation mapping (KC-006 Sprint 6.3).
  *
  * Maps DigitalRafeeqService responses into Home display copy.
@@ -105,9 +105,9 @@ function buildConnectQueue(
 
   return {
     connectedKarkuns: karkunReady
-      ? 'مربوط کارکنان کا سیاق آج کے کام کے لیے تیار ہے۔'
+      ? 'منسلک کارکنان کا سیاق آج کے کام کے لیے تیار ہے۔'
       : knowledge?.requestedDomains.includes('karkun')
-        ? 'مربوط کارکنان کا سیاق اس وقت محدود ہے۔'
+        ? 'منسلک کارکنان کا سیاق اس وقت محدود ہے۔'
         : EMPTY_CONNECT_QUEUE.connectedKarkuns,
     pendingVisits:
       followUpDueCount > 0

@@ -19,7 +19,7 @@ export const ARKAAN_DAILY_REPORT_TEMPLATES: DailyReportTemplate[] = [
 
 📊 آج کی صورتحال
 • کل کارکن: {{total}}
-• رابطہ مکمل: {{connected}}
+• منسلک کارکنان: {{connected}}
 • باقی: {{remaining}}
 • مجموعی پیش رفت: {{progress}}٪
 
@@ -57,7 +57,7 @@ export const ARKAAN_DAILY_REPORT_TEMPLATES: DailyReportTemplate[] = [
 مہم اپنے اہم مرحلے میں داخل ہو چکی ہے۔
 
 📊 موجودہ پیش رفت
-• مکمل رابطے: {{connected}}
+• منسلک کارکنان: {{connected}}
 • باقی کارکن: {{remaining}}
 • باقی دن: {{daysLeft}}
 

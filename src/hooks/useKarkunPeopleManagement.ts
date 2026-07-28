@@ -2,8 +2,11 @@
  * KC-0112.4
  * People reads Monthly Baitul Maal through the canonical adapter.
  * Legacy write path retained until write migration.
+ *
+ * KC-BUG-0125 — Registry Quick Search uses canonical digit-aware matcher and
+ * searches across genders while a query is active (gender tabs only silo browse).
  */
-import { useMemo, useState, useEffect } from 'react'
+import { useMemo, useState, useEffect, useRef } from 'react'
 import { getAllKarkuns, getAllMuttafiqeen } from '@/lib/peopleStore'
 import { subscribeToAssignments } from '@/lib/assignmentEngine'
 import { usePeopleStore } from '@/hooks/usePeopleStore'
@@ -15,6 +18,10 @@ import { subscribeToBaitulMaalStore } from '@/stores/baitulMaalStore'
 import { subscribeToMonthlyBaitulMaalStore } from '@/stores/monthlyBaitulMaalStore'
 import { subscribeToIjtemaAttendanceStore } from '@/stores/ijtemaAttendanceStore'
 import { subscribeToWeeklyIjtemaStore } from '@/stores/weeklyIjtemaStore'
+import {
+  matchesKarkunRegistrySearch,
+  resolveSearchGenderHint,
+} from '@/lib/peopleSearch'
 import type {
   KarkunRegistryRecord,
   PersonCategory,
@@ -65,21 +72,8 @@ function matchesKarkunFilters(karkun: KarkunRegistryRecord, filters: PeopleFilte
     return false
   }
 
-  if (filters.search.trim()) {
-    const normalized = filters.search.trim().toLowerCase()
-    const haystack = [
-      karkun.name,
-      karkun.mobile,
-      karkun.whatsapp ?? '',
-      karkun.notes,
-      karkun.id,
-      karkun.registryNumber ?? '',
-    ]
-      .join(' ')
-      .toLowerCase()
-    if (!haystack.includes(normalized)) {
-      return false
-    }
+  if (filters.search.trim() && !matchesKarkunRegistrySearch(karkun, filters.search)) {
+    return false
   }
 
   if (
@@ -157,6 +151,9 @@ function sortKarkuns(
 export function useKarkunPeopleManagement(
   sectionGender: PersonGender,
   registryCategory: PersonCategory = 'Karkun',
+  options?: {
+    onSearchGenderHint?: (gender: PersonGender) => void
+  },
 ) {
   const peopleVersion = usePeopleStore()
   const [assignmentVersion, setAssignmentVersion] = useState(0)
@@ -197,18 +194,41 @@ export function useKarkunPeopleManagement(
   const [sortField, setSortField] = useState<PeopleSortField>('name')
   const [sortDirection, setSortDirection] = useState<PeopleSortDirection>('asc')
   const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const genderHintRef = useRef(options?.onSearchGenderHint)
+  useEffect(() => {
+    genderHintRef.current = options?.onSearchGenderHint
+  }, [options?.onSearchGenderHint])
 
-  const allKarkuns = useMemo(
+  const registryPool = useMemo(
     () => {
       // Exclusive pools: Muttafiqeen never enter Karkun totals / lists and vice versa.
-      const pool =
-        registryCategory === 'Muttafiq' ? getAllMuttafiqeen() : getAllKarkuns(false)
-      return pool.filter((k) => k.gender === sectionGender)
+      return registryCategory === 'Muttafiq' ? getAllMuttafiqeen() : getAllKarkuns(false)
     },
     // peopleVersion invalidates after mutable MOCK_KARKUN_REGISTRY hydrate
     // eslint-disable-next-line react-hooks/exhaustive-deps -- registry is module state
-    [sectionGender, peopleVersion, registryCategory],
+    [peopleVersion, registryCategory],
   )
+
+  const searching = filters.search.trim().length > 0
+
+  const allKarkuns = useMemo(() => {
+    // Browse mode: gender tab silos the list.
+    // Search mode: every active person in the category is discoverable.
+    if (searching) {
+      return registryPool
+    }
+    return registryPool.filter((k) => k.gender === sectionGender)
+  }, [registryPool, sectionGender, searching])
+
+  useEffect(() => {
+    if (!searching || !genderHintRef.current) {
+      return
+    }
+    const hint = resolveSearchGenderHint(registryPool, filters.search)
+    if (hint && hint !== sectionGender) {
+      genderHintRef.current(hint)
+    }
+  }, [searching, filters.search, registryPool, sectionGender])
 
   const filteredRecords = useMemo(() => {
     void assignmentVersion
@@ -217,7 +237,16 @@ export function useKarkunPeopleManagement(
     void ijtemaVersion
     const filtered = allKarkuns.filter((karkun) => matchesKarkunFilters(karkun, filters))
     return sortKarkuns(filtered, sortField, sortDirection)
-  }, [allKarkuns, filters, sortField, sortDirection, assignmentVersion, jihVersion, baitulMaalVersion, ijtemaVersion])
+  }, [
+    allKarkuns,
+    filters,
+    sortField,
+    sortDirection,
+    assignmentVersion,
+    jihVersion,
+    baitulMaalVersion,
+    ijtemaVersion,
+  ])
 
   const totalPages = Math.max(1, Math.ceil(filteredRecords.length / PEOPLE_PAGE_SIZE))
 
@@ -273,6 +302,7 @@ export function useKarkunPeopleManagement(
     allFilteredRecords: filteredRecords,
     totalRecords: filteredRecords.length,
     totalCount: allKarkuns.length,
+    registryPoolCount: registryPool.length,
     currentPage: Math.min(currentPage, totalPages),
     totalPages,
     pageSize: PEOPLE_PAGE_SIZE,

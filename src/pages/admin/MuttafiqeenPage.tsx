@@ -37,6 +37,7 @@ type MuttafiqGenderSectionProps = {
   shouldOpenAddForm: boolean
   onAddFormOpened: () => void
   onRegisterHandlers: (handlers: MuttafiqSectionHandlers | null) => void
+  onSearchGenderHint?: (gender: PersonGender) => void
 }
 
 function MuttafiqGenderSection({
@@ -44,8 +45,11 @@ function MuttafiqGenderSection({
   shouldOpenAddForm,
   onAddFormOpened,
   onRegisterHandlers,
+  onSearchGenderHint,
 }: MuttafiqGenderSectionProps) {
-  const management = useKarkunPeopleManagement(gender, 'Muttafiq')
+  const management = useKarkunPeopleManagement(gender, 'Muttafiq', {
+    onSearchGenderHint,
+  })
 
   const [isFormOpen, setIsFormOpen] = useState(shouldOpenAddForm)
   const [editingPerson, setEditingPerson] = useState<KarkunRegistryRecord | null>(null)
@@ -86,7 +90,10 @@ function MuttafiqGenderSection({
     options?: { confirmMobileOverwrite?: boolean },
   ) => {
     setFormError('')
-    const payload = { ...values, gender }
+    const payload = {
+      ...values,
+      gender: editingPerson ? values.gender : gender,
+    }
 
     if (editingPerson) {
       const result = updateKarkun(editingPerson.id, payload, 'Administrator', options)
@@ -143,7 +150,9 @@ function MuttafiqGenderSection({
   return (
     <div className="space-y-6">
       <p className="text-sm text-secondary">
-        {gender} Muttafiqeen registry — {management.totalCount} members
+        {management.filters.search.trim()
+          ? `Search results — ${management.totalRecords} match${management.totalRecords === 1 ? '' : 'es'} across Male and Female`
+          : `${gender} Muttafiqeen registry — ${management.totalCount} members`}
       </p>
 
       <PeopleFiltersBar
@@ -317,6 +326,10 @@ export function MuttafiqeenRegistryPanel({ showActions = true }: { showActions?:
     setOpenAddForGender(null)
   }, [])
 
+  const handleSearchGenderHint = useCallback((gender: PersonGender) => {
+    setActiveGender(gender)
+  }, [])
+
   const requestAdd = (gender: PersonGender) => {
     if (gender === activeGender) {
       sectionHandlersRef.current?.openAddForm()
@@ -367,11 +380,11 @@ export function MuttafiqeenRegistryPanel({ showActions = true }: { showActions?:
 
       <div className="mt-6">
         <MuttafiqGenderSection
-          key={activeGender}
           gender={activeGender}
           shouldOpenAddForm={openAddForGender === activeGender}
           onAddFormOpened={handleAddFormOpened}
           onRegisterHandlers={registerSectionHandlers}
+          onSearchGenderHint={handleSearchGenderHint}
         />
       </div>
     </div>

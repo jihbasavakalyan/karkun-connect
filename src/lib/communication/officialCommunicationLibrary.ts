@@ -79,7 +79,7 @@ export const OFFICIAL_COMMUNICATION_LIBRARY: MessageTemplate[] = [
 
 آپ کی سپردگی کی فہرست میں تازہ پیش رفت ہوئی ہے:
 کل سپرد شدہ: {{AssignedKarkunCount}} {{KarkunWord}}
-منسلک: {{ConnectedCount}}
+منسلک کارکنان: {{ConnectedCount}}
 
 تازہ فہرست:
 {{AssignedKarkunList}}

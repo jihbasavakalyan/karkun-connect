@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Rukn Home Assistant — view types (KC-006 Sprint 6.3).
  */
 
@@ -36,7 +36,7 @@ export type RuknAssistantViewModel = {
 }
 
 export const EMPTY_CONNECT_QUEUE: RuknConnectQueueView = {
-  connectedKarkuns: 'ابھی مربوط کارکن کا سیاق نہیں۔',
+  connectedKarkuns: 'ابھی منسلک کارکن کا سیاق نہیں۔',
   pendingVisits: 'کوئی باقی ملاقات نہیں۔',
   pendingMeetings: 'کوئی طے شدہ ملاقات نہیں۔',
 }

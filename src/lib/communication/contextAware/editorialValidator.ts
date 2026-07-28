@@ -1,21 +1,23 @@
 /**
- * KC-0119 — Editorial Validator for context-aware communication.
+ * KC-0119 / KC-0125 — Editorial Validator for context-aware communication.
  * Automatic validation before Preview; revalidate after edits.
  */
 
-export const EDITORIAL_GREETING = 'السلام علیکم ورحمۃ اللہ وبرکاتہ'
-export const EDITORIAL_DUA = 'اللہ تعالیٰ آپ کی کوششوں کو قبول فرمائے۔'
-export const EDITORIAL_CLOSING = 'والسلام'
+import { APPROVED_EDITORIAL } from './approvedEditorialCopy'
+import { URDU_AVOID } from '@/lib/communication/urduTerminology'
 
-/** Prohibited machine / bureaucratic wording (KC-0118 / KC-0119). */
+export const EDITORIAL_GREETING = APPROVED_EDITORIAL.greeting
+export const EDITORIAL_DUA = APPROVED_EDITORIAL.dua
+export const EDITORIAL_CLOSING = APPROVED_EDITORIAL.closing
+
+/** Prohibited machine / bureaucratic wording (KC-0118 / KC-0119 / KC-0125). */
 export const EDITORIAL_PROHIBITED = [
-  'اپ ڈیٹس',
+  ...URDU_AVOID,
   'کارروائی',
-  'ٹاسک',
-  'اسٹیٹس',
-  'ریمائنڈر',
   'بہ سہولت',
   'اگر ممکن ہو',
+  'جب سہولت ہو',
+  'جب موقع ملے',
 ] as const
 
 export type EditorialRuleId =

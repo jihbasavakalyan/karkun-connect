@@ -1,5 +1,7 @@
-Noto Naskh Arabic
-Copyright 2022 The Noto Project Authors (https://github.com/notofonts/arabic)
+SIL Open Font License for fonts under public/fonts/
 
-This Font Software is licensed under the SIL Open Font License, Version 1.1.
-See https://openfontlicense.org
+- Noto Nastaliq Urdu (Google) — canonical Urdu report face (KC-BUG-0126)
+- Noto Naskh Arabic (Google) — retained for legacy/vector fallbacks only
+
+All reports must use the shared typography module
+(src/lib/reporting/urduPdfTypography.ts) so faces stay consistent.

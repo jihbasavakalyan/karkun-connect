@@ -1,41 +1,8 @@
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
-import { normalizeMobile } from '@/lib/mobileValidation'
 import { getLatestSubmissionForKarkun } from '@/stores/annexure1Store'
 
-export function matchesKarkunRegistrySearch(
-  karkun: KarkunRegistryRecord,
-  query: string,
-): boolean {
-  const term = query.trim().toLowerCase()
-  if (!term) {
-    return true
-  }
-
-  const haystack = [
-    karkun.name,
-    karkun.mobile,
-    karkun.whatsapp ?? '',
-    karkun.fatherHusbandName ?? '',
-    karkun.place,
-    karkun.area,
-    karkun.id,
-  ]
-    .join(' ')
-    .toLowerCase()
-
-  const digitQuery = term.replace(/\D/g, '')
-  if (digitQuery.length >= 3) {
-    const mobileDigits = normalizeMobile(karkun.mobile)
-    const whatsappDigits = normalizeMobile(karkun.whatsapp ?? '')
-    if (mobileDigits.includes(digitQuery) || whatsappDigits.includes(digitQuery)) {
-      return true
-    }
-  }
-
-  // Every whitespace-separated token must appear somewhere (order-independent).
-  // Fixes multi-word searches that failed with a single contiguous includes() check.
-  return term.split(/\s+/).every((token) => token.length > 0 && haystack.includes(token))
-}
+/** @deprecated Prefer `@/lib/peopleSearch` — re-exported for existing imports. */
+export { matchesKarkunRegistrySearch } from '@/lib/peopleSearch'
 
 export function formatLastVisitLabel(karkunId: string): string {
   const latest = getLatestSubmissionForKarkun(karkunId)

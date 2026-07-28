@@ -18,6 +18,7 @@ import {
   persistKarkunDurable,
   updateKarkun,
 } from '@/lib/peopleStore'
+import { resolveSearchGenderHint } from '@/lib/peopleSearch'
 import { usePeopleStore } from '@/hooks/usePeopleStore'
 import {
   exportKarkuns,
@@ -85,6 +86,7 @@ type KarkunGenderSectionProps = {
   initialSearch?: string
   onAddFormOpened: () => void
   onRegisterHandlers: (handlers: KarkunSectionHandlers | null) => void
+  onSearchGenderHint?: (gender: PersonGender) => void
 }
 
 function KarkunGenderSection({
@@ -93,8 +95,11 @@ function KarkunGenderSection({
   initialSearch = '',
   onAddFormOpened,
   onRegisterHandlers,
+  onSearchGenderHint,
 }: KarkunGenderSectionProps) {
-  const management = useKarkunPeopleManagement(gender)
+  const management = useKarkunPeopleManagement(gender, 'Karkun', {
+    onSearchGenderHint,
+  })
   useAssignmentEngine()
 
   const [isFormOpen, setIsFormOpen] = useState(shouldOpenAddForm)
@@ -133,7 +138,11 @@ function KarkunGenderSection({
     values: PersonFormValues,
     options?: { confirmMobileOverwrite?: boolean },
   ) => {
-    const payload = { ...values, gender }
+    const payload = {
+      ...values,
+      // Add stays on the active tab gender; Edit keeps the form (record) gender.
+      gender: editingKarkun ? values.gender : gender,
+    }
     const { assignedRuknId, ...karkunPayload } = payload
 
     const editingId = editingKarkun?.id ?? null
@@ -289,7 +298,9 @@ function KarkunGenderSection({
   return (
     <div className="space-y-6">
       <p className="text-sm text-secondary">
-        {gender} Karkun registry — {management.totalCount} members
+        {management.filters.search.trim()
+          ? `Search results — ${management.totalRecords} match${management.totalRecords === 1 ? '' : 'es'} across Male and Female`
+          : `${gender} Karkun registry — ${management.totalCount} members`}
       </p>
 
       <PeopleFiltersBar
@@ -514,9 +525,17 @@ export function KarkunanPage() {
   const location = useLocation()
   const initialSearch =
     (location.state as { searchQuery?: string } | null)?.searchQuery?.trim() ?? ''
-  const [activeGender, setActiveGender] = useState<GenderTab>('Male')
+  const [activeGender, setActiveGender] = useState<GenderTab>(() => {
+    if (!initialSearch.trim()) return 'Male'
+    const hint = resolveSearchGenderHint(getAllKarkuns(false), initialSearch)
+    return hint ?? 'Male'
+  })
   const sectionHandlersRef = useRef<KarkunSectionHandlers | null>(null)
   const [openAddForGender, setOpenAddForGender] = useState<PersonGender | null>(null)
+
+  const handleSearchGenderHint = useCallback((gender: PersonGender) => {
+    setActiveGender(gender)
+  }, [])
 
   const registerSectionHandlers = useCallback((handlers: KarkunSectionHandlers | null) => {
     sectionHandlersRef.current = handlers
@@ -600,12 +619,12 @@ export function KarkunanPage() {
 
         <div className="mt-6">
           <KarkunGenderSection
-            key={activeGender}
             gender={activeGender}
             initialSearch={initialSearch}
             shouldOpenAddForm={openAddForGender === activeGender}
             onAddFormOpened={handleAddFormOpened}
             onRegisterHandlers={registerSectionHandlers}
+            onSearchGenderHint={handleSearchGenderHint}
           />
         </div>
       </section>

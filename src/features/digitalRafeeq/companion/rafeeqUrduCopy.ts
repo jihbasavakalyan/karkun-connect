@@ -90,7 +90,7 @@ export function buildContextualRafeeqGuidance(ruknId: string): string {
   const list = sortGuidanceByUrgency(getGuidanceForRuknKarkuns(ruknId))
   const top = list[0]
   if (!top) {
-    return 'ابھی کوئی کارکن مربوط نہیں۔ جب آپ تیار ہوں تو کسی قریبی کارکن سے رابطہ شروع کیجیے — میں آپ کے ساتھ رہوں گا۔'
+    return 'ابھی کوئی کارکن منسلک نہیں۔ جب آپ تیار ہوں تو کسی قریبی کارکن سے رابطہ شروع کیجیے — میں آپ کے ساتھ رہوں گا۔'
   }
 
   const name = top.karkunName.trim() || 'کارکن'

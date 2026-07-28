@@ -20,6 +20,12 @@ declare module 'bidi-js' {
       start?: number,
       end?: number,
     ) => Array<[number, number]>
+    getReorderedString: (
+      text: string,
+      embeddingLevels: EmbeddingLevels,
+      start?: number,
+      end?: number,
+    ) => string
   }
 
   export default function bidiFactory(): Bidi

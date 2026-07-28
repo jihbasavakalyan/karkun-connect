@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Operational Q&A for Digital Rafeeq — Urdu-first companion (رفیق).
  * Answers from live repositories/services — presentation/wording only (KC-016.1).
  */
@@ -135,13 +135,13 @@ function answerAdminQuery(
   if (
     matches(query, [
       /unconnected|remain|available|not connected|pending connection/,
-      /غیر مربوط|باقی|دستیاب|رابطہ نہیں/,
+      /غیر منسلک|باقی|دستیاب|رابطہ نہیں/,
     ])
   ) {
     return {
       text: companionReply(
-        `ابھی ${people.unassignedKarkuns} کارکن کا رابطہ باقی ہے، جبکہ ${assignments.activeAssignments} پہلے سے مربوط ہیں۔`,
-        'اگر مناسب سمجھیں تو اگلا قدم روابط پر توجہ دینا بہتر ہوگا۔',
+        `ابھی ${people.unassignedKarkuns} کارکن کا رابطہ باقی ہے، جبکہ ${assignments.activeAssignments} پہلے سے منسلک ہیں۔`,
+        'براہ کرم اگلا قدم روابط پر توجہ دینا بہتر ہوگا۔',
         'اللہ اس کوشش میں آسانی عطا فرمائے۔',
       ),
       actions: [
@@ -198,7 +198,7 @@ function answerAdminQuery(
     return {
       text: companionReply(
         `بیت المال کی صورتحال تقریباً ${baitulMaal.compliancePercentage}% مکمل ہے۔ ${baitulMaal.pending} باقی اور ${baitulMaal.paid} ادا شدہ ہیں۔`,
-        'اگر مناسب سمجھیں تو نرم یاد دہانی سے مہینہ مکمل ہو سکتا ہے۔',
+        'براہ کرم بیت المال کی تکمیل جلد فرما لیجیے تاکہ مہینہ مکمل ہو۔',
       ),
       actions: [
         { id: 'baitul', label: 'بیت المال دیکھیں', route: adminCompliancePath('baitul-maal') },
@@ -234,7 +234,7 @@ function answerAdminQuery(
     return {
       text: companionReply(
         `آج کی توجہ یہ لگتی ہے: ${title}${detail ? `۔ ${detail}` : ''}`,
-        'اگر مناسب سمجھیں تو اسی سے آغاز کیجیے۔',
+        'براہ کرم اسی سے آغاز فرما لیجیے۔',
       ),
       actions: [
         {
@@ -261,7 +261,7 @@ function answerAdminQuery(
 
   return {
     text: companionReply(
-      `اس وقت ${assignments.activeAssignments} کارکن مربوط ہیں، ${people.unassignedKarkuns} کا رابطہ باقی ہے، اور ${team.length} ارکان خدمت پر ہیں۔`,
+      `اس وقت ${assignments.activeAssignments} کارکن منسلک ہیں، ${people.unassignedKarkuns} کا رابطہ باقی ہے، اور ${team.length} ارکان خدمت پر ہیں۔`,
       'ملاقات، حاضری، فالو اپ یا رکن کی کارکردگی کے بارے میں کچھ بھی پوچھیے۔',
       'میں آپ کے ساتھ ہوں۔',
     ),
@@ -291,11 +291,11 @@ function answerRuknQuery(
     return {
       text: companionReply(
         'فون کمانڈ جلد آپ کی خدمت میں حاضر ہوگی۔',
-        'ابھی آپ مربوط کارکنان کی فہرست سے براہِ راست کال کر سکتے ہیں۔',
+        'ابھی آپ منسلک کارکنان کی فہرست سے براہِ راست کال کر سکتے ہیں۔',
         'میں آپ کے ساتھ ہوں۔',
       ),
       actions: [
-        { id: 'connected', label: 'مربوط کارکنان', route: ROUTES.RUKN_MY_KARKUN },
+        { id: 'connected', label: 'منسلک کارکنان', route: ROUTES.RUKN_MY_KARKUN },
       ],
     }
   }
@@ -314,7 +314,7 @@ function answerRuknQuery(
           'پہلے چند کارکنان سے رابطہ قائم کریں، پھر ترتیب بنانا آسان ہوگا۔',
         ),
         actions: [
-          { id: 'connect', label: 'کارکن مربوط کریں', route: ROUTES.RUKN_AVAILABLE_KARKUN },
+          { id: 'connect', label: 'کارکن منسلک کریں', route: ROUTES.RUKN_AVAILABLE_KARKUN },
         ],
       }
     }
@@ -328,7 +328,7 @@ function answerRuknQuery(
         ...(urgent[0]
           ? [{ id: 'record', label: 'ملاقات محفوظ کریں', route: ruknVisitPath(urgent[0].karkunId) }]
           : []),
-        { id: 'connected', label: 'مربوط کارکنان', route: ROUTES.RUKN_MY_KARKUN },
+        { id: 'connected', label: 'منسلک کارکنان', route: ROUTES.RUKN_MY_KARKUN },
       ],
     }
   }
@@ -341,10 +341,10 @@ function answerRuknQuery(
   ) {
     return {
       text: companionReply(
-        `${snapshot?.nextAction.title ?? 'آج اپنے مربوط کارکنان کو دیکھ لیجیے'}${
+        `${snapshot?.nextAction.title ?? 'آج اپنے منسلک کارکنان کو دیکھ لیجیے'}${
           snapshot?.nextAction.description ? `۔ ${snapshot.nextAction.description}` : ''
         }`,
-        'اگر مناسب سمجھیں تو اسی ترجیح سے آغاز کیجیے۔',
+        'براہ کرم اسی ترجیح سے آغاز فرما لیجیے۔',
         'اللہ آپ کی خدمت قبول فرمائے۔',
       ),
       actions: [
@@ -353,7 +353,7 @@ function answerRuknQuery(
           label: snapshot?.nextAction.actionLabel ?? 'آج کی ترجیح',
           route: snapshot?.nextAction.route ?? ROUTES.RUKN_MY_KARKUN,
         },
-        { id: 'connected', label: 'مربوط کارکنان', route: ROUTES.RUKN_MY_KARKUN },
+        { id: 'connected', label: 'منسلک کارکنان', route: ROUTES.RUKN_MY_KARKUN },
       ],
     }
   }
@@ -372,7 +372,7 @@ function answerRuknQuery(
           'جب آپ تیار ہوں تو کسی قریبی کارکن سے رابطہ شروع کیجیے۔',
         ),
         actions: [
-          { id: 'connect', label: 'کارکن مربوط کریں', route: ROUTES.RUKN_AVAILABLE_KARKUN },
+          { id: 'connect', label: 'کارکن منسلک کریں', route: ROUTES.RUKN_AVAILABLE_KARKUN },
         ],
       }
     }
@@ -385,7 +385,7 @@ function answerRuknQuery(
       ),
       actions: [
         { id: 'record', label: 'ملاقات محفوظ کریں', route: ruknVisitPath(top.karkunId) },
-        { id: 'connected', label: 'مربوط کارکنان', route: ROUTES.RUKN_MY_KARKUN },
+        { id: 'connected', label: 'منسلک کارکنان', route: ROUTES.RUKN_MY_KARKUN },
       ],
     }
   }
@@ -408,7 +408,7 @@ function answerRuknQuery(
               named.length ? ` — خاص طور پر ${named.join('، ')}` : ''
             }۔`,
         visitItems.length === 0
-          ? 'اگر مناسب سمجھیں تو مربوط کارکنان دیکھ کر اگلی ملاقات طے کر لیجیے۔'
+          ? 'براہ کرم منسلک کارکنان دیکھ کر اگلی ملاقات طے فرما لیجیے۔'
           : 'اگر ممکن ہو تو پہلے ان سے رابطہ کر لیجیے۔',
         visitItems.length > 0 ? 'آپ کی توجہ ان کے لیے قیمتی ہے۔' : undefined,
       ),
@@ -416,7 +416,7 @@ function answerRuknQuery(
         ...(firstId
           ? [{ id: 'record', label: 'ملاقات محفوظ کریں', route: ruknVisitPath(firstId) }]
           : []),
-        { id: 'connected', label: 'مربوط کارکنان', route: ROUTES.RUKN_MY_KARKUN },
+        { id: 'connected', label: 'منسلک کارکنان', route: ROUTES.RUKN_MY_KARKUN },
         { id: 'schedule', label: 'ملاقات طے کریں', route: ROUTES.RUKN_MY_KARKUN },
       ],
     }
@@ -447,12 +447,12 @@ function answerRuknQuery(
         text: companionReply(
           `آج اجتماع میں ${present.length} کارکن شریک ہوئے، جبکہ ${missed.length} غیر حاضر یا غیر محفوظ ہیں۔`,
           missed.length > 0
-            ? 'اگر مناسب سمجھیں تو غیر حاضر کارکنان سے نرم رابطہ مفید ہوگا۔'
+            ? 'براہ کرم غیر حاضر کارکنان سے خلوص بھرا رابطہ فرما لیجیے — یہ مفید ہوگا۔'
             : 'الحمد للہ — اسی تسلسل کو برقرار رکھیے۔',
         ),
         actions: [
           { id: 'attendance', label: 'حاضری دیکھیں', route: ROUTES.RUKN },
-          { id: 'connected', label: 'مربوط کارکنان', route: ROUTES.RUKN_MY_KARKUN },
+          { id: 'connected', label: 'منسلک کارکنان', route: ROUTES.RUKN_MY_KARKUN },
         ],
       }
     }
@@ -460,13 +460,13 @@ function answerRuknQuery(
     return {
       text: companionReply(
         missed.length === 0
-          ? 'الحمد للہ — اس ہفتے کے اجتماع میں سب مربوط کارکنان حاضر یا معذور نظر آتے ہیں۔'
+          ? 'الحمد للہ — اس ہفتے کے اجتماع میں سب منسلک کارکنان حاضر یا معذور نظر آتے ہیں۔'
           : `آج اجتماع میں ${missed.length} کارکن شریک نہیں ہو سکے${
               named.length ? `: ${named.join('، ')}` : ''
             }۔`,
         missed.length === 0
           ? 'اسی تسلسل کو برقرار رکھیے۔'
-          : 'اگر مناسب سمجھیں تو مختصر اور نرم یاد دہانی مفید ہوگی۔',
+          : 'براہ کرم مختصر رہنمائی مفید ہوگی۔',
         missed.length > 0 ? 'دوبارہ رابطہ تعلق مضبوط کرتا ہے۔' : 'اللہ حاضری میں برکت عطا فرمائے۔',
       ),
       actions: [
@@ -491,7 +491,7 @@ function answerRuknQuery(
           'اس وقت کوئی خاص توجہ والی صورتحال نظر نہیں آ رہی۔',
           'ایک ہلکا سا رابطہ بھی خیر کا کام ہے۔',
         ),
-        actions: [{ id: 'connected', label: 'مربوط کارکنان', route: ROUTES.RUKN_MY_KARKUN }],
+        actions: [{ id: 'connected', label: 'منسلک کارکنان', route: ROUTES.RUKN_MY_KARKUN }],
       }
     }
     return {
@@ -504,7 +504,7 @@ function answerRuknQuery(
         ...(urgent[0]
           ? [{ id: 'record', label: 'ملاقات محفوظ کریں', route: ruknVisitPath(urgent[0].karkunId) }]
           : []),
-        { id: 'connected', label: 'مربوط کارکنان', route: ROUTES.RUKN_MY_KARKUN },
+        { id: 'connected', label: 'منسلک کارکنان', route: ROUTES.RUKN_MY_KARKUN },
       ],
     }
   }
@@ -520,9 +520,9 @@ function answerRuknQuery(
       return {
         text: companionReply(
           'اس ہفتے کے لیے ابھی کوئی خاص تجویز نہیں۔',
-          'جب آپ مناسب سمجھیں تو کسی مربوط کارکن سے نرم رابطہ مفید ہوگا۔',
+          'براہ کرم کسی منسلک کارکن سے خلوص بھرا رابطہ فرما لیجیے — یہ مفید ہوگا۔',
         ),
-        actions: [{ id: 'connected', label: 'مربوط کارکنان', route: ROUTES.RUKN_MY_KARKUN }],
+        actions: [{ id: 'connected', label: 'منسلک کارکنان', route: ROUTES.RUKN_MY_KARKUN }],
       }
     }
     return {
@@ -533,7 +533,7 @@ function answerRuknQuery(
       ),
       actions: [
         { id: 'record', label: 'ملاقات محفوظ کریں', route: ruknVisitPath(top.karkunId) },
-        { id: 'connected', label: 'مربوط کارکنان', route: ROUTES.RUKN_MY_KARKUN },
+        { id: 'connected', label: 'منسلک کارکنان', route: ROUTES.RUKN_MY_KARKUN },
       ],
     }
   }
@@ -551,15 +551,15 @@ function answerRuknQuery(
     return {
       text: companionReply(
         pending.length === 0
-          ? 'الحمد للہ — سب مربوط کارکنان کی بنیادی معلومات اور اندراج مکمل نظر آتے ہیں۔'
+          ? 'الحمد للہ — سب منسلک کارکنان کی بنیادی معلومات اور اندراج مکمل نظر آتے ہیں۔'
           : `${pending.length} کارکن کی معلومات یا اندراج ابھی نامکمل ہے${
               named.length ? `: ${named.join('، ')}` : ''
             }۔`,
         pending.length === 0
           ? 'اب ملاقات اور تعلق پر توجہ دے سکتے ہیں۔'
-          : 'اگر مناسب سمجھیں تو نرم رہنمائی سے اندراج مکمل کروا لیجیے۔',
+          : 'براہ کرم رہنمائی سے اندراج مکمل کروا لیجیے۔',
       ),
-      actions: [{ id: 'connected', label: 'مربوط کارکنان', route: ROUTES.RUKN_MY_KARKUN }],
+      actions: [{ id: 'connected', label: 'منسلک کارکنان', route: ROUTES.RUKN_MY_KARKUN }],
     }
   }
 
@@ -567,7 +567,7 @@ function answerRuknQuery(
     return {
       text: companionReply(
         `آپ کے روابط میں بیت المال کی صورتحال: ${baitulMaal.pending} باقی، ${baitulMaal.paid} ادا شدہ، اور ${baitulMaal.exempt} مستثنیٰ۔`,
-        'اگر مناسب سمجھیں تو نرم یاد دہانی سے مہینہ مکمل ہو سکتا ہے۔',
+        'براہ کرم بیت المال کی تکمیل جلد فرما لیجیے تاکہ مہینہ مکمل ہو۔',
       ),
       actions: [
         { id: 'baitul', label: 'بیت المال', route: ROUTES.RUKN_MY_KARKUN },
@@ -589,11 +589,11 @@ function answerRuknQuery(
     }).length
     return {
       text: companionReply(
-        `آپ اس وقت ${connectedIds.length} مربوط کارکنان کے ساتھ ہیں۔ مجموعی طور پر سلسلہ جاری ہے؛ ${due} ترقیاتی جائزے ابھی باقی ہیں۔`,
+        `آپ اس وقت ${connectedIds.length} منسلک کارکنان کے ساتھ ہیں۔ مجموعی طور پر سلسلہ جاری ہے؛ ${due} ترقیاتی جائزے ابھی باقی ہیں۔`,
         'اگر ممکن ہو تو ایک ایک کر کے آگے بڑھیں — جلدی کی ضرورت نہیں۔',
         'آپ کی کارکردگی امانت داری سے جڑی ہے۔ اللہ قبول فرمائے۔',
       ),
-      actions: [{ id: 'connected', label: 'مربوط کارکنان', route: ROUTES.RUKN_MY_KARKUN }],
+      actions: [{ id: 'connected', label: 'منسلک کارکنان', route: ROUTES.RUKN_MY_KARKUN }],
     }
   }
 
@@ -605,19 +605,19 @@ function answerRuknQuery(
         'اگر ممکن ہو تو آج چند مکمل کر لیجیے تاکہ تعلق مضبوط رہے۔',
         'چھوٹی کوشش بھی خیر کا ذریعہ بنتی ہے۔',
       ),
-      actions: [{ id: 'connected', label: 'مربوط کارکنان', route: ROUTES.RUKN_MY_KARKUN }],
+      actions: [{ id: 'connected', label: 'منسلک کارکنان', route: ROUTES.RUKN_MY_KARKUN }],
     }
   }
 
   return {
     text: companionReply(
-      `اس وقت آپ کے ${connectedIds.length} مربوط کارکن ہیں۔`,
+      `اس وقت آپ کے ${connectedIds.length} منسلک کارکن ہیں۔`,
       'ترجیحات، ملاقاتیں، اجتماع، اندراج یا مجموعی صورتحال — جو پوچھنا چاہیں پوچھیے۔',
       'میں آپ کا رفیق ہوں۔',
     ),
     actions: [
-      { id: 'connected', label: 'مربوط کارکنان', route: ROUTES.RUKN_MY_KARKUN },
-      { id: 'connect', label: 'کارکن مربوط کریں', route: ROUTES.RUKN_AVAILABLE_KARKUN },
+      { id: 'connected', label: 'منسلک کارکنان', route: ROUTES.RUKN_MY_KARKUN },
+      { id: 'connect', label: 'کارکن منسلک کریں', route: ROUTES.RUKN_AVAILABLE_KARKUN },
     ],
   }
 }
