@@ -153,6 +153,8 @@ export function useKarkunPeopleManagement(
   registryCategory: PersonCategory = 'Karkun',
   options?: {
     onSearchGenderHint?: (gender: PersonGender) => void
+    /** KC-0127 — hydrate filters from registry deep links (values unchanged). */
+    initialFilters?: Partial<PeopleFilters>
   },
 ) {
   const peopleVersion = usePeopleStore()
@@ -189,7 +191,10 @@ export function useKarkunPeopleManagement(
     }
   }, [])
 
-  const [filters, setFilters] = useState<PeopleFilters>(initialFilters)
+  const [filters, setFilters] = useState<PeopleFilters>(() => ({
+    ...initialFilters,
+    ...options?.initialFilters,
+  }))
   const [currentPage, setCurrentPage] = useState(1)
   const [sortField, setSortField] = useState<PeopleSortField>('name')
   const [sortDirection, setSortDirection] = useState<PeopleSortDirection>('asc')

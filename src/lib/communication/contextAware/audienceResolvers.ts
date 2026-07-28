@@ -167,17 +167,21 @@ function resolvePendingWeeklyIjtema(): ContextAwareCommunicationInput {
 function resolvePendingBaitulMaal(): ContextAwareCommunicationInput {
   const kpi = getMonthlyBaitulMaalDashboardKpi()
   const report = kpi.cycleId ? getMonthlyBaitulMaalReport(kpi.cycleId) : null
-  const pendingRows = (report?.ruknRows ?? []).filter((row) => !row.submitted || row.pending > 0)
+  // KC-0127 — remind Rukns who still have Pending or unrecorded contributions (not a full-roster gate).
+  const pendingRows = (report?.ruknRows ?? []).filter(
+    (row) => row.pending > 0 || row.contributed + row.pending < row.assigned,
+  )
   const recipients = pendingRows
     .map((row) => ruknRecipient(row.ruknId))
     .filter((item): item is MessageRecipient => Boolean(item))
 
-  const matters = pendingRows.slice(0, 12).map((row) =>
-    pendingMatter(
+  const matters = pendingRows.slice(0, 12).map((row) => {
+    const remaining = Math.max(row.assigned - row.contributed, 0)
+    return pendingMatter(
       `bm:${row.ruknId}`,
-      `${row.ruknName}: ${APPROVED_ACTIVITY_LABELS.baitulPending}`,
-    ),
-  )
+      `${row.ruknName}: ${remaining} contribution${remaining === 1 ? '' : 's'} still pending`,
+    )
+  })
 
   return {
     context: 'pending-baitul-maal',

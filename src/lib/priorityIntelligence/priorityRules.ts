@@ -77,17 +77,18 @@ export function evaluatePriorityRules(): PriorityRuleSignal[] {
     })
   }
 
-  if (baitul.ruknsPending > 0) {
-    const severity = severityForCount(baitul.ruknsPending, { high: 5, medium: 1 })
+  if (baitul.pending > 0 || baitul.ruknsPending > 0) {
+    const count = Math.max(baitul.pending, baitul.ruknsPending)
+    const severity = severityForCount(count, { high: 5, medium: 1 })
     signals.push({
       id: 'priority-pending-baitul-maal',
       severity,
-      reason: `${baitul.ruknsPending} Monthly Baitul Maal completion${baitul.ruknsPending === 1 ? '' : 's'} remain pending.`,
-      affectedCount: baitul.ruknsPending,
-      affectedPeopleLabel: `${baitul.ruknsPending} Rukn${baitul.ruknsPending === 1 ? '' : 's'}`,
+      reason: `${baitul.pending} Monthly Baitul Maal contribution${baitul.pending === 1 ? '' : 's'} remain pending.`,
+      affectedCount: count,
+      affectedPeopleLabel: `${baitul.pending} contribution${baitul.pending === 1 ? '' : 's'} pending`,
       responsiblePersonLabel: 'Rukns with pending Baitul Maal',
       context: 'pending-baitul-maal',
-      rank: severityRank(severity) * 100 + Math.min(baitul.ruknsPending, 99),
+      rank: severityRank(severity) * 100 + Math.min(count, 99),
     })
   }
 

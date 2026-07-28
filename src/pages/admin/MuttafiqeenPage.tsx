@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import type { PersonGender } from '@/types/karkun-registry.types'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
 import type { MobileLookupResult } from '@/lib/peopleStore'
@@ -314,9 +314,17 @@ function MuttafiqeenSummaryCards() {
 
 /** KC-0114 — Muttafiqeen registry block (reusable on People page). */
 export function MuttafiqeenRegistryPanel({ showActions = true }: { showActions?: boolean }) {
+  const [searchParams] = useSearchParams()
   const [activeGender, setActiveGender] = useState<GenderTab>('Male')
   const sectionHandlersRef = useRef<MuttafiqSectionHandlers | null>(null)
   const [openAddForGender, setOpenAddForGender] = useState<PersonGender | null>(null)
+  const addRequestedRef = useRef(false)
+
+  useEffect(() => {
+    if (searchParams.get('action') !== 'add' || addRequestedRef.current) return
+    addRequestedRef.current = true
+    setOpenAddForGender(activeGender)
+  }, [searchParams, activeGender])
 
   const registerSectionHandlers = useCallback((handlers: MuttafiqSectionHandlers | null) => {
     sectionHandlersRef.current = handlers

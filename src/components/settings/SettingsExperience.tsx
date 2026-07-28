@@ -1,4 +1,5 @@
 import { Suspense, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { lazyWithChunkReload } from '@/lib/lazyWithChunkReload'
 import type { UserRole } from '@/types/auth.types'
 import type { SettingsSectionId } from '@/types/userPreferences.types'
@@ -54,14 +55,43 @@ function SettingsSectionFallback() {
   )
 }
 
+function isSettingsSectionId(value: string | null): value is SettingsSectionId {
+  return (
+    value === 'profile' ||
+    value === 'rafeeq' ||
+    value === 'notifications' ||
+    value === 'appearance' ||
+    value === 'privacy' ||
+    value === 'campaign' ||
+    value === 'data' ||
+    value === 'maintenance' ||
+    value === 'about' ||
+    value === 'integrations'
+  )
+}
+
 export function SettingsExperience({ role }: SettingsExperienceProps) {
+  const [searchParams, setSearchParams] = useSearchParams()
   const items = useMemo(
     () => NAV_ITEMS.filter((item) => (item.adminOnly ? role === 'administrator' : true)),
     [role],
   )
-  const [active, setActive] = useState<SettingsSectionId>(items[0]?.id ?? 'profile')
+  const sectionFromUrl = searchParams.get('section')
+  const [localActive, setLocalActive] = useState<SettingsSectionId>(items[0]?.id ?? 'profile')
 
-  const resolvedActive = items.some((item) => item.id === active) ? active : items[0]?.id ?? 'profile'
+  const resolvedActive = (() => {
+    if (isSettingsSectionId(sectionFromUrl) && items.some((item) => item.id === sectionFromUrl)) {
+      return sectionFromUrl
+    }
+    return items.some((item) => item.id === localActive) ? localActive : items[0]?.id ?? 'profile'
+  })()
+
+  const selectSection = (id: SettingsSectionId) => {
+    setLocalActive(id)
+    const next = new URLSearchParams(searchParams)
+    next.set('section', id)
+    setSearchParams(next, { replace: true })
+  }
 
   return (
     <div className="settings-experience grid gap-4 lg:grid-cols-[12rem_minmax(0,1fr)]">
@@ -80,7 +110,7 @@ export function SettingsExperience({ role }: SettingsExperienceProps) {
                 isActive ? 'ds-tab-active' : '',
               ].join(' ')}
               aria-current={isActive ? 'page' : undefined}
-              onClick={() => setActive(item.id)}
+              onClick={() => selectSection(item.id)}
             >
               {item.label}
             </button>

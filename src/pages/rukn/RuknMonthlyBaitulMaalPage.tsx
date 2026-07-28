@@ -1,10 +1,10 @@
 /**
- * KC-0108 — Rukn Monthly Baitul Maal submission (Contributed / Pending only).
+ * KC-0108 / KC-0127 — Rukn Monthly Baitul Maal (individual contribution recording).
+ * Record one Karkun at a time as contributions arrive; other marks stay unchanged.
  */
 
 import { useEffect, useMemo, useState } from 'react'
 import { Navigate } from 'react-router-dom'
-import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { PageShell } from '@/components/ui'
 import { ROUTES } from '@/constants/routes'
 import { getRuknById } from '@/data/ruknMaster'
@@ -16,7 +16,7 @@ import {
   getCurrentMonthlyBaitulMaalCycle,
   getRuknMonthlyBaitulMaalWorkspace,
   listMonthlyBaitulMaalCycles,
-  saveMonthlyBaitulMaalSubmission,
+  upsertMonthlyBaitulMaalKarkunMark,
 } from '@/services/monthlyBaitulMaalService'
 import { subscribeToMonthlyBaitulMaalStore } from '@/stores/monthlyBaitulMaalStore'
 import {
@@ -40,6 +40,7 @@ export function RuknMonthlyBaitulMaalPage() {
   const [draft, setDraft] = useState<Record<string, DraftStatus>>({})
   const [draftSeedKey, setDraftSeedKey] = useState('')
   const [message, setMessage] = useState('')
+  const [savingKarkunId, setSavingKarkunId] = useState<string | null>(null)
   const { busy: saving, run } = useBusyAction()
 
   useEffect(() => subscribeToMonthlyBaitulMaalStore(() => setStoreVersion((v) => v + 1)), [])
@@ -90,48 +91,35 @@ export function RuknMonthlyBaitulMaalPage() {
   }
 
   const rukn = getRuknById(ruknId)
-  const unmarkedCount = workspace
+  const contributedCount = workspace
+    ? workspace.assigned.filter((karkun) => (draft[karkun.id] ?? 'Unmarked') === 'Contributed')
+        .length
+    : 0
+  const pendingCount = workspace
+    ? workspace.assigned.filter((karkun) => (draft[karkun.id] ?? 'Unmarked') === 'Pending').length
+    : 0
+  const unrecordedCount = workspace
     ? workspace.assigned.filter((karkun) => (draft[karkun.id] ?? 'Unmarked') === 'Unmarked')
         .length
     : 0
-  const allMarked = Boolean(workspace && workspace.assigned.length > 0 && unmarkedCount === 0)
-  const canSubmit = Boolean(workspace?.editable && allMarked)
 
-  const setStatus = (karkunId: string, status: MonthlyBaitulMaalMarkStatus) => {
-    if (!workspace?.editable) return
+  const saveMark = (karkunId: string, status: MonthlyBaitulMaalMarkStatus) => {
+    if (!ruknId || !workspace?.editable) return
+    const karkun = workspace.assigned.find((row) => row.id === karkunId)
+    if (!karkun) return
+
     setDraft((current) => ({ ...current, [karkunId]: status }))
-  }
-
-  const handleSubmit = () => {
-    if (!ruknId || !workspace || !canSubmit) return
+    setSavingKarkunId(karkunId)
     void run(
       async () => {
         setMessage('')
-        const marks = workspace.assigned.map((karkun) => {
-          const status = draft[karkun.id]
-          if (status !== 'Contributed' && status !== 'Pending') {
-            setMessage(
-              'Please mark contribution status for all connected Karkuns before submitting.',
-            )
-            return null
-          }
-          return {
-            karkunId: karkun.id,
-            karkunName: karkun.name,
-            status,
-          }
-        })
-        if (marks.some((mark) => mark == null)) return
-
-        const result = saveMonthlyBaitulMaalSubmission({
+        const result = upsertMonthlyBaitulMaalKarkunMark({
           cycleId: workspace.cycle.id,
           ruknId,
           ruknName: rukn?.name ?? ruknId,
-          marks: marks as {
-            karkunId: string
-            karkunName: string
-            status: MonthlyBaitulMaalMarkStatus
-          }[],
+          karkunId,
+          karkunName: karkun.name,
+          status,
           submittedBy: user?.displayName ?? user?.uid ?? ruknId,
         })
 
@@ -140,7 +128,6 @@ export function RuknMonthlyBaitulMaalPage() {
           return
         }
 
-        // KC-BUG-0124 / KC-ARCH-001 — await durable write before success (Weekly Ijtema parity).
         try {
           const { awaitQueuedWrite } = await import('@/repositories/firestore/firestoreRepositories')
           await awaitQueuedWrite('compliance.monthlyBaitulMaalSubmissions')
@@ -148,10 +135,20 @@ export function RuknMonthlyBaitulMaalPage() {
           // local provider has no queue
         }
 
-        setMessage('Baitul Maal status submitted successfully.')
+        setMessage(
+          status === 'Contributed'
+            ? `${karkun.name} marked Contributed. Dashboard and reports update immediately.`
+            : `${karkun.name} marked Pending. Other Connected Karkuns are unchanged.`,
+        )
       },
-      { key: `monthly-baitul-maal-submit:${ruknId}`, waitForPendingWrites: true, minMs: 400 },
-    )
+      {
+        key: `monthly-baitul-maal-mark:${ruknId}:${karkunId}`,
+        waitForPendingWrites: true,
+        minMs: 250,
+      },
+    ).finally(() => {
+      setSavingKarkunId(null)
+    })
   }
 
   return (
@@ -159,7 +156,8 @@ export function RuknMonthlyBaitulMaalPage() {
       <header className="app-screen-header">
         <h1 className="app-screen-title">Monthly Baitul Maal</h1>
         <p className="app-screen-subtitle">
-          Mark Contributed or Pending for connected Karkuns. No amounts are recorded.
+          Record each contribution individually as it is received. You do not need to update every
+          Connected Karkun in one sitting.
         </p>
       </header>
 
@@ -206,8 +204,8 @@ export function RuknMonthlyBaitulMaalPage() {
           </div>
 
           <p className="mb-3 text-xs text-secondary">
-            {workspace.assigned.length} connected · {unmarkedCount} unmarked
-            {workspace.submission ? ' · previously submitted' : ''}
+            {workspace.assigned.length} connected · {contributedCount} contributed · {pendingCount}{' '}
+            pending · {unrecordedCount} not yet recorded
           </p>
 
           {workspace.assigned.length === 0 ? (
@@ -218,26 +216,33 @@ export function RuknMonthlyBaitulMaalPage() {
             <ul className="space-y-3">
               {workspace.assigned.map((karkun) => {
                 const status = draft[karkun.id] ?? 'Unmarked'
+                const rowBusy = saving && savingKarkunId === karkun.id
                 return (
                   <li
                     key={karkun.id}
                     className="rounded-lg border border-border bg-surface px-3 py-3 shadow-card"
                   >
-                    <p className="font-semibold text-text-heading">{karkun.name}</p>
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="font-semibold text-text-heading">{karkun.name}</p>
+                      <p className="text-xs text-secondary">
+                        {status === 'Unmarked' ? 'Not yet recorded' : status}
+                        {rowBusy ? ' · Saving…' : ''}
+                      </p>
+                    </div>
                     <div className="mt-2 flex flex-wrap gap-2">
                       {STATUS_OPTIONS.map((option) => (
                         <button
                           key={option.value}
                           type="button"
-                          disabled={!workspace.editable}
+                          disabled={!workspace.editable || saving}
                           className={[
                             'min-h-11 min-w-[6.5rem] rounded-lg border px-3 text-sm font-semibold',
                             status === option.value
                               ? 'border-primary bg-primary/10 text-primary'
                               : 'border-border bg-surface text-text-heading',
-                            !workspace.editable ? 'opacity-60' : '',
+                            !workspace.editable || saving ? 'opacity-60' : '',
                           ].join(' ')}
-                          onClick={() => setStatus(karkun.id, option.value)}
+                          onClick={() => saveMark(karkun.id, option.value)}
                         >
                           {option.label}
                         </button>
@@ -249,35 +254,25 @@ export function RuknMonthlyBaitulMaalPage() {
             </ul>
           )}
 
-          {!allMarked && workspace.assigned.length > 0 ? (
-            <p className="mt-3 text-sm text-amber-700" role="status">
-              Please mark contribution status for all connected Karkuns before submitting.
+          {unrecordedCount > 0 && workspace.editable ? (
+            <p className="mt-3 text-sm text-secondary" role="status">
+              Unrecorded people stay unchanged until their contribution is received.
             </p>
           ) : null}
 
           {message ? (
             <p
-              className={`mt-3 text-sm ${message.includes('success') ? 'text-green-700' : 'text-red-600'}`}
+              className={`mt-3 text-sm ${
+                message.includes('failed') || message.includes('error') || message.includes('Error')
+                  ? 'text-red-600'
+                  : message.includes('marked') || message.includes('immediately')
+                    ? 'text-green-700'
+                    : 'text-red-600'
+              }`}
             >
               {message}
             </p>
           ) : null}
-
-          <div className="mt-4">
-            <PrimaryButton
-              type="button"
-              fullWidth
-              onClick={handleSubmit}
-              disabled={saving || !canSubmit}
-              loading={saving}
-            >
-              {saving
-                ? 'Submitting…'
-                : workspace.submission
-                  ? 'Update Status'
-                  : 'Submit Status'}
-            </PrimaryButton>
-          </div>
         </>
       )}
     </PageShell>
