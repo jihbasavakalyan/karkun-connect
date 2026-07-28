@@ -1,4 +1,5 @@
 import type { KarkunAssignmentPoolStatus } from '@/types/karkun-registry.types'
+import { UI_LABELS } from '@/lib/uiTerminology'
 
 /**
  * User-facing Connection language for the internal assignment/pool status values.
@@ -10,14 +11,13 @@ export function getConnectionStatusLabel(
 ): string {
   switch (status) {
     case 'Assigned':
-      return 'Connected'
+      return UI_LABELS.connected
     case 'Available':
-      return 'Available'
     case 'Unassigned':
-      return 'Not Connected'
+      return UI_LABELS.notConnected
     case 'Suspended':
       return 'Suspended'
     default:
-      return status ? String(status) : 'Not Connected'
+      return status ? String(status) : UI_LABELS.notConnected
   }
 }

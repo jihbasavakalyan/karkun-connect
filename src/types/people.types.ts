@@ -130,13 +130,13 @@ export const GENDER_FILTER_OPTIONS = [
 ] as const
 
 export const STATUS_FILTER_OPTIONS = [
-  { value: '', label: 'All Statuses' },
+  { value: '', label: 'All person statuses' },
   { value: 'active', label: 'Active' },
   { value: 'inactive', label: 'Inactive' },
 ] as const
 
 export const ASSIGNMENT_STATUS_FILTER_OPTIONS = [
-  { value: '', label: 'All' },
+  { value: '', label: 'All connections' },
   { value: 'Assigned', label: 'Connected' },
   { value: 'Unassigned', label: 'Not Connected' },
 ] as const

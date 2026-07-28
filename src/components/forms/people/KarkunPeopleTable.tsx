@@ -20,6 +20,7 @@ import {
   PEOPLE_TABLE_WRAPPER_CLASS,
 } from '@/components/forms/people/peopleTableDisplay'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { UI_LABELS } from '@/lib/uiTerminology'
 
 type KarkunPeopleTableProps = {
   records: KarkunRegistryRecord[]
@@ -121,8 +122,8 @@ export function KarkunPeopleTable({
     return (
       <EmptyState
         icon="search"
-        title={emptyTitle ?? 'No results'}
-        description={emptyLabel}
+        title={emptyTitle ?? UI_LABELS.noSearchResults}
+        description={emptyLabel ?? UI_LABELS.noSearchResultsHint}
       />
     )
   }
@@ -163,13 +164,17 @@ export function KarkunPeopleTable({
               </th>
               {showAssignmentControls ? (
                 <>
-                  <th className="px-4 py-3 font-semibold text-text-heading">Connected Rukn</th>
-                  <th className="px-4 py-3 font-semibold text-text-heading">Connection</th>
+                  <th className="px-4 py-3 font-semibold text-text-heading">
+                    {UI_LABELS.connectedRukn}
+                  </th>
+                  <th className="px-4 py-3 font-semibold text-text-heading">
+                    {UI_LABELS.connection}
+                  </th>
                 </>
               ) : null}
               <th className="px-4 py-3">
                 <SortHeader
-                  label="Status"
+                  label={UI_LABELS.personStatus}
                   field="status"
                   sortField={sortField}
                   sortDirection={sortDirection}

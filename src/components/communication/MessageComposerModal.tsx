@@ -279,21 +279,20 @@ function MessageComposerModalContent({
         )}
 
         {composedMessage ? (
-          <div className="rounded-lg border border-border bg-surface-muted p-3">
-            <p className="text-xs font-medium uppercase tracking-wide text-secondary">Preview</p>
+          <div className="wa-preview">
+            <p className="wa-preview-label">WhatsApp preview</p>
             {previewSubject ? (
-              <div className="mt-2 border-b border-border pb-2">
-                <p className="text-xs text-secondary">Subject</p>
-                <p className="text-sm font-medium text-text-heading" dir="auto">
+              <div className="wa-preview-subject">
+                <p className="wa-preview-meta">Subject</p>
+                <p className="wa-preview-subject-text" dir="auto">
                   {previewSubject}
                 </p>
               </div>
             ) : null}
-            <p className="mt-2 text-xs text-secondary">Message</p>
-            <p className="mt-1 whitespace-pre-wrap text-sm text-text-heading" dir="auto">
-              {previewBody}
-            </p>
-            <p className="mt-2 text-xs text-secondary">
+            <div className="wa-preview-bubble" dir="auto" lang="ur">
+              <p className="wa-preview-body">{previewBody}</p>
+            </div>
+            <p className="wa-preview-meta">
               {composedMessage.length} characters including footer (
               {footerMode === 'official' ? 'Administrator' : 'Personal'})
             </p>

@@ -144,7 +144,7 @@ export function DailyReportsPanel() {
         {preview ? (
           <dl className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <div className="rounded-lg border border-border bg-surface-muted px-3 py-2">
-              <dt className="text-xs text-secondary">Connected</dt>
+              <dt className="text-xs text-secondary">Connected Karkuns</dt>
               <dd className="text-base font-semibold text-text-heading">
                 {preview.metrics.connected}
               </dd>

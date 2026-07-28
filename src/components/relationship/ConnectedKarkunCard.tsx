@@ -129,7 +129,7 @@ export function ConnectedKarkunCard({ karkun, ruknId, visitPath }: ConnectedKark
           </p>
         </div>
 
-        <div className="connected-status-chips" aria-label="Status">
+        <div className="connected-status-chips" aria-label="Connection progress">
           {guidance ? (
             <>
               <JourneyStageBadge stageId={guidance.currentStage} variant="rukn" />

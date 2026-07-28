@@ -23,6 +23,7 @@ import {
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import { Icon } from '@/components/ui/Icon'
+import { UI_LABELS } from '@/lib/uiTerminology'
 
 type PeopleFiltersBarProps = {
   filters: PeopleFilters
@@ -39,7 +40,7 @@ type PeopleFiltersBarProps = {
 const selectClassName =
   'w-full rounded-lg border border-border bg-surface px-4 py-3 text-sm text-text-heading focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20'
 
-const QUICK_SEARCH_PLACEHOLDER = 'Search by Name or Mobile...'
+const QUICK_SEARCH_PLACEHOLDER = UI_LABELS.registrySearchPlaceholder
 
 function labelForOption(
   options: readonly { value: string; label: string }[],
@@ -79,14 +80,14 @@ function buildActiveFilterSummary(
 
   if (filters.status) {
     entries.push({
-      label: 'Status',
+      label: 'Person status',
       value: formatPersonStatus(filters.status),
     })
   }
 
   if (config.showAssignmentFilters && filters.assignmentStatus) {
     entries.push({
-      label: 'Connection',
+      label: UI_LABELS.connection,
       value: labelForOption(ASSIGNMENT_STATUS_FILTER_OPTIONS, filters.assignmentStatus),
     })
   }
@@ -197,12 +198,15 @@ export function PeopleFiltersBar({
   }
 
   return (
-    <div className="rounded-(--radius-card) border border-border bg-surface p-4 shadow-card">
+    <div className="people-filters-bar rounded-(--radius-card) border border-border bg-surface p-4 shadow-card sm:p-5">
       <form className="flex flex-col gap-3 lg:flex-row lg:items-end" onSubmit={handleSearchSubmit}>
         <div className="min-w-0 flex-1">
           <label htmlFor="people-search" className="text-sm font-medium text-text-heading">
             Quick Search
           </label>
+          <p className="mt-0.5 text-xs text-secondary">
+            Name, mobile, person ID, ward, or area
+          </p>
           <input
             id="people-search"
             type="search"
@@ -275,7 +279,7 @@ export function PeopleFiltersBar({
 
           <div className="flex flex-col gap-2">
             <label htmlFor="filter-status" className="text-sm font-medium text-secondary">
-              Status
+              Person status
             </label>
             <select
               id="filter-status"

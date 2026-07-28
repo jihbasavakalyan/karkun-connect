@@ -4324,3 +4324,70 @@ html[data-theme='dark'] {
     transition: none !important;
   }
 }
+
+/* ========== KC-0126 — Product experience polish (presentation only) ========== */
+
+.wa-preview {
+  @apply rounded-xl border border-border/80 bg-[#e5ddd5] p-3 sm:p-4;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.35) 1px, transparent 1px);
+  background-size: 12px 12px;
+}
+
+.wa-preview-label {
+  @apply text-xs font-semibold uppercase tracking-wide text-secondary;
+}
+
+.wa-preview-meta {
+  @apply mt-2 text-xs text-secondary;
+}
+
+.wa-preview-subject {
+  @apply mt-2 rounded-lg border border-border/70 bg-surface/90 px-3 py-2;
+}
+
+.wa-preview-subject-text {
+  @apply text-sm font-medium text-text-heading;
+}
+
+.wa-preview-bubble {
+  @apply relative mt-2 ml-auto max-w-[min(100%,28rem)] rounded-2xl rounded-tr-md border border-border/40 bg-surface px-3.5 py-3 shadow-sm;
+}
+
+.wa-preview-body {
+  @apply whitespace-pre-wrap text-[0.95rem] leading-7 text-text-heading;
+  font-family: var(--font-urdu), var(--font-sans);
+}
+
+.comm-pending-panel {
+  @apply rounded-xl border border-border/80 bg-surface-muted/60 px-3.5 py-3;
+}
+
+.people-filters-bar {
+  @apply gap-1;
+}
+
+.person-360-card {
+  @apply transition-shadow duration-200;
+}
+
+.person-360-card:hover {
+  @apply shadow-card-hover;
+}
+
+.person-360-timeline {
+  scrollbar-gutter: stable;
+}
+
+@media (max-width: 640px) {
+  .wa-preview-bubble {
+    @apply max-w-full;
+  }
+
+  .people-filters-bar {
+    @apply p-3;
+  }
+
+  .person-360 {
+    @apply space-y-4;
+  }
+}
