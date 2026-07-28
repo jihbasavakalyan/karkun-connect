@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "typecheck": "tsc -b --pretty false",
     "lint": "eslint .",
     "verify:rc1": "npx vite-node scripts/verify-rc1.ts",
     "verify:routes": "npx vite-node scripts/verify-routes.ts",
@@ -98,6 +99,7 @@
     "verify:kc0119": "npx vite-node scripts/verify-kc0119-editorial-history.ts",
     "verify:kc0125": "npx vite-node scripts/verify-kc0125-editorial-approval.ts",
     "verify:kc-bug-0125": "npx vite-node scripts/verify-kc-bug-0125-search-discoverability.ts",
+    "verify:kc-0129": "npx vite-node scripts/verify-kc-0129-rukn-workspace.ts",
     "verify:kc-bug-0126": "npx vite-node scripts/verify-kc-bug-0126-urdu-pdf-typography.ts",
     "admin:export-seed": "npx vite-node scripts/admin/export-seed-backup.ts",
     "admin:sanitize-runtime": "node scripts/admin/sanitize-production-runtime.mjs",

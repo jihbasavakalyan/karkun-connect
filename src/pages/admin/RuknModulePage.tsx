@@ -1,7 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { useRuknManagement } from '@/hooks/useRuknManagement'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
-import { getRuknAssignmentEngineStats } from '@/lib/assignmentEngine'
 import {
   bulkSetRuknStatus,
   createRukn,
@@ -17,6 +16,7 @@ import type { Rukn } from '@/data/ruknMaster'
 import type { ImportSummary } from '@/types/people.types'
 import type { MobileLookupResult } from '@/lib/peopleStore'
 import { RuknAssignmentCard } from '@/components/forms/rukn'
+import { OfficialBriefingModal } from '@/components/communication/OfficialBriefingModal'
 import {
   BulkActionsBar,
   ConfirmDialog,
@@ -30,6 +30,7 @@ import {
 import type { PersonFormValues } from '@/components/forms/people'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { PageHeader, PageShell } from '@/components/ui'
+import type { MessageRecipient } from '@/types/communication'
 
 type ActiveTab = 'manage' | 'assignments'
 
@@ -49,11 +50,20 @@ export function RuknModulePage() {
   const [pendingFormValues, setPendingFormValues] = useState<PersonFormValues | null>(null)
   const [mobileOwner, setMobileOwner] = useState<MobileLookupResult | null>(null)
   const [importSummary, setImportSummary] = useState<ImportSummary | null>(null)
+  const [briefingRecipient, setBriefingRecipient] = useState<MessageRecipient | null>(null)
+  const [communicateError, setCommunicateError] = useState('')
 
-  const statsFor = useMemo(
-    () => (ruknId: string) => getRuknAssignmentEngineStats(ruknId),
-    [],
-  )
+  const openCommunicate = (rukn: Rukn) => {
+    setCommunicateError('')
+    const recipient: MessageRecipient = {
+      personId: rukn.id,
+      personKind: 'rukn',
+      name: rukn.name,
+      mobile: rukn.mobile,
+      whatsapp: rukn.whatsapp,
+    }
+    setBriefingRecipient(recipient)
+  }
 
   const openAddForm = () => {
     setEditingRukn(null)
@@ -193,17 +203,29 @@ export function RuknModulePage() {
       ) : (
         <>
           <p className="text-sm text-secondary">
-            Connection overview for {management.totalCount} Rukn
+            Operational workspace — identify who needs attention and communicate in one click (
+            {management.totalCount} Rukn)
           </p>
+          {communicateError ? (
+            <p className="text-sm text-error" role="alert">
+              {communicateError}
+            </p>
+          ) : null}
           <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {management.allFilteredRecords.map((rukn) => (
               <li key={rukn.id}>
-                <RuknAssignmentCard rukn={rukn} stats={statsFor(rukn.id)} />
+                <RuknAssignmentCard rukn={rukn} onCommunicate={openCommunicate} />
               </li>
             ))}
           </ul>
         </>
       )}
+
+      <OfficialBriefingModal
+        isOpen={Boolean(briefingRecipient)}
+        recipient={briefingRecipient}
+        onClose={() => setBriefingRecipient(null)}
+      />
 
       <PersonFormModal
         isOpen={isFormOpen}

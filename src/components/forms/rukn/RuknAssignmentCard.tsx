@@ -1,51 +1,162 @@
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { Rukn } from '@/data/ruknMaster'
-import type { RuknAssignmentStats } from '@/lib/ruknAssignments'
-import { adminRuknDetailPath } from '@/constants/routes'
+import {
+  adminAssignmentsPath,
+  adminRuknDetailPath,
+  ROUTES,
+} from '@/constants/routes'
 import { Icon } from '@/components/ui/Icon'
+import { PrimaryButton } from '@/components/ui/PrimaryButton'
+import { StatusBadge } from '@/components/ui/StatusBadge'
+import {
+  buildRuknWorkspacePending,
+  getRuknLastCommunicationLabel,
+  ruknWorkspaceStatus,
+} from '@/lib/ruknWorkspacePresentation'
 
 type RuknAssignmentCardProps = {
   rukn: Rukn
-  stats: RuknAssignmentStats
+  onCommunicate: (rukn: Rukn) => void
 }
 
-export function RuknAssignmentCard({ rukn, stats }: RuknAssignmentCardProps) {
-  const mobileLabel = rukn.mobile.trim() ? rukn.mobile : 'Mobile Not Added'
+function PendingRow({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="flex items-baseline justify-between gap-3 py-1">
+      <dt className="text-sm text-secondary">{label}</dt>
+      <dd
+        className={[
+          'text-sm font-semibold tabular-nums',
+          value > 0 ? 'text-text-heading' : 'text-secondary',
+        ].join(' ')}
+      >
+        {value}
+      </dd>
+    </div>
+  )
+}
+
+export function RuknAssignmentCard({ rukn, onCommunicate }: RuknAssignmentCardProps) {
+  const pending = buildRuknWorkspacePending(rukn.id)
+  const status = ruknWorkspaceStatus(pending.completionPct, pending.connectedKarkuns)
+  const lastCommunication = getRuknLastCommunicationLabel(rukn.id)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!menuOpen) return
+    const handlePointer = (event: MouseEvent) => {
+      if (!menuRef.current?.contains(event.target as Node)) {
+        setMenuOpen(false)
+      }
+    }
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMenuOpen(false)
+    }
+    document.addEventListener('mousedown', handlePointer)
+    document.addEventListener('keydown', handleKey)
+    return () => {
+      document.removeEventListener('mousedown', handlePointer)
+      document.removeEventListener('keydown', handleKey)
+    }
+  }, [menuOpen])
 
   return (
-    <Link
-      to={adminRuknDetailPath(rukn.id)}
-      className="block rounded-(--radius-card) border border-border bg-surface p-5 shadow-card transition-shadow hover:shadow-card-hover"
-    >
-      <h2 className="text-lg font-semibold text-text-heading">
-        {rukn.id} – {rukn.name}
-      </h2>
-      <p className="mt-1 text-sm text-secondary">Connected Karkuns: {stats.assignedCount}</p>
+    <article className="flex h-full flex-col rounded-(--radius-card) border border-border bg-surface p-5 shadow-card">
+      <header className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h2 className="truncate text-lg font-semibold text-text-heading">{rukn.name}</h2>
+          <p className="mt-0.5 text-xs text-secondary">{rukn.id}</p>
+        </div>
+        <StatusBadge variant={status.badgeVariant} className="shrink-0">
+          <span aria-hidden="true">{status.icon}</span> {status.label}
+        </StatusBadge>
+      </header>
 
-      <dl className="mt-4 space-y-2 text-sm">
-        <div className="flex items-start gap-2">
-          <dt className="text-secondary">
-            <Icon name="smartphone" size="sm" />
-          </dt>
-          <dd className={rukn.mobile.trim() ? 'text-text-heading' : 'text-secondary'}>
-            {mobileLabel}
-          </dd>
-        </div>
-        <div className="flex justify-between gap-3 border-t border-border pt-3">
-          <div>
-            <dt className="text-secondary">Connected Karkuns</dt>
-            <dd className="text-lg font-semibold text-text-heading">{stats.assignedCount}</dd>
-          </div>
-          <div>
-            <dt className="text-secondary">Completed</dt>
-            <dd className="text-lg font-semibold text-text-heading">{stats.completedCount}</dd>
-          </div>
-          <div>
-            <dt className="text-secondary">Available Capacity</dt>
-            <dd className="text-lg font-semibold text-primary">{stats.availableCapacity}</dd>
-          </div>
-        </div>
+      <p className="mt-4 text-sm text-secondary">
+        Connected Karkuns{' '}
+        <span className="font-semibold tabular-nums text-text-heading">
+          {pending.connectedKarkuns}
+        </span>
+      </p>
+
+      <dl className="mt-3 space-y-0.5 border-t border-border pt-3">
+        <PendingRow label="Pending Visits" value={pending.pendingVisits} />
+        <PendingRow label="Pending Weekly Ijtema" value={pending.pendingWeeklyIjtema} />
+        <PendingRow label="Pending Monthly Baitul Maal" value={pending.pendingMonthlyBaitulMaal} />
+        <PendingRow label="Pending App Registration" value={pending.pendingAppRegistration} />
       </dl>
-    </Link>
+
+      {lastCommunication ? (
+        <p className="mt-3 text-xs text-secondary">
+          Last Communication · {lastCommunication}
+        </p>
+      ) : (
+        <p className="mt-3 text-xs text-secondary">Last Communication · Not yet</p>
+      )}
+
+      <div className="mt-auto flex items-center gap-2 pt-5">
+        <PrimaryButton
+          type="button"
+          className="min-w-0 flex-1 inline-flex items-center justify-center gap-2"
+          onClick={() => onCommunicate(rukn)}
+        >
+          <Icon name="message" size="sm" />
+          Communicate
+        </PrimaryButton>
+
+        <div className="relative shrink-0" ref={menuRef}>
+          <button
+            type="button"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-border bg-surface text-secondary transition-colors hover:border-primary/40 hover:text-primary"
+            aria-label={`More actions for ${rukn.name}`}
+            aria-expanded={menuOpen}
+            aria-haspopup="menu"
+            onClick={() => setMenuOpen((open) => !open)}
+          >
+            <Icon name="menu" size="sm" />
+          </button>
+          {menuOpen ? (
+            <div
+              role="menu"
+              className="absolute end-0 bottom-full z-20 mb-2 w-48 overflow-hidden rounded-lg border border-border bg-surface py-1 shadow-card"
+            >
+              <Link
+                role="menuitem"
+                to={adminRuknDetailPath(rukn.id)}
+                className="block px-3 py-2 text-sm text-text-heading hover:bg-surface-muted"
+                onClick={() => setMenuOpen(false)}
+              >
+                View Profile
+              </Link>
+              <Link
+                role="menuitem"
+                to={adminRuknDetailPath(rukn.id)}
+                className="block px-3 py-2 text-sm text-text-heading hover:bg-surface-muted"
+                onClick={() => setMenuOpen(false)}
+              >
+                View Connections
+              </Link>
+              <Link
+                role="menuitem"
+                to={adminAssignmentsPath({ ruknId: rukn.id, view: 'assign' })}
+                className="block px-3 py-2 text-sm text-text-heading hover:bg-surface-muted"
+                onClick={() => setMenuOpen(false)}
+              >
+                Assign Karkun
+              </Link>
+              <Link
+                role="menuitem"
+                to={ROUTES.ADMIN_COMMUNICATION_HISTORY}
+                className="block px-3 py-2 text-sm text-text-heading hover:bg-surface-muted"
+                onClick={() => setMenuOpen(false)}
+              >
+                History
+              </Link>
+            </div>
+          ) : null}
+        </div>
+      </div>
+    </article>
   )
 }
