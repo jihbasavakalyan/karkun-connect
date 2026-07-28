@@ -25,9 +25,19 @@ import {
   buildTopPriorityRukns,
   type TopPriorityRuknView,
 } from '@/lib/missionControl/campaignOperationsCommandCenter'
+import {
+  buildAdminAttentionRequired,
+  buildAdminCampaignProgressCards,
+  buildAdminNextActions,
+  buildAdminQuickActions,
+} from '@/lib/missionControl/adminCommandCenterWorkflow'
 import { AdminActionCenter } from './AdminActionCenter'
 import { AdminOpsThreeColumnLayout } from './AdminOpsThreeColumnLayout'
 import { NextBestActionsPanel } from './NextBestActionsPanel'
+import { NextActionsPanel } from './NextActionsPanel'
+import { AttentionRequiredPanel } from './AttentionRequiredPanel'
+import { CampaignProgressPanel } from './CampaignProgressPanel'
+import { AdminQuickActionsPanel } from './AdminQuickActionsPanel'
 import { runPriorityEngine, type PriorityItem } from '@/lib/priorityIntelligence'
 import {
   buildAppreciationDraft,
@@ -623,6 +633,30 @@ export function AdminCommandCenter({
     return buildCampaignOperationsHealthMetrics()
   }, [assignmentVersion, moduleTick, metricsReady])
 
+  /** KC-0127 — Command Center workflow surfaces (presentation only). */
+  const nextActions = useMemo(() => {
+    void assignmentVersion
+    void moduleTick
+    if (!backgroundReady) return []
+    return buildAdminNextActions()
+  }, [assignmentVersion, moduleTick, backgroundReady])
+
+  const attentionItems = useMemo(() => {
+    void assignmentVersion
+    void moduleTick
+    if (!backgroundReady) return []
+    return buildAdminAttentionRequired()
+  }, [assignmentVersion, moduleTick, backgroundReady])
+
+  const campaignProgress = useMemo(() => {
+    void assignmentVersion
+    void moduleTick
+    if (!metricsReady) return []
+    return buildAdminCampaignProgressCards()
+  }, [assignmentVersion, moduleTick, metricsReady])
+
+  const quickActions = useMemo(() => buildAdminQuickActions(), [])
+
   useEffect(() => {
     dashState03WidgetRender(
       'CampaignHealth',
@@ -735,6 +769,23 @@ export function AdminCommandCenter({
         </WidgetErrorBoundary>
       ) : (
         <>
+          {/* KC-0127 — Quick Actions stay visible without scrolling the stack */}
+          <WidgetErrorBoundary title="Quick Actions">
+            <AdminQuickActionsPanel actions={quickActions} />
+          </WidgetErrorBoundary>
+
+          <WidgetErrorBoundary title="Next Actions">
+            <NextActionsPanel items={nextActions} ready={backgroundReady} />
+          </WidgetErrorBoundary>
+
+          <WidgetErrorBoundary title="Attention Required">
+            <AttentionRequiredPanel items={attentionItems} ready={backgroundReady} />
+          </WidgetErrorBoundary>
+
+          <WidgetErrorBoundary title="Campaign Progress">
+            <CampaignProgressPanel cards={campaignProgress} ready={metricsReady} />
+          </WidgetErrorBoundary>
+
           {/* KC-0102E — Executive Collective Overview (before Campaign Health) */}
           <WidgetErrorBoundary title="Collective Overview">
             <OverviewMetricGrid

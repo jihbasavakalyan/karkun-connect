@@ -4391,3 +4391,255 @@ html[data-theme='dark'] {
     @apply space-y-4;
   }
 }
+
+/* KC-0127 — Admin Command Center workflow panels */
+.cc-quick-actions {
+  position: sticky;
+  top: 0.5rem;
+  z-index: 20;
+  backdrop-filter: blur(8px);
+}
+
+.cc-quick-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+@media (min-width: 640px) {
+  .cc-quick-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.cc-quick-btn {
+  display: flex;
+  min-height: 2.75rem;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: var(--radius-card);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  padding: 0.55rem 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-text-heading);
+  text-decoration: none;
+  touch-action: manipulation;
+}
+
+.cc-quick-btn:hover {
+  border-color: color-mix(in oklab, var(--color-primary) 40%, var(--color-border));
+  background: color-mix(in oklab, var(--color-primary) 6%, var(--color-surface));
+}
+
+.cc-action-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.cc-action-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border-radius: var(--radius-card);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  padding: 0.75rem 0.9rem;
+  text-decoration: none;
+  color: inherit;
+}
+
+.cc-action-row:hover {
+  border-color: color-mix(in oklab, var(--color-primary) 35%, var(--color-border));
+}
+
+.cc-action-row-warn {
+  border-color: color-mix(in oklab, #d97706 35%, var(--color-border));
+}
+
+.cc-action-row-critical {
+  border-color: color-mix(in oklab, #dc2626 40%, var(--color-border));
+}
+
+.cc-action-count {
+  display: inline-flex;
+  min-width: 2.5rem;
+  justify-content: center;
+  border-radius: 0.5rem;
+  background: color-mix(in oklab, var(--color-primary) 12%, var(--color-surface));
+  padding: 0.35rem 0.5rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.cc-action-copy {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.cc-action-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-heading);
+}
+
+.cc-action-desc {
+  font-size: 0.75rem;
+  color: var(--color-secondary);
+}
+
+.cc-action-go {
+  color: var(--color-secondary);
+  font-weight: 700;
+}
+
+.cc-attention-grid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+@media (min-width: 640px) {
+  .cc-attention-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .cc-attention-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.cc-attention-card {
+  display: block;
+  border-radius: var(--radius-card);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  padding: 0.85rem 1rem;
+  text-decoration: none;
+  color: inherit;
+}
+
+.cc-attention-card:hover {
+  border-color: color-mix(in oklab, #d97706 40%, var(--color-border));
+}
+
+.cc-attention-card-critical {
+  border-color: color-mix(in oklab, #dc2626 35%, var(--color-border));
+}
+
+.cc-attention-count {
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--color-text-heading);
+}
+
+.cc-attention-label {
+  margin-top: 0.35rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-heading);
+}
+
+.cc-attention-desc {
+  margin-top: 0.2rem;
+  font-size: 0.75rem;
+  color: var(--color-secondary);
+}
+
+.cc-progress-grid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+@media (min-width: 640px) {
+  .cc-progress-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .cc-progress-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+.cc-progress-card {
+  display: block;
+  border-radius: var(--radius-card);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  padding: 0.85rem 1rem;
+  text-decoration: none;
+  color: inherit;
+}
+
+.cc-progress-card:hover {
+  border-color: color-mix(in oklab, var(--color-primary) 35%, var(--color-border));
+}
+
+.cc-progress-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-secondary);
+}
+
+.cc-progress-ratio {
+  margin-top: 0.35rem;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--color-text-heading);
+}
+
+.cc-progress-current {
+  color: var(--color-primary);
+}
+
+.cc-progress-sep,
+.cc-progress-target {
+  color: var(--color-secondary);
+  font-weight: 600;
+}
+
+.cc-progress-track {
+  margin-top: 0.55rem;
+  height: 0.4rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--color-border) 80%, transparent);
+}
+
+.cc-progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--color-primary);
+}
+
+.cc-progress-pct {
+  margin-top: 0.35rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--color-text-heading);
+}
+
+.cc-progress-trend {
+  margin-top: 0.2rem;
+  font-size: 0.7rem;
+  color: var(--color-secondary);
+}
+
+@media (max-width: 639px) {
+  .cc-quick-actions {
+    position: static;
+  }
+}
+

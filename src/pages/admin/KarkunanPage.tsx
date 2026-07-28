@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import type { PersonGender } from '@/types/karkun-registry.types'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
+import type { PeopleFilters } from '@/types/people.types'
 import type { ImportSummary } from '@/types/people.types'
 import type { MobileLookupResult } from '@/lib/peopleStore'
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
@@ -48,6 +49,10 @@ import { IjtemaAttendanceBulkUpdateModal } from '@/components/forms/ijtema/Ijtem
 import type { BaitulMaalStatus } from '@/types/baitulMaal'
 import type { IjtemaAttendanceStatus } from '@/types/ijtemaAttendance'
 import { PageHeader, PageShell } from '@/components/ui'
+import {
+  hasRegistryActionAdd,
+  parsePeopleFiltersFromSearchParams,
+} from '@/lib/peopleRegistryNavigation'
 
 type GenderTab = PersonGender
 
@@ -84,6 +89,7 @@ type KarkunGenderSectionProps = {
   gender: PersonGender
   shouldOpenAddForm: boolean
   initialSearch?: string
+  initialFilters?: Partial<PeopleFilters>
   onAddFormOpened: () => void
   onRegisterHandlers: (handlers: KarkunSectionHandlers | null) => void
   onSearchGenderHint?: (gender: PersonGender) => void
@@ -93,12 +99,17 @@ function KarkunGenderSection({
   gender,
   shouldOpenAddForm,
   initialSearch = '',
+  initialFilters,
   onAddFormOpened,
   onRegisterHandlers,
   onSearchGenderHint,
 }: KarkunGenderSectionProps) {
   const management = useKarkunPeopleManagement(gender, 'Karkun', {
     onSearchGenderHint,
+    initialFilters: {
+      ...initialFilters,
+      ...(initialSearch ? { search: initialSearch } : {}),
+    },
   })
   useAssignmentEngine()
 
@@ -523,15 +534,32 @@ function KarkunGenderSection({
 
 export function KarkunanPage() {
   const location = useLocation()
+  const [searchParams] = useSearchParams()
+  const urlFilters = useMemo(
+    () => parsePeopleFiltersFromSearchParams(searchParams),
+    [searchParams],
+  )
   const initialSearch =
-    (location.state as { searchQuery?: string } | null)?.searchQuery?.trim() ?? ''
+    (location.state as { searchQuery?: string } | null)?.searchQuery?.trim() ??
+    urlFilters.search?.trim() ??
+    ''
   const [activeGender, setActiveGender] = useState<GenderTab>(() => {
+    if (urlFilters.gender === 'Male' || urlFilters.gender === 'Female') {
+      return urlFilters.gender
+    }
     if (!initialSearch.trim()) return 'Male'
     const hint = resolveSearchGenderHint(getAllKarkuns(false), initialSearch)
     return hint ?? 'Male'
   })
   const sectionHandlersRef = useRef<KarkunSectionHandlers | null>(null)
   const [openAddForGender, setOpenAddForGender] = useState<PersonGender | null>(null)
+  const addRequestedRef = useRef(false)
+
+  useEffect(() => {
+    if (!hasRegistryActionAdd(searchParams) || addRequestedRef.current) return
+    addRequestedRef.current = true
+    setOpenAddForGender(activeGender)
+  }, [searchParams, activeGender])
 
   const handleSearchGenderHint = useCallback((gender: PersonGender) => {
     setActiveGender(gender)
@@ -619,8 +647,10 @@ export function KarkunanPage() {
 
         <div className="mt-6">
           <KarkunGenderSection
+            key={`karkun-registry:${activeGender}:${JSON.stringify(urlFilters)}:${initialSearch}`}
             gender={activeGender}
             initialSearch={initialSearch}
+            initialFilters={urlFilters}
             shouldOpenAddForm={openAddForGender === activeGender}
             onAddFormOpened={handleAddFormOpened}
             onRegisterHandlers={registerSectionHandlers}

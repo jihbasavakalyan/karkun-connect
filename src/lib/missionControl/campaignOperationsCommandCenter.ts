@@ -161,11 +161,11 @@ export function buildTodaysMissionOperationalItems(): AdminActionCenterItem[] {
   push(
     'mission-pending-monthly-baitul-maal',
     baitul.ruknsPending >= 5 ? 'high' : 'medium',
-    'Pending Monthly Baitul Maal submissions',
-    `${baitul.ruknsPending} Rukn${baitul.ruknsPending === 1 ? '' : 's'} still need to submit completion`,
+    'Pending Monthly Baitul Maal contributions',
+    `${baitul.pending} contribution${baitul.pending === 1 ? '' : 's'} still pending this cycle`,
     'Review',
     adminMonthlyBaitulMaalPath(),
-    baitul.ruknsPending,
+    Math.max(baitul.pending, baitul.ruknsPending),
   )
 
   push(
