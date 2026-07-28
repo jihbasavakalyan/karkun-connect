@@ -30,6 +30,20 @@ import {
 
 type DraftStatus = WeeklyIjtemaMarkStatus | 'Unmarked'
 
+function buildDraftFromWorkspace(
+  eventId: string,
+  ruknId: string,
+): Record<string, DraftStatus> {
+  const result = getRuknWeeklyIjtemaWorkspace(eventId, ruknId)
+  if (!result.success) return {}
+  const next: Record<string, DraftStatus> = {}
+  for (const karkun of result.assigned) {
+    const existing = result.submission?.marks.find((mark) => mark.karkunId === karkun.id)
+    next[karkun.id] = existing?.status ?? 'Unmarked'
+  }
+  return next
+}
+
 const STATUS_OPTIONS: { value: WeeklyIjtemaMarkStatus; label: string; urdu: string }[] = [
   { value: 'Present', label: 'Present', urdu: 'حاضر' },
   { value: 'Absent', label: 'Absent', urdu: 'غیر حاضر' },
@@ -42,6 +56,7 @@ export function WeeklyIjtemaRegisterPage() {
   const [storeVersion, setStoreVersion] = useState(0)
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null)
   const [draft, setDraft] = useState<Record<string, DraftStatus>>({})
+  const [draftSeedKey, setDraftSeedKey] = useState('')
   const [message, setMessage] = useState('')
   const { busy: saving, run } = useBusyAction()
 
@@ -87,26 +102,13 @@ export function WeeklyIjtemaRegisterPage() {
   const assignedKey = workspace?.assigned.map((k) => k.id).join('|') ?? ''
   const submissionUpdatedAt = workspace?.submission?.updatedAt ?? ''
   const eventId = currentEvent?.id ?? ''
-
-  // Seed draft from server when meeting / roster / saved submission changes.
-  // Intentionally omit storeVersion — hydrate notifies must not wipe in-progress marks (KC-BUG-0122).
-  useEffect(() => {
-    if (!ruknId || !eventId) {
-      setDraft({})
-      return
-    }
-    const result = getRuknWeeklyIjtemaWorkspace(eventId, ruknId)
-    if (!result.success) {
-      setDraft({})
-      return
-    }
-    const next: Record<string, DraftStatus> = {}
-    for (const karkun of result.assigned) {
-      const existing = result.submission?.marks.find((mark) => mark.karkunId === karkun.id)
-      next[karkun.id] = existing?.status ?? 'Unmarked'
-    }
-    setDraft(next)
-  }, [assignedKey, eventId, submissionUpdatedAt, ruknId])
+  // Seed only when meeting / roster / saved submission identity changes — not on storeVersion
+  // hydrate notifies (KC-BUG-0122: those were wiping Present/Absent before Submit enabled).
+  const nextSeedKey = ruknId && eventId ? `${eventId}|${assignedKey}|${submissionUpdatedAt}` : ''
+  if (nextSeedKey !== draftSeedKey) {
+    setDraftSeedKey(nextSeedKey)
+    setDraft(nextSeedKey && ruknId && eventId ? buildDraftFromWorkspace(eventId, ruknId) : {})
+  }
 
   if (!ruknId) {
     return <Navigate to={ROUTES.LOGIN} replace />
