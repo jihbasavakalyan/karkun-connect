@@ -36,6 +36,10 @@ function resolveEncoding(
     return Encoding.OGG_OPUS
   }
   if (type.includes('wav') || type.includes('wave') || type.includes('linear')) {
+    // WAV carries sample rate in the header — prefer auto-detect over a wrong Hertz.
+    if (type.includes('wav') || type.includes('wave')) {
+      return Encoding.ENCODING_UNSPECIFIED
+    }
     return Encoding.LINEAR16
   }
   if (type.includes('flac')) {
@@ -43,6 +47,10 @@ function resolveEncoding(
   }
   if (type.includes('mpeg') || type.includes('mp3')) {
     return Encoding.MP3
+  }
+  // Safari may still send audio/mp4 if client prepare failed — do not mis-label as WebM.
+  if (type.includes('mp4') || type.includes('aac') || type.includes('m4a')) {
+    return Encoding.ENCODING_UNSPECIFIED
   }
   return Encoding.WEBM_OPUS
 }

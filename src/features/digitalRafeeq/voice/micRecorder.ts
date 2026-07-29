@@ -1,6 +1,8 @@
 /**
  * KC-027 — Push-to-talk microphone recorder with silence auto-stop.
  * Audio is discarded after transcription; nothing is persisted.
+ *
+ * Safari / iOS: prefers audio/mp4, must not use small timeslices, flush via requestData().
  */
 
 export type MicRecorderStatus = 'idle' | 'requesting' | 'recording' | 'denied' | 'unsupported' | 'error'
@@ -21,14 +23,39 @@ type MicRecorderOptions = {
   onSilenceStop?: () => void
 }
 
-function pickMimeType(): string | undefined {
-  if (typeof MediaRecorder === 'undefined') return undefined
-  const candidates = [
-    'audio/webm;codecs=opus',
-    'audio/webm',
-    'audio/ogg;codecs=opus',
-  ]
-  return candidates.find((type) => MediaRecorder.isTypeSupported(type))
+/** Prefer Opus/WebM when available; include Safari MP4/AAC candidates. */
+export const MEDIA_RECORDER_MIME_CANDIDATES = Object.freeze([
+  'audio/webm;codecs=opus',
+  'audio/webm',
+  'audio/ogg;codecs=opus',
+  'audio/mp4',
+  'audio/mp4;codecs=mp4a.40.2',
+  'audio/aac',
+  'audio/mpeg',
+])
+
+export function pickMimeType(
+  isTypeSupported: (type: string) => boolean = (type) =>
+    typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported(type),
+): string | undefined {
+  return MEDIA_RECORDER_MIME_CANDIDATES.find((type) => isTypeSupported(type))
+}
+
+export function isMp4FamilyMime(mime: string | undefined | null): boolean {
+  if (!mime) return false
+  const lower = mime.toLowerCase()
+  return (
+    lower.includes('mp4') ||
+    lower.includes('aac') ||
+    lower.includes('m4a') ||
+    (lower.includes('mpeg') && !lower.includes('webm'))
+  )
+}
+
+function logRecorderDiag(message: string, detail?: Record<string, unknown>): void {
+  if (typeof console === 'undefined' || typeof console.info !== 'function') return
+  if (detail) console.info(`[rafeeq-mic] ${message}`, detail)
+  else console.info(`[rafeeq-mic] ${message}`)
 }
 
 export function createMicRecorder(options: MicRecorderOptions = {}): MicRecorderControllers {
@@ -38,6 +65,7 @@ export function createMicRecorder(options: MicRecorderOptions = {}): MicRecorder
   let status: MicRecorderStatus = 'idle'
   let mediaStream: MediaStream | null = null
   let mediaRecorder: MediaRecorder | null = null
+  let selectedMime: string | undefined
   let chunks: BlobPart[] = []
   let audioContext: AudioContext | null = null
   let analyser: AnalyserNode | null = null
@@ -138,18 +166,39 @@ export function createMicRecorder(options: MicRecorderOptions = {}): MicRecorder
       throw Object.assign(new Error('mic-denied'), { code: 'denied' })
     }
 
-    const mimeType = pickMimeType()
+    selectedMime = pickMimeType()
     chunks = []
-    mediaRecorder = mimeType
-      ? new MediaRecorder(mediaStream, { mimeType })
+    mediaRecorder = selectedMime
+      ? new MediaRecorder(mediaStream, { mimeType: selectedMime })
       : new MediaRecorder(mediaStream)
 
+    const effectiveMime =
+      mediaRecorder.mimeType || selectedMime || 'application/octet-stream'
+    const useTimeslice = !isMp4FamilyMime(effectiveMime)
+
+    logRecorderDiag('Recorder started', {
+      selectedMime: selectedMime ?? '(browser default)',
+      effectiveMime,
+      useTimeslice,
+    })
+
     mediaRecorder.ondataavailable = (event) => {
-      if (event.data.size > 0) chunks.push(event.data)
+      if (event.data.size > 0) {
+        chunks.push(event.data)
+        logRecorderDiag('Chunk received', {
+          chunkSize: event.data.size,
+          chunkCount: chunks.length,
+        })
+      }
     }
     mediaRecorder.onstop = () => {
-      const type = mediaRecorder?.mimeType || mimeType || 'audio/webm'
+      const type = mediaRecorder?.mimeType || selectedMime || 'audio/webm'
       const blob = chunks.length > 0 ? new Blob(chunks, { type }) : null
+      logRecorderDiag('Recorder stopped', {
+        chunkCount: chunks.length,
+        blobSize: blob?.size ?? 0,
+        blobType: blob?.type ?? type,
+      })
       cleanupGraph()
       setStatus('idle')
       stopResolver?.(blob)
@@ -157,17 +206,30 @@ export function createMicRecorder(options: MicRecorderOptions = {}): MicRecorder
     }
 
     try {
-      audioContext = new AudioContext()
-      const source = audioContext.createMediaStreamSource(mediaStream)
-      analyser = audioContext.createAnalyser()
-      analyser.fftSize = 2048
-      source.connect(analyser)
+      const Ctx =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+      if (Ctx) {
+        audioContext = new Ctx()
+        if (audioContext.state === 'suspended') {
+          await audioContext.resume()
+        }
+        const source = audioContext.createMediaStreamSource(mediaStream)
+        analyser = audioContext.createAnalyser()
+        analyser.fftSize = 2048
+        source.connect(analyser)
+      }
     } catch {
       // Silence detection optional if AudioContext fails.
     }
 
     setStatus('recording')
-    mediaRecorder.start(250)
+    // Safari MP4: small timeslices yield empty blobs — start without timeslice.
+    if (useTimeslice) {
+      mediaRecorder.start(250)
+    } else {
+      mediaRecorder.start()
+    }
     monitorSilence()
     maxTimer = window.setTimeout(() => {
       if (rafId) {
@@ -191,6 +253,14 @@ export function createMicRecorder(options: MicRecorderOptions = {}): MicRecorder
     return new Promise((resolve) => {
       stopResolver = resolve
       try {
+        if (
+          mediaRecorder &&
+          mediaRecorder.state === 'recording' &&
+          typeof mediaRecorder.requestData === 'function'
+        ) {
+          logRecorderDiag('requestData() called')
+          mediaRecorder.requestData()
+        }
         mediaRecorder?.stop()
       } catch {
         cleanupGraph()

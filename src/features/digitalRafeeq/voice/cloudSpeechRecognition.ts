@@ -7,6 +7,7 @@ import {
   STT_ERROR_MESSAGE_URDU,
   STT_NO_SPEECH_MESSAGE_URDU,
 } from './ttsMessages'
+import { ensureSttCompatibleAudio } from './sttAudioPrepare'
 
 export type CloudTranscriptResult = {
   transcript: string
@@ -33,22 +34,39 @@ export async function transcribeCloudAudio(
   audio: Blob,
   options?: { languageCode?: string; signal?: AbortSignal },
 ): Promise<CloudTranscriptResult> {
-  const audioBase64 = await blobToBase64(audio)
+  const prepared = await ensureSttCompatibleAudio(audio)
+  const audioBase64 = await blobToBase64(prepared.blob)
+
+  if (typeof console !== 'undefined' && console.info) {
+    console.info('[rafeeq-stt] /api/stt request', {
+      contentType: prepared.contentType,
+      byteLength: prepared.blob.size,
+      languageCode: options?.languageCode ?? 'ur-PK',
+    })
+  }
+
   const response = await fetch('/api/stt', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       audioBase64,
-      contentType: audio.type || 'audio/webm',
+      contentType: prepared.contentType,
       languageCode: options?.languageCode ?? 'ur-PK',
     }),
     signal: options?.signal,
   })
 
+  if (typeof console !== 'undefined' && console.info) {
+    console.info('[rafeeq-stt] /api/stt response', { status: response.status })
+  }
+
   if (!response.ok) {
     let message = STT_ERROR_MESSAGE_URDU
     try {
       const payload = (await response.json()) as { error?: string; message?: string }
+      if (typeof console !== 'undefined' && console.info) {
+        console.info('[rafeeq-stt] /api/stt error body', payload)
+      }
       if (payload.error === 'no_speech') message = STT_NO_SPEECH_MESSAGE_URDU
       else if (payload.message) message = payload.message
     } catch {
