@@ -26,6 +26,7 @@ import { RAFEEQ_UX } from '@/conversation/mvp/v2/uxPolish'
 import { RafeeqSpeakButton } from './RafeeqSpeakButton'
 import { stopCloudSpeech } from './cloudSpeechPlayback'
 import { stopLocalSpeech } from './speechPlayback'
+import { markVoicePipelineEpoch, voicePipelineLog } from './voicePipelineDiag'
 import {
   createVoiceConversationService,
   type ConversationPhase,
@@ -256,6 +257,7 @@ export function DigitalRafeeqVoiceDrawer({
 
   const handleMicClick = async () => {
     if (phase === 'listening') {
+      voicePipelineLog('Mic clicked (stop/finish)', { phase, busy })
       setBusy(true)
       await conversation.finishListeningAndConverse(answerFn)
       return
@@ -268,8 +270,11 @@ export function DigitalRafeeqVoiceDrawer({
             ? 'بول رہے ہیں…'
             : 'رفیق مصروف ہے۔ ذرا انتظار کریں۔'
       setVoiceNotice(statusNotice)
+      voicePipelineLog('Mic clicked ignored (busy)', { phase, busy })
       return
     }
+    markVoicePipelineEpoch('Mic clicked (start listening)')
+    voicePipelineLog('Mic clicked', { phase, busy })
     stopCloudSpeech()
     stopLocalSpeech()
     try {

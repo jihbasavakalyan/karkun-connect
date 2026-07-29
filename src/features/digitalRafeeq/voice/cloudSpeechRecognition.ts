@@ -8,6 +8,7 @@ import {
   STT_NO_SPEECH_MESSAGE_URDU,
 } from './ttsMessages'
 import { ensureSttCompatibleAudio } from './sttAudioPrepare'
+import { voicePipelineLog } from './voicePipelineDiag'
 
 export type CloudTranscriptResult = {
   transcript: string
@@ -37,13 +38,11 @@ export async function transcribeCloudAudio(
   const prepared = await ensureSttCompatibleAudio(audio)
   const audioBase64 = await blobToBase64(prepared.blob)
 
-  if (typeof console !== 'undefined' && console.info) {
-    console.info('[rafeeq-stt] /api/stt request', {
-      contentType: prepared.contentType,
-      byteLength: prepared.blob.size,
-      languageCode: options?.languageCode ?? 'ur-PK',
-    })
-  }
+  voicePipelineLog('/api/stt request', {
+    contentType: prepared.contentType,
+    byteLength: prepared.blob.size,
+    languageCode: options?.languageCode ?? 'ur-PK',
+  })
 
   const response = await fetch('/api/stt', {
     method: 'POST',
@@ -56,17 +55,13 @@ export async function transcribeCloudAudio(
     signal: options?.signal,
   })
 
-  if (typeof console !== 'undefined' && console.info) {
-    console.info('[rafeeq-stt] /api/stt response', { status: response.status })
-  }
+  voicePipelineLog('/api/stt response', { status: response.status })
 
   if (!response.ok) {
     let message = STT_ERROR_MESSAGE_URDU
     try {
       const payload = (await response.json()) as { error?: string; message?: string }
-      if (typeof console !== 'undefined' && console.info) {
-        console.info('[rafeeq-stt] /api/stt error body', payload)
-      }
+      voicePipelineLog('/api/stt error body', payload as Record<string, unknown>)
       if (payload.error === 'no_speech') message = STT_NO_SPEECH_MESSAGE_URDU
       else if (payload.message) message = payload.message
     } catch {
@@ -77,5 +72,11 @@ export async function transcribeCloudAudio(
     throw error
   }
 
-  return (await response.json()) as CloudTranscriptResult
+  const result = (await response.json()) as CloudTranscriptResult
+  voicePipelineLog('/api/stt success body', {
+    transcriptLength: result.transcript?.length ?? 0,
+    provider: result.provider,
+    durationMs: result.durationMs,
+  })
+  return result
 }

@@ -1,3 +1,5 @@
+import { voicePipelineLog } from './voicePipelineDiag'
+
 /**
  * Convert browser-recorded audio (e.g. Safari audio/mp4 AAC) into WAV / LINEAR16
  * so Google Cloud STT can transcribe without unsupported MP4/AAC encodings.
@@ -97,14 +99,16 @@ export async function ensureSttCompatibleAudio(
     const raw = await audio.arrayBuffer()
     const decoded = await context.decodeAudioData(raw.slice(0))
     const wav = audioBufferToWavBlob(decoded)
-    if (typeof console !== 'undefined' && console.info) {
-      console.info('[rafeeq-stt] Transcoded for Google STT', {
-        fromType: contentType || '(empty)',
-        toType: 'audio/wav',
-        fromSize: audio.size,
-        toSize: wav.size,
-      })
-    }
+    const wavDurationMs = Math.round((decoded.length / decoded.sampleRate) * 1000)
+    voicePipelineLog('WAV duration', {
+      fromType: contentType || '(empty)',
+      toType: 'audio/wav',
+      fromSize: audio.size,
+      toSize: wav.size,
+      wavDurationMs,
+      sampleRate: decoded.sampleRate,
+      samples: decoded.length,
+    })
     return { blob: wav, contentType: 'audio/wav' }
   } finally {
     try {

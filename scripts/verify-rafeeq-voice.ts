@@ -508,11 +508,41 @@ async function main() {
       assert(recorder.includes('requestData'), 'requestData flush')
       assert(recorder.includes('useTimeslice'), 'timeslice gate')
       assert(recorder.includes('mediaRecorder.start()'), 'start without timeslice path')
+      assert(recorder.includes('voiceDetected'), 'voiceDetected gate')
+      assert(recorder.includes('SILENCE_WARMUP_MS'), 'warm-up constant')
+      assert(recorder.includes('flatlineFallbackApplied') || recorder.includes('flatline fallback'), 'flatline fallback')
+      assert(recorder.includes('createGain'), 'Safari GainNode path')
       const prepare = read('src/features/digitalRafeeq/voice/sttAudioPrepare.ts')
       assert(prepare.includes('ensureSttCompatibleAudio'), 'STT audio prepare')
       assert(prepare.includes('audio/wav'), 'wav transcode target')
       const stt = read('src/server/voice/providers/GoogleSTTProvider.ts')
       assert(stt.includes('mp4') && stt.includes('ENCODING_UNSPECIFIED'), 'mp4 not mapped to WEBM_OPUS')
+    }),
+  )
+
+  cases.push(
+    await runAsync('voiceDetected / warm-up / Safari UA helpers', async () => {
+      const { isSafariLikeBrowser } = await import(
+        '../src/features/digitalRafeeq/voice/micRecorder'
+      )
+      assert(
+        isSafariLikeBrowser(
+          'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+        ),
+        'iPhone Safari',
+      )
+      assert(
+        !isSafariLikeBrowser(
+          'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/120.0.0.0 Mobile/15E148 Safari/604.1',
+        ),
+        'Chrome iOS excluded',
+      )
+      assert(
+        !isSafariLikeBrowser(
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        ),
+        'Chrome desktop excluded',
+      )
     }),
   )
 
@@ -567,17 +597,45 @@ async function main() {
 
       class SafariAudioContext {
         state = 'running'
+        destination = {}
         resume() {
           return Promise.resolve()
         }
         createMediaStreamSource() {
-          return { connect: () => undefined }
+          return {
+            connect: (node: { __kind?: string }) => {
+              ;(globalThis as { __safariGraph?: string[] }).__safariGraph = [
+                ...((globalThis as { __safariGraph?: string[] }).__safariGraph ?? []),
+                `source→${node.__kind ?? 'node'}`,
+              ]
+            },
+          }
         }
         createAnalyser() {
           return {
+            __kind: 'analyser',
             fftSize: 2048,
+            connect: (node: { __kind?: string }) => {
+              ;(globalThis as { __safariGraph?: string[] }).__safariGraph = [
+                ...((globalThis as { __safariGraph?: string[] }).__safariGraph ?? []),
+                `analyser→${node.__kind ?? 'node'}`,
+              ]
+            },
             getByteTimeDomainData: (data: Uint8Array) => data.fill(128),
           }
+        }
+        createGain() {
+          const gain = {
+            __kind: 'gain0',
+            gain: { value: 1 },
+            connect: (dest: unknown) => {
+              ;(globalThis as { __safariGraph?: string[] }).__safariGraph = [
+                ...((globalThis as { __safariGraph?: string[] }).__safariGraph ?? []),
+                dest === this.destination ? 'gain→destination' : 'gain→?',
+              ]
+            },
+          }
+          return gain
         }
         decodeAudioData(raw: ArrayBuffer) {
           const samples = Math.max(1600, Math.floor(raw.byteLength / 2))
@@ -600,12 +658,17 @@ async function main() {
       Object.defineProperty(g, 'navigator', {
         configurable: true,
         value: {
+          userAgent:
+            'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+          platform: 'iPhone',
+          maxTouchPoints: 5,
           mediaDevices: {
             getUserMedia: async () =>
               ({ getTracks: () => [{ stop: () => undefined }] }) as unknown as MediaStream,
           },
         },
       })
+      ;(globalThis as { __safariGraph?: string[] }).__safariGraph = []
       g.MediaRecorder = SafariMediaRecorder as unknown as typeof MediaRecorder
       g.AudioContext = SafariAudioContext as unknown as typeof AudioContext
       g.window.MediaRecorder = g.MediaRecorder
