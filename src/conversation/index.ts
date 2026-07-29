@@ -349,3 +349,6 @@ export * as conversationServiceContracts from './serviceContracts'
 
 /** Confirmation Orchestrator Foundation (KC-0131.8) — execution eligibility decision gate (no execution). */
 export * as conversationConfirmationOrchestrator from './confirmation'
+
+/** Execution Pipeline Foundation (KC-0131.9) — confirmed decision → adapter coordination (no work). */
+export * as conversationExecutionPipeline from './executionPipeline'
