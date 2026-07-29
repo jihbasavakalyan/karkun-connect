@@ -334,3 +334,6 @@ export * as conversationIntent from './intent'
 
 /** Secretary Engine Foundation (KC-0131.4) — intent batches → immutable plans (no execution). */
 export * as conversationSecretary from './secretary'
+
+/** Execution Orchestrator Foundation (KC-0131.5) — plan lifecycle coordination (no work performed). */
+export * as conversationOrchestrator from './orchestrator'

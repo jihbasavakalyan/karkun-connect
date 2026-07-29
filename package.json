@@ -105,6 +105,7 @@
     "verify:kc-0131.2": "npx vite-node scripts/verify-kc-0131-2-conversation-domain.ts",
     "verify:kc-0131.3": "npx vite-node scripts/verify-kc-0131-3-intent-engine.ts",
     "verify:kc-0131.4": "npx vite-node scripts/verify-kc-0131-4-secretary-engine.ts",
+    "verify:kc-0131.5": "npx vite-node scripts/verify-kc-0131-5-execution-orchestrator.ts",
     "verify:kc-bug-0130a": "npx vite-node scripts/verify-kc-bug-0130a-whatsapp-launch.ts",
     "verify:kc-bug-0126": "npx vite-node scripts/verify-kc-bug-0126-urdu-pdf-typography.ts",
     "admin:export-seed": "npx vite-node scripts/admin/export-seed-backup.ts",
