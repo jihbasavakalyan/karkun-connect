@@ -108,6 +108,7 @@
     "verify:kc-0131.5": "npx vite-node scripts/verify-kc-0131-5-execution-orchestrator.ts",
     "verify:kc-0131.6": "npx vite-node scripts/verify-kc-0131-6-execution-adapters.ts",
     "verify:kc-0131.7": "npx vite-node scripts/verify-kc-0131-7-service-contracts.ts",
+    "verify:kc-0131.8": "npx vite-node scripts/verify-kc-0131-8-confirmation-orchestrator.ts",
     "verify:kc-bug-0130a": "npx vite-node scripts/verify-kc-bug-0130a-whatsapp-launch.ts",
     "verify:kc-bug-0126": "npx vite-node scripts/verify-kc-bug-0126-urdu-pdf-typography.ts",
     "admin:export-seed": "npx vite-node scripts/admin/export-seed-backup.ts",

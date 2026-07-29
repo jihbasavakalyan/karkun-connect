@@ -346,3 +346,6 @@ export * as conversationExecutionAdapters from './executionAdapters'
 
 /** Service Integration Contracts (KC-0131.7) — adapter ↔ platform service shapes (no invocation). */
 export * as conversationServiceContracts from './serviceContracts'
+
+/** Confirmation Orchestrator Foundation (KC-0131.8) — execution eligibility decision gate (no execution). */
+export * as conversationConfirmationOrchestrator from './confirmation'
