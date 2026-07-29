@@ -153,6 +153,16 @@ Reject subjective “looks fixed”.
 
 ---
 
-## Phase 4–6 (post-coding placeholders)
+## Phase 4–6
 
-Record after implementation: workflow list, certification (`READY` / limitations), post-deploy smoke.
+### Phase 4 — Post-implementation audit (recorded 2026-07-30)
+
+Workflows tested via verifies: search, navigation, campaign intelligence, secretary stack path, work queue, daily briefing, recommendations, notifications, timeline, conversation memory, pronouns/context, safe actions, explainability, entity cards, accessibility helpers, performance memo, no Firestore writes, prior MVP verifies.
+
+### Phase 5 — Certification
+
+**READY WITH KNOWN LIMITATIONS** — keyword NLU; ephemeral history; proactive on-demand (no push scheduler); voice interfaces only (existing TTS/STT).
+
+### Phase 6 — Post-deploy
+
+Pending production deploy smoke (Admin/Rukn login, drawer open, briefing/queue utterances, hard refresh).
