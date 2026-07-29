@@ -337,3 +337,9 @@ export * as conversationSecretary from './secretary'
 
 /** Execution Orchestrator Foundation (KC-0131.5) — plan lifecycle coordination (no work performed). */
 export * as conversationOrchestrator from './orchestrator'
+
+/**
+ * Execution Adapter Foundation (KC-0131.6) — step → capability routing (no service invocation).
+ * Distinct from KC-004 repository adapters exported above from `./adapters`.
+ */
+export * as conversationExecutionAdapters from './executionAdapters'
