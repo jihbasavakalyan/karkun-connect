@@ -8,7 +8,6 @@ import { getActiveAssignmentsForRukn } from '@/stores/assignmentStore'
 import {
   buildCampaignExecutionSummary,
   buildCampaignMatrixRows,
-  buildTodaysFocusItems,
 } from '@/lib/campaignExecutionMatrix'
 import {
   checkOfficialLanguageCompliance,
@@ -19,7 +18,9 @@ import {
   OFFICIAL_COMMUNICATION_LIBRARY,
   OFFICIAL_COMMUNICATION_LIBRARY_IDS,
 } from '@/lib/communication/officialCommunicationLibrary'
+import { formatPendingResponsibilitiesUrdu } from '@/lib/communication/officialBriefingFromCampaign'
 import { buildMailMergeVariablesForRecipient } from '@/lib/communication/mailMergeEngine'
+import { buildOfficialCampaignSummary } from '@/lib/ruknWorkspacePresentation'
 import { getConnectedKarkunsForRukn } from '@/lib/connections/getConnectedKarkunsForRukn'
 import { composeWhatsAppMessage, getTemplate, listTemplates } from '@/services/templateService'
 import { getActiveCampaignName } from '@/services/campaignService'
@@ -51,15 +52,13 @@ export function buildOfficialCommunicationVariables(
     const assignedCount = connected.length
     const summary = buildCampaignExecutionSummary(ruknId)
     const matrix = buildCampaignMatrixRows(ruknId)
-    const focus = buildTodaysFocusItems(ruknId, 8)
+    const campaignView = buildOfficialCampaignSummary(ruknId)
     const assignments = getActiveAssignmentsForRukn(ruknId)
 
-    const pendingObjectives = focus.map((item) => item.pendingLabel).filter(Boolean)
+    // KC-0130 — numeric pending summary (same as Rukn card); never join "Visit Pending" labels.
+    const pendingObjectives = formatPendingResponsibilitiesUrdu(campaignView)
     const pendingCount = matrix.filter((row) => !row.completed).length
-    const progressPct =
-      summary.assigned > 0
-        ? Math.round((summary.completed / summary.assigned) * 100)
-        : 0
+    const progressPct = campaignView.completionPct
 
     const earliestAssignment = assignments
       .map((item) => item.assignedDate || item.effectiveFrom || item.createdAt)
@@ -77,17 +76,38 @@ export function buildOfficialCommunicationVariables(
     setAliases(vars, 'KarkunWord', karkunWordForCount(assignedCount))
     setAliases(vars, 'AssignmentCount', String(assignedCount))
     setAliases(vars, 'PendingCount', String(pendingCount))
-    setAliases(
-      vars,
-      'PendingObjectives',
-      pendingObjectives.length > 0 ? pendingObjectives.join('، ') : 'مہم کی عمومی پیش رفت',
-    )
+    setAliases(vars, 'PendingObjectives', pendingObjectives)
+    setAliases(vars, 'PendingResponsibilities', pendingObjectives)
+    setAliases(vars, 'CompletedResponsibilities', String(summary.completed))
     setAliases(vars, 'CampaignProgress', `${progressPct}%`)
     setAliases(
       vars,
-      'DaysSinceAssignment',
-      days !== null ? String(days) : '-',
+      'VisitProgress',
+      `${campaignView.completedVisits}/${campaignView.connectedKarkuns}`,
     )
+    setAliases(
+      vars,
+      'WeeklyIjtemaProgress',
+      `${campaignView.completedWeeklyIjtema}/${campaignView.connectedKarkuns}`,
+    )
+    setAliases(
+      vars,
+      'MonthlyBaitulMaalProgress',
+      `${campaignView.completedMonthlyBaitulMaal}/${campaignView.connectedKarkuns}`,
+    )
+    setAliases(
+      vars,
+      'AppRegistrationProgress',
+      `${campaignView.completedAppRegistration}/${campaignView.connectedKarkuns}`,
+    )
+    setAliases(
+      vars,
+      'CampaignSummary',
+      campaignView.connectedKarkuns > 0
+        ? `ملاقات ${campaignView.completedVisits}/${campaignView.connectedKarkuns} · اجتماع ${campaignView.completedWeeklyIjtema}/${campaignView.connectedKarkuns} · بیت المال ${campaignView.completedMonthlyBaitulMaal}/${campaignView.connectedKarkuns} · ایپ ${campaignView.completedAppRegistration}/${campaignView.connectedKarkuns}`
+        : 'ابھی کوئی سپردگی نہیں',
+    )
+    setAliases(vars, 'DaysSinceAssignment', days !== null ? String(days) : '-')
     setAliases(
       vars,
       'LastActivity',
@@ -99,19 +119,35 @@ export function buildOfficialCommunicationVariables(
           })
         : '-',
     )
+    setAliases(vars, 'OverallStatus', campaignView.overallStatus.label)
+    setAliases(vars, 'LastCommunication', campaignView.lastCommunication)
   } else {
     setAliases(vars, 'KarkunWord', 'کارکن')
     setAliases(vars, 'AssignmentCount', '-')
     setAliases(vars, 'PendingCount', '-')
     setAliases(vars, 'PendingObjectives', '-')
+    setAliases(vars, 'PendingResponsibilities', '-')
+    setAliases(vars, 'CompletedResponsibilities', '-')
     setAliases(vars, 'CampaignProgress', '-')
+    setAliases(vars, 'VisitProgress', '-')
+    setAliases(vars, 'WeeklyIjtemaProgress', '-')
+    setAliases(vars, 'MonthlyBaitulMaalProgress', '-')
+    setAliases(vars, 'AppRegistrationProgress', '-')
+    setAliases(vars, 'CampaignSummary', '-')
     setAliases(vars, 'DaysSinceAssignment', '-')
     setAliases(vars, 'LastActivity', '-')
+    setAliases(vars, 'OverallStatus', '-')
+    setAliases(vars, 'LastCommunication', '-')
   }
 
   if (!vars.CampaignName || vars.CampaignName === '-') {
     setAliases(vars, 'CampaignName', getActiveCampaignName() || '-')
   }
+
+  // Free-text slots — empty until the operator edits (ZWSP so mail-merge does not emit "-").
+  if (!vars.PersonalNote?.trim()) setAliases(vars, 'PersonalNote', '\u200b')
+  if (!vars.AdditionalRemarks?.trim()) setAliases(vars, 'AdditionalRemarks', '\u200b')
+  if (!vars.ClosingMessage?.trim()) setAliases(vars, 'ClosingMessage', '\u200b')
 
   return vars
 }
