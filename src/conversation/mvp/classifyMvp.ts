@@ -14,6 +14,7 @@ import {
   isClarificationUtterance,
   detectContextSwitchTopic,
 } from './v2/conversationAdvanced'
+import { isPersonRemainingFollowUp } from './secretaryIntelligence'
 
 const TASK_PATTERNS: RegExp[] = [
   /what should i do/i,
@@ -59,6 +60,13 @@ const PROFILE_PATTERNS: RegExp[] = [
   /پروفائل/,
   /فون دکھاو?/,
   /تاریخ ملاقات/,
+  /کی رپورٹ/,
+  /کا رپورٹ/,
+  /رپورٹ بتا/,
+  /رپورٹ سنا/,
+  /کارکن کی معلومات/,
+  /کی معلومات بتا/,
+  /کا جائزہ/,
 ]
 
 const PROACTIVE_PATTERNS: RegExp[] = [
@@ -191,6 +199,17 @@ function stripActionSubject(raw: string, patterns: RegExp[]): string | null {
     text = text.replace(pattern, ' ')
   }
   const cleaned = text.replace(/\s+/g, ' ').trim()
+  return cleaned.length >= 2 ? cleaned : null
+}
+
+/** Drop leftover report verbs so «اسلم کی رپورٹ بتاؤ» → «اسلم». */
+function cleanPersonReportSubject(subject: string | null): string | null {
+  if (!subject) return null
+  const cleaned = subject
+    .replace(/بتاؤ?|بتاو?|سناؤ?|سناو?|دکھاؤ?|دکھاو?|please|show|me/giu, ' ')
+    .replace(/[؟?!.،,]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
   return cleaned.length >= 2 ? cleaned : null
 }
 
@@ -342,6 +361,18 @@ export function classifyMvpUtterance(raw: string): ExtendedClassification {
     }
   }
 
+  // Person continuity: «کیا باقی ہے؟» after a karkun report (before TASK / campaign).
+  if (isPersonRemainingFollowUp(trimmed)) {
+    return {
+      intentCodes: ['SEARCH'],
+      searchQuery: null,
+      navigationTarget: null,
+      raw,
+      mvpKind: 'KARKUN_INFO',
+      actionSubject: null,
+    }
+  }
+
   if (TASK_PATTERNS.some((p) => p.test(raw))) {
     return {
       intentCodes: ['FOLLOW_UP'],
@@ -364,14 +395,20 @@ export function classifyMvpUtterance(raw: string): ExtendedClassification {
     }
   }
 
-  if (PROFILE_PATTERNS.some((p) => p.test(raw))) {
+  if (
+    PROFILE_PATTERNS.some((p) => p.test(raw)) &&
+    !/مہم|campaign/i.test(raw)
+  ) {
+    const subject = cleanPersonReportSubject(
+      stripActionSubject(raw, PROFILE_PATTERNS),
+    )
     return {
       intentCodes: ['SEARCH'],
-      searchQuery: stripActionSubject(raw, PROFILE_PATTERNS),
+      searchQuery: subject,
       navigationTarget: null,
       raw,
       mvpKind: 'KARKUN_INFO',
-      actionSubject: stripActionSubject(raw, PROFILE_PATTERNS),
+      actionSubject: subject,
     }
   }
 

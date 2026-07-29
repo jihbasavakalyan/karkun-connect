@@ -49,6 +49,8 @@ const TOPIC_PATTERNS: Array<{ topic: CampaignIntelTopic; patterns: RegExp[] }> =
       /how many.*pending.*visits?/i,
       /how many.*visits?.*pending/i,
       /باقی ملاقات/,
+      /ملاقات باقی/,
+      /کن.*ملاقات باقی/,
     ],
   },
   {
@@ -74,6 +76,8 @@ const TOPIC_PATTERNS: Array<{ topic: CampaignIntelTopic; patterns: RegExp[] }> =
       /attendance progress/i,
       /اجتما.*پیش رفت/,
       /حاضری.*پیش رفت/,
+      /ہفتہ وار اجتماع/,
+      /شرکت کم/,
     ],
   },
   {
@@ -83,6 +87,8 @@ const TOPIC_PATTERNS: Array<{ topic: CampaignIntelTopic; patterns: RegExp[] }> =
       /registration progress/i,
       /jih.*registration/i,
       /رجسٹریشن/,
+      /کن کی رجسٹریشن/,
+      /رجسٹریشن نہیں/,
     ],
   },
   {
@@ -96,6 +102,9 @@ const TOPIC_PATTERNS: Array<{ topic: CampaignIntelTopic; patterns: RegExp[] }> =
       /metrics need attention/i,
       /which campaign metrics/i,
       /توجہ/,
+      /فوری توجہ/,
+      /کمزور رکن/,
+      /سب سے کمزور/,
     ],
   },
   {
@@ -115,6 +124,8 @@ const TOPIC_PATTERNS: Array<{ topic: CampaignIntelTopic; patterns: RegExp[] }> =
       /campaign overview/i,
       /مہم.*پیش رفت/,
       /مہم خلاصہ/,
+      /مہم کی صورتحال/,
+      /صورتحال کیا ہے/,
     ],
   },
 ]
@@ -141,6 +152,7 @@ export const CAMPAIGN_INTEL_GATE: RegExp[] = [
   /اجتما/,
   /بیت المال/,
   /رجسٹریشن/,
+  /کمزور/,
   /^why\??$/i,
   /show details/i,
   /what about attendance/i,

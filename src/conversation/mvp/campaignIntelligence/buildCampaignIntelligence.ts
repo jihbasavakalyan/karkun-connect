@@ -2,6 +2,7 @@
  * Build read-only campaign intelligence answers from existing services.
  */
 
+import { formatCampaignSecretaryText } from '../secretaryIntelligence/formatCampaignSecretary'
 import type { RafeeqAction, RafeeqRole } from '../types'
 import type { RafeeqSessionMemory } from '../session'
 import { getTurnMetricsBundle } from '../turnMetricsCache'
@@ -299,15 +300,5 @@ export function buildCampaignIntelligence(input: {
 export function formatCampaignIntelligenceText(
   payload: CampaignIntelligencePayload,
 ): string {
-  const lines = [payload.title, '']
-  for (const metric of payload.metrics) {
-    lines.push(`• ${metric.label}: ${metric.value}`)
-  }
-  if (payload.metrics.length > 0) lines.push('')
-  lines.push(payload.narrative.trim())
-  if (payload.insights.length > 0 && payload.topic === 'overview') {
-    lines.push('')
-    lines.push(payload.insights[0]!)
-  }
-  return lines.filter((line, index, all) => !(line === '' && all[index - 1] === '')).join('\n')
+  return formatCampaignSecretaryText(payload)
 }

@@ -511,7 +511,10 @@ function runRafeeqTurnInner(
 
   if (classified.mvpKind === 'KARKUN_INFO') {
     runStackShell(['SEARCH'], layers)
-    return handleKarkunInfo(layers, subject, memory)
+    return handleKarkunInfo(layers, subject, memory, {
+      utterance,
+      ruknId: context.ruknId,
+    })
   }
 
   if (

@@ -12,6 +12,12 @@ import {
   formatCampaignIntelligenceText,
   type CampaignIntelTopic,
 } from './campaignIntelligence'
+import {
+  buildPersonSecretaryFacts,
+  formatPersonSecretaryReport,
+  isPersonRemainingFollowUp,
+  type SecretaryFocus,
+} from './secretaryIntelligence'
 import type { RafeeqAction, RafeeqRole, RafeeqTurnResult } from './types'
 import type { RafeeqSessionMemory } from './session'
 
@@ -65,6 +71,7 @@ export function handleInsights(
   ruknId: string | null = null,
 ): RafeeqTurnResult {
   layers.push('campaign_intelligence')
+  layers.push('secretary_intelligence')
   const payload = buildCampaignIntelligence({
     topic: (topic as CampaignIntelTopic | null) ?? 'overview',
     role,
@@ -80,10 +87,13 @@ export function handleInsights(
     layersVisited: Object.freeze([...layers]),
     metadata: {
       campaignIntelligence: payload,
+      secretaryIntelligence: true,
       metrics: payload.metrics,
       insights: payload.insights,
       summaryTitle: payload.title,
       sources: payload.sources,
+      topic: payload.topic,
+      noFirestoreWrite: true,
     },
   })
 }
@@ -166,18 +176,25 @@ export function handleKarkunInfo(
   layers: string[],
   subject: string | null,
   memory: RafeeqSessionMemory,
+  options?: { focus?: SecretaryFocus; utterance?: string; ruknId?: string | null },
 ): RafeeqTurnResult {
   layers.push('karkun_info')
+  layers.push('secretary_intelligence')
+  const focus: SecretaryFocus =
+    options?.focus ??
+    (options?.utterance && isPersonRemainingFollowUp(options.utterance)
+      ? 'remaining'
+      : 'full')
   const query = subject?.trim() || memory.lastPersonName || ''
   if (!query) {
     return baseResult({
-      text: companion('کس کارکن کی معلومات چاہیے؟ نام لکھیں۔'),
+      text: companion('کس کارکن کی رپورٹ چاہیے؟ نام لکھیں۔'),
       actions: [],
       intentCode: 'SEARCH',
       requiresConfirmation: false,
       confirmationState: null,
       layersVisited: Object.freeze([...layers]),
-      metadata: {},
+      metadata: { secretaryIntelligence: true },
     })
   }
 
@@ -190,22 +207,29 @@ export function handleKarkunInfo(
       requiresConfirmation: false,
       confirmationState: null,
       layersVisited: Object.freeze([...layers]),
-      metadata: { query },
+      metadata: { query, secretaryIntelligence: true },
     })
   }
 
   const primary = hits[0]!
   memory.lastPersonId = primary.personId
   memory.lastPersonName = primary.name
+  memory.followUpHint = 'کیا باقی ہے؟ / تفصیل / ملاقات'
+
+  const facts = buildPersonSecretaryFacts({
+    personId: primary.personId,
+    name: primary.name,
+    mobile: primary.mobile,
+    profilePath: primary.profilePath,
+    ruknId: options?.ruknId ?? null,
+  })
+
+  const report = facts
+    ? formatPersonSecretaryReport(facts, focus)
+    : `${primary.name}\nموبائل: ${primary.mobile || '—'}`
 
   return baseResult({
-    text: companion(
-      [
-        `نام: ${primary.name}`,
-        `موبائل: ${primary.mobile || '—'}`,
-        'تفصیل پروفائل میں دستیاب ہے (read-only)۔',
-      ].join('\n'),
-    ),
+    text: companion(report),
     actions: hits.map((hit) => ({
       id: `info-${hit.personId}`,
       label: hit.name,
@@ -215,7 +239,14 @@ export function handleKarkunInfo(
     requiresConfirmation: false,
     confirmationState: 'AUTO_APPROVED',
     layersVisited: Object.freeze([...layers]),
-    metadata: { hits, readOnly: true },
+    metadata: {
+      hits,
+      readOnly: true,
+      secretaryIntelligence: true,
+      personReport: facts,
+      focus,
+      noFirestoreWrite: true,
+    },
   })
 }
 
