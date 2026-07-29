@@ -4,10 +4,26 @@
 
 export type RafeeqRole = 'administrator' | 'rukn'
 
+export type RafeeqEntityType =
+  | 'karkun'
+  | 'muttafiq'
+  | 'rukn'
+  | 'campaign'
+  | 'assignment'
+  | 'report'
+  | 'module'
+  | 'dashboard'
+  | 'settings'
+  | 'attendance'
+  | 'weekly_ijtema'
+
 export type RafeeqAction = {
   readonly id: string
   readonly label: string
   readonly route: string
+  readonly entityType?: RafeeqEntityType
+  readonly description?: string
+  readonly primaryActionLabel?: string
 }
 
 export type RafeeqTurnResult = {
@@ -28,4 +44,5 @@ export type RafeeqTurnContext = {
   readonly ruknId: string | null
   readonly locale: 'ur' | 'en'
   readonly sessionId: string
+  readonly signal?: AbortSignal
 }

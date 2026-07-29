@@ -21,6 +21,7 @@ const SEARCH_PATTERNS: RegExp[] = [
   /\bshow\b/i,
   /\blocate\b/i,
   /\bopen\s+(?:profile|person)\b/i,
+  /search by/i,
   /تلاش/,
   /ڈھونڈ/,
 ]
@@ -28,45 +29,99 @@ const SEARCH_PATTERNS: RegExp[] = [
 const NAV_PATTERNS: Array<{ target: string; patterns: RegExp[] }> = [
   {
     target: 'dashboard',
-    patterns: [/dashboard/i, /ڈیش بورڈ/, /میرے؟? ?ہوم/, /\bhome\b/i],
+    patterns: [
+      /open\s+dashboard/i,
+      /go\s+to\s+dashboard/i,
+      /dashboard/i,
+      /ڈیش بورڈ/,
+      /\bhome\b/i,
+    ],
   },
   {
     target: 'registry',
-    patterns: [/registry/i, /karkun\s*list/i, /رجسٹری/, /کارکنان/],
+    patterns: [
+      /open\s+registry/i,
+      /go\s+to\s+registry/i,
+      /registry/i,
+      /karkun\s*list/i,
+      /رجسٹری/,
+    ],
   },
   {
     target: 'weekly_ijtema',
-    patterns: [/weekly\s*ijtema/i, /ijtema/i, /اجتما/, /حاضری\s*کھول/],
+    patterns: [
+      /open\s+weekly\s*ijtema/i,
+      /go\s+to\s+weekly\s*ijtema/i,
+      /weekly\s*ijtema/i,
+      /open\s+ijtema/i,
+      /اجتما/,
+    ],
   },
   {
     target: 'reports',
-    patterns: [/reports?/i, /رپورٹ/, /campaign\s*record/i],
+    patterns: [
+      /open\s+reports?/i,
+      /go\s+to\s+reports?/i,
+      /reports?/i,
+      /رپورٹ/,
+      /campaign\s*record/i,
+    ],
   },
   {
     target: 'settings',
-    patterns: [/settings?/i, /ترتیبات/],
+    patterns: [
+      /open\s+settings?/i,
+      /go\s+to\s+settings?/i,
+      /settings?/i,
+      /ترتیبات/,
+    ],
   },
   {
     target: 'assignments',
-    patterns: [/assignment/i, /connections?/i, /تفویض/, /کنکشن/],
+    patterns: [
+      /find\s+assigned\s+karkuns?/i,
+      /show\s+assigned\s+karkuns?/i,
+      /open\s+assignments?/i,
+      /assigned\s+karkuns?/i,
+      /assignment/i,
+      /connections?/i,
+      /تفویض/,
+      /کنکشن/,
+    ],
   },
   {
     target: 'campaign',
-    patterns: [/open\s+campaign/i, /campaign\s+setup/i, /مہم/],
+    patterns: [
+      /show\s+campaign/i,
+      /open\s+campaign/i,
+      /go\s+to\s+campaign/i,
+      /campaign\s+setup/i,
+      /مہم/,
+    ],
   },
   {
     target: 'attendance',
-    patterns: [/open\s+attendance/i, /attendance/i, /حاضری/],
+    patterns: [
+      /open\s+attendance/i,
+      /go\s+to\s+attendance/i,
+      /attendance/i,
+      /حاضری/,
+    ],
   },
   {
     target: 'muttafiq',
-    patterns: [/muttafiq/i, /متفق/],
+    patterns: [
+      /show\s+muttafiq/i,
+      /open\s+muttafiq/i,
+      /muttafiq/i,
+      /متفق/,
+    ],
   },
 ]
 
 const REPORT_PATTERNS: RegExp[] = [
   /how many/i,
-  /pending/i,
+  /pending\s+tasks?/i,
   /connected/i,
   /progress/i,
   /completion/i,
@@ -81,7 +136,7 @@ const REPORT_PATTERNS: RegExp[] = [
 const HELP_PATTERNS: RegExp[] = [
   /how do i/i,
   /how to/i,
-  /help/i,
+  /\bhelp\b/i,
   /explain/i,
   /shortcuts?/i,
   /commands?/i,
@@ -95,10 +150,10 @@ const HELP_PATTERNS: RegExp[] = [
 export function extractSearchQuery(raw: string): string | null {
   const cleaned = raw
     .replace(
-      /^(find|search|show|locate|open profile|open person|تلاش|ڈھونڈو?)\s+/i,
+      /^(find|search|show|locate|open profile|open person|search by(?:\s+(?:mobile(?:\s+number)?|rukn\s*id|karkun\s*id))?|تلاش|ڈھونڈو?)\s+/i,
       '',
     )
-    .replace(/\b(worker|karkun|person|کارکن)\b/gi, '')
+    .replace(/\b(worker|karkun|person|by mobile(?: number)?|by rukn id|by karkun id|کارکن)\b/gi, '')
     .trim()
   return cleaned.length >= 2 ? cleaned : null
 }
@@ -106,6 +161,7 @@ export function extractSearchQuery(raw: string): string | null {
 export function classifyUtterance(raw: string): ClassifiedUtterance {
   const q = normalize(raw)
 
+  // Navigation first for explicit open/go to module phrases
   for (const nav of NAV_PATTERNS) {
     if (nav.patterns.some((p) => p.test(raw) || p.test(q))) {
       return {
@@ -135,7 +191,16 @@ export function classifyUtterance(raw: string): ClassifiedUtterance {
     }
   }
 
-  // Name-like search: "Find Aslam", "Show Imran", Urdu names after search verbs
+  // Mobile / ID bare tokens → SEARCH
+  if (/^[\d+][\d\s-]{6,}$/.test(raw.trim()) || /^[a-z0-9_-]{4,}$/i.test(raw.trim())) {
+    return {
+      intentCodes: ['SEARCH'],
+      searchQuery: raw.trim(),
+      navigationTarget: null,
+      raw,
+    }
+  }
+
   if (
     SEARCH_PATTERNS.some((p) => p.test(raw)) ||
     /^(find|show|search|locate)\s+\S+/i.test(raw.trim())

@@ -16,8 +16,8 @@ import { classifyMvpUtterance } from './classifyMvp'
 import { resolveNavigationTarget } from './navigationMap'
 import {
   createSearchPeopleAdapter,
-  searchPeopleReadOnly,
-  type MvpSearchHit,
+  searchUniversal,
+  type UniversalSearchHit,
 } from './adapters/searchAdapter'
 import { createNavigationAdapter } from './adapters/navigationAdapter'
 import {
@@ -32,6 +32,7 @@ import {
   buildObservability,
   createUndoInterface,
 } from './observability'
+import { ENTITY_TYPE_LABEL_UR } from './universalSearchTypes'
 import {
   handleHelp,
   handleInsights,
@@ -311,11 +312,15 @@ function runRafeeqTurnInner(
 
     createServiceInvocationRequest({
       capability: 'SEARCH',
-      operation: 'searchPeople',
-      serviceId: 'personSearch',
+      operation: 'searchUniversal',
+      serviceId: 'universalSearch',
       payload: { query, readOnly: true },
     })
     layers.push('service_integration_contract')
+
+    if (context.signal?.aborted) {
+      return unknownResult(layers, 'SEARCH')
+    }
 
     const adapter = createSearchPeopleAdapter()
     const step = plan.steps[0]!
@@ -333,8 +338,9 @@ function runRafeeqTurnInner(
 
     rememberSearch(memory, query)
     persistRecentSearches(memory, context.role)
-    const hits = (adapterResult.metadata['hits'] as MvpSearchHit[] | undefined) ??
-      searchPeopleReadOnly(query)
+    const hits =
+      (adapterResult.metadata['hits'] as UniversalSearchHit[] | undefined) ??
+      searchUniversal(query, context.role, 12, context.signal)
 
     runtime.beginStep(session, step.id)
     runtime.completeStep(session, step.id)
@@ -342,8 +348,19 @@ function runRafeeqTurnInner(
 
     if (hits.length === 0) {
       return {
-        text: companion(`“${query}” کے لیے کوئی نتیجہ نہیں ملا۔`),
-        actions: [],
+        text: companion(
+          `“${query}” کے لیے کوئی نتیجہ نہیں ملا۔\nدوبارہ تلاش کریں یا Open Dashboard لکھیں۔`,
+        ),
+        actions: [
+          {
+            id: 'search-again-hint',
+            label: 'ڈیش بورڈ',
+            route: resolveNavigationTarget('dashboard', context.role)?.route ?? '/',
+            entityType: 'dashboard',
+            description: 'ماڈیول کھولیں',
+            primaryActionLabel: 'کھولیں',
+          },
+        ],
         intentCode: 'SEARCH',
         usedStack: true,
         usedFallback: false,
@@ -351,32 +368,44 @@ function runRafeeqTurnInner(
         requiresConfirmation: false,
         confirmationState: conf.decision.state,
         layersVisited: Object.freeze(layers),
-        metadata: { query, hits: [] },
+        metadata: { query, hits: [], noResults: true },
       }
     }
 
-    if (hits.length === 1) {
-      rememberPerson(memory, hits[0]!.personId, hits[0]!.name)
+    const firstPerson = hits.find(
+      (hit) =>
+        hit.entityType === 'karkun' ||
+        hit.entityType === 'muttafiq' ||
+        hit.entityType === 'rukn',
+    )
+    if (firstPerson?.personId) {
+      rememberPerson(memory, firstPerson.personId, firstPerson.name)
       memory.followUpHint = 'Call them / WhatsApp / Show profile'
     } else if (hits.length > 1) {
-      memory.followUpHint = 'Specify a name to narrow results'
+      memory.followUpHint = 'Refine your search'
     }
 
     const actions: RafeeqAction[] = hits.map((hit) => ({
-      id: `person-${hit.personId}`,
+      id: hit.id,
       label: hit.name,
-      route: hit.profilePath,
+      route: hit.route,
+      entityType: hit.entityType,
+      description: hit.description,
+      primaryActionLabel: 'کھولیں',
     }))
 
     const lines = hits
-      .slice(0, 5)
-      .map((hit, i) => `${i + 1}. ${hit.name}${hit.mobile ? ` — ${hit.mobile}` : ''}`)
+      .slice(0, 6)
+      .map((hit, i) => {
+        const typeLabel = ENTITY_TYPE_LABEL_UR[hit.entityType] ?? hit.entityType
+        return `${i + 1}. [${typeLabel}] ${hit.name}${hit.description ? ` — ${hit.description}` : ''}`
+      })
       .join('\n')
 
     const followUp =
       hits.length === 1
-        ? '\n\nاگلا قدم: Call / WhatsApp / Show profile (ان کا…)'
-        : '\n\nنام واضح کریں یا ایک نتیجہ منتخب کریں۔'
+        ? '\n\nنتیجہ کھولنے کے لیے بٹن دبائیں۔'
+        : `\n\n${hits.length} نتائج — مناسب نتیجہ منتخب کریں۔`
 
     return {
       text: companion(`تلاش کے نتائج:\n${lines}${followUp}`),
@@ -388,7 +417,12 @@ function runRafeeqTurnInner(
       requiresConfirmation: false,
       confirmationState: conf.decision.state,
       layersVisited: Object.freeze(layers),
-      metadata: { query, hits, followUpHint: memory.followUpHint },
+      metadata: {
+        query,
+        hits,
+        followUpHint: memory.followUpHint,
+        ranking: hits.map((h) => ({ id: h.id, score: h.score, tier: h.tier })),
+      },
     }
   }
 
@@ -455,11 +489,20 @@ function runRafeeqTurnInner(
     runtime.complete(session)
 
     // Also validate against map for label consistency
-    resolveNavigationTarget(classified.navigationTarget, context.role)
+    const mapped = resolveNavigationTarget(classified.navigationTarget, context.role)
 
     return {
       text: companion(`میں آپ کو یہاں لے چلتا ہوں: ${label}`),
-      actions: [{ id: `nav-${classified.navigationTarget}`, label, route }],
+      actions: [
+        {
+          id: `nav-${classified.navigationTarget}`,
+          label,
+          route,
+          entityType: mapped?.entityType ?? 'module',
+          description: 'سمارٹ نیویگیشن',
+          primaryActionLabel: 'کھولیں',
+        },
+      ],
       intentCode: 'NAVIGATION',
       usedStack: true,
       usedFallback: false,

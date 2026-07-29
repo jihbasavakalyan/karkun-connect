@@ -33,6 +33,9 @@ export type OpsAnswerAction = {
   id: string
   label: string
   route: string
+  entityType?: string
+  description?: string
+  primaryActionLabel?: string
 }
 
 export type OpsAnswer = {

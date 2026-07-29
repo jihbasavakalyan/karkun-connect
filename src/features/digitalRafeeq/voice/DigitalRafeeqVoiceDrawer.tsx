@@ -40,6 +40,15 @@ type ChatMessage = {
   requiresConfirmation?: boolean
 }
 
+const SEARCH_SUGGESTIONS = [
+  'Find Aslam',
+  'Open Dashboard',
+  'Go to Registry',
+  'Show Campaign',
+  'Open Reports',
+  'Open Weekly Ijtema',
+]
+
 type DigitalRafeeqVoiceDrawerProps = {
   role: VoiceAssistantRole
   open: boolean
@@ -70,7 +79,7 @@ function VoiceStageFeedback({ phase }: { phase: ConversationPhase }) {
       {phase === 'thinking' ? (
         <p className="dr-voice-thinking">
           <span className="dr-voice-thinking-dot" />
-          سوچ رہے ہیں…
+          تلاش ہو رہی ہے…
         </p>
       ) : null}
       {phase === 'speaking' ? <div className="dr-voice-speaking-orb" /> : null}
@@ -319,11 +328,56 @@ export function DigitalRafeeqVoiceDrawer({
                 </p>
               ) : null}
               {message.actions && message.actions.length > 0 && (
-                <div className="dr-voice-actions">
+                <div className="dr-voice-results" role="list">
                   {message.actions.map((action) => {
                     const external =
                       /^(tel:|sms:|https?:|mailto:)/i.test(action.route) ||
                       action.route.startsWith('//')
+                    const rich = Boolean(action.entityType || action.description)
+                    const openLabel = action.primaryActionLabel ?? 'کھولیں'
+                    if (rich) {
+                      const cardClass = message.requiresConfirmation
+                        ? 'dr-voice-result-card dr-voice-result-card-confirm'
+                        : 'dr-voice-result-card'
+                      const body = (
+                        <>
+                          {action.entityType ? (
+                            <span className="dr-voice-result-type">{action.entityType}</span>
+                          ) : null}
+                          <span className="dr-voice-result-name">{action.label}</span>
+                          {action.description ? (
+                            <span className="dr-voice-result-desc">{action.description}</span>
+                          ) : null}
+                          <span className="dr-voice-result-cta">{openLabel}</span>
+                        </>
+                      )
+                      if (external) {
+                        return (
+                          <a
+                            key={action.id}
+                            href={action.route}
+                            className={cardClass}
+                            role="listitem"
+                            target={action.route.startsWith('http') ? '_blank' : undefined}
+                            rel={action.route.startsWith('http') ? 'noreferrer' : undefined}
+                            onClick={onClose}
+                          >
+                            {body}
+                          </a>
+                        )
+                      }
+                      return (
+                        <Link
+                          key={action.id}
+                          to={action.route}
+                          className={cardClass}
+                          role="listitem"
+                          onClick={onClose}
+                        >
+                          {body}
+                        </Link>
+                      )
+                    }
                     const actionClass = message.requiresConfirmation
                       ? 'dr-voice-action dr-voice-action-confirm'
                       : 'dr-voice-action'
@@ -369,6 +423,22 @@ export function DigitalRafeeqVoiceDrawer({
                 onClick={() => void handleTextAnswer(`Find ${chip}`)}
               >
                 {chip}
+              </button>
+            ))}
+          </div>
+        ) : null}
+
+        {messages.length === 0 ? (
+          <div className="dr-voice-suggestions" role="list" aria-label="تجویز کردہ تلاش">
+            {SEARCH_SUGGESTIONS.map((text) => (
+              <button
+                key={text}
+                type="button"
+                className="dr-voice-chip"
+                disabled={busy}
+                onClick={() => void handleTextAnswer(text)}
+              >
+                {text}
               </button>
             ))}
           </div>

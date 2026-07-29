@@ -6,12 +6,13 @@ import {
   ROUTES,
   adminAssignmentsPath,
 } from '@/constants/routes'
-import type { RafeeqRole } from './types'
+import type { RafeeqEntityType, RafeeqRole } from './types'
 
 export type NavigationResolution = {
   readonly target: string
   readonly route: string
   readonly label: string
+  readonly entityType: RafeeqEntityType
 }
 
 export function resolveNavigationTarget(
@@ -26,49 +27,63 @@ export function resolveNavigationTarget(
         target,
         route: admin ? ROUTES.ADMIN : ROUTES.RUKN,
         label: 'ڈیش بورڈ',
+        entityType: 'dashboard',
       }
     case 'registry':
       return {
         target,
         route: admin ? ROUTES.ADMIN_KARKUN : ROUTES.RUKN_MY_KARKUN,
         label: 'رجسٹری',
+        entityType: 'module',
       }
     case 'weekly_ijtema':
-    case 'attendance':
       return {
         target,
         route: admin ? ROUTES.ADMIN_WEEKLY_IJTEMA : ROUTES.RUKN_WEEKLY_IJTEMA,
         label: 'ہفتہ وار اجتماع',
+        entityType: 'weekly_ijtema',
+      }
+    case 'attendance':
+      return {
+        target,
+        route: admin ? ROUTES.ADMIN_WEEKLY_IJTEMA : ROUTES.RUKN_WEEKLY_IJTEMA,
+        label: 'حاضری',
+        entityType: 'attendance',
       }
     case 'reports':
       return {
         target,
         route: admin ? ROUTES.ADMIN_ACTIVITIES : ROUTES.RUKN_CAMPAIGN_RECORD,
         label: 'رپورٹس',
+        entityType: 'report',
       }
     case 'settings':
       return {
         target,
         route: admin ? ROUTES.ADMIN_SETTINGS : ROUTES.RUKN_SETTINGS,
         label: 'ترتیبات',
+        entityType: 'settings',
       }
     case 'assignments':
       return {
         target,
         route: admin ? adminAssignmentsPath() : ROUTES.RUKN_AVAILABLE_KARKUN,
         label: 'تفویض / کنکشن',
+        entityType: 'module',
       }
     case 'campaign':
       return {
         target,
         route: admin ? ROUTES.ADMIN_CAMPAIGN : ROUTES.RUKN_CAMPAIGN_RECORD,
         label: 'مہم',
+        entityType: 'campaign',
       }
     case 'muttafiq':
       return {
         target,
         route: admin ? ROUTES.ADMIN_MUTTAFIQEEN : ROUTES.RUKN_AVAILABLE_KARKUN,
         label: 'متفقین',
+        entityType: 'module',
       }
     default:
       return null

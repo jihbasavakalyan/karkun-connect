@@ -1,11 +1,7 @@
 /**
- * SEARCH adapter — read-only people discovery via existing peopleStore/search.
+ * SEARCH adapter — read-only universal discovery via existing KC services.
  */
 
-import { getAllKarkuns, getAllMuttafiqeen } from '@/lib/peopleStore'
-import { matchesKarkunRegistrySearch } from '@/lib/peopleSearch'
-import { mobilesMatch, normalizeMobile } from '@/lib/mobileValidation'
-import { adminPersonProfilePath } from '@/lib/personProfile/ProfilePresenter'
 import type { ExecutionStep } from '../../secretary/plans'
 import type { AdapterContext, ExecutionAdapter } from '../../executionAdapters'
 import {
@@ -13,8 +9,14 @@ import {
   createAdapterMetadata,
   createAdapterResult,
 } from '../../executionAdapters'
+import {
+  searchPeopleReadOnly,
+  searchUniversal,
+  type UniversalSearchHit,
+} from '../universalSearch'
+import type { RafeeqRole } from '../types'
 
-export const SEARCH_ADAPTER_ID = 'mvp-search-people'
+export const SEARCH_ADAPTER_ID = 'mvp-universal-search'
 
 export type MvpSearchHit = {
   readonly personId: string
@@ -23,43 +25,17 @@ export type MvpSearchHit = {
   readonly profilePath: string
 }
 
-export function searchPeopleReadOnly(query: string, limit = 8): MvpSearchHit[] {
-  const trimmed = query.trim()
-  if (!trimmed) return []
-
-  const pool = [...getAllKarkuns(), ...getAllMuttafiqeen()]
-  const byId = new Map(pool.map((person) => [person.id, person]))
-  const unique = [...byId.values()]
-
-  const mobileNorm = normalizeMobile(trimmed)
-  const mobileHits = unique.filter((person) => mobilesMatch(person.mobile, mobileNorm))
-  if (mobileHits.length > 0) {
-    return mobileHits.slice(0, limit).map((person) => ({
-      personId: person.id,
-      name: person.name,
-      mobile: person.mobile,
-      profilePath: adminPersonProfilePath(person.id),
-    }))
-  }
-
-  return unique
-    .filter((person) => matchesKarkunRegistrySearch(person, trimmed))
-    .slice(0, limit)
-    .map((person) => ({
-      personId: person.id,
-      name: person.name,
-      mobile: person.mobile,
-      profilePath: adminPersonProfilePath(person.id),
-    }))
-}
+export { searchPeopleReadOnly, searchUniversal }
+export type { UniversalSearchHit }
 
 export function createSearchPeopleAdapter(): ExecutionAdapter {
   return {
     metadata: createAdapterMetadata({
       adapterId: SEARCH_ADAPTER_ID,
       capability: 'SEARCH',
-      name: 'MVP Search People Adapter',
-      description: 'Read-only people search via peopleStore + peopleSearch',
+      name: 'MVP Universal Search Adapter',
+      description:
+        'Read-only universal search: people, rukns, campaigns, assignments, modules',
       priority: 100,
       available: true,
       isPlaceholder: false,
@@ -73,8 +49,11 @@ export function createSearchPeopleAdapter(): ExecutionAdapter {
             ? String(step.metadata['searchQuery'])
             : step.summary
 
+      const role: RafeeqRole =
+        context.role === 'rukn' ? 'rukn' : 'administrator'
+
       try {
-        const hits = searchPeopleReadOnly(String(query ?? ''), 8)
+        const hits = searchUniversal(String(query ?? ''), role, 12)
         return createAdapterResult({
           status: 'success',
           capability: 'SEARCH',
@@ -82,7 +61,7 @@ export function createSearchPeopleAdapter(): ExecutionAdapter {
           stepId: step.id,
           summary:
             hits.length === 0
-              ? `No people found for “${query}”`
+              ? `No results for “${query}”`
               : `Found ${hits.length} result(s) for “${query}”`,
           isPlaceholder: false,
           invokedService: true,
