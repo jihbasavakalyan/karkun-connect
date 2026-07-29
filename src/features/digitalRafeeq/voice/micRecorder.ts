@@ -93,8 +93,17 @@ export function createMicRecorder(options: MicRecorderOptions = {}): MicRecorder
       if (rms < 0.04) {
         if (silenceStartedAt == null) silenceStartedAt = now
         else if (now - silenceStartedAt >= silenceMs) {
-          options.onSilenceStop?.()
-          void stop()
+          // Stop the monitor; when onSilenceStop is set, the owner must call stop()
+          // (e.g. finishListeningAndConverse) so the audio blob is not discarded.
+          if (rafId) {
+            cancelAnimationFrame(rafId)
+            rafId = 0
+          }
+          if (options.onSilenceStop) {
+            options.onSilenceStop()
+          } else {
+            void stop()
+          }
           return
         }
       } else {
@@ -161,7 +170,15 @@ export function createMicRecorder(options: MicRecorderOptions = {}): MicRecorder
     mediaRecorder.start(250)
     monitorSilence()
     maxTimer = window.setTimeout(() => {
-      void stop()
+      if (rafId) {
+        cancelAnimationFrame(rafId)
+        rafId = 0
+      }
+      if (options.onSilenceStop) {
+        options.onSilenceStop()
+      } else {
+        void stop()
+      }
     }, maxDurationMs)
   }
 

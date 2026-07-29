@@ -107,6 +107,8 @@ export class VoiceConversationService {
   private preferBrowserStt = false
   private browserFinal = ''
   private browserRecognition: SpeechRecognitionLike | null = null
+  private pendingAnswer: AnswerFn | null = null
+  private completionInFlight = false
   private readonly listeners = new Set<Listener>()
   private readonly recorder = createMicRecorder({
     silenceMs: 1800,
@@ -114,6 +116,9 @@ export class VoiceConversationService {
     onStatus: (status) => {
       this.micStatus = status
       this.emit()
+    },
+    onSilenceStop: () => {
+      this.requestListeningCompletion()
     },
   })
   private turnToken = 0
@@ -147,6 +152,8 @@ export class VoiceConversationService {
     this.turnToken += 1
     this.abort?.abort()
     this.abort = null
+    this.completionInFlight = false
+    this.pendingAnswer = null
     this.recorder.cancel()
     this.stopBrowserRecognition()
     stopCloudSpeech()
@@ -155,8 +162,13 @@ export class VoiceConversationService {
     this.emit()
   }
 
-  /** Push-to-talk: start listening. */
-  async startListening(): Promise<void> {
+  /**
+   * Push-to-talk: start listening.
+   * Pass `answer` so silence / browser-end auto-complete can reuse finishListeningAndConverse.
+   */
+  async startListening(answer?: AnswerFn): Promise<void> {
+    if (answer) this.pendingAnswer = answer
+    this.completionInFlight = false
     this.notice = ''
     this.interimRecognizedText = ''
     this.browserFinal = ''
@@ -188,98 +200,107 @@ export class VoiceConversationService {
   }
 
   /**
-   * Stop mic, transcribe, answer via intelligence, speak reply.
+   * Single completion pipeline: stop mic, transcribe, answer via intelligence, speak reply.
+   * Used by manual mic click, silence auto-stop, and browser SpeechRecognition onend.
    */
   async finishListeningAndConverse(answer: AnswerFn): Promise<VoiceConversationTurn | null> {
-    const token = ++this.turnToken
-    this.abort?.abort()
-    this.abort = new AbortController()
+    if (this.completionInFlight) return null
+    this.completionInFlight = true
+    this.pendingAnswer = answer
 
-    if (this.preferBrowserStt) {
-      this.stopBrowserRecognition()
-      const transcript = this.browserFinal.trim()
-      if (!transcript) {
+    try {
+      const token = ++this.turnToken
+      this.abort?.abort()
+      this.abort = new AbortController()
+
+      if (this.preferBrowserStt) {
+        this.stopBrowserRecognition()
+        const transcript = this.browserFinal.trim()
+        if (!transcript) {
+          this.phase = 'error'
+          this.notice = STT_NO_SPEECH_MESSAGE_URDU
+          this.emit()
+          return null
+        }
+        this.phase = 'thinking'
+        this.interimRecognizedText = transcript
+        this.emit()
+        return await this.runIntelligenceTurn({
+          transcript,
+          answer,
+          source: 'voice',
+          token,
+          speakReply: true,
+        })
+      }
+
+      let audio: Blob | null = null
+      try {
+        audio = await this.recorder.stop()
+      } catch (error) {
+        this.phase = 'error'
+        this.notice = friendlyError(error)
+        this.emit()
+        return null
+      }
+
+      if (token !== this.turnToken) return null
+      if (!audio || audio.size < 256) {
         this.phase = 'error'
         this.notice = STT_NO_SPEECH_MESSAGE_URDU
         this.emit()
         return null
       }
+
       this.phase = 'thinking'
+      this.interimRecognizedText = 'آواز پہچانی جا رہی ہے…'
+      this.emit()
+
+      let transcript = ''
+      try {
+        const result = await transcribeCloudAudio(audio, {
+          languageCode: 'ur-PK',
+          signal: this.abort.signal,
+        })
+        transcript = result.transcript.trim()
+      } catch (error) {
+        if (token !== this.turnToken) return null
+        // Switch to browser STT for subsequent turns when Google STT is unavailable.
+        this.preferBrowserStt = true
+        this.phase = 'error'
+        this.notice =
+          'کلاؤڈ سننے کا نظام ابھی دستیاب نہیں۔ دوبارہ مائیک دبائیں — مقامی پہچان استعمال ہوگی۔'
+        this.interimRecognizedText = ''
+        audio = null
+        this.emit()
+        void error
+        return null
+      }
+
+      audio = null
+
+      if (token !== this.turnToken) return null
+      if (!transcript) {
+        this.phase = 'error'
+        this.notice = STT_NO_SPEECH_MESSAGE_URDU
+        this.interimRecognizedText = ''
+        this.emit()
+        return null
+      }
+
       this.interimRecognizedText = transcript
       this.emit()
-      return this.runIntelligenceTurn({
+
+      return await this.runIntelligenceTurn({
         transcript,
         answer,
         source: 'voice',
         token,
         speakReply: true,
       })
+    } finally {
+      this.completionInFlight = false
     }
-
-    let audio: Blob | null = null
-    try {
-      audio = await this.recorder.stop()
-    } catch (error) {
-      this.phase = 'error'
-      this.notice = friendlyError(error)
-      this.emit()
-      return null
-    }
-
-    if (token !== this.turnToken) return null
-    if (!audio || audio.size < 256) {
-      this.phase = 'error'
-      this.notice = STT_NO_SPEECH_MESSAGE_URDU
-      this.emit()
-      return null
-    }
-
-    this.phase = 'thinking'
-    this.interimRecognizedText = 'آواز پہچانی جا رہی ہے…'
-    this.emit()
-
-    let transcript = ''
-    try {
-      const result = await transcribeCloudAudio(audio, {
-        languageCode: 'ur-PK',
-        signal: this.abort.signal,
-      })
-      transcript = result.transcript.trim()
-    } catch (error) {
-      if (token !== this.turnToken) return null
-      // Switch to browser STT for subsequent turns when Google STT is unavailable.
-      this.preferBrowserStt = true
-      this.phase = 'error'
-      this.notice =
-        'کلاؤڈ سننے کا نظام ابھی دستیاب نہیں۔ دوبارہ مائیک دبائیں — مقامی پہچان استعمال ہوگی۔'
-      this.interimRecognizedText = ''
-      audio = null
-      this.emit()
-      void error
-      return null
-    }
-
-    audio = null
-
-    if (token !== this.turnToken) return null
-    if (!transcript) {
-      this.phase = 'error'
-      this.notice = STT_NO_SPEECH_MESSAGE_URDU
-      this.interimRecognizedText = ''
-      this.emit()
-      return null
-    }
-
-    this.interimRecognizedText = transcript
-    this.emit()
-
-    return this.runIntelligenceTurn({
-      transcript,
-      answer,
-      source: 'voice',
-      token,
-      speakReply: true,
-    })
   }
 
   async converseFromText(
@@ -301,6 +322,19 @@ export class VoiceConversationService {
       token,
       speakReply: options?.speakReply ?? false,
     })
+  }
+
+  /** Auto-complete from silence / browser onend — same pipeline as manual mic stop. */
+  private requestListeningCompletion(): void {
+    if (this.completionInFlight || this.phase !== 'listening') return
+    const answer = this.pendingAnswer
+    if (!answer) {
+      this.phase = 'idle'
+      this.notice = 'سننا مکمل نہیں ہو سکا۔ دوبارہ مائیک دبائیں۔'
+      this.emit()
+      return
+    }
+    void this.finishListeningAndConverse(answer)
   }
 
   private startBrowserRecognition(): void {
@@ -346,10 +380,18 @@ export class VoiceConversationService {
       }
     }
     recognition.onend = () => {
-      if (this.phase === 'listening') {
-        this.phase = 'idle'
-        this.emit()
+      if (this.completionInFlight) return
+      if (this.phase !== 'listening') return
+      if (this.browserFinal.trim() && this.pendingAnswer) {
+        this.requestListeningCompletion()
+        return
       }
+      this.phase = 'idle'
+      this.micStatus = 'idle'
+      if (!this.browserFinal.trim()) {
+        this.notice = STT_NO_SPEECH_MESSAGE_URDU
+      }
+      this.emit()
     }
     this.browserRecognition = recognition
     this.micStatus = 'recording'

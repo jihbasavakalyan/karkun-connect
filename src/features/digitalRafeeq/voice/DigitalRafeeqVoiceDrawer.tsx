@@ -260,11 +260,20 @@ export function DigitalRafeeqVoiceDrawer({
       await conversation.finishListeningAndConverse(answerFn)
       return
     }
-    if (busy) return
+    if (busy) {
+      const statusNotice =
+        phase === 'thinking'
+          ? 'سوچ رہے ہیں…'
+          : phase === 'speaking'
+            ? 'بول رہے ہیں…'
+            : 'رفیق مصروف ہے۔ ذرا انتظار کریں۔'
+      setVoiceNotice(statusNotice)
+      return
+    }
     stopCloudSpeech()
     stopLocalSpeech()
     try {
-      await conversation.startListening()
+      await conversation.startListening(answerFn)
     } catch {
       // notice already set on service
     }
