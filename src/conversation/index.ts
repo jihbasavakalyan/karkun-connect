@@ -325,3 +325,6 @@ export {
 
 /** DRDS Conversation Foundation (KC-0131.1) — additive; does not replace KC-004 engine. */
 export * as conversationFoundation from './foundation'
+
+/** Canonical conversation domain model (KC-0131.2) — shared vocabulary for future engines. */
+export * as conversationDomain from './domain'
