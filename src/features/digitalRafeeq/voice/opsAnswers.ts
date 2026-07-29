@@ -38,6 +38,7 @@ export type OpsAnswerAction = {
 export type OpsAnswer = {
   text: string
   actions: OpsAnswerAction[]
+  requiresConfirmation?: boolean
 }
 
 function normalize(query: string): string {

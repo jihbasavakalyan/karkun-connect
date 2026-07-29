@@ -19,7 +19,7 @@ import {
   resolveContextualSuggestions,
   type OpsAnswerAction,
 } from './opsAnswers'
-import { runRafeeqTurn } from '@/conversation/mvp'
+import { runRafeeqTurn, getOrCreateSession, hydrateRecentSearches } from '@/conversation/mvp'
 import { RafeeqSpeakButton } from './RafeeqSpeakButton'
 import { stopCloudSpeech } from './cloudSpeechPlayback'
 import { stopLocalSpeech } from './speechPlayback'
@@ -37,6 +37,7 @@ type ChatMessage = {
   role: 'user' | 'assistant'
   text: string
   actions?: OpsAnswerAction[]
+  requiresConfirmation?: boolean
 }
 
 type DigitalRafeeqVoiceDrawerProps = {
@@ -90,6 +91,7 @@ function turnsToMessages(turns: VoiceConversationTurn[]): ChatMessage[] {
       role: 'assistant',
       text: turn.rafeeqResponse,
       actions: turn.actions,
+      requiresConfirmation: turn.requiresConfirmation,
     })
   }
   return messages
@@ -112,6 +114,7 @@ export function DigitalRafeeqVoiceDrawer({
   const [input, setInput] = useState('')
   const [voiceNotice, setVoiceNotice] = useState('')
   const [busy, setBusy] = useState(false)
+  const lastSubmitAtRef = useRef(0)
   const ruknId = useRequiredRuknId()
   const { preferences } = useUserPreferences()
 
@@ -129,6 +132,16 @@ export function DigitalRafeeqVoiceDrawer({
   }, [role, ruknSnapshot, adminSnapshot, preferences.rafeeq.suggestedQuestions])
 
   const mvpSessionId = useMemo(() => `rafeeq-drawer-${role}`, [role])
+
+  const recentSearchChips = useMemo(() => {
+    const session = getOrCreateSession(mvpSessionId)
+    return session.recentSearches.slice(0, 4)
+  }, [mvpSessionId, messages.length])
+
+  useEffect(() => {
+    if (!open) return
+    hydrateRecentSearches(getOrCreateSession(mvpSessionId), role)
+  }, [open, mvpSessionId, role])
 
   useEffect(() => {
     return conversation.subscribe((state) => {
@@ -165,6 +178,7 @@ export function DigitalRafeeqVoiceDrawer({
       return {
         text: turn.text,
         actions: [...turn.actions],
+        requiresConfirmation: turn.requiresConfirmation,
       }
     }
 
@@ -179,6 +193,9 @@ export function DigitalRafeeqVoiceDrawer({
   const handleTextAnswer = async (query: string) => {
     const trimmed = query.trim()
     if (!trimmed || busy) return
+    const now = Date.now()
+    if (now - lastSubmitAtRef.current < 400) return
+    lastSubmitAtRef.current = now
     setInput('')
     await conversation.converseFromText(trimmed, answerFn, { speakReply: false })
   }
@@ -296,18 +313,26 @@ export function DigitalRafeeqVoiceDrawer({
                   />
                 ) : null}
               </div>
+              {message.requiresConfirmation ? (
+                <p className="dr-voice-confirm-note" role="status">
+                  تصدیق: متعلقہ بٹن دبا کر عمل مکمل کریں۔
+                </p>
+              ) : null}
               {message.actions && message.actions.length > 0 && (
                 <div className="dr-voice-actions">
                   {message.actions.map((action) => {
                     const external =
                       /^(tel:|sms:|https?:|mailto:)/i.test(action.route) ||
                       action.route.startsWith('//')
+                    const actionClass = message.requiresConfirmation
+                      ? 'dr-voice-action dr-voice-action-confirm'
+                      : 'dr-voice-action'
                     if (external) {
                       return (
                         <a
                           key={action.id}
                           href={action.route}
-                          className="dr-voice-action"
+                          className={actionClass}
                           target={action.route.startsWith('http') ? '_blank' : undefined}
                           rel={action.route.startsWith('http') ? 'noreferrer' : undefined}
                           onClick={onClose}
@@ -320,7 +345,7 @@ export function DigitalRafeeqVoiceDrawer({
                       <Link
                         key={action.id}
                         to={action.route}
-                        className="dr-voice-action"
+                        className={actionClass}
                         onClick={onClose}
                       >
                         {action.label}
@@ -332,6 +357,22 @@ export function DigitalRafeeqVoiceDrawer({
             </div>
           ))}
         </div>
+
+        {recentSearchChips.length > 0 ? (
+          <div className="dr-voice-suggestions" role="list" aria-label="حالیہ تلاش">
+            {recentSearchChips.map((chip) => (
+              <button
+                key={`recent-${chip}`}
+                type="button"
+                className="dr-voice-chip"
+                disabled={busy}
+                onClick={() => void handleTextAnswer(`Find ${chip}`)}
+              >
+                {chip}
+              </button>
+            ))}
+          </div>
+        ) : null}
 
         {suggestions.length > 0 ? (
           <div className="dr-voice-suggestions" role="list" aria-label="تجویز کردہ سوالات">
@@ -394,6 +435,19 @@ export function DigitalRafeeqVoiceDrawer({
         </footer>
 
         {voiceNotice ? <p className="dr-voice-fallback">{voiceNotice}</p> : null}
+
+        {phase === 'error' ? (
+          <div className="dr-voice-error-recovery" role="alert">
+            <p className="dr-voice-fallback">جواب نہیں مل سکا۔ دوبارہ کوشش کریں۔</p>
+            <SecondaryButton
+              type="button"
+              disabled={busy}
+              onClick={() => void handleTextAnswer('Help')}
+            >
+              مدد
+            </SecondaryButton>
+          </div>
+        ) : null}
 
         <p className="dr-voice-fallback dr-voice-hint">
           مائیک دبائیں، بات کریں، پھر دوبارہ دبائیں — رفیق سنے گا، سمجھے گا اور جواب بولے گا۔

@@ -3899,6 +3899,19 @@ html[data-theme='dark'] {
     @apply min-h-10 rounded-full bg-primary-muted px-3.5 py-2 text-sm font-semibold text-primary transition hover:bg-primary/15;
   }
 
+  .dr-voice-action-confirm {
+    @apply bg-primary text-white hover:bg-primary/90;
+  }
+
+  .dr-voice-confirm-note {
+    @apply mt-2 rounded-xl bg-primary-muted/80 px-3 py-2 text-sm font-medium text-text-heading;
+    line-height: 2;
+  }
+
+  .dr-voice-error-recovery {
+    @apply mx-3 mb-2 flex flex-wrap items-center gap-2;
+  }
+
   .dr-voice-thinking {
     @apply flex items-center gap-2 text-sm font-medium text-primary;
   }

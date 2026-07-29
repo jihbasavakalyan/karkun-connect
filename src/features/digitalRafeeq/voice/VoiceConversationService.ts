@@ -29,6 +29,7 @@ export type VoiceConversationTurn = {
   userSpeechRecognized: string
   rafeeqResponse: string
   actions?: OpsAnswerAction[]
+  requiresConfirmation?: boolean
   timestamp: string
   source: 'voice' | 'text'
 }
@@ -394,6 +395,7 @@ export class VoiceConversationService {
       userSpeechRecognized: input.transcript,
       rafeeqResponse: ops.text,
       actions: ops.actions,
+      requiresConfirmation: ops.requiresConfirmation,
       timestamp: new Date().toISOString(),
       source: input.source,
     }
