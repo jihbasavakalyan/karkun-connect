@@ -343,3 +343,6 @@ export * as conversationOrchestrator from './orchestrator'
  * Distinct from KC-004 repository adapters exported above from `./adapters`.
  */
 export * as conversationExecutionAdapters from './executionAdapters'
+
+/** Service Integration Contracts (KC-0131.7) — adapter ↔ platform service shapes (no invocation). */
+export * as conversationServiceContracts from './serviceContracts'
