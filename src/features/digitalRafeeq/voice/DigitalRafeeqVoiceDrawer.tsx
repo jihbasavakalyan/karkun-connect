@@ -21,6 +21,8 @@ import {
   type OpsAnswerMetric,
 } from './opsAnswers'
 import { runRafeeqTurn, getOrCreateSession, hydrateRecentSearches } from '@/conversation/mvp'
+import { RAFEEQ_A11Y } from '@/conversation/mvp/v2/accessibility'
+import { RAFEEQ_UX } from '@/conversation/mvp/v2/uxPolish'
 import { RafeeqSpeakButton } from './RafeeqSpeakButton'
 import { stopCloudSpeech } from './cloudSpeechPlayback'
 import { stopLocalSpeech } from './speechPlayback'
@@ -42,6 +44,8 @@ type ChatMessage = {
   summaryTitle?: string
   metrics?: OpsAnswerMetric[]
   insights?: string[]
+  why?: string[]
+  contextualSuggestions?: string[]
   executionResult?: 'success' | 'cancelled' | 'failed'
   executionMessage?: string
 }
@@ -110,6 +114,8 @@ function turnsToMessages(turns: VoiceConversationTurn[]): ChatMessage[] {
       summaryTitle: turn.summaryTitle,
       metrics: turn.metrics,
       insights: turn.insights,
+      why: turn.why,
+      contextualSuggestions: turn.contextualSuggestions,
       executionResult: turn.executionResult,
       executionMessage: turn.executionMessage,
     })
@@ -215,6 +221,12 @@ export function DigitalRafeeqVoiceDrawer({
           intel?.metrics,
         insights:
           (turn.metadata['insights'] as string[] | undefined) ?? intel?.insights,
+        why: (
+          (turn.metadata['explainability'] as Array<{ label: string }> | undefined) ??
+          []
+        ).map((r) => r.label),
+        contextualSuggestions:
+          (turn.metadata['contextualSuggestions'] as string[] | undefined) ?? [],
         executionResult: turn.metadata['executionResult'] as
           | 'success'
           | 'cancelled'
@@ -308,12 +320,13 @@ export function DigitalRafeeqVoiceDrawer({
   return (
     <div className="dr-voice-overlay" role="presentation" onClick={onClose}>
       <aside
-        className="dr-voice-drawer urdu-text"
+        className={`dr-voice-drawer urdu-text ${RAFEEQ_UX.responsiveDrawerClass} ${RAFEEQ_UX.transitionClass}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        dir="rtl"
-        lang="ur"
+        aria-label={RAFEEQ_A11Y.drawerLabel}
+        dir={RAFEEQ_UX.urduDir}
+        lang={RAFEEQ_UX.urduLang}
         onClick={(event) => event.stopPropagation()}
       >
         <header className="dr-voice-header">
@@ -337,7 +350,7 @@ export function DigitalRafeeqVoiceDrawer({
             <p className="dr-voice-empty">{RAFEEQ_WELCOME_MESSAGE}</p>
           ) : null}
           {messages.length === 0 && !preferences.rafeeq.dailyGreeting ? (
-            <p className="dr-voice-empty">آپ بول کر یا لکھ کر پوچھ سکتے ہیں۔</p>
+            <p className="dr-voice-empty">{RAFEEQ_UX.emptyBodyUr}</p>
           ) : null}
           {messages.map((message) => (
             <div
@@ -376,6 +389,30 @@ export function DigitalRafeeqVoiceDrawer({
                   {message.insights && message.insights.length > 0 ? (
                     <p className="dr-voice-insight">{message.insights[0]}</p>
                   ) : null}
+                </div>
+              ) : null}
+              {message.why && message.why.length > 0 ? (
+                <ul className="dr-voice-why" aria-label="Why">
+                  {message.why.slice(0, 4).map((line) => (
+                    <li key={line}>{line}</li>
+                  ))}
+                </ul>
+              ) : null}
+              {message.contextualSuggestions &&
+              message.contextualSuggestions.length > 0 ? (
+                <div className="dr-voice-suggestions" role="list" aria-label="Suggested next steps">
+                  {message.contextualSuggestions.slice(0, 6).map((sug) => (
+                    <button
+                      key={sug}
+                      type="button"
+                      className="dr-voice-chip"
+                      role="listitem"
+                      disabled={busy}
+                      onClick={() => void handleTextAnswer(sug)}
+                    >
+                      {sug}
+                    </button>
+                  ))}
                 </div>
               ) : null}
               {message.executionResult ? (
@@ -625,7 +662,7 @@ export function DigitalRafeeqVoiceDrawer({
               onChange={(event) => setInput(event.target.value)}
               placeholder="کچھ بھی پوچھیے…"
               className="dr-voice-input"
-              aria-label="ڈیجیٹل رفیق سے پوچھیں"
+              aria-label={RAFEEQ_A11Y.inputLabel}
               dir="auto"
               enterKeyHint="send"
               autoComplete="off"

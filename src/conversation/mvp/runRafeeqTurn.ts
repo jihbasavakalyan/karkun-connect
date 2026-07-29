@@ -52,6 +52,25 @@ import {
   handleSuggestions,
   handleTasks,
 } from './handlers'
+import {
+  handleDailyBriefing,
+  handleEntityCards,
+  handleExplainWhy,
+  handleGuidedWorkflow,
+  handleHistory,
+  handleNotifications,
+  handleOperationalInsights,
+  handlePersonalDashboard,
+  handleProactive,
+  handleRecommendations,
+  handleTimeline,
+  handleVoiceReadyStatus,
+  handleWorkQueue,
+} from './v2/handlers'
+import { recordConversationTurn } from './v2/history'
+import { searchWithEnhancements } from './v2/searchEnhancements'
+import { attachSuggestionsMetadata } from './v2/contextualSuggestions'
+import { assertNotAborted } from './v2/performance'
 import type { RafeeqAction, RafeeqTurnContext, RafeeqTurnResult } from './types'
 
 function companion(text: string): string {
@@ -103,17 +122,30 @@ function runStackShell(intentCodes: readonly string[], layers: string[]) {
 function finalizeTurn(
   result: RafeeqTurnResult,
   startedAt: number,
+  context?: RafeeqTurnContext,
+  memory?: ReturnType<typeof getOrCreateSession>,
 ): RafeeqTurnResult {
+  const baseMeta = {
+    ...result.metadata,
+    observability: buildObservability(
+      result.layersVisited,
+      Date.now() - startedAt,
+    ),
+    undo: createUndoInterface(),
+    noFirestoreWrite: true,
+  }
+  const metadata =
+    context && memory
+      ? attachSuggestionsMetadata(
+          baseMeta,
+          context.role,
+          memory,
+          result.intentCode,
+        )
+      : baseMeta
   return {
     ...result,
-    metadata: {
-      ...result.metadata,
-      observability: buildObservability(
-        result.layersVisited,
-        Date.now() - startedAt,
-      ),
-      undo: createUndoInterface(),
-    },
+    metadata,
   }
 }
 
@@ -125,26 +157,233 @@ export function runRafeeqTurn(
   context: RafeeqTurnContext,
 ): RafeeqTurnResult {
   const startedAt = Date.now()
-  return finalizeTurn(runRafeeqTurnInner(utterance, context), startedAt)
+  const memory = getOrCreateSession(context.sessionId)
+  const result = runRafeeqTurnInner(utterance, context, memory)
+  return finalizeTurn(result, startedAt, context, memory)
+}
+
+function dispatchV2ReadOnly(
+  layers: string[],
+  kind: string,
+  context: RafeeqTurnContext,
+  memory: ReturnType<typeof getOrCreateSession>,
+  subject: string | null,
+): RafeeqTurnResult {
+  runStackShell(['FOLLOW_UP'], layers)
+  const { orchestrator: confirmation } = createConfirmationOrchestratorFoundation()
+  const conf = confirmation.evaluate(
+    confirmation.createRequest({
+      summary: `Rafeeq v2: ${kind}`,
+      policyKind: 'read_only_action',
+      capability: 'REMINDER',
+      context: { sessionId: context.sessionId, planId: null },
+    }),
+  )
+  layers.push('confirmation_orchestrator')
+  createExecutionPipelineFoundation().coordinator.simulateCoordination({
+    confirmationDecisionId: conf.decision.id,
+    confirmationEligible: true,
+    sessionId: context.sessionId,
+    requestedCapability: 'REMINDER',
+  })
+  layers.push('execution_pipeline')
+  createServiceInvocationRequest({
+    capability: 'REMINDER',
+    operation: `rafeeqV2:${kind}`,
+    serviceId: 'existingKcServices',
+    payload: { kind, readOnly: true, noFirestoreWrite: true },
+  })
+  layers.push('service_integration_contract')
+  layers.push('execution_adapter')
+
+  switch (kind) {
+    case 'PROACTIVE':
+      return handleProactive(layers, context.role, context.ruknId, memory)
+    case 'DAILY_BRIEFING':
+      return handleDailyBriefing(layers, context.role, context.ruknId, memory)
+    case 'WORK_QUEUE':
+      return handleWorkQueue(layers, context.role, context.ruknId, memory)
+    case 'PERSONAL_DASHBOARD':
+      return handlePersonalDashboard(layers, context.role, context.ruknId, memory)
+    case 'RECOMMENDATIONS':
+      return handleRecommendations(layers, context.role, context.ruknId, memory)
+    case 'NOTIFICATIONS':
+      return handleNotifications(
+        layers,
+        context.role,
+        context.ruknId,
+        memory,
+        context.sessionId,
+      )
+    case 'TIMELINE':
+      return handleTimeline(layers, context.role, context.ruknId, memory)
+    case 'HISTORY':
+      return handleHistory(layers, context.role, memory)
+    case 'ENTITY_CARDS':
+      return handleEntityCards(
+        layers,
+        context.role,
+        context.ruknId,
+        memory,
+        subject,
+      )
+    case 'OPERATIONAL_INSIGHTS':
+      return handleOperationalInsights(
+        layers,
+        context.role,
+        context.ruknId,
+        memory,
+      )
+    case 'GUIDED_WORKFLOW':
+      return handleGuidedWorkflow(layers, context.role, memory, subject)
+    case 'EXPLAINABILITY':
+    case 'CLARIFY':
+      return handleExplainWhy(layers, context.role, context.ruknId, memory)
+    case 'VOICE_READY':
+      return handleVoiceReadyStatus(layers, context.role, memory)
+    default:
+      return handleProactive(layers, context.role, context.ruknId, memory)
+  }
 }
 
 function runRafeeqTurnInner(
   utterance: string,
   context: RafeeqTurnContext,
+  memory: ReturnType<typeof getOrCreateSession>,
 ): RafeeqTurnResult {
   const layers: string[] = ['conversation']
   const classified = classifyMvpUtterance(utterance)
-  const memory = getOrCreateSession(context.sessionId)
   hydrateRecentSearches(memory, context.role)
   memory.lastIntentCode = String(classified.mvpKind)
   memory.lastUtterance = utterance
   memory.followUpHint = null
+  recordConversationTurn(memory, utterance)
 
   const subject = resolveSubjectAgainstMemory(
     classified.actionSubject,
     memory,
     utterance,
   )
+
+  const v2Kinds = new Set([
+    'PROACTIVE',
+    'DAILY_BRIEFING',
+    'WORK_QUEUE',
+    'PERSONAL_DASHBOARD',
+    'RECOMMENDATIONS',
+    'NOTIFICATIONS',
+    'TIMELINE',
+    'HISTORY',
+    'ENTITY_CARDS',
+    'OPERATIONAL_INSIGHTS',
+    'GUIDED_WORKFLOW',
+    'EXPLAINABILITY',
+    'VOICE_READY',
+    'CLARIFY',
+  ])
+
+  // Campaign follow-up: "Why?" after a campaign topic reuses Campaign Intelligence.
+  if (
+    (classified.mvpKind === 'EXPLAINABILITY' || classified.mvpKind === 'CLARIFY') &&
+    memory.lastCampaignTopic
+  ) {
+    const topic = memory.lastCampaignTopic
+    const { plan, session, runtime } = runStackShell(['REPORT'], layers)
+    const { orchestrator: confirmation } = createConfirmationOrchestratorFoundation()
+    const conf = confirmation.evaluate(
+      confirmation.createRequest({
+        summary: `Campaign explain: ${topic}`,
+        policyKind: 'read_only_action',
+        capability: 'REPORTING',
+        context: {
+          planId: plan.id,
+          sessionId: session.id,
+          requestedCapability: 'REPORTING',
+        },
+      }),
+    )
+    layers.push('confirmation_orchestrator')
+    createExecutionPipelineFoundation().coordinator.simulateCoordination({
+      planId: plan.id,
+      confirmationDecisionId: conf.decision.id,
+      confirmationEligible: conf.decision.eligibleForExecution,
+      sessionId: session.id,
+      requestedCapability: 'REPORTING',
+    })
+    layers.push('execution_pipeline')
+    createServiceInvocationRequest({
+      capability: 'REPORTING',
+      operation: 'campaignIntelligence',
+      serviceId: 'metricsService+dashboardMetricsService',
+      payload: { topic, readOnly: true, explain: true },
+    })
+    layers.push('service_integration_contract')
+    const adapter = createCampaignIntelligenceAdapter()
+    const step = plan.steps[0]!
+    const adapterResult = adapter.adapt(step, {
+      locale: 'ur',
+      role: context.role,
+      ruknId: context.ruknId,
+      conversationId: null,
+      sessionId: session.id,
+      planId: plan.id,
+      stepId: step.id,
+      extensions: {
+        campaignTopic: topic,
+        memorySessionId: context.sessionId,
+      },
+    })
+    layers.push('execution_adapter')
+    layers.push('campaign_intelligence')
+    layers.push('metrics_service')
+    runtime.complete(session)
+    const payload = adapterResult.metadata['payload'] as
+      | CampaignIntelligencePayload
+      | undefined
+    const text =
+      typeof adapterResult.metadata['text'] === 'string'
+        ? String(adapterResult.metadata['text'])
+        : payload
+          ? formatCampaignIntelligenceText(payload)
+          : handleInsights(layers, context.role, memory, topic, context.ruknId).text
+    return {
+      text: companion(text),
+      actions: payload ? [...payload.actions] : [],
+      intentCode: 'REPORT',
+      usedStack: true,
+      usedFallback: false,
+      readOnly: true,
+      requiresConfirmation: false,
+      confirmationState: conf.decision.state,
+      layersVisited: Object.freeze(layers),
+      metadata: {
+        campaignIntelligence: payload ?? null,
+        metrics: payload?.metrics ?? [],
+        insights: payload?.insights ?? [],
+        summaryTitle: payload?.title ?? 'Campaign Progress',
+        sources: payload?.sources ?? [],
+        topic,
+        explainability: [
+          {
+            id: 'campaign-why',
+            label: `Explaining topic ${topic} from existing campaign metrics`,
+            sourceField: 'campaignIntelligence',
+          },
+        ],
+        noFirestoreWrite: true,
+      },
+    }
+  }
+
+  if (v2Kinds.has(classified.mvpKind)) {
+    return dispatchV2ReadOnly(
+      layers,
+      classified.mvpKind,
+      context,
+      memory,
+      subject,
+    )
+  }
 
   if (classified.mvpKind === 'HELP') {
     return handleHelp(layers)
@@ -466,6 +705,16 @@ function runRafeeqTurnInner(
     if (context.signal?.aborted) {
       return unknownResult(layers, 'SEARCH')
     }
+    assertNotAborted(context.signal)
+
+    const enhanced = searchWithEnhancements(
+      query,
+      context.role,
+      memory,
+      12,
+      context.signal,
+    )
+    layers.push('search_enhancements')
 
     const adapter = createSearchPeopleAdapter()
     const step = plan.steps[0]!
@@ -477,15 +726,17 @@ function runRafeeqTurnInner(
       sessionId: session.id,
       planId: plan.id,
       stepId: step.id,
-      extensions: { searchQuery: query },
+      extensions: { searchQuery: enhanced.expandedQuery },
     })
     layers.push('execution_adapter')
 
     rememberSearch(memory, query)
     persistRecentSearches(memory, context.role)
     const hits =
-      (adapterResult.metadata['hits'] as UniversalSearchHit[] | undefined) ??
-      searchUniversal(query, context.role, 12, context.signal)
+      enhanced.hits.length > 0
+        ? enhanced.hits
+        : ((adapterResult.metadata['hits'] as UniversalSearchHit[] | undefined) ??
+          searchUniversal(query, context.role, 12, context.signal))
 
     runtime.beginStep(session, step.id)
     runtime.completeStep(session, step.id)

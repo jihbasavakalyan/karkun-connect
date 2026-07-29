@@ -4114,6 +4114,42 @@ html[data-theme='dark'] {
     padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0px));
   }
 
+  .dr-voice-why {
+    @apply mt-2 list-disc ps-5 text-xs text-secondary;
+  }
+
+  .dr-voice-suggestions {
+    @apply mt-2 flex flex-wrap gap-2;
+  }
+
+  .dr-conversation-transition .dr-voice-bubble {
+    animation: dr-fade-in 180ms ease-out;
+  }
+
+  @keyframes dr-fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .dr-skeleton {
+    @apply animate-pulse rounded bg-surface;
+  }
+
+  .dr-drawer-responsive {
+    max-width: 100%;
+  }
+
+  .dr-a11y-high-contrast .dr-voice-bubble-text {
+    @apply text-primary;
+    font-weight: 600;
+  }
+
   @media (min-width: 640px) {
     .dr-voice-footer-note {
       @apply px-3;

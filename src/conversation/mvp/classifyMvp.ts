@@ -1,5 +1,5 @@
 /**
- * Extended keyword classification for MVP capabilities.
+ * Extended keyword classification for MVP + v2 capabilities.
  */
 
 import type { IntentTypeCode } from '../intent'
@@ -10,6 +10,10 @@ import {
 } from './campaignIntelligence/topics'
 import { classifySafeAction } from './safeActions/classifySafeAction'
 import type { SafeActionKind } from './safeActions/policy'
+import {
+  isClarificationUtterance,
+  detectContextSwitchTopic,
+} from './v2/conversationAdvanced'
 
 const TASK_PATTERNS: RegExp[] = [
   /what should i do/i,
@@ -36,7 +40,6 @@ const HELP_PATTERNS: RegExp[] = [
   /how do i/i,
   /how to/i,
   /\bhelp\b/i,
-  /explain/i,
   /shortcuts?/i,
   /commands?/i,
   /مدد/,
@@ -58,6 +61,98 @@ const PROFILE_PATTERNS: RegExp[] = [
   /تاریخ ملاقات/,
 ]
 
+const PROACTIVE_PATTERNS: RegExp[] = [
+  /\bproactive\b/i,
+  /good morning/i,
+  /what('?s| is) (important|urgent)/i,
+  /surface (updates?|alerts?)/i,
+  /صبح بخیر/,
+  /فوری معلومات/,
+]
+
+const BRIEFING_PATTERNS: RegExp[] = [
+  /daily briefing/i,
+  /today'?s? briefing/i,
+  /morning briefing/i,
+  /complete briefing/i,
+  /آج کی بریفنگ/,
+  /بریفنگ/,
+]
+
+const WORK_QUEUE_PATTERNS: RegExp[] = [
+  /work queue/i,
+  /smart queue/i,
+  /prioritized? (work|tasks?|queue)/i,
+  /show pending visits/i,
+  /ترجیحی (کام|قطار)/,
+  /کام کی قطار/,
+]
+
+const DASHBOARD_PATTERNS: RegExp[] = [
+  /personal dashboard/i,
+  /my (progress|dashboard|stats)/i,
+  /completion %/i,
+  /ذاتی ڈیش بورڈ/,
+  /میرا ڈیٹا/,
+]
+
+const RECOMMEND_PATTERNS: RegExp[] = [
+  /recommend/i,
+  /visit these (workers?|karkuns?)/i,
+  /who (to|should i) visit first/i,
+  /next best/i,
+  /سفارش/,
+]
+
+const NOTIFY_PATTERNS: RegExp[] = [
+  /notifications?/i,
+  /reminders? due/i,
+  /unread (messages?|communication)/i,
+  /اطلاعات/,
+  /یاددہانیاں/,
+]
+
+const TIMELINE_PATTERNS: RegExp[] = [
+  /\btimeline\b/i,
+  /recent activity/i,
+  /what happened (today|yesterday)/i,
+  /activity (today|this week)/i,
+  /ٹائم لائن/,
+  /حالیہ سرگرمی/,
+]
+
+const HISTORY_PATTERNS: RegExp[] = [
+  /conversation history/i,
+  /recent (conversations?|searches?|actions?)/i,
+  /pinned conversations?/i,
+  /گفتگو کی تاریخ/,
+  /حالیہ تلاش/,
+]
+
+const ENTITY_CARD_PATTERNS: RegExp[] = [
+  /entity cards?/i,
+  /show (campaign|assignment|attendance) card/i,
+  /کارڈ دکھاو?/,
+]
+
+const INSIGHTS_V2_PATTERNS: RegExp[] = [
+  /operational insights?/i,
+  /weekly trend/i,
+  /آپریشنل بصیرت/,
+]
+
+const GUIDED_PATTERNS: RegExp[] = [
+  /guided (workflow|flow)/i,
+  /walk me through/i,
+  /ہدایتی بہاؤ/,
+]
+
+const VOICE_READY_PATTERNS: RegExp[] = [
+  /voice ready/i,
+  /voice (status|interface)/i,
+  /صوتی تیاری/,
+]
+
 export type MvpIntentKind =
   | IntentTypeCode
   | 'TASK_ASSIST'
@@ -67,6 +162,20 @@ export type MvpIntentKind =
   | 'CAMPAIGN_INTEL'
   | 'SAFE_ACTION'
   | 'REMINDER'
+  | 'PROACTIVE'
+  | 'DAILY_BRIEFING'
+  | 'WORK_QUEUE'
+  | 'PERSONAL_DASHBOARD'
+  | 'RECOMMENDATIONS'
+  | 'NOTIFICATIONS'
+  | 'TIMELINE'
+  | 'HISTORY'
+  | 'ENTITY_CARDS'
+  | 'OPERATIONAL_INSIGHTS'
+  | 'GUIDED_WORKFLOW'
+  | 'EXPLAINABILITY'
+  | 'VOICE_READY'
+  | 'CLARIFY'
 
 export type ExtendedClassification = ClassifiedUtterance & {
   readonly mvpKind: MvpIntentKind
@@ -85,7 +194,89 @@ function stripActionSubject(raw: string, patterns: RegExp[]): string | null {
   return cleaned.length >= 2 ? cleaned : null
 }
 
+function v2Kind(
+  kind: MvpIntentKind,
+  raw: string,
+  subject: string | null = null,
+): ExtendedClassification {
+  return {
+    intentCodes: ['FOLLOW_UP'],
+    searchQuery: subject,
+    navigationTarget: null,
+    raw,
+    mvpKind: kind,
+    actionSubject: subject,
+  }
+}
+
 export function classifyMvpUtterance(raw: string): ExtendedClassification {
+  const trimmed = raw.trim()
+
+  // Bare why / explain — explainability. "What about attendance?" continues to campaign intel.
+  if (/^(why\??|کیوں\??|explain more|وضاحت)$/i.test(trimmed)) {
+    return v2Kind('EXPLAINABILITY', raw)
+  }
+
+  if (VOICE_READY_PATTERNS.some((p) => p.test(raw))) {
+    return v2Kind('VOICE_READY', raw)
+  }
+
+  if (BRIEFING_PATTERNS.some((p) => p.test(raw))) {
+    return v2Kind('DAILY_BRIEFING', raw)
+  }
+
+  if (PROACTIVE_PATTERNS.some((p) => p.test(raw))) {
+    return v2Kind('PROACTIVE', raw)
+  }
+
+  if (WORK_QUEUE_PATTERNS.some((p) => p.test(raw))) {
+    return v2Kind('WORK_QUEUE', raw)
+  }
+
+  if (DASHBOARD_PATTERNS.some((p) => p.test(raw))) {
+    return v2Kind('PERSONAL_DASHBOARD', raw)
+  }
+
+  if (RECOMMEND_PATTERNS.some((p) => p.test(raw))) {
+    return v2Kind('RECOMMENDATIONS', raw)
+  }
+
+  if (NOTIFY_PATTERNS.some((p) => p.test(raw))) {
+    return v2Kind('NOTIFICATIONS', raw)
+  }
+
+  if (TIMELINE_PATTERNS.some((p) => p.test(raw))) {
+    return v2Kind('TIMELINE', raw)
+  }
+
+  if (HISTORY_PATTERNS.some((p) => p.test(raw))) {
+    return v2Kind('HISTORY', raw)
+  }
+
+  if (GUIDED_PATTERNS.some((p) => p.test(raw))) {
+    return v2Kind(
+      'GUIDED_WORKFLOW',
+      raw,
+      stripActionSubject(raw, [
+        /guided (workflow|flow)/i,
+        /walk me through/i,
+        /ہدایتی بہاؤ/,
+      ]),
+    )
+  }
+
+  if (ENTITY_CARD_PATTERNS.some((p) => p.test(raw))) {
+    return v2Kind(
+      'ENTITY_CARDS',
+      raw,
+      stripActionSubject(raw, ENTITY_CARD_PATTERNS),
+    )
+  }
+
+  if (INSIGHTS_V2_PATTERNS.some((p) => p.test(raw))) {
+    return v2Kind('OPERATIONAL_INSIGHTS', raw)
+  }
+
   if (HELP_PATTERNS.some((p) => p.test(raw))) {
     return {
       intentCodes: ['UNKNOWN'],
@@ -185,7 +376,12 @@ export function classifyMvpUtterance(raw: string): ExtendedClassification {
   }
 
   const explicitNav = /^(open|go to)\b/i.test(raw.trim())
-  if (!explicitNav && isCampaignIntelligenceUtterance(raw)) {
+  // Context switch "what about attendance?" must hit campaign intel (strip filler).
+  const contextTopic = detectContextSwitchTopic(raw)
+  const campaignProbe = contextTopic
+    ? contextTopic
+    : raw
+  if (!explicitNav && isCampaignIntelligenceUtterance(campaignProbe)) {
     return {
       intentCodes: ['REPORT'],
       searchQuery: null,
@@ -193,8 +389,12 @@ export function classifyMvpUtterance(raw: string): ExtendedClassification {
       raw,
       mvpKind: 'CAMPAIGN_INTEL',
       actionSubject: null,
-      campaignTopic: classifyCampaignIntelTopic(raw),
+      campaignTopic: classifyCampaignIntelTopic(campaignProbe),
     }
+  }
+
+  if (isClarificationUtterance(raw) && !contextTopic) {
+    return v2Kind('CLARIFY', raw)
   }
 
   const base = classifyBase(raw)

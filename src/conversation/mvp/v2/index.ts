@@ -1,0 +1,26 @@
+/**
+ * Digital Rafeeq v2 — product modules on KC-0131 MVP bridge.
+ */
+
+export * from './types'
+export * from './explainability'
+export * from './proactive'
+export * from './briefing'
+export * from './workQueue'
+export * from './personalDashboard'
+export * from './conversationAdvanced'
+export * from './recommendations'
+export * from './notifications'
+export * from './timeline'
+export * from './history'
+export * from './quickActions'
+export * from './entityCards'
+export * from './insights'
+export * from './guidedWorkflow'
+export * from './contextualSuggestions'
+export * from './searchEnhancements'
+export * from './voiceReady'
+export * from './accessibility'
+export * from './performance'
+export * from './uxPolish'
+export * from './handlers'

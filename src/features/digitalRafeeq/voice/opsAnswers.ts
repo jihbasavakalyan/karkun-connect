@@ -53,6 +53,8 @@ export type OpsAnswer = {
   summaryTitle?: string
   metrics?: OpsAnswerMetric[]
   insights?: string[]
+  why?: string[]
+  contextualSuggestions?: string[]
   executionResult?: 'success' | 'cancelled' | 'failed'
   executionMessage?: string
 }

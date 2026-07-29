@@ -115,6 +115,7 @@
     "verify:rafeeq-search": "npx vite-node scripts/verify-rafeeq-search.ts",
     "verify:rafeeq-campaign-intelligence": "npx vite-node scripts/verify-rafeeq-campaign-intelligence.ts",
     "verify:rafeeq-safe-actions": "npx vite-node scripts/verify-rafeeq-safe-actions.ts",
+    "verify:rafeeq-v2": "npx vite-node scripts/verify-rafeeq-v2.ts",
     "verify:kc-bug-0130a": "npx vite-node scripts/verify-kc-bug-0130a-whatsapp-launch.ts",
     "verify:kc-bug-0126": "npx vite-node scripts/verify-kc-bug-0126-urdu-pdf-typography.ts",
     "admin:export-seed": "npx vite-node scripts/admin/export-seed-backup.ts",

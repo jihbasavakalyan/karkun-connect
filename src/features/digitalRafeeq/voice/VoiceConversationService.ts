@@ -33,6 +33,8 @@ export type VoiceConversationTurn = {
   summaryTitle?: string
   metrics?: OpsAnswer['metrics']
   insights?: string[]
+  why?: string[]
+  contextualSuggestions?: string[]
   executionResult?: OpsAnswer['executionResult']
   executionMessage?: string
   timestamp: string
@@ -404,6 +406,8 @@ export class VoiceConversationService {
       summaryTitle: ops.summaryTitle,
       metrics: ops.metrics,
       insights: ops.insights,
+      why: ops.why,
+      contextualSuggestions: ops.contextualSuggestions,
       executionResult: ops.executionResult,
       executionMessage: ops.executionMessage,
       timestamp: new Date().toISOString(),
