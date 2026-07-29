@@ -6,10 +6,27 @@
 import { ROUTES, adminAssignmentsPath } from '@/constants/routes'
 import { getTurnMetricsBundle } from '../turnMetricsCache'
 import { searchPeopleReadOnly } from '../adapters/searchAdapter'
-import type { RafeeqAction, RafeeqRole } from '../types'
+import type { RafeeqRole } from '../types'
 import type { UniversalSearchHit } from '../universalSearchTypes'
 import { reason } from './explainability'
 import type { EntityCard } from './types'
+
+/** Adapt people-only search rows into UniversalSearchHit without re-querying. */
+function peopleRowsToHits(
+  rows: ReturnType<typeof searchPeopleReadOnly>,
+): UniversalSearchHit[] {
+  return rows.map((row) => ({
+    id: row.personId,
+    personId: row.personId,
+    entityType: 'karkun',
+    name: row.name,
+    description: row.mobile || 'karkun',
+    route: row.profilePath,
+    score: 0,
+    tier: 'matched',
+    mobile: row.mobile,
+  }))
+}
 
 function peopleCard(hit: UniversalSearchHit): EntityCard {
   return {
@@ -60,7 +77,11 @@ export function buildOperationalEntityCards(
   const bundle = getTurnMetricsBundle(ruknId)
 
   if (personQuery?.trim()) {
-    cards.push(...buildEntityCardsFromHits(searchPeopleReadOnly(personQuery, 3)))
+    cards.push(
+      ...buildEntityCardsFromHits(
+        peopleRowsToHits(searchPeopleReadOnly(personQuery, 3)),
+      ),
+    )
   }
 
   cards.push({

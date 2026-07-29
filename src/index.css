@@ -3918,7 +3918,7 @@ html[data-theme='dark'] {
   }
 
   .dr-voice-result-desc {
-    @apply text-sm text-text-body;
+    @apply text-sm text-text;
     line-height: 1.7;
   }
 
@@ -3977,7 +3977,7 @@ html[data-theme='dark'] {
   }
 
   .dr-voice-metric-label {
-    @apply flex-1 text-sm text-text-body;
+    @apply flex-1 text-sm text-text;
   }
 
   .dr-voice-metric-value {
@@ -4001,7 +4001,7 @@ html[data-theme='dark'] {
   }
 
   .dr-voice-insight {
-    @apply mt-2 text-sm text-text-body;
+    @apply mt-2 text-sm text-text;
     line-height: 1.8;
   }
 

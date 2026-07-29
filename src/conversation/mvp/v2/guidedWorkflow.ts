@@ -23,9 +23,9 @@ export function buildGuidedWorkflow(
   const hits = query ? searchPeopleReadOnly(query, 1) : []
   const person = hits[0]
   if (person) {
-    memory.lastPersonId = person.personId ?? person.id
+    memory.lastPersonId = person.personId
     memory.lastPersonName = person.name
-    memory.lastRoute = person.route
+    memory.lastRoute = person.profilePath
   }
 
   const steps: GuidedStep[] = [
@@ -33,14 +33,18 @@ export function buildGuidedWorkflow(
       id: 'find',
       label: query ? `Find ${query}` : 'Find person',
       action: person
-        ? { id: 'gw-find', label: person.name, route: person.route }
+        ? { id: 'gw-find', label: person.name, route: person.profilePath }
         : undefined,
     },
     {
       id: 'profile',
       label: 'Open Profile',
       action: person
-        ? { id: 'gw-profile', label: 'Open Profile', route: person.route }
+        ? {
+            id: 'gw-profile',
+            label: 'Open Profile',
+            route: person.profilePath,
+          }
         : undefined,
     },
     {

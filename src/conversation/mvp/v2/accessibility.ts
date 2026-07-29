@@ -46,7 +46,7 @@ export function focusableActionProps(label: string): {
 
 export function liveRegionProps(
   polite: boolean,
-): { readonly role: 'status'; 'alert'; readonly 'aria-live': 'polite' | 'assertive' } {
+): { readonly role: 'status' | 'alert'; readonly 'aria-live': 'polite' | 'assertive' } {
   return polite
     ? { role: 'status', 'aria-live': 'polite' }
     : { role: 'alert', 'aria-live': 'assertive' }
