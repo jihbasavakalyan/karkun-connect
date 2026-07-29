@@ -1,8 +1,12 @@
 /**
  * KC-0077.2.2B — WhatsApp Web launch for personalized bulk delivery.
  * Reuses buildWhatsAppLink; does not modify sendIndividualMessage or mail merge.
+ *
+ * KC-BUG-0130A — Pre-opened tabs must NOT use `noopener`; otherwise the opener
+ * cannot navigate `about:blank` → wa.me and the tab stays blank.
  */
 
+import { normalizeMobile } from '@/lib/mobileValidation'
 import type { MessageRecipient } from '@/types/communication'
 import { buildWhatsAppLink } from '@/utils/personContactLinks'
 
@@ -20,6 +24,8 @@ export function resolveRecipientWhatsAppNumber(recipient: MessageRecipient): str
 /**
  * Pre-open blank tabs during the user click handler so async merge can navigate them later.
  * Browsers block window.open after the first await without this gesture-linked step.
+ *
+ * Do not pass `noopener`/`noreferrer` — opener must set `location` on the new tab.
  */
 export function prepareWhatsAppLaunchWindows(count: number): (Window | null)[] {
   if (typeof window === 'undefined' || count <= 0) {
@@ -27,7 +33,7 @@ export function prepareWhatsAppLaunchWindows(count: number): (Window | null)[] {
   }
   const windows: (Window | null)[] = []
   for (let index = 0; index < count; index++) {
-    windows.push(window.open('about:blank', '_blank', 'noopener,noreferrer'))
+    windows.push(window.open('about:blank', '_blank'))
   }
   return windows
 }
@@ -41,6 +47,41 @@ export function closeWhatsAppLaunchWindow(launchWindow: Window | null | undefine
   }
 }
 
+/** Log launch inputs before opening the browser (verification / support). */
+export function logWhatsAppLaunchDiagnostics(
+  recipient: MessageRecipient,
+  message: string,
+  url: string | null,
+): void {
+  const phoneRaw = resolveRecipientWhatsAppNumber(recipient)
+  const phoneDigits = normalizeMobile(phoneRaw)
+  const payload = {
+    phone: phoneDigits || phoneRaw || '(missing)',
+    messageLength: message.length,
+    encodedMessagePreview: message ? `${encodeURIComponent(message).slice(0, 120)}…` : '',
+    url: url ?? '(invalid — could not build wa.me link)',
+  }
+  if (typeof console !== 'undefined' && typeof console.info === 'function') {
+    console.info('[WhatsApp launch]', payload)
+  }
+}
+
+function navigatePreopenedWindow(launchWindow: Window, url: string): boolean {
+  try {
+    launchWindow.location.replace(url)
+    launchWindow.focus()
+    return true
+  } catch {
+    try {
+      launchWindow.location.href = url
+      launchWindow.focus()
+      return true
+    } catch {
+      return false
+    }
+  }
+}
+
 /**
  * Navigate a pre-opened tab (or open a new one) to WhatsApp Web with the merged message.
  */
@@ -51,6 +92,8 @@ export function launchWhatsAppWebMessage(
 ): WhatsAppLaunchResult {
   const phone = resolveRecipientWhatsAppNumber(recipient)
   const url = buildWhatsAppLink(phone, message)
+  logWhatsAppLaunchDiagnostics(recipient, message, url)
+
   if (!url) {
     closeWhatsAppLaunchWindow(launchWindow)
     return { launched: false, url: null, reason: 'Invalid phone number' }
@@ -62,9 +105,10 @@ export function launchWhatsAppWebMessage(
 
   try {
     if (launchWindow && !launchWindow.closed) {
-      launchWindow.location.href = url
-      launchWindow.focus()
-      return { launched: true, url }
+      if (navigatePreopenedWindow(launchWindow, url)) {
+        return { launched: true, url }
+      }
+      closeWhatsAppLaunchWindow(launchWindow)
     }
 
     const opened = window.open(url, '_blank', 'noopener,noreferrer')
