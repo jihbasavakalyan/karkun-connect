@@ -328,3 +328,6 @@ export * as conversationFoundation from './foundation'
 
 /** Canonical conversation domain model (KC-0131.2) — shared vocabulary for future engines. */
 export * as conversationDomain from './domain'
+
+/** Intent Engine Foundation (KC-0131.3) — domain → normalized intent batches (no NLP/execution). */
+export * as conversationIntent from './intent'
