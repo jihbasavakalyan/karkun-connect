@@ -19,6 +19,7 @@ import {
   resolveContextualSuggestions,
   type OpsAnswerAction,
 } from './opsAnswers'
+import { runRafeeqTurn } from '@/conversation/mvp'
 import { RafeeqSpeakButton } from './RafeeqSpeakButton'
 import { stopCloudSpeech } from './cloudSpeechPlayback'
 import { stopLocalSpeech } from './speechPlayback'
@@ -127,6 +128,8 @@ export function DigitalRafeeqVoiceDrawer({
     })
   }, [role, ruknSnapshot, adminSnapshot, preferences.rafeeq.suggestedQuestions])
 
+  const mvpSessionId = useMemo(() => `rafeeq-drawer-${role}`, [role])
+
   useEffect(() => {
     return conversation.subscribe((state) => {
       setPhase(state.phase)
@@ -150,6 +153,21 @@ export function DigitalRafeeqVoiceDrawer({
     } catch {
       // Ops answers do not require runtime.
     }
+
+    const turn = runRafeeqTurn(query, {
+      role,
+      ruknId: ruknId ?? null,
+      locale: 'ur',
+      sessionId: mvpSessionId,
+    })
+
+    if (!turn.usedFallback && turn.text) {
+      return {
+        text: turn.text,
+        actions: [...turn.actions],
+      }
+    }
+
     return answerOperationalQuery(query, {
       role,
       ruknId: ruknId ?? undefined,

@@ -355,3 +355,6 @@ export * as conversationExecutionPipeline from './executionPipeline'
 
 /** Reference Execution Flow (KC-0131.11) — first read-only end-to-end validation. */
 export * as conversationReferenceFlow from './referenceFlow'
+
+/** Digital Rafeeq MVP turn runner — VoiceDrawer → KC-0131 stack. */
+export * as conversationRafeeqMvp from './mvp'
