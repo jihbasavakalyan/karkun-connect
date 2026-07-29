@@ -298,16 +298,35 @@ export function DigitalRafeeqVoiceDrawer({
               </div>
               {message.actions && message.actions.length > 0 && (
                 <div className="dr-voice-actions">
-                  {message.actions.map((action) => (
-                    <Link
-                      key={action.id}
-                      to={action.route}
-                      className="dr-voice-action"
-                      onClick={onClose}
-                    >
-                      {action.label}
-                    </Link>
-                  ))}
+                  {message.actions.map((action) => {
+                    const external =
+                      /^(tel:|sms:|https?:|mailto:)/i.test(action.route) ||
+                      action.route.startsWith('//')
+                    if (external) {
+                      return (
+                        <a
+                          key={action.id}
+                          href={action.route}
+                          className="dr-voice-action"
+                          target={action.route.startsWith('http') ? '_blank' : undefined}
+                          rel={action.route.startsWith('http') ? 'noreferrer' : undefined}
+                          onClick={onClose}
+                        >
+                          {action.label}
+                        </a>
+                      )
+                    }
+                    return (
+                      <Link
+                        key={action.id}
+                        to={action.route}
+                        className="dr-voice-action"
+                        onClick={onClose}
+                      >
+                        {action.label}
+                      </Link>
+                    )
+                  })}
                 </div>
               )}
             </div>

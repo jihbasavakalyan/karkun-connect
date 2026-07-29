@@ -8,8 +8,10 @@
 
 export * from './types'
 export * from './classify'
+export * from './classifyMvp'
 export * from './session'
 export * from './navigationMap'
+export * from './handlers'
 export * from './adapters/searchAdapter'
 export * from './adapters/navigationAdapter'
 export * from './runRafeeqTurn'

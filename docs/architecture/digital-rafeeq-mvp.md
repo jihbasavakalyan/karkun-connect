@@ -30,18 +30,18 @@ Utterance → classify → Intent → Secretary → Orchestrator → Confirmatio
 | Capability | Status |
 |------------|--------|
 | Bridge (UI → stack) | Done |
-| Search & Discovery | Done (peopleStore + peopleSearch) |
-| Navigation | Done (ROUTES map) |
-| Campaign Insights | Partial (REPORT → MetricsService reference flow) |
-| Karkun Information | Planned |
-| Task Assistant | Planned |
-| Smart Suggestions | Planned |
-| Safe Actions | Planned |
-| Communication | Planned |
-| Reports | Planned |
-| Help | Planned |
+| Search & Discovery | Done |
+| Navigation | Done |
+| Campaign Insights | Done (MetricsService + assignment/ijtema KPIs) |
+| Karkun Information | Done (read-only profile cards) |
+| Task Assistant | Done |
+| Smart Suggestions | Done (no auto-execute) |
+| Safe Actions | Done (Call/WhatsApp links; Visit/Attendance open existing UI) |
+| Communication | Done (tel / WhatsApp helpers) |
+| Reports | Done (via REPORT insights path) |
+| Help | Done |
 | Conversation memory / obs / perf | Session memory seed |
-| Panel UX polish | Planned |
+| Panel UX polish | External action links |
 
 ## Verify
 

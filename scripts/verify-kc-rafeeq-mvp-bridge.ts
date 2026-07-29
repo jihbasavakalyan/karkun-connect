@@ -103,6 +103,24 @@ function testFoundation(): void {
   const f = createRafeeqMvpFoundation()
   assert(typeof f.runTurn === 'function', 'runTurn')
   assert(f.classify('Go to Registry').intentCodes[0] === 'NAVIGATION', 'classify')
+  assert(f.classify('Help').mvpKind === 'HELP', 'help kind')
+}
+
+function testHelpTasksSuggest(): void {
+  assert(runRafeeqTurn('Help', ctx('t-help')).intentCode === 'HELP', 'help')
+  assert(runRafeeqTurn('What should I do today?', ctx('t-task')).intentCode === 'FOLLOW_UP', 'task')
+  assert(
+    runRafeeqTurn('Suggest who should I contact', ctx('t-sug')).metadata['suggestionsOnly'] ===
+      true,
+    'suggest',
+  )
+}
+
+function testSafeCall(): void {
+  const result = runRafeeqTurn('Call someone', ctx('t-call'))
+  assert(result.intentCode === 'CALL', 'call')
+  assert(result.requiresConfirmation === true, 'needs confirm')
+  assert(result.layersVisited.includes('confirmation_orchestrator'), 'confirm layer')
 }
 
 const results = [
@@ -111,6 +129,8 @@ const results = [
   run('search path', testSearchPath),
   run('navigation path', testNavigationPath),
   run('fallback unknown', testFallbackUnknown),
+  run('help tasks suggest', testHelpTasksSuggest),
+  run('safe call', testSafeCall),
   run('documentation', testDocs),
   run('foundation', testFoundation),
 ]

@@ -12,7 +12,7 @@ import { createConfirmationOrchestratorFoundation } from '../confirmation'
 import { createExecutionPipelineFoundation } from '../executionPipeline'
 import { createServiceInvocationRequest } from '../serviceContracts'
 import { runReportingReferenceFlow } from '../referenceFlow'
-import { classifyUtterance } from './classify'
+import { classifyMvpUtterance } from './classifyMvp'
 import { resolveNavigationTarget } from './navigationMap'
 import {
   createSearchPeopleAdapter,
@@ -26,6 +26,15 @@ import {
   rememberRoute,
   rememberSearch,
 } from './session'
+import {
+  handleHelp,
+  handleInsights,
+  handleKarkunInfo,
+  handleSafeCommunication,
+  handleSafeNavigateAction,
+  handleSuggestions,
+  handleTasks,
+} from './handlers'
 import type { RafeeqAction, RafeeqTurnContext, RafeeqTurnResult } from './types'
 
 function companion(text: string): string {
@@ -82,13 +91,116 @@ export function runRafeeqTurn(
   context: RafeeqTurnContext,
 ): RafeeqTurnResult {
   const layers: string[] = ['conversation']
-  const classified = classifyUtterance(utterance)
+  const classified = classifyMvpUtterance(utterance)
   const memory = getOrCreateSession(context.sessionId)
-  memory.lastIntentCode = classified.intentCodes[0] ?? 'UNKNOWN'
+  memory.lastIntentCode = String(classified.mvpKind)
+
+  if (classified.mvpKind === 'HELP') {
+    return handleHelp(layers)
+  }
+
+  if (classified.mvpKind === 'TASK_ASSIST') {
+    runStackShell(['FOLLOW_UP'], layers)
+    const { orchestrator: confirmation } = createConfirmationOrchestratorFoundation()
+    const conf = confirmation.evaluate(
+      confirmation.createRequest({
+        summary: 'Task assist',
+        policyKind: 'read_only_action',
+        capability: 'REMINDER',
+        context: { sessionId: context.sessionId, planId: null },
+      }),
+    )
+    layers.push('confirmation_orchestrator')
+    createExecutionPipelineFoundation().coordinator.simulateCoordination({
+      confirmationDecisionId: conf.decision.id,
+      confirmationEligible: true,
+      sessionId: context.sessionId,
+      requestedCapability: 'REMINDER',
+    })
+    layers.push('execution_pipeline')
+    return handleTasks(layers, context.role)
+  }
+
+  if (classified.mvpKind === 'SUGGEST') {
+    runStackShell(['FOLLOW_UP'], layers)
+    return handleSuggestions(layers, context.role)
+  }
+
+  if (classified.mvpKind === 'KARKUN_INFO') {
+    runStackShell(['SEARCH'], layers)
+    return handleKarkunInfo(layers, classified.actionSubject, memory)
+  }
+
+  if (classified.mvpKind === 'CALL' || classified.mvpKind === 'WHATSAPP') {
+    const code = classified.mvpKind
+    const { plan, session } = runStackShell([code], layers)
+    const { orchestrator: confirmation } = createConfirmationOrchestratorFoundation()
+    const conf = confirmation.evaluate(
+      confirmation.createRequest({
+        summary: `${code} action`,
+        policyKind: 'external_communication',
+        capability: code === 'CALL' ? 'CALL' : 'WHATSAPP',
+        context: {
+          planId: plan.id,
+          sessionId: session.id,
+          requestedCapability: code === 'CALL' ? 'CALL' : 'WHATSAPP',
+        },
+      }),
+    )
+    layers.push('confirmation_orchestrator')
+    createExecutionPipelineFoundation().coordinator.simulateCoordination({
+      planId: plan.id,
+      confirmationDecisionId: conf.decision.id,
+      confirmationEligible: conf.decision.eligibleForExecution,
+      sessionId: session.id,
+    })
+    layers.push('execution_pipeline')
+    // MVP: surface confirmed launch links (USER_CONFIRMATION_REQUIRED still provides links; user clicks = confirm)
+    return handleSafeCommunication(
+      layers,
+      code,
+      classified.actionSubject,
+      memory,
+      conf.decision.state,
+    )
+  }
+
+  if (
+    classified.mvpKind === 'VISIT_UPDATE' ||
+    classified.mvpKind === 'IJTEMA_ATTENDANCE'
+  ) {
+    const code = classified.mvpKind
+    const { plan, session } = runStackShell([code], layers)
+    const { orchestrator: confirmation } = createConfirmationOrchestratorFoundation()
+    const conf = confirmation.evaluate(
+      confirmation.createRequest({
+        summary: `${code}`,
+        policyKind: 'single_business_action',
+        capability: code === 'VISIT_UPDATE' ? 'VISIT' : 'ATTENDANCE',
+        context: { planId: plan.id, sessionId: session.id },
+      }),
+    )
+    layers.push('confirmation_orchestrator')
+    createExecutionPipelineFoundation().coordinator.simulateCoordination({
+      planId: plan.id,
+      confirmationDecisionId: conf.decision.id,
+      confirmationEligible: true,
+      sessionId: session.id,
+    })
+    layers.push('execution_pipeline')
+    return handleSafeNavigateAction(
+      layers,
+      code,
+      context.role,
+      classified.actionSubject,
+      memory,
+      conf.decision.state,
+    )
+  }
 
   const primary = classified.intentCodes[0] ?? 'UNKNOWN'
 
-  // --- REPORT → existing reference flow (MetricsService) ---
+  // --- REPORT → stack + live insights ---
   if (primary === 'REPORT') {
     const report = runReportingReferenceFlow()
     layers.push(
@@ -101,35 +213,15 @@ export function runRafeeqTurn(
       'service_integration_contract',
       'metrics_service',
     )
-    if (!report.success || !report.metrics) {
+    const insights = handleInsights(layers, context.role)
+    if (report.success && report.metrics) {
       return {
-        text: companion('معلومات حاصل نہیں ہو سکیں۔ براہ کرم دوبارہ کوشش کریں۔'),
-        actions: [],
-        intentCode: 'REPORT',
-        usedStack: true,
-        usedFallback: false,
-        readOnly: true,
-        requiresConfirmation: false,
-        confirmationState: report.confirmation?.decision.state ?? null,
-        layersVisited: Object.freeze(layers),
-        metadata: { error: report.error },
+        ...insights,
+        confirmationState: report.confirmation?.decision.state ?? 'AUTO_APPROVED',
+        metadata: { ...insights.metadata, referenceFlow: true },
       }
     }
-    const m = report.metrics
-    return {
-      text: companion(
-        `منسلک: ${m.connected}\nباقی: ${m.remaining}\nکل: ${m.total}\nپیش رفت: ${m.progressPct}%`,
-      ),
-      actions: [],
-      intentCode: 'REPORT',
-      usedStack: true,
-      usedFallback: false,
-      readOnly: true,
-      requiresConfirmation: false,
-      confirmationState: report.confirmation?.decision.state ?? 'AUTO_APPROVED',
-      layersVisited: Object.freeze(layers),
-      metadata: { metrics: m },
-    }
+    return insights
   }
 
   // --- SEARCH ---
@@ -335,7 +427,7 @@ export function runRafeeqTurn(
 
 export function createRafeeqMvpFoundation() {
   return {
-    classify: classifyUtterance,
+    classify: classifyMvpUtterance,
     runTurn: runRafeeqTurn,
     getSession: getOrCreateSession,
   }
