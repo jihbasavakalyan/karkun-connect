@@ -26,6 +26,12 @@ import {
   rememberRoute,
   rememberSearch,
 } from './session'
+import { hydrateRecentSearches, persistRecentSearches } from './sessionStorage'
+import { resolveSubjectAgainstMemory } from './pronouns'
+import {
+  buildObservability,
+  createUndoInterface,
+} from './observability'
 import {
   handleHelp,
   handleInsights,
@@ -83,6 +89,23 @@ function runStackShell(intentCodes: readonly string[], layers: string[]) {
   return { plan, session, runtime }
 }
 
+function finalizeTurn(
+  result: RafeeqTurnResult,
+  startedAt: number,
+): RafeeqTurnResult {
+  return {
+    ...result,
+    metadata: {
+      ...result.metadata,
+      observability: buildObservability(
+        result.layersVisited,
+        Date.now() - startedAt,
+      ),
+      undo: createUndoInterface(),
+    },
+  }
+}
+
 /**
  * Primary MVP turn entry. Returns usedFallback=true when caller should use opsAnswers.
  */
@@ -90,10 +113,27 @@ export function runRafeeqTurn(
   utterance: string,
   context: RafeeqTurnContext,
 ): RafeeqTurnResult {
+  const startedAt = Date.now()
+  return finalizeTurn(runRafeeqTurnInner(utterance, context), startedAt)
+}
+
+function runRafeeqTurnInner(
+  utterance: string,
+  context: RafeeqTurnContext,
+): RafeeqTurnResult {
   const layers: string[] = ['conversation']
   const classified = classifyMvpUtterance(utterance)
   const memory = getOrCreateSession(context.sessionId)
+  hydrateRecentSearches(memory, context.role)
   memory.lastIntentCode = String(classified.mvpKind)
+  memory.lastUtterance = utterance
+  memory.followUpHint = null
+
+  const subject = resolveSubjectAgainstMemory(
+    classified.actionSubject,
+    memory,
+    utterance,
+  )
 
   if (classified.mvpKind === 'HELP') {
     return handleHelp(layers)
@@ -128,7 +168,7 @@ export function runRafeeqTurn(
 
   if (classified.mvpKind === 'KARKUN_INFO') {
     runStackShell(['SEARCH'], layers)
-    return handleKarkunInfo(layers, classified.actionSubject, memory)
+    return handleKarkunInfo(layers, subject, memory)
   }
 
   if (classified.mvpKind === 'CALL' || classified.mvpKind === 'WHATSAPP') {
@@ -159,7 +199,7 @@ export function runRafeeqTurn(
     return handleSafeCommunication(
       layers,
       code,
-      classified.actionSubject,
+      subject,
       memory,
       conf.decision.state,
     )
@@ -192,7 +232,7 @@ export function runRafeeqTurn(
       layers,
       code,
       context.role,
-      classified.actionSubject,
+      subject,
       memory,
       conf.decision.state,
     )
@@ -226,7 +266,9 @@ export function runRafeeqTurn(
 
   // --- SEARCH ---
   if (primary === 'SEARCH') {
-    const query = classified.searchQuery ?? utterance.trim()
+    const query =
+      resolveSubjectAgainstMemory(classified.searchQuery, memory, utterance) ??
+      utterance.trim()
     const { plan, session, runtime } = runStackShell(['SEARCH'], layers)
 
     const { orchestrator: confirmation } = createConfirmationOrchestratorFoundation()
@@ -290,6 +332,7 @@ export function runRafeeqTurn(
     layers.push('execution_adapter')
 
     rememberSearch(memory, query)
+    persistRecentSearches(memory, context.role)
     const hits = (adapterResult.metadata['hits'] as MvpSearchHit[] | undefined) ??
       searchPeopleReadOnly(query)
 
@@ -314,6 +357,9 @@ export function runRafeeqTurn(
 
     if (hits.length === 1) {
       rememberPerson(memory, hits[0]!.personId, hits[0]!.name)
+      memory.followUpHint = 'Call them / WhatsApp / Show profile'
+    } else if (hits.length > 1) {
+      memory.followUpHint = 'Specify a name to narrow results'
     }
 
     const actions: RafeeqAction[] = hits.map((hit) => ({
@@ -327,8 +373,13 @@ export function runRafeeqTurn(
       .map((hit, i) => `${i + 1}. ${hit.name}${hit.mobile ? ` — ${hit.mobile}` : ''}`)
       .join('\n')
 
+    const followUp =
+      hits.length === 1
+        ? '\n\nاگلا قدم: Call / WhatsApp / Show profile (ان کا…)'
+        : '\n\nنام واضح کریں یا ایک نتیجہ منتخب کریں۔'
+
     return {
-      text: companion(`تلاش کے نتائج:\n${lines}`),
+      text: companion(`تلاش کے نتائج:\n${lines}${followUp}`),
       actions,
       intentCode: 'SEARCH',
       usedStack: true,
@@ -337,7 +388,7 @@ export function runRafeeqTurn(
       requiresConfirmation: false,
       confirmationState: conf.decision.state,
       layersVisited: Object.freeze(layers),
-      metadata: { query, hits },
+      metadata: { query, hits, followUpHint: memory.followUpHint },
     }
   }
 

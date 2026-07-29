@@ -6,7 +6,11 @@ import { existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 import {
   classifyUtterance,
+  clearSession,
   createRafeeqMvpFoundation,
+  getOrCreateSession,
+  isPronounReference,
+  rememberPerson,
   resolveNavigationTarget,
   runRafeeqTurn,
   searchPeopleReadOnly,
@@ -123,6 +127,25 @@ function testSafeCall(): void {
   assert(result.layersVisited.includes('confirmation_orchestrator'), 'confirm layer')
 }
 
+function testMemoryAndObservability(): void {
+  const sessionId = 't-memory'
+  clearSession(sessionId)
+  const memory = getOrCreateSession(sessionId)
+  rememberPerson(memory, 'p1', 'Imran')
+  assert(isPronounReference('ان کا'), 'urdu pronoun')
+  const call = runRafeeqTurn('Call ان کا', ctx(sessionId))
+  assert(call.intentCode === 'CALL', 'pronoun call intent')
+  assert(
+    typeof (call.metadata['observability'] as { durationMs?: number } | undefined)
+      ?.durationMs === 'number',
+    'obs duration',
+  )
+  assert(
+    (call.metadata['undo'] as { kind?: string } | undefined)?.kind === 'noop',
+    'undo interface',
+  )
+}
+
 const results = [
   run('classify', testClassify),
   run('bridge report', testBridgeReport),
@@ -131,6 +154,7 @@ const results = [
   run('fallback unknown', testFallbackUnknown),
   run('help tasks suggest', testHelpTasksSuggest),
   run('safe call', testSafeCall),
+  run('memory observability', testMemoryAndObservability),
   run('documentation', testDocs),
   run('foundation', testFoundation),
 ]

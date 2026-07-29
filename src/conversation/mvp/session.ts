@@ -10,6 +10,8 @@ export type RafeeqSessionMemory = {
   lastPersonId: string | null
   lastPersonName: string | null
   lastRoute: string | null
+  lastUtterance: string | null
+  followUpHint: string | null
   recentSearches: string[]
 }
 
@@ -24,11 +26,17 @@ export function getOrCreateSession(sessionId: string): RafeeqSessionMemory {
       lastPersonId: null,
       lastPersonName: null,
       lastRoute: null,
+      lastUtterance: null,
+      followUpHint: null,
       recentSearches: [],
     }
     sessions.set(sessionId, session)
   }
   return session
+}
+
+export function clearSession(sessionId: string): void {
+  sessions.delete(sessionId)
 }
 
 export function rememberSearch(session: RafeeqSessionMemory, query: string): void {

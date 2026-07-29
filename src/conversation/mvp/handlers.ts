@@ -2,15 +2,11 @@
  * MVP capability handlers — existing services only.
  */
 
-import { getPeopleStatistics } from '@/lib/peopleStore'
-import { getPendingKarkunRequests } from '@/services/karkunRequestService'
-import { getCampaignConnectionMetrics } from '@/services/metricsService'
-import { getAssignmentDashboardMetrics } from '@/services/assignmentService'
-import { getIjtemaAttendanceDashboardMetrics } from '@/services/ijtemaAttendanceService'
 import { ROUTES, adminAssignmentsPath, adminExecutionPath, ruknVisitPath } from '@/constants/routes'
 import { buildTelLink, buildWhatsAppLink } from '@/utils/personContactLinks'
 import { searchPeopleReadOnly } from './adapters/searchAdapter'
 import { resolveNavigationTarget } from './navigationMap'
+import { getTurnMetricsBundle } from './turnMetricsCache'
 import type { RafeeqAction, RafeeqRole, RafeeqTurnResult } from './types'
 import type { RafeeqSessionMemory } from './session'
 
@@ -58,10 +54,11 @@ export function handleHelp(layers: string[]): RafeeqTurnResult {
 
 export function handleInsights(layers: string[], role: RafeeqRole): RafeeqTurnResult {
   layers.push('insights')
-  const metrics = getCampaignConnectionMetrics()
-  const assignments = getAssignmentDashboardMetrics()
-  const ijtema = getIjtemaAttendanceDashboardMetrics()
-  const people = getPeopleStatistics()
+  const bundle = getTurnMetricsBundle()
+  const metrics = bundle.campaign
+  const assignments = bundle.assignments
+  const ijtema = bundle.ijtema
+  const people = bundle.people
 
   const actions: RafeeqAction[] =
     role === 'administrator'
@@ -101,9 +98,10 @@ export function handleInsights(layers: string[], role: RafeeqRole): RafeeqTurnRe
 
 export function handleTasks(layers: string[], role: RafeeqRole): RafeeqTurnResult {
   layers.push('tasks')
-  const pending = getPendingKarkunRequests().length
-  const people = getPeopleStatistics()
-  const metrics = getCampaignConnectionMetrics()
+  const bundle = getTurnMetricsBundle()
+  const pending = bundle.pendingCount
+  const people = bundle.people
+  const metrics = bundle.campaign
 
   const lines = [
     'آج کی ترجیحات:',
@@ -139,9 +137,10 @@ export function handleTasks(layers: string[], role: RafeeqRole): RafeeqTurnResul
 
 export function handleSuggestions(layers: string[], role: RafeeqRole): RafeeqTurnResult {
   layers.push('suggestions')
-  const people = getPeopleStatistics()
-  const pending = getPendingKarkunRequests().length
-  const metrics = getCampaignConnectionMetrics()
+  const bundle = getTurnMetricsBundle()
+  const people = bundle.people
+  const pending = bundle.pendingCount
+  const metrics = bundle.campaign
 
   return baseResult({
     text: companion(

@@ -1,6 +1,6 @@
 # Digital Rafeeq MVP
 
-**Status:** In progress  
+**Status:** Complete (MVP capabilities)  
 **Gate:** [`kc-rafeeq-mvp-arch009-gate.md`](./kc-rafeeq-mvp-arch009-gate.md)  
 **Module:** `src/conversation/mvp/`  
 **UI:** `src/features/digitalRafeeq/voice/DigitalRafeeqVoiceDrawer.tsx`
@@ -16,7 +16,7 @@ Deliver working Digital Rafeeq capabilities on the completed KC-0131 conversatio
 - Reads → existing services/libs via thin adapters
 - Writes → confirmation → open existing routes / `tel:` / WhatsApp launch
 - NLP → keyword classification + Intent registry (no AI)
-- Fallback → `opsAnswers` when intent is UNKNOWN
+- Fallback → `opsAnswers` when intent is `UNKNOWN`
 
 ## Backbone
 
@@ -40,8 +40,8 @@ Utterance → classify → Intent → Secretary → Orchestrator → Confirmatio
 | Communication | Done (tel / WhatsApp helpers) |
 | Reports | Done (via REPORT insights path) |
 | Help | Done |
-| Conversation memory / obs / perf | Session memory seed |
-| Panel UX polish | External action links |
+| Conversation memory / obs / perf | Done (pronouns, session + localStorage, stage traces, turn metrics cache, submit debounce, turn abort) |
+| Panel UX polish | Done (confirm note/actions, recent searches, error recovery) |
 
 ## Verify
 
