@@ -322,3 +322,6 @@ export {
   type ConversationTransitionResult,
   type PendingConfirmation,
 } from './ConversationTypes'
+
+/** DRDS Conversation Foundation (KC-0131.1) — additive; does not replace KC-004 engine. */
+export * as conversationFoundation from './foundation'
