@@ -15,12 +15,14 @@ import type { AdapterRegistry } from '../registry'
 
 /**
  * Execution adapter — routing endpoint contract.
- * Implementations in this sprint are placeholders only.
+ * KC-0131.6 placeholders never invoke services.
+ * KC-0131.11 may bind exactly one read-only reference adapter.
  */
 export type ExecutionAdapter = {
   readonly metadata: AdapterMetadata
   /**
-   * Architecture hook — must not invoke platform services in KC-0131.6.
+   * Invoke adapter for a step. Reference adapters may call one existing
+   * read-only KC service; placeholders must not.
    */
   adapt(step: ExecutionStep, context: AdapterContext): AdapterResult
 }

@@ -20,7 +20,8 @@ export type AdapterMetadata = {
   readonly description: string
   readonly priority: number
   readonly available: boolean
-  readonly isPlaceholder: true
+  /** False only for the KC-0131.11 reference adapter (read-only service bind). */
+  readonly isPlaceholder: boolean
   readonly extensions: Readonly<Record<string, unknown>>
 }
 
@@ -51,8 +52,9 @@ export type AdapterResult = {
   readonly adapterId: AdapterId | null
   readonly stepId: string | null
   readonly summary: string
-  readonly isPlaceholder: true
-  readonly invokedService: false
+  readonly isPlaceholder: boolean
+  readonly invokedService: boolean
+  /** Architecture invariant for KC-0131.11: reference flow is read-only (no writes). */
   readonly performedWork: false
   readonly error: AdapterError | null
   readonly metadata: Readonly<Record<string, unknown>>

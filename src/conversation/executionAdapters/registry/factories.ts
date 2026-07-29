@@ -25,7 +25,7 @@ function nextResultId(): string {
 }
 
 export function createAdapterMetadata(
-  input: Omit<AdapterMetadata, 'version' | 'isPlaceholder' | 'extensions'> & {
+  input: Omit<AdapterMetadata, 'version' | 'extensions'> & {
     readonly extensions?: Readonly<Record<string, unknown>>
   },
 ): AdapterMetadata {
@@ -37,7 +37,7 @@ export function createAdapterMetadata(
     description: input.description,
     priority: input.priority,
     available: input.available,
-    isPlaceholder: true,
+    isPlaceholder: input.isPlaceholder,
     extensions: Object.freeze({ ...(input.extensions ?? {}) }),
   }
 }
@@ -83,6 +83,8 @@ export function createAdapterResult(input: {
   readonly summary: string
   readonly error?: AdapterError | null
   readonly metadata?: Readonly<Record<string, unknown>>
+  readonly isPlaceholder?: boolean
+  readonly invokedService?: boolean
 }): AdapterResult {
   return {
     id: nextResultId(),
@@ -91,8 +93,8 @@ export function createAdapterResult(input: {
     adapterId: input.adapterId ?? null,
     stepId: input.stepId ?? null,
     summary: input.summary,
-    isPlaceholder: true,
-    invokedService: false,
+    isPlaceholder: input.isPlaceholder ?? true,
+    invokedService: input.invokedService ?? false,
     performedWork: false,
     error: input.error ?? null,
     metadata: Object.freeze({ ...(input.metadata ?? {}) }),

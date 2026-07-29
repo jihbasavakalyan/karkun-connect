@@ -76,6 +76,7 @@ export function createDefaultPlaceholderAdapters(): readonly ExecutionAdapter[] 
         description: `Architecture placeholder for ${spec.capability}`,
         priority: spec.priority,
         available: true,
+        isPlaceholder: true,
       }),
     ),
   )

@@ -352,3 +352,6 @@ export * as conversationConfirmationOrchestrator from './confirmation'
 
 /** Execution Pipeline Foundation (KC-0131.9) — confirmed decision → adapter coordination (no work). */
 export * as conversationExecutionPipeline from './executionPipeline'
+
+/** Reference Execution Flow (KC-0131.11) — first read-only end-to-end validation. */
+export * as conversationReferenceFlow from './referenceFlow'

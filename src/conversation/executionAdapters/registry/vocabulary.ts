@@ -58,7 +58,7 @@ export const ADAPTER_ERROR_CODES: readonly AdapterErrorCode[] = [
   'configuration_error',
 ] as const
 
-export type AdapterResultStatus = 'placeholder' | 'unsupported' | 'error'
+export type AdapterResultStatus = 'placeholder' | 'unsupported' | 'error' | 'success'
 
 export function isAdapterCapability(value: string): value is AdapterCapability {
   return (ADAPTER_CAPABILITIES as readonly string[]).includes(value)
