@@ -20,6 +20,7 @@ import {
 import { useGuidance } from '@/hooks/useGuidance'
 import { Annexure1ExecutionForm } from '@/components/forms/annexure1'
 import { RequestReviewModal } from '@/components/forms/assignment/RequestReviewModal'
+import type { RequestReviewModalAction } from '@/components/forms/assignment/RequestReviewModal'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import { getRuknById } from '@/data/ruknMaster'
@@ -35,7 +36,8 @@ import { resolvePostVisitWorkflowDestination } from '@/lib/workflowPresentation'
 import { saveAnnexure1Draft, submitAnnexure1 } from '@/services/annexure1Service'
 import { scheduleWhatsAppMessage } from '@/services/schedulingService'
 import { submitAssignmentReviewRequest } from '@/services/assignmentReviewService'
-import type { AssignmentReviewReason } from '@/types/assignmentReview.types'
+import { submitKarkunToMuttafiqConversionRequest } from '@/services/karkunRequestService'
+import { getPersonCategory } from '@/lib/peopleClassification'
 import { getRegistrationForKarkun } from '@/services/jihWebPortalService'
 import { getActiveAssignmentsForKarkun } from '@/stores/assignmentStore'
 import {
@@ -101,6 +103,7 @@ export function ConnectionJourneyPage() {
   const [reviewOpen, setReviewOpen] = useState(false)
   const [reviewError, setReviewError] = useState('')
   const [reviewNotice, setReviewNotice] = useState('')
+  const [conversionBusy, setConversionBusy] = useState(false)
 
   useEffect(() => {
     if (location.hash !== '#visit-details') return
@@ -541,14 +544,42 @@ export function ConnectionJourneyPage() {
         <RequestReviewModal
           isOpen={reviewOpen}
           karkunName={karkun.name}
-          onClose={() => setReviewOpen(false)}
+          onClose={() => {
+            if (conversionBusy) return
+            setReviewOpen(false)
+          }}
           error={reviewError}
-          onConfirm={(reason: AssignmentReviewReason, notes: string) => {
+          allowConvertToMuttafiq={getPersonCategory(karkun) === 'Karkun'}
+          confirmBusy={conversionBusy}
+          onConfirm={(action: RequestReviewModalAction, notes: string) => {
             if (!authRuknId) return
+            if (action === 'Convert to Muttafiq') {
+              if (conversionBusy) return
+              setConversionBusy(true)
+              setReviewError('')
+              void (async () => {
+                try {
+                  const result = await submitKarkunToMuttafiqConversionRequest({
+                    personId: karkun.id,
+                    requestingRuknId: authRuknId,
+                    createdBy: user?.displayName ?? user?.uid ?? 'Rukn',
+                  })
+                  if (!result.ok) {
+                    setReviewError(result.error)
+                    return
+                  }
+                  setReviewOpen(false)
+                  setReviewNotice('Conversion request sent to Admin Inbox.')
+                } finally {
+                  setConversionBusy(false)
+                }
+              })()
+              return
+            }
             const result = submitAssignmentReviewRequest({
               karkunId: karkun.id,
               ruknId: authRuknId,
-              reason,
+              reason: action,
               notes,
               createdBy: user?.displayName ?? user?.uid ?? 'Rukn',
             })

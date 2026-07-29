@@ -18,9 +18,9 @@ import { submitKarkunToMuttafiqConversionRequest } from '@/services/karkunReques
 import { getPersonCategory } from '@/lib/peopleClassification'
 import { useAuth } from '@/hooks/useAuth'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
-import type { AssignmentReviewReason } from '@/types/assignmentReview.types'
 import { ProfileCompletionReminder } from './ProfileCompletionReminder'
 import { RequestReviewModal } from '@/components/forms/assignment/RequestReviewModal'
+import type { RequestReviewModalAction } from '@/components/forms/assignment/RequestReviewModal'
 import { Icon } from '@/components/ui/Icon'
 import type { MessageRecipient } from '@/types/communication'
 
@@ -67,11 +67,36 @@ export function ConnectedKarkunCard({ karkun, ruknId, visitPath }: ConnectedKark
     whatsapp: karkun.whatsapp,
   }
 
-  const handleRequestReview = (reason: AssignmentReviewReason, notes: string) => {
+  const handleRequestReview = (action: RequestReviewModalAction, notes: string) => {
+    if (action === 'Convert to Muttafiq') {
+      if (conversionBusy) return
+      setConversionBusy(true)
+      setReviewError('')
+      void (async () => {
+        try {
+          const result = await submitKarkunToMuttafiqConversionRequest({
+            personId: karkun.id,
+            requestingRuknId: ruknId,
+            createdBy: user?.displayName ?? user?.uid ?? ruknId,
+          })
+          if (!result.ok) {
+            setReviewError(result.error)
+            return
+          }
+          setReviewError('')
+          setReviewOpen(false)
+          setReviewNotice('Conversion request sent to Admin Inbox.')
+        } finally {
+          setConversionBusy(false)
+        }
+      })()
+      return
+    }
+
     const result = submitAssignmentReviewRequest({
       karkunId: karkun.id,
       ruknId,
-      reason,
+      reason: action,
       notes,
     })
     if (!result.ok) {
@@ -81,28 +106,6 @@ export function ConnectedKarkunCard({ karkun, ruknId, visitPath }: ConnectedKark
     setReviewError('')
     setReviewOpen(false)
     setReviewNotice('Review request sent to Administrator. Ownership is unchanged.')
-  }
-
-  const handleConversionRequest = () => {
-    if (conversionBusy) return
-    setConversionBusy(true)
-    setReviewError('')
-    void (async () => {
-      try {
-        const result = await submitKarkunToMuttafiqConversionRequest({
-          personId: karkun.id,
-          requestingRuknId: ruknId,
-          createdBy: user?.displayName ?? user?.uid ?? ruknId,
-        })
-        if (!result.ok) {
-          setReviewError(result.error)
-          return
-        }
-        setReviewNotice('Conversion request sent to Admin Inbox.')
-      } finally {
-        setConversionBusy(false)
-      }
-    })()
   }
 
   const canRequestConversion = getPersonCategory(karkun) === 'Karkun'
@@ -185,17 +188,6 @@ export function ConnectedKarkunCard({ karkun, ruknId, visitPath }: ConnectedKark
             <Icon name="flag" size="sm" />
             Review
           </button>
-          {canRequestConversion ? (
-            <button
-              type="button"
-              className="connected-action"
-              disabled={conversionBusy}
-              onClick={handleConversionRequest}
-            >
-              <Icon name="users" size="sm" />
-              {conversionBusy ? '…' : 'To Muttafiq'}
-            </button>
-          ) : null}
         </div>
 
         <div className="connected-activity">
@@ -232,9 +224,14 @@ export function ConnectedKarkunCard({ karkun, ruknId, visitPath }: ConnectedKark
       <RequestReviewModal
         isOpen={reviewOpen}
         karkunName={karkun.name}
-        onClose={() => setReviewOpen(false)}
+        onClose={() => {
+          if (conversionBusy) return
+          setReviewOpen(false)
+        }}
         onConfirm={handleRequestReview}
         error={reviewError}
+        allowConvertToMuttafiq={canRequestConversion}
+        confirmBusy={conversionBusy}
       />
 
       <SchedulePickerModal

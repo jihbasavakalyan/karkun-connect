@@ -20,17 +20,18 @@ type RuknAssignmentCardProps = {
   onCommunicate: (rukn: Rukn) => void
 }
 
-function PendingRow({ label, value }: { label: string; value: number }) {
+function PendingRow({ label, value }: { label: string; value: number | null }) {
+  const display = value === null ? '-' : String(value)
   return (
     <div className="flex items-baseline justify-between gap-3 py-1">
       <dt className="text-sm text-secondary">{label}</dt>
       <dd
         className={[
           'text-sm font-semibold tabular-nums',
-          value > 0 ? 'text-text-heading' : 'text-secondary',
+          value !== null && value > 0 ? 'text-text-heading' : 'text-secondary',
         ].join(' ')}
       >
-        {value}
+        {display}
       </dd>
     </div>
   )
@@ -87,13 +88,9 @@ export function RuknAssignmentCard({ rukn, onCommunicate }: RuknAssignmentCardPr
         <PendingRow label="Pending App Registration" value={pending.pendingAppRegistration} />
       </dl>
 
-      {lastCommunication ? (
-        <p className="mt-3 text-xs text-secondary">
-          Last Communication · {lastCommunication}
-        </p>
-      ) : (
-        <p className="mt-3 text-xs text-secondary">Last Communication · Not yet</p>
-      )}
+      <p className="mt-3 text-xs text-secondary">
+        Last Communication · {lastCommunication ?? '-'}
+      </p>
 
       <div className="mt-auto flex items-center gap-2 pt-5">
         <PrimaryButton

@@ -1,11 +1,14 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Modal } from '@/components/common/Modal'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import { FORM_INPUT_CLASS, FORM_LABEL_CLASS, FORM_SELECT_CLASS } from '@/components/ui/formStyles'
 import type { AssignmentReviewReason } from '@/types/assignmentReview.types'
 
-const REASONS: AssignmentReviewReason[] = [
+/** KC-0129 — Review dialog actions; Convert is UI-only routing to existing conversion request. */
+export type RequestReviewModalAction = AssignmentReviewReason | 'Convert to Muttafiq'
+
+const REVIEW_REASONS: AssignmentReviewReason[] = [
   'Needs attention',
   'Unable to continue',
   'Wrong assignment',
@@ -15,20 +18,25 @@ const REASONS: AssignmentReviewReason[] = [
 ]
 
 const REASON_DISPLAY_LABELS: Record<AssignmentReviewReason, string> = {
-  'Needs attention': 'Needs attention',
-  'Unable to continue': 'Unable to continue',
-  'Wrong assignment': 'Wrong connection',
-  'Shifted area': 'Shifted area',
-  'Personal reason': 'Personal reason',
+  'Needs attention': 'Needs Attention',
+  'Unable to continue': 'Unable to Continue',
+  'Wrong assignment': 'Wrong Connection',
+  'Shifted area': 'Shifted Area',
+  'Personal reason': 'Personal Reason',
   Other: 'Other',
 }
+
+const CONVERT_ACTION = 'Convert to Muttafiq' as const
 
 type RequestReviewModalProps = {
   isOpen: boolean
   karkunName: string
   onClose: () => void
-  onConfirm: (reason: AssignmentReviewReason, notes: string) => void
+  onConfirm: (action: RequestReviewModalAction, notes: string) => void
   error?: string
+  /** When true, Reason list includes Convert to Muttafiq (existing conversion workflow). */
+  allowConvertToMuttafiq?: boolean
+  confirmBusy?: boolean
 }
 
 export function RequestReviewModal({
@@ -37,9 +45,19 @@ export function RequestReviewModal({
   onClose,
   onConfirm,
   error,
+  allowConvertToMuttafiq = false,
+  confirmBusy = false,
 }: RequestReviewModalProps) {
-  const [reason, setReason] = useState<AssignmentReviewReason>('Needs attention')
+  const [action, setAction] = useState<RequestReviewModalAction>('Needs attention')
   const [notes, setNotes] = useState('')
+
+  useEffect(() => {
+    if (!isOpen) return
+    setAction('Needs attention')
+    setNotes('')
+  }, [isOpen])
+
+  const isConvert = action === CONVERT_ACTION
 
   return (
     <Modal
@@ -49,34 +67,53 @@ export function RequestReviewModal({
       size="md"
       footer={
         <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-          <SecondaryButton type="button" onClick={onClose}>
+          <SecondaryButton type="button" onClick={onClose} disabled={confirmBusy}>
             Cancel
           </SecondaryButton>
-          <PrimaryButton type="button" onClick={() => onConfirm(reason, notes)}>
-            Submit Request
+          <PrimaryButton
+            type="button"
+            loading={confirmBusy}
+            disabled={confirmBusy}
+            onClick={() => onConfirm(action, notes)}
+          >
+            {isConvert ? 'Submit Conversion Request' : 'Submit Request'}
           </PrimaryButton>
         </div>
       }
     >
       <div className="space-y-3">
         <p className="text-sm text-secondary">
-          Ask an Administrator to review the connection for{' '}
-          <span className="font-semibold text-text-heading">{karkunName}</span>. Ownership does not
-          change until Admin decides.
+          {isConvert ? (
+            <>
+              Request converting{' '}
+              <span className="font-semibold text-text-heading">{karkunName}</span> to Muttafiq.
+              Admin Inbox and approval stay the same.
+            </>
+          ) : (
+            <>
+              Ask an Administrator to review the connection for{' '}
+              <span className="font-semibold text-text-heading">{karkunName}</span>. Ownership does
+              not change until Admin decides.
+            </>
+          )}
         </p>
 
         <label className="block">
           <span className={FORM_LABEL_CLASS}>Reason</span>
           <select
             className={FORM_SELECT_CLASS}
-            value={reason}
-            onChange={(event) => setReason(event.target.value as AssignmentReviewReason)}
+            value={action}
+            onChange={(event) => setAction(event.target.value as RequestReviewModalAction)}
+            disabled={confirmBusy}
           >
-            {REASONS.map((option) => (
+            {REVIEW_REASONS.map((option) => (
               <option key={option} value={option}>
                 {REASON_DISPLAY_LABELS[option]}
               </option>
             ))}
+            {allowConvertToMuttafiq ? (
+              <option value={CONVERT_ACTION}>{CONVERT_ACTION}</option>
+            ) : null}
           </select>
         </label>
 
@@ -88,6 +125,7 @@ export function RequestReviewModal({
             value={notes}
             onChange={(event) => setNotes(event.target.value)}
             placeholder="Share context that will help the Administrator decide."
+            disabled={confirmBusy}
           />
         </label>
 
