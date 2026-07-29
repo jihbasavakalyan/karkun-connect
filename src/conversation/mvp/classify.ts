@@ -62,9 +62,6 @@ const NAV_PATTERNS: Array<{ target: string; patterns: RegExp[] }> = [
     patterns: [
       /open\s+reports?/i,
       /go\s+to\s+reports?/i,
-      /reports?/i,
-      /رپورٹ/,
-      /campaign\s*record/i,
     ],
   },
   {
@@ -92,11 +89,9 @@ const NAV_PATTERNS: Array<{ target: string; patterns: RegExp[] }> = [
   {
     target: 'campaign',
     patterns: [
-      /show\s+campaign/i,
       /open\s+campaign/i,
       /go\s+to\s+campaign/i,
       /campaign\s+setup/i,
-      /مہم/,
     ],
   },
   {
@@ -104,8 +99,6 @@ const NAV_PATTERNS: Array<{ target: string; patterns: RegExp[] }> = [
     patterns: [
       /open\s+attendance/i,
       /go\s+to\s+attendance/i,
-      /attendance/i,
-      /حاضری/,
     ],
   },
   {
@@ -126,7 +119,15 @@ const REPORT_PATTERNS: RegExp[] = [
   /progress/i,
   /completion/i,
   /visits?\s+pending/i,
+  /visits?\s+completed/i,
+  /campaign\s+(summary|overview|progress)/i,
+  /how is the campaign/i,
+  /need(?:s)? attention/i,
+  /what changed this week/i,
   /attendance\s+today/i,
+  /registration progress/i,
+  /bait.?ul.?maal progress/i,
+  /weekly\s*ijtema\s*progress/i,
   /کتنے/,
   /کتنی/,
   /پیش رفت/,

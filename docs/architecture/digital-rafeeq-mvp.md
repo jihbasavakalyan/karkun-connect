@@ -43,8 +43,10 @@ Utterance → classify → Intent → Secretary → Orchestrator → Confirmatio
 | Conversation memory / obs / perf | Done (pronouns, session + localStorage, stage traces, turn metrics cache, submit debounce, turn abort) |
 | Panel UX polish | Done (confirm note/actions, recent searches, error recovery) |
 | Universal Search & Smart Navigation | Done — see [`../features/rafeeq-universal-search.md`](../features/rafeeq-universal-search.md) |
+| Campaign Intelligence | Done — see [`../features/rafeeq-campaign-intelligence.md`](../features/rafeeq-campaign-intelligence.md) |
 
 ## Verify
 
 - `npm run verify:kc-rafeeq-mvp-bridge`
 - `npm run verify:rafeeq-search`
+- `npm run verify:rafeeq-campaign-intelligence`

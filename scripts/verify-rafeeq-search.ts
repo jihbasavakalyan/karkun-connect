@@ -64,7 +64,7 @@ function testNavigation(): void {
     ['Open Dashboard', 'dashboard'],
     ['Go to Registry', 'registry'],
     ['Open Weekly Ijtema', 'weekly_ijtema'],
-    ['Show Campaign', 'campaign'],
+    ['Open Campaign', 'campaign'],
     ['Open Reports', 'reports'],
     ['Open Settings', 'settings'],
     ['Open Attendance', 'attendance'],

@@ -34,6 +34,12 @@ import {
 } from './observability'
 import { ENTITY_TYPE_LABEL_UR } from './universalSearchTypes'
 import {
+  createCampaignIntelligenceAdapter,
+  formatCampaignIntelligenceText,
+  type CampaignIntelligencePayload,
+  type CampaignIntelTopic,
+} from './campaignIntelligence'
+import {
   handleHelp,
   handleInsights,
   handleKarkunInfo,
@@ -140,6 +146,99 @@ function runRafeeqTurnInner(
     return handleHelp(layers)
   }
 
+  if (classified.mvpKind === 'CAMPAIGN_INTEL' || classified.intentCodes[0] === 'REPORT') {
+    const topic =
+      (classified.campaignTopic as CampaignIntelTopic | null | undefined) ??
+      'overview'
+    const { plan, session, runtime } = runStackShell(['REPORT'], layers)
+    const { orchestrator: confirmation } = createConfirmationOrchestratorFoundation()
+    const conf = confirmation.evaluate(
+      confirmation.createRequest({
+        summary: `Campaign intelligence: ${topic}`,
+        policyKind: 'read_only_action',
+        capability: 'REPORTING',
+        context: {
+          planId: plan.id,
+          sessionId: session.id,
+          requestedCapability: 'REPORTING',
+        },
+      }),
+    )
+    layers.push('confirmation_orchestrator')
+    createExecutionPipelineFoundation().coordinator.simulateCoordination({
+      planId: plan.id,
+      confirmationDecisionId: conf.decision.id,
+      confirmationEligible: conf.decision.eligibleForExecution,
+      sessionId: session.id,
+      requestedCapability: 'REPORTING',
+    })
+    layers.push('execution_pipeline')
+
+    createServiceInvocationRequest({
+      capability: 'REPORTING',
+      operation: 'campaignIntelligence',
+      serviceId: 'metricsService+dashboardMetricsService',
+      payload: { topic, readOnly: true },
+    })
+    layers.push('service_integration_contract')
+
+    const adapter = createCampaignIntelligenceAdapter()
+    const step = plan.steps[0]!
+    const adapterResult = adapter.adapt(step, {
+      locale: 'ur',
+      role: context.role,
+      ruknId: context.ruknId,
+      conversationId: null,
+      sessionId: session.id,
+      planId: plan.id,
+      stepId: step.id,
+      extensions: {
+        campaignTopic: topic,
+        memorySessionId: context.sessionId,
+      },
+    })
+    layers.push('execution_adapter')
+    layers.push('campaign_intelligence')
+    layers.push('metrics_service')
+
+    // Keep reference flow for architecture path certification (read-only MetricsService bind).
+    const report = runReportingReferenceFlow()
+    layers.push('reference_flow')
+
+    runtime.complete(session)
+
+    const payload = adapterResult.metadata['payload'] as
+      | CampaignIntelligencePayload
+      | undefined
+    const text =
+      typeof adapterResult.metadata['text'] === 'string'
+        ? String(adapterResult.metadata['text'])
+        : payload
+          ? formatCampaignIntelligenceText(payload)
+          : handleInsights(layers, context.role, memory, topic, context.ruknId).text
+
+    return {
+      text: companion(text),
+      actions: payload ? [...payload.actions] : [],
+      intentCode: 'REPORT',
+      usedStack: true,
+      usedFallback: false,
+      readOnly: true,
+      requiresConfirmation: false,
+      confirmationState: conf.decision.state,
+      layersVisited: Object.freeze(layers),
+      metadata: {
+        campaignIntelligence: payload ?? null,
+        metrics: payload?.metrics ?? [],
+        insights: payload?.insights ?? [],
+        summaryTitle: payload?.title ?? 'Campaign Progress',
+        sources: payload?.sources ?? [],
+        referenceFlow: report.success,
+        topic,
+      },
+    }
+  }
+
   if (classified.mvpKind === 'TASK_ASSIST') {
     runStackShell(['FOLLOW_UP'], layers)
     const { orchestrator: confirmation } = createConfirmationOrchestratorFoundation()
@@ -240,30 +339,6 @@ function runRafeeqTurnInner(
   }
 
   const primary = classified.intentCodes[0] ?? 'UNKNOWN'
-
-  // --- REPORT → stack + live insights ---
-  if (primary === 'REPORT') {
-    const report = runReportingReferenceFlow()
-    layers.push(
-      'intent',
-      'secretary',
-      'execution_orchestrator',
-      'confirmation_orchestrator',
-      'execution_pipeline',
-      'execution_adapter',
-      'service_integration_contract',
-      'metrics_service',
-    )
-    const insights = handleInsights(layers, context.role)
-    if (report.success && report.metrics) {
-      return {
-        ...insights,
-        confirmationState: report.confirmation?.decision.state ?? 'AUTO_APPROVED',
-        metadata: { ...insights.metadata, referenceFlow: true },
-      }
-    }
-    return insights
-  }
 
   // --- SEARCH ---
   if (primary === 'SEARCH') {

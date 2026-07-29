@@ -3939,6 +3939,51 @@ html[data-theme='dark'] {
     line-height: 2;
   }
 
+  .dr-voice-summary-card {
+    @apply mt-3 rounded-2xl border border-primary/15 bg-white/90 px-3.5 py-3;
+  }
+
+  .dr-voice-summary-title {
+    @apply mb-2 text-sm font-semibold text-text-heading;
+  }
+
+  .dr-voice-metric-list {
+    @apply m-0 flex list-none flex-col gap-2 p-0;
+  }
+
+  .dr-voice-metric-row {
+    @apply flex items-center gap-2 rounded-xl bg-primary-muted/50 px-3 py-2;
+  }
+
+  .dr-voice-metric-label {
+    @apply flex-1 text-sm text-text-body;
+  }
+
+  .dr-voice-metric-value {
+    @apply text-sm font-semibold text-text-heading;
+  }
+
+  .dr-voice-metric-status {
+    @apply h-2.5 w-2.5 shrink-0 rounded-full bg-slate-400;
+  }
+
+  .dr-voice-metric-status.status-good {
+    @apply bg-emerald-500;
+  }
+
+  .dr-voice-metric-status.status-steady {
+    @apply bg-amber-400;
+  }
+
+  .dr-voice-metric-status.status-attention {
+    @apply bg-rose-500;
+  }
+
+  .dr-voice-insight {
+    @apply mt-2 text-sm text-text-body;
+    line-height: 1.8;
+  }
+
   .dr-voice-error-recovery {
     @apply mx-3 mb-2 flex flex-wrap items-center gap-2;
   }

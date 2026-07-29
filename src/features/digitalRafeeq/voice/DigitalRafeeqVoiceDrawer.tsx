@@ -18,6 +18,7 @@ import {
   RAFEEQ_WELCOME_MESSAGE,
   resolveContextualSuggestions,
   type OpsAnswerAction,
+  type OpsAnswerMetric,
 } from './opsAnswers'
 import { runRafeeqTurn, getOrCreateSession, hydrateRecentSearches } from '@/conversation/mvp'
 import { RafeeqSpeakButton } from './RafeeqSpeakButton'
@@ -38,15 +39,18 @@ type ChatMessage = {
   text: string
   actions?: OpsAnswerAction[]
   requiresConfirmation?: boolean
+  summaryTitle?: string
+  metrics?: OpsAnswerMetric[]
+  insights?: string[]
 }
 
 const SEARCH_SUGGESTIONS = [
   'Find Aslam',
   'Open Dashboard',
   'Go to Registry',
-  'Show Campaign',
-  'Open Reports',
-  'Open Weekly Ijtema',
+  'How is the campaign progressing?',
+  'How many visits are pending?',
+  'Show Weekly Ijtema progress',
 ]
 
 type DigitalRafeeqVoiceDrawerProps = {
@@ -101,6 +105,9 @@ function turnsToMessages(turns: VoiceConversationTurn[]): ChatMessage[] {
       text: turn.rafeeqResponse,
       actions: turn.actions,
       requiresConfirmation: turn.requiresConfirmation,
+      summaryTitle: turn.summaryTitle,
+      metrics: turn.metrics,
+      insights: turn.insights,
     })
   }
   return messages
@@ -184,10 +191,26 @@ export function DigitalRafeeqVoiceDrawer({
     })
 
     if (!turn.usedFallback && turn.text) {
+      const intel = turn.metadata['campaignIntelligence'] as
+        | {
+            title?: string
+            metrics?: OpsAnswerMetric[]
+            insights?: string[]
+          }
+        | null
+        | undefined
       return {
         text: turn.text,
         actions: [...turn.actions],
         requiresConfirmation: turn.requiresConfirmation,
+        summaryTitle:
+          (turn.metadata['summaryTitle'] as string | undefined) ??
+          intel?.title,
+        metrics:
+          (turn.metadata['metrics'] as OpsAnswerMetric[] | undefined) ??
+          intel?.metrics,
+        insights:
+          (turn.metadata['insights'] as string[] | undefined) ?? intel?.insights,
       }
     }
 
@@ -322,6 +345,29 @@ export function DigitalRafeeqVoiceDrawer({
                   />
                 ) : null}
               </div>
+              {message.summaryTitle && message.metrics && message.metrics.length > 0 ? (
+                <div className="dr-voice-summary-card" role="region" aria-label={message.summaryTitle}>
+                  <p className="dr-voice-summary-title">{message.summaryTitle}</p>
+                  <ul className="dr-voice-metric-list">
+                    {message.metrics.map((metric) => (
+                      <li
+                        key={metric.id}
+                        className={`dr-voice-metric-row status-${metric.status ?? 'steady'}`}
+                      >
+                        <span className="dr-voice-metric-label">{metric.label}</span>
+                        <span className="dr-voice-metric-value">{metric.value}</span>
+                        <span
+                          className={`dr-voice-metric-status status-${metric.status ?? 'steady'}`}
+                          aria-hidden="true"
+                        />
+                      </li>
+                    ))}
+                  </ul>
+                  {message.insights && message.insights.length > 0 ? (
+                    <p className="dr-voice-insight">{message.insights[0]}</p>
+                  ) : null}
+                </div>
+              ) : null}
               {message.requiresConfirmation ? (
                 <p className="dr-voice-confirm-note" role="status">
                   تصدیق: متعلقہ بٹن دبا کر عمل مکمل کریں۔

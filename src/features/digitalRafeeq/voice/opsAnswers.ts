@@ -38,10 +38,20 @@ export type OpsAnswerAction = {
   primaryActionLabel?: string
 }
 
+export type OpsAnswerMetric = {
+  id: string
+  label: string
+  value: string
+  status?: 'good' | 'steady' | 'attention'
+}
+
 export type OpsAnswer = {
   text: string
   actions: OpsAnswerAction[]
   requiresConfirmation?: boolean
+  summaryTitle?: string
+  metrics?: OpsAnswerMetric[]
+  insights?: string[]
 }
 
 function normalize(query: string): string {

@@ -7,6 +7,11 @@ import { buildTelLink, buildWhatsAppLink } from '@/utils/personContactLinks'
 import { searchPeopleReadOnly } from './adapters/searchAdapter'
 import { resolveNavigationTarget } from './navigationMap'
 import { getTurnMetricsBundle } from './turnMetricsCache'
+import {
+  buildCampaignIntelligence,
+  formatCampaignIntelligenceText,
+  type CampaignIntelTopic,
+} from './campaignIntelligence'
 import type { RafeeqAction, RafeeqRole, RafeeqTurnResult } from './types'
 import type { RafeeqSessionMemory } from './session'
 
@@ -35,7 +40,7 @@ export function handleHelp(layers: string[]): RafeeqTurnResult {
         'ڈیجیٹل رفیق کمانڈز:',
         '• تلاش: Find Aslam / Show Imran',
         '• نیویگیشن: Open Dashboard / Open Registry / Open Settings',
-        '• بصیرت: How many connected? / Pending tasks?',
+        '• بصیرت: How is the campaign progressing? / How many connected?',
         '• رابطہ: Call … / WhatsApp …',
         '• مدد: How do I assign?',
       ].join('\n'),
@@ -52,47 +57,34 @@ export function handleHelp(layers: string[]): RafeeqTurnResult {
   })
 }
 
-export function handleInsights(layers: string[], role: RafeeqRole): RafeeqTurnResult {
-  layers.push('insights')
-  const bundle = getTurnMetricsBundle()
-  const metrics = bundle.campaign
-  const assignments = bundle.assignments
-  const ijtema = bundle.ijtema
-  const people = bundle.people
-
-  const actions: RafeeqAction[] =
-    role === 'administrator'
-      ? [
-          { id: 'ins-conn', label: 'روابط', route: adminAssignmentsPath() },
-          { id: 'ins-exec', label: 'عملدرآمد', route: adminExecutionPath() },
-          {
-            id: 'ins-ijtema',
-            label: 'اجتما',
-            route: ROUTES.ADMIN_WEEKLY_IJTEMA,
-          },
-        ]
-      : [
-          { id: 'ins-my', label: 'میرے کارکنان', route: ROUTES.RUKN_MY_KARKUN },
-          { id: 'ins-ijtema', label: 'اجتما', route: ROUTES.RUKN_WEEKLY_IJTEMA },
-        ]
-
+export function handleInsights(
+  layers: string[],
+  role: RafeeqRole,
+  memory: RafeeqSessionMemory,
+  topic: string | null = 'overview',
+  ruknId: string | null = null,
+): RafeeqTurnResult {
+  layers.push('campaign_intelligence')
+  const payload = buildCampaignIntelligence({
+    topic: (topic as CampaignIntelTopic | null) ?? 'overview',
+    role,
+    ruknId,
+    memory,
+  })
   return baseResult({
-    text: companion(
-      [
-        `منسلک: ${metrics.connected}`,
-        `باقی / غیر منسلک: ${metrics.remaining}`,
-        `پیش رفت: ${metrics.progressPct}%`,
-        `فعال روابط: ${assignments.activeAssignments}`,
-        `حاضری: حاضر ${ijtema.present} / غیر حاضر ${ijtema.absent} / غیر درج ${ijtema.notRecorded}`,
-        `دستیاب کارکنان: ${people.unassignedKarkuns}`,
-      ].join('\n'),
-    ),
-    actions,
+    text: companion(formatCampaignIntelligenceText(payload)),
+    actions: [...payload.actions],
     intentCode: 'REPORT',
     requiresConfirmation: false,
     confirmationState: 'AUTO_APPROVED',
     layersVisited: Object.freeze([...layers]),
-    metadata: { metrics, sourceOfTruth: metrics.sourceOfTruth },
+    metadata: {
+      campaignIntelligence: payload,
+      metrics: payload.metrics,
+      insights: payload.insights,
+      summaryTitle: payload.title,
+      sources: payload.sources,
+    },
   })
 }
 

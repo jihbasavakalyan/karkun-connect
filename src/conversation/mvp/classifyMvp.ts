@@ -4,6 +4,10 @@
 
 import type { IntentTypeCode } from '../intent'
 import { classifyUtterance as classifyBase, type ClassifiedUtterance } from './classify'
+import {
+  classifyCampaignIntelTopic,
+  isCampaignIntelligenceUtterance,
+} from './campaignIntelligence/topics'
 
 const TASK_PATTERNS: RegExp[] = [
   /what should i do/i,
@@ -61,10 +65,12 @@ export type MvpIntentKind =
   | 'SUGGEST'
   | 'HELP'
   | 'KARKUN_INFO'
+  | 'CAMPAIGN_INTEL'
 
 export type ExtendedClassification = ClassifiedUtterance & {
   readonly mvpKind: MvpIntentKind
   readonly actionSubject: string | null
+  readonly campaignTopic?: string | null
 }
 
 function stripActionSubject(raw: string, patterns: RegExp[]): string | null {
@@ -165,10 +171,25 @@ export function classifyMvpUtterance(raw: string): ExtendedClassification {
     }
   }
 
+  const explicitNav = /^(open|go to)\b/i.test(raw.trim())
+  if (!explicitNav && isCampaignIntelligenceUtterance(raw)) {
+    return {
+      intentCodes: ['REPORT'],
+      searchQuery: null,
+      navigationTarget: null,
+      raw,
+      mvpKind: 'CAMPAIGN_INTEL',
+      actionSubject: null,
+      campaignTopic: classifyCampaignIntelTopic(raw),
+    }
+  }
+
   const base = classifyBase(raw)
   return {
     ...base,
     mvpKind: (base.intentCodes[0] as MvpIntentKind) ?? 'UNKNOWN',
     actionSubject: base.searchQuery,
+    campaignTopic:
+      base.intentCodes[0] === 'REPORT' ? classifyCampaignIntelTopic(raw) : null,
   }
 }
