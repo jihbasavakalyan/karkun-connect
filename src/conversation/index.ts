@@ -331,3 +331,6 @@ export * as conversationDomain from './domain'
 
 /** Intent Engine Foundation (KC-0131.3) — domain → normalized intent batches (no NLP/execution). */
 export * as conversationIntent from './intent'
+
+/** Secretary Engine Foundation (KC-0131.4) — intent batches → immutable plans (no execution). */
+export * as conversationSecretary from './secretary'
