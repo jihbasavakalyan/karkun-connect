@@ -8,6 +8,8 @@ import {
   classifyCampaignIntelTopic,
   isCampaignIntelligenceUtterance,
 } from './campaignIntelligence/topics'
+import { classifySafeAction } from './safeActions/classifySafeAction'
+import type { SafeActionKind } from './safeActions/policy'
 
 const TASK_PATTERNS: RegExp[] = [
   /what should i do/i,
@@ -25,7 +27,6 @@ const SUGGEST_PATTERNS: RegExp[] = [
   /suggest/i,
   /who should (i )?contact/i,
   /bottleneck/i,
-  /reminder/i,
   /assignment gaps?/i,
   /تجویز/,
   /کسے رابطہ/,
@@ -43,8 +44,6 @@ const HELP_PATTERNS: RegExp[] = [
   /ہدایت/,
 ]
 
-const CALL_PATTERNS: RegExp[] = [/\bcall\b/i, /فون کرو?/, /کال کرو?/]
-const WHATSAPP_PATTERNS: RegExp[] = [/whatsapp/i, /واٹس ایپ/, /واٹساپ/]
 const VISIT_PATTERNS: RegExp[] = [/record visit/i, /mark visit/i, /ملاقات درج/, /وزیٹ/]
 const ATTENDANCE_MARK_PATTERNS: RegExp[] = [
   /mark attendance/i,
@@ -66,11 +65,15 @@ export type MvpIntentKind =
   | 'HELP'
   | 'KARKUN_INFO'
   | 'CAMPAIGN_INTEL'
+  | 'SAFE_ACTION'
+  | 'REMINDER'
 
 export type ExtendedClassification = ClassifiedUtterance & {
   readonly mvpKind: MvpIntentKind
   readonly actionSubject: string | null
   readonly campaignTopic?: string | null
+  readonly safeActionKind?: SafeActionKind | null
+  readonly safeExtraKinds?: readonly SafeActionKind[]
 }
 
 function stripActionSubject(raw: string, patterns: RegExp[]): string | null {
@@ -94,25 +97,35 @@ export function classifyMvpUtterance(raw: string): ExtendedClassification {
     }
   }
 
-  if (CALL_PATTERNS.some((p) => p.test(raw))) {
-    return {
-      intentCodes: ['CALL'],
-      searchQuery: stripActionSubject(raw, CALL_PATTERNS),
-      navigationTarget: null,
-      raw,
-      mvpKind: 'CALL',
-      actionSubject: stripActionSubject(raw, CALL_PATTERNS),
-    }
-  }
+  const safe = classifySafeAction(raw)
+  if (safe) {
+    const intentCode: IntentTypeCode =
+      safe.kind === 'CALL'
+        ? 'CALL'
+        : safe.kind === 'WHATSAPP'
+          ? 'WHATSAPP'
+          : safe.kind === 'REMINDER'
+            ? 'REMINDER'
+            : safe.kind === 'CONFIRM' || safe.kind === 'CANCEL'
+              ? 'UNKNOWN'
+              : 'NAVIGATION'
 
-  if (WHATSAPP_PATTERNS.some((p) => p.test(raw))) {
     return {
-      intentCodes: ['WHATSAPP'],
-      searchQuery: stripActionSubject(raw, WHATSAPP_PATTERNS),
+      intentCodes: [intentCode],
+      searchQuery: safe.subject,
       navigationTarget: null,
       raw,
-      mvpKind: 'WHATSAPP',
-      actionSubject: stripActionSubject(raw, WHATSAPP_PATTERNS),
+      mvpKind:
+        safe.kind === 'REMINDER'
+          ? 'REMINDER'
+          : safe.kind === 'CONFIRM' || safe.kind === 'CANCEL'
+            ? 'SAFE_ACTION'
+            : safe.kind === 'CALL' || safe.kind === 'WHATSAPP'
+              ? safe.kind
+              : 'SAFE_ACTION',
+      actionSubject: safe.subject,
+      safeActionKind: safe.kind,
+      safeExtraKinds: safe.extraKinds,
     }
   }
 

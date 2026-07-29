@@ -24,6 +24,8 @@ export type RafeeqAction = {
   readonly entityType?: RafeeqEntityType
   readonly description?: string
   readonly primaryActionLabel?: string
+  /** Confirm / Cancel / alternative / follow-up affordance for safe actions */
+  readonly confirmRole?: 'confirm' | 'cancel' | 'alternative' | 'followup'
 }
 
 export type RafeeqTurnResult = {

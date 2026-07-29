@@ -44,9 +44,11 @@ Utterance → classify → Intent → Secretary → Orchestrator → Confirmatio
 | Panel UX polish | Done (confirm note/actions, recent searches, error recovery) |
 | Universal Search & Smart Navigation | Done — see [`../features/rafeeq-universal-search.md`](../features/rafeeq-universal-search.md) |
 | Campaign Intelligence | Done — see [`../features/rafeeq-campaign-intelligence.md`](../features/rafeeq-campaign-intelligence.md) |
+| Safe Actions | Done — see [`../features/rafeeq-safe-actions.md`](../features/rafeeq-safe-actions.md) |
 
 ## Verify
 
 - `npm run verify:kc-rafeeq-mvp-bridge`
 - `npm run verify:rafeeq-search`
 - `npm run verify:rafeeq-campaign-intelligence`
+- `npm run verify:rafeeq-safe-actions`

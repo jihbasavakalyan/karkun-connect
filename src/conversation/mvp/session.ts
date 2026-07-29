@@ -3,6 +3,7 @@
  */
 
 import type { RafeeqAction } from './types'
+import type { PendingSafeAction } from './safeActions/policy'
 
 export type RafeeqSessionMemory = {
   readonly sessionId: string
@@ -13,6 +14,7 @@ export type RafeeqSessionMemory = {
   lastUtterance: string | null
   followUpHint: string | null
   lastCampaignTopic: string | null
+  pendingSafeAction: PendingSafeAction | null
   recentSearches: string[]
 }
 
@@ -30,6 +32,7 @@ export function getOrCreateSession(sessionId: string): RafeeqSessionMemory {
       lastUtterance: null,
       followUpHint: null,
       lastCampaignTopic: null,
+      pendingSafeAction: null,
       recentSearches: [],
     }
     sessions.set(sessionId, session)

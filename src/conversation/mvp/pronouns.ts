@@ -5,10 +5,10 @@
 import type { RafeeqSessionMemory } from './session'
 
 const PRONOUN_ONLY =
-  /^(ان کا|ان کی|ان کے|ان کو|اس کا|اس کی|اس کے|اس کو|them|him|her|their|his|her's|uska|unki|unka|iska|iski)$/i
+  /^(ان کا|ان کی|ان کے|ان کو|اس کا|اس کی|اس کے|اس کو|them|him|her|their|his|her's|it|uska|unki|unka|iska|iski)$/i
 
 const PRONOUN_IN_TEXT =
-  /\b(ان کا|ان کی|ان کے|ان کو|اس کا|اس کی|اس کے|اس کو|their|his|her)\b/i
+  /\b(ان کا|ان کی|ان کے|ان کو|اس کا|اس کی|اس کے|اس کو|their|his|her|him|them|it)\b/i
 
 export function isPronounReference(text: string): boolean {
   const trimmed = text.trim()

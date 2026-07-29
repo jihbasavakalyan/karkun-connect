@@ -42,6 +42,8 @@ type ChatMessage = {
   summaryTitle?: string
   metrics?: OpsAnswerMetric[]
   insights?: string[]
+  executionResult?: 'success' | 'cancelled' | 'failed'
+  executionMessage?: string
 }
 
 const SEARCH_SUGGESTIONS = [
@@ -108,6 +110,8 @@ function turnsToMessages(turns: VoiceConversationTurn[]): ChatMessage[] {
       summaryTitle: turn.summaryTitle,
       metrics: turn.metrics,
       insights: turn.insights,
+      executionResult: turn.executionResult,
+      executionMessage: turn.executionMessage,
     })
   }
   return messages
@@ -211,6 +215,12 @@ export function DigitalRafeeqVoiceDrawer({
           intel?.metrics,
         insights:
           (turn.metadata['insights'] as string[] | undefined) ?? intel?.insights,
+        executionResult: turn.metadata['executionResult'] as
+          | 'success'
+          | 'cancelled'
+          | 'failed'
+          | undefined,
+        executionMessage: turn.metadata['executionMessage'] as string | undefined,
       }
     }
 
@@ -368,23 +378,97 @@ export function DigitalRafeeqVoiceDrawer({
                   ) : null}
                 </div>
               ) : null}
+              {message.executionResult ? (
+                <p
+                  className={`dr-voice-execution-result status-${message.executionResult}`}
+                  role="status"
+                >
+                  {message.executionMessage ??
+                    (message.executionResult === 'success'
+                      ? '✓ Action completed'
+                      : message.executionResult === 'cancelled'
+                        ? 'عمل منسوخ'
+                        : 'عمل ناکام')}
+                </p>
+              ) : null}
               {message.requiresConfirmation ? (
                 <p className="dr-voice-confirm-note" role="status">
-                  تصدیق: متعلقہ بٹن دبا کر عمل مکمل کریں۔
+                  تصدیق درکار: Confirm دبائیں یا Cancel کریں۔
                 </p>
               ) : null}
               {message.actions && message.actions.length > 0 && (
                 <div className="dr-voice-results" role="list">
                   {message.actions.map((action) => {
+                    const confirmRole = action.confirmRole
+                    if (confirmRole === 'cancel' || action.route.startsWith('?rafeeqCancel')) {
+                      return (
+                        <button
+                          key={action.id}
+                          type="button"
+                          className="dr-voice-action dr-voice-action-cancel"
+                          role="listitem"
+                          disabled={busy}
+                          onClick={() => void handleTextAnswer('Cancel')}
+                        >
+                          {action.label}
+                        </button>
+                      )
+                    }
+                    if (
+                      confirmRole === 'followup' ||
+                      action.route.startsWith('?rafeeq=')
+                    ) {
+                      const query = action.route.startsWith('?rafeeq=')
+                        ? decodeURIComponent(action.route.slice('?rafeeq='.length))
+                        : action.label
+                      return (
+                        <button
+                          key={action.id}
+                          type="button"
+                          className="dr-voice-chip"
+                          role="listitem"
+                          disabled={busy}
+                          onClick={() => void handleTextAnswer(query)}
+                        >
+                          {action.label}
+                        </button>
+                      )
+                    }
+                    if (confirmRole === 'confirm' && action.route.startsWith('?rafeeqConfirm')) {
+                      return (
+                        <button
+                          key={action.id}
+                          type="button"
+                          className="dr-voice-action dr-voice-action-confirm"
+                          role="listitem"
+                          disabled={busy}
+                          onClick={() => void handleTextAnswer('Confirm')}
+                        >
+                          {action.label}
+                        </button>
+                      )
+                    }
                     const external =
                       /^(tel:|sms:|https?:|mailto:)/i.test(action.route) ||
                       action.route.startsWith('//')
                     const rich = Boolean(action.entityType || action.description)
-                    const openLabel = action.primaryActionLabel ?? 'کھولیں'
-                    if (rich) {
-                      const cardClass = message.requiresConfirmation
-                        ? 'dr-voice-result-card dr-voice-result-card-confirm'
-                        : 'dr-voice-result-card'
+                    const openLabel =
+                      action.primaryActionLabel ??
+                      (confirmRole === 'confirm' ? 'Confirm' : 'کھولیں')
+                    const onConfirmLaunch = () => {
+                      if (confirmRole === 'confirm') {
+                        void handleTextAnswer('Confirm')
+                      }
+                      if (!external || confirmRole === 'confirm') {
+                        // Confirm with tel/wa still navigates via href; also clear pending.
+                      }
+                      if (!external) onClose()
+                    }
+                    if (rich || confirmRole === 'confirm' || confirmRole === 'alternative') {
+                      const cardClass =
+                        confirmRole === 'confirm'
+                          ? 'dr-voice-result-card dr-voice-result-card-confirm'
+                          : 'dr-voice-result-card'
                       const body = (
                         <>
                           {action.entityType ? (
@@ -406,7 +490,10 @@ export function DigitalRafeeqVoiceDrawer({
                             role="listitem"
                             target={action.route.startsWith('http') ? '_blank' : undefined}
                             rel={action.route.startsWith('http') ? 'noreferrer' : undefined}
-                            onClick={onClose}
+                            onClick={() => {
+                              if (confirmRole === 'confirm') void handleTextAnswer('Confirm')
+                              if (action.route.startsWith('http')) onClose()
+                            }}
                           >
                             {body}
                           </a>
@@ -418,7 +505,7 @@ export function DigitalRafeeqVoiceDrawer({
                           to={action.route}
                           className={cardClass}
                           role="listitem"
-                          onClick={onClose}
+                          onClick={onConfirmLaunch}
                         >
                           {body}
                         </Link>

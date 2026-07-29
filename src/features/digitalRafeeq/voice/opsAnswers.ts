@@ -36,6 +36,7 @@ export type OpsAnswerAction = {
   entityType?: string
   description?: string
   primaryActionLabel?: string
+  confirmRole?: 'confirm' | 'cancel' | 'alternative' | 'followup'
 }
 
 export type OpsAnswerMetric = {
@@ -52,6 +53,8 @@ export type OpsAnswer = {
   summaryTitle?: string
   metrics?: OpsAnswerMetric[]
   insights?: string[]
+  executionResult?: 'success' | 'cancelled' | 'failed'
+  executionMessage?: string
 }
 
 function normalize(query: string): string {

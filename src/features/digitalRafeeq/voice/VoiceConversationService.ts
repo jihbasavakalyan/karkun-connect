@@ -33,6 +33,8 @@ export type VoiceConversationTurn = {
   summaryTitle?: string
   metrics?: OpsAnswer['metrics']
   insights?: string[]
+  executionResult?: OpsAnswer['executionResult']
+  executionMessage?: string
   timestamp: string
   source: 'voice' | 'text'
 }
@@ -402,6 +404,8 @@ export class VoiceConversationService {
       summaryTitle: ops.summaryTitle,
       metrics: ops.metrics,
       insights: ops.insights,
+      executionResult: ops.executionResult,
+      executionMessage: ops.executionMessage,
       timestamp: new Date().toISOString(),
       source: input.source,
     }

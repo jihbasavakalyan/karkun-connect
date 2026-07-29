@@ -40,10 +40,14 @@ import {
   type CampaignIntelTopic,
 } from './campaignIntelligence'
 import {
+  handleSafeActionRequest,
+  requiresExplicitConfirmation,
+  type SafeActionKind,
+} from './safeActions'
+import {
   handleHelp,
   handleInsights,
   handleKarkunInfo,
-  handleSafeCommunication,
   handleSafeNavigateAction,
   handleSuggestions,
   handleTasks,
@@ -271,19 +275,75 @@ function runRafeeqTurnInner(
     return handleKarkunInfo(layers, subject, memory)
   }
 
-  if (classified.mvpKind === 'CALL' || classified.mvpKind === 'WHATSAPP') {
-    const code = classified.mvpKind
-    const { plan, session } = runStackShell([code], layers)
+  if (
+    classified.mvpKind === 'CALL' ||
+    classified.mvpKind === 'WHATSAPP' ||
+    classified.mvpKind === 'REMINDER' ||
+    classified.mvpKind === 'SAFE_ACTION'
+  ) {
+    const safeKind: SafeActionKind =
+      classified.safeActionKind ??
+      (classified.mvpKind === 'CALL'
+        ? 'CALL'
+        : classified.mvpKind === 'WHATSAPP'
+          ? 'WHATSAPP'
+          : classified.mvpKind === 'REMINDER'
+            ? 'REMINDER'
+            : 'OPEN_PROFILE')
+    const extra = classified.safeExtraKinds ?? []
+    const needsConfirm = requiresExplicitConfirmation(safeKind)
+    const serviceCapability =
+      safeKind === 'CALL' || safeKind === 'WHATSAPP'
+        ? 'COMMUNICATION'
+        : safeKind === 'REMINDER'
+          ? 'REMINDER'
+          : 'NAVIGATION'
+    const domainCode =
+      safeKind === 'CALL' || safeKind === 'WHATSAPP' || safeKind === 'REMINDER'
+        ? safeKind
+        : 'NAVIGATION'
+
+    if (safeKind === 'CONFIRM' || safeKind === 'CANCEL') {
+      runStackShell(['NAVIGATION'], layers)
+      const { orchestrator: confirmation } = createConfirmationOrchestratorFoundation()
+      const conf = confirmation.evaluate(
+        confirmation.createRequest({
+          summary: `${safeKind} pending safe action`,
+          policyKind: 'informational_response',
+          capability: 'NAVIGATION',
+          context: { sessionId: context.sessionId, planId: null },
+        }),
+      )
+      layers.push('confirmation_orchestrator')
+      createExecutionPipelineFoundation().coordinator.simulateCoordination({
+        confirmationDecisionId: conf.decision.id,
+        confirmationEligible: true,
+        sessionId: context.sessionId,
+      })
+      layers.push('execution_pipeline')
+      layers.push('execution_adapter')
+      return handleSafeActionRequest({
+        layers,
+        kind: safeKind,
+        subject,
+        extraKinds: extra,
+        role: context.role,
+        memory,
+        confirmationState: conf.decision.state,
+      })
+    }
+
+    const { plan, session } = runStackShell([domainCode], layers)
     const { orchestrator: confirmation } = createConfirmationOrchestratorFoundation()
     const conf = confirmation.evaluate(
       confirmation.createRequest({
-        summary: `${code} action`,
-        policyKind: 'external_communication',
-        capability: code === 'CALL' ? 'CALL' : 'WHATSAPP',
+        summary: `Safe action: ${safeKind}`,
+        policyKind: needsConfirm ? 'external_communication' : 'informational_response',
+        capability: serviceCapability,
         context: {
           planId: plan.id,
           sessionId: session.id,
-          requestedCapability: code === 'CALL' ? 'CALL' : 'WHATSAPP',
+          requestedCapability: serviceCapability,
         },
       }),
     )
@@ -291,18 +351,28 @@ function runRafeeqTurnInner(
     createExecutionPipelineFoundation().coordinator.simulateCoordination({
       planId: plan.id,
       confirmationDecisionId: conf.decision.id,
-      confirmationEligible: conf.decision.eligibleForExecution,
+      confirmationEligible: conf.decision.eligibleForExecution || !needsConfirm,
       sessionId: session.id,
     })
     layers.push('execution_pipeline')
-    // MVP: surface confirmed launch links (USER_CONFIRMATION_REQUIRED still provides links; user clicks = confirm)
-    return handleSafeCommunication(
+    createServiceInvocationRequest({
+      capability: serviceCapability,
+      operation: `safeAction:${safeKind}`,
+      serviceId: 'existingKcActions',
+      payload: { kind: safeKind, readOnly: !needsConfirm, noFirestoreWrite: true },
+    })
+    layers.push('service_integration_contract')
+    layers.push('execution_adapter')
+
+    return handleSafeActionRequest({
       layers,
-      code,
+      kind: safeKind,
       subject,
+      extraKinds: extra,
+      role: context.role,
       memory,
-      conf.decision.state,
-    )
+      confirmationState: conf.decision.state,
+    })
   }
 
   if (

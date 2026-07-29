@@ -3934,6 +3934,27 @@ html[data-theme='dark'] {
     @apply bg-primary text-white hover:bg-primary/90;
   }
 
+  .dr-voice-action-cancel {
+    @apply min-h-10 rounded-full bg-slate-200 px-3.5 py-2 text-sm font-semibold text-text-heading transition hover:bg-slate-300;
+  }
+
+  .dr-voice-execution-result {
+    @apply mt-2 rounded-xl px-3 py-2 text-sm font-semibold;
+    line-height: 1.8;
+  }
+
+  .dr-voice-execution-result.status-success {
+    @apply bg-emerald-50 text-emerald-800;
+  }
+
+  .dr-voice-execution-result.status-cancelled {
+    @apply bg-slate-100 text-slate-700;
+  }
+
+  .dr-voice-execution-result.status-failed {
+    @apply bg-rose-50 text-rose-800;
+  }
+
   .dr-voice-confirm-note {
     @apply mt-2 rounded-xl bg-primary-muted/80 px-3 py-2 text-sm font-medium text-text-heading;
     line-height: 2;
