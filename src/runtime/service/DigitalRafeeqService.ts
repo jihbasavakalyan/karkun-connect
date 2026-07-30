@@ -16,6 +16,11 @@ import {
   type IntentRecognitionResult,
 } from '@/intents'
 import {
+  getWorkflowEngine,
+  type WorkflowActor,
+  type WorkflowExecutionResult,
+} from '@/workflows'
+import {
   getRuntimeBootstrapResult,
   initializeRuntime,
   type InitializeRuntimeOptions,
@@ -338,6 +343,20 @@ export class DigitalRafeeqService {
     conversation?: IntentConversationInput | null,
   ): IntentRecognitionResult {
     return recognizeIntent(utterance, conversation)
+  }
+
+  /**
+   * KC-035C — Run an operational workflow from a recognition result.
+   * Orchestrates existing services; does not embed business rules.
+   */
+  async runOperationalWorkflow(input: {
+    sessionId: string
+    actor: WorkflowActor
+    recognition: IntentRecognitionResult
+    conversation?: IntentConversationInput | null
+    confirmPending?: boolean
+  }): Promise<WorkflowExecutionResult> {
+    return getWorkflowEngine().executor.run(input)
   }
 
   /**
