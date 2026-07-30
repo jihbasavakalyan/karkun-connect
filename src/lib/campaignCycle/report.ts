@@ -2,6 +2,7 @@
  * Shared binary completion report builder for campaign cycles.
  */
 
+import type { WeeklyIjtemaAudienceGender } from '@/lib/weeklyIjtema/attendanceWindowSchedule'
 import { listActiveRuknsWithAssignments } from './activeRukns'
 
 export type BinaryCycleSubmission<TStatus extends string> = {
@@ -36,8 +37,9 @@ export function buildBinaryCycleReport<TStatus extends string>(
   submissions: BinaryCycleSubmission<TStatus>[],
   positiveStatus: TStatus,
   negativeStatus: TStatus,
+  options?: { audienceGender?: WeeklyIjtemaAudienceGender },
 ): BinaryCycleReport {
-  const ruknRowsBase = listActiveRuknsWithAssignments()
+  const ruknRowsBase = listActiveRuknsWithAssignments(options)
   const byRukn = new Map(submissions.map((item) => [item.ruknId, item]))
 
   let positive = 0

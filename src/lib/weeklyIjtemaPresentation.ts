@@ -1,9 +1,11 @@
 /**
- * KC-0113.2 / KC-0113.3 — Weekly Ijtema admin presentation helpers.
+ * KC-0113.2 / KC-0113.3 / KC-028C — Weekly Ijtema admin presentation helpers.
  * Presentation-only; does not change adapters or repositories.
+ * Uniqueness key: meetingDate + audienceGender (legacy = no gender).
  */
 
 import type { WeeklyIjtemaEvent } from '@/types/weeklyIjtema'
+import { eventAudienceKey } from '@/lib/weeklyIjtema/attendanceWindowSchedule'
 
 export function preferWeeklyIjtemaMeeting(
   current: WeeklyIjtemaEvent,
@@ -14,7 +16,7 @@ export function preferWeeklyIjtemaMeeting(
   return candidate.updatedAt >= current.updatedAt ? candidate : current
 }
 
-/** Canonical meeting for a date: Open preferred, else latest updatedAt. */
+/** Canonical meeting for a date (+ optional audience): Open preferred, else latest updatedAt. */
 export function pickCanonicalWeeklyIjtemaMeeting(
   events: WeeklyIjtemaEvent[],
 ): WeeklyIjtemaEvent | undefined {
@@ -22,12 +24,15 @@ export function pickCanonicalWeeklyIjtemaMeeting(
   return events.reduce((best, event) => preferWeeklyIjtemaMeeting(best, event))
 }
 
+function uniquenessKey(event: WeeklyIjtemaEvent): string {
+  return eventAudienceKey(event.meetingDate, event.audienceGender)
+}
+
 /**
- * Render exactly one card per meetingDate.
+ * Render exactly one card per meetingDate + audienceGender.
  *
- * Root cause of duplicates: Create allowed multiple events for the same
- * meetingDate (distinct ids). Prefer Open, then newest updatedAt.
- * When storage still has duplicates, warn once per render call for investigation.
+ * KC-0113.3 / KC-028C: Create allowed one event per (meetingDate, audienceGender).
+ * Prefer Open, then newest updatedAt.
  */
 export function uniqueWeeklyIjtemaMeetingsForDisplay(
   events: WeeklyIjtemaEvent[],
@@ -37,18 +42,19 @@ export function uniqueWeeklyIjtemaMeetingsForDisplay(
     byId.set(event.id, event)
   }
 
-  const byMeetingDate = new Map<string, WeeklyIjtemaEvent[]>()
+  const byKey = new Map<string, WeeklyIjtemaEvent[]>()
   for (const event of byId.values()) {
-    const group = byMeetingDate.get(event.meetingDate) ?? []
+    const key = uniquenessKey(event)
+    const group = byKey.get(key) ?? []
     group.push(event)
-    byMeetingDate.set(event.meetingDate, group)
+    byKey.set(key, group)
   }
 
   const unique: WeeklyIjtemaEvent[] = []
-  for (const [meetingDate, group] of byMeetingDate) {
+  for (const [key, group] of byKey) {
     if (group.length > 1) {
-      console.warn('[KC-0113.3] Duplicate Weekly Ijtema meetings for meetingDate', {
-        meetingDate,
+      console.warn('[KC-028C] Duplicate Weekly Ijtema meetings for key', {
+        key,
         count: group.length,
         eventIds: group.map((event) => event.id),
         statuses: group.map((event) => event.status),
@@ -58,5 +64,9 @@ export function uniqueWeeklyIjtemaMeetingsForDisplay(
     if (canonical) unique.push(canonical)
   }
 
-  return unique.sort((a, b) => b.meetingDate.localeCompare(a.meetingDate))
+  return unique.sort((a, b) => {
+    const dateCmp = b.meetingDate.localeCompare(a.meetingDate)
+    if (dateCmp !== 0) return dateCmp
+    return (a.audienceGender ?? '').localeCompare(b.audienceGender ?? '')
+  })
 }

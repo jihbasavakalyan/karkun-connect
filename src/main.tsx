@@ -47,12 +47,29 @@ async function runDeferredBootstrap(): Promise<void> {
 
   // KC-027F: Digital Rafeeq runtime must not compete with first dashboard paint.
   // Schedule after hydrate gate; do not await on the bootstrap critical path.
-  const scheduleRafeeq =
+  const scheduleIdle =
     typeof window !== 'undefined' && 'requestIdleCallback' in window
       ? (cb: () => void) => window.requestIdleCallback(cb, { timeout: 2000 })
       : (cb: () => void) => window.setTimeout(cb, 0)
 
-  scheduleRafeeq(() => {
+  // KC-028C — ensure gender-scoped Weekly Ijtema attendance windows (deferred).
+  if (isRepositoryHydrationReady()) {
+    scheduleIdle(() => {
+      try {
+        void import('@/lib/weeklyIjtema/attendanceWindowEngine').then(
+          ({ ensureWeeklyIjtemaAttendanceWindows }) => {
+            ensureWeeklyIjtemaAttendanceWindows()
+            logStartupTiming('weeklyIjtemaAttendanceWindows.ensured')
+          },
+        )
+      } catch (error) {
+        console.warn('[bootstrap] Weekly Ijtema attendance window ensure failed', error)
+        logStartupTiming('weeklyIjtemaAttendanceWindows.error')
+      }
+    })
+  }
+
+  scheduleIdle(() => {
     void (async () => {
       try {
         const { initializeRuntime } = await import('@/runtime/bootstrap/initializeRuntime')

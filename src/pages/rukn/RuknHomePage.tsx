@@ -6,6 +6,7 @@ import { WidgetErrorBoundary } from '@/components/mission-control/WidgetErrorBou
 import { RuknFloatingActionButton } from '@/components/home'
 import { ExecutionSuccessBanner } from '@/components/execution/ExecutionSuccessBanner'
 import { CampaignExecutionProgressCard } from '@/components/execution/CampaignExecutionProgressCard'
+import { WeeklyIjtemaAttendanceOpenCard } from '@/components/execution/WeeklyIjtemaAttendanceOpenCard'
 import { RuknExecutionSummaryCards } from '@/components/execution/RuknExecutionSummaryCards'
 import { CampaignExecutionMatrix } from '@/components/execution/CampaignExecutionMatrix'
 import { RuknTodaysFocus } from '@/components/execution/RuknTodaysFocus'
@@ -76,6 +77,7 @@ export function RuknHomePage() {
             campaignName={campaignName}
             hideSummaryChips
           />
+          <WeeklyIjtemaAttendanceOpenCard ruknId={ruknId} />
           <CampaignExecutionProgressCard ruknId={ruknId} />
           {!postCampaign ? <RuknExecutionSummaryCards ruknId={ruknId} /> : null}
           <AskDigitalRafeeqCard

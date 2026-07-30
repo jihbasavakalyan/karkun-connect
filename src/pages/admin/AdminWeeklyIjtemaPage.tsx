@@ -1,6 +1,7 @@
 /**
  * KC-0107 — Admin Weekly Ijtema Management.
  * KC-0113.2 — Deduped meeting cards; Edit/Delete reuse create form + cascade delete.
+ * KC-028C — Automatic windows; reopen requires reason + duration (audit log).
  */
 
 import { useEffect, useMemo, useState } from 'react'
@@ -13,6 +14,8 @@ import { GenerateCampaignReportButton } from '@/components/reporting/GenerateCam
 import { ROUTES, adminWeeklyIjtemaReportPath } from '@/constants/routes'
 import { useAuth } from '@/hooks/useAuth'
 import { useBusyAction } from '@/hooks/useBusyAction'
+import { ensureWeeklyIjtemaAttendanceWindows } from '@/lib/weeklyIjtema/attendanceWindowEngine'
+import { getAttendanceWindowSchedule } from '@/lib/weeklyIjtema/attendanceWindowSchedule'
 import { uniqueWeeklyIjtemaMeetingsForDisplay } from '@/lib/weeklyIjtemaPresentation'
 import {
   closeWeeklyIjtemaAttendance,
@@ -61,6 +64,12 @@ function isSuccessMessage(message: string): boolean {
   )
 }
 
+function audienceLabel(event: WeeklyIjtemaEvent): string {
+  if (event.audienceGender === 'Female') return 'Women'
+  if (event.audienceGender === 'Male') return 'Men'
+  return 'All / Legacy'
+}
+
 export function AdminWeeklyIjtemaPage() {
   const { user } = useAuth()
   const [version, setVersion] = useState(0)
@@ -73,9 +82,17 @@ export function AdminWeeklyIjtemaPage() {
   )
   const [message, setMessage] = useState('')
   const [pendingDelete, setPendingDelete] = useState<WeeklyIjtemaEvent | null>(null)
+  const [reopenTarget, setReopenTarget] = useState<WeeklyIjtemaEvent | null>(null)
+  const [reopenReason, setReopenReason] = useState('')
+  const [reopenDurationHours, setReopenDurationHours] = useState('4')
   const { busy, run } = useBusyAction()
 
-  useEffect(() => subscribeToWeeklyIjtemaStore(() => setVersion((v) => v + 1)), [])
+  useEffect(() => {
+    ensureWeeklyIjtemaAttendanceWindows()
+    return subscribeToWeeklyIjtemaStore(() => setVersion((v) => v + 1))
+  }, [])
+
+  const schedule = useMemo(() => getAttendanceWindowSchedule(), [])
 
   const events = useMemo(() => {
     void version
@@ -152,12 +169,8 @@ export function AdminWeeklyIjtemaPage() {
           createdBy: actor,
         })
         if (!result.success) {
-          // KC-0113.3 — Switch into Edit for the canonical meeting on that date.
           if (result.existingEventId) {
-            startEditById(
-              result.existingEventId,
-              result.error,
-            )
+            startEditById(result.existingEventId, result.error)
             return
           }
           setMessage(result.error)
@@ -176,32 +189,49 @@ export function AdminWeeklyIjtemaPage() {
     )
   }
 
-  const runStatusAction = (
-    event: WeeklyIjtemaEvent,
-    action: 'open' | 'close' | 'reopen',
-  ) => {
+  const runStatusAction = (event: WeeklyIjtemaEvent, action: 'open' | 'close') => {
     void run(
       async () => {
         setMessage('')
         const result =
           action === 'close'
             ? closeWeeklyIjtemaAttendance(event.id, actor)
-            : action === 'reopen'
-              ? reopenWeeklyIjtemaAttendance(event.id, actor)
-              : openWeeklyIjtemaAttendance(event.id, actor)
+            : openWeeklyIjtemaAttendance(event.id, actor)
         if (!result.success) {
           setMessage(result.error)
           return
         }
-        setMessage(
-          action === 'close'
-            ? 'Attendance closed.'
-            : action === 'reopen'
-              ? 'Attendance reopened for corrections.'
-              : 'Attendance opened.',
-        )
+        setMessage(action === 'close' ? 'Attendance closed.' : 'Attendance opened.')
       },
       { key: `weekly-ijtema-${action}:${event.id}`, waitForPendingWrites: true, minMs: 250 },
+    )
+  }
+
+  const confirmReopen = () => {
+    if (!reopenTarget) return
+    const event = reopenTarget
+    const hours = Number(reopenDurationHours)
+    void run(
+      async () => {
+        setMessage('')
+        const result = reopenWeeklyIjtemaAttendance({
+          eventId: event.id,
+          updatedBy: actor,
+          reason: reopenReason,
+          durationHours: hours,
+        })
+        if (!result.success) {
+          setMessage(result.error)
+          return
+        }
+        setReopenTarget(null)
+        setReopenReason('')
+        setReopenDurationHours('4')
+        setMessage(
+          `Attendance reopened for ${hours} hour(s). Reason recorded in audit log.`,
+        )
+      },
+      { key: `weekly-ijtema-reopen:${event.id}`, waitForPendingWrites: true, minMs: 250 },
     )
   }
 
@@ -231,11 +261,27 @@ export function AdminWeeklyIjtemaPage() {
     <PageShell>
       <PageHeader
         title="Weekly Ijtema"
-        description="Create meetings, open or close attendance, and generate the Campaign Report for leadership review."
+        description="Attendance windows open automatically from the configured schedule. Use this page for corrections, reports, and late reopen."
         actions={<GenerateCampaignReportButton size="sm" />}
       />
 
-      <section className="rounded-xl border border-border bg-surface p-4 shadow-card sm:p-5">
+      <section className="rounded-xl border border-border bg-surface-muted p-4 text-sm text-secondary">
+        <p className="font-semibold text-text-heading">Automatic attendance windows</p>
+        <ul className="mt-2 list-disc space-y-1 pl-5">
+          {schedule.entries.map((entry) => (
+            <li key={entry.id}>
+              {entry.label}: day {entry.dayOfWeek} · {entry.openTime}–{entry.closeTime} (
+              {schedule.timezone})
+            </li>
+          ))}
+        </ul>
+        <p className="mt-2 text-xs">
+          No weekly Administrator open is required. Manual create remains available for
+          exceptions.
+        </p>
+      </section>
+
+      <section className="mt-4 rounded-xl border border-border bg-surface p-4 shadow-card sm:p-5">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-secondary">
           {isEditing ? 'Edit Weekly Ijtema' : 'Create Weekly Ijtema'}
         </h2>
@@ -267,7 +313,7 @@ export function AdminWeeklyIjtemaPage() {
               onChange={(event) => setDeadlineLocal(event.target.value)}
             />
             <span className="mt-1 block text-xs text-secondary">
-              Default is Meeting Date + 24 hours. Rukns can edit until this deadline while Open.
+              Default is Meeting Date + 24 hours. Auto windows use same-day close time.
             </span>
           </label>
           {isEditing ? (
@@ -311,83 +357,100 @@ export function AdminWeeklyIjtemaPage() {
         </h2>
         {events.length === 0 ? (
           <p className="rounded-lg border border-border bg-surface p-4 text-sm text-secondary">
-            No Weekly Ijtema events yet. Create the first meeting above.
+            No Weekly Ijtema events yet. Windows open automatically on scheduled days, or create
+            one above.
           </p>
         ) : (
           <ul className="space-y-3">
-            {events.map((event) => (
-              <li
-                key={event.id}
-                className="rounded-xl border border-border bg-surface p-4 shadow-card"
-              >
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <p className="font-semibold text-text-heading">{event.title}</p>
-                    <p className="text-sm text-secondary">
-                      {formatWeeklyIjtemaMeetingLabel(event.meetingDate)}
-                    </p>
-                    <p className="mt-1 text-xs text-secondary">
-                      Deadline{' '}
-                      {new Date(event.submissionDeadline).toLocaleString('en-GB', {
-                        day: 'numeric',
-                        month: 'short',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
-                    </p>
+            {events.map((event) => {
+              const lastAudit = event.reopenAudit?.[event.reopenAudit.length - 1]
+              return (
+                <li
+                  key={event.id}
+                  className="rounded-xl border border-border bg-surface p-4 shadow-card"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="font-semibold text-text-heading">{event.title}</p>
+                      <p className="text-sm text-secondary">
+                        {formatWeeklyIjtemaMeetingLabel(event.meetingDate)} · Audience:{' '}
+                        {audienceLabel(event)}
+                        {event.openedAutomatically ? ' · Auto window' : ''}
+                      </p>
+                      <p className="mt-1 text-xs text-secondary">
+                        Deadline{' '}
+                        {new Date(event.submissionDeadline).toLocaleString('en-GB', {
+                          day: 'numeric',
+                          month: 'short',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </p>
+                      {lastAudit ? (
+                        <p className="mt-1 text-xs text-secondary">
+                          Last reopen: {lastAudit.by} · {lastAudit.reason} ·{' '}
+                          {lastAudit.durationHours}h ·{' '}
+                          {new Date(lastAudit.at).toLocaleString('en-GB')}
+                        </p>
+                      ) : null}
+                    </div>
+                    <span
+                      className={[
+                        'rounded-full px-3 py-1 text-xs font-semibold',
+                        event.status === 'Open'
+                          ? 'bg-emerald-50 text-emerald-800'
+                          : 'bg-slate-100 text-slate-700',
+                      ].join(' ')}
+                    >
+                      {event.status}
+                    </span>
                   </div>
-                  <span
-                    className={[
-                      'rounded-full px-3 py-1 text-xs font-semibold',
-                      event.status === 'Open'
-                        ? 'bg-emerald-50 text-emerald-800'
-                        : 'bg-slate-100 text-slate-700',
-                    ].join(' ')}
-                  >
-                    {event.status}
-                  </span>
-                </div>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <SecondaryButton
-                    type="button"
-                    onClick={() => startEdit(event)}
-                    disabled={busy}
-                  >
-                    Edit
-                  </SecondaryButton>
-                  <SecondaryButton
-                    type="button"
-                    onClick={() => setPendingDelete(event)}
-                    disabled={busy}
-                  >
-                    Delete
-                  </SecondaryButton>
-                  {event.status === 'Closed' ? (
+                  <div className="mt-3 flex flex-wrap gap-2">
                     <SecondaryButton
                       type="button"
-                      onClick={() => runStatusAction(event, 'reopen')}
+                      onClick={() => startEdit(event)}
                       disabled={busy}
                     >
-                      Reopen Attendance
+                      Edit
                     </SecondaryButton>
-                  ) : (
                     <SecondaryButton
                       type="button"
-                      onClick={() => runStatusAction(event, 'close')}
+                      onClick={() => setPendingDelete(event)}
                       disabled={busy}
                     >
-                      Close Attendance
+                      Delete
                     </SecondaryButton>
-                  )}
-                  <Link
-                    to={adminWeeklyIjtemaReportPath(event.id)}
-                    className="inline-flex min-h-10 items-center rounded-lg border border-border px-3 text-sm font-semibold text-text-heading hover:bg-surface-muted"
-                  >
-                    View Attendance Report
-                  </Link>
-                </div>
-              </li>
-            ))}
+                    {event.status === 'Closed' ? (
+                      <SecondaryButton
+                        type="button"
+                        onClick={() => {
+                          setReopenTarget(event)
+                          setReopenReason('')
+                          setReopenDurationHours('4')
+                        }}
+                        disabled={busy}
+                      >
+                        Reopen Attendance
+                      </SecondaryButton>
+                    ) : (
+                      <SecondaryButton
+                        type="button"
+                        onClick={() => runStatusAction(event, 'close')}
+                        disabled={busy}
+                      >
+                        Close Attendance
+                      </SecondaryButton>
+                    )}
+                    <Link
+                      to={adminWeeklyIjtemaReportPath(event.id)}
+                      className="inline-flex min-h-10 items-center rounded-lg border border-border px-3 text-sm font-semibold text-text-heading hover:bg-surface-muted"
+                    >
+                      View Attendance Report
+                    </Link>
+                  </div>
+                </li>
+              )
+            })}
           </ul>
         )}
       </section>
@@ -424,6 +487,54 @@ export function AdminWeeklyIjtemaPage() {
             Associated attendance submissions for this meeting will also be deleted so records are
             not orphaned.
           </p>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={Boolean(reopenTarget)}
+        title="Reopen Attendance"
+        onClose={busy ? () => undefined : () => setReopenTarget(null)}
+        size="md"
+        footer={
+          <ModalFormFooter
+            onCancel={() => setReopenTarget(null)}
+            primaryLabel="Reopen Attendance"
+            onPrimaryClick={confirmReopen}
+            loading={busy}
+          />
+        }
+      >
+        <div className="space-y-3 text-sm">
+          <p className="text-secondary">
+            Late entry requires a reason and duration. Who reopened, why, when, and how long are
+            recorded in the audit log.
+          </p>
+          {reopenTarget ? (
+            <p className="font-medium text-text-heading">
+              {reopenTarget.title} · {formatWeeklyIjtemaMeetingLabel(reopenTarget.meetingDate)}
+            </p>
+          ) : null}
+          <label className="block">
+            <span className="mb-1 block text-secondary">Reason</span>
+            <textarea
+              className="w-full rounded-lg border border-border bg-surface px-3 py-2"
+              rows={3}
+              value={reopenReason}
+              onChange={(event) => setReopenReason(event.target.value)}
+              placeholder="Why is attendance being reopened?"
+            />
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-secondary">Duration (hours)</span>
+            <input
+              type="number"
+              min={1}
+              step={1}
+              className="w-full rounded-lg border border-border bg-surface px-3 py-2"
+              value={reopenDurationHours}
+              onChange={(event) => setReopenDurationHours(event.target.value)}
+            />
+          </label>
         </div>
       </Modal>
     </PageShell>

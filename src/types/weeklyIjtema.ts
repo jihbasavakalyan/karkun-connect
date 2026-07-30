@@ -2,6 +2,7 @@
  * KC-0107 — Weekly Ijtema Attendance Management (event-based model).
  * Attendance records belong to a Weekly Ijtema event — not Person/Karkun docs.
  * Lifecycle (open/deadline/lock/reopen) is shared via campaignCycle.
+ * KC-028C — gender audience + automatic attendance windows + reopen audit.
  */
 
 import type { CampaignCycleBase } from '@/lib/campaignCycle/lifecycle'
@@ -11,15 +12,30 @@ import {
   formatCycleDateLabel,
   isCycleDeadlinePassed,
 } from '@/lib/campaignCycle/lifecycle'
+import type { WeeklyIjtemaAudienceGender } from '@/lib/weeklyIjtema/attendanceWindowSchedule'
 
 export type WeeklyIjtemaEventStatus = 'Open' | 'Closed'
 
 /** Version-1 statuses only. No Excused / remarks / reasons. */
 export type WeeklyIjtemaMarkStatus = 'Present' | 'Absent'
 
+export type WeeklyIjtemaReopenAuditEntry = {
+  at: string
+  by: string
+  reason: string
+  durationHours: number
+  reopenUntil: string
+}
+
 export type WeeklyIjtemaEvent = CampaignCycleBase & {
   meetingDate: string
   status: WeeklyIjtemaEventStatus
+  /** KC-028C — Male = men's register; Female = women's. Legacy events may omit. */
+  audienceGender?: WeeklyIjtemaAudienceGender
+  openedAutomatically?: boolean
+  reopenReason?: string
+  reopenUntil?: string
+  reopenAudit?: WeeklyIjtemaReopenAuditEntry[]
 }
 
 export type WeeklyIjtemaKarkunMark = {
@@ -82,6 +98,8 @@ export type CreateWeeklyIjtemaEventInput = {
   title?: string
   submissionDeadline?: string
   createdBy?: string
+  audienceGender?: WeeklyIjtemaAudienceGender
+  openedAutomatically?: boolean
 }
 
 export type UpdateWeeklyIjtemaEventInput = {
@@ -91,12 +109,20 @@ export type UpdateWeeklyIjtemaEventInput = {
   submissionDeadline?: string
   status?: WeeklyIjtemaEventStatus
   updatedBy?: string
+  audienceGender?: WeeklyIjtemaAudienceGender
 }
 
 export type UpdateWeeklyIjtemaEventStatusInput = {
   eventId: string
   status: WeeklyIjtemaEventStatus
   updatedBy?: string
+}
+
+export type ReopenWeeklyIjtemaAttendanceInput = {
+  eventId: string
+  updatedBy: string
+  reason: string
+  durationHours: number
 }
 
 export type SaveWeeklyIjtemaSubmissionInput = {
@@ -107,7 +133,11 @@ export type SaveWeeklyIjtemaSubmissionInput = {
   submittedBy: string
 }
 
-export function defaultWeeklyIjtemaTitle(): string {
+export function defaultWeeklyIjtemaTitle(
+  audienceGender?: WeeklyIjtemaAudienceGender,
+): string {
+  if (audienceGender === 'Female') return "Women's Weekly Ijtema"
+  if (audienceGender === 'Male') return "Men's Weekly Ijtema"
   return 'Weekly Ijtema'
 }
 
@@ -132,4 +162,13 @@ export function canRuknEditWeeklyIjtema(
 
 export function formatWeeklyIjtemaMeetingLabel(meetingDate: string): string {
   return formatCycleDateLabel(meetingDate)
+}
+
+export function matchesWeeklyIjtemaAudience(
+  event: Pick<WeeklyIjtemaEvent, 'audienceGender'>,
+  audienceGender: WeeklyIjtemaAudienceGender | undefined,
+): boolean {
+  if (!audienceGender) return true
+  if (!event.audienceGender) return true
+  return event.audienceGender === audienceGender
 }

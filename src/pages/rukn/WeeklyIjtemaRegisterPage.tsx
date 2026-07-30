@@ -16,6 +16,8 @@ import {
   EXECUTION_PERSIST_FAILED_EVENT,
   type ExecutionPersistFailedDetail,
 } from '@/lib/executionPersistEvents'
+import { ensureWeeklyIjtemaAttendanceWindows } from '@/lib/weeklyIjtema/attendanceWindowEngine'
+import type { WeeklyIjtemaAudienceGender } from '@/lib/weeklyIjtema/attendanceWindowSchedule'
 import {
   getCurrentWeeklyIjtemaEvent,
   getRuknWeeklyIjtemaWorkspace,
@@ -60,7 +62,10 @@ export function WeeklyIjtemaRegisterPage() {
   const [message, setMessage] = useState('')
   const { busy: saving, run } = useBusyAction()
 
-  useEffect(() => subscribeToWeeklyIjtemaStore(() => setStoreVersion((v) => v + 1)), [])
+  useEffect(() => {
+    ensureWeeklyIjtemaAttendanceWindows()
+    return subscribeToWeeklyIjtemaStore(() => setStoreVersion((v) => v + 1))
+  }, [])
 
   useEffect(() => {
     const onPersistFailed = (event: Event) => {
@@ -80,16 +85,31 @@ export function WeeklyIjtemaRegisterPage() {
 
   const events = useMemo(() => {
     void storeVersion
-    return listWeeklyIjtemaEvents()
-  }, [storeVersion])
+    const all = listWeeklyIjtemaEvents()
+    if (!ruknId) return all
+    const gender: WeeklyIjtemaAudienceGender =
+      getRuknById(ruknId)?.gender === 'Female' ? 'Female' : 'Male'
+    const scoped = all.filter(
+      (event) => !event.audienceGender || event.audienceGender === gender,
+    )
+    return scoped.length > 0 ? scoped : all
+  }, [storeVersion, ruknId])
 
   const currentEvent = useMemo(() => {
     void storeVersion
+    const gender: WeeklyIjtemaAudienceGender | undefined = ruknId
+      ? getRuknById(ruknId)?.gender === 'Female'
+        ? 'Female'
+        : 'Male'
+      : undefined
     if (selectedEventId) {
-      return events.find((event) => event.id === selectedEventId) ?? getCurrentWeeklyIjtemaEvent()
+      return (
+        events.find((event) => event.id === selectedEventId) ??
+        getCurrentWeeklyIjtemaEvent({ audienceGender: gender })
+      )
     }
-    return getCurrentWeeklyIjtemaEvent()
-  }, [events, selectedEventId, storeVersion])
+    return getCurrentWeeklyIjtemaEvent({ audienceGender: gender })
+  }, [events, selectedEventId, storeVersion, ruknId])
 
   const workspace = useMemo(() => {
     void assignmentVersion

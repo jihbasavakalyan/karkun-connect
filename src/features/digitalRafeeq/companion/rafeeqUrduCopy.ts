@@ -13,6 +13,12 @@ import { getGuidanceForRuknKarkuns } from '@/lib/guidance/guidanceEngine'
 import { sortGuidanceByUrgency } from '@/lib/homePresentation'
 import { getActivePlanForKarkun } from '@/stores/executionPlanStore'
 import { buildRafeeqPriorityWhyUrdu } from '@/lib/relationshipIntelligencePresentation'
+import { getRuknById } from '@/data/ruknMaster'
+import {
+  getActiveAttendanceWindowForGender,
+  getRuknAttendanceProgress,
+} from '@/lib/weeklyIjtema/attendanceWindowEngine'
+import type { WeeklyIjtemaAudienceGender } from '@/lib/weeklyIjtema/attendanceWindowSchedule'
 
 export const RAFEEQ_BRAND = 'Digital Rafeeq'
 
@@ -76,7 +82,32 @@ function buildMatrixFocusGuidanceUrdu(focus: TodaysFocusItem): string {
   }
 }
 
+/** KC-028C — Prefer attendance-window guidance when the register is open and incomplete. */
+function buildWeeklyIjtemaWindowGuidanceUrdu(ruknId: string): string | null {
+  const rukn = getRuknById(ruknId)
+  if (!rukn) return null
+  const gender: WeeklyIjtemaAudienceGender =
+    rukn.gender === 'Female' ? 'Female' : 'Male'
+  const event = getActiveAttendanceWindowForGender(gender)
+  if (!event || event.status !== 'Open') return null
+
+  const progress = getRuknAttendanceProgress(event.id, ruknId)
+  if (progress.pending <= 0) return null
+
+  if (progress.pending === 1) {
+    return 'آج ہفتہ وار اجتماع کی حاضری درج کرنا باقی ہے۔'
+  }
+  if (progress.pending >= 3) {
+    return `آپ کے ${progress.pending} کارکنوں کی حاضری ابھی درج نہیں ہوئی۔`
+  }
+  return 'اجتماع کی حاضری مکمل کریں۔'
+}
+
 export function buildContextualRafeeqGuidance(ruknId: string): string {
+  // KC-028C — attendance window incomplete takes priority when active.
+  const ijtemaGuidance = buildWeeklyIjtemaWindowGuidanceUrdu(ruknId)
+  if (ijtemaGuidance) return ijtemaGuidance
+
   // KC-0092C — campaign Execution Matrix is the source of truth for Home recommendations.
   // Reuses buildTodaysFocusItems (same rows as the Matrix); no extra Firestore reads.
   if (!isRuknPostCampaignMode()) {

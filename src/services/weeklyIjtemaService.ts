@@ -10,6 +10,8 @@
  *
  * KC-0111 — Health slice uses present÷totalAssigned from this KPI
  * (not marked-only attendancePct). See kc-0111-campaign-health-inventory.md.
+ *
+ * KC-028C — gender-scoped current event + reopen audit (reason/duration).
  */
 
 import { getAssignedKarkunanForRukn } from '@/lib/assignmentEngine'
@@ -35,8 +37,11 @@ import {
 import {
   pickCanonicalWeeklyIjtemaMeeting,
 } from '@/lib/weeklyIjtemaPresentation'
+import type { WeeklyIjtemaAudienceGender } from '@/lib/weeklyIjtema/attendanceWindowSchedule'
+import { matchesWeeklyIjtemaAudience } from '@/types/weeklyIjtema'
 import type {
   CreateWeeklyIjtemaEventInput,
+  ReopenWeeklyIjtemaAttendanceInput,
   SaveWeeklyIjtemaSubmissionInput,
   UpdateWeeklyIjtemaEventInput,
   UpdateWeeklyIjtemaEventStatusInput,
@@ -60,18 +65,58 @@ export function getWeeklyIjtemaEventById(eventId: string): WeeklyIjtemaEvent | u
   return getWeeklyIjtemaEvent(eventId)
 }
 
-/** KC-0113.3 — Canonical meeting for a date (Open preferred, else latest updatedAt). */
-export function getWeeklyIjtemaEventByMeetingDate(
+function eventsForMeetingAudience(
   meetingDate: string,
-): WeeklyIjtemaEvent | undefined {
-  const matches = getAllWeeklyIjtemaEvents().filter((event) => event.meetingDate === meetingDate)
-  return pickCanonicalWeeklyIjtemaMeeting(matches)
+  audienceGender?: WeeklyIjtemaAudienceGender,
+): WeeklyIjtemaEvent[] {
+  return getAllWeeklyIjtemaEvents().filter((event) => {
+    if (event.meetingDate !== meetingDate) return false
+    if (!audienceGender) return true
+    if (!event.audienceGender) return true
+    return event.audienceGender === audienceGender
+  })
 }
 
-/** Prefer the latest Open event; otherwise the most recent meeting. */
-export function getCurrentWeeklyIjtemaEvent(): WeeklyIjtemaEvent | undefined {
+/** KC-0113.3 / KC-028C — Canonical meeting for a date (+ optional audience). */
+export function getWeeklyIjtemaEventByMeetingDate(
+  meetingDate: string,
+  audienceGender?: WeeklyIjtemaAudienceGender,
+): WeeklyIjtemaEvent | undefined {
+  return pickCanonicalWeeklyIjtemaMeeting(eventsForMeetingAudience(meetingDate, audienceGender))
+}
+
+export type GetCurrentWeeklyIjtemaEventOptions = {
+  audienceGender?: WeeklyIjtemaAudienceGender
+  /** Prefer meeting on this YYYY-MM-DD when Open. */
+  meetingDate?: string
+}
+
+/**
+ * Prefer Open event matching audience (and optional meetingDate);
+ * else any Open matching audience; else latest matching; else legacy Open.
+ */
+export function getCurrentWeeklyIjtemaEvent(
+  options?: GetCurrentWeeklyIjtemaEventOptions,
+): WeeklyIjtemaEvent | undefined {
   const events = getAllWeeklyIjtemaEvents()
-  return events.find((event) => event.status === 'Open') ?? events[0]
+  const gender = options?.audienceGender
+  const meetingDate = options?.meetingDate
+
+  const pool = gender
+    ? events.filter((event) => matchesWeeklyIjtemaAudience(event, gender))
+    : events
+  if (pool.length === 0) return undefined
+
+  if (meetingDate) {
+    const todayOpen = pool.find(
+      (event) => event.status === 'Open' && event.meetingDate === meetingDate,
+    )
+    if (todayOpen) return todayOpen
+  }
+
+  const open = pool.find((event) => event.status === 'Open')
+  if (open) return open
+  return pool[0]
 }
 
 export function createWeeklyIjtemaEvent(
@@ -84,14 +129,35 @@ export function createWeeklyIjtemaEvent(
     return { success: false, error: validation.error }
   }
 
-  // KC-0113.3 — One Weekly Ijtema meeting per meetingDate.
-  const existing = getWeeklyIjtemaEventByMeetingDate(input.meetingDate)
+  // KC-0113.3 / KC-028C — One meeting per meetingDate + audienceGender.
+  const existing = getWeeklyIjtemaEventByMeetingDate(input.meetingDate, input.audienceGender)
   if (existing) {
-    return {
-      success: false,
-      error:
-        'A Weekly Ijtema meeting already exists for this date. Edit the existing meeting instead.',
-      existingEventId: existing.id,
+    const sameAudience =
+      !input.audienceGender ||
+      !existing.audienceGender ||
+      existing.audienceGender === input.audienceGender
+    if (sameAudience) {
+      return {
+        success: false,
+        error:
+          'A Weekly Ijtema meeting already exists for this date and audience. Edit the existing meeting instead.',
+        existingEventId: existing.id,
+      }
+    }
+  }
+
+  // Also block exact key collisions when legacy (no gender) exists on that date and caller has no gender.
+  if (!input.audienceGender) {
+    const legacy = getAllWeeklyIjtemaEvents().find(
+      (event) => event.meetingDate === input.meetingDate && !event.audienceGender,
+    )
+    if (legacy) {
+      return {
+        success: false,
+        error:
+          'A Weekly Ijtema meeting already exists for this date. Edit the existing meeting instead.',
+        existingEventId: legacy.id,
+      }
     }
   }
 
@@ -99,7 +165,7 @@ export function createWeeklyIjtemaEvent(
   const actor = input.createdBy ?? 'Administrator'
   const event: WeeklyIjtemaEvent = {
     id: createCycleId('wij'),
-    title: input.title?.trim() || defaultWeeklyIjtemaTitle(),
+    title: input.title?.trim() || defaultWeeklyIjtemaTitle(input.audienceGender),
     meetingDate: input.meetingDate,
     status: 'Open',
     submissionDeadline: input.submissionDeadline || defaultSubmissionDeadline(input.meetingDate),
@@ -107,6 +173,8 @@ export function createWeeklyIjtemaEvent(
     createdBy: actor,
     updatedAt: timestamp,
     updatedBy: actor,
+    audienceGender: input.audienceGender,
+    openedAutomatically: input.openedAutomatically === true,
   }
 
   return { success: true, event: upsertWeeklyIjtemaEvent(event) }
@@ -125,13 +193,16 @@ export function updateWeeklyIjtemaEvent(
     return { success: false, error: 'Weekly Ijtema event not found.' }
   }
 
-  // KC-0113.3 — Do not move a meeting onto another date that already has a meeting.
-  if (input.meetingDate !== existing.meetingDate) {
-    const conflict = getWeeklyIjtemaEventByMeetingDate(input.meetingDate)
+  const nextAudience = input.audienceGender ?? existing.audienceGender
+  if (
+    input.meetingDate !== existing.meetingDate ||
+    nextAudience !== existing.audienceGender
+  ) {
+    const conflict = getWeeklyIjtemaEventByMeetingDate(input.meetingDate, nextAudience)
     if (conflict && conflict.id !== input.eventId) {
       return {
         success: false,
-        error: 'A Weekly Ijtema meeting already exists for this date.',
+        error: 'A Weekly Ijtema meeting already exists for this date and audience.',
       }
     }
   }
@@ -146,6 +217,7 @@ export function updateWeeklyIjtemaEvent(
       input.submissionDeadline || defaultSubmissionDeadline(input.meetingDate),
     updatedAt: timestamp,
     updatedBy: actor,
+    audienceGender: nextAudience,
   }
 
   if (input.status && input.status !== existing.status) {
@@ -188,11 +260,67 @@ export function openWeeklyIjtemaAttendance(eventId: string, updatedBy?: string) 
 }
 
 export function closeWeeklyIjtemaAttendance(eventId: string, updatedBy?: string) {
-  return setWeeklyIjtemaEventStatus({ eventId, status: 'Closed', updatedBy })
+  const existing = getWeeklyIjtemaEvent(eventId)
+  if (!existing) {
+    return { success: false as const, error: 'Weekly Ijtema event not found.' }
+  }
+  const actor = updatedBy ?? 'Administrator'
+  const closed = applyCycleStatusChange(existing, 'Closed', actor)
+  const next: WeeklyIjtemaEvent = {
+    ...closed,
+    reopenUntil: undefined,
+  }
+  return { success: true as const, event: upsertWeeklyIjtemaEvent(next) }
 }
 
-export function reopenWeeklyIjtemaAttendance(eventId: string, updatedBy?: string) {
-  return setWeeklyIjtemaEventStatus({ eventId, status: 'Open', updatedBy })
+/** KC-028C — Admin reopen with required reason + duration; append-only audit. */
+export function reopenWeeklyIjtemaAttendance(
+  eventIdOrInput: string | ReopenWeeklyIjtemaAttendanceInput,
+  updatedByMaybe?: string,
+): { success: true; event: WeeklyIjtemaEvent } | { success: false; error: string } {
+  // Backward-compatible: reopenWeeklyIjtemaAttendance(id, by)
+  if (typeof eventIdOrInput === 'string') {
+    return setWeeklyIjtemaEventStatus({
+      eventId: eventIdOrInput,
+      status: 'Open',
+      updatedBy: updatedByMaybe,
+    })
+  }
+
+  const input = eventIdOrInput
+  const reason = input.reason?.trim()
+  if (!reason) {
+    return { success: false, error: 'A reason is required to reopen attendance.' }
+  }
+  if (!Number.isFinite(input.durationHours) || input.durationHours <= 0) {
+    return { success: false, error: 'Duration (hours) must be a positive number.' }
+  }
+
+  const existing = getWeeklyIjtemaEvent(input.eventId)
+  if (!existing) {
+    return { success: false, error: 'Weekly Ijtema event not found.' }
+  }
+
+  const actor = input.updatedBy.trim() || 'Administrator'
+  const timestamp = nowIso()
+  const reopenUntil = new Date(
+    Date.now() + input.durationHours * 3600_000,
+  ).toISOString()
+  const opened = applyCycleStatusChange(existing, 'Open', actor)
+  const auditEntry = {
+    at: timestamp,
+    by: actor,
+    reason,
+    durationHours: input.durationHours,
+    reopenUntil,
+  }
+  const next: WeeklyIjtemaEvent = {
+    ...opened,
+    reopenReason: reason,
+    reopenUntil,
+    reopenAudit: [...(existing.reopenAudit ?? []), auditEntry],
+  }
+  return { success: true, event: upsertWeeklyIjtemaEvent(next) }
 }
 
 export function getRuknWeeklyIjtemaWorkspace(eventId: string, ruknId: string) {
@@ -267,8 +395,13 @@ export function saveWeeklyIjtemaSubmission(
 }
 
 /** Open event only — used by write cutover (KC-0110.6). */
-export function getOpenWeeklyIjtemaEvent(): WeeklyIjtemaEvent | undefined {
-  return getAllWeeklyIjtemaEvents().find((event) => event.status === 'Open')
+export function getOpenWeeklyIjtemaEvent(
+  audienceGender?: WeeklyIjtemaAudienceGender,
+): WeeklyIjtemaEvent | undefined {
+  return getAllWeeklyIjtemaEvents().find(
+    (event) =>
+      event.status === 'Open' && matchesWeeklyIjtemaAudience(event, audienceGender),
+  )
 }
 
 export type UpsertWeeklyIjtemaKarkunMarkInput = {
@@ -403,6 +536,7 @@ function buildReportForEvent(event: WeeklyIjtemaEvent): WeeklyIjtemaReport {
     getWeeklyIjtemaSubmissionsForEvent(event.id),
     'Present',
     'Absent',
+    { audienceGender: event.audienceGender },
   )
 
   return {
@@ -433,8 +567,10 @@ export function getWeeklyIjtemaReport(eventId: string): WeeklyIjtemaReport | nul
   return buildReportForEvent(event)
 }
 
-export function getWeeklyIjtemaDashboardKpi(): WeeklyIjtemaDashboardKpi {
-  const event = getCurrentWeeklyIjtemaEvent()
+export function getWeeklyIjtemaDashboardKpi(
+  options?: GetCurrentWeeklyIjtemaEventOptions,
+): WeeklyIjtemaDashboardKpi {
+  const event = getCurrentWeeklyIjtemaEvent(options)
   if (!event) {
     return {
       eventId: null,
@@ -465,4 +601,22 @@ export function getWeeklyIjtemaDashboardKpi(): WeeklyIjtemaDashboardKpi {
     ruknsPending: report.ruknsPending,
     ruknsTotal: report.ruknsTotal,
   }
+}
+
+/** KC-028C — Present / Absent / unmarked pending for one Rukn on an event. */
+export function getRuknAttendanceProgress(
+  eventId: string,
+  ruknId: string,
+): { present: number; absent: number; pending: number; assigned: number } {
+  const assigned = getAssignedKarkunanForRukn(ruknId)
+  const submission = getWeeklyIjtemaSubmission(eventId, ruknId)
+  let present = 0
+  let absent = 0
+  for (const karkun of assigned) {
+    const mark = submission?.marks.find((row) => row.karkunId === karkun.id)
+    if (mark?.status === 'Present') present += 1
+    else if (mark?.status === 'Absent') absent += 1
+  }
+  const pending = Math.max(0, assigned.length - present - absent)
+  return { present, absent, pending, assigned: assigned.length }
 }

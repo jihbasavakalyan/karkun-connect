@@ -116,6 +116,8 @@ export type AutomationTrigger =
   | 'assignment-created'
   | 'first-meeting-pending'
   | 'ijtema-tomorrow'
+  | 'ijtema-window-open'
+  | 'ijtema-incomplete-reminder'
   | 'monthly-report-pending'
   | 'baitul-maal-due'
   | 'follow-up-tomorrow'
@@ -241,6 +243,8 @@ export const AUTOMATION_TRIGGER_LABELS: Record<AutomationTrigger, string> = {
   'assignment-created': 'Connection Created',
   'first-meeting-pending': 'First Meeting Pending',
   'ijtema-tomorrow': 'Ijtema Tomorrow',
+  'ijtema-window-open': 'Ijtema Attendance Window Open',
+  'ijtema-incomplete-reminder': 'Ijtema Incomplete Reminder',
   'monthly-report-pending': 'Monthly Report Pending',
   'baitul-maal-due': 'Bait-ul-Maal Due',
   'follow-up-tomorrow': 'Follow-up Tomorrow',
