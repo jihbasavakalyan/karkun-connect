@@ -75,4 +75,12 @@ Workflows / dialogue moves tested:
 
 ## Phase 6 — Post-deploy
 
-Filled after Vercel READY + production smoke.
+| Check | Result |
+|-------|--------|
+| GitHub HEAD | `a59c640` on `origin/main` |
+| Vercel | `dpl_4t1p5EDwVY7CZUiZRMSyuAxSxigt` READY |
+| Production URL | https://jihbasavakalyan.org |
+| Bundle smoke | `processDialogueTurn`, dialogue move markers, prior Rafeeq markers |
+| KC-035A/B/C | verify scripts green; prior markers present |
+
+**Production Certification: READY — Release Complete**
