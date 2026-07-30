@@ -13,3 +13,18 @@ export {
   FRIENDLY_PERSIST_PERMISSION_ERROR,
   toOperatorPersistError,
 } from '@/lib/reliability/persistErrors'
+
+export {
+  WRITE_ERROR_URDU,
+  WRITE_PROGRESS_URDU,
+  WRITE_SLOW_URDU,
+  classifyWriteError,
+  clearRecentWriteTimings,
+  getRecentWriteTimings,
+  runWriteLifecycle,
+  writeProgressMessage,
+  type WriteLifecycleErrorCode,
+  type WriteLifecycleResult,
+  type WritePhase,
+  type WriteTimings,
+} from '@/lib/reliability/writeLifecycle'
