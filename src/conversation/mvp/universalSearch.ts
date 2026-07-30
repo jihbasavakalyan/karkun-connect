@@ -3,7 +3,8 @@
  * Uses peopleStore, campaignService, assignmentStore, ROUTES — no duplicated business rules.
  */
 
-import { getAllKarkuns, getAllMuttafiqeen, getAllRukns } from '@/lib/peopleStore'
+import { getAllKarkuns, getAllMuttafiqeen, getAllRukns, findMobileOwner } from '@/lib/peopleStore'
+import { isSoftRemoved } from '@/lib/peopleClassification'
 import { matchesKarkunRegistrySearch } from '@/lib/peopleSearch'
 import { mobilesMatch, normalizeMobile } from '@/lib/mobileValidation'
 import { adminPersonProfilePath } from '@/lib/personProfile/ProfilePresenter'
@@ -118,6 +119,9 @@ function searchPeople(
 
   for (const { people, entityType } of pools) {
     for (const person of people) {
+      // KC-027 — soft-removed never appear in Rafeeq people hits.
+      if (isSoftRemoved(person)) continue
+
       let score = 0
       let tier = 'none'
       if (mobileNorm && mobilesMatch(person.mobile, mobileNorm)) {
@@ -165,6 +169,59 @@ function searchPeople(
         mobile: person.mobile,
       })
     }
+  }
+
+  collapsePeopleHitsByMobile(bag)
+}
+
+/**
+ * KC-027 — when two non-soft-removed docs share a mobile, keep one canonical hit.
+ * Prefers findMobileOwner id; else higher score. No Firestore merge.
+ */
+function collapsePeopleHitsByMobile(bag: Map<string, UniversalSearchHit>): void {
+  const byMobile = new Map<string, UniversalSearchHit>()
+  const removeIds: string[] = []
+
+  for (const hit of bag.values()) {
+    if (hit.entityType !== 'karkun' && hit.entityType !== 'muttafiq') continue
+    const mobileKey = normalizeMobile(hit.mobile ?? '')
+    if (!mobileKey) continue
+
+    const existing = byMobile.get(mobileKey)
+    if (!existing) {
+      byMobile.set(mobileKey, hit)
+      continue
+    }
+
+    const owner = findMobileOwner(mobileKey)
+    const existingIsCanonical = Boolean(owner && existing.personId === owner.id)
+    const hitIsCanonical = Boolean(owner && hit.personId === owner.id)
+
+    let keep = existing
+    let drop = hit
+    if (hitIsCanonical && !existingIsCanonical) {
+      keep = hit
+      drop = existing
+    } else if (existingIsCanonical && !hitIsCanonical) {
+      keep = existing
+      drop = hit
+    } else if (hit.score > existing.score) {
+      keep = hit
+      drop = existing
+    } else if (hit.score === existing.score) {
+      const preferHit = (hit.personId ?? hit.id).localeCompare(existing.personId ?? existing.id) < 0
+      if (preferHit) {
+        keep = hit
+        drop = existing
+      }
+    }
+
+    byMobile.set(mobileKey, keep)
+    removeIds.push(drop.id)
+  }
+
+  for (const id of removeIds) {
+    bag.delete(id)
   }
 }
 
@@ -352,17 +409,29 @@ export function searchPeopleReadOnly(
   mobile: string
   profilePath: string
 }> {
-  return searchUniversal(query, 'administrator', limit)
-    .filter(
-      (hit) =>
-        hit.entityType === 'karkun' ||
-        hit.entityType === 'muttafiq' ||
-        hit.entityType === 'rukn',
-    )
-    .map((hit) => ({
-      personId: hit.personId ?? hit.id,
-      name: hit.name,
-      mobile: hit.mobile ?? '',
-      profilePath: hit.route,
-    }))
+  const people = searchUniversal(query, 'administrator', Math.max(limit * 3, 12)).filter(
+    (hit) =>
+      hit.entityType === 'karkun' ||
+      hit.entityType === 'muttafiq' ||
+      hit.entityType === 'rukn',
+  )
+
+  // Defense: collapse again by normalized mobile for the people-only view.
+  const seenMobile = new Set<string>()
+  const collapsed: typeof people = []
+  for (const hit of people) {
+    const key = normalizeMobile(hit.mobile ?? '')
+    if (key) {
+      if (seenMobile.has(key)) continue
+      seenMobile.add(key)
+    }
+    collapsed.push(hit)
+  }
+
+  return collapsed.slice(0, limit).map((hit) => ({
+    personId: hit.personId ?? hit.id,
+    name: hit.name,
+    mobile: hit.mobile ?? '',
+    profilePath: hit.route,
+  }))
 }

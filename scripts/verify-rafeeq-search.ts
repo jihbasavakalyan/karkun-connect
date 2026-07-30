@@ -4,12 +4,15 @@
 
 import { existsSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { MOCK_KARKUN_REGISTRY } from '../src/constants/mockKarkunRegistry'
+import { isSoftRemoved } from '../src/lib/peopleClassification'
 import {
   classifyUtterance,
   clearUniversalSearchCache,
   rankField,
   resolveNavigationTarget,
   runRafeeqTurn,
+  searchPeopleReadOnly,
   searchUniversal,
 } from '../src/conversation/mvp'
 
@@ -147,6 +150,127 @@ function testDocsAndReuse(): void {
   )
 }
 
+function testSoftRemovedHiddenAndSameMobileCollapse(): void {
+  clearUniversalSearchCache()
+
+  const sharedMobile = '03998887766'
+  const softId = 'kr-kc027-soft'
+  const twinA = 'kr-kc027-twin-a'
+  const twinB = 'kr-kc027-twin-b'
+
+  // Cleanup prior runs
+  for (const id of [softId, twinA, twinB]) {
+    const idx = MOCK_KARKUN_REGISTRY.findIndex((k) => k.id === id)
+    if (idx >= 0) MOCK_KARKUN_REGISTRY.splice(idx, 1)
+  }
+
+  MOCK_KARKUN_REGISTRY.push({
+    id: softId,
+    name: 'سافٹ حذف',
+    gender: 'Male',
+    mobile: sharedMobile,
+    place: 'لاہور',
+    status: 'active',
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+    updatedBy: 'verify',
+    address: '',
+    area: '',
+    assignedRukn: null,
+    assignedRuknId: null,
+    assignmentStatus: 'Unassigned',
+    assignmentDate: null,
+    campaignStatus: 'not_assigned',
+    visitStatus: null,
+    lastVisit: null,
+    commitment: null,
+    currentCommitment: '',
+    jihAppRegistrationStatus: 'Not Registered',
+    notes: '',
+    isArchived: true,
+    archiveKind: 'duplicate_merge',
+    category: 'Karkun',
+  })
+
+  MOCK_KARKUN_REGISTRY.push({
+    id: twinA,
+    name: 'ٹوئن اے',
+    gender: 'Male',
+    mobile: sharedMobile,
+    place: 'لاہور',
+    status: 'active',
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+    updatedBy: 'verify',
+    address: '',
+    area: '',
+    assignedRukn: null,
+    assignedRuknId: null,
+    assignmentStatus: 'Unassigned',
+    assignmentDate: null,
+    campaignStatus: 'not_assigned',
+    visitStatus: null,
+    lastVisit: null,
+    commitment: null,
+    currentCommitment: '',
+    jihAppRegistrationStatus: 'Not Registered',
+    notes: '',
+    isArchived: false,
+    category: 'Karkun',
+  })
+
+  MOCK_KARKUN_REGISTRY.push({
+    id: twinB,
+    name: 'ٹوئن بی',
+    gender: 'Male',
+    mobile: sharedMobile,
+    place: 'لاہور',
+    status: 'active',
+    createdAt: '2026-01-02T00:00:00.000Z',
+    updatedAt: '2026-01-02T00:00:00.000Z',
+    updatedBy: 'verify',
+    address: '',
+    area: '',
+    assignedRukn: null,
+    assignedRuknId: null,
+    assignmentStatus: 'Unassigned',
+    assignmentDate: null,
+    campaignStatus: 'not_assigned',
+    visitStatus: null,
+    lastVisit: null,
+    commitment: null,
+    currentCommitment: '',
+    jihAppRegistrationStatus: 'Not Registered',
+    notes: '',
+    isArchived: false,
+    category: 'Karkun',
+  })
+
+  const soft = MOCK_KARKUN_REGISTRY.find((k) => k.id === softId)!
+  assert(isSoftRemoved(soft), 'fixture soft-removed')
+
+  const byMobile = searchPeopleReadOnly(sharedMobile, 10)
+  assert(
+    byMobile.every((p) => p.personId !== softId),
+    'soft-removed hidden from Rafeeq search',
+  )
+  assert(byMobile.length === 1, `same-mobile collapse count=${byMobile.length}`)
+  assert(
+    byMobile[0]!.personId === twinA || byMobile[0]!.personId === twinB,
+    'canonical twin id',
+  )
+
+  const byName = searchUniversal(sharedMobile, 'administrator', 20)
+  const peopleHits = byName.filter(
+    (h) => h.entityType === 'karkun' || h.entityType === 'muttafiq',
+  )
+  assert(
+    peopleHits.every((h) => h.personId !== softId),
+    'soft-removed absent in universal people hits',
+  )
+  assert(peopleHits.length === 1, `universal same-mobile count=${peopleHits.length}`)
+}
+
 const results = [
   run('person search', testPersonSearch),
   run('campaign search', testCampaignSearch),
@@ -156,6 +280,7 @@ const results = [
   run('no result state', testNoResults),
   run('architecture path', testArchitecturePath),
   run('docs and reuse', testDocsAndReuse),
+  run('soft-removed + same-mobile collapse', testSoftRemovedHiddenAndSameMobileCollapse),
 ]
 
 let failed = 0
