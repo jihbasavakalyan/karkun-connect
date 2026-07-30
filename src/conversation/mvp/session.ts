@@ -1,7 +1,13 @@
 /**
  * Short-lived conversation session memory (MVP).
+ * KC-035A — bridges person/clear into the conversation engine (additive).
  */
 
+import {
+  clearEngineSession,
+  ensureEngineSession,
+  syncPersonToEngine,
+} from '@/conversation/engine/bridge/mvpSessionBridge'
 import type { RafeeqAction } from './types'
 import type { PendingSafeAction } from './safeActions/policy'
 
@@ -37,11 +43,13 @@ export function getOrCreateSession(sessionId: string): RafeeqSessionMemory {
     }
     sessions.set(sessionId, session)
   }
+  ensureEngineSession(sessionId)
   return session
 }
 
 export function clearSession(sessionId: string): void {
   sessions.delete(sessionId)
+  clearEngineSession(sessionId)
 }
 
 export function rememberSearch(session: RafeeqSessionMemory, query: string): void {
@@ -60,6 +68,7 @@ export function rememberPerson(
 ): void {
   session.lastPersonId = personId
   session.lastPersonName = name
+  syncPersonToEngine(session.sessionId, personId, name)
 }
 
 export function rememberRoute(session: RafeeqSessionMemory, route: string): void {
