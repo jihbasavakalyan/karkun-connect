@@ -7,6 +7,7 @@ import { Modal, ModalFormFooter } from '@/components/common'
 import { ExistingPersonFoundPanel } from '@/components/relationship/ExistingPersonFoundPanel'
 import { FORM_INPUT_CLASS, FORM_LABEL_CLASS } from '@/components/ui/formStyles'
 import { getRuknById } from '@/data/ruknMaster'
+import { useWriteLifecycle } from '@/hooks/useWriteLifecycle'
 import { normalizePersonGender } from '@/lib/peopleStore'
 import {
   submitNewMuttafiqRequest,
@@ -35,8 +36,8 @@ export function NewMuttafiqRequestModal({
   const [area, setArea] = useState('')
   const [remarks, setRemarks] = useState('')
   const [error, setError] = useState('')
-  const [submitting, setSubmitting] = useState(false)
   const [duplicate, setDuplicate] = useState<MobileDuplicateDetails | null>(null)
+  const { busy: submitting, progressMessage, run } = useWriteLifecycle()
 
   const reset = () => {
     setFullName('')
@@ -54,11 +55,11 @@ export function NewMuttafiqRequestModal({
   }
 
   const handleSubmit = () => {
-    if (submitting) return
-    setSubmitting(true)
     setError('')
-    void (async () => {
-      try {
+    void run({
+      key: `new-muttafiq-submit:${ruknId}`,
+      queueLabels: ['settings.karkunRequests'],
+      work: async () => {
         const result = await submitNewMuttafiqRequest({
           fullName,
           mobile,
@@ -70,15 +71,16 @@ export function NewMuttafiqRequestModal({
         if (!result.ok) {
           setError(result.error)
           setDuplicate(result.duplicate ?? null)
-          return
+          throw Object.assign(new Error(result.error), { code: result.code ?? 'unknown' })
         }
-        reset()
-        onSubmitted()
-        onClose()
-      } finally {
-        setSubmitting(false)
-      }
-    })()
+        return result
+      },
+    }).then((lifecycle) => {
+      if (!lifecycle?.ok) return
+      reset()
+      onSubmitted()
+      onClose()
+    })
   }
 
   return (
@@ -90,7 +92,9 @@ export function NewMuttafiqRequestModal({
       footer={
         <ModalFormFooter
           onCancel={handleClose}
-          primaryLabel={submitting ? 'Submitting…' : 'Submit Request'}
+          primaryLabel={
+            submitting ? progressMessage || 'محفوظ کیا جا رہا ہے...' : 'Submit Request'
+          }
           onPrimaryClick={() => handleSubmit()}
           primaryDisabled={submitting}
         />

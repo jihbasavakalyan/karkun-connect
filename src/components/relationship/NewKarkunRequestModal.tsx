@@ -7,6 +7,7 @@ import { Modal, ModalFormFooter } from '@/components/common'
 import { ExistingPersonFoundPanel } from '@/components/relationship/ExistingPersonFoundPanel'
 import { FORM_INPUT_CLASS, FORM_LABEL_CLASS } from '@/components/ui/formStyles'
 import { getRuknById } from '@/data/ruknMaster'
+import { useWriteLifecycle } from '@/hooks/useWriteLifecycle'
 import { normalizePersonGender } from '@/lib/peopleStore'
 import { submitNewKarkunRequest, type MobileDuplicateDetails } from '@/services/karkunRequestService'
 import type { PersonGender } from '@/types/people.types'
@@ -32,10 +33,10 @@ export function NewKarkunRequestModal({
   const [area, setArea] = useState('')
   const [remarks, setRemarks] = useState('')
   const [error, setError] = useState('')
-  const [submitting, setSubmitting] = useState(false)
   const [nameWarning, setNameWarning] = useState(false)
   const [nameMatches, setNameMatches] = useState<{ id: string; name: string }[]>([])
   const [duplicate, setDuplicate] = useState<MobileDuplicateDetails | null>(null)
+  const { busy: submitting, progressMessage, run } = useWriteLifecycle()
 
   const reset = () => {
     setFullName('')
@@ -55,11 +56,11 @@ export function NewKarkunRequestModal({
   }
 
   const handleSubmit = (acknowledgeNameWarning = false) => {
-    if (submitting) return
-    setSubmitting(true)
     setError('')
-    void (async () => {
-      try {
+    void run({
+      key: `new-karkun-submit:${ruknId}`,
+      queueLabels: ['settings.karkunRequests'],
+      work: async () => {
         const result = await submitNewKarkunRequest({
           fullName,
           mobile,
@@ -75,16 +76,17 @@ export function NewKarkunRequestModal({
           setDuplicate(result.duplicate ?? null)
           setNameWarning(result.code === 'NAME_WARNING')
           setNameMatches(result.nameMatches ?? [])
-          return
+          throw Object.assign(new Error(result.error), { code: result.code ?? 'unknown' })
         }
 
-        reset()
-        onSubmitted()
-        onClose()
-      } finally {
-        setSubmitting(false)
-      }
-    })()
+        return result
+      },
+    }).then((lifecycle) => {
+      if (!lifecycle?.ok) return
+      reset()
+      onSubmitted()
+      onClose()
+    })
   }
 
   return (
@@ -97,7 +99,11 @@ export function NewKarkunRequestModal({
         <ModalFormFooter
           onCancel={handleClose}
           primaryLabel={
-            submitting ? 'Submitting…' : nameWarning ? 'Continue anyway' : 'Submit'
+            submitting
+              ? progressMessage || 'محفوظ کیا جا رہا ہے...'
+              : nameWarning
+                ? 'Continue anyway'
+                : 'Submit'
           }
           primaryDisabled={submitting}
           onPrimaryClick={() => handleSubmit(nameWarning)}

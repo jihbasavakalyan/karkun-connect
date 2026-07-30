@@ -10,7 +10,9 @@ import {
   type ComposerMode,
   refreshComposerTemplates,
 } from '@/components/communication/EditableCommunicationComposerFields'
+import { useWriteLifecycle } from '@/hooks/useWriteLifecycle'
 import { combineSubjectAndBody } from '@/lib/communication/combineSubjectAndBody'
+import { buildOfficialCommunicationVariables } from '@/lib/communication/officialCommunicationEngine'
 import {
   applyTemplateVariables,
   composeWhatsAppMessage,
@@ -25,6 +27,16 @@ import type { PersonalizedBulkReport } from '@/lib/communication/personalizedBul
 
 const selectClassName =
   'w-full rounded-lg border border-border bg-surface px-4 py-3 text-base text-text-heading focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20'
+
+/** Free-text slots the operator may edit; everything else is live-resolved. */
+const FREE_TEXT_VARIABLE_KEYS = new Set([
+  'PersonalNote',
+  'AdditionalRemarks',
+  'ClosingMessage',
+  'time',
+  'venue',
+  'event',
+])
 
 type MessageComposerModalProps = {
   isOpen: boolean
@@ -42,6 +54,13 @@ type MessageComposerModalProps = {
   recommendedTemplateId?: string
   /** KC-0077.1 — after personalized bulk completes (multi-recipient). */
   onBulkComplete?: (report: PersonalizedBulkReport) => void
+}
+
+function scrubZeroWidth(text: string): string {
+  return text
+    .replace(/\u200b/g, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trimEnd()
 }
 
 export function MessageComposerModal({
@@ -125,39 +144,80 @@ function MessageComposerModalContent({
     event: '',
     month: '',
     campaign: '',
+    PersonalNote: '',
+    AdditionalRemarks: '',
+    ClosingMessage: '',
     ...contextVariables,
   }))
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
-  const [sending, setSending] = useState(false)
+  const { busy: sending, progressMessage, run } = useWriteLifecycle()
   const [scheduleOpen, setScheduleOpen] = useState(false)
 
   const selectedTemplate: MessageTemplate | undefined = templates.find(
     (item) => item.id === templateId,
   )
+  const primaryRecipient = recipients[0]
+  const liveRecipient =
+    primaryRecipient?.personKind === 'rukn' || primaryRecipient?.personKind === 'karkun'
+  // KC-0128 — live campaign / person variables from the Official Communication engine.
+  const liveVariables = useMemo(() => {
+    if (!primaryRecipient) return {} as Record<string, string>
+    return buildOfficialCommunicationVariables(primaryRecipient)
+  }, [primaryRecipient])
+
   // KC-0077.2.1 — Administrators edit freely; Rukn keeps official wording locked.
-  const isOfficialLocked = role === 'rukn' && Boolean(selectedTemplate?.isOfficial)
+  // KC-0128 — Rukn live briefing also locks library wording (free-text slots only).
+  const isLiveResolved = Boolean(liveRecipient && (selectedTemplate || templateId))
+  const isOfficialLocked =
+    (role === 'rukn' && Boolean(selectedTemplate?.isOfficial)) ||
+    (isLiveResolved && mode === 'official' && Boolean(selectedTemplate))
+
   const variableKeys = selectedTemplate?.variables.length
     ? selectedTemplate.variables
     : TEMPLATE_PLACEHOLDER_KEYS.filter(
         (key) => message.includes(`{${key}}`) || subject.includes(`{${key}}`),
       )
 
-  const mergedVariables = useMemo(
-    () => ({
+  const editableVariableKeys = isLiveResolved
+    ? variableKeys.filter((key) => FREE_TEXT_VARIABLE_KEYS.has(key))
+    : variableKeys
+
+  const mergedVariables = useMemo(() => {
+    const freeText: Record<string, string> = {}
+    for (const key of FREE_TEXT_VARIABLE_KEYS) {
+      const value = placeholders[key]
+      if (typeof value === 'string' && value.trim()) {
+        freeText[key] = value.trim()
+      }
+    }
+    if (isLiveResolved) {
+      return {
+        ...liveVariables,
+        ...contextVariables,
+        ...freeText,
+        name:
+          (typeof placeholders.name === 'string' && placeholders.name.trim()) ||
+          recipients[0]?.name ||
+          liveVariables.name ||
+          '',
+      }
+    }
+    return {
+      ...liveVariables,
       ...placeholders,
-      name: placeholders.name || recipients[0]?.name || '',
+      name: placeholders.name || recipients[0]?.name || liveVariables.name || '',
       ...contextVariables,
-    }),
-    [placeholders, recipients, contextVariables],
-  )
+      ...freeText,
+    }
+  }, [placeholders, recipients, contextVariables, liveVariables, isLiveResolved])
 
   const previewSubject = useMemo(
-    () => applyTemplateVariables(subject, mergedVariables).trim(),
+    () => scrubZeroWidth(applyTemplateVariables(subject, mergedVariables)),
     [subject, mergedVariables],
   )
   const previewBody = useMemo(
-    () => composeWhatsAppMessage(message, mergedVariables, footerMode),
+    () => scrubZeroWidth(composeWhatsAppMessage(message, mergedVariables, footerMode)),
     [message, mergedVariables, footerMode],
   )
   const composedMessage = useMemo(
@@ -165,7 +225,6 @@ function MessageComposerModalContent({
     [previewSubject, previewBody],
   )
 
-  const primaryRecipient = recipients[0]
   const singleRecipient = recipients.length === 1 && primaryRecipient
   const waLink = singleRecipient
     ? buildWhatsAppLink(
@@ -189,21 +248,33 @@ function MessageComposerModalContent({
     }
   }
 
-  const handleSend = async () => {
+  const handleSend = () => {
     setError('')
     setSuccess('')
-    setSending(true)
-    const result = await onSend({
-      templateId: templateId || undefined,
-      message: composedMessage,
+    void run({
+      key: `communication:send:${recipients.map((r) => r.personId).join(',')}`,
+      queueLabels: ['communications'],
+      work: async () => {
+        const result = await onSend({
+          templateId: templateId || undefined,
+          message: composedMessage,
+        })
+        if (!result.success) {
+          throw Object.assign(new Error(result.error ?? 'Unable to queue message.'), {
+            code: 'unknown',
+          })
+        }
+        return result
+      },
+    }).then((lifecycle) => {
+      if (!lifecycle) return
+      if (!lifecycle.ok) {
+        setError(lifecycle.message)
+        return
+      }
+      setSuccess('Message queued for delivery. Backend integration arrives in Sprint 16.')
+      setTimeout(() => onClose(), 1200)
     })
-    setSending(false)
-    if (!result.success) {
-      setError(result.error ?? 'Unable to queue message.')
-      return
-    }
-    setSuccess('Message queued for delivery. Backend integration arrives in Sprint 16.')
-    setTimeout(() => onClose(), 1200)
   }
 
   const handleSendViaWhatsApp = () => {
@@ -260,18 +331,20 @@ function MessageComposerModalContent({
           }}
         />
 
-        {variableKeys.length > 0 && (
+        {editableVariableKeys.length > 0 && (
           <div className="grid gap-3 sm:grid-cols-2">
-            {variableKeys.map((key) => (
+            {editableVariableKeys.map((key) => (
               <div key={key} className="flex flex-col gap-1">
-                <label className="text-xs font-medium text-text-heading">{`{${key}}`}</label>
+                <label className="text-xs font-medium text-text-heading">{key}</label>
                 <input
                   value={placeholders[key] ?? ''}
                   onChange={(event) =>
                     setPlaceholders((current) => ({ ...current, [key]: event.target.value }))
                   }
                   className={selectClassName}
-                  placeholder={key}
+                  placeholder={
+                    FREE_TEXT_VARIABLE_KEYS.has(key) ? 'Optional free-text' : key
+                  }
                 />
               </div>
             ))}
@@ -335,7 +408,7 @@ function MessageComposerModalContent({
               onClick={handleSend}
               disabled={sending || !composedMessage.trim()}
             >
-              {sending ? 'Sending…' : 'Queue Message'}
+              {sending ? progressMessage || 'محفوظ کیا جا رہا ہے...' : 'Queue Message'}
             </PrimaryButton>
           </div>
         </div>
