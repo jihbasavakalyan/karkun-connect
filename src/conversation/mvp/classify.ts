@@ -34,6 +34,8 @@ const NAV_PATTERNS: Array<{ target: string; patterns: RegExp[] }> = [
       /go\s+to\s+dashboard/i,
       /dashboard/i,
       /ڈیش بورڈ/,
+      /(کھولیں|کھولو)\s*ڈیش\s*بورڈ/,
+      /ڈیش\s*بورڈ\s*(کھولیں|کھولو)/,
       /\bhome\b/i,
     ],
   },
@@ -45,6 +47,8 @@ const NAV_PATTERNS: Array<{ target: string; patterns: RegExp[] }> = [
       /registry/i,
       /karkun\s*list/i,
       /رجسٹری/,
+      /(کھولیں|کھولو)\s*رجسٹری/,
+      /رجسٹری\s*(کھولیں|کھولو)/,
     ],
   },
   {
@@ -55,6 +59,15 @@ const NAV_PATTERNS: Array<{ target: string; patterns: RegExp[] }> = [
       /weekly\s*ijtema/i,
       /open\s+ijtema/i,
       /اجتما/,
+    ],
+  },
+  {
+    target: 'baitul_maal',
+    patterns: [
+      /open\s+bait.?ul.?maal/i,
+      /go\s+to\s+bait.?ul.?maal/i,
+      /(کھولیں|کھولو).{0,12}بیت\s*المال/,
+      /بیت\s*المال\s*(کھولیں|کھولو|صفحہ)/,
     ],
   },
   {

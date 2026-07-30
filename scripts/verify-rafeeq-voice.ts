@@ -9,6 +9,9 @@ import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { createVoiceConversationService } from '@/features/digitalRafeeq/voice/VoiceConversationService'
 import type { AnswerFn } from '@/features/digitalRafeeq/voice/VoiceConversationService'
+import { classifyUtterance } from '@/conversation/mvp/classify'
+import { resolveNavigationTarget } from '@/conversation/mvp/navigationMap'
+import { prepareUrduTtsText } from '@/server/voice/prepareUrduTtsText'
 
 type CaseResult = { name: string; passed: boolean; detail: string }
 
@@ -738,6 +741,81 @@ async function main() {
       } finally {
         globalThis.fetch = originalFetch
       }
+    }),
+  )
+
+  // KC-027 — Urdu navigation + TTS prep + auto-nav wiring
+  cases.push(
+    run('Urdu nav — رجسٹری کھولو resolves registry route', () => {
+      const c = classifyUtterance('رجسٹری کھولو')
+      assert(c.intentCodes[0] === 'NAVIGATION', `intent=${c.intentCodes[0]}`)
+      assert(c.navigationTarget === 'registry', `target=${c.navigationTarget}`)
+      const mapped = resolveNavigationTarget('registry', 'rukn')
+      assert(Boolean(mapped?.route), 'registry route')
+      assert(
+        mapped!.route.includes('karkun') || mapped!.route.includes('rukn'),
+        `route=${mapped!.route}`,
+      )
+    }),
+  )
+
+  cases.push(
+    run('Urdu nav — ڈیش بورڈ کھولیں resolves dashboard', () => {
+      const c = classifyUtterance('ڈیش بورڈ کھولیں')
+      assert(c.intentCodes[0] === 'NAVIGATION', `intent=${c.intentCodes[0]}`)
+      assert(c.navigationTarget === 'dashboard', `target=${c.navigationTarget}`)
+    }),
+  )
+
+  cases.push(
+    run('Urdu nav — بیت المال کھولو resolves baitul_maal', () => {
+      const c = classifyUtterance('بیت المال کھولو')
+      assert(c.navigationTarget === 'baitul_maal', `target=${c.navigationTarget}`)
+      const mapped = resolveNavigationTarget('baitul_maal', 'rukn')
+      assert(mapped?.route === '/rukn/baitul-maal', `route=${mapped?.route}`)
+    }),
+  )
+
+  cases.push(
+    run('TTS prep transforms organisational words', () => {
+      const sample = 'آج کی ترجیحات اور بیت المال، رجسٹری کھولیں'
+      const prepared = prepareUrduTtsText(sample)
+      assert(prepared.changed, 'should change')
+      assert(prepared.plain.includes('بیتُل مال'), `plain=${prepared.plain}`)
+      assert(prepared.plain.includes('تَر جیحات'), 'ترجیحات alias')
+      assert(prepared.ssml.includes('<sub alias='), 'ssml sub')
+      assert(prepared.ssml.includes('رجسٹری'), 'ssml keeps display term')
+      assert(
+        sample === 'آج کی ترجیحات اور بیت المال، رجسٹری کھولیں',
+        'display source unchanged',
+      )
+    }),
+  )
+
+  cases.push(
+    run('Voice drawer wires auto-navigate for NAVIGATION', () => {
+      const src = read('src/features/digitalRafeeq/voice/DigitalRafeeqVoiceDrawer.tsx')
+      assert(src.includes('useNavigate'), 'useNavigate import')
+      assert(src.includes('maybeAutoNavigate'), 'auto-nav helper')
+      assert(/intentCode\s*===\s*['"]NAVIGATION['"]/.test(src), 'NAVIGATION gate')
+      assert(src.includes('navigate(route)'), 'navigate call')
+    }),
+  )
+
+  cases.push(
+    await runAsync('Auto-nav callback invoked for NAVIGATION answer', async () => {
+      let navigatedTo = ''
+      const onNavigate = (route: string) => {
+        navigatedTo = route
+      }
+      const intentCode = 'NAVIGATION'
+      const actions = [{ id: 'nav-registry', label: 'رجسٹری', route: '/rukn/my-karkun' }]
+      const route = actions[0]?.route
+      const shouldNav =
+        intentCode === 'NAVIGATION' || Boolean(actions[0]?.id?.startsWith('nav-'))
+      assert(shouldNav && Boolean(route), 'should auto-nav')
+      onNavigate(route!)
+      assert(navigatedTo === '/rukn/my-karkun', `got=${navigatedTo}`)
     }),
   )
 

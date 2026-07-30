@@ -131,7 +131,9 @@ function fallbackTasks(
           'getDashboardMonthlyBaitulMaalHealthSlice',
         ),
       ],
-      openRoute: role === 'administrator' ? ROUTES.ADMIN : ROUTES.RUKN,
+      openRoute: role === 'administrator'
+        ? ROUTES.ADMIN_MONTHLY_BAITUL_MAAL
+        : ROUTES.RUKN_MONTHLY_BAITUL_MAAL,
       context: 'pending-baitul-maal',
     })
   }

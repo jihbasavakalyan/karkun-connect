@@ -85,6 +85,15 @@ export function resolveNavigationTarget(
         label: 'متفقین',
         entityType: 'module',
       }
+    case 'baitul_maal':
+      return {
+        target,
+        route: admin
+          ? ROUTES.ADMIN_MONTHLY_BAITUL_MAAL
+          : ROUTES.RUKN_MONTHLY_BAITUL_MAAL,
+        label: 'بیت المال',
+        entityType: 'module',
+      }
     default:
       return null
   }

@@ -57,6 +57,8 @@ export type OpsAnswer = {
   contextualSuggestions?: string[]
   executionResult?: 'success' | 'cancelled' | 'failed'
   executionMessage?: string
+  /** KC-027 — when NAVIGATION, voice drawer may auto-navigate. */
+  intentCode?: string
 }
 
 function normalize(query: string): string {

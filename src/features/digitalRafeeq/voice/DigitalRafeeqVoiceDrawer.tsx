@@ -4,7 +4,7 @@
  */
 
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Icon } from '@/components/ui/Icon'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
@@ -130,6 +130,7 @@ export function DigitalRafeeqVoiceDrawer({
   onClose,
 }: DigitalRafeeqVoiceDrawerProps) {
   const titleId = useId()
+  const navigate = useNavigate()
   const listRef = useRef<HTMLDivElement>(null)
   const serviceRef = useRef<VoiceConversationService | null>(null)
   if (!serviceRef.current) serviceRef.current = createVoiceConversationService()
@@ -184,6 +185,26 @@ export function DigitalRafeeqVoiceDrawer({
     })
   }, [conversation])
 
+  const maybeAutoNavigate = (intentCode: string | undefined, actions: OpsAnswerAction[]) => {
+    const route = actions[0]?.route?.trim()
+    if (!route) return
+    const external =
+      route.startsWith('http') ||
+      route.startsWith('tel:') ||
+      route.startsWith('sms:') ||
+      route.startsWith('mailto:') ||
+      route.startsWith('whatsapp:')
+    if (external) return
+    const shouldNav =
+      intentCode === 'NAVIGATION' || Boolean(actions[0]?.id?.startsWith('nav-'))
+    if (!shouldNav) return
+    // Chips remain fallback; navigate after the turn is recorded.
+    queueMicrotask(() => {
+      navigate(route)
+      onClose()
+    })
+  }
+
   const answerFn = async (query: string) => {
     try {
       const service = getDigitalRafeeqService()
@@ -210,9 +231,12 @@ export function DigitalRafeeqVoiceDrawer({
           }
         | null
         | undefined
+      const actions = [...turn.actions]
+      maybeAutoNavigate(String(turn.intentCode ?? ''), actions)
       return {
         text: turn.text,
-        actions: [...turn.actions],
+        actions,
+        intentCode: String(turn.intentCode ?? ''),
         requiresConfirmation: turn.requiresConfirmation,
         summaryTitle:
           (turn.metadata['summaryTitle'] as string | undefined) ??

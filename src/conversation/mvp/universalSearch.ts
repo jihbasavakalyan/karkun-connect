@@ -84,6 +84,11 @@ const MODULE_ALIASES: Array<{
     entityType: 'module',
     names: ['muttafiq', 'muttafiqs', 'muttafiqeen', 'متفق', 'متفقین'],
   },
+  {
+    target: 'baitul_maal',
+    entityType: 'module',
+    names: ['baitul maal', 'bait-ul-maal', 'بیت المال', 'بیتُ المال'],
+  },
 ]
 
 function pushHit(

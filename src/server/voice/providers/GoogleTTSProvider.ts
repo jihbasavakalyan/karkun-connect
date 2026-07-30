@@ -5,6 +5,7 @@
 
 import { TextToSpeechClient, protos } from '@google-cloud/text-to-speech'
 import { assertServiceAccount, loadGoogleServiceAccount } from '../credentials.js'
+import { prepareUrduTtsText } from '../prepareUrduTtsText.js'
 import {
   DEFAULT_TTS_LANGUAGE,
   DEFAULT_TTS_PITCH,
@@ -81,6 +82,7 @@ export class GoogleTTSProvider implements VoiceProvider {
 
   async generateSpeech(input: GenerateSpeechInput) {
     const text = input.text.trim()
+    const prepared = prepareUrduTtsText(text)
     const speakingRate = input.speakingRate ?? DEFAULT_TTS_SPEAKING_RATE
     const pitch = input.pitch ?? DEFAULT_TTS_PITCH
     const client = this.getClient()
@@ -99,41 +101,52 @@ export class GoogleTTSProvider implements VoiceProvider {
       if (tried.has(candidate.name)) continue
       tried.add(candidate.name)
 
-      const request: protos.google.cloud.texttospeech.v1.ISynthesizeSpeechRequest = {
-        input: { text },
-        voice: {
-          languageCode: candidate.languageCode,
-          name: candidate.name,
-        },
-        audioConfig: {
-          audioEncoding: 'MP3',
-          speakingRate,
-          pitch,
-        },
+      const voice = {
+        languageCode: candidate.languageCode,
+        name: candidate.name,
+      }
+      const audioConfig = {
+        audioEncoding: 'MP3' as const,
+        speakingRate,
+        pitch,
       }
 
-      try {
-        const [response] = await client.synthesizeSpeech(request)
-        const audioContent = response.audioContent
-        if (!audioContent || (typeof audioContent !== 'string' && audioContent.length === 0)) {
-          throw new Error('empty-audio')
+      // Prefer SSML `<sub alias>` for organisational terms; fall back to plain speakable text.
+      const inputVariants: Array<protos.google.cloud.texttospeech.v1.ISynthesisInput> = [
+        { ssml: prepared.ssml },
+        { text: prepared.plain },
+      ]
+
+      for (const synthesisInput of inputVariants) {
+        const request: protos.google.cloud.texttospeech.v1.ISynthesizeSpeechRequest = {
+          input: synthesisInput,
+          voice,
+          audioConfig,
         }
 
-        const audio =
-          typeof audioContent === 'string'
-            ? Buffer.from(audioContent, 'base64')
-            : Buffer.from(audioContent)
+        try {
+          const [response] = await client.synthesizeSpeech(request)
+          const audioContent = response.audioContent
+          if (!audioContent || (typeof audioContent !== 'string' && audioContent.length === 0)) {
+            throw new Error('empty-audio')
+          }
 
-        this.resolvedVoice = candidate
-        return {
-          audio,
-          contentType: 'audio/mpeg' as const,
-          provider: this.id,
-          voiceName: candidate.name,
-          languageCode: candidate.languageCode,
+          const audio =
+            typeof audioContent === 'string'
+              ? Buffer.from(audioContent, 'base64')
+              : Buffer.from(audioContent)
+
+          this.resolvedVoice = candidate
+          return {
+            audio,
+            contentType: 'audio/mpeg' as const,
+            provider: this.id,
+            voiceName: candidate.name,
+            languageCode: candidate.languageCode,
+          }
+        } catch (error) {
+          lastError = error
         }
-      } catch (error) {
-        lastError = error
       }
     }
 
