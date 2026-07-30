@@ -70,4 +70,12 @@ Workflows tested:
 
 ## Phase 6 — Post-deploy
 
-Filled after Vercel READY + production smoke.
+| Check | Result |
+|-------|--------|
+| GitHub HEAD | `2ab762f` on `origin/main` |
+| Vercel | `dpl_6PtmSynN1TTJm63St29BMNxSaTGe` READY |
+| Production URL | https://jihbasavakalyan.org |
+| Bundle smoke | `runOperationalWorkflow`, `SHOW_PERSON_DETAILS`, `RECORD_VISIT`, visit-saved Urdu, `recognizeUrduIntent` present |
+| KC-035A / KC-035B | verify scripts green; intent markers in prod bundle |
+
+**Production Certification: READY — Release Complete**
