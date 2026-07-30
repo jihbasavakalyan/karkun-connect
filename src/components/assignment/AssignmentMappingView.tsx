@@ -12,6 +12,7 @@ import { getExecutionStatusForAssignment } from '@/lib/executionStatus'
 import { hasSubmittedAnnexureForAssignment } from '@/stores/annexure1Store'
 import { getGuidanceForRuknKarkuns } from '@/lib/guidance/guidanceEngine'
 import { humanizeVisitPending } from '@/lib/relationshipPresentation'
+import { mappingRowMatchesSearch } from '@/lib/personResolution'
 import { buildTelLink, buildWhatsAppLink } from '@/utils/personContactLinks'
 import { JourneyStageBadge, RelationshipHealthBadge } from '@/components/guidance'
 import { KarkunSearchField } from '@/components/relationship'
@@ -117,20 +118,18 @@ export function AssignmentMappingView({ version = 0 }: AssignmentMappingViewProp
 
       if (!query) return true
 
-      const haystacks: string[] = [row.ruknName, row.mobile, row.area]
-      for (const { assignment, karkun } of row.karkuns) {
-        haystacks.push(assignment.assignmentNumber)
-        if (karkun) {
-          haystacks.push(
-            karkun.name,
-            karkun.mobile,
-            karkun.fatherHusbandName ?? '',
-            karkun.area,
-            karkun.id,
-          )
-        }
-      }
-      return haystacks.some((value) => value.toLowerCase().includes(query))
+      return mappingRowMatchesSearch(
+        {
+          ruknName: row.ruknName,
+          mobile: row.mobile,
+          area: row.area,
+          karkuns: row.karkuns.map(({ assignment, karkun }) => ({
+            assignmentNumber: assignment.assignmentNumber,
+            karkun,
+          })),
+        },
+        search,
+      )
     })
 
     const sorted = [...filtered]

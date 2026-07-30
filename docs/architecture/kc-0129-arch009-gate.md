@@ -84,3 +84,20 @@ Filled after implementation and production verification.
 ## Phase 6 — Post-deploy
 
 Pending production deploy + verification.
+
+---
+
+## Phase 6 — Post-deploy (completed)
+
+**Verified** production Ready deploy `https://karkun-connect-2ihzbgnh6-jihbk.vercel.app` (alias `https://karkun-connect.vercel.app`), commit `814770d`:
+
+| Check | Result |
+|-------|--------|
+| Deploy Ready | Yes |
+| Available Capacity / Completed on overview | Absent from `RuknModulePage` chunk |
+| Communicate + pending rows | Present |
+| Convert to Muttafiq under Review | Present in `relationship` chunk |
+| Standalone To Muttafiq button | Absent (case-sensitive) |
+| Login smoke | HTTP 200 |
+
+**Production verification: SUCCEEDED**

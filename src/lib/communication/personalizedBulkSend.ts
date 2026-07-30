@@ -3,7 +3,7 @@
  * KC-0077.2.2B — Launch WhatsApp Web per recipient before recording delivery history.
  */
 
-import { buildMailMergeVariablesForRecipient } from '@/lib/communication/mailMergeEngine'
+import { buildOfficialCommunicationVariables } from '@/lib/communication/officialCommunicationEngine'
 import { MAIL_MERGE_FALLBACK } from '@/lib/communication/mailMergeVariables'
 import {
   closeWhatsAppLaunchWindow,
@@ -58,7 +58,8 @@ export function buildPersonalizedMessageForRecipient(
   recipient: MessageRecipient,
   role: 'administrator' | 'rukn' = 'administrator',
 ): string {
-  const variables = buildMailMergeVariablesForRecipient(recipient)
+  // KC-0128 — same live variable pipeline as single-recipient Communication Preview.
+  const variables = buildOfficialCommunicationVariables(recipient)
   return composeWhatsAppMessage(templateBody, variables, resolveFooterMode(role))
 }
 

@@ -9,6 +9,7 @@ import {
   getConnectedKarkunCountForRukn,
   getConnectedKarkunsForRukn,
 } from '@/lib/connections/getConnectedKarkunsForRukn'
+import { buildCampaignExecutionSummary } from '@/lib/campaignExecutionMatrix'
 import { buildIndividualCommunicationContext } from '@/lib/communicationContext'
 import { MAIL_MERGE_FALLBACK } from '@/lib/communication/mailMergeVariables'
 import { getKarkunGuidance } from '@/lib/guidance/guidanceEngine'
@@ -44,6 +45,9 @@ function fillRuknPlaybookStats(vars: Record<string, string>, ruknId: string): vo
   const todayIso = new Date().toISOString().slice(0, 10)
   const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000
 
+  // Prefer campaign matrix progress (same source as Command Center) for visit counts.
+  const summary = buildCampaignExecutionSummary(ruknId)
+
   const list =
     connected.length > 0
       ? connected.map((karkun, index) => `${index + 1}. ${karkun.name}`).join('\n')
@@ -52,13 +56,8 @@ function fillRuknPlaybookStats(vars: Record<string, string>, ruknId: string): vo
   const pendingFirstContact = connected.filter(
     (karkun) => !karkun.lastVisit || karkun.visitStatus === 'none',
   ).length
-  const pendingVisits = connected.filter(
-    (karkun) =>
-      karkun.visitStatus === 'pending' ||
-      karkun.visitStatus === 'overdue' ||
-      karkun.visitStatus === 'scheduled',
-  ).length
-  const completedVisits = connected.filter((karkun) => karkun.visitStatus === 'completed').length
+  const pendingVisits = Math.max(0, summary.assigned - summary.visitCompleted)
+  const completedVisits = summary.visitCompleted
   const recentlyAdded = connected.filter((karkun) => {
     const stamp = karkun.assignmentDate || karkun.createdAt
     if (!stamp) return false

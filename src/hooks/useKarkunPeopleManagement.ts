@@ -18,10 +18,8 @@ import { subscribeToBaitulMaalStore } from '@/stores/baitulMaalStore'
 import { subscribeToMonthlyBaitulMaalStore } from '@/stores/monthlyBaitulMaalStore'
 import { subscribeToIjtemaAttendanceStore } from '@/stores/ijtemaAttendanceStore'
 import { subscribeToWeeklyIjtemaStore } from '@/stores/weeklyIjtemaStore'
-import {
-  matchesKarkunRegistrySearch,
-  resolveSearchGenderHint,
-} from '@/lib/peopleSearch'
+import { getPeopleSearchPool, personMatchesSearchQuery } from '@/lib/personResolution'
+import { resolveSearchGenderHint } from '@/lib/peopleSearch'
 import type {
   KarkunRegistryRecord,
   PersonCategory,
@@ -72,7 +70,7 @@ function matchesKarkunFilters(karkun: KarkunRegistryRecord, filters: PeopleFilte
     return false
   }
 
-  if (filters.search.trim() && !matchesKarkunRegistrySearch(karkun, filters.search)) {
+  if (filters.search.trim() && !personMatchesSearchQuery(karkun, filters.search)) {
     return false
   }
 
@@ -206,19 +204,23 @@ export function useKarkunPeopleManagement(
 
   const registryPool = useMemo(
     () => {
-      // Exclusive pools: Muttafiqeen never enter Karkun totals / lists and vice versa.
+      // Browse: category-exclusive. Search: full people pool via Person Resolution
+      // so duplicate-detection hits are always discoverable on either registry page.
+      if (filters.search.trim()) {
+        return getPeopleSearchPool(registryCategory)
+      }
       return registryCategory === 'Muttafiq' ? getAllMuttafiqeen() : getAllKarkuns(false)
     },
     // peopleVersion invalidates after mutable MOCK_KARKUN_REGISTRY hydrate
     // eslint-disable-next-line react-hooks/exhaustive-deps -- registry is module state
-    [peopleVersion, registryCategory],
+    [peopleVersion, registryCategory, filters.search],
   )
 
   const searching = filters.search.trim().length > 0
 
   const allKarkuns = useMemo(() => {
     // Browse mode: gender tab silos the list.
-    // Search mode: every active person in the category is discoverable.
+    // Search mode: every active person is discoverable (KC-BUG-0125 + KC-0128).
     if (searching) {
       return registryPool
     }

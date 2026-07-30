@@ -157,11 +157,24 @@ export const WORKFLOW_URDU_PLAYBOOK_TEMPLATES: MessageTemplate[] = [
 پیروی باقی: {{PendingFollowUps}}
 مکمل ملاقاتیں: {{CompletedVisits}}
 زیرِ التواء ملاقاتیں: {{PendingVisits}}
+ملاقات کی پیش رفت: {{VisitProgress}}
+ہفتہ وار اجتماع: {{WeeklyIjtemaProgress}}
+ماہانہ بیت المال: {{MonthlyBaitulMaalProgress}}
+ایپ رجسٹریشن: {{AppRegistrationProgress}}
+مکمل ذمہ داریاں: {{CompletedResponsibilities}}
+باقی ذمہ داریاں: {{PendingResponsibilities}}
+
+مہم کا خلاصہ:
+{{CampaignSummary}}
 
 فہرست:
 {{AssignedKarkunList}}
 
+{{PersonalNote}}
+
 براہ کرم جس سے رابطہ آسان لگے وہیں سے شروع فرما لیجیے۔
+
+{{ClosingMessage}}
 
 اللہ اس امانت میں برکت عطا فرمائے۔`,
     [
@@ -174,7 +187,16 @@ export const WORKFLOW_URDU_PLAYBOOK_TEMPLATES: MessageTemplate[] = [
       'PendingFollowUps',
       'CompletedVisits',
       'PendingVisits',
+      'VisitProgress',
+      'WeeklyIjtemaProgress',
+      'MonthlyBaitulMaalProgress',
+      'AppRegistrationProgress',
+      'CompletedResponsibilities',
+      'PendingResponsibilities',
+      'CampaignSummary',
       'AssignedKarkunList',
+      'PersonalNote',
+      'ClosingMessage',
     ],
   ),
 

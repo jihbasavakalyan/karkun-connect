@@ -3,7 +3,7 @@
  * Reuses existing Communication module; does not send by itself.
  */
 
-import { getRuknById } from '@/data/ruknMaster'
+import { resolvePersonById, toMessageRecipient } from '@/lib/personResolution'
 import type { MessageRecipient } from '@/types/communication'
 
 export type DashboardPerformanceBadge = {
@@ -56,15 +56,9 @@ Today's activity is below the expected progress. Kindly update your visits and c
 }
 
 export function buildRuknMessageRecipient(ruknId: string): MessageRecipient | null {
-  const rukn = getRuknById(ruknId)
-  if (!rukn || !rukn.mobile.trim()) return null
-  return {
-    personId: rukn.id,
-    personKind: 'rukn',
-    name: rukn.name,
-    mobile: rukn.mobile,
-    whatsapp: rukn.whatsapp,
-  }
+  const resolved = resolvePersonById(ruknId)
+  if (!resolved || resolved.kind !== 'rukn') return null
+  return toMessageRecipient(resolved)
 }
 
 export function buildRuknMessageRecipients(ruknIds: string[]): MessageRecipient[] {

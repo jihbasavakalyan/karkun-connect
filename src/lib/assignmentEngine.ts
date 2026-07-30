@@ -71,7 +71,8 @@ export function getRuknAssignmentEngineStats(ruknId: string) {
   return {
     assignedCount,
     completedCount,
-    availableCapacity: getAvailableKarkunan().length,
+    // KC-0129 — gender-scoped pool (Male Rukn → Male Karkuns only, and vice versa)
+    availableCapacity: getAvailableKarkunan(ruknId).length,
   }
 }
 

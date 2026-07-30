@@ -9,7 +9,7 @@ import {
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import { combineSubjectAndBody } from '@/lib/communication/combineSubjectAndBody'
-import { buildMailMergeVariablesForRecipient } from '@/lib/communication/mailMergeEngine'
+import { buildOfficialCommunicationVariables } from '@/lib/communication/officialCommunicationEngine'
 import { prepareWhatsAppLaunchWindows } from '@/lib/communication/whatsappWebLaunch'
 import {
   previewPersonalizedMessages,
@@ -111,7 +111,7 @@ function PersonalizedBulkComposerContent({
 
   const previewSubjectResolved = useMemo(() => {
     if (!subject.trim() || !currentPreview) return ''
-    const vars = buildMailMergeVariablesForRecipient(currentPreview.recipient)
+    const vars = buildOfficialCommunicationVariables(currentPreview.recipient)
     return applyTemplateVariables(subject, vars).trim()
   }, [subject, currentPreview])
 

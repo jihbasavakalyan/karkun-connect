@@ -12,6 +12,7 @@ import {
 } from '@/types/karkunRequest.types'
 import type { CommunicationHistoryRecord } from '@/types/communication'
 import { getPersonCategory } from '@/lib/peopleClassification'
+import { resolvePersonById } from '@/lib/personResolution'
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { getRuknById } from '@/data/ruknMaster'
 import { getActiveAssignmentsForKarkun } from '@/stores/assignmentStore'
@@ -177,8 +178,22 @@ export function resolvePersonLookup(personId: string): {
   connectedToRuknName?: string
   adminViewRoute?: string
 } {
+  const resolved = resolvePersonById(personId)
+  if (!resolved || resolved.kind === 'rukn') return { found: false }
   const person = getKarkunById(personId)
-  if (!person) return { found: false }
+  if (!person) {
+    return {
+      found: true,
+      name: resolved.name,
+      mobile: resolved.mobile,
+      category: resolved.category ?? undefined,
+      status: resolved.status,
+      assignmentStatus: resolved.assignmentStatus,
+      connectedToRuknId: resolved.assignedRuknId || undefined,
+      connectedToRuknName: resolved.assignedRukn || undefined,
+      adminViewRoute: resolved.profilePath ?? adminKarkunProfilePath(personId),
+    }
+  }
   const active = getActiveAssignmentsForKarkun(personId)[0]
   return {
     found: true,

@@ -1,9 +1,8 @@
 /**
- * KC-BUG-0124 — Resolve full existing-person relationship graph for duplicate mobile UX.
- * Uses in-memory stores first, then durable repository caches (no new repo APIs).
+ * Resolve full existing-person relationship graph for duplicate mobile UX.
+ * Uses canonical Person Resolution for the person record, then connection graph.
  */
 
-import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { getRuknById } from '@/data/ruknMaster'
 import {
   adminAnnexure1Path,
@@ -13,11 +12,13 @@ import {
 } from '@/constants/routes'
 import { getPersonCategory } from '@/lib/peopleClassification'
 import { isKarkunSelectableForConnection } from '@/lib/connectionEligibility'
+import { resolvePersonById } from '@/lib/personResolution'
 import { unwrapRepository } from '@/repositories/errors'
 import { getRepositories } from '@/repositories/provider'
 import { getActiveAssignmentsForKarkun } from '@/stores/assignmentStore'
 import type { AssignmentRecord } from '@/types/assignment'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
+import { getKarkunById } from '@/constants/mockKarkunRegistry'
 
 export type ExistingPersonRelationship = {
   found: boolean
@@ -51,6 +52,17 @@ function nonEmpty(value: string | undefined | null): string {
 }
 
 function resolvePersonRecord(personId: string): KarkunRegistryRecord | undefined {
+  // KC-0128 — identity must resolve through the canonical Person Resolution pipeline first.
+  const resolved = resolvePersonById(personId)
+  if (!resolved || resolved.kind === 'rukn') {
+    // Durable fallback still allows recovery when memory is cold but repo cache has the row.
+    const state = unwrapRepository(getRepositories().karkun.loadState(), {
+      karkuns: [],
+      nextKarkunNum: 1,
+    })
+    return state.karkuns.find((row) => row.id === personId && !row.isArchived)
+  }
+
   const memory = getKarkunById(personId)
   if (memory) return memory
 
