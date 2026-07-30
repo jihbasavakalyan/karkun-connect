@@ -1,18 +1,18 @@
 /**
- * KC-0110.7 — LEGACY Weekly Ijtema compatibility track (per-Karkun week records).
+ * KC-0110.7 / KC-033 — LEGACY Weekly Ijtema compatibility track (per-Karkun week records).
  *
  * Operational SoT is Event/Cycle (`weeklyIjtema*` + read/write adapters).
  * This module remains for:
  * - Excused status (not in event mark model)
  * - Historical week records / read-adapter fallback
  * - Dual-write sync from `weeklyIjtemaWriteAdapter`
- * - Deferred Cos / automation / mission-strip readers (future rewiring)
  *
  * Do not add new product callers. Prefer:
  * - `markWeeklyIjtemaAttendance` / `bulkMarkWeeklyIjtemaAttendance`
  * - `getWeeklyIjtemaCurrentAttendanceView` (and related read helpers)
+ * - `getWeeklyIjtemaDashboardKpi` / Health slices for executive metrics
  *
- * Inventory: docs/architecture/kc-0110-weekly-ijtema-inventory.md
+ * Inventory: docs/architecture/kc-0110-weekly-ijtema-inventory.md · KC-033 registry
  */
 
 import { getKarkunById } from '@/constants/mockKarkunRegistry'

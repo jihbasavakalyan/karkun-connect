@@ -26,7 +26,7 @@ import {
   getDashboardVisitMetrics,
 } from '@/services/dashboardMetricsService'
 import { getFollowUpDashboardMetrics } from '@/services/followUpService'
-import { getCurrentIjtemaAttendance } from '@/services/ijtemaAttendanceService'
+import { CanonicalMetricProviders } from '@/lib/operations/canonicalCampaignMetrics'
 import { getCampaignConnectionMetrics } from '@/services/metricsService'
 import { getRecentActivity } from '@/stores/activityLogStore'
 import { ruknMaster } from '@/data/ruknMaster'
@@ -123,7 +123,8 @@ export function buildAdminCampaignAchievementProgress(): AdminCampaignAchievemen
     if (connectedIds.has(karkun.id)) connected += 1
     if (isVisitConducted(karkun.id)) visitConducted += 1
     if (isJihRegistered(karkun)) appRegistered += 1
-    if (getCurrentIjtemaAttendance(karkun.id).status === 'Present') ijtemaAgreed += 1
+    if (CanonicalMetricProviders.weeklyIjtema.getCurrentAttendanceView(karkun.id).status === 'Present')
+      ijtemaAgreed += 1
     if (getBaitulMaalCampaignState(karkun.id) === 'committed') baitulMaalCommitted += 1
   }
 

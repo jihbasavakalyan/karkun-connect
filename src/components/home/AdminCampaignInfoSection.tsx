@@ -5,8 +5,7 @@ import { CommandCenterRecentActivity } from '@/components/command-center/Command
 import { CommandCenterHero } from '@/components/command-center/CommandCenterHero'
 import { getCommunicationDashboardMetrics } from '@/stores/communicationStore'
 import { getJihWebPortalDashboardMetrics } from '@/services/jihWebPortalService'
-import { getIjtemaAttendanceDashboardMetrics } from '@/services/ijtemaAttendanceService'
-import { getBaitulMaalDashboardMetrics } from '@/services/baitulMaalService'
+import { CanonicalMetricProviders } from '@/lib/operations/canonicalCampaignMetrics'
 import { getAssignmentDashboardMetrics } from '@/services/assignmentService'
 import { getGuidanceForRuknKarkuns } from '@/lib/guidance/guidanceEngine'
 import { getAllAssignments } from '@/stores/assignmentStore'
@@ -44,8 +43,8 @@ function buildJourneyDistribution(): { stageId: JourneyStageId; count: number }[
 export function AdminCampaignInfoSection({ hero }: AdminCampaignInfoSectionProps) {
   const assignmentMetrics = getAssignmentDashboardMetrics()
   const jih = getJihWebPortalDashboardMetrics()
-  const ijtema = getIjtemaAttendanceDashboardMetrics()
-  const baitulMaal = getBaitulMaalDashboardMetrics()
+  const ijtema = CanonicalMetricProviders.weeklyIjtema.getDashboardMetricsView()
+  const baitulMaal = CanonicalMetricProviders.baitulMaal.getDashboardMetricsView()
   const communication = getCommunicationDashboardMetrics()
   const journeyDistribution = buildJourneyDistribution()
   const maxJourneyCount = Math.max(...journeyDistribution.map((entry) => entry.count), 1)

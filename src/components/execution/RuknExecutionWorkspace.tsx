@@ -13,9 +13,9 @@ import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { getDailyProgressView } from '@/lib/dailyProgressPresentation'
 import { getRuknJourneyStageLabel } from '@/lib/ruknProgressPresentation'
 import { resolveCurrentJourneyStage } from '@/lib/guidance/journeyEngine'
-import { getCurrentIjtemaAttendance } from '@/services/ijtemaAttendanceService'
+import { CanonicalMetricProviders } from '@/lib/operations/canonicalCampaignMetrics'
 import { subscribeToAnnexure1Store } from '@/stores/annexure1Store'
-import { subscribeToIjtemaAttendanceStore } from '@/stores/ijtemaAttendanceStore'
+import { subscribeToWeeklyIjtemaStore } from '@/stores/weeklyIjtemaStore'
 import { subscribeToDevelopmentAssessmentStore } from '@/stores/developmentAssessmentStore'
 import { getActiveAssignmentsForKarkun } from '@/stores/assignmentStore'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
@@ -38,7 +38,7 @@ function KarkunExecutionRow({
   onOpenChecklist: () => void
 }) {
   const progress = getDailyProgressView(karkun.id)
-  const ijtema = getCurrentIjtemaAttendance(karkun.id)
+  const ijtema = CanonicalMetricProviders.weeklyIjtema.getCurrentAttendanceView(karkun.id)
 
   return (
     <article className="rounded-lg border border-border bg-surface px-3 py-3 sm:px-4">
@@ -128,7 +128,7 @@ export function RuknExecutionWorkspace({ ruknId }: RuknExecutionWorkspaceProps) 
 
   useEffect(() => {
     const unsubA = subscribeToAnnexure1Store(() => setStoreTick((v) => v + 1))
-    const unsubI = subscribeToIjtemaAttendanceStore(() => setStoreTick((v) => v + 1))
+    const unsubI = subscribeToWeeklyIjtemaStore(() => setStoreTick((v) => v + 1))
     const unsubD = subscribeToDevelopmentAssessmentStore(() => setStoreTick((v) => v + 1))
     return () => {
       unsubA()

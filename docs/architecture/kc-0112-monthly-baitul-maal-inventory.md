@@ -368,13 +368,17 @@ Campaign Health / Mission / Top Priority already consume cycle KPI. Ops surfaces
 
 | Consumer | Legacy dependency | Prefer when rewiring |
 |----------|-------------------|----------------------|
-| Cos / communication context | `getCurrentBaitulMaalStatus` | Compliance status / campaign-state view |
-| Cos relationship intelligence | `getCurrentBaitulMaalStatus` + store record | Adapter views |
-| Automation engine | `getAllBaitulMaalSummaries` / dashboard metrics | Adapter summaries / cycle KPI |
-| Rafeeq ops answers + contextual | legacy metrics / guidance reminders | Adapter / cycle KPI |
-| Mission-control / command-center strips | `getBaitulMaalDashboardMetrics` / `getRuknBaitulMaalMetrics` | Cycle KPI / adapter metrics |
-| Achievement builders | `getBaitulMaalCampaignState` | `getMonthlyBaitulMaalCampaignStateView` |
-| Development assessment hint | `isBaitulMaalSettledThisMonth` | Compliance status view (Paid via Contributed) |
+| Cos / communication / relationship / automation / Rafeeq / mission strips | *(was legacy)* | **✅ KC-033** — adapters / cycle KPI / Health |
+| Achievement builders | `getBaitulMaalCampaignState` | **✅ KC-033** — adapter campaign-state |
+| Development assessment hint | `isBaitulMaalSettledThisMonth` | **✅ KC-033** — adapter compliance |
+
+See [KC-033 canonical registry](./kc-033-canonical-metric-registry.md).
+
+### Known future work (post KC-033)
+
+1. Turn off dual-write once Excused/Exempt product mapping is decided.
+2. Retire `baitulMaal_*` Firestore docs under a dedicated KC-ARCH-001 durability ticket (KC-0112.8).
+3. Optionally fold Exempt into the cycle model if product requires it on Health.
 
 ### Retirement Decisions
 

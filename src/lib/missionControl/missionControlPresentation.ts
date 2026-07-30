@@ -7,11 +7,7 @@ import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { getConnectedKarkunIdsForRukn } from '@/lib/connections/getConnectedKarkunsForRukn'
 import { getGuidanceForRuknKarkuns } from '@/lib/guidance/guidanceEngine'
 import { isJihRegistered } from '@/lib/guidance/journeyEngine'
-/**
- * KC-0112.7 TODO — home mission presentation still on legacy BM metrics.
- * Prefer adapter / cycle KPI when rewiring.
- */
-import { getRuknBaitulMaalMetrics } from '@/services/baitulMaalService'
+import { getCanonicalRuknBaitulMaalMetrics } from '@/lib/operations/canonicalCampaignMetrics'
 import { getDevelopmentAssessment } from '@/stores/developmentAssessmentStore'
 import type { RuknMissionControlModel } from './buildRuknMissionControl'
 
@@ -37,7 +33,7 @@ export function buildCampaignTaskBadges(
   const target = Math.max(connectedIds.length, 1)
 
   const ijtemaPresent = model.attendanceStrip.present
-  const baitul = getRuknBaitulMaalMetrics(connectedIds)
+  const baitul = getCanonicalRuknBaitulMaalMetrics(connectedIds)
 
   let jihRegistered = 0
   let literature = 0
@@ -108,7 +104,7 @@ export function buildDevelopmentSummary(
   }
 
   const ijtemaPresent = model.attendanceStrip.present
-  const baitul = getRuknBaitulMaalMetrics(connectedIds)
+  const baitul = getCanonicalRuknBaitulMaalMetrics(connectedIds)
 
   let jihRegistered = 0
   for (const karkunId of connectedIds) {

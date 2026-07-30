@@ -4,15 +4,14 @@ import {
   hasSubmittedAnnexureForAssignment,
 } from '@/stores/annexure1Store'
 import { getActiveFollowUpForKarkun } from '@/stores/followUpStore'
-import { getIjtemaAttendanceRecord } from '@/stores/ijtemaAttendanceStore'
 import { getDevelopmentAssessment } from '@/stores/developmentAssessmentStore'
 import { getRegistrationForKarkun } from '@/services/jihWebPortalService'
 import { getCommitmentsForKarkun } from '@/stores/guidanceStore'
+import { getWeeklyIjtemaCurrentAttendanceView } from '@/lib/operations/weeklyIjtemaReadAdapter'
 import {
   JOURNEY_STAGE_ORDER,
   type JourneyStageId,
 } from '@/types/guidance'
-import { getWeekEndingDate } from '@/types/ijtemaAttendance'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
 
 export function todayIsoDate(): string {
@@ -59,8 +58,9 @@ export function hasOrientationSignal(karkun: KarkunRegistryRecord): boolean {
 }
 
 export function hasParticipationSignal(karkun: KarkunRegistryRecord): boolean {
-  const ijtema = getIjtemaAttendanceRecord(karkun.id, getWeekEndingDate())
-  if (ijtema?.status === 'Present') {
+  // KC-033 — Weekly Ijtema participation from canonical event adapter.
+  const ijtema = getWeeklyIjtemaCurrentAttendanceView(karkun.id)
+  if (ijtema.status === 'Present') {
     return true
   }
   return getCommitmentsForKarkun(karkun.id).some(

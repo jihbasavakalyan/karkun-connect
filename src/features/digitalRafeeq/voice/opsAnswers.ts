@@ -8,12 +8,10 @@ import { getTeamPerformanceRows } from '@/lib/commandCenterPresentation'
 import { getGuidanceForRuknKarkuns } from '@/lib/guidance/guidanceEngine'
 import { sortGuidanceByUrgency } from '@/lib/homePresentation'
 import { getAssignmentDashboardMetrics } from '@/services/assignmentService'
-/**
- * KC-0112.7 TODO — Rafeeq ops answers still on legacy BM metrics.
- * Prefer monthlyBaitulMaalReadAdapter / cycle KPI when rewiring.
- */
-import { getBaitulMaalDashboardMetrics, getRuknBaitulMaalMetrics } from '@/services/baitulMaalService'
-import { getCurrentIjtemaAttendance, getIjtemaAttendanceDashboardMetrics } from '@/services/ijtemaAttendanceService'
+import {
+  CanonicalMetricProviders,
+  getCanonicalRuknBaitulMaalMetrics,
+} from '@/lib/operations/canonicalCampaignMetrics'
 import { getJihWebPortalDashboardMetrics } from '@/services/jihWebPortalService'
 import { getConnectedKarkunIdsForRukn } from '@/lib/connections/getConnectedKarkunsForRukn'
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
@@ -122,8 +120,8 @@ function answerAdminQuery(
 ): OpsAnswer {
   const people = getPeopleStatistics()
   const assignments = getAssignmentDashboardMetrics()
-  const ijtema = getIjtemaAttendanceDashboardMetrics()
-  const baitulMaal = getBaitulMaalDashboardMetrics()
+  const ijtema = CanonicalMetricProviders.weeklyIjtema.getDashboardMetricsView()
+  const baitulMaal = CanonicalMetricProviders.baitulMaal.getDashboardMetricsView()
   const jih = getJihWebPortalDashboardMetrics()
   const team = getTeamPerformanceRows()
   const pendingKarkunRequests = getPendingKarkunRequests().length
@@ -300,7 +298,7 @@ function answerRuknQuery(
 ): OpsAnswer {
   const connectedIds = getConnectedKarkunIdsForRukn(ruknId)
   const guidance = getGuidanceForRuknKarkuns(ruknId)
-  const baitulMaal = getRuknBaitulMaalMetrics(connectedIds)
+  const baitulMaal = getCanonicalRuknBaitulMaalMetrics(connectedIds)
   const urgent = sortGuidanceByUrgency(guidance)
 
   if (
@@ -450,11 +448,11 @@ function answerRuknQuery(
     ])
   ) {
     const missed = connectedIds.filter((id) => {
-      const status = getCurrentIjtemaAttendance(id).status
+      const status = CanonicalMetricProviders.weeklyIjtema.getCurrentAttendanceView(id).status
       return status === 'Absent' || status === 'Not recorded'
     })
     const present = connectedIds.filter((id) => {
-      const status = getCurrentIjtemaAttendance(id).status
+      const status = CanonicalMetricProviders.weeklyIjtema.getCurrentAttendanceView(id).status
       return status === 'Present' || status === 'Excused'
     })
     const names = missed

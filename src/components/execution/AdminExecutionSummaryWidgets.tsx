@@ -7,9 +7,9 @@ import { Link } from 'react-router-dom'
 import { adminExecutionPath, adminCompliancePath } from '@/constants/routes'
 import { buildCampaignDailyProgressSummary } from '@/lib/dailyProgressPresentation'
 import { createCoalescedNotifier } from '@/lib/dashboard/coalesceStoreNotifications'
-import { getIjtemaAttendanceDashboardMetrics } from '@/services/ijtemaAttendanceService'
+import { CanonicalMetricProviders } from '@/lib/operations/canonicalCampaignMetrics'
 import { subscribeToAnnexure1Store } from '@/stores/annexure1Store'
-import { subscribeToIjtemaAttendanceStore } from '@/stores/ijtemaAttendanceStore'
+import { subscribeToWeeklyIjtemaStore } from '@/stores/weeklyIjtemaStore'
 
 function MetricCell({ label, value }: { label: string; value: number | string }) {
   return (
@@ -26,7 +26,7 @@ export function AdminExecutionSummaryWidgets() {
   useEffect(() => {
     const coalesced = createCoalescedNotifier(() => setTick((v) => v + 1))
     const unsubA = subscribeToAnnexure1Store(coalesced.bump)
-    const unsubI = subscribeToIjtemaAttendanceStore(coalesced.bump)
+    const unsubI = subscribeToWeeklyIjtemaStore(coalesced.bump)
     return () => {
       coalesced.dispose()
       unsubA()
@@ -36,10 +36,8 @@ export function AdminExecutionSummaryWidgets() {
 
   void tick
   const daily = buildCampaignDailyProgressSummary()
-  const ijtema = getIjtemaAttendanceDashboardMetrics()
-  const recorded = ijtema.present + ijtema.absent + ijtema.excused
-  const total = recorded + ijtema.notRecorded
-  const attendancePct = total > 0 ? Math.round((ijtema.present / total) * 100) : 0
+  const ijtema = CanonicalMetricProviders.weeklyIjtema.getDashboardMetricsView()
+  const attendancePct = CanonicalMetricProviders.weeklyIjtema.getHealthSlice().pct
 
   return (
     <section className="grid gap-3 sm:grid-cols-2" aria-label="Execution summaries">

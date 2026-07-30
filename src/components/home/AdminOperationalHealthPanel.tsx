@@ -5,8 +5,7 @@
 import { Link } from 'react-router-dom'
 import { ROUTES, adminCompliancePath, adminExecutionPath } from '@/constants/routes'
 import { getAssignmentDashboardMetrics } from '@/services/assignmentService'
-import { getBaitulMaalDashboardMetrics } from '@/services/baitulMaalService'
-import { getIjtemaAttendanceDashboardMetrics } from '@/services/ijtemaAttendanceService'
+import { CanonicalMetricProviders } from '@/lib/operations/canonicalCampaignMetrics'
 import { getGuidanceForRuknKarkuns } from '@/lib/guidance/guidanceEngine'
 import { getAllAssignments } from '@/stores/assignmentStore'
 import { getTeamPerformanceRows } from '@/lib/commandCenterPresentation'
@@ -39,21 +38,18 @@ function buildJourneyDistribution(): { stageId: JourneyStageId; count: number }[
 }
 
 export function AdminOperationalHealthPanel({ snapshot }: AdminOperationalHealthPanelProps) {
-  const ijtema = getIjtemaAttendanceDashboardMetrics()
-  const baitulMaal = getBaitulMaalDashboardMetrics()
+  const ijtema = CanonicalMetricProviders.weeklyIjtema.getDashboardMetricsView()
+  const baitulMaal = CanonicalMetricProviders.baitulMaal.getDashboardMetricsView()
+  const wiHealth = CanonicalMetricProviders.weeklyIjtema.getHealthSlice()
+  const bmHealth = CanonicalMetricProviders.baitulMaal.getHealthSlice()
   const assignments = getAssignmentDashboardMetrics()
   const journeyDistribution = buildJourneyDistribution()
   const teamRows = getTeamPerformanceRows().slice(0, 5)
   const criticalFollowUps =
     snapshot.followUpQueue.find((group) => group.section === 'overdue')?.items.length ?? 0
 
-  const attendanceCompliance =
-    ijtema.present + ijtema.absent + ijtema.excused + ijtema.notRecorded === 0
-      ? 100
-      : Math.round(
-          (ijtema.present / Math.max(ijtema.present + ijtema.absent + ijtema.notRecorded, 1)) *
-            100,
-        )
+  const attendanceCompliance = wiHealth.moduleActive ? wiHealth.pct : 0
+  const baitulCompliance = bmHealth.moduleActive ? bmHealth.pct : baitulMaal.compliancePercentage
 
   return (
     <section className="cd-panel cd-panel-secondary" aria-label="Campaign health">
@@ -75,7 +71,7 @@ export function AdminOperationalHealthPanel({ snapshot }: AdminOperationalHealth
             to={adminCompliancePath('baitul-maal')}
             className="mt-0.5 block text-xl font-semibold text-primary"
           >
-            {baitulMaal.compliancePercentage}%
+            {baitulCompliance}%
           </Link>
           <span className="text-xs text-secondary">{baitulMaal.pending} pending</span>
         </li>

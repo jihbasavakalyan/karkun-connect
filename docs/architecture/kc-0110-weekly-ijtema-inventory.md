@@ -308,7 +308,7 @@ Each step must preserve current behaviour until its cutover flag/adapter is read
 | Compliance Ijtema **writes** | Legacy `updateIjtemaAttendance` | Canonical write adapter (+ legacy dual-write) | ✅ KC-0110.6 |
 | People (profile + list filters via `useKarkunPeopleManagement`) | Legacy | Canonical read adapter | ✅ KC-0110.4 |
 | People profile / bulk **writes** | Legacy | Canonical write adapter (+ legacy dual-write) | ✅ KC-0110.6 |
-| Cos / automation / Rafeeq / home strips | Legacy | Legacy | TODO — deferred reader rewiring |
+| Cos / automation / Rafeeq / home strips | Legacy | **Canonical** (KC-033) | ✅ Rewired to adapters / KPIs / Health |
 | Operational writes (Matrix / Journey / Compliance / People / checklist) | Legacy | Canonical write adapter | ✅ KC-0110.6 |
 
 **Read adapter:** `src/lib/operations/weeklyIjtemaReadAdapter.ts`  
@@ -422,8 +422,8 @@ Campaign Health / Mission / Top Priority already consumed Event/Cycle KPIs; Matr
 | Read-adapter legacy fallback | Excused + weeks without event marks | Keep — documented |
 | `ijtemaAttendanceStore` + ComplianceRepository `load/saveIjtema` | Persistence for compatibility records | Keep — no schema removal |
 | `ensureIjtemaAttendanceRecord` | No-op historical call sites (people / migration) | Keep — safeguard |
-| Cos / automation / Rafeeq / mission strips / communication context | Still legacy readers | Leave TODO — future rewiring |
-| `journeyEngine` store selector | Participation signal | Leave TODO — future rewiring |
+| Cos / automation / Rafeeq / mission strips / communication context | **KC-033** → adapters / KPI / Health | Done — dual-write retained for Excused/history only |
+| `journeyEngine` participation signal | **KC-033** → `getWeeklyIjtemaCurrentAttendanceView` | Done |
 
 ### Intentional legacy retained
 

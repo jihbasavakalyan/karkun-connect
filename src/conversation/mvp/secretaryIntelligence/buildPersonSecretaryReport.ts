@@ -9,9 +9,7 @@ import {
   hasVisitRecorded,
   isJihRegistered,
 } from '@/lib/guidance/journeyEngine'
-import { getCurrentBaitulMaalStatus } from '@/services/baitulMaalService'
-import { getIjtemaAttendanceRecord } from '@/stores/ijtemaAttendanceStore'
-import { getWeekEndingDate } from '@/types/ijtemaAttendance'
+import { CanonicalMetricProviders } from '@/lib/operations/canonicalCampaignMetrics'
 import { getActiveFollowUpForKarkun } from '@/stores/followUpStore'
 import { getPersonCategory } from '@/lib/peopleClassification'
 import type { RelationshipHealthLevel } from '@/types/guidance'
@@ -89,9 +87,9 @@ export function buildPersonSecretaryFacts(input: {
   const assignmentId = guidance?.assignmentId
   const visitDone = karkun ? hasVisitRecorded(karkun, assignmentId) : false
   const jihDone = karkun ? isJihRegistered(karkun) : false
-  const ijtema = getIjtemaAttendanceRecord(input.personId, getWeekEndingDate())
-  const ijtemaDone = ijtema?.status === 'Present'
-  const baitul = getCurrentBaitulMaalStatus(input.personId)
+  const ijtema = CanonicalMetricProviders.weeklyIjtema.getCurrentAttendanceView(input.personId)
+  const ijtemaDone = ijtema.status === 'Present'
+  const baitul = CanonicalMetricProviders.baitulMaal.getComplianceStatusView(input.personId)
   const baitulDone = baitul.status === 'Paid' || baitul.status === 'Exempt'
   const followUp = getActiveFollowUpForKarkun(input.personId)
   const healthLevel = guidance?.health.level ?? 'needs-attention'

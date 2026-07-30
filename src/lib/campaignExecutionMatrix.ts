@@ -22,7 +22,6 @@ import { updateMonthlyBaitulMaalContribution } from '@/lib/operations/monthlyBai
 import { getWeeklyIjtemaCurrentAttendanceView } from '@/lib/operations/weeklyIjtemaReadAdapter'
 import { markWeeklyIjtemaAttendance } from '@/lib/operations/weeklyIjtemaWriteAdapter'
 import { saveDailyProgress } from '@/services/annexure1Service'
-import { getCurrentBaitulMaalStatus } from '@/services/baitulMaalService'
 import { getCampaignTimeline } from '@/services/campaignService'
 import { createCommitment } from '@/services/guidanceService'
 import { getActiveAssignmentsForKarkun } from '@/stores/assignmentStore'
@@ -83,23 +82,11 @@ export function getJihAppMatrixState(karkunId: string): JihAppMatrixState {
 }
 
 /**
- * Legacy campaign-state helper — Paid/Exempt/remarks vocabulary.
- *
- * KC-0112.7 TODO — deferred Cos / achievement builders still call this.
- * Presentation + Matrix writes use adapters; prefer
- * getMonthlyBaitulMaalCampaignStateView when rewiring remaining callers.
+ * Campaign-state helper — delegates to canonical Monthly BM adapter (KC-033).
+ * Legacy Paid/Exempt/remarks vocabulary retained via adapter fallback.
  */
 export function getBaitulMaalCampaignState(karkunId: string): BaitulMaalCampaignState {
-  const record = getCurrentBaitulMaalStatus(karkunId)
-  if (record.status === 'Paid' || record.status === 'Exempt') return 'committed'
-  const remarks = (record.remarks ?? '').toLowerCase()
-  if (remarks.includes('committed') || remarks.includes(BAITUL_COMMITTED.toLowerCase())) {
-    return 'committed'
-  }
-  if (remarks.includes('discussed') || remarks.includes(BAITUL_DISCUSSED.toLowerCase())) {
-    return 'discussed'
-  }
-  return 'not_discussed'
+  return getMonthlyBaitulMaalCampaignStateView(karkunId).state
 }
 
 export function buildCampaignMatrixRows(ruknId: string): CampaignMatrixRow[] {

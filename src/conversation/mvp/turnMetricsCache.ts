@@ -1,6 +1,6 @@
 /**
  * Expanded short-TTL metrics bundle for Rafeeq campaign intelligence.
- * Existing services only — no duplicate calculations.
+ * KC-033 — canonical Health slices + adapter WI metrics only (no legacy IJ/BM).
  */
 
 import { getCampaignConnectionMetrics } from '@/services/metricsService'
@@ -20,7 +20,7 @@ import {
 import { getPeopleStatistics } from '@/lib/peopleStore'
 import { getPendingKarkunRequests } from '@/services/karkunRequestService'
 import { getAssignmentDashboardMetrics } from '@/services/assignmentService'
-import { getIjtemaAttendanceDashboardMetrics } from '@/services/ijtemaAttendanceService'
+import { getWeeklyIjtemaDashboardMetricsView } from '@/lib/operations/weeklyIjtemaReadAdapter'
 
 const TTL_MS = 2500
 
@@ -30,7 +30,8 @@ type Bundle = {
   people: ReturnType<typeof getPeopleStatistics>
   pendingCount: number
   assignments: ReturnType<typeof getAssignmentDashboardMetrics>
-  ijtema: ReturnType<typeof getIjtemaAttendanceDashboardMetrics>
+  /** Canonical-prefer adapter metrics (legacy-shaped counts for Cos cards). */
+  ijtema: ReturnType<typeof getWeeklyIjtemaDashboardMetricsView>
   visits: ReturnType<typeof getDashboardVisitMetrics>
   appRegistration: ReturnType<typeof getDashboardAppRegistrationMetrics>
   weeklyIjtemaHealth: ReturnType<typeof getDashboardWeeklyIjtemaHealthSlice>
@@ -59,7 +60,7 @@ function fresh(ruknId?: string | null): Bundle {
     people: getPeopleStatistics(),
     pendingCount: getPendingKarkunRequests().length,
     assignments: getAssignmentDashboardMetrics(),
-    ijtema: getIjtemaAttendanceDashboardMetrics(),
+    ijtema: getWeeklyIjtemaDashboardMetricsView(),
     visits,
     appRegistration,
     weeklyIjtemaHealth: getDashboardWeeklyIjtemaHealthSlice(),

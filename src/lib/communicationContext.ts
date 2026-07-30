@@ -7,15 +7,7 @@ import { getRuknById } from '@/data/ruknMaster'
 import { getCurrentAssignmentForKarkun } from '@/lib/assignmentEngine'
 import { resolveCurrentJourneyStage } from '@/lib/guidance/journeyEngine'
 import { JOURNEY_STAGE_LABELS } from '@/types/guidance'
-/**
- * KC-0110.7 TODO — Cos / communication still on legacy current-week attendance.
- * Prefer getWeeklyIjtemaCurrentAttendanceView when rewiring.
- *
- * KC-0112.7 TODO — Cos / communication still on legacy Baitul Maal status.
- * Prefer getMonthlyBaitulMaalComplianceStatusView when rewiring.
- */
-import { getCurrentIjtemaAttendance } from '@/services/ijtemaAttendanceService'
-import { getCurrentBaitulMaalStatus } from '@/services/baitulMaalService'
+import { CanonicalMetricProviders } from '@/lib/operations/canonicalCampaignMetrics'
 import { getLatestSubmissionForKarkun } from '@/stores/annexure1Store'
 import { getDevelopmentAssessment } from '@/stores/developmentAssessmentStore'
 import { getRegistrationForKarkun } from '@/services/jihWebPortalService'
@@ -51,8 +43,8 @@ export function buildIndividualCommunicationContext(
   const assignment = getCurrentAssignmentForKarkun(karkunId)
   const rukn = assignment ? getRuknById(assignment.ruknId) : undefined
   const journey = resolveCurrentJourneyStage(karkun, assignment?.assignmentId)
-  const ijtema = getCurrentIjtemaAttendance(karkunId)
-  const baitulMaal = getCurrentBaitulMaalStatus(karkunId)
+  const ijtema = CanonicalMetricProviders.weeklyIjtema.getCurrentAttendanceView(karkunId)
+  const baitulMaal = CanonicalMetricProviders.baitulMaal.getComplianceStatusView(karkunId)
   const latestVisit = getLatestSubmissionForKarkun(karkunId)
   const assessment = getDevelopmentAssessment(karkunId)
   const jih = getRegistrationForKarkun(karkunId)

@@ -33,25 +33,13 @@ import {
 import { getAssignmentDashboardMetrics } from '@/services/assignmentService'
 import {
   getAnnexure1ExecutionMetrics,
-  getCampaignHealthFromAnnexure1,
   getTodaysMeetingAssignments,
 } from '@/services/annexure1Service'
 import { getPendingFollowUps } from '@/services/followUpService'
 import {
-  getBaitulMaalDashboardMetrics,
-  getAllBaitulMaalSummaries,
-} from '@/services/baitulMaalService'
-/**
- * KC-0110.7 TODO — automation still on legacy Ijtema summaries/metrics.
- * Prefer weeklyIjtemaReadAdapter / getWeeklyIjtemaDashboardKpi when rewiring.
- *
- * KC-0112.7 TODO — automation still on legacy Baitul Maal summaries/metrics.
- * Prefer monthlyBaitulMaalReadAdapter / getMonthlyBaitulMaalDashboardKpi when rewiring.
- */
-import {
-  getAllIjtemaAttendanceSummaries,
-  getIjtemaAttendanceDashboardMetrics,
-} from '@/services/ijtemaAttendanceService'
+  getCanonicalCampaignHealthOverallPct,
+  CanonicalMetricProviders,
+} from '@/lib/operations/canonicalCampaignMetrics'
 import {
   getAllJihWebPortalSummaries,
   getJihWebPortalDashboardMetrics,
@@ -135,11 +123,14 @@ function getActionableComplianceSummary(ruknId?: string): ActionableComplianceSu
 
   const items: ActionableComplianceItem[] = []
 
-  const ijtemaPending = getAllIjtemaAttendanceSummaries().filter(
-    (item) =>
-      assignedIds.has(item.karkunId) &&
-      (item.status === 'Not recorded' || item.status === 'Absent'),
-  ).length
+  // KC-033 — canonical Weekly Ijtema (event adapter summaries; same SoR as Health).
+  const ijtemaPending = CanonicalMetricProviders.weeklyIjtema
+    .getSummariesView()
+    .filter(
+      (item) =>
+        assignedIds.has(item.karkunId) &&
+        (item.status === 'Not recorded' || item.status === 'Absent'),
+    ).length
 
   if (ijtemaPending > 0) {
     items.push({
@@ -166,9 +157,10 @@ function getActionableComplianceSummary(ruknId?: string): ActionableComplianceSu
     })
   }
 
-  const baitulPending = getAllBaitulMaalSummaries().filter(
-    (item) => assignedIds.has(item.karkunId) && item.status === 'Pending',
-  ).length
+  // KC-033 — canonical Monthly Baitul Maal (cycle adapter summaries).
+  const baitulPending = CanonicalMetricProviders.baitulMaal
+    .getSummariesView()
+    .filter((item) => assignedIds.has(item.karkunId) && item.status === 'Pending').length
 
   if (baitulPending > 0) {
     items.push({
@@ -192,7 +184,8 @@ export function buildCampaignHeroData(): CampaignHeroData | null {
     return null
   }
 
-  const health = getCampaignHealthFromAnnexure1()
+  // KC-033 — healthScore from canonical four-slice Campaign Health (not annexure avg).
+  const healthScore = getCanonicalCampaignHealthOverallPct()
 
   return {
     name: campaign.name,
@@ -207,7 +200,7 @@ export function buildCampaignHeroData(): CampaignHeroData | null {
     timelineStatus: timeline.status,
     campaignStatus: campaign.status,
     progress: getCampaignProgress(),
-    healthScore: health.overallScore,
+    healthScore,
     nextMilestone: getActiveCampaignNextMilestone(),
     percentageElapsed: timeline.percentageElapsed,
   }
@@ -418,9 +411,10 @@ export function buildCallQueue(ruknId?: string): CallQueueItem[] {
 export function buildReminders(ruknId?: string): ReminderItem[] {
   const reminders: ReminderItem[] = []
   const today = todayIsoDate()
-  const ijtema = getIjtemaAttendanceDashboardMetrics()
+  const ijtema = CanonicalMetricProviders.weeklyIjtema.getDashboardMetricsView()
+  const ijtemaKpi = CanonicalMetricProviders.weeklyIjtema.getKpi()
   const jih = getJihWebPortalDashboardMetrics()
-  const baitul = getBaitulMaalDashboardMetrics()
+  const baitulKpi = CanonicalMetricProviders.baitulMaal.getKpi()
   const pendingFollowUps = filterByRukn(getPendingFollowUps(), ruknId)
   const overdueFollowUps = pendingFollowUps.filter((record) => record.followUpDate < today)
   const todaysFollowUps = pendingFollowUps.filter((record) => record.followUpDate === today)
@@ -432,7 +426,7 @@ export function buildReminders(ruknId?: string): ReminderItem[] {
     : getCanonicalConnectedAssignments()
   ).filter((assignment) => getExecutionStatusForAssignment(assignment.assignmentId, assignment.karkunId) === 'Pending')
 
-  if (ijtema.absent > 0 || getAllIjtemaAttendanceSummaries().some((item) => item.status === 'Not recorded')) {
+  if (ijtema.absent > 0 || ijtema.notRecorded > 0 || ijtemaKpi.ruknsPending > 0) {
     reminders.push({
       id: 'reminder-ijtema',
       label: 'Weekly Ijtema',
@@ -452,11 +446,11 @@ export function buildReminders(ruknId?: string): ReminderItem[] {
     })
   }
 
-  if (baitul.pending > 0) {
+  if (baitulKpi.pending > 0 || baitulKpi.ruknsPending > 0) {
     reminders.push({
       id: 'reminder-baitul-maal',
       label: 'Bait-ul-Maal',
-      reason: `${baitul.pending} contribution(s) pending`,
+      reason: `${baitulKpi.pending} contribution(s) pending`,
       route: adminCompliancePath('baitul-maal'),
       priority: 4,
     })

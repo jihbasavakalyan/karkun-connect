@@ -6,7 +6,8 @@ import {
 import { getRepositories } from '@/repositories/provider'
 import { unwrapRepository } from '@/repositories/errors'
 import { getAllAssignments } from '@/stores/assignmentStore'
-import { getAnnexure1ExecutionMetrics, getCampaignHealthFromAnnexure1 } from '@/services/annexure1Service'
+import { getAnnexure1ExecutionMetrics } from '@/services/annexure1Service'
+import { getCanonicalCampaignHealthOverallPct } from '@/lib/operations/canonicalCampaignMetrics'
 import { ACTIVE_CAMPAIGN_ID } from '@/types/assignment.types'
 
 export type CampaignTimelineStatus = 'upcoming' | 'active' | 'completed'
@@ -133,9 +134,11 @@ export function getCampaignProgress(): number {
     return 0
   }
 
-  const health = getCampaignHealthFromAnnexure1()
-  if (health.overallScore > 0) {
-    return health.overallScore
+  // KC-033 — same operational truth as Campaign Health (four-slice mean).
+  // Legacy annexure overallScore no longer drives progress decisions.
+  const healthOverall = getCanonicalCampaignHealthOverallPct()
+  if (healthOverall > 0) {
+    return healthOverall
   }
 
   const metrics = getAnnexure1ExecutionMetrics()

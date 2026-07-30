@@ -5,8 +5,7 @@
 import { Link } from 'react-router-dom'
 import { ROUTES } from '@/constants/routes'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
-import { getRuknBaitulMaalMetrics } from '@/services/baitulMaalService'
-import { getCurrentIjtemaAttendance } from '@/services/ijtemaAttendanceService'
+import { CanonicalMetricProviders, getCanonicalRuknBaitulMaalMetrics } from '@/lib/operations/canonicalCampaignMetrics'
 import { getDevelopmentAssessment } from '@/stores/developmentAssessmentStore'
 import { getGuidanceForRuknKarkuns } from '@/lib/guidance/guidanceEngine'
 import type { RuknCommandCenterSnapshot } from '@/types/campaignAutomation.types'
@@ -19,11 +18,13 @@ type RuknOperationalPanelProps = {
 export function RuknOperationalPanel({ ruknId, snapshot }: RuknOperationalPanelProps) {
   const { getAssignedKarkunanForRukn } = useAssignmentEngine()
   const connected = getAssignedKarkunanForRukn(ruknId)
-  const baitulMaal = getRuknBaitulMaalMetrics(connected.map((karkun) => karkun.id))
+  const baitulMaal = getCanonicalRuknBaitulMaalMetrics(connected.map((karkun) => karkun.id))
   const guidance = getGuidanceForRuknKarkuns(ruknId)
 
   const missingIjtema = connected.filter(
-    (karkun) => getCurrentIjtemaAttendance(karkun.id).status === 'Not recorded',
+    (karkun) =>
+      CanonicalMetricProviders.weeklyIjtema.getCurrentAttendanceView(karkun.id).status ===
+      'Not recorded',
   ).length
 
   const pendingFollowUps = snapshot.followUpQueue.reduce(

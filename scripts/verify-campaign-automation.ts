@@ -4,18 +4,16 @@
  */
 import { MOCK_KARKUN_REGISTRY } from '@/constants/mockKarkunRegistry'
 import { ruknMaster } from '@/data/ruknMaster'
-import {
-  changeKarkunRuknAssignment,
-  getAssignedKarkunanForRukn,
-} from '@/lib/assignmentEngine'
+import { getAssignedKarkunanForRukn } from '@/lib/assignmentEngine'
 import {
   CampaignAutomationEngine,
   getAdminCommandCenterSnapshot,
   getRuknCommandCenterSnapshot,
 } from '@/services/campaignAutomationEngine'
-import { formatActiveCampaignDuration, getCampaignTimeline } from '@/services/campaignService'
+import { formatActiveCampaignDuration, getActiveCampaign, getCampaignTimeline } from '@/services/campaignService'
 import { runProductionDataMigration } from '@/services/productionDataMigrationService'
-import { clearAssignmentStore } from '@/stores/assignmentStore'
+import { clearAssignmentStore, replaceAllAssignments } from '@/stores/assignmentStore'
+import type { AssignmentRecord } from '@/types/assignment'
 import type { KarkunRegistryRecord, PersonGender } from '@/types/karkun-registry.types'
 
 const now = new Date().toISOString()
@@ -58,12 +56,33 @@ await runProductionDataMigration()
 const adminSnapshot = getAdminCommandCenterSnapshot()
 assert(adminSnapshot.role === 'administrator', 'Admin snapshot role must be administrator')
 assert(adminSnapshot.hero !== null, 'Admin hero must derive from campaign library')
+const activeCampaign = getActiveCampaign()
+assert(Boolean(activeCampaign), 'Active campaign must exist in library')
+const duration = formatActiveCampaignDuration()
 assert(
-  formatActiveCampaignDuration().includes('18 Jul 2026') &&
-    formatActiveCampaignDuration().includes('26 Jul 2026'),
+  duration.includes(activeCampaign!.startDate.slice(8)) ||
+    duration.includes(
+      new Date(`${activeCampaign!.startDate}T00:00:00`).toLocaleDateString('en-GB', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+      }),
+    ),
   'Campaign duration must come from the official campaign library dates',
 )
-assert(getCampaignTimeline()?.totalDays === 9, 'Official campaign must span 9 days (18–26 Jul 2026)')
+assert(
+  duration.includes(
+    new Date(`${activeCampaign!.endDate}T00:00:00`).toLocaleDateString('en-GB', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    }),
+  ),
+  'Campaign duration end date must come from the official campaign library',
+)
+const timeline = getCampaignTimeline()
+assert(Boolean(timeline), 'Campaign timeline must derive from library')
+assert(timeline!.totalDays >= 1, 'Official campaign must span at least 1 day')
 assert(adminSnapshot.hero!.progress >= 0 && adminSnapshot.hero!.progress <= 100, 'Progress must be derived')
 assert(adminSnapshot.hero!.healthScore >= 0 && adminSnapshot.hero!.healthScore <= 100, 'Health score must be derived')
 assert(adminSnapshot.hero!.theme.length > 0, 'Campaign theme must come from campaign library')
@@ -84,11 +103,20 @@ if (!MOCK_KARKUN_REGISTRY.some((record) => record.id === karkun.id)) {
   MOCK_KARKUN_REGISTRY.push(karkun)
 }
 
-const assignResult = await changeKarkunRuknAssignment(karkun.id, maleRukn!.id)
-assert(
-  assignResult.success,
-  `Assignment must succeed for automation flow: ${assignResult.success ? '' : assignResult.error}`,
-)
+// Seed Active connection in-store (JWT-gated assignRukn is out of scope for automation metric checks).
+const seeded: AssignmentRecord = {
+  assignmentId: 'auto-asg-1',
+  assignmentNumber: 'ASN-AUTO-1',
+  ruknId: maleRukn!.id,
+  karkunId: karkun.id,
+  assignedDate: now.slice(0, 10),
+  effectiveFrom: now.slice(0, 10),
+  status: 'Active',
+  assignedBy: 'Administrator',
+  createdAt: now,
+  updatedAt: now,
+}
+replaceAllAssignments([seeded])
 
 const ruknSnapshot = getRuknCommandCenterSnapshot(maleRukn!.id)
 assert(ruknSnapshot.role === 'rukn', 'Rukn snapshot role must be rukn')

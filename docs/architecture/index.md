@@ -17,8 +17,10 @@
 | [KC-0103D — Engagement Capability Audit](./kc-0103d-engagement-capability-audit.md) | Engagement domain evidence |
 | [KC-0103E — Reporting & Executive Visibility Audit](./kc-0103e-reporting-executive-audit.md) | Dashboard / reporting evidence |
 | [**KC-032 — Product Capability Audit & Roadmap Refresh**](./kc-032-product-capability-audit.md) | Cross-product capability matrix, gaps, debt, and refreshed roadmap (SSoT) |
+| [**KC-033 — Canonical Campaign Metric Registry**](./kc-033-canonical-metric-registry.md) | Authoritative metric providers after Operations Truth Convergence |
+| [KC-033 — ARCH-009 Gate](./kc-033-arch009-gate.md) | Convergence sprint gate |
 
-Future implementation must align with KC-0104. Engineering gates: [KC-ARCH-009](./kc-arch-009-feature-impact.md) · [KC-ARCH-001](./kc-arch-001-reliability-persistence.md). Current capability status: [KC-032](./kc-032-product-capability-audit.md).
+Future implementation must align with KC-0104. Engineering gates: [KC-ARCH-009](./kc-arch-009-feature-impact.md) · [KC-ARCH-001](./kc-arch-001-reliability-persistence.md). Current capability status: [KC-032](./kc-032-product-capability-audit.md). Metric providers: [KC-033](./kc-033-canonical-metric-registry.md).
 
 ## Overview
 

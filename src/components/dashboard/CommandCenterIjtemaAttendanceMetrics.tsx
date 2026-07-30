@@ -2,19 +2,19 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { adminCompliancePath } from '@/constants/routes'
 import { getComplianceStatusStyle } from '@/lib/complianceStatusStyles'
-import { getIjtemaAttendanceDashboardMetrics } from '@/services/ijtemaAttendanceService'
-import { subscribeToIjtemaAttendanceStore } from '@/stores/ijtemaAttendanceStore'
+import { CanonicalMetricProviders } from '@/lib/operations/canonicalCampaignMetrics'
+import { subscribeToWeeklyIjtemaStore } from '@/stores/weeklyIjtemaStore'
 
 export function CommandCenterIjtemaAttendanceMetrics() {
   const [, setVersion] = useState(0)
 
   useEffect(() => {
-    return subscribeToIjtemaAttendanceStore(() => setVersion((value) => value + 1))
+    return subscribeToWeeklyIjtemaStore(() => setVersion((value) => value + 1))
   }, [])
 
   void setVersion
 
-  const metrics = getIjtemaAttendanceDashboardMetrics()
+  const metrics = CanonicalMetricProviders.weeklyIjtema.getDashboardMetricsView()
 
   const items = [
     {

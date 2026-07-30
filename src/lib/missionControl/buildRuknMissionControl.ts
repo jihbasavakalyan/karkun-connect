@@ -6,12 +6,7 @@ import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { getConnectedKarkunIdsForRukn } from '@/lib/connections/getConnectedKarkunsForRukn'
 import { getGuidanceForRuknKarkuns } from '@/lib/guidance/guidanceEngine'
 import { buildRuknExecutionSummary } from '@/lib/executionStatus'
-/**
- * KC-0112.7 TODO — Rukn mission snapshot still on legacy BM metrics.
- * Prefer getRukn-scoped cycle KPI / adapter when rewiring.
- */
-import { getRuknBaitulMaalMetrics } from '@/services/baitulMaalService'
-import { getCurrentIjtemaAttendance } from '@/services/ijtemaAttendanceService'
+import { CanonicalMetricProviders } from '@/lib/operations/canonicalCampaignMetrics'
 import { getDevelopmentAssessment } from '@/stores/developmentAssessmentStore'
 import { getRecentActivity } from '@/stores/activityLogStore'
 import { JOURNEY_STAGE_LABELS, JOURNEY_STAGE_ORDER, type JourneyStageId } from '@/types/guidance'
@@ -49,7 +44,15 @@ export function buildRuknMissionControl(
 ): RuknMissionControlModel {
   const connectedIds = getConnectedKarkunIdsForRukn(ruknId)
   const guidance = getGuidanceForRuknKarkuns(ruknId)
-  const baitulMaal = getRuknBaitulMaalMetrics(connectedIds)
+  // KC-033 — scope cycle adapter summaries to this Rukn's Connected set.
+  const baitulSummaries = CanonicalMetricProviders.baitulMaal
+    .getSummariesView()
+    .filter((row) => connectedIds.includes(row.karkunId))
+  const baitulMaal = {
+    paid: baitulSummaries.filter((row) => row.status === 'Paid').length,
+    pending: baitulSummaries.filter((row) => row.status === 'Pending').length,
+    exempt: baitulSummaries.filter((row) => row.status === 'Exempt').length,
+  }
 
   const stageCounts = new Map<JourneyStageId, number>()
   for (const item of guidance) {
@@ -67,7 +70,7 @@ export function buildRuknMissionControl(
   let excused = 0
   let notRecorded = 0
   for (const karkunId of connectedIds) {
-    const status = getCurrentIjtemaAttendance(karkunId).status
+    const status = CanonicalMetricProviders.weeklyIjtema.getCurrentAttendanceView(karkunId).status
     if (status === 'Present') present += 1
     else if (status === 'Absent') absent += 1
     else if (status === 'Excused') excused += 1

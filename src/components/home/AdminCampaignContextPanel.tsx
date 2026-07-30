@@ -2,8 +2,7 @@ import { Link } from 'react-router-dom'
 import { ROUTES, adminCompliancePath } from '@/constants/routes'
 import { getCommunicationDashboardMetrics } from '@/stores/communicationStore'
 import { getJihWebPortalDashboardMetrics } from '@/services/jihWebPortalService'
-import { getIjtemaAttendanceDashboardMetrics } from '@/services/ijtemaAttendanceService'
-import { getBaitulMaalDashboardMetrics } from '@/services/baitulMaalService'
+import { CanonicalMetricProviders } from '@/lib/operations/canonicalCampaignMetrics'
 import { getAssignmentDashboardMetrics } from '@/services/assignmentService'
 import { getGuidanceForRuknKarkuns } from '@/lib/guidance/guidanceEngine'
 import { getAllAssignments } from '@/stores/assignmentStore'
@@ -37,8 +36,8 @@ export function AdminCampaignContextPanel() {
   const overview = getCampaignProgressOverview()
   const assignmentMetrics = getAssignmentDashboardMetrics()
   const jih = getJihWebPortalDashboardMetrics()
-  const ijtema = getIjtemaAttendanceDashboardMetrics()
-  const baitulMaal = getBaitulMaalDashboardMetrics()
+  const ijtema = CanonicalMetricProviders.weeklyIjtema.getDashboardMetricsView()
+  const baitulMaal = CanonicalMetricProviders.baitulMaal.getDashboardMetricsView()
   const communication = getCommunicationDashboardMetrics()
   const journeyDistribution = buildJourneyDistribution()
   const maxJourneyCount = Math.max(...journeyDistribution.map((entry) => entry.count), 1)

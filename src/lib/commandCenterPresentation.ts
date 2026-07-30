@@ -9,16 +9,10 @@ import { getPeopleStatistics } from '@/lib/peopleStore'
 import { getRuknById } from '@/data/ruknMaster'
 import {
   getAnnexure1ExecutionMetrics,
-  getCampaignHealthFromAnnexure1,
 } from '@/services/annexure1Service'
 import { getAssignmentDashboardMetrics } from '@/services/assignmentService'
 import { getCampaignProgress, getCampaignTimeline } from '@/services/campaignService'
-/**
- * KC-0112.7 TODO — command-center presentation still on legacy BM metrics.
- * Prefer getMonthlyBaitulMaalDashboardMetricsView / cycle KPI when rewiring.
- */
-import { getBaitulMaalDashboardMetrics } from '@/services/baitulMaalService'
-import { getIjtemaAttendanceDashboardMetrics } from '@/services/ijtemaAttendanceService'
+import { CanonicalMetricProviders } from '@/lib/operations/canonicalCampaignMetrics'
 import { getJihWebPortalDashboardMetrics } from '@/services/jihWebPortalService'
 import type { CommandCenterKpi } from '@/types/campaignAutomation.types'
 
@@ -137,14 +131,15 @@ export type CampaignProgressOverview = {
 
 export function getCampaignProgressOverview(): CampaignProgressOverview {
   const assignmentMetrics = getAssignmentDashboardMetrics()
-  const health = getCampaignHealthFromAnnexure1()
+  const visits = CanonicalMetricProviders.visits.get()
   const people = getPeopleStatistics()
   const activeRukns = ruknMaster.filter((rukn) => rukn.status === 'active').length
   const totalKarkuns = people.totalMaleKarkuns + people.totalFemaleKarkuns
 
   const jih = getJihWebPortalDashboardMetrics()
-  const baitulMaal = getBaitulMaalDashboardMetrics()
-  const ijtema = getIjtemaAttendanceDashboardMetrics()
+  // KC-033 — compliance pending from canonical WI/BM tracks (not legacy week/month docs).
+  const baitulMaal = CanonicalMetricProviders.baitulMaal.getKpi()
+  const ijtema = CanonicalMetricProviders.weeklyIjtema.getDashboardMetricsView()
   const assignedCount = assignmentMetrics.activeAssignments || 1
   const pendingComplianceItems =
     jih.notRegistered + jih.pendingReports + baitulMaal.pending + ijtema.absent
@@ -155,9 +150,9 @@ export function getCampaignProgressOverview(): CampaignProgressOverview {
 
   return {
     overall: getCampaignProgress(),
-    execution: health.visitCompletionRate,
+    execution: visits.pct,
     coverage: activeRukns > 0 ? Math.round((assignmentMetrics.assignedRukns / activeRukns) * 100) : 0,
-    followUp: health.followUpCompletionRate,
+    followUp: getAnnexure1ExecutionMetrics().followUpCompletionRate,
     compliance: compliancePct,
     assignment:
       totalKarkuns > 0

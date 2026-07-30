@@ -13,15 +13,9 @@ import {
 } from '@/lib/campaignExecutionMatrix'
 import { getDailyProgressView } from '@/lib/dailyProgressPresentation'
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
-/**
- * KC-0112.7 TODO — Cos relationship intelligence still on legacy BM status/record.
- * Prefer getMonthlyBaitulMaalComplianceStatusView / campaign-state view when rewiring.
- */
-import { getCurrentBaitulMaalStatus } from '@/services/baitulMaalService'
-import { getCurrentIjtemaAttendance } from '@/services/ijtemaAttendanceService'
+import { CanonicalMetricProviders } from '@/lib/operations/canonicalCampaignMetrics'
 import { getCurrentMonthKey } from '@/services/jihWebPortalService'
 import { getLatestSubmissionForKarkun } from '@/stores/annexure1Store'
-import { getBaitulMaalRecord } from '@/stores/baitulMaalStore'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
 
 export type RelationshipJourneyStage =
@@ -149,22 +143,25 @@ function collectMeaningfulInteractions(karkunId: string): InteractionCandidate[]
     pushCandidate(candidates, 'JIH App registered', karkun.updatedAt)
   }
 
-  const ijtema = getCurrentIjtemaAttendance(karkunId)
+  const ijtema = CanonicalMetricProviders.weeklyIjtema.getCurrentAttendanceView(karkunId)
   if (ijtema.status === 'Present') {
-    pushCandidate(candidates, 'Weekly Ijtema attended', ijtema.updatedAt)
+    pushCandidate(candidates, 'Weekly Ijtema attended', ijtema.meetingDate ?? ijtema.weekEndingDate)
   } else if (ijtema.status === 'Absent' || ijtema.status === 'Excused') {
-    pushCandidate(candidates, `Weekly Ijtema ${ijtema.status.toLowerCase()}`, ijtema.updatedAt)
+    pushCandidate(
+      candidates,
+      `Weekly Ijtema ${ijtema.status.toLowerCase()}`,
+      ijtema.meetingDate ?? ijtema.weekEndingDate,
+    )
   }
 
-  const baitul = getCurrentBaitulMaalStatus(karkunId)
-  const baitulRecord = getBaitulMaalRecord(karkunId, getCurrentMonthKey())
-  const baitulAt = baitulRecord?.updatedAt ?? baitul.paymentDate
+  const baitul = CanonicalMetricProviders.baitulMaal.getComplianceStatusView(karkunId)
+  const baitulAt = baitul.paymentDate
   if (baitul.status === 'Paid' || baitul.status === 'Exempt') {
-    pushCandidate(candidates, 'Baitul Maal contribution', baitulAt)
+    pushCandidate(candidates, 'Baitul Maal contribution', baitulAt, getCurrentMonthKey())
   } else if ((baitul.remarks ?? '').toLowerCase().includes('committed')) {
-    pushCandidate(candidates, 'Baitul Maal contribution', baitulAt)
+    pushCandidate(candidates, 'Baitul Maal contribution', baitulAt, getCurrentMonthKey())
   } else if ((baitul.remarks ?? '').toLowerCase().includes('discussed')) {
-    pushCandidate(candidates, 'Baitul Maal discussed', baitulAt)
+    pushCandidate(candidates, 'Baitul Maal discussed', baitulAt, getCurrentMonthKey())
   }
 
   return candidates.sort((a, b) => b.at - a.at)

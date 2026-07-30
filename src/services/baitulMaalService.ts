@@ -1,14 +1,19 @@
 /**
  * KC-0112.7 — LEGACY Monthly Baitul Maal compatibility track (per-Karkun month records).
- * Dual-write target + Exempt vocabulary + deferred Cos / Automation / Rafeeq readers.
- * Not the Campaign Health source of truth — do not extend for new executive KPIs.
+ * Dual-write target + Exempt vocabulary + adapter fallback only.
+ * Not the Campaign Health / automation source of truth — do not extend for new executive KPIs.
  * Ops reads/writes: `monthlyBaitulMaalReadAdapter` / `monthlyBaitulMaalWriteAdapter`.
- * Inventory: docs/architecture/kc-0112-monthly-baitul-maal-inventory.md
+ * Inventory: docs/architecture/kc-0112-monthly-baitul-maal-inventory.md · KC-033 registry
  */
 
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { getAllKarkuns } from '@/lib/peopleStore'
 import { getActiveCampaign } from '@/services/campaignService'
+import {
+  getMonthlyBaitulMaalComplianceStatusView,
+  getMonthlyBaitulMaalDashboardMetricsView,
+  getMonthlyBaitulMaalSummariesView,
+} from '@/lib/operations/monthlyBaitulMaalReadAdapter'
 import {
   getBaitulMaalRecord,
   upsertBaitulMaalRecord,
@@ -142,7 +147,8 @@ export function getCurrentBaitulMaalStatus(karkunId: string) {
 
 /** True when compliance indicates contribution is settled for the month (Paid or Exempt). */
 export function isBaitulMaalSettledThisMonth(karkunId: string): boolean {
-  const status = getCurrentBaitulMaalStatus(karkunId).status
+  // KC-033 — cycle adapter compliance status (Paid via Contributed).
+  const status = getMonthlyBaitulMaalComplianceStatusView(karkunId).status
   return status === 'Paid' || status === 'Exempt'
 }
 
@@ -361,10 +367,47 @@ export function buildBaitulMaalGuidanceReminders(
   scope: 'administrator' | 'rukn',
   karkunIds?: readonly string[],
 ): string[] {
-  const metrics =
-    scope === 'rukn' && karkunIds
-      ? getRuknBaitulMaalMetrics(karkunIds)
-      : getBaitulMaalDashboardMetrics()
+  // KC-033 — cycle adapter metrics (not legacy baitulMaal* dashboard as truth).
+  let metrics: BaitulMaalDashboardMetrics
+  if (scope === 'rukn' && karkunIds) {
+    const idSet = new Set(karkunIds)
+    const summaries = getMonthlyBaitulMaalSummariesView().filter((row) => idSet.has(row.karkunId))
+    let paid = 0
+    let pending = 0
+    let exempt = 0
+    for (const row of summaries) {
+      if (row.status === 'Paid') paid += 1
+      else if (row.status === 'Exempt') exempt += 1
+      else pending += 1
+    }
+    const total = karkunIds.length
+    const compliant = paid + exempt
+    const compliancePercentage = total === 0 ? 0 : Math.round((compliant / total) * 100)
+    const campaign = getActiveCampaign()
+    const campaignTrendLabel =
+      total === 0
+        ? 'No contributors in scope'
+        : pending === 0
+          ? 'On track for this campaign month'
+          : compliancePercentage >= 80
+            ? 'Strong compliance this campaign month'
+            : compliancePercentage >= 50
+              ? 'Moderate — follow up on pending contributors'
+              : 'Needs attention — many pending this month'
+    metrics = {
+      paid,
+      pending,
+      exempt,
+      total,
+      compliancePercentage,
+      daysUntilMonthClose: getDaysUntilMonthClose(),
+      campaignId: campaign?.id,
+      campaignName: campaign?.name,
+      campaignTrendLabel,
+    }
+  } else {
+    metrics = getMonthlyBaitulMaalDashboardMetricsView()
+  }
 
   const reminders: string[] = []
 

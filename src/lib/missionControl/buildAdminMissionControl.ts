@@ -12,12 +12,7 @@ import {
   formatCampaignDate,
   getCampaignTimeline,
 } from '@/services/campaignService'
-/**
- * KC-0112.7 TODO — mission-control strips still on legacy BM metrics.
- * Prefer getMonthlyBaitulMaalDashboardMetricsView / cycle KPI when rewiring.
- */
-import { getBaitulMaalDashboardMetrics } from '@/services/baitulMaalService'
-import { getIjtemaAttendanceDashboardMetrics } from '@/services/ijtemaAttendanceService'
+import { CanonicalMetricProviders } from '@/lib/operations/canonicalCampaignMetrics'
 import { getJihWebPortalDashboardMetrics } from '@/services/jihWebPortalService'
 import { getConnectedProfileCompletionMetrics } from '@/lib/karkunProfileCompletion'
 import { getCanonicalConnectedAssignments } from '@/lib/connections/getConnectedKarkunsForRukn'
@@ -116,20 +111,15 @@ export function buildAdminMissionControl(
   // KC-0058.1 — shared MetricsService (dashboard + integrity scanner).
   const connectionMetrics = getCampaignConnectionMetrics()
   const overview = getCampaignProgressOverview()
-  const ijtema = getIjtemaAttendanceDashboardMetrics()
-  const baitulMaal = getBaitulMaalDashboardMetrics()
+  const baitulMaal = CanonicalMetricProviders.baitulMaal.getDashboardMetricsView()
+  const wiHealth = CanonicalMetricProviders.weeklyIjtema.getHealthSlice()
+  const bmHealth = CanonicalMetricProviders.baitulMaal.getHealthSlice()
   const jih = getJihWebPortalDashboardMetrics()
   const team = getTeamPerformanceRows().slice(0, 8)
   const funnel = buildJourneyFunnel()
 
-  const attendanceCompliance =
-    ijtema.present + ijtema.absent + ijtema.excused + ijtema.notRecorded === 0
-      ? 100
-      : Math.round(
-          (ijtema.present /
-            Math.max(ijtema.present + ijtema.absent + ijtema.notRecorded, 1)) *
-            100,
-        )
+  const attendanceCompliance = wiHealth.moduleActive ? wiHealth.pct : 0
+  const baitulMaalCompliance = bmHealth.moduleActive ? bmHealth.pct : baitulMaal.compliancePercentage
 
   const criticalFollowUps =
     snapshot.followUpQueue.find((group) => group.section === 'overdue')?.items.length ?? 0
@@ -219,9 +209,9 @@ export function buildAdminMissionControl(
       pct: connectionMetrics.progressPct,
     },
     campaignHealth: {
-      overall: overview.overall,
+      overall: CanonicalMetricProviders.campaignHealth.getOverallPct(),
       attendanceCompliance,
-      baitulMaalCompliance: baitulMaal.compliancePercentage,
+      baitulMaalCompliance,
       jihPending: jih.notRegistered + jih.pendingReports,
       criticalFollowUps,
     },

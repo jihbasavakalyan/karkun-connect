@@ -15,7 +15,7 @@ import {
   saveWeeklyIjtemaSubmission,
 } from '../src/services/weeklyIjtemaService'
 import { canRuknEditWeeklyIjtema, defaultSubmissionDeadline } from '../src/types/weeklyIjtema'
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 function assert(condition: boolean, message: string): asserts condition {
@@ -25,8 +25,10 @@ function assert(condition: boolean, message: string): asserts condition {
 
 clearWeeklyIjtemaStore()
 
+const meetingDate = new Date().toISOString().slice(0, 10)
+
 const created = createWeeklyIjtemaEvent({
-  meetingDate: '2026-07-24',
+  meetingDate,
   title: 'Weekly Ijtema',
   createdBy: 'Admin Test',
 })
@@ -34,7 +36,7 @@ assert(created.success, 'Admin can create Weekly Ijtema event')
 assert(created.success && created.event.status === 'Open', 'new event opens attendance')
 assert(
   created.success &&
-    created.event.submissionDeadline === defaultSubmissionDeadline('2026-07-24'),
+    created.event.submissionDeadline === defaultSubmissionDeadline(meetingDate),
   'default deadline is meeting date + 24h',
 )
 
@@ -65,7 +67,7 @@ assert(typeof kpi.ruknsSubmitted === 'number', 'dashboard KPI has submission pro
 
 const report = getWeeklyIjtemaReport(event!.id)
 assert(Boolean(report), 'weekly report available')
-assert(report!.event.meetingDate === '2026-07-24', 'report includes meeting date')
+assert(report!.event.meetingDate === meetingDate, 'report includes meeting date')
 
 const workspaceMissing = getRuknWeeklyIjtemaWorkspace('missing', 'rukn-1')
 assert(!workspaceMissing.success, 'workspace fails for missing event')
@@ -82,18 +84,16 @@ const ruknPage = readFileSync(resolve('src/pages/rukn/WeeklyIjtemaRegisterPage.t
 assert(ruknPage.includes('حاضر'), 'rukn page shows Present Urdu')
 assert(ruknPage.includes('غیر حاضر'), 'rukn page shows Absent Urdu')
 assert(
-  ruknPage.includes('Please mark attendance for all assigned Karkuns before submitting.'),
+  ruknPage.includes('Please mark attendance for all connected Karkuns before submitting.'),
   'rukn incomplete submit message present',
 )
 assert(!ruknPage.includes('Excused'), 'rukn v1 has no Excused status')
 
-const kpiCard = readFileSync(
-  resolve('src/components/mission-control/WeeklyIjtemaDashboardKpiCard.tsx'),
-  'utf8',
+// KC-0110.7 / KC-033 — orphan WeeklyIjtemaDashboardKpiCard removed; Health panel is canonical.
+assert(
+  !existsSync(resolve('src/components/mission-control/WeeklyIjtemaDashboardKpiCard.tsx')),
+  'legacy Weekly Ijtema KPI card file retired',
 )
-assert(kpiCard.includes('Attendance'), 'dashboard KPI shows attendance')
-assert(kpiCard.includes('Submission'), 'dashboard KPI shows submission')
-assert(kpiCard.includes('Pending'), 'dashboard KPI shows pending')
 
 const ops = readFileSync(
   resolve('src/lib/missionControl/campaignOperationsCommandCenter.ts'),
