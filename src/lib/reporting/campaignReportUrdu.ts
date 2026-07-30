@@ -1,5 +1,6 @@
 /**
- * KC-029 — Urdu copy for the executive Campaign Report.
+ * KC-029 / KC-034 — Urdu copy for the executive Campaign Report.
+ * Natural Jamaat administrative tone; Connection ≠ Visit throughout.
  */
 
 export const URDU_REPORT = {
@@ -25,44 +26,68 @@ export const URDU_REPORT = {
 
   sections: {
     cover: 'سرورق',
-    executive: 'کارکردگی کا خلاصہ',
+    executive: 'انتظامی خلاصہ',
+    organization: 'تنظیم',
+    campaignSummary: 'مہم کا خلاصہ',
     campaignProgress: 'مہم کی پیش رفت',
     overallProgress: 'مجموعی مہم کی پیش رفت',
     achievement: 'مجموعی کارکردگی',
     malePerformance: 'ارکان کی کارکردگی (مرد)',
     femalePerformance: 'ارکان کی کارکردگی (خواتین)',
-    individualPerformance: 'انفرادی کارکردگی',
+    individualPerformance: 'ارکان کی تفصیل',
     pending: 'امور زیر التواء',
     critical: 'فوری توجہ درکار',
+    progressBands: 'ارکان کی پیش رفت — زمرے',
+    followUp: 'فالو اپ فہرستیں',
     topPerformers: 'نمایاں کارکردگی',
     categoryLeaders: 'شعبہ جاتی نمایاں کارکردگی',
     statistics: 'مجموعی اعداد و شمار',
-    recommendations: 'اہم مشاہدات اور آئندہ اقدامات',
+    recommendations: 'تجاویز',
+  },
+
+  progressBands: {
+    notStarted: 'شروع نہیں ہوا (۰٪)',
+    initial: 'ابتدائی پیش رفت (۱–۴۰٪)',
+    nearComplete: 'قریب تکمیل (۴۱–۹۹٪)',
+    complete: 'مہم مکمل (۱۰۰٪)',
+    count: 'تعداد',
+    names: 'نام',
+    empty: 'اس زمرے میں کوئی رکن نہیں۔',
+  },
+
+  followUp: {
+    visitPending: 'ملاقات زیر التواء',
+    appRegistrationPending: 'ایپ رجسٹریشن زیر التواء',
+    weeklyIjtemaFollowUp: 'ہفتہ وار اجتماع — فالو اپ',
+    baitulMaalFollowUp: 'بیت المال — فالو اپ',
+    empty: 'اس فہرست میں کوئی رکن نہیں۔',
   },
 
   recommendationTiers: {
-    urgent: 'فوری توجہ درکار',
+    urgent: 'فوری کارروائی',
     next: 'اگلا مرحلہ',
     positive: 'مثبت پیش رفت',
   },
 
   kpi: {
     totalRukns: 'کل ارکان',
-    maleRukns: 'مرد ارکان',
-    femaleRukns: 'خواتین ارکان',
+    maleRukns: 'مرد',
+    femaleRukns: 'خواتین',
     totalKarkuns: 'کل کارکن',
-    maleKarkuns: 'مرد کارکن',
-    femaleKarkuns: 'خواتین کارکن',
+    maleKarkuns: 'مرد',
+    femaleKarkuns: 'خواتین',
     totalMuttafiqeen: 'کل متفقین',
     maleMuttafiqeen: 'مرد متفقین',
     femaleMuttafiqeen: 'خواتین متفقین',
     connectedKarkuns: 'منسلک کارکنان',
-    connectionPct: 'منسلک ہونے کی شرح',
+    connectionPct: 'رابطوں کی شرح',
     visits: 'ملاقاتیں',
-    appRegistration: 'جے آئی ایچ رپورٹنگ ایپ',
+    appRegistration: 'ایپ رجسٹریشن',
     weeklyIjtema: 'ہفتہ وار اجتماع',
     baitulMaal: 'بیت المال',
     overallProgress: 'مجموعی پیش رفت',
+    rukn: 'رکن',
+    karkun: 'کارکن',
   },
 
   columns: {
@@ -104,24 +129,24 @@ export const URDU_REPORT = {
     visits: 'ملاقاتیں',
     appRegistration: 'ایپ رجسٹریشن',
     weeklyIjtema: 'ہفتہ وار اجتماع',
-    baitulMaal: 'بیت المال عزم',
+    baitulMaal: 'بیت المال',
   },
 
   topCategories: {
-    connections: 'منسلک کارکنان',
-    visits: 'بہترین ملاقات کارکردگی',
-    appRegistration: 'بہترین ایپ رجسٹریشن',
-    weeklyIjtema: 'بہترین ہفتہ وار اجتماع',
-    baitulMaal: 'بہترین بیت المال',
+    connections: 'رابطے',
+    visits: 'ملاقاتیں',
+    appRegistration: 'ایپ رجسٹریشن',
+    weeklyIjtema: 'ہفتہ وار اجتماع',
+    baitulMaal: 'بیت المال',
     overall: 'مجموعی پیش رفت',
-    mostImproved: 'سب سے نمایاں بہتری',
+    mostImproved: 'نمایاں بہتری',
   },
 
   empty: {
     noRukns: 'اس سیکشن میں کوئی رکن موجود نہیں۔',
     noPending: 'کسی رکن کے پاس امور زیر التواء نہیں۔',
-    noCritical: 'فوری توجہ کے مستحق کوئی رکن نہیں ملا۔',
-    noRecommendations: 'اس زمرے میں کوئی مشاہدہ نہیں۔',
+    noCritical: 'فوری توجہ کے مستحق کوئی رکن نہیں۔',
+    noRecommendations: 'اس زمرے میں کوئی تجویز نہیں۔',
     noCategoryLeader: 'فی الحال اس شعبہ میں کوئی نمایاں کارکردگی موجود نہیں۔',
     noTopPerformers: 'فی الحال کوئی نمایاں کارکردگی موجود نہیں۔',
   },
@@ -148,8 +173,8 @@ export const URDU_REPORT = {
 } as const
 
 export const URDU_CRITICAL_REASONS = {
-  noConnections: 'کوئی منسلک کارکن نہیں',
-  lowVisits: 'ملاقاتوں کی تکمیل کم ہے',
+  noConnections: 'رابطے شروع نہیں ہوئے',
+  lowVisits: 'ملاقاتیں کم ہیں',
   lowWeeklyIjtema: 'ہفتہ وار اجتماع کی حاضری کم ہے',
   lowAppRegistration: 'ایپ رجسٹریشن کم ہے',
   lowBaitulMaal: 'بیت المال کی پیش رفت کم ہے',

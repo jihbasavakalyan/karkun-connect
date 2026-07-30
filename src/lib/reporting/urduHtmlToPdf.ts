@@ -164,6 +164,9 @@ html, body {
 .urdu-report .kpi-grid.kpi-3 {
   grid-template-columns: 1fr 1fr 1fr;
 }
+.urdu-report .kpi-grid.kpi-2 {
+  grid-template-columns: 1fr 1fr;
+}
 .urdu-report .kpi-card {
   background: ${colors.cardBg};
   border-radius: 12px;
@@ -437,6 +440,78 @@ html, body {
   font-size: 8.5pt;
   color: ${colors.muted};
   line-height: 1.45;
+}
+
+/* ── Progress bands + exception follow-up (KC-034) ──────────── */
+.urdu-report .band-list,
+.urdu-report .exception-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0 0 10px;
+}
+.urdu-report .band-card,
+.urdu-report .exception-card {
+  background: ${colors.cardBg};
+  border-radius: 10px;
+  padding: 7px 10px;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.04);
+}
+.urdu-report .band-card.tone-good { border-right: 3px solid ${colors.emerald}; }
+.urdu-report .band-card.tone-warn { border-right: 3px solid #d97706; }
+.urdu-report .band-card.tone-info { border-right: 3px solid ${colors.secondary}; }
+.urdu-report .band-card.tone-danger { border-right: 3px solid #b91c1c; }
+.urdu-report .band-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.urdu-report .band-title {
+  margin: 0;
+  font-size: 10pt;
+  font-weight: 700;
+  color: ${colors.primary};
+}
+.urdu-report .band-names {
+  margin: 0;
+  font-size: 9pt;
+  color: ${colors.text};
+  line-height: 1.55;
+}
+.urdu-report .band-empty {
+  margin: 0;
+  font-size: 8.5pt;
+  color: ${colors.muted};
+}
+.urdu-report .table-wrap {
+  overflow: hidden;
+  margin: 0 0 8px;
+}
+.urdu-report table.exec-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 8.5pt;
+}
+.urdu-report table.exec-table th,
+.urdu-report table.exec-table td {
+  padding: 5px 4px;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.95);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.urdu-report table.exec-table th {
+  background: #f1f5f9;
+  color: ${colors.primary};
+  font-weight: 700;
+  font-size: 8pt;
+}
+.urdu-report table.exec-table td.name-cell {
+  text-align: right;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 /* ── Rank / performer cards ─────────────────────────────────── */

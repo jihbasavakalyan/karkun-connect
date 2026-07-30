@@ -112,6 +112,28 @@ export type CampaignReportRecommendationGroups = {
   positive: string[]
 }
 
+/** Operational progress band — KC-034 replaces selective Top-5 ranking. */
+export type CampaignReportProgressBandKey =
+  | 'notStarted'
+  | 'initial'
+  | 'nearComplete'
+  | 'complete'
+
+export type CampaignReportProgressBand = {
+  key: CampaignReportProgressBandKey
+  label: string
+  count: number
+  names: string[]
+}
+
+/** Exception-based follow-up lists — Administrator next-action plan. */
+export type CampaignReportExceptionLists = {
+  visitPending: string[]
+  appRegistrationPending: string[]
+  weeklyIjtemaFollowUp: string[]
+  baitulMaalFollowUp: string[]
+}
+
 export type CampaignReportModel = {
   cover: {
     campaignName: string
@@ -152,9 +174,15 @@ export type CampaignReportModel = {
   allRukns: CampaignReportRuknRow[]
   pendingByRukn: CampaignReportRuknRow[]
   criticalRukns: CampaignReportRuknRow[]
-  /** @deprecated Prefer topOverallPerformers — kept for compatibility. */
+  /** KC-034 — full operational categorisation by overall %. */
+  progressBands: CampaignReportProgressBand[]
+  /** KC-034 — exception action lists (names only). */
+  exceptionLists: CampaignReportExceptionLists
+  /** @deprecated Prefer progressBands — kept for compatibility. */
   topPerformers: CampaignReportTopPerformer[]
+  /** @deprecated Prefer progressBands — kept for compatibility. */
   topOverallPerformers: CampaignReportRankedPerformer[]
+  /** @deprecated Prefer exceptionLists — kept for compatibility. */
   categoryLeaders: CampaignReportCategoryLeader[]
   statistics: Array<{ label: string; metric: CampaignReportMetricPair }>
   recommendationGroups: CampaignReportRecommendationGroups
@@ -234,103 +262,114 @@ function sumMetric(
   return pair(completed, total)
 }
 
+function namesWithPending(
+  rows: CampaignReportRuknRow[],
+  key: 'visits' | 'appRegistration' | 'weeklyIjtema' | 'baitulMaal',
+): string[] {
+  return rows
+    .filter((row) => row[key].pending > 0)
+    .sort((a, b) => a.ruknName.localeCompare(b.ruknName))
+    .map((row) => row.ruknName)
+}
+
+function buildProgressBands(rows: CampaignReportRuknRow[]): CampaignReportProgressBand[] {
+  const buckets: Record<CampaignReportProgressBandKey, string[]> = {
+    notStarted: [],
+    initial: [],
+    nearComplete: [],
+    complete: [],
+  }
+  for (const row of rows) {
+    const pct = row.overallPct
+    if (pct <= 0) buckets.notStarted.push(row.ruknName)
+    else if (pct <= 40) buckets.initial.push(row.ruknName)
+    else if (pct < 100) buckets.nearComplete.push(row.ruknName)
+    else buckets.complete.push(row.ruknName)
+  }
+  const order: CampaignReportProgressBandKey[] = [
+    'notStarted',
+    'initial',
+    'nearComplete',
+    'complete',
+  ]
+  return order.map((key) => {
+    const names = [...buckets[key]].sort((a, b) => a.localeCompare(b))
+    return {
+      key,
+      label: URDU_REPORT.progressBands[key],
+      count: names.length,
+      names,
+    }
+  })
+}
+
+/** Recommendations from pending operational work only — no generic advice. */
 function buildRecommendationGroups(input: {
-  critical: CampaignReportRuknRow[]
   executive: CampaignReportModel['executive']
-  topOverall: CampaignReportRankedPerformer[]
-  categoryLeaders: CampaignReportCategoryLeader[]
+  exceptionLists: CampaignReportExceptionLists
+  progressBands: CampaignReportProgressBand[]
 }): CampaignReportRecommendationGroups {
   const urgent: string[] = []
   const next: string[] = []
   const positive: string[] = []
-  const { critical, executive, topOverall, categoryLeaders } = input
+  const { executive, exceptionLists, progressBands } = input
 
   if (executive.visits.pending > 0) {
     urgent.push(
-      `${executive.visits.pending} ملاقاتیں زیر التواء ہیں — فوری طور پر مکمل کیجیے۔`,
+      `زیر التواء ملاقاتیں مکمل کیجیے (${executive.visits.pending} · ${exceptionLists.visitPending.length} ارکان)۔`,
     )
   }
-  if (executive.connectionPct < 50) {
+  if (executive.connected.pending > 0 && executive.connectionPct < 50) {
     urgent.push(
-      `منسلک ہونے کی شرح صرف ${executive.connectionPct}٪ ہے — رابطہ باقی ${executive.connected.pending} فوری ترجیح دیں۔`,
+      `باقی رابطے مکمل کیجیے (${executive.connected.pending} · شرح ${executive.connectionPct}٪)۔`,
     )
   }
-  if (critical.length > 0) {
-    const names = critical
-      .slice(0, 5)
-      .map((row) => row.ruknName)
-      .join('، ')
-    urgent.push(`ان ارکان پر فوری توجہ درکار ہے: ${names}۔`)
-  }
-  if (executive.overallCampaignProgress < 40) {
-    urgent.push(
-      `مجموعی مہم کی پیش رفت ${executive.overallCampaignProgress}٪ ہے — ترجیحی شعبوں پر توجہ مرکوز کیجیے۔`,
-    )
+  const notStarted = progressBands.find((b) => b.key === 'notStarted')
+  if (notStarted && notStarted.count > 0) {
+    urgent.push(`${notStarted.count} ارکان نے مہم شروع نہیں کی — فوری رابطہ ضروری ہے۔`)
   }
 
-  if (executive.connectionPct >= 50 && executive.connectionPct < 70) {
-    next.push(
-      `رابطے ${executive.connectionPct}٪ تک پہنچ چکے ہیں — اگلا ہدف ${executive.connected.pending} باقی رابطے مکمل کرنا ہے۔`,
-    )
-  }
   if (executive.weeklyIjtema.pending > 0) {
     next.push(
-      `اگلے ہفتہ وار اجتماع سے پہلے ${executive.weeklyIjtema.pending} حاضری اندراجات مکمل کیجیے۔`,
+      `ہفتہ وار اجتماع کے لیے فالو اپ کیجیے (${executive.weeklyIjtema.pending} · ${exceptionLists.weeklyIjtemaFollowUp.length} ارکان)۔`,
     )
   }
   if (executive.appRegistration.pending > 0) {
     next.push(
-      `${executive.appRegistration.pending} ایپ رجسٹریشنز باقی ہیں — انہیں اگلے مرحلے میں ترجیح دیں۔`,
+      `ایپ رجسٹریشن کی ترغیب دیجیے (${executive.appRegistration.pending} · ${exceptionLists.appRegistrationPending.length} ارکان)۔`,
     )
   }
   if (executive.baitulMaal.pending > 0) {
     next.push(
-      `${executive.baitulMaal.pending} بیت المال عزم کے اندراجات مکمل کیجیے۔`,
+      `بیت المال عزم کے لیے فالو اپ کیجیے (${executive.baitulMaal.pending} · ${exceptionLists.baitulMaalFollowUp.length} ارکان)۔`,
     )
   }
-  if (
-    executive.visits.pct >= 60 &&
-    executive.visits.pct < 90 &&
-    executive.visits.pending > 0
-  ) {
-    next.push(
-      `ملاقاتیں ${executive.visits.pct}٪ مکمل ہیں — بقیہ کو شیڈول کر کے بند کیجیے۔`,
-    )
+  if (executive.connected.pending > 0 && executive.connectionPct >= 50) {
+    next.push(`باقی رابطے مکمل کیجیے (${executive.connected.pending})۔`)
   }
 
+  const complete = progressBands.find((b) => b.key === 'complete')
+  if (complete && complete.count > 0) {
+    positive.push(`${complete.count} ارکان کی مہم مکمل ہو چکی ہے۔`)
+  }
   if (executive.overallCampaignProgress >= 70) {
-    positive.push(
-      `مجموعی پیش رفت ${executive.overallCampaignProgress}٪ ہے — مہم مضبوط رفتار پر ہے۔`,
-    )
+    positive.push(`مجموعی پیش رفت ${executive.overallCampaignProgress}٪ ہے۔`)
   }
-  if (topOverall[0]) {
-    positive.push(
-      `${topOverall[0].ruknName} مجموعی کارکردگی اسکور ${topOverall[0].performanceScore} کے ساتھ نمایاں ہیں۔`,
-    )
-  }
-  for (const leader of categoryLeaders.filter((item) => item.hasLeader).slice(0, 3)) {
-    positive.push(`${leader.category}: ${leader.ruknName} (${leader.valueLabel})۔`)
+  if (executive.visits.pending === 0 && executive.visits.total > 0) {
+    positive.push('تمام طے شدہ ملاقاتیں مکمل ہیں۔')
   }
   if (executive.connected.pct >= 80) {
-    positive.push(`رابطے ${executive.connected.pct}٪ مکمل — مضبوط بنیاد قائم ہو چکی ہے۔`)
-  }
-  if (
-    executive.visits.pending === 0 &&
-    executive.visits.total > 0
-  ) {
-    positive.push('تمام طے شدہ ملاقاتیں مکمل ہو چکی ہیں۔')
+    positive.push(`رابطے ${executive.connected.pct}٪ مکمل ہیں۔`)
   }
 
   if (urgent.length === 0 && next.length === 0 && positive.length === 0) {
-    positive.push(
-      'مہم کے اعداد و شمار اطمینان بخش ہیں۔ موجودہ رفتار برقرار رکھیے۔',
-    )
+    positive.push('زیر التواء امور نہیں — موجودہ رفتار برقرار رکھیے۔')
   }
 
   return {
-    urgent: urgent.slice(0, 5),
-    next: next.slice(0, 5),
-    positive: positive.slice(0, 5),
+    urgent: urgent.slice(0, 4),
+    next: next.slice(0, 4),
+    positive: positive.slice(0, 4),
   }
 }
 
@@ -666,6 +705,14 @@ export function buildCampaignReportModel(input?: {
     .filter((row) => row.criticalReasons.length > 0)
     .sort((a, b) => a.overallPct - b.overallPct || a.ruknName.localeCompare(b.ruknName))
 
+  const progressBands = buildProgressBands(ruknRows)
+  const exceptionLists: CampaignReportExceptionLists = {
+    visitPending: namesWithPending(ruknRows, 'visits'),
+    appRegistrationPending: namesWithPending(ruknRows, 'appRegistration'),
+    weeklyIjtemaFollowUp: namesWithPending(ruknRows, 'weeklyIjtema'),
+    baitulMaalFollowUp: namesWithPending(ruknRows, 'baitulMaal'),
+  }
+
   const duration =
     campaign?.startDate && campaign?.endDate
       ? `${formatCampaignDate(campaign.startDate)} – ${formatCampaignDate(campaign.endDate)}`
@@ -697,10 +744,9 @@ export function buildCampaignReportModel(input?: {
   }
 
   const recommendationGroups = buildRecommendationGroups({
-    critical: criticalRukns,
     executive,
-    topOverall: topOverallPerformers,
-    categoryLeaders,
+    exceptionLists,
+    progressBands,
   })
 
   const reportDate = now.toLocaleDateString('ur-PK', {
@@ -769,6 +815,8 @@ export function buildCampaignReportModel(input?: {
       )
       .sort((a, b) => a.ruknName.localeCompare(b.ruknName)),
     criticalRukns,
+    progressBands,
+    exceptionLists,
     topPerformers,
     topOverallPerformers,
     categoryLeaders,

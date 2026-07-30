@@ -1,5 +1,5 @@
 /**
- * KC-BUG-0126 / KC-029 — Urdu PDF typography contracts.
+ * KC-BUG-0126 / KC-029 / KC-034 — Urdu PDF typography + executive report contracts.
  */
 import { existsSync, readFileSync, statSync } from 'node:fs'
 import { resolve } from 'node:path'
@@ -21,26 +21,35 @@ assert(htmlEngine.includes('dir = \'rtl\'') || htmlEngine.includes('dir="rtl"'),
 assert(htmlEngine.includes('URDU_PDF_FONT'), 'canonical font family wired')
 assert(htmlEngine.includes('urduPdfFontFaceCss') || htmlEngine.includes('urduReportShellCss'), 'font-face CSS included')
 assert(htmlEngine.includes('pdf-page'), 'paged PDF capture supported')
+assert(htmlEngine.includes('band-list'), 'progress band styles present')
+assert(htmlEngine.includes('exception-list'), 'exception follow-up styles present')
 
 const report = readFileSync(resolve(root, 'src/lib/reporting/campaignReportPdf.ts'), 'utf8')
 assert(report.includes('downloadUrduHtmlReportPdf'), 'campaign report uses HTML OT pipeline')
 assert(!report.includes('NotoNaskhArabic'), 'campaign report no longer embeds Naskh for body')
 assert(report.includes('exec-header'), 'executive report header present')
-assert(report.includes('topOverallPerformers'), 'weighted top performers wired')
-assert(report.includes('chunkSize = 6'), 'individual section packs 6 cards per page')
-assert(report.includes('rukn-card compact'), 'compact individual rukn cards')
+assert(report.includes('progressBands'), 'operational progress bands wired')
+assert(report.includes('exceptionLists'), 'exception follow-up lists wired')
+assert(report.includes('chunkSize = 18'), 'individual section uses compact table pages')
+assert(report.includes('exec-table'), 'compact individual rukn table')
 assert(!report.includes('peopleCovered'), 'coverage KPI removed from executive PDF')
-assert(report.includes('noCategoryLeader') || report.includes('hasLeader'), 'zero-leader empty state wired')
+assert(!report.includes('topOverallPerformers'), 'selective Top-5 ranking removed from PDF')
+assert(report.includes('columns.connected') && report.includes('columns.visits'), 'Connection ≠ Visit columns')
 
 const model = readFileSync(resolve(root, 'src/lib/reporting/campaignReportModel.ts'), 'utf8')
-assert(model.includes('score(row) > 0 && completed(row) > 0'), 'category leaders require positive metric + completion')
-assert(model.includes('hasLeader'), 'category leader empty-state flag')
+assert(model.includes('buildProgressBands'), 'progress band builder present')
+assert(model.includes('exceptionLists'), 'exception lists on model')
+assert(model.includes('score(row) > 0 && completed(row) > 0'), 'legacy category leaders still gated')
 assert(!model.includes('کوریج'), 'model copy must not use coverage wording')
 
 const urdu = readFileSync(resolve(root, 'src/lib/reporting/campaignReportUrdu.ts'), 'utf8')
 assert(!urdu.includes('زیرِ کوریج'), 'no زیرِ کوریج in Urdu report copy')
 assert(!urdu.includes('Coverage'), 'no Coverage label in Urdu report copy')
-assert(urdu.includes('فی الحال اس شعبہ میں کوئی نمایاں کارکردگی موجود نہیں'), 'empty category leader copy')
+assert(urdu.includes('ملاقات زیر التواء'), 'visit pending follow-up label')
+assert(urdu.includes('رابطے'), 'Connection terminology present')
+assert(urdu.includes('ملاقات'), 'Visit terminology present')
+assert(urdu.includes("male: 'مرد'"), 'Men terminology (مرد)')
+assert(urdu.includes("female: 'خواتین'"), 'Women terminology (خواتین)')
 
 assert(URDU_PDF_LAYOUT.captureScale >= 2, 'capture scale must be print-quality')
 assert(URDU_PDF_LAYOUT.type.tablePt >= 11, 'table type must be readable without zoom')
@@ -58,7 +67,8 @@ console.log(
         'Noto Nastaliq Urdu embedded asset present',
         'Shared typography tokens',
         'Campaign report uses HTML OT pipeline',
-        'Executive layout + paged capture',
+        'Progress bands + exception lists (KC-034)',
+        'Connection ≠ Visit preserved',
         'RTL + print-scale capture',
       ],
     },

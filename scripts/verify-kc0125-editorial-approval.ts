@@ -44,11 +44,16 @@ for (const tpl of ARKAAN_DAILY_REPORT_TEMPLATES) {
 
 // 4) Campaign report Urdu labels
 assert(URDU_REPORT.kpi.connectedKarkuns === 'منسلک کارکنان', 'report KPI terminology')
-assert(URDU_REPORT.sections.executive === 'کارکردگی کا خلاصہ', 'report executive heading')
-assert(URDU_REPORT.sections.recommendations === 'اہم مشاہدات اور آئندہ اقدامات', 'report insights heading')
-assert(URDU_REPORT.sections.topPerformers === 'نمایاں کارکردگی', 'report outstanding heading')
+assert(URDU_REPORT.sections.executive === 'انتظامی خلاصہ', 'report executive heading')
+assert(URDU_REPORT.sections.recommendations === 'تجاویز', 'report recommendations heading')
+assert(URDU_REPORT.sections.progressBands === 'ارکان کی پیش رفت — زمرے', 'report progress bands heading')
+assert(URDU_REPORT.sections.followUp === 'فالو اپ فہرستیں', 'report follow-up heading')
 assert(URDU_REPORT.sections.critical === 'فوری توجہ درکار', 'report attention heading')
 assert(URDU_REPORT.sections.pending === 'امور زیر التواء', 'report pending heading')
+assert(URDU_REPORT.achievementAreas.connections === 'رابطے', 'Connection label')
+assert(URDU_REPORT.achievementAreas.visits === 'ملاقاتیں', 'Visit label distinct from Connection')
+assert(URDU_REPORT.columns.male === 'مرد', 'Men terminology')
+assert(URDU_REPORT.columns.female === 'خواتین', 'Women terminology')
 assert(!URDU_REPORT.subtitle.includes('سرکاری'), 'report must not use سرکاری')
 assert(URDU_REPORT.documentTitle === 'کارکن کنیکٹ جائزہ رپورٹ', 'executive report title')
 assert(
@@ -59,6 +64,9 @@ assert(
   URDU_REPORT.empty.noCategoryLeader.includes('کوئی نمایاں کارکردگی موجود نہیں'),
   'zero-performance category empty copy',
 )
+assert(URDU_REPORT.followUp.visitPending === 'ملاقات زیر التواء', 'visit pending follow-up')
+assert(URDU_REPORT.progressBands.complete === 'مہم مکمل (۱۰۰٪)', 'campaign complete band')
+
 
 // 5) Personalized builder + editorial approval
 const sample = buildContextAwareUrduMessage({

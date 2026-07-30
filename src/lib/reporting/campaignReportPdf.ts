@@ -1,14 +1,16 @@
 /**
- * KC-0114 / KC-BUG-0126 / KC-029 / KC-029.1 — Executive Urdu Campaign Report PDF.
+ * KC-0114 / KC-BUG-0126 / KC-029 / KC-034 — Executive Urdu Campaign Report PDF.
  *
- * Typography: Noto Nastaliq Urdu via browser OpenType shaping (HTML → PDF).
- * Presentation redesign only — reuses CampaignReportModel data.
+ * Editorial polish: org → campaign summary → bands → exception lists → recommendations.
+ * Connection ≠ Visit preserved. Presentation only — reuses CampaignReportModel.
  */
 
 import {
   buildCampaignReportModel,
+  type CampaignReportExceptionLists,
   type CampaignReportMetricPair,
   type CampaignReportModel,
+  type CampaignReportProgressBand,
   type CampaignReportRuknRow,
 } from './campaignReportModel'
 import { URDU_REPORT } from './campaignReportUrdu'
@@ -120,30 +122,86 @@ function recommendationTier(
   `
 }
 
-function rankBadgeClass(rank: number): string {
-  if (rank === 1) return 'r1'
-  if (rank === 2) return 'r2'
-  if (rank === 3) return 'r3'
-  if (rank === 4) return 'r4'
-  return 'r5'
+function bandTone(key: CampaignReportProgressBand['key']): string {
+  if (key === 'complete') return 'good'
+  if (key === 'nearComplete') return 'warn'
+  if (key === 'initial') return 'info'
+  return 'danger'
 }
 
-/** Compact executive Rukn card — no repeated Male/Female breakdowns. */
-function ruknCard(row: CampaignReportRuknRow): string {
-  const tone = progressTone(row.overallPct)
+function progressBandBlock(band: CampaignReportProgressBand): string {
+  const names =
+    band.names.length === 0
+      ? `<p class="band-empty">${UrduHtml.text(URDU_REPORT.progressBands.empty)}</p>`
+      : `<p class="band-names">${UrduHtml.text(band.names.join('، '))}</p>`
   return `
-    <div class="rukn-card compact">
-      <div class="rukn-head">
-        <p class="rukn-name">${UrduHtml.text(row.ruknName)}</p>
-        <span class="tag tag-info">${row.overallPct}٪</span>
+    <div class="band-card tone-${bandTone(band.key)}">
+      <div class="band-head">
+        <p class="band-title">${UrduHtml.text(band.label)}</p>
+        <span class="tag tag-info">${band.count}</span>
       </div>
-      <div class="rukn-totals">
-        <span>${UrduHtml.text(URDU_REPORT.columns.totalKarkuns)}: <strong>${row.totalKarkuns}</strong></span>
-        <span>${UrduHtml.text(URDU_REPORT.columns.totalMuttafiqeen)}: <strong>${row.totalMuttafiqeen}</strong></span>
+      ${names}
+    </div>
+  `
+}
+
+function exceptionBlock(title: string, names: string[]): string {
+  const body =
+    names.length === 0
+      ? `<p class="band-empty">${UrduHtml.text(URDU_REPORT.followUp.empty)}</p>`
+      : `<p class="band-names">${UrduHtml.text(names.join('، '))}</p>`
+  return `
+    <div class="exception-card">
+      <div class="band-head">
+        <p class="band-title">${UrduHtml.text(title)}</p>
+        <span class="tag tag-warning">${names.length}</span>
       </div>
-      <table class="compact">
+      ${body}
+    </div>
+  `
+}
+
+function exceptionSections(lists: CampaignReportExceptionLists): string {
+  return [
+    exceptionBlock(URDU_REPORT.followUp.visitPending, lists.visitPending),
+    exceptionBlock(URDU_REPORT.followUp.appRegistrationPending, lists.appRegistrationPending),
+    exceptionBlock(URDU_REPORT.followUp.weeklyIjtemaFollowUp, lists.weeklyIjtemaFollowUp),
+    exceptionBlock(URDU_REPORT.followUp.baitulMaalFollowUp, lists.baitulMaalFollowUp),
+  ].join('\n')
+}
+
+/** Compact all-Rukn table — Connection and Visit remain separate columns. */
+function ruknSummaryTable(rows: CampaignReportRuknRow[]): string {
+  if (rows.length === 0) {
+    return UrduHtml.empty(URDU_REPORT.empty.noRukns)
+  }
+  const body = rows
+    .map((row) => {
+      const genderLabel =
+        row.gender === 'Female' ? URDU_REPORT.columns.female : URDU_REPORT.columns.male
+      return `
+        <tr>
+          <td class="name-cell">${UrduHtml.text(row.ruknName)}</td>
+          <td>${UrduHtml.text(genderLabel)}</td>
+          <td>${row.totalKarkuns}</td>
+          <td>${metricLabel(row.connections)}</td>
+          <td>${metricLabel(row.visits)}</td>
+          <td>${metricLabel(row.appRegistration)}</td>
+          <td>${metricLabel(row.weeklyIjtema)}</td>
+          <td>${metricLabel(row.baitulMaal)}</td>
+          <td>${row.overallPct}٪</td>
+        </tr>
+      `
+    })
+    .join('')
+  return `
+    <div class="table-wrap">
+      <table class="exec-table compact">
         <thead>
           <tr>
+            <th>${UrduHtml.text(URDU_REPORT.columns.rukn)}</th>
+            <th></th>
+            <th>${UrduHtml.text(URDU_REPORT.columns.total)}</th>
             <th>${UrduHtml.text(URDU_REPORT.columns.connected)}</th>
             <th>${UrduHtml.text(URDU_REPORT.columns.visits)}</th>
             <th>${UrduHtml.text(URDU_REPORT.columns.appRegistration)}</th>
@@ -152,20 +210,8 @@ function ruknCard(row: CampaignReportRuknRow): string {
             <th>${UrduHtml.text(URDU_REPORT.columns.overall)}</th>
           </tr>
         </thead>
-        <tbody>
-          <tr>
-            <td>${metricLabel(row.connections)}</td>
-            <td>${metricLabel(row.visits)}</td>
-            <td>${metricLabel(row.appRegistration)}</td>
-            <td>${metricLabel(row.weeklyIjtema)}</td>
-            <td>${metricLabel(row.baitulMaal)}</td>
-            <td>${row.overallPct}٪</td>
-          </tr>
-        </tbody>
+        <tbody>${body}</tbody>
       </table>
-      <div class="progress-track thin">
-        <div class="progress-fill ${tone}" style="width:${row.overallPct}%"></div>
-      </div>
     </div>
   `
 }
@@ -175,7 +221,7 @@ function buildCampaignReportHtml(model: CampaignReportModel): string {
   const ex = model.executive
   const cover = model.cover
 
-  // ── PAGE 1: Where does the campaign stand? ─────────────────
+  // ── PAGE 1: Organization + Campaign Summary ────────────────
   parts.push(`<section class="pdf-page">`)
   parts.push(`
     <header class="exec-header">
@@ -190,29 +236,23 @@ function buildCampaignReportHtml(model: CampaignReportModel): string {
     </header>
   `)
 
-  parts.push(UrduHtml.section(URDU_REPORT.sections.executive))
-  parts.push(`<div class="kpi-grid kpi-3">`)
+  parts.push(UrduHtml.section(URDU_REPORT.sections.organization))
+  parts.push(`<div class="kpi-grid kpi-2">`)
   parts.push(
-    kpiCard(URDU_REPORT.kpi.totalRukns, ex.totalRukns, 'navy', [
+    kpiCard(URDU_REPORT.kpi.rukn, ex.totalRukns, 'navy', [
       { text: `${URDU_REPORT.kpi.maleRukns}: ${ex.maleRukns}`, cls: 'tag-male' },
       { text: `${URDU_REPORT.kpi.femaleRukns}: ${ex.femaleRukns}`, cls: 'tag-female' },
     ]),
   )
   parts.push(
-    kpiCard(URDU_REPORT.kpi.totalKarkuns, ex.totalKarkuns, 'blue', [
-      { text: `${URDU_REPORT.columns.male}: ${ex.maleKarkuns}`, cls: 'tag-male' },
-      { text: `${URDU_REPORT.columns.female}: ${ex.femaleKarkuns}`, cls: 'tag-female' },
-    ]),
-  )
-  parts.push(
-    kpiCard(URDU_REPORT.kpi.totalMuttafiqeen, ex.totalMuttafiqeen, 'sky', [
-      { text: `${URDU_REPORT.columns.male}: ${ex.maleMuttafiqeen}`, cls: 'tag-male' },
-      { text: `${URDU_REPORT.columns.female}: ${ex.femaleMuttafiqeen}`, cls: 'tag-female' },
+    kpiCard(URDU_REPORT.kpi.karkun, ex.totalKarkuns, 'blue', [
+      { text: `${URDU_REPORT.kpi.maleKarkuns}: ${ex.maleKarkuns}`, cls: 'tag-male' },
+      { text: `${URDU_REPORT.kpi.femaleKarkuns}: ${ex.femaleKarkuns}`, cls: 'tag-female' },
     ]),
   )
   parts.push(`</div>`)
 
-  parts.push(UrduHtml.section(URDU_REPORT.sections.campaignProgress))
+  parts.push(UrduHtml.section(URDU_REPORT.sections.campaignSummary))
   parts.push(`<div class="activity-list">`)
   for (const activity of model.activityProgress) {
     parts.push(activityCard(activity))
@@ -223,8 +263,20 @@ function buildCampaignReportHtml(model: CampaignReportModel): string {
   parts.push(circularProgress(ex.overallCampaignProgress, URDU_REPORT.kpi.overallProgress))
   parts.push(`</section>`)
 
-  // ── PAGE 2: Attention + best performers ────────────────────
+  // ── PAGE 2: Progress bands + follow-up + recommendations ───
   parts.push(`<section class="pdf-page">`)
+  parts.push(UrduHtml.section(URDU_REPORT.sections.progressBands))
+  parts.push(`<div class="band-list">`)
+  for (const band of model.progressBands) {
+    parts.push(progressBandBlock(band))
+  }
+  parts.push(`</div>`)
+
+  parts.push(UrduHtml.section(URDU_REPORT.sections.followUp))
+  parts.push(`<div class="exception-list">`)
+  parts.push(exceptionSections(model.exceptionLists))
+  parts.push(`</div>`)
+
   parts.push(UrduHtml.section(URDU_REPORT.sections.recommendations))
   parts.push(
     recommendationTier(
@@ -247,76 +299,10 @@ function buildCampaignReportHtml(model: CampaignReportModel): string {
       model.recommendationGroups.positive,
     ),
   )
-
-  if (model.criticalRukns.length > 0) {
-    parts.push(UrduHtml.section(URDU_REPORT.sections.critical))
-    parts.push(`<div class="critical-compact">`)
-    for (const row of model.criticalRukns.slice(0, 6)) {
-      parts.push(`
-        <div class="critical-row">
-          <span class="who">${UrduHtml.text(row.ruknName)}</span>
-          <span class="tag tag-danger">${row.overallPct}٪</span>
-          <span class="why">${UrduHtml.text(row.criticalReasons.join('؛ '))}</span>
-        </div>
-      `)
-    }
-    parts.push(`</div>`)
-  }
-
-  parts.push(UrduHtml.section(URDU_REPORT.sections.topPerformers))
-  if (model.topOverallPerformers.length === 0) {
-    parts.push(UrduHtml.empty(URDU_REPORT.empty.noTopPerformers))
-  } else {
-    parts.push(`<div class="rank-list">`)
-    for (const performer of model.topOverallPerformers) {
-      parts.push(`
-        <div class="rank-card">
-          <div class="rank-badge ${rankBadgeClass(performer.rank)}">${performer.rank}</div>
-          <div class="rank-body">
-            <p class="name">${UrduHtml.text(performer.ruknName)}</p>
-            <p class="meta">
-              ${UrduHtml.text(URDU_REPORT.columns.visits)} ${performer.visitsPct}٪ ·
-              ${UrduHtml.text(URDU_REPORT.columns.appRegistration)} ${performer.appPct}٪ ·
-              ${UrduHtml.text(URDU_REPORT.columns.weeklyIjtema)} ${performer.weeklyIjtemaPct}٪ ·
-              ${UrduHtml.text(URDU_REPORT.columns.baitulMaal)} ${performer.baitulMaalPct}٪ ·
-              ${UrduHtml.text(URDU_REPORT.columns.connected)} ${performer.connectionsPct}٪
-            </p>
-          </div>
-          <div class="rank-score">
-            <span class="num">${performer.performanceScore}</span>
-            <span class="lbl">${UrduHtml.text(URDU_REPORT.columns.score)}</span>
-          </div>
-        </div>
-      `)
-    }
-    parts.push(`</div>`)
-  }
-
-  parts.push(UrduHtml.section(URDU_REPORT.sections.categoryLeaders))
-  parts.push(`<div class="leader-grid">`)
-  for (const leader of model.categoryLeaders) {
-    if (leader.hasLeader) {
-      parts.push(`
-        <div class="leader-card">
-          <p class="cat">${UrduHtml.text(leader.category)}</p>
-          <p class="who">${UrduHtml.text(leader.ruknName)}</p>
-          <p class="res">${UrduHtml.text(leader.valueLabel)}</p>
-        </div>
-      `)
-    } else {
-      parts.push(`
-        <div class="leader-card empty">
-          <p class="cat">${UrduHtml.text(leader.category)}</p>
-          <p class="who muted">${UrduHtml.text(URDU_REPORT.empty.noCategoryLeader)}</p>
-        </div>
-      `)
-    }
-  }
-  parts.push(`</div>`)
   parts.push(`</section>`)
 
-  // ── PAGE 3+: Individual Performance (6 cards / page) ───────
-  const chunkSize = 6
+  // ── PAGE 3+: Compact Rukn table (chunked for readability) ──
+  const chunkSize = 18
   const allRukns = model.allRukns
   for (let i = 0; i < allRukns.length || i === 0; i += chunkSize) {
     const chunk = allRukns.slice(i, i + chunkSize)
@@ -330,13 +316,7 @@ function buildCampaignReportHtml(model: CampaignReportModel): string {
         ),
       )
     }
-    if (chunk.length === 0) {
-      parts.push(UrduHtml.empty(URDU_REPORT.empty.noRukns))
-    } else {
-      for (const row of chunk) {
-        parts.push(ruknCard(row))
-      }
-    }
+    parts.push(ruknSummaryTable(chunk))
 
     if (i + chunkSize >= allRukns.length) {
       parts.push(`
