@@ -99,16 +99,35 @@ export function classifyDialogueMove(input: {
     return 'clarify_answer'
   }
 
+  if (
+    intent === IntentCode.SHOW_PENDING_TASKS ||
+    intent === IntentCode.SHOW_DASHBOARD
+  ) {
+    return 'advise'
+  }
+
+  if (
+    input.recognition.category === IntentCategory.NAVIGATION ||
+    intent === IntentCode.NAVIGATE_DASHBOARD ||
+    intent === IntentCode.NAVIGATE_HOME ||
+    intent === IntentCode.NAVIGATE_BACK ||
+    intent === IntentCode.NAVIGATE_ATTENDANCE ||
+    intent === IntentCode.NAVIGATE_PAYMENT ||
+    intent === IntentCode.NAVIGATE_WORKERS ||
+    intent === IntentCode.NAVIGATE_REPORTS ||
+    intent === IntentCode.NAVIGATE_SETTINGS ||
+    intent === IntentCode.NAVIGATE_CAMPAIGN ||
+    intent === IntentCode.NAVIGATE_ACTIVITIES
+  ) {
+    return 'route_navigation'
+  }
+
   if (isOperationalIntent(intent) || intent === IntentCode.PREVIOUS) {
     return 'route_workflow'
   }
 
   if (intent === IntentCode.UNKNOWN) {
     if (awaiting) return 'resume'
-    return 'acknowledge_unknown'
-  }
-
-  if (input.recognition.category === IntentCategory.NAVIGATION) {
     return 'acknowledge_unknown'
   }
 

@@ -157,9 +157,9 @@ Lightweight engines; no unnecessary re-renders; no duplicated repository calls; 
 | `src/intents/` | KC-035B |
 | `src/workflows/` | KC-035C |
 | `src/dialogue/` | KC-035D |
-| Recommendation (TBD path) | KC-035E |
-| Voice navigation (TBD path) | KC-035F |
-| Personality / polish (copy + policies) | KC-035G |
+| `src/recommendations/` | KC-035E |
+| `src/navigation/` | KC-035F |
+| `src/secretary/` | KC-035G |
 
 Public façade methods live on `DigitalRafeeqService` without embedding domain rules.
 
@@ -173,11 +173,11 @@ Public façade methods live on `DigitalRafeeqService` without embedding domain r
 | **KC-035B** | Natural Urdu Intent Engine (Understand) | ✅ Production Complete |
 | **KC-035C** | Operational Workflow Engine (Execute) | ✅ Production Complete |
 | **KC-035D** | Dialogue Manager (Manage) | ✅ Production Complete |
-| **KC-035E** | Operational Recommendation Engine (Advise) | Pending |
-| **KC-035F** | Voice Navigation & Voice Operation | Pending |
-| **KC-035G** | Secretary Personality & Conversation Polish | Pending |
+| **KC-035E** | Operational Recommendation Engine (Advise) | ✅ Implemented — see gate |
+| **KC-035F** | Voice Navigation & Voice Operation | ✅ Implemented — see gate |
+| **KC-035G** | Secretary Personality & Conversation Polish | ✅ Implemented — see gate |
 
-Gates: [035A](./kc-035a-arch009-gate.md) · [035B](./kc-035b-arch009-gate.md) · [035C](./kc-035c-arch009-gate.md) · [035D](./kc-035d-arch009-gate.md)
+Gates: [035A](./kc-035a-arch009-gate.md) · [035B](./kc-035b-arch009-gate.md) · [035C](./kc-035c-arch009-gate.md) · [035D](./kc-035d-arch009-gate.md) · [035E](./kc-035e-arch009-gate.md) · [035F](./kc-035f-arch009-gate.md) · [035G](./kc-035g-arch009-gate.md)
 
 ---
 

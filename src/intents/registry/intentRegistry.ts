@@ -172,6 +172,41 @@ export const INTENT_REGISTRY: readonly IntentDefinition[] = [
       { id: 'activities-page', allOf: ['سرگرمی'], anyOf: ['کھولو', 'صفحہ'], weight: 1 },
     ],
   },
+  {
+    code: IntentCode.NAVIGATE_ATTENDANCE,
+    category: IntentCategory.NAVIGATION,
+    baseStrength: 0.88,
+    patterns: [
+      { id: 'go-attendance', anyOf: ['حاضری کھولو', 'حاضری صفحہ'], weight: 1.1 },
+      { id: 'go-ijtema-page', allOf: ['اجتماع'], anyOf: ['کھولو', 'صفحہ', 'جائیں'], weight: 1 },
+      { id: 'open-weekly-ijtema-nav', allOf: ['ہفتہ وار'], anyOf: ['کھولو', 'صفحہ'], weight: 1.05 },
+    ],
+  },
+  {
+    code: IntentCode.NAVIGATE_PAYMENT,
+    category: IntentCategory.NAVIGATION,
+    baseStrength: 0.88,
+    patterns: [
+      { id: 'go-payment', anyOf: ['ادائیگی کھولو', 'پیمنٹ کھولو'], weight: 1.05 },
+      { id: 'go-baitul-page', allOf: ['بیت المال'], anyOf: ['کھولو', 'صفحہ', 'جائیں'], weight: 1.1 },
+    ],
+  },
+  {
+    code: IntentCode.NAVIGATE_HOME,
+    category: IntentCategory.NAVIGATION,
+    baseStrength: 0.9,
+    patterns: [
+      { id: 'go-home', anyOf: ['ہوم', 'گھر جائیں', 'مرکزی صفحہ', 'home'], weight: 1 },
+    ],
+  },
+  {
+    code: IntentCode.NAVIGATE_BACK,
+    category: IntentCategory.NAVIGATION,
+    baseStrength: 0.9,
+    patterns: [
+      { id: 'go-back', anyOf: ['واپس', 'پیچھے جائیں', 'back'], weight: 1 },
+    ],
+  },
 
   // ── Search ─────────────────────────────────────────────────
   {

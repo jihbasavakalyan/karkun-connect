@@ -25,6 +25,22 @@ import {
   type DialogueTurnResult,
 } from '@/dialogue'
 import {
+  getRecommendationEngine,
+  type AdvisePersonInput,
+  type AdviseRoleInput,
+  type RecommendationBundle,
+} from '@/recommendations'
+import {
+  getVoiceNavigationEngine,
+  type ResolveVoiceNavigationInput,
+  type VoiceNavigationResult,
+} from '@/navigation'
+import {
+  composeSecretaryResponse,
+  polishCompletedWithNext,
+  polishSavedLine,
+} from '@/secretary'
+import {
   getRuntimeBootstrapResult,
   initializeRuntime,
   type InitializeRuntimeOptions,
@@ -374,6 +390,49 @@ export class DigitalRafeeqService {
     recognition?: IntentRecognitionResult
   }): Promise<DialogueTurnResult> {
     return getDialogueEngine().manager.turn(input)
+  }
+
+  /**
+   * KC-035E — Operational recommendations (advise only — never writes).
+   */
+  getOperationalRecommendations(
+    input:
+      | ({ kind: 'person' } & AdvisePersonInput)
+      | ({ kind: 'role' } & AdviseRoleInput)
+      | ({ kind: 'daily' } & AdviseRoleInput),
+  ): RecommendationBundle {
+    const engine = getRecommendationEngine().engine
+    if (input.kind === 'person') return engine.advisePerson(input)
+    if (input.kind === 'daily') return engine.adviseDailyBrief(input)
+    return engine.adviseRole(input)
+  }
+
+  /**
+   * KC-035F — Resolve a voice navigation route (UI only — no writes).
+   */
+  resolveVoiceNavigation(
+    input: ResolveVoiceNavigationInput,
+  ): VoiceNavigationResult {
+    return getVoiceNavigationEngine().resolve(input)
+  }
+
+  /**
+   * KC-035G — Compose secretary-styled Urdu response.
+   */
+  composeSecretaryLine(input: {
+    body: string
+    acknowledge?: boolean
+    seed?: number
+  }): string {
+    return composeSecretaryResponse(input)
+  }
+
+  polishSecretarySaved(detail?: string): string {
+    return polishSavedLine(detail)
+  }
+
+  polishSecretaryCompleted(nextLabel?: string | null): string {
+    return polishCompletedWithNext(nextLabel)
   }
 
   /**

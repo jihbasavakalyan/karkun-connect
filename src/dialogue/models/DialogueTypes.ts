@@ -6,6 +6,7 @@
 
 import type { IntentCode, IntentRecognitionResult } from '@/intents'
 import type { WorkflowExecutionResult } from '@/workflows'
+import type { VoiceNavigationResult } from '@/navigation'
 
 export type DialogueMove =
   | 'cancel'
@@ -18,6 +19,8 @@ export type DialogueMove =
   | 'interrupt'
   | 'clarify_answer'
   | 'route_workflow'
+  | 'route_navigation'
+  | 'advise'
   | 'next'
   | 'acknowledge_unknown'
 
@@ -31,6 +34,8 @@ export type DialogueTurnKind =
   | 'switched'
   | 'interrupted'
   | 'repaired'
+  | 'navigated'
+  | 'advised'
   | 'noop'
 
 export type ParkedDialogueWork = {
@@ -55,4 +60,5 @@ export type DialogueTurnResult = {
   readonly responseUrdu: string
   readonly recognition: IntentRecognitionResult
   readonly workflowResult: WorkflowExecutionResult | null
+  readonly navigation?: VoiceNavigationResult | null
 }

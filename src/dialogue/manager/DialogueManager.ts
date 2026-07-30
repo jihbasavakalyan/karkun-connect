@@ -20,6 +20,9 @@ import {
   type WorkflowExecutionResult,
   type WorkflowEngine,
 } from '@/workflows'
+import { getRecommendationEngine } from '@/recommendations'
+import { getVoiceNavigationEngine } from '@/navigation'
+import { composeSecretaryResponse } from '@/secretary'
 import type {
   DialogueMove,
   DialogueSessionState,
@@ -371,9 +374,54 @@ export class DialogueManager {
         return {
           kind: mapWorkflowKind(wf),
           move,
-          responseUrdu: wf.responseUrdu,
+          responseUrdu: composeSecretaryResponse({
+            acknowledge: wf.kind === 'completed' || wf.kind === 'suggested_next',
+            body: wf.responseUrdu,
+          }),
           recognition,
           workflowResult: wf,
+        }
+      }
+      case 'route_navigation': {
+        const nav = getVoiceNavigationEngine().resolve({
+          intent: recognition.intent,
+          role: input.actor.role,
+          personId: recognition.entities.personId,
+        })
+        conv.patchContext(input.sessionId, {
+          lastResponse: nav.responseUrdu,
+        })
+        return {
+          kind: nav.ok ? 'navigated' : 'responded',
+          move,
+          responseUrdu: nav.responseUrdu,
+          recognition,
+          workflowResult: null,
+          navigation: nav,
+        }
+      }
+      case 'advise': {
+        const person = conversationSnapshot?.activePerson
+        const bundle = person
+          ? getRecommendationEngine().engine.advisePerson({
+              personId: person.personId,
+              personName: person.displayName,
+              ruknId: input.actor.ruknId,
+            })
+          : getRecommendationEngine().engine.adviseRole({
+              role: input.actor.role,
+              ruknId: input.actor.ruknId,
+            })
+        const body = composeSecretaryResponse({
+          acknowledge: true,
+          body: bundle.dailyBriefUrdu,
+        })
+        return {
+          kind: 'advised',
+          move,
+          responseUrdu: body,
+          recognition,
+          workflowResult: null,
         }
       }
       case 'acknowledge_unknown':

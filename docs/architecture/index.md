@@ -25,6 +25,9 @@
 | [KC-035B — ARCH-009 Gate](./kc-035b-arch009-gate.md) | Natural Urdu intent recognition engine |
 | [KC-035C — ARCH-009 Gate](./kc-035c-arch009-gate.md) | Operational workflow engine |
 | [KC-035D — ARCH-009 Gate](./kc-035d-arch009-gate.md) | Dialogue Manager (interruptions, switches, repair) |
+| [KC-035E — ARCH-009 Gate](./kc-035e-arch009-gate.md) | Operational Recommendation Engine |
+| [KC-035F — ARCH-009 Gate](./kc-035f-arch009-gate.md) | Voice Navigation & Voice Operation |
+| [KC-035G — ARCH-009 Gate](./kc-035g-arch009-gate.md) | Secretary Personality & Conversational Refinement |
 
 Future implementation must align with KC-0104. Engineering gates: [KC-ARCH-009](./kc-arch-009-feature-impact.md) · [KC-ARCH-001](./kc-arch-001-reliability-persistence.md). Current capability status: [KC-032](./kc-032-product-capability-audit.md). Metric providers: [KC-033](./kc-033-canonical-metric-registry.md).
 
