@@ -44,4 +44,11 @@ Dashboard/workers/reports/settings/attendance/payment/home/back; Dialogue `route
 
 ## Phase 6 — Post-deploy
 
-Filled after production smoke.
+| Check | Result |
+|-------|--------|
+| Feature SHA | `9ad7065` |
+| Deployment | `dpl_6qa8Kdrz74eeksPYVvSWaMYJwUjA` READY |
+| Production | https://jihbasavakalyan.org |
+| Smoke | `resolveVoiceNavigation`, `NAVIGATE_ATTENDANCE` |
+
+**Production Certification: READY — Release Complete**

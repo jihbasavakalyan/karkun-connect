@@ -43,4 +43,11 @@ Ack variation, templates, no AI/software wording; A–F verify green.
 
 ## Phase 6 — Post-deploy
 
-Filled after production smoke.
+| Check | Result |
+|-------|--------|
+| Feature SHA | `9ad7065` |
+| Deployment | `dpl_6qa8Kdrz74eeksPYVvSWaMYJwUjA` READY |
+| Production | https://jihbasavakalyan.org |
+| Smoke | `composeSecretaryLine`, `جی، حاضر`, next-step template |
+
+**Production Certification: READY — Release Complete**

@@ -45,4 +45,11 @@ Person / role / daily brief advise; A–D verify green; no writes.
 
 ## Phase 6 — Post-deploy
 
-Filled after production smoke.
+| Check | Result |
+|-------|--------|
+| Feature SHA | `9ad7065` |
+| Deployment | `dpl_6qa8Kdrz74eeksPYVvSWaMYJwUjA` READY |
+| Production | https://jihbasavakalyan.org |
+| Smoke | `getOperationalRecommendations`, `advisePerson`, next-best Urdu |
+
+**Production Certification: READY — Release Complete**
