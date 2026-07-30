@@ -11,6 +11,11 @@ import type { CommunicationPlan } from '@/conversation/communication'
 import type { GuidanceBundle } from '@/conversation/guidance'
 import type { RuntimeContainer } from '@/conversation/runtime'
 import {
+  recognizeIntent,
+  type IntentConversationInput,
+  type IntentRecognitionResult,
+} from '@/intents'
+import {
   getRuntimeBootstrapResult,
   initializeRuntime,
   type InitializeRuntimeOptions,
@@ -322,6 +327,17 @@ export class DigitalRafeeqService {
       return this.lastResponse.guidancePlan
     }
     return this.getSession()?.generatedGuidance ?? null
+  }
+
+  /**
+   * KC-035B — Natural Urdu intent recognition (read-only).
+   * Does not mutate conversation state or execute workflows.
+   */
+  recognizeUrduIntent(
+    utterance: string,
+    conversation?: IntentConversationInput | null,
+  ): IntentRecognitionResult {
+    return recognizeIntent(utterance, conversation)
   }
 
   /**

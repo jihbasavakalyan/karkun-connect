@@ -21,6 +21,7 @@
 | [KC-033 — ARCH-009 Gate](./kc-033-arch009-gate.md) | Convergence sprint gate |
 | [KC-034 — ARCH-009 Gate](./kc-034-arch009-gate.md) | Executive Report editorial polish gate |
 | [KC-035A — ARCH-009 Gate](./kc-035a-arch009-gate.md) | Digital Rafeeq conversation engine foundation |
+| [KC-035B — ARCH-009 Gate](./kc-035b-arch009-gate.md) | Natural Urdu intent recognition engine |
 
 Future implementation must align with KC-0104. Engineering gates: [KC-ARCH-009](./kc-arch-009-feature-impact.md) · [KC-ARCH-001](./kc-arch-001-reliability-persistence.md). Current capability status: [KC-032](./kc-032-product-capability-audit.md). Metric providers: [KC-033](./kc-033-canonical-metric-registry.md).
 

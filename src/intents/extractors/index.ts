@@ -1,0 +1,1 @@
+export { extractEntities } from './extractEntities'
