@@ -118,6 +118,7 @@
     "verify:rafeeq-v2": "npx vite-node scripts/verify-rafeeq-v2.ts",
     "verify:rafeeq-voice": "npx vite-node scripts/verify-rafeeq-voice.ts",
     "verify:rafeeq-secretary": "npx vite-node scripts/verify-rafeeq-secretary.ts",
+    "verify:kc-027": "npx vite-node scripts/verify-kc-027.ts",
     "verify:kc-bug-0130a": "npx vite-node scripts/verify-kc-bug-0130a-whatsapp-launch.ts",
     "verify:kc-bug-0126": "npx vite-node scripts/verify-kc-bug-0126-urdu-pdf-typography.ts",
     "admin:export-seed": "npx vite-node scripts/admin/export-seed-backup.ts",

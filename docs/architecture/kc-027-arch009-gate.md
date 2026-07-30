@@ -219,12 +219,21 @@ Filled after implementation and production verification.
 
 ### Phase 4 — Regression audit
 
-_Pending full aggregate verify._
+| Check | Result |
+|-------|--------|
+| `npm run verify:rafeeq-secretary` | Pass (self-report + prior cases) |
+| `npm run verify:rafeeq-voice` | Pass (nav + TTS prep + auto-nav) |
+| `npm run verify:rafeeq-campaign-intelligence` | Via `verify:kc-027` |
+| `npm run verify:reliability` | Pass (guidance rules + permission hint) |
+| `npm run verify:rafeeq-search` | Pass (soft-removed + same-mobile collapse) |
+| `npm run verify:kc-027` | Aggregate gate |
+| Firestore schema | Unchanged |
+| Unrelated WIP | Left unstaged |
 
 ### Phase 5 — Certification
 
-_Pending — `NOT READY` until `npm run verify:kc-027` green._
+**READY** — `npm run verify:kc-027` 8/8 green.
 
 ### Phase 6 — Post-deploy
 
-_Pending production app deploy + verification (rules already released 2026-07-30)._
+_Pending production app deploy + verification (Firestore rules already released 2026-07-30)._
