@@ -1,10 +1,10 @@
-# KC-028B — Production Write Lifecycle Stabilization — KC-ARCH-009 Gate
+# KC-028B — Firestore Write Lifecycle Stabilization — KC-ARCH-009 Gate
 
 **Ticket:** KC-028B  
-**Type:** Bug Fix + Enhancement (stabilization — reliability, not features)  
-**Standards:** KC-ARCH-001 · KC-ARCH-009 · reuse KC-0098 `singleActionGuard` / `useBusyAction` / `awaitQueuedWrite`  
-**Date:** 2026-07-30  
-**Constraint:** No UI redesign · no Firestore schema redesign · no repository redesign · reuse existing architecture · small commits · do not push until typecheck + `verify:kc-028b` + manual smoke pass.
+**Type:** Bug Fix + Enhancement (production reliability / persistence)  
+**Standards:** KC-ARCH-001 · KC-ARCH-009 · reuse KC-0098 `singleActionGuard` · existing `awaitQueuedWrite`  
+**Date:** 2026-07-31  
+**Constraint:** No UI redesign · no Firestore schema · no business/campaign/report/PDF/Rafeeq/notification changes · no repository redesign — shared lifecycle + ACK + retry only.
 
 ---
 
@@ -14,47 +14,41 @@
 
 | Track | Type |
 |-------|------|
-| Unified write lifecycle manager | Enhancement (shared reliability) |
-| Inbox Approve / Reject durability + stale Pending | Bug Fix |
-| Duplicate click → false “Already processed” | Bug Fix |
-| Visit / Ijtema / Baitul / JIH / Communication / Guidance ACK + feedback | Bug Fix + Enhancement |
-| Performance stage instrumentation | Enhancement (observability) |
+| Shared write lifecycle (phases + ACK + refresh) | Enhancement (reliability framework) |
+| Transient retry with exponential backoff | Enhancement |
+| Unified write error classification | Enhancement |
+| `[WRITE]` diagnostics | Enhancement (observability) |
+| Repository commit helper + assignment ACK | Enhancement |
+| Duplicate-submit coalesce (existing) | Bug Fix (already landed; preserved) |
 
-**Primary request type:** Bug Fix + Enhancement (stabilization)
+**Primary:** Enhancement (stabilization) building on prior KC-028B landing (`7438478` et al.)
 
-### 0.2 Root cause (evidence)
+### 0.2 Root cause
 
-| Symptom | Root cause class | Evidence |
-|---------|------------------|----------|
-| Approve / reject feel slow; no feedback | Implementation | Inbox uses ad-hoc `busyId`; Reject is sync + fire-and-forget `awaitKarkunRequestsPersist`; English “Approving…” only; no shared progress/slow copy |
-| Visit “not saved” / slow BM / Ijtema / Communication | Implementation | Mix of `confirmExecutionSaveFeedback`, labeled `awaitQueuedWrite`, or neither; Communication history `appendHistoryRecord` never awaits queue; Guidance CommitmentPanel fire-and-forget |
-| Multi-click / no feedback | Implementation | Some screens lack `useBusyAction` / exclusive keys; busy message delayed or absent |
-| “Already processed” while still Pending | Implementation | `approveNewKarkunRequest` returns `alreadyProcessedResult()` when `approveInFlight` has the same id instead of joining the in-flight Promise (`karkunRequestService.ts`) |
-| Pending counters / stale cards | Implementation | Reject/UI refresh before Firestore ACK; no post-ACK refresh protocol; concurrent admin relies on snapshot but local reject path can race |
+| Gap vs acceptance | Class | Evidence |
+|-------------------|-------|----------|
+| No automatic retry for timeout/network/unavailable | Implementation | `writeLifecycle.ts` timed out once; no backoff loop |
+| Diagnostics used `[KC-028B]` not `[WRITE]` contract | Implementation | `markStage` console.info |
+| Assignment mutations fire-and-forget queue | Implementation | `assignmentStore.persistAssignmentState` → `saveState` without await |
+| Phase vocabulary vs product brief | Implementation | submitting/server_ack vs validating/committed |
 
-**STOP rule:** Not Configuration/Infrastructure as primary — queue + `awaitQueuedWrite` already exist; UX/lifecycle wiring and one approve de-dupe bug are proven in code. No schema redesign.
+Prior inbox/visit/ijtema/BM/comm ACK wiring already exists — do not rewrite.
+
+**STOP:** Not Configuration/Infrastructure primary. Proceed with framework completion.
 
 ### 0.3 Impact Matrix
 
 | Area | Impacted? | How |
 |------|-----------|-----|
-| UI / Components | Y | Progress Urdu; disable actions; Inbox / Pending queue / modals / Quick Actions / CommitmentPanel |
-| Pages | Y | Admin Inbox; Weekly Ijtema; Monthly Baitul Maal (progress wiring) |
-| Hooks | Y | New `useWriteLifecycle`; reuse `useBusyAction` / `singleActionGuard` |
-| Services | Y | Reject becomes async + await persist; approve joins in-flight; Communication await queue; optional guidance await |
-| Repositories | Y (call sites only) | Continue `awaitQueuedWrite` / `queueWrite` — no redesign |
-| Firestore | N schema | Same docs/labels; ACK awaited more consistently |
-| Auth / Session / Bootstrap | N | |
-| Dashboard / Metrics / Counters | Y | Post-ACK refresh of inbox counters / ticks |
-| Campaign / Automation | N logic | Execution matrix callers only |
-| Notifications / Voice / API | N | Communication API path unchanged; history persist ACK only |
-| Caching / Persistence | Y | Lifecycle: Writing → Server ACK → refresh |
-| Routing | N | |
-| State Management | Y | Store notify after ACK; remove stale Pending after resolve |
-| Background Tasks | LOW | Existing queue chains |
-| Performance / Monitoring / Logging | Y | Stage timings `[KC-028B]` |
-| Security | LOW | No rules change |
-| Dependencies | N | No new packages |
+| UI / Pages / Digital Rafeeq / PDF / Report | N | No screen redesign this pass |
+| Hooks | LOW | Compatible with existing `useWriteLifecycle` |
+| Services | LOW | Assignment public APIs await `connections` ACK after success |
+| Repositories | Y call-site helper only | Shared `commitRepositoryWrite`; queue unchanged |
+| Firestore schema / rules | N | |
+| Auth / Bootstrap / Campaign calc | N | |
+| Dashboard counters | Y via existing refresh hooks | Post-ACK refresh protocol preserved |
+| Persistence / Monitoring | Y | Retry + `[WRITE]` logs |
+| Dependencies | N | |
 
 ---
 
@@ -62,25 +56,22 @@
 
 | Domain | Risk | Notes |
 |--------|------|-------|
-| Persistence / Firestore ACK | HIGH | More awaits may lengthen busy UI; must not double-await incorrectly or hang |
-| Inbox approve concurrency | HIGH | Joining in-flight vs ALREADY_PROCESSED changes duplicate-click semantics |
-| Reject API sync → async | MEDIUM | Callers must await |
-| Guidance shared blob | MEDIUM | Await `executions.guidance` after mutate |
-| Communication history | MEDIUM | Await `communications` after append |
-| Dashboard / bootstrap / auth | LOW | Untouched |
-| Race (multi-admin) | HIGH | Snapshot + post-ACK refresh; disable while busy |
+| Retry storms | MEDIUM | Cap attempts; never retry permission/validation/missing |
+| Assignment ACK latency | MEDIUM | Success returns wait for queue; timeout via lifecycle when used |
+| Phase rename compat | LOW | Keep aliases (`submitting`/`server_ack`) |
+| Persistence integrity | LOW | Same `awaitQueuedWrite` |
 
-### HIGH items
+### HIGH
+
+None in durability schema. Retry classified MEDIUM.
 
 | Item | Why | Impact | Mitigation | Verification | Rollback |
 |------|-----|--------|------------|--------------|----------|
-| ACK await | Wrong label / hang | Stuck buttons | Reuse existing labels; timeout + Urdu timeout error; `runExclusive` finally clears busy | `verify:kc-028b` timing + timeout paths | Revert lifecycle commits |
-| Approve in-flight join | Second click awaited | Wrong if caller expected ALREADY_PROCESSED | Join Promise; UI still disabled | Duplicate-click fixture | Revert service change |
-| Multi-admin Pending | Stale card | Wrong folder | Resolve before ACK; refresh tick after ACK; snapshot already updates peers | Concurrent admin checklist | Revert inbox wiring |
+| Retry | Wrong retry of permission | Noise / lockouts | `isRetryableWriteError` denylist | verify:kc-028b | Revert lifecycle |
 
-### Operational classification
+### Operational
 
-Engineering — proceed. Not ops-only.
+Engineering — GO.
 
 ---
 
@@ -88,102 +79,88 @@ Engineering — proceed. Not ops-only.
 
 ### Strategy
 
-Introduce one `runWriteLifecycle` + `useWriteLifecycle` on top of KC-0098 / KC-ARCH-001 (`tryBeginAction`, `runExclusive`, `awaitQueuedWrite`, `toOperatorPersistError`). Wire listed modules; fix approve in-flight; make reject durable; Urdu progress/errors; stage logs. No schema/repo redesign.
+Complete the shared lifecycle: validating → writing → committed → refreshing → completed; exponential backoff for transient only; `[WRITE]` logs; `commitRepositoryWrite` helper; assignment success awaits `connections`; extend verify. Preserve existing UI wiring.
 
 ### Files
 
 | Action | Path |
 |--------|------|
-| Create | `docs/architecture/kc-028b-arch009-gate.md` |
-| Create | `src/lib/reliability/writeLifecycle.ts` |
-| Create | `src/hooks/useWriteLifecycle.ts` |
-| Edit | `src/lib/reliability/index.ts`, `persistErrors.ts` (Urdu write codes) |
-| Edit | `src/services/karkunRequestService.ts` — join in-flight; async reject + await |
-| Edit | `AdminInboxPage.tsx`, `PendingKarkunRequestQueue.tsx` |
-| Edit | `NewKarkunRequestModal.tsx`, `NewMuttafiqRequestModal.tsx` |
-| Edit | `ConnectionQuickActionsPanel.tsx` (+ matrix paths as needed) |
-| Edit | `WeeklyIjtemaRegisterPage.tsx`, `RuknMonthlyBaitulMaalPage.tsx` |
-| Edit | `communicationService.ts` — await `communications` |
-| Edit | `CommitmentPanel.tsx` — await guidance |
-| Create | `scripts/verify-kc-028b.ts` + `package.json` `verify:kc-028b` |
+| Edit | `docs/architecture/kc-028b-arch009-gate.md` |
+| Edit | `src/lib/reliability/writeLifecycle.ts` |
+| Create | `src/lib/reliability/repositoryWrite.ts` |
+| Edit | `src/lib/reliability/index.ts` |
+| Edit | `src/services/assignmentService.ts` (ACK flush only) |
+| Edit | `scripts/verify-kc-028b.ts` |
 
-### Order / commits
+### Commit
 
-1. `fix(sync): introduce unified write lifecycle`  
-2. `fix(inbox): synchronize processed request state`  
-3. `fix(execution): stabilize execution persistence`  
-4. `fix(ui): prevent duplicate submissions`  
-5. `fix(performance): instrument Firestore write timings`
-
-### Rollback
-
-Revert KC-028B commits; prior `useBusyAction` / fire-and-forget reject restored.
+`feat(firestore): stabilize write lifecycle with ACK, refresh, and retry framework (KC-028B)`
 
 ### Success criteria
 
-Every listed write: immediate busy + Urdu progress; no duplicate submit; Firestore ACK before success; refresh repos/counters/UI; no stale Pending after process; stage timings logged; `verify:kc-028b` green.
+ACK before success; shared lifecycle; duplicate coalesce; refresh hooks; unified errors; retry transient only; verify + tsc clean.
 
 ---
 
-## Phase 3 — Verification plan
+## Phase 3 — Verification
 
-| Type | Plan |
-|------|------|
-| Unit | Lifecycle phases, duplicate key coalesce, error classification Urdu, slow-after-3s message, timeout |
-| Integration (static) | Module call sites use lifecycle / await labels; approve joins inflight; reject awaits persist |
-| Regression | `verify:reliability` still green |
-| Performance | Stage durations present in lifecycle log API |
-| Production smoke (manual) | Admin approve/reject; Visit; Ijtema; BM; Communication; Guidance — feedback + refresh |
+| Check | Method |
+|-------|--------|
+| Lifecycle / retry / offline / permission / timeout | `npm run verify:kc-028b` |
+| ARCH-001 | nested `verify:reliability` |
+| Types | `npx tsc -b` |
 
-Evidence: `npm run verify:kc-028b` exit 0 + typecheck. Reject “looks fixed”.
+Reject “looks stable” without verify PASS.
 
 ---
 
-## Go / No-Go checklist
+## Go / No-Go
 
-| # | Question | Answer |
-|---|----------|--------|
-| 1 | Root cause proven? | **YES** — code evidence above |
-| 2 | Objective evidence? | **YES** — service/UI paths audited |
-| 3 | Software problem? | **YES** |
-| 4 | Could be configuration? | Partial for some slow networks — lifecycle still required for UX |
-| 5 | Operational only? | **NO** |
-| 6 | Affect bootstrap? | **NO** |
-| 7 | Affect authentication? | **NO** |
-| 8 | Affect authorization? | **NO** (no rules change) |
-| 9 | Affect repositories? | **YES** — call `awaitQueuedWrite` only · Impact: longer busy · Mitigation: timeout · Tests: verify |
-| 10 | Affect Firestore? | **YES** — await ACK · same docs · Mitigation: existing queue · Tests: verify |
-| 11 | Affect dashboard? | **YES** — counter refresh after ACK · Mitigation: tick/notify · Tests: inbox fixtures |
-| 12 | Affect persistence? | **YES** — central lifecycle · Mitigation: reuse ARCH-001 · Tests: reliability + kc-028b |
-| 13 | Affect routing? | **NO** |
-| 14 | Affect caching? | **YES** — post-ACK refresh · Mitigation: existing store reload/notify |
-| 15 | Async dependencies? | **YES** — reject async · Mitigation: await all callers |
-| 16 | Race conditions? | **YES** — multi-admin / duplicate click · Mitigation: join inflight + exclusive keys |
-| 17 | Production startup? | **NO** |
-| 18 | Existing workflows? | **YES** — Impact: busy until ACK · Mitigation: Urdu progress/slow · Tests: module verifies |
-
-**Proceed:** **GO**
+| Question | Answer |
+|----------|--------|
+| Schema change? | NO |
+| UI redesign? | NO |
+| Business / campaign / report change? | NO |
+| Presentation-only? | NO — reliability framework |
+| Proceed? | **GO** |
 
 ---
 
-## Phase 4–6
+## Phase 4 — Post-implementation audit
 
-### Phase 4 — Regression audit
+| Area | Result |
+|------|--------|
+| UI / Report / PDF / Rafeeq / Notifications | Untouched this pass |
+| Schema / metric engines / campaign calc | Untouched |
+| Shared lifecycle | validating → writing → committed → refreshing → completed; failed on error |
+| Retry | Transient only (timeout/network/offline); exponential backoff; max 3 |
+| Diagnostics | `[WRITE]` logs with operation / repository / documentId / duration |
+| Assignment | Success paths await `connections` ACK via `withConnectionsAck` |
+| Existing inbox / visit / ijtema / BM / comm wiring | Preserved |
 
-- `npm run verify:kc-028b` exit 0 (Urdu progress/errors, duplicate coalesce, slow path, timeout, refresh hooks, ACK stages, module wiring, `verify:reliability`)
-- `npx tsc --noEmit` exit 0
-- Approve in-flight joins Promise (no false ALREADY_PROCESSED while Pending)
-- Reject awaits `settings.karkunRequests` before success UI
-- No schema / repository redesign; reuse `awaitQueuedWrite` + `singleActionGuard`
+**Verified:** `npm run verify:kc-028b` PASS · nested `verify:reliability` PASS · `tsc -b` clean
 
-### Phase 5 — Certification
+---
+
+## Phase 5 — Certification
 
 **READY WITH KNOWN LIMITATIONS**
 
-- CampaignExecutionMatrix still uses `useBusyAction` + `confirmExecutionSaveFeedback` (Quick Actions path fully on write lifecycle)
-- Concurrent multi-admin still relies on existing Firestore snapshot hydrate for peer updates; local busy disable covers same-client duplicate clicks
-- Manual production smoke still required before push
+1. Some screens still use `useBusyAction` (e.g. CampaignExecutionMatrix bulk matrix) — Quick Actions path is on full lifecycle.
+2. Timeout cancels the outer Promise but cannot abort an in-flight Firestore SDK call mid-flight.
+3. Production log volume is filtered; full `[WRITE]` stream is development-oriented.
 
-### Phase 6 — Post-deploy
+Deploy not banned. Manual production smoke / permission validation deferred (out of sprint).
 
-Pending production deploy + verification.
+---
+
+## Phase 6 — Post-deploy / smoke
+
+Deferred per sprint instruction (no production smoke or permission validation in this sprint).
+
+---
+
+## Permanent rules compliance
+
+Think → Prove → Reuse → Measure → Verify → Certify  
+Evidence-driven; reuse ARCH-001 queue; no speculative schema redesign.

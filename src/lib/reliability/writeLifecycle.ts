@@ -1,10 +1,11 @@
 /**
- * KC-028B — Unified write-operation lifecycle.
+ * KC-028B — Unified Firestore write-operation lifecycle.
  *
- * Idle → Submitting → Writing → Server ACK → Refresh repos/counters/UI → Completed
+ * idle → validating → writing → committed → refreshing → completed
+ * Failure: writing → failed
  *
  * Reuses KC-0098 singleActionGuard + KC-ARCH-001 awaitQueuedWrite.
- * Do not duplicate busy/timeout/ACK logic in screens.
+ * Never report success before Firestore commit ACK.
  */
 
 import { runExclusive } from '@/lib/reliability/singleActionGuard'
@@ -13,16 +14,21 @@ export const WRITE_PROGRESS_URDU = 'محفوظ کیا جا رہا ہے...'
 export const WRITE_SLOW_URDU =
   'کارروائی مکمل ہونے میں معمول سے زیادہ وقت لگ رہا ہے...'
 
+/** Canonical KC-028B phases (+ aliases kept for existing call sites). */
 export type WritePhase =
   | 'idle'
-  | 'submitting'
+  | 'validating'
+  | 'submitting' // alias of validating (compat)
   | 'writing'
-  | 'server_ack'
+  | 'committed'
+  | 'server_ack' // alias of committed (compat)
+  | 'refreshing'
   | 'refreshing_repos'
   | 'refreshing_counters'
   | 'refreshing_ui'
   | 'completed'
-  | 'error'
+  | 'failed'
+  | 'error' // alias of failed (compat)
 
 export type WriteLifecycleErrorCode =
   | 'permission_denied'
@@ -31,6 +37,10 @@ export type WriteLifecycleErrorCode =
   | 'duplicate'
   | 'network'
   | 'timeout'
+  | 'offline'
+  | 'cancelled'
+  | 'not_found'
+  | 'validation'
   | 'unknown'
 
 export const WRITE_ERROR_URDU: Record<WriteLifecycleErrorCode, string> = {
@@ -40,6 +50,10 @@ export const WRITE_ERROR_URDU: Record<WriteLifecycleErrorCode, string> = {
   duplicate: 'یہ اندراج پہلے سے موجود ہے۔',
   network: 'نیٹ ورک کی خرابی۔ دوبارہ کوشش کریں۔',
   timeout: 'وقت ختم ہو گیا۔ دوبارہ کوشش کریں۔',
+  offline: 'آپ آف لائن ہیں۔ کنکشن بحال کر کے دوبارہ کوشش کریں۔',
+  cancelled: 'کارروائی منسوخ ہو گئی۔',
+  not_found: 'مطلوبہ ریکارڈ نہیں ملا۔',
+  validation: 'درج کردہ معلومات درست نہیں۔',
   unknown: 'محفوظ نہیں ہو سکا۔ دوبارہ کوشش کریں۔',
 }
 
@@ -49,11 +63,19 @@ export type WriteStageTiming = {
   msFromClick: number
 }
 
+export type WriteDiagnostics = {
+  operation: string
+  repository?: string
+  documentId?: string
+}
+
 export type WriteTimings = {
   key: string
   userClickAt: number
   stages: WriteStageTiming[]
   completedMs?: number
+  diagnostics?: WriteDiagnostics
+  attempts?: number
 }
 
 export type WriteLifecycleOk<T> = {
@@ -77,17 +99,30 @@ export type WriteLifecycleResult<T> = WriteLifecycleOk<T> | WriteLifecycleFail
 export type RunWriteLifecycleOptions<T> = {
   /** Unique key — duplicate clicks coalesce onto one in-flight Promise. */
   key: string
+  /** Human-readable operation name for [WRITE] logs (e.g. Visit, Approve). */
+  operation?: string
+  repository?: string
+  documentId?: string
   /** Firestore queue label(s) to await after work (Server ACK). */
   queueLabels?: string[]
   /** Show slow Urdu copy after this many ms (default 3000). */
   slowAfterMs?: number
   /** Fail the whole operation after this many ms (default 30000). */
   timeoutMs?: number
+  /**
+   * Max attempts including the first try (default 3).
+   * Only transient errors retry (timeout / network / unavailable / offline).
+   */
+  maxAttempts?: number
+  /** Base delay ms for exponential backoff (default 250). */
+  retryBaseMs?: number
   onPhase?: (phase: WritePhase, message: string) => void
   onSlow?: () => void
   refreshRepos?: () => void | Promise<void>
   refreshCounters?: () => void | Promise<void>
   refreshUi?: () => void | Promise<void>
+  /** Optional explicit validation step before work. */
+  validate?: () => void | Promise<void>
   work: () => Promise<T>
 }
 
@@ -165,6 +200,31 @@ export function classifyWriteError(error: unknown): {
     }
   }
 
+  if (
+    code === 'not-found' ||
+    code === 'not_found' ||
+    /missing document|not found|no document/i.test(raw)
+  ) {
+    return { code: 'not_found', message: WRITE_ERROR_URDU.not_found }
+  }
+
+  if (
+    code === 'cancelled' ||
+    code === 'canceled' ||
+    /cancelled|canceled|منسوخ/i.test(raw)
+  ) {
+    return { code: 'cancelled', message: WRITE_ERROR_URDU.cancelled }
+  }
+
+  if (
+    code === 'invalid-argument' ||
+    code === 'failed-precondition' ||
+    code === 'validation' ||
+    /validation|invalid|درج کردہ/i.test(raw)
+  ) {
+    return { code: 'validation', message: WRITE_ERROR_URDU.validation }
+  }
+
   if (code === 'conflict' || /conflict|version|stale/i.test(raw)) {
     return { code: 'conflict', message: WRITE_ERROR_URDU.conflict }
   }
@@ -178,16 +238,17 @@ export function classifyWriteError(error: unknown): {
     return { code: 'duplicate', message: WRITE_ERROR_URDU.duplicate }
   }
 
-  if (
-    code === 'timeout' ||
-    /timeout|timed out|وقت ختم/i.test(raw)
-  ) {
+  if (code === 'timeout' || /timeout|timed out|وقت ختم/i.test(raw)) {
     return { code: 'timeout', message: WRITE_ERROR_URDU.timeout }
+  }
+
+  if (code === 'unavailable' || /offline|آف لائن/i.test(raw)) {
+    return { code: 'offline', message: WRITE_ERROR_URDU.offline }
   }
 
   if (
     code === 'storagefailure' ||
-    /offline|network|unavailable|deadline|نیٹ ورک/i.test(raw)
+    /network|unavailable|deadline|نیٹ ورک/i.test(raw)
   ) {
     return { code: 'network', message: WRITE_ERROR_URDU.network }
   }
@@ -199,14 +260,72 @@ export function classifyWriteError(error: unknown): {
   return { code: 'unknown', message: WRITE_ERROR_URDU.unknown }
 }
 
-function markStage(timings: WriteTimings, stage: string): void {
+/** Transient failures eligible for automatic retry. */
+export function isRetryableWriteError(error: unknown): boolean {
+  const { code } = classifyWriteError(error)
+  return code === 'timeout' || code === 'network' || code === 'offline'
+}
+
+function writeLog(
+  event: string,
+  details: Record<string, unknown>,
+): void {
+  // Development / non-production diagnostics only (KC-028B).
+  const isProd =
+    typeof import.meta !== 'undefined' &&
+    Boolean((import.meta as ImportMeta & { env?: { PROD?: boolean } }).env?.PROD)
+  if (isProd && !/Fail|Error|Timeout/i.test(event)) return
+  console.info(`[WRITE] ${event}`, details)
+}
+
+function markStage(
+  timings: WriteTimings,
+  stage: string,
+  extra?: Record<string, unknown>,
+): void {
   const msFromClick = performance.now() - timings.userClickAt
   timings.stages.push({ stage, at: Date.now(), msFromClick })
-  console.info('[KC-028B]', {
-    key: timings.key,
+  const op = timings.diagnostics?.operation ?? timings.key
+  writeLog(stageLabel(stage, op), {
+    operation: op,
+    repository: timings.diagnostics?.repository,
+    documentId: timings.diagnostics?.documentId,
     stage,
     ms: Math.round(msFromClick * 10) / 10,
+    attempts: timings.attempts,
+    ...extra,
   })
+}
+
+function stageLabel(stage: string, operation: string): string {
+  switch (stage) {
+    case 'user_click':
+    case 'validating':
+    case 'submitting':
+      return `${operation} Started`
+    case 'writing':
+    case 'repository_start':
+    case 'firestore_start':
+      return `${operation} Writing`
+    case 'work_done':
+      return `Commit Success`
+    case 'firestore_ack':
+      return `ACK Received`
+    case 'repository_refresh':
+      return `Repository Refreshed`
+    case 'counter_refresh':
+    case 'ui_refresh':
+      return `Dashboard Updated`
+    case 'completed':
+      return `Completed`
+    case 'error':
+    case 'failed':
+      return `${operation} Failed`
+    case 'retry':
+      return `${operation} Retry`
+    default:
+      return `${operation} ${stage}`
+  }
 }
 
 async function awaitQueueLabels(labels: string[]): Promise<void> {
@@ -242,6 +361,10 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
   })
 }
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
 /**
  * Run one durable write through the shared lifecycle.
  * Duplicate clicks for the same key receive the same in-flight result.
@@ -257,10 +380,19 @@ async function executeWriteLifecycle<T>(
 ): Promise<WriteLifecycleResult<T>> {
   const slowAfterMs = options.slowAfterMs ?? 3_000
   const timeoutMs = options.timeoutMs ?? 30_000
+  const maxAttempts = Math.max(1, options.maxAttempts ?? 3)
+  const retryBaseMs = options.retryBaseMs ?? 250
+  const operation = options.operation ?? options.key
   const timings: WriteTimings = {
     key: options.key,
     userClickAt: performance.now(),
     stages: [],
+    diagnostics: {
+      operation,
+      repository: options.repository,
+      documentId: options.documentId,
+    },
+    attempts: 0,
   }
   let slowWarned = false
   let slowTimer: ReturnType<typeof setTimeout> | undefined
@@ -269,7 +401,7 @@ async function executeWriteLifecycle<T>(
     const message =
       phase === 'idle' || phase === 'completed'
         ? ''
-        : phase === 'error'
+        : phase === 'error' || phase === 'failed'
           ? ''
           : slowWarned
             ? WRITE_SLOW_URDU
@@ -278,7 +410,9 @@ async function executeWriteLifecycle<T>(
   }
 
   markStage(timings, 'user_click')
+  setPhase('validating')
   setPhase('submitting')
+  markStage(timings, 'validating')
   markStage(timings, 'submitting')
 
   slowTimer = setTimeout(() => {
@@ -288,59 +422,110 @@ async function executeWriteLifecycle<T>(
   }, slowAfterMs)
 
   try {
+    if (options.validate) {
+      await options.validate()
+    }
+
     const value = await withTimeout(
       (async () => {
-        setPhase('writing')
-        markStage(timings, 'repository_start')
-        markStage(timings, 'firestore_start')
-        const result = await options.work()
-        markStage(timings, 'work_done')
+        let lastError: unknown
+        for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+          timings.attempts = attempt
+          setPhase('writing')
+          markStage(timings, 'repository_start')
+          markStage(timings, 'firestore_start')
+          markStage(timings, 'writing')
+          try {
+            const result = await options.work()
+            markStage(timings, 'work_done')
 
-        setPhase('server_ack')
-        markStage(timings, 'firestore_ack_start')
-        await awaitQueueLabels(options.queueLabels ?? [])
-        markStage(timings, 'firestore_ack')
+            setPhase('committed')
+            setPhase('server_ack')
+            markStage(timings, 'firestore_ack_start')
+            await awaitQueueLabels(options.queueLabels ?? [])
+            markStage(timings, 'firestore_ack')
 
-        if (options.refreshRepos) {
-          setPhase('refreshing_repos')
-          markStage(timings, 'repository_refresh_start')
-          await options.refreshRepos()
-          markStage(timings, 'repository_refresh')
+            setPhase('refreshing')
+            if (options.refreshRepos) {
+              setPhase('refreshing_repos')
+              markStage(timings, 'repository_refresh_start')
+              await options.refreshRepos()
+              markStage(timings, 'repository_refresh')
+            }
+
+            if (options.refreshCounters) {
+              setPhase('refreshing_counters')
+              markStage(timings, 'counter_refresh_start')
+              await options.refreshCounters()
+              markStage(timings, 'counter_refresh')
+            }
+
+            if (options.refreshUi) {
+              setPhase('refreshing_ui')
+              markStage(timings, 'ui_refresh_start')
+              await options.refreshUi()
+              markStage(timings, 'ui_refresh')
+            }
+
+            return result
+          } catch (error) {
+            lastError = error
+            const retryable = isRetryableWriteError(error) && attempt < maxAttempts
+            if (!retryable) throw error
+            const delay = retryBaseMs * 2 ** (attempt - 1)
+            markStage(timings, 'retry', {
+              attempt,
+              nextDelayMs: delay,
+              code: classifyWriteError(error).code,
+            })
+            writeLog(`${operation} Retry`, {
+              operation,
+              attempt,
+              maxAttempts,
+              delayMs: delay,
+              code: classifyWriteError(error).code,
+            })
+            await sleep(delay)
+          }
         }
-
-        if (options.refreshCounters) {
-          setPhase('refreshing_counters')
-          markStage(timings, 'counter_refresh_start')
-          await options.refreshCounters()
-          markStage(timings, 'counter_refresh')
-        }
-
-        if (options.refreshUi) {
-          setPhase('refreshing_ui')
-          markStage(timings, 'ui_refresh_start')
-          await options.refreshUi()
-          markStage(timings, 'ui_refresh')
-        }
-
-        return result
+        throw lastError
       })(),
       timeoutMs,
     )
 
     setPhase('completed')
-    markStage(timings, 'completed')
+    markStage(timings, 'completed', {
+      durationMs: Math.round((performance.now() - timings.userClickAt) * 10) / 10,
+    })
     timings.completedMs =
       timings.stages[timings.stages.length - 1]?.msFromClick
     recordTimings(timings)
+    writeLog(`Completed (${Math.round(timings.completedMs ?? 0)} ms)`, {
+      operation,
+      repository: options.repository,
+      documentId: options.documentId,
+      durationMs: timings.completedMs,
+      success: true,
+    })
 
     return { ok: true, value, timings, slowWarned }
   } catch (error) {
     const classified = classifyWriteError(error)
+    setPhase('failed')
     setPhase('error')
+    markStage(timings, 'failed')
     markStage(timings, 'error')
     timings.completedMs =
       timings.stages[timings.stages.length - 1]?.msFromClick
     recordTimings(timings)
+    writeLog(`${operation} Failed`, {
+      operation,
+      repository: options.repository,
+      documentId: options.documentId,
+      code: classified.code,
+      durationMs: timings.completedMs,
+      success: false,
+    })
     return {
       ok: false,
       code: classified.code,

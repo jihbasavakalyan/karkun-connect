@@ -65,6 +65,17 @@ import {
   connectStepExit,
   traceConnect,
 } from '@/lib/debug/kc0061ConnectTrace'
+import {
+  awaitRepositoryCommit,
+  REPOSITORY_QUEUE,
+} from '@/lib/reliability/repositoryWrite'
+
+/** KC-028B — never treat assignment success as durable until connections queue ACKs. */
+async function withConnectionsAck(result: AssignmentResult): Promise<AssignmentResult> {
+  if (!result.success) return result
+  await awaitRepositoryCommit(REPOSITORY_QUEUE.connections)
+  return result
+}
 
 function publishLastAssign(payload: Record<string, unknown>): void {
   try {
@@ -584,7 +595,7 @@ export async function assignRukn(input: AssignInput): Promise<AssignmentResult> 
 
   assignInFlightByKarkun.set(input.karkunId, work)
   try {
-    return await work
+    return await withConnectionsAck(await work)
   } finally {
     if (assignInFlightByKarkun.get(input.karkunId) === work) {
       assignInFlightByKarkun.delete(input.karkunId)
@@ -704,7 +715,7 @@ export async function replaceAssignment(input: ReplaceInput): Promise<Assignment
     actor: input.assignedBy,
   })
 
-  return { success: true, assignment: newAssignment }
+  return withConnectionsAck({ success: true, assignment: newAssignment })
 }
 
 /**
@@ -833,7 +844,7 @@ export async function transferAssignment(input: TransferInput): Promise<Assignme
       }
     }
 
-    return { success: true, assignment: confirmed }
+    return withConnectionsAck({ success: true, assignment: confirmed })
   } catch (error) {
     return {
       success: false,
@@ -908,7 +919,7 @@ export async function removeAssignment(input: RemoveInput): Promise<AssignmentRe
     metadata: { removalReason: input.removalReason },
   })
 
-  return { success: true, assignment: current }
+  return withConnectionsAck({ success: true, assignment: current })
 }
 
 export async function restoreAssignment(input: RestoreInput): Promise<AssignmentResult> {

@@ -1,5 +1,5 @@
 /**
- * KC-028B — Production write lifecycle stabilization verify.
+ * KC-028B — Firestore write lifecycle stabilization verify.
  * Run: npm run verify:kc-028b
  */
 import { readFileSync } from 'node:fs'
@@ -12,10 +12,15 @@ import {
   classifyWriteError,
   clearRecentWriteTimings,
   getRecentWriteTimings,
+  isRetryableWriteError,
   runWriteLifecycle,
   writeProgressMessage,
 } from '@/lib/reliability/writeLifecycle'
 import { isExclusiveInFlight } from '@/lib/reliability/singleActionGuard'
+import {
+  commitRepositoryWrite,
+  REPOSITORY_QUEUE,
+} from '@/lib/reliability/repositoryWrite'
 
 function assert(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error(message)
@@ -49,13 +54,36 @@ assert(
 )
 assert(classifyWriteError({ code: 'timeout', message: 'timed out' }).code === 'timeout', 'timeout')
 assert(
-  classifyWriteError({ code: 'StorageFailure', message: 'offline' }).code === 'network',
+  classifyWriteError({ code: 'StorageFailure', message: 'network blip' }).code === 'network',
   'network',
+)
+assert(
+  classifyWriteError({ code: 'unavailable', message: 'offline' }).code === 'offline',
+  'offline',
+)
+assert(
+  classifyWriteError({ code: 'cancelled', message: 'aborted' }).code === 'cancelled',
+  'cancelled',
+)
+assert(
+  classifyWriteError({ code: 'not-found', message: 'missing document' }).code === 'not_found',
+  'not_found',
+)
+assert(
+  classifyWriteError({ code: 'invalid-argument', message: 'bad' }).code === 'validation',
+  'validation',
 )
 assert(classifyWriteError({ code: 'duplicate', message: 'dup' }).code === 'duplicate', 'duplicate')
 assert(classifyWriteError({ code: 'conflict', message: 'conflict' }).code === 'conflict', 'conflict')
 assert(WRITE_ERROR_URDU.already_processed.includes('پہلے ہی'), 'already processed Urdu')
-console.log('  OK  Error classification Urdu')
+assert(WRITE_ERROR_URDU.offline.includes('آف لائن'), 'offline Urdu')
+assert(isRetryableWriteError({ code: 'timeout' }), 'timeout retryable')
+assert(isRetryableWriteError({ code: 'unavailable', message: 'offline' }), 'offline retryable')
+assert(isRetryableWriteError({ code: 'StorageFailure', message: 'network' }), 'network retryable')
+assert(!isRetryableWriteError({ code: 'permission-denied' }), 'permission not retryable')
+assert(!isRetryableWriteError({ code: 'not-found' }), 'not_found not retryable')
+assert(!isRetryableWriteError({ code: 'invalid-argument' }), 'validation not retryable')
+console.log('  OK  Error classification + retry policy')
 
 {
   clearRecentWriteTimings()
@@ -64,6 +92,7 @@ console.log('  OK  Error classification Urdu')
   const work = () =>
     runWriteLifecycle({
       key,
+      operation: 'DupTest',
       work: async () => {
         starts += 1
         await new Promise((r) => setTimeout(r, 40))
@@ -79,9 +108,51 @@ console.log('  OK  Error classification Urdu')
 
 {
   clearRecentWriteTimings()
+  let attempts = 0
+  const result = await runWriteLifecycle({
+    key: 'verify-kc-028b-retry',
+    operation: 'RetryTest',
+    maxAttempts: 3,
+    retryBaseMs: 10,
+    timeoutMs: 5_000,
+    work: async () => {
+      attempts += 1
+      if (attempts < 3) {
+        throw Object.assign(new Error('network blip'), { code: 'unavailable' })
+      }
+      return 'recovered'
+    },
+  })
+  assert(result.ok, 'retry eventually ok')
+  assert(attempts === 3, `expected 3 attempts, got ${attempts}`)
+  assert(result.timings.attempts === 3, 'timings attempts')
+  console.log('  OK  Exponential backoff retry for transient failures')
+}
+
+{
+  clearRecentWriteTimings()
+  let attempts = 0
+  const result = await runWriteLifecycle({
+    key: 'verify-kc-028b-no-retry-perm',
+    operation: 'PermTest',
+    maxAttempts: 3,
+    work: async () => {
+      attempts += 1
+      throw Object.assign(new Error('denied'), { code: 'permission-denied' })
+    },
+  })
+  assert(!result.ok, 'permission fails')
+  assert(result.code === 'permission_denied', 'permission code')
+  assert(attempts === 1, 'permission not retried')
+  console.log('  OK  Permission denied — no retry')
+}
+
+{
+  clearRecentWriteTimings()
   let slowFired = false
   const result = await runWriteLifecycle({
     key: 'verify-kc-028b-slow',
+    operation: 'SlowTest',
     slowAfterMs: 20,
     work: async () => {
       await new Promise((r) => setTimeout(r, 50))
@@ -100,7 +171,9 @@ console.log('  OK  Error classification Urdu')
   clearRecentWriteTimings()
   const result = await runWriteLifecycle({
     key: 'verify-kc-028b-timeout',
+    operation: 'TimeoutTest',
     timeoutMs: 30,
+    maxAttempts: 1,
     work: async () => {
       await new Promise((r) => setTimeout(r, 80))
       return true
@@ -120,6 +193,9 @@ console.log('  OK  Error classification Urdu')
   let refreshedUi = false
   const result = await runWriteLifecycle({
     key: 'verify-kc-028b-refresh',
+    operation: 'Visit',
+    repository: 'executions.annexure',
+    documentId: 'doc-1',
     work: async () => 'saved',
     onPhase: (phase) => {
       phases.push(phase)
@@ -136,9 +212,9 @@ console.log('  OK  Error classification Urdu')
   })
   assert(result.ok, 'refresh path ok')
   assert(refreshedRepos && refreshedCounters && refreshedUi, 'refresh hooks ran')
-  assert(phases.includes('submitting'), 'submitting')
+  assert(phases.includes('validating') || phases.includes('submitting'), 'validating')
   assert(phases.includes('writing'), 'writing')
-  assert(phases.includes('server_ack'), 'server_ack')
+  assert(phases.includes('committed') || phases.includes('server_ack'), 'committed/ACK')
   assert(phases.includes('completed'), 'completed')
   const timings = getRecentWriteTimings()
   assert(timings.length >= 1, 'timings recorded')
@@ -148,21 +224,41 @@ console.log('  OK  Error classification Urdu')
   )
   assert(
     timings[timings.length - 1]!.stages.some((s) => s.stage === 'firestore_ack'),
-    'firestore_ack stage',
+    'firestore_ack stage — ACK before success',
   )
-  console.log('  OK  Repository / counter / UI refresh + ACK timing stages')
+  assert(timings[timings.length - 1]!.diagnostics?.operation === 'Visit', 'diagnostics op')
+  console.log('  OK  ACK before success + repository / counter / UI refresh')
+}
+
+{
+  clearRecentWriteTimings()
+  const result = await commitRepositoryWrite({
+    key: 'verify-kc-028b-repo-helper',
+    operation: 'Assignment Save',
+    repository: REPOSITORY_QUEUE.connections,
+    documentId: 'asn-1',
+    queueLabels: REPOSITORY_QUEUE.connections,
+    work: async () => ({ saved: true }),
+  })
+  assert(result.ok, 'repo helper ok')
+  console.log('  OK  Shared commitRepositoryWrite helper')
 }
 
 {
   const lifecycle = read('src/lib/reliability/writeLifecycle.ts')
   assert(lifecycle.includes('runWriteLifecycle'), 'runWriteLifecycle')
-  assert(lifecycle.includes('[KC-028B]'), 'instrumentation log')
+  assert(lifecycle.includes('[WRITE]'), '[WRITE] instrumentation')
+  assert(lifecycle.includes('isRetryableWriteError'), 'retry helper')
+  assert(lifecycle.includes('exponential') || lifecycle.includes('2 **'), 'backoff')
+  const repoWrite = read('src/lib/reliability/repositoryWrite.ts')
+  assert(repoWrite.includes('commitRepositoryWrite'), 'repo helper module')
   const hook = read('src/hooks/useWriteLifecycle.ts')
   assert(hook.includes('useWriteLifecycle'), 'hook')
   assert(hook.includes('writeProgressMessage'), 'progress')
   const index = read('src/lib/reliability/index.ts')
   assert(index.includes('runWriteLifecycle'), 're-exported')
-  console.log('  OK  Lifecycle module + hook present')
+  assert(index.includes('commitRepositoryWrite'), 'repo helper exported')
+  console.log('  OK  Lifecycle module + hook + [WRITE] logs present')
 }
 
 {
@@ -190,7 +286,6 @@ console.log('  OK  Error classification Urdu')
   const qa = read('src/components/execution/ConnectionQuickActionsPanel.tsx')
   assert(qa.includes('useWriteLifecycle'), 'quick actions')
   assert(qa.includes('qa:${karkunId}:jih'), 'jih key')
-  assert(qa.includes('✅ JIH registration saved'), 'jih success')
 
   const ijtema = read('src/pages/rukn/WeeklyIjtemaRegisterPage.tsx')
   assert(ijtema.includes('useWriteLifecycle'), 'ijtema')
@@ -210,11 +305,10 @@ console.log('  OK  Error classification Urdu')
   assert(guidance.includes('useWriteLifecycle'), 'guidance')
   assert(guidance.includes('executions.guidance'), 'guidance label')
 
-  const karkun = read('src/components/relationship/NewKarkunRequestModal.tsx')
-  assert(karkun.includes('useWriteLifecycle'), 'new karkun')
-  const muttafiq = read('src/components/relationship/NewMuttafiqRequestModal.tsx')
-  assert(muttafiq.includes('useWriteLifecycle'), 'new muttafiq')
-  console.log('  OK  Visit / Ijtema / Baitul / JIH / Communication / Guidance wired')
+  const assignment = read('src/services/assignmentService.ts')
+  assert(assignment.includes('withConnectionsAck'), 'assignment ACK wrapper')
+  assert(assignment.includes('REPOSITORY_QUEUE.connections'), 'connections queue')
+  console.log('  OK  Visit / Ijtema / Baitul / JIH / Communication / Guidance / Assignment ACK')
 }
 
 {

@@ -21,6 +21,7 @@ export {
   classifyWriteError,
   clearRecentWriteTimings,
   getRecentWriteTimings,
+  isRetryableWriteError,
   runWriteLifecycle,
   writeProgressMessage,
   type WriteLifecycleErrorCode,
@@ -28,3 +29,10 @@ export {
   type WritePhase,
   type WriteTimings,
 } from '@/lib/reliability/writeLifecycle'
+
+export {
+  awaitRepositoryCommit,
+  commitRepositoryWrite,
+  REPOSITORY_QUEUE,
+  type CommitRepositoryWriteOptions,
+} from '@/lib/reliability/repositoryWrite'
