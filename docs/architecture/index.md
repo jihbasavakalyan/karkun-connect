@@ -16,8 +16,9 @@
 | [KC-0103C — Operations Capability Audit](./kc-0103c-operations-capability-audit.md) | Operations domain evidence |
 | [KC-0103D — Engagement Capability Audit](./kc-0103d-engagement-capability-audit.md) | Engagement domain evidence |
 | [KC-0103E — Reporting & Executive Visibility Audit](./kc-0103e-reporting-executive-audit.md) | Dashboard / reporting evidence |
+| [**KC-032 — Product Capability Audit & Roadmap Refresh**](./kc-032-product-capability-audit.md) | Cross-product capability matrix, gaps, debt, and refreshed roadmap (SSoT) |
 
-Future implementation must align with KC-0104. Engineering gates: [KC-ARCH-009](./kc-arch-009-feature-impact.md) · [KC-ARCH-001](./kc-arch-001-reliability-persistence.md).
+Future implementation must align with KC-0104. Engineering gates: [KC-ARCH-009](./kc-arch-009-feature-impact.md) · [KC-ARCH-001](./kc-arch-001-reliability-persistence.md). Current capability status: [KC-032](./kc-032-product-capability-audit.md).
 
 ## Overview
 
@@ -108,6 +109,7 @@ Scripts validate routes, auth, data integrity, assignments, and compliance witho
 
 ## Related Documents
 
+- [**KC-032 — Product Capability Audit & Roadmap Refresh**](./kc-032-product-capability-audit.md) (capability matrix + roadmap SSoT)
 - [**KC-0104 — Campaign Operating System Product Architecture Baseline**](./campaign-operating-system-product-architecture.md) (canonical product architecture)
 - [**KC-ARCH-001 — Reliability & Persistence Standard**](./kc-arch-001-reliability-persistence.md) (mandatory for all modules)
 - [**KC-ARCH-009 — Feature Impact & Regression Prevention Framework**](./kc-arch-009-feature-impact.md) (mandatory gate before every change)
