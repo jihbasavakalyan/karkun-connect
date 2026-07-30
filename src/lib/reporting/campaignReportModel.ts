@@ -1,13 +1,14 @@
 /**
- * KC-0114 — Campaign Report presentation model.
+ * KC-0114 / KC-029 — Campaign Report presentation model.
  * Composes existing dashboard / Health / connection getters only.
  * Does not introduce calculation engines or touch repositories / Firestore.
  */
 
+import { APP_VERSION } from '@/constants/app'
 import { ruknMaster } from '@/data/ruknMaster'
 import { getAssignedKarkunanForRukn } from '@/lib/assignmentEngine'
 import { getConnectedKarkunCountForRukn } from '@/lib/connections/getConnectedKarkunsForRukn'
-import { getPeopleStatistics } from '@/lib/peopleStore'
+import { getAllMuttafiqeen, getPeopleStatistics } from '@/lib/peopleStore'
 import {
   formatCampaignDate,
   getActiveCampaign,
@@ -30,6 +31,10 @@ import {
   getWeeklyIjtemaDashboardKpi,
   getWeeklyIjtemaReport,
 } from '@/services/weeklyIjtemaService'
+import {
+  URDU_CRITICAL_REASONS,
+  URDU_REPORT,
+} from './campaignReportUrdu'
 
 export type CampaignReportMetricPair = {
   completed: number
@@ -38,17 +43,35 @@ export type CampaignReportMetricPair = {
   pct: number
 }
 
+export type CampaignReportGenderedActivity = {
+  label: string
+  overall: CampaignReportMetricPair
+  male: CampaignReportMetricPair
+  female: CampaignReportMetricPair
+  /** Muttafiqeen are outside campaign execution — shown as empty metric. */
+  muttafiqeen: CampaignReportMetricPair
+}
+
 export type CampaignReportRuknRow = {
   ruknId: string
   ruknName: string
   gender: 'Male' | 'Female'
   assignedKarkuns: number
+  maleKarkuns: number
+  femaleKarkuns: number
+  totalKarkuns: number
+  maleMuttafiqeen: number
+  femaleMuttafiqeen: number
+  totalMuttafiqeen: number
   connections: CampaignReportMetricPair
   visits: CampaignReportMetricPair
   appRegistration: CampaignReportMetricPair
   weeklyIjtema: CampaignReportMetricPair
   baitulMaal: CampaignReportMetricPair
   overallPct: number
+  /** Weighted Overall Performance Score (0–100). */
+  performanceScore: number
+  pendingActivities: number
   criticalReasons: string[]
 }
 
@@ -59,21 +82,60 @@ export type CampaignReportTopPerformer = {
   pct: number
 }
 
+export type CampaignReportRankedPerformer = {
+  rank: number
+  ruknId: string
+  ruknName: string
+  gender: 'Male' | 'Female'
+  performanceScore: number
+  overallPct: number
+  visitsPct: number
+  appPct: number
+  weeklyIjtemaPct: number
+  baitulMaalPct: number
+  connectionsPct: number
+}
+
+export type CampaignReportCategoryLeader = {
+  categoryKey: string
+  category: string
+  ruknName: string
+  valueLabel: string
+  pct: number
+}
+
+export type CampaignReportRecommendationGroups = {
+  urgent: string[]
+  next: string[]
+  positive: string[]
+}
+
 export type CampaignReportModel = {
   cover: {
     campaignName: string
     campaignDuration: string
+    reportPeriod: string
     organization: string
     reportDate: string
+    generatedDate: string
+    generatedTime: string
     generatedOn: string
     generatedBy: string
     campaignStatus: string
+    campaignDay: string
+    systemVersion: string
   }
   executive: {
     totalRukns: number
     maleRukns: number
     femaleRukns: number
     totalKarkuns: number
+    maleKarkuns: number
+    femaleKarkuns: number
+    totalMuttafiqeen: number
+    maleMuttafiqeen: number
+    femaleMuttafiqeen: number
+    peopleCovered: number
     connected: CampaignReportMetricPair
     connectionPct: number
     visits: CampaignReportMetricPair
@@ -82,13 +144,20 @@ export type CampaignReportModel = {
     baitulMaal: CampaignReportMetricPair
     overallCampaignProgress: number
   }
+  activityProgress: CampaignReportGenderedActivity[]
   achievement: Array<{ label: string; metric: CampaignReportMetricPair }>
   maleRukns: CampaignReportRuknRow[]
   femaleRukns: CampaignReportRuknRow[]
+  allRukns: CampaignReportRuknRow[]
   pendingByRukn: CampaignReportRuknRow[]
   criticalRukns: CampaignReportRuknRow[]
+  /** @deprecated Prefer topOverallPerformers — kept for compatibility. */
   topPerformers: CampaignReportTopPerformer[]
+  topOverallPerformers: CampaignReportRankedPerformer[]
+  categoryLeaders: CampaignReportCategoryLeader[]
   statistics: Array<{ label: string; metric: CampaignReportMetricPair }>
+  recommendationGroups: CampaignReportRecommendationGroups
+  /** Flattened recommendations for any legacy consumers. */
   recommendations: string[]
 }
 
@@ -100,11 +169,6 @@ function pair(completed: number, total: number): CampaignReportMetricPair {
   return { completed: safeCompleted, total: safeTotal, pending, pct }
 }
 
-import {
-  URDU_CRITICAL_REASONS,
-  URDU_REPORT,
-} from './campaignReportUrdu'
-
 function formatPair(metric: CampaignReportMetricPair): string {
   return `${metric.completed} / ${metric.total} (${metric.pct}٪)`
 }
@@ -114,7 +178,26 @@ function averagePct(values: number[]): number {
   return Math.round(values.reduce((sum, value) => sum + value, 0) / values.length)
 }
 
-function criticalReasonsFor(row: Omit<CampaignReportRuknRow, 'criticalReasons'>): string[] {
+/** Overall Performance Score — visits 30%, app 20%, WI 20%, BM 20%, connections 10%. */
+export function computePerformanceScore(row: {
+  visits: CampaignReportMetricPair
+  appRegistration: CampaignReportMetricPair
+  weeklyIjtema: CampaignReportMetricPair
+  baitulMaal: CampaignReportMetricPair
+  connections: CampaignReportMetricPair
+}): number {
+  return Math.round(
+    row.visits.pct * 0.3 +
+      row.appRegistration.pct * 0.2 +
+      row.weeklyIjtema.pct * 0.2 +
+      row.baitulMaal.pct * 0.2 +
+      row.connections.pct * 0.1,
+  )
+}
+
+function criticalReasonsFor(
+  row: Omit<CampaignReportRuknRow, 'criticalReasons'>,
+): string[] {
   const reasons: string[] = []
   if (row.assignedKarkuns === 0 || row.connections.completed === 0) {
     reasons.push(URDU_CRITICAL_REASONS.noConnections)
@@ -137,27 +220,38 @@ function criticalReasonsFor(row: Omit<CampaignReportRuknRow, 'criticalReasons'>)
   return reasons
 }
 
-function buildRecommendations(input: {
+function sumMetric(
+  rows: CampaignReportRuknRow[],
+  key: 'connections' | 'visits' | 'appRegistration' | 'weeklyIjtema' | 'baitulMaal',
+): CampaignReportMetricPair {
+  let completed = 0
+  let total = 0
+  for (const row of rows) {
+    completed += row[key].completed
+    total += row[key].total
+  }
+  return pair(completed, total)
+}
+
+function buildRecommendationGroups(input: {
   critical: CampaignReportRuknRow[]
   executive: CampaignReportModel['executive']
-  topOverall: CampaignReportRuknRow | undefined
-}): string[] {
-  const lines: string[] = []
-  const { critical, executive, topOverall } = input
+  topOverall: CampaignReportRankedPerformer[]
+  categoryLeaders: CampaignReportCategoryLeader[]
+}): CampaignReportRecommendationGroups {
+  const urgent: string[] = []
+  const next: string[] = []
+  const positive: string[] = []
+  const { critical, executive, topOverall, categoryLeaders } = input
 
   if (executive.visits.pending > 0) {
-    lines.push(
-      `فوری پیروی: ${executive.visits.pending} ملاقات کی رپورٹ ابھی زیر التواء ہے۔`,
+    urgent.push(
+      `${executive.visits.pending} ملاقاتیں زیر التواء ہیں — فوری طور پر مکمل کیجیے۔`,
     )
   }
-  if (executive.weeklyIjtema.pending > 0) {
-    lines.push(
-      `اگلے ہفتہ وار اجتماع سے پہلے: ${executive.weeklyIjtema.pending} حاضری کے اندراجات مکمل کیجیے۔`,
-    )
-  }
-  if (executive.connectionPct < 70) {
-    lines.push(
-      `رابطوں کی کوریج ${executive.connectionPct}٪ ہے — باقی رابطے (${executive.connected.pending}) کو ترجیح دیجیے۔`,
+  if (executive.connectionPct < 50) {
+    urgent.push(
+      `رابطوں کی کوریج صرف ${executive.connectionPct}٪ ہے — باقی ${executive.connected.pending} رابطے فوری ترجیح دیں۔`,
     )
   }
   if (critical.length > 0) {
@@ -165,29 +259,78 @@ function buildRecommendations(input: {
       .slice(0, 5)
       .map((row) => row.ruknName)
       .join('، ')
-    lines.push(`کم کارکردگی والے ارکان جن پر توجہ درکار ہے: ${names}۔`)
+    urgent.push(`ان ارکان پر فوری توجہ درکار ہے: ${names}۔`)
   }
-  if (topOverall) {
-    lines.push(
-      `مہم کی طاقت: ${topOverall.ruknName} مجموعی پیش رفت میں ${topOverall.overallPct}٪ کے ساتھ نمایاں ہیں۔`,
+  if (executive.overallCampaignProgress < 40) {
+    urgent.push(
+      `مجموعی مہم کی پیش رفت ${executive.overallCampaignProgress}٪ ہے — ترجیحی شعبوں پر توجہ مرکوز کیجیے۔`,
+    )
+  }
+
+  if (executive.connectionPct >= 50 && executive.connectionPct < 70) {
+    next.push(
+      `رابطے ${executive.connectionPct}٪ تک پہنچ چکے ہیں — اگلا ہدف ${executive.connected.pending} باقی رابطے مکمل کرنا ہے۔`,
+    )
+  }
+  if (executive.weeklyIjtema.pending > 0) {
+    next.push(
+      `اگلے ہفتہ وار اجتماع سے پہلے ${executive.weeklyIjtema.pending} حاضری اندراجات مکمل کیجیے۔`,
     )
   }
   if (executive.appRegistration.pending > 0) {
-    lines.push(
-      `ترجیحی اقدام: ${executive.appRegistration.pending} زیر التواء جے آئی ایچ رپورٹنگ ایپ رجسٹریشن مکمل کیجیے۔`,
+    next.push(
+      `${executive.appRegistration.pending} ایپ رجسٹریشنز باقی ہیں — انہیں اگلے مرحلے میں ترجیح دیں۔`,
     )
   }
   if (executive.baitulMaal.pending > 0) {
-    lines.push(
-      `ترجیحی اقدام: ${executive.baitulMaal.pending} زیر التواء بیت المال کے اندراجات مکمل کیجیے۔`,
+    next.push(
+      `${executive.baitulMaal.pending} بیت المال عزم کے اندراجات مکمل کیجیے۔`,
     )
   }
-  if (lines.length === 0) {
-    lines.push(
-      'مہم کے اعداد و شمار اطمینان بخش ہیں۔ اگلے ہفتہ وار اجتماع تک موجودہ رفتار برقرار رکھیے۔',
+  if (
+    executive.visits.pct >= 60 &&
+    executive.visits.pct < 90 &&
+    executive.visits.pending > 0
+  ) {
+    next.push(
+      `ملاقاتیں ${executive.visits.pct}٪ مکمل ہیں — بقیہ کو شیڈول کر کے بند کیجیے۔`,
     )
   }
-  return lines.slice(0, 8)
+
+  if (executive.overallCampaignProgress >= 70) {
+    positive.push(
+      `مجموعی پیش رفت ${executive.overallCampaignProgress}٪ ہے — مہم مضبوط رفتار پر ہے۔`,
+    )
+  }
+  if (topOverall[0]) {
+    positive.push(
+      `${topOverall[0].ruknName} مجموعی کارکردگی اسکور ${topOverall[0].performanceScore} کے ساتھ نمایاں ہیں۔`,
+    )
+  }
+  for (const leader of categoryLeaders.slice(0, 3)) {
+    positive.push(`${leader.category}: ${leader.ruknName} (${leader.valueLabel})۔`)
+  }
+  if (executive.connected.pct >= 80) {
+    positive.push(`رابطے ${executive.connected.pct}٪ مکمل — مضبوط بنیاد قائم ہو چکی ہے۔`)
+  }
+  if (
+    executive.visits.pending === 0 &&
+    executive.visits.total > 0
+  ) {
+    positive.push('تمام طے شدہ ملاقاتیں مکمل ہو چکی ہیں۔')
+  }
+
+  if (urgent.length === 0 && next.length === 0 && positive.length === 0) {
+    positive.push(
+      'مہم کے اعداد و شمار اطمینان بخش ہیں۔ موجودہ رفتار برقرار رکھیے۔',
+    )
+  }
+
+  return {
+    urgent: urgent.slice(0, 5),
+    next: next.slice(0, 5),
+    positive: positive.slice(0, 5),
+  }
 }
 
 export function buildCampaignReportModel(input?: {
@@ -209,6 +352,7 @@ export function buildCampaignReportModel(input?: {
   const bmRows = bmKpi.cycleId ? (getMonthlyBaitulMaalReport(bmKpi.cycleId)?.ruknRows ?? []) : []
   const wiById = new Map(wiRows.map((row) => [row.ruknId, row]))
   const bmById = new Map(bmRows.map((row) => [row.ruknId, row]))
+  const muttafiqeenAll = getAllMuttafiqeen()
 
   const wiSlice = healthSlices.find((slice) => slice.id === 'weekly-ijtema')
   const bmSlice = healthSlices.find((slice) => slice.id === 'monthly-baitul-maal')
@@ -244,6 +388,14 @@ export function buildCampaignReportModel(input?: {
     const wiAssigned = wiRow?.assigned ?? assigned.length
     const bmAssigned = bmRow?.assigned ?? assigned.length
 
+    const maleKarkuns = assigned.filter((k) => k.gender === 'Male').length
+    const femaleKarkuns = assigned.filter((k) => k.gender === 'Female').length
+    const linkedMuttafiqeen = muttafiqeenAll.filter(
+      (m) => m.assignedRuknId === rukn.id || m.assignedRukn === rukn.name,
+    )
+    const maleMuttafiqeen = linkedMuttafiqeen.filter((m) => m.gender === 'Male').length
+    const femaleMuttafiqeen = linkedMuttafiqeen.filter((m) => m.gender === 'Female').length
+
     const connectionsPair = pair(connectedCount, Math.max(connectedCount, assigned.length))
     const visitsPair = pair(visitRow.completed, visitRow.planned)
     const appPair = pair(appRow.registered, appRow.eligible || assigned.length)
@@ -268,17 +420,40 @@ export function buildCampaignReportModel(input?: {
       bmPair.pct,
     ])
 
+    const performanceScore = computePerformanceScore({
+      visits: visitsPair,
+      appRegistration: appPair,
+      weeklyIjtema: wiPair,
+      baitulMaal: bmPair,
+      connections: connectionsPair,
+    })
+
+    const pendingActivities =
+      connectionsPair.pending +
+      visitsPair.pending +
+      appPair.pending +
+      wiPair.pending +
+      bmPair.pending
+
     const base = {
       ruknId: rukn.id,
       ruknName: rukn.name,
       gender: (rukn.gender === 'Female' ? 'Female' : 'Male') as 'Male' | 'Female',
       assignedKarkuns: assigned.length,
+      maleKarkuns,
+      femaleKarkuns,
+      totalKarkuns: assigned.length,
+      maleMuttafiqeen,
+      femaleMuttafiqeen,
+      totalMuttafiqeen: linkedMuttafiqeen.length,
       connections: connectionsPair,
       visits: visitsPair,
       appRegistration: appPair,
       weeklyIjtema: wiPair,
       baitulMaal: bmPair,
       overallPct,
+      performanceScore,
+      pendingActivities,
     }
 
     return {
@@ -295,6 +470,25 @@ export function buildCampaignReportModel(input?: {
     .sort((a, b) => a.ruknName.localeCompare(b.ruknName))
 
   const withAssigned = ruknRows.filter((row) => row.assignedKarkuns > 0)
+
+  const emptyMuttafiqMetric = pair(0, 0)
+
+  const activityProgress: CampaignReportGenderedActivity[] = (
+    [
+      ['connections', URDU_REPORT.achievementAreas.connections, connectedMetric] as const,
+      ['visits', URDU_REPORT.achievementAreas.visits, visitsMetric] as const,
+      ['appRegistration', URDU_REPORT.achievementAreas.appRegistration, appMetric] as const,
+      ['weeklyIjtema', URDU_REPORT.achievementAreas.weeklyIjtema, wiMetric] as const,
+      ['baitulMaal', URDU_REPORT.achievementAreas.baitulMaal, bmMetric] as const,
+    ] as const
+  ).map(([key, label, overall]) => ({
+    label,
+    overall,
+    male: sumMetric(maleRukns, key),
+    female: sumMetric(femaleRukns, key),
+    muttafiqeen: emptyMuttafiqMetric,
+  }))
+
   const pickTop = (
     category: string,
     score: (row: CampaignReportRuknRow) => number,
@@ -314,6 +508,94 @@ export function buildCampaignReportModel(input?: {
     }
   }
 
+  const rankedByScore = [...withAssigned].sort(
+    (a, b) =>
+      b.performanceScore - a.performanceScore ||
+      b.overallPct - a.overallPct ||
+      a.ruknName.localeCompare(b.ruknName),
+  )
+
+  const topOverallPerformers: CampaignReportRankedPerformer[] = rankedByScore
+    .slice(0, 5)
+    .map((row, index) => ({
+      rank: index + 1,
+      ruknId: row.ruknId,
+      ruknName: row.ruknName,
+      gender: row.gender,
+      performanceScore: row.performanceScore,
+      overallPct: row.overallPct,
+      visitsPct: row.visits.pct,
+      appPct: row.appRegistration.pct,
+      weeklyIjtemaPct: row.weeklyIjtema.pct,
+      baitulMaalPct: row.baitulMaal.pct,
+      connectionsPct: row.connections.pct,
+    }))
+
+  const pickCategoryLeader = (
+    categoryKey: string,
+    category: string,
+    score: (row: CampaignReportRuknRow) => number,
+    label: (row: CampaignReportRuknRow) => string,
+  ): CampaignReportCategoryLeader | null => {
+    if (withAssigned.length === 0) return null
+    const ranked = [...withAssigned].sort(
+      (a, b) => score(b) - score(a) || a.ruknName.localeCompare(b.ruknName),
+    )
+    const winner = ranked[0]
+    if (!winner) return null
+    return {
+      categoryKey,
+      category,
+      ruknName: winner.ruknName,
+      valueLabel: label(winner),
+      pct: score(winner),
+    }
+  }
+
+  /** Proxy for “most improved” without historical snapshots: activity avg vs connection baseline. */
+  const mostImprovedScore = (row: CampaignReportRuknRow): number => {
+    const activityAvg = averagePct([
+      row.visits.pct,
+      row.appRegistration.pct,
+      row.weeklyIjtema.pct,
+      row.baitulMaal.pct,
+    ])
+    return Math.max(0, activityAvg - row.connections.pct) + Math.round(activityAvg * 0.25)
+  }
+
+  const categoryLeaders = [
+    pickCategoryLeader(
+      'visits',
+      URDU_REPORT.topCategories.visits,
+      (row) => row.visits.pct,
+      (row) => formatPair(row.visits),
+    ),
+    pickCategoryLeader(
+      'appRegistration',
+      URDU_REPORT.topCategories.appRegistration,
+      (row) => row.appRegistration.pct,
+      (row) => formatPair(row.appRegistration),
+    ),
+    pickCategoryLeader(
+      'weeklyIjtema',
+      URDU_REPORT.topCategories.weeklyIjtema,
+      (row) => row.weeklyIjtema.pct,
+      (row) => formatPair(row.weeklyIjtema),
+    ),
+    pickCategoryLeader(
+      'baitulMaal',
+      URDU_REPORT.topCategories.baitulMaal,
+      (row) => row.baitulMaal.pct,
+      (row) => formatPair(row.baitulMaal),
+    ),
+    pickCategoryLeader(
+      'mostImproved',
+      URDU_REPORT.topCategories.mostImproved,
+      mostImprovedScore,
+      (row) => `${row.performanceScore} اسکور · ${row.overallPct}٪`,
+    ),
+  ].filter((item): item is CampaignReportCategoryLeader => Boolean(item))
+
   const topPerformers = [
     pickTop(URDU_REPORT.topCategories.connections, (row) => row.connections.pct, (row) => formatPair(row.connections)),
     pickTop(URDU_REPORT.topCategories.visits, (row) => row.visits.pct, (row) => formatPair(row.visits)),
@@ -324,7 +606,7 @@ export function buildCampaignReportModel(input?: {
     ),
     pickTop(URDU_REPORT.topCategories.weeklyIjtema, (row) => row.weeklyIjtema.pct, (row) => formatPair(row.weeklyIjtema)),
     pickTop(URDU_REPORT.topCategories.baitulMaal, (row) => row.baitulMaal.pct, (row) => formatPair(row.baitulMaal)),
-    pickTop(URDU_REPORT.topCategories.overall, (row) => row.overallPct, (row) => `${row.overallPct}٪`),
+    pickTop(URDU_REPORT.topCategories.overall, (row) => row.performanceScore, (row) => `${row.performanceScore}`),
   ].filter((item): item is CampaignReportTopPerformer => Boolean(item))
 
   const criticalRukns = ruknRows
@@ -336,11 +618,25 @@ export function buildCampaignReportModel(input?: {
       ? `${formatCampaignDate(campaign.startDate)} – ${formatCampaignDate(campaign.endDate)}`
       : URDU_REPORT.status.notSet
 
+  const maleKarkuns = people.totalMaleKarkuns
+  const femaleKarkuns = people.totalFemaleKarkuns
+  const totalMuttafiqeen = people.totalMuttafiqeen ?? 0
+  const maleMuttafiqeen = people.maleMuttafiqeen ?? 0
+  const femaleMuttafiqeen = people.femaleMuttafiqeen ?? 0
+  const peopleCovered =
+    activeRukns.length + maleKarkuns + femaleKarkuns + totalMuttafiqeen
+
   const executive: CampaignReportModel['executive'] = {
     totalRukns: activeRukns.length,
     maleRukns: maleRuknCount,
     femaleRukns: femaleRuknCount,
-    totalKarkuns: people.totalMaleKarkuns + people.totalFemaleKarkuns,
+    totalKarkuns: maleKarkuns + femaleKarkuns,
+    maleKarkuns,
+    femaleKarkuns,
+    totalMuttafiqeen,
+    maleMuttafiqeen,
+    femaleMuttafiqeen,
+    peopleCovered,
     connected: connectedMetric,
     connectionPct: connections.progressPct,
     visits: visitsMetric,
@@ -350,12 +646,21 @@ export function buildCampaignReportModel(input?: {
     overallCampaignProgress,
   }
 
-  const topOverall = [...withAssigned].sort((a, b) => b.overallPct - a.overallPct)[0]
+  const recommendationGroups = buildRecommendationGroups({
+    critical: criticalRukns,
+    executive,
+    topOverall: topOverallPerformers,
+    categoryLeaders,
+  })
 
   const reportDate = now.toLocaleDateString('ur-PK', {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
+  })
+  const generatedTime = now.toLocaleTimeString('ur-PK', {
+    hour: '2-digit',
+    minute: '2-digit',
   })
   const generatedOn = now.toLocaleString('ur-PK', {
     day: 'numeric',
@@ -365,23 +670,34 @@ export function buildCampaignReportModel(input?: {
     minute: '2-digit',
   })
 
+  const campaignDay =
+    timeline?.currentDay != null
+      ? `دن ${timeline.currentDay} از ${timeline.totalDays}`
+      : timeline?.dayLabel || URDU_REPORT.status.notSet
+
   const campaignStatus = campaign?.status
     ? campaign.status === 'active'
-      ? `${URDU_REPORT.status.active}${timeline?.dayLabel ? ` · ${timeline.dayLabel}` : ''}`
+      ? URDU_REPORT.status.active
       : URDU_REPORT.status.archived
     : URDU_REPORT.status.none
 
   return {
     cover: {
-      campaignName: campaign?.name?.trim() || 'فعال مہم',
+      campaignName: campaign?.name?.trim() || 'فعال کارکن، فعال جماعت',
       campaignDuration: duration,
+      reportPeriod: duration,
       organization: input?.organization?.trim() || URDU_REPORT.organizationDefault,
       reportDate,
+      generatedDate: reportDate,
+      generatedTime,
       generatedOn,
       generatedBy: input?.generatedBy?.trim() || 'منتظم',
       campaignStatus,
+      campaignDay,
+      systemVersion: APP_VERSION,
     },
     executive,
+    activityProgress,
     achievement: [
       { label: URDU_REPORT.achievementAreas.connections, metric: connectedMetric },
       { label: URDU_REPORT.achievementAreas.visits, metric: visitsMetric },
@@ -391,6 +707,7 @@ export function buildCampaignReportModel(input?: {
     ],
     maleRukns,
     femaleRukns,
+    allRukns: [...maleRukns, ...femaleRukns],
     pendingByRukn: ruknRows
       .filter(
         (row) =>
@@ -403,6 +720,8 @@ export function buildCampaignReportModel(input?: {
       .sort((a, b) => a.ruknName.localeCompare(b.ruknName)),
     criticalRukns,
     topPerformers,
+    topOverallPerformers,
+    categoryLeaders,
     statistics: [
       { label: URDU_REPORT.achievementAreas.connections, metric: connectedMetric },
       { label: URDU_REPORT.achievementAreas.visits, metric: visitsMetric },
@@ -410,10 +729,11 @@ export function buildCampaignReportModel(input?: {
       { label: URDU_REPORT.achievementAreas.weeklyIjtema, metric: wiMetric },
       { label: URDU_REPORT.achievementAreas.baitulMaal, metric: bmMetric },
     ],
-    recommendations: buildRecommendations({
-      critical: criticalRukns,
-      executive,
-      topOverall,
-    }),
+    recommendationGroups,
+    recommendations: [
+      ...recommendationGroups.urgent,
+      ...recommendationGroups.next,
+      ...recommendationGroups.positive,
+    ],
   }
 }

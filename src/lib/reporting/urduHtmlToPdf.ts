@@ -1,5 +1,5 @@
 /**
- * KC-BUG-0126 — HTML → PDF export with browser OpenType Urdu shaping.
+ * KC-BUG-0126 / KC-029 — HTML → PDF export with browser OpenType Urdu shaping.
  *
  * jsPDF cannot apply GSUB/GPOS. Rendering the report as RTL HTML with an
  * embedded Nastaliq face lets Chrome/Edge shape ligatures correctly; we then
@@ -41,7 +41,7 @@ ${urduPdfFontFaceCss()}
 html, body {
   margin: 0;
   padding: 0;
-  background: #ffffff;
+  background: ${colors.pageBg};
   color: ${colors.text};
   font-family: '${family}', 'Noto Nastaliq Urdu', serif;
   font-size: ${t.bodyPt}pt;
@@ -52,11 +52,552 @@ html, body {
 }
 .urdu-report {
   width: ${URDU_PDF_LAYOUT.page.widthCssPx}px;
-  padding: 28px 32px 40px;
+  padding: 0;
   direction: rtl;
   text-align: right;
-  background: #fff;
+  background: ${colors.pageBg};
 }
+.urdu-report .pdf-page {
+  width: 100%;
+  min-height: 1040px;
+  padding: 28px 30px 36px;
+  background: ${colors.pageBg};
+  page-break-after: always;
+  break-after: page;
+}
+
+/* ── Premium header ─────────────────────────────────────────── */
+.urdu-report .exec-header {
+  background: linear-gradient(135deg, ${colors.primary} 0%, ${colors.secondary} 55%, #2563eb 100%);
+  color: #fff;
+  padding: 28px 28px 24px;
+  margin: -28px -30px 24px;
+  border-radius: 0 0 28px 28px;
+  position: relative;
+  overflow: hidden;
+}
+.urdu-report .exec-header::after {
+  content: '';
+  position: absolute;
+  left: -40px;
+  bottom: -50px;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.08);
+}
+.urdu-report .exec-header::before {
+  content: '';
+  position: absolute;
+  right: 40px;
+  top: -60px;
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.06);
+}
+.urdu-report .exec-header h1 {
+  margin: 0;
+  font-size: ${t.documentTitlePt}pt;
+  font-weight: 700;
+  line-height: 1.55;
+  position: relative;
+  z-index: 1;
+}
+.urdu-report .exec-header .campaign-name {
+  margin: 10px 0 0;
+  font-size: 13pt;
+  font-weight: 600;
+  opacity: 0.98;
+  position: relative;
+  z-index: 1;
+}
+.urdu-report .exec-header .meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  margin-top: 16px;
+  position: relative;
+  z-index: 1;
+}
+.urdu-report .exec-header .meta-chip {
+  background: rgba(255,255,255,0.14);
+  border: 1px solid rgba(255,255,255,0.22);
+  border-radius: 999px;
+  padding: 5px 14px;
+  font-size: 9.5pt;
+  line-height: 1.6;
+}
+
+/* ── Section titles ─────────────────────────────────────────── */
+.urdu-report h2.section {
+  margin: 22px 0 14px;
+  font-size: ${t.sectionTitlePt}pt;
+  font-weight: 700;
+  color: ${colors.primary};
+  padding: 0 0 8px;
+  border-bottom: none;
+  line-height: 1.55;
+  position: relative;
+}
+.urdu-report h2.section::after {
+  content: '';
+  display: block;
+  width: 56px;
+  height: 3px;
+  margin-top: 6px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, ${colors.emerald}, ${colors.secondary});
+  margin-right: 0;
+}
+
+/* ── KPI cards ──────────────────────────────────────────────── */
+.urdu-report .kpi-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 0 0 18px;
+}
+.urdu-report .kpi-grid.kpi-4 {
+  grid-template-columns: 1fr 1fr;
+}
+.urdu-report .kpi-card {
+  background: ${colors.cardBg};
+  border-radius: 16px;
+  padding: 16px 18px;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+}
+.urdu-report .kpi-card .kpi-label {
+  margin: 0;
+  font-size: 10pt;
+  color: ${colors.muted};
+  font-weight: 600;
+}
+.urdu-report .kpi-card .kpi-value {
+  margin: 6px 0 0;
+  font-size: 22pt;
+  font-weight: 700;
+  color: ${colors.primary};
+  font-variant-numeric: tabular-nums;
+  line-height: 1.3;
+}
+.urdu-report .kpi-card .kpi-sub {
+  margin: 8px 0 0;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.urdu-report .kpi-card .tag {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 8.5pt;
+  font-weight: 600;
+  line-height: 1.6;
+}
+.urdu-report .tag-male {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+.urdu-report .tag-female {
+  background: #fce7f3;
+  color: #be185d;
+}
+.urdu-report .tag-info {
+  background: #e0f2fe;
+  color: #0284c7;
+}
+.urdu-report .tag-success {
+  background: #dcfce7;
+  color: #15803d;
+}
+.urdu-report .tag-warning {
+  background: #ffedd5;
+  color: #c2410c;
+}
+.urdu-report .tag-danger {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+.urdu-report .kpi-card.accent-emerald {
+  border-top: 3px solid ${colors.emerald};
+}
+.urdu-report .kpi-card.accent-blue {
+  border-top: 3px solid ${colors.secondary};
+}
+.urdu-report .kpi-card.accent-sky {
+  border-top: 3px solid ${colors.info};
+}
+.urdu-report .kpi-card.accent-navy {
+  border-top: 3px solid ${colors.primary};
+}
+
+/* ── Activity progress cards ────────────────────────────────── */
+.urdu-report .activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0 0 20px;
+}
+.urdu-report .activity-card {
+  background: ${colors.cardBg};
+  border-radius: 16px;
+  padding: 14px 16px;
+  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.05);
+  border: 1px solid rgba(226, 232, 240, 0.85);
+}
+.urdu-report .activity-card .act-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.urdu-report .activity-card .act-title {
+  margin: 0;
+  font-size: 11.5pt;
+  font-weight: 700;
+  color: ${colors.primary};
+}
+.urdu-report .activity-card .act-pct {
+  font-size: 12pt;
+  font-weight: 700;
+  color: ${colors.secondary};
+  font-variant-numeric: tabular-nums;
+}
+.urdu-report .progress-track {
+  height: 9px;
+  background: #e2e8f0;
+  border-radius: 999px;
+  overflow: hidden;
+  margin: 0 0 10px;
+}
+.urdu-report .progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, ${colors.secondary}, ${colors.emerald});
+}
+.urdu-report .progress-fill.warn {
+  background: linear-gradient(90deg, ${colors.warning}, #f59e0b);
+}
+.urdu-report .progress-fill.danger {
+  background: linear-gradient(90deg, ${colors.attention}, #f87171);
+}
+.urdu-report .progress-fill.good {
+  background: linear-gradient(90deg, ${colors.emerald}, ${colors.success});
+}
+.urdu-report .act-breakdown {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 8px;
+}
+.urdu-report .act-stat {
+  background: #f8fafc;
+  border-radius: 10px;
+  padding: 8px 10px;
+  text-align: center;
+}
+.urdu-report .act-stat .lbl {
+  display: block;
+  font-size: 8pt;
+  color: ${colors.muted};
+  margin-bottom: 2px;
+}
+.urdu-report .act-stat .val {
+  display: block;
+  font-size: 9.5pt;
+  font-weight: 700;
+  color: ${colors.text};
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Circular progress ──────────────────────────────────────── */
+.urdu-report .ring-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 12px 0 8px;
+}
+.urdu-report .ring-card {
+  background: ${colors.cardBg};
+  border-radius: 20px;
+  padding: 22px 28px;
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.07);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  text-align: center;
+  min-width: 260px;
+}
+.urdu-report .ring {
+  position: relative;
+  width: 148px;
+  height: 148px;
+  margin: 0 auto 10px;
+}
+.urdu-report .ring svg {
+  width: 148px;
+  height: 148px;
+  transform: rotate(-90deg);
+}
+.urdu-report .ring .ring-bg {
+  fill: none;
+  stroke: #e2e8f0;
+  stroke-width: 3.2;
+}
+.urdu-report .ring .ring-fg {
+  fill: none;
+  stroke: url(#ringGrad);
+  stroke-width: 3.2;
+  stroke-linecap: round;
+}
+.urdu-report .ring .ring-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transform: none;
+}
+.urdu-report .ring .ring-pct {
+  font-size: 26pt;
+  font-weight: 700;
+  color: ${colors.primary};
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+.urdu-report .ring .ring-sub {
+  font-size: 9pt;
+  color: ${colors.muted};
+}
+
+/* ── Recommendation tiers ───────────────────────────────────── */
+.urdu-report .rec-tier {
+  background: ${colors.cardBg};
+  border-radius: 16px;
+  padding: 14px 16px;
+  margin: 0 0 12px;
+  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.05);
+  border: 1px solid rgba(226, 232, 240, 0.85);
+}
+.urdu-report .rec-tier.urgent { border-right: 4px solid ${colors.attention}; }
+.urdu-report .rec-tier.next { border-right: 4px solid ${colors.warning}; }
+.urdu-report .rec-tier.positive { border-right: 4px solid ${colors.success}; }
+.urdu-report .rec-tier h3 {
+  margin: 0 0 10px;
+  font-size: 12pt;
+  font-weight: 700;
+}
+.urdu-report .rec-tier.urgent h3 { color: ${colors.attention}; }
+.urdu-report .rec-tier.next h3 { color: ${colors.warning}; }
+.urdu-report .rec-tier.positive h3 { color: ${colors.success}; }
+.urdu-report .rec-tier ul {
+  margin: 0;
+  padding: 0 1.1em 0 0;
+  list-style: disc;
+}
+.urdu-report .rec-tier li {
+  margin: 0 0 8px;
+  line-height: 1.65;
+  font-size: 10.5pt;
+}
+
+/* ── Rank / performer cards ─────────────────────────────────── */
+.urdu-report .rank-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0 0 18px;
+}
+.urdu-report .rank-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: ${colors.cardBg};
+  border-radius: 14px;
+  padding: 12px 16px;
+  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.05);
+  border: 1px solid rgba(226, 232, 240, 0.85);
+}
+.urdu-report .rank-badge {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 12pt;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+}
+.urdu-report .rank-badge.r1 { background: linear-gradient(135deg, #ca8a04, #eab308); }
+.urdu-report .rank-badge.r2 { background: linear-gradient(135deg, #64748b, #94a3b8); }
+.urdu-report .rank-badge.r3 { background: linear-gradient(135deg, #b45309, #d97706); }
+.urdu-report .rank-badge.r4 { background: ${colors.secondary}; }
+.urdu-report .rank-badge.r5 { background: ${colors.emerald}; }
+.urdu-report .rank-body { flex: 1; min-width: 0; }
+.urdu-report .rank-body .name {
+  margin: 0;
+  font-size: 12pt;
+  font-weight: 700;
+  color: ${colors.primary};
+}
+.urdu-report .rank-body .meta {
+  margin: 4px 0 0;
+  font-size: 9pt;
+  color: ${colors.muted};
+}
+.urdu-report .rank-score {
+  flex-shrink: 0;
+  text-align: center;
+  background: #f0fdf4;
+  border-radius: 12px;
+  padding: 6px 12px;
+  min-width: 64px;
+}
+.urdu-report .rank-score .num {
+  display: block;
+  font-size: 14pt;
+  font-weight: 700;
+  color: ${colors.emerald};
+  font-variant-numeric: tabular-nums;
+}
+.urdu-report .rank-score .lbl {
+  display: block;
+  font-size: 7.5pt;
+  color: ${colors.muted};
+}
+
+.urdu-report .leader-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 0 0 12px;
+}
+.urdu-report .leader-card {
+  background: ${colors.cardBg};
+  border-radius: 14px;
+  padding: 14px 14px;
+  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.05);
+  border: 1px solid rgba(226, 232, 240, 0.85);
+  position: relative;
+  overflow: hidden;
+}
+.urdu-report .leader-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 4px;
+  background: linear-gradient(90deg, ${colors.secondary}, ${colors.emerald});
+}
+.urdu-report .leader-card .cat {
+  margin: 0;
+  font-size: 9pt;
+  color: ${colors.muted};
+  font-weight: 600;
+}
+.urdu-report .leader-card .who {
+  margin: 6px 0 0;
+  font-size: 12pt;
+  font-weight: 700;
+  color: ${colors.primary};
+}
+.urdu-report .leader-card .res {
+  margin: 4px 0 0;
+  font-size: 9.5pt;
+  color: ${colors.secondary};
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Individual rukn cards ──────────────────────────────────── */
+.urdu-report .rukn-card {
+  background: ${colors.cardBg};
+  border-radius: 14px;
+  padding: 14px 14px 12px;
+  margin: 0 0 12px;
+  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.05);
+  border: 1px solid rgba(226, 232, 240, 0.85);
+}
+.urdu-report .rukn-card .rukn-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f1f5f9;
+}
+.urdu-report .rukn-card .rukn-name {
+  margin: 0;
+  font-size: 12pt;
+  font-weight: 700;
+  color: ${colors.primary};
+}
+.urdu-report .rukn-card .chip-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+.urdu-report .mini-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.urdu-report .mini-stat {
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 6px 8px;
+  text-align: center;
+}
+.urdu-report .mini-stat .lbl {
+  display: block;
+  font-size: 7.5pt;
+  color: ${colors.muted};
+}
+.urdu-report .mini-stat .val {
+  display: block;
+  font-size: 10pt;
+  font-weight: 700;
+  color: ${colors.text};
+  font-variant-numeric: tabular-nums;
+}
+.urdu-report table.compact {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 9pt;
+  line-height: 1.5;
+  margin: 0;
+}
+.urdu-report table.compact th,
+.urdu-report table.compact td {
+  padding: 5px 6px;
+  border: none;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+.urdu-report table.compact th {
+  background: #f8fafc;
+  color: ${colors.muted};
+  font-weight: 700;
+  font-size: 8pt;
+  text-align: center;
+}
+.urdu-report table.compact td {
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.urdu-report table.compact td.label {
+  text-align: right;
+  font-weight: 600;
+}
+
+/* ── Legacy helpers (kept for other reports) ────────────────── */
 .urdu-report .banner {
   background: ${colors.banner};
   color: #fff;
@@ -80,15 +621,6 @@ html, body {
   margin: 10px 0 0;
   font-size: 11pt;
   opacity: 0.9;
-}
-.urdu-report h2.section {
-  margin: 28px 0 12px;
-  font-size: ${t.sectionTitlePt}pt;
-  font-weight: 700;
-  color: ${colors.text};
-  border-bottom: 2.5px solid ${colors.accent};
-  padding-bottom: 6px;
-  line-height: 1.6;
 }
 .urdu-report .kv {
   width: 100%;
@@ -166,12 +698,21 @@ html, body {
   line-height: ${t.lineHeight};
 }
 .urdu-report .footer-note {
-  margin-top: 28px;
-  padding-top: 12px;
-  border-top: 1px solid ${table.border};
+  margin-top: 24px;
+  padding: 14px 16px;
+  border-top: none;
+  background: ${colors.cardBg};
+  border-radius: 14px;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
   font-size: ${t.footerPt}pt;
   color: ${colors.muted};
-  line-height: 1.7;
+  line-height: 1.75;
+  text-align: center;
+}
+.urdu-report .footer-note .disclaimer {
+  margin-top: 6px;
+  color: ${colors.muted};
+  opacity: 0.9;
 }
 `.trim()
 }
@@ -185,13 +726,59 @@ async function waitForUrduFonts(root: HTMLElement): Promise<void> {
   await document.fonts.load(`400 16px "${family}"`)
   await document.fonts.load(`700 16px "${family}"`)
   await document.fonts.ready
-  // Force layout after face activation
   void root.offsetHeight
   await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
 }
 
+async function captureElement(el: HTMLElement): Promise<HTMLCanvasElement> {
+  return html2canvas(el, {
+    scale: URDU_PDF_LAYOUT.captureScale,
+    useCORS: true,
+    allowTaint: true,
+    backgroundColor: URDU_PDF_LAYOUT.colors.pageBg,
+    logging: false,
+    windowWidth: URDU_PDF_LAYOUT.page.widthCssPx,
+    onclone: (_doc, cloned) => {
+      cloned.dir = 'rtl'
+      cloned.lang = 'ur'
+    },
+  })
+}
+
+function addCanvasPage(
+  pdf: jsPDF,
+  canvas: HTMLCanvasElement,
+  isFirst: boolean,
+): void {
+  const pageWidth = URDU_PDF_LAYOUT.page.widthMm
+  const pageHeight = URDU_PDF_LAYOUT.page.heightMm
+  const imgWidth = pageWidth
+  const imgHeight = (canvas.height * imgWidth) / canvas.width
+  const pageData = canvas.toDataURL('image/jpeg', 0.92)
+
+  if (imgHeight <= pageHeight + 0.5) {
+    if (!isFirst) pdf.addPage()
+    pdf.addImage(pageData, 'JPEG', 0, 0, imgWidth, imgHeight, undefined, 'FAST')
+    return
+  }
+
+  let heightLeft = imgHeight
+  let position = 0
+  if (!isFirst) pdf.addPage()
+  pdf.addImage(pageData, 'JPEG', 0, position, imgWidth, imgHeight, undefined, 'FAST')
+  heightLeft -= pageHeight
+
+  while (heightLeft > 1) {
+    position = heightLeft - imgHeight
+    pdf.addPage()
+    pdf.addImage(pageData, 'JPEG', 0, position, imgWidth, imgHeight, undefined, 'FAST')
+    heightLeft -= pageHeight
+  }
+}
+
 /**
  * Render RTL HTML (browser-shaped Urdu) into a multi-page A4 PDF and download.
+ * When body contains `.pdf-page` sections, each is captured as its own page block.
  */
 export async function downloadUrduHtmlReportPdf(
   documentSpec: UrduHtmlReportDocument,
@@ -199,7 +786,7 @@ export async function downloadUrduHtmlReportPdf(
   const host = document.createElement('div')
   host.setAttribute('data-urdu-pdf-host', 'true')
   host.style.cssText =
-    'position:fixed;left:-10000px;top:0;width:794px;background:#fff;z-index:-1;opacity:1;'
+    'position:fixed;left:-10000px;top:0;width:794px;background:#f1f5f9;z-index:-1;opacity:1;'
 
   const style = document.createElement('style')
   style.textContent = urduReportShellCss()
@@ -217,19 +804,6 @@ export async function downloadUrduHtmlReportPdf(
   try {
     await waitForUrduFonts(article)
 
-    const canvas = await html2canvas(article, {
-      scale: URDU_PDF_LAYOUT.captureScale,
-      useCORS: true,
-      allowTaint: true,
-      backgroundColor: '#ffffff',
-      logging: false,
-      windowWidth: URDU_PDF_LAYOUT.page.widthCssPx,
-      onclone: (_doc, cloned) => {
-        cloned.dir = 'rtl'
-        cloned.lang = 'ur'
-      },
-    })
-
     const pdf = new jsPDF({
       orientation: URDU_PDF_LAYOUT.page.orientation,
       unit: 'mm',
@@ -237,23 +811,15 @@ export async function downloadUrduHtmlReportPdf(
       compress: true,
     })
 
-    const pageWidth = URDU_PDF_LAYOUT.page.widthMm
-    const pageHeight = URDU_PDF_LAYOUT.page.heightMm
-    const imgWidth = pageWidth
-    const imgHeight = (canvas.height * imgWidth) / canvas.width
-
-    let heightLeft = imgHeight
-    let position = 0
-    const pageData = canvas.toDataURL('image/jpeg', 0.92)
-
-    pdf.addImage(pageData, 'JPEG', 0, position, imgWidth, imgHeight, undefined, 'FAST')
-    heightLeft -= pageHeight
-
-    while (heightLeft > 1) {
-      position = heightLeft - imgHeight
-      pdf.addPage()
-      pdf.addImage(pageData, 'JPEG', 0, position, imgWidth, imgHeight, undefined, 'FAST')
-      heightLeft -= pageHeight
+    const pages = Array.from(article.querySelectorAll<HTMLElement>('.pdf-page'))
+    if (pages.length > 0) {
+      for (let i = 0; i < pages.length; i++) {
+        const canvas = await captureElement(pages[i]!)
+        addCanvasPage(pdf, canvas, i === 0)
+      }
+    } else {
+      const canvas = await captureElement(article)
+      addCanvasPage(pdf, canvas, true)
     }
 
     const safe =

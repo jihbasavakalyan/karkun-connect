@@ -44,8 +44,13 @@ for (const tpl of ARKAAN_DAILY_REPORT_TEMPLATES) {
 
 // 4) Campaign report Urdu labels
 assert(URDU_REPORT.kpi.connectedKarkuns === 'منسلک کارکنان', 'report KPI terminology')
-assert(URDU_REPORT.sections.executive === 'خلاصۂ ذمہ داریاں', 'report executive heading')
+assert(URDU_REPORT.sections.executive === 'کارکردگی کا خلاصہ', 'report executive heading')
+assert(URDU_REPORT.sections.recommendations === 'اہم مشاہدات اور آئندہ اقدامات', 'report insights heading')
+assert(URDU_REPORT.sections.topPerformers === 'نمایاں کارکردگی', 'report outstanding heading')
+assert(URDU_REPORT.sections.critical === 'فوری توجہ درکار', 'report attention heading')
 assert(URDU_REPORT.sections.pending === 'امور زیر التواء', 'report pending heading')
+assert(!URDU_REPORT.subtitle.includes('سرکاری'), 'report must not use سرکاری')
+assert(URDU_REPORT.documentTitle === 'کارکن کنیکٹ جائزہ رپورٹ', 'executive report title')
 
 // 5) Personalized builder + editorial approval
 const sample = buildContextAwareUrduMessage({

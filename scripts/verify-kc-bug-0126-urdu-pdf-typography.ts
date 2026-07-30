@@ -1,5 +1,5 @@
 /**
- * KC-BUG-0126 — Urdu PDF typography contracts.
+ * KC-BUG-0126 / KC-029 — Urdu PDF typography contracts.
  */
 import { existsSync, readFileSync, statSync } from 'node:fs'
 import { resolve } from 'node:path'
@@ -20,15 +20,18 @@ assert(htmlEngine.includes('html2canvas'), 'HTML→PDF engine uses html2canvas')
 assert(htmlEngine.includes('dir = \'rtl\'') || htmlEngine.includes('dir="rtl"'), 'RTL dir set')
 assert(htmlEngine.includes('URDU_PDF_FONT'), 'canonical font family wired')
 assert(htmlEngine.includes('urduPdfFontFaceCss') || htmlEngine.includes('urduReportShellCss'), 'font-face CSS included')
+assert(htmlEngine.includes('pdf-page'), 'paged PDF capture supported')
 
 const report = readFileSync(resolve(root, 'src/lib/reporting/campaignReportPdf.ts'), 'utf8')
 assert(report.includes('downloadUrduHtmlReportPdf'), 'campaign report uses HTML OT pipeline')
 assert(!report.includes('NotoNaskhArabic'), 'campaign report no longer embeds Naskh for body')
-assert(report.includes('URDU_PDF_FONT'), 'campaign report references shared typography')
+assert(report.includes('exec-header'), 'executive report header present')
+assert(report.includes('topOverallPerformers'), 'weighted top performers wired')
 
 assert(URDU_PDF_LAYOUT.captureScale >= 2, 'capture scale must be print-quality')
 assert(URDU_PDF_LAYOUT.type.tablePt >= 11, 'table type must be readable without zoom')
 assert(URDU_PDF_LAYOUT.table.cellPaddingY >= 8, 'table cell padding elevated')
+assert(URDU_PDF_LAYOUT.colors.primary === '#0b1f3a', 'deep navy primary')
 
 console.log(
   JSON.stringify(
@@ -41,6 +44,7 @@ console.log(
         'Noto Nastaliq Urdu embedded asset present',
         'Shared typography tokens',
         'Campaign report uses HTML OT pipeline',
+        'Executive layout + paged capture',
         'RTL + print-scale capture',
       ],
     },
