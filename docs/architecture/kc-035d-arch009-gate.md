@@ -59,6 +59,20 @@ No HIGH. **GO.**
 
 ---
 
-## Phase 4–6
+## Phase 4 — Regression audit
 
-Filled after implementation / production.
+Workflows / dialogue moves tested:
+- Move classifier (cancel, correction markers)
+- Cancel / resume / restart
+- Interruption (pending confirm → new operational intent)
+- Context switch + correction repair
+- Repeat / help / multi-turn clarification routing
+- KC-035A / B / C verify scripts green
+
+## Phase 5 — Certification
+
+**READY** for production deploy (dialogue orchestration only).
+
+## Phase 6 — Post-deploy
+
+Filled after Vercel READY + production smoke.

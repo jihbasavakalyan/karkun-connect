@@ -76,6 +76,7 @@
     "verify:kc-035a": "npx vite-node scripts/verify-kc-035a-conversation-engine.ts",
     "verify:kc-035b": "npx vite-node scripts/verify-kc-035b-intent-engine.ts",
     "verify:kc-035c": "npx vite-node scripts/verify-kc-035c-workflow-engine.ts",
+    "verify:kc-035d": "npx vite-node scripts/verify-kc-035d-dialogue-manager.ts",
     "capture:phase3": "npx vite-node scripts/capture-phase3-screenshots.ts",
     "preview": "vite preview",
     "migrate:generate": "node scripts/generate-production-seeds.mjs",

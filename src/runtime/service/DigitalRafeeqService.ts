@@ -21,6 +21,10 @@ import {
   type WorkflowExecutionResult,
 } from '@/workflows'
 import {
+  getDialogueEngine,
+  type DialogueTurnResult,
+} from '@/dialogue'
+import {
   getRuntimeBootstrapResult,
   initializeRuntime,
   type InitializeRuntimeOptions,
@@ -357,6 +361,19 @@ export class DigitalRafeeqService {
     confirmPending?: boolean
   }): Promise<WorkflowExecutionResult> {
     return getWorkflowEngine().executor.run(input)
+  }
+
+  /**
+   * KC-035D — Process one dialogue turn (interrupt / switch / repair / workflow).
+   * Orchestrates Conversation + Intent + Workflow; no business rules.
+   */
+  async processDialogueTurn(input: {
+    sessionId: string
+    utterance: string
+    actor: WorkflowActor
+    recognition?: IntentRecognitionResult
+  }): Promise<DialogueTurnResult> {
+    return getDialogueEngine().manager.turn(input)
   }
 
   /**

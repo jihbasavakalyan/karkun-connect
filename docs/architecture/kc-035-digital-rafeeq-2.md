@@ -172,7 +172,7 @@ Public façade methods live on `DigitalRafeeqService` without embedding domain r
 | **KC-035A** | Conversation Engine (Remember) | ✅ Production Complete |
 | **KC-035B** | Natural Urdu Intent Engine (Understand) | ✅ Production Complete |
 | **KC-035C** | Operational Workflow Engine (Execute) | ✅ Production Complete |
-| **KC-035D** | Dialogue Manager (Manage) | In progress / see gate |
+| **KC-035D** | Dialogue Manager (Manage) | ✅ See [gate](./kc-035d-arch009-gate.md) |
 | **KC-035E** | Operational Recommendation Engine (Advise) | Pending |
 | **KC-035F** | Voice Navigation & Voice Operation | Pending |
 | **KC-035G** | Secretary Personality & Conversation Polish | Pending |
