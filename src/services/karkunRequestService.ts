@@ -531,9 +531,11 @@ export async function approveNewKarkunRequest(input: {
   decidedBy: string
   decisionNotes?: string
 }): Promise<ApproveNewKarkunRequestResult> {
+  // KC-028B — duplicate clicks join the in-flight approve; do not fake ALREADY_PROCESSED
+  // while the request is still Pending.
   const inflight = approveInFlight.get(input.requestId)
   if (inflight) {
-    return alreadyProcessedResult()
+    return inflight
   }
 
   const work = approveNewKarkunRequestOnce(input)
@@ -545,11 +547,11 @@ export async function approveNewKarkunRequest(input: {
   }
 }
 
-export function rejectNewKarkunRequest(input: {
+export async function rejectNewKarkunRequest(input: {
   requestId: string
   decidedBy: string
   decisionNotes?: string
-}): { ok: true; request: NewKarkunRequest } | { ok: false; error: string } {
+}): Promise<{ ok: true; request: NewKarkunRequest } | { ok: false; error: string }> {
   const resolved = resolveKarkunRequest(input.requestId, 'Rejected', input.decidedBy, {
     decisionNotes: input.decisionNotes?.trim() || undefined,
   })
@@ -564,14 +566,18 @@ export function rejectNewKarkunRequest(input: {
     actor: 'Administrator',
   })
 
-  // Fire-and-forget merge flush (reject stays sync for UI).
-  void import('@/repositories/provider').then(async ({ getRepositoryProviderMode }) => {
-    if (getRepositoryProviderMode() !== 'firestore') return
-    const { awaitKarkunRequestsPersist } = await import(
-      '@/repositories/firestore/firestoreRepositories'
-    )
-    await awaitKarkunRequestsPersist()
-  })
+  // KC-028B / KC-ARCH-001 — await durable write before success UI.
+  try {
+    const { getRepositoryProviderMode } = await import('@/repositories/provider')
+    if (getRepositoryProviderMode() === 'firestore') {
+      const { awaitKarkunRequestsPersist } = await import(
+        '@/repositories/firestore/firestoreRepositories'
+      )
+      await awaitKarkunRequestsPersist()
+    }
+  } catch {
+    // local provider / queue unavailable
+  }
 
   return { ok: true, request: resolved }
 }

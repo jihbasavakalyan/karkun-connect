@@ -1,6 +1,7 @@
 /**
  * Pending New Karkun requests queue (KC-018 / KC-0068 / KC-0072C / KC-0107 / KC-0115).
  * Canonical owner: Karkun module. Dashboard only launches here.
+ * KC-028B — unified write lifecycle for approve / reject.
  */
 
 import { useEffect, useState } from 'react'
@@ -8,6 +9,7 @@ import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import { FORM_INPUT_CLASS, FORM_LABEL_CLASS } from '@/components/ui/formStyles'
 import { useAuth } from '@/hooks/useAuth'
+import { useWriteLifecycle } from '@/hooks/useWriteLifecycle'
 import { ExistingPersonFoundPanel } from '@/components/relationship/ExistingPersonFoundPanel'
 import {
   approvePeopleIntakeRequest,
@@ -25,8 +27,7 @@ export function PendingKarkunRequestQueue() {
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [duplicate, setDuplicate] = useState<MobileDuplicateDetails | null>(null)
-  /** KC-0072C — single-flight: at most one approve in progress per request id. */
-  const [approvingIds, setApprovingIds] = useState<Set<string>>(() => new Set())
+  const { busy, busyKey, progressMessage, run } = useWriteLifecycle()
 
   useEffect(() => {
     return subscribeToKarkunRequestStore(() => setTick((value) => value + 1))
@@ -44,64 +45,85 @@ export function PendingKarkunRequestQueue() {
   const pending = getPendingKarkunRequests()
   const decidedBy = user?.displayName ?? user?.uid ?? 'Administrator'
 
-  const handleApprove = (request: NewKarkunRequest) => {
-    if (approvingIds.has(request.id)) {
-      return
-    }
+  const refreshUi = () => {
+    setTick((value) => value + 1)
+  }
 
-    setApprovingIds((current) => {
-      const next = new Set(current)
-      next.add(request.id)
-      return next
-    })
+  const handleApprove = (request: NewKarkunRequest) => {
     setError('')
     setNotice('')
     setDuplicate(null)
 
-    void (async () => {
-      try {
+    void run({
+      key: `pending-queue:approve:${request.id}`,
+      queueLabels: ['settings.karkunRequests'],
+      work: async () => {
         const result = await approvePeopleIntakeRequest({
           requestId: request.id,
           decidedBy,
           decisionNotes: notesById[request.id],
         })
         if (!result.ok) {
-          setError(result.error)
-          setDuplicate(result.duplicate ?? null)
-          setNotice('')
-          return
+          throw Object.assign(new Error(result.error), {
+            code: result.code ?? 'unknown',
+            duplicate: result.duplicate,
+          })
         }
-        setError('')
-        setDuplicate(null)
-        setNotice(`Approved ${request.fullName} and connected to ${request.requestingRuknName}.`)
-      } finally {
-        setApprovingIds((current) => {
-          const next = new Set(current)
-          next.delete(request.id)
-          return next
-        })
+        return result
+      },
+      refreshCounters: refreshUi,
+      refreshUi,
+    }).then((lifecycle) => {
+      if (!lifecycle) return
+      if (!lifecycle.ok) {
+        setError(lifecycle.message)
+        const dup = (lifecycle.error as { duplicate?: MobileDuplicateDetails } | undefined)
+          ?.duplicate
+        setDuplicate(dup ?? null)
+        setNotice('')
+        refreshUi()
+        return
       }
-    })()
+      setError('')
+      setDuplicate(null)
+      setNotice(`Approved ${request.fullName} and connected to ${request.requestingRuknName}.`)
+    })
   }
 
   const handleReject = (request: NewKarkunRequest) => {
-    if (approvingIds.has(request.id)) {
-      return
-    }
-    const result = rejectNewKarkunRequest({
-      requestId: request.id,
-      decidedBy,
-      decisionNotes: notesById[request.id],
-    })
-    if (!result.ok) {
-      setError(result.error)
-      setDuplicate(null)
-      setNotice('')
-      return
-    }
     setError('')
+    setNotice('')
     setDuplicate(null)
-    setNotice(`Rejected request for ${request.fullName}.`)
+
+    void run({
+      key: `pending-queue:reject:${request.id}`,
+      queueLabels: ['settings.karkunRequests'],
+      work: async () => {
+        const result = await rejectNewKarkunRequest({
+          requestId: request.id,
+          decidedBy,
+          decisionNotes: notesById[request.id],
+        })
+        if (!result.ok) {
+          throw Object.assign(new Error(result.error), { code: 'unknown' })
+        }
+        return result
+      },
+      refreshCounters: refreshUi,
+      refreshUi,
+    }).then((lifecycle) => {
+      if (!lifecycle) return
+      if (!lifecycle.ok) {
+        setError(lifecycle.message)
+        setDuplicate(null)
+        setNotice('')
+        refreshUi()
+        return
+      }
+      setError('')
+      setDuplicate(null)
+      setNotice(`Rejected request for ${request.fullName}.`)
+    })
   }
 
   if (pending.length === 0) {
@@ -148,10 +170,17 @@ export function PendingKarkunRequestQueue() {
           {notice}
         </div>
       ) : null}
+      {busy && progressMessage ? (
+        <p className="mb-3 text-sm text-secondary" role="status" aria-live="polite">
+          {progressMessage}
+        </p>
+      ) : null}
 
       <ul className="space-y-3">
         {pending.map((request) => {
-          const isApproving = approvingIds.has(request.id)
+          const isBusy =
+            busyKey === `pending-queue:approve:${request.id}` ||
+            busyKey === `pending-queue:reject:${request.id}`
           return (
             <li key={request.id} className="rounded-2xl border border-border bg-surface px-4 py-3">
               <div className="flex flex-wrap items-start justify-between gap-2">
@@ -169,7 +198,7 @@ export function PendingKarkunRequestQueue() {
                   ) : null}
                 </div>
                 <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800">
-                  {isApproving ? 'Approving…' : 'Pending Approval'}
+                  {isBusy ? progressMessage || '…' : 'Pending Approval'}
                 </span>
               </div>
 
@@ -180,7 +209,7 @@ export function PendingKarkunRequestQueue() {
                 id={`kreq-notes-${request.id}`}
                 className={FORM_INPUT_CLASS}
                 value={notesById[request.id] ?? ''}
-                disabled={isApproving}
+                disabled={busy}
                 onChange={(event) =>
                   setNotesById((current) => ({ ...current, [request.id]: event.target.value }))
                 }
@@ -189,18 +218,18 @@ export function PendingKarkunRequestQueue() {
               <div className="mt-3 flex flex-wrap gap-2">
                 <PrimaryButton
                   type="button"
-                  disabled={isApproving}
-                  aria-busy={isApproving}
+                  disabled={busy}
+                  aria-busy={isBusy}
                   onClick={() => handleApprove(request)}
                 >
-                  {isApproving ? 'Approving...' : 'Approve'}
+                  {isBusy ? progressMessage || '…' : 'Approve'}
                 </PrimaryButton>
                 <SecondaryButton
                   type="button"
-                  disabled={isApproving}
+                  disabled={busy}
                   onClick={() => handleReject(request)}
                 >
-                  Reject
+                  {isBusy ? progressMessage || '…' : 'Reject'}
                 </SecondaryButton>
               </div>
             </li>

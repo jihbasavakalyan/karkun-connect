@@ -1,5 +1,6 @@
 /**
  * KC-0123 — Admin Unified Inbox (people intake + Rukn communications).
+ * KC-028B — unified write lifecycle for approve / reject.
  */
 
 import { useEffect, useMemo, useState } from 'react'
@@ -9,6 +10,7 @@ import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import { FORM_INPUT_CLASS, FORM_LABEL_CLASS } from '@/components/ui/formStyles'
 import { useAuth } from '@/hooks/useAuth'
+import { useWriteLifecycle } from '@/hooks/useWriteLifecycle'
 import {
   buildUnifiedInbox,
   countUnreadInboxItems,
@@ -16,6 +18,7 @@ import {
   type InboxItem,
   type InboxItemKind,
 } from '@/lib/peopleLifecycle'
+import { classifyWriteError } from '@/lib/reliability/writeLifecycle'
 import {
   approvePeopleIntakeRequest,
   rejectNewKarkunRequest,
@@ -51,7 +54,7 @@ export function AdminInboxPage() {
   const query = queryDraft ?? (searchParams.get('query') ?? '')
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
-  const [busyId, setBusyId] = useState<string | null>(null)
+  const { busy, busyKey, progressMessage, run } = useWriteLifecycle()
 
   useEffect(() => subscribeToKarkunRequestStore(() => setTick((v) => v + 1)), [])
 
@@ -67,40 +70,73 @@ export function AdminInboxPage() {
 
   const decidedBy = user?.displayName ?? user?.uid ?? 'Administrator'
 
+  const refreshAfterDecision = () => {
+    setTick((v) => v + 1)
+  }
+
   const handleApprove = (item: InboxItem) => {
     const request = item.rawRequest
     if (!request) return
-    setBusyId(item.id)
     setError('')
     setNotice('')
-    void (async () => {
-      try {
+    void run({
+      key: `inbox:approve:${request.id}`,
+      queueLabels: ['settings.karkunRequests'],
+      work: async () => {
         const result = await approvePeopleIntakeRequest({
           requestId: request.id,
           decidedBy,
         })
         if (!result.ok) {
-          setError(result.error)
-          return
+          throw Object.assign(new Error(result.error), {
+            code: result.code ?? 'unknown',
+          })
         }
-        setNotice(`Approved ${request.fullName}.`)
-        setTick((v) => v + 1)
-      } finally {
-        setBusyId(null)
+        return result
+      },
+      refreshCounters: refreshAfterDecision,
+      refreshUi: refreshAfterDecision,
+    }).then((lifecycle) => {
+      if (!lifecycle) return
+      if (!lifecycle.ok) {
+        setError(lifecycle.message)
+        refreshAfterDecision()
+        return
       }
-    })()
+      setNotice(`Approved ${request.fullName}.`)
+    })
   }
 
   const handleReject = (item: InboxItem) => {
     const request = item.rawRequest
     if (!request) return
-    const result = rejectNewKarkunRequest({ requestId: request.id, decidedBy })
-    if (!result.ok) {
-      setError(result.error)
-      return
-    }
-    setNotice(`Rejected ${request.fullName}.`)
-    setTick((v) => v + 1)
+    setError('')
+    setNotice('')
+    void run({
+      key: `inbox:reject:${request.id}`,
+      queueLabels: ['settings.karkunRequests'],
+      work: async () => {
+        const result = await rejectNewKarkunRequest({
+          requestId: request.id,
+          decidedBy,
+        })
+        if (!result.ok) {
+          throw Object.assign(new Error(result.error), { code: 'unknown' })
+        }
+        return result
+      },
+      refreshCounters: refreshAfterDecision,
+      refreshUi: refreshAfterDecision,
+    }).then((lifecycle) => {
+      if (!lifecycle) return
+      if (!lifecycle.ok) {
+        const classified = classifyWriteError(lifecycle.error ?? lifecycle.message)
+        setError(classified.message)
+        refreshAfterDecision()
+        return
+      }
+      setNotice(`Rejected ${request.fullName}.`)
+    })
   }
 
   return (
@@ -173,6 +209,11 @@ export function AdminInboxPage() {
           {notice}
         </div>
       ) : null}
+      {busy && progressMessage ? (
+        <p className="mb-3 text-sm text-secondary" role="status" aria-live="polite">
+          {progressMessage}
+        </p>
+      ) : null}
 
       {items.length === 0 ? (
         <p className="rounded-xl border border-border bg-surface px-4 py-6 text-sm text-secondary">
@@ -181,7 +222,9 @@ export function AdminInboxPage() {
       ) : (
         <ul className="space-y-3">
           {items.map((item) => {
-            const busy = busyId === item.id
+            const itemBusy =
+              busyKey === `inbox:approve:${item.rawRequest?.id ?? ''}` ||
+              busyKey === `inbox:reject:${item.rawRequest?.id ?? ''}`
             const canDecide = Boolean(item.rawRequest && item.folder === 'pending')
             return (
               <li
@@ -229,14 +272,14 @@ export function AdminInboxPage() {
                         disabled={busy}
                         onClick={() => handleApprove(item)}
                       >
-                        {busy ? 'Approving…' : 'Approve'}
+                        {itemBusy ? progressMessage || '…' : 'Approve'}
                       </PrimaryButton>
                       <SecondaryButton
                         type="button"
                         disabled={busy}
                         onClick={() => handleReject(item)}
                       >
-                        Reject
+                        {itemBusy ? progressMessage || '…' : 'Reject'}
                       </SecondaryButton>
                     </>
                   ) : null}
