@@ -56,7 +56,6 @@ export const URDU_REPORT = {
     totalMuttafiqeen: 'کل متفقین',
     maleMuttafiqeen: 'مرد متفقین',
     femaleMuttafiqeen: 'خواتین متفقین',
-    peopleCovered: 'کل افرادِ زیرِ کوریج',
     connectedKarkuns: 'منسلک کارکنان',
     connectionPct: 'منسلک ہونے کی شرح',
     visits: 'ملاقاتیں',
@@ -123,6 +122,8 @@ export const URDU_REPORT = {
     noPending: 'کسی رکن کے پاس امور زیر التواء نہیں۔',
     noCritical: 'فوری توجہ کے مستحق کوئی رکن نہیں ملا۔',
     noRecommendations: 'اس زمرے میں کوئی مشاہدہ نہیں۔',
+    noCategoryLeader: 'فی الحال اس شعبہ میں کوئی نمایاں کارکردگی موجود نہیں۔',
+    noTopPerformers: 'فی الحال کوئی نمایاں کارکردگی موجود نہیں۔',
   },
 
   status: {

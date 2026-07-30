@@ -51,6 +51,14 @@ assert(URDU_REPORT.sections.critical === 'فوری توجہ درکار', 'report
 assert(URDU_REPORT.sections.pending === 'امور زیر التواء', 'report pending heading')
 assert(!URDU_REPORT.subtitle.includes('سرکاری'), 'report must not use سرکاری')
 assert(URDU_REPORT.documentTitle === 'کارکن کنیکٹ جائزہ رپورٹ', 'executive report title')
+assert(
+  !JSON.stringify(URDU_REPORT).includes('کوریج') && !JSON.stringify(URDU_REPORT).includes('Coverage'),
+  'report must not use coverage terminology',
+)
+assert(
+  URDU_REPORT.empty.noCategoryLeader.includes('کوئی نمایاں کارکردگی موجود نہیں'),
+  'zero-performance category empty copy',
+)
 
 // 5) Personalized builder + editorial approval
 const sample = buildContextAwareUrduMessage({

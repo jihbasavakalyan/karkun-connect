@@ -99,9 +99,11 @@ export type CampaignReportRankedPerformer = {
 export type CampaignReportCategoryLeader = {
   categoryKey: string
   category: string
+  /** Empty when no Rukn has metric value > 0 and completion > 0. */
   ruknName: string
   valueLabel: string
   pct: number
+  hasLeader: boolean
 }
 
 export type CampaignReportRecommendationGroups = {
@@ -135,7 +137,6 @@ export type CampaignReportModel = {
     totalMuttafiqeen: number
     maleMuttafiqeen: number
     femaleMuttafiqeen: number
-    peopleCovered: number
     connected: CampaignReportMetricPair
     connectionPct: number
     visits: CampaignReportMetricPair
@@ -251,7 +252,7 @@ function buildRecommendationGroups(input: {
   }
   if (executive.connectionPct < 50) {
     urgent.push(
-      `رابطوں کی کوریج صرف ${executive.connectionPct}٪ ہے — باقی ${executive.connected.pending} رابطے فوری ترجیح دیں۔`,
+      `منسلک ہونے کی شرح صرف ${executive.connectionPct}٪ ہے — رابطہ باقی ${executive.connected.pending} فوری ترجیح دیں۔`,
     )
   }
   if (critical.length > 0) {
@@ -307,7 +308,7 @@ function buildRecommendationGroups(input: {
       `${topOverall[0].ruknName} مجموعی کارکردگی اسکور ${topOverall[0].performanceScore} کے ساتھ نمایاں ہیں۔`,
     )
   }
-  for (const leader of categoryLeaders.slice(0, 3)) {
+  for (const leader of categoryLeaders.filter((item) => item.hasLeader).slice(0, 3)) {
     positive.push(`${leader.category}: ${leader.ruknName} (${leader.valueLabel})۔`)
   }
   if (executive.connected.pct >= 80) {
@@ -493,9 +494,11 @@ export function buildCampaignReportModel(input?: {
     category: string,
     score: (row: CampaignReportRuknRow) => number,
     label: (row: CampaignReportRuknRow) => string,
+    completed: (row: CampaignReportRuknRow) => number,
   ): CampaignReportTopPerformer | null => {
-    if (withAssigned.length === 0) return null
-    const ranked = [...withAssigned].sort(
+    const eligible = withAssigned.filter((row) => score(row) > 0 && completed(row) > 0)
+    if (eligible.length === 0) return null
+    const ranked = [...eligible].sort(
       (a, b) => score(b) - score(a) || a.ruknName.localeCompare(b.ruknName),
     )
     const winner = ranked[0]
@@ -508,12 +511,14 @@ export function buildCampaignReportModel(input?: {
     }
   }
 
-  const rankedByScore = [...withAssigned].sort(
-    (a, b) =>
-      b.performanceScore - a.performanceScore ||
-      b.overallPct - a.overallPct ||
-      a.ruknName.localeCompare(b.ruknName),
-  )
+  const rankedByScore = [...withAssigned]
+    .filter((row) => row.performanceScore > 0)
+    .sort(
+      (a, b) =>
+        b.performanceScore - a.performanceScore ||
+        b.overallPct - a.overallPct ||
+        a.ruknName.localeCompare(b.ruknName),
+    )
 
   const topOverallPerformers: CampaignReportRankedPerformer[] = rankedByScore
     .slice(0, 5)
@@ -536,19 +541,30 @@ export function buildCampaignReportModel(input?: {
     category: string,
     score: (row: CampaignReportRuknRow) => number,
     label: (row: CampaignReportRuknRow) => string,
-  ): CampaignReportCategoryLeader | null => {
-    if (withAssigned.length === 0) return null
-    const ranked = [...withAssigned].sort(
+    completed: (row: CampaignReportRuknRow) => number,
+  ): CampaignReportCategoryLeader => {
+    const eligible = withAssigned.filter((row) => score(row) > 0 && completed(row) > 0)
+    if (eligible.length === 0) {
+      return {
+        categoryKey,
+        category,
+        ruknName: '',
+        valueLabel: URDU_REPORT.empty.noCategoryLeader,
+        pct: 0,
+        hasLeader: false,
+      }
+    }
+    const ranked = [...eligible].sort(
       (a, b) => score(b) - score(a) || a.ruknName.localeCompare(b.ruknName),
     )
-    const winner = ranked[0]
-    if (!winner) return null
+    const winner = ranked[0]!
     return {
       categoryKey,
       category,
       ruknName: winner.ruknName,
       valueLabel: label(winner),
       pct: score(winner),
+      hasLeader: true,
     }
   }
 
@@ -563,50 +579,87 @@ export function buildCampaignReportModel(input?: {
     return Math.max(0, activityAvg - row.connections.pct) + Math.round(activityAvg * 0.25)
   }
 
+  const mostImprovedCompleted = (row: CampaignReportRuknRow): number =>
+    row.visits.completed +
+    row.appRegistration.completed +
+    row.weeklyIjtema.completed +
+    row.baitulMaal.completed
+
   const categoryLeaders = [
     pickCategoryLeader(
       'visits',
       URDU_REPORT.topCategories.visits,
       (row) => row.visits.pct,
       (row) => formatPair(row.visits),
+      (row) => row.visits.completed,
     ),
     pickCategoryLeader(
       'appRegistration',
       URDU_REPORT.topCategories.appRegistration,
       (row) => row.appRegistration.pct,
       (row) => formatPair(row.appRegistration),
+      (row) => row.appRegistration.completed,
     ),
     pickCategoryLeader(
       'weeklyIjtema',
       URDU_REPORT.topCategories.weeklyIjtema,
       (row) => row.weeklyIjtema.pct,
       (row) => formatPair(row.weeklyIjtema),
+      (row) => row.weeklyIjtema.completed,
     ),
     pickCategoryLeader(
       'baitulMaal',
       URDU_REPORT.topCategories.baitulMaal,
       (row) => row.baitulMaal.pct,
       (row) => formatPair(row.baitulMaal),
+      (row) => row.baitulMaal.completed,
     ),
     pickCategoryLeader(
       'mostImproved',
       URDU_REPORT.topCategories.mostImproved,
       mostImprovedScore,
       (row) => `${row.performanceScore} اسکور · ${row.overallPct}٪`,
+      mostImprovedCompleted,
     ),
-  ].filter((item): item is CampaignReportCategoryLeader => Boolean(item))
+  ]
 
   const topPerformers = [
-    pickTop(URDU_REPORT.topCategories.connections, (row) => row.connections.pct, (row) => formatPair(row.connections)),
-    pickTop(URDU_REPORT.topCategories.visits, (row) => row.visits.pct, (row) => formatPair(row.visits)),
+    pickTop(
+      URDU_REPORT.topCategories.connections,
+      (row) => row.connections.pct,
+      (row) => formatPair(row.connections),
+      (row) => row.connections.completed,
+    ),
+    pickTop(
+      URDU_REPORT.topCategories.visits,
+      (row) => row.visits.pct,
+      (row) => formatPair(row.visits),
+      (row) => row.visits.completed,
+    ),
     pickTop(
       URDU_REPORT.topCategories.appRegistration,
       (row) => row.appRegistration.pct,
       (row) => formatPair(row.appRegistration),
+      (row) => row.appRegistration.completed,
     ),
-    pickTop(URDU_REPORT.topCategories.weeklyIjtema, (row) => row.weeklyIjtema.pct, (row) => formatPair(row.weeklyIjtema)),
-    pickTop(URDU_REPORT.topCategories.baitulMaal, (row) => row.baitulMaal.pct, (row) => formatPair(row.baitulMaal)),
-    pickTop(URDU_REPORT.topCategories.overall, (row) => row.performanceScore, (row) => `${row.performanceScore}`),
+    pickTop(
+      URDU_REPORT.topCategories.weeklyIjtema,
+      (row) => row.weeklyIjtema.pct,
+      (row) => formatPair(row.weeklyIjtema),
+      (row) => row.weeklyIjtema.completed,
+    ),
+    pickTop(
+      URDU_REPORT.topCategories.baitulMaal,
+      (row) => row.baitulMaal.pct,
+      (row) => formatPair(row.baitulMaal),
+      (row) => row.baitulMaal.completed,
+    ),
+    pickTop(
+      URDU_REPORT.topCategories.overall,
+      (row) => row.performanceScore,
+      (row) => `${row.performanceScore}`,
+      (row) => row.performanceScore,
+    ),
   ].filter((item): item is CampaignReportTopPerformer => Boolean(item))
 
   const criticalRukns = ruknRows
@@ -623,8 +676,6 @@ export function buildCampaignReportModel(input?: {
   const totalMuttafiqeen = people.totalMuttafiqeen ?? 0
   const maleMuttafiqeen = people.maleMuttafiqeen ?? 0
   const femaleMuttafiqeen = people.femaleMuttafiqeen ?? 0
-  const peopleCovered =
-    activeRukns.length + maleKarkuns + femaleKarkuns + totalMuttafiqeen
 
   const executive: CampaignReportModel['executive'] = {
     totalRukns: activeRukns.length,
@@ -636,7 +687,6 @@ export function buildCampaignReportModel(input?: {
     totalMuttafiqeen,
     maleMuttafiqeen,
     femaleMuttafiqeen,
-    peopleCovered,
     connected: connectedMetric,
     connectionPct: connections.progressPct,
     visits: visitsMetric,

@@ -1,5 +1,5 @@
 /**
- * KC-0114 / KC-BUG-0126 / KC-029 — Executive Urdu Campaign Report PDF.
+ * KC-0114 / KC-BUG-0126 / KC-029 / KC-029.1 — Executive Urdu Campaign Report PDF.
  *
  * Typography: Noto Nastaliq Urdu via browser OpenType shaping (HTML → PDF).
  * Presentation redesign only — reuses CampaignReportModel data.
@@ -78,7 +78,7 @@ function activityCard(item: CampaignReportModel['activityProgress'][number]): st
     <div class="act-stat">
       <span class="lbl">${UrduHtml.text(lbl)}</span>
       <span class="val">${UrduHtml.text(metricLabel(m))}</span>
-      <span class="lbl">${m.total > 0 ? `${m.pct}٪ · ${m.pending} ${URDU_REPORT.columns.pending}` : '—'}</span>
+      <span class="lbl">${m.total > 0 ? `${m.pct}٪` : '—'}</span>
     </div>
   `
   return `
@@ -90,11 +90,10 @@ function activityCard(item: CampaignReportModel['activityProgress'][number]): st
       <div class="progress-track">
         <div class="progress-fill ${tone}" style="width:${item.overall.pct}%"></div>
       </div>
-      <div class="act-breakdown">
+      <div class="act-breakdown act-breakdown-3">
         ${cell(URDU_REPORT.columns.overallLabel, item.overall)}
         ${cell(URDU_REPORT.columns.male, item.male)}
         ${cell(URDU_REPORT.columns.female, item.female)}
-        ${cell(URDU_REPORT.columns.muttafiqeen, item.muttafiqeen)}
       </div>
     </div>
   `
@@ -129,34 +128,18 @@ function rankBadgeClass(rank: number): string {
   return 'r5'
 }
 
+/** Compact executive Rukn card — no repeated Male/Female breakdowns. */
 function ruknCard(row: CampaignReportRuknRow): string {
   const tone = progressTone(row.overallPct)
   return `
-    <div class="rukn-card">
+    <div class="rukn-card compact">
       <div class="rukn-head">
-        <div>
-          <p class="rukn-name">${UrduHtml.text(row.ruknName)}</p>
-          <div class="chip-row">
-            <span class="tag ${row.gender === 'Female' ? 'tag-female' : 'tag-male'}">
-              ${UrduHtml.text(row.gender === 'Female' ? URDU_REPORT.columns.female : URDU_REPORT.columns.male)}
-            </span>
-            <span class="tag tag-info">${row.overallPct}٪</span>
-            <span class="tag tag-success">${row.performanceScore} اسکور</span>
-            ${
-              row.pendingActivities > 0
-                ? `<span class="tag tag-warning">${row.pendingActivities} ${URDU_REPORT.columns.pending}</span>`
-                : `<span class="tag tag-success">مکمل</span>`
-            }
-          </div>
-        </div>
+        <p class="rukn-name">${UrduHtml.text(row.ruknName)}</p>
+        <span class="tag tag-info">${row.overallPct}٪</span>
       </div>
-      <div class="mini-grid">
-        <div class="mini-stat"><span class="lbl">${UrduHtml.text(URDU_REPORT.columns.maleKarkuns)}</span><span class="val">${row.maleKarkuns}</span></div>
-        <div class="mini-stat"><span class="lbl">${UrduHtml.text(URDU_REPORT.columns.femaleKarkuns)}</span><span class="val">${row.femaleKarkuns}</span></div>
-        <div class="mini-stat"><span class="lbl">${UrduHtml.text(URDU_REPORT.columns.totalKarkuns)}</span><span class="val">${row.totalKarkuns}</span></div>
-        <div class="mini-stat"><span class="lbl">${UrduHtml.text(URDU_REPORT.columns.maleMuttafiqeen)}</span><span class="val">${row.maleMuttafiqeen}</span></div>
-        <div class="mini-stat"><span class="lbl">${UrduHtml.text(URDU_REPORT.columns.femaleMuttafiqeen)}</span><span class="val">${row.femaleMuttafiqeen}</span></div>
-        <div class="mini-stat"><span class="lbl">${UrduHtml.text(URDU_REPORT.columns.totalMuttafiqeen)}</span><span class="val">${row.totalMuttafiqeen}</span></div>
+      <div class="rukn-totals">
+        <span>${UrduHtml.text(URDU_REPORT.columns.totalKarkuns)}: <strong>${row.totalKarkuns}</strong></span>
+        <span>${UrduHtml.text(URDU_REPORT.columns.totalMuttafiqeen)}: <strong>${row.totalMuttafiqeen}</strong></span>
       </div>
       <table class="compact">
         <thead>
@@ -180,7 +163,7 @@ function ruknCard(row: CampaignReportRuknRow): string {
           </tr>
         </tbody>
       </table>
-      <div class="progress-track" style="margin-top:10px">
+      <div class="progress-track thin">
         <div class="progress-fill ${tone}" style="width:${row.overallPct}%"></div>
       </div>
     </div>
@@ -192,7 +175,7 @@ function buildCampaignReportHtml(model: CampaignReportModel): string {
   const ex = model.executive
   const cover = model.cover
 
-  // ── PAGE 1: Executive Summary ──────────────────────────────
+  // ── PAGE 1: Where does the campaign stand? ─────────────────
   parts.push(`<section class="pdf-page">`)
   parts.push(`
     <header class="exec-header">
@@ -208,7 +191,7 @@ function buildCampaignReportHtml(model: CampaignReportModel): string {
   `)
 
   parts.push(UrduHtml.section(URDU_REPORT.sections.executive))
-  parts.push(`<div class="kpi-grid kpi-4">`)
+  parts.push(`<div class="kpi-grid kpi-3">`)
   parts.push(
     kpiCard(URDU_REPORT.kpi.totalRukns, ex.totalRukns, 'navy', [
       { text: `${URDU_REPORT.kpi.maleRukns}: ${ex.maleRukns}`, cls: 'tag-male' },
@@ -227,11 +210,6 @@ function buildCampaignReportHtml(model: CampaignReportModel): string {
       { text: `${URDU_REPORT.columns.female}: ${ex.femaleMuttafiqeen}`, cls: 'tag-female' },
     ]),
   )
-  parts.push(
-    kpiCard(URDU_REPORT.kpi.peopleCovered, ex.peopleCovered, 'emerald', [
-      { text: URDU_REPORT.kpi.peopleCovered, cls: 'tag-success' },
-    ]),
-  )
   parts.push(`</div>`)
 
   parts.push(UrduHtml.section(URDU_REPORT.sections.campaignProgress))
@@ -245,56 +223,49 @@ function buildCampaignReportHtml(model: CampaignReportModel): string {
   parts.push(circularProgress(ex.overallCampaignProgress, URDU_REPORT.kpi.overallProgress))
   parts.push(`</section>`)
 
-  // ── PAGE 2: Insights & Recommendations ─────────────────────
+  // ── PAGE 2: Attention + best performers ────────────────────
   parts.push(`<section class="pdf-page">`)
   parts.push(UrduHtml.section(URDU_REPORT.sections.recommendations))
   parts.push(
     recommendationTier(
       'urgent',
-      `🔴 ${URDU_REPORT.recommendationTiers.urgent}`,
+      URDU_REPORT.recommendationTiers.urgent,
       model.recommendationGroups.urgent,
     ),
   )
   parts.push(
     recommendationTier(
       'next',
-      `🟡 ${URDU_REPORT.recommendationTiers.next}`,
+      URDU_REPORT.recommendationTiers.next,
       model.recommendationGroups.next,
     ),
   )
   parts.push(
     recommendationTier(
       'positive',
-      `🟢 ${URDU_REPORT.recommendationTiers.positive}`,
+      URDU_REPORT.recommendationTiers.positive,
       model.recommendationGroups.positive,
     ),
   )
 
   if (model.criticalRukns.length > 0) {
     parts.push(UrduHtml.section(URDU_REPORT.sections.critical))
-    parts.push(`<div class="activity-list">`)
-    for (const row of model.criticalRukns.slice(0, 8)) {
+    parts.push(`<div class="critical-compact">`)
+    for (const row of model.criticalRukns.slice(0, 6)) {
       parts.push(`
-        <div class="activity-card">
-          <div class="act-head">
-            <p class="act-title">${UrduHtml.text(row.ruknName)}</p>
-            <span class="tag tag-danger">${row.overallPct}٪</span>
-          </div>
-          <p style="margin:0;font-size:10pt;color:#64748b;line-height:1.65">
-            ${UrduHtml.text(row.criticalReasons.join('؛ '))}
-          </p>
+        <div class="critical-row">
+          <span class="who">${UrduHtml.text(row.ruknName)}</span>
+          <span class="tag tag-danger">${row.overallPct}٪</span>
+          <span class="why">${UrduHtml.text(row.criticalReasons.join('؛ '))}</span>
         </div>
       `)
     }
     parts.push(`</div>`)
   }
-  parts.push(`</section>`)
 
-  // ── PAGE 3: Outstanding Performance ────────────────────────
-  parts.push(`<section class="pdf-page">`)
   parts.push(UrduHtml.section(URDU_REPORT.sections.topPerformers))
   if (model.topOverallPerformers.length === 0) {
-    parts.push(UrduHtml.empty(URDU_REPORT.empty.noRukns))
+    parts.push(UrduHtml.empty(URDU_REPORT.empty.noTopPerformers))
   } else {
     parts.push(`<div class="rank-list">`)
     for (const performer of model.topOverallPerformers) {
@@ -324,19 +295,28 @@ function buildCampaignReportHtml(model: CampaignReportModel): string {
   parts.push(UrduHtml.section(URDU_REPORT.sections.categoryLeaders))
   parts.push(`<div class="leader-grid">`)
   for (const leader of model.categoryLeaders) {
-    parts.push(`
-      <div class="leader-card">
-        <p class="cat">${UrduHtml.text(leader.category)}</p>
-        <p class="who">${UrduHtml.text(leader.ruknName)}</p>
-        <p class="res">${UrduHtml.text(leader.valueLabel)}</p>
-      </div>
-    `)
+    if (leader.hasLeader) {
+      parts.push(`
+        <div class="leader-card">
+          <p class="cat">${UrduHtml.text(leader.category)}</p>
+          <p class="who">${UrduHtml.text(leader.ruknName)}</p>
+          <p class="res">${UrduHtml.text(leader.valueLabel)}</p>
+        </div>
+      `)
+    } else {
+      parts.push(`
+        <div class="leader-card empty">
+          <p class="cat">${UrduHtml.text(leader.category)}</p>
+          <p class="who muted">${UrduHtml.text(URDU_REPORT.empty.noCategoryLeader)}</p>
+        </div>
+      `)
+    }
   }
   parts.push(`</div>`)
   parts.push(`</section>`)
 
-  // ── PAGE 4+: Individual Performance ────────────────────────
-  const chunkSize = 4
+  // ── PAGE 3+: Individual Performance (6 cards / page) ───────
+  const chunkSize = 6
   const allRukns = model.allRukns
   for (let i = 0; i < allRukns.length || i === 0; i += chunkSize) {
     const chunk = allRukns.slice(i, i + chunkSize)

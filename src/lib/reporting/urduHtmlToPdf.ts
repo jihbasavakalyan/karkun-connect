@@ -60,7 +60,7 @@ html, body {
 .urdu-report .pdf-page {
   width: 100%;
   min-height: 1040px;
-  padding: 28px 30px 36px;
+  padding: 18px 22px 24px;
   background: ${colors.pageBg};
   page-break-after: always;
   break-after: page;
@@ -70,9 +70,9 @@ html, body {
 .urdu-report .exec-header {
   background: linear-gradient(135deg, ${colors.primary} 0%, ${colors.secondary} 55%, #2563eb 100%);
   color: #fff;
-  padding: 28px 28px 24px;
-  margin: -28px -30px 24px;
-  border-radius: 0 0 28px 28px;
+  padding: 18px 20px 16px;
+  margin: -18px -22px 14px;
+  border-radius: 0 0 20px 20px;
   position: relative;
   overflow: hidden;
 }
@@ -105,8 +105,8 @@ html, body {
   z-index: 1;
 }
 .urdu-report .exec-header .campaign-name {
-  margin: 10px 0 0;
-  font-size: 13pt;
+  margin: 6px 0 0;
+  font-size: 12pt;
   font-weight: 600;
   opacity: 0.98;
   position: relative;
@@ -115,8 +115,8 @@ html, body {
 .urdu-report .exec-header .meta-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px 18px;
-  margin-top: 16px;
+  gap: 8px 12px;
+  margin-top: 10px;
   position: relative;
   z-index: 1;
 }
@@ -124,28 +124,28 @@ html, body {
   background: rgba(255,255,255,0.14);
   border: 1px solid rgba(255,255,255,0.22);
   border-radius: 999px;
-  padding: 5px 14px;
-  font-size: 9.5pt;
-  line-height: 1.6;
+  padding: 3px 10px;
+  font-size: 9pt;
+  line-height: 1.55;
 }
 
 /* ── Section titles ─────────────────────────────────────────── */
 .urdu-report h2.section {
-  margin: 22px 0 14px;
+  margin: 12px 0 8px;
   font-size: ${t.sectionTitlePt}pt;
   font-weight: 700;
   color: ${colors.primary};
-  padding: 0 0 8px;
+  padding: 0 0 4px;
   border-bottom: none;
-  line-height: 1.55;
+  line-height: 1.5;
   position: relative;
 }
 .urdu-report h2.section::after {
   content: '';
   display: block;
-  width: 56px;
-  height: 3px;
-  margin-top: 6px;
+  width: 48px;
+  height: 2.5px;
+  margin-top: 4px;
   border-radius: 3px;
   background: linear-gradient(90deg, ${colors.emerald}, ${colors.secondary});
   margin-right: 0;
@@ -155,46 +155,49 @@ html, body {
 .urdu-report .kpi-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin: 0 0 18px;
+  gap: 8px;
+  margin: 0 0 10px;
 }
 .urdu-report .kpi-grid.kpi-4 {
   grid-template-columns: 1fr 1fr;
 }
+.urdu-report .kpi-grid.kpi-3 {
+  grid-template-columns: 1fr 1fr 1fr;
+}
 .urdu-report .kpi-card {
   background: ${colors.cardBg};
-  border-radius: 16px;
-  padding: 16px 18px;
-  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+  border-radius: 12px;
+  padding: 10px 12px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
   border: 1px solid rgba(226, 232, 240, 0.9);
 }
 .urdu-report .kpi-card .kpi-label {
   margin: 0;
-  font-size: 10pt;
+  font-size: 9.5pt;
   color: ${colors.muted};
   font-weight: 600;
 }
 .urdu-report .kpi-card .kpi-value {
-  margin: 6px 0 0;
-  font-size: 22pt;
+  margin: 4px 0 0;
+  font-size: 18pt;
   font-weight: 700;
   color: ${colors.primary};
   font-variant-numeric: tabular-nums;
-  line-height: 1.3;
+  line-height: 1.25;
 }
 .urdu-report .kpi-card .kpi-sub {
-  margin: 8px 0 0;
+  margin: 6px 0 0;
   display: flex;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
 }
 .urdu-report .kpi-card .tag {
   display: inline-block;
   border-radius: 999px;
-  padding: 2px 10px;
-  font-size: 8.5pt;
+  padding: 1px 8px;
+  font-size: 8pt;
   font-weight: 600;
-  line-height: 1.6;
+  line-height: 1.55;
 }
 .urdu-report .tag-male {
   background: #e0f2fe;
@@ -237,41 +240,45 @@ html, body {
 .urdu-report .activity-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin: 0 0 20px;
+  gap: 7px;
+  margin: 0 0 10px;
 }
 .urdu-report .activity-card {
   background: ${colors.cardBg};
-  border-radius: 16px;
-  padding: 14px 16px;
-  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.05);
+  border-radius: 10px;
+  padding: 8px 10px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
   border: 1px solid rgba(226, 232, 240, 0.85);
 }
 .urdu-report .activity-card .act-head {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 10px;
+  gap: 10px;
+  margin-bottom: 6px;
 }
 .urdu-report .activity-card .act-title {
   margin: 0;
-  font-size: 11.5pt;
+  font-size: 10.5pt;
   font-weight: 700;
   color: ${colors.primary};
 }
 .urdu-report .activity-card .act-pct {
-  font-size: 12pt;
+  font-size: 11pt;
   font-weight: 700;
   color: ${colors.secondary};
   font-variant-numeric: tabular-nums;
 }
 .urdu-report .progress-track {
-  height: 9px;
+  height: 7px;
   background: #e2e8f0;
   border-radius: 999px;
   overflow: hidden;
-  margin: 0 0 10px;
+  margin: 0 0 6px;
+}
+.urdu-report .progress-track.thin {
+  height: 5px;
+  margin: 4px 0 0;
 }
 .urdu-report .progress-fill {
   height: 100%;
@@ -290,23 +297,26 @@ html, body {
 .urdu-report .act-breakdown {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr 1fr;
-  gap: 8px;
+  gap: 6px;
+}
+.urdu-report .act-breakdown.act-breakdown-3 {
+  grid-template-columns: 1fr 1fr 1fr;
 }
 .urdu-report .act-stat {
   background: #f8fafc;
-  border-radius: 10px;
-  padding: 8px 10px;
+  border-radius: 8px;
+  padding: 4px 6px;
   text-align: center;
 }
 .urdu-report .act-stat .lbl {
   display: block;
-  font-size: 8pt;
+  font-size: 7.5pt;
   color: ${colors.muted};
-  margin-bottom: 2px;
+  margin-bottom: 1px;
 }
 .urdu-report .act-stat .val {
   display: block;
-  font-size: 9.5pt;
+  font-size: 9pt;
   font-weight: 700;
   color: ${colors.text};
   font-variant-numeric: tabular-nums;
@@ -317,26 +327,26 @@ html, body {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 12px 0 8px;
+  padding: 4px 0 2px;
 }
 .urdu-report .ring-card {
   background: ${colors.cardBg};
-  border-radius: 20px;
-  padding: 22px 28px;
-  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.07);
+  border-radius: 14px;
+  padding: 12px 18px;
+  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.05);
   border: 1px solid rgba(226, 232, 240, 0.9);
   text-align: center;
-  min-width: 260px;
+  min-width: 200px;
 }
 .urdu-report .ring {
   position: relative;
-  width: 148px;
-  height: 148px;
-  margin: 0 auto 10px;
+  width: 112px;
+  height: 112px;
+  margin: 0 auto 4px;
 }
 .urdu-report .ring svg {
-  width: 148px;
-  height: 148px;
+  width: 112px;
+  height: 112px;
   transform: rotate(-90deg);
 }
 .urdu-report .ring .ring-bg {
@@ -360,32 +370,32 @@ html, body {
   transform: none;
 }
 .urdu-report .ring .ring-pct {
-  font-size: 26pt;
+  font-size: 20pt;
   font-weight: 700;
   color: ${colors.primary};
-  line-height: 1.2;
+  line-height: 1.15;
   font-variant-numeric: tabular-nums;
 }
 .urdu-report .ring .ring-sub {
-  font-size: 9pt;
+  font-size: 8.5pt;
   color: ${colors.muted};
 }
 
 /* ── Recommendation tiers ───────────────────────────────────── */
 .urdu-report .rec-tier {
   background: ${colors.cardBg};
-  border-radius: 16px;
-  padding: 14px 16px;
-  margin: 0 0 12px;
-  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.05);
+  border-radius: 10px;
+  padding: 8px 10px;
+  margin: 0 0 8px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
   border: 1px solid rgba(226, 232, 240, 0.85);
 }
-.urdu-report .rec-tier.urgent { border-right: 4px solid ${colors.attention}; }
-.urdu-report .rec-tier.next { border-right: 4px solid ${colors.warning}; }
-.urdu-report .rec-tier.positive { border-right: 4px solid ${colors.success}; }
+.urdu-report .rec-tier.urgent { border-right: 3px solid ${colors.attention}; }
+.urdu-report .rec-tier.next { border-right: 3px solid ${colors.warning}; }
+.urdu-report .rec-tier.positive { border-right: 3px solid ${colors.success}; }
 .urdu-report .rec-tier h3 {
-  margin: 0 0 10px;
-  font-size: 12pt;
+  margin: 0 0 6px;
+  font-size: 11pt;
   font-weight: 700;
 }
 .urdu-report .rec-tier.urgent h3 { color: ${colors.attention}; }
@@ -397,38 +407,65 @@ html, body {
   list-style: disc;
 }
 .urdu-report .rec-tier li {
+  margin: 0 0 4px;
+  line-height: 1.55;
+  font-size: 9.5pt;
+}
+
+.urdu-report .critical-compact {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
   margin: 0 0 8px;
-  line-height: 1.65;
-  font-size: 10.5pt;
+}
+.urdu-report .critical-row {
+  display: grid;
+  grid-template-columns: 140px auto 1fr;
+  gap: 8px;
+  align-items: start;
+  background: ${colors.cardBg};
+  border: 1px solid rgba(226, 232, 240, 0.85);
+  border-radius: 8px;
+  padding: 5px 8px;
+}
+.urdu-report .critical-row .who {
+  font-weight: 700;
+  font-size: 9.5pt;
+  color: ${colors.primary};
+}
+.urdu-report .critical-row .why {
+  font-size: 8.5pt;
+  color: ${colors.muted};
+  line-height: 1.45;
 }
 
 /* ── Rank / performer cards ─────────────────────────────────── */
 .urdu-report .rank-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin: 0 0 18px;
+  gap: 5px;
+  margin: 0 0 8px;
 }
 .urdu-report .rank-card {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 10px;
   background: ${colors.cardBg};
-  border-radius: 14px;
-  padding: 12px 16px;
-  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.05);
+  border-radius: 10px;
+  padding: 6px 10px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
   border: 1px solid rgba(226, 232, 240, 0.85);
 }
 .urdu-report .rank-badge {
   flex-shrink: 0;
-  width: 36px;
-  height: 36px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  font-size: 12pt;
+  font-size: 10pt;
   color: #fff;
   font-variant-numeric: tabular-nums;
 }
@@ -440,47 +477,47 @@ html, body {
 .urdu-report .rank-body { flex: 1; min-width: 0; }
 .urdu-report .rank-body .name {
   margin: 0;
-  font-size: 12pt;
+  font-size: 10.5pt;
   font-weight: 700;
   color: ${colors.primary};
 }
 .urdu-report .rank-body .meta {
-  margin: 4px 0 0;
-  font-size: 9pt;
+  margin: 2px 0 0;
+  font-size: 8pt;
   color: ${colors.muted};
 }
 .urdu-report .rank-score {
   flex-shrink: 0;
   text-align: center;
   background: #f0fdf4;
-  border-radius: 12px;
-  padding: 6px 12px;
-  min-width: 64px;
+  border-radius: 8px;
+  padding: 4px 8px;
+  min-width: 52px;
 }
 .urdu-report .rank-score .num {
   display: block;
-  font-size: 14pt;
+  font-size: 12pt;
   font-weight: 700;
   color: ${colors.emerald};
   font-variant-numeric: tabular-nums;
 }
 .urdu-report .rank-score .lbl {
   display: block;
-  font-size: 7.5pt;
+  font-size: 7pt;
   color: ${colors.muted};
 }
 
 .urdu-report .leader-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin: 0 0 12px;
+  gap: 6px;
+  margin: 0 0 6px;
 }
 .urdu-report .leader-card {
   background: ${colors.cardBg};
-  border-radius: 14px;
-  padding: 14px 14px;
-  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.05);
+  border-radius: 10px;
+  padding: 8px 10px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
   border: 1px solid rgba(226, 232, 240, 0.85);
   position: relative;
   overflow: hidden;
@@ -491,24 +528,33 @@ html, body {
   top: 0;
   right: 0;
   left: 0;
-  height: 4px;
+  height: 3px;
   background: linear-gradient(90deg, ${colors.secondary}, ${colors.emerald});
+}
+.urdu-report .leader-card.empty::before {
+  background: #cbd5e1;
 }
 .urdu-report .leader-card .cat {
   margin: 0;
-  font-size: 9pt;
+  font-size: 8pt;
   color: ${colors.muted};
   font-weight: 600;
 }
 .urdu-report .leader-card .who {
-  margin: 6px 0 0;
-  font-size: 12pt;
+  margin: 3px 0 0;
+  font-size: 10.5pt;
   font-weight: 700;
   color: ${colors.primary};
+  line-height: 1.4;
+}
+.urdu-report .leader-card .who.muted {
+  font-size: 9pt;
+  font-weight: 600;
+  color: ${colors.muted};
 }
 .urdu-report .leader-card .res {
-  margin: 4px 0 0;
-  font-size: 9.5pt;
+  margin: 2px 0 0;
+  font-size: 8.5pt;
   color: ${colors.secondary};
   font-variant-numeric: tabular-nums;
 }
@@ -516,53 +562,74 @@ html, body {
 /* ── Individual rukn cards ──────────────────────────────────── */
 .urdu-report .rukn-card {
   background: ${colors.cardBg};
-  border-radius: 14px;
-  padding: 14px 14px 12px;
-  margin: 0 0 12px;
-  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.05);
+  border-radius: 10px;
+  padding: 7px 9px 6px;
+  margin: 0 0 6px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
   border: 1px solid rgba(226, 232, 240, 0.85);
+}
+.urdu-report .rukn-card.compact .rukn-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 3px;
+  padding-bottom: 0;
+  border-bottom: none;
 }
 .urdu-report .rukn-card .rukn-head {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: 10px;
-  margin-bottom: 10px;
-  padding-bottom: 8px;
+  gap: 8px;
+  margin-bottom: 6px;
+  padding-bottom: 4px;
   border-bottom: 1px solid #f1f5f9;
 }
 .urdu-report .rukn-card .rukn-name {
   margin: 0;
-  font-size: 12pt;
+  font-size: 10.5pt;
   font-weight: 700;
   color: ${colors.primary};
 }
 .urdu-report .rukn-card .chip-row {
   display: flex;
-  gap: 6px;
+  gap: 5px;
   flex-wrap: wrap;
-  margin-top: 6px;
+  margin-top: 4px;
+}
+.urdu-report .rukn-totals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  margin: 0 0 4px;
+  font-size: 8.5pt;
+  color: ${colors.muted};
+}
+.urdu-report .rukn-totals strong {
+  color: ${colors.text};
+  font-variant-numeric: tabular-nums;
 }
 .urdu-report .mini-grid {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
-  gap: 6px;
-  margin-bottom: 10px;
+  gap: 5px;
+  margin-bottom: 6px;
 }
 .urdu-report .mini-stat {
   background: #f8fafc;
-  border-radius: 8px;
-  padding: 6px 8px;
+  border-radius: 6px;
+  padding: 4px 6px;
   text-align: center;
 }
 .urdu-report .mini-stat .lbl {
   display: block;
-  font-size: 7.5pt;
+  font-size: 7pt;
   color: ${colors.muted};
 }
 .urdu-report .mini-stat .val {
   display: block;
-  font-size: 10pt;
+  font-size: 9.5pt;
   font-weight: 700;
   color: ${colors.text};
   font-variant-numeric: tabular-nums;
@@ -570,13 +637,13 @@ html, body {
 .urdu-report table.compact {
   width: 100%;
   border-collapse: collapse;
-  font-size: 9pt;
-  line-height: 1.5;
+  font-size: 8.5pt;
+  line-height: 1.4;
   margin: 0;
 }
 .urdu-report table.compact th,
 .urdu-report table.compact td {
-  padding: 5px 6px;
+  padding: 3px 4px;
   border: none;
   border-bottom: 1px solid #f1f5f9;
   vertical-align: middle;
@@ -585,7 +652,7 @@ html, body {
   background: #f8fafc;
   color: ${colors.muted};
   font-weight: 700;
-  font-size: 8pt;
+  font-size: 7.5pt;
   text-align: center;
 }
 .urdu-report table.compact td {

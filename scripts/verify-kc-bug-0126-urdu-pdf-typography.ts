@@ -27,6 +27,20 @@ assert(report.includes('downloadUrduHtmlReportPdf'), 'campaign report uses HTML 
 assert(!report.includes('NotoNaskhArabic'), 'campaign report no longer embeds Naskh for body')
 assert(report.includes('exec-header'), 'executive report header present')
 assert(report.includes('topOverallPerformers'), 'weighted top performers wired')
+assert(report.includes('chunkSize = 6'), 'individual section packs 6 cards per page')
+assert(report.includes('rukn-card compact'), 'compact individual rukn cards')
+assert(!report.includes('peopleCovered'), 'coverage KPI removed from executive PDF')
+assert(report.includes('noCategoryLeader') || report.includes('hasLeader'), 'zero-leader empty state wired')
+
+const model = readFileSync(resolve(root, 'src/lib/reporting/campaignReportModel.ts'), 'utf8')
+assert(model.includes('score(row) > 0 && completed(row) > 0'), 'category leaders require positive metric + completion')
+assert(model.includes('hasLeader'), 'category leader empty-state flag')
+assert(!model.includes('کوریج'), 'model copy must not use coverage wording')
+
+const urdu = readFileSync(resolve(root, 'src/lib/reporting/campaignReportUrdu.ts'), 'utf8')
+assert(!urdu.includes('زیرِ کوریج'), 'no زیرِ کوریج in Urdu report copy')
+assert(!urdu.includes('Coverage'), 'no Coverage label in Urdu report copy')
+assert(urdu.includes('فی الحال اس شعبہ میں کوئی نمایاں کارکردگی موجود نہیں'), 'empty category leader copy')
 
 assert(URDU_PDF_LAYOUT.captureScale >= 2, 'capture scale must be print-quality')
 assert(URDU_PDF_LAYOUT.type.tablePt >= 11, 'table type must be readable without zoom')
