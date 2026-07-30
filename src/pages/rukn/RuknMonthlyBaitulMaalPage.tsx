@@ -10,7 +10,7 @@ import { ROUTES } from '@/constants/routes'
 import { getRuknById } from '@/data/ruknMaster'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { useAuth } from '@/hooks/useAuth'
-import { useBusyAction } from '@/hooks/useBusyAction'
+import { useWriteLifecycle } from '@/hooks/useWriteLifecycle'
 import { useRequiredRuknId } from '@/hooks/useRequiredRuknId'
 import {
   getCurrentMonthlyBaitulMaalCycle,
@@ -41,7 +41,7 @@ export function RuknMonthlyBaitulMaalPage() {
   const [draftSeedKey, setDraftSeedKey] = useState('')
   const [message, setMessage] = useState('')
   const [savingKarkunId, setSavingKarkunId] = useState<string | null>(null)
-  const { busy: saving, run } = useBusyAction()
+  const { busy: saving, progressMessage, run } = useWriteLifecycle()
 
   useEffect(() => subscribeToMonthlyBaitulMaalStore(() => setStoreVersion((v) => v + 1)), [])
 
@@ -110,8 +110,10 @@ export function RuknMonthlyBaitulMaalPage() {
 
     setDraft((current) => ({ ...current, [karkunId]: status }))
     setSavingKarkunId(karkunId)
-    void run(
-      async () => {
+    void run({
+      key: `monthly-baitul-maal-mark:${ruknId}:${karkunId}`,
+      queueLabels: ['compliance.monthlyBaitulMaalSubmissions'],
+      work: async () => {
         setMessage('')
         const result = upsertMonthlyBaitulMaalKarkunMark({
           cycleId: workspace.cycle.id,
@@ -124,31 +126,27 @@ export function RuknMonthlyBaitulMaalPage() {
         })
 
         if (!result.success) {
-          setMessage(result.error)
+          throw Object.assign(new Error(result.error), { code: 'unknown' })
+        }
+        return result
+      },
+      refreshUi: () => setStoreVersion((v) => v + 1),
+    })
+      .then((lifecycle) => {
+        if (!lifecycle) return
+        if (!lifecycle.ok) {
+          setMessage(lifecycle.message)
           return
         }
-
-        try {
-          const { awaitQueuedWrite } = await import('@/repositories/firestore/firestoreRepositories')
-          await awaitQueuedWrite('compliance.monthlyBaitulMaalSubmissions')
-        } catch {
-          // local provider has no queue
-        }
-
         setMessage(
           status === 'Contributed'
             ? `${karkun.name} marked Contributed. Dashboard and reports update immediately.`
             : `${karkun.name} marked Pending. Other Connected Karkuns are unchanged.`,
         )
-      },
-      {
-        key: `monthly-baitul-maal-mark:${ruknId}:${karkunId}`,
-        waitForPendingWrites: true,
-        minMs: 250,
-      },
-    ).finally(() => {
-      setSavingKarkunId(null)
-    })
+      })
+      .finally(() => {
+        setSavingKarkunId(null)
+      })
   }
 
   return (
@@ -226,7 +224,7 @@ export function RuknMonthlyBaitulMaalPage() {
                       <p className="font-semibold text-text-heading">{karkun.name}</p>
                       <p className="text-xs text-secondary">
                         {status === 'Unmarked' ? 'Not yet recorded' : status}
-                        {rowBusy ? ' · Saving…' : ''}
+                        {rowBusy ? ` · ${progressMessage || 'محفوظ کیا جا رہا ہے...'}` : ''}
                       </p>
                     </div>
                     <div className="mt-2 flex flex-wrap gap-2">

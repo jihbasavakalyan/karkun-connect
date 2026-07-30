@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
+import { useWriteLifecycle } from '@/hooks/useWriteLifecycle'
 import {
   cancelCommitment,
   completeCommitment,
@@ -29,43 +30,91 @@ export function CommitmentPanel({
   const [adding, setAdding] = useState(false)
   const [text, setText] = useState('')
   const [targetDate, setTargetDate] = useState(new Date().toISOString().slice(0, 10))
+  const [error, setError] = useState('')
+  const { busy, progressMessage, run } = useWriteLifecycle()
 
   const pending = commitments.filter((record) => record.status === 'pending')
 
   const handleAdd = () => {
-    if (!text.trim()) {
-      return
-    }
-    createCommitment({
-      karkunId,
-      ruknId,
-      assignmentId,
-      text,
-      targetDate,
-      source: 'manual',
+    if (!text.trim() || busy) return
+    setError('')
+    void run({
+      key: `guidance:create:${karkunId}`,
+      queueLabels: ['executions.guidance'],
+      work: async () => {
+        createCommitment({
+          karkunId,
+          ruknId,
+          assignmentId,
+          text,
+          targetDate,
+          source: 'manual',
+        })
+        return true
+      },
+      refreshUi: () => onChange?.(),
+    }).then((lifecycle) => {
+      if (!lifecycle) return
+      if (!lifecycle.ok) {
+        setError(lifecycle.message)
+        return
+      }
+      setText('')
+      setAdding(false)
     })
-    setText('')
-    setAdding(false)
-    onChange?.()
   }
 
   const handleComplete = (id: string) => {
-    completeCommitment(id)
-    onChange?.()
+    if (busy) return
+    setError('')
+    void run({
+      key: `guidance:complete:${id}`,
+      queueLabels: ['executions.guidance'],
+      work: async () => {
+        completeCommitment(id)
+        return true
+      },
+      refreshUi: () => onChange?.(),
+    }).then((lifecycle) => {
+      if (lifecycle && !lifecycle.ok) setError(lifecycle.message)
+    })
   }
 
   const handleCancel = (id: string) => {
-    cancelCommitment(id)
-    onChange?.()
+    if (busy) return
+    setError('')
+    void run({
+      key: `guidance:cancel:${id}`,
+      queueLabels: ['executions.guidance'],
+      work: async () => {
+        cancelCommitment(id)
+        return true
+      },
+      refreshUi: () => onChange?.(),
+    }).then((lifecycle) => {
+      if (lifecycle && !lifecycle.ok) setError(lifecycle.message)
+    })
   }
 
   return (
     <div className="space-y-3">
+      {error ? (
+        <p className="text-sm text-red-600" role="alert">
+          {error}
+        </p>
+      ) : null}
+      {busy && progressMessage ? (
+        <p className="text-sm text-secondary" role="status" aria-live="polite">
+          {progressMessage}
+        </p>
+      ) : null}
+
       {pending.length === 0 && !adding && (
         <button
           type="button"
           onClick={() => setAdding(true)}
-          className="w-full rounded-lg border border-dashed border-border py-4 text-sm font-medium text-primary hover:border-primary hover:bg-primary-muted/20"
+          disabled={busy}
+          className="w-full rounded-lg border border-dashed border-border py-4 text-sm font-medium text-primary hover:border-primary hover:bg-primary-muted/20 disabled:opacity-60"
         >
           + Add Follow-up Commitment
         </button>
@@ -79,10 +128,18 @@ export function CommitmentPanel({
           <p className="font-medium text-text-heading">{commitment.text}</p>
           <p className="mt-1 text-xs text-secondary">Target: {commitment.targetDate}</p>
           <div className="mt-3 flex flex-wrap gap-2">
-            <SecondaryButton type="button" onClick={() => handleComplete(commitment.id)}>
+            <SecondaryButton
+              type="button"
+              disabled={busy}
+              onClick={() => handleComplete(commitment.id)}
+            >
               Mark Done
             </SecondaryButton>
-            <SecondaryButton type="button" onClick={() => handleCancel(commitment.id)}>
+            <SecondaryButton
+              type="button"
+              disabled={busy}
+              onClick={() => handleCancel(commitment.id)}
+            >
               Cancel
             </SecondaryButton>
           </div>
@@ -96,6 +153,7 @@ export function CommitmentPanel({
             className={inputClassName}
             placeholder="Agreed next step (e.g. Meet Sunday)"
             value={text}
+            disabled={busy}
             onChange={(event) => setText(event.target.value)}
           />
           <input
@@ -103,13 +161,22 @@ export function CommitmentPanel({
             className={inputClassName}
             min={new Date().toISOString().slice(0, 10)}
             value={targetDate}
+            disabled={busy}
             onChange={(event) => setTargetDate(event.target.value)}
           />
           <div className="flex gap-2">
-            <PrimaryButton type="button" onClick={handleAdd} disabled={!text.trim()}>
-              Save Commitment
+            <PrimaryButton
+              type="button"
+              onClick={handleAdd}
+              disabled={!text.trim() || busy}
+            >
+              {busy ? progressMessage || 'محفوظ کیا جا رہا ہے...' : 'Save Commitment'}
             </PrimaryButton>
-            <SecondaryButton type="button" onClick={() => setAdding(false)}>
+            <SecondaryButton
+              type="button"
+              disabled={busy}
+              onClick={() => setAdding(false)}
+            >
               Cancel
             </SecondaryButton>
           </div>
@@ -117,7 +184,7 @@ export function CommitmentPanel({
       )}
 
       {pending.length > 0 && !adding && (
-        <SecondaryButton type="button" fullWidth onClick={() => setAdding(true)}>
+        <SecondaryButton fullWidth type="button" disabled={busy} onClick={() => setAdding(true)}>
           + Add Commitment
         </SecondaryButton>
       )}

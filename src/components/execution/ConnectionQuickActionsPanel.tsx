@@ -8,7 +8,7 @@
 
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
-import { useBusyAction } from '@/hooks/useBusyAction'
+import { useWriteLifecycle } from '@/hooks/useWriteLifecycle'
 import { usePeopleStore } from '@/hooks/usePeopleStore'
 import {
   baitulMaalStatusChip,
@@ -43,7 +43,7 @@ export function ConnectionQuickActionsPanel({
 }: ConnectionQuickActionsPanelProps) {
   const { user } = useAuth()
   const peopleVersion = usePeopleStore()
-  const { busy, busyKey, run } = useBusyAction()
+  const { busy, busyKey, progressMessage, run } = useWriteLifecycle()
   const [tick, setTick] = useState(0)
   const [remarks, setRemarks] = useState('')
   const [error, setError] = useState('')
@@ -94,23 +94,32 @@ export function ConnectionQuickActionsPanel({
     key: string,
     fn: () => { success: true } | { success: false; error: string },
     successMessage?: string,
+    queueLabels: string[] = ['executions.annexure', 'karkuns'],
   ) => {
-    void run(
-      async () => {
+    void run({
+      key,
+      queueLabels,
+      work: async () => {
         setError('')
         setSavedNote(false)
         const result = fn()
         if (!result.success) {
-          setError(result.error)
-          return
+          throw Object.assign(new Error(result.error), { code: 'unknown' })
         }
-        setTick((v) => v + 1)
         if (successMessage) {
           await confirmExecutionSaveFeedback(successMessage)
         }
+        return result
       },
-      { key, waitForPendingWrites: Boolean(successMessage), minMs: 400 },
-    )
+      refreshUi: () => {
+        setTick((v) => v + 1)
+      },
+    }).then((lifecycle) => {
+      if (!lifecycle) return
+      if (!lifecycle.ok) {
+        setError(lifecycle.message)
+      }
+    })
   }
 
   const actionClass =
@@ -123,7 +132,11 @@ export function ConnectionQuickActionsPanel({
     >
       <h2 className="text-sm font-semibold text-text-heading">Quick Actions</h2>
       {error ? <p className="mt-2 text-sm text-red-600">{error}</p> : null}
-      {busy ? <p className="mt-2 text-xs text-secondary">Saving…</p> : null}
+      {busy && progressMessage ? (
+        <p className="mt-2 text-xs text-secondary" role="status" aria-live="polite">
+          {progressMessage}
+        </p>
+      ) : null}
       <div className="mt-2 grid gap-2">
         <button
           type="button"
@@ -141,7 +154,11 @@ export function ConnectionQuickActionsPanel({
         >
           <span>{row.visitDone ? '☑' : '☐'} Visit</span>
           <span className="text-xs text-secondary">
-            {busyKey === `qa:${karkunId}:visit` ? 'Saving…' : row.visitDone ? 'Done' : 'Pending'}
+            {busyKey === `qa:${karkunId}:visit`
+              ? progressMessage || '…'
+              : row.visitDone
+                ? 'Done'
+                : 'Pending'}
           </span>
         </button>
         <button
@@ -149,19 +166,26 @@ export function ConnectionQuickActionsPanel({
           className={actionClass}
           disabled={busy}
           onClick={() =>
-            runAction(`qa:${karkunId}:jih`, () => {
-              const result = cycleJihAppForKarkun(karkunId, ruknId)
-              return result.success
-                ? { success: true as const }
-                : { success: false as const, error: result.error }
-            })
+            runAction(
+              `qa:${karkunId}:jih`,
+              () => {
+                const result = cycleJihAppForKarkun(karkunId, ruknId)
+                return result.success
+                  ? { success: true as const }
+                  : { success: false as const, error: result.error }
+              },
+              '✅ JIH registration saved',
+              ['karkuns', 'executions.guidance'],
+            )
           }
         >
           <span>
             {row.jih === 'not_discussed' ? '☐' : '☑'} JIH Registration
           </span>
           <span className="text-xs text-secondary">
-            {busyKey === `qa:${karkunId}:jih` ? 'Saving…' : `${jih.emoji} ${jih.label}`}
+            {busyKey === `qa:${karkunId}:jih`
+              ? progressMessage || '…'
+              : `${jih.emoji} ${jih.label}`}
           </span>
         </button>
         <button
@@ -169,18 +193,23 @@ export function ConnectionQuickActionsPanel({
           className={actionClass}
           disabled={busy}
           onClick={() =>
-            runAction(`qa:${karkunId}:ijtema`, () => {
-              const result = cycleIjtemaForKarkun(karkunId, ruknId, user?.uid)
-              return result.success
-                ? { success: true as const }
-                : { success: false as const, error: result.error }
-            })
+            runAction(
+              `qa:${karkunId}:ijtema`,
+              () => {
+                const result = cycleIjtemaForKarkun(karkunId, ruknId, user?.uid)
+                return result.success
+                  ? { success: true as const }
+                  : { success: false as const, error: result.error }
+              },
+              '✅ Weekly Ijtema saved',
+              ['compliance.weeklyIjtemaSubmissions', 'compliance.ijtema'],
+            )
           }
         >
           <span>{row.ijtema === 'Pending' ? '☐' : '☑'} Weekly Ijtema</span>
           <span className="text-xs text-secondary">
             {busyKey === `qa:${karkunId}:ijtema`
-              ? 'Saving…'
+              ? progressMessage || '…'
               : `${ijtema.emoji} ${ijtema.label}`}
           </span>
         </button>
@@ -189,22 +218,27 @@ export function ConnectionQuickActionsPanel({
           className={actionClass}
           disabled={busy}
           onClick={() =>
-            runAction(`qa:${karkunId}:baitul`, () => {
-              const result = cycleBaitulMaalCampaignForKarkun(
-                karkunId,
-                user?.displayName ?? user?.uid ?? 'Rukn',
-                ruknId,
-              )
-              return result.success
-                ? { success: true as const }
-                : { success: false as const, error: result.error }
-            })
+            runAction(
+              `qa:${karkunId}:baitul`,
+              () => {
+                const result = cycleBaitulMaalCampaignForKarkun(
+                  karkunId,
+                  user?.displayName ?? user?.uid ?? 'Rukn',
+                  ruknId,
+                )
+                return result.success
+                  ? { success: true as const }
+                  : { success: false as const, error: result.error }
+              },
+              '✅ Baitul Maal saved',
+              ['compliance.monthlyBaitulMaalSubmissions', 'compliance.baitulMaal'],
+            )
           }
         >
           <span>{row.baitulMaal === 'not_discussed' ? '☐' : '☑'} Baitul Maal</span>
           <span className="text-xs text-secondary">
             {busyKey === `qa:${karkunId}:baitul`
-              ? 'Saving…'
+              ? progressMessage || '…'
               : `${baitul.emoji} ${baitul.label}`}
           </span>
         </button>
@@ -226,25 +260,28 @@ export function ConnectionQuickActionsPanel({
         disabled={busy}
         className="mt-2 rounded-lg border border-border px-3 py-2 text-sm font-semibold text-text-heading disabled:cursor-not-allowed disabled:opacity-60"
         onClick={() => {
-          void run(
-            async () => {
+          void run({
+            key: `qa:${karkunId}:remarks`,
+            queueLabels: ['executions.annexure'],
+            work: async () => {
               setError('')
               setSavedNote(false)
               const result = saveMatrixRemarks(karkunId, ruknId, remarks, user?.uid)
               if (!result.success) {
-                setError(result.error)
-                return
+                throw Object.assign(new Error(result.error), { code: 'unknown' })
               }
-              setTick((v) => v + 1)
               setSavedNote(true)
               await confirmExecutionSaveFeedback('✅ Remarks saved successfully')
+              return result
             },
-            { key: `qa:${karkunId}:remarks`, waitForPendingWrites: true, minMs: 400 },
-          )
+            refreshUi: () => setTick((v) => v + 1),
+          }).then((lifecycle) => {
+            if (lifecycle && !lifecycle.ok) setError(lifecycle.message)
+          })
         }}
       >
         {busyKey === `qa:${karkunId}:remarks`
-          ? 'Saving…'
+          ? progressMessage || '…'
           : savedNote
             ? 'Remarks saved'
             : 'Save Remarks'}

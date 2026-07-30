@@ -9,7 +9,7 @@ import { PageShell } from '@/components/ui'
 import { ROUTES } from '@/constants/routes'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { useAuth } from '@/hooks/useAuth'
-import { useBusyAction } from '@/hooks/useBusyAction'
+import { useWriteLifecycle } from '@/hooks/useWriteLifecycle'
 import { useRequiredRuknId } from '@/hooks/useRequiredRuknId'
 import { getRuknById } from '@/data/ruknMaster'
 import {
@@ -60,7 +60,7 @@ export function WeeklyIjtemaRegisterPage() {
   const [draft, setDraft] = useState<Record<string, DraftStatus>>({})
   const [draftSeedKey, setDraftSeedKey] = useState('')
   const [message, setMessage] = useState('')
-  const { busy: saving, run } = useBusyAction()
+  const { busy: saving, progressMessage, run } = useWriteLifecycle()
 
   useEffect(() => {
     ensureWeeklyIjtemaAttendanceWindows()
@@ -148,13 +148,14 @@ export function WeeklyIjtemaRegisterPage() {
 
   const handleSubmit = () => {
     if (!ruknId || !workspace || !canSubmit) return
-    void run(
-      async () => {
+    void run({
+      key: `weekly-ijtema-submit:${ruknId}`,
+      queueLabels: ['compliance.weeklyIjtemaSubmissions'],
+      work: async () => {
         setMessage('')
         const marks = workspace.assigned.map((karkun) => {
           const status = draft[karkun.id]
           if (status !== 'Present' && status !== 'Absent') {
-            setMessage('Please mark attendance for all connected Karkuns before submitting.')
             return null
           }
           return {
@@ -164,7 +165,10 @@ export function WeeklyIjtemaRegisterPage() {
           }
         })
         if (marks.some((mark) => mark == null)) {
-          return
+          throw Object.assign(
+            new Error('Please mark attendance for all connected Karkuns before submitting.'),
+            { code: 'validation' },
+          )
         }
 
         const result = saveWeeklyIjtemaSubmission({
@@ -176,22 +180,20 @@ export function WeeklyIjtemaRegisterPage() {
         })
 
         if (!result.success) {
-          setMessage(result.error)
-          return
+          throw Object.assign(new Error(result.error), { code: 'unknown' })
         }
 
-        // KC-BUG-0122 / KC-ARCH-001 — await durable write before success.
-        try {
-          const { awaitQueuedWrite } = await import('@/repositories/firestore/firestoreRepositories')
-          await awaitQueuedWrite('compliance.weeklyIjtemaSubmissions')
-        } catch {
-          // local provider has no queue
-        }
-
-        setMessage('Attendance submitted successfully.')
+        return result
       },
-      { key: `weekly-ijtema-submit:${ruknId}`, waitForPendingWrites: true, minMs: 400 },
-    )
+      refreshUi: () => setStoreVersion((v) => v + 1),
+    }).then((lifecycle) => {
+      if (!lifecycle) return
+      if (!lifecycle.ok) {
+        setMessage(lifecycle.message)
+        return
+      }
+      setMessage('Attendance submitted successfully.')
+    })
   }
 
   return (
@@ -315,7 +317,7 @@ export function WeeklyIjtemaRegisterPage() {
               loading={saving}
             >
               {saving
-                ? 'Submitting…'
+                ? progressMessage || 'محفوظ کیا جا رہا ہے...'
                 : workspace.submission
                   ? 'Update Attendance'
                   : 'Submit Attendance'}

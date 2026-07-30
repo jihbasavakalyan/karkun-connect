@@ -76,6 +76,16 @@ export async function sendIndividualMessage(
     actor,
   })
 
+  // KC-028B / KC-ARCH-001 — await durable communication history write.
+  try {
+    const { awaitQueuedWrite } = await import(
+      '@/repositories/firestore/firestoreRepositories'
+    )
+    await awaitQueuedWrite('communications')
+  } catch {
+    // local provider has no queue
+  }
+
   return { success: true, historyId, status: 'queued' }
 }
 
