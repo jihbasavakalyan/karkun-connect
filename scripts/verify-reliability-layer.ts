@@ -5,6 +5,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { FRIENDLY_DATA_ACCESS_ERROR } from '@/repositories/errors'
 import {
+  FRIENDLY_PERSIST_GUIDANCE_PERMISSION_ERROR,
   FRIENDLY_PERSIST_PERMISSION_ERROR,
   toOperatorPersistError,
 } from '@/lib/reliability/persistErrors'
@@ -31,8 +32,19 @@ assert(
   toOperatorPersistError('executions.guidance', {
     code: 'Permission',
     message: FRIENDLY_DATA_ACCESS_ERROR,
+  }) === FRIENDLY_PERSIST_GUIDANCE_PERMISSION_ERROR,
+  'guidance permission denials map to guidance role/claims hint',
+)
+assert(
+  toOperatorPersistError('executions.annexure', {
+    code: 'Permission',
+    message: FRIENDLY_DATA_ACCESS_ERROR,
   }) === FRIENDLY_PERSIST_PERMISSION_ERROR,
-  'permission denials map to persist permission copy',
+  'other permission denials map to persist permission copy',
+)
+assert(
+  FRIENDLY_PERSIST_GUIDANCE_PERMISSION_ERROR.includes('ruknId'),
+  'guidance permission copy mentions ruknId claims',
 )
 
 const events = readFileSync(resolve(root, 'src/lib/executionPersistEvents.ts'), 'utf8')

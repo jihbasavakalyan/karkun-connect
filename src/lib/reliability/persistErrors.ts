@@ -14,11 +14,15 @@ export const FRIENDLY_PERSIST_ERROR =
 export const FRIENDLY_PERSIST_PERMISSION_ERROR =
   'You do not have permission to save this change. Sign out, sign in again, then retry. If it continues, contact the administrator.'
 
+/** KC-027 — guidance blob denials are usually missing JWT role/ruknId after rules are correct. */
+export const FRIENDLY_PERSIST_GUIDANCE_PERMISSION_ERROR =
+  'You do not have permission to save guidance. Sign out, sign in as Rukn, then retry. If it continues, ask Admin to verify your JWT role and ruknId claims.'
+
 export const FRIENDLY_PERSIST_OFFLINE_ERROR =
   'You appear to be offline. Reconnect and try saving again.'
 
 const LABEL_HINTS: Record<string, string> = {
-  'executions.guidance': 'Guidance / commitments could not be saved.',
+  'executions.guidance': 'Guidance / commitments could not be saved (executions/guidance).',
   'executions.annexure': 'Visit / annexure progress could not be saved.',
   'settings.karkunRequests': 'New Karkun request could not be saved.',
   communications: 'Communication state could not be saved.',
@@ -62,6 +66,9 @@ export function toOperatorPersistError(label: string, error: unknown): string {
     raw === FRIENDLY_DATA_ACCESS_ERROR ||
     /permission|insufficient/i.test(raw)
   ) {
+    if (label === 'executions.guidance') {
+      return FRIENDLY_PERSIST_GUIDANCE_PERMISSION_ERROR
+    }
     return FRIENDLY_PERSIST_PERMISSION_ERROR
   }
 
