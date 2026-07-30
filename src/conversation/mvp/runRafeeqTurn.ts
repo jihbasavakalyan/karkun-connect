@@ -48,6 +48,7 @@ import {
   handleHelp,
   handleInsights,
   handleKarkunInfo,
+  handleRuknSelfReport,
   handleSafeNavigateAction,
   handleSuggestions,
   handleTasks,
@@ -387,6 +388,22 @@ function runRafeeqTurnInner(
 
   if (classified.mvpKind === 'HELP') {
     return handleHelp(layers)
+  }
+
+  if (
+    classified.mvpKind === 'RUKN_SELF_REPORT' ||
+    classified.mvpKind === 'RUKN_SELF_PRIORITIES'
+  ) {
+    runStackShell(
+      [classified.mvpKind === 'RUKN_SELF_REPORT' ? 'REPORT' : 'FOLLOW_UP'],
+      layers,
+    )
+    return handleRuknSelfReport(
+      layers,
+      classified.mvpKind === 'RUKN_SELF_REPORT' ? 'report' : 'priorities',
+      context.role,
+      context.ruknId,
+    )
   }
 
   if (classified.mvpKind === 'CAMPAIGN_INTEL' || classified.intentCodes[0] === 'REPORT') {

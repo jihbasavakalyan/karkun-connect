@@ -4,6 +4,11 @@
 
 import { ROUTES, adminAssignmentsPath, adminExecutionPath, ruknVisitPath } from '@/constants/routes'
 import { buildTelLink, buildWhatsAppLink } from '@/utils/personContactLinks'
+import {
+  buildOfficialCampaignSummary,
+  type OfficialCampaignSummary,
+} from '@/lib/ruknWorkspacePresentation'
+import { buildContextualRafeeqGuidance } from '@/features/digitalRafeeq/companion/rafeeqUrduCopy'
 import { searchPeopleReadOnly } from './adapters/searchAdapter'
 import { resolveNavigationTarget } from './navigationMap'
 import { getTurnMetricsBundle } from './turnMetricsCache'
@@ -15,9 +20,12 @@ import {
 import {
   buildPersonSecretaryFacts,
   formatPersonSecretaryReport,
+  formatSecretarySections,
   isPersonRemainingFollowUp,
   type SecretaryFocus,
 } from './secretaryIntelligence'
+import { buildSmartWorkQueue } from './v2/workQueue'
+import type { WorkQueueTask } from './v2/types'
 import type { RafeeqAction, RafeeqRole, RafeeqTurnResult } from './types'
 import type { RafeeqSessionMemory } from './session'
 
@@ -107,7 +115,7 @@ export function handleTasks(layers: string[], role: RafeeqRole): RafeeqTurnResul
 
   const lines = [
     'آج کی ترجیحات:',
-    `1. Pending Karkun Requests: ${pending}`,
+    `1. منظوری کی منتظر درخواستیں: ${pending}`,
     `2. غیر منسلک کارکنان: ${people.unassignedKarkuns}`,
     `3. مہم پیش رفت: ${metrics.progressPct}% (${metrics.connected}/${metrics.total})`,
   ]
@@ -150,7 +158,9 @@ export function handleSuggestions(layers: string[], role: RafeeqRole): RafeeqTur
         'تجاویز (خودکار عمل نہیں):',
         `• رابطہ کے امیدوار: ${people.unassignedKarkuns} غیر منسلک`,
         `• رکاوٹ: پیش رفت ${metrics.progressPct}% — روابط پر توجہ`,
-        pending > 0 ? `• ${pending} درخواست(یں) منظوری کی منتظر` : '• کوئی pending request نہیں',
+        pending > 0
+          ? `• ${pending} درخواست(یں) منظوری کی منتظر`
+          : '• کوئی منظوری کی منتظر درخواست نہیں',
         '• اجتماع کی یاددہانی: ہفتہ وار حاضری چیک کریں',
       ].join('\n'),
     ),
@@ -169,6 +179,194 @@ export function handleSuggestions(layers: string[], role: RafeeqRole): RafeeqTur
     confirmationState: null,
     layersVisited: Object.freeze([...layers]),
     metadata: { suggestionsOnly: true },
+  })
+}
+
+const STATUS_LABEL_URDU: Record<
+  OfficialCampaignSummary['overallStatus']['label'],
+  string
+> = {
+  'On Track': 'صحیح سمت',
+  'Needs Attention': 'توجہ درکار',
+  'Immediate Action': 'فوری عمل',
+}
+
+function workQueueTitleUrdu(task: WorkQueueTask): string {
+  const map: Array<[RegExp, string]> = [
+    [/pending visits|overdue/i, 'باقی / تاخیر شدہ ملاقاتیں'],
+    [/follow-?ups?/i, 'فالو اپ'],
+    [/weekly ijtema|ijtema/i, 'ہفتہ وار اجتماع'],
+    [/registration/i, 'رجسٹریشن باقی'],
+    [/baitul.?maal/i, 'بیت المال'],
+    [/campaign/i, 'باقی مہم کے کام'],
+  ]
+  for (const [pattern, urdu] of map) {
+    if (pattern.test(task.title) || pattern.test(task.context)) return urdu
+  }
+  return task.title
+    .replace(/\bPending\b/gi, 'باقی')
+    .replace(/\bOverdue\b/gi, 'تاخیر شدہ')
+    .replace(/\bRecommendation\b/gi, 'تجویز')
+    .replace(/\bRisk\b/gi, 'خطرہ')
+    .replace(/\bStatus\b/gi, 'صورتِ حال')
+}
+
+function formatSelfReportSections(summary: OfficialCampaignSummary, advice: string): string {
+  const statusUrdu = STATUS_LABEL_URDU[summary.overallStatus.label]
+  const progress: string[] = []
+  if (summary.completedVisits > 0) {
+    progress.push(`${summary.completedVisits} ملاقاتیں مکمل`)
+  }
+  if (summary.completedWeeklyIjtema > 0) {
+    progress.push(`${summary.completedWeeklyIjtema} ہفتہ وار اجتماع درج`)
+  }
+  if (summary.completedAppRegistration > 0) {
+    progress.push(`${summary.completedAppRegistration} JIH App رجسٹریشن`)
+  }
+  if (summary.completedMonthlyBaitulMaal > 0) {
+    progress.push(`${summary.completedMonthlyBaitulMaal} بیت المال`)
+  }
+
+  const remaining: string[] = []
+  if (summary.pendingVisits > 0) remaining.push(`${summary.pendingVisits} ملاقاتیں باقی`)
+  if (summary.pendingWeeklyIjtema > 0) {
+    remaining.push(`${summary.pendingWeeklyIjtema} اجتماع باقی`)
+  }
+  if (summary.pendingAppRegistration > 0) {
+    remaining.push(`${summary.pendingAppRegistration} رجسٹریشن باقی`)
+  }
+  if (summary.pendingMonthlyBaitulMaal > 0) {
+    remaining.push(`${summary.pendingMonthlyBaitulMaal} بیت المال باقی`)
+  }
+
+  const attention: string[] = []
+  if (summary.connectedKarkuns <= 0) {
+    attention.push('ابھی کوئی کارکن منسلک نہیں۔')
+  } else if (summary.overallStatus.label !== 'On Track') {
+    attention.push(`مجموعی صورتِ حال: ${statusUrdu}`)
+  }
+  if (summary.pendingVisits > summary.connectedKarkuns / 2 && summary.connectedKarkuns > 0) {
+    attention.push('ملاقاتوں کی تکمیل منسلکیت سے پیچھے ہے۔')
+  }
+
+  const nextPlan: string[] = []
+  if (summary.pendingVisits > 0) nextPlan.push('باقی ملاقاتیں جلد مکمل کریں۔')
+  if (summary.pendingWeeklyIjtema > 0) nextPlan.push('ہفتہ وار اجتماع کی حاضری درج کریں۔')
+  if (summary.pendingAppRegistration > 0) nextPlan.push('باقی JIH App رجسٹریشن مکمل کریں۔')
+  if (summary.pendingMonthlyBaitulMaal > 0) nextPlan.push('بیت المال کی وابستگی مکمل کریں۔')
+  if (summary.allResponsibilitiesComplete) {
+    nextPlan.push('الحمد للہ — موجودہ ذمہ داریاں مکمل نظر آتی ہیں۔')
+  }
+
+  return formatSecretarySections({
+    situation: `آپ کی عملی رپورٹ: ${summary.connectedKarkuns} منسلک کارکن؛ تکمیل ${summary.completionPct}% — ${statusUrdu}۔`,
+    progress,
+    remaining,
+    attention,
+    nextPlan,
+    advice,
+  })
+}
+
+function formatSelfPrioritiesSections(
+  tasks: readonly WorkQueueTask[],
+  advice: string,
+): string {
+  const nextPlan =
+    tasks.length > 0
+      ? tasks.slice(0, 5).map((t, i) => `${i + 1}. ${workQueueTitleUrdu(t)}`)
+      : []
+  const remaining = nextPlan.map((line) => line.replace(/^\d+\.\s*/, ''))
+  return formatSecretarySections({
+    situation: 'آج آپ کی عملی ترجیحات درج ذیل قطار سے اخذ کی گئی ہیں۔',
+    progress: [],
+    remaining,
+    attention: tasks.length === 0 ? ['اس وقت کوئی فوری ترجیحی کام نظر نہیں آتا۔'] : [],
+    nextPlan: nextPlan.length > 0 ? nextPlan : ['موجودہ رفتار برقرار رکھیں۔'],
+    advice,
+    remainingFirst: true,
+  })
+}
+
+/**
+ * KC-027 — Logged-in Rukn first-person secretary report / priorities.
+ * Never asks «کس کارکن کی رپورٹ؟»; uses official campaign summary SSoT.
+ */
+export function handleRuknSelfReport(
+  layers: string[],
+  mode: 'report' | 'priorities',
+  role: RafeeqRole,
+  ruknId: string | null,
+): RafeeqTurnResult {
+  layers.push('rukn_self_report')
+  layers.push('secretary_intelligence')
+
+  if (!ruknId) {
+    return baseResult({
+      text: companion(
+        'ذاتی رپورٹ / ترجیحات کے لیے رکن کے طور پر سائن ان کریں۔',
+      ),
+      actions: [{ id: 'self-login', label: 'سائن ان', route: ROUTES.LOGIN }],
+      intentCode: mode === 'report' ? 'REPORT' : 'FOLLOW_UP',
+      requiresConfirmation: false,
+      confirmationState: null,
+      layersVisited: Object.freeze([...layers]),
+      metadata: {
+        secretaryIntelligence: true,
+        ruknSelf: mode,
+        missingRuknId: true,
+        noFirestoreWrite: true,
+      },
+    })
+  }
+
+  const home = role === 'administrator' ? ROUTES.ADMIN : ROUTES.RUKN
+  const myKarkun =
+    role === 'administrator' ? adminAssignmentsPath() : ROUTES.RUKN_MY_KARKUN
+  const advice = buildContextualRafeeqGuidance(ruknId)
+
+  if (mode === 'priorities') {
+    const tasks = buildSmartWorkQueue(role, ruknId)
+    const body = formatSelfPrioritiesSections(tasks, advice)
+    return baseResult({
+      text: companion(body),
+      actions: [
+        { id: 'self-priorities-home', label: 'ہوم', route: home },
+        { id: 'self-priorities-karkun', label: 'میرے کارکنان', route: myKarkun },
+      ],
+      intentCode: 'FOLLOW_UP',
+      requiresConfirmation: false,
+      confirmationState: 'AUTO_APPROVED',
+      layersVisited: Object.freeze([...layers]),
+      metadata: {
+        secretaryIntelligence: true,
+        ruknSelf: 'priorities',
+        ruknId,
+        workQueue: tasks,
+        noFirestoreWrite: true,
+      },
+    })
+  }
+
+  const summary = buildOfficialCampaignSummary(ruknId)
+  const body = formatSelfReportSections(summary, advice)
+  return baseResult({
+    text: companion(body),
+    actions: [
+      { id: 'self-report-home', label: 'ہوم', route: home },
+      { id: 'self-report-karkun', label: 'میرے کارکنان', route: myKarkun },
+    ],
+    intentCode: 'REPORT',
+    requiresConfirmation: false,
+    confirmationState: 'AUTO_APPROVED',
+    layersVisited: Object.freeze([...layers]),
+    metadata: {
+      secretaryIntelligence: true,
+      ruknSelf: 'report',
+      ruknId,
+      officialCampaignSummary: summary,
+      noFirestoreWrite: true,
+    },
   })
 }
 

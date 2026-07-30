@@ -54,6 +54,23 @@ const ATTENDANCE_MARK_PATTERNS: RegExp[] = [
   /حاضری لگاو?/,
   /حاضری درج/,
 ]
+/** KC-027 — first-person Rukn secretary report (before PROFILE / person name). */
+const SELF_REPORT_PATTERNS: RegExp[] = [
+  /میری رپورٹ/,
+  /میرا جائزہ/,
+  /میری ذمہ داری/,
+  /my (report|review|responsibilities)/i,
+]
+
+/** KC-027 — first-person priorities (before TASK_PATTERNS «آج کیا»). */
+const SELF_PRIORITIES_PATTERNS: RegExp[] = [
+  /میری ترجیحات/,
+  /آج مجھے کیا/,
+  /آج کیا کرنا/,
+  /my (priorities|priorities today)/i,
+  /what should i (do|focus on) today/i,
+]
+
 const PROFILE_PATTERNS: RegExp[] = [
   /show profile/i,
   /show (phone|family|status|assignments?|visit history)/i,
@@ -167,6 +184,8 @@ export type MvpIntentKind =
   | 'SUGGEST'
   | 'HELP'
   | 'KARKUN_INFO'
+  | 'RUKN_SELF_REPORT'
+  | 'RUKN_SELF_PRIORITIES'
   | 'CAMPAIGN_INTEL'
   | 'SAFE_ACTION'
   | 'REMINDER'
@@ -369,6 +388,29 @@ export function classifyMvpUtterance(raw: string): ExtendedClassification {
       navigationTarget: null,
       raw,
       mvpKind: 'KARKUN_INFO',
+      actionSubject: null,
+    }
+  }
+
+  // KC-027 — first-person secretary (before TASK / PROFILE so «میری» is never a person name).
+  if (SELF_REPORT_PATTERNS.some((p) => p.test(raw))) {
+    return {
+      intentCodes: ['REPORT'],
+      searchQuery: null,
+      navigationTarget: null,
+      raw,
+      mvpKind: 'RUKN_SELF_REPORT',
+      actionSubject: null,
+    }
+  }
+
+  if (SELF_PRIORITIES_PATTERNS.some((p) => p.test(raw))) {
+    return {
+      intentCodes: ['FOLLOW_UP'],
+      searchQuery: null,
+      navigationTarget: null,
+      raw,
+      mvpKind: 'RUKN_SELF_PRIORITIES',
       actionSubject: null,
     }
   }

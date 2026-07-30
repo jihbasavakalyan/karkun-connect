@@ -3,7 +3,7 @@
  */
 
 const FORBIDDEN_ENGLISH =
-  /\b(Status|Pending|Risk|Recommendation|Current Progress|Needs Attention|Healthy|Urgent|Dormant)\b/
+  /\b(Status|Pending|Risk|Recommendation|Current Progress|Needs Attention|Healthy|Urgent|Dormant|On Track|Immediate Action|No active module)\b/
 
 export function assertNoChatbotEnglish(text: string): boolean {
   return !FORBIDDEN_ENGLISH.test(text)

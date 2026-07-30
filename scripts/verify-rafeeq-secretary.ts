@@ -111,6 +111,70 @@ cases.push(
 )
 
 cases.push(
+  run('Classify self report — میری رپورٹ', () => {
+    const c = classifyMvpUtterance('میری رپورٹ')
+    assert(c.mvpKind === 'RUKN_SELF_REPORT', `kind=${c.mvpKind}`)
+    assert(c.actionSubject == null || c.actionSubject === '', 'no person subject')
+  }),
+)
+
+cases.push(
+  run('Classify self priorities — میری ترجیحات', () => {
+    const c = classifyMvpUtterance('میری ترجیحات')
+    assert(c.mvpKind === 'RUKN_SELF_PRIORITIES', `kind=${c.mvpKind}`)
+  }),
+)
+
+cases.push(
+  run('Classify میری رپورٹ بتا — not person name میری', () => {
+    const c = classifyMvpUtterance('میری رپورٹ بتا')
+    assert(c.mvpKind === 'RUKN_SELF_REPORT', `kind=${c.mvpKind}`)
+    assert(c.mvpKind !== 'KARKUN_INFO', 'not karkun info')
+  }),
+)
+
+cases.push(
+  run('Self report uses ruknId — never کس کارکن', () => {
+    clearSession('sec-self')
+    const result = runRafeeqTurn('میری رپورٹ', ctx('sec-self'))
+    assert(result.metadata['secretaryIntelligence'] === true, 'secretary meta')
+    assert(result.metadata['ruknSelf'] === 'report', 'ruknSelf report')
+    assert(result.metadata['ruknId'] === 'rukn-sec-1', 'ruknId used')
+    assert(!/کس کارکن/.test(result.text), 'never ask کس کارکن')
+    assert(/موجودہ صورتحال/.test(result.text), 'situation')
+    assert(/تجویز/.test(result.text), 'advice')
+    assert(assertNoChatbotEnglish(result.text), 'no english labels')
+  }),
+)
+
+cases.push(
+  run('Self priorities — میری ترجیحات', () => {
+    clearSession('sec-prio')
+    const result = runRafeeqTurn('میری ترجیحات', ctx('sec-prio'))
+    assert(result.metadata['ruknSelf'] === 'priorities', 'priorities mode')
+    assert(result.metadata['ruknId'] === 'rukn-sec-1', 'ruknId used')
+    assert(!/کس کارکن/.test(result.text), 'never ask کس کارکن')
+    assert(/موجودہ صورتحال|باقی کام|تجویز/.test(result.text), 'sections')
+    assert(assertNoChatbotEnglish(result.text), 'no english labels')
+  }),
+)
+
+cases.push(
+  run('Self report without ruknId asks sign-in not کس کارکن', () => {
+    clearSession('sec-norukn')
+    const result = runRafeeqTurn('میری رپورٹ', {
+      role: 'rukn',
+      ruknId: null,
+      locale: 'ur',
+      sessionId: 'sec-norukn',
+    })
+    assert(result.metadata['missingRuknId'] === true, 'missing flag')
+    assert(/سائن ان|رکن/.test(result.text), 'ask sign in')
+    assert(!/کس کارکن/.test(result.text), 'not کس کارکن')
+  }),
+)
+
+cases.push(
   run('Classify remaining follow-up', () => {
     assert(isPersonRemainingFollowUp('کیا باقی ہے؟'), 'remaining helper')
     const c = classifyMvpUtterance('کیا باقی ہے؟')
