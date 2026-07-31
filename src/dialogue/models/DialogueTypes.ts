@@ -7,6 +7,7 @@
 import type { IntentCode, IntentRecognitionResult } from '@/intents'
 import type { WorkflowExecutionResult } from '@/workflows'
 import type { VoiceNavigationResult } from '@/navigation'
+import type { PersonSearchResult } from '../adapters/personSearchAdapter'
 
 export type DialogueMove =
   | 'cancel'
@@ -61,4 +62,6 @@ export type DialogueTurnResult = {
   readonly recognition: IntentRecognitionResult
   readonly workflowResult: WorkflowExecutionResult | null
   readonly navigation?: VoiceNavigationResult | null
+  /** KC-035R1 — person search execution payload (FIND_PERSON). */
+  readonly search?: PersonSearchResult | null
 }

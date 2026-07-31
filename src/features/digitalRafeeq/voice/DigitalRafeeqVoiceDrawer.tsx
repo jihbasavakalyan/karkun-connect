@@ -8,19 +8,19 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Icon } from '@/components/ui/Icon'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
-import { getDigitalRafeeqService } from '@/runtime/service'
 import { useRequiredRuknId } from '@/hooks/useRequiredRuknId'
 import { useUserPreferences } from '@/hooks/useUserPreferences'
 import { useOptionalAdminCommandCenter } from '@/providers/AdminCommandCenterProvider'
 import { useOptionalRuknCommandCenter } from '@/providers/RuknCommandCenterProvider'
 import {
-  answerOperationalQuery,
   RAFEEQ_WELCOME_MESSAGE,
   resolveContextualSuggestions,
   type OpsAnswerAction,
   type OpsAnswerMetric,
 } from './opsAnswers'
-import { runRafeeqTurn, getOrCreateSession, hydrateRecentSearches } from '@/conversation/mvp'
+import { getOrCreateSession, hydrateRecentSearches } from '@/conversation/mvp'
+import { runKc035OperationalTurn } from './runKc035OperationalTurn'
+import { RafeeqDiagOverlay } from './RafeeqDiagOverlay'
 import { RAFEEQ_A11Y } from '@/conversation/mvp/v2/accessibility'
 import { RAFEEQ_UX } from '@/conversation/mvp/v2/uxPolish'
 import { RafeeqSpeakButton } from './RafeeqSpeakButton'
@@ -206,67 +206,16 @@ export function DigitalRafeeqVoiceDrawer({
   }
 
   const answerFn = async (query: string) => {
-    try {
-      const service = getDigitalRafeeqService()
-      if (service.isEnabled()) {
-        await service.initialize()
-      }
-    } catch {
-      // Ops answers do not require runtime.
-    }
-
-    const turn = runRafeeqTurn(query, {
+    const result = await runKc035OperationalTurn(query, {
       role,
       ruknId: ruknId ?? null,
-      locale: 'ur',
       sessionId: mvpSessionId,
-    })
-
-    if (!turn.usedFallback && turn.text) {
-      const intel = turn.metadata['campaignIntelligence'] as
-        | {
-            title?: string
-            metrics?: OpsAnswerMetric[]
-            insights?: string[]
-          }
-        | null
-        | undefined
-      const actions = [...turn.actions]
-      maybeAutoNavigate(String(turn.intentCode ?? ''), actions)
-      return {
-        text: turn.text,
-        actions,
-        intentCode: String(turn.intentCode ?? ''),
-        requiresConfirmation: turn.requiresConfirmation,
-        summaryTitle:
-          (turn.metadata['summaryTitle'] as string | undefined) ??
-          intel?.title,
-        metrics:
-          (turn.metadata['metrics'] as OpsAnswerMetric[] | undefined) ??
-          intel?.metrics,
-        insights:
-          (turn.metadata['insights'] as string[] | undefined) ?? intel?.insights,
-        why: (
-          (turn.metadata['explainability'] as Array<{ label: string }> | undefined) ??
-          []
-        ).map((r) => r.label),
-        contextualSuggestions:
-          (turn.metadata['contextualSuggestions'] as string[] | undefined) ?? [],
-        executionResult: turn.metadata['executionResult'] as
-          | 'success'
-          | 'cancelled'
-          | 'failed'
-          | undefined,
-        executionMessage: turn.metadata['executionMessage'] as string | undefined,
-      }
-    }
-
-    return answerOperationalQuery(query, {
-      role,
-      ruknId: ruknId ?? undefined,
-      adminSnapshot: role === 'administrator' ? (adminSnapshot ?? undefined) : undefined,
+      adminSnapshot:
+        role === 'administrator' ? (adminSnapshot ?? undefined) : undefined,
       ruknSnapshot: role === 'rukn' ? (ruknSnapshot ?? undefined) : undefined,
     })
+    maybeAutoNavigate(String(result.intentCode ?? ''), result.actions)
+    return result
   }
 
   const handleTextAnswer = async (query: string) => {
@@ -357,6 +306,7 @@ export function DigitalRafeeqVoiceDrawer({
 
   return (
     <div className="dr-voice-overlay" role="presentation" onClick={onClose}>
+      <RafeeqDiagOverlay />
       <aside
         className={`dr-voice-drawer urdu-text ${RAFEEQ_UX.responsiveDrawerClass} ${RAFEEQ_UX.transitionClass}`}
         role="dialog"

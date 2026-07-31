@@ -80,6 +80,7 @@
     "verify:kc-035e": "npx vite-node scripts/verify-kc-035e-recommendation-engine.ts",
     "verify:kc-035f": "npx vite-node scripts/verify-kc-035f-voice-navigation.ts",
     "verify:kc-035g": "npx vite-node scripts/verify-kc-035g-secretary-personality.ts",
+    "verify:kc-035r1": "npx vite-node scripts/verify-kc-035r1-operational-recovery.ts",
     "capture:phase3": "npx vite-node scripts/capture-phase3-screenshots.ts",
     "preview": "vite preview",
     "migrate:generate": "node scripts/generate-production-seeds.mjs",

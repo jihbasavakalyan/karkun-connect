@@ -1,5 +1,7 @@
 export { DigitalRafeeqVoiceDrawer } from './DigitalRafeeqVoiceDrawer'
 export { RafeeqSpeakButton } from './RafeeqSpeakButton'
+export { RafeeqDiagOverlay } from './RafeeqDiagOverlay'
+export { runKc035OperationalTurn } from './runKc035OperationalTurn'
 export {
   speakRafeeqText,
   stopLocalSpeech,

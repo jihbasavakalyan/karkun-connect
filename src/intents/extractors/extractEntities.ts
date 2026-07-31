@@ -56,9 +56,26 @@ function detectRelative(normalized: string): RelativePersonRef | null {
 }
 
 function extractPersonName(original: string, normalized: string): string | null {
+  // English: "Search Mohammad Aslam" / "Find Ahmed"
+  const enSearch = original.match(
+    /(?:search|find|locate|show)\s+(?:for\s+)?(.+?)$/i,
+  )
+  if (enSearch?.[1]) {
+    const name = enSearch[1]
+      .replace(/\b(person|karkun|worker|profile|details?)\b/gi, '')
+      .trim()
+    if (name.length >= 2 && !/^(pending|dashboard|registry|reports?|activities)$/i.test(name)) {
+      return name
+    }
+  }
+
   // "نام X تلاش" / search patterns
   const named = original.match(/(?:نام|تلاش|ڈھونڈو)\s+([^\s،۔.]{2,40})/u)
   if (named?.[1]) return named[1].trim()
+
+  // "تلاش X" after normalization may leave Latin name tokens in original
+  const afterSearch = original.match(/تلاش\s+([^\s،۔.]{2,40})/u)
+  if (afterSearch?.[1]) return afterSearch[1].trim()
 
   // Avoid treating relative-only phrases as names
   if (detectRelative(normalized)) return null
@@ -82,7 +99,10 @@ function extractNavigationTarget(normalized: string): string | null {
   if (normalized.includes('رپورٹ')) return 'reports'
   if (normalized.includes('ترتیبات')) return 'settings'
   if (normalized.includes('سرگرمی')) return 'activities'
-  if (normalized.includes('کارکن')) return 'workers'
+  if (normalized.includes('رجسٹری') || normalized.includes('کارکن')) return 'workers'
+  if (normalized.includes('ہفتہواراجتماع') || normalized.includes('اجتماع')) return 'attendance'
+  if (normalized.includes('بیتمال')) return 'baitul_maal'
+  if (normalized.includes('فالواپ')) return 'follow_up'
   return null
 }
 

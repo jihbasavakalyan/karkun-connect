@@ -15,6 +15,11 @@ import {
 } from './ttsMessages'
 import { getUserPreferences } from '@/stores/userPreferencesStore'
 import type { OpsAnswer, OpsAnswerAction } from './opsAnswers'
+import {
+  patchPipelineDiag,
+  recordPipelineStage,
+  voicePipelineLog,
+} from './voicePipelineDiag'
 
 export type ConversationPhase =
   | 'idle'
@@ -174,6 +179,9 @@ export class VoiceConversationService {
     this.browserFinal = ''
     this.phase = 'listening'
     this.emit()
+    voicePipelineLog('stt:listening_start', {
+      mode: this.preferBrowserStt ? 'browser' : 'google',
+    })
 
     if (this.preferBrowserStt) {
       this.startBrowserRecognition()
@@ -182,6 +190,7 @@ export class VoiceConversationService {
 
     try {
       await this.recorder.start()
+      voicePipelineLog('stt:recording_started', { micStatus: this.micStatus })
     } catch (error) {
       // Fall back to browser STT when MediaRecorder/mic path is unavailable.
       const ctor = getBrowserSpeechCtor()
@@ -194,6 +203,14 @@ export class VoiceConversationService {
       }
       this.phase = 'error'
       this.notice = friendlyError(error)
+      recordPipelineStage({
+        stage: 'speech_to_text',
+        stageInput: { phase: 'start' },
+        stageOutput: null,
+        success: false,
+        failure: friendlyError(error),
+        startedAt: Date.now(),
+      })
       this.emit()
       throw error
     }
@@ -219,11 +236,26 @@ export class VoiceConversationService {
         if (!transcript) {
           this.phase = 'error'
           this.notice = STT_NO_SPEECH_MESSAGE_URDU
+          recordPipelineStage({
+            stage: 'speech_to_text',
+            stageInput: { mode: 'browser' },
+            stageOutput: null,
+            success: false,
+            failure: 'silence_or_empty',
+            startedAt: Date.now(),
+          })
           this.emit()
           return null
         }
         this.phase = 'thinking'
         this.interimRecognizedText = transcript
+        recordPipelineStage({
+          stage: 'speech_to_text',
+          stageInput: { mode: 'browser' },
+          stageOutput: { transcript },
+          success: true,
+          startedAt: Date.now(),
+        })
         this.emit()
         return await this.runIntelligenceTurn({
           transcript,
@@ -235,11 +267,21 @@ export class VoiceConversationService {
       }
 
       let audio: Blob | null = null
+      const sttStarted = Date.now()
       try {
         audio = await this.recorder.stop()
+        voicePipelineLog('stt:recording_stopped', { size: audio?.size ?? 0 })
       } catch (error) {
         this.phase = 'error'
         this.notice = friendlyError(error)
+        recordPipelineStage({
+          stage: 'speech_to_text',
+          stageInput: { mode: 'google' },
+          stageOutput: null,
+          success: false,
+          failure: friendlyError(error),
+          startedAt: sttStarted,
+        })
         this.emit()
         return null
       }
@@ -248,6 +290,14 @@ export class VoiceConversationService {
       if (!audio || audio.size < 256) {
         this.phase = 'error'
         this.notice = STT_NO_SPEECH_MESSAGE_URDU
+        recordPipelineStage({
+          stage: 'speech_to_text',
+          stageInput: { mode: 'google', audioSize: audio?.size ?? 0 },
+          stageOutput: null,
+          success: false,
+          failure: 'silence_or_empty',
+          startedAt: sttStarted,
+        })
         this.emit()
         return null
       }
@@ -272,6 +322,14 @@ export class VoiceConversationService {
           'کلاؤڈ سننے کا نظام ابھی دستیاب نہیں۔ دوبارہ مائیک دبائیں — مقامی پہچان استعمال ہوگی۔'
         this.interimRecognizedText = ''
         audio = null
+        recordPipelineStage({
+          stage: 'speech_to_text',
+          stageInput: { mode: 'google' },
+          stageOutput: null,
+          success: false,
+          failure: friendlyError(error),
+          startedAt: sttStarted,
+        })
         this.emit()
         void error
         return null
@@ -284,10 +342,25 @@ export class VoiceConversationService {
         this.phase = 'error'
         this.notice = STT_NO_SPEECH_MESSAGE_URDU
         this.interimRecognizedText = ''
+        recordPipelineStage({
+          stage: 'speech_to_text',
+          stageInput: { mode: 'google' },
+          stageOutput: null,
+          success: false,
+          failure: 'empty_transcript',
+          startedAt: sttStarted,
+        })
         this.emit()
         return null
       }
 
+      recordPipelineStage({
+        stage: 'speech_to_text',
+        stageInput: { mode: 'google' },
+        stageOutput: { transcript },
+        success: true,
+        startedAt: sttStarted,
+      })
       this.interimRecognizedText = transcript
       this.emit()
 
@@ -463,12 +536,46 @@ export class VoiceConversationService {
     const shouldSpeak = input.speakReply && prefs.voiceResponses
     if (shouldSpeak) {
       this.phase = 'speaking'
+      patchPipelineDiag({ ttsStatus: 'speaking' })
       this.emit()
+      const ttsStarted = Date.now()
       try {
         await speakRafeeqCloudText(ops.text)
+        recordPipelineStage({
+          stage: 'text_to_speech',
+          stageInput: { textLength: ops.text.length },
+          stageOutput: { played: true },
+          success: true,
+          startedAt: ttsStarted,
+        })
+        patchPipelineDiag({ ttsStatus: 'done' })
       } catch (error) {
-        this.notice = friendlyError(error)
+        const message = friendlyError(error)
+        this.notice = message
+        const interrupted =
+          error instanceof Error &&
+          (/abort|interrupt/i.test(error.message) || error.name === 'AbortError')
+        recordPipelineStage({
+          stage: 'text_to_speech',
+          stageInput: { textLength: ops.text.length },
+          stageOutput: null,
+          success: false,
+          failure: interrupted ? 'interrupted' : message,
+          startedAt: ttsStarted,
+        })
+        patchPipelineDiag({
+          ttsStatus: interrupted ? 'interrupted' : 'failed',
+        })
       }
+    } else {
+      patchPipelineDiag({ ttsStatus: 'skipped' })
+      recordPipelineStage({
+        stage: 'text_to_speech',
+        stageInput: { speakReply: input.speakReply, voiceResponses: prefs.voiceResponses },
+        stageOutput: { skipped: true },
+        success: true,
+        startedAt: Date.now(),
+      })
     }
 
     if (input.token !== this.turnToken) return turn

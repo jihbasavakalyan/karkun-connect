@@ -24,12 +24,14 @@ export function intentToNavigationTarget(
     case IntentCode.NAVIGATE_SETTINGS:
       return 'settings'
     case IntentCode.NAVIGATE_ACTIVITIES:
-      return 'assignments'
+      return 'activities'
     case IntentCode.NAVIGATE_ATTENDANCE:
     case IntentCode.SHOW_WEEKLY_IJTEMA:
       return 'attendance'
     case IntentCode.NAVIGATE_PAYMENT:
       return 'baitul_maal'
+    case IntentCode.SHOW_PENDING_TASKS:
+      return 'follow_up'
     case IntentCode.NAVIGATE_HOME:
       return 'home'
     case IntentCode.NAVIGATE_BACK:

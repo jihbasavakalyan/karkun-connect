@@ -33,8 +33,10 @@ function testTargets(): void {
   assert(intentToNavigationTarget(IntentCode.NAVIGATE_WORKERS) === 'registry', 'workers')
   assert(intentToNavigationTarget(IntentCode.NAVIGATE_REPORTS) === 'reports', 'reports')
   assert(intentToNavigationTarget(IntentCode.NAVIGATE_SETTINGS) === 'settings', 'settings')
+  assert(intentToNavigationTarget(IntentCode.NAVIGATE_ACTIVITIES) === 'activities', 'activities')
   assert(intentToNavigationTarget(IntentCode.NAVIGATE_ATTENDANCE) === 'attendance', 'att')
   assert(intentToNavigationTarget(IntentCode.NAVIGATE_PAYMENT) === 'baitul_maal', 'pay')
+  assert(intentToNavigationTarget(IntentCode.SHOW_PENDING_TASKS) === 'follow_up', 'follow_up')
   assert(intentToNavigationTarget(IntentCode.NAVIGATE_HOME) === 'home', 'home')
   assert(intentToNavigationTarget(IntentCode.NAVIGATE_BACK) === 'back', 'back')
 }

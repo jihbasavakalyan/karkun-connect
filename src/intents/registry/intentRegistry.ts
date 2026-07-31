@@ -31,6 +31,7 @@ export const INTENT_REGISTRY: readonly IntentDefinition[] = [
       { id: 'dashboard-word', anyOf: ['ڈیشبورڈ'], weight: 1.1 },
       { id: 'today-status', allOf: ['آجکی'], anyOf: ['حال', 'پیشرفت'], weight: 1.15 },
       { id: 'today-progress', allOf: ['آج'], anyOf: ['پیشرفت', 'حال'], weight: 1 },
+      { id: 'show-dashboard-en', allOf: ['ڈیشبورڈ'], anyOf: ['پیش', 'دکھا'], weight: 1.05 },
     ],
   },
   {
@@ -68,6 +69,8 @@ export const INTENT_REGISTRY: readonly IntentDefinition[] = [
       { id: 'pending', anyOf: ['زیرالتواء', 'باقی', 'pending'], weight: 0.9 },
       { id: 'pending-tasks', allOf: ['باقی'], anyOf: ['کام', 'کارروائی', 'امور'], weight: 1 },
       { id: 'pending-phrase', anyOf: ['زیر التواء', 'امور زیر التواء'], weight: 1.05 },
+      { id: 'pending-followup', anyOf: ['فالواپباقی', 'فالواپ'], weight: 1.1 },
+      { id: 'show-pending-followup-en', allOf: ['پیش'], anyOf: ['فالواپ', 'فالواپباقی'], weight: 1.05 },
     ],
   },
 
@@ -128,6 +131,7 @@ export const INTENT_REGISTRY: readonly IntentDefinition[] = [
     patterns: [
       { id: 'go-dashboard', allOf: ['ڈیشبورڈ'], anyOf: ['کھولو', 'جائیں', 'لے چلو', 'کھول'], weight: 1 },
       { id: 'open-dashboard', anyOf: ['ڈیشبورڈ کھولو', 'ڈیشبورڈ پر'], weight: 1.05 },
+      { id: 'open-dashboard-en', allOf: ['کھول'], anyOf: ['ڈیشبورڈ'], weight: 1.25 },
     ],
   },
   {
@@ -144,6 +148,8 @@ export const INTENT_REGISTRY: readonly IntentDefinition[] = [
     baseStrength: 0.84,
     patterns: [
       { id: 'go-workers-nav', allOf: ['کارکن'], anyOf: ['کھولو', 'فہرست', 'صفحہ', 'جائیں'], weight: 1 },
+      { id: 'open-registry', anyOf: ['رجسٹری'], weight: 1.05 },
+      { id: 'open-registry-en', allOf: ['کھول'], anyOf: ['رجسٹری'], weight: 1.25 },
     ],
   },
   {
@@ -151,7 +157,8 @@ export const INTENT_REGISTRY: readonly IntentDefinition[] = [
     category: IntentCategory.NAVIGATION,
     baseStrength: 0.84,
     patterns: [
-      { id: 'go-reports', allOf: ['رپورٹ'], anyOf: ['کھولو', 'صفحہ', 'جائیں', 'لے چلو'], weight: 1 },
+      { id: 'go-reports', allOf: ['رپورٹ'], anyOf: ['کھولو', 'صفحہ', 'جائیں', 'لے چلو', 'کھول'], weight: 1 },
+      { id: 'open-reports-en', allOf: ['کھول'], anyOf: ['رپورٹ'], weight: 1.25 },
     ],
   },
   {
@@ -168,8 +175,9 @@ export const INTENT_REGISTRY: readonly IntentDefinition[] = [
     category: IntentCategory.NAVIGATION,
     baseStrength: 0.84,
     patterns: [
-      { id: 'go-activities', anyOf: ['سرگرمی', 'سرگرمیاں', 'activities'], weight: 0.95 },
-      { id: 'activities-page', allOf: ['سرگرمی'], anyOf: ['کھولو', 'صفحہ'], weight: 1 },
+      { id: 'go-activities', anyOf: ['سرگرمی', 'سرگرمیاں'], weight: 0.95 },
+      { id: 'activities-page', allOf: ['سرگرمی'], anyOf: ['کھولو', 'صفحہ', 'کھول'], weight: 1 },
+      { id: 'open-activities-en', allOf: ['کھول'], anyOf: ['سرگرمیاں', 'سرگرمی'], weight: 1.25 },
     ],
   },
   {
@@ -178,8 +186,9 @@ export const INTENT_REGISTRY: readonly IntentDefinition[] = [
     baseStrength: 0.88,
     patterns: [
       { id: 'go-attendance', anyOf: ['حاضری کھولو', 'حاضری صفحہ'], weight: 1.1 },
-      { id: 'go-ijtema-page', allOf: ['اجتماع'], anyOf: ['کھولو', 'صفحہ', 'جائیں'], weight: 1 },
-      { id: 'open-weekly-ijtema-nav', allOf: ['ہفتہ وار'], anyOf: ['کھولو', 'صفحہ'], weight: 1.05 },
+      { id: 'go-ijtema-page', allOf: ['اجتماع'], anyOf: ['کھولو', 'صفحہ', 'جائیں', 'کھول'], weight: 1 },
+      { id: 'open-weekly-ijtema-nav', allOf: ['ہفتہواراجتماع'], anyOf: ['کھول', 'کھولو', 'صفحہ'], weight: 1.1 },
+      { id: 'open-weekly-ijtema-en', allOf: ['کھول'], anyOf: ['ہفتہواراجتماع', 'اجتماع'], weight: 1.25 },
     ],
   },
   {
@@ -188,7 +197,8 @@ export const INTENT_REGISTRY: readonly IntentDefinition[] = [
     baseStrength: 0.88,
     patterns: [
       { id: 'go-payment', anyOf: ['ادائیگی کھولو', 'پیمنٹ کھولو'], weight: 1.05 },
-      { id: 'go-baitul-page', allOf: ['بیت المال'], anyOf: ['کھولو', 'صفحہ', 'جائیں'], weight: 1.1 },
+      { id: 'go-baitul-page', allOf: ['بیتمال'], anyOf: ['کھولو', 'صفحہ', 'جائیں', 'کھول'], weight: 1.1 },
+      { id: 'open-baitul-en', allOf: ['کھول'], anyOf: ['بیتمال'], weight: 1.25 },
     ],
   },
   {
@@ -217,6 +227,7 @@ export const INTENT_REGISTRY: readonly IntentDefinition[] = [
       { id: 'find-person', allOf: ['تلاش'], anyOf: ['کارکن', 'شخص', 'نام'], weight: 1 },
       { id: 'find-worker', anyOf: ['کارکن تلاش', 'ڈھونڈو کارکن', 'تلاش کرو'], weight: 1 },
       { id: 'who-is', anyOf: ['کون ہے', 'ڈھونڈو'], weight: 0.8 },
+      { id: 'search-en', anyOf: ['تلاش'], weight: 0.82 },
     ],
   },
   {

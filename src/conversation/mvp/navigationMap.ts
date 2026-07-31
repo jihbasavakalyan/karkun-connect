@@ -71,6 +71,20 @@ export function resolveNavigationTarget(
         label: 'تفویض / کنکشن',
         entityType: 'module',
       }
+    case 'activities':
+      return {
+        target,
+        route: admin ? ROUTES.ADMIN_ACTIVITIES : ROUTES.RUKN_CAMPAIGN_RECORD,
+        label: 'سرگرمیاں',
+        entityType: 'module',
+      }
+    case 'follow_up':
+      return {
+        target,
+        route: admin ? ROUTES.ADMIN_FOLLOW_UP : ROUTES.RUKN,
+        label: 'فالو اپ',
+        entityType: 'module',
+      }
     case 'campaign':
       return {
         target,

@@ -362,6 +362,37 @@ export class DialogueManager {
         }
       }
       case 'route_workflow': {
+        // KC-035R1 — FIND_PERSON executes via existing universal search (no new SoR).
+        if (
+          recognition.intent === IntentCode.FIND_PERSON ||
+          recognition.intent === IntentCode.FIND_RUKN
+        ) {
+          const { executePersonSearch } = await import(
+            '../adapters/personSearchAdapter'
+          )
+          const search = executePersonSearch({
+            query:
+              recognition.entities.personName?.trim() ||
+              recognition.originalUtterance.trim(),
+            role: input.actor.role,
+            preferPersonName: recognition.entities.personName,
+          })
+          if (search.personId) {
+            conv.setActivePerson(input.sessionId, {
+              personId: search.personId,
+              displayName: search.personName || search.personId,
+              kind: 'karkun',
+            })
+          }
+          return {
+            kind: search.ok ? 'executed' : 'responded',
+            move,
+            responseUrdu: search.responseUrdu,
+            recognition,
+            workflowResult: null,
+            search,
+          }
+        }
         const wf = await executor.run({
           sessionId: input.sessionId,
           actor: input.actor,

@@ -14,6 +14,8 @@ export type NavigationTargetKey =
   | 'weekly_ijtema'
   | 'baitul_maal'
   | 'assignments'
+  | 'activities'
+  | 'follow_up'
   | 'home'
   | 'back'
 

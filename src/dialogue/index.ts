@@ -23,3 +23,8 @@ export {
   resetDialogueEngineForTests,
   type DialogueEngine,
 } from './engine/createDialogueEngine'
+export {
+  executePersonSearch,
+  type PersonSearchResult,
+  type PersonSearchAction,
+} from './adapters/personSearchAdapter'

@@ -101,9 +101,11 @@ export function classifyDialogueMove(input: {
 
   if (
     intent === IntentCode.SHOW_PENDING_TASKS ||
-    intent === IntentCode.SHOW_DASHBOARD
+    intent === IntentCode.SHOW_DASHBOARD ||
+    intent === IntentCode.SHOW_WEEKLY_IJTEMA ||
+    intent === IntentCode.SHOW_REPORT
   ) {
-    return 'advise'
+    return 'route_navigation'
   }
 
   if (
