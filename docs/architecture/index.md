@@ -20,7 +20,8 @@
 | [**KC-033 — Canonical Campaign Metric Registry**](./kc-033-canonical-metric-registry.md) | Authoritative metric providers after Operations Truth Convergence |
 | [KC-033 — ARCH-009 Gate](./kc-033-arch009-gate.md) | Convergence sprint gate |
 | [KC-034 — ARCH-009 Gate](./kc-034-arch009-gate.md) | Executive Report editorial polish gate |
-| [**KC-035 — Digital Rafeeq 2.0 (Master)**](./kc-035-digital-rafeeq-2.md) | Canonical Rafeeq layered architecture, principles, roadmap A–G |
+| [**KC-037 — Executive Report Framework (V2)**](./kc-037-executive-report-framework-v2.md) | Configurable executive reports — canonical contract |
+| [KC-035 — Digital Rafeeq 2.0 (Master)](./kc-035-digital-rafeeq-2.md) | Canonical Rafeeq layered architecture, principles, roadmap A–G |
 | [KC-035A — ARCH-009 Gate](./kc-035a-arch009-gate.md) | Digital Rafeeq conversation engine foundation |
 | [KC-035B — ARCH-009 Gate](./kc-035b-arch009-gate.md) | Natural Urdu intent recognition engine |
 | [KC-035C — ARCH-009 Gate](./kc-035c-arch009-gate.md) | Operational workflow engine |
