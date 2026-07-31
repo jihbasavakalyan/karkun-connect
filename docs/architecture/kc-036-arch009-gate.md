@@ -75,4 +75,12 @@
 
 ## Phase 6 — Post-deploy
 
-Filled after Vercel READY + production smoke (`/api/karkun-mobile-lookup` present).
+| Check | Result |
+|-------|--------|
+| Feature SHA | `0767ffb` |
+| Deployment | `dpl_FUecJVPPTfgLqbnjtp6eibjx9ZPJ` READY |
+| Production | https://jihbasavakalyan.org |
+| Smoke | `api/karkun-mobile-lookup` λ present on production deploy |
+| Issue 1 | No data mutation; report artifact under `production-data/exports/kc036-connection-distribution-latest.json` |
+
+**Production Certification: READY — Release Complete**
