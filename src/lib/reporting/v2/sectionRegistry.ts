@@ -11,7 +11,21 @@ export function registerSection(definition: SectionDefinition): void {
   if (!definition.id.trim()) {
     throw new Error('SectionDefinition.id is required')
   }
-  registry.set(definition.id, definition)
+  const normalized: SectionDefinition = {
+    ...definition,
+    title: definition.title ?? definition.displayName,
+    supportedReportTypes: definition.supportedReportTypes ?? [],
+    supportedDetailLevels: definition.supportedDetailLevels ?? [
+      'executive',
+      'standard',
+      'detailed',
+      'audit',
+    ],
+    dependencies: definition.dependencies ?? [],
+    defaultEnabled: definition.defaultEnabled ?? false,
+    visibility: definition.visibility ?? 'always',
+  }
+  registry.set(normalized.id, normalized)
 }
 
 export function getSection(id: string): SectionDefinition | undefined {
@@ -37,6 +51,15 @@ export function listEnabledSections(enabledIds: string[]): SectionDefinition[] {
     ordered.push(def)
   }
   return ordered.sort((a, b) => a.renderPriority - b.renderPriority)
+}
+
+export function listSectionsForReportType(reportTypeId: string): SectionDefinition[] {
+  return listSections().filter((s) => {
+    if (s.visibility === 'hidden') return false
+    const types = s.supportedReportTypes ?? []
+    if (types.length === 0) return true
+    return types.includes(reportTypeId as (typeof types)[number])
+  })
 }
 
 /** Test / hot-reload helper — does not affect production boot after modules load. */

@@ -1,7 +1,6 @@
-import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
-import { useAuth } from '@/hooks/useAuth'
-import { downloadCampaignReportPdf } from '@/lib/reporting/campaignReportPdf'
+import { ROUTES } from '@/constants/routes'
 import { URDU_REPORT } from '@/lib/reporting/campaignReportUrdu'
 
 type GenerateCampaignReportButtonProps = {
@@ -10,36 +9,20 @@ type GenerateCampaignReportButtonProps = {
 }
 
 /**
- * KC-0114 — Generates the official Urdu Campaign Report PDF.
+ * KC-0114 / KC-037B — Opens Report Center configuration workflow
+ * (replaces direct one-click PDF export).
  */
 export function GenerateCampaignReportButton({
   className = '',
   size = 'md',
 }: GenerateCampaignReportButtonProps) {
-  const { user } = useAuth()
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState('')
-
-  const onClick = () => {
-    setError('')
-    setBusy(true)
-    void downloadCampaignReportPdf({
-      generatedBy: user?.displayName?.trim() || user?.email || user?.phone || 'منتظم',
-    })
-      .catch((err: unknown) => {
-        setError(err instanceof Error ? err.message : 'مہم کی رپورٹ تیار نہیں ہو سکی۔')
-      })
-      .finally(() => {
-        setBusy(false)
-      })
-  }
+  const navigate = useNavigate()
 
   return (
     <div className={className}>
-      <PrimaryButton type="button" size={size} loading={busy} onClick={onClick}>
+      <PrimaryButton type="button" size={size} onClick={() => navigate(ROUTES.ADMIN_REPORTS)}>
         {URDU_REPORT.button}
       </PrimaryButton>
-      {error ? <p className="mt-2 text-sm text-danger">{error}</p> : null}
     </div>
   )
 }

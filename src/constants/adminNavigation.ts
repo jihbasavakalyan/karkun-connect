@@ -46,6 +46,7 @@ export const ADMIN_NAV_ITEMS: AdminNavEntry[] = [
   },
   { id: 'inbox', label: 'Inbox', icon: 'message', to: ROUTES.ADMIN_INBOX },
   { id: 'campaign', label: 'Campaign', icon: 'chart', to: ROUTES.ADMIN_CAMPAIGN },
+  { id: 'reports', label: 'Reports', icon: 'file-text', to: ROUTES.ADMIN_REPORTS },
   { id: 'rukn', label: 'Rukn', icon: 'user', to: ROUTES.ADMIN_RUKN },
   { id: 'karkun', label: 'Karkun', icon: 'users', to: ROUTES.ADMIN_KARKUN },
   { id: 'muttafiqeen', label: 'Muttafiqeen', icon: 'users', to: ROUTES.ADMIN_MUTTAFIQEEN },

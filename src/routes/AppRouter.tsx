@@ -20,6 +20,11 @@ const CampaignSetupPage = lazyWithChunkReload(() =>
 const CampaignsPage = lazyWithChunkReload(() =>
   import('@/pages/admin/CampaignsPage').then((m) => ({ default: m.CampaignsPage })),
 )
+const AdminReportCenterPage = lazyWithChunkReload(() =>
+  import('@/pages/admin/AdminReportCenterPage').then((m) => ({
+    default: m.AdminReportCenterPage,
+  })),
+)
 const OperationsPage = lazyWithChunkReload(() =>
   import('@/pages/admin/OperationsPage').then((m) => ({ default: m.OperationsPage })),
 )
@@ -173,6 +178,7 @@ export function AppRouter() {
             <Route index element={<AdminHomePage />} />
             <Route path="campaign" element={<CampaignsPage />} />
             <Route path="campaign/setup" element={<CampaignSetupPage />} />
+            <Route path="reports" element={<AdminReportCenterPage />} />
             <Route path="rukn" element={<RuknModulePage />} />
             <Route path="rukn/:ruknId" element={<RuknDetailPage />} />
             <Route path="karkun" element={<KarkunanPage />} />

@@ -34,9 +34,10 @@ export function buildKc034ExecutiveSectionModel(ctx: ReportContext): SectionMode
 export function registerKc034ExecutiveSection(): void {
   registerSection({
     id: KC034_EXECUTIVE_SECTION_ID,
+    title: 'Executive Campaign Body (KC-034)',
     displayName: 'KC-034 Executive Campaign Report',
     description:
-      'Full Urdu executive campaign PDF model (cover, KPIs, bands, exceptions, Rukn table).',
+      'Full Urdu executive campaign PDF model (cover, KPIs, bands, exceptions, Rukn table). Connection ≠ Visit.',
     requiredProviders: [
       'connections',
       'visits',
@@ -47,8 +48,13 @@ export function registerKc034ExecutiveSection(): void {
     ],
     configurationSchema: 'kc034_executive_v1',
     renderPriority: 10,
-    supportedOutputs: ['pdf', 'dashboard', 'excel', 'csv', 'mobile_summary'],
+    supportedOutputs: ['pdf', 'dashboard', 'excel', 'csv', 'json', 'mobile_summary'],
+    supportedReportTypes: ['executive_campaign'],
+    supportedDetailLevels: ['executive', 'standard', 'detailed', 'audit'],
+    dependencies: [],
+    defaultEnabled: true,
     featureFlag: true,
+    visibility: 'always',
     status: 'active',
     buildModel: buildKc034ExecutiveSectionModel,
   })
