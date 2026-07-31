@@ -88,4 +88,12 @@ No dashboard UI, bootstrap, auth, Firestore, or repository behaviour changes.
 
 ## Phase 6 — Post-deploy verification
 
-*(filled after deploy)*
+| Check | Result |
+|-------|--------|
+| GitHub HEAD | `6127320` on `origin/main` |
+| Vercel | `dpl_FsCwGGNe4n1rczyowiPMBri6YjWZ` READY |
+| Production URL | https://jihbasavakalyan.org |
+| Bundle smoke | `GenerateCampaignReportButton-DvDHubaf.js` contains `kc034_executive_campaign`, `campaign_report_v1`, `getActiveRuknRows`, `getCountForRukn` |
+| Local verifies | `verify:kc-037a` 6/6 · `verify:kc-bug-0126` · `verify:kc0125` · `verify:kc-033` · typecheck |
+
+**Closure:** KC-037A complete — Report Composer foundation live; KC-034 PDF path migrated without visual redesign.
