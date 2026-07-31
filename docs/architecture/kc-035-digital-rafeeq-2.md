@@ -176,7 +176,7 @@ Public façade methods live on `DigitalRafeeqService` without embedding domain r
 | **KC-035E** | Operational Recommendation Engine (Advise) | ✅ Production Complete |
 | **KC-035F** | Voice Navigation & Voice Operation | ✅ Production Complete |
 | **KC-035G** | Secretary Personality & Conversation Polish | ✅ Production Complete |
-| **KC-035R1** | Operational Recovery (wire live voice → KC-035 pipeline) | 🔄 In progress |
+| **KC-035R1** | Operational Recovery (wire live voice → KC-035 pipeline) | ✅ Production Complete |
 
 Gates: [035A](./kc-035a-arch009-gate.md) · [035B](./kc-035b-arch009-gate.md) · [035C](./kc-035c-arch009-gate.md) · [035D](./kc-035d-arch009-gate.md) · [035E](./kc-035e-arch009-gate.md) · [035F](./kc-035f-arch009-gate.md) · [035G](./kc-035g-arch009-gate.md) · [035R1](./kc-035r1-arch009-gate.md)
 

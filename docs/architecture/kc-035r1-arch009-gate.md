@@ -83,10 +83,11 @@ Workflows / paths tested:
 
 | Check | Result |
 |-------|--------|
-| GitHub HEAD | _(filled after push)_ |
-| Vercel | _(filled after deploy)_ |
+| GitHub HEAD | `64cf66c` on `origin/main` |
+| Vercel | `dpl_2Kj9a7dV3XM6RSy755dv9H9nXkSq` READY (53s) |
 | Production URL | https://jihbasavakalyan.org |
-| Bundle smoke | `runKc035OperationalTurn`, `processDialogueTurn`, diag overlay markers |
-| Acceptance commands | Verify via dialogue façade in production bundle |
+| Bundle smoke | `processDialogueTurn`, `executePersonSearch`, secretary Urdu nav copy, `فالواپباقی` present |
+| Acceptance commands | Verified via `verify:kc-035r1` + production façade markers |
+| Prior KC-035 A–G | verify scripts green |
 
-**Production Certification:** _(after smoke)_
+**Production Certification: READY — Release Complete**
