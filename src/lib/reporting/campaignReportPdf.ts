@@ -1,12 +1,11 @@
 /**
- * KC-0114 / KC-BUG-0126 / KC-029 / KC-034 — Executive Urdu Campaign Report PDF.
+ * KC-0114 / KC-BUG-0126 / KC-029 / KC-034 / KC-037A — Executive Urdu Campaign Report PDF.
  *
  * Editorial polish: org → campaign summary → bands → exception lists → recommendations.
- * Connection ≠ Visit preserved. Presentation only — reuses CampaignReportModel.
+ * Connection ≠ Visit preserved. Presentation only — model via Report Composer (KC-033 KPIs).
  */
 
 import {
-  buildCampaignReportModel,
   type CampaignReportExceptionLists,
   type CampaignReportMetricPair,
   type CampaignReportModel,
@@ -15,6 +14,7 @@ import {
 } from './campaignReportModel'
 import { URDU_REPORT } from './campaignReportUrdu'
 import { downloadUrduHtmlReportPdf, UrduHtml } from './urduHtmlToPdf'
+import { composeKc034CampaignReportModel } from './v2'
 
 function progressTone(pct: number): string {
   if (pct >= 70) return 'good'
@@ -344,7 +344,7 @@ export async function downloadCampaignReportPdf(options?: {
 }): Promise<CampaignReportModel> {
   const model =
     options?.model ??
-    buildCampaignReportModel({
+    composeKc034CampaignReportModel({
       generatedBy: options?.generatedBy,
       organization: options?.organization,
     })

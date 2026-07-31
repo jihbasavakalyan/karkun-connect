@@ -1,36 +1,21 @@
 /**
- * KC-0114 / KC-029 — Campaign Report presentation model.
- * Composes existing dashboard / Health / connection getters only.
+ * KC-0114 / KC-029 / KC-037A — Campaign Report presentation model.
+ * Composes KC-033 CanonicalMetricProviders only for KPIs.
  * Does not introduce calculation engines or touch repositories / Firestore.
  */
 
 import { APP_VERSION } from '@/constants/app'
 import { ruknMaster } from '@/data/ruknMaster'
 import { getAssignedKarkunanForRukn } from '@/lib/assignmentEngine'
-import { getConnectedKarkunCountForRukn } from '@/lib/connections/getConnectedKarkunsForRukn'
 import { getAllMuttafiqeen, getPeopleStatistics } from '@/lib/peopleStore'
+import {
+  CanonicalMetricProviders,
+} from '@/lib/operations/canonicalCampaignMetrics'
 import {
   formatCampaignDate,
   getActiveCampaign,
   getCampaignTimeline,
 } from '@/services/campaignService'
-import {
-  getDashboardAppRegistrationMetrics,
-  getDashboardAppRegistrationMetricsForRukn,
-  getDashboardHealthModulePct,
-  getDashboardHealthSlices,
-  getDashboardVisitMetrics,
-  getDashboardVisitMetricsForRukn,
-} from '@/services/dashboardMetricsService'
-import { getCampaignConnectionMetrics } from '@/services/metricsService'
-import {
-  getMonthlyBaitulMaalDashboardKpi,
-  getMonthlyBaitulMaalReport,
-} from '@/services/monthlyBaitulMaalService'
-import {
-  getWeeklyIjtemaDashboardKpi,
-  getWeeklyIjtemaReport,
-} from '@/services/weeklyIjtemaService'
 import {
   URDU_CRITICAL_REASONS,
   URDU_REPORT,
@@ -377,19 +362,22 @@ export function buildCampaignReportModel(input?: {
   generatedBy?: string
   organization?: string
   now?: Date
+  /** KC-037A — prefer Composer-bound providers; defaults to CanonicalMetricProviders. */
+  providers?: typeof CanonicalMetricProviders
 }): CampaignReportModel {
   const now = input?.now ?? new Date()
+  const providers = input?.providers ?? CanonicalMetricProviders
   const campaign = getActiveCampaign()
   const timeline = getCampaignTimeline(now)
   const people = getPeopleStatistics()
-  const connections = getCampaignConnectionMetrics()
-  const visits = getDashboardVisitMetrics()
-  const app = getDashboardAppRegistrationMetrics()
-  const healthSlices = getDashboardHealthSlices()
-  const wiKpi = getWeeklyIjtemaDashboardKpi()
-  const bmKpi = getMonthlyBaitulMaalDashboardKpi()
-  const wiRows = wiKpi.eventId ? (getWeeklyIjtemaReport(wiKpi.eventId)?.ruknRows ?? []) : []
-  const bmRows = bmKpi.cycleId ? (getMonthlyBaitulMaalReport(bmKpi.cycleId)?.ruknRows ?? []) : []
+  const connections = providers.connections.get()
+  const visits = providers.visits.get()
+  const app = providers.appRegistration.get()
+  const healthSlices = providers.campaignHealth.getSlices()
+  const wiKpi = providers.weeklyIjtema.getKpi()
+  const bmKpi = providers.baitulMaal.getKpi()
+  const wiRows = providers.weeklyIjtema.getActiveRuknRows()
+  const bmRows = providers.baitulMaal.getActiveRuknRows()
   const wiById = new Map(wiRows.map((row) => [row.ruknId, row]))
   const bmById = new Map(bmRows.map((row) => [row.ruknId, row]))
   const muttafiqeenAll = getAllMuttafiqeen()
@@ -420,9 +408,9 @@ export function buildCampaignReportModel(input?: {
 
   const ruknRows: CampaignReportRuknRow[] = activeRukns.map((rukn) => {
     const assigned = getAssignedKarkunanForRukn(rukn.id)
-    const connectedCount = getConnectedKarkunCountForRukn(rukn.id)
-    const visitRow = getDashboardVisitMetricsForRukn(rukn.id)
-    const appRow = getDashboardAppRegistrationMetricsForRukn(rukn.id)
+    const connectedCount = providers.connections.getCountForRukn(rukn.id)
+    const visitRow = providers.visits.getForRukn(rukn.id)
+    const appRow = providers.appRegistration.getForRukn(rukn.id)
     const wiRow = wiById.get(rukn.id)
     const bmRow = bmById.get(rukn.id)
     const wiAssigned = wiRow?.assigned ?? assigned.length
@@ -443,13 +431,13 @@ export function buildCampaignReportModel(input?: {
     const wiPairBase = pair(wiCompleted, wiAssigned)
     const wiPair: CampaignReportMetricPair = {
       ...wiPairBase,
-      pct: getDashboardHealthModulePct(wiCompleted, wiAssigned, Boolean(wiKpi.eventId)),
+      pct: providers.campaignHealth.getModulePct(wiCompleted, wiAssigned, Boolean(wiKpi.eventId)),
     }
     const bmCompleted = bmRow?.contributed ?? 0
     const bmPairBase = pair(bmCompleted, bmAssigned)
     const bmPair: CampaignReportMetricPair = {
       ...bmPairBase,
-      pct: getDashboardHealthModulePct(bmCompleted, bmAssigned, Boolean(bmKpi.cycleId)),
+      pct: providers.campaignHealth.getModulePct(bmCompleted, bmAssigned, Boolean(bmKpi.cycleId)),
     }
 
     const overallPct = averagePct([

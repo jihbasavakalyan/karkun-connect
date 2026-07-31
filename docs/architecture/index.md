@@ -21,6 +21,8 @@
 | [KC-033 — ARCH-009 Gate](./kc-033-arch009-gate.md) | Convergence sprint gate |
 | [KC-034 — ARCH-009 Gate](./kc-034-arch009-gate.md) | Executive Report editorial polish gate |
 | [**KC-037 — Executive Report Framework (V2)**](./kc-037-executive-report-framework-v2.md) | Configurable executive reports — canonical contract |
+| [KC-037A — ARCH-009 Gate](./kc-037a-arch009-gate.md) | Report Composer foundation + PDF migration |
+| [KC-037A — Report Composer](./kc-037a-report-composer.md) | How to register sections; Composer pipeline |
 | [KC-035 — Digital Rafeeq 2.0 (Master)](./kc-035-digital-rafeeq-2.md) | Canonical Rafeeq layered architecture, principles, roadmap A–G |
 | [KC-035A — ARCH-009 Gate](./kc-035a-arch009-gate.md) | Digital Rafeeq conversation engine foundation |
 | [KC-035B — ARCH-009 Gate](./kc-035b-arch009-gate.md) | Natural Urdu intent recognition engine |

@@ -9,17 +9,27 @@
  * Registry: docs/architecture/kc-033-canonical-metric-registry.md
  */
 
+import { getConnectedKarkunCountForRukn } from '@/lib/connections/getConnectedKarkunsForRukn'
 import { getCampaignConnectionMetrics } from '@/services/metricsService'
 import {
   getDashboardAppRegistrationMetrics,
+  getDashboardAppRegistrationMetricsForRukn,
+  getDashboardHealthModulePct,
   getDashboardHealthSlices,
   getDashboardMonthlyBaitulMaalHealthSlice,
   getDashboardVisitMetrics,
+  getDashboardVisitMetricsForRukn,
   getDashboardWeeklyIjtemaHealthSlice,
   type DashboardHealthSlice,
 } from '@/services/dashboardMetricsService'
-import { getWeeklyIjtemaDashboardKpi } from '@/services/weeklyIjtemaService'
-import { getMonthlyBaitulMaalDashboardKpi } from '@/services/monthlyBaitulMaalService'
+import {
+  getMonthlyBaitulMaalDashboardKpi,
+  getMonthlyBaitulMaalReport,
+} from '@/services/monthlyBaitulMaalService'
+import {
+  getWeeklyIjtemaDashboardKpi,
+  getWeeklyIjtemaReport,
+} from '@/services/weeklyIjtemaService'
 import {
   getWeeklyIjtemaAttendanceSummariesView,
   getWeeklyIjtemaCurrentAttendanceView,
@@ -43,17 +53,34 @@ export function getCanonicalHealthSlices(): DashboardHealthSlice[] {
   return getDashboardHealthSlices()
 }
 
+/** Active WI event rukn rows (empty when no current event). */
+export function getCanonicalWeeklyIjtemaActiveRuknRows() {
+  const kpi = getWeeklyIjtemaDashboardKpi()
+  if (!kpi.eventId) return []
+  return getWeeklyIjtemaReport(kpi.eventId)?.ruknRows ?? []
+}
+
+/** Active BM cycle rukn rows (empty when no current cycle). */
+export function getCanonicalMonthlyBaitulMaalActiveRuknRows() {
+  const kpi = getMonthlyBaitulMaalDashboardKpi()
+  if (!kpi.cycleId) return []
+  return getMonthlyBaitulMaalReport(kpi.cycleId)?.ruknRows ?? []
+}
+
 /** Authoritative metric provider map (documentation + typed access). */
 export const CanonicalMetricProviders = {
   connections: {
     id: 'connections',
     provider: 'metricsService.getCampaignConnectionMetrics',
     get: getCampaignConnectionMetrics,
+    /** Unique eligible Active connections for one Rukn. */
+    getCountForRukn: getConnectedKarkunCountForRukn,
   },
   visits: {
     id: 'visits',
     provider: 'dashboardMetricsService.getDashboardVisitMetrics',
     get: getDashboardVisitMetrics,
+    getForRukn: getDashboardVisitMetricsForRukn,
   },
   weeklyIjtema: {
     id: 'weekly-ijtema',
@@ -66,6 +93,7 @@ export const CanonicalMetricProviders = {
     getDashboardMetricsView: getWeeklyIjtemaDashboardMetricsView,
     getSummariesView: getWeeklyIjtemaAttendanceSummariesView,
     getCurrentAttendanceView: getWeeklyIjtemaCurrentAttendanceView,
+    getActiveRuknRows: getCanonicalWeeklyIjtemaActiveRuknRows,
   },
   baitulMaal: {
     id: 'monthly-baitul-maal',
@@ -76,17 +104,20 @@ export const CanonicalMetricProviders = {
     getSummariesView: getMonthlyBaitulMaalSummariesView,
     getComplianceStatusView: getMonthlyBaitulMaalComplianceStatusView,
     getCampaignStateView: getMonthlyBaitulMaalCampaignStateView,
+    getActiveRuknRows: getCanonicalMonthlyBaitulMaalActiveRuknRows,
   },
   appRegistration: {
     id: 'app-registration',
     provider: 'dashboardMetricsService.getDashboardAppRegistrationMetrics',
     get: getDashboardAppRegistrationMetrics,
+    getForRukn: getDashboardAppRegistrationMetricsForRukn,
   },
   campaignHealth: {
     id: 'campaign-health',
     provider: 'dashboardMetricsService.getDashboardHealthSlices',
     getSlices: getDashboardHealthSlices,
     getOverallPct: getCanonicalCampaignHealthOverallPct,
+    getModulePct: getDashboardHealthModulePct,
   },
 } as const
 

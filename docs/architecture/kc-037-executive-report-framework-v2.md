@@ -203,7 +203,7 @@ Administrators may save custom templates (config JSON; no duplicated metrics).
 | Phase | Ticket suggestion | Outcome |
 |-------|-------------------|---------|
 | **0** | KC-037 (this doc) | Architecture freeze + gap map |
-| **1** | KC-037A | Report Config model + section registry + CanonicalMetricProviders binding; keep PDF default |
+| **1** | KC-037A | Report Config model + section registry + CanonicalMetricProviders binding; keep PDF default — **done** ([gate](./kc-037a-arch009-gate.md) · [composer](./kc-037a-report-composer.md)) |
 | **2** | KC-037B | Config UI (scope · period · sections) → PDF export |
 | **3** | KC-037C | Men/Women + Rukn scorecard depth; rankings |
 | **4** | KC-037D | Interactive dashboard + Excel/CSV |
