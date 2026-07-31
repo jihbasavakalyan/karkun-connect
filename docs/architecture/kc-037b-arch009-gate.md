@@ -67,4 +67,13 @@ Workflows tested:
 
 ## Phase 6 — Post-deploy
 
-*(after deploy)*
+| Check | Result |
+|-------|--------|
+| GitHub HEAD | `4d64d7a` on `origin/main` |
+| Vercel | `dpl_EvV54HWDSBWUxT4qtCq8zYf4F8RK` READY |
+| Production URL | https://jihbasavakalyan.org |
+| Route | Admin `path: reports` → `AdminReportCenterPage` in prod router |
+| Bundle smoke | `AdminReportCenterPage-B6KOZaPe.js` includes `kc034_executive_campaign`, `executive_weekly_review`, Connection/Visit terminology; Generate button chunk navigates to Report Center |
+| Verifies | `verify:kc-037b` · `verify:kc-037a` · `verify:kc-bug-0126` · typecheck |
+
+**Closure:** KC-037B complete — Report Center live; Executive PDF via Composer unchanged in KPI math.
