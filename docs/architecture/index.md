@@ -32,6 +32,7 @@
 | [KC-036 — ARCH-009 Gate](./kc-036-arch009-gate.md) | Connection integrity & duplicate request audit |
 | [KC-036 — Investigation Report](./kc-036-investigation-report.md) | Distribution evidence + duplicate-request RCA |
 | [KC-036A — R007 Forensics](./kc-036a-r007-forensics.md) | How R007 accumulated 53 connections (read-only) |
+| [KC-036B — Mathematical Reconciliation Audit](./kc-036b-math-reconciliation-audit.md) | Registry + Rukn connection math proof (read-only) |
 
 Future implementation must align with KC-0104. Engineering gates: [KC-ARCH-009](./kc-arch-009-feature-impact.md) · [KC-ARCH-001](./kc-arch-001-reliability-persistence.md). Current capability status: [KC-032](./kc-032-product-capability-audit.md). Metric providers: [KC-033](./kc-033-canonical-metric-registry.md).
 
