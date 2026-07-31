@@ -8,6 +8,9 @@
     },
     "api/rukn-claims-provision.ts": {
       "includeFiles": "src/server/ruknClaims/**"
+    },
+    "api/karkun-mobile-lookup.ts": {
+      "includeFiles": "src/server/karkunMobileLookup/**"
     }
   },
   "rewrites": [

@@ -40,6 +40,7 @@ import {
 } from '@/stores/karkunRequestStore'
 import { getRepositories, getRepositoryProviderMode } from '@/repositories/provider'
 import { unwrapRepository } from '@/repositories/errors'
+import { lookupMobileInMasterRegistry } from '@/lib/people/lookupMobileInMasterRegistry'
 import type { NewKarkunRequest, PeopleRequestKind } from '@/types/karkunRequest.types'
 import type { PersonGender } from '@/types/people.types'
 import { DEFAULT_PLACE } from '@/types/people.types'
@@ -230,7 +231,7 @@ export async function submitNewKarkunRequest(
     }
   }
 
-  // KC-0068 Check 1 — mobile already in Karkun registry (hard block).
+  // KC-0068 Check 1 — mobile already in local (scoped) registry (hard block).
   const owner = findMobileOwner(input.mobile)
   if (owner?.kind === 'karkun') {
     const duplicate = buildMobileDuplicate(owner.id, owner.name, input.mobile)
@@ -248,6 +249,40 @@ export async function submitNewKarkunRequest(
       ok: false,
       error: `This mobile number belongs to Rukn ${owner.name}.`,
       code: 'VALIDATION',
+    }
+  }
+
+  // KC-036 — master registry check (full Firestore via privileged API).
+  // Closes Rukn-scoped hydrate gap: mobiles on Karkuns connected to other Rukns.
+  if (getRepositoryProviderMode() === 'firestore') {
+    const master = await lookupMobileInMasterRegistry(input.mobile)
+    if (!master.ok) {
+      return {
+        ok: false,
+        error: master.error,
+        code: 'VALIDATION',
+      }
+    }
+    if (master.exists) {
+      if (master.hit.kind === 'rukn') {
+        return {
+          ok: false,
+          error: `This mobile number belongs to Rukn ${master.hit.name}.`,
+          code: 'VALIDATION',
+        }
+      }
+      const duplicate = buildMobileDuplicate(
+        master.hit.id,
+        master.hit.name,
+        input.mobile,
+      )
+      return {
+        ok: false,
+        error:
+          'Existing Person Found — this mobile already belongs to a registry record.',
+        code: 'MOBILE_EXISTS',
+        duplicate,
+      }
     }
   }
 
