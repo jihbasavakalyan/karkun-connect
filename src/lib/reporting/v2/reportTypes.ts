@@ -1,249 +1,116 @@
 /**
- * KC-037B — Report type catalog (UI + Composer validation).
- * Only executive_campaign is fully available for PDF generation.
+ * KC-037B/C-F — Report type catalog.
+ * All suite types are available; generation goes through Composer blueprints.
  */
 
-import { KC034_EXECUTIVE_SECTION_ID } from './reportConfig'
+import { blueprintSectionsFor } from './reportBlueprints'
 import type { ReportTypeDefinition, ReportTypeId } from './types'
 
-const EXECUTIVE_SECTIONS = [
-  KC034_EXECUTIVE_SECTION_ID,
-  'executive_summary',
-  'kpi_dashboard',
-  'mens_performance',
-  'womens_performance',
-  'weekly_ijtema',
-  'visits',
-  'baitul_maal',
-  'app_registration',
-  'connections',
-  'top_performers',
-  'recommendations',
-  'rafeeq_insights',
-  'muttafiqeen_summary',
-]
+function def(
+  id: ReportTypeId,
+  title: string,
+  description: string,
+  defaults: Pick<ReportTypeDefinition, 'defaultScope' | 'defaultDetailLevel'>,
+): ReportTypeDefinition {
+  return {
+    id,
+    title,
+    description,
+    available: true,
+    featureFlag: true,
+    defaultScope: defaults.defaultScope,
+    defaultDetailLevel: defaults.defaultDetailLevel,
+    defaultOutput: 'pdf',
+    sectionIds: blueprintSectionsFor(id),
+  }
+}
 
 export const REPORT_TYPE_CATALOG: ReportTypeDefinition[] = [
-  {
-    id: 'executive_campaign',
-    title: 'Executive Campaign Report',
-    description: 'Full management briefing (KC-034 Urdu PDF via Report Composer).',
-    available: true,
+  def('executive_campaign', 'Executive Campaign Report', 'Full management briefing via Composer.', {
     defaultScope: 'overall_campaign',
     defaultDetailLevel: 'standard',
-    defaultOutput: 'pdf',
-    sectionIds: EXECUTIVE_SECTIONS,
-    featureFlag: true,
-  },
-  {
-    id: 'campaign_progress',
-    title: 'Campaign Progress Report',
-    description: 'Progress-focused campaign view.',
-    available: false,
+  }),
+  def('campaign_progress', 'Campaign Progress Report', 'Progress-focused campaign view.', {
     defaultScope: 'overall_campaign',
     defaultDetailLevel: 'standard',
-    defaultOutput: 'pdf',
-    sectionIds: ['kpi_dashboard', 'visits', 'connections'],
-    featureFlag: false,
-  },
-  {
-    id: 'men_performance',
-    title: 'Men Performance Report',
-    description: "Men's wing performance.",
-    available: false,
+  }),
+  def('men_performance', 'Men Performance Report', "Men's wing performance.", {
     defaultScope: 'mens_wing',
     defaultDetailLevel: 'standard',
-    defaultOutput: 'pdf',
-    sectionIds: ['mens_performance'],
-    featureFlag: false,
-  },
-  {
-    id: 'women_performance',
-    title: 'Women Performance Report',
-    description: "Women's wing performance.",
-    available: false,
+  }),
+  def('women_performance', 'Women Performance Report', "Women's wing performance.", {
     defaultScope: 'womens_wing',
     defaultDetailLevel: 'standard',
-    defaultOutput: 'pdf',
-    sectionIds: ['womens_performance'],
-    featureFlag: false,
-  },
-  {
-    id: 'rukn_performance',
-    title: 'Rukn Performance Report',
-    description: 'All Rukns scorecard.',
-    available: false,
+  }),
+  def('rukn_performance', 'Rukn Performance Report', 'All Rukns scorecard.', {
     defaultScope: 'overall_campaign',
     defaultDetailLevel: 'detailed',
-    defaultOutput: 'pdf',
-    sectionIds: ['individual_rukn_performance'],
-    featureFlag: false,
-  },
-  {
-    id: 'individual_rukn',
-    title: 'Individual Rukn Report',
-    description: 'Single Rukn dossier.',
-    available: false,
+  }),
+  def('individual_rukn', 'Individual Rukn Report', 'Single Rukn dossier.', {
     defaultScope: 'individual_rukn',
     defaultDetailLevel: 'detailed',
-    defaultOutput: 'pdf',
-    sectionIds: ['individual_rukn_performance'],
-    featureFlag: false,
-  },
-  {
-    id: 'individual_karkun',
-    title: 'Individual Karkun Report',
-    description: 'Single Karkun dossier.',
-    available: false,
+  }),
+  def('individual_karkun', 'Individual Karkun Report', 'Single Karkun dossier.', {
     defaultScope: 'individual_karkun',
     defaultDetailLevel: 'detailed',
-    defaultOutput: 'pdf',
-    sectionIds: ['individual_karkun_performance'],
-    featureFlag: false,
-  },
-  {
-    id: 'weekly_ijtema',
-    title: 'Weekly Ijtema Report',
-    description: 'Ijtema attendance analytics.',
-    available: false,
+  }),
+  def('weekly_ijtema', 'Weekly Ijtema Report', 'Ijtema attendance analytics.', {
     defaultScope: 'overall_campaign',
     defaultDetailLevel: 'standard',
-    defaultOutput: 'pdf',
-    sectionIds: ['weekly_ijtema'],
-    featureFlag: false,
-  },
-  {
-    id: 'visit_progress',
-    title: 'Visit Progress Report',
-    description: 'Personal visit progress (not Connection).',
-    available: false,
+  }),
+  def('visit_progress', 'Visit Progress Report', 'Personal visit progress (not Connection).', {
     defaultScope: 'overall_campaign',
     defaultDetailLevel: 'standard',
-    defaultOutput: 'pdf',
-    sectionIds: ['visits'],
-    featureFlag: false,
-  },
-  {
-    id: 'baitul_maal',
-    title: 'Baitul Maal Report',
-    description: 'Monthly Baitul Maal compliance.',
-    available: false,
+  }),
+  def('baitul_maal', 'Baitul Maal Report', 'Monthly Baitul Maal compliance.', {
     defaultScope: 'overall_campaign',
     defaultDetailLevel: 'standard',
-    defaultOutput: 'pdf',
-    sectionIds: ['baitul_maal'],
-    featureFlag: false,
-  },
-  {
-    id: 'app_registration',
-    title: 'JIH App Registration Report',
-    description: 'App registration progress.',
-    available: false,
+  }),
+  def('app_registration', 'JIH App Registration Report', 'App registration progress.', {
     defaultScope: 'overall_campaign',
     defaultDetailLevel: 'standard',
-    defaultOutput: 'pdf',
-    sectionIds: ['app_registration'],
-    featureFlag: false,
-  },
-  {
-    id: 'pending_activities',
-    title: 'Pending Activities Report',
-    description: 'Open operational work.',
-    available: false,
+  }),
+  def('pending_activities', 'Pending Activities Report', 'Open operational work.', {
     defaultScope: 'overall_campaign',
     defaultDetailLevel: 'standard',
-    defaultOutput: 'pdf',
-    sectionIds: ['pending_tasks'],
-    featureFlag: false,
-  },
-  {
-    id: 'communication',
-    title: 'Communication Report',
-    description: 'Communication status overview.',
-    available: false,
+  }),
+  def('communication', 'Communication Report', 'Communication status overview.', {
     defaultScope: 'overall_campaign',
     defaultDetailLevel: 'standard',
-    defaultOutput: 'pdf',
-    sectionIds: ['communication_status'],
-    featureFlag: false,
-  },
-  {
-    id: 'follow_up',
-    title: 'Follow-up Report',
-    description: 'Follow-up and exceptions.',
-    available: false,
+  }),
+  def('follow_up', 'Follow-up Report', 'Follow-up and exceptions.', {
     defaultScope: 'overall_campaign',
     defaultDetailLevel: 'standard',
-    defaultOutput: 'pdf',
-    sectionIds: ['recommendations'],
-    featureFlag: false,
-  },
-  {
-    id: 'muttafiqeen',
-    title: 'Muttafiqeen Report',
-    description: 'Muttafiqeen summary (outside campaign execution).',
-    available: false,
+  }),
+  def('muttafiqeen', 'Muttafiqeen Report', 'Muttafiqeen summary (outside campaign execution).', {
     defaultScope: 'muttafiqeen_only',
     defaultDetailLevel: 'standard',
-    defaultOutput: 'pdf',
-    sectionIds: ['muttafiqeen_summary'],
-    featureFlag: false,
-  },
-  {
-    id: 'connections',
-    title: 'Connection Report',
-    description: 'Administrative Connection assignment progress (not Visits).',
-    available: false,
+  }),
+  def('connections', 'Connection Report', 'Administrative Connection progress (not Visits).', {
     defaultScope: 'connected_only',
     defaultDetailLevel: 'standard',
-    defaultOutput: 'pdf',
-    sectionIds: ['connections'],
-    featureFlag: false,
-  },
-  {
-    id: 'snapshot_summary',
-    title: 'Snapshot Summary Report',
-    description: 'One-page snapshot.',
-    available: false,
+  }),
+  def('snapshot_summary', 'Snapshot Summary Report', 'One-page snapshot.', {
     defaultScope: 'overall_campaign',
     defaultDetailLevel: 'executive',
-    defaultOutput: 'pdf',
-    sectionIds: ['executive_summary', 'kpi_dashboard'],
-    featureFlag: false,
-  },
-  {
-    id: 'mathematical_audit',
-    title: 'Mathematical Audit Report',
-    description: 'Registry / connection reconciliation (ops).',
-    available: false,
+  }),
+  def('mathematical_audit', 'Mathematical Audit Report', 'Registry / connection reconciliation appendix.', {
     defaultScope: 'entire_registry',
     defaultDetailLevel: 'audit',
-    defaultOutput: 'pdf',
-    sectionIds: ['data_quality'],
-    featureFlag: false,
-  },
-  {
-    id: 'integrity',
-    title: 'Integrity Report',
-    description: 'Integrity and exception audit.',
-    available: false,
+  }),
+  def('integrity', 'Integrity Report', 'Integrity and exception audit.', {
     defaultScope: 'entire_registry',
     defaultDetailLevel: 'audit',
-    defaultOutput: 'pdf',
-    sectionIds: ['data_quality'],
-    featureFlag: false,
-  },
-  {
-    id: 'historical_comparison',
-    title: 'Historical Comparison Report',
-    description: 'Period comparison — placeholder until history store exists.',
-    available: false,
-    defaultScope: 'campaign_comparison',
-    defaultDetailLevel: 'detailed',
-    defaultOutput: 'pdf',
-    sectionIds: ['trend_analysis'],
-    featureFlag: false,
-  },
+  }),
+  def(
+    'historical_comparison',
+    'Historical Comparison Report',
+    'Period comparison when history exists (snapshot-safe).',
+    {
+      defaultScope: 'campaign_comparison',
+      defaultDetailLevel: 'detailed',
+    },
+  ),
 ]
 
 const byId = new Map(REPORT_TYPE_CATALOG.map((t) => [t.id, t]))

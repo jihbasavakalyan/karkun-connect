@@ -15,7 +15,6 @@ import {
   registerBuiltinSections,
   resetSectionRegistryForTests,
   validateReportConfig,
-  ReportComposeError,
 } from '../src/lib/reporting/v2'
 
 type CaseResult = { name: string; passed: boolean; detail: string }
@@ -48,7 +47,7 @@ function testCatalog(): void {
   assert(types.length >= 15, 'report types registered')
   const exec = getReportType('executive_campaign')
   assert(Boolean(exec?.available), 'executive available')
-  assert(types.some((t) => t.id === 'historical_comparison' && !t.available), 'placeholder type')
+  assert(types.some((t) => t.id === 'historical_comparison' && t.available), 'historical available')
   const presets = listEnabledReportPresets()
   assert(presets.some((p) => p.id === 'executive_weekly_review'), 'weekly preset')
   const sections = listSectionsForReportType('executive_campaign')
@@ -61,27 +60,26 @@ function testValidation(): void {
   const ok = validateReportConfig(defaultKc034Config())
   assert(ok.ok, 'default config valid')
   const badType = validateReportConfig(
-    defaultKc034Config({ reportType: 'historical_comparison', enabledSections: ['trend_analysis'] }),
+    defaultKc034Config({ reportType: 'custom', enabledSections: [KC034_EXECUTIVE_SECTION_ID] }),
   )
-  assert(!badType.ok, 'unavailable type rejected')
-  assert(badType.errors.some((e) => e.code === 'REPORT_TYPE_UNAVAILABLE'), 'unavailable code')
-  const badOutput = validateReportConfig(defaultKc034Config({ outputType: 'excel' }))
-  assert(!badOutput.ok, 'excel rejected')
+  assert(!badType.ok, 'unknown type rejected')
+  const excelOk = validateReportConfig(defaultKc034Config({ outputType: 'excel' }))
+  assert(excelOk.ok, 'excel output allowed')
   const badSection = validateReportConfig(
-    defaultKc034Config({ enabledSections: ['executive_summary'] }),
+    defaultKc034Config({ enabledSections: ['section_does_not_exist'] }),
   )
-  assert(!badSection.ok, 'planned section rejected')
+  assert(!badSection.ok, 'unknown section rejected')
 }
 
 function testComposerRejectsInvalid(): void {
   ensureRegistry()
   let threw = false
   try {
-    composeReport(defaultKc034Config({ outputType: 'csv' }))
-  } catch (e) {
-    threw = e instanceof ReportComposeError
+    composeReport(defaultKc034Config({ enabledSections: ['missing_section_xyz'] }))
+  } catch {
+    threw = true
   }
-  assert(threw, 'compose throws ReportComposeError')
+  assert(threw, 'compose throws on unknown section')
 }
 
 function testPreviewAndCompose(): void {
@@ -112,7 +110,12 @@ function testUiWiring(): void {
   assert(panel.includes('generateConfiguredReport'), 'generate via composer helper')
   const gen = readFileSync(resolve('src/lib/reporting/v2/generateConfiguredReport.ts'), 'utf8')
   assert(gen.includes('composeReport'), 'generate uses composeReport')
-  assert(gen.includes('downloadCampaignReportPdf'), 'generate uses PDF exporter')
+  assert(gen.includes('exportReportDocument'), 'generate uses exportReportDocument')
+  const exporter = readFileSync(
+    resolve('src/lib/reporting/v2/exporters/exportReportDocument.ts'),
+    'utf8',
+  )
+  assert(exporter.includes('downloadCampaignReportPdf'), 'PDF exporter path preserved')
 }
 
 function testNoDirectKpiInUi(): void {

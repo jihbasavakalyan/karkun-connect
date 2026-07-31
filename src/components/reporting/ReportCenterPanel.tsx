@@ -2,16 +2,20 @@ import { useMemo, useState } from 'react'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { useAuth } from '@/hooks/useAuth'
 import {
+  blueprintSectionsFor,
   buildReportPreview,
   defaultKc034Config,
   getReportType,
   KC034_EXECUTIVE_SECTION_ID,
+  listCustomTemplates,
   listEnabledReportPresets,
   listReportTypes,
   listSectionsForReportType,
+  saveCustomTemplate,
   type ReportConfig,
   type ReportDateRangeKind,
   type ReportDetailLevel,
+  type ReportDocument,
   type ReportLanguage,
   type ReportOutputType,
   type ReportScope,
@@ -19,6 +23,8 @@ import {
   type ReportTypeId,
 } from '@/lib/reporting/v2'
 import { generateConfiguredReport } from '@/lib/reporting/v2/generateConfiguredReport'
+import { ReportDashboardView } from '@/components/reporting/ReportDashboardView'
+import { ruknMaster } from '@/data/ruknMaster'
 
 const SCOPES: Array<{ id: ReportScope; label: string }> = [
   { id: 'overall_campaign', label: 'Entire Campaign' },
@@ -57,10 +63,10 @@ const DETAIL_LEVELS: Array<{ id: ReportDetailLevel; label: string; hint: string 
 
 const OUTPUTS: Array<{ id: ReportOutputType; label: string; enabled: boolean }> = [
   { id: 'pdf', label: 'PDF', enabled: true },
-  { id: 'dashboard', label: 'Dashboard', enabled: false },
-  { id: 'excel', label: 'Excel', enabled: false },
-  { id: 'csv', label: 'CSV', enabled: false },
-  { id: 'json', label: 'JSON', enabled: false },
+  { id: 'dashboard', label: 'Dashboard', enabled: true },
+  { id: 'excel', label: 'Excel', enabled: true },
+  { id: 'csv', label: 'CSV', enabled: true },
+  { id: 'json', label: 'JSON', enabled: true },
 ]
 
 function FieldLabel({ children }: { children: string }) {
@@ -102,9 +108,12 @@ export function ReportCenterPanel() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [dashboardDoc, setDashboardDoc] = useState<ReportDocument | null>(null)
+  const [customTitle, setCustomTitle] = useState('')
 
   const reportTypes = useMemo(() => listReportTypes(), [])
   const presets = useMemo(() => listEnabledReportPresets(), [])
+  const customTemplates = useMemo(() => listCustomTemplates(), [success])
   const sections = useMemo(
     () => listSectionsForReportType(config.reportType),
     [config.reportType],
@@ -112,9 +121,12 @@ export function ReportCenterPanel() {
   const preview = useMemo(() => buildReportPreview(config), [config])
   const typeDef = getReportType(config.reportType)
   const canGenerate =
-    Boolean(typeDef?.available && typeDef.featureFlag) &&
-    config.outputType === 'pdf' &&
-    preview.diagnostics.ok
+    Boolean(typeDef?.available && typeDef.featureFlag) && preview.diagnostics.ok
+
+  const activeRukns = useMemo(
+    () => ruknMaster.filter((r) => r.status === 'active' && !r.isArchived),
+    [],
+  )
 
   const patch = (partial: Partial<ReportConfig>) => {
     setConfig((prev) => defaultKc034Config({ ...prev, ...partial }))
@@ -125,22 +137,12 @@ export function ReportCenterPanel() {
   const onReportTypeChange = (id: ReportTypeId) => {
     const next = getReportType(id)
     if (!next) return
-    const typeSections = listSectionsForReportType(id)
-    const defaultSections = next.sectionIds.filter((sid) => {
-      const s = typeSections.find((x) => x.id === sid)
-      return s?.defaultEnabled || sid === KC034_EXECUTIVE_SECTION_ID
-    })
     patch({
       reportType: id,
       scope: next.defaultScope,
       detailLevel: next.defaultDetailLevel,
       outputType: next.defaultOutput,
-      enabledSections:
-        id === 'executive_campaign'
-          ? [KC034_EXECUTIVE_SECTION_ID]
-          : defaultSections.length
-            ? defaultSections
-            : next.sectionIds.slice(0, 1),
+      enabledSections: blueprintSectionsFor(id),
       presetId: undefined,
     })
   }
@@ -168,17 +170,33 @@ export function ReportCenterPanel() {
     setBusy(true)
     setError('')
     setSuccess('')
+    setDashboardDoc(null)
     void generateConfiguredReport({
       config,
       generatedBy: user?.displayName?.trim() || user?.email || user?.phone || 'منتظم',
+      includeZipSnapshot: config.detailLevel === 'audit',
     })
-      .then(() => {
-        setSuccess('Report generated successfully.')
+      .then((result) => {
+        if (result.mode === 'dashboard') {
+          setDashboardDoc(result.document)
+          setSuccess('Dashboard ready — same Composer models.')
+        } else {
+          setSuccess('Report exported successfully.')
+        }
       })
       .catch((err: unknown) => {
         setError(err instanceof Error ? err.message : 'Report generation failed.')
       })
       .finally(() => setBusy(false))
+  }
+
+  const onSaveTemplate = () => {
+    const saved = saveCustomTemplate({
+      title: customTitle || `${config.reportType} template`,
+      config,
+    })
+    setSuccess(`Saved template: ${saved.title}`)
+    setCustomTitle('')
   }
 
   return (
@@ -202,6 +220,34 @@ export function ReportCenterPanel() {
               </button>
             ))}
           </div>
+          <div className="mt-3 flex flex-wrap items-end gap-2">
+            <div className="min-w-[12rem] flex-1">
+              <FieldLabel>Save current as template</FieldLabel>
+              <input
+                className="w-full rounded-md border border-border px-3 py-2 text-sm"
+                value={customTitle}
+                onChange={(e) => setCustomTitle(e.target.value)}
+                placeholder="Template name"
+              />
+            </div>
+            <PrimaryButton type="button" size="sm" onClick={onSaveTemplate}>
+              Save
+            </PrimaryButton>
+          </div>
+          {customTemplates.length > 0 ? (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {customTemplates.map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  className="rounded-full border border-dashed border-border px-3 py-1 text-xs text-secondary"
+                  onClick={() => patch({ ...t.config, presetId: t.id })}
+                >
+                  {t.title}
+                </button>
+              ))}
+            </div>
+          ) : null}
         </section>
 
         <section className="rounded-lg border border-border bg-surface p-4 space-y-4">
@@ -222,6 +268,44 @@ export function ReportCenterPanel() {
             onChange={(scope) => patch({ scope })}
             options={SCOPES.map((s) => ({ id: s.id, label: s.label }))}
           />
+          {config.scope === 'individual_rukn' ||
+          config.scope === 'selected_rukn' ||
+          config.reportType === 'individual_rukn' ? (
+            <div>
+              <FieldLabel>Rukn</FieldLabel>
+              <select
+                className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm"
+                value={config.scopeTarget?.ruknId ?? ''}
+                onChange={(e) =>
+                  patch({
+                    scopeTarget: { ...config.scopeTarget, ruknId: e.target.value || undefined },
+                  })
+                }
+              >
+                <option value="">Select Rukn…</option>
+                {activeRukns.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : null}
+          {config.scope === 'individual_karkun' || config.reportType === 'individual_karkun' ? (
+            <div>
+              <FieldLabel>Karkun ID</FieldLabel>
+              <input
+                className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm"
+                placeholder="e.g. kr-001"
+                value={config.scopeTarget?.personId ?? ''}
+                onChange={(e) =>
+                  patch({
+                    scopeTarget: { ...config.scopeTarget, personId: e.target.value.trim() || undefined },
+                  })
+                }
+              />
+            </div>
+          ) : null}
           <SelectField
             label="Date range"
             value={config.dateRange.kind}
@@ -332,7 +416,7 @@ export function ReportCenterPanel() {
               options={[
                 { id: 'ur', label: 'Urdu' },
                 { id: 'en', label: 'English' },
-                { id: 'bilingual', label: 'Bilingual', disabled: true },
+                { id: 'bilingual', label: 'Bilingual (Urdu-primary)' },
               ]}
             />
             <SelectField
@@ -504,7 +588,7 @@ export function ReportCenterPanel() {
               disabled={!canGenerate || busy}
               onClick={onGenerate}
             >
-              Generate PDF
+              {config.outputType === 'dashboard' ? 'Open Dashboard' : 'Generate / Export'}
             </PrimaryButton>
             {!typeDef?.available ? (
               <p className="mt-2 text-xs text-secondary">
@@ -515,6 +599,9 @@ export function ReportCenterPanel() {
             {success ? <p className="mt-2 text-sm text-success">{success}</p> : null}
           </div>
         </section>
+        {dashboardDoc ? (
+          <ReportDashboardView document={dashboardDoc} onClose={() => setDashboardDoc(null)} />
+        ) : null}
       </aside>
     </div>
   )

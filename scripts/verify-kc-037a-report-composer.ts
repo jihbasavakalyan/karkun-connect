@@ -88,10 +88,11 @@ function testExtensibleRegistry(): void {
 function testPlannedStubsNotComposable(): void {
   ensureBuiltinRegistry()
   const planned = listSections().filter((s) => s.status === 'planned')
-  assert(planned.length >= 10, 'planned stubs registered')
+  assert(planned.length >= 1, 'planned stubs registered')
+  const plannedId = planned[0]!.id
   let threw = false
   try {
-    composeReport(defaultKc034Config({ enabledSections: ['executive_summary'] }))
+    composeReport(defaultKc034Config({ enabledSections: [plannedId] }))
   } catch {
     threw = true
   }

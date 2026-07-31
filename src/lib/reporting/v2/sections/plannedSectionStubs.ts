@@ -176,6 +176,14 @@ const PLANNED: Stub[] = [
     renderPriority: 250,
     supportedReportTypes: ['mathematical_audit', 'integrity', 'executive_campaign'],
   },
+  {
+    id: 'future_whatsapp_cards',
+    title: 'WhatsApp Cards (Future)',
+    displayName: 'WhatsApp-ready image cards',
+    description: 'Optional P3 export — planned only',
+    renderPriority: 900,
+    supportedReportTypes: ['executive_campaign'],
+  },
 ]
 
 export function registerPlannedSectionStubs(): void {

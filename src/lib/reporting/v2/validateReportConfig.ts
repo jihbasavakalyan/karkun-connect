@@ -32,14 +32,11 @@ export function validateReportConfig(
         message: `Report type "${typeDef.title}" is not available yet.`,
       })
     }
-    if (config.outputType !== 'pdf') {
+    if (!['pdf', 'dashboard', 'excel', 'csv', 'json', 'mobile_summary'].includes(config.outputType)) {
       errors.push({
         code: 'UNSUPPORTED_OUTPUT',
-        message: `Output "${config.outputType}" is not functional yet (PDF only).`,
+        message: `Output "${config.outputType}" is not supported.`,
       })
-    }
-    if (typeDef.defaultOutput === 'pdf' && config.outputType === 'pdf') {
-      /* ok */
     }
   }
 

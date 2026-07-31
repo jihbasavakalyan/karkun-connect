@@ -205,10 +205,10 @@ Administrators may save custom templates (config JSON; no duplicated metrics).
 | **0** | KC-037 (this doc) | Architecture freeze + gap map |
 | **1** | KC-037A | Report Config model + section registry + CanonicalMetricProviders binding; keep PDF default — **done** ([gate](./kc-037a-arch009-gate.md) · [composer](./kc-037a-report-composer.md)) |
 | **2** | KC-037B | Config UI (scope · period · sections) → PDF export — **done** ([gate](./kc-037b-arch009-gate.md) · [report center](./kc-037b-report-center.md)) |
-| **3** | KC-037C | Men/Women + Rukn scorecard depth; rankings |
-| **4** | KC-037D | Interactive dashboard + Excel/CSV |
-| **5** | KC-037E | Templates + visuals + bilingual |
-| **6** | KC-037F | Trends (where history exists) + Rafeeq insights + recommended actions with owners |
+| **3** | KC-037C | Men/Women + Rukn scorecard depth; rankings — **done** (part of [KC-037C–F](./kc-037c-f-reporting-platform.md)) |
+| **4** | KC-037D | Interactive dashboard + Excel/CSV — **done** (part of KC-037C–F) |
+| **5** | KC-037E | Templates + visuals + bilingual — **done** (part of KC-037C–F) |
+| **6** | KC-037F | Trends (where history exists) + Rafeeq insights + recommended actions — **done** (snapshot-safe trends; part of KC-037C–F) |
 
 Each phase requires its own **KC-ARCH-009 gate**, `verify:kc-037*`, and production certification. No phase may introduce alternate KPI math.
 
