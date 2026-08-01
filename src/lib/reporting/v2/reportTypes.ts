@@ -46,9 +46,9 @@ export const REPORT_TYPE_CATALOG: ReportTypeDefinition[] = [
     defaultScope: 'overall_campaign',
     defaultDetailLevel: 'detailed',
   }),
-  def('individual_rukn', 'Individual Rukn Report', 'Single Rukn dossier.', {
+  def('individual_rukn', 'Individual Rukn Performance Report', 'Single Rukn operational dossier for daily review.', {
     defaultScope: 'individual_rukn',
-    defaultDetailLevel: 'detailed',
+    defaultDetailLevel: 'standard',
   }),
   def('individual_karkun', 'Individual Karkun Report', 'Single Karkun dossier.', {
     defaultScope: 'individual_karkun',

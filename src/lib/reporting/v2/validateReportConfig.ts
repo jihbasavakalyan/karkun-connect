@@ -56,6 +56,16 @@ export function validateReportConfig(
     }
   }
 
+  if (
+    (config.reportType === 'individual_rukn' || config.scope === 'individual_rukn') &&
+    !config.scopeTarget?.ruknId?.trim()
+  ) {
+    errors.push({
+      code: 'RUKN_REQUIRED',
+      message: 'Individual Rukn report requires selecting a Rukn.',
+    })
+  }
+
   if (!config.enabledSections.length) {
     errors.push({
       code: 'NO_SECTIONS',

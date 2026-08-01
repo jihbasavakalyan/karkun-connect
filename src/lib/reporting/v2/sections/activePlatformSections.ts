@@ -5,14 +5,13 @@
 
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { getAllMuttafiqeen, getPeopleStatistics } from '@/lib/peopleStore'
-import { ruknMaster } from '@/data/ruknMaster'
 import { APP_VERSION } from '@/constants/app'
+import { buildIndividualRuknReportModel } from '@/lib/reporting/individualRuknReportModel'
 import { registerSection } from '../sectionRegistry'
 import type { ReportContext, SectionModel, ReportTypeId } from '../types'
 import { campaignModelFromContext, pairView } from './campaignModelAccess'
 import { buildProviderInsights } from '../insights/buildProviderInsights'
 import { reportLabel } from '../localization/reportLabels'
-import { scoreFromPairs } from '../scoring/scoringConfig'
 import type {
   AuditAppendixView,
   InsightItemView,
@@ -400,39 +399,15 @@ export function registerActivePlatformSections(): void {
   section(
     'individual_rukn_performance',
     'Individual Rukn Performance',
-    'Single Rukn scorecard (scopeTarget.ruknId)',
+    'Single Rukn operational dossier (scopeTarget.ruknId)',
     140,
     ['rukn_performance', 'individual_rukn', 'executive_campaign'],
     (ctx) => {
-      const m = campaignModelFromContext(ctx)
-      const ruknId = ctx.config.scopeTarget?.ruknId
-      const row = ruknId
-        ? m.allRukns.find((r) => r.ruknId === ruknId)
-        : m.allRukns[0]
-      if (!row) {
-        return { missing: true, message: 'Select a Rukn (scopeTarget.ruknId).' }
+      const built = buildIndividualRuknReportModel(ctx)
+      if ('missing' in built && built.missing) {
+        return { missing: true, message: built.message }
       }
-      const master = ruknMaster.find((r) => r.id === row.ruknId)
-      return {
-        profile: {
-          ruknId: row.ruknId,
-          name: row.ruknName,
-          gender: row.gender,
-          status: master?.status ?? 'active',
-        },
-        assignedKarkuns: row.assignedKarkuns,
-        connections: pairView(row.connections),
-        visits: pairView(row.visits),
-        weeklyIjtema: pairView(row.weeklyIjtema),
-        baitulMaal: pairView(row.baitulMaal),
-        appRegistration: pairView(row.appRegistration),
-        pendingActivities: row.pendingActivities,
-        performanceScore: scoreFromPairs(row, 'individual_rukn'),
-        overallPct: row.overallPct,
-        strengths: row.criticalReasons.length === 0 ? ['No critical flags'] : [],
-        recommendations: row.criticalReasons,
-        narrative: narrativeFromExecutive(ctx),
-      }
+      return built
     },
   )
 

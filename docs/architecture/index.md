@@ -29,6 +29,8 @@
 | [KC-037C–F — Reporting Platform](./kc-037c-f-reporting-platform.md) | Suite · dashboard · exports · templates · insights |
 | [KC-037C1 — ARCH-009 Gate](./kc-037c1-arch009-gate.md) | Executive Campaign Report V2 content |
 | [KC-037C1 — Executive Report V2](./kc-037c1-executive-report-v2.md) | Briefing sections · presentation only |
+| [KC-037C2 — ARCH-009 Gate](./kc-037c2-arch009-gate.md) | Individual Rukn Performance Report |
+| [KC-037C2 — Individual Rukn Report](./kc-037c2-individual-rukn-report.md) | Operational dossier · presentation only |
 | [KC-035 — Digital Rafeeq 2.0 (Master)](./kc-035-digital-rafeeq-2.md) | Canonical Rafeeq layered architecture, principles, roadmap A–G |
 | [KC-035A — ARCH-009 Gate](./kc-035a-arch009-gate.md) | Digital Rafeeq conversation engine foundation |
 | [KC-035B — ARCH-009 Gate](./kc-035b-arch009-gate.md) | Natural Urdu intent recognition engine |

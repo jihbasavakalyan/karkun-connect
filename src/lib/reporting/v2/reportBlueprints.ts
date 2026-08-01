@@ -23,7 +23,7 @@ export const REPORT_TYPE_BLUEPRINTS: Record<ReportTypeId, string[]> = {
     'recommendations',
   ],
   rukn_performance: ['individual_rukn_performance', 'top_performers', 'kpi_dashboard'],
-  individual_rukn: ['individual_rukn_performance', 'recommendations', 'data_quality'],
+  individual_rukn: ['individual_rukn_performance'],
   individual_karkun: ['individual_karkun_performance', 'data_quality'],
   weekly_ijtema: ['weekly_ijtema', 'kpi_dashboard', 'recommendations'],
   visit_progress: ['visits', 'kpi_dashboard', 'recommendations'],

@@ -5,6 +5,13 @@
 import * as XLSX from 'xlsx'
 import { downloadCampaignReportPdf } from '@/lib/reporting/campaignReportPdf'
 import {
+  downloadIndividualRuknReportPdf,
+} from '@/lib/reporting/individualRuknReportPdf'
+import {
+  INDIVIDUAL_RUKN_SECTION_ID,
+  isIndividualRuknReportModel,
+} from '@/lib/reporting/individualRuknReportModel'
+import {
   campaignReportModelFromDocument,
 } from './campaignPdfViaComposer'
 import { KC034_EXECUTIVE_SECTION_ID } from '../reportConfig'
@@ -97,8 +104,19 @@ export async function exportReportDocument(
         generatedBy: doc.config.generatedBy,
         organization: doc.config.organization,
       })
+    } else if (doc.config.reportType === 'individual_rukn') {
+      const section = doc.sections.find((s) => s.definition.id === INDIVIDUAL_RUKN_SECTION_ID)
+      const data = section?.model.data
+      if (!isIndividualRuknReportModel(data)) {
+        throw new Error(
+          typeof data === 'object' && data && 'message' in data
+            ? String((data as { message: string }).message)
+            : 'Individual Rukn report model missing — select a Rukn.',
+        )
+      }
+      await downloadIndividualRuknReportPdf(data)
     } else {
-      // Textual PDF for non-KC034 compositions (presentation dump).
+      // Textual PDF for other non-KC034 compositions (presentation dump).
       const { downloadUrduHtmlReportPdf, UrduHtml } = await import('@/lib/reporting/urduHtmlToPdf')
       const parts = doc.sections.map((s) => {
         const title = s.definition.title ?? s.definition.displayName

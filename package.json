@@ -88,6 +88,7 @@
     "verify:kc-037b": "npx vite-node scripts/verify-kc-037b-report-center.ts",
     "verify:kc-037cf": "npx vite-node scripts/verify-kc-037cf-reporting-platform.ts",
     "verify:kc-037c1": "npx vite-node scripts/verify-kc-037c1-executive-report-v2.ts",
+    "verify:kc-037c2": "npx vite-node scripts/verify-kc-037c2-individual-rukn-report.ts",
     "verify:kc-035r1": "npx vite-node scripts/verify-kc-035r1-operational-recovery.ts",
     "capture:phase3": "npx vite-node scripts/capture-phase3-screenshots.ts",
     "preview": "vite preview",
