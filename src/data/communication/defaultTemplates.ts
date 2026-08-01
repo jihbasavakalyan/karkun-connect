@@ -222,8 +222,9 @@ export const OFFICIAL_WHATSAPP_TEMPLATES: MessageTemplate[] = [
     'campaign-update',
     `السلام علیکم {name}
 
-{campaign} کی مختصر اطلاع۔
-تفصیل جلد شیئر کی جائے گی۔
+مرکزی مہم '{campaign}' کی مدت میں توسیع کرتے ہوئے اب یہ مہم 9 اگست 2026 تک جاری رہے گی۔
+
+پہلا مرحلہ مکمل · دوسرا مرحلہ جاری
 
 اللہ کامیابی عطا فرمائے۔`,
     ['name', 'campaign'],

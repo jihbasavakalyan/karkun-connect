@@ -12384,16 +12384,19 @@
       "name": "فعال کارکن، فعال جماعت",
       "status": "active",
       "startDate": "2026-07-18",
-      "endDate": "2026-08-02",
+      "endDate": "2026-08-09",
       "theme": "Activate every Karkun and integrate them into Jamaat work.",
-      "objective": "Ensure every connected Karkun is contacted, visited, engaged, and integrated into Jamaat activities during the campaign.",
+      "objective": "Ensure every connected Karkun is contacted, visited, engaged, and integrated into Jamaat activities during the campaign (extended through 9 Aug 2026).",
       "objectives": [
-        "Reconnect",
-        "Understand",
-        "Empower",
-        "Activate"
+        "باقی کارکنوں کی تکمیل",
+        "تمام ملاقاتوں کی تکمیل",
+        "ہفتہ وار اجتماع میں مؤثر شرکت",
+        "بیت المال کے عزم اور ادائیگی کی تکمیل",
+        "JIH Reporting App رجسٹریشن",
+        "متفقین کی فہرست کی تکمیل",
+        "مسلسل فالو اپ"
       ],
-      "nextMilestone": "Complete first visits for all connected Karkuns",
+      "nextMilestone": "Phase II — complete remaining connections, visits, and follow-up",
       "motto": "فعال کارکن، فعال جماعت"
     },
     {

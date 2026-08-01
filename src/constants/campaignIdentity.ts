@@ -6,6 +6,39 @@
 
 export const CAMPAIGN_HEADLINE = 'فعال کارکن، فعال جماعت'
 
+/** Original approved end before KC-038 extension (informational). */
+export const CAMPAIGN_ORIGINAL_END_DATE = '2026-08-02'
+
+/** Official extended campaign end (KC-038). */
+export const CAMPAIGN_EXTENDED_END_DATE = '2026-08-09'
+
+export const CAMPAIGN_EXTENSION_ANNOUNCEMENT_UR =
+  "مرکزی مہم 'فعال کارکن، فعال جماعت' کی مدت میں توسیع کرتے ہوئے اب یہ مہم 9 اگست 2026 تک جاری رہے گی۔"
+
+export const CAMPAIGN_PHASE_LABELS = {
+  firstPhaseComplete: 'پہلا مرحلہ مکمل',
+  secondPhaseInProgress: 'دوسرا مرحلہ جاری',
+  extendedCampaignEn: 'Extended Campaign',
+  phaseIiEn: 'Phase II in Progress',
+  campaignContinuesEn: 'Campaign Continues',
+} as const
+
+/** Extended-period operational goals — display only; no duplicate KPI engines. */
+export const CAMPAIGN_EXTENDED_OBJECTIVES_UR = [
+  'باقی کارکنوں کی تکمیل',
+  'تمام ملاقاتوں کی تکمیل',
+  'ہفتہ وار اجتماع میں مؤثر شرکت',
+  'بیت المال کے عزم اور ادائیگی کی تکمیل',
+  'JIH Reporting App رجسٹریشن',
+  'متفقین کی فہرست کی تکمیل',
+  'مسلسل فالو اپ',
+] as const
+
+export function isCampaignEndExtended(endDate: string | undefined | null): boolean {
+  if (!endDate) return false
+  return endDate > CAMPAIGN_ORIGINAL_END_DATE
+}
+
 export const CAMPAIGN_MOTTO_LINES = [
   'ہر کارکن تک رسائی،',
   'ہر دل سے تعلق،',

@@ -3,16 +3,19 @@ import { ROUTES } from '@/constants/routes'
 import { getActiveCampaign, formatCampaignDate } from '@/services/campaignService'
 import type { CampaignHeroData } from '@/types/campaignAutomation.types'
 import { EnterpriseBadge } from '@/components/enterprise'
-import { CAMPAIGN_HEADLINE, CAMPAIGN_MOTTO_LINES, CAMPAIGN_VALUES } from '@/constants/campaignIdentity'
+import {
+  CAMPAIGN_HEADLINE,
+  CAMPAIGN_MOTTO_LINES,
+  CAMPAIGN_VALUES,
+} from '@/constants/campaignIdentity'
+import { campaignSituationLabel } from '@/lib/homeHeroPresentation'
 
 type CommandCenterHeroProps = {
   hero: CampaignHeroData | null
 }
 
-function timelineStatusLabel(status: CampaignHeroData['timelineStatus']): string {
-  if (status === 'upcoming') return 'Upcoming'
-  if (status === 'completed') return 'Completed'
-  return 'Active'
+function timelineStatusLabel(status: CampaignHeroData['timelineStatus'], endDate?: string): string {
+  return campaignSituationLabel({ timelineStatus: status, endDate })
 }
 
 function timelineBadgeVariant(
@@ -86,7 +89,7 @@ export function CommandCenterHero({ hero }: CommandCenterHeroProps) {
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px]">
               <EnterpriseBadge variant={timelineBadgeVariant(hero.timelineStatus)}>
-                {timelineStatusLabel(hero.timelineStatus)}
+                {timelineStatusLabel(hero.timelineStatus, campaign?.endDate)}
               </EnterpriseBadge>
               <span className="text-white/90">{startDate} – {endDate}</span>
               <span className="font-medium text-amber-100">{hero.dayLabel}</span>

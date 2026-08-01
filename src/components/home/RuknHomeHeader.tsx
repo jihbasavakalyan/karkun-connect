@@ -1,6 +1,8 @@
 import type { CampaignHeroData } from '@/types/campaignAutomation.types'
 import type { MorningBrief } from '@/types/guidance'
 import { CAMPAIGN_HEADLINE } from '@/constants/campaignIdentity'
+import { formatActiveCampaignDuration } from '@/services/campaignService'
+import { CampaignExtensionNotice } from '@/components/campaign/CampaignExtensionNotice'
 
 type RuknHomeHeaderProps = {
   brief: MorningBrief
@@ -12,6 +14,7 @@ export function RuknHomeHeader({ brief, hero }: RuknHomeHeaderProps) {
     brief.nextActions[0] != null
       ? `${brief.nextActions[0].karkunName}: ${brief.nextActions[0].label}`
       : brief.mission
+  const duration = formatActiveCampaignDuration()
 
   return (
     <header className="home-stack-tight">
@@ -32,9 +35,14 @@ export function RuknHomeHeader({ brief, hero }: RuknHomeHeaderProps) {
           <p className="mt-1 text-base font-semibold text-white" dir="rtl">
             {CAMPAIGN_HEADLINE}
           </p>
-          <p className="mt-1 text-xs text-white/85">{hero.dayLabel}</p>
+          <p className="mt-1 text-xs text-white/85">
+            {hero.dayLabel}
+            {duration !== '—' ? ` · ${duration}` : ''}
+          </p>
         </div>
       )}
+
+      <CampaignExtensionNotice />
 
       <article className="home-card border-primary/20 bg-primary-muted/20">
         <p className="home-eyebrow">Today&apos;s Priority</p>

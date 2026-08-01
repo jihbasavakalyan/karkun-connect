@@ -2,12 +2,13 @@ import { getActiveCampaign, formatCampaignDate } from '@/services/campaignServic
 import { buildAdminCampaignPulse } from '@/lib/campaignPulsePresentation'
 import {
   ADMIN_CAMPAIGN_MOTIVATION,
+  campaignSituationLabel,
   greetingForTimeOfDay,
-  timelineStatusLabel,
 } from '@/lib/homeHeroPresentation'
 import { CAMPAIGN_HEADLINE } from '@/constants/campaignIdentity'
 import type { CampaignHeroData } from '@/types/campaignAutomation.types'
 import { CampaignPulseHeartbeat } from './CampaignPulseHeartbeat'
+import { CampaignExtensionNotice } from '@/components/campaign/CampaignExtensionNotice'
 
 type AdminHomeHeroProps = {
   hero: CampaignHeroData | null
@@ -20,7 +21,12 @@ export function AdminHomeHero({ hero }: AdminHomeHeroProps) {
   const startDate = campaign ? formatCampaignDate(campaign.startDate) : ''
   const endDate = campaign ? formatCampaignDate(campaign.endDate) : ''
   const dayLabel = hero?.dayLabel ?? '—'
-  const status = hero ? timelineStatusLabel(hero.timelineStatus) : '—'
+  const status = hero
+    ? campaignSituationLabel({
+        timelineStatus: hero.timelineStatus,
+        endDate: campaign?.endDate,
+      })
+    : '—'
   const duration = hero?.duration ?? `${startDate} – ${endDate}`
 
   return (
@@ -48,6 +54,10 @@ export function AdminHomeHero({ hero }: AdminHomeHeroProps) {
           </div>
 
           <p className="cd-hero-motivation">{ADMIN_CAMPAIGN_MOTIVATION}</p>
+        </div>
+
+        <div className="mt-2">
+          <CampaignExtensionNotice />
         </div>
 
         <CampaignPulseHeartbeat pulse={pulse} variant="hero" />

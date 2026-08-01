@@ -1,4 +1,8 @@
-import { CAMPAIGN_MOTTO_LINES } from '@/constants/campaignIdentity'
+import {
+  CAMPAIGN_MOTTO_LINES,
+  CAMPAIGN_PHASE_LABELS,
+  isCampaignEndExtended,
+} from '@/constants/campaignIdentity'
 import { getGuidanceForRuknKarkuns } from '@/lib/guidance/guidanceEngine'
 
 export const ADMIN_CAMPAIGN_MOTIVATION =
@@ -62,5 +66,18 @@ export function buildRuknDailyFocus(ruknId: string): string {
 export function timelineStatusLabel(status: 'upcoming' | 'active' | 'completed'): string {
   if (status === 'upcoming') return 'Upcoming'
   if (status === 'completed') return 'Completed'
+  return 'Active'
+}
+
+/** KC-038 — Prefer extension wording while campaign remains active past original end. */
+export function campaignSituationLabel(input: {
+  timelineStatus: 'upcoming' | 'active' | 'completed'
+  endDate?: string | null
+}): string {
+  if (input.timelineStatus === 'completed') return 'Completed'
+  if (input.timelineStatus === 'upcoming') return 'Upcoming'
+  if (isCampaignEndExtended(input.endDate)) {
+    return CAMPAIGN_PHASE_LABELS.extendedCampaignEn
+  }
   return 'Active'
 }

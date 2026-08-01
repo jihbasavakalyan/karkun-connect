@@ -69,7 +69,7 @@ assert(!command.includes('LiveActivityFeed'), 'Live Activity merged into Activit
 assert(!command.includes('Recent System History'), 'System History merged into Activity Timeline')
 assert(!command.includes('WeeklyIjtemaDashboardKpiCard'), 'Weekly Ijtema KPI card not duplicated on dashboard')
 assert(!command.includes('MonthlyBaitulMaalDashboardKpiCard'), 'Baitul Maal KPI card not duplicated on dashboard')
-assert(mockMissions.includes("endDate: '2026-08-02'"), 'campaign end date seed is 2 Aug 2026')
+assert(mockMissions.includes("endDate: '2026-08-09'"), 'campaign end date seed is 9 Aug 2026')
 
 assert(
   experiment.includes('USE_ADMIN_ACTION_CENTER_EXPERIMENT = true'),
