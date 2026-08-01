@@ -132,6 +132,9 @@ export type CampaignReportModel = {
     generatedBy: string
     campaignStatus: string
     campaignDay: string
+    /** From campaign timeline — not invented KPI math. */
+    daysCompleted: number | null
+    daysRemaining: number | null
     systemVersion: string
   }
   executive: {
@@ -778,6 +781,8 @@ export function buildCampaignReportModel(input?: {
       generatedBy: input?.generatedBy?.trim() || 'منتظم',
       campaignStatus,
       campaignDay,
+      daysCompleted: timeline?.currentDay ?? null,
+      daysRemaining: timeline?.daysRemaining ?? null,
       systemVersion: APP_VERSION,
     },
     executive,

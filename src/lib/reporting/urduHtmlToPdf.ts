@@ -238,6 +238,55 @@ html, body {
 .urdu-report .kpi-card.accent-navy {
   border-top: 3px solid ${colors.primary};
 }
+.urdu-report .kpi-card.accent-amber {
+  border-top: 3px solid ${colors.warning};
+}
+.urdu-report .kpi-grid.kpi-stat {
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 7px;
+}
+.urdu-report .kpi-grid.kpi-stat .kpi-value {
+  font-size: 12.5pt;
+}
+.urdu-report .v2-eyebrow {
+  margin: 0 0 4px;
+  font-size: 9pt;
+  opacity: 0.9;
+  letter-spacing: 0.02em;
+  position: relative;
+  z-index: 1;
+}
+.urdu-report .v2-summary-card,
+.urdu-report .v2-closing-card {
+  background: ${colors.cardBg};
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin: 0 0 12px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+}
+.urdu-report .v2-closing-card p {
+  margin: 0;
+  line-height: 1.7;
+  font-size: 10.5pt;
+}
+.urdu-report .v2-list {
+  margin: 0 0 12px;
+  padding: 0 18px 0 0;
+}
+.urdu-report .v2-list li {
+  margin: 0 0 6px;
+  line-height: 1.65;
+}
+.urdu-report .v2-detail {
+  color: ${colors.muted};
+  font-weight: 500;
+}
+.urdu-report .v2-empty {
+  margin: 0 0 12px;
+  color: ${colors.muted};
+  font-size: 10pt;
+}
 
 /* ── Activity progress cards ────────────────────────────────── */
 .urdu-report .activity-list {
