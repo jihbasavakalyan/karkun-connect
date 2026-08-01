@@ -61,4 +61,12 @@
 
 ## Phase 6 — Post-deploy
 
-*(after deploy + Firestore patch if campaigns collection present)*
+| Check | Result |
+|-------|--------|
+| GitHub HEAD | `cc5b392` on `origin/main` |
+| Vercel | `dpl_58DX5dFvjDPi5B3YA3kZ6pPRZMmn` READY |
+| Firestore campaigns | Empty — seed `mockMissions` endDate `2026-08-09` (no patch write) |
+| Prod smoke | `2026-08-09` in firestoreRepositories chunk; extension copy in campaignIdentity chunk |
+| Verifies | `verify:kc-038` · typecheck |
+
+**Closure:** KC-038 complete — campaign continues through 9 Aug 2026.
