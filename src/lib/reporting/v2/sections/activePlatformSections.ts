@@ -3,10 +3,10 @@
  * Replaces planned stubs for these ids with featureFlag:true builders.
  */
 
-import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { getAllMuttafiqeen, getPeopleStatistics } from '@/lib/peopleStore'
 import { APP_VERSION } from '@/constants/app'
 import { buildIndividualRuknReportModel } from '@/lib/reporting/individualRuknReportModel'
+import { buildIndividualKarkunReportModel } from '@/lib/reporting/individualKarkunReportModel'
 import { registerSection } from '../sectionRegistry'
 import type { ReportContext, SectionModel, ReportTypeId } from '../types'
 import { campaignModelFromContext, pairView } from './campaignModelAccess'
@@ -414,38 +414,15 @@ export function registerActivePlatformSections(): void {
   section(
     'individual_karkun_performance',
     'Individual Karkun Performance',
-    'Single Karkun dossier (scopeTarget.personId)',
+    'Single Karkun operational dossier (scopeTarget.personId)',
     150,
     ['individual_karkun'],
     (ctx) => {
-      const personId = ctx.config.scopeTarget?.personId
-      if (!personId) {
-        return { missing: true, message: 'Select a Karkun (scopeTarget.personId).' }
+      const built = buildIndividualKarkunReportModel(ctx)
+      if ('missing' in built && built.missing) {
+        return { missing: true, message: built.message }
       }
-      const person = getKarkunById(personId)
-      if (!person) {
-        return { missing: true, message: `Karkun not found: ${personId}` }
-      }
-      const wi = ctx.providers.weeklyIjtema.getCurrentAttendanceView(personId)
-      const bm = ctx.providers.baitulMaal.getComplianceStatusView(personId)
-      return {
-        profile: {
-          id: person.id,
-          name: person.name,
-          gender: person.gender,
-          mobile: person.mobile,
-          status: person.status,
-        },
-        connectedDate: (person as { connectedAt?: string }).connectedAt || null,
-        responsibleRuknId: person.assignedRuknId || null,
-        responsibleRuknName: person.assignedRukn || null,
-        visitStatus: 'Person-level visit status via Connection Journey; aggregates use Visit providers.',
-        weeklyIjtema: wi,
-        baitulMaal: bm,
-        appRegistration: person.jihAppRegistrationStatus || null,
-        pendingTasks: [],
-        remarks: 'KPIs via KC-033 attendance/compliance views; no alternate math.',
-      }
+      return built
     },
   )
 

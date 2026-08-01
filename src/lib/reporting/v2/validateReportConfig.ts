@@ -66,6 +66,16 @@ export function validateReportConfig(
     })
   }
 
+  if (
+    (config.reportType === 'individual_karkun' || config.scope === 'individual_karkun') &&
+    !config.scopeTarget?.personId?.trim()
+  ) {
+    errors.push({
+      code: 'KARKUN_REQUIRED',
+      message: 'Individual Karkun report requires selecting a Karkun.',
+    })
+  }
+
   if (!config.enabledSections.length) {
     errors.push({
       code: 'NO_SECTIONS',

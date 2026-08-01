@@ -50,9 +50,9 @@ export const REPORT_TYPE_CATALOG: ReportTypeDefinition[] = [
     defaultScope: 'individual_rukn',
     defaultDetailLevel: 'standard',
   }),
-  def('individual_karkun', 'Individual Karkun Report', 'Single Karkun dossier.', {
+  def('individual_karkun', 'Individual Karkun Performance Report', 'Single Karkun operational dossier for daily review.', {
     defaultScope: 'individual_karkun',
-    defaultDetailLevel: 'detailed',
+    defaultDetailLevel: 'standard',
   }),
   def('weekly_ijtema', 'Weekly Ijtema Report', 'Ijtema attendance analytics.', {
     defaultScope: 'overall_campaign',

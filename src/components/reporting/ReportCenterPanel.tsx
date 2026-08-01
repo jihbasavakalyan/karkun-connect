@@ -25,6 +25,8 @@ import {
 import { generateConfiguredReport } from '@/lib/reporting/v2/generateConfiguredReport'
 import { ReportDashboardView } from '@/components/reporting/ReportDashboardView'
 import { ruknMaster } from '@/data/ruknMaster'
+import { getKarkunById } from '@/constants/mockKarkunRegistry'
+import { getCanonicalConnectedAssignments } from '@/lib/connections/getConnectedKarkunsForRukn'
 
 const SCOPES: Array<{ id: ReportScope; label: string }> = [
   { id: 'overall_campaign', label: 'Entire Campaign' },
@@ -127,6 +129,20 @@ export function ReportCenterPanel() {
     () => ruknMaster.filter((r) => r.status === 'active' && !r.isArchived),
     [],
   )
+
+  const connectedKarkunOptions = useMemo(() => {
+    return getCanonicalConnectedAssignments()
+      .map((assignment) => {
+        const person = getKarkunById(assignment.karkunId)
+        if (!person) return null
+        return {
+          id: person.id,
+          label: `${assignment.assignmentNumber || '—'} · ${person.name}`,
+        }
+      })
+      .filter((row): row is { id: string; label: string } => Boolean(row))
+      .sort((a, b) => a.label.localeCompare(b.label))
+  }, [])
 
   const patch = (partial: Partial<ReportConfig>) => {
     setConfig((prev) => defaultKc034Config({ ...prev, ...partial }))
@@ -293,17 +309,31 @@ export function ReportCenterPanel() {
           ) : null}
           {config.scope === 'individual_karkun' || config.reportType === 'individual_karkun' ? (
             <div>
-              <FieldLabel>Karkun ID</FieldLabel>
-              <input
+              <FieldLabel>Karkun</FieldLabel>
+              <select
                 className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm"
-                placeholder="e.g. kr-001"
                 value={config.scopeTarget?.personId ?? ''}
                 onChange={(e) =>
                   patch({
-                    scopeTarget: { ...config.scopeTarget, personId: e.target.value.trim() || undefined },
+                    scopeTarget: {
+                      ...config.scopeTarget,
+                      personId: e.target.value || undefined,
+                    },
                   })
                 }
-              />
+              >
+                <option value="">Select Karkun…</option>
+                {connectedKarkunOptions.map((k) => (
+                  <option key={k.id} value={k.id}>
+                    {k.label}
+                  </option>
+                ))}
+              </select>
+              {connectedKarkunOptions.length === 0 ? (
+                <p className="mt-1 text-xs text-secondary">
+                  No connected Karkuns available in the current session.
+                </p>
+              ) : null}
             </div>
           ) : null}
           <SelectField

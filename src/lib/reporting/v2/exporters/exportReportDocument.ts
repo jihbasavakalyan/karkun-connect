@@ -12,6 +12,13 @@ import {
   isIndividualRuknReportModel,
 } from '@/lib/reporting/individualRuknReportModel'
 import {
+  downloadIndividualKarkunReportPdf,
+} from '@/lib/reporting/individualKarkunReportPdf'
+import {
+  INDIVIDUAL_KARKUN_SECTION_ID,
+  isIndividualKarkunReportModel,
+} from '@/lib/reporting/individualKarkunReportModel'
+import {
   campaignReportModelFromDocument,
 } from './campaignPdfViaComposer'
 import { KC034_EXECUTIVE_SECTION_ID } from '../reportConfig'
@@ -115,6 +122,17 @@ export async function exportReportDocument(
         )
       }
       await downloadIndividualRuknReportPdf(data)
+    } else if (doc.config.reportType === 'individual_karkun') {
+      const section = doc.sections.find((s) => s.definition.id === INDIVIDUAL_KARKUN_SECTION_ID)
+      const data = section?.model.data
+      if (!isIndividualKarkunReportModel(data)) {
+        throw new Error(
+          typeof data === 'object' && data && 'message' in data
+            ? String((data as { message: string }).message)
+            : 'Individual Karkun report model missing — select a Karkun.',
+        )
+      }
+      await downloadIndividualKarkunReportPdf(data)
     } else {
       // Textual PDF for other non-KC034 compositions (presentation dump).
       const { downloadUrduHtmlReportPdf, UrduHtml } = await import('@/lib/reporting/urduHtmlToPdf')
