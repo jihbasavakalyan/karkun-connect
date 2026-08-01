@@ -2,7 +2,6 @@ import type { CampaignHeroData } from '@/types/campaignAutomation.types'
 import type { MorningBrief } from '@/types/guidance'
 import { CAMPAIGN_HEADLINE } from '@/constants/campaignIdentity'
 import { formatActiveCampaignDuration } from '@/services/campaignService'
-import { CampaignExtensionNotice } from '@/components/campaign/CampaignExtensionNotice'
 
 type RuknHomeHeaderProps = {
   brief: MorningBrief
@@ -41,8 +40,6 @@ export function RuknHomeHeader({ brief, hero }: RuknHomeHeaderProps) {
           </p>
         </div>
       )}
-
-      <CampaignExtensionNotice />
 
       <article className="home-card border-primary/20 bg-primary-muted/20">
         <p className="home-eyebrow">Today&apos;s Priority</p>

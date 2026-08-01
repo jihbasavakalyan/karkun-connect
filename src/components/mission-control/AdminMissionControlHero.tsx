@@ -9,15 +9,11 @@ import { subscribeToAnnexure1Store } from '@/stores/annexure1Store'
 import { subscribeToJihWebPortalStore } from '@/stores/jihWebPortalStore'
 import { subscribeToWeeklyIjtemaStore } from '@/stores/weeklyIjtemaStore'
 import { subscribeToMonthlyBaitulMaalStore } from '@/stores/monthlyBaitulMaalStore'
-import { getCampaignTimeline, getActiveCampaign } from '@/services/campaignService'
-import { campaignSituationLabel } from '@/lib/homeHeroPresentation'
+import { getCampaignTimeline } from '@/services/campaignService'
+import { campaignSituationUrdu } from '@/lib/homeHeroPresentation'
 import { McProgressRing } from './McProgressRing'
 import { MissionControlQuickActions } from './MissionControlQuickActions'
 import { CampaignExtensionNotice } from '@/components/campaign/CampaignExtensionNotice'
-import {
-  CAMPAIGN_PHASE_LABELS,
-  isCampaignEndExtended,
-} from '@/constants/campaignIdentity'
 
 type MissionControlHeroProps = {
   model: AdminMissionControlModel
@@ -38,15 +34,13 @@ export function AdminMissionControlHero({
   const [complianceTick, setComplianceTick] = useState(0)
   const campaignWindow = formatCampaignWindowLabel()
   const timeline = getCampaignTimeline()
-  const campaign = getActiveCampaign()
-  const statusLabel = campaignSituationLabel({
-    timelineStatus: timeline?.status ?? 'active',
-    endDate: campaign?.endDate,
-  })
-  const phaseCaption =
-    campaign && isCampaignEndExtended(campaign.endDate)
-      ? `${CAMPAIGN_PHASE_LABELS.phaseIiEn} · ${CAMPAIGN_PHASE_LABELS.firstPhaseComplete}`
-      : null
+  const situationUrdu = timeline
+    ? campaignSituationUrdu({
+        timelineStatus: timeline.status,
+        currentDay: timeline.currentDay,
+        totalDays: timeline.totalDays,
+      })
+    : null
 
   useEffect(() => {
     // KC-0102B — coalesce compliance store storms into one hero tick.
@@ -98,11 +92,14 @@ export function AdminMissionControlHero({
         <h1 className="exdash-hero-title">{model.campaignName}</h1>
         {campaignWindow ? <p className="exdash-hero-window">{campaignWindow}</p> : null}
         <p className="exdash-hero-date">{model.currentDateLabel}</p>
-        {statusLabel ? (
-          <p className="exdash-hero-caption" style={{ marginTop: '0.35rem', opacity: 0.9 }}>
-            Campaign situation · {statusLabel}
-            {timeline?.dayLabel ? ` · ${timeline.dayLabel}` : ''}
-            {phaseCaption ? ` · ${phaseCaption}` : ''}
+        {situationUrdu ? (
+          <p
+            className="exdash-hero-caption"
+            style={{ marginTop: '0.35rem', opacity: 0.9 }}
+            dir="rtl"
+            lang="ur"
+          >
+            {situationUrdu}
           </p>
         ) : null}
       </div>

@@ -1,14 +1,14 @@
-import { getActiveCampaign, formatCampaignDate } from '@/services/campaignService'
+import { getActiveCampaign, formatCampaignDate, getCampaignTimeline } from '@/services/campaignService'
 import { buildAdminCampaignPulse } from '@/lib/campaignPulsePresentation'
 import {
   ADMIN_CAMPAIGN_MOTIVATION,
-  campaignSituationLabel,
+  campaignSituationUrdu,
   greetingForTimeOfDay,
+  timelineStatusLabel,
 } from '@/lib/homeHeroPresentation'
 import { CAMPAIGN_HEADLINE } from '@/constants/campaignIdentity'
 import type { CampaignHeroData } from '@/types/campaignAutomation.types'
 import { CampaignPulseHeartbeat } from './CampaignPulseHeartbeat'
-import { CampaignExtensionNotice } from '@/components/campaign/CampaignExtensionNotice'
 
 type AdminHomeHeroProps = {
   hero: CampaignHeroData | null
@@ -16,16 +16,20 @@ type AdminHomeHeroProps = {
 
 export function AdminHomeHero({ hero }: AdminHomeHeroProps) {
   const campaign = getActiveCampaign()
+  const timeline = getCampaignTimeline()
   const pulse = buildAdminCampaignPulse()
 
   const startDate = campaign ? formatCampaignDate(campaign.startDate) : ''
   const endDate = campaign ? formatCampaignDate(campaign.endDate) : ''
   const dayLabel = hero?.dayLabel ?? '—'
   const status = hero
-    ? campaignSituationLabel({
-        timelineStatus: hero.timelineStatus,
-        endDate: campaign?.endDate,
-      })
+    ? timeline
+      ? campaignSituationUrdu({
+          timelineStatus: timeline.status,
+          currentDay: timeline.currentDay,
+          totalDays: timeline.totalDays,
+        })
+      : timelineStatusLabel(hero.timelineStatus)
     : '—'
   const duration = hero?.duration ?? `${startDate} – ${endDate}`
 
@@ -50,14 +54,12 @@ export function AdminHomeHero({ hero }: AdminHomeHeroProps) {
             <span className="cd-hero-meta-dot" aria-hidden="true" />
             <span>{duration}</span>
             <span className="cd-hero-meta-dot" aria-hidden="true" />
-            <span className="cd-hero-status">{status}</span>
+            <span className="cd-hero-status" dir="rtl" lang="ur">
+              {status}
+            </span>
           </div>
 
           <p className="cd-hero-motivation">{ADMIN_CAMPAIGN_MOTIVATION}</p>
-        </div>
-
-        <div className="mt-2">
-          <CampaignExtensionNotice />
         </div>
 
         <CampaignPulseHeartbeat pulse={pulse} variant="hero" />

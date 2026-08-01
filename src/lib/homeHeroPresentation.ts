@@ -1,8 +1,4 @@
-import {
-  CAMPAIGN_MOTTO_LINES,
-  CAMPAIGN_PHASE_LABELS,
-  isCampaignEndExtended,
-} from '@/constants/campaignIdentity'
+import { CAMPAIGN_MOTTO_LINES } from '@/constants/campaignIdentity'
 import { getGuidanceForRuknKarkuns } from '@/lib/guidance/guidanceEngine'
 
 export const ADMIN_CAMPAIGN_MOTIVATION =
@@ -69,15 +65,18 @@ export function timelineStatusLabel(status: 'upcoming' | 'active' | 'completed')
   return 'Active'
 }
 
-/** KC-038 — Prefer extension wording while campaign remains active past original end. */
-export function campaignSituationLabel(input: {
+/** KC-038A — Urdu campaign situation line (presentation only; uses existing timeline fields). */
+export function campaignSituationUrdu(input: {
   timelineStatus: 'upcoming' | 'active' | 'completed'
-  endDate?: string | null
+  currentDay: number | null
+  totalDays: number
 }): string {
-  if (input.timelineStatus === 'completed') return 'Completed'
-  if (input.timelineStatus === 'upcoming') return 'Upcoming'
-  if (isCampaignEndExtended(input.endDate)) {
-    return CAMPAIGN_PHASE_LABELS.extendedCampaignEn
+  if (input.timelineStatus === 'upcoming') {
+    return 'موجودہ صورتحال: مہم شروع ہونے والی ہے'
   }
-  return 'Active'
+  if (input.timelineStatus === 'completed') {
+    return 'موجودہ صورتحال: مہم مکمل'
+  }
+  const day = input.currentDay ?? '—'
+  return `موجودہ صورتحال: مہم جاری ہے • دن ${day} از ${input.totalDays}`
 }

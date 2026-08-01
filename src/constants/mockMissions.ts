@@ -136,7 +136,7 @@ export const MOCK_CAMPAIGNS: CampaignListItem[] = [
       'متفقین کی فہرست کی تکمیل',
       'مسلسل فالو اپ',
     ],
-    nextMilestone: 'Phase II — complete remaining connections, visits, and follow-up',
+    nextMilestone: 'Complete remaining connections, visits, and follow-up',
     motto: 'فعال کارکن، فعال جماعت',
   },
   {

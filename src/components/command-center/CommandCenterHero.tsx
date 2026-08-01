@@ -8,14 +8,14 @@ import {
   CAMPAIGN_MOTTO_LINES,
   CAMPAIGN_VALUES,
 } from '@/constants/campaignIdentity'
-import { campaignSituationLabel } from '@/lib/homeHeroPresentation'
+import { timelineStatusLabel as statusLabelEn } from '@/lib/homeHeroPresentation'
 
 type CommandCenterHeroProps = {
   hero: CampaignHeroData | null
 }
 
-function timelineStatusLabel(status: CampaignHeroData['timelineStatus'], endDate?: string): string {
-  return campaignSituationLabel({ timelineStatus: status, endDate })
+function timelineStatusLabel(status: CampaignHeroData['timelineStatus']): string {
+  return statusLabelEn(status)
 }
 
 function timelineBadgeVariant(
@@ -89,7 +89,7 @@ export function CommandCenterHero({ hero }: CommandCenterHeroProps) {
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px]">
               <EnterpriseBadge variant={timelineBadgeVariant(hero.timelineStatus)}>
-                {timelineStatusLabel(hero.timelineStatus, campaign?.endDate)}
+                {timelineStatusLabel(hero.timelineStatus)}
               </EnterpriseBadge>
               <span className="text-white/90">{startDate} – {endDate}</span>
               <span className="font-medium text-amber-100">{hero.dayLabel}</span>

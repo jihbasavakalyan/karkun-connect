@@ -8,7 +8,6 @@ import {
   getActiveCampaignTheme,
   getCampaignTimeline,
 } from '@/services/campaignService'
-import { isCampaignEndExtended } from '@/constants/campaignIdentity'
 import { phoneCallStartedPolicy, genericExecutionPolicy } from '@/execution'
 import {
   SettingsReadonly,
@@ -19,12 +18,9 @@ import {
 export function CampaignSettingsSection() {
   const campaign = getActiveCampaign()
   const timeline = getCampaignTimeline()
-  const statusLabel =
-    campaign && isCampaignEndExtended(campaign.endDate)
-      ? 'Extended Campaign (Active)'
-      : timeline?.status
-        ? timeline.status.charAt(0).toUpperCase() + timeline.status.slice(1)
-        : 'Unknown'
+  const statusLabel = timeline?.status
+    ? timeline.status.charAt(0).toUpperCase() + timeline.status.slice(1)
+    : 'Unknown'
 
   return (
     <SettingsSection

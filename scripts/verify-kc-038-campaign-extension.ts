@@ -76,13 +76,40 @@ function testMessagingAndNoHardcodedOldEndInUiSeeds(): void {
     'utf8',
   )
   assert(notice.includes('CAMPAIGN_EXTENSION_ANNOUNCEMENT_UR'), 'notice component')
+  assert(notice.includes('CAMPAIGN_EXTENSION_ANNOUNCEMENT_TITLE_UR'), 'announcement title')
+  assert(!notice.includes('CAMPAIGN_PHASE_LABELS'), 'no phase labels in notice')
+  assert(!notice.includes('Extended Campaign'), 'no Extended Campaign')
+  assert(!notice.includes('پہلا مرحلہ'), 'no phase 1 copy')
+  assert(!notice.includes('دوسرا مرحلہ'), 'no phase 2 copy')
+
+  const hero = readFileSync(
+    resolve('src/components/mission-control/AdminMissionControlHero.tsx'),
+    'utf8',
+  )
+  assert(hero.includes('campaignSituationUrdu'), 'Urdu situation line')
+  assert(!hero.includes('Phase II'), 'no Phase II in hero')
+  assert(!hero.includes('Extended Campaign'), 'no Extended Campaign in hero')
+  assert(hero.includes('<CampaignExtensionNotice'), 'notice mounted once on AdminMissionControlHero')
+  assert(
+    (hero.match(/<CampaignExtensionNotice/g) ?? []).length === 1,
+    'exactly one notice mount',
+  )
+
+  const home = readFileSync(resolve('src/components/home/AdminHomeHero.tsx'), 'utf8')
+  assert(!home.includes('CampaignExtensionNotice'), 'no duplicate notice on AdminHomeHero')
+  const rukn = readFileSync(resolve('src/components/home/RuknHomeHeader.tsx'), 'utf8')
+  assert(!rukn.includes('CampaignExtensionNotice'), 'no duplicate notice on Rukn header')
+
+  const identity = readFileSync(resolve('src/constants/campaignIdentity.ts'), 'utf8')
+  assert(!identity.includes('CAMPAIGN_PHASE_LABELS'), 'phase labels removed')
+  assert(identity.includes('اہم اعلان'), 'title constant')
 }
 
 const cases = [
   run('seed end date extended', testSeedEndDate),
   run('timeline recalculates from new end', testTimelineRecalc),
   run('duration label 18 Jul – 9 Aug', testDurationLabel),
-  run('extension messaging present', testMessagingAndNoHardcodedOldEndInUiSeeds),
+  run('KC-038A polish: single announcement, no phase copy', testMessagingAndNoHardcodedOldEndInUiSeeds),
 ]
 
 const failed = cases.filter((c) => !c.passed)

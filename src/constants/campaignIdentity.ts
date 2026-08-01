@@ -12,16 +12,10 @@ export const CAMPAIGN_ORIGINAL_END_DATE = '2026-08-02'
 /** Official extended campaign end (KC-038). */
 export const CAMPAIGN_EXTENDED_END_DATE = '2026-08-09'
 
-export const CAMPAIGN_EXTENSION_ANNOUNCEMENT_UR =
-  "مرکزی مہم 'فعال کارکن، فعال جماعت' کی مدت میں توسیع کرتے ہوئے اب یہ مہم 9 اگست 2026 تک جاری رہے گی۔"
+export const CAMPAIGN_EXTENSION_ANNOUNCEMENT_TITLE_UR = '📢 اہم اعلان'
 
-export const CAMPAIGN_PHASE_LABELS = {
-  firstPhaseComplete: 'پہلا مرحلہ مکمل',
-  secondPhaseInProgress: 'دوسرا مرحلہ جاری',
-  extendedCampaignEn: 'Extended Campaign',
-  phaseIiEn: 'Phase II in Progress',
-  campaignContinuesEn: 'Campaign Continues',
-} as const
+export const CAMPAIGN_EXTENSION_ANNOUNCEMENT_UR =
+  'مرکزی مہم "فعال کارکن، فعال جماعت" کی مدت میں توسیع کرتے ہوئے اب یہ مہم 9 اگست 2026 تک جاری رہے گی۔'
 
 /** Extended-period operational goals — display only; no duplicate KPI engines. */
 export const CAMPAIGN_EXTENDED_OBJECTIVES_UR = [
