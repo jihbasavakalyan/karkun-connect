@@ -67,4 +67,12 @@ Workflows tested:
 
 ## Phase 6 — Post-deploy
 
-*(after deploy)*
+| Check | Result |
+|-------|--------|
+| GitHub HEAD | `e194bc4` on `origin/main` |
+| Vercel | `dpl_3QXK3umnttbCiAPcfmAKETXY2uDW` READY |
+| Production URL | https://jihbasavakalyan.org |
+| Bundle smoke | `AdminReportCenterPage-DdcJzbeb.js` includes `Executive V2`, V2 section markers, `executive_v2`, `kc034_executive_campaign`, `CanonicalMetricProviders`, `Mehm_Report` |
+| Verifies | `verify:kc-037c1` · `verify:kc-037a` · `verify:kc-037b` · `verify:kc-bug-0126` · typecheck |
+
+**Closure:** KC-037C1 complete — Executive Campaign Report V2 live; Composer/KC-033/PDF flow unchanged. STOP (no further report types).
