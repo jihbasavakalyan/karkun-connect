@@ -27,8 +27,8 @@ import {
   getMonthlyBaitulMaalReport,
 } from '@/services/monthlyBaitulMaalService'
 import {
+  getWeeklyIjtemaActiveRuknRows,
   getWeeklyIjtemaDashboardKpi,
-  getWeeklyIjtemaReport,
 } from '@/services/weeklyIjtemaService'
 import {
   getWeeklyIjtemaAttendanceSummariesView,
@@ -53,11 +53,9 @@ export function getCanonicalHealthSlices(): DashboardHealthSlice[] {
   return getDashboardHealthSlices()
 }
 
-/** Active WI event rukn rows (empty when no current event). */
+/** Active WI event rukn rows — KC-037C2E aggregates all Open gender events. */
 export function getCanonicalWeeklyIjtemaActiveRuknRows() {
-  const kpi = getWeeklyIjtemaDashboardKpi()
-  if (!kpi.eventId) return []
-  return getWeeklyIjtemaReport(kpi.eventId)?.ruknRows ?? []
+  return getWeeklyIjtemaActiveRuknRows()
 }
 
 /** Active BM cycle rukn rows (empty when no current cycle). */

@@ -25,7 +25,7 @@ import {
   getIjtemaAttendanceForKarkun,
   getIjtemaAttendanceHistory,
 } from '@/services/ijtemaAttendanceService'
-import { getCurrentWeeklyIjtemaEvent } from '@/services/weeklyIjtemaService'
+import { getCurrentWeeklyIjtemaEvent, listOpenWeeklyIjtemaEvents } from '@/services/weeklyIjtemaService'
 import {
   getAllWeeklyIjtemaEvents,
   getWeeklyIjtemaSubmissionsForEvent,
@@ -267,14 +267,84 @@ function viewFromLegacyCurrent(karkunId: string): WeeklyIjtemaCurrentAttendanceV
   }
 }
 
+function preferCanonicalMark(
+  current: CanonicalMark | undefined,
+  next: CanonicalMark,
+): CanonicalMark {
+  if (!current) return next
+  const currentRank = current.status === 'Present' || current.status === 'Absent' ? 2 : current.reminded ? 1 : 0
+  const nextRank = next.status === 'Present' || next.status === 'Absent' ? 2 : next.reminded ? 1 : 0
+  return nextRank >= currentRank ? next : current
+}
+
+/** KC-037C2E — Merge submission marks across Open events (Male + Female). */
+function buildOpenEventsMarkIndex(
+  events: WeeklyIjtemaEvent[],
+): {
+  markIndex: Map<string, CanonicalMark>
+  eventByKarkun: Map<string, WeeklyIjtemaEvent>
+  primaryEvent: WeeklyIjtemaEvent | undefined
+} {
+  const markIndex = new Map<string, CanonicalMark>()
+  const eventByKarkun = new Map<string, WeeklyIjtemaEvent>()
+  const ordered = [...events].sort((a, b) => b.meetingDate.localeCompare(a.meetingDate))
+  for (const event of ordered) {
+    for (const [karkunId, mark] of buildCanonicalMarkIndex(event)) {
+      const preferred = preferCanonicalMark(markIndex.get(karkunId), mark)
+      if (preferred === mark || !markIndex.has(karkunId)) {
+        markIndex.set(karkunId, preferred)
+        eventByKarkun.set(karkunId, event)
+      }
+    }
+  }
+  return { markIndex, eventByKarkun, primaryEvent: ordered[0] }
+}
+
+function emptyCanonicalAttendance(
+  karkunId: string,
+  event: WeeklyIjtemaEvent,
+): WeeklyIjtemaCurrentAttendanceView {
+  return {
+    karkunId,
+    status: 'Not recorded',
+    weekEndingDate: event.meetingDate,
+    weekLabel: formatCycleDateLabel(event.meetingDate),
+    source: 'canonical',
+    eventId: event.id,
+    meetingDate: event.meetingDate,
+  }
+}
+
 /**
  * Current Weekly Ijtema attendance for presentation (recurring event track).
  * Prefers canonical event marks. Does not treat campaign invitation legacy
  * records as attendance (KC-037C2A).
+ * KC-037C2E — scans all Open events so gender-scoped writes are visible.
  */
 export function getWeeklyIjtemaCurrentAttendanceView(
   karkunId: string,
 ): WeeklyIjtemaCurrentAttendanceView {
+  const openEvents = listOpenWeeklyIjtemaEvents()
+  if (openEvents.length > 0) {
+    for (const event of openEvents) {
+      const mark = findCanonicalMark(event, karkunId)
+      if (mark) {
+        const view = viewFromCanonicalMark(karkunId, event, mark)
+        logWeeklyIjtemaRead('current', view.source, { karkunId, eventId: event.id })
+        return view
+      }
+    }
+    const primary = openEvents[0]
+    const empty = emptyCanonicalAttendance(karkunId, primary)
+    logWeeklyIjtemaRead('current', 'canonical', {
+      karkunId,
+      eventId: primary.id,
+      unmarked: true,
+      openEvents: openEvents.length,
+    })
+    return empty
+  }
+
   const event = getCurrentWeeklyIjtemaEvent()
   if (event) {
     const mark = findCanonicalMark(event, karkunId)
@@ -283,16 +353,7 @@ export function getWeeklyIjtemaCurrentAttendanceView(
       logWeeklyIjtemaRead('current', view.source, { karkunId, eventId: event.id })
       return view
     }
-    // Open/current event with no mark → unmarked attendance (ignore invitation legacy).
-    const empty: WeeklyIjtemaCurrentAttendanceView = {
-      karkunId,
-      status: 'Not recorded',
-      weekEndingDate: event.meetingDate,
-      weekLabel: formatCycleDateLabel(event.meetingDate),
-      source: 'canonical',
-      eventId: event.id,
-      meetingDate: event.meetingDate,
-    }
+    const empty = emptyCanonicalAttendance(karkunId, event)
     logWeeklyIjtemaRead('current', 'canonical', { karkunId, eventId: event.id, unmarked: true })
     return empty
   }
@@ -452,21 +513,34 @@ export function getWeeklyIjtemaAttendanceHistoryView(
 }
 
 /**
- * KC-0110.3 — Compliance list rows: one summary per active Karkun.
- * Builds a single mark index for the current event (avoids N submission scans).
+ * KC-0110.3 / KC-037C2E — Compliance list rows: one summary per active Karkun.
+ * Builds a mark index across all Open events (Male + Female). When any Open
+ * event exists, missing marks are Not recorded — never legacy ijtema_*.
  */
 export function getWeeklyIjtemaAttendanceSummariesView(): IjtemaAttendanceKarkunSummary[] {
-  const event = getCurrentWeeklyIjtemaEvent()
-  const markIndex = event ? buildCanonicalMarkIndex(event) : null
+  const openEvents = listOpenWeeklyIjtemaEvents()
+  const closedFallback =
+    openEvents.length === 0 ? getCurrentWeeklyIjtemaEvent() : undefined
+  const events = openEvents.length > 0 ? openEvents : closedFallback ? [closedFallback] : []
+  const { markIndex, eventByKarkun, primaryEvent } = buildOpenEventsMarkIndex(events)
+  const preferCanonicalOnly = openEvents.length > 0
   let canonicalCount = 0
   let legacyCount = 0
+  let unmarkedCanonical = 0
 
   const summaries = getAllKarkuns().map((karkun) => {
     let attendance: WeeklyIjtemaCurrentAttendanceView
-    const mark = markIndex?.get(karkun.id)
-    if (event && mark) {
-      attendance = viewFromCanonicalMark(karkun.id, event, mark)
+    const mark = markIndex.get(karkun.id)
+    const markEvent = eventByKarkun.get(karkun.id) ?? primaryEvent
+    if (markEvent && mark) {
+      attendance = viewFromCanonicalMark(karkun.id, markEvent, mark)
       canonicalCount += 1
+    } else if (preferCanonicalOnly && primaryEvent) {
+      attendance = emptyCanonicalAttendance(karkun.id, primaryEvent)
+      unmarkedCanonical += 1
+    } else if (markEvent && !mark) {
+      attendance = emptyCanonicalAttendance(karkun.id, markEvent)
+      unmarkedCanonical += 1
     } else {
       attendance = viewFromLegacyCurrent(karkun.id)
       legacyCount += 1
@@ -487,8 +561,10 @@ export function getWeeklyIjtemaAttendanceSummariesView(): IjtemaAttendanceKarkun
 
   if (isWeeklyIjtemaReadDebugEnabled()) {
     console.debug('[KC-0110.5] Weekly Ijtema summaries:', {
-      eventId: event?.id ?? null,
+      openEvents: openEvents.map((event) => event.id),
+      primaryEventId: primaryEvent?.id ?? null,
       canonical: canonicalCount,
+      unmarkedCanonical,
       legacyFallback: legacyCount,
     })
   }
@@ -523,24 +599,38 @@ export function getWeeklyIjtemaDashboardMetricsView(): IjtemaAttendanceDashboard
 }
 
 /**
- * KC-0110.4 — Attendance for a specific week ending date (People filters).
- * Prefers a canonical event whose meetingDate matches; for the current week
- * ending, reuses the current-attendance view; else legacy week record.
+ * KC-0110.4 / KC-037C2E — Attendance for a specific week ending date (People filters).
+ * Prefers canonical events whose meetingDate matches (all audiences); for the
+ * current week ending, reuses the current-attendance view; else legacy week record.
  */
 export function getWeeklyIjtemaAttendanceForWeekView(
   karkunId: string,
   weekEndingDate: string,
 ): WeeklyIjtemaCurrentAttendanceView {
-  const eventByDate = getAllWeeklyIjtemaEvents().find(
+  const eventsByDate = getAllWeeklyIjtemaEvents().filter(
     (event) => event.meetingDate === weekEndingDate,
   )
-  if (eventByDate) {
+  for (const eventByDate of eventsByDate) {
     const mark = findCanonicalMark(eventByDate, karkunId)
     if (mark) {
       const view = viewFromCanonicalMark(karkunId, eventByDate, mark)
-      logWeeklyIjtemaRead('week', view.source, { karkunId, weekEndingDate, eventId: eventByDate.id })
+      logWeeklyIjtemaRead('week', view.source, {
+        karkunId,
+        weekEndingDate,
+        eventId: eventByDate.id,
+      })
       return view
     }
+  }
+  if (eventsByDate.length > 0) {
+    const empty = emptyCanonicalAttendance(karkunId, eventsByDate[0])
+    logWeeklyIjtemaRead('week', 'canonical', {
+      karkunId,
+      weekEndingDate,
+      eventId: eventsByDate[0].id,
+      unmarked: true,
+    })
+    return empty
   }
 
   if (weekEndingDate === getWeekEndingDate()) {

@@ -12,6 +12,7 @@
  * (Reminder % is Reminded÷Connected.)
  *
  * KC-028C — gender-scoped current event + reopen audit (reason/duration).
+ * KC-037C2E — Unscoped Admin KPI aggregates all Open Male/Female events.
  */
 
 import { getAssignedKarkunanForRukn } from '@/lib/assignmentEngine'
@@ -49,6 +50,7 @@ import type {
   WeeklyIjtemaDashboardKpi,
   WeeklyIjtemaEvent,
   WeeklyIjtemaReport,
+  WeeklyIjtemaRuknReportRow,
   WeeklyIjtemaSubmission,
 } from '@/types/weeklyIjtema'
 import { defaultWeeklyIjtemaTitle } from '@/types/weeklyIjtema'
@@ -95,6 +97,10 @@ export type GetCurrentWeeklyIjtemaEventOptions = {
 /**
  * Prefer Open event matching audience (and optional meetingDate);
  * else any Open matching audience; else latest matching; else legacy Open.
+ *
+ * KC-037C2E — Rukn register/write paths must pass audienceGender.
+ * Admin executive metrics must not rely on this alone when Male+Female
+ * Open events coexist — use listOpenWeeklyIjtemaEvents + KPI aggregate.
  */
 export function getCurrentWeeklyIjtemaEvent(
   options?: GetCurrentWeeklyIjtemaEventOptions,
@@ -118,6 +124,26 @@ export function getCurrentWeeklyIjtemaEvent(
   const open = pool.find((event) => event.status === 'Open')
   if (open) return open
   return pool[0]
+}
+
+/**
+ * KC-037C2E — All Open Weekly Ijtema events (optional audience / meetingDate filter).
+ * Admin KPI/summaries aggregate these so Male + Female marks are both visible.
+ */
+export function listOpenWeeklyIjtemaEvents(
+  options?: GetCurrentWeeklyIjtemaEventOptions,
+): WeeklyIjtemaEvent[] {
+  const gender = options?.audienceGender
+  const meetingDate = options?.meetingDate
+  const pool = getAllWeeklyIjtemaEvents().filter(
+    (event) =>
+      event.status === 'Open' && matchesWeeklyIjtemaAudience(event, gender),
+  )
+  if (meetingDate) {
+    const dated = pool.filter((event) => event.meetingDate === meetingDate)
+    if (dated.length > 0) return dated
+  }
+  return pool
 }
 
 export function createWeeklyIjtemaEvent(
@@ -622,34 +648,31 @@ export function getWeeklyIjtemaReport(eventId: string): WeeklyIjtemaReport | nul
   return buildReportForEvent(event)
 }
 
-export function getWeeklyIjtemaDashboardKpi(
-  options?: GetCurrentWeeklyIjtemaEventOptions,
-): WeeklyIjtemaDashboardKpi {
-  const event = getCurrentWeeklyIjtemaEvent(options)
-  if (!event) {
-    return {
-      eventId: null,
-      meetingDate: null,
-      title: null,
-      eventStatus: null,
-      attendancePct: 0,
-      invitationPct: 0,
-      reminderPct: 0,
-      present: 0,
-      absent: 0,
-      invited: 0,
-      reminded: 0,
-      invitedTotal: 0,
-      remindedTotal: 0,
-      totalAssigned: 0,
-      pendingNotInvited: 0,
-      ruknsSubmitted: 0,
-      ruknsPending: 0,
-      ruknsTotal: 0,
-    }
-  }
+const EMPTY_WEEKLY_IJTEMA_KPI: WeeklyIjtemaDashboardKpi = {
+  eventId: null,
+  meetingDate: null,
+  title: null,
+  eventStatus: null,
+  attendancePct: 0,
+  invitationPct: 0,
+  reminderPct: 0,
+  present: 0,
+  absent: 0,
+  invited: 0,
+  reminded: 0,
+  invitedTotal: 0,
+  remindedTotal: 0,
+  totalAssigned: 0,
+  pendingNotInvited: 0,
+  ruknsSubmitted: 0,
+  ruknsPending: 0,
+  ruknsTotal: 0,
+}
 
-  const report = buildReportForEvent(event)
+function kpiFromEventReport(
+  event: WeeklyIjtemaEvent,
+  report: WeeklyIjtemaReport,
+): WeeklyIjtemaDashboardKpi {
   return {
     eventId: event.id,
     meetingDate: event.meetingDate,
@@ -670,6 +693,153 @@ export function getWeeklyIjtemaDashboardKpi(
     ruknsPending: report.ruknsPending,
     ruknsTotal: report.ruknsTotal,
   }
+}
+
+/**
+ * KC-037C2E — Sum Present/Reminded/Absent across Open gender-scoped events.
+ * Identity fields (eventId/title) come from the newest Open meetingDate.
+ */
+function mergeOpenEventKpis(
+  events: WeeklyIjtemaEvent[],
+): WeeklyIjtemaDashboardKpi {
+  if (events.length === 0) return EMPTY_WEEKLY_IJTEMA_KPI
+  if (events.length === 1) {
+    return kpiFromEventReport(events[0], buildReportForEvent(events[0]))
+  }
+
+  const ordered = [...events].sort((a, b) =>
+    b.meetingDate.localeCompare(a.meetingDate),
+  )
+  const primary = ordered[0]
+
+  let present = 0
+  let absent = 0
+  let invited = 0
+  let invitedTotal = 0
+  let totalAssigned = 0
+  let pendingNotInvited = 0
+  let ruknsSubmitted = 0
+  let ruknsPending = 0
+  let ruknsTotal = 0
+
+  for (const event of events) {
+    const report = buildReportForEvent(event)
+    present += report.present
+    absent += report.absent
+    invited += report.invited
+    invitedTotal += report.invitedTotal
+    totalAssigned += report.totalAssigned
+    pendingNotInvited += report.pendingNotInvited
+    ruknsSubmitted += report.ruknsSubmitted
+    ruknsPending += report.ruknsPending
+    ruknsTotal += report.ruknsTotal
+  }
+
+  const attendancePct =
+    invitedTotal === 0 ? 0 : Math.round((present / invitedTotal) * 100)
+  const invitationPct =
+    totalAssigned === 0 ? 0 : Math.round((invitedTotal / totalAssigned) * 100)
+
+  return {
+    eventId: primary.id,
+    meetingDate: primary.meetingDate,
+    title: primary.title,
+    eventStatus: 'Open',
+    attendancePct,
+    invitationPct,
+    reminderPct: invitationPct,
+    present,
+    absent,
+    invited,
+    reminded: invited,
+    invitedTotal,
+    remindedTotal: invitedTotal,
+    totalAssigned,
+    pendingNotInvited,
+    ruknsSubmitted,
+    ruknsPending,
+    ruknsTotal,
+  }
+}
+
+/**
+ * KC-037C2E — Merge Rukn rows across Open events (Admin Rukn-wise %).
+ * Male/Female Open windows are additive; same ruknId should not appear twice.
+ */
+export function getWeeklyIjtemaActiveRuknRows(
+  options?: GetCurrentWeeklyIjtemaEventOptions,
+): WeeklyIjtemaRuknReportRow[] {
+  const openEvents = listOpenWeeklyIjtemaEvents(options)
+  const events =
+    openEvents.length > 0
+      ? openEvents
+      : (() => {
+          const current = getCurrentWeeklyIjtemaEvent(options)
+          return current ? [current] : []
+        })()
+
+  const byRukn = new Map<string, WeeklyIjtemaRuknReportRow>()
+  for (const event of events) {
+    for (const row of buildReportForEvent(event).ruknRows) {
+      const existing = byRukn.get(row.ruknId)
+      if (!existing) {
+        byRukn.set(row.ruknId, { ...row })
+        continue
+      }
+      const assigned = existing.assigned + row.assigned
+      const reminded = existing.reminded + row.reminded
+      const remindedTotal = existing.remindedTotal + row.remindedTotal
+      const present = existing.present + row.present
+      const absent = existing.absent + row.absent
+      byRukn.set(row.ruknId, {
+        ruknId: existing.ruknId,
+        ruknName: existing.ruknName,
+        assigned,
+        invited: reminded,
+        reminded,
+        invitedTotal: remindedTotal,
+        remindedTotal,
+        present,
+        absent,
+        attendancePct:
+          remindedTotal === 0 ? 0 : Math.round((present / remindedTotal) * 100),
+        invitationPct:
+          assigned === 0 ? 0 : Math.round((remindedTotal / assigned) * 100),
+        reminderPct:
+          assigned === 0 ? 0 : Math.round((remindedTotal / assigned) * 100),
+        submitted: existing.submitted || row.submitted,
+        submittedAt:
+          existing.submittedAt && row.submittedAt
+            ? existing.submittedAt > row.submittedAt
+              ? existing.submittedAt
+              : row.submittedAt
+            : existing.submittedAt ?? row.submittedAt,
+      })
+    }
+  }
+
+  return [...byRukn.values()].sort((a, b) => a.ruknName.localeCompare(b.ruknName))
+}
+
+export function getWeeklyIjtemaDashboardKpi(
+  options?: GetCurrentWeeklyIjtemaEventOptions,
+): WeeklyIjtemaDashboardKpi {
+  // Scoped (Rukn / gender / meetingDate): keep single-event binding.
+  if (options?.audienceGender || options?.meetingDate) {
+    const event = getCurrentWeeklyIjtemaEvent(options)
+    if (!event) return EMPTY_WEEKLY_IJTEMA_KPI
+    return kpiFromEventReport(event, buildReportForEvent(event))
+  }
+
+  // KC-037C2E — Admin unscoped: aggregate all Open events (Male + Female).
+  const openEvents = listOpenWeeklyIjtemaEvents()
+  if (openEvents.length > 0) {
+    return mergeOpenEventKpis(openEvents)
+  }
+
+  const event = getCurrentWeeklyIjtemaEvent()
+  if (!event) return EMPTY_WEEKLY_IJTEMA_KPI
+  return kpiFromEventReport(event, buildReportForEvent(event))
 }
 
 /** KC-037C2D — Reminder + attendance progress for one Rukn on an event. */
