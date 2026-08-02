@@ -1,15 +1,15 @@
 /**
  * KC-0110.7 / KC-033 — LEGACY Weekly Ijtema compatibility track (per-Karkun week records).
  *
- * Operational SoT is Event/Cycle (`weeklyIjtema*` + read/write adapters).
- * This module remains for:
+ * KC-037C2A — also hosts campaign invitation remarks (`Campaign: Invited`).
+ * Attendance SoT remains Event/Cycle (`weeklyIjtema*`). This module remains for:
+ * - Invited for Weekly Ijtema (Matrix) via `markWeeklyIjtemaInvitation`
  * - Excused status (not in event mark model)
- * - Historical week records / read-adapter fallback
- * - Dual-write sync from `weeklyIjtemaWriteAdapter`
+ * - Historical week records / non-campaign attendance fallback
  *
- * Do not add new product callers. Prefer:
- * - `markWeeklyIjtemaAttendance` / `bulkMarkWeeklyIjtemaAttendance`
- * - `getWeeklyIjtemaCurrentAttendanceView` (and related read helpers)
+ * Prefer:
+ * - `markWeeklyIjtemaInvitation` / `getWeeklyIjtemaInvitationView` (campaign)
+ * - `markWeeklyIjtemaAttendance` / `getWeeklyIjtemaCurrentAttendanceView` (attendance)
  * - `getWeeklyIjtemaDashboardKpi` / Health slices for executive metrics
  *
  * Inventory: docs/architecture/kc-0110-weekly-ijtema-inventory.md · KC-033 registry
