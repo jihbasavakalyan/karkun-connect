@@ -317,6 +317,8 @@ export function reopenWeeklyIjtemaAttendance(
   }
   const next: WeeklyIjtemaEvent = {
     ...opened,
+    // KC-037C2E — extend edit deadline so canRuknEditCycle unlocks for reopen window.
+    submissionDeadline: reopenUntil,
     reopenReason: reason,
     reopenUntil,
     reopenAudit: [...(existing.reopenAudit ?? []), auditEntry],

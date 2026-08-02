@@ -34,6 +34,7 @@ import type {
 } from '@/types/ijtemaAttendance'
 import { getWeekEndingDate } from '@/types/ijtemaAttendance'
 import type { WeeklyIjtemaEvent } from '@/types/weeklyIjtema'
+import type { WeeklyIjtemaAudienceGender } from '@/lib/weeklyIjtema/attendanceWindowSchedule'
 
 export type WeeklyIjtemaWriteSource = 'canonical' | 'legacy'
 
@@ -47,6 +48,16 @@ function resolveRuknId(karkunId: string, explicitRuknId?: string): string | unde
   if (assignment?.ruknId) return assignment.ruknId
   const karkun = getKarkunById(karkunId)
   return karkun?.assignedRuknId || undefined
+}
+
+/** KC-037C2E — scope open event by Rukn gender (avoid Male/Female cross-write). */
+function resolveAudienceGender(ruknId?: string): WeeklyIjtemaAudienceGender | undefined {
+  if (!ruknId) return undefined
+  return getRuknById(ruknId)?.gender === 'Female' ? 'Female' : 'Male'
+}
+
+function resolveOpenEventForRukn(ruknId?: string): WeeklyIjtemaEvent | undefined {
+  return getOpenWeeklyIjtemaEvent(resolveAudienceGender(ruknId))
 }
 
 function shouldWriteCanonical(
@@ -152,8 +163,8 @@ export function markWeeklyIjtemaAttendance(
   }
 
   const actor = input.updatedBy ?? 'Administrator'
-  const openEvent = getOpenWeeklyIjtemaEvent()
   const ruknId = resolveRuknId(input.karkunId, input.ruknId)
+  const openEvent = resolveOpenEventForRukn(ruknId)
 
   if (!shouldWriteCanonical(openEvent, input.weekEndingDate) || !ruknId) {
     return writeLegacy(input)
@@ -207,8 +218,8 @@ export function markWeeklyIjtemaReminded(input: {
     return { success: false, error: 'Karkun not found.' }
   }
   const actor = input.updatedBy ?? 'Administrator'
-  const openEvent = getOpenWeeklyIjtemaEvent()
   const ruknId = resolveRuknId(input.karkunId, input.ruknId)
+  const openEvent = resolveOpenEventForRukn(ruknId)
   if (!openEvent || !ruknId || !canRuknEditCycle(openEvent)) {
     return { success: false, error: 'No open Weekly Ijtema event to mark Reminder.' }
   }
@@ -236,7 +247,7 @@ export function bulkMarkWeeklyIjtemaAttendance(
     return { success: false, error: 'Attendance status is required.' }
   }
 
-  const openEvent = getOpenWeeklyIjtemaEvent()
+  const openEvent = resolveOpenEventForRukn(input.ruknId)
   const canPreferCanonical = Boolean(openEvent && canRuknEditCycle(openEvent))
 
   if (!canPreferCanonical) {

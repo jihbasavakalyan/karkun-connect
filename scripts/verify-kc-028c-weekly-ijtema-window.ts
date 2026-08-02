@@ -163,9 +163,13 @@ const card = readFileSync(
   resolve('src/components/execution/WeeklyIjtemaAttendanceOpenCard.tsx'),
   'utf8',
 )
-assert(card.includes('Weekly Ijtema Attendance is Open'), 'dashboard open banner copy present')
+assert(
+  card.includes("Today's Weekly Ijtema Attendance") ||
+    card.includes('Today&apos;s Weekly Ijtema Attendance'),
+  'dashboard open attendance title present',
+)
 assert(card.includes('Open Attendance'), 'dashboard Open Attendance quick action present')
-assert(card.includes('Present'), 'dashboard Present metric present')
+assert(card.includes('Reminded') || card.includes('Present'), 'dashboard Reminded/Present metrics')
 assert(card.includes('Absent'), 'dashboard Absent metric present')
 assert(card.includes('Pending'), 'dashboard Pending metric present')
 

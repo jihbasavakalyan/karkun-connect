@@ -23,6 +23,7 @@ import {
   getRuknWeeklyIjtemaWorkspace,
   listWeeklyIjtemaEvents,
   saveWeeklyIjtemaSubmission,
+  upsertWeeklyIjtemaKarkunMark,
 } from '@/services/weeklyIjtemaService'
 import { subscribeToWeeklyIjtemaStore } from '@/stores/weeklyIjtemaStore'
 import {
@@ -149,8 +150,45 @@ export function WeeklyIjtemaRegisterPage() {
   const canSubmit = Boolean(workspace?.editable && allMarked)
 
   const setStatus = (karkunId: string, status: DraftStatus) => {
-    if (!workspace?.editable) return
+    if (!workspace?.editable || !ruknId || status === 'Unmarked') return
+    const previous = draft[karkunId] ?? 'Unmarked'
     setDraft((current) => ({ ...current, [karkunId]: status }))
+    setMessage('')
+
+    const karkunName =
+      workspace.assigned.find((row) => row.id === karkunId)?.name ?? karkunId
+    const actor = user?.displayName ?? user?.uid ?? ruknId
+
+    void run({
+      key: `weekly-ijtema-mark:${ruknId}:${karkunId}`,
+      queueLabels: ['compliance.weeklyIjtemaSubmissions'],
+      work: async () => {
+        const result = upsertWeeklyIjtemaKarkunMark({
+          eventId: workspace.event.id,
+          ruknId,
+          ruknName: rukn?.name ?? ruknId,
+          karkunId,
+          karkunName,
+          reminded: true,
+          ...(status === 'Present' || status === 'Absent' ? { status } : {}),
+          submittedBy: actor,
+        })
+        if (!result.success) {
+          throw Object.assign(new Error(result.error), { code: 'unknown' })
+        }
+        return result
+      },
+      refreshUi: () => setStoreVersion((v) => v + 1),
+    }).then((lifecycle) => {
+      if (!lifecycle) {
+        // Duplicate click while busy — leave optimistic draft; next mark waits.
+        return
+      }
+      if (!lifecycle.ok) {
+        setDraft((current) => ({ ...current, [karkunId]: previous }))
+        setMessage(lifecycle.message || 'Save failed.')
+      }
+    })
   }
 
   const handleSubmit = () => {
@@ -293,7 +331,7 @@ export function WeeklyIjtemaRegisterPage() {
                         <button
                           key={option.value}
                           type="button"
-                          disabled={!workspace.editable}
+                          disabled={!workspace.editable || saving}
                           className={[
                             'min-h-11 min-w-[6.5rem] rounded-lg border px-3 text-sm font-semibold',
                             status === option.value
