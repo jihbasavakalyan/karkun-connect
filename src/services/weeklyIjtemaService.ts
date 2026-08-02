@@ -13,6 +13,8 @@
  *
  * KC-028C — gender-scoped current event + reopen audit (reason/duration).
  * KC-037C2E — Unscoped Admin KPI aggregates all Open Male/Female events.
+ * KC-037C2G — One canonical Open meeting per meetingDate+audienceGender;
+ * archived duplicates are ignored; Open duplicates never inflate Connected KPIs.
  */
 
 import { getAssignedKarkunanForRukn } from '@/lib/assignmentEngine'
@@ -38,9 +40,13 @@ import {
 } from '@/stores/weeklyIjtemaStore'
 import {
   pickCanonicalWeeklyIjtemaMeeting,
+  uniqueWeeklyIjtemaMeetingsForDisplay,
 } from '@/lib/weeklyIjtemaPresentation'
 import type { WeeklyIjtemaAudienceGender } from '@/lib/weeklyIjtema/attendanceWindowSchedule'
-import { matchesWeeklyIjtemaAudience } from '@/types/weeklyIjtema'
+import {
+  isWeeklyIjtemaEventActive,
+  matchesWeeklyIjtemaAudience,
+} from '@/types/weeklyIjtema'
 import type {
   CreateWeeklyIjtemaEventInput,
   ReopenWeeklyIjtemaAttendanceInput,
@@ -61,6 +67,11 @@ import {
 } from '@/validation/weeklyIjtemaValidation'
 
 export function listWeeklyIjtemaEvents(): WeeklyIjtemaEvent[] {
+  return getAllWeeklyIjtemaEvents().filter(isWeeklyIjtemaEventActive)
+}
+
+/** Includes soft-archived duplicates (admin recovery / audit only). */
+export function listAllWeeklyIjtemaEventsIncludingArchived(): WeeklyIjtemaEvent[] {
   return getAllWeeklyIjtemaEvents()
 }
 
@@ -73,6 +84,7 @@ function eventsForMeetingAudience(
   audienceGender?: WeeklyIjtemaAudienceGender,
 ): WeeklyIjtemaEvent[] {
   return getAllWeeklyIjtemaEvents().filter((event) => {
+    if (!isWeeklyIjtemaEventActive(event)) return false
     if (event.meetingDate !== meetingDate) return false
     if (!audienceGender) return true
     if (!event.audienceGender) return true
@@ -101,11 +113,14 @@ export type GetCurrentWeeklyIjtemaEventOptions = {
  * KC-037C2E — Rukn register/write paths must pass audienceGender.
  * Admin executive metrics must not rely on this alone when Male+Female
  * Open events coexist — use listOpenWeeklyIjtemaEvents + KPI aggregate.
+ *
+ * KC-037C2G — When multiple Opens share meetingDate+audience, pick the
+ * mark-rich canonical (never the first empty Open).
  */
 export function getCurrentWeeklyIjtemaEvent(
   options?: GetCurrentWeeklyIjtemaEventOptions,
 ): WeeklyIjtemaEvent | undefined {
-  const events = getAllWeeklyIjtemaEvents()
+  const events = getAllWeeklyIjtemaEvents().filter(isWeeklyIjtemaEventActive)
   const gender = options?.audienceGender
   const meetingDate = options?.meetingDate
 
@@ -115,10 +130,11 @@ export function getCurrentWeeklyIjtemaEvent(
   if (pool.length === 0) return undefined
 
   if (meetingDate) {
-    const todayOpen = pool.find(
+    const todayOpen = pool.filter(
       (event) => event.status === 'Open' && event.meetingDate === meetingDate,
     )
-    if (todayOpen) return todayOpen
+    const todayCanonical = pickCanonicalWeeklyIjtemaMeeting(todayOpen)
+    if (todayCanonical) return todayCanonical
   }
 
   const openEvents = pool.filter((event) => event.status === 'Open')
@@ -129,8 +145,9 @@ export function getCurrentWeeklyIjtemaEvent(
 }
 
 /**
- * KC-037C2E — All Open Weekly Ijtema events (optional audience / meetingDate filter).
- * Admin KPI/summaries aggregate these so Male + Female marks are both visible.
+ * KC-037C2E / KC-037C2G — Open Weekly Ijtema events for KPI and summaries.
+ * Male + Female Open windows remain additive, but same meetingDate+audience
+ * collapses to one canonical event so Connected is never × duplicate Opens.
  */
 export function listOpenWeeklyIjtemaEvents(
   options?: GetCurrentWeeklyIjtemaEventOptions,
@@ -141,11 +158,11 @@ export function listOpenWeeklyIjtemaEvents(
     (event) =>
       event.status === 'Open' && matchesWeeklyIjtemaAudience(event, gender),
   )
-  if (meetingDate) {
-    const dated = pool.filter((event) => event.meetingDate === meetingDate)
-    if (dated.length > 0) return dated
-  }
-  return pool
+  const dated =
+    meetingDate && pool.some((event) => event.meetingDate === meetingDate)
+      ? pool.filter((event) => event.meetingDate === meetingDate)
+      : pool
+  return uniqueWeeklyIjtemaMeetingsForDisplay(dated)
 }
 
 export function createWeeklyIjtemaEvent(
@@ -236,6 +253,10 @@ export function updateWeeklyIjtemaEvent(
     }
   }
 
+  if (existing.status === 'archived') {
+    return { success: false, error: 'Archived Weekly Ijtema events are read-only.' }
+  }
+
   const actor = input.updatedBy ?? 'Administrator'
   const timestamp = nowIso()
   let next: WeeklyIjtemaEvent = {
@@ -249,7 +270,11 @@ export function updateWeeklyIjtemaEvent(
     audienceGender: nextAudience,
   }
 
-  if (input.status && input.status !== existing.status) {
+  if (
+    input.status &&
+    input.status !== existing.status &&
+    (input.status === 'Open' || input.status === 'Closed')
+  ) {
     next = applyCycleStatusChange(next, input.status, actor)
   }
 
@@ -275,6 +300,15 @@ export function setWeeklyIjtemaEventStatus(
   const existing = getWeeklyIjtemaEvent(input.eventId)
   if (!existing) {
     return { success: false, error: 'Weekly Ijtema event not found.' }
+  }
+  if (input.status !== 'Open' && input.status !== 'Closed') {
+    return {
+      success: false,
+      error: 'Use controlled recovery to soft-archive duplicate Weekly Ijtema events.',
+    }
+  }
+  if (existing.status === 'archived') {
+    return { success: false, error: 'Archived Weekly Ijtema events are read-only.' }
   }
 
   const actor = input.updatedBy ?? 'Administrator'

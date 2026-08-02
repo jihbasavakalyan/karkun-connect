@@ -1,0 +1,140 @@
+{
+  "ticket": "KC-037C2G",
+  "step": 1,
+  "mode": "APPLY",
+  "generatedAt": "2026-08-02T19:33:22.685Z",
+  "projectId": "karkun-connect-75c68",
+  "meetingDate": "2026-08-02",
+  "canonicalEventId": "wij_msb2iz7w_5gvbtq",
+  "sourceEventId": "wij_msb2nhy2_4nef9x",
+  "ruknId": "R027",
+  "before": {
+    "destination": {
+      "id": "wij_msb2iz7w_5gvbtq:R027",
+      "updatedAt": "2026-08-02T05:15:30.853Z",
+      "submittedAt": "2026-08-02T05:13:46.466Z",
+      "markCount": 4,
+      "marks": [
+        {
+          "karkunId": "kr-080",
+          "karkunName": "Md Ubaid",
+          "reminded": true
+        },
+        {
+          "karkunId": "kr-115",
+          "karkunName": "Syed Saud",
+          "reminded": true,
+          "status": "Present"
+        },
+        {
+          "karkunId": "kr-107",
+          "karkunName": "M A Baig",
+          "reminded": true
+        },
+        {
+          "karkunId": "kr-013",
+          "karkunName": "MOHAMMED ABDULLA",
+          "reminded": true
+        }
+      ]
+    },
+    "source": {
+      "id": "wij_msb2nhy2_4nef9x:R027",
+      "updatedAt": "2026-08-02T05:16:37.197Z",
+      "submittedAt": "2026-08-02T05:16:09.539Z",
+      "markCount": 6,
+      "marks": [
+        {
+          "karkunId": "kr-107",
+          "karkunName": "M A Baig",
+          "reminded": true
+        },
+        {
+          "karkunId": "kr-013",
+          "karkunName": "MOHAMMED ABDULLA",
+          "reminded": true
+        },
+        {
+          "karkunId": "kr-006",
+          "karkunName": "DR ZABIULLAH KHAN WASI",
+          "reminded": true
+        },
+        {
+          "karkunId": "kr-045",
+          "karkunName": "Javid Khan",
+          "status": "Present",
+          "reminded": true
+        },
+        {
+          "karkunId": "kr-145",
+          "karkunName": "AFROZ WAISER",
+          "status": "Absent",
+          "reminded": true
+        },
+        {
+          "karkunId": "kr-139",
+          "karkunName": "BILAL MIYAN",
+          "reminded": true
+        }
+      ]
+    }
+  },
+  "after": {
+    "destination": {
+      "firestoreDocId": "weeklyIjtemaSubmission_wij_msb2iz7w_5gvbtq_R027",
+      "record": {
+        "id": "wij_msb2iz7w_5gvbtq:R027",
+        "eventId": "wij_msb2iz7w_5gvbtq",
+        "ruknId": "R027",
+        "ruknName": "Riyaz Patel",
+        "marks": [
+          {
+            "karkunId": "kr-107",
+            "karkunName": "M A Baig",
+            "reminded": true
+          },
+          {
+            "karkunId": "kr-013",
+            "karkunName": "MOHAMMED ABDULLA",
+            "reminded": true
+          },
+          {
+            "karkunId": "kr-006",
+            "karkunName": "DR ZABIULLAH KHAN WASI",
+            "reminded": true
+          },
+          {
+            "karkunId": "kr-045",
+            "karkunName": "Javid Khan",
+            "status": "Present",
+            "reminded": true
+          },
+          {
+            "karkunId": "kr-145",
+            "karkunName": "AFROZ WAISER",
+            "status": "Absent",
+            "reminded": true
+          },
+          {
+            "karkunId": "kr-139",
+            "karkunName": "BILAL MIYAN",
+            "reminded": true
+          }
+        ],
+        "submittedAt": "2026-08-02T05:16:09.539Z",
+        "submittedBy": "W6Gj3kf4I9dh4QmCbThHUOtjDQH2",
+        "updatedAt": "2026-08-02T05:16:37.197Z",
+        "updatedBy": "W6Gj3kf4I9dh4QmCbThHUOtjDQH2"
+      },
+      "markCount": 6
+    }
+  },
+  "safety": {
+    "archived": false,
+    "deleted": false,
+    "sourceSubmissionRetained": true,
+    "otherEventsUntouched": true
+  },
+  "applied": true,
+  "writtenAt": "2026-08-02T19:33:22.860Z"
+}

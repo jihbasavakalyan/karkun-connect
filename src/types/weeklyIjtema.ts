@@ -14,7 +14,8 @@ import {
 } from '@/lib/campaignCycle/lifecycle'
 import type { WeeklyIjtemaAudienceGender } from '@/lib/weeklyIjtema/attendanceWindowSchedule'
 
-export type WeeklyIjtemaEventStatus = 'Open' | 'Closed'
+/** Lifecycle status. `archived` = soft-retired duplicate (KC-037C2G); never deleted. */
+export type WeeklyIjtemaEventStatus = 'Open' | 'Closed' | 'archived'
 
 /** Version-1 statuses only. No Excused / remarks / reasons. */
 export type WeeklyIjtemaMarkStatus = 'Present' | 'Absent'
@@ -27,7 +28,7 @@ export type WeeklyIjtemaReopenAuditEntry = {
   reopenUntil: string
 }
 
-export type WeeklyIjtemaEvent = CampaignCycleBase & {
+export type WeeklyIjtemaEvent = Omit<CampaignCycleBase, 'status'> & {
   meetingDate: string
   status: WeeklyIjtemaEventStatus
   /** KC-028C — Male = men's register; Female = women's. Legacy events may omit. */
@@ -36,6 +37,17 @@ export type WeeklyIjtemaEvent = CampaignCycleBase & {
   reopenReason?: string
   reopenUntil?: string
   reopenAudit?: WeeklyIjtemaReopenAuditEntry[]
+  /** KC-037C2G — when status=archived, id of the surviving meeting. */
+  mergedInto?: string
+  /** KC-037C2G — e.g. duplicate_open_event */
+  archivedReason?: string
+}
+
+/** Operational / KPI surfaces ignore soft-archived duplicates. */
+export function isWeeklyIjtemaEventActive(
+  event: Pick<WeeklyIjtemaEvent, 'status'>,
+): boolean {
+  return event.status !== 'archived'
 }
 
 export type WeeklyIjtemaKarkunMark = {

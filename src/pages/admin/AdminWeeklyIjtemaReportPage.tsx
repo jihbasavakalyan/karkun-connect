@@ -7,6 +7,7 @@ import { Link, useParams } from 'react-router-dom'
 import { PageHeader, PageShell } from '@/components/ui'
 import { ROUTES, adminWeeklyIjtemaPath, adminWeeklyIjtemaReportPath } from '@/constants/routes'
 import { getWeeklyIjtemaReport, listWeeklyIjtemaEvents } from '@/services/weeklyIjtemaService'
+import { uniqueWeeklyIjtemaMeetingsForDisplay } from '@/lib/weeklyIjtemaPresentation'
 import { subscribeToWeeklyIjtemaStore } from '@/stores/weeklyIjtemaStore'
 import { formatWeeklyIjtemaMeetingLabel } from '@/types/weeklyIjtema'
 
@@ -24,7 +25,8 @@ export function AdminWeeklyIjtemaReportPage() {
 
   const history = useMemo(() => {
     void version
-    return listWeeklyIjtemaEvents()
+    // KC-037C2G — one row per meetingDate+audience; ignore archived / Open dupes.
+    return uniqueWeeklyIjtemaMeetingsForDisplay(listWeeklyIjtemaEvents())
   }, [version])
 
   if (!eventId || !report) {

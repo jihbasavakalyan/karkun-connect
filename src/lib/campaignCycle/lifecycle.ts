@@ -5,6 +5,9 @@
 
 export type CampaignCycleStatus = 'Open' | 'Closed'
 
+/** Statuses that participate in Open/Closed lifecycle helpers. */
+export type CampaignCycleLifecycleStatus = CampaignCycleStatus | 'archived'
+
 export type CampaignCycleBase = {
   id: string
   title: string
@@ -59,7 +62,7 @@ export function isCycleDeadlinePassed(
 }
 
 export function canRuknEditCycle(
-  cycle: Pick<CampaignCycleBase, 'status' | 'submissionDeadline'>,
+  cycle: { status: string; submissionDeadline: string },
   now = new Date(),
 ): boolean {
   if (cycle.status !== 'Open') return false
@@ -67,7 +70,7 @@ export function canRuknEditCycle(
 }
 
 export function cycleReadOnlyReason(
-  cycle: Pick<CampaignCycleBase, 'status' | 'submissionDeadline'>,
+  cycle: { status: string; submissionDeadline: string },
   labels: { closed: string; deadline: string; fallback?: string } = {
     closed: 'This cycle is closed by Admin.',
     deadline: 'Submission deadline has passed. Records are read-only.',
@@ -76,12 +79,14 @@ export function cycleReadOnlyReason(
   now = new Date(),
 ): string | null {
   if (canRuknEditCycle(cycle, now)) return null
-  if (cycle.status === 'Closed') return labels.closed
+  if (cycle.status === 'Closed' || cycle.status === 'archived') return labels.closed
   if (isCycleDeadlinePassed(cycle, now)) return labels.deadline
   return labels.fallback ?? 'This cycle is not editable.'
 }
 
-export function applyCycleStatusChange<T extends CampaignCycleBase>(
+export function applyCycleStatusChange<
+  T extends { status: string; updatedAt: string; updatedBy: string; reopenedAt?: string; reopenedBy?: string },
+>(
   existing: T,
   status: CampaignCycleStatus,
   updatedBy: string,

@@ -1,0 +1,337 @@
+{
+  "ticket": "KC-037C2G",
+  "mode": "DRY_RUN_AUDIT_ONLY",
+  "generatedAt": "2026-08-02T19:27:38.891Z",
+  "projectId": "karkun-connect-75c68",
+  "meetingDate": "2026-08-02",
+  "summary": {
+    "totalEvents": 4,
+    "audienceGroups": 1,
+    "groupsNeedingDedupe": 1,
+    "proposedCanonicalIds": [
+      "wij_msb2iz7w_5gvbtq"
+    ],
+    "proposedArchiveIds": [
+      "wij_msb2nhy2_4nef9x",
+      "wij_msb2o85a_qgd12i",
+      "wij_msbm1cuk_gwhumo"
+    ],
+    "totalConflicts": 1
+  },
+  "groups": [
+    {
+      "audienceKey": "2026-08-02::Male",
+      "audienceGender": "Male",
+      "eventCount": 4,
+      "events": [
+        {
+          "eventId": "wij_msb2iz7w_5gvbtq",
+          "firestoreDocId": "weeklyIjtemaEvent_wij_msb2iz7w_5gvbtq",
+          "createdAt": "2026-08-02T00:34:48.140Z",
+          "updatedAt": "2026-08-02T00:34:48.140Z",
+          "status": "Open",
+          "gender": "Male",
+          "title": "Men's Weekly Ijtema",
+          "submissionCount": 16,
+          "markCount": 131,
+          "markBreakdown": {
+            "present": 41,
+            "absent": 72,
+            "remindedOnly": 18,
+            "remindedTotal": 131,
+            "markTotal": 131
+          },
+          "connectedSnapshot": {
+            "connected": 200,
+            "reminded": 18,
+            "remindedTotal": 130,
+            "present": 40,
+            "absent": 72,
+            "pending": 70,
+            "ruknsWithAssignments": 25,
+            "ruknsSubmitted": 16
+          },
+          "isCanonicalCandidate": true
+        },
+        {
+          "eventId": "wij_msb2nhy2_4nef9x",
+          "firestoreDocId": "weeklyIjtemaEvent_wij_msb2nhy2_4nef9x",
+          "createdAt": "2026-08-02T00:38:19.034Z",
+          "updatedAt": "2026-08-02T00:38:19.034Z",
+          "status": "Open",
+          "gender": "Male",
+          "title": "Men's Weekly Ijtema",
+          "submissionCount": 1,
+          "markCount": 6,
+          "markBreakdown": {
+            "present": 1,
+            "absent": 1,
+            "remindedOnly": 4,
+            "remindedTotal": 6,
+            "markTotal": 6
+          },
+          "connectedSnapshot": {
+            "connected": 200,
+            "reminded": 3,
+            "remindedTotal": 5,
+            "present": 1,
+            "absent": 1,
+            "pending": 195,
+            "ruknsWithAssignments": 25,
+            "ruknsSubmitted": 1
+          },
+          "isCanonicalCandidate": false
+        },
+        {
+          "eventId": "wij_msb2o85a_qgd12i",
+          "firestoreDocId": "weeklyIjtemaEvent_wij_msb2o85a_qgd12i",
+          "createdAt": "2026-08-02T00:38:52.990Z",
+          "updatedAt": "2026-08-02T00:38:52.990Z",
+          "status": "Open",
+          "gender": "Male",
+          "title": "Men's Weekly Ijtema",
+          "submissionCount": 0,
+          "markCount": 0,
+          "markBreakdown": {
+            "present": 0,
+            "absent": 0,
+            "remindedOnly": 0,
+            "remindedTotal": 0,
+            "markTotal": 0
+          },
+          "connectedSnapshot": {
+            "connected": 200,
+            "reminded": 0,
+            "remindedTotal": 0,
+            "present": 0,
+            "absent": 0,
+            "pending": 200,
+            "ruknsWithAssignments": 25,
+            "ruknsSubmitted": 0
+          },
+          "isCanonicalCandidate": false
+        },
+        {
+          "eventId": "wij_msbm1cuk_gwhumo",
+          "firestoreDocId": "weeklyIjtemaEvent_wij_msbm1cuk_gwhumo",
+          "createdAt": "2026-08-02T09:40:58.316Z",
+          "updatedAt": "2026-08-02T09:40:58.316Z",
+          "status": "Open",
+          "gender": "Male",
+          "title": "Men's Weekly Ijtema",
+          "submissionCount": 0,
+          "markCount": 0,
+          "markBreakdown": {
+            "present": 0,
+            "absent": 0,
+            "remindedOnly": 0,
+            "remindedTotal": 0,
+            "markTotal": 0
+          },
+          "connectedSnapshot": {
+            "connected": 200,
+            "reminded": 0,
+            "remindedTotal": 0,
+            "present": 0,
+            "absent": 0,
+            "pending": 200,
+            "ruknsWithAssignments": 25,
+            "ruknsSubmitted": 0
+          },
+          "isCanonicalCandidate": false
+        }
+      ],
+      "canonical": {
+        "eventId": "wij_msb2iz7w_5gvbtq",
+        "status": "Open",
+        "gender": "Male",
+        "createdAt": "2026-08-02T00:34:48.140Z",
+        "updatedAt": "2026-08-02T00:34:48.140Z",
+        "submissionCount": 16,
+        "markCount": 131,
+        "selectionReasons": [
+          "seed=wij_msb2iz7w_5gvbtq (Open=true, marks=131, updatedAt=2026-08-02T00:34:48.140Z)",
+          "compare wij_msb2iz7w_5gvbtq vs wij_msb2nhy2_4nef9x: more submission marks (131 > 6) → wij_msb2iz7w_5gvbtq",
+          "compare wij_msb2iz7w_5gvbtq vs wij_msb2o85a_qgd12i: more submission marks (131 > 0) → wij_msb2iz7w_5gvbtq",
+          "compare wij_msb2iz7w_5gvbtq vs wij_msbm1cuk_gwhumo: more submission marks (131 > 0) → wij_msb2iz7w_5gvbtq"
+        ]
+      },
+      "wouldArchive": [
+        {
+          "eventId": "wij_msb2nhy2_4nef9x",
+          "status": "Open",
+          "createdAt": "2026-08-02T00:38:19.034Z",
+          "submissionCount": 1,
+          "markCount": 6,
+          "proposedStatus": "archived",
+          "proposedMergedInto": "wij_msb2iz7w_5gvbtq"
+        },
+        {
+          "eventId": "wij_msb2o85a_qgd12i",
+          "status": "Open",
+          "createdAt": "2026-08-02T00:38:52.990Z",
+          "submissionCount": 0,
+          "markCount": 0,
+          "proposedStatus": "archived",
+          "proposedMergedInto": "wij_msb2iz7w_5gvbtq"
+        },
+        {
+          "eventId": "wij_msbm1cuk_gwhumo",
+          "status": "Open",
+          "createdAt": "2026-08-02T09:40:58.316Z",
+          "submissionCount": 0,
+          "markCount": 0,
+          "proposedStatus": "archived",
+          "proposedMergedInto": "wij_msb2iz7w_5gvbtq"
+        }
+      ],
+      "conflicts": [
+        {
+          "ruknId": "R027",
+          "ruknName": "Riyaz Patel",
+          "winner": {
+            "eventId": "wij_msb2nhy2_4nef9x",
+            "submissionId": "wij_msb2nhy2_4nef9x:R027",
+            "updatedAt": "2026-08-02T05:16:37.197Z",
+            "submittedAt": "2026-08-02T05:16:09.539Z",
+            "markCount": 6
+          },
+          "losers": [
+            {
+              "eventId": "wij_msb2iz7w_5gvbtq",
+              "submissionId": "wij_msb2iz7w_5gvbtq:R027",
+              "updatedAt": "2026-08-02T05:15:30.853Z",
+              "submittedAt": "2026-08-02T05:13:46.466Z",
+              "markCount": 4
+            }
+          ],
+          "rule": "latest updatedAt (fallback submittedAt)"
+        }
+      ],
+      "mergeFromDuplicates": [
+        {
+          "eventId": "wij_msb2nhy2_4nef9x",
+          "status": "Open",
+          "submissionCount": 1,
+          "markCount": 6,
+          "submissions": [
+            {
+              "ruknId": "R027",
+              "ruknName": "Riyaz Patel",
+              "submissionId": "wij_msb2nhy2_4nef9x:R027",
+              "updatedAt": "2026-08-02T05:16:37.197Z",
+              "markCount": 6,
+              "wouldWinForCanonical": true,
+              "action": "overwrite_canonical_with_this_newer_submission"
+            }
+          ]
+        },
+        {
+          "eventId": "wij_msb2o85a_qgd12i",
+          "status": "Open",
+          "submissionCount": 0,
+          "markCount": 0,
+          "submissions": []
+        },
+        {
+          "eventId": "wij_msbm1cuk_gwhumo",
+          "status": "Open",
+          "submissionCount": 0,
+          "markCount": 0,
+          "submissions": []
+        }
+      ],
+      "beforeCounts": {
+        "note": "Sum across Open events — Connected is roster×eventCount (current Admin KPI double-count risk). Present/Absent/Reminded sum raw marks from each Open event.",
+        "openEventCount": 4,
+        "summedOpenKpis": {
+          "connected": 800,
+          "reminded": 21,
+          "present": 41,
+          "absent": 73,
+          "pending": 665,
+          "markTotal": 137,
+          "submissions": 17
+        },
+        "perEvent": [
+          {
+            "eventId": "wij_msb2iz7w_5gvbtq",
+            "status": "Open",
+            "connected": 200,
+            "reminded": 18,
+            "remindedTotal": 130,
+            "present": 40,
+            "absent": 72,
+            "pending": 70,
+            "ruknsWithAssignments": 25,
+            "ruknsSubmitted": 16,
+            "submissionCount": 16,
+            "markCount": 131
+          },
+          {
+            "eventId": "wij_msb2nhy2_4nef9x",
+            "status": "Open",
+            "connected": 200,
+            "reminded": 3,
+            "remindedTotal": 5,
+            "present": 1,
+            "absent": 1,
+            "pending": 195,
+            "ruknsWithAssignments": 25,
+            "ruknsSubmitted": 1,
+            "submissionCount": 1,
+            "markCount": 6
+          },
+          {
+            "eventId": "wij_msb2o85a_qgd12i",
+            "status": "Open",
+            "connected": 200,
+            "reminded": 0,
+            "remindedTotal": 0,
+            "present": 0,
+            "absent": 0,
+            "pending": 200,
+            "ruknsWithAssignments": 25,
+            "ruknsSubmitted": 0,
+            "submissionCount": 0,
+            "markCount": 0
+          },
+          {
+            "eventId": "wij_msbm1cuk_gwhumo",
+            "status": "Open",
+            "connected": 200,
+            "reminded": 0,
+            "remindedTotal": 0,
+            "present": 0,
+            "absent": 0,
+            "pending": 200,
+            "ruknsWithAssignments": 25,
+            "ruknsSubmitted": 0,
+            "submissionCount": 0,
+            "markCount": 0
+          }
+        ]
+      },
+      "afterCounts": {
+        "note": "After merge into single canonical: Connected counted once from Active assignments for audience gender. Marks from winning Rukn submissions only.",
+        "connected": 200,
+        "reminded": 18,
+        "remindedTotal": 132,
+        "present": 41,
+        "absent": 73,
+        "pending": 68,
+        "ruknsWithAssignments": 25,
+        "ruknsSubmitted": 16,
+        "submissionCount": 16,
+        "markCountRaw": 133
+      }
+    }
+  ],
+  "safety": {
+    "firestoreWrites": 0,
+    "archived": false,
+    "deleted": false,
+    "updated": false,
+    "nextStep": "Review this report. Only run --apply after explicit approval."
+  }
+}

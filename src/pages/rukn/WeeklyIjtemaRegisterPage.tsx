@@ -18,6 +18,7 @@ import {
 } from '@/lib/executionPersistEvents'
 import { ensureWeeklyIjtemaAttendanceWindows } from '@/lib/weeklyIjtema/attendanceWindowEngine'
 import type { WeeklyIjtemaAudienceGender } from '@/lib/weeklyIjtema/attendanceWindowSchedule'
+import { uniqueWeeklyIjtemaMeetingsForDisplay } from '@/lib/weeklyIjtemaPresentation'
 import {
   getCurrentWeeklyIjtemaEvent,
   getRuknWeeklyIjtemaWorkspace,
@@ -107,7 +108,7 @@ export function WeeklyIjtemaRegisterPage() {
 
   const events = useMemo(() => {
     void storeVersion
-    const all = listWeeklyIjtemaEvents()
+    const all = uniqueWeeklyIjtemaMeetingsForDisplay(listWeeklyIjtemaEvents())
     if (!ruknId) return all
     const gender: WeeklyIjtemaAudienceGender =
       getRuknById(ruknId)?.gender === 'Female' ? 'Female' : 'Male'

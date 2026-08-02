@@ -1,0 +1,69 @@
+{
+  "ticket": "KC-037C2G",
+  "generatedAt": "2026-08-02T19:43:06.797Z",
+  "projectId": "karkun-connect-75c68",
+  "meetingDate": "2026-08-02",
+  "canonicalEventId": "wij_msb2iz7w_5gvbtq",
+  "events": [
+    {
+      "id": "wij_msb2iz7w_5gvbtq",
+      "status": "Open",
+      "audienceGender": "Male",
+      "createdAt": "2026-08-02T00:34:48.140Z",
+      "markCount": 133,
+      "submissionCount": 16
+    },
+    {
+      "id": "wij_msb2nhy2_4nef9x",
+      "status": "Open",
+      "audienceGender": "Male",
+      "createdAt": "2026-08-02T00:38:19.034Z",
+      "markCount": 6,
+      "submissionCount": 1
+    },
+    {
+      "id": "wij_msb2o85a_qgd12i",
+      "status": "Open",
+      "audienceGender": "Male",
+      "createdAt": "2026-08-02T00:38:52.990Z",
+      "markCount": 0,
+      "submissionCount": 0
+    },
+    {
+      "id": "wij_msbm1cuk_gwhumo",
+      "status": "Open",
+      "audienceGender": "Male",
+      "createdAt": "2026-08-02T09:40:58.316Z",
+      "markCount": 0,
+      "submissionCount": 0
+    }
+  ],
+  "r027OnCanonical": {
+    "id": "wij_msb2iz7w_5gvbtq:R027",
+    "markCount": 6,
+    "updatedAt": "2026-08-02T05:16:37.197Z",
+    "submittedAt": "2026-08-02T05:16:09.539Z",
+    "hasPresentJavid": true,
+    "hasAbsentAfroz": true
+  },
+  "beforeAdapterBug": {
+    "note": "Summing all Open events / raw marks (legacy bug)",
+    "openEventCount": 4,
+    "connectedInflated": 800,
+    "presentMarks": 42,
+    "absentMarks": 74,
+    "remindedOnlyMarks": 23
+  },
+  "afterCanonicalUnique": {
+    "note": "Single canonical Open for Male 2026-08-02 after adapter dedupe + R027 merge",
+    "connected": 200,
+    "reminded": 18,
+    "present": 41,
+    "absent": 73,
+    "pending": 68,
+    "submissionCount": 16,
+    "markCount": 133
+  },
+  "archived": false,
+  "deleted": false
+}
