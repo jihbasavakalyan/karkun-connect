@@ -29,7 +29,7 @@ import { HomePageSkeleton } from '@/components/ui'
  * KC-0083 — Execution Dashboard in three sections:
  * 1) Mission Overview  2) Execution  3) Follow-up
  * KC-0102A — Section error isolation; layout progressive shell is in RuknLayout.
- * KC-037C2B — Mission Overview order: Progress → Visit → Invited → Attendance → JIH → Baitul.
+ * KC-037C2B revision — Attendance-first execution priority; Progress labels / OPEN / sizing only.
  */
 export function RuknHomePage() {
   const ruknId = useRequiredRuknId()
@@ -67,7 +67,7 @@ export function RuknHomePage() {
     <div className="cd-page cd-page-rukn mc-page mc-page-rukn-compact mc-page-execution mc-page-onescreen">
       <ExecutionSuccessBanner />
 
-      {/* Section 1 — Mission Overview: Progress → workflow KPIs → Rafeeq (KC-037C2B) */}
+      {/* Section 1 — Mission Overview: Attendance → Progress → Summaries → Rafeeq */}
       <WidgetErrorBoundary title="Mission Overview">
         <section className="space-y-3" aria-label="Mission Overview">
           <RuknMissionControlHero
@@ -78,16 +78,9 @@ export function RuknHomePage() {
             campaignName={campaignName}
             hideSummaryChips
           />
+          <WeeklyIjtemaAttendanceOpenCard ruknId={ruknId} />
           <CampaignExecutionProgressCard ruknId={ruknId} />
-          {!postCampaign ? (
-            <RuknExecutionSummaryCards
-              ruknId={ruknId}
-              afterCardId="ijtema"
-              afterCard={<WeeklyIjtemaAttendanceOpenCard ruknId={ruknId} />}
-            />
-          ) : (
-            <WeeklyIjtemaAttendanceOpenCard ruknId={ruknId} />
-          )}
+          {!postCampaign ? <RuknExecutionSummaryCards ruknId={ruknId} /> : null}
           <AskDigitalRafeeqCard
             mini
             onOpen={openDigitalRafeeqAssistant}

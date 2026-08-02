@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>KC-037C2B Revision — Before / After</title>
+<style>
+  :root { --border:#e2e8f0; --muted:#f1f5f9; --text:#0f172a; --sec:#64748b; --pri:#0f766e; --card:#fff; --ok:#16a34a; }
+  body { font-family: ui-sans-serif, system-ui, sans-serif; background:#f8fafc; color:var(--text); margin:0; padding:24px; }
+  h1 { font-size:1.25rem; margin:0 0 8px; }
+  .sub { color:var(--sec); font-size:.875rem; margin-bottom:24px; }
+  .grid { display:grid; gap:24px; grid-template-columns:1fr; max-width:980px; }
+  @media (min-width:900px){ .grid { grid-template-columns:1fr 1fr; } }
+  .col h2 { font-size:.75rem; letter-spacing:.08em; text-transform:uppercase; color:var(--sec); margin:0 0 12px; }
+  .stack { display:flex; flex-direction:column; gap:12px; }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:16px; box-shadow:0 1px 2px rgba(15,23,42,.04); }
+  .card.accent { border-color:rgba(15,118,110,.35); }
+  .row { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .title { font-size:.875rem; font-weight:600; margin:0; }
+  .badge { display:inline-flex; align-items:center; gap:6px; font-size:.7rem; font-weight:600; color:#166534; background:#dcfce7; border-radius:999px; padding:2px 8px; }
+  .dot { width:6px; height:6px; border-radius:50%; background:var(--ok); }
+  .bar { height:10px; background:var(--muted); border-radius:999px; overflow:hidden; margin-top:12px; }
+  .fill { height:100%; width:67%; background:var(--pri); border-radius:999px; }
+  .metrics { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:12px; }
+  .metrics-2 { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:auto; padding-top:12px; }
+  .metric { background:var(--muted); border:1px solid var(--border); border-radius:8px; padding:8px; text-align:center; min-height:4.25rem; display:flex; flex-direction:column; justify-content:center; }
+  .metric .l { font-size:.7rem; color:var(--sec); line-height:1.2; }
+  .metric .v { font-size:1.125rem; font-weight:600; margin-top:2px; font-variant-numeric:tabular-nums; }
+  .kpi-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .kpi { display:flex; flex-direction:column; min-height:7.5rem; }
+  .btn { display:inline-flex; align-items:center; min-height:40px; padding:0 12px; border-radius:8px; background:var(--pri); color:#fff; font-size:.875rem; font-weight:600; text-decoration:none; }
+  .note { font-size:.75rem; color:var(--sec); margin-top:8px; }
+</style>
+</head>
+<body>
+  <h1>KC-037C2B Revision — Restore Execution Priority</h1>
+  <p class="sub">Layout restore only · Progress labels / OPEN badge / matrix helper / card sizing retained · numbers illustrative</p>
+  <div class="grid">
+    <div class="col">
+      <h2>Before (workflow reorder)</h2>
+      <div class="stack">
+        <div class="card">
+          <div class="row"><p class="title">Campaign Progress</p><strong>67%</strong></div>
+          <div class="bar"><div class="fill"></div></div>
+          <div class="metrics">
+            <div class="metric"><div class="l">Connected Karkuns</div><div class="v">12</div></div>
+            <div class="metric"><div class="l">Campaign Completed</div><div class="v">8</div></div>
+            <div class="metric"><div class="l">Remaining Follow-up</div><div class="v">4</div></div>
+          </div>
+        </div>
+        <div class="kpi-grid">
+          <div class="card kpi"><p class="title">Visit</p><div class="metrics-2"><div class="metric"><div class="l">Completed</div><div class="v">9</div></div><div class="metric"><div class="l">Pending</div><div class="v">3</div></div></div></div>
+          <div class="card kpi"><p class="title">Invited for Weekly Ijtema</p><div class="metrics-2"><div class="metric"><div class="l">Invited</div><div class="v">7</div></div><div class="metric"><div class="l">Pending</div><div class="v">5</div></div></div></div>
+        </div>
+        <div class="card accent">
+          <div class="row">
+            <div>
+              <div class="row" style="justify-content:flex-start;gap:8px">
+                <p class="title">Today's Weekly Ijtema Attendance</p>
+                <span class="badge"><span class="dot"></span>Open</span>
+              </div>
+              <p class="note">Men's Weekly Ijtema</p>
+            </div>
+            <a class="btn" href="#">Open Attendance</a>
+          </div>
+          <div class="metrics">
+            <div class="metric"><div class="l">Present</div><div class="v">6</div></div>
+            <div class="metric"><div class="l">Absent</div><div class="v">2</div></div>
+            <div class="metric"><div class="l">Pending</div><div class="v">4</div></div>
+          </div>
+        </div>
+        <p class="note">Attendance was mid-stack after Invited · Visit→Invited→Attendance→JIH→Baitul</p>
+      </div>
+    </div>
+    <div class="col">
+      <h2>After (execution priority restored)</h2>
+      <div class="stack">
+        <div class="card accent">
+          <div class="row">
+            <div>
+              <div class="row" style="justify-content:flex-start;gap:8px">
+                <p class="title">Today's Weekly Ijtema Attendance</p>
+                <span class="badge"><span class="dot"></span>Open</span>
+              </div>
+              <p class="note">Men's Weekly Ijtema</p>
+            </div>
+            <a class="btn" href="#">Open Attendance</a>
+          </div>
+          <div class="metrics">
+            <div class="metric"><div class="l">Present</div><div class="v">6</div></div>
+            <div class="metric"><div class="l">Absent</div><div class="v">2</div></div>
+            <div class="metric"><div class="l">Pending</div><div class="v">4</div></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="row"><p class="title">Campaign Progress</p><strong>67%</strong></div>
+          <div class="bar"><div class="fill"></div></div>
+          <div class="metrics">
+            <div class="metric"><div class="l">Connected Karkuns</div><div class="v">12</div></div>
+            <div class="metric"><div class="l">All Objectives Done</div><div class="v">8</div></div>
+            <div class="metric"><div class="l">Need Follow-up</div><div class="v">4</div></div>
+          </div>
+        </div>
+        <div class="kpi-grid">
+          <div class="card kpi"><p class="title">Visit</p><div class="metrics-2"><div class="metric"><div class="l">Completed</div><div class="v">9</div></div><div class="metric"><div class="l">Pending</div><div class="v">3</div></div></div></div>
+          <div class="card kpi"><p class="title">JIH App Registration</p><div class="metrics-2"><div class="metric"><div class="l">Registered</div><div class="v">5</div></div><div class="metric"><div class="l">Pending</div><div class="v">7</div></div></div></div>
+          <div class="card kpi"><p class="title">Invited for Weekly Ijtema</p><div class="metrics-2"><div class="metric"><div class="l">Invited</div><div class="v">7</div></div><div class="metric"><div class="l">Pending</div><div class="v">5</div></div></div></div>
+          <div class="card kpi"><p class="title">Baitul Maal</p><div class="metrics-2"><div class="metric"><div class="l">Contributed</div><div class="v">4</div></div><div class="metric"><div class="l">Pending</div><div class="v">8</div></div></div></div>
+        </div>
+        <p class="note">Attendance back near top · Visit→JIH→Invited→Baitul · OPEN + clearer Progress labels kept</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

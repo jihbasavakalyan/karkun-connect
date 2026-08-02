@@ -1,6 +1,7 @@
 /**
- * KC-0083 — Simplified Campaign Progress (%, Connected / Campaign Completed / Remaining Follow-up).
- * KC-037C2B — Presentation labels only; counts still from buildCampaignExecutionSummary.
+ * KC-0083 — Simplified Campaign Progress (%, Connected / All Objectives Done / Need Follow-up).
+ * KC-037C2B revision — Presentation labels + metric cell sizing only;
+ * counts still from buildCampaignExecutionSummary.
  * Detailed Visit / JIH / Ijtema / Baitul Maal counters live in the Execution Matrix.
  */
 
@@ -104,8 +105,8 @@ export function CampaignExecutionProgressCard({ ruknId }: CampaignExecutionProgr
       </div>
       <div className="mt-3 grid grid-cols-3 gap-2">
         <Metric label="Connected Karkuns" value={summary.assigned} />
-        <Metric label="Campaign Completed" value={summary.completed} />
-        <Metric label="Remaining Follow-up" value={summary.pending} />
+        <Metric label="All Objectives Done" value={summary.completed} />
+        <Metric label="Need Follow-up" value={summary.pending} />
       </div>
     </section>
   )
