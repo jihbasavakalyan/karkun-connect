@@ -1,12 +1,14 @@
 /**
- * KC-039 — Lightweight install / offline / update shell for the PWA.
+ * KC-039A — Lightweight install / offline / update shell for the PWA.
  * No campaign, auth, or reporting logic.
  */
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { useRegisterSW } from 'virtual:pwa-register/react'
 
 const DISMISS_KEY = 'kc039.pwaInstallDismissedUntil'
+const INSTALLED_KEY = 'kc039.pwaInstalled'
 const DISMISS_MS = 30 * 24 * 60 * 60 * 1000
 
 type BeforeInstallPromptEvent = Event & {
@@ -28,6 +30,23 @@ function isDismissed(): boolean {
   }
 }
 
+function isMarkedInstalled(): boolean {
+  try {
+    return localStorage.getItem(INSTALLED_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+
+function markInstalledPermanently(): void {
+  try {
+    localStorage.setItem(INSTALLED_KEY, '1')
+    localStorage.removeItem(DISMISS_KEY)
+  } catch {
+    // private mode
+  }
+}
+
 function dismissForThirtyDays(): void {
   try {
     localStorage.setItem(DISMISS_KEY, String(Date.now() + DISMISS_MS))
@@ -40,11 +59,25 @@ function isStandaloneDisplay(): boolean {
   if (typeof window === 'undefined') return false
   const mq = window.matchMedia?.('(display-mode: standalone)')
   if (mq?.matches) return true
-  // iOS Safari
   return Boolean((navigator as Navigator & { standalone?: boolean }).standalone)
 }
 
+/** KC-039A — never interrupt Weekly Ijtema attendance workflows. */
+function isAttendanceWorkflowPath(pathname: string): boolean {
+  return (
+    pathname.includes('/weekly-ijtema') ||
+    pathname.includes('/weeklyIjtema') ||
+    pathname.includes('/ijtema')
+  )
+}
+
 export function PwaRuntimeChrome() {
+  const location = useLocation()
+  const suppressInstall = useMemo(
+    () => isAttendanceWorkflowPath(location.pathname),
+    [location.pathname],
+  )
+
   const [online, setOnline] = useState(
     typeof navigator === 'undefined' ? true : navigator.onLine,
   )
@@ -75,7 +108,32 @@ export function PwaRuntimeChrome() {
   }, [])
 
   useEffect(() => {
-    if (isStandaloneDisplay() || isDismissed()) return
+    if (isStandaloneDisplay()) {
+      markInstalledPermanently()
+      setShowInstall(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    const onInstalled = () => {
+      markInstalledPermanently()
+      setInstallEvent(null)
+      setShowInstall(false)
+    }
+    window.addEventListener('appinstalled', onInstalled)
+    return () => window.removeEventListener('appinstalled', onInstalled)
+  }, [])
+
+  useEffect(() => {
+    if (
+      isStandaloneDisplay() ||
+      isMarkedInstalled() ||
+      isDismissed() ||
+      suppressInstall
+    ) {
+      setShowInstall(false)
+      return
+    }
 
     const onBeforeInstall = (event: Event) => {
       event.preventDefault()
@@ -84,13 +142,16 @@ export function PwaRuntimeChrome() {
     }
     window.addEventListener('beforeinstallprompt', onBeforeInstall)
     return () => window.removeEventListener('beforeinstallprompt', onBeforeInstall)
-  }, [])
+  }, [suppressInstall])
 
   const onInstall = useCallback(async () => {
     if (!installEvent) return
     await installEvent.prompt()
     try {
-      await installEvent.userChoice
+      const choice = await installEvent.userChoice
+      if (choice.outcome === 'accepted') {
+        markInstalledPermanently()
+      }
     } catch {
       // ignore
     }
@@ -113,7 +174,7 @@ export function PwaRuntimeChrome() {
         >
           <div className="mx-auto flex max-w-lg flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-sm font-semibold text-text-heading">You are currently offline.</p>
+              <p className="text-sm font-semibold text-text-heading">You are offline.</p>
               <p className="text-xs text-secondary">Please reconnect to continue.</p>
             </div>
             <button
@@ -127,7 +188,7 @@ export function PwaRuntimeChrome() {
         </div>
       ) : null}
 
-      {showInstall && installEvent && online ? (
+      {showInstall && installEvent && online && !suppressInstall ? (
         <div
           role="dialog"
           aria-label="Install Karkun Connect"
@@ -161,7 +222,9 @@ export function PwaRuntimeChrome() {
           role="status"
           className="fixed inset-x-3 top-3 z-[75] mx-auto flex max-w-md items-center justify-between gap-3 rounded-xl border border-primary/30 bg-surface px-4 py-3 shadow-card sm:inset-x-auto sm:right-4"
         >
-          <p className="text-sm text-text-heading">A new version is available.</p>
+          <p className="text-sm text-text-heading">
+            A new version of Karkun Connect is available.
+          </p>
           <button
             type="button"
             className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-lg bg-primary px-3 text-sm font-semibold text-white"

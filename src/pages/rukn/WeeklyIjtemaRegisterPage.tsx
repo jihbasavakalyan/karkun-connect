@@ -68,11 +68,25 @@ export function WeeklyIjtemaRegisterPage() {
   const [draft, setDraft] = useState<Record<string, DraftStatus>>({})
   const [draftSeedKey, setDraftSeedKey] = useState('')
   const [message, setMessage] = useState('')
+  const [online, setOnline] = useState(
+    typeof navigator === 'undefined' ? true : navigator.onLine,
+  )
   const { busy: saving, progressMessage, run } = useWriteLifecycle()
 
   useEffect(() => {
     ensureWeeklyIjtemaAttendanceWindows()
     return subscribeToWeeklyIjtemaStore(() => setStoreVersion((v) => v + 1))
+  }, [])
+
+  useEffect(() => {
+    const onOnline = () => setOnline(true)
+    const onOffline = () => setOnline(false)
+    window.addEventListener('online', onOnline)
+    window.addEventListener('offline', onOffline)
+    return () => {
+      window.removeEventListener('online', onOnline)
+      window.removeEventListener('offline', onOffline)
+    }
   }, [])
 
   useEffect(() => {
@@ -147,10 +161,14 @@ export function WeeklyIjtemaRegisterPage() {
     ? workspace.assigned.filter((karkun) => (draft[karkun.id] ?? 'Unmarked') === 'Unmarked').length
     : 0
   const allMarked = Boolean(workspace && workspace.assigned.length > 0 && unmarkedCount === 0)
-  const canSubmit = Boolean(workspace?.editable && allMarked)
+  const canSubmit = Boolean(workspace?.editable && allMarked && online)
 
   const setStatus = (karkunId: string, status: DraftStatus) => {
     if (!workspace?.editable || !ruknId || status === 'Unmarked') return
+    if (!online) {
+      setMessage('You are offline. Please reconnect to continue.')
+      return
+    }
     const previous = draft[karkunId] ?? 'Unmarked'
     setDraft((current) => ({ ...current, [karkunId]: status }))
     setMessage('')
@@ -193,6 +211,10 @@ export function WeeklyIjtemaRegisterPage() {
 
   const handleSubmit = () => {
     if (!ruknId || !workspace || !canSubmit) return
+    if (!online) {
+      setMessage('You are offline. Please reconnect to continue.')
+      return
+    }
     void run({
       key: `weekly-ijtema-submit:${ruknId}`,
       queueLabels: ['compliance.weeklyIjtemaSubmissions'],
@@ -331,7 +353,7 @@ export function WeeklyIjtemaRegisterPage() {
                         <button
                           key={option.value}
                           type="button"
-                          disabled={!workspace.editable || saving}
+                          disabled={!workspace.editable || saving || !online}
                           className={[
                             'min-h-11 min-w-[6.5rem] rounded-lg border px-3 text-sm font-semibold',
                             status === option.value
@@ -354,7 +376,13 @@ export function WeeklyIjtemaRegisterPage() {
             </ul>
           )}
 
-          {!allMarked && workspace.assigned.length > 0 ? (
+          {!online ? (
+            <p className="mt-3 text-sm text-amber-700" role="status">
+              You are offline. Please reconnect to continue.
+            </p>
+          ) : null}
+
+          {!allMarked && workspace.assigned.length > 0 && online ? (
             <p className="mt-3 text-sm text-amber-700" role="status">
               Please mark attendance for all connected Karkuns before submitting.
             </p>

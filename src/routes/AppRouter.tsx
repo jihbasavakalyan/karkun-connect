@@ -3,6 +3,7 @@ import { BrowserRouter, Navigate, Route, Routes, useParams, useSearchParams } fr
 import { ROUTES, adminOperationsPath } from '@/constants/routes'
 import { ScrollToTop } from '@/components/ux/ScrollToTop'
 import { RoutePageFallback } from '@/components/ux/RoutePageFallback'
+import { PwaRuntimeChrome } from '@/components/pwa/PwaRuntimeChrome'
 import { AdminLayout } from '@/layouts/AdminLayout'
 import { RuknLayout } from '@/layouts/RuknLayout'
 import { lazyWithChunkReload } from '@/lib/lazyWithChunkReload'
@@ -155,6 +156,7 @@ export function AppRouter() {
   return (
     <BrowserRouter>
       <ScrollToTop />
+      <PwaRuntimeChrome />
       <Suspense fallback={<RoutePageFallback />}>
         <Routes>
           <Route path={ROUTES.HOME} element={<LandingPage />} />

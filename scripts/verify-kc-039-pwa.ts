@@ -28,14 +28,16 @@ for (const size of [72, 96, 128, 144, 152, 192, 384, 512]) {
   assert(existsSync(resolve(root, `public/pwa/icon-${size}.png`)), `icon-${size}.png`)
 }
 
-const appSrc = readFileSync(resolve(root, 'src/App.tsx'), 'utf8')
-assert(appSrc.includes('PwaRuntimeChrome'), 'PwaRuntimeChrome mounted')
+const appSrc = readFileSync(resolve(root, 'src/routes/AppRouter.tsx'), 'utf8')
+assert(appSrc.includes('PwaRuntimeChrome'), 'PwaRuntimeChrome mounted inside router')
 
 const chrome = readFileSync(resolve(root, 'src/components/pwa/PwaRuntimeChrome.tsx'), 'utf8')
 assert(chrome.includes('beforeinstallprompt'), 'install prompt listener')
 assert(chrome.includes('30 * 24'), '30-day dismiss')
-assert(chrome.includes('You are currently offline'), 'offline copy')
-assert(chrome.includes('A new version is available'), 'update prompt')
+assert(chrome.includes('You are offline'), 'offline copy')
+assert(chrome.includes('A new version of Karkun Connect is available'), 'update prompt')
+assert(chrome.includes('kc039.pwaInstalled') || chrome.includes('markInstalled'), 'hide after install')
+assert(chrome.includes('weekly-ijtema'), 'suppress install on attendance routes')
 
 const dist = resolve(root, 'dist')
 if (existsSync(dist)) {
