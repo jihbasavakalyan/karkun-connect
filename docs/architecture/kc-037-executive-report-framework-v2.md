@@ -7,6 +7,8 @@
 
 > Implementation prompts for report work should **reference this document**. Do not redesign reporting ownership or invent alternate KPI math.
 
+**Version 1 access lock:** Report Center remains **Administrator-only** for the current campaign. Do not implement Rukn report generation, viewing, or download. Policy: [KC-037 V1 Admin-Only Reporting](./kc-037-v1-admin-only-reporting-policy.md).
+
 ---
 
 ## Vision

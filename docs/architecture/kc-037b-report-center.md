@@ -8,6 +8,8 @@
 
 Admin **Report Center** → `/admin/reports` (`ROUTES.ADMIN_REPORTS`)
 
+**Access (Version 1):** Administrator-only for the current campaign. Rukns have no Report Center, generation, preview, or PDF download. See [KC-037 V1 Admin-Only Reporting Policy](./kc-037-v1-admin-only-reporting-policy.md).
+
 The Campaign / Weekly Ijtema **Generate Report** button navigates here (configuration workflow), then PDF generation uses:
 
 `generateConfiguredReport` → `composeReport` → KC-033 providers → `downloadCampaignReportPdf`

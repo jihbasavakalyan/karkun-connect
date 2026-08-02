@@ -52,9 +52,10 @@ export function buildSmartQuickActions(
     label: 'Campaign',
     route: role === 'administrator' ? ROUTES.ADMIN : ROUTES.RUKN,
   })
+  // KC-037 V1 — Report Center is Admin-only; Rukns get Campaign Record, not a Reports label.
   actions.push({
     id: 'qa-reports',
-    label: 'Reports',
+    label: role === 'administrator' ? 'Reports' : 'Campaign Record',
     route: role === 'administrator' ? ROUTES.ADMIN_ACTIVITIES : ROUTES.RUKN_CAMPAIGN_RECORD,
   })
   actions.push({

@@ -5,7 +5,7 @@ export const ROUTES = {
   ADMIN_CAMPAIGN: '/admin/campaign',
   ADMIN_CAMPAIGNS: '/admin/campaign',
   ADMIN_CAMPAIGN_SETUP: '/admin/campaign/setup',
-  /** KC-037B — Report Center (configuration + generation) */
+  /** KC-037B — Report Center (configuration + generation). V1: Administrator-only. */
   ADMIN_REPORTS: '/admin/reports',
   ADMIN_RUKN: '/admin/rukn',
   ADMIN_KARKUN: '/admin/karkun',

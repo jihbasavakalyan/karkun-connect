@@ -254,6 +254,7 @@ export function AppRouter() {
             <Route path="weekly-ijtema" element={<WeeklyIjtemaRegisterPage />} />
             <Route path="baitul-maal" element={<RuknMonthlyBaitulMaalPage />} />
             <Route path="settings" element={<RuknSettingsPage />} />
+            {/* KC-037 V1 — no Rukn Report Center; legacy /rukn/reports → Campaign Record */}
             <Route path="reports" element={<Navigate to={ROUTES.RUKN_CAMPAIGN_RECORD} replace />} />
             <Route path="tasks" element={<Navigate to={ROUTES.RUKN} replace />} />
             <Route path="visits" element={<Navigate to={ROUTES.RUKN_MY_KARKUN} replace />} />
