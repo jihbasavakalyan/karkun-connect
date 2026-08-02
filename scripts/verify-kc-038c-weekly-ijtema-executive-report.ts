@@ -95,7 +95,24 @@ function testNoRankingInPdf(): void {
   assert(!pdfSrc.includes('top5'), 'no top performer highlights')
   assert(!pdfSrc.includes('bottom5'), 'no bottom performer highlights')
   assert(pdfSrc.includes('ijtema-exec-v1'), 'executive design class')
-  assert(pdfSrc.includes('wi-funnel'), 'comparison funnel')
+  assert(pdfSrc.includes('wi-summary-row'), 'summary layout')
+  assert(pdfSrc.includes('wi-page-footer'), 'page footer')
+  assert(pdfSrc.includes('صفحہ'), 'Urdu page numbers')
+  assert(!pdfSrc.includes('Karkun Connect ·'), 'no technical header metadata')
+  assert(!pdfSrc.includes('generatedTimestamp'), 'no timestamp in HTML output')
+  assert(pdfSrc.includes('wi-meeting-dates'), 'meeting dates inside report body')
+  assert(!pdfSrc.includes('wi-cover-dates'), 'no meeting dates on cover')
+  assert(pdfSrc.includes('pdf-page-rukn'), 'rukn pages avoid split')
+  assert(pdfSrc.includes('break-inside: avoid'), 'page-break guard on rukn sections')
+  const urduSrc = readFileSync(
+    resolve('src/lib/reporting/weeklyIjtemaExecutiveReportUrdu.ts'),
+    'utf8',
+  )
+  assert(urduSrc.includes('خلاصۂ جائزہ'), 'executive summary heading')
+  assert(urduSrc.includes('اہم مشاہدات'), 'observation heading')
+  assert(urduSrc.includes('شرکت کا جائزہ'), 'comparison heading')
+  assert(urduSrc.includes('رکن وار تفصیل'), 'rukn detail heading')
+  assert(urduSrc.includes('مزید توجہ کے متقاضی کارکنان'), 'follow-up heading')
 }
 
 function testExporterWiring(): void {
