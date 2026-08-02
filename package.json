@@ -94,6 +94,8 @@
     "verify:kc-037c2d": "npx vite-node scripts/verify-kc-037c2d-commitment-reminder.ts",
     "verify:kc-037c3": "npx vite-node scripts/verify-kc-037c3-individual-karkun-report.ts",
     "verify:kc-037c4": "npx vite-node scripts/verify-kc-037c4-weekly-ijtema-attendance-report.ts",
+    "verify:kc-039": "npx vite-node scripts/verify-kc-039-pwa.ts",
+    "generate:pwa-icons": "node scripts/generate-pwa-icons.mjs",
     "verify:kc-038": "npx vite-node scripts/verify-kc-038-campaign-extension.ts",
     "admin:kc038:extend": "node scripts/admin/kc038-patch-campaign-end-date.mjs",
     "admin:kc038:extend:dry": "node scripts/admin/kc038-patch-campaign-end-date.mjs --dry-run",
@@ -191,9 +193,11 @@
     "eslint-plugin-react-refresh": "^0.5.3",
     "globals": "^17.7.0",
     "playwright": "^1.58.2",
+    "sharp": "^0.35.3",
     "tailwindcss": "^4.3.2",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.62.0",
-    "vite": "^8.1.1"
+    "vite": "^8.1.1",
+    "vite-plugin-pwa": "^1.3.0"
   }
 }
