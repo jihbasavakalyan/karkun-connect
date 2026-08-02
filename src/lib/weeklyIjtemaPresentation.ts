@@ -2,10 +2,22 @@
  * KC-0113.2 / KC-0113.3 / KC-028C — Weekly Ijtema admin presentation helpers.
  * Presentation-only; does not change adapters or repositories.
  * Uniqueness key: meetingDate + audienceGender (legacy = no gender).
+ *
+ * KC-037C2F — When duplicate Open events exist for the same meeting key,
+ * prefer the event that already has canonical submission marks so Admin
+ * Report / write binding stay on the attendance SoR (never invents data).
  */
 
 import type { WeeklyIjtemaEvent } from '@/types/weeklyIjtema'
 import { eventAudienceKey } from '@/lib/weeklyIjtema/attendanceWindowSchedule'
+import { getWeeklyIjtemaSubmissionsForEvent } from '@/stores/weeklyIjtemaStore'
+
+function submissionMarkCount(eventId: string): number {
+  return getWeeklyIjtemaSubmissionsForEvent(eventId).reduce(
+    (sum, submission) => sum + submission.marks.length,
+    0,
+  )
+}
 
 export function preferWeeklyIjtemaMeeting(
   current: WeeklyIjtemaEvent,
@@ -13,6 +25,12 @@ export function preferWeeklyIjtemaMeeting(
 ): WeeklyIjtemaEvent {
   if (current.status === 'Open' && candidate.status !== 'Open') return current
   if (candidate.status === 'Open' && current.status !== 'Open') return candidate
+  // KC-037C2F — prefer event with existing attendance marks over empty newer Opens.
+  const currentMarks = submissionMarkCount(current.id)
+  const candidateMarks = submissionMarkCount(candidate.id)
+  if (candidateMarks !== currentMarks) {
+    return candidateMarks > currentMarks ? candidate : current
+  }
   return candidate.updatedAt >= current.updatedAt ? candidate : current
 }
 

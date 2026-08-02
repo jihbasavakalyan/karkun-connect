@@ -121,7 +121,9 @@ export function getCurrentWeeklyIjtemaEvent(
     if (todayOpen) return todayOpen
   }
 
-  const open = pool.find((event) => event.status === 'Open')
+  const openEvents = pool.filter((event) => event.status === 'Open')
+  // KC-037C2F — same canonical pick as Admin meeting cards (prefer marks over empty Open).
+  const open = pickCanonicalWeeklyIjtemaMeeting(openEvents)
   if (open) return open
   return pool[0]
 }
@@ -433,10 +435,12 @@ export function saveWeeklyIjtemaSubmission(
 export function getOpenWeeklyIjtemaEvent(
   audienceGender?: WeeklyIjtemaAudienceGender,
 ): WeeklyIjtemaEvent | undefined {
-  return getAllWeeklyIjtemaEvents().find(
+  const open = getAllWeeklyIjtemaEvents().filter(
     (event) =>
       event.status === 'Open' && matchesWeeklyIjtemaAudience(event, audienceGender),
   )
+  // KC-037C2F — bind writes to the same Open event Admin Report prefers (marks > empty).
+  return pickCanonicalWeeklyIjtemaMeeting(open)
 }
 
 export type UpsertWeeklyIjtemaKarkunMarkInput = {
