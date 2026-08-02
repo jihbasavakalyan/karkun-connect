@@ -167,10 +167,7 @@ function formatSubmissionTime(iso: string | undefined, language: 'ur' | 'en'): s
   })
 }
 
-function statusLabel(
-  status: string,
-  language: 'ur' | 'en',
-): WeeklyIjtemaAttendanceStatusLabel {
+function statusLabel(status: string): WeeklyIjtemaAttendanceStatusLabel {
   if (status === 'Present') return 'Present'
   if (status === 'Absent') return 'Absent'
   return 'Pending'
@@ -442,7 +439,7 @@ export function buildWeeklyIjtemaAttendanceReportModel(
       ruknNameById.get(markRuknId) ||
       person?.assignedRukn ||
       dash(language)
-    const attendance = statusLabel(summary.status, language)
+    const attendance = statusLabel(summary.status)
     const markedBy =
       attendance === 'Pending'
         ? dash(language)
