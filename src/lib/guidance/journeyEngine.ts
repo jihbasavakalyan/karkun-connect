@@ -7,7 +7,7 @@ import { getActiveFollowUpForKarkun } from '@/stores/followUpStore'
 import { getDevelopmentAssessment } from '@/stores/developmentAssessmentStore'
 import { getRegistrationForKarkun } from '@/services/jihWebPortalService'
 import { getCommitmentsForKarkun } from '@/stores/guidanceStore'
-import { getWeeklyIjtemaCurrentAttendanceView } from '@/lib/operations/weeklyIjtemaReadAdapter'
+import { getWeeklyIjtemaInvitationView } from '@/lib/operations/weeklyIjtemaReadAdapter'
 import {
   JOURNEY_STAGE_ORDER,
   type JourneyStageId,
@@ -58,8 +58,8 @@ export function hasOrientationSignal(karkun: KarkunRegistryRecord): boolean {
 }
 
 export function hasParticipationSignal(karkun: KarkunRegistryRecord): boolean {
-  // KC-033 — Weekly Ijtema participation from canonical event adapter.
-  const ijtema = getWeeklyIjtemaCurrentAttendanceView(karkun.id)
+  // KC-037C2A — campaign invitation (Invited), not weekly attendance Present.
+  const ijtema = getWeeklyIjtemaInvitationView(karkun.id)
   if (ijtema.status === 'Present') {
     return true
   }

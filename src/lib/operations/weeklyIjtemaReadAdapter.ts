@@ -1,15 +1,16 @@
 /**
- * KC-0110 — Weekly Ijtema canonical read adapter.
+ * KC-0110 / KC-037C2A — Weekly Ijtema read adapter.
  *
- * Presentation/read abstraction only. Prefers the event/cycle SoR
- * (`weeklyIjtema*`); falls back to legacy per-Karkun attendance when no
- * mark exists on the current event. No persistence, caching, or writes.
+ * Two presentation concerns (do not mix):
+ * - Attendance: event/cycle submissions (`weeklyIjtema*`) — recurring weekly.
+ * - Invitation: legacy `ijtema_*` campaign remarks — one-time Matrix objective.
  *
  * Dev diagnostics: set localStorage `kc.debug.weeklyIjtemaReads=1` (DEV only).
  * Inventory: docs/architecture/kc-0110-weekly-ijtema-inventory.md
  */
 
 import {
+  formatWeekLabel,
   getWeekEndingDate,
   type IjtemaAttendanceDashboardMetrics,
   type IjtemaAttendanceKarkunSummary,
@@ -31,6 +32,31 @@ import {
 } from '@/stores/weeklyIjtemaStore'
 import type { WeeklyIjtemaEvent, WeeklyIjtemaMarkStatus } from '@/types/weeklyIjtema'
 
+/** KC-037C2A — campaign invitation remarks on legacy `ijtema_*` docs. */
+export const IJTEMA_CAMPAIGN_INVITED = 'Campaign: Invited'
+export const IJTEMA_CAMPAIGN_NOT_INVITED = 'Campaign: Not Invited'
+export const IJTEMA_CAMPAIGN_EXCUSED = 'Campaign: Excused'
+
+export function isIjtemaCampaignInvitationRemarks(remarks?: string): boolean {
+  const value = (remarks ?? '').trim().toLowerCase()
+  if (!value) return false
+  return (
+    value.includes('campaign: invited') ||
+    value.includes('campaign: not invited') ||
+    value.includes('campaign: excused')
+  )
+}
+
+function statusFromCampaignRemarks(
+  remarks?: string,
+): IjtemaAttendanceStatus | null {
+  const value = (remarks ?? '').trim().toLowerCase()
+  if (value.includes('campaign: not invited')) return 'Absent'
+  if (value.includes('campaign: excused')) return 'Excused'
+  if (value.includes('campaign: invited')) return 'Present'
+  return null
+}
+
 export type WeeklyIjtemaReadSource = 'canonical' | 'legacy'
 
 export type WeeklyIjtemaCurrentAttendanceView = {
@@ -42,6 +68,16 @@ export type WeeklyIjtemaCurrentAttendanceView = {
   source: WeeklyIjtemaReadSource
   eventId?: string
   meetingDate?: string
+}
+
+/** KC-037C2A — one-time campaign invitation (Matrix / Journey participation). */
+export type WeeklyIjtemaInvitationView = {
+  karkunId: string
+  status: IjtemaAttendanceStatus | 'Not recorded'
+  weekEndingDate: string
+  weekLabel: string
+  remarks?: string
+  source: 'legacy'
 }
 
 type CanonicalMark = {
@@ -133,8 +169,9 @@ function viewFromLegacyCurrent(karkunId: string): WeeklyIjtemaCurrentAttendanceV
 }
 
 /**
- * Current Weekly Ijtema attendance for presentation.
- * Canonical event mark wins when present; otherwise legacy week record.
+ * Current Weekly Ijtema attendance for presentation (recurring event track).
+ * Prefers canonical event marks. Does not treat campaign invitation legacy
+ * records as attendance (KC-037C2A).
  */
 export function getWeeklyIjtemaCurrentAttendanceView(
   karkunId: string,
@@ -147,11 +184,109 @@ export function getWeeklyIjtemaCurrentAttendanceView(
       logWeeklyIjtemaRead('current', view.source, { karkunId, eventId: event.id })
       return view
     }
+    // Open/current event with no mark → unmarked attendance (ignore invitation legacy).
+    const empty: WeeklyIjtemaCurrentAttendanceView = {
+      karkunId,
+      status: 'Not recorded',
+      weekEndingDate: event.meetingDate,
+      weekLabel: formatCycleDateLabel(event.meetingDate),
+      source: 'canonical',
+      eventId: event.id,
+      meetingDate: event.meetingDate,
+    }
+    logWeeklyIjtemaRead('current', 'canonical', { karkunId, eventId: event.id, unmarked: true })
+    return empty
+  }
+
+  const legacy = getCurrentIjtemaAttendance(karkunId)
+  if (isIjtemaCampaignInvitationRemarks(legacy.remarks)) {
+    const empty: WeeklyIjtemaCurrentAttendanceView = {
+      karkunId,
+      status: 'Not recorded',
+      weekEndingDate: legacy.weekEndingDate,
+      weekLabel: legacy.weekLabel,
+      source: 'legacy',
+    }
+    logWeeklyIjtemaRead('current', 'legacy', { karkunId, skippedInvitation: true })
+    return empty
   }
 
   const view = viewFromLegacyCurrent(karkunId)
   logWeeklyIjtemaRead('current', view.source, { karkunId })
   return view
+}
+
+/**
+ * KC-037C2A — Invited for Weekly Ijtema (campaign objective).
+ * Legacy-only, campaign-stable: invitation survives week rollover and is
+ * never derived from event attendance submissions.
+ */
+export function getWeeklyIjtemaInvitationView(
+  karkunId: string,
+): WeeklyIjtemaInvitationView {
+  const weekEndingDate = getWeekEndingDate()
+  const history = getIjtemaAttendanceHistory(karkunId, 104)
+
+  let campaignBest: IjtemaAttendanceRecord | null = null
+  for (const record of history) {
+    if (!isIjtemaCampaignInvitationRemarks(record.remarks)) continue
+    if (!campaignBest || record.updatedAt.localeCompare(campaignBest.updatedAt) > 0) {
+      campaignBest = record
+    }
+  }
+  if (campaignBest) {
+    const fromRemarks = statusFromCampaignRemarks(campaignBest.remarks)
+    const status = fromRemarks ?? campaignBest.status
+    const view: WeeklyIjtemaInvitationView = {
+      karkunId,
+      status,
+      weekEndingDate: campaignBest.weekEndingDate,
+      weekLabel: formatWeekLabel(campaignBest.weekEndingDate),
+      remarks: campaignBest.remarks,
+      source: 'legacy',
+    }
+    logWeeklyIjtemaRead('invitation', 'legacy', { karkunId, via: 'campaign-remarks' })
+    return view
+  }
+
+  // Backward compatibility: prior Matrix dual-writes left Present on legacy.
+  const stickyPresent = history.find((record) => record.status === 'Present')
+  if (stickyPresent) {
+    const view: WeeklyIjtemaInvitationView = {
+      karkunId,
+      status: 'Present',
+      weekEndingDate: stickyPresent.weekEndingDate,
+      weekLabel: formatWeekLabel(stickyPresent.weekEndingDate),
+      remarks: stickyPresent.remarks,
+      source: 'legacy',
+    }
+    logWeeklyIjtemaRead('invitation', 'legacy', { karkunId, via: 'legacy-present' })
+    return view
+  }
+
+  const current = getCurrentIjtemaAttendance(karkunId)
+  if (current.status === 'Absent' || current.status === 'Excused') {
+    const view: WeeklyIjtemaInvitationView = {
+      karkunId,
+      status: current.status,
+      weekEndingDate: current.weekEndingDate,
+      weekLabel: current.weekLabel,
+      remarks: current.remarks,
+      source: 'legacy',
+    }
+    logWeeklyIjtemaRead('invitation', 'legacy', { karkunId, via: 'current-week' })
+    return view
+  }
+
+  const empty: WeeklyIjtemaInvitationView = {
+    karkunId,
+    status: 'Not recorded',
+    weekEndingDate,
+    weekLabel: formatWeekLabel(weekEndingDate),
+    source: 'legacy',
+  }
+  logWeeklyIjtemaRead('invitation', 'legacy', { karkunId, via: 'empty' })
+  return empty
 }
 
 /**

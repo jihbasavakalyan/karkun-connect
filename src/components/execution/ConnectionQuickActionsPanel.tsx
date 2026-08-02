@@ -201,12 +201,12 @@ export function ConnectionQuickActionsPanel({
                   ? { success: true as const }
                   : { success: false as const, error: result.error }
               },
-              '✅ Weekly Ijtema saved',
+              '✅ Invited for Weekly Ijtema saved',
               ['compliance.weeklyIjtemaSubmissions', 'compliance.ijtema'],
             )
           }
         >
-          <span>{row.ijtema === 'Pending' ? '☐' : '☑'} Weekly Ijtema</span>
+          <span>{row.ijtema === 'Pending' ? '☐' : '☑'} Invited for Weekly Ijtema</span>
           <span className="text-xs text-secondary">
             {busyKey === `qa:${karkunId}:ijtema`
               ? progressMessage || '…'

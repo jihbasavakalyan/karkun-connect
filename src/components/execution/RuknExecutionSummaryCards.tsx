@@ -81,8 +81,8 @@ export function RuknExecutionSummaryCards({ ruknId }: RuknExecutionSummaryCardsP
     },
     {
       id: 'ijtema',
-      title: 'Weekly Ijtema',
-      doneLabel: 'Attended',
+      title: 'Invited for Weekly Ijtema',
+      doneLabel: 'Invited',
       done: ijtemaAttended,
       pending: rows.filter((r) => r.ijtema === 'Pending').length,
     },

@@ -23,7 +23,6 @@ import {
 } from '@/lib/campaignExecutionMatrix'
 import { subscribeToAnnexure1Store } from '@/stores/annexure1Store'
 import { subscribeToIjtemaAttendanceStore } from '@/stores/ijtemaAttendanceStore'
-import { subscribeToWeeklyIjtemaStore } from '@/stores/weeklyIjtemaStore'
 import { subscribeToBaitulMaalStore } from '@/stores/baitulMaalStore'
 import { subscribeToMonthlyBaitulMaalStore } from '@/stores/monthlyBaitulMaalStore'
 import { createCoalescedNotifier } from '@/lib/dashboard/coalesceStoreNotifications'
@@ -88,9 +87,8 @@ export function CampaignExecutionMatrix({ ruknId }: CampaignExecutionMatrixProps
   useEffect(() => {
     const coalesced = createCoalescedNotifier(() => setTick((v) => v + 1))
     const a = subscribeToAnnexure1Store(coalesced.bump)
+    // KC-037C2A — invitation lives on legacy ijtema_*; do not refresh from attendance submissions.
     const i = subscribeToIjtemaAttendanceStore(coalesced.bump)
-    // KC-0110.2: Matrix Ijtema chips also refresh when canonical event submissions change.
-    const w = subscribeToWeeklyIjtemaStore(coalesced.bump)
     const b = subscribeToBaitulMaalStore(coalesced.bump)
     // KC-0112.2: Matrix BM chips also refresh when canonical cycle submissions change.
     const m = subscribeToMonthlyBaitulMaalStore(coalesced.bump)
@@ -105,7 +103,6 @@ export function CampaignExecutionMatrix({ ruknId }: CampaignExecutionMatrixProps
       coalesced.dispose()
       a()
       i()
-      w()
       b()
       m()
       window.removeEventListener(EXECUTION_PERSIST_FAILED_EVENT, onPersistFailed)
@@ -163,7 +160,7 @@ export function CampaignExecutionMatrix({ ruknId }: CampaignExecutionMatrixProps
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
 
       <div className="overflow-x-auto rounded-(--radius-card) border border-border bg-surface shadow-card">
-        <table className="w-full min-w-[40rem] border-collapse text-sm">
+        <table className="w-full min-w-[44rem] border-collapse text-sm">
           <thead>
             <tr className="border-b border-border bg-surface-muted text-left text-xs uppercase tracking-wide text-secondary">
               <th className="sticky left-0 z-10 bg-surface-muted px-3 py-2.5 font-semibold">
@@ -171,7 +168,9 @@ export function CampaignExecutionMatrix({ ruknId }: CampaignExecutionMatrixProps
               </th>
               <th className="px-2 py-2.5 text-center font-semibold">Visit</th>
               <th className="px-2 py-2.5 text-center font-semibold">JIH App</th>
-              <th className="px-2 py-2.5 text-center font-semibold">Ijtema</th>
+              <th className="max-w-[6.5rem] px-1.5 py-2.5 text-center text-[10px] font-semibold leading-tight normal-case sm:max-w-none sm:px-2 sm:text-xs sm:uppercase">
+                Invited for Weekly Ijtema
+              </th>
               <th className="px-2 py-2.5 text-center font-semibold">Baitul Maal</th>
             </tr>
           </thead>

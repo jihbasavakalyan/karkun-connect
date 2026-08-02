@@ -320,7 +320,7 @@ export function buildCampaignObjectiveProgress(
     },
     {
       id: 'ijtema',
-      label: 'Weekly Ijtema',
+      label: 'Invited for Weekly Ijtema',
       completed: row.ijtema !== 'Pending',
       detail: ijtemaStatusChip(row.ijtema).label,
     },

@@ -19,8 +19,8 @@ import {
 } from '@/lib/dailyProgressPresentation'
 import { getMonthlyBaitulMaalCampaignStateView } from '@/lib/operations/monthlyBaitulMaalReadAdapter'
 import { updateMonthlyBaitulMaalContribution } from '@/lib/operations/monthlyBaitulMaalWriteAdapter'
-import { getWeeklyIjtemaCurrentAttendanceView } from '@/lib/operations/weeklyIjtemaReadAdapter'
-import { markWeeklyIjtemaAttendance } from '@/lib/operations/weeklyIjtemaWriteAdapter'
+import { getWeeklyIjtemaInvitationView } from '@/lib/operations/weeklyIjtemaReadAdapter'
+import { markWeeklyIjtemaInvitation } from '@/lib/operations/weeklyIjtemaWriteAdapter'
 import { saveDailyProgress } from '@/services/annexure1Service'
 import { getCampaignTimeline } from '@/services/campaignService'
 import { createCommitment } from '@/services/guidanceService'
@@ -97,10 +97,8 @@ export function buildCampaignMatrixRows(ruknId: string): CampaignMatrixRow[] {
         (progress.hasAnyProgress && progress.submission?.visitConducted === 'yes'),
     )
     const jih = getJihAppMatrixState(karkun.id)
-    // KC-0110.2:
-    // Reads Weekly Ijtema through the canonical Event/Cycle adapter.
-    // Legacy service retained for compatibility until retirement.
-    const ijtemaRaw = getWeeklyIjtemaCurrentAttendanceView(karkun.id)
+    // KC-037C2A — Invited for Weekly Ijtema (campaign objective; not attendance).
+    const ijtemaRaw = getWeeklyIjtemaInvitationView(karkun.id)
     const ijtema: IjtemaAttendanceStatus | 'Pending' =
       ijtemaRaw.status === 'Not recorded' ? 'Pending' : ijtemaRaw.status
     // KC-0112.2
@@ -223,8 +221,8 @@ export function cycleIjtemaForKarkun(
   ruknId: string,
   actorId?: string,
 ): { success: true; next: IjtemaAttendanceStatus } | { success: false; error: string } {
-  // KC-0110.6 — seed from canonical read adapter; write via write adapter.
-  const current = getWeeklyIjtemaCurrentAttendanceView(karkunId)
+  // KC-037C2A — invitation campaign objective (legacy only; not event attendance).
+  const current = getWeeklyIjtemaInvitationView(karkunId)
   const cycle: IjtemaAttendanceStatus[] = ['Present', 'Absent', 'Excused']
   let next: IjtemaAttendanceStatus
   if (current.status === 'Not recorded') {
@@ -233,7 +231,7 @@ export function cycleIjtemaForKarkun(
     const idx = cycle.indexOf(current.status as IjtemaAttendanceStatus)
     next = cycle[(idx + 1) % cycle.length]!
   }
-  const result = markWeeklyIjtemaAttendance({
+  const result = markWeeklyIjtemaInvitation({
     karkunId,
     status: next,
     updatedBy: actorId ?? ruknId,
@@ -435,12 +433,12 @@ function setIjtemaPresentAbsolute(
   ruknId: string,
   actorId?: string,
 ): { success: true } | { success: false; error: string } {
-  // KC-0110.6 — seed from canonical read adapter; write via write adapter.
-  const current = getWeeklyIjtemaCurrentAttendanceView(karkunId)
+  // KC-037C2A — mark Invited (campaign objective), not weekly attendance.
+  const current = getWeeklyIjtemaInvitationView(karkunId)
   if (current.status === 'Present') {
     return { success: true }
   }
-  const result = markWeeklyIjtemaAttendance({
+  const result = markWeeklyIjtemaInvitation({
     karkunId,
     status: 'Present',
     updatedBy: actorId ?? ruknId,
@@ -523,7 +521,7 @@ export function applyTodaysCampaignProgress(input: {
     }
     if (afterRow.ijtema === 'Pending') {
       return {
-        objective: 'Weekly Ijtema Participation',
+        objective: 'Invited for Weekly Ijtema',
         action: 'Invite to Weekly Ijtema.',
       }
     }
@@ -554,7 +552,7 @@ export function buildTodaysFocusItems(ruknId: string, limit = 6): TodaysFocusIte
   const priorityRank = (label: string): number => {
     if (label.startsWith('Visit')) return 0
     if (label.startsWith('Registration')) return 1
-    if (label.startsWith('Weekly Ijtema')) return 2
+    if (label.startsWith('Invited for Weekly Ijtema')) return 2
     return 3
   }
 
@@ -564,7 +562,7 @@ export function buildTodaysFocusItems(ruknId: string, limit = 6): TodaysFocusIte
     let pendingLabel = ''
     if (!row.visitDone) pendingLabel = 'Visit Pending'
     else if (row.jih !== 'registered') pendingLabel = 'Registration Pending'
-    else if (row.ijtema === 'Pending') pendingLabel = 'Weekly Ijtema Pending'
+    else if (row.ijtema === 'Pending') pendingLabel = 'Invited for Weekly Ijtema Pending'
     else if (row.baitulMaal !== 'committed') pendingLabel = 'Baitul Maal Pending'
     else continue
 
@@ -609,10 +607,12 @@ export function baitulMaalStatusChip(
   }
 }
 
+/** KC-037C2A — Matrix presentation only; stored values remain Present/Absent/Excused. */
 export function ijtemaStatusChip(
   state: IjtemaAttendanceStatus | 'Pending',
 ): { emoji: string; label: string; tone: MatrixStatusTone } {
   if (state === 'Pending') return { emoji: '⚪', label: 'Pending', tone: 'idle' }
-  if (state === 'Present') return { emoji: '🟢', label: 'Present', tone: 'done' }
+  if (state === 'Present') return { emoji: '🟢', label: 'Invited', tone: 'done' }
+  if (state === 'Absent') return { emoji: '🟡', label: 'Not Invited', tone: 'progress' }
   return { emoji: '🟡', label: state, tone: 'progress' }
 }

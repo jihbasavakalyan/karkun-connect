@@ -73,7 +73,7 @@ function buildMatrixFocusGuidanceUrdu(focus: TodaysFocusItem): string {
       return `${name} آپ کی ملاقات کے منتظر ہیں۔ آج ہی رابطہ مفید ہوگا۔`
     case 'Registration Pending':
       return `${name} کی JIH App رجسٹریشن میں مدد آج کا نرم اور مفید قدم ہو سکتا ہے۔`
-    case 'Weekly Ijtema Pending':
+    case 'Invited for Weekly Ijtema Pending':
       return `اگر مناسب سمجھیں تو ${name} کو ہفتہ وار اجتماع کی دعوت دینا مفید ہو سکتا ہے۔`
     case 'Baitul Maal Pending':
       return `${name} سے بیت المال کی گفتگو مکمل کرنا آج کا موزوں قدم ہے۔`

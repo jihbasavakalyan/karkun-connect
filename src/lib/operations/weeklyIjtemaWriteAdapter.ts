@@ -1,9 +1,9 @@
 /**
- * KC-0110.6 — Weekly Ijtema canonical write adapter.
+ * KC-0110.6 / KC-037C2A — Weekly Ijtema write adapter.
  *
- * Single write entry for Matrix / Journey / Compliance / People / bulk marks.
- * Present/Absent → open-event submission (canonical); dual-writes legacy for
- * compatibility. Excused / no open editable event → legacy compatibility only.
+ * Attendance (event submissions): Present/Absent on open event only.
+ * Invitation (Matrix campaign objective): legacy `ijtema_*` only — never
+ * writes event submissions, and attendance never overwrites invitation.
  *
  * Full Rukn register submit remains `saveWeeklyIjtemaSubmission`.
  * Inventory: docs/architecture/kc-0110-weekly-ijtema-inventory.md
@@ -13,6 +13,11 @@ import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { getRuknById } from '@/data/ruknMaster'
 import { getActiveAssignmentsForKarkun } from '@/stores/assignmentStore'
 import { canRuknEditCycle } from '@/lib/campaignCycle/lifecycle'
+import {
+  IJTEMA_CAMPAIGN_EXCUSED,
+  IJTEMA_CAMPAIGN_INVITED,
+  IJTEMA_CAMPAIGN_NOT_INVITED,
+} from '@/lib/operations/weeklyIjtemaReadAdapter'
 import {
   getOpenWeeklyIjtemaEvent,
   removeWeeklyIjtemaKarkunMark,
@@ -25,6 +30,7 @@ import {
 import type {
   BulkUpdateIjtemaAttendanceInput,
   IjtemaAttendanceRecord,
+  IjtemaAttendanceStatus,
   UpdateIjtemaAttendanceInput,
 } from '@/types/ijtemaAttendance'
 import { getWeekEndingDate } from '@/types/ijtemaAttendance'
@@ -63,8 +69,47 @@ function writeLegacy(
   return { success: true, source: 'legacy', record: result.record }
 }
 
+function campaignRemarksForInvitation(status: IjtemaAttendanceStatus): string {
+  if (status === 'Present') return IJTEMA_CAMPAIGN_INVITED
+  if (status === 'Absent') return IJTEMA_CAMPAIGN_NOT_INVITED
+  return IJTEMA_CAMPAIGN_EXCUSED
+}
+
 /**
- * Canonical write entry — Present/Absent on open event; Excused/fallback → legacy.
+ * KC-037C2A — Invited for Weekly Ijtema (campaign objective).
+ * Writes legacy only; never touches event attendance submissions.
+ */
+export function markWeeklyIjtemaInvitation(
+  input: UpdateIjtemaAttendanceInput,
+): MarkWeeklyIjtemaAttendanceResult {
+  const status = input.status
+  if (!status) {
+    return { success: false, error: 'Invitation status is required.' }
+  }
+  if (status !== 'Present' && status !== 'Absent' && status !== 'Excused') {
+    return { success: false, error: 'Invitation status is required.' }
+  }
+
+  const karkun = getKarkunById(input.karkunId)
+  if (!karkun) {
+    return { success: false, error: 'Karkun not found.' }
+  }
+
+  const actor = input.updatedBy ?? 'Administrator'
+  const ruknId = resolveRuknId(input.karkunId, input.ruknId)
+  return writeLegacy({
+    ...input,
+    status,
+    remarks: campaignRemarksForInvitation(status),
+    ruknId,
+    updatedBy: actor,
+    weekEndingDate: input.weekEndingDate ?? getWeekEndingDate(),
+  })
+}
+
+/**
+ * Attendance write — Present/Absent on open event only (no legacy dual-write).
+ * Excused / no open editable event → legacy compatibility only (non-campaign).
  */
 export function markWeeklyIjtemaAttendance(
   input: UpdateIjtemaAttendanceInput,
@@ -84,6 +129,7 @@ export function markWeeklyIjtemaAttendance(
   const ruknId = resolveRuknId(input.karkunId, input.ruknId)
 
   if (!shouldWriteCanonical(openEvent, input.weekEndingDate) || !ruknId) {
+    // Do not stamp campaign invitation remarks from attendance fallbacks.
     return writeLegacy(input)
   }
 
@@ -107,6 +153,7 @@ export function markWeeklyIjtemaAttendance(
     return { success: false, error: 'Attendance status is required.' }
   }
 
+  // KC-037C2A — attendance submissions only; never overwrite invitation legacy.
   const canonical = upsertWeeklyIjtemaKarkunMark({
     eventId: openEvent.id,
     ruknId,
@@ -120,21 +167,7 @@ export function markWeeklyIjtemaAttendance(
     return canonical
   }
 
-  // Compatibility dual-write — Cos / deferred readers still on legacy until retirement.
-  const legacy = updateIjtemaAttendance({
-    ...input,
-    status,
-    ruknId,
-    updatedBy: actor,
-  })
-  if (!legacy.success) {
-    return {
-      success: true,
-      source: 'canonical',
-    }
-  }
-
-  return { success: true, source: 'canonical', record: legacy.record }
+  return { success: true, source: 'canonical' }
 }
 
 export function bulkMarkWeeklyIjtemaAttendance(

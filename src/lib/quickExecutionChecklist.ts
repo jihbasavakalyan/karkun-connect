@@ -19,8 +19,8 @@ import {
 import { saveDailyProgress } from '@/services/annexure1Service'
 import { setDevelopmentIndicator } from '@/services/developmentAssessmentService'
 import { createCommitment } from '@/services/guidanceService'
-import { getWeeklyIjtemaCurrentAttendanceView } from '@/lib/operations/weeklyIjtemaReadAdapter'
-import { markWeeklyIjtemaAttendance } from '@/lib/operations/weeklyIjtemaWriteAdapter'
+import { getWeeklyIjtemaInvitationView } from '@/lib/operations/weeklyIjtemaReadAdapter'
+import { markWeeklyIjtemaInvitation } from '@/lib/operations/weeklyIjtemaWriteAdapter'
 import { getActiveAssignmentsForKarkun } from '@/stores/assignmentStore'
 import { getCommitmentsForKarkun } from '@/stores/guidanceStore'
 import { createInitialAnnexure1FormState } from '@/types/annexure1.types'
@@ -74,7 +74,7 @@ export function buildQuickExecutionSnapshot(
   const assignmentId = getActiveAssignmentsForKarkun(karkunId)[0]?.assignmentId
   const { currentStage } = resolveCurrentJourneyStage(karkun, assignmentId)
   const progress = getDailyProgressView(karkunId)
-  const ijtema = getWeeklyIjtemaCurrentAttendanceView(karkunId)
+  const ijtema = getWeeklyIjtemaInvitationView(karkunId)
   const jihStatus = karkun.jihAppRegistrationStatus
   const hasInstalledCommitment = getCommitmentsForKarkun(karkunId).some((c) =>
     /jih app installed/i.test(c.text),
@@ -260,10 +260,9 @@ export function saveQuickExecutionChecklist(
   }
 
   if (draft.ijtema !== initial.ijtema && draft.ijtema) {
-    const result = markWeeklyIjtemaAttendance({
+    const result = markWeeklyIjtemaInvitation({
       karkunId,
       status: draft.ijtema,
-      remarks: draft.remarks.trim() || undefined,
       updatedBy: actorId ?? ruknId,
       ruknId,
     })
@@ -305,7 +304,7 @@ export function saveQuickExecutionChecklist(
 
   if (draft.journey.participation && !hasParticipationSignal(karkun)) {
     if (draft.ijtema !== 'Present') {
-      const result = markWeeklyIjtemaAttendance({
+      const result = markWeeklyIjtemaInvitation({
         karkunId,
         status: 'Present',
         updatedBy: actorId ?? ruknId,

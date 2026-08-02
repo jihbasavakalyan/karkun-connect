@@ -199,7 +199,7 @@ export function WeeklyIjtemaRegisterPage() {
   return (
     <PageShell variant="narrow" className="app-screen">
       <header className="app-screen-header">
-        <h1 className="app-screen-title">Weekly Ijtema</h1>
+        <h1 className="app-screen-title">{"Today's Weekly Ijtema Attendance"}</h1>
         <p className="app-screen-subtitle">
           Mark Present (حاضر) or Absent (غیر حاضر) for connected Karkuns.
         </p>
