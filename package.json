@@ -100,6 +100,7 @@
     "verify:kc-039": "npx vite-node scripts/verify-kc-039-pwa.ts",
     "generate:pwa-icons": "node scripts/generate-pwa-icons.mjs",
     "verify:kc-038": "npx vite-node scripts/verify-kc-038-campaign-extension.ts",
+    "verify:kc-038-search": "npx vite-node scripts/verify-kc-038-search-state.ts",
     "admin:kc038:extend": "node scripts/admin/kc038-patch-campaign-end-date.mjs",
     "admin:kc038:extend:dry": "node scripts/admin/kc038-patch-campaign-end-date.mjs --dry-run",
     "verify:kc-035r1": "npx vite-node scripts/verify-kc-035r1-operational-recovery.ts",

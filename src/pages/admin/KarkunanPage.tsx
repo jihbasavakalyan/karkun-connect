@@ -19,7 +19,6 @@ import {
   persistKarkunDurable,
   updateKarkun,
 } from '@/lib/peopleStore'
-import { resolveSearchGenderHint } from '@/lib/peopleSearch'
 import { usePeopleStore } from '@/hooks/usePeopleStore'
 import {
   exportKarkuns,
@@ -92,7 +91,6 @@ type KarkunGenderSectionProps = {
   initialFilters?: Partial<PeopleFilters>
   onAddFormOpened: () => void
   onRegisterHandlers: (handlers: KarkunSectionHandlers | null) => void
-  onSearchGenderHint?: (gender: PersonGender) => void
 }
 
 function KarkunGenderSection({
@@ -102,10 +100,8 @@ function KarkunGenderSection({
   initialFilters,
   onAddFormOpened,
   onRegisterHandlers,
-  onSearchGenderHint,
 }: KarkunGenderSectionProps) {
   const management = useKarkunPeopleManagement(gender, 'Karkun', {
-    onSearchGenderHint,
     initialFilters: {
       ...initialFilters,
       ...(initialSearch ? { search: initialSearch } : {}),
@@ -297,20 +293,26 @@ function KarkunGenderSection({
     }
   }, [shouldOpenAddForm, onAddFormOpened])
 
+  const urlFiltersKey = useMemo(() => JSON.stringify(initialFilters ?? {}), [initialFilters])
+
   useEffect(() => {
-    if (!initialSearch.trim()) {
+    if (!initialFilters) {
       return
     }
-    management.updateFilter('search', initialSearch.trim())
-    // Apply global search once when arriving from the command bar.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+    for (const [key, value] of Object.entries(initialFilters)) {
+      if (value == null || value === '') {
+        continue
+      }
+      management.updateFilter(key as keyof PeopleFilters, value)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- sync deep-link params only
+  }, [urlFiltersKey])
 
   return (
     <div className="space-y-6">
       <p className="text-sm text-secondary">
         {management.filters.search.trim()
-          ? `Search results — ${management.totalRecords} match${management.totalRecords === 1 ? '' : 'es'} across Male and Female`
+          ? `Search results — ${management.totalRecords} match${management.totalRecords === 1 ? '' : 'es'} in ${gender} Karkuns`
           : `${gender} Karkun registry — ${management.totalCount} members`}
       </p>
 
@@ -547,9 +549,7 @@ export function KarkunanPage() {
     if (urlFilters.gender === 'Male' || urlFilters.gender === 'Female') {
       return urlFilters.gender
     }
-    if (!initialSearch.trim()) return 'Male'
-    const hint = resolveSearchGenderHint(getAllKarkuns(false), initialSearch)
-    return hint ?? 'Male'
+    return 'Male'
   })
   const sectionHandlersRef = useRef<KarkunSectionHandlers | null>(null)
   const [openAddForGender, setOpenAddForGender] = useState<PersonGender | null>(null)
@@ -560,10 +560,6 @@ export function KarkunanPage() {
     addRequestedRef.current = true
     setOpenAddForGender(activeGender)
   }, [searchParams, activeGender])
-
-  const handleSearchGenderHint = useCallback((gender: PersonGender) => {
-    setActiveGender(gender)
-  }, [])
 
   const registerSectionHandlers = useCallback((handlers: KarkunSectionHandlers | null) => {
     sectionHandlersRef.current = handlers
@@ -647,14 +643,12 @@ export function KarkunanPage() {
 
         <div className="mt-6">
           <KarkunGenderSection
-            key={`karkun-registry:${activeGender}:${JSON.stringify(urlFilters)}:${initialSearch}`}
             gender={activeGender}
             initialSearch={initialSearch}
             initialFilters={urlFilters}
             shouldOpenAddForm={openAddForGender === activeGender}
             onAddFormOpened={handleAddFormOpened}
             onRegisterHandlers={registerSectionHandlers}
-            onSearchGenderHint={handleSearchGenderHint}
           />
         </div>
       </section>

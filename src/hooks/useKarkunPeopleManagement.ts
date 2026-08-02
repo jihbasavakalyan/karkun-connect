@@ -3,10 +3,10 @@
  * People reads Monthly Baitul Maal through the canonical adapter.
  * Legacy write path retained until write migration.
  *
- * KC-BUG-0125 — Registry Quick Search uses canonical digit-aware matcher and
- * searches across genders while a query is active (gender tabs only silo browse).
+ * KC-BUG-0125 — Registry Quick Search uses canonical digit-aware matcher.
+ * KC-038 — Search stays within the active gender tab; no auto tab switching.
  */
-import { useMemo, useState, useEffect, useRef } from 'react'
+import { useMemo, useState, useEffect, useCallback } from 'react'
 import { getAllKarkuns, getAllMuttafiqeen } from '@/lib/peopleStore'
 import { subscribeToAssignments } from '@/lib/assignmentEngine'
 import { usePeopleStore } from '@/hooks/usePeopleStore'
@@ -18,8 +18,7 @@ import { subscribeToBaitulMaalStore } from '@/stores/baitulMaalStore'
 import { subscribeToMonthlyBaitulMaalStore } from '@/stores/monthlyBaitulMaalStore'
 import { subscribeToIjtemaAttendanceStore } from '@/stores/ijtemaAttendanceStore'
 import { subscribeToWeeklyIjtemaStore } from '@/stores/weeklyIjtemaStore'
-import { getPeopleSearchPool, personMatchesSearchQuery } from '@/lib/personResolution'
-import { resolveSearchGenderHint } from '@/lib/peopleSearch'
+import { personMatchesSearchQuery } from '@/lib/personResolution'
 import type {
   KarkunRegistryRecord,
   PersonCategory,
@@ -150,7 +149,6 @@ export function useKarkunPeopleManagement(
   sectionGender: PersonGender,
   registryCategory: PersonCategory = 'Karkun',
   options?: {
-    onSearchGenderHint?: (gender: PersonGender) => void
     /** KC-0127 — hydrate filters from registry deep links (values unchanged). */
     initialFilters?: Partial<PeopleFilters>
   },
@@ -197,45 +195,19 @@ export function useKarkunPeopleManagement(
   const [sortField, setSortField] = useState<PeopleSortField>('name')
   const [sortDirection, setSortDirection] = useState<PeopleSortDirection>('asc')
   const [selectedIds, setSelectedIds] = useState<string[]>([])
-  const genderHintRef = useRef(options?.onSearchGenderHint)
-  useEffect(() => {
-    genderHintRef.current = options?.onSearchGenderHint
-  }, [options?.onSearchGenderHint])
 
   const registryPool = useMemo(
-    () => {
-      // Browse: category-exclusive. Search: full people pool via Person Resolution
-      // so duplicate-detection hits are always discoverable on either registry page.
-      if (filters.search.trim()) {
-        return getPeopleSearchPool(registryCategory)
-      }
-      return registryCategory === 'Muttafiq' ? getAllMuttafiqeen() : getAllKarkuns(false)
-    },
+    () =>
+      registryCategory === 'Muttafiq' ? getAllMuttafiqeen() : getAllKarkuns(false),
     // peopleVersion invalidates after mutable MOCK_KARKUN_REGISTRY hydrate
     // eslint-disable-next-line react-hooks/exhaustive-deps -- registry is module state
-    [peopleVersion, registryCategory, filters.search],
+    [peopleVersion, registryCategory],
   )
 
-  const searching = filters.search.trim().length > 0
-
-  const allKarkuns = useMemo(() => {
-    // Browse mode: gender tab silos the list.
-    // Search mode: every active person is discoverable (KC-BUG-0125 + KC-0128).
-    if (searching) {
-      return registryPool
-    }
-    return registryPool.filter((k) => k.gender === sectionGender)
-  }, [registryPool, sectionGender, searching])
-
-  useEffect(() => {
-    if (!searching || !genderHintRef.current) {
-      return
-    }
-    const hint = resolveSearchGenderHint(registryPool, filters.search)
-    if (hint && hint !== sectionGender) {
-      genderHintRef.current(hint)
-    }
-  }, [searching, filters.search, registryPool, sectionGender])
+  const allKarkuns = useMemo(
+    () => registryPool.filter((k) => k.gender === sectionGender),
+    [registryPool, sectionGender],
+  )
 
   const filteredRecords = useMemo(() => {
     void assignmentVersion
@@ -263,15 +235,15 @@ export function useKarkunPeopleManagement(
     return filteredRecords.slice(start, start + PEOPLE_PAGE_SIZE)
   }, [filteredRecords, currentPage, totalPages])
 
-  const updateFilter = (key: keyof PeopleFilters, value: string) => {
+  const updateFilter = useCallback((key: keyof PeopleFilters, value: string) => {
     setFilters((previous) => ({ ...previous, [key]: value }))
     setCurrentPage(1)
-  }
+  }, [])
 
-  const clearFilters = () => {
+  const clearFilters = useCallback(() => {
     setFilters(initialFilters)
     setCurrentPage(1)
-  }
+  }, [])
 
   const toggleSort = (field: PeopleSortField) => {
     if (sortField === field) {

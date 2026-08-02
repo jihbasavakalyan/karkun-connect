@@ -14,6 +14,7 @@ import { PortalAuthActions } from '@/components/layout/PortalAuthActions'
 import type { CampaignTimelineStatus } from '@/services/campaignService'
 import { EnterpriseBadge } from '@/components/enterprise'
 import { resolveUniquePersonProfilePath } from '@/lib/personProfile'
+import { adminKarkunRegistryPath } from '@/lib/peopleRegistryNavigation'
 
 type AdminTopBarProps = {
   alertCount?: number
@@ -43,7 +44,7 @@ export function AdminTopBar({ alertCount = 0, onMenuToggle }: AdminTopBarProps) 
       navigate(profilePath)
       return
     }
-    navigate(ROUTES.ADMIN_KARKUN, { state: { searchQuery: trimmed } })
+    navigate(adminKarkunRegistryPath({ search: trimmed }))
   }
 
   return (
