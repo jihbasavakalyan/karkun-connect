@@ -38,10 +38,65 @@ export function ReportDashboardView({ document, onClose }: ReportDashboardViewPr
             ? ((data as { items: Array<{ title: string; detail: string; severity: string }> }).items)
             : null
 
+          // KC-037C4 — Weekly Ijtema Attendance dossier preview cards
+          const wiExec = (data as { executiveSummary?: {
+            totalConnectedKarkuns: number
+            present: number
+            absent: number
+            pending: number
+            overallAttendancePct: number
+            narrative: string
+          } }).executiveSummary
+          const wiInsights = Array.isArray((data as { operationalInsights?: string[] }).operationalInsights)
+            ? (data as { operationalInsights: string[] }).operationalInsights
+            : null
+          const wiRecs = Array.isArray(
+            (data as { operationalRecommendations?: string[] }).operationalRecommendations,
+          )
+            ? (data as { operationalRecommendations: string[] }).operationalRecommendations
+            : null
+
           return (
             <article key={section.definition.id} className="rounded-md border border-border/80 p-3">
               <h3 className="text-sm font-semibold text-primary">{title}</h3>
               <p className="text-xs text-secondary">{section.definition.description}</p>
+              {wiExec ? (
+                <div className="mt-3 space-y-3">
+                  <p className="text-sm text-primary">{wiExec.narrative}</p>
+                  <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                    {[
+                      { title: 'Connected', value: wiExec.totalConnectedKarkuns },
+                      { title: 'Present', value: wiExec.present },
+                      { title: 'Absent', value: wiExec.absent },
+                      { title: 'Pending', value: wiExec.pending },
+                      { title: 'Attendance %', value: `${wiExec.overallAttendancePct}%` },
+                    ].map((c) => (
+                      <div key={c.title} className="rounded-md bg-muted/30 px-3 py-2">
+                        <p className="text-xs text-secondary">{c.title}</p>
+                        <p className="text-lg font-semibold text-primary">{c.value}</p>
+                      </div>
+                    ))}
+                  </div>
+                  {wiInsights && wiInsights.length > 0 ? (
+                    <ul className="space-y-1 text-sm">
+                      {wiInsights.slice(0, 5).map((line, idx) => (
+                        <li key={`wi-i-${idx}`} className="text-secondary">
+                          {line}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                  {wiRecs && wiRecs.length > 0 ? (
+                    <ul className="space-y-1 text-sm">
+                      {wiRecs.slice(0, 4).map((line, idx) => (
+                        <li key={`wi-r-${idx}`} className="text-primary">
+                          {line}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </div>
+              ) : null}
               {cards ? (
                 <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                   {cards.map((c) => (
@@ -69,7 +124,7 @@ export function ReportDashboardView({ document, onClose }: ReportDashboardViewPr
                   ))}
                 </ul>
               ) : null}
-              {!cards && !narrative && !insights ? (
+              {!wiExec && !cards && !narrative && !insights ? (
                 <pre className="mt-2 max-h-48 overflow-auto rounded bg-muted/20 p-2 text-[11px] leading-snug text-secondary">
                   {JSON.stringify(data, null, 2)}
                 </pre>

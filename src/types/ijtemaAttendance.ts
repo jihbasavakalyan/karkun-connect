@@ -34,6 +34,8 @@ export type IjtemaAttendanceKarkunSummary = {
   status: IjtemaAttendanceStatus | 'Not recorded'
   remarks?: string
   updatedAt?: string
+  /** Who last marked attendance (submission operator) — presentation only. */
+  updatedBy?: string
   ruknId?: string
   campaignId?: string
 }

@@ -7,6 +7,7 @@ import { getAllMuttafiqeen, getPeopleStatistics } from '@/lib/peopleStore'
 import { APP_VERSION } from '@/constants/app'
 import { buildIndividualRuknReportModel } from '@/lib/reporting/individualRuknReportModel'
 import { buildIndividualKarkunReportModel } from '@/lib/reporting/individualKarkunReportModel'
+import { buildWeeklyIjtemaAttendanceReportModel } from '@/lib/reporting/weeklyIjtemaAttendanceReportModel'
 import { registerSection } from '../sectionRegistry'
 import type { ReportContext, SectionModel, ReportTypeId } from '../types'
 import { campaignModelFromContext, pairView } from './campaignModelAccess'
@@ -433,6 +434,16 @@ export function registerActivePlatformSections(): void {
     160,
     ['executive_campaign', 'weekly_ijtema'],
     (ctx) => domainFromProviders(ctx, 'weekly_ijtema'),
+  )
+
+  // KC-037C4 — full operational Attendance Report (canonical domain dossier).
+  section(
+    'weekly_ijtema_attendance',
+    'Weekly Ijtema Attendance Report',
+    'Operational Weekly Ijtema attendance dossier (cover → registers → insights)',
+    165,
+    ['weekly_ijtema'],
+    (ctx) => buildWeeklyIjtemaAttendanceReportModel(ctx),
   )
 
   section(

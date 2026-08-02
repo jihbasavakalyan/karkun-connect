@@ -63,13 +63,15 @@ export const BUILTIN_TEMPLATES: ReportPresetDefinition[] = [
   },
   {
     id: 'weekly_ijtema_review',
-    title: 'Weekly Ijtema',
-    description: 'Ijtema attendance review.',
+    title: 'Weekly Ijtema Attendance',
+    description: 'Operational Weekly Ijtema attendance report.',
     reportType: 'weekly_ijtema',
     featureFlag: true,
     config: {
       reportType: 'weekly_ijtema',
       enabledSections: blueprintSectionsFor('weekly_ijtema'),
+      outputType: 'pdf',
+      detailLevel: 'standard',
     },
   },
   {

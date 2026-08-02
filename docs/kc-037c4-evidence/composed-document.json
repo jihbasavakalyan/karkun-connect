@@ -1,0 +1,44 @@
+{
+  "reportType": "weekly_ijtema",
+  "sections": [
+    "weekly_ijtema_attendance"
+  ],
+  "cover": {
+    "reportTitle": "Weekly Ijtema Attendance Report",
+    "campaignName": "فعال کارکن، فعال جماعت",
+    "campaignUrdu": "فعال کارکن، فعال جماعت",
+    "reportingDate": "2 اگست، 2026",
+    "attendanceWindow": "No active event",
+    "generatedOn": "2 اگست، 2026 کو 07:57 AM",
+    "generatedBy": "KC-037C4 Evidence"
+  },
+  "executiveSummary": {
+    "totalConnectedKarkuns": 0,
+    "present": 0,
+    "absent": 0,
+    "pending": 0,
+    "overallAttendancePct": 0,
+    "maleAttendancePct": 0,
+    "femaleAttendancePct": 0,
+    "narrative": "No Weekly Ijtema attendance data is available for this reporting window — empty state."
+  },
+  "analytics": {
+    "bestPerformingRukn": "—",
+    "lowestPerformingRukn": "—",
+    "highestAttendancePct": 0,
+    "lowestAttendancePct": 0,
+    "overallAttendancePct": 0,
+    "maleAttendancePct": 0,
+    "femaleAttendancePct": 0,
+    "maleFemaleComparison": "Male 0% · Female 0%"
+  },
+  "insights": [
+    "No active Weekly Ijtema event — attendance snapshot unavailable."
+  ],
+  "recommendations": [
+    "Open a Weekly Ijtema event so attendance can be recorded."
+  ],
+  "ruknCount": 0,
+  "registerCount": 0,
+  "absentCount": 0
+}

@@ -91,6 +91,7 @@
     "verify:kc-037c2": "npx vite-node scripts/verify-kc-037c2-individual-rukn-report.ts",
     "verify:kc-037c2a": "npx vite-node scripts/verify-kc-037c2a-ijtema-presentation.ts",
     "verify:kc-037c3": "npx vite-node scripts/verify-kc-037c3-individual-karkun-report.ts",
+    "verify:kc-037c4": "npx vite-node scripts/verify-kc-037c4-weekly-ijtema-attendance-report.ts",
     "verify:kc-038": "npx vite-node scripts/verify-kc-038-campaign-extension.ts",
     "admin:kc038:extend": "node scripts/admin/kc038-patch-campaign-end-date.mjs",
     "admin:kc038:extend:dry": "node scripts/admin/kc038-patch-campaign-end-date.mjs --dry-run",

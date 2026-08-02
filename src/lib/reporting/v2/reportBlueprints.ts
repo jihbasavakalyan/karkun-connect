@@ -25,7 +25,8 @@ export const REPORT_TYPE_BLUEPRINTS: Record<ReportTypeId, string[]> = {
   rukn_performance: ['individual_rukn_performance', 'top_performers', 'kpi_dashboard'],
   individual_rukn: ['individual_rukn_performance'],
   individual_karkun: ['individual_karkun_performance'],
-  weekly_ijtema: ['weekly_ijtema', 'kpi_dashboard', 'recommendations'],
+  // KC-037C4 — single operational dossier section (thin `weekly_ijtema` remains for executive).
+  weekly_ijtema: ['weekly_ijtema_attendance'],
   visit_progress: ['visits', 'kpi_dashboard', 'recommendations'],
   baitul_maal: ['baitul_maal', 'kpi_dashboard', 'recommendations'],
   app_registration: ['app_registration', 'kpi_dashboard', 'recommendations'],

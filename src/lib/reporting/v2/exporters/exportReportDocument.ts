@@ -19,6 +19,13 @@ import {
   isIndividualKarkunReportModel,
 } from '@/lib/reporting/individualKarkunReportModel'
 import {
+  downloadWeeklyIjtemaAttendanceReportPdf,
+} from '@/lib/reporting/weeklyIjtemaAttendanceReportPdf'
+import {
+  WEEKLY_IJTEMA_ATTENDANCE_SECTION_ID,
+  isWeeklyIjtemaAttendanceReportModel,
+} from '@/lib/reporting/weeklyIjtemaAttendanceReportModel'
+import {
   campaignReportModelFromDocument,
 } from './campaignPdfViaComposer'
 import { KC034_EXECUTIVE_SECTION_ID } from '../reportConfig'
@@ -133,6 +140,15 @@ export async function exportReportDocument(
         )
       }
       await downloadIndividualKarkunReportPdf(data)
+    } else if (doc.config.reportType === 'weekly_ijtema') {
+      const section = doc.sections.find(
+        (s) => s.definition.id === WEEKLY_IJTEMA_ATTENDANCE_SECTION_ID,
+      )
+      const data = section?.model.data
+      if (!isWeeklyIjtemaAttendanceReportModel(data)) {
+        throw new Error('Weekly Ijtema Attendance report model missing.')
+      }
+      await downloadWeeklyIjtemaAttendanceReportPdf(data)
     } else {
       // Textual PDF for other non-KC034 compositions (presentation dump).
       const { downloadUrduHtmlReportPdf, UrduHtml } = await import('@/lib/reporting/urduHtmlToPdf')

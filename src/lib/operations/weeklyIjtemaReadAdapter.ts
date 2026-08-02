@@ -84,6 +84,9 @@ type CanonicalMark = {
   status: WeeklyIjtemaMarkStatus
   ruknId: string
   updatedAt: string
+  /** Submission operator (Rukn / Admin) — presentation audit only. */
+  updatedBy?: string
+  submittedAt?: string
 }
 
 /** KC-0110.5 — DEV-only; enable via localStorage `kc.debug.weeklyIjtemaReads=1`. */
@@ -118,6 +121,8 @@ function findCanonicalMark(
         status: mark.status,
         ruknId: submission.ruknId,
         updatedAt: submission.updatedAt,
+        updatedBy: submission.updatedBy || submission.submittedBy,
+        submittedAt: submission.submittedAt,
       }
     }
   }
@@ -134,6 +139,8 @@ function buildCanonicalMarkIndex(event: WeeklyIjtemaEvent): Map<string, Canonica
         status: mark.status,
         ruknId: submission.ruknId,
         updatedAt: submission.updatedAt,
+        updatedBy: submission.updatedBy || submission.submittedBy,
+        submittedAt: submission.submittedAt,
       })
     }
   }
@@ -366,6 +373,9 @@ export function getWeeklyIjtemaAttendanceSummariesView(): IjtemaAttendanceKarkun
       weekLabel: attendance.weekLabel,
       status: attendance.status,
       remarks: attendance.remarks,
+      updatedAt: mark?.updatedAt ?? mark?.submittedAt,
+      updatedBy: mark?.updatedBy,
+      ruknId: mark?.ruknId,
     }
   })
 

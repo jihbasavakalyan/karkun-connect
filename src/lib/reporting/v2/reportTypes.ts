@@ -54,10 +54,15 @@ export const REPORT_TYPE_CATALOG: ReportTypeDefinition[] = [
     defaultScope: 'individual_karkun',
     defaultDetailLevel: 'standard',
   }),
-  def('weekly_ijtema', 'Weekly Ijtema Report', 'Ijtema attendance analytics.', {
-    defaultScope: 'overall_campaign',
-    defaultDetailLevel: 'standard',
-  }),
+  def(
+    'weekly_ijtema',
+    'Weekly Ijtema Attendance Report',
+    'Operational Weekly Ijtema attendance dossier via Composer + KC-033.',
+    {
+      defaultScope: 'overall_campaign',
+      defaultDetailLevel: 'standard',
+    },
+  ),
   def('visit_progress', 'Visit Progress Report', 'Personal visit progress (not Connection).', {
     defaultScope: 'overall_campaign',
     defaultDetailLevel: 'standard',
