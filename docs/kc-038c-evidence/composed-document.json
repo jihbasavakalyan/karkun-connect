@@ -1,0 +1,42 @@
+{
+  "reportType": "weekly_ijtema",
+  "cover": {
+    "reportTitle": "ہفتہ وار اجتماع کی جائزہ رپورٹ",
+    "campaignName": "فعال کارکن، فعال جماعت",
+    "campaignUrdu": "فعال کارکن، فعال جماعت",
+    "meetingDateGregorian": "3 اگست، 2026",
+    "meetingDateHijri": "—",
+    "reportingDate": "3 اگست، 2026",
+    "attendanceWindow": "کوئی فعال تقریب نہیں",
+    "generatedOn": "3 اگست، 2026 کو 02:55 AM",
+    "generatedBy": "KC-038C Evidence"
+  },
+  "executiveSummary": {
+    "totalConnectedKarkuns": 0,
+    "reminded": 0,
+    "present": 0,
+    "absent": 0,
+    "reportsSubmitted": 0,
+    "reportsPending": 0,
+    "attendancePct": 0
+  },
+  "executiveObservation": "اس ہفتے کے اجتماع کے لیے ابھی کوئی یاد دہانی یا شرکت درج نہیں — رپورٹ خالی حالت میں ہے۔",
+  "comparisonGraph": {
+    "reminded": 0,
+    "present": 0,
+    "attendancePct": 0
+  },
+  "reportSubmission": {
+    "submitted": [],
+    "pendingNames": []
+  },
+  "ruknDetailCount": 0,
+  "followUpCount": 0,
+  "futurePlaceholders": [
+    "ہفتہ وار حاضری کا رجحان",
+    "یاد دہانی کا رجحان",
+    "یاد دہانی بمقابلہ شرکت",
+    "ماہانہ موازنہ",
+    "مہم کی پیش رفت"
+  ]
+}

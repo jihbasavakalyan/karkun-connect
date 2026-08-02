@@ -1,60 +1,55 @@
 /**
- * KC-037C4 — Weekly Ijtema Attendance Report presentation model.
- * Assembles cover → executive summary → overview → Rukn performance → registers
- * → analytics → insights → recommendations → appendix from KC-033 providers
- * + CampaignReportModel. No alternate KPI math. No Firestore. No Composer changes.
- *
- * Product brief labeled this “KC-037C2”; repository id is KC-037C4
- * (KC-037C2 = Individual Rukn Performance Report).
+ * KC-038C — Weekly Ijtema Executive Urdu Report presentation model.
+ * Assembles executive summary, Rukn detail, follow-up, and submission sections
+ * from KC-033 providers. No alternate KPI math. No Firestore.
  */
 
 import { APP_VERSION } from '@/constants/app'
-import { ruknMaster } from '@/data/ruknMaster'
 import { getAllKarkuns } from '@/lib/peopleStore'
+import { listOpenWeeklyIjtemaEvents } from '@/services/weeklyIjtemaService'
+import { getWeeklyIjtemaSubmissionsForEvent } from '@/stores/weeklyIjtemaStore'
 import { getActiveAssignmentsForKarkun } from '@/stores/assignmentStore'
-import type { CampaignReportMetricPair, CampaignReportRuknRow } from './campaignReportModel'
+import { isWeeklyIjtemaMarkReminded } from '@/lib/operations/weeklyIjtemaInvitationAttendance'
 import type { ReportContext } from './v2/types'
 import { campaignModelFromContext } from './v2/sections/campaignModelAccess'
+import type { WeeklyIjtemaKarkunMark } from '@/types/weeklyIjtema'
 
 export const WEEKLY_IJTEMA_ATTENDANCE_SECTION_ID = 'weekly_ijtema_attendance' as const
-export const WEEKLY_IJTEMA_ATTENDANCE_MODEL_KIND = 'weekly_ijtema_attendance_report_v1' as const
-export const WEEKLY_IJTEMA_ATTENDANCE_REPORT_VERSION = 'KC-037C4'
+export const WEEKLY_IJTEMA_ATTENDANCE_MODEL_KIND = 'weekly_ijtema_executive_report_v1' as const
+export const WEEKLY_IJTEMA_ATTENDANCE_REPORT_VERSION = 'KC-038C'
 
-/** Operational excellence threshold for insights (presentation heuristic, not a KPI formula). */
-const ATTENDANCE_EXCELLENCE_PCT = 90
-/** Operational follow-up threshold (aligned with provider-insight severity bands). */
-const ATTENDANCE_TARGET_PCT = 70
+export type KarkunIjtemaDisposition = 'present' | 'absent' | 'reminded' | 'pending'
 
-export type WeeklyIjtemaAttendanceStatusLabel = 'Present' | 'Absent' | 'Pending'
+export type WeeklyIjtemaKarkunDetailRow = {
+  karkunId: string
+  karkunName: string
+  disposition: KarkunIjtemaDisposition
+  statusLabel: string
+}
 
-export type WeeklyIjtemaRuknPerformanceRow = {
-  rank: number
+export type WeeklyIjtemaRuknDetailSection = {
   ruknId: string
   ruknName: string
   connected: number
+  reminded: number
   present: number
   absent: number
-  pending: number
   attendancePct: number
-  highlight: 'top5' | 'bottom5' | null
+  karkuns: WeeklyIjtemaKarkunDetailRow[]
 }
 
-export type WeeklyIjtemaRegisterRow = {
-  karkunId: string
-  karkunName: string
-  ruknId: string
+export type WeeklyIjtemaReportSubmissionRow = {
   ruknName: string
-  attendance: WeeklyIjtemaAttendanceStatusLabel
-  markedBy: string
-  submissionTime: string
+  connected: number
+  reminded: number
+  present: number
+  absent: number
 }
 
-export type WeeklyIjtemaAbsentRow = {
-  karkunId: string
-  karkunName: string
+export type WeeklyIjtemaFollowUpGroup = {
   ruknName: string
-  assignedRuknName: string
-  followUpRequired: string
+  remindedOnly: string[]
+  absent: string[]
 }
 
 export type WeeklyIjtemaAttendanceReportModel = {
@@ -65,6 +60,8 @@ export type WeeklyIjtemaAttendanceReportModel = {
     reportTitle: string
     campaignName: string
     campaignUrdu: string
+    meetingDateGregorian: string
+    meetingDateHijri: string
     reportingDate: string
     attendanceWindow: string
     generatedOn: string
@@ -72,51 +69,27 @@ export type WeeklyIjtemaAttendanceReportModel = {
   }
   executiveSummary: {
     totalConnectedKarkuns: number
+    reminded: number
     present: number
     absent: number
-    pending: number
-    overallAttendancePct: number
-    maleAttendancePct: number
-    femaleAttendancePct: number
-    narrative: string
-  }
-  attendanceOverview: {
-    present: number
-    absent: number
-    pending: number
+    reportsSubmitted: number
+    reportsPending: number
     attendancePct: number
   }
-  ruknPerformance: WeeklyIjtemaRuknPerformanceRow[]
-  attendanceRegister: WeeklyIjtemaRegisterRow[]
-  absentRegister: WeeklyIjtemaAbsentRow[]
-  analytics: {
-    bestPerformingRukn: string
-    lowestPerformingRukn: string
-    highestAttendancePct: number
-    lowestAttendancePct: number
-    overallAttendancePct: number
-    maleAttendancePct: number
-    femaleAttendancePct: number
-    maleFemaleComparison: string
+  executiveObservation: string
+  comparisonGraph: {
+    reminded: number
+    present: number
+    attendancePct: number
   }
-  operationalInsights: string[]
-  operationalRecommendations: string[]
+  reportSubmission: {
+    submitted: WeeklyIjtemaReportSubmissionRow[]
+    pendingNames: string[]
+  }
+  ruknDetails: WeeklyIjtemaRuknDetailSection[]
+  followUp: WeeklyIjtemaFollowUpGroup[]
+  futureAnalyticsPlaceholders: string[]
   appendix: {
-    attendanceByRukn: Array<{
-      ruknName: string
-      connected: number
-      present: number
-      absent: number
-      pending: number
-      attendancePct: number
-    }>
-    overallTotals: {
-      connected: number
-      present: number
-      absent: number
-      pending: number
-      attendancePct: number
-    }
     definitions: string[]
     generatedTimestamp: string
     reportVersion: string
@@ -136,227 +109,126 @@ function pctOf(completed: number, total: number): number {
   return Math.round((completed / total) * 100)
 }
 
-function sumPair(rows: CampaignReportRuknRow[], key: 'weeklyIjtema'): CampaignReportMetricPair {
-  let completed = 0
-  let total = 0
-  let pending = 0
-  for (const row of rows) {
-    const m = row[key]
-    completed += m.completed
-    total += m.total
-    pending += m.pending
-  }
-  return {
-    completed,
-    total,
-    pending,
-    pct: pctOf(completed, total),
-  }
-}
-
-function formatSubmissionTime(iso: string | undefined, language: 'ur' | 'en'): string {
+function formatGregorianDate(iso: string | null | undefined, language: 'ur' | 'en'): string {
   if (!iso?.trim()) return dash(language)
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return iso
-  return d.toLocaleString(language === 'ur' ? 'ur-PK' : 'en-GB', {
+  return d.toLocaleDateString(language === 'ur' ? 'ur-PK' : 'en-GB', {
+    weekday: 'long',
     day: 'numeric',
-    month: 'short',
+    month: 'long',
     year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
   })
 }
 
-function statusLabel(status: string): WeeklyIjtemaAttendanceStatusLabel {
-  if (status === 'Present') return 'Present'
-  if (status === 'Absent') return 'Absent'
-  return 'Pending'
+function formatHijriDate(iso: string | null | undefined, language: 'ur' | 'en'): string {
+  if (!iso?.trim()) return dash(language)
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return dash(language)
+  try {
+    return new Intl.DateTimeFormat(language === 'ur' ? 'ur-PK-u-ca-islamic' : 'en-u-ca-islamic', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    }).format(d)
+  } catch {
+    return dash(language)
+  }
 }
 
-function buildNarrative(
+function buildMarkIndex(): Map<string, WeeklyIjtemaKarkunMark> {
+  const index = new Map<string, WeeklyIjtemaKarkunMark>()
+  const events = listOpenWeeklyIjtemaEvents()
+  for (const event of events) {
+    for (const submission of getWeeklyIjtemaSubmissionsForEvent(event.id)) {
+      for (const mark of submission.marks) {
+        if (!index.has(mark.karkunId)) {
+          index.set(mark.karkunId, mark)
+        }
+      }
+    }
+  }
+  return index
+}
+
+function resolveDisposition(
+  mark: WeeklyIjtemaKarkunMark | undefined,
+  summaryStatus: string,
+): KarkunIjtemaDisposition {
+  if (summaryStatus === 'Present') return 'present'
+  if (summaryStatus === 'Absent') return 'absent'
+  if (mark && isWeeklyIjtemaMarkReminded(mark) && !mark.status) return 'reminded'
+  if (mark?.reminded === true) return 'reminded'
+  return 'pending'
+}
+
+function statusLabelForDisposition(
+  disposition: KarkunIjtemaDisposition,
   language: 'ur' | 'en',
-  overallPct: number,
-  present: number,
-  absent: number,
-  pending: number,
-  connected: number,
 ): string {
-  if (language === 'ur') {
-    if (connected === 0 && present + absent + pending === 0) {
-      return 'اس ہفتے کے لیے اجتماع کی حاضری کا ڈیٹا دستیاب نہیں — رپورٹ خالی حالت میں ہے۔'
-    }
-    if (overallPct >= ATTENDANCE_EXCELLENCE_PCT) {
-      return `مجموعی حاضری ${overallPct}٪ ہے — حاضر ${present}، غیر حاضر ${absent}، زیر التواء ${pending}۔ کارکردگی بہترین سطح پر ہے۔`
-    }
-    if (overallPct >= ATTENDANCE_TARGET_PCT) {
-      return `مجموعی حاضری ${overallPct}٪ ہے — حاضر ${present}، غیر حاضر ${absent}، زیر التواء ${pending}۔ آپریشنل ہدف کے قریب؛ فالو اپ جاری رکھیں۔`
-    }
-    return `مجموعی حاضری ${overallPct}٪ ہے — حاضر ${present}، غیر حاضر ${absent}، زیر التواء ${pending}۔ فوری آپریشنل فالو اپ درکار ہے۔`
-  }
-  if (connected === 0 && present + absent + pending === 0) {
-    return 'No Weekly Ijtema attendance data is available for this reporting window — empty state.'
-  }
-  if (overallPct >= ATTENDANCE_EXCELLENCE_PCT) {
-    return `Overall attendance is ${overallPct}% — Present ${present}, Absent ${absent}, Pending ${pending}. Performance is at excellence level.`
-  }
-  if (overallPct >= ATTENDANCE_TARGET_PCT) {
-    return `Overall attendance is ${overallPct}% — Present ${present}, Absent ${absent}, Pending ${pending}. Near operational target; continue follow-up.`
-  }
-  return `Overall attendance is ${overallPct}% — Present ${present}, Absent ${absent}, Pending ${pending}. Immediate operational follow-up is required.`
+  const ur =
+    disposition === 'present'
+      ? 'اجتماع میں شریک ہوئے'
+      : disposition === 'absent'
+        ? 'اجتماع میں شریک نہ ہوسکے'
+        : disposition === 'reminded'
+          ? 'یاد دہانی کی گئی'
+          : 'ابھی رابطہ باقی'
+  const en =
+    disposition === 'present'
+      ? 'Attended'
+      : disposition === 'absent'
+        ? 'Could not attend'
+        : disposition === 'reminded'
+          ? 'Reminded'
+          : 'Not yet contacted'
+  return language === 'ur' ? ur : en
 }
 
-function buildInsights(input: {
+function buildExecutiveObservation(input: {
   language: 'ur' | 'en'
-  overallPct: number
+  reminded: number
+  present: number
   absent: number
-  pending: number
-  lowRuknCount: number
-  malePct: number
-  femalePct: number
-  hasEvent: boolean
-}): string[] {
-  const { language: lang, overallPct, absent, pending, lowRuknCount, malePct, femalePct, hasEvent } =
+  attendancePct: number
+  reportsPending: number
+  followUpCount: number
+}): string {
+  const { language, reminded, present, absent, attendancePct, reportsPending, followUpCount } =
     input
-  const lines: string[] = []
-  const ur = lang === 'ur'
-
-  if (!hasEvent) {
-    lines.push(
-      ur
-        ? 'فعال ہفتہ وار اجتماع کی تقریب نہیں ملی — حاضری کا سنیپ شاٹ دستیاب نہیں۔'
-        : 'No active Weekly Ijtema event — attendance snapshot unavailable.',
-    )
-    return lines
+  if (language === 'ur') {
+    if (reminded === 0 && present === 0 && absent === 0) {
+      return 'اس ہفتے کے اجتماع کے لیے ابھی کوئی یاد دہانی یا شرکت درج نہیں — رپورٹ خالی حالت میں ہے۔'
+    }
+    if (attendancePct >= 85 && absent === 0) {
+      return `یاد دہانی اور شرکت دونوں مضبوط رہیں — ${present} کارکن اجتماع میں شریک ہوئے۔ موجودہ رفتار برقرار رکھیے۔`
+    }
+    if (absent > 0 || followUpCount > 0) {
+      return `یاد دہانی کی کوششیں ${reminded > 0 ? 'جاری رہیں' : 'شروع ہونا باقی ہیں'}، تاہم ${absent > 0 ? `${absent} کارکن اجتماع میں شریک نہ ہوسکے` : 'کچھ کارکنوں کی شرکت درج نہیں'}۔ آئندہ اجتماع سے قبل ان کارکنان سے دوبارہ رابطہ ضروری ہے۔`
+    }
+    if (reportsPending > 0) {
+      return `${reportsPending} ارکان کی رپورٹ ابھی جمع نہیں — قیادت فوری طور پر ان ارکان سے رابطہ کرے۔`
+    }
+    return `شرکت کی شرح ${attendancePct}٪ ہے — ${present} کارکن اجتماع میں شریک ہوئے۔`
   }
 
-  if (overallPct >= ATTENDANCE_EXCELLENCE_PCT) {
-    lines.push(
-      ur
-        ? `حاضری ${ATTENDANCE_EXCELLENCE_PCT}٪ سے تجاوز کر گئی۔`
-        : `Attendance exceeded ${ATTENDANCE_EXCELLENCE_PCT}%.`,
-    )
-  } else if (overallPct < ATTENDANCE_TARGET_PCT) {
-    lines.push(
-      ur
-        ? 'حاضری مہم کے آپریشنل ہدف سے کم ہے۔'
-        : 'Attendance below campaign operational target.',
-    )
+  if (reminded === 0 && present === 0 && absent === 0) {
+    return 'No reminders or attendance recorded for this Weekly Ijtema yet.'
   }
-
-  if (lowRuknCount > 0) {
-    lines.push(
-      ur
-        ? `${lowRuknCount} ارکان کو فوری فالو اپ درکار ہے۔`
-        : `${lowRuknCount} Rukn${lowRuknCount === 1 ? '' : 's'} require immediate follow-up.`,
-    )
+  if (attendancePct >= 85 && absent === 0) {
+    return `Reminders and attendance are strong — ${present} Karkuns attended. Maintain this pace.`
   }
-
-  if (femalePct > malePct && (malePct > 0 || femalePct > 0)) {
-    lines.push(
-      ur
-        ? 'خواتین کی حاضری مردوں کی حاضری سے زیادہ ہے۔'
-        : 'Female attendance exceeded Male attendance.',
-    )
-  } else if (malePct > femalePct && (malePct > 0 || femalePct > 0)) {
-    lines.push(
-      ur
-        ? 'مردوں کی حاضری خواتین کی حاضری سے زیادہ ہے۔'
-        : 'Male attendance exceeded Female attendance.',
-    )
+  if (absent > 0 || followUpCount > 0) {
+    return `Reminder efforts continued, but ${absent > 0 ? `${absent} Karkuns could not attend` : 'some Karkuns still need attendance marks'}. Follow up before the next Weekly Ijtema.`
   }
-
-  if (absent > 0) {
-    lines.push(
-      ur
-        ? `${absent} کارکنان غیر حاضر — فالو اپ فہرست تیار ہے۔`
-        : `${absent} Karkuns absent — follow-up register is ready.`,
-    )
+  if (reportsPending > 0) {
+    return `${reportsPending} Rukns have not submitted their report — leadership should follow up promptly.`
   }
-
-  if (pending > 0) {
-    lines.push(
-      ur
-        ? `${pending} حاضری اندراجات زیر التواء ہیں۔`
-        : `${pending} attendance submissions remain pending.`,
-    )
-  }
-
-  lines.push(
-    ur
-      ? 'گزشتہ ہفتے سے موازنہ: سنیپ شاٹ فقط (تاریخی ڈیٹا دستیاب نہیں)۔'
-      : 'Week-over-week comparison: snapshot only (historical series not available).',
-  )
-
-  return lines.slice(0, 8)
-}
-
-function buildRecommendations(input: {
-  language: 'ur' | 'en'
-  overallPct: number
-  absent: number
-  pending: number
-  lowRuknNames: string[]
-  hasEvent: boolean
-}): string[] {
-  const { language: lang, overallPct, absent, pending, lowRuknNames, hasEvent } = input
-  const ur = lang === 'ur'
-  const lines: string[] = []
-
-  if (!hasEvent) {
-    lines.push(
-      ur
-        ? 'ہفتہ وار اجتماع کی تقریب کھولیں تاکہ حاضری ریکارڈ ہو سکے۔'
-        : 'Open a Weekly Ijtema event so attendance can be recorded.',
-    )
-    return lines
-  }
-
-  if (absent > 0) {
-    lines.push(
-      ur
-        ? 'تمام غیر حاضر کارکنان سے 24 گھنٹوں کے اندر رابطہ کیجیے۔'
-        : 'Follow up with all absent Karkuns within 24 hours.',
-    )
-  }
-
-  if (lowRuknNames.length > 0) {
-    const names = lowRuknNames.slice(0, 3).join(ur ? '، ' : ', ')
-    lines.push(
-      ur
-        ? `ان ارکان سے رابطہ کیجیے جن کی حاضری ہدف سے کم ہے: ${names}۔`
-        : `Contact Rukns with attendance below campaign target: ${names}.`,
-    )
-  }
-
-  if (pending > 0) {
-    lines.push(
-      ur
-        ? 'زیر التواء حاضری اندراجات کا جائزہ لے کر مکمل کیجیے۔'
-        : 'Review pending attendance submissions and close them.',
-    )
-  }
-
-  if (overallPct < ATTENDANCE_TARGET_PCT) {
-    lines.push(
-      ur
-        ? 'اگلے ہفتہ وار اجتماع سے پہلے دعوتیں مکمل کرنے کی تاکید کیجیے۔'
-        : 'Encourage invitation completion before the next Weekly Ijtema.',
-    )
-  }
-
-  if (lines.length === 0) {
-    lines.push(
-      ur
-        ? 'حاضری مضبوط ہے — موجودہ آپریشنل رفتار برقرار رکھیے۔'
-        : 'Attendance is strong — maintain current operational pace.',
-    )
-  }
-
-  return lines.slice(0, 6)
+  return `Attendance rate is ${attendancePct}% — ${present} Karkuns attended.`
 }
 
 /**
- * Build Weekly Ijtema Attendance presentation model from Composer context.
+ * Build Weekly Ijtema Executive presentation model from Composer context.
  */
 export function buildWeeklyIjtemaAttendanceReportModel(
   ctx: ReportContext,
@@ -369,138 +241,95 @@ export function buildWeeklyIjtemaAttendanceReportModel(
   const ruknRows = p.weeklyIjtema.getActiveRuknRows()
   const summaries = p.weeklyIjtema.getSummariesView()
   const connections = p.connections.get()
+  const markIndex = buildMarkIndex()
 
   const present = health.current ?? kpi.present
-  const totalAssigned = health.total ?? kpi.totalAssigned
+  const reminded = kpi.remindedTotal ?? kpi.reminded ?? 0
   const absent = kpi.absent
-  const pending = Math.max(0, totalAssigned - present - absent)
-  const overallPct = health.pct ?? pctOf(present, totalAssigned)
+  const overallPct = health.pct ?? pctOf(present, reminded)
+  const reportsSubmitted = kpi.ruknsSubmitted ?? 0
+  const reportsPending = kpi.ruknsPending ?? 0
   const hasEvent = Boolean(kpi.eventId)
 
-  const malePair = sumPair(campaign.maleRukns, 'weeklyIjtema')
-  const femalePair = sumPair(campaign.femaleRukns, 'weeklyIjtema')
-  const malePct = malePair.pct
-  const femalePct = femalePair.pct
-
-  const ruknNameById = new Map(ruknMaster.map((r) => [r.id, r.name]))
   const peopleById = new Map(getAllKarkuns().map((k) => [k.id, k]))
-
-  // Rank by attendance % (highest → lowest); tie-break by present then name.
-  const rankedSource = [...ruknRows].sort((a, b) => {
-    if (b.attendancePct !== a.attendancePct) return b.attendancePct - a.attendancePct
-    if (b.present !== a.present) return b.present - a.present
-    return a.ruknName.localeCompare(b.ruknName)
-  })
-
-  const ranked: WeeklyIjtemaRuknPerformanceRow[] = rankedSource.map((row, index) => {
-    const pendingRow = Math.max(0, row.assigned - row.present - row.absent)
-    const campaignRow = campaign.allRukns.find((r) => r.ruknId === row.ruknId)
-    return {
-      rank: index + 1,
-      ruknId: row.ruknId,
-      ruknName: row.ruknName,
-      connected: campaignRow?.connections.completed ?? row.assigned,
-      present: row.present,
-      absent: row.absent,
-      pending: pendingRow,
-      attendancePct: row.attendancePct,
-      highlight: null,
-    }
-  })
-
-  const withAssigned = ranked.filter((r) => r.present + r.absent + r.pending > 0)
-  const topIds = new Set(withAssigned.slice(0, 5).map((r) => r.ruknId))
-  const bottomIds = new Set(withAssigned.slice(-5).map((r) => r.ruknId))
-  for (const row of ranked) {
-    if (topIds.has(row.ruknId) && bottomIds.has(row.ruknId) && withAssigned.length <= 5) {
-      row.highlight = 'top5'
-    } else if (topIds.has(row.ruknId)) {
-      row.highlight = 'top5'
-    } else if (bottomIds.has(row.ruknId)) {
-      row.highlight = 'bottom5'
-    }
-  }
-
   const assignedRuknIds = new Set(ruknRows.map((r) => r.ruknId))
-  const registerRows: WeeklyIjtemaRegisterRow[] = []
+
+  const karkunsByRukn = new Map<string, WeeklyIjtemaKarkunDetailRow[]>()
 
   for (const summary of summaries) {
     const assignment = getActiveAssignmentsForKarkun(summary.karkunId)[0]
     const assignedRuknId = assignment?.ruknId?.trim() || summary.ruknId || ''
     if (assignedRuknIds.size > 0 && assignedRuknId && !assignedRuknIds.has(assignedRuknId)) {
-      // Limit register to karkuns under Rukns in the active WI report set.
       continue
     }
     if (assignedRuknIds.size > 0 && !assignedRuknId) continue
 
+    const mark = markIndex.get(summary.karkunId)
+    const disposition = resolveDisposition(mark, summary.status)
     const person = peopleById.get(summary.karkunId)
-    const markRuknId = summary.ruknId || assignedRuknId
-    const ruknName =
-      ruknNameById.get(markRuknId) ||
-      person?.assignedRukn ||
-      dash(language)
-    const attendance = statusLabel(summary.status)
-    const markedBy =
-      attendance === 'Pending'
-        ? dash(language)
-        : summary.updatedBy?.trim() ||
-          ruknNameById.get(summary.ruknId ?? '') ||
-          ruknName
-    const submissionTime =
-      attendance === 'Pending'
-        ? dash(language)
-        : formatSubmissionTime(summary.updatedAt, language)
-
-    registerRows.push({
+    const row: WeeklyIjtemaKarkunDetailRow = {
       karkunId: summary.karkunId,
       karkunName: summary.karkunName || person?.name || summary.karkunId,
-      ruknId: markRuknId || assignedRuknId,
-      ruknName,
-      attendance,
-      markedBy,
-      submissionTime,
-    })
+      disposition,
+      statusLabel: statusLabelForDisposition(disposition, language),
+    }
+
+    const bucket = assignedRuknId || summary.ruknId || 'unassigned'
+    const list = karkunsByRukn.get(bucket) ?? []
+    list.push(row)
+    karkunsByRukn.set(bucket, list)
   }
 
-  // Group by Rukn name for register readability.
-  registerRows.sort((a, b) => {
-    const byRukn = a.ruknName.localeCompare(b.ruknName)
-    if (byRukn !== 0) return byRukn
-    return a.karkunName.localeCompare(b.karkunName)
-  })
+  for (const [, list] of karkunsByRukn) {
+    list.sort((a, b) => a.karkunName.localeCompare(b.karkunName))
+  }
 
-  const absentRegister: WeeklyIjtemaAbsentRow[] = registerRows
-    .filter((r) => r.attendance === 'Absent')
-    .map((r) => {
-      const assignment = getActiveAssignmentsForKarkun(r.karkunId)[0]
-      const assignedName =
-        ruknNameById.get(assignment?.ruknId ?? '') ||
-        peopleById.get(r.karkunId)?.assignedRukn ||
-        r.ruknName
-      return {
-        karkunId: r.karkunId,
-        karkunName: r.karkunName,
-        ruknName: r.ruknName,
-        assignedRuknName: assignedName,
-        followUpRequired: language === 'ur' ? 'ہاں — 24 گھنٹے' : 'Yes — within 24h',
-      }
-    })
+  const ruknDetails: WeeklyIjtemaRuknDetailSection[] = ruknRows
+    .map((row) => ({
+      ruknId: row.ruknId,
+      ruknName: row.ruknName,
+      connected: row.assigned,
+      reminded: row.remindedTotal,
+      present: row.present,
+      absent: row.absent,
+      attendancePct: row.attendancePct,
+      karkuns: karkunsByRukn.get(row.ruknId) ?? [],
+    }))
+    .sort((a, b) => a.ruknName.localeCompare(b.ruknName))
 
-  const scored = ranked.filter((r) => r.present + r.absent + r.pending > 0)
-  const best = scored[0]
-  const worst = scored[scored.length - 1]
-  const lowRukns = scored.filter((r) => r.attendancePct < ATTENDANCE_TARGET_PCT)
-  const lowRuknNames = lowRukns.map((r) => r.ruknName)
+  const submitted: WeeklyIjtemaReportSubmissionRow[] = ruknRows
+    .filter((row) => row.submitted)
+    .map((row) => ({
+      ruknName: row.ruknName,
+      connected: row.assigned,
+      reminded: row.remindedTotal,
+      present: row.present,
+      absent: row.absent,
+    }))
+    .sort((a, b) => a.ruknName.localeCompare(b.ruknName))
 
-  const maleFemaleComparison =
-    language === 'ur'
-      ? `مرد ${malePct}٪ · خواتین ${femalePct}٪`
-      : `Male ${malePct}% · Female ${femalePct}%`
+  const pendingNames = ruknRows
+    .filter((row) => !row.submitted)
+    .map((row) => row.ruknName)
+    .sort((a, b) => a.localeCompare(b))
 
-  const reportingDate =
-    kpi.meetingDate ||
-    campaign.cover.generatedDate ||
-    new Date().toISOString().slice(0, 10)
+  const followUp: WeeklyIjtemaFollowUpGroup[] = ruknDetails
+    .map((section) => ({
+      ruknName: section.ruknName,
+      remindedOnly: section.karkuns
+        .filter((k) => k.disposition === 'reminded')
+        .map((k) => k.karkunName),
+      absent: section.karkuns.filter((k) => k.disposition === 'absent').map((k) => k.karkunName),
+    }))
+    .filter((group) => group.remindedOnly.length > 0 || group.absent.length > 0)
+
+  const followUpCount = followUp.reduce(
+    (sum, group) => sum + group.remindedOnly.length + group.absent.length,
+    0,
+  )
+
+  const meetingIso = kpi.meetingDate || campaign.cover.generatedDate
+  const reportingDate = meetingIso || new Date().toISOString().slice(0, 10)
   const attendanceWindow = hasEvent
     ? `${kpi.title ?? 'Weekly Ijtema'} · ${kpi.meetingDate ?? '—'} · ${kpi.eventStatus ?? '—'}`
     : language === 'ur'
@@ -508,54 +337,50 @@ export function buildWeeklyIjtemaAttendanceReportModel(
       : 'No active event'
 
   const reportTitle =
-    language === 'ur' ? 'ہفتہ وار اجتماع حاضری رپورٹ' : 'Weekly Ijtema Attendance Report'
+    language === 'ur' ? 'ہفتہ وار اجتماع کی جائزہ رپورٹ' : 'Weekly Ijtema Executive Review Report'
 
-  const narrative = buildNarrative(
+  const executiveObservation = buildExecutiveObservation({
     language,
-    overallPct,
+    reminded,
     present,
     absent,
-    pending,
-    connections.connected,
-  )
-
-  const insights = buildInsights({
-    language,
-    overallPct,
-    absent,
-    pending,
-    lowRuknCount: lowRukns.length,
-    malePct,
-    femalePct,
-    hasEvent,
-  })
-
-  const recommendations = buildRecommendations({
-    language,
-    overallPct,
-    absent,
-    pending,
-    lowRuknNames,
-    hasEvent,
+    attendancePct: overallPct,
+    reportsPending,
+    followUpCount,
   })
 
   const definitions =
     language === 'ur'
       ? [
-          'یاد دہانی — اس ہفتے کے اجتماع کی یاد دہانی؛ حاضری ابھی درج نہیں۔',
-          'حاضر — اجتماع میں شرکت درج ہے (یاد دہانی خودکار)۔',
-          'غیر حاضر — اجتماع میں غیر حاضری درج ہے (یاد دہانی خودکار)۔',
-          'زیر التواء — نہ یاد دہانی، نہ حاضری۔',
-          'یاد دہانی ٪ — یاد دہانی کل ÷ منسلک۔',
-          'حاضری ٪ — حاضر ÷ یاد دہانی کل (KC-033 / KC-037C2D)۔',
+          'یاد دہانی — اس ہفتے کے اجتماع کے لیے رکن نے کارکن سے رابطہ کیا۔',
+          'اجتماع میں شریک — حاضری درج ہے۔',
+          'اجتماع میں شریک نہ ہوسکے — غیر حاضری درج ہے۔',
+          'شرکت کی شرح — شرکت ÷ یاد دہانی (کل)۔',
+          'رپورٹ جمع — رکن نے اس ہفتے کی رپورٹ جمع کر دی۔',
         ]
       : [
-          'Reminded — contacted for this week’s Weekly Ijtema; attendance not yet Present/Absent.',
-          'Present — marked present (auto-marks Reminded).',
-          'Absent — marked absent (auto-marks Reminded).',
-          'Pending — not reminded and no attendance mark.',
-          'Reminder % — RemindedTotal ÷ Connected.',
-          'Attendance % — Present ÷ RemindedTotal (KC-033 / KC-037C2D).',
+          'Reminded — Rukn contacted the Karkun for this week’s Ijtema.',
+          'Attended — present mark recorded.',
+          'Could not attend — absent mark recorded.',
+          'Attendance rate — Present ÷ Reminded (total).',
+          'Report submitted — Rukn submitted this week’s report.',
+        ]
+
+  const futureAnalyticsPlaceholders =
+    language === 'ur'
+      ? [
+          'ہفتہ وار حاضری کا رجحان',
+          'یاد دہانی کا رجحان',
+          'یاد دہانی بمقابلہ شرکت',
+          'ماہانہ موازنہ',
+          'مہم کی پیش رفت',
+        ]
+      : [
+          'Weekly Attendance Trend',
+          'Reminder Trend',
+          'Reminder vs Attendance Trend',
+          'Monthly Comparison',
+          'Campaign Progress Trend',
         ]
 
   return {
@@ -566,6 +391,8 @@ export function buildWeeklyIjtemaAttendanceReportModel(
       reportTitle,
       campaignName: campaign.cover.campaignName,
       campaignUrdu: 'فعال کارکن، فعال جماعت',
+      meetingDateGregorian: formatGregorianDate(meetingIso, language),
+      meetingDateHijri: formatHijriDate(meetingIso, language),
       reportingDate,
       attendanceWindow,
       generatedOn: campaign.cover.generatedOn,
@@ -573,51 +400,27 @@ export function buildWeeklyIjtemaAttendanceReportModel(
     },
     executiveSummary: {
       totalConnectedKarkuns: connections.connected,
+      reminded,
       present,
       absent,
-      pending,
-      overallAttendancePct: overallPct,
-      maleAttendancePct: malePct,
-      femaleAttendancePct: femalePct,
-      narrative,
-    },
-    attendanceOverview: {
-      present,
-      absent,
-      pending,
+      reportsSubmitted,
+      reportsPending,
       attendancePct: overallPct,
     },
-    ruknPerformance: ranked,
-    attendanceRegister: registerRows,
-    absentRegister,
-    analytics: {
-      bestPerformingRukn: best?.ruknName ?? dash(language),
-      lowestPerformingRukn: worst?.ruknName ?? dash(language),
-      highestAttendancePct: best?.attendancePct ?? 0,
-      lowestAttendancePct: worst?.attendancePct ?? 0,
-      overallAttendancePct: overallPct,
-      maleAttendancePct: malePct,
-      femaleAttendancePct: femalePct,
-      maleFemaleComparison,
+    executiveObservation,
+    comparisonGraph: {
+      reminded,
+      present,
+      attendancePct: overallPct,
     },
-    operationalInsights: insights,
-    operationalRecommendations: recommendations,
+    reportSubmission: {
+      submitted,
+      pendingNames,
+    },
+    ruknDetails,
+    followUp,
+    futureAnalyticsPlaceholders,
     appendix: {
-      attendanceByRukn: ranked.map((r) => ({
-        ruknName: r.ruknName,
-        connected: r.connected,
-        present: r.present,
-        absent: r.absent,
-        pending: r.pending,
-        attendancePct: r.attendancePct,
-      })),
-      overallTotals: {
-        connected: connections.connected,
-        present,
-        absent,
-        pending,
-        attendancePct: overallPct,
-      },
       definitions,
       generatedTimestamp: `${campaign.cover.generatedDate} ${campaign.cover.generatedTime}`,
       reportVersion: WEEKLY_IJTEMA_ATTENDANCE_REPORT_VERSION,
@@ -638,3 +441,39 @@ export function isWeeklyIjtemaAttendanceReportModel(
     (value as WeeklyIjtemaAttendanceReportModel).kind === WEEKLY_IJTEMA_ATTENDANCE_MODEL_KIND
   )
 }
+
+/** @deprecated KC-038C — ranking removed; kept for legacy test imports. */
+export type WeeklyIjtemaRuknPerformanceRow = {
+  rank: number
+  ruknId: string
+  ruknName: string
+  connected: number
+  present: number
+  absent: number
+  pending: number
+  attendancePct: number
+  highlight: null
+}
+
+/** @deprecated KC-038C */
+export type WeeklyIjtemaRegisterRow = {
+  karkunId: string
+  karkunName: string
+  ruknId: string
+  ruknName: string
+  attendance: string
+  markedBy: string
+  submissionTime: string
+}
+
+/** @deprecated KC-038C */
+export type WeeklyIjtemaAbsentRow = {
+  karkunId: string
+  karkunName: string
+  ruknName: string
+  assignedRuknName: string
+  followUpRequired: string
+}
+
+/** @deprecated KC-038C */
+export type WeeklyIjtemaAttendanceStatusLabel = 'Present' | 'Absent' | 'Pending'

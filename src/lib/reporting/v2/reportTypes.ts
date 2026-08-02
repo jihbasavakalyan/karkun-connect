@@ -56,8 +56,8 @@ export const REPORT_TYPE_CATALOG: ReportTypeDefinition[] = [
   }),
   def(
     'weekly_ijtema',
-    'Weekly Ijtema Attendance Report',
-    'Operational Weekly Ijtema attendance dossier via Composer + KC-033.',
+    'Weekly Ijtema Executive Report',
+    'Urdu executive Weekly Ijtema review for Arkaan — Composer + KC-033.',
     {
       defaultScope: 'overall_campaign',
       defaultDetailLevel: 'standard',

@@ -38,22 +38,22 @@ export function ReportDashboardView({ document, onClose }: ReportDashboardViewPr
             ? ((data as { items: Array<{ title: string; detail: string; severity: string }> }).items)
             : null
 
-          // KC-037C4 — Weekly Ijtema Attendance dossier preview cards
-          const wiExec = (data as { executiveSummary?: {
-            totalConnectedKarkuns: number
-            present: number
-            absent: number
-            pending: number
-            overallAttendancePct: number
-            narrative: string
-          } }).executiveSummary
-          const wiInsights = Array.isArray((data as { operationalInsights?: string[] }).operationalInsights)
-            ? (data as { operationalInsights: string[] }).operationalInsights
-            : null
-          const wiRecs = Array.isArray(
-            (data as { operationalRecommendations?: string[] }).operationalRecommendations,
-          )
-            ? (data as { operationalRecommendations: string[] }).operationalRecommendations
+          // KC-038C — Weekly Ijtema Executive dossier preview cards
+          const wiExec = (data as {
+            executiveSummary?: {
+              totalConnectedKarkuns: number
+              reminded: number
+              present: number
+              absent: number
+              reportsSubmitted: number
+              reportsPending: number
+              attendancePct: number
+            }
+            executiveObservation?: string
+          }).executiveSummary
+          const wiObservation = (data as { executiveObservation?: string }).executiveObservation
+          const wiFollowUp = Array.isArray((data as { followUp?: unknown[] }).followUp)
+            ? (data as { followUp: Array<{ ruknName: string }> }).followUp
             : null
 
           return (
@@ -62,14 +62,18 @@ export function ReportDashboardView({ document, onClose }: ReportDashboardViewPr
               <p className="text-xs text-secondary">{section.definition.description}</p>
               {wiExec ? (
                 <div className="mt-3 space-y-3">
-                  <p className="text-sm text-primary">{wiExec.narrative}</p>
+                  {wiObservation ? (
+                    <p className="text-sm text-primary">{wiObservation}</p>
+                  ) : null}
                   <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                     {[
                       { title: 'Connected', value: wiExec.totalConnectedKarkuns },
+                      { title: 'Reminded', value: wiExec.reminded },
                       { title: 'Present', value: wiExec.present },
                       { title: 'Absent', value: wiExec.absent },
-                      { title: 'Pending', value: wiExec.pending },
-                      { title: 'Attendance %', value: `${wiExec.overallAttendancePct}%` },
+                      { title: 'Reports Submitted', value: wiExec.reportsSubmitted },
+                      { title: 'Reports Pending', value: wiExec.reportsPending },
+                      { title: 'Attendance %', value: `${wiExec.attendancePct}%` },
                     ].map((c) => (
                       <div key={c.title} className="rounded-md bg-muted/30 px-3 py-2">
                         <p className="text-xs text-secondary">{c.title}</p>
@@ -77,23 +81,11 @@ export function ReportDashboardView({ document, onClose }: ReportDashboardViewPr
                       </div>
                     ))}
                   </div>
-                  {wiInsights && wiInsights.length > 0 ? (
-                    <ul className="space-y-1 text-sm">
-                      {wiInsights.slice(0, 5).map((line, idx) => (
-                        <li key={`wi-i-${idx}`} className="text-secondary">
-                          {line}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : null}
-                  {wiRecs && wiRecs.length > 0 ? (
-                    <ul className="space-y-1 text-sm">
-                      {wiRecs.slice(0, 4).map((line, idx) => (
-                        <li key={`wi-r-${idx}`} className="text-primary">
-                          {line}
-                        </li>
-                      ))}
-                    </ul>
+                  {wiFollowUp && wiFollowUp.length > 0 ? (
+                    <p className="text-sm text-secondary">
+                      Follow-up groups: {wiFollowUp.length} Rukn
+                      {wiFollowUp.length === 1 ? '' : 's'}
+                    </p>
                   ) : null}
                 </div>
               ) : null}

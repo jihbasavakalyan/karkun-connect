@@ -97,6 +97,7 @@
     "verify:kc-037c2g": "npx vite-node scripts/verify-kc-037c2g-dedupe-canonical.ts",
     "verify:kc-037c3": "npx vite-node scripts/verify-kc-037c3-individual-karkun-report.ts",
     "verify:kc-037c4": "npx vite-node scripts/verify-kc-037c4-weekly-ijtema-attendance-report.ts",
+    "verify:kc-038c": "npx vite-node scripts/verify-kc-038c-weekly-ijtema-executive-report.ts",
     "verify:kc-039": "npx vite-node scripts/verify-kc-039-pwa.ts",
     "generate:pwa-icons": "node scripts/generate-pwa-icons.mjs",
     "verify:kc-038": "npx vite-node scripts/verify-kc-038-campaign-extension.ts",
