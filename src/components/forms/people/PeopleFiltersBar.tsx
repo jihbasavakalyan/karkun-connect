@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useMemo, useState, type FormEvent } from 'react'
 import { REGISTRY_LIFECYCLE_FILTER_OPTIONS } from '@/types/karkun-registry.types'
 import type { PeopleFilters } from '@/types/people.types'
 import {
@@ -24,7 +24,7 @@ import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import { Icon } from '@/components/ui/Icon'
 import { UI_LABELS } from '@/lib/uiTerminology'
-import { useDebouncedValue } from '@/hooks/useDebouncedValue'
+import { useDebouncedSearchInput } from '@/hooks/useDebouncedSearchInput'
 
 const SEARCH_DEBOUNCE_MS = 250
 
@@ -159,18 +159,11 @@ export function PeopleFiltersBar({
   hideGenderFilter = false,
 }: PeopleFiltersBarProps) {
   const [advancedOpen, setAdvancedOpen] = useState(false)
-  const [searchDraft, setSearchDraft] = useState(filters.search)
-  const debouncedSearch = useDebouncedValue(searchDraft, SEARCH_DEBOUNCE_MS)
-
-  useEffect(() => {
-    setSearchDraft(filters.search)
-  }, [filters.search])
-
-  useEffect(() => {
-    if (debouncedSearch !== filters.search) {
-      onFilterChange('search', debouncedSearch)
-    }
-  }, [debouncedSearch, filters.search, onFilterChange])
+  const search = useDebouncedSearchInput(
+    filters.search,
+    (value) => onFilterChange('search', value),
+    SEARCH_DEBOUNCE_MS,
+  )
 
   const activeFilters = useMemo(() => {
     const yearFilterOptions = getBaitulMaalYearFilterOptions()
@@ -200,19 +193,16 @@ export function PeopleFiltersBar({
   const weekFilterOptions = getIjtemaWeekFilterOptions()
 
   const applySearch = (value: string) => {
-    setSearchDraft(value)
-    if (!value.trim()) {
-      onFilterChange('search', '')
-    }
+    search.setDraftValue(value)
   }
 
   const handleSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    onFilterChange('search', searchDraft)
+    search.commitNow()
   }
 
   const handleClear = () => {
-    setSearchDraft('')
+    search.clearDraft()
     onClear()
   }
 
@@ -229,7 +219,7 @@ export function PeopleFiltersBar({
           <input
             id="people-search"
             type="search"
-            value={searchDraft}
+            value={search.draft}
             placeholder={QUICK_SEARCH_PLACEHOLDER}
             onChange={(event) => applySearch(event.target.value)}
             className={`${selectClassName} mt-2`}
