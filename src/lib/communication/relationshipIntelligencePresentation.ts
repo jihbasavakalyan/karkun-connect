@@ -211,7 +211,7 @@ export function resolvePendingObjectiveAndAction(row: CampaignMatrixRow): {
       attentionRank: 1,
     }
   }
-  if (row.ijtema === 'Pending') {
+  if (row.ijtema === 'not_discussed') {
     return {
       pendingObjective: 'Weekly Ijtema',
       nextAction: 'Invite to Weekly Ijtema',
@@ -241,7 +241,7 @@ export function resolveCampaignJourneyStage(
   }
   if (!row.visitDone) return 'First Meeting'
   if (row.jih !== 'registered') return 'JIH App'
-  if (row.ijtema === 'Pending') return 'Weekly Ijtema'
+  if (row.ijtema === 'not_discussed') return 'Weekly Ijtema'
   if (row.baitulMaal !== 'committed') return 'Baitul Maal'
   return postCampaign ? 'Regular Contact' : 'Campaign Completed'
 }
@@ -252,7 +252,7 @@ export function resolveRelationshipStatus(
 ): RelationshipStatusLabel {
   if (row.completed || pendingObjective === 'None') return 'Campaign Complete'
   if (!row.visitDone) return 'Needs Visit'
-  if (row.visitDone && row.jih === 'registered' && row.ijtema === 'Present') {
+  if (row.visitDone && row.jih === 'registered' && row.ijtema === 'committed') {
     return 'High Engagement'
   }
   if (pendingObjective !== 'None') return 'Needs Follow-up'
@@ -287,7 +287,7 @@ function emptyMatrixRow(karkun: KarkunRegistryRecord): CampaignMatrixRow {
     area: karkun.area || '',
     visitDone: false,
     jih: 'not_discussed',
-    ijtema: 'Pending',
+    ijtema: 'not_discussed',
     baitulMaal: 'not_discussed',
     remarks: '',
     completed: false,
@@ -320,8 +320,8 @@ export function buildCampaignObjectiveProgress(
     },
     {
       id: 'ijtema',
-      label: 'Invited for Weekly Ijtema',
-      completed: row.ijtema !== 'Pending',
+      label: 'Weekly Ijtema Commitment',
+      completed: row.ijtema === 'committed',
       detail: ijtemaStatusChip(row.ijtema).label,
     },
     {
@@ -556,7 +556,7 @@ function buildWhyAttentionLines(row: CampaignMatrixRow, pendingObjective: string
     return lines
   }
 
-  if (row.ijtema !== 'Pending') {
+  if (row.ijtema !== 'committed') {
     lines.push('Weekly Ijtema attendance completed.')
   }
 

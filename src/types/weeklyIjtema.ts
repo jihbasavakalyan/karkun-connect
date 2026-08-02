@@ -41,7 +41,13 @@ export type WeeklyIjtemaEvent = CampaignCycleBase & {
 export type WeeklyIjtemaKarkunMark = {
   karkunId: string
   karkunName: string
-  status: WeeklyIjtemaMarkStatus
+  /**
+   * Attendance for this week's event. Omit when Reminded-only (attendance Pending).
+   * KC-037C2D — Present/Absent imply reminded for analytics.
+   */
+  status?: WeeklyIjtemaMarkStatus
+  /** KC-037C2D — Rukn reminded/contacted this Karkun for THIS week's Weekly Ijtema. */
+  reminded?: boolean
 }
 
 export type WeeklyIjtemaSubmission = {
@@ -61,18 +67,22 @@ export type WeeklyIjtemaDashboardKpi = {
   meetingDate: string | null
   title: string | null
   eventStatus: WeeklyIjtemaEventStatus | null
-  /** KC-037C2C — Present ÷ InvitedTotal (not Present ÷ Connected). */
+  /** KC-037C2D — Present ÷ RemindedTotal (not Present ÷ Connected). */
   attendancePct: number
-  /** KC-037C2C — InvitedTotal ÷ Connected. */
+  /** KC-037C2D — RemindedTotal ÷ Connected. Alias of reminderPct. */
   invitationPct: number
+  /** KC-037C2D — RemindedTotal ÷ Connected. */
+  reminderPct: number
   present: number
   absent: number
-  /** Invited-only bucket (invited, attendance pending). */
+  /** Reminded-only bucket (reminded, attendance pending). Alias of reminded. */
   invited: number
-  /** Total invited including Present/Absent. */
+  reminded: number
+  /** Total reminded including Present/Absent. Alias of remindedTotal. */
   invitedTotal: number
+  remindedTotal: number
   totalAssigned: number
-  /** Connected − InvitedOnly − Present − Absent. */
+  /** Connected − RemindedOnly − Present − Absent. */
   pendingNotInvited: number
   ruknsSubmitted: number
   ruknsPending: number
@@ -84,12 +94,15 @@ export type WeeklyIjtemaRuknReportRow = {
   ruknName: string
   assigned: number
   invited: number
+  reminded: number
   invitedTotal: number
+  remindedTotal: number
   present: number
   absent: number
-  /** Present ÷ InvitedTotal. */
+  /** Present ÷ RemindedTotal. */
   attendancePct: number
   invitationPct: number
+  reminderPct: number
   submitted: boolean
   submittedAt?: string
 }
@@ -100,8 +113,11 @@ export type WeeklyIjtemaReport = {
   absent: number
   attendancePct: number
   invitationPct: number
+  reminderPct: number
   invited: number
+  reminded: number
   invitedTotal: number
+  remindedTotal: number
   pendingNotInvited: number
   totalAssigned: number
   ruknsSubmitted: number

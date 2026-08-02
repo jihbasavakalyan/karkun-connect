@@ -169,7 +169,7 @@ export function CampaignExecutionMatrix({ ruknId }: CampaignExecutionMatrixProps
               <th className="px-2 py-2.5 text-center font-semibold">Visit</th>
               <th className="px-2 py-2.5 text-center font-semibold">JIH App</th>
               <th className="max-w-[6.5rem] px-1.5 py-2.5 text-center text-[10px] font-semibold leading-tight normal-case sm:max-w-none sm:px-2 sm:text-xs sm:uppercase">
-                Invited for Weekly Ijtema
+                Weekly Ijtema Commitment
               </th>
               <th className="px-2 py-2.5 text-center font-semibold">Baitul Maal</th>
             </tr>

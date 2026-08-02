@@ -4,10 +4,9 @@ import type {
   UpdateWeeklyIjtemaEventInput,
   WeeklyIjtemaKarkunMark,
 } from '@/types/weeklyIjtema'
-import { validateAssignedMarksComplete } from '@/lib/campaignCycle/validation'
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
-const ALLOWED = ['Present', 'Absent'] as const
+const ATTENDANCE_STATUSES = new Set(['Present', 'Absent'])
 
 export function validateCreateWeeklyIjtemaEvent(
   input: CreateWeeklyIjtemaEventInput,
@@ -45,16 +44,40 @@ export function validateUpdateWeeklyIjtemaEvent(
   return { valid: true }
 }
 
+function isValidWeeklyIjtemaMark(mark: WeeklyIjtemaKarkunMark): boolean {
+  if (mark.status === 'Present' || mark.status === 'Absent') return true
+  if (mark.reminded === true && (mark.status === undefined || !ATTENDANCE_STATUSES.has(mark.status))) {
+    return true
+  }
+  return false
+}
+
 export function validateWeeklyIjtemaMarks(
   marks: WeeklyIjtemaKarkunMark[],
   assignedKarkunIds: string[],
 ): { valid: true } | { valid: false; error: string } {
-  return validateAssignedMarksComplete(
-    marks,
-    assignedKarkunIds,
-    ALLOWED,
-    'Please mark attendance for all connected Karkuns before submitting.',
-  )
+  if (assignedKarkunIds.length === 0) {
+    return { valid: false, error: 'No connected Karkuns to mark.' }
+  }
+
+  const byId = new Map(marks.map((mark) => [mark.karkunId, mark]))
+  for (const karkunId of assignedKarkunIds) {
+    const mark = byId.get(karkunId)
+    if (!mark || !isValidWeeklyIjtemaMark(mark)) {
+      return {
+        valid: false,
+        error: 'Please mark Reminder or attendance for all connected Karkuns before submitting.',
+      }
+    }
+  }
+
+  for (const mark of marks) {
+    if (!assignedKarkunIds.includes(mark.karkunId)) {
+      return { valid: false, error: 'Submission includes a Karkun that is not connected.' }
+    }
+  }
+
+  return { valid: true }
 }
 
 export function validateSaveWeeklyIjtemaSubmission(

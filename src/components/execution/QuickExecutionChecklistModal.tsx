@@ -18,7 +18,6 @@ import {
 } from '@/lib/quickExecutionChecklist'
 import { confirmExecutionSaveFeedback } from '@/lib/executionPersistEvents'
 import type { JourneyStageId } from '@/types/guidance'
-import type { IjtemaAttendanceStatus } from '@/types/ijtemaAttendance'
 
 const tapClass =
   'flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-text-heading active:bg-surface-muted'
@@ -210,14 +209,32 @@ export function QuickExecutionChecklistModal({
           />
         </section>
 
-        <section aria-label="Weekly Ijtema" className="space-y-2">
+        <section aria-label="Weekly Ijtema Commitment" className="space-y-2">
           <h4 className="text-xs font-semibold uppercase tracking-wide text-secondary">
-            Weekly Ijtema
+            Weekly Ijtema Commitment
           </h4>
-          {(['Present', 'Absent', 'Excused'] as IjtemaAttendanceStatus[]).map((status) => (
+          {(
+            [
+              'committed',
+              'discussed',
+              'not_discussed',
+              'deferred',
+              'not_interested',
+            ] as const
+          ).map((status) => (
             <RadioRow
               key={status}
-              label={status}
+              label={
+                status === 'committed'
+                  ? 'Committed'
+                  : status === 'discussed'
+                    ? 'Discussed'
+                    : status === 'deferred'
+                      ? 'Deferred'
+                      : status === 'not_interested'
+                        ? 'Not Interested'
+                        : 'Not Discussed'
+              }
               checked={draft.ijtema === status}
               onSelect={() => setDraft((c) => (c ? { ...c, ijtema: status } : c))}
             />

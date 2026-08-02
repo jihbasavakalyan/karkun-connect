@@ -542,20 +542,20 @@ export function buildWeeklyIjtemaAttendanceReportModel(
   const definitions =
     language === 'ur'
       ? [
-          'مدعو — دعوت دی گئی، حاضری ابھی درج نہیں۔',
-          'حاضر — اجتماع میں شرکت درج ہے (دعوت خودکار)۔',
-          'غیر حاضر — اجتماع میں غیر حاضری درج ہے (دعوت خودکار)۔',
-          'زیر التواء — نہ مدعو، نہ حاضری۔',
-          'دعوت ٪ — مدعو کل ÷ منسلک۔',
-          'حاضری ٪ — حاضر ÷ مدعو کل (KC-033 / KC-037C2C)۔',
+          'یاد دہانی — اس ہفتے کے اجتماع کی یاد دہانی؛ حاضری ابھی درج نہیں۔',
+          'حاضر — اجتماع میں شرکت درج ہے (یاد دہانی خودکار)۔',
+          'غیر حاضر — اجتماع میں غیر حاضری درج ہے (یاد دہانی خودکار)۔',
+          'زیر التواء — نہ یاد دہانی، نہ حاضری۔',
+          'یاد دہانی ٪ — یاد دہانی کل ÷ منسلک۔',
+          'حاضری ٪ — حاضر ÷ یاد دہانی کل (KC-033 / KC-037C2D)۔',
         ]
       : [
-          'Invited — invited, attendance not yet Present/Absent.',
-          'Present — marked present (auto-marks Invited).',
-          'Absent — marked absent (auto-marks Invited).',
-          'Pending — not invited and no attendance mark.',
-          'Invitation % — InvitedTotal ÷ Connected.',
-          'Attendance % — Present ÷ InvitedTotal (KC-033 / KC-037C2C).',
+          'Reminded — contacted for this week’s Weekly Ijtema; attendance not yet Present/Absent.',
+          'Present — marked present (auto-marks Reminded).',
+          'Absent — marked absent (auto-marks Reminded).',
+          'Pending — not reminded and no attendance mark.',
+          'Reminder % — RemindedTotal ÷ Connected.',
+          'Attendance % — Present ÷ RemindedTotal (KC-033 / KC-037C2D).',
         ]
 
   return {

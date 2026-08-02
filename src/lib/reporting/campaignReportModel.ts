@@ -432,7 +432,7 @@ export function buildCampaignReportModel(input?: {
     const visitsPair = pair(visitRow.completed, visitRow.planned)
     const appPair = pair(appRow.registered, appRow.eligible || assigned.length)
     const wiCompleted = wiRow?.present ?? 0
-    // KC-037C2C — WI pair uses Present ÷ InvitedTotal (not Present ÷ Connected).
+    // KC-037C2D — WI pair uses Present ÷ RemindedTotal (not Present ÷ Connected).
     const wiPairBase = pair(wiCompleted, wiInvitedTotal)
     const wiPair: CampaignReportMetricPair = {
       ...wiPairBase,

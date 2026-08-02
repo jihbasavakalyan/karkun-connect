@@ -30,7 +30,7 @@ import {
   type WeeklyIjtemaMarkStatus,
 } from '@/types/weeklyIjtema'
 
-type DraftStatus = WeeklyIjtemaMarkStatus | 'Unmarked'
+type DraftStatus = WeeklyIjtemaMarkStatus | 'Reminded' | 'Unmarked'
 
 function buildDraftFromWorkspace(
   eventId: string,
@@ -41,12 +41,19 @@ function buildDraftFromWorkspace(
   const next: Record<string, DraftStatus> = {}
   for (const karkun of result.assigned) {
     const existing = result.submission?.marks.find((mark) => mark.karkunId === karkun.id)
-    next[karkun.id] = existing?.status ?? 'Unmarked'
+    if (existing?.status === 'Present' || existing?.status === 'Absent') {
+      next[karkun.id] = existing.status
+    } else if (existing?.reminded) {
+      next[karkun.id] = 'Reminded'
+    } else {
+      next[karkun.id] = 'Unmarked'
+    }
   }
   return next
 }
 
-const STATUS_OPTIONS: { value: WeeklyIjtemaMarkStatus; label: string; urdu: string }[] = [
+const STATUS_OPTIONS: { value: DraftStatus; label: string; urdu: string }[] = [
+  { value: 'Reminded', label: 'Reminded', urdu: 'یاد دہانی' },
   { value: 'Present', label: 'Present', urdu: 'حاضر' },
   { value: 'Absent', label: 'Absent', urdu: 'غیر حاضر' },
 ]
@@ -141,7 +148,7 @@ export function WeeklyIjtemaRegisterPage() {
   const allMarked = Boolean(workspace && workspace.assigned.length > 0 && unmarkedCount === 0)
   const canSubmit = Boolean(workspace?.editable && allMarked)
 
-  const setStatus = (karkunId: string, status: WeeklyIjtemaMarkStatus) => {
+  const setStatus = (karkunId: string, status: DraftStatus) => {
     if (!workspace?.editable) return
     setDraft((current) => ({ ...current, [karkunId]: status }))
   }
@@ -155,18 +162,28 @@ export function WeeklyIjtemaRegisterPage() {
         setMessage('')
         const marks = workspace.assigned.map((karkun) => {
           const status = draft[karkun.id]
-          if (status !== 'Present' && status !== 'Absent') {
-            return null
+          if (status === 'Present' || status === 'Absent') {
+            return {
+              karkunId: karkun.id,
+              karkunName: karkun.name,
+              status,
+              reminded: true as const,
+            }
           }
-          return {
-            karkunId: karkun.id,
-            karkunName: karkun.name,
-            status,
+          if (status === 'Reminded') {
+            return {
+              karkunId: karkun.id,
+              karkunName: karkun.name,
+              reminded: true as const,
+            }
           }
+          return null
         })
         if (marks.some((mark) => mark == null)) {
           throw Object.assign(
-            new Error('Please mark attendance for all connected Karkuns before submitting.'),
+            new Error(
+              'Please mark Reminder or attendance for all connected Karkuns before submitting.',
+            ),
             { code: 'validation' },
           )
         }
@@ -175,7 +192,12 @@ export function WeeklyIjtemaRegisterPage() {
           eventId: workspace.event.id,
           ruknId,
           ruknName: rukn?.name ?? ruknId,
-          marks: marks as { karkunId: string; karkunName: string; status: 'Present' | 'Absent' }[],
+          marks: marks as {
+            karkunId: string
+            karkunName: string
+            status?: 'Present' | 'Absent'
+            reminded?: boolean
+          }[],
           submittedBy: user?.displayName ?? user?.uid ?? ruknId,
         })
 
@@ -201,7 +223,7 @@ export function WeeklyIjtemaRegisterPage() {
       <header className="app-screen-header">
         <h1 className="app-screen-title">{"Today's Weekly Ijtema Attendance"}</h1>
         <p className="app-screen-subtitle">
-          Mark Present (حاضر) or Absent (غیر حاضر) for connected Karkuns.
+          Mark Reminded, Present (حاضر), or Absent (غیر حاضر) for connected Karkuns.
         </p>
       </header>
 

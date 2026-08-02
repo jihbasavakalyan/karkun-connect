@@ -58,9 +58,9 @@ export function hasOrientationSignal(karkun: KarkunRegistryRecord): boolean {
 }
 
 export function hasParticipationSignal(karkun: KarkunRegistryRecord): boolean {
-  // KC-037C2A — campaign invitation (Invited), not weekly attendance Present.
+  // KC-037C2D — campaign commitment (Committed), not weekly attendance Present.
   const ijtema = getWeeklyIjtemaInvitationView(karkun.id)
-  if (ijtema.status === 'Present') {
+  if (ijtema.commitment === 'committed') {
     return true
   }
   return getCommitmentsForKarkun(karkun.id).some(

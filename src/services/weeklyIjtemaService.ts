@@ -8,8 +8,8 @@
  * (`getWeeklyIjtemaDashboardKpi`). Do not replace with ijtemaAttendance*.
  * Inventory: docs/architecture/kc-0110-weekly-ijtema-inventory.md
  *
- * KC-0111 — Health slice uses Present÷InvitedTotal from this KPI (KC-037C2C).
- * (Previously Present÷Assigned; Invitation % is Invited÷Connected.)
+ * KC-0111 — Health slice uses Present÷RemindedTotal from this KPI (KC-037C2D).
+ * (Reminder % is Reminded÷Connected.)
  *
  * KC-028C — gender-scoped current event + reopen audit (reason/duration).
  */
@@ -25,7 +25,6 @@ import {
   nowIso,
 } from '@/lib/campaignCycle/lifecycle'
 import { buildBinaryCycleReport } from '@/lib/campaignCycle/report'
-import { ensureWeeklyIjtemaInvitedFromAttendance } from '@/lib/operations/weeklyIjtemaInvitationAttendance'
 import { getRuknWeeklyIjtemaInvitationAttendanceCounts } from '@/lib/operations/weeklyIjtemaInvitationAttendance'
 import {
   getAllWeeklyIjtemaEvents,
@@ -382,11 +381,15 @@ export function saveWeeklyIjtemaSubmission(
     eventId: input.eventId,
     ruknId: input.ruknId,
     ruknName: input.ruknName,
-    marks: input.marks.map((mark) => ({
-      karkunId: mark.karkunId,
-      karkunName: mark.karkunName,
-      status: mark.status,
-    })),
+    marks: input.marks.map((mark) => {
+      const hasAttendance = mark.status === 'Present' || mark.status === 'Absent'
+      return {
+        karkunId: mark.karkunId,
+        karkunName: mark.karkunName,
+        ...(hasAttendance ? { status: mark.status } : {}),
+        reminded: mark.reminded === true || hasAttendance,
+      }
+    }),
     submittedAt: existing?.submittedAt ?? timestamp,
     submittedBy: existing?.submittedBy ?? input.submittedBy,
     updatedAt: timestamp,
@@ -394,17 +397,6 @@ export function saveWeeklyIjtemaSubmission(
   }
 
   const saved = upsertWeeklyIjtemaSubmission(submission)
-
-  // KC-037C2C Option A — Present/Absent auto-ensures Invitation=Invited.
-  for (const mark of saved.marks) {
-    if (mark.status !== 'Present' && mark.status !== 'Absent') continue
-    ensureWeeklyIjtemaInvitedFromAttendance({
-      karkunId: mark.karkunId,
-      ruknId: input.ruknId,
-      updatedBy: input.submittedBy,
-      weekEndingDate: event.meetingDate,
-    })
-  }
 
   return { success: true, submission: saved }
 }
@@ -425,12 +417,15 @@ export type UpsertWeeklyIjtemaKarkunMarkInput = {
   ruknName: string
   karkunId: string
   karkunName: string
-  status: 'Present' | 'Absent'
+  /** Present/Absent attendance. Omit for Reminded-only. */
+  status?: 'Present' | 'Absent'
+  /** KC-037C2D — reminded for this week's event. */
+  reminded?: boolean
   submittedBy: string
 }
 
 /**
- * KC-0110.6 — Canonical single-mark upsert (partial submission allowed).
+ * KC-0110.6 / KC-037C2D — Canonical single-mark upsert (partial submission allowed).
  * Full-register submit remains `saveWeeklyIjtemaSubmission` (all assigned required).
  */
 export function upsertWeeklyIjtemaKarkunMark(
@@ -455,17 +450,24 @@ export function upsertWeeklyIjtemaKarkunMark(
   if (!assignedIds.includes(input.karkunId)) {
     return { success: false, error: 'Karkun is not assigned to this Rukn.' }
   }
-  if (input.status !== 'Present' && input.status !== 'Absent') {
+
+  const hasAttendance = input.status === 'Present' || input.status === 'Absent'
+  const reminded = input.reminded === true || hasAttendance
+  if (!reminded && !hasAttendance) {
+    return { success: false, error: 'Reminder or attendance status is required.' }
+  }
+  if (input.status !== undefined && input.status !== 'Present' && input.status !== 'Absent') {
     return { success: false, error: 'Attendance status must be Present or Absent.' }
   }
 
   const timestamp = nowIso()
   const existing = getWeeklyIjtemaSubmission(input.eventId, input.ruknId)
   const marks = [...(existing?.marks ?? [])]
-  const nextMark = {
+  const nextMark: WeeklyIjtemaSubmission['marks'][number] = {
     karkunId: input.karkunId,
     karkunName: input.karkunName,
-    status: input.status,
+    reminded: true,
+    ...(hasAttendance ? { status: input.status } : {}),
   }
   const index = marks.findIndex((mark) => mark.karkunId === input.karkunId)
   if (index >= 0) {
@@ -478,8 +480,11 @@ export function upsertWeeklyIjtemaKarkunMark(
     if (!assignedIds.includes(mark.karkunId)) {
       return { success: false, error: 'Submission includes a Karkun that is not assigned.' }
     }
-    if (mark.status !== 'Present' && mark.status !== 'Absent') {
+    if (mark.status !== undefined && mark.status !== 'Present' && mark.status !== 'Absent') {
       return { success: false, error: 'Attendance status must be Present or Absent.' }
+    }
+    if (!mark.reminded && mark.status !== 'Present' && mark.status !== 'Absent') {
+      return { success: false, error: 'Reminder or attendance status is required.' }
     }
   }
 
@@ -548,7 +553,12 @@ export function removeWeeklyIjtemaKarkunMark(
 
 function buildReportForEvent(event: WeeklyIjtemaEvent): WeeklyIjtemaReport {
   const binary = buildBinaryCycleReport(
-    getWeeklyIjtemaSubmissionsForEvent(event.id),
+    getWeeklyIjtemaSubmissionsForEvent(event.id).map((submission) => ({
+      ...submission,
+      marks: submission.marks.map((mark) => ({
+        status: mark.status ?? (mark.reminded ? 'Reminded' : 'Unmarked'),
+      })),
+    })),
     'Present',
     'Absent',
     { audienceGender: event.audienceGender },
@@ -560,19 +570,22 @@ function buildReportForEvent(event: WeeklyIjtemaEvent): WeeklyIjtemaReport {
       ruknId: row.ruknId,
       ruknName: row.ruknName,
       assigned: row.assigned,
-      invited: counts.invitedOnly,
-      invitedTotal: counts.invitedTotal,
+      invited: counts.remindedOnly,
+      reminded: counts.remindedOnly,
+      invitedTotal: counts.remindedTotal,
+      remindedTotal: counts.remindedTotal,
       present: counts.present,
       absent: counts.absent,
       attendancePct: counts.attendancePct,
-      invitationPct: counts.invitationPct,
+      invitationPct: counts.reminderPct,
+      reminderPct: counts.reminderPct,
       submitted: row.submitted,
       submittedAt: row.submittedAt,
     }
   })
 
-  const invitedTotal = ruknRows.reduce((sum, row) => sum + row.invitedTotal, 0)
-  const invitedOnly = ruknRows.reduce((sum, row) => sum + row.invited, 0)
+  const invitedTotal = ruknRows.reduce((sum, row) => sum + row.remindedTotal, 0)
+  const invitedOnly = ruknRows.reduce((sum, row) => sum + row.reminded, 0)
   const present = ruknRows.reduce((sum, row) => sum + row.present, 0)
   const absent = ruknRows.reduce((sum, row) => sum + row.absent, 0)
   const totalAssigned = binary.totalAssigned
@@ -592,8 +605,11 @@ function buildReportForEvent(event: WeeklyIjtemaEvent): WeeklyIjtemaReport {
     ruknsTotal: binary.ruknsTotal,
     ruknRows,
     invited: invitedOnly,
+    reminded: invitedOnly,
     invitedTotal,
+    remindedTotal: invitedTotal,
     invitationPct,
+    reminderPct: invitationPct,
     pendingNotInvited: Math.max(0, totalAssigned - invitedOnly - present - absent),
   }
 }
@@ -616,10 +632,13 @@ export function getWeeklyIjtemaDashboardKpi(
       eventStatus: null,
       attendancePct: 0,
       invitationPct: 0,
+      reminderPct: 0,
       present: 0,
       absent: 0,
       invited: 0,
+      reminded: 0,
       invitedTotal: 0,
+      remindedTotal: 0,
       totalAssigned: 0,
       pendingNotInvited: 0,
       ruknsSubmitted: 0,
@@ -636,10 +655,13 @@ export function getWeeklyIjtemaDashboardKpi(
     eventStatus: event.status,
     attendancePct: report.attendancePct,
     invitationPct: report.invitationPct,
+    reminderPct: report.reminderPct,
     present: report.present,
     absent: report.absent,
     invited: report.invited,
+    reminded: report.reminded,
     invitedTotal: report.invitedTotal,
+    remindedTotal: report.remindedTotal,
     totalAssigned: report.totalAssigned,
     pendingNotInvited: report.pendingNotInvited,
     ruknsSubmitted: report.ruknsSubmitted,
@@ -648,7 +670,7 @@ export function getWeeklyIjtemaDashboardKpi(
   }
 }
 
-/** KC-028C / KC-037C2C — Invitation + attendance progress for one Rukn on an event. */
+/** KC-037C2D — Reminder + attendance progress for one Rukn on an event. */
 export function getRuknAttendanceProgress(
   eventId: string,
   ruknId: string,
@@ -658,9 +680,12 @@ export function getRuknAttendanceProgress(
   pending: number
   assigned: number
   invited: number
+  reminded: number
   invitedTotal: number
+  remindedTotal: number
   unmarked: number
   invitationPct: number
+  reminderPct: number
   attendancePct: number
   attendanceGap: number
 } {
@@ -670,10 +695,13 @@ export function getRuknAttendanceProgress(
     absent: counts.absent,
     pending: counts.pending,
     assigned: counts.connected,
-    invited: counts.invitedOnly,
-    invitedTotal: counts.invitedTotal,
+    invited: counts.remindedOnly,
+    reminded: counts.remindedOnly,
+    invitedTotal: counts.remindedTotal,
+    remindedTotal: counts.remindedTotal,
     unmarked: counts.unmarked,
-    invitationPct: counts.invitationPct,
+    invitationPct: counts.reminderPct,
+    reminderPct: counts.reminderPct,
     attendancePct: counts.attendancePct,
     attendanceGap: counts.attendanceGap,
   }

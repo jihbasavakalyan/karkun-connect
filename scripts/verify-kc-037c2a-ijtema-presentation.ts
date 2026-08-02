@@ -1,5 +1,5 @@
 /**
- * KC-037C2A — Weekly Ijtema presentation + invitation/attendance decoupling.
+ * KC-037C2A / C2D — Weekly Ijtema Commitment presentation + attendance isolation.
  * Run: npx vite-node scripts/verify-kc-037c2a-ijtema-presentation.ts
  */
 
@@ -13,13 +13,13 @@ import {
   ijtemaStatusChip,
 } from '../src/lib/campaignExecutionMatrix'
 import {
+  getWeeklyIjtemaCommitmentView,
   getWeeklyIjtemaCurrentAttendanceView,
-  getWeeklyIjtemaInvitationView,
-  IJTEMA_CAMPAIGN_INVITED,
+  IJTEMA_CAMPAIGN_COMMITTED,
 } from '../src/lib/operations/weeklyIjtemaReadAdapter'
 import {
   markWeeklyIjtemaAttendance,
-  markWeeklyIjtemaInvitation,
+  markWeeklyIjtemaCommitment,
 } from '../src/lib/operations/weeklyIjtemaWriteAdapter'
 import {
   createWeeklyIjtemaEvent,
@@ -39,11 +39,12 @@ function assert(condition: boolean, message: string): asserts condition {
   console.log(`OK: ${message}`)
 }
 
-// --- Presentation labels ---
-assert(ijtemaStatusChip('Pending').label === 'Pending', 'Pending stays Pending')
-assert(ijtemaStatusChip('Present').label === 'Invited', 'Present displays as Invited')
-assert(ijtemaStatusChip('Absent').label === 'Not Invited', 'Absent displays as Not Invited')
-assert(ijtemaStatusChip('Excused').label === 'Excused', 'Excused stays Excused')
+// --- Presentation labels (KC-037C2D Commitment ladder) ---
+assert(ijtemaStatusChip('not_discussed').label === 'Not Discussed', 'Not Discussed')
+assert(ijtemaStatusChip('committed').label === 'Committed', 'Committed')
+assert(ijtemaStatusChip('discussed').label === 'Discussed', 'Discussed')
+assert(ijtemaStatusChip('deferred').label === 'Deferred', 'Deferred')
+assert(ijtemaStatusChip('not_interested').label === 'Not Interested', 'Not Interested')
 
 const registerSource = readFileSync(
   resolve('src/pages/rukn/WeeklyIjtemaRegisterPage.tsx'),
@@ -57,6 +58,7 @@ assert(
   registerSource.includes("label: 'Present'") && registerSource.includes("label: 'Absent'"),
   'attendance STATUS_OPTIONS keep Present and Absent',
 )
+assert(registerSource.includes("label: 'Reminded'"), 'attendance STATUS_OPTIONS include Reminded')
 assert(
   !registerSource.includes("label: 'Invited'") &&
     !registerSource.includes("label: 'Not Invited'"),
@@ -68,8 +70,8 @@ const matrixSource = readFileSync(
   'utf8',
 )
 assert(
-  matrixSource.includes('Invited for Weekly Ijtema'),
-  'Execution Matrix column uses Invited for Weekly Ijtema',
+  matrixSource.includes('Weekly Ijtema Commitment'),
+  'Execution Matrix column uses Weekly Ijtema Commitment',
 )
 assert(
   !matrixSource.includes('subscribeToWeeklyIjtemaStore'),
@@ -77,17 +79,17 @@ assert(
 )
 assert(
   matrixSource.includes('subscribeToIjtemaAttendanceStore'),
-  'Matrix still refreshes from invitation (legacy) store',
+  'Matrix still refreshes from commitment (legacy) store',
 )
 
 const matrixLib = readFileSync(resolve('src/lib/campaignExecutionMatrix.ts'), 'utf8')
 assert(
-  matrixLib.includes('getWeeklyIjtemaInvitationView'),
-  'Matrix rows read invitation view',
+  matrixLib.includes('getWeeklyIjtemaCommitmentView'),
+  'Matrix rows read commitment view',
 )
 assert(
-  matrixLib.includes('markWeeklyIjtemaInvitation'),
-  'Matrix writes invitation API',
+  matrixLib.includes('markWeeklyIjtemaCommitment'),
+  'Matrix writes commitment API',
 )
 assert(
   !matrixLib.includes('getWeeklyIjtemaCurrentAttendanceView'),
@@ -161,41 +163,41 @@ const created = createWeeklyIjtemaEvent({
 assert(created.success, 'open attendance event created')
 const eventId = created.success ? created.event.id : ''
 
-const invited = markWeeklyIjtemaInvitation({
+const committed = markWeeklyIjtemaCommitment({
   karkunId,
-  status: 'Present',
+  commitment: 'committed',
   updatedBy: rukn!.id,
   ruknId: rukn!.id,
 })
-assert(invited.success, 'invitation marked Invited (Present)')
+assert(committed.success, 'commitment marked Committed')
 assert(
-  getWeeklyIjtemaInvitationView(karkunId).status === 'Present',
-  'invitation view is Present/Invited',
+  getWeeklyIjtemaCommitmentView(karkunId).commitment === 'committed',
+  'commitment view is committed',
 )
 assert(
-  (getWeeklyIjtemaInvitationView(karkunId).remarks ?? '').includes(IJTEMA_CAMPAIGN_INVITED),
-  'invitation stamps Campaign: Invited remarks',
+  (getWeeklyIjtemaCommitmentView(karkunId).remarks ?? '').includes(IJTEMA_CAMPAIGN_COMMITTED),
+  'commitment stamps Campaign: Committed remarks',
 )
 assert(
   getWeeklyIjtemaSubmissionsForEvent(eventId).length === 0,
-  'invitation write does not create attendance submissions',
+  'commitment write does not create attendance submissions',
 )
 
 const matrixBefore = buildCampaignMatrixRows(rukn!.id).find((r) => r.karkunId === karkunId)
-assert(matrixBefore?.ijtema === 'Present', 'Matrix shows Invited before attendance submit')
+assert(matrixBefore?.ijtema === 'committed', 'Matrix shows Committed before attendance submit')
 
 const submitted = saveWeeklyIjtemaSubmission({
   eventId,
   ruknId: rukn!.id,
   ruknName: rukn!.name,
-  marks: [{ karkunId, karkunName: karkun.name, status: 'Absent' }],
+  marks: [{ karkunId, karkunName: karkun.name, status: 'Absent', reminded: true }],
   submittedBy: rukn!.id,
 })
 assert(submitted.success, 'attendance submission (Absent) succeeds')
 
 assert(
-  getWeeklyIjtemaInvitationView(karkunId).status === 'Present',
-  'attendance submit does not change invitation',
+  getWeeklyIjtemaCommitmentView(karkunId).commitment === 'committed',
+  'attendance submit does not change commitment',
 )
 assert(
   getWeeklyIjtemaCurrentAttendanceView(karkunId).status === 'Absent',
@@ -203,7 +205,7 @@ assert(
 )
 
 const matrixAfter = buildCampaignMatrixRows(rukn!.id).find((r) => r.karkunId === karkunId)
-assert(matrixAfter?.ijtema === 'Present', 'Matrix invitation unchanged after attendance submit')
+assert(matrixAfter?.ijtema === 'committed', 'Matrix commitment unchanged after attendance submit')
 
 const attendanceOnly = markWeeklyIjtemaAttendance({
   karkunId,
@@ -213,12 +215,12 @@ const attendanceOnly = markWeeklyIjtemaAttendance({
 })
 assert(attendanceOnly.success, 'attendance adapter can upsert event mark')
 assert(
-  getWeeklyIjtemaInvitationView(karkunId).status === 'Present',
-  'attendance adapter does not clobber invitation',
+  getWeeklyIjtemaCommitmentView(karkunId).commitment === 'committed',
+  'attendance adapter does not clobber commitment',
 )
 assert(
-  (getWeeklyIjtemaInvitationView(karkunId).remarks ?? '').includes(IJTEMA_CAMPAIGN_INVITED),
-  'invitation remarks remain Campaign: Invited after attendance write',
+  (getWeeklyIjtemaCommitmentView(karkunId).remarks ?? '').includes(IJTEMA_CAMPAIGN_COMMITTED),
+  'commitment remarks remain after attendance write',
 )
 
-console.log('\nKC-037C2A presentation + decoupling verification passed.')
+console.log('\nKC-037C2A/C2D presentation + decoupling verification passed.')

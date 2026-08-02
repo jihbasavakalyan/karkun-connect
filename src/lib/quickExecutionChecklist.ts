@@ -19,8 +19,11 @@ import {
 import { saveDailyProgress } from '@/services/annexure1Service'
 import { setDevelopmentIndicator } from '@/services/developmentAssessmentService'
 import { createCommitment } from '@/services/guidanceService'
-import { getWeeklyIjtemaInvitationView } from '@/lib/operations/weeklyIjtemaReadAdapter'
-import { markWeeklyIjtemaInvitation } from '@/lib/operations/weeklyIjtemaWriteAdapter'
+import {
+  getWeeklyIjtemaCommitmentView,
+  type WeeklyIjtemaCommitmentState,
+} from '@/lib/operations/weeklyIjtemaReadAdapter'
+import { markWeeklyIjtemaCommitment } from '@/lib/operations/weeklyIjtemaWriteAdapter'
 import { getActiveAssignmentsForKarkun } from '@/stores/assignmentStore'
 import { getCommitmentsForKarkun } from '@/stores/guidanceStore'
 import { createInitialAnnexure1FormState } from '@/types/annexure1.types'
@@ -30,7 +33,6 @@ import {
   JOURNEY_STAGE_ORDER,
   type JourneyStageId,
 } from '@/types/guidance'
-import type { IjtemaAttendanceStatus } from '@/types/ijtemaAttendance'
 
 export type VisitChecklist = {
   visitedToday: boolean
@@ -47,7 +49,7 @@ export type JihAppChecklist = {
 
 export type QuickExecutionDraft = {
   visit: VisitChecklist
-  ijtema: IjtemaAttendanceStatus | null
+  ijtema: WeeklyIjtemaCommitmentState | null
   journey: Record<JourneyStageId, boolean>
   jih: JihAppChecklist
   remarks: string
@@ -74,7 +76,7 @@ export function buildQuickExecutionSnapshot(
   const assignmentId = getActiveAssignmentsForKarkun(karkunId)[0]?.assignmentId
   const { currentStage } = resolveCurrentJourneyStage(karkun, assignmentId)
   const progress = getDailyProgressView(karkunId)
-  const ijtema = getWeeklyIjtemaInvitationView(karkunId)
+  const ijtema = getWeeklyIjtemaCommitmentView(karkunId)
   const jihStatus = karkun.jihAppRegistrationStatus
   const hasInstalledCommitment = getCommitmentsForKarkun(karkunId).some((c) =>
     /jih app installed/i.test(c.text),
@@ -114,7 +116,7 @@ export function buildQuickExecutionSnapshot(
     currentStageLabel: JOURNEY_STAGE_LABELS[currentStage],
     draft: {
       visit,
-      ijtema: ijtema.status === 'Not recorded' ? null : ijtema.status,
+      ijtema: ijtema.commitment === 'not_discussed' ? null : ijtema.commitment,
       journey,
       jih,
       remarks:
@@ -260,9 +262,9 @@ export function saveQuickExecutionChecklist(
   }
 
   if (draft.ijtema !== initial.ijtema && draft.ijtema) {
-    const result = markWeeklyIjtemaInvitation({
+    const result = markWeeklyIjtemaCommitment({
       karkunId,
-      status: draft.ijtema,
+      commitment: draft.ijtema,
       updatedBy: actorId ?? ruknId,
       ruknId,
     })
@@ -303,10 +305,10 @@ export function saveQuickExecutionChecklist(
   }
 
   if (draft.journey.participation && !hasParticipationSignal(karkun)) {
-    if (draft.ijtema !== 'Present') {
-      const result = markWeeklyIjtemaInvitation({
+    if (draft.ijtema !== 'committed') {
+      const result = markWeeklyIjtemaCommitment({
         karkunId,
-        status: 'Present',
+        commitment: 'committed',
         updatedBy: actorId ?? ruknId,
         ruknId,
       })

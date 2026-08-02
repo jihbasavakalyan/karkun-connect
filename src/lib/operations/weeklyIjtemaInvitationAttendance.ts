@@ -1,45 +1,51 @@
 /**
- * KC-037C2C — Weekly Ijtema invitation + attendance counts (Option A).
+ * KC-037C2D — Weekly Ijtema Reminder + Attendance counts.
  * Single calculation path for dashboard, Health, KPI, and reports.
  *
- * Invitation (Rukn effort) and Attendance (Karkun response) stay separate SoRs;
- * Present/Absent imply Invited for analytics (auto-transition / back-compat).
+ * Reminder (Rukn contact this week) and Attendance (Present/Absent) live on event marks.
+ * Commitment (Matrix) is a separate legacy SoR and must not feed these counts.
+ *
+ * Present/Absent imply Reminded=true for analytics (backward compat).
  */
 
-import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { getAssignedKarkunanForRukn } from '@/lib/assignmentEngine'
-import {
-  getWeeklyIjtemaCurrentAttendanceView,
-  getWeeklyIjtemaInvitationView,
-  IJTEMA_CAMPAIGN_INVITED,
-  isIjtemaCampaignInvitationRemarks,
-} from '@/lib/operations/weeklyIjtemaReadAdapter'
-import { updateIjtemaAttendance } from '@/services/ijtemaAttendanceService'
-import { getActiveAssignmentsForKarkun } from '@/stores/assignmentStore'
 import { getWeeklyIjtemaSubmission } from '@/stores/weeklyIjtemaStore'
-import { getWeekEndingDate } from '@/types/ijtemaAttendance'
+import type { WeeklyIjtemaKarkunMark } from '@/types/weeklyIjtema'
 
 export type WeeklyIjtemaInvitationAttendanceCounts = {
   /** Connected / assigned roster size. */
   connected: number
-  /** Invited but attendance not yet Present/Absent (dashboard Invited bucket). */
+  /**
+   * Reminded but attendance not yet Present/Absent (dashboard Reminded bucket).
+   * @deprecated Prefer remindedOnly — kept for KC-037C2C field compat.
+   */
   invitedOnly: number
-  /** Total invited = invitedOnly + present + absent. */
+  /** Reminded but attendance not yet Present/Absent. */
+  remindedOnly: number
+  /**
+   * Total reminded = remindedOnly + present + absent.
+   * @deprecated Prefer remindedTotal.
+   */
   invitedTotal: number
+  remindedTotal: number
   present: number
   absent: number
   /**
-   * Dashboard Pending = Connected − InvitedOnly − Present − Absent
-   * (not invited and no attendance mark).
+   * Dashboard Pending = Connected − ReminderOnly − Present − Absent
+   * (not reminded and no attendance mark).
    */
   pending: number
-  /** Unmarked attendance (no Present/Absent) — reminders. */
+  /** Unmarked attendance (no Present/Absent) — includes reminded-only. */
   unmarked: number
-  /** Invited ÷ Connected. */
+  /**
+   * Reminder ÷ Connected.
+   * @deprecated Prefer reminderPct.
+   */
   invitationPct: number
-  /** Present ÷ InvitedTotal (0 when invitedTotal = 0). */
+  reminderPct: number
+  /** Present ÷ RemindedTotal (0 when remindedTotal = 0). */
   attendancePct: number
-  /** InvitedTotal − Present (absent + invited-only remaining). */
+  /** RemindedTotal − Present (absent + reminded-only remaining). */
   attendanceGap: number
 }
 
@@ -48,67 +54,47 @@ function pct(numerator: number, denominator: number): number {
   return Math.round((numerator / denominator) * 100)
 }
 
-/** True when invitation SoR says Invited (legacy Present / Campaign: Invited). */
-export function isWeeklyIjtemaInvitationInvited(karkunId: string): boolean {
-  return getWeeklyIjtemaInvitationView(karkunId).status === 'Present'
+/** True when mark is reminded (explicit flag or Present/Absent attendance). */
+export function isWeeklyIjtemaMarkReminded(mark?: WeeklyIjtemaKarkunMark | null): boolean {
+  if (!mark) return false
+  if (mark.reminded === true) return true
+  return mark.status === 'Present' || mark.status === 'Absent'
 }
 
 /**
- * Invited for analytics: explicit invitation OR attendance Present/Absent
- * (Option A / backward compat for historical marks without invitation stamp).
+ * @deprecated KC-037C2D — Reminder no longer uses Matrix invitation SoR.
+ * Always returns false; retained so accidental call sites do not inflate Reminder.
+ */
+export function isWeeklyIjtemaInvitationInvited(_karkunId: string): boolean {
+  return false
+}
+
+/**
+ * Effectively reminded for analytics: mark reminded OR Present/Absent.
  */
 export function isWeeklyIjtemaEffectivelyInvited(
-  karkunId: string,
+  _karkunId: string,
   attendanceStatus?: string,
 ): boolean {
-  if (isWeeklyIjtemaInvitationInvited(karkunId)) return true
-  const status =
-    attendanceStatus ?? getWeeklyIjtemaCurrentAttendanceView(karkunId).status
-  return status === 'Present' || status === 'Absent'
+  return attendanceStatus === 'Present' || attendanceStatus === 'Absent'
 }
 
 /**
- * KC-037C2C Option A — Ensure Invitation=Invited after attendance Present/Absent.
- * Sync helper used by write adapter + register submit (no circular imports).
- * Never writes Not Invited / never clears invitation on Present↔Absent.
+ * @deprecated KC-037C2D — attendance must not mutate Matrix Commitment.
+ * No-op retained so leftover imports compile until call sites are removed.
  */
-export function ensureWeeklyIjtemaInvitedFromAttendance(input: {
+export function ensureWeeklyIjtemaInvitedFromAttendance(_input: {
   karkunId: string
   ruknId?: string
   updatedBy?: string
   weekEndingDate?: string
-}): { success: true } | { success: false; error: string } {
-  const current = getWeeklyIjtemaInvitationView(input.karkunId)
-  if (current.status === 'Present' && isIjtemaCampaignInvitationRemarks(current.remarks)) {
-    return { success: true }
-  }
-
-  const karkun = getKarkunById(input.karkunId)
-  if (!karkun) {
-    return { success: false, error: 'Karkun not found.' }
-  }
-
-  const ruknId =
-    input.ruknId?.trim() ||
-    getActiveAssignmentsForKarkun(input.karkunId)[0]?.ruknId ||
-    karkun.assignedRuknId ||
-    undefined
-
-  const result = updateIjtemaAttendance({
-    karkunId: input.karkunId,
-    status: 'Present',
-    remarks: IJTEMA_CAMPAIGN_INVITED,
-    ruknId,
-    updatedBy: input.updatedBy ?? 'Administrator',
-    weekEndingDate: input.weekEndingDate ?? getWeekEndingDate(),
-  })
-  if (!result.success) return result
+}): { success: true } {
   return { success: true }
 }
 
 /**
- * Per-Rukn invitation/attendance partition for one event.
- * Attendance marks come from the event submission; invitation from legacy view.
+ * Per-Rukn reminder/attendance partition for one event.
+ * Attendance + Reminder come from the event submission marks only.
  */
 export function getRuknWeeklyIjtemaInvitationAttendanceCounts(
   eventId: string,
@@ -117,43 +103,49 @@ export function getRuknWeeklyIjtemaInvitationAttendanceCounts(
   const assigned = getAssignedKarkunanForRukn(ruknId)
   const submission = getWeeklyIjtemaSubmission(eventId, ruknId)
   const markById = new Map(
-    (submission?.marks ?? []).map((mark) => [mark.karkunId, mark.status] as const),
+    (submission?.marks ?? []).map((mark) => [mark.karkunId, mark] as const),
   )
 
-  let invitedOnly = 0
+  let remindedOnly = 0
   let present = 0
   let absent = 0
 
   for (const karkun of assigned) {
     const mark = markById.get(karkun.id)
-    if (mark === 'Present') {
+    const status = mark?.status
+    if (status === 'Present') {
       present += 1
       continue
     }
-    if (mark === 'Absent') {
+    if (status === 'Absent') {
       absent += 1
       continue
     }
-    if (isWeeklyIjtemaInvitationInvited(karkun.id)) {
-      invitedOnly += 1
+    if (isWeeklyIjtemaMarkReminded(mark)) {
+      remindedOnly += 1
     }
   }
 
   const connected = assigned.length
-  const invitedTotal = invitedOnly + present + absent
-  const pending = Math.max(0, connected - invitedOnly - present - absent)
+  const remindedTotal = remindedOnly + present + absent
+  const pending = Math.max(0, connected - remindedOnly - present - absent)
   const unmarked = Math.max(0, connected - present - absent)
+  const reminderPct = pct(remindedTotal, connected)
+  const attendancePct = pct(present, remindedTotal)
 
   return {
     connected,
-    invitedOnly,
-    invitedTotal,
+    invitedOnly: remindedOnly,
+    remindedOnly,
+    invitedTotal: remindedTotal,
+    remindedTotal,
     present,
     absent,
     pending,
     unmarked,
-    invitationPct: pct(invitedTotal, connected),
-    attendancePct: pct(present, invitedTotal),
-    attendanceGap: Math.max(0, invitedTotal - present),
+    invitationPct: reminderPct,
+    reminderPct,
+    attendancePct,
+    attendanceGap: Math.max(0, remindedTotal - present),
   }
 }

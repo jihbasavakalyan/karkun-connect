@@ -1,9 +1,9 @@
 /**
- * KC-0110 / KC-037C2A — Weekly Ijtema read adapter.
+ * KC-0110 / KC-037C2A / KC-037C2D — Weekly Ijtema read adapter.
  *
  * Two presentation concerns (do not mix):
- * - Attendance: event/cycle submissions (`weeklyIjtema*`) — recurring weekly.
- * - Invitation: legacy `ijtema_*` campaign remarks — one-time Matrix objective.
+ * - Attendance / Reminder: event/cycle submissions (`weeklyIjtema*`) — recurring weekly.
+ * - Commitment: legacy `ijtema_*` campaign remarks — one-time Matrix objective.
  *
  * Dev diagnostics: set localStorage `kc.debug.weeklyIjtemaReads=1` (DEV only).
  * Inventory: docs/architecture/kc-0110-weekly-ijtema-inventory.md
@@ -32,29 +32,116 @@ import {
 } from '@/stores/weeklyIjtemaStore'
 import type { WeeklyIjtemaEvent, WeeklyIjtemaMarkStatus } from '@/types/weeklyIjtema'
 
-/** KC-037C2A — campaign invitation remarks on legacy `ijtema_*` docs. */
+/** KC-037C2D — Weekly Ijtema Commitment (one-time Matrix objective). */
+export type WeeklyIjtemaCommitmentState =
+  | 'not_discussed'
+  | 'discussed'
+  | 'committed'
+  | 'deferred'
+  | 'not_interested'
+
+/** Canonical commitment remarks on legacy `ijtema_*` docs. */
+export const IJTEMA_CAMPAIGN_COMMITTED = 'Campaign: Committed'
+export const IJTEMA_CAMPAIGN_DISCUSSED = 'Campaign: Discussed'
+export const IJTEMA_CAMPAIGN_NOT_INTERESTED = 'Campaign: Not Interested'
+export const IJTEMA_CAMPAIGN_DEFERRED = 'Campaign: Deferred'
+export const IJTEMA_CAMPAIGN_NOT_DISCUSSED = 'Campaign: Not Discussed'
+
+/** Legacy invitation remarks — still read as Commitment for backward compat. */
 export const IJTEMA_CAMPAIGN_INVITED = 'Campaign: Invited'
 export const IJTEMA_CAMPAIGN_NOT_INVITED = 'Campaign: Not Invited'
 export const IJTEMA_CAMPAIGN_EXCUSED = 'Campaign: Excused'
 
-export function isIjtemaCampaignInvitationRemarks(remarks?: string): boolean {
+export function isIjtemaCampaignCommitmentRemarks(remarks?: string): boolean {
   const value = (remarks ?? '').trim().toLowerCase()
   if (!value) return false
   return (
+    value.includes('campaign: committed') ||
+    value.includes('campaign: discussed') ||
+    value.includes('campaign: not discussed') ||
+    value.includes('campaign: not interested') ||
+    value.includes('campaign: deferred') ||
     value.includes('campaign: invited') ||
     value.includes('campaign: not invited') ||
     value.includes('campaign: excused')
   )
 }
 
+/** @deprecated Prefer isIjtemaCampaignCommitmentRemarks (KC-037C2D). */
+export function isIjtemaCampaignInvitationRemarks(remarks?: string): boolean {
+  return isIjtemaCampaignCommitmentRemarks(remarks)
+}
+
+export function commitmentStateFromRemarks(
+  remarks?: string,
+): WeeklyIjtemaCommitmentState | null {
+  const value = (remarks ?? '').trim().toLowerCase()
+  if (!value) return null
+  // Longer / more specific phrases first.
+  if (value.includes('campaign: not interested') || value.includes('campaign: not invited')) {
+    return 'not_interested'
+  }
+  if (value.includes('campaign: not discussed')) return 'not_discussed'
+  if (value.includes('campaign: deferred') || value.includes('campaign: excused')) {
+    return 'deferred'
+  }
+  if (value.includes('campaign: discussed')) return 'discussed'
+  if (value.includes('campaign: committed') || value.includes('campaign: invited')) {
+    return 'committed'
+  }
+  return null
+}
+
 function statusFromCampaignRemarks(
   remarks?: string,
 ): IjtemaAttendanceStatus | null {
-  const value = (remarks ?? '').trim().toLowerCase()
-  if (value.includes('campaign: not invited')) return 'Absent'
-  if (value.includes('campaign: excused')) return 'Excused'
-  if (value.includes('campaign: invited')) return 'Present'
-  return null
+  const state = commitmentStateFromRemarks(remarks)
+  if (!state || state === 'not_discussed') return null
+  return commitmentStateToStoredStatus(state)
+}
+
+export function campaignRemarksForCommitment(
+  state: WeeklyIjtemaCommitmentState,
+): string {
+  switch (state) {
+    case 'committed':
+      return IJTEMA_CAMPAIGN_COMMITTED
+    case 'discussed':
+      return IJTEMA_CAMPAIGN_DISCUSSED
+    case 'deferred':
+      return IJTEMA_CAMPAIGN_DEFERRED
+    case 'not_interested':
+      return IJTEMA_CAMPAIGN_NOT_INTERESTED
+    case 'not_discussed':
+      return IJTEMA_CAMPAIGN_NOT_DISCUSSED
+  }
+}
+
+export function commitmentStateToStoredStatus(
+  state: WeeklyIjtemaCommitmentState,
+): IjtemaAttendanceStatus {
+  switch (state) {
+    case 'committed':
+    case 'discussed':
+      return 'Present'
+    case 'not_interested':
+    case 'not_discussed':
+      return 'Absent'
+    case 'deferred':
+      return 'Excused'
+  }
+}
+
+export function invitationStatusToCommitmentState(
+  status: IjtemaAttendanceStatus | 'Not recorded' | 'Pending',
+  remarks?: string,
+): WeeklyIjtemaCommitmentState {
+  const fromRemarks = commitmentStateFromRemarks(remarks)
+  if (fromRemarks) return fromRemarks
+  if (status === 'Present') return 'committed'
+  if (status === 'Absent') return 'not_interested'
+  if (status === 'Excused') return 'deferred'
+  return 'not_discussed'
 }
 
 export type WeeklyIjtemaReadSource = 'canonical' | 'legacy'
@@ -70,10 +157,11 @@ export type WeeklyIjtemaCurrentAttendanceView = {
   meetingDate?: string
 }
 
-/** KC-037C2A — one-time campaign invitation (Matrix / Journey participation). */
+/** KC-037C2A / C2D — one-time campaign commitment (Matrix / Journey). */
 export type WeeklyIjtemaInvitationView = {
   karkunId: string
   status: IjtemaAttendanceStatus | 'Not recorded'
+  commitment: WeeklyIjtemaCommitmentState
   weekEndingDate: string
   weekLabel: string
   remarks?: string
@@ -81,7 +169,9 @@ export type WeeklyIjtemaInvitationView = {
 }
 
 type CanonicalMark = {
-  status: WeeklyIjtemaMarkStatus
+  /** Absent when Reminded-only (attendance Pending). */
+  status?: WeeklyIjtemaMarkStatus
+  reminded?: boolean
   ruknId: string
   updatedAt: string
   /** Submission operator (Rukn / Admin) — presentation audit only. */
@@ -119,6 +209,7 @@ function findCanonicalMark(
     if (mark) {
       return {
         status: mark.status,
+        reminded: mark.reminded,
         ruknId: submission.ruknId,
         updatedAt: submission.updatedAt,
         updatedBy: submission.updatedBy || submission.submittedBy,
@@ -137,6 +228,7 @@ function buildCanonicalMarkIndex(event: WeeklyIjtemaEvent): Map<string, Canonica
       if (index.has(mark.karkunId)) continue
       index.set(mark.karkunId, {
         status: mark.status,
+        reminded: mark.reminded,
         ruknId: submission.ruknId,
         updatedAt: submission.updatedAt,
         updatedBy: submission.updatedBy || submission.submittedBy,
@@ -154,7 +246,7 @@ function viewFromCanonicalMark(
 ): WeeklyIjtemaCurrentAttendanceView {
   return {
     karkunId,
-    status: mark.status,
+    status: mark.status ?? 'Not recorded',
     weekEndingDate: event.meetingDate,
     weekLabel: formatCycleDateLabel(event.meetingDate),
     source: 'canonical',
@@ -224,8 +316,8 @@ export function getWeeklyIjtemaCurrentAttendanceView(
 }
 
 /**
- * KC-037C2A — Invited for Weekly Ijtema (campaign objective).
- * Legacy-only, campaign-stable: invitation survives week rollover and is
+ * KC-037C2A / C2D — Weekly Ijtema Commitment (campaign objective).
+ * Legacy-only, campaign-stable: commitment survives week rollover and is
  * never derived from event attendance submissions.
  */
 export function getWeeklyIjtemaInvitationView(
@@ -236,23 +328,28 @@ export function getWeeklyIjtemaInvitationView(
 
   let campaignBest: IjtemaAttendanceRecord | null = null
   for (const record of history) {
-    if (!isIjtemaCampaignInvitationRemarks(record.remarks)) continue
+    if (!isIjtemaCampaignCommitmentRemarks(record.remarks)) continue
     if (!campaignBest || record.updatedAt.localeCompare(campaignBest.updatedAt) > 0) {
       campaignBest = record
     }
   }
   if (campaignBest) {
+    const commitment = invitationStatusToCommitmentState(
+      campaignBest.status,
+      campaignBest.remarks,
+    )
     const fromRemarks = statusFromCampaignRemarks(campaignBest.remarks)
     const status = fromRemarks ?? campaignBest.status
     const view: WeeklyIjtemaInvitationView = {
       karkunId,
       status,
+      commitment,
       weekEndingDate: campaignBest.weekEndingDate,
       weekLabel: formatWeekLabel(campaignBest.weekEndingDate),
       remarks: campaignBest.remarks,
       source: 'legacy',
     }
-    logWeeklyIjtemaRead('invitation', 'legacy', { karkunId, via: 'campaign-remarks' })
+    logWeeklyIjtemaRead('invitation', 'legacy', { karkunId, via: 'campaign-remarks', commitment })
     return view
   }
 
@@ -262,6 +359,7 @@ export function getWeeklyIjtemaInvitationView(
     const view: WeeklyIjtemaInvitationView = {
       karkunId,
       status: 'Present',
+      commitment: 'committed',
       weekEndingDate: stickyPresent.weekEndingDate,
       weekLabel: formatWeekLabel(stickyPresent.weekEndingDate),
       remarks: stickyPresent.remarks,
@@ -273,9 +371,11 @@ export function getWeeklyIjtemaInvitationView(
 
   const current = getCurrentIjtemaAttendance(karkunId)
   if (current.status === 'Absent' || current.status === 'Excused') {
+    const commitment = invitationStatusToCommitmentState(current.status, current.remarks)
     const view: WeeklyIjtemaInvitationView = {
       karkunId,
       status: current.status,
+      commitment,
       weekEndingDate: current.weekEndingDate,
       weekLabel: current.weekLabel,
       remarks: current.remarks,
@@ -288,12 +388,18 @@ export function getWeeklyIjtemaInvitationView(
   const empty: WeeklyIjtemaInvitationView = {
     karkunId,
     status: 'Not recorded',
+    commitment: 'not_discussed',
     weekEndingDate,
     weekLabel: formatWeekLabel(weekEndingDate),
     source: 'legacy',
   }
   logWeeklyIjtemaRead('invitation', 'legacy', { karkunId, via: 'empty' })
   return empty
+}
+
+/** KC-037C2D — Commitment view (Matrix). */
+export function getWeeklyIjtemaCommitmentView(karkunId: string): WeeklyIjtemaInvitationView {
+  return getWeeklyIjtemaInvitationView(karkunId)
 }
 
 /**
@@ -313,7 +419,7 @@ export function getWeeklyIjtemaAttendanceHistoryView(
 
   for (const event of events) {
     const mark = findCanonicalMark(event, karkunId)
-    if (!mark) continue
+    if (!mark?.status) continue
     seenDates.add(event.meetingDate)
     canonicalRows.push({
       karkunId,

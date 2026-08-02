@@ -62,7 +62,7 @@ export function RuknExecutionSummaryCards({ ruknId }: RuknExecutionSummaryCardsP
 
   const visitCompleted = rows.filter((r) => r.visitDone).length
   const jihRegistered = rows.filter((r) => r.jih === 'registered').length
-  const ijtemaAttended = rows.filter((r) => r.ijtema === 'Present').length
+  const ijtemaAttended = rows.filter((r) => r.ijtema === 'committed').length
   const baitulContributed = rows.filter((r) => r.baitulMaal === 'committed').length
 
   // Execution priority order (pre–workflow reorder): Visit → JIH → Invited → Baitul.
@@ -83,10 +83,10 @@ export function RuknExecutionSummaryCards({ ruknId }: RuknExecutionSummaryCardsP
     },
     {
       id: 'ijtema',
-      title: 'Invited for Weekly Ijtema',
-      doneLabel: 'Invited',
+      title: 'Weekly Ijtema Commitment',
+      doneLabel: 'Committed',
       done: ijtemaAttended,
-      pending: rows.filter((r) => r.ijtema === 'Pending').length,
+      pending: rows.filter((r) => r.ijtema === 'not_discussed').length,
     },
     {
       id: 'baitul',
