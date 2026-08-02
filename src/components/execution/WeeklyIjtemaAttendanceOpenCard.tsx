@@ -1,6 +1,7 @@
 /**
  * KC-028C — Rukn dashboard card when Weekly Ijtema attendance window is open.
- * KC-037C2B — Title + OPEN badge presentation only; stats unchanged.
+ * KC-037C2B — Title + OPEN badge presentation only.
+ * KC-037C2C — Invited / Present / Absent / Pending (Option A counts).
  */
 
 import { useEffect, useState } from 'react'
@@ -15,6 +16,7 @@ import {
 } from '@/lib/weeklyIjtema/attendanceWindowEngine'
 import { listWeeklyIjtemaNotificationsForRukn } from '@/stores/weeklyIjtemaNotificationStore'
 import { subscribeToWeeklyIjtemaStore } from '@/stores/weeklyIjtemaStore'
+import { subscribeToIjtemaAttendanceStore } from '@/stores/ijtemaAttendanceStore'
 import type { WeeklyIjtemaAudienceGender } from '@/lib/weeklyIjtema/attendanceWindowSchedule'
 
 type WeeklyIjtemaAttendanceOpenCardProps = {
@@ -35,7 +37,13 @@ export function WeeklyIjtemaAttendanceOpenCard({ ruknId }: WeeklyIjtemaAttendanc
 
   useEffect(() => {
     ensureWeeklyIjtemaAttendanceWindows()
-    return subscribeToWeeklyIjtemaStore(() => setTick((value) => value + 1))
+    const unsubEvent = subscribeToWeeklyIjtemaStore(() => setTick((value) => value + 1))
+    // Invitation SoR affects Invited / Pending buckets (KC-037C2C).
+    const unsubInvite = subscribeToIjtemaAttendanceStore(() => setTick((value) => value + 1))
+    return () => {
+      unsubEvent()
+      unsubInvite()
+    }
   }, [])
 
   void tick
@@ -85,11 +93,16 @@ export function WeeklyIjtemaAttendanceOpenCard({ ruknId }: WeeklyIjtemaAttendanc
           Open Attendance
         </Link>
       </div>
-      <div className="mt-3 grid grid-cols-3 gap-2">
+      <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <Metric label="Invited" value={progress.invited} />
         <Metric label="Present" value={progress.present} />
         <Metric label="Absent" value={progress.absent} />
         <Metric label="Pending" value={progress.pending} />
       </div>
+      <p className="mt-2 text-[11px] text-secondary">
+        Invitation {progress.invitationPct}% · Attendance {progress.attendancePct}% (Present ÷
+        Invited)
+      </p>
     </section>
   )
 }

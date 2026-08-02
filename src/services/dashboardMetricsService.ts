@@ -181,19 +181,20 @@ export function getDashboardAppRegistrationMetricsForRukn(
 }
 
 /**
- * KC-0111.1
+ * KC-0111.1 / KC-037C2C
  * Canonical Campaign Health calculation — Weekly Ijtema slice.
- * Present ÷ Assigned on current event (not marked-only attendancePct).
+ * Present ÷ InvitedTotal (not Present ÷ Connected/Assigned).
  * All consumers should use dashboardMetricsService.
  */
 export function getDashboardWeeklyIjtemaHealthSlice(): DashboardHealthSlice {
   const ijtema = getWeeklyIjtemaDashboardKpi()
   const moduleActive = Boolean(ijtema.eventId)
+  const total = ijtema.invitedTotal
   return {
     id: 'weekly-ijtema',
     current: ijtema.present,
-    total: ijtema.totalAssigned,
-    pct: getDashboardHealthModulePct(ijtema.present, ijtema.totalAssigned, moduleActive),
+    total,
+    pct: getDashboardHealthModulePct(ijtema.present, total, moduleActive),
     moduleActive,
   }
 }

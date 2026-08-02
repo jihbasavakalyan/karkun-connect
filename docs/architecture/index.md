@@ -35,6 +35,8 @@
 | [KC-037C3 — Individual Karkun Report](./kc-037c3-individual-karkun-report.md) | Operational dossier · presentation only |
 | [KC-037C4 — ARCH-009 Gate](./kc-037c4-arch009-gate.md) | Weekly Ijtema Attendance Report |
 | [KC-037C4 — Weekly Ijtema Attendance Report](./kc-037c4-weekly-ijtema-attendance-report.md) | Operational attendance dossier · presentation only |
+| [KC-037C2C — ARCH-009 Gate](./kc-037c2c-arch009-gate.md) | Invitation workflow Option A (auto state transition) |
+| [KC-037C2C — Invitation / Attendance](./kc-037c2c-invitation-attendance.md) | Option A rules · Present÷Invited |
 | [KC-038 — ARCH-009 Gate](./kc-038-arch009-gate.md) | Campaign extension to 9 Aug 2026 |
 | [KC-035 — Digital Rafeeq 2.0 (Master)](./kc-035-digital-rafeeq-2.md) | Canonical Rafeeq layered architecture, principles, roadmap A–G |
 | [KC-035A — ARCH-009 Gate](./kc-035a-arch009-gate.md) | Digital Rafeeq conversation engine foundation |

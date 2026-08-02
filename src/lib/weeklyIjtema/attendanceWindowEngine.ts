@@ -71,11 +71,11 @@ function notifyIncompleteReminders(
   const windowKey = `${eventAudienceKey(event.meetingDate, event.audienceGender)}:reminder`
   for (const rukn of eligibleRuknsForGender(event.audienceGender)) {
     const progress = getRuknAttendanceProgress(event.id, rukn.id)
-    if (progress.pending <= 0) continue
+    if (progress.unmarked <= 0) continue
     enqueueWeeklyIjtemaNotification({
       ruknId: rukn.id,
       kind: 'ijtema-incomplete-reminder',
-      messageUrdu: `آپ کے ${progress.pending} کارکنوں کی حاضری ابھی درج نہیں ہوئی۔`,
+      messageUrdu: `آپ کے ${progress.unmarked} کارکنوں کی حاضری ابھی درج نہیں ہوئی۔`,
       eventId: event.id,
       windowKey,
     })

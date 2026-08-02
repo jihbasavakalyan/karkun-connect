@@ -545,16 +545,20 @@ export function buildWeeklyIjtemaAttendanceReportModel(
   const definitions =
     language === 'ur'
       ? [
-          'حاضر — اجتماع میں شرکت درج ہے۔',
-          'غیر حاضر — اجتماع میں غیر حاضری درج ہے۔',
-          'زیر التواء — مخصوص کارکن کی حاضری ابھی درج نہیں۔',
-          'حاضری ٪ — حاضر ÷ مخصوص (Campaign Health / KC-033)۔',
+          'مدعو — دعوت دی گئی، حاضری ابھی درج نہیں۔',
+          'حاضر — اجتماع میں شرکت درج ہے (دعوت خودکار)۔',
+          'غیر حاضر — اجتماع میں غیر حاضری درج ہے (دعوت خودکار)۔',
+          'زیر التواء — نہ مدعو، نہ حاضری۔',
+          'دعوت ٪ — مدعو کل ÷ منسلک۔',
+          'حاضری ٪ — حاضر ÷ مدعو کل (KC-033 / KC-037C2C)۔',
         ]
       : [
-          'Present — marked present for the Weekly Ijtema event.',
-          'Absent — marked absent for the Weekly Ijtema event.',
-          'Pending — assigned Karkun not yet marked.',
-          'Attendance % — Present ÷ Assigned (Campaign Health / KC-033).',
+          'Invited — invited, attendance not yet Present/Absent.',
+          'Present — marked present (auto-marks Invited).',
+          'Absent — marked absent (auto-marks Invited).',
+          'Pending — not invited and no attendance mark.',
+          'Invitation % — InvitedTotal ÷ Connected.',
+          'Attendance % — Present ÷ InvitedTotal (KC-033 / KC-037C2C).',
         ]
 
   return {

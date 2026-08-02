@@ -61,10 +61,19 @@ export type WeeklyIjtemaDashboardKpi = {
   meetingDate: string | null
   title: string | null
   eventStatus: WeeklyIjtemaEventStatus | null
+  /** KC-037C2C — Present ÷ InvitedTotal (not Present ÷ Connected). */
   attendancePct: number
+  /** KC-037C2C — InvitedTotal ÷ Connected. */
+  invitationPct: number
   present: number
   absent: number
+  /** Invited-only bucket (invited, attendance pending). */
+  invited: number
+  /** Total invited including Present/Absent. */
+  invitedTotal: number
   totalAssigned: number
+  /** Connected − InvitedOnly − Present − Absent. */
+  pendingNotInvited: number
   ruknsSubmitted: number
   ruknsPending: number
   ruknsTotal: number
@@ -74,9 +83,13 @@ export type WeeklyIjtemaRuknReportRow = {
   ruknId: string
   ruknName: string
   assigned: number
+  invited: number
+  invitedTotal: number
   present: number
   absent: number
+  /** Present ÷ InvitedTotal. */
   attendancePct: number
+  invitationPct: number
   submitted: boolean
   submittedAt?: string
 }
@@ -86,6 +99,10 @@ export type WeeklyIjtemaReport = {
   present: number
   absent: number
   attendancePct: number
+  invitationPct: number
+  invited: number
+  invitedTotal: number
+  pendingNotInvited: number
   totalAssigned: number
   ruknsSubmitted: number
   ruknsPending: number

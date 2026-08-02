@@ -391,7 +391,7 @@ export function buildCampaignReportModel(input?: {
   const connectedMetric = pair(connections.connected, connections.total)
   const visitsMetric = pair(visits.completed, visits.planned)
   const appMetric = pair(app.registered, app.eligible)
-  const wiMetric = pair(wiSlice?.current ?? wiKpi.present, wiSlice?.total ?? wiKpi.totalAssigned)
+  const wiMetric = pair(wiSlice?.current ?? wiKpi.present, wiSlice?.total ?? wiKpi.invitedTotal)
   const bmMetric = pair(
     bmSlice?.current ?? bmKpi.contributed,
     bmSlice?.total ?? bmKpi.totalAssigned,
@@ -417,6 +417,7 @@ export function buildCampaignReportModel(input?: {
     const wiRow = wiById.get(rukn.id)
     const bmRow = bmById.get(rukn.id)
     const wiAssigned = wiRow?.assigned ?? assigned.length
+    const wiInvitedTotal = wiRow?.invitedTotal ?? wiAssigned
     const bmAssigned = bmRow?.assigned ?? assigned.length
 
     const maleKarkuns = assigned.filter((k) => k.gender === 'Male').length
@@ -431,10 +432,15 @@ export function buildCampaignReportModel(input?: {
     const visitsPair = pair(visitRow.completed, visitRow.planned)
     const appPair = pair(appRow.registered, appRow.eligible || assigned.length)
     const wiCompleted = wiRow?.present ?? 0
-    const wiPairBase = pair(wiCompleted, wiAssigned)
+    // KC-037C2C — WI pair uses Present ÷ InvitedTotal (not Present ÷ Connected).
+    const wiPairBase = pair(wiCompleted, wiInvitedTotal)
     const wiPair: CampaignReportMetricPair = {
       ...wiPairBase,
-      pct: providers.campaignHealth.getModulePct(wiCompleted, wiAssigned, Boolean(wiKpi.eventId)),
+      pct: providers.campaignHealth.getModulePct(
+        wiCompleted,
+        wiInvitedTotal,
+        Boolean(wiKpi.eventId),
+      ),
     }
     const bmCompleted = bmRow?.contributed ?? 0
     const bmPairBase = pair(bmCompleted, bmAssigned)

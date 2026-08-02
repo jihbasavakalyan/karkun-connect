@@ -92,13 +92,13 @@ function buildWeeklyIjtemaWindowGuidanceUrdu(ruknId: string): string | null {
   if (!event || event.status !== 'Open') return null
 
   const progress = getRuknAttendanceProgress(event.id, ruknId)
-  if (progress.pending <= 0) return null
+  if (progress.unmarked <= 0) return null
 
-  if (progress.pending === 1) {
+  if (progress.unmarked === 1) {
     return 'آج ہفتہ وار اجتماع کی حاضری درج کرنا باقی ہے۔'
   }
-  if (progress.pending >= 3) {
-    return `آپ کے ${progress.pending} کارکنوں کی حاضری ابھی درج نہیں ہوئی۔`
+  if (progress.unmarked >= 3) {
+    return `آپ کے ${progress.unmarked} کارکنوں کی حاضری ابھی درج نہیں ہوئی۔`
   }
   return 'اجتماع کی حاضری مکمل کریں۔'
 }

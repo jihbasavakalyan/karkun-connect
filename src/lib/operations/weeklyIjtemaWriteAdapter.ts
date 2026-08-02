@@ -1,9 +1,12 @@
 /**
- * KC-0110.6 / KC-037C2A — Weekly Ijtema write adapter.
+ * KC-0110.6 / KC-037C2A / KC-037C2C — Weekly Ijtema write adapter.
  *
  * Attendance (event submissions): Present/Absent on open event only.
- * Invitation (Matrix campaign objective): legacy `ijtema_*` only — never
- * writes event submissions, and attendance never overwrites invitation.
+ * Invitation (Matrix campaign objective): legacy `ijtema_*` only — Matrix never
+ * writes event submissions.
+ *
+ * KC-037C2C Option A: Present/Absent attendance auto-ensures Invitation=Invited
+ * (does not require a prior Invited tap; never clears invitation on Present↔Absent).
  *
  * Full Rukn register submit remains `saveWeeklyIjtemaSubmission`.
  * Inventory: docs/architecture/kc-0110-weekly-ijtema-inventory.md
@@ -18,6 +21,7 @@ import {
   IJTEMA_CAMPAIGN_INVITED,
   IJTEMA_CAMPAIGN_NOT_INVITED,
 } from '@/lib/operations/weeklyIjtemaReadAdapter'
+import { ensureWeeklyIjtemaInvitedFromAttendance } from '@/lib/operations/weeklyIjtemaInvitationAttendance'
 import {
   getOpenWeeklyIjtemaEvent,
   removeWeeklyIjtemaKarkunMark,
@@ -76,8 +80,15 @@ function campaignRemarksForInvitation(status: IjtemaAttendanceStatus): string {
 }
 
 /**
+ * KC-037C2C Option A — Ensure Invitation=Invited after attendance Present/Absent.
+ * Re-export shared helper (single implementation).
+ */
+export { ensureWeeklyIjtemaInvitedFromAttendance } from '@/lib/operations/weeklyIjtemaInvitationAttendance'
+
+/**
  * KC-037C2A — Invited for Weekly Ijtema (campaign objective).
  * Writes legacy only; never touches event attendance submissions.
+ * Rule 1: Invited → Invitation=Invited; attendance stays Pending until marked.
  */
 export function markWeeklyIjtemaInvitation(
   input: UpdateIjtemaAttendanceInput,
@@ -108,8 +119,10 @@ export function markWeeklyIjtemaInvitation(
 }
 
 /**
- * Attendance write — Present/Absent on open event only (no legacy dual-write).
- * Excused / no open editable event → legacy compatibility only (non-campaign).
+ * Attendance write — Present/Absent on open event only.
+ * Excused / no open editable event → legacy compatibility only (non-campaign remarks
+ * for Excused path; Present/Absent still ensure Invited via Option A).
+ * KC-037C2C — Present/Absent auto-ensures Invitation=Invited.
  */
 export function markWeeklyIjtemaAttendance(
   input: UpdateIjtemaAttendanceInput,
@@ -129,8 +142,16 @@ export function markWeeklyIjtemaAttendance(
   const ruknId = resolveRuknId(input.karkunId, input.ruknId)
 
   if (!shouldWriteCanonical(openEvent, input.weekEndingDate) || !ruknId) {
-    // Do not stamp campaign invitation remarks from attendance fallbacks.
-    return writeLegacy(input)
+    const legacy = writeLegacy(input)
+    if (legacy.success && (status === 'Present' || status === 'Absent')) {
+      ensureWeeklyIjtemaInvitedFromAttendance({
+        karkunId: input.karkunId,
+        ruknId,
+        updatedBy: actor,
+        weekEndingDate: input.weekEndingDate,
+      })
+    }
+    return legacy
   }
 
   const ruknName = getRuknById(ruknId)?.name ?? ruknId
@@ -153,7 +174,6 @@ export function markWeeklyIjtemaAttendance(
     return { success: false, error: 'Attendance status is required.' }
   }
 
-  // KC-037C2A — attendance submissions only; never overwrite invitation legacy.
   const canonical = upsertWeeklyIjtemaKarkunMark({
     eventId: openEvent.id,
     ruknId,
@@ -165,6 +185,16 @@ export function markWeeklyIjtemaAttendance(
   })
   if (!canonical.success) {
     return canonical
+  }
+
+  const invited = ensureWeeklyIjtemaInvitedFromAttendance({
+    karkunId: input.karkunId,
+    ruknId,
+    updatedBy: actor,
+    weekEndingDate: input.weekEndingDate ?? openEvent.meetingDate,
+  })
+  if (!invited.success) {
+    return invited
   }
 
   return { success: true, source: 'canonical' }
@@ -186,6 +216,16 @@ export function bulkMarkWeeklyIjtemaAttendance(
   if (!canPreferCanonical) {
     const legacy = bulkUpdateIjtemaAttendance(input)
     if (!legacy.success) return legacy
+    if (input.status === 'Present' || input.status === 'Absent') {
+      for (const karkunId of input.karkunIds) {
+        ensureWeeklyIjtemaInvitedFromAttendance({
+          karkunId,
+          ruknId: input.ruknId,
+          updatedBy: input.updatedBy,
+          weekEndingDate: input.weekEndingDate,
+        })
+      }
+    }
     return { success: true, updated: legacy.updated, source: 'legacy' }
   }
 

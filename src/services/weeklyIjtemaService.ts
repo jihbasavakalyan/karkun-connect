@@ -8,8 +8,8 @@
  * (`getWeeklyIjtemaDashboardKpi`). Do not replace with ijtemaAttendance*.
  * Inventory: docs/architecture/kc-0110-weekly-ijtema-inventory.md
  *
- * KC-0111 — Health slice uses present÷totalAssigned from this KPI
- * (not marked-only attendancePct). See kc-0111-campaign-health-inventory.md.
+ * KC-0111 — Health slice uses Present÷InvitedTotal from this KPI (KC-037C2C).
+ * (Previously Present÷Assigned; Invitation % is Invited÷Connected.)
  *
  * KC-028C — gender-scoped current event + reopen audit (reason/duration).
  */
@@ -25,6 +25,8 @@ import {
   nowIso,
 } from '@/lib/campaignCycle/lifecycle'
 import { buildBinaryCycleReport } from '@/lib/campaignCycle/report'
+import { ensureWeeklyIjtemaInvitedFromAttendance } from '@/lib/operations/weeklyIjtemaInvitationAttendance'
+import { getRuknWeeklyIjtemaInvitationAttendanceCounts } from '@/lib/operations/weeklyIjtemaInvitationAttendance'
 import {
   getAllWeeklyIjtemaEvents,
   getWeeklyIjtemaEvent,
@@ -391,7 +393,20 @@ export function saveWeeklyIjtemaSubmission(
     updatedBy: input.submittedBy,
   }
 
-  return { success: true, submission: upsertWeeklyIjtemaSubmission(submission) }
+  const saved = upsertWeeklyIjtemaSubmission(submission)
+
+  // KC-037C2C Option A — Present/Absent auto-ensures Invitation=Invited.
+  for (const mark of saved.marks) {
+    if (mark.status !== 'Present' && mark.status !== 'Absent') continue
+    ensureWeeklyIjtemaInvitedFromAttendance({
+      karkunId: mark.karkunId,
+      ruknId: input.ruknId,
+      updatedBy: input.submittedBy,
+      weekEndingDate: event.meetingDate,
+    })
+  }
+
+  return { success: true, submission: saved }
 }
 
 /** Open event only — used by write cutover (KC-0110.6). */
@@ -539,25 +554,47 @@ function buildReportForEvent(event: WeeklyIjtemaEvent): WeeklyIjtemaReport {
     { audienceGender: event.audienceGender },
   )
 
-  return {
-    event,
-    present: binary.positive,
-    absent: binary.negative,
-    attendancePct: binary.completionPct,
-    totalAssigned: binary.totalAssigned,
-    ruknsSubmitted: binary.ruknsSubmitted,
-    ruknsPending: binary.ruknsPending,
-    ruknsTotal: binary.ruknsTotal,
-    ruknRows: binary.ruknRows.map((row) => ({
+  const ruknRows = binary.ruknRows.map((row) => {
+    const counts = getRuknWeeklyIjtemaInvitationAttendanceCounts(event.id, row.ruknId)
+    return {
       ruknId: row.ruknId,
       ruknName: row.ruknName,
       assigned: row.assigned,
-      present: row.positive,
-      absent: row.negative,
-      attendancePct: row.completionPct,
+      invited: counts.invitedOnly,
+      invitedTotal: counts.invitedTotal,
+      present: counts.present,
+      absent: counts.absent,
+      attendancePct: counts.attendancePct,
+      invitationPct: counts.invitationPct,
       submitted: row.submitted,
       submittedAt: row.submittedAt,
-    })),
+    }
+  })
+
+  const invitedTotal = ruknRows.reduce((sum, row) => sum + row.invitedTotal, 0)
+  const invitedOnly = ruknRows.reduce((sum, row) => sum + row.invited, 0)
+  const present = ruknRows.reduce((sum, row) => sum + row.present, 0)
+  const absent = ruknRows.reduce((sum, row) => sum + row.absent, 0)
+  const totalAssigned = binary.totalAssigned
+  const attendancePct =
+    invitedTotal === 0 ? 0 : Math.round((present / invitedTotal) * 100)
+  const invitationPct =
+    totalAssigned === 0 ? 0 : Math.round((invitedTotal / totalAssigned) * 100)
+
+  return {
+    event,
+    present,
+    absent,
+    attendancePct,
+    totalAssigned,
+    ruknsSubmitted: binary.ruknsSubmitted,
+    ruknsPending: binary.ruknsPending,
+    ruknsTotal: binary.ruknsTotal,
+    ruknRows,
+    invited: invitedOnly,
+    invitedTotal,
+    invitationPct,
+    pendingNotInvited: Math.max(0, totalAssigned - invitedOnly - present - absent),
   }
 }
 
@@ -578,9 +615,13 @@ export function getWeeklyIjtemaDashboardKpi(
       title: null,
       eventStatus: null,
       attendancePct: 0,
+      invitationPct: 0,
       present: 0,
       absent: 0,
+      invited: 0,
+      invitedTotal: 0,
       totalAssigned: 0,
+      pendingNotInvited: 0,
       ruknsSubmitted: 0,
       ruknsPending: 0,
       ruknsTotal: 0,
@@ -594,29 +635,46 @@ export function getWeeklyIjtemaDashboardKpi(
     title: event.title,
     eventStatus: event.status,
     attendancePct: report.attendancePct,
+    invitationPct: report.invitationPct,
     present: report.present,
     absent: report.absent,
+    invited: report.invited,
+    invitedTotal: report.invitedTotal,
     totalAssigned: report.totalAssigned,
+    pendingNotInvited: report.pendingNotInvited,
     ruknsSubmitted: report.ruknsSubmitted,
     ruknsPending: report.ruknsPending,
     ruknsTotal: report.ruknsTotal,
   }
 }
 
-/** KC-028C — Present / Absent / unmarked pending for one Rukn on an event. */
+/** KC-028C / KC-037C2C — Invitation + attendance progress for one Rukn on an event. */
 export function getRuknAttendanceProgress(
   eventId: string,
   ruknId: string,
-): { present: number; absent: number; pending: number; assigned: number } {
-  const assigned = getAssignedKarkunanForRukn(ruknId)
-  const submission = getWeeklyIjtemaSubmission(eventId, ruknId)
-  let present = 0
-  let absent = 0
-  for (const karkun of assigned) {
-    const mark = submission?.marks.find((row) => row.karkunId === karkun.id)
-    if (mark?.status === 'Present') present += 1
-    else if (mark?.status === 'Absent') absent += 1
+): {
+  present: number
+  absent: number
+  pending: number
+  assigned: number
+  invited: number
+  invitedTotal: number
+  unmarked: number
+  invitationPct: number
+  attendancePct: number
+  attendanceGap: number
+} {
+  const counts = getRuknWeeklyIjtemaInvitationAttendanceCounts(eventId, ruknId)
+  return {
+    present: counts.present,
+    absent: counts.absent,
+    pending: counts.pending,
+    assigned: counts.connected,
+    invited: counts.invitedOnly,
+    invitedTotal: counts.invitedTotal,
+    unmarked: counts.unmarked,
+    invitationPct: counts.invitationPct,
+    attendancePct: counts.attendancePct,
+    attendanceGap: counts.attendanceGap,
   }
-  const pending = Math.max(0, assigned.length - present - absent)
-  return { present, absent, pending, assigned: assigned.length }
 }
