@@ -1,5 +1,6 @@
 /**
- * KC-0083 — Simplified Campaign Progress (%, Assigned / Completed / Pending only).
+ * KC-0083 — Simplified Campaign Progress (%, Connected / Campaign Completed / Remaining Follow-up).
+ * KC-037C2B — Presentation labels only; counts still from buildCampaignExecutionSummary.
  * Detailed Visit / JIH / Ijtema / Baitul Maal counters live in the Execution Matrix.
  */
 
@@ -23,9 +24,9 @@ type CampaignExecutionProgressCardProps = {
 
 function Metric({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-lg border border-border bg-surface-muted px-3 py-2 text-center">
-      <p className="text-xs text-secondary">{label}</p>
-      <p className="mt-0.5 text-lg font-semibold text-text-heading">{value}</p>
+    <div className="flex min-h-[4.25rem] flex-col justify-center rounded-lg border border-border bg-surface-muted px-2 py-2 text-center sm:px-3">
+      <p className="text-[11px] leading-tight text-secondary sm:text-xs">{label}</p>
+      <p className="mt-0.5 text-lg font-semibold tabular-nums text-text-heading">{value}</p>
     </div>
   )
 }
@@ -103,8 +104,8 @@ export function CampaignExecutionProgressCard({ ruknId }: CampaignExecutionProgr
       </div>
       <div className="mt-3 grid grid-cols-3 gap-2">
         <Metric label="Connected Karkuns" value={summary.assigned} />
-        <Metric label="Completed" value={summary.completed} />
-        <Metric label="Pending" value={summary.pending} />
+        <Metric label="Campaign Completed" value={summary.completed} />
+        <Metric label="Remaining Follow-up" value={summary.pending} />
       </div>
     </section>
   )

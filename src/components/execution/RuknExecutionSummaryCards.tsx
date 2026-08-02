@@ -1,9 +1,10 @@
 /**
  * KC-0092B — Rukn Home execution summary cards (read-only).
  * Aggregates the same matrix rows as CampaignExecutionMatrix — no editing, no new queries.
+ * KC-037C2B — Workflow card order (Visit → Invited → JIH → Baitul); optional insert slot for Attendance.
  */
 
-import { useEffect, useState } from 'react'
+import { Fragment, type ReactNode, useEffect, useState } from 'react'
 import { buildCampaignMatrixRows } from '@/lib/campaignExecutionMatrix'
 import { createCoalescedNotifier } from '@/lib/dashboard/coalesceStoreNotifications'
 import { subscribeToAnnexure1Store } from '@/stores/annexure1Store'
@@ -14,10 +15,13 @@ import { usePeopleStore } from '@/hooks/usePeopleStore'
 
 type RuknExecutionSummaryCardsProps = {
   ruknId: string
+  /** Render after the named card (full-width on sm+) — e.g. attendance after Invited. */
+  afterCardId?: 'visit' | 'ijtema' | 'jih' | 'baitul'
+  afterCard?: ReactNode
 }
 
 type SummaryCard = {
-  id: string
+  id: 'visit' | 'ijtema' | 'jih' | 'baitul'
   title: string
   doneLabel: string
   done: number
@@ -33,7 +37,11 @@ function MetricCell({ label, value }: { label: string; value: number }) {
   )
 }
 
-export function RuknExecutionSummaryCards({ ruknId }: RuknExecutionSummaryCardsProps) {
+export function RuknExecutionSummaryCards({
+  ruknId,
+  afterCardId,
+  afterCard,
+}: RuknExecutionSummaryCardsProps) {
   const peopleVersion = usePeopleStore()
   const [tick, setTick] = useState(0)
 
@@ -64,6 +72,7 @@ export function RuknExecutionSummaryCards({ ruknId }: RuknExecutionSummaryCardsP
   const ijtemaAttended = rows.filter((r) => r.ijtema === 'Present').length
   const baitulContributed = rows.filter((r) => r.baitulMaal === 'committed').length
 
+  // KC-037C2B — workflow order: Visit → Invited → JIH → Baitul (Attendance injected via afterCard).
   const cards: SummaryCard[] = [
     {
       id: 'visit',
@@ -73,18 +82,18 @@ export function RuknExecutionSummaryCards({ ruknId }: RuknExecutionSummaryCardsP
       pending: Math.max(0, assigned - visitCompleted),
     },
     {
-      id: 'jih',
-      title: 'JIH App Registration',
-      doneLabel: 'Registered',
-      done: jihRegistered,
-      pending: Math.max(0, assigned - jihRegistered),
-    },
-    {
       id: 'ijtema',
       title: 'Invited for Weekly Ijtema',
       doneLabel: 'Invited',
       done: ijtemaAttended,
       pending: rows.filter((r) => r.ijtema === 'Pending').length,
+    },
+    {
+      id: 'jih',
+      title: 'JIH App Registration',
+      doneLabel: 'Registered',
+      done: jihRegistered,
+      pending: Math.max(0, assigned - jihRegistered),
     },
     {
       id: 'baitul',
@@ -98,16 +107,18 @@ export function RuknExecutionSummaryCards({ ruknId }: RuknExecutionSummaryCardsP
   return (
     <section className="grid gap-3 sm:grid-cols-2" aria-label="Execution summaries">
       {cards.map((card) => (
-        <div
-          key={card.id}
-          className="rounded-(--radius-card) border border-border bg-surface p-4 shadow-card"
-        >
-          <h2 className="text-sm font-semibold text-text-heading">{card.title}</h2>
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            <MetricCell label={card.doneLabel} value={card.done} />
-            <MetricCell label="Pending" value={card.pending} />
+        <Fragment key={card.id}>
+          <div className="flex h-full min-h-[7.5rem] flex-col rounded-(--radius-card) border border-border bg-surface p-4 shadow-card">
+            <h2 className="text-sm font-semibold leading-snug text-text-heading">{card.title}</h2>
+            <div className="mt-auto grid grid-cols-2 gap-2 pt-3">
+              <MetricCell label={card.doneLabel} value={card.done} />
+              <MetricCell label="Pending" value={card.pending} />
+            </div>
           </div>
-        </div>
+          {afterCardId === card.id && afterCard ? (
+            <div className="sm:col-span-2">{afterCard}</div>
+          ) : null}
+        </Fragment>
       ))}
     </section>
   )

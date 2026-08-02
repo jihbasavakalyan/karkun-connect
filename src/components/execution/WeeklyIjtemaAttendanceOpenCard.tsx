@@ -1,9 +1,11 @@
 /**
  * KC-028C — Rukn dashboard card when Weekly Ijtema attendance window is open.
+ * KC-037C2B — Title + OPEN badge presentation only; stats unchanged.
  */
 
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { EnterpriseBadge } from '@/components/enterprise'
 import { ROUTES } from '@/constants/routes'
 import { getRuknById } from '@/data/ruknMaster'
 import {
@@ -53,13 +55,22 @@ export function WeeklyIjtemaAttendanceOpenCard({ ruknId }: WeeklyIjtemaAttendanc
   return (
     <section
       className="rounded-(--radius-card) border border-primary/30 bg-surface p-4 shadow-card"
-      aria-label="Weekly Ijtema attendance window"
+      aria-label="Today's Weekly Ijtema attendance"
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h2 className="text-sm font-semibold text-text-heading">
-            Weekly Ijtema Attendance is Open
-          </h2>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="text-sm font-semibold text-text-heading">
+              Today&apos;s Weekly Ijtema Attendance
+            </h2>
+            <EnterpriseBadge variant="success">
+              <span
+                className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-green-600"
+                aria-hidden
+              />
+              Open
+            </EnterpriseBadge>
+          </div>
           <p className="mt-1 text-xs text-secondary">{event.title}</p>
           {notice ? (
             <p className="mt-2 text-sm text-secondary" dir="rtl" lang="ur">

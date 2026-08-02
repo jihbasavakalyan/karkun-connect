@@ -153,7 +153,7 @@ export function CampaignExecutionMatrix({ ruknId }: CampaignExecutionMatrixProps
       <div className="flex items-baseline justify-between gap-2">
         <h2 className="text-lg font-semibold text-text-heading">Execution Matrix</h2>
         <p className="text-xs text-secondary">
-          {busy ? 'Saving…' : 'Tap a cell to update'}
+          {busy ? 'Saving…' : 'Tap any status to update.'}
         </p>
       </div>
 
