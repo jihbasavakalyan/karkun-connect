@@ -1,0 +1,181 @@
+{
+  "ticket": "KC-037C2G",
+  "generatedAt": "2026-08-02T20:26:21.397Z",
+  "prodUrl": "https://karkun-connect.vercel.app",
+  "canonicalEventId": "wij_msb2iz7w_5gvbtq",
+  "signInResult": {
+    "uid": "VQkrDSDGoQUptRlyghtlFxmcJN03"
+  },
+  "deploymentAlias": "https://karkun-connect.vercel.app",
+  "pages": {
+    "adminDashboard": {
+      "path": "/admin",
+      "onLogin": false,
+      "signals": {
+        "hasWeeklyIjtema": true,
+        "hasCampaignHealth": true,
+        "hasConnected": true,
+        "hasPresent": false,
+        "mentionsCanonicalId": false,
+        "mentionsAug2": true,
+        "connectedMatches": [
+          594,
+          594,
+          594,
+          266,
+          200,
+          37,
+          394,
+          59,
+          18,
+          17,
+          14,
+          12,
+          12,
+          11,
+          9,
+          8,
+          18,
+          18,
+          18,
+          18,
+          18,
+          18,
+          18,
+          18,
+          18,
+          18,
+          18
+        ],
+        "presentMatches": [],
+        "absentMatches": [],
+        "suspiciousConnected800": false,
+        "healthyConnected200": true
+      },
+      "sample": "karkun-connect\n\nCampaign Execution Platform\n\n←\n\nفعال کارکن، فعال جماعت\n\nDashboard\nMission Workspace\nInbox\nCampaign\nReports\nRukn\nKarkun\nMuttafiqeen\nConnections\nActivities\nWeekly Ijtema\nMonthly Baitul Maal\nFollow-up\nCampaign Execution\nCommunication\nBroadcast\nSaved Lists\nHistory\nSettings\n\njihbasavakalyan1@gmail.com\n\nAdministrator\n\nHelp\nCampaign Library →\n\nفعال کارکن، فعال جماعت\n\n18 Jul 2026 — 9 Aug 2026\n\nACTIVE\nSearch Karkun\n3\n\njihbasavakalyan1@gmail.com\n\nAdministrator\n\nLogout\nفعال کارکن، فعال جماعت\n\n18 Jul 2026 – 9 Aug 2026\n\nMonday, 3 August 2026\n\nموجودہ صورتحال: مہم جاری ہے • دن 17 از 23\n\n📢 اہم اعلان\n\nمرکزی مہم \"فعال کارکن، فعال جماعت\" کی مدت میں توسیع کرتے ہوئے اب یہ مہم 9 اگست 2026 تک جاری رہے گی۔\n\n100%\nPROGRESS\n\nCampaign Progress\n\nCONNECTED KARKUNS\n594\nREMAINING\n0\nDAYS LEFT\n6\n\nDay 17 of 23 · Momentum 25%\n\nPending Karkun Requests\nConnections\nExecute\nReview\nWork Queue\nCommunication\nQUICK ACTIONS\nAlways available\nAdd Karkun\nAdd Muttafiq\nAssign Rukn\nRecord Visit\nRecord Weekly Ijtema\nRecord Baitul Maal\nSend Communication\nExport Report\nNEXT ACTIONS\n4 open\n9\nPending Weekly Ijtema follow-ups\nRukns still needing attendance submission\n→\n266\nPending Visit follow-ups\nVisits and follow-ups awaiting completion\n→\n539\nPending App Registration\nEligible Karkuns not yet registered\n→\n37\nPending Baitul Maal commitments\nContributions still pending this cycle\n→\nATTENTION REQUIRED\n0 items\n\nNo attention items — registry looks healthy.\n\nCAMPAIGN PROGRESS\nCurrent / Target\n\nConnected\n\n594 / 594\n\n100%\n\n~6 days at current pace\n\nVisit Conducted\n\n332 / 594\n\n55.9%\n\n0 submissions today\n\nApp Registered\n\n55 / 594\n\n9.3%\n\nWeekly Ijtema\n\n41 / 594\n\n6.9%\n\nBaitul Maal\n\n37 / 594\n\n6.2%\n\nCOLLECTIVE OVERVIEW\nExecutive summary\n\nTOTAL RUKNS\n\n49\n\nWITH CONNECTIONS\n\n47\n\nAt least one Connected Karkun\n\nCONNECTED\n\n594\n\nActive Connected Karkuns\n\nPENDING\n\n266\n\nVisits and tasks not yet completed\n\nAVERAGE PROGRESS\n\n48%\n\nCRITICAL\n\n22\n\nRukns behind on progress\n\nMALE RUKNS\nExecutive summary\n\nTOTAL\n\n25\n\nWITH CONNECTIONS\n\n25\n\nCONNECTED\n\n200\n\nPENDING\n\n122\n\nCONNECTION %\n\n100%\n\nRukns with at least one Connected Karkun\n\nPROGRESS\n\n37%\n\nAverage completion across Rukns\n\nFEMALE RUKNS\nExecutive summary\n\nTOTAL\n\n24\n\nWITH CONNECTIONS\n\n22\n\nCONNECTED\n\n394\n\nPENDING\n\n144\n\nCONNECTION %\n\n92%\n\nRukns with at least one Connected Karkun\n\nPROGRESS\n\n59%\n\nAverage completion across Rukns\n\nCAMPAIGN HEALTH\nDerived summary\n\nVISITS\n\n55%\n\nWEEKLY IJTEMA\n\n31%\n\nMONTHLY BAITUL MAAL\n\n6%\n\nAPP REGISTRATION\n\n9%\n\nTODAY'S MISSION\n\nExecutive summary — laun"
+    },
+    "weeklyIjtemaManagement": {
+      "path": "/admin/weekly-ijtema",
+      "onLogin": false,
+      "signals": {
+        "hasWeeklyIjtema": true,
+        "hasCampaignHealth": false,
+        "hasConnected": false,
+        "hasPresent": false,
+        "mentionsCanonicalId": false,
+        "mentionsAug2": true,
+        "connectedMatches": [],
+        "presentMatches": [],
+        "absentMatches": [],
+        "suspiciousConnected800": false,
+        "healthyConnected200": false
+      },
+      "sample": "karkun-connect\n\nCampaign Execution Platform\n\n←\n\nفعال کارکن، فعال جماعت\n\nDashboard\nMission Workspace\nInbox\nCampaign\nReports\nRukn\nKarkun\nMuttafiqeen\nConnections\nActivities\nWeekly Ijtema\nMonthly Baitul Maal\nFollow-up\nCampaign Execution\nCommunication\nBroadcast\nSaved Lists\nHistory\nSettings\n\njihbasavakalyan1@gmail.com\n\nAdministrator\n\nHelp\nCampaign Library →\n\nفعال کارکن، فعال جماعت\n\n18 Jul 2026 — 9 Aug 2026\n\nACTIVE\nSearch Karkun\n3\n\njihbasavakalyan1@gmail.com\n\nAdministrator\n\nLogout\nWeekly Ijtema\n\nAttendance windows open automatically from the configured schedule. Use this page for corrections, reports, and late reopen.\n\nمہم کی رپورٹ (PDF)\n\nAutomatic attendance windows\n\nWomen's Weekly Ijtema: day 6 · 00:01–23:59 (Asia/Karachi)\nMen's Weekly Ijtema: day 0 · 00:01–23:59 (Asia/Karachi)\n\nNo weekly Administrator open is required. Manual create remains available for exceptions.\n\nCREATE WEEKLY IJTEMA\nMeeting Date\nTitle\nSubmission Deadline\nDefault is Meeting Date + 24 hours. Auto windows use same-day close time.\nCreate & Open Attendance\nMEETINGS\n\nMen's Weekly Ijtema\n\nSun, 2 Aug 2026 · Audience: Men · Auto window\n\nDeadline 3 Aug, 00:29\n\nClosed\nEdit\nDelete\nReopen Attendance\nView Attendance Report\n\nWomen's Weekly Ijtema\n\nSat, 1 Aug 2026 · Audience: Women · Auto window\n\nDeadline 2 Aug, 00:29\n\nClosed\nEdit\nDelete\nReopen Attendance\nView Attendance Report\n\n← Back to Dashboard"
+    },
+    "weeklyIjtemaReport": {
+      "path": "/admin/weekly-ijtema/wij_msb2iz7w_5gvbtq/report",
+      "onLogin": false,
+      "signals": {
+        "hasWeeklyIjtema": true,
+        "hasCampaignHealth": false,
+        "hasConnected": true,
+        "hasPresent": true,
+        "mentionsCanonicalId": false,
+        "mentionsAug2": true,
+        "connectedMatches": [
+          200
+        ],
+        "presentMatches": [
+          41
+        ],
+        "absentMatches": [
+          73
+        ],
+        "suspiciousConnected800": false,
+        "healthyConnected200": true
+      },
+      "sample": "karkun-connect\n\nCampaign Execution Platform\n\n←\n\nفعال کارکن، فعال جماعت\n\nDashboard\nMission Workspace\nInbox\nCampaign\nReports\nRukn\nKarkun\nMuttafiqeen\nConnections\nActivities\nWeekly Ijtema\nMonthly Baitul Maal\nFollow-up\nCampaign Execution\nCommunication\nBroadcast\nSaved Lists\nHistory\nSettings\n\njihbasavakalyan1@gmail.com\n\nAdministrator\n\nHelp\nCampaign Library →\n\nفعال کارکن، فعال جماعت\n\n18 Jul 2026 — 9 Aug 2026\n\nACTIVE\nSearch Karkun\n3\n\njihbasavakalyan1@gmail.com\n\nAdministrator\n\nLogout\nWeekly Summary\n\nMen's Weekly Ijtema · Sun, 2 Aug 2026\n\nMEETING DATE\n\nSun, 2 Aug 2026\n\nPRESENT\n\n41\n\nABSENT\n\n73\n\nATTENDANCE %\n\n31%\n\nTOTAL CONNECTED\n\n200\n\nRUKNS SUBMITTED\n\n16\n\nRUKNS PENDING\n\n9\n\nSTATUS\n\nClosed\n\nRUKN-WISE ATTENDANCE %\nRUKN\tCONNECTED\tPRESENT\tABSENT\tATTENDANCE %\tSUBMISSION\nAbdul Khader Er\t6\t1\t4\t20%\tSubmitted\nAbdul Khaleel Gobre\t8\t0\t0\t—\tPending\nAejaz Ahmed Gobre\t7\t2\t5\t29%\tSubmitted\nAmir Khan\t8\t0\t0\t—\tPending\nAsadulla Khan Zaki\t17\t6\t11\t35%\tSubmitted\nIzhar ul Haque\t8\t4\t4\t50%\tSubmitted\nM Althaf Amjad\t8\t0\t0\t—\tPending\nMd Arafat Ahmad\t8\t2\t2\t25%\tSubmitted\nMd Ehtesham Akhtar\t12\t0\t12\t0%\tSubmitted\nMd Yousufuddin\t12\t0\t0\t—\tPending\nMir Mukaram Ali Jamadar\t9\t0\t0\t—\tPending\nMohammad Aslam\t7\t5\t0\t71%\tSubmitted\nMohammad Faizuddin (Imran)\t7\t4\t3\t57%\tSubmitted\nMohammed Alauddin\t7\t0\t0\t—\tPending\nMohammed Ghulam Rasool\t8\t0\t0\t—\tPending\nMohammed Nayeemuddin\t13\t3\t10\t23%\tSubmitted\nMohd Minhajuddin\t10\t1\t1\t11%\tSubmitted\nMoulvi Abdul Qadir\t2\t0\t0\t—\tPending\nMuhammad Faruq\t6\t3\t3\t50%\tSubmitted\nMujahid Pasha Qureshi\t5\t0\t5\t0%\tSubmitted\nQyamuddin Baagh\t3\t0\t0\t—\tPending\nRiyaz Patel\t6\t1\t1\t20%\tSubmitted\nSyed Sher Ali\t8\t2\t6\t25%\tSubmitted\nTafheemuddin\t6\t3\t1\t50%\tSubmitted\nZulfiqar Ahmed\t9\t4\t5\t44%\tSubmitted\nHISTORICAL WEEKS\nSun, 2 Aug 2026\nSat, 1 Aug 2026\n\n← Weekly Ijtema Management · Dashboard"
+    },
+    "reportCenter": {
+      "path": "/admin/reports",
+      "onLogin": false,
+      "signals": {
+        "hasWeeklyIjtema": true,
+        "hasCampaignHealth": false,
+        "hasConnected": true,
+        "hasPresent": true,
+        "mentionsCanonicalId": false,
+        "mentionsAug2": true,
+        "connectedMatches": [],
+        "presentMatches": [],
+        "absentMatches": [],
+        "suspiciousConnected800": false,
+        "healthyConnected200": false
+      },
+      "sample": "karkun-connect\n\nCampaign Execution Platform\n\n←\n\nفعال کارکن، فعال جماعت\n\nDashboard\nMission Workspace\nInbox\nCampaign\nReports\nRukn\nKarkun\nMuttafiqeen\nConnections\nActivities\nWeekly Ijtema\nMonthly Baitul Maal\nFollow-up\nCampaign Execution\nCommunication\nBroadcast\nSaved Lists\nHistory\nSettings\n\njihbasavakalyan1@gmail.com\n\nAdministrator\n\nHelp\nCampaign Library →\n\nفعال کارکن، فعال جماعت\n\n18 Jul 2026 — 9 Aug 2026\n\nACTIVE\nSearch Karkun\n3\n\njihbasavakalyan1@gmail.com\n\nAdministrator\n\nLogout\nReport Center\n\nConfigure campaign reports. Every KPI comes from KC-033 providers via the Report Composer. Connection (assignment) is never conflated with Visit (personal meeting).\n\nPresets\nExecutive Weekly Review\nCampaign Review\nMen Review\nWomen Review\nWeekly Ijtema Attendance\nVisit Review\nMuttafiqeen\nBaitul Maal\nApp Registration\nIndividual Rukn\nIndividual Karkun\nAudit\nHistorical Comparison\nSave current as template\nSave\nConfiguration\nReport type\nExecutive Campaign Report\nCampaign Progress Report\nMen Performance Report\nWomen Performance Report\nRukn Performance Report\nIndividual Rukn Performance Report\nIndividual Karkun Performance Report\nWeekly Ijtema Attendance Report\nVisit Progress Report\nBaitul Maal Report\nJIH App Registration Report\nPending Activities Report\nCommunication Report\nFollow-up Report\nMuttafiqeen Report\nConnection Report\nSnapshot Summary Report\nMathematical Audit Report\nIntegrity Report\nHistorical Comparison Report\nScope\nEntire Campaign\nMen\nWomen\nCombined\nSpecific Rukn\nSpecific Halqa\nSpecific Ward\nSpecific Individual (Rukn)\nSpecific Individual (Karkun)\nEntire Registry\nConnected Only\nAvailable Only\nMuttafiqeen Only\nDate range\nSnapshot (now)\nToday\nYesterday\nCurrent Week\nPrevious Week\nCurrent Month\nCampaign Duration\nCustom Date Range\nAll Time\nDetail level\nExecutive\nOne-page management density\nStandard\nCurrent KC-034 equivalent\nDetailed\nExpanded statistics\nAudit\nFull appendix density\nOutput format\nPDF\nDashboard\nExcel\nCSV\nJSON\nLanguage\nUrdu\nEnglish\nBilingual (Urdu-primary)\nTheme\nDefault (Classic Urdu)\nExecutive\nMinimal\nNeutral Default\nOptions\nConfidential watermark\nShow charts\nShow rankings\nShow appendix\nPortrait\nLandscape\nSections\n\nDriven by the Section Registry for the selected report type. Planned sections are visible but not selectable until implemented.\n\nExecutive Campaign Body (KC-034)\nFull Urdu executive campaign PDF model (cover, KPIs, bands, exceptions, Rukn table). Connection ≠ Visit.\nExecutive Summary\nWhere we are, achievements, remaining work, priorities\nCampaign KP"
+    },
+    "ruknDashboard": {
+      "path": "/admin",
+      "onLogin": false,
+      "signals": {
+        "hasWeeklyIjtema": true,
+        "hasCampaignHealth": true,
+        "hasConnected": true,
+        "hasPresent": false,
+        "mentionsCanonicalId": false,
+        "mentionsAug2": true,
+        "connectedMatches": [
+          594,
+          594,
+          594,
+          266,
+          200,
+          37,
+          394,
+          59,
+          18,
+          17,
+          14,
+          12,
+          12,
+          11,
+          9,
+          8,
+          18,
+          18,
+          18,
+          18,
+          18,
+          18,
+          18,
+          18,
+          18,
+          18,
+          18
+        ],
+        "presentMatches": [],
+        "absentMatches": [],
+        "suspiciousConnected800": false,
+        "healthyConnected200": true
+      },
+      "sample": "karkun-connect\n\nCampaign Execution Platform\n\n←\n\nفعال کارکن، فعال جماعت\n\nDashboard\nMission Workspace\nInbox\nCampaign\nReports\nRukn\nKarkun\nMuttafiqeen\nConnections\nActivities\nWeekly Ijtema\nMonthly Baitul Maal\nFollow-up\nCampaign Execution\nCommunication\nBroadcast\nSaved Lists\nHistory\nSettings\n\njihbasavakalyan1@gmail.com\n\nAdministrator\n\nHelp\nCampaign Library →\n\nفعال کارکن، فعال جماعت\n\n18 Jul 2026 — 9 Aug 2026\n\nACTIVE\nSearch Karkun\n3\n\njihbasavakalyan1@gmail.com\n\nAdministrator\n\nLogout\nفعال کارکن، فعال جماعت\n\n18 Jul 2026 – 9 Aug 2026\n\nMonday, 3 August 2026\n\nموجودہ صورتحال: مہم جاری ہے • دن 17 از 23\n\n📢 اہم اعلان\n\nمرکزی مہم \"فعال کارکن، فعال جماعت\" کی مدت میں توسیع کرتے ہوئے اب یہ مہم 9 اگست 2026 تک جاری رہے گی۔\n\n100%\nPROGRESS\n\nCampaign Progress\n\nCONNECTED KARKUNS\n594\nREMAINING\n0\nDAYS LEFT\n6\n\nDay 17 of 23 · Momentum 25%\n\nPending Karkun Requests\nConnections\nExecute\nReview\nWork Queue\nCommunication\nQUICK ACTIONS\nAlways available\nAdd Karkun\nAdd Muttafiq\nAssign Rukn\nRecord Visit\nRecord Weekly Ijtema\nRecord Baitul Maal\nSend Communication\nExport Report\nNEXT ACTIONS\n4 open\n9\nPending Weekly Ijtema follow-ups\nRukns still needing attendance submission\n→\n266\nPending Visit follow-ups\nVisits and follow-ups awaiting completion\n→\n539\nPending App Registration\nEligible Karkuns not yet registered\n→\n37\nPending Baitul Maal commitments\nContributions still pending this cycle\n→\nATTENTION REQUIRED\n0 items\n\nNo attention items — registry looks healthy.\n\nCAMPAIGN PROGRESS\nCurrent / Target\n\nConnected\n\n594 / 594\n\n100%\n\n~6 days at current pace\n\nVisit Conducted\n\n332 / 594\n\n55.9%\n\n0 submissions today\n\nApp Registered\n\n55 / 594\n\n9.3%\n\nWeekly Ijtema\n\n41 / 594\n\n6.9%\n\nBaitul Maal\n\n37 / 594\n\n6.2%\n\nCOLLECTIVE OVERVIEW\nExecutive summary\n\nTOTAL RUKNS\n\n49\n\nWITH CONNECTIONS\n\n47\n\nAt least one Connected Karkun\n\nCONNECTED\n\n594\n\nActive Connected Karkuns\n\nPENDING\n\n266\n\nVisits and tasks not yet completed\n\nAVERAGE PROGRESS\n\n48%\n\nCRITICAL\n\n22\n\nRukns behind on progress\n\nMALE RUKNS\nExecutive summary\n\nTOTAL\n\n25\n\nWITH CONNECTIONS\n\n25\n\nCONNECTED\n\n200\n\nPENDING\n\n122\n\nCONNECTION %\n\n100%\n\nRukns with at least one Connected Karkun\n\nPROGRESS\n\n37%\n\nAverage completion across Rukns\n\nFEMALE RUKNS\nExecutive summary\n\nTOTAL\n\n24\n\nWITH CONNECTIONS\n\n22\n\nCONNECTED\n\n394\n\nPENDING\n\n144\n\nCONNECTION %\n\n92%\n\nRukns with at least one Connected Karkun\n\nPROGRESS\n\n59%\n\nAverage completion across Rukns\n\nCAMPAIGN HEALTH\nDerived summary\n\nVISITS\n\n55%\n\nWEEKLY IJTEMA\n\n31%\n\nMONTHLY BAITUL MAAL\n\n6%\n\nAPP REGISTRATION\n\n9%\n\nTODAY'S MISSION\n\nExecutive summary — laun"
+    }
+  },
+  "consoleErrorCount": 12,
+  "consoleErrors": [
+    "Error: <path> attribute d: Expected number, \"…-1.8-.6 1.8-.6.6Z\".",
+    "Error: <path> attribute d: Expected number, \"…-1.8-.6 1.8-.6.6Z\".",
+    "Error: <path> attribute d: Expected number, \"…-1.8-.6 1.8-.6.6Z\".",
+    "Error: <path> attribute d: Expected number, \"…-1.8-.6 1.8-.6.6Z\".",
+    "Error: <path> attribute d: Expected number, \"…-1.8-.6 1.8-.6.6Z\".",
+    "Error: <path> attribute d: Expected number, \"…-1.8-.6 1.8-.6.6Z\".",
+    "Error: <path> attribute d: Expected number, \"…-1.8-.6 1.8-.6.6Z\".",
+    "Error: <path> attribute d: Expected number, \"…-1.8-.6 1.8-.6.6Z\".",
+    "Error: <path> attribute d: Expected number, \"…-1.8-.6 1.8-.6.6Z\".",
+    "Error: <path> attribute d: Expected number, \"…-1.8-.6 1.8-.6.6Z\".",
+    "Error: <path> attribute d: Expected number, \"…-1.8-.6 1.8-.6.6Z\".",
+    "Error: <path> attribute d: Expected number, \"…-1.8-.6 1.8-.6.6Z\"."
+  ],
+  "failures": [],
+  "passed": true
+}
