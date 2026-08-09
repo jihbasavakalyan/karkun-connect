@@ -14,6 +14,7 @@ import {
   getMonthlyBaitulMaalReport,
   listMonthlyBaitulMaalCycles,
 } from '@/services/monthlyBaitulMaalService'
+import { subscribeToBaitulMaalStore } from '@/stores/baitulMaalStore'
 import { subscribeToMonthlyBaitulMaalStore } from '@/stores/monthlyBaitulMaalStore'
 import { formatMonthlyBaitulMaalLabel } from '@/types/monthlyBaitulMaal'
 
@@ -21,7 +22,16 @@ export function AdminMonthlyBaitulMaalReportPage() {
   const { cycleId } = useParams<{ cycleId: string }>()
   const [version, setVersion] = useState(0)
 
-  useEffect(() => subscribeToMonthlyBaitulMaalStore(() => setVersion((v) => v + 1)), [])
+  useEffect(() => {
+    const unsubCanonical = subscribeToMonthlyBaitulMaalStore(() =>
+      setVersion((v) => v + 1),
+    )
+    const unsubLegacy = subscribeToBaitulMaalStore(() => setVersion((v) => v + 1))
+    return () => {
+      unsubCanonical()
+      unsubLegacy()
+    }
+  }, [])
 
   const report = useMemo(() => {
     void version
@@ -64,6 +74,7 @@ export function AdminMonthlyBaitulMaalReportPage() {
 
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard label="Contributed" value={String(report.contributed)} />
+        <MetricCard label="Committed" value={String(report.committed)} />
         <MetricCard label="Pending" value={String(report.pending)} />
         <MetricCard label="Completion %" value={`${report.completionPct}%`} />
         <MetricCard label="Total Connected" value={String(report.totalAssigned)} />
@@ -86,6 +97,7 @@ export function AdminMonthlyBaitulMaalReportPage() {
                   <th className="px-2 py-2 font-semibold">Rukn</th>
                   <th className="px-2 py-2 font-semibold">Connected</th>
                   <th className="px-2 py-2 font-semibold">Contributed</th>
+                  <th className="px-2 py-2 font-semibold">Committed</th>
                   <th className="px-2 py-2 font-semibold">Pending</th>
                   <th className="px-2 py-2 font-semibold">Completion %</th>
                   <th className="px-2 py-2 font-semibold">Submission</th>
@@ -97,6 +109,7 @@ export function AdminMonthlyBaitulMaalReportPage() {
                     <td className="px-2 py-2 font-medium text-text-heading">{row.ruknName}</td>
                     <td className="px-2 py-2">{row.assigned}</td>
                     <td className="px-2 py-2">{row.contributed}</td>
+                    <td className="px-2 py-2">{row.committed}</td>
                     <td className="px-2 py-2">{row.pending}</td>
                     <td className="px-2 py-2">
                       {row.submitted ? `${row.completionPct}%` : '—'}
@@ -115,6 +128,40 @@ export function AdminMonthlyBaitulMaalReportPage() {
           </div>
         )}
       </section>
+
+      {report.committedRows.length > 0 ? (
+        <section className="mt-6 rounded-xl border border-border bg-surface p-4 shadow-card">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-secondary">
+            Legacy commitments (Campaign:Committed)
+          </h2>
+          <p className="mt-1 text-xs text-secondary">
+            Shown separately from Contributed. Source: legacy Bait-ul-Maal records for this
+            month with no canonical cycle mark.
+          </p>
+          <div className="mt-3 overflow-x-auto">
+            <table className="min-w-full text-left text-sm">
+              <thead className="border-b border-border text-xs uppercase tracking-wide text-secondary">
+                <tr>
+                  <th className="px-2 py-2 font-semibold">Rukn</th>
+                  <th className="px-2 py-2 font-semibold">Karkun</th>
+                  <th className="px-2 py-2 font-semibold">Status</th>
+                  <th className="px-2 py-2 font-semibold">Remarks</th>
+                </tr>
+              </thead>
+              <tbody>
+                {report.committedRows.map((row) => (
+                  <tr key={`${row.karkunId}:${row.monthKey}`} className="border-b border-border/70">
+                    <td className="px-2 py-2 font-medium text-text-heading">{row.ruknName}</td>
+                    <td className="px-2 py-2">{row.karkunName}</td>
+                    <td className="px-2 py-2 text-amber-800">Committed</td>
+                    <td className="px-2 py-2 text-secondary">{row.remarks || '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      ) : null}
 
       <section className="mt-6">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-secondary">

@@ -116,6 +116,9 @@ const reportPage = readFileSync(
 )
 assert(reportPage.includes('Monthly Summary'), 'report page present')
 assert(reportPage.includes('Rukn-wise Completion'), 'rukn-wise % present')
+assert(reportPage.includes('Committed'), 'report distinguishes Committed from Contributed')
+assert(report!.committed === 0 || typeof report!.committed === 'number', 'report.committed is numeric')
+assert(Array.isArray(report!.committedRows), 'report.committedRows present')
 
 const ruknPage = readFileSync(resolve('src/pages/rukn/RuknMonthlyBaitulMaalPage.tsx'), 'utf8')
 assert(ruknPage.includes('Contributed'), 'rukn contributed status')

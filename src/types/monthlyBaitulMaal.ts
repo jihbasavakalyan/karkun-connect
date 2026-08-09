@@ -63,15 +63,40 @@ export type MonthlyBaitulMaalRuknReportRow = {
   assigned: number
   contributed: number
   pending: number
+  /**
+   * Legacy Campaign:Committed count for this Rukn's connected Karkuns in the
+   * cycle month — only when no canonical cycle mark exists for that Karkun.
+   * Never included in `contributed`.
+   */
+  committed: number
   completionPct: number
   submitted: boolean
   submittedAt?: string
+}
+
+/** Read-side compatibility row — legacy Campaign:Committed (not Contributed). */
+export type MonthlyBaitulMaalCommittedRow = {
+  karkunId: string
+  karkunName: string
+  ruknId: string
+  ruknName: string
+  monthKey: string
+  legacyStatus: string
+  remarks: string
+  updatedAt?: string
+  source: 'legacy'
 }
 
 export type MonthlyBaitulMaalReport = {
   cycle: MonthlyBaitulMaalCycle
   contributed: number
   pending: number
+  /**
+   * Distinct legacy Campaign:Committed responses for this month with no
+   * canonical cycle mark. Never merged into `contributed`.
+   */
+  committed: number
+  committedRows: MonthlyBaitulMaalCommittedRow[]
   completionPct: number
   totalAssigned: number
   ruknsSubmitted: number

@@ -33,8 +33,14 @@ import {
   upsertMonthlyBaitulMaalCycle,
   upsertMonthlyBaitulMaalSubmission,
 } from '@/stores/monthlyBaitulMaalStore'
+import { getAllBaitulMaalRecords } from '@/stores/baitulMaalStore'
+import { getActiveAssignmentsForKarkun } from '@/stores/assignmentStore'
+import { getKarkunById } from '@/constants/mockKarkunRegistry'
+import { getRuknById } from '@/data/ruknMaster'
+import { classifyBaitulMaalStoredRecord } from '@/lib/reporting/statusNormalization'
 import type {
   CreateMonthlyBaitulMaalCycleInput,
+  MonthlyBaitulMaalCommittedRow,
   MonthlyBaitulMaalCycle,
   MonthlyBaitulMaalDashboardKpi,
   MonthlyBaitulMaalReport,
@@ -368,17 +374,89 @@ export function removeMonthlyBaitulMaalKarkunMark(
   return { success: true, submission: upsertMonthlyBaitulMaalSubmission(submission) }
 }
 
+/**
+ * Read-side compatibility: surface legacy Campaign:Committed for the cycle month
+ * when that Karkun has no canonical cycle mark.
+ *
+ * Dedup (deterministic):
+ * - Canonical mark for karkunId on this cycle → contribution track wins; legacy
+ *   Campaign:Committed is NOT counted as Committed (and never as Contributed).
+ * - No canonical mark + legacy Campaign:Committed for cycle.monthKey → Committed +1.
+ * Never mutates Firestore. Never changes contributed/pending totals.
+ */
+function collectLegacyCommittedForCycle(cycle: MonthlyBaitulMaalCycle): {
+  committed: number
+  committedRows: MonthlyBaitulMaalCommittedRow[]
+  committedByRukn: Map<string, number>
+} {
+  const canonicalKarkunIds = new Set<string>()
+  for (const submission of getMonthlyBaitulMaalSubmissionsForCycle(cycle.id)) {
+    for (const mark of submission.marks ?? []) {
+      canonicalKarkunIds.add(mark.karkunId)
+    }
+  }
+
+  const committedRows: MonthlyBaitulMaalCommittedRow[] = []
+  const committedByRukn = new Map<string, number>()
+
+  for (const record of getAllBaitulMaalRecords()) {
+    if (record.monthKey !== cycle.monthKey) continue
+    const classified = classifyBaitulMaalStoredRecord({
+      status: record.status,
+      remarks: record.remarks,
+    })
+    if (classified.bucket !== 'campaign_committed') continue
+    if (canonicalKarkunIds.has(record.karkunId)) continue
+
+    const assignment = getActiveAssignmentsForKarkun(record.karkunId)[0]
+    const ruknId =
+      assignment?.ruknId ||
+      getKarkunById(record.karkunId)?.assignedRuknId ||
+      'unassigned'
+    const ruknName = getRuknById(ruknId)?.name ?? ruknId
+    const karkunName = getKarkunById(record.karkunId)?.name ?? record.karkunId
+
+    committedRows.push({
+      karkunId: record.karkunId,
+      karkunName,
+      ruknId,
+      ruknName,
+      monthKey: record.monthKey,
+      legacyStatus: String(record.status ?? ''),
+      remarks: String(record.remarks ?? ''),
+      updatedAt: record.updatedAt,
+      source: 'legacy',
+    })
+    committedByRukn.set(ruknId, (committedByRukn.get(ruknId) ?? 0) + 1)
+  }
+
+  committedRows.sort((a, b) => {
+    const byRukn = a.ruknName.localeCompare(b.ruknName)
+    if (byRukn !== 0) return byRukn
+    return a.karkunName.localeCompare(b.karkunName)
+  })
+
+  return {
+    committed: committedRows.length,
+    committedRows,
+    committedByRukn,
+  }
+}
+
 function buildReportForCycle(cycle: MonthlyBaitulMaalCycle): MonthlyBaitulMaalReport {
   const binary = buildBinaryCycleReport(
     getMonthlyBaitulMaalSubmissionsForCycle(cycle.id),
     'Contributed',
     'Pending',
   )
+  const legacyCommitted = collectLegacyCommittedForCycle(cycle)
 
   return {
     cycle,
     contributed: binary.positive,
     pending: binary.negative,
+    committed: legacyCommitted.committed,
+    committedRows: legacyCommitted.committedRows,
     completionPct: binary.completionPct,
     totalAssigned: binary.totalAssigned,
     ruknsSubmitted: binary.ruknsSubmitted,
@@ -390,6 +468,7 @@ function buildReportForCycle(cycle: MonthlyBaitulMaalCycle): MonthlyBaitulMaalRe
       assigned: row.assigned,
       contributed: row.positive,
       pending: row.negative,
+      committed: legacyCommitted.committedByRukn.get(row.ruknId) ?? 0,
       completionPct: row.completionPct,
       submitted: row.submitted,
       submittedAt: row.submittedAt,

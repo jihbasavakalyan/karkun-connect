@@ -13,6 +13,10 @@ import {
 } from '../src/constants/mockKarkunRegistry'
 import { clearAssignmentStore, replaceAllAssignments } from '../src/stores/assignmentStore'
 import { clearIjtemaAttendanceStore, upsertIjtemaAttendanceRecord } from '../src/stores/ijtemaAttendanceStore'
+import {
+  clearBaitulMaalStore,
+  upsertBaitulMaalRecord,
+} from '../src/stores/baitulMaalStore'
 import { clearMonthlyBaitulMaalStore, upsertMonthlyBaitulMaalCycle, upsertMonthlyBaitulMaalSubmission } from '../src/stores/monthlyBaitulMaalStore'
 import { clearWeeklyIjtemaStore, upsertWeeklyIjtemaSubmission } from '../src/stores/weeklyIjtemaStore'
 import { getRegistration } from '../src/stores/jihWebPortalStore'
@@ -177,6 +181,118 @@ assert((augReport?.contributed ?? 0) >= 1, 'R013 August contribution appears in 
 const julyReport = getMonthlyBaitulMaalReport(july.id)
 assert(Boolean(julyReport), 'July remains accessible by cycleId')
 assert((julyReport?.contributed ?? 0) === 0, 'July report untouched by August marks')
+
+// R044-shaped legacy Campaign:Committed (no canonical mark) → Committed, not Contributed
+clearBaitulMaalStore()
+seedKarkun({
+  id: 'kr-048',
+  name: 'SYED MANSOOR ALI',
+  gender: 'Male',
+  ruknId: 'R044',
+  ruknName: 'Izhar ul Haque',
+})
+replaceAllAssignments(
+  [
+    {
+      assignmentId: 'A-phase3-r013',
+      assignmentNumber: 'ASN-phase3-bm',
+      ruknId: 'R013',
+      karkunId: 'kr-664',
+      assignedDate: '2026-08-01',
+      effectiveFrom: '2026-08-01',
+      status: 'Active',
+      assignedBy: 'Administrator',
+      createdAt: nowBm,
+      updatedAt: nowBm,
+    } satisfies AssignmentRecord,
+    {
+      assignmentId: 'A-phase3-r044',
+      assignmentNumber: 'ASN-phase3-r044',
+      ruknId: 'R044',
+      karkunId: 'kr-048',
+      assignedDate: '2026-08-01',
+      effectiveFrom: '2026-08-01',
+      status: 'Active',
+      assignedBy: 'Administrator',
+      createdAt: nowBm,
+      updatedAt: nowBm,
+    } satisfies AssignmentRecord,
+  ],
+  2,
+)
+upsertBaitulMaalRecord({
+  karkunId: 'kr-048',
+  month: 8,
+  year: 2026,
+  monthKey: '2026-08',
+  status: 'Pending',
+  remarks: 'Campaign:Committed',
+  updatedAt: '2026-08-02T00:00:00.000Z',
+  updatedBy: 'R044',
+})
+const contributedBeforeLegacy = augReport?.contributed ?? 0
+const pendingBeforeLegacy = augReport?.pending ?? 0
+const legacyReport = getMonthlyBaitulMaalReport(august.id)
+assert(Boolean(legacyReport), 'August report after legacy seed')
+assert(
+  (legacyReport?.committed ?? 0) === 1,
+  'R044/kr-048 legacy Campaign:Committed surfaces as Committed=1',
+)
+assert(
+  legacyReport?.committedRows.some((r) => r.karkunId === 'kr-048' && r.source === 'legacy') === true,
+  'committedRows includes kr-048 from legacy source',
+)
+assert(
+  (legacyReport?.contributed ?? 0) === contributedBeforeLegacy,
+  'legacy Committed does not inflate Contributed',
+)
+assert(
+  (legacyReport?.pending ?? 0) === pendingBeforeLegacy,
+  'legacy Committed does not inflate Pending',
+)
+assert(
+  classifyBaitulMaalStoredRecord({
+    status: 'Pending',
+    remarks: 'Campaign:Committed',
+  }).bucket === 'campaign_committed',
+  'Campaign:Committed classifies as campaign_committed (not Contributed)',
+)
+
+// Dedup: canonical mark for same karkun+cycle suppresses legacy Committed
+upsertMonthlyBaitulMaalSubmission({
+  id: `${august.id}:R044`,
+  eventId: august.id,
+  ruknId: 'R044',
+  ruknName: 'Izhar ul Haque',
+  marks: [{ karkunId: 'kr-048', karkunName: 'SYED MANSOOR ALI', status: 'Pending' }],
+  submittedAt: '2026-08-08T10:00:00.000Z',
+  submittedBy: 'R044',
+  updatedAt: '2026-08-08T10:00:00.000Z',
+  updatedBy: 'R044',
+})
+const deduped = getMonthlyBaitulMaalReport(august.id)
+assert(
+  (deduped?.committedRows ?? []).every((r) => r.karkunId !== 'kr-048'),
+  'canonical mark for kr-048 suppresses legacy Committed (no double count)',
+)
+assert((deduped?.pending ?? 0) >= 1, 'canonical Pending for kr-048 counted in Pending')
+
+// Dedup: legacy Campaign:Committed for Karkun that already has Contributed → ignored
+upsertBaitulMaalRecord({
+  karkunId: 'kr-664',
+  month: 8,
+  year: 2026,
+  monthKey: '2026-08',
+  status: 'Pending',
+  remarks: 'Campaign: Committed',
+  updatedAt: '2026-08-02T00:00:00.000Z',
+  updatedBy: 'R013',
+})
+const noDupContrib = getMonthlyBaitulMaalReport(august.id)
+assert(
+  (noDupContrib?.committedRows ?? []).every((r) => r.karkunId !== 'kr-664'),
+  'legacy Committed ignored when canonical Contributed already exists for karkun',
+)
 
 // ========== Phase C/D: Weekly Ijtema ==========
 clearWeeklyIjtemaStore()
