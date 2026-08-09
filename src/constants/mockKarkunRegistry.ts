@@ -4,6 +4,8 @@ import type {
 } from '@/types/karkun-registry.types'
 import { getActiveRuknNames, getRuknById } from '@/data/ruknMaster'
 import { notifyAndPersistKarkunRecords } from '@/lib/peopleStore'
+import { upsertRegistration } from '@/stores/jihWebPortalStore'
+import type { JihWebPortalRegistrationStatus } from '@/types/jihWebPortal'
 
 /** Production Karkun registry — populated by production data migration. */
 export const MOCK_KARKUN_REGISTRY: KarkunRegistryRecord[] = []
@@ -12,6 +14,11 @@ export function getKarkunById(id: string): KarkunRegistryRecord | undefined {
   return MOCK_KARKUN_REGISTRY.find((karkun) => karkun.id === id)
 }
 
+/**
+ * Person field `jihAppRegistrationStatus` is the Matrix/report source of truth.
+ * When `syncJihPortal` is true, mirror Registered → portal Registered (else Not Registered)
+ * for compatibility readers — does not replace person SoT.
+ */
 export function updateKarkunMeetingOutcomes(
   karkunId: string,
   outcomes: {
@@ -36,6 +43,19 @@ export function updateKarkunMeetingOutcomes(
   karkun.updatedBy = 'Rukn'
   // KC-0086 — targeted karkun persist only (never full registry + rukn.saveAll).
   void notifyAndPersistKarkunRecords([karkun])
+
+  if (outcomes.syncJihPortal) {
+    const portalStatus: JihWebPortalRegistrationStatus =
+      outcomes.jihAppRegistrationStatus === 'Registered' ? 'Registered' : 'Not Registered'
+    upsertRegistration({
+      karkunId,
+      status: portalStatus,
+      registrationDate:
+        portalStatus === 'Registered' ? new Date().toISOString().slice(0, 10) : undefined,
+      updatedAt: karkun.updatedAt,
+      updatedBy: 'Rukn',
+    })
+  }
 }
 
 export function updateKarkunVisitExecution(

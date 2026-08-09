@@ -29,6 +29,7 @@ import {
 } from '@/lib/campaignCycle/lifecycle'
 import { buildBinaryCycleReport } from '@/lib/campaignCycle/report'
 import { getRuknWeeklyIjtemaInvitationAttendanceCounts } from '@/lib/operations/weeklyIjtemaInvitationAttendance'
+import { classifyIjtemaLegacyRecord } from '@/lib/reporting/statusNormalization'
 import {
   getAllWeeklyIjtemaEvents,
   getWeeklyIjtemaEvent,
@@ -38,6 +39,7 @@ import {
   upsertWeeklyIjtemaSubmission,
   deleteWeeklyIjtemaEvent as deleteWeeklyIjtemaEventFromStore,
 } from '@/stores/weeklyIjtemaStore'
+import { getAllIjtemaAttendanceRecords } from '@/stores/ijtemaAttendanceStore'
 import {
   pickCanonicalWeeklyIjtemaMeeting,
   uniqueWeeklyIjtemaMeetingsForDisplay,
@@ -684,6 +686,74 @@ export function getWeeklyIjtemaReport(eventId: string): WeeklyIjtemaReport | nul
   const event = getWeeklyIjtemaEvent(eventId)
   if (!event) return null
   return buildReportForEvent(event)
+}
+
+export type WeeklyIjtemaEventTrackSummary = {
+  eventId: string
+  meetingDate: string
+  eventStatus: WeeklyIjtemaEvent['status']
+  /** Canonical attendance marks on this event (Present+Absent+Reminded-only). */
+  canonicalAttendanceMarks: number
+  canonicalPresent: number
+  canonicalAbsent: number
+  /** Legacy ijtema_* rows for the same weekEnding/meetingDate. */
+  legacyResponsesForWeek: number
+  legacyCommitments: number
+  legacyAttendanceLike: number
+  /**
+   * True when Open event has zero canonical attendance but legacy rows exist —
+   * Admin must not interpret KPI 0 as “nobody responded”.
+   */
+  emptyOpenWithLegacyDetected: boolean
+}
+
+/**
+ * Separate Commitment vs Attendance track counts for Admin reporting.
+ * Does not merge legacy Commitment into attendance totals.
+ */
+export function getWeeklyIjtemaEventTrackSummary(
+  eventId: string,
+): WeeklyIjtemaEventTrackSummary | null {
+  const event = getWeeklyIjtemaEvent(eventId)
+  if (!event) return null
+
+  let canonicalAttendanceMarks = 0
+  let canonicalPresent = 0
+  let canonicalAbsent = 0
+  for (const submission of getWeeklyIjtemaSubmissionsForEvent(event.id)) {
+    for (const mark of submission.marks ?? []) {
+      canonicalAttendanceMarks += 1
+      if (mark.status === 'Present') canonicalPresent += 1
+      else if (mark.status === 'Absent') canonicalAbsent += 1
+    }
+  }
+
+  let legacyResponsesForWeek = 0
+  let legacyCommitments = 0
+  let legacyAttendanceLike = 0
+  for (const record of getAllIjtemaAttendanceRecords()) {
+    if (record.weekEndingDate !== event.meetingDate) continue
+    legacyResponsesForWeek += 1
+    const kind = classifyIjtemaLegacyRecord(record).kind
+    if (kind === 'commitment') legacyCommitments += 1
+    else if (kind === 'attendance_like') legacyAttendanceLike += 1
+  }
+
+  return {
+    eventId: event.id,
+    meetingDate: event.meetingDate,
+    eventStatus: event.status,
+    canonicalAttendanceMarks,
+    canonicalPresent,
+    canonicalAbsent,
+    legacyResponsesForWeek,
+    legacyCommitments,
+    legacyAttendanceLike,
+    emptyOpenWithLegacyDetected:
+      event.status === 'Open' &&
+      canonicalAttendanceMarks === 0 &&
+      legacyResponsesForWeek > 0,
+  }
 }
 
 const EMPTY_WEEKLY_IJTEMA_KPI: WeeklyIjtemaDashboardKpi = {

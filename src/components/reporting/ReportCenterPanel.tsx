@@ -190,7 +190,8 @@ export function ReportCenterPanel() {
     void generateConfiguredReport({
       config,
       generatedBy: user?.displayName?.trim() || user?.email || user?.phone || 'منتظم',
-      includeZipSnapshot: config.detailLevel === 'audit',
+      // Never auto-download JSON snapshot with PDF — explicit outputType:'json' only.
+      includeZipSnapshot: false,
     })
       .then((result) => {
         if (result.mode === 'dashboard') {

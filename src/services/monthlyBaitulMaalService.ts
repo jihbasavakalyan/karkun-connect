@@ -50,6 +50,43 @@ import {
   validateCreateMonthlyBaitulMaalCycle,
   validateSaveMonthlyBaitulMaalSubmission,
 } from '@/validation/monthlyBaitulMaalValidation'
+import { getCurrentMonthKey } from '@/services/jihWebPortalService'
+
+/**
+ * Prefer Open cycle for the application current month.
+ * Never rely on array order when multiple Open cycles exist (Phase 2: July before August).
+ */
+export function pickPreferredOpenMonthlyBaitulMaalCycle(
+  cycles: MonthlyBaitulMaalCycle[],
+  monthKey: string = getCurrentMonthKey(),
+): MonthlyBaitulMaalCycle | undefined {
+  const open = cycles.filter((cycle) => cycle.status === 'Open')
+  if (open.length === 0) return undefined
+
+  const forMonth = open.filter((cycle) => cycle.monthKey === monthKey)
+  const pool = forMonth.length > 0 ? forMonth : open
+
+  if (pool.length > 1) {
+    console.warn('[monthlyBaitulMaal] multiple Open cycles — selecting deterministically', {
+      monthKey,
+      preferredMonthMatch: forMonth.length > 0,
+      cycleIds: pool.map((cycle) => cycle.id),
+      monthKeys: pool.map((cycle) => cycle.monthKey),
+    })
+  }
+
+  return [...pool].sort((a, b) => {
+    // Current-month matches: newest updatedAt, then id.
+    // Cross-month fallback: newest monthKey first, then updatedAt, then id.
+    if (forMonth.length === 0) {
+      const byMonth = b.monthKey.localeCompare(a.monthKey)
+      if (byMonth !== 0) return byMonth
+    }
+    const byUpdated = String(b.updatedAt ?? '').localeCompare(String(a.updatedAt ?? ''))
+    if (byUpdated !== 0) return byUpdated
+    return b.id.localeCompare(a.id)
+  })[0]
+}
 
 export function listMonthlyBaitulMaalCycles(): MonthlyBaitulMaalCycle[] {
   return getAllMonthlyBaitulMaalCycles()
@@ -63,7 +100,7 @@ export function getMonthlyBaitulMaalCycleById(
 
 export function getCurrentMonthlyBaitulMaalCycle(): MonthlyBaitulMaalCycle | undefined {
   const cycles = getAllMonthlyBaitulMaalCycles()
-  return cycles.find((cycle) => cycle.status === 'Open') ?? cycles[0]
+  return pickPreferredOpenMonthlyBaitulMaalCycle(cycles) ?? cycles[0]
 }
 
 export function createMonthlyBaitulMaalCycle(
@@ -199,9 +236,9 @@ export function saveMonthlyBaitulMaalSubmission(
   return { success: true, submission: upsertMonthlyBaitulMaalSubmission(submission) }
 }
 
-/** Open cycle only — used by write cutover (KC-0112.6). */
+/** Open cycle for current-month writes (KC-0112.6) — never first-Open-by-array-order. */
 export function getOpenMonthlyBaitulMaalCycle(): MonthlyBaitulMaalCycle | undefined {
-  return getAllMonthlyBaitulMaalCycles().find((cycle) => cycle.status === 'Open')
+  return pickPreferredOpenMonthlyBaitulMaalCycle(getAllMonthlyBaitulMaalCycles())
 }
 
 export type UpsertMonthlyBaitulMaalKarkunMarkInput = {

@@ -123,7 +123,7 @@ export function CampaignExecutionMatrix({ ruknId }: CampaignExecutionMatrixProps
   const runCell = (
     key: string,
     fn: () => { success: true } | { success: false; error: string },
-    successMessage?: string,
+    successMessage: string,
   ) => {
     void run(
       async () => {
@@ -134,12 +134,11 @@ export function CampaignExecutionMatrix({ ruknId }: CampaignExecutionMatrixProps
           return result
         }
         refresh()
-        if (successMessage) {
-          await confirmExecutionSaveFeedback(successMessage)
-        }
+        // Await durable queue drain — never toast success before persistence confirms.
+        await confirmExecutionSaveFeedback(successMessage)
         return result
       },
-      { key, waitForPendingWrites: Boolean(successMessage), minMs: 400 },
+      { key, waitForPendingWrites: true, minMs: 400 },
     )
   }
 
@@ -221,12 +220,16 @@ export function CampaignExecutionMatrix({ ruknId }: CampaignExecutionMatrixProps
                       busy={busyKey === `matrix:${row.karkunId}:jih`}
                       disabled={rowBusy}
                       onClick={() =>
-                        runCell(`matrix:${row.karkunId}:jih`, () => {
-                          const result = cycleJihAppForKarkun(row.karkunId, ruknId)
-                          return result.success
-                            ? { success: true as const }
-                            : { success: false as const, error: result.error }
-                        })
+                        runCell(
+                          `matrix:${row.karkunId}:jih`,
+                          () => {
+                            const result = cycleJihAppForKarkun(row.karkunId, ruknId)
+                            return result.success
+                              ? { success: true as const }
+                              : { success: false as const, error: result.error }
+                          },
+                          '✅ JIH App status saved successfully',
+                        )
                       }
                     />
                   </td>
@@ -238,16 +241,20 @@ export function CampaignExecutionMatrix({ ruknId }: CampaignExecutionMatrixProps
                       busy={busyKey === `matrix:${row.karkunId}:ijtema`}
                       disabled={rowBusy}
                       onClick={() =>
-                        runCell(`matrix:${row.karkunId}:ijtema`, () => {
-                          const result = cycleIjtemaForKarkun(
-                            row.karkunId,
-                            ruknId,
-                            user?.uid,
-                          )
-                          return result.success
-                            ? { success: true as const }
-                            : { success: false as const, error: result.error }
-                        })
+                        runCell(
+                          `matrix:${row.karkunId}:ijtema`,
+                          () => {
+                            const result = cycleIjtemaForKarkun(
+                              row.karkunId,
+                              ruknId,
+                              user?.uid,
+                            )
+                            return result.success
+                              ? { success: true as const }
+                              : { success: false as const, error: result.error }
+                          },
+                          '✅ Weekly Ijtema Commitment saved successfully',
+                        )
                       }
                     />
                   </td>
@@ -259,16 +266,20 @@ export function CampaignExecutionMatrix({ ruknId }: CampaignExecutionMatrixProps
                       busy={busyKey === `matrix:${row.karkunId}:baitul`}
                       disabled={rowBusy}
                       onClick={() =>
-                        runCell(`matrix:${row.karkunId}:baitul`, () => {
-                          const result = cycleBaitulMaalCampaignForKarkun(
-                            row.karkunId,
-                            user?.displayName ?? user?.uid ?? 'Rukn',
-                            ruknId,
-                          )
-                          return result.success
-                            ? { success: true as const }
-                            : { success: false as const, error: result.error }
-                        })
+                        runCell(
+                          `matrix:${row.karkunId}:baitul`,
+                          () => {
+                            const result = cycleBaitulMaalCampaignForKarkun(
+                              row.karkunId,
+                              user?.displayName ?? user?.uid ?? 'Rukn',
+                              ruknId,
+                            )
+                            return result.success
+                              ? { success: true as const }
+                              : { success: false as const, error: result.error }
+                          },
+                          '✅ Baitul Maal status saved successfully',
+                        )
                       }
                     />
                   </td>

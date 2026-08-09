@@ -55,9 +55,13 @@ export async function generateConfiguredReport(input: {
   }
 
   const document = composeReport(config)
-  if (input.includeZipSnapshot) {
+
+  // JSON snapshot is opt-in only. Never pair it with PDF/dashboard downloads.
+  // Explicit outputType === 'json' is handled by exportReportDocument alone.
+  if (input.includeZipSnapshot && config.outputType === 'json') {
     await exportReportZipSnapshot(document)
   }
+
   const result = await exportReportDocument(document, config.outputType)
   return { config, document: result.document, mode: result.mode }
 }
