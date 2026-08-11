@@ -116,8 +116,9 @@ Planned (not in Phase 1):
 | Horizon | Capability |
 |---------|------------|
 | Now (KC-0058) | Soft delete, ledger, rules, scanner, activity append-only |
-| Next | Recovery Center UI, verified restore wizards |
-| Later | Scheduled backups, cross-region export, point-in-time recovery drills |
+| Now (KC-027.1) | Firestore backup/recovery **baseline docs** + non-prod runbook (managed backups, PITR, GCS export design). Ops must still enable schedules/PITR in GCP. |
+| Next | Ops enablement + certified non-prod restore drill; Recovery Center UI, verified restore wizards |
+| Later | Production cutover playbooks, cross-region archive hardening |
 
 ## Migration notes
 

@@ -24,6 +24,8 @@ console.log('▶ operational documentation')
     'docs/operations/security-audit.md',
     'docs/operations/firebase-production-audit.md',
     'docs/operations/backup-guide.md',
+    'docs/operations/firestore-backup-recovery-baseline.md',
+    'docs/operations/firestore-nonprod-recovery-runbook.md',
     'docs/operations/monitoring.md',
     'docs/operations/smoke-test.md',
     'docs/operations/release-candidate.md',

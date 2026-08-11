@@ -22,7 +22,7 @@ Documented boundaries for Basavakalyan Pilot V1. These are **not defects** unles
 | KL-D01 | Full collection hydration on init | Higher read count at login | Acceptable at pilot scale (~500 records) |
 | KL-D02 | Assignment save replaces full batch | Write amplification on large changes | Pilot-scale acceptable |
 | KL-D03 | Offline queue limited to Firestore SDK | Complex offline conflicts rare | Refresh when online |
-| KL-D04 | No automatic Firestore export in app | Manual backup required | Schedule console export + JSON backup |
+| KL-D04 | No automatic Firestore export in app | Manual / GCP-managed backup required | Follow [KC-027.1 baseline](./firestore-backup-recovery-baseline.md); enable managed backups + PITR + GCS export in GCP; JSON backup remains supplemental |
 
 ---
 

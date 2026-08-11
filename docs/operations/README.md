@@ -26,6 +26,8 @@ Operational documentation for deploying and running Karkun Connect in production
 | [Security Audit](security-audit.md) | Rules, auth, secrets review |
 | [Environment Management](environment-management.md) | Dev / staging / production vars |
 | [Backup Guide](backup-guide.md) | Export, restore, retention |
+| [Firestore Backup & Recovery Baseline (KC-027.1)](firestore-backup-recovery-baseline.md) | Managed backups, PITR, IAM, production inventory |
+| [Non-Prod Firestore Recovery Runbook (KC-027.1)](firestore-nonprod-recovery-runbook.md) | Restore drills into non-production only |
 | [Monitoring](monitoring.md) | Logging and alerting recommendations |
 | [Performance Review](performance-review.md) | Firestore and listener audit |
 | [Smoke Test](smoke-test.md) | Production smoke test procedures |
