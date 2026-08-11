@@ -222,6 +222,8 @@ Source of truth: `src/repositories/firestore/collections.ts` + architecture docs
 
 **KC-027.1 stop condition:** Practice recovery **only** into non-production databases. See [firestore-nonprod-recovery-runbook.md](./firestore-nonprod-recovery-runbook.md).
 
+**KC-027.2:** The runbook now defines restore-target strategy, pre/post verification, domain validation, acceptance criteria (AC-1…AC-7), and safe cleanup — still **no** production restore from documentation alone.
+
 ---
 
 ## 7. Required IAM permissions

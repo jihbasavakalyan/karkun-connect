@@ -1,8 +1,9 @@
-# KC-027.1 — Firestore Non-Production Recovery Runbook
+# Firestore Non-Production Recovery Runbook
 
 **Purpose:** Restore production backup artifacts into a **non-production** Firestore database for drills and validation.  
-**Ticket:** KC-027.1  
-**Last updated:** 2026-08-11
+**Tickets:** KC-027.1 (baseline paths) · **KC-027.2** (restore-target strategy, validation, acceptance, cleanup)  
+**Last updated:** 2026-08-12  
+**Canonical collections/docs:** `src/repositories/firestore/collections.ts` only — do not invent names.
 
 ## Hard prohibitions
 
@@ -11,10 +12,48 @@
 | Restore / import into production `karkun-connect-75c68` database `(default)` | Risk of live data overwrite/corruption |
 | Point Vercel Preview or staging app env at production project | Violates isolation rule |
 | Delete production `(default)` database | Irreversible outage |
-| Production Vercel promote from this drill | Out of scope for KC-027.1 |
-| Skip verification after restore | Undetected incomplete recovery |
+| Production Vercel promote from this drill | Out of scope |
+| Change backup schedules or PITR as part of a drill | Separate change control (KC-027.1 ops enablement) |
+| Skip pre-restore or post-restore verification | Undetected incomplete / unsafe recovery |
+| Cleanup of any database that is not the declared drill ID | Accidental deletion of live data |
 
 If any step would touch production `(default)`, **STOP**.
+
+---
+
+## Non-production restore target strategy (KC-027.2)
+
+### Preferred first drill
+
+| Preference | Choice | Rationale |
+|------------|--------|-----------|
+| **Primary** | **Path A** — managed backup → **new** database ID in `karkun-connect-75c68` | Fastest; restore cannot overwrite `(default)`; isolates drill data by database ID |
+| **Secondary** | **Path C** — GCS export → import into **staging** project | Required when validating Preview app against restored data (isolated Firebase web config) |
+| **Optional** | **Path B** — PITR / clone → new database ID | Only when PITR is enabled and a precise timestamp is needed |
+
+### Naming convention
+
+| Field | Rule | Example |
+|-------|------|---------|
+| Drill ID | `recovery-drill-YYYYMMDD` or `recovery-drill-YYYYMMDDHHMM` | `recovery-drill-20260812` |
+| Destination database ID | **Exactly** the Drill ID (Path A/B) | Must **never** be `(default)` |
+| Staging import target | Staging project only (Path C) | e.g. `karkun-connect-staging` / `(default)` — **never** prod |
+
+### Decision matrix
+
+| Goal | Use |
+|------|-----|
+| Prove backup → restore works (data-only drill) | Path A |
+| Prove Preview/app can boot on restored data | Path C (then Preview env → staging) |
+| Prove point-in-time recovery | Path B (after PITR enabled) |
+| Production cutover | **Not this runbook** |
+
+### App attachment rules
+
+| Target | May attach Production Vercel? | May attach Preview? |
+|--------|------------------------------|---------------------|
+| `recovery-drill-*` in prod GCP project | **NO** | **NO** (client SDKs typically use `(default)`; drill DB is Console/Admin-SDK validation only unless a dedicated non-default client config exists) |
+| Staging project `(default)` after Path C | **NO** | **YES** — Preview env must use staging `VITE_FIREBASE_*` only |
 
 ---
 
@@ -23,23 +62,58 @@ If any step would touch production `(default)`, **STOP**.
 - [ ] Change ticket / approval for a **drill** (not a production incident cutover)
 - [ ] `gcloud` authenticated as an operator with backup/restore + storage permissions ([baseline IAM](./firestore-backup-recovery-baseline.md#7-required-iam-permissions))
 - [ ] Production project ID known: `karkun-connect-75c68`
-- [ ] Non-prod destination chosen (pick **one** path below)
-- [ ] Staging / Preview Firebase web config available (isolated project)
+- [ ] Production `locationId` recorded in [baseline inventory](./firestore-backup-recovery-baseline.md#1-production-firestore-inventory-evidence-based) (or confirmed in this drill’s pre-restore log)
+- [ ] Non-prod destination chosen (Path A / B / C)
+- [ ] Drill ID reserved (`recovery-drill-…`) and recorded before restore starts
+- [ ] Source artifact exists (managed backup ID, GCS export path, or PITR timestamp)
+- [ ] Staging / Preview Firebase web config available when Path C + Preview smoke is in scope
 - [ ] Blaze billing enabled on projects that will run export/import/restore
+- [ ] Pre-restore checklist (§ below) completed and signed
 
-### Destination options
+### Destination options (summary)
 
 | Option | Destination | When to use |
 |--------|-------------|-------------|
-| **A — New DB in prod project** | New database ID in `karkun-connect-75c68` (e.g. `recovery-drill-YYYYMMDD`) | Fastest managed-backup restore drill; app still must **not** use it in Production |
-| **B — Staging project** | Separate project (e.g. `karkun-connect-staging`) `(default)` or named DB | Preferred for Preview app validation |
-| **C — GCS import into staging** | Import export objects into staging | Cross-project / archive validation |
+| **A — New DB in prod project** | `recovery-drill-*` in `karkun-connect-75c68` | Primary data-plane drill |
+| **B — PITR / clone** | New `recovery-drill-*` DB | Recent-window precision |
+| **C — GCS → staging** | Staging project database | Preview / cross-project validation |
+
+---
+
+## Pre-restore verification (mandatory)
+
+Complete **before** any `restore` / `import` / `clone` command.
+
+| # | Check | Pass criteria | Record |
+|---|-------|---------------|--------|
+| P1 | Operator identity | Named operator + break-glass role | |
+| P2 | Change ticket | Drill-only approval; production cutover **not** authorized | |
+| P3 | Project context | `gcloud config get-value project` intentional for the next command | |
+| P4 | Production `(default)` describe | Database exists; note `locationId` | |
+| P5 | Destination ID conflict | Path A/B: `databases describe --database=DRILL_ID` fails (DB must not already exist) **or** explicit reuse approved | |
+| P6 | Source artifact | Backup list / GCS object / PITR timestamp verified | |
+| P7 | Destination ≠ `(default)` on prod | Written Drill ID ≠ `(default)` | |
+| P8 | Isolation | Preview/Production env will **not** be pointed at prod for this drill’s app smoke (Path C uses staging only) | |
+| P9 | Cleanup plan | Delete command drafted with **exact** Drill ID only | |
+| P10 | Baseline counts (optional but recommended) | Spot counts from last known export / dashboard screenshot for P0 collections | |
+
+```bash
+# Example pre-restore probes (read-only)
+gcloud config set project karkun-connect-75c68
+gcloud firestore databases describe --database='(default)' \
+  --format='yaml(name,locationId,type,pointInTimeRecoveryEnablement)'
+gcloud firestore backups list --database='(default)'
+# Expect failure (DB absent) before Path A restore:
+gcloud firestore databases describe --database=recovery-drill-YYYYMMDD
+```
+
+**Gate:** If any of P1–P9 fail → **do not restore**.
 
 ---
 
 ## Path A — Restore managed backup → new database (same GCP project)
 
-Use when scheduled backups already exist.
+Use when scheduled backups already exist. **Preferred first drill (KC-027.2).**
 
 ### A1. List backups
 
@@ -69,30 +143,19 @@ gcloud firestore databases restore \
 Wait until operation completes:
 
 ```bash
-gcloud firestore operations list --database='(default)'
+gcloud firestore operations list
 gcloud firestore databases describe --database=recovery-drill-YYYYMMDD
 ```
 
-### A3. Validate (read-only)
+### A3. Post-restore validation
 
-Prefer Admin SDK / Console inspection against the **drill** database only:
-
-- Collection presence: `rukns`, `karkuns`, `connections`, `campaigns`, `activityLogs`, `connectionLedger`, `executions`, `followUps`, `compliance`, `settings`, `communications`
-- Spot-check document counts vs last known production metrics (from a prior export or dashboard screenshot)
-- Confirm `settings/karkunCounter` and `settings/migrationVersion` exist
+Execute [Post-restore validation](#post-restore-validation-critical-data-domains) against the **drill** database only (Admin SDK / Console with database ID override).
 
 Do **not** point Production hosting at `recovery-drill-*`.
 
 ### A4. Cleanup
 
-When the drill is signed off:
-
-```bash
-# Only delete the drill database — never (default)
-gcloud firestore databases delete recovery-drill-YYYYMMDD --quiet
-```
-
-Retain the evidence table in the change ticket.
+Follow [Safe cleanup / rollback](#safe-cleanup--rollback-of-temporary-non-production-database).
 
 ---
 
@@ -103,13 +166,13 @@ Use when PITR is enabled and the incident timestamp is within 7 days.
 ```bash
 gcloud config set project karkun-connect-75c68
 
-# Example: clone to a new database from a minute-aligned timestamp (see current gcloud clone docs)
-# Always use a non-(default) destination database ID.
+# Use current gcloud clone / PITR docs for your CLI version.
+# Destination database ID must be recovery-drill-* — never (default).
 ```
 
-Follow Google’s current `databases clone` / PITR guidance for your CLI version. Destination database ID must not be `(default)`.
+Validate with [Post-restore validation](#post-restore-validation-critical-data-domains); cleanup per [Safe cleanup](#safe-cleanup--rollback-of-temporary-non-production-database).
 
-Validate and cleanup as in Path A3–A4.
+**Unresolved prerequisite:** PITR may still be disabled on production `(default)` until ops complete KC-027.1 enablement — Path B is blocked until enabled.
 
 ---
 
@@ -124,7 +187,7 @@ gcloud config set project karkun-connect-75c68
 gsutil ls gs://karkun-connect-75c68-firestore-backups/firestore/
 ```
 
-Or create a one-shot export (production read-only export is allowed; import target must be non-prod):
+Or create a one-shot **read-only export** from production (import target must remain non-prod):
 
 ```bash
 gcloud firestore export gs://karkun-connect-75c68-firestore-backups/firestore/drill/$(date +%Y%m%d%H%M) \
@@ -168,6 +231,105 @@ Redeploy Preview after env change. Confirm in browser network tab that Firestore
 | Hard refresh | Still authenticated / data loads |
 | Confirm project | Requests to staging project only |
 
+Then run [Post-restore validation](#post-restore-validation-critical-data-domains) against the **staging** database.
+
+### C5. Staging cleanup / rollback
+
+Path C does **not** delete a GCP database by default (staging `(default)` is shared). Prefer:
+
+1. Re-import a known-good **staging seed** export, **or**
+2. Document that staging was overwritten for the drill and schedule reseeding
+
+Do **not** “clean up” by touching production.
+
+---
+
+## Post-restore validation (critical data domains)
+
+Evidence source for names: `FIRESTORE_COLLECTIONS` and `FIRESTORE_DOCS` in `src/repositories/firestore/collections.ts`.
+
+Perform **read-only** checks against the **destination** database only.
+
+### Domain matrix
+
+| Domain | Collection / doc | Priority | Validation |
+|--------|------------------|----------|------------|
+| People — Rukns | `rukns` | P0 | Collection exists; document count &gt; 0 if source had data; spot-check one known `ruknId` |
+| People — Karkuns | `karkuns` | P0 | Collection exists; count spot-check; spot-check one known `karkunId` |
+| Assignments | `connections` | P0 | Collection exists; count spot-check; sample doc has expected assignment fields |
+| Campaigns | `campaigns` | P0 | Collection exists; active/library campaign doc(s) present if expected from source |
+| Audit trail | `activityLogs` | P0 | Collection exists (may be large); spot-check recent entry shape |
+| Connection ledger | `connectionLedger` | P0 | Collection exists if source had ledger events (KC-0058) |
+| Execution | `executions` | P1 | Collection exists; optional `guidance` doc (`FIRESTORE_DOCS.guidanceState`) |
+| Follow-ups | `followUps` | P1 | Collection exists |
+| Compliance | `compliance` | P1 | Collection exists; optional typed docs (`baitulMaal_*`, `ijtema_*`, `weeklyIjtemaEvent_*`, `monthlyBaitulMaalCycle_*`, …) if present in source |
+| Settings / meta | `settings` | P1 | Docs: `karkunCounter`, `connectionMeta`, `migrationVersion` present when present in source; `backupIndex` optional |
+| Communications | `communications` | P2 | Collection exists; optional `state` doc (`FIRESTORE_DOCS.communicationState`) |
+
+### Count reconciliation
+
+| Check | Method | Pass |
+|-------|--------|------|
+| P0 counts | Compare destination counts to pre-restore baseline (export metrics / screenshot) | Within agreed tolerance (document ±0 for exact restore drills unless known export skew) |
+| Orphan smoke | Sample Active `connections` reference existing `karkuns` / `rukns` IDs | No obvious mass orphans on sample |
+| Counter sanity | `settings/karkunCounter` coherent with max observed karkun IDs (if both present) | No gross underflow vs sample |
+
+### Auth note
+
+Firestore restore does **not** restore Firebase Auth users or custom claims. Path C Preview login requires **staging** Auth users/claims separately.
+
+---
+
+## Recovery acceptance criteria
+
+Drill is **ACCEPTED** only when all of the following are true:
+
+| ID | Criterion |
+|----|-----------|
+| AC-1 | Destination was non-production per strategy (Path A/B drill DB **or** staging project) |
+| AC-2 | Production `karkun-connect-75c68` / `(default)` was **not** modified (no import/restore/delete against it) |
+| AC-3 | All **P0** domain checks passed (collections present + count/spot checks recorded) |
+| AC-4 | **P1** settings docs checked when expected from source (`karkunCounter`, `migrationVersion` at minimum) |
+| AC-5 | Evidence template completed and attached to the change ticket |
+| AC-6 | Preview project ID (if used) ≠ `karkun-connect-75c68` |
+| AC-7 | Cleanup completed **or** explicit retain-with-expiry recorded (Path A/B); staging reseed plan recorded (Path C) |
+
+Drill is **REJECTED** if any AC fails, or if any hard prohibition was breached (treat as incident).
+
+---
+
+## Safe cleanup / rollback of temporary non-production database
+
+### Path A / B (named drill database)
+
+**Allowed delete target:** only the pre-declared Drill ID matching `recovery-drill-*`.
+
+| Step | Action |
+|------|--------|
+| 1 | Confirm Drill ID from change ticket |
+| 2 | `gcloud firestore databases describe --database=DRILL_ID` — matches expected restore |
+| 3 | Confirm ID is **not** `(default)` |
+| 4 | Confirm project is intentional |
+| 5 | Delete drill DB only |
+
+```bash
+# Only delete the drill database — never (default)
+gcloud config set project karkun-connect-75c68
+gcloud firestore databases describe --database=recovery-drill-YYYYMMDD
+gcloud firestore databases delete recovery-drill-YYYYMMDD
+# Prefer interactive confirm; use --quiet only when CI/automation has dual control
+```
+
+| Rollback meaning | Action |
+|------------------|--------|
+| Abort before restore | No cleanup needed |
+| Failed restore (partial DB) | Delete the failed `recovery-drill-*` ID after describe confirms it is not `(default)` |
+| Accepted drill | Delete drill DB after evidence archived **or** retain ≤ 7 days with ticket expiry |
+
+### Path C
+
+See [C5](#c5-staging-cleanup--rollback) — reseed staging; never delete production.
+
 ---
 
 ## Verification evidence template
@@ -178,14 +340,23 @@ Copy into the change ticket after every drill:
 Drill ID:
 Date (UTC):
 Operator:
+Ticket:
+Path (A/B/C):
 Source (backup ID / export path / PITR timestamp):
 Destination project:
 Destination database ID:
-Collections checked:
-Count spot-checks:
+Pre-restore checklist (P1–P10): PASS / FAIL
+P0 domains (rukns, karkuns, connections, campaigns, activityLogs, connectionLedger):
+P1 domains (executions, followUps, compliance, settings):
+P2 communications:
+Count spot-checks (baseline → restored):
+settings/karkunCounter present?:
+settings/migrationVersion present?:
 Preview URL (if used):
 Preview project ID observed:
 Production (default) modified? NO
+Cleanup: deleted DRILL_ID / retained until / staging reseed planned
+Acceptance (AC-1…AC-7): PASS / FAIL
 Issues:
 Sign-off:
 ```
@@ -194,16 +365,32 @@ Sign-off:
 
 ## Incident vs drill
 
-| Mode | Allowed in KC-027.1? | Notes |
-|------|----------------------|-------|
-| Non-prod drill (this runbook) | **Yes** | Baseline verification |
-| Production cutover / in-place repair | **No** | Requires separate certified incident procedure + leadership approval |
+| Mode | Allowed? | Notes |
+|------|----------|-------|
+| Non-prod drill (this runbook) | **Yes** | KC-027.1 / KC-027.2 |
+| Production cutover / in-place repair | **No** | Separate certified incident procedure + leadership approval |
+
+---
+
+## Unresolved prerequisites (block live drill execution)
+
+| Prerequisite | Status (as of KC-027.2 docs) | Blocks |
+|--------------|------------------------------|--------|
+| Confirm production `locationId` | TBD in baseline | Accurate backup resource paths |
+| Enable managed backup schedules | Ops (KC-027.1 §9) | Path A |
+| Enable PITR | Ops (KC-027.1 §9) | Path B |
+| Create GCS backup bucket + export | Ops (KC-027.1 §9) | Path C (unless one-shot export run under change control) |
+| Staging Firebase project + Preview env isolation | Ops | Path C Preview smoke |
+
+This ticket **documents** readiness only — it does **not** enable the above.
 
 ---
 
 ## Related
 
 - [Firestore Backup & Recovery Baseline](./firestore-backup-recovery-baseline.md)
+- [KC-027.2 ARCH-009 gate](../architecture/kc-027-2-arch009-gate.md)
+- [KC-027.1 ARCH-009 gate](../architecture/kc-027-1-arch009-gate.md)
 - [Recovery Guide](./recovery-guide.md)
 - [Backup Guide](./backup-guide.md)
 - [Environment Management](./environment-management.md)
