@@ -1,9 +1,9 @@
 # KC Phase 2 — Product / Data Design
 
-**Status:** DESIGN ONLY — not implemented · [ARCH-009 Phase 2 gate: GO](./kc-phase2-local-programme-arch009-gate.md)  
+**Status:** **PHASE 2 — CERTIFIED FOR DEVELOPMENT BASELINE** (TASK-019; TASK-020 ABSORBED) · [ARCH-009 Phase 2 gate: GO](./kc-phase2-local-programme-arch009-gate.md)  
 **Authority:** [Phase 0 — CERTIFIED](./kc-post-campaign-phase0-system-mapping.md) · [Phase 1 — CERTIFIED FOR DEVELOPMENT BASELINE](./kc-phase1-product-data-design.md) · Frozen post-campaign architecture · [KC-ARCH-009](./kc-arch-009-feature-impact.md) · [KC-ARCH-001](./kc-arch-001-reliability-persistence.md) · [ARCH-009 Phase 2 gate](./kc-phase2-local-programme-arch009-gate.md)  
 **Scope of this document:** Campaign → Local Programme  
-**Does not authorize:** code, Firestore collections, migrations, UI, repositories, indexes, or deploy from this design alone — implementation requires the ARCH-009 GO and follow-on tickets
+**Implementation:** Types, persistence, Campaign planning links, Admin Local Programme UI, and local verification complete (TASK-014–018). This design remains the product/data authority for the certified baseline.
 
 Label every item below as **DESIGN DECISION** (locked for later implementation), **IMPLEMENTATION TASK** (belongs to ARCH-009 + coding tickets), or **PRODUCT DECISION** (cannot be closed from frozen architecture alone).
 
@@ -310,15 +310,15 @@ Phase 0 deferred decision **A** (Rukn Ijtema Present/Absent) remains Phase 5 —
 |------|------|------|
 | **TASK-012** | DESIGN (this doc) | Product/data design — **complete** |
 | **TASK-013** | ARCH-009 gate | [GO](./kc-phase2-local-programme-arch009-gate.md) — Impact Matrix, HIGH risks, plan, verification |
-| **Then** | IMPLEMENTATION | Types + `LocalProgrammeRepository` (+ local/Firestore) |
-| **Then** | IMPLEMENTATION | Collection `localProgrammes` + Admin-only `firestore.rules` (+ indexes if queried) together |
-| **Then** | IMPLEMENTATION | Optional additive Campaign fields + extend Campaign write path if Admin linking is in scope |
-| **Then** | IMPLEMENTATION | Minimal Admin UI: list/create/edit Local Programmes under a selected Campaign; optional Campaign FK linking |
-| **Then** | VERIFY | Local verification; soft background hydrate; **no production deploy** until Phase 5 READY for that ticket |
+| **TASK-014** | IMPLEMENTATION | Types + `LocalProgrammeRepository` contract — **complete** |
+| **TASK-015** | IMPLEMENTATION | Collection `localProgrammes` + Admin-only `firestore.rules` + local/Firestore repos + soft hydrate — **complete** |
+| **TASK-016** | IMPLEMENTATION | Optional additive Campaign `mansoobaId` / `objectiveIds` + merge-only planning-links write — **complete** |
+| **TASK-017** (+ **TASK-018** absorbed) | IMPLEMENTATION | Minimal Admin UI: list/create/edit Local Programmes under a selected Campaign — **complete** |
+| **TASK-019** (+ **TASK-020** absorbed) | VERIFY + CERTIFY | Local verification; soft background hydrate; Phase 5 development-baseline certification — **complete** |
 
 **IMPLEMENTATION TASK (later phases):** Occurrence generation (Phase 3); wrap WI/BM under programme/occurrence; Work / Responsibility (Phase 4).
 
-**DESIGN DECISION:** ARCH-009 for Phase 2 is **GO** (`kc-phase2-local-programme-arch009-gate.md`). Phase 2 code may begin only under follow-on implementation tickets with HIGH-risk mitigations; no production deploy until implementation Phase 5 READY.
+**DESIGN DECISION:** ARCH-009 for Phase 2 is **GO** (`kc-phase2-local-programme-arch009-gate.md`). Phase 2 foundation is certified for continued local development; no production deploy until a later production-ready Phase 5 without the known browser-CRUD limitation.
 
 ---
 
@@ -377,12 +377,30 @@ Do not expand ARCH-009 into Occurrence, Work, Responsibility, reporting, or KC-0
 
 | Field | Value |
 |-------|-------|
-| Type | Product / data design |
-| Code | None |
-| Collections created | None |
-| Production | Unchanged |
-| Architecture conflicts found | **None** (Campaign → Local Programme aligns with TASK-012 approved direction and Phase 0 REUSE+REPOSITION / INTRODUCE dispositions) |
-| ARCH-009 gate | **GO** — see `kc-phase2-local-programme-arch009-gate.md` |
-| Next | TASK-014 — types + repository interfaces (local-first); not authorized by design doc alone |
+| Type | Product / data design (authority for Phase 2 entities) |
+| Design | Approved (TASK-012); ARCH-009 PASS / GO (TASK-013) |
+| Implementation | Complete for Phase 2 foundation (TASK-014–018) |
+| Verification / certification | TASK-019 (+ TASK-020 absorbed) — **PHASE 2 — CERTIFIED FOR DEVELOPMENT BASELINE** |
+| Production | Unchanged — no Vercel / production deploy in Phase 2 |
+| Architecture conflicts found | **None** |
+| Next | Phase 3 (Occurrence generation + Calendar) under its own ARCH-009 gate — not started here |
 
-**Stop:** Do not begin Phase 2 implementation from this design document alone — follow the ARCH-009 GO conditions and implementation ticket sequence.
+---
+
+## 14. PHASE 2 — CERTIFIED FOR DEVELOPMENT BASELINE
+
+| Field | Value |
+|-------|-------|
+| Decision | **PHASE 2 — CERTIFIED FOR DEVELOPMENT BASELINE** |
+| Date | 2026-08-13 |
+| Task | TASK-019 — local verification & certification (TASK-020 ABSORBED INTO TASK-019) |
+| Architecture / design | Implemented as approved: Campaign 1 → many Local Programmes; optional Campaign `mansoobaId` / `objectiveIds`; programme reaches planning via Campaign only |
+| Persistence | Verified (`verify:kc-phase2-local-programme-persistence` PASS · `verify:kc-phase2-campaign-planning-links` PASS) — Admin-only rules, no client delete, soft background hydrate (not critical), Campaign parent validation, merge-only planning links, no Objective dual-write |
+| Admin UI | `/admin/planning` Campaign selection + Local Programme CRUD; `programmeCampaignId` lock; no delete UI; archive via status |
+| Local verification | `npm run typecheck` PASS · `npm run build` PASS · Phase 1 + Phase 2 verify scripts PASS |
+| Authenticated browser CRUD | **Unverified** — valid local Admin credentials not available; do not treat as a follow-on credential task |
+| Production deployment | **Not performed** |
+| ARCH-009 Phase 5 | **READY WITH KNOWN LIMITATIONS** (browser CRUD unverified; production deploy still banned until a later production-ready gate) |
+| Phase 3 | **May proceed** under its own KC-ARCH-009 gate |
+
+**Deferred product decisions P2-A–D and KC-0104 B remain unresolved** (see design §10 / ARCH-009 gate).

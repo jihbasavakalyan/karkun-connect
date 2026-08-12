@@ -5,16 +5,16 @@
 **Standards:** KC-ARCH-009 · KC-ARCH-001  
 **Authority:** [Phase 0 — CERTIFIED](./kc-post-campaign-phase0-system-mapping.md) · [Phase 1 — CERTIFIED FOR DEVELOPMENT BASELINE](./kc-phase1-planning-foundation-arch009-gate.md) · [Phase 2 product/data design](./kc-phase2-product-data-design.md) · Frozen post-campaign architecture  
 **Date:** 2026-08-13  
-**This artifact:** ARCH-009 readiness gate for Phase 2 implementation (design gate only)  
-**Implementation status:** **NOT STARTED** — this gate does not authorize code, collections, UI, or deploy
+**This artifact:** ARCH-009 readiness gate for Phase 2 + post-implementation certification (TASK-019)  
+**Implementation status:** **PHASE 2 — CERTIFIED FOR DEVELOPMENT BASELINE** (TASK-019; TASK-020 ABSORBED)
 
 ---
 
 ## ARCH-009 STATUS
 
-**PASS** (design gate) · **Go/No-Go: GO**
+**PASS** (design gate) · **Go/No-Go: GO** · **Implementation Phase 5: READY WITH KNOWN LIMITATIONS**
 
-Phase 2 implementation may begin under subsequent tickets (TASK-014+), subject to the locked design, HIGH-risk mitigations below, local-first verification, and no production / Vercel deploy until implementation Phase 5 is not `NOT READY`.
+Phase 2 foundation (TASK-014–018) is certified for continued local development. Production / Vercel deploy remains banned until a later production-ready ARCH-009 Phase 5 without the known browser-CRUD limitation.
 
 ---
 
@@ -343,6 +343,46 @@ ARCH-009 does **not** require resolving P2-A–D or KC-0104 before Phase 2 imple
 | Collections created in TASK-013 | **None** |
 | Production changed | **No** |
 | Architecture conflicts | **None** |
-| Next | TASK-014 — Phase 2 types + repository interfaces (local-first) — **not started by this task** |
+| Next (at gate time) | TASK-014 — Phase 2 types + repository interfaces (local-first) |
 
-**Stop:** Do not begin Phase 2 implementation from this conversation. Do not start TASK-014 here.
+---
+
+## PHASE 2 — CERTIFIED FOR DEVELOPMENT BASELINE (TASK-019)
+
+Local integration review of the completed Phase 2 Local Programme foundation (design + ARCH-009 gate + types/repos + persistence + Campaign planning links + Admin UI). TASK-020 (certification close) is **ABSORBED INTO TASK-019**.
+
+### Phase 4 — Regression audit (local)
+
+| Area | Result |
+|------|--------|
+| Local Programme architecture | `campaignId` required; Campaign 1 → many; no direct Mansooba/Objective FKs on programme — PASS |
+| Campaign planning links | Optional `mansoobaId` / `objectiveIds`; merge-only `savePlanningLinksDurable`; no Objective title sync into `objectives[]` — PASS |
+| Campaign / people / Rukn / WI / BM SoTs | Untouched as SoT rewrite — PASS (verify scripts + code review) |
+| Application layer | UI → `getRepositories().localProgramme` / `.campaign`; no new programme service/store — PASS |
+| Persistence | Local + Firestore; Admin-only rules; no delete; soft background hydrate (not critical) — PASS |
+| UI / authz | `/admin/planning` + Campaign selection + programme CRUD; `programmeCampaignId` lock; Admin-only route — PASS |
+| Bootstrap | Empty `localProgrammes` valid; not on critical hydrate path — PASS |
+
+### Phase 5 — Certification
+
+| Field | Value |
+|-------|-------|
+| Decision | **PHASE 2 — CERTIFIED FOR DEVELOPMENT BASELINE** |
+| ARCH-009 Phase 5 | **READY WITH KNOWN LIMITATIONS** |
+| Architecture / design | Implemented as approved |
+| Persistence | Verified (`verify:kc-phase2-local-programme-persistence` PASS · `verify:kc-phase2-campaign-planning-links` PASS · Phase 1 verify PASS) |
+| Admin UI | Implemented (`AdminPlanningPage` Campaign + Local Programme section) |
+| Local verification | `typecheck` PASS · `build` PASS · Phase 1/2 verify scripts PASS |
+| Authenticated Admin browser CRUD | **Unverified** (credentials unavailable locally) — recorded limitation, not a new task |
+| Production / Vercel deploy | **Not performed** |
+| Phase 3 | **May proceed** under its own ARCH-009 gate |
+
+### Known limitations
+
+1. Authenticated Admin browser CRUD was not executed (no valid local Admin credentials).
+2. No production deployment or production data testing.
+3. Deferred product decisions P2-A–D and KC-0104 B remain open.
+
+### Phase 6 — Post-deploy
+
+**Not applicable** — no production deploy in Phase 2.
