@@ -32,6 +32,18 @@ import type {
   Unit,
   UnitStatus,
 } from '@/types/planning.types'
+import type { Work } from '@/types/work.types'
+import { MansoobaActivityReportPanel } from '@/pages/admin/MansoobaActivityReportPanel'
+import {
+  getAllWeeklyIjtemaEvents,
+  getAllWeeklyIjtemaSubmissions,
+  subscribeToWeeklyIjtemaStore,
+} from '@/stores/weeklyIjtemaStore'
+import {
+  getAllMonthlyBaitulMaalCycles,
+  getAllMonthlyBaitulMaalSubmissions,
+  subscribeToMonthlyBaitulMaalStore,
+} from '@/stores/monthlyBaitulMaalStore'
 
 const inputClassName =
   'w-full rounded-lg border border-border bg-surface px-4 py-3 text-base text-text-heading focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20'
@@ -202,6 +214,8 @@ export function AdminPlanningPage() {
   const [programmes, setProgrammes] = useState<LocalProgramme[]>([])
   /** Phase 3 — canonical Occurrence rows (history / calendar consume these; no second SoT). */
   const [occurrences, setOccurrences] = useState<Occurrence[]>([])
+  const [workItems, setWorkItems] = useState<Work[]>([])
+  const [activityStoreVersion, setActivityStoreVersion] = useState(0)
   const [selectedMansoobaId, setSelectedMansoobaId] = useState<string | null>(null)
   const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null)
   const [message, setMessage] = useState('')
@@ -239,12 +253,14 @@ export function AdminPlanningPage() {
     const nextCampaigns = [...unwrapRepository(repos.campaign.getAll(), [])]
     const nextProgrammes = [...unwrapRepository(repos.localProgramme.loadAll(), [])]
     const nextOccurrences = [...unwrapRepository(repos.occurrence.loadAll(), [])]
+    const nextWork = [...unwrapRepository(repos.work.loadAll(), [])]
     setMansoobas(nextMansoobas)
     setObjectives(nextObjectives)
     setUnits(nextUnits)
     setCampaigns(nextCampaigns)
     setProgrammes(nextProgrammes)
     setOccurrences(nextOccurrences)
+    setWorkItems(nextWork)
 
     setSelectedMansoobaId((current) => {
       if (current && nextMansoobas.some((row) => row.id === current)) return current
@@ -265,6 +281,19 @@ export function AdminPlanningPage() {
   useEffect(() => {
     refresh()
   }, [refresh])
+
+  useEffect(() => {
+    const unsubWi = subscribeToWeeklyIjtemaStore(() =>
+      setActivityStoreVersion((value) => value + 1),
+    )
+    const unsubBm = subscribeToMonthlyBaitulMaalStore(() =>
+      setActivityStoreVersion((value) => value + 1),
+    )
+    return () => {
+      unsubWi()
+      unsubBm()
+    }
+  }, [])
 
   const selectedMansooba = useMemo(
     () => mansoobas.find((row) => row.id === selectedMansoobaId) ?? null,
@@ -318,6 +347,26 @@ export function AdminPlanningPage() {
     () => listOccurrenceHistory(campaignOccurrences),
     [campaignOccurrences],
   )
+
+  const weeklyIjtemaEvents = useMemo(() => {
+    void activityStoreVersion
+    return getAllWeeklyIjtemaEvents()
+  }, [activityStoreVersion])
+
+  const weeklyIjtemaSubmissions = useMemo(() => {
+    void activityStoreVersion
+    return getAllWeeklyIjtemaSubmissions()
+  }, [activityStoreVersion])
+
+  const baitulMaalCycles = useMemo(() => {
+    void activityStoreVersion
+    return getAllMonthlyBaitulMaalCycles()
+  }, [activityStoreVersion])
+
+  const baitulMaalSubmissions = useMemo(() => {
+    void activityStoreVersion
+    return getAllMonthlyBaitulMaalSubmissions()
+  }, [activityStoreVersion])
 
   const unitNameById = useMemo(() => {
     const map = new Map<string, string>()
@@ -954,6 +1003,19 @@ export function AdminPlanningPage() {
             </div>
           )}
         </section>
+
+        <MansoobaActivityReportPanel
+          mansooba={selectedMansooba}
+          objectives={objectives}
+          campaigns={campaigns}
+          programmes={programmes}
+          occurrences={occurrences}
+          work={workItems}
+          weeklyIjtemaEvents={weeklyIjtemaEvents}
+          weeklyIjtemaSubmissions={weeklyIjtemaSubmissions}
+          baitulMaalCycles={baitulMaalCycles}
+          baitulMaalSubmissions={baitulMaalSubmissions}
+        />
 
         <section className="rounded-(--radius-card) border border-border bg-surface p-5 shadow-card">
           <div className="flex flex-wrap items-start justify-between gap-3">

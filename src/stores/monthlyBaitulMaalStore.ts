@@ -68,6 +68,10 @@ export function getMonthlyBaitulMaalSubmissionsForCycle(
   return [...submissions.values()].filter((item) => item.eventId === cycleId)
 }
 
+export function getAllMonthlyBaitulMaalSubmissions(): MonthlyBaitulMaalSubmission[] {
+  return [...submissions.values()]
+}
+
 export function upsertMonthlyBaitulMaalSubmission(
   submission: MonthlyBaitulMaalSubmission,
 ): MonthlyBaitulMaalSubmission {
