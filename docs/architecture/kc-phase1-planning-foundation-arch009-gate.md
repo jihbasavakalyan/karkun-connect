@@ -5,15 +5,16 @@
 **Standards:** KC-ARCH-009 · KC-ARCH-001  
 **Authority:** [Phase 0 — CERTIFIED](./kc-post-campaign-phase0-system-mapping.md) · [Phase 1 product/data design](./kc-phase1-product-data-design.md) · Frozen post-campaign architecture  
 **Date:** 2026-08-13  
-**This artifact:** Assessment / design gate only — **no Phase 1 code**
+**This artifact:** ARCH-009 gate + Phase 1 foundation certification record  
+**Implementation status:** **PHASE 1 — CERTIFIED FOR DEVELOPMENT BASELINE** (TASK-011)
 
 ---
 
 ## ARCH-009 STATUS
 
-**PASS**
+**PASS** (design gate) · **Phase 5: READY WITH KNOWN LIMITATIONS** (implementation baseline)
 
-Phase 1 implementation **may begin** (TASK-005+) only within the locked design and the mitigations below. Production deploy remains banned until a later ARCH-009 Phase 5 certification for the implementation ticket.
+Phase 1 foundation (TASK-005–010) is certified for continued local development. Production / Vercel deploy remains banned until a later production-ready ARCH-009 Phase 5 without the known browser-CRUD limitation.
 
 ---
 
@@ -267,12 +268,53 @@ ARCH-009 does **not** require resolving A–D before Phase 1 implementation begi
 
 ---
 
-## Certification for this gate artifact
+## Certification for this gate artifact (design gate — historical)
 
 | Field | Value |
 |-------|-------|
 | ARCH-009 STATUS | **PASS** |
-| Implementation code in this task | **None** |
-| Collections created | **None** |
+| Implementation code in TASK-004 | **None** |
+| Collections created in TASK-004 | **None** |
 | Production changed | **No** |
-| Next | TASK-005 — types + repository interfaces (local-first) |
+| Next (at gate time) | TASK-005 — types + repository interfaces (local-first) |
+
+---
+
+## PHASE 1 — CERTIFIED FOR DEVELOPMENT BASELINE (TASK-011)
+
+Local integration review of the completed Phase 1 Planning Foundation (design + ARCH-009 gate + types/repos + persistence + Admin UI + UX hardening).
+
+### Phase 4 — Regression audit (local)
+
+| Area | Result |
+|------|--------|
+| Planning architecture | Mansooba root; Objective requires `mansoobaId`; Unit flat — PASS |
+| Campaign / people / Rukn SoTs | Untouched by planning writes — PASS (verify script isolation + code review) |
+| Application layer | UI → `getRepositories()` only; no planning service/store — PASS |
+| Persistence | Local + Firestore; Admin-only rules; no delete; soft background hydrate — PASS |
+| UI / authz | `/admin/planning` + nav; `ProtectedRoute allowedRole="administrator"`; TASK-010 locks intact — PASS |
+| Unrelated Admin/Rukn nav | Planning additive before Settings; no Campaign/Karkun/Rukn route changes required — PASS |
+
+### Phase 5 — Certification
+
+| Field | Value |
+|-------|-------|
+| Decision | **PHASE 1 — CERTIFIED FOR DEVELOPMENT BASELINE** |
+| ARCH-009 Phase 5 | **READY WITH KNOWN LIMITATIONS** |
+| Architecture / design | Implemented as approved |
+| Persistence | Verified (`verify:kc-phase1-planning-persistence` PASS) |
+| Admin UI | Implemented (`AdminPlanningPage` at `/admin/planning`) |
+| Local verification | `typecheck` PASS · `build` PASS · persistence verify PASS |
+| Authenticated Admin browser CRUD | **Unverified** (credentials unavailable locally) — recorded limitation, not a new task |
+| Production / Vercel deploy | **Not performed** |
+| Phase 2 | **May proceed** under its own ARCH-009 gate |
+
+### Known limitations
+
+1. Authenticated Admin browser CRUD was not executed (no valid local Admin credentials).
+2. No production deployment or production data testing.
+3. Deferred product decisions A–D remain open.
+
+### Phase 6 — Post-deploy
+
+**Not applicable** — no production deploy in Phase 1.

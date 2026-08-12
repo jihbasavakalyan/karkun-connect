@@ -558,8 +558,8 @@ Rules, schema, and indexes must ship together (KC-ARCH-001). No new collection i
 | Phase | Scope | Code? |
 |-------|-------|-------|
 | **0** | This inventory | **PHASE 0 — CERTIFIED** (documentation baseline) |
-| 1 | Meqati Mansooba + Objectives + Unit foundation | May proceed after ARCH-009 for that ticket |
-| 2 | Campaign → Local Programme | |
+| **1** | Meqati Mansooba + Objectives + Unit foundation | **PHASE 1 — CERTIFIED FOR DEVELOPMENT BASELINE** (see `kc-phase1-product-data-design.md` §15) |
+| 2 | Campaign → Local Programme | May proceed under its own ARCH-009 gate |
 | 3 | Occurrence generation + Calendar | |
 | 4 | Responsibility + Work engine | |
 | 5 | Programme-specific attendance + Reporting (real JIH/Basavakalyan report first) | |

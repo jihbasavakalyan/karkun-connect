@@ -1,11 +1,11 @@
 # KC Phase 1 — Product / Data Design
 
-**Status:** DESIGN ONLY — not implemented  
-**Authority:** [Phase 0 — CERTIFIED](./kc-post-campaign-phase0-system-mapping.md) · Frozen post-campaign architecture · [KC-ARCH-009](./kc-arch-009-feature-impact.md) · [KC-ARCH-001](./kc-arch-001-reliability-persistence.md)  
+**Status:** **PHASE 1 — CERTIFIED FOR DEVELOPMENT BASELINE** (TASK-011)  
+**Authority:** [Phase 0 — CERTIFIED](./kc-post-campaign-phase0-system-mapping.md) · Frozen post-campaign architecture · [KC-ARCH-009](./kc-arch-009-feature-impact.md) · [KC-ARCH-001](./kc-arch-001-reliability-persistence.md) · [ARCH-009 Phase 1 gate](./kc-phase1-planning-foundation-arch009-gate.md)  
 **Scope of this document:** Meqati Mansooba → Objectives → Unit / Scope  
-**Does not authorize:** code, Firestore collections, migrations, UI, repositories, indexes, or deploy
+**Implementation:** Types, repositories, Admin UI, and local verification complete (TASK-005–010). This design remains the product/data authority for the certified baseline.
 
-Label every item below as **DESIGN DECISION** (locked for later implementation) or **IMPLEMENTATION TASK** (belongs to TASK-004+).
+Label every item below as **DESIGN DECISION** (locked) or **IMPLEMENTATION TASK** (completed through Phase 1 foundation, or deferred to Phase 2+).
 
 ---
 
@@ -255,19 +255,16 @@ No additional open decisions are required to keep Phase 1 minimal.
 
 ## 12. ARCH-009 status (for Phase 1 implementation)
 
-ARCH-009 requirements are **already documented** in [kc-arch-009-feature-impact.md](./kc-arch-009-feature-impact.md). This design does **not** invent new ARCH-009 rules.
-
 | Item | Status |
 |------|--------|
-| This TASK-003 artifact | Documentation / product-data design only — **no coding** |
-| Phase 0 post-campaign mapping | **CERTIFIED** — baseline for reuse decisions |
-| Before any Phase 1 code (TASK-004+) | **REQUIRED:** ARCH-009 Phases 0–3 + Go/No-Go for the **implementation** ticket |
-| Classification for that ticket | **New Feature** (planning foundation) |
-| Must include | Impact Matrix · regression risk (HIGH items fully documented) · implementation plan · verification plan · Go/No-Go answers with Impact / Mitigation / Regression Tests for every YES |
-| Deploy | Banned until ARCH-009 Phase 5 certification is not `NOT READY` |
-| Related | KC-ARCH-001 — schema + repository + `firestore.rules` (+ indexes) ship together |
+| TASK-003 design | **Complete** — product/data design authority |
+| TASK-004 ARCH-009 gate | **PASS / GO** — [gate artifact](./kc-phase1-planning-foundation-arch009-gate.md) |
+| TASK-005–010 implementation | **Complete** — types, persistence, Admin UI, UX hardening |
+| TASK-011 certification | **PHASE 1 — CERTIFIED FOR DEVELOPMENT BASELINE** |
+| Production deploy | Banned until a later production-ready Phase 5 (browser CRUD still a known limitation) |
+| Related | KC-ARCH-001 — schema + repository + `firestore.rules` shipped together for planning collections |
 
-**DESIGN DECISION:** TASK-004 must produce the ARCH-009 gate artifact and receive Go before creating collections, repositories, UI, or rules.
+**DESIGN DECISION:** Phase 2 (Campaign reposition / optional FKs) requires its own ARCH-009 gate. Deferred decisions A–D remain unresolved.
 
 ---
 
@@ -292,10 +289,28 @@ ARCH-009 requirements are **already documented** in [kc-arch-009-feature-impact.
 
 | Field | Value |
 |-------|-------|
-| Type | Product / data design |
-| Code | None |
-| Collections created | None |
-| Production | Unchanged |
-| Next gate | TASK-004 ARCH-009 for Phase 1 implementation |
+| Type | Product / data design (authority for Phase 1 entities) |
+| Design | Approved (TASK-003); ARCH-009 PASS / GO (TASK-004) |
+| Implementation | Complete for Phase 1 foundation (TASK-005–010) |
+| Production | Unchanged — no Vercel / production deploy in Phase 1 |
+| Next | Phase 2 may proceed under its own ARCH-009 gate |
 
-**Stop:** Do not begin implementation from this document alone.
+---
+
+## 15. PHASE 1 — CERTIFIED FOR DEVELOPMENT BASELINE
+
+| Field | Value |
+|-------|-------|
+| Decision | **PHASE 1 — CERTIFIED FOR DEVELOPMENT BASELINE** |
+| Date | 2026-08-13 |
+| Task | TASK-011 — local integration & certification |
+| Architecture / design | Implemented as approved: Mansooba root → Objective (`mansoobaId`) → flat Unit; Campaign and people/Rukn models untouched; no planning service/store layer |
+| Persistence | Verified (`npm run verify:kc-phase1-planning-persistence` PASS) — local + Firestore repos, Admin-only rules, no client delete, soft background hydrate, no Campaign dual-write |
+| Admin UI | `/admin/planning` under existing `ProtectedRoute allowedRole="administrator"`; TASK-010 mansoobaId lock + modal validation intact |
+| Local verification | `npm run typecheck` PASS · `npm run build` PASS · planning persistence verify PASS |
+| Authenticated browser CRUD | **Unverified** — valid local Admin credentials not available; do not treat as a follow-on credential task |
+| Production deployment | **Not performed** |
+| ARCH-009 Phase 5 | **READY WITH KNOWN LIMITATIONS** (browser CRUD unverified; production deploy still banned until a later production-ready gate) |
+| Phase 2 | **May proceed** under its own KC-ARCH-009 gate |
+
+**Deferred product decisions A–D remain unresolved** (see design §11 / ARCH-009 gate).
