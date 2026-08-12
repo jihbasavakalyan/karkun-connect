@@ -135,7 +135,7 @@ service cloud.firestore {
         && request.resource.data._docType == 'pendingLock';
     }
 
-    function isAssignmentReviewCreate() {
+    function isAssignmentReviewCreate(reviewId) {
       return request.resource.data.keys().hasAll(['id', 'karkunId', 'ruknId', 'status'])
         && request.resource.data.id == reviewId
         && request.resource.data.status == 'Pending'
@@ -151,7 +151,7 @@ service cloud.firestore {
       allow create: if isAdministrator()
         || (isRukn()
           && request.resource.data.ruknId == ruknId()
-          && (isAssignmentReviewCreate() || isAssignmentReviewPendingLockCreate()));
+          && (isAssignmentReviewCreate(reviewId) || isAssignmentReviewPendingLockCreate()));
 
       allow update: if isAdministrator()
         && !isAssignmentReviewPendingLock()
