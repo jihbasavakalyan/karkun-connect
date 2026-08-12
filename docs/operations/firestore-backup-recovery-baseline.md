@@ -224,6 +224,8 @@ Source of truth: `src/repositories/firestore/collections.ts` + architecture docs
 
 **KC-027.2:** Runbook defines restore-target strategy, pre/post verification, domain validation, acceptance criteria (AC-1…AC-7), and safe cleanup. **Live Path A non-prod drill verified 2026-08-12** (backup `e58615a2-d8d7-428e-b5e5-55bf7b278f07` → `kc0272-restore-20260812`; 10/10 collection parity; production unmodified). Certification: **RECOVERY DRILL VERIFIED — NON-PRODUCTION PASS**. Production cutover remains out of scope.
 
+**KC-027.3:** Canonical operator health contract lives in [firestore-backup-recovery-health.md](./firestore-backup-recovery-health.md) (curated ops snapshot — not live app polling). Do **not** treat Admin Settings “Backup Status” as GCP managed DR.
+
 ---
 
 ## 7. Required IAM permissions
@@ -295,6 +297,7 @@ Remaining limitations: no app connectivity test against restore DB; no destructi
 
 ## 10. Related
 
+- [Backup/Recovery Health (KC-027.3)](./firestore-backup-recovery-health.md)
 - [Non-production recovery runbook](./firestore-nonprod-recovery-runbook.md)
 - [Backup Guide](./backup-guide.md) (operator summary)
 - [Recovery Guide](./recovery-guide.md)
@@ -302,6 +305,7 @@ Remaining limitations: no app connectivity test against restore DB; no destructi
 - [Firestore architecture](../architecture/firestore.md)
 - [KC-027.1 ARCH-009 gate](../architecture/kc-027-1-arch009-gate.md)
 - [KC-027.2 ARCH-009 gate](../architecture/kc-027-2-arch009-gate.md)
+- [KC-027.3 ARCH-009 gate](../architecture/kc-027-3-arch009-gate.md)
 
 ### External references
 

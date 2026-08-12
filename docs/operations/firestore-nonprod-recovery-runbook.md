@@ -471,7 +471,9 @@ Live Path A **data-plane** drill is complete. Remaining rows above are optional 
 ## Related
 
 - [Firestore Backup & Recovery Baseline](./firestore-backup-recovery-baseline.md)
+- [Backup/Recovery Health (KC-027.3)](./firestore-backup-recovery-health.md)
 - [KC-027.2 ARCH-009 gate](../architecture/kc-027-2-arch009-gate.md)
+- [KC-027.3 ARCH-009 gate](../architecture/kc-027-3-arch009-gate.md)
 - [KC-027.1 ARCH-009 gate](../architecture/kc-027-1-arch009-gate.md)
 - [Recovery Guide](./recovery-guide.md)
 - [Backup Guide](./backup-guide.md)
