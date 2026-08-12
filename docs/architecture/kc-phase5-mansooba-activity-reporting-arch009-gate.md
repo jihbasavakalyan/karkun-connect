@@ -132,13 +132,12 @@ Work has no programme/occurrence FK. Include Work when `dueDate` is in the perio
 ## After coding
 
 - **Phase 4:** WI/BM/Work/Occurrence writes not used; empty/archived/multi-objective cases covered by verify  
-- **Phase 5:** READY WITH KNOWN LIMITATIONS — local-first; orientation GAP; Work needs `primaryUnitId` + `dueDate`; no Vercel  
-- **Phase 6:** N/A  
+- **Phase 5:** Official certification is [kc-phase5-certification.md](./kc-phase5-certification.md) (TASK-045). This batch remains **READY WITH KNOWN LIMITATIONS**.  
+- **Phase 6:** N/A until production deploy authorised. Do **not** start TASK-046.
 
 | Task | Status |
 |------|--------|
 | TASK-042 | COMPLETE |
 | TASK-043 | COMPLETE |
 | TASK-044 | COMPLETE |
-
-Do **not** start TASK-045.
+| TASK-045 | COMPLETE / PHASE 5 CERTIFIED |

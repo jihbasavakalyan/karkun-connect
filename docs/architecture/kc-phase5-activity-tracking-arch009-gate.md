@@ -215,8 +215,8 @@ STOP conditions not triggered: WI submission supports the state; no fourth write
 
 **Workflows tested (local automated):** create/open/close/reopen WI event; Karkun mark Present/Absent; Rukn Invited→Present/Absent on same submission; Matrix Committed isolated; Occurrence `sourceRef` wrap to WI event without mutating WI; orientation journey SoT unchanged; BM cycle Paid/Unpaid (Contributed/Pending) + sourceRef wrap.
 
-- **Phase 5:** **READY WITH KNOWN LIMITATIONS** — local-first; no production / Vercel; Excused/Exempt still unresolved; reporting not in this batch; authenticated browser may be unverified without credentials.  
-- **Phase 6:** N/A until production deploy authorised.
+- **Phase 5:** Official certification is [kc-phase5-certification.md](./kc-phase5-certification.md) (TASK-045). This batch remains **READY WITH KNOWN LIMITATIONS** as an activity-tracking baseline.  
+- **Phase 6:** N/A until production deploy authorised. Do **not** start TASK-046.
 
 ---
 
@@ -230,16 +230,18 @@ STOP conditions not triggered: WI submission supports the state; no fourth write
 | TASK-040 — Orientation attendance | **COMPLETE** |
 | TASK-041 — Bait-ul-Maal integration | **COMPLETE** |
 
-Do **not** start TASK-042.
+TASK-042–044 (Mansooba reporting) and TASK-045 (Phase 5 certification) are recorded in [kc-phase5-certification.md](./kc-phase5-certification.md). Do **not** start Phase 6 / TASK-046.
 
 ---
 
-## PHASE 5 — CERTIFIED (development baseline)
+## Activity-tracking baseline (superseded for Phase 5 close)
+
+This table remains the TASK-038–041 baseline. Official Phase 5 close is [kc-phase5-certification.md](./kc-phase5-certification.md).
 
 | Field | Value |
 |-------|-------|
-| Decision | **READY WITH KNOWN LIMITATIONS** |
+| Decision | **READY WITH KNOWN LIMITATIONS** (activity-tracking batch) |
 | Date | 2026-08-13 |
 | Chain | Programme → Occurrence → existing WI / orientation journey / BM SoTs |
 | Verify | `typecheck` · `verify:kc0107` · `verify:kc0108` · `verify:kc-028c` · `verify:kc-phase3-occurrence-foundation` · `verify:kc-phase3-occurrence-generation` · `verify:kc-phase5-activity-tracking` |
-| Limitations | No production / Vercel; Excused/Exempt unresolved; no reporting redesign; orientation remains journey-signal SoT (not a programme event register); Occurrence `sourceRef` is a wrap link, not attendance storage |
+| Limitations | No production / Vercel; Excused/Exempt unresolved; orientation remains journey-signal SoT; Occurrence `sourceRef` is a wrap link, not attendance storage |
