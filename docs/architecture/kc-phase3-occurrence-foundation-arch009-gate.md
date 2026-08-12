@@ -5,14 +5,45 @@
 **Standards:** KC-ARCH-009 · KC-ARCH-001  
 **Authority:** [Phase 0 — CERTIFIED](./kc-post-campaign-phase0-system-mapping.md) · [Phase 2 — CERTIFIED](./kc-phase2-local-programme-arch009-gate.md) · [Phase 2 product/data design](./kc-phase2-product-data-design.md)  
 **Date:** 2026-08-13  
-**This artifact:** ARCH-009 readiness gate for Phase 3 foundation only (no automatic generation)  
-**Implementation status:** Design + foundation contracts (TASK-021 / TASK-022)
+**This artifact:** ARCH-009 readiness gate for Phase 3 Occurrence foundation + generation horizon  
+**Implementation status:** Foundation COMPLETE (TASK-021 / TASK-022) · Generation horizon APPROVED (TASK-023)
 
 ---
 
 ## ARCH-009 STATUS
 
 **PASS** (design gate) · **Go/No-Go: GO** · Implementation Phase 5 after coding: see certification section
+
+---
+
+## Approved generation horizon (TASK-023)
+
+**PRODUCT DECISION (authoritative):**
+
+Occurrence generation is bounded by the Local Programme lifecycle window:
+
+`startDate` → `endDate` **inclusive**
+
+| Rule | Decision |
+|------|----------|
+| Horizon | Only candidates with `startDate <= occurrenceDate <= endDate` |
+| Missing / invalid `startDate` or `endDate` | Do **not** invent dates; do **not** fall back to today; skip programme with observable reason |
+| Rolling N-day horizon | **Rejected** |
+| Same-day-only generic generation | **Rejected** |
+| WI `attendanceWindowEngine` same-day open/close | Remains WI attendance behaviour only — **does not** define the generic Occurrence generation horizon |
+| WI `attendanceWindowSchedule` | Remains the **recurrence precursor** for `weekly_ijtema` weekday rules inside the programme window |
+
+```
+Local Programme (active + valid startDate/endDate)
+    ↓
+ProgrammeRecurrenceRule / WI schedule (weekly_ijtema)
+    ↓
+candidate dates within startDate–endDate inclusive
+    ↓
+deterministic generationKey
+    ↓
+idempotent durable Occurrence save
+```
 
 ---
 
@@ -50,7 +81,7 @@
 | WI attendance window | Y (minimal) | Reuse schedule as weekly recurrence source; engine behaviour unchanged |
 | Local Programme | Y (light) | `frequency` remains recurrence config SoT; no nested occurrences |
 | Campaign / Planning / People | N | |
-| Generation jobs / idempotency runners | N | Foundation only (`generationKey` field reserved) |
+| Generation jobs / idempotency runners | Y (TASK-023) | Callable domain generator; durable `generationKey`; no new scheduler |
 
 ### 0.4 Reuse-first decision
 
@@ -72,7 +103,7 @@ Local Programme
     ↓
 Recurrence configuration (programme.frequency and/or WI attendance window schedule for weekly_ijtema)
     ↓
-Occurrence (canonical generated event record — generation in a later task)
+Occurrence (canonical generated event record; horizon = programme startDate–endDate inclusive)
 ```
 
 Do **not** create: second Event entity, second Calendar source, separate WI occurrence collection, notification-created events.
@@ -126,7 +157,7 @@ Reject “looks fixed.”
 | Touches WI SoT writers? | NO | Engine untouched; 028c verify |
 | Parallel Occurrence engine for WI dates? | NO | Schedule reused as recurrence input only |
 | Nested occurrences on Local Programme? | NO | Separate `occurrences` docs |
-| Automatic generation this batch? | NO | `generationKey` reserved only |
+| Automatic generation this batch? | YES (TASK-023 callable) | Horizon = programme startDate–endDate; no scheduler invented |
 | Unnecessary indexes? | NO | None |
 | Production / Vercel? | NO | Local-first |
 
@@ -136,8 +167,8 @@ Reject “looks fixed.”
 
 ## After coding — Phases 4–6
 
-- **Phase 4:** Local Occurrence CRUD; recurrence resolve (WI schedule + ProgrammeFrequency); WI window regression via `verify:kc-028c` — PASS  
-- **Phase 5:** **READY WITH KNOWN LIMITATIONS** — no Admin Occurrence UI; no automatic generation; no composite indexes; no production / Vercel deploy  
+- **Phase 4:** Local Occurrence CRUD; recurrence resolve; generation within startDate–endDate; idempotent `generationKey`; WI schedule reuse for `weekly_ijtema`  
+- **Phase 5:** **READY WITH KNOWN LIMITATIONS** — no Admin Occurrence UI; no production scheduler/trigger; no composite indexes; no production / Vercel deploy  
 - **Phase 6:** N/A until production deploy authorised  
 
 ---
@@ -148,4 +179,5 @@ Reject “looks fixed.”
 |------|--------|
 | TASK-021 — Occurrence foundation | **COMPLETE** |
 | TASK-022 — Recurrence rules | **ABSORBED INTO TASK-021** |
-| TASK-023 — Generation | NOT STARTED — STOP |
+| TASK-023 — Generation | **COMPLETE** (horizon approved; callable generator; no scheduler) |
+| TASK-024 | NOT STARTED — STOP |
