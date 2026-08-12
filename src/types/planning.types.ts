@@ -3,7 +3,7 @@
  * Authority: docs/architecture/kc-phase1-product-data-design.md
  *
  * Admin-owned configuration only. No people unitId requirement.
- * No Campaign dual-write. No Responsibility / Tenure.
+ * No Campaign dual-write. Responsibility / Tenure live in a separate Phase 4 entity.
  */
 
 /** Meqati Mansooba lifecycle. Only one `active` expected initially. */

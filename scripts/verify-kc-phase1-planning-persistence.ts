@@ -79,7 +79,7 @@ console.log('▶ provider wiring (local + firestore factories; single provider)'
     'objective: new ObjectiveLocalRepository()',
     'local Objective repo',
   )
-  assertIncludes(provider, 'unit: new UnitLocalRepository()', 'local Unit repo')
+  assertIncludes(provider, 'const unit = new UnitLocalRepository()', 'local Unit repo')
   assertIncludes(
     provider,
     'meqatiMansooba: new MeqatiMansoobaFirestoreRepository()',
@@ -90,7 +90,7 @@ console.log('▶ provider wiring (local + firestore factories; single provider)'
     'objective: new ObjectiveFirestoreRepository()',
     'firestore Objective repo',
   )
-  assertIncludes(provider, 'unit: new UnitFirestoreRepository()', 'firestore Unit repo')
+  assertIncludes(provider, 'const unit = new UnitFirestoreRepository()', 'firestore Unit repo')
   assertIncludes(provider, 'getRepositoryProviderMode()', 'single mode switch')
   assertIncludes(provider, "=== 'firestore'", 'firestore mode branch')
   assertNotIncludes(provider, 'createPlanningProvider', 'no second provider')

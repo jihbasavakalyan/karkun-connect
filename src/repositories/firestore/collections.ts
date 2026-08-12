@@ -25,6 +25,8 @@ export const FIRESTORE_COLLECTIONS = {
   localProgrammes: 'localProgrammes',
   /** Phase 3 — Occurrence under a Local Programme (Admin-owned; generation later) */
   occurrences: 'occurrences',
+  /** Phase 4 — Responsibility (Admin-owned; person + Unit + tenure) */
+  responsibilities: 'responsibilities',
 } as const
 
 export const FIRESTORE_DOCS = {

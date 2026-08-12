@@ -15,6 +15,11 @@ export type {
 } from './planning.types'
 
 export type {
+  Responsibility,
+  ResponsibilityStatus,
+} from './responsibility.types'
+
+export type {
   LocalProgramme,
   LocalProgrammeStatus,
   ProgrammeKind,

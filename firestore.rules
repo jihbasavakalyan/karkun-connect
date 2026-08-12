@@ -200,6 +200,12 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // Phase 4 Responsibility — Admin-owned; tenure/archive via update (no client deletes).
+    match /responsibilities/{docId} {
+      allow read, create, update: if isAdministrator();
+      allow delete: if false;
+    }
+
     /**
      * Compliance docs:
      * - Legacy ijtema / baitulMaal: Rukn may write assigned-karkun records (KC-0084).
