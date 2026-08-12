@@ -6,6 +6,15 @@ export type {
 } from './auth.types'
 
 export type {
+  MeqatiMansooba,
+  MeqatiMansoobaStatus,
+  PlanningObjective,
+  PlanningObjectiveStatus,
+  Unit,
+  UnitStatus,
+} from './planning.types'
+
+export type {
   CampaignSetupState,
   CampaignSetupAction,
   WizardStep,

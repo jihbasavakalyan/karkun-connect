@@ -12,3 +12,6 @@ export type {
   BroadcastListRecord,
   MigrationBackupIndexEntry,
 } from './SettingsRepository'
+export type { MeqatiMansoobaRepository } from './MeqatiMansoobaRepository'
+export type { ObjectiveRepository } from './ObjectiveRepository'
+export type { UnitRepository } from './UnitRepository'
