@@ -23,14 +23,22 @@ export type ProgrammeKind =
   | 'other'
 
 /**
- * Optional frequency configuration hint for Phase 3 Occurrence generation.
- * Not a calendar engine — does not open/close events in Phase 2.
+ * Optional frequency / recurrence configuration for Phase 3 Occurrence generation.
+ * Not a calendar engine — does not open/close events by itself.
+ * For `weekly_ijtema`, live weekday windows also come from `attendanceWindowSchedule`
+ * (Occurrence precursor); see `src/lib/occurrence/recurrence.ts`.
  */
 export type ProgrammeFrequency =
   | { cadence: 'weekly'; dayOfWeek?: number }
   | { cadence: 'monthly'; dayOfMonth?: number }
   | { cadence: 'once' }
   | { cadence: 'custom'; note?: string }
+
+/**
+ * Phase 3 — recurrence configuration SoT on Local Programme (`frequency`).
+ * Alias only — do not invent a second frequency field or RRULE engine.
+ */
+export type ProgrammeRecurrenceRule = ProgrammeFrequency
 
 /**
  * Durable Local Programme belonging to exactly one Campaign (`campaignId`).
@@ -50,7 +58,7 @@ export type LocalProgramme = {
   startDate?: string
   /** Programme window end — YYYY-MM-DD */
   endDate?: string
-  /** Configuration hint only — not an occurrence generator */
+  /** Configuration / recurrence SoT for Phase 3 — not an occurrence generator by itself */
   frequency?: ProgrammeFrequency
   summary?: string
   createdAt: string

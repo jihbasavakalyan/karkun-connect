@@ -128,6 +128,7 @@ import type {
   Unit,
 } from '@/types/planning.types'
 import type { LocalProgramme } from '@/types/localProgramme.types'
+import type { Occurrence } from '@/types/occurrence.types'
 import {
   applyPlanningHydrate,
   readPlanningCollectionsForClient,
@@ -138,6 +139,11 @@ import {
   readLocalProgrammeCollectionsForClient,
   resetLocalProgrammeCachesForTests,
 } from '@/repositories/firestore/localProgrammeFirestoreRepositories'
+import {
+  applyOccurrenceHydrate,
+  readOccurrenceCollectionsForClient,
+  resetOccurrenceCachesForTests,
+} from '@/repositories/firestore/occurrenceFirestoreRepositories'
 
 type ConnectionMetaDoc = {
   nextSequence?: number
@@ -774,6 +780,7 @@ function applyBackgroundHydratePayload(input: {
     units: Unit[]
   }
   localProgrammes: LocalProgramme[]
+  occurrences: Occurrence[]
 }): void {
   const {
     activityLogs,
@@ -786,6 +793,7 @@ function applyBackgroundHydratePayload(input: {
     assignmentReviews,
     planning,
     localProgrammes,
+    occurrences,
   } = input
 
   activityLogCache.set(activityLogs)
@@ -885,6 +893,8 @@ function applyBackgroundHydratePayload(input: {
   applyPlanningHydrate(planning)
   // Phase 2 — non-critical Local Programme (Admin-only; soft-empty for Rukn).
   applyLocalProgrammeHydrate(localProgrammes)
+  // Phase 3 — non-critical Occurrence (Admin-only; soft-empty for Rukn).
+  applyOccurrenceHydrate(occurrences)
 }
 
 function markConnectionRepositoriesLoading(caller: string): void {
@@ -1045,6 +1055,7 @@ function readBackgroundHydratePayload(db: ReturnType<typeof getFirestoreDb>) {
     readAssignmentReviewsForClient(),
     readPlanningCollectionsForClient(),
     readLocalProgrammeCollectionsForClient(),
+    readOccurrenceCollectionsForClient(),
   ]).then(
     ([
       activityLogs,
@@ -1057,6 +1068,7 @@ function readBackgroundHydratePayload(db: ReturnType<typeof getFirestoreDb>) {
       assignmentReviews,
       planning,
       localProgrammes,
+      occurrences,
     ]) => ({
       activityLogs,
       executionSnapshots,
@@ -1068,6 +1080,7 @@ function readBackgroundHydratePayload(db: ReturnType<typeof getFirestoreDb>) {
       assignmentReviews,
       planning,
       localProgrammes,
+      occurrences,
     }),
   )
 }
@@ -1192,6 +1205,7 @@ async function hydrateFirestoreCachesOnce(): Promise<void> {
       assignmentReviews,
       planning,
       localProgrammes,
+      occurrences,
     ] = await Promise.all([
       readCollection<CampaignListItem>(db, FIRESTORE_COLLECTIONS.campaigns),
       readRuknsForClient(db),
@@ -1215,6 +1229,7 @@ async function hydrateFirestoreCachesOnce(): Promise<void> {
       readAssignmentReviewsForClient(),
       readPlanningCollectionsForClient(),
       readLocalProgrammeCollectionsForClient(),
+      readOccurrenceCollectionsForClient(),
     ])
 
     await applyCriticalHydratePayload({
@@ -1236,6 +1251,7 @@ async function hydrateFirestoreCachesOnce(): Promise<void> {
       assignmentReviews,
       planning,
       localProgrammes,
+      occurrences,
     })
     traceIncidentStage('hydrateFirestoreCachesOnce:complete', {
       caller: 'hydrateFirestoreCachesOnce',
@@ -2841,4 +2857,5 @@ export async function clearAllFirestoreCachesForTests(): Promise<void> {
   resetAssignmentReviewCacheForTests()
   resetPlanningCachesForTests()
   resetLocalProgrammeCachesForTests()
+  resetOccurrenceCachesForTests()
 }

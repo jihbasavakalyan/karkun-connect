@@ -2,6 +2,10 @@
  * KC-028C — Automatic Weekly Ijtema attendance window engine.
  * Idempotent ensure: open configured gender windows; close when window (or reopenUntil) ends.
  * Schedule comes from attendanceWindowSchedule — not hardcoded here.
+ *
+ * Phase 3: this engine remains the live WI Occurrence precursor for open/close.
+ * Generic Occurrence records / recurrence helpers live under src/lib/occurrence +
+ * occurrences collection — do not invent a parallel WI date generator here.
  */
 
 import { ruknMaster } from '@/data/ruknMaster'

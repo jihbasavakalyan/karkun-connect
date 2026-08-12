@@ -23,6 +23,8 @@ export const FIRESTORE_COLLECTIONS = {
   units: 'units',
   /** Phase 2 — Local Programme under a Campaign (Admin-owned) */
   localProgrammes: 'localProgrammes',
+  /** Phase 3 — Occurrence under a Local Programme (Admin-owned; generation later) */
+  occurrences: 'occurrences',
 } as const
 
 export const FIRESTORE_DOCS = {

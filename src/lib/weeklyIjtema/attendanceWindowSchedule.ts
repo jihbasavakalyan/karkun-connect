@@ -258,3 +258,33 @@ export function eventAudienceKey(
 ): string {
   return `${meetingDate}:${audienceGender ?? 'legacy'}`
 }
+
+/**
+ * Phase 3 — weekday-window rows as weekly recurrence descriptors.
+ * Occurrence foundation reuses this precursor; does not invent a parallel WI calendar.
+ * See `src/lib/occurrence/recurrence.ts` (no automatic Occurrence generation here).
+ */
+export type WeeklyWindowRecurrenceDescriptor = {
+  scheduleEntryId: string
+  /** 0 = Sunday … 6 = Saturday */
+  dayOfWeek: number
+  audienceGender: WeeklyIjtemaAudienceGender
+  openTime: string
+  closeTime: string
+  title: string
+  timezone: string
+}
+
+export function listWeeklyWindowRecurrenceDescriptors(
+  config: AttendanceWindowScheduleConfig = DEFAULT_ATTENDANCE_WINDOW_SCHEDULE,
+): WeeklyWindowRecurrenceDescriptor[] {
+  return config.entries.map((entry) => ({
+    scheduleEntryId: entry.id,
+    dayOfWeek: entry.dayOfWeek,
+    audienceGender: entry.audienceGender,
+    openTime: entry.openTime,
+    closeTime: entry.closeTime,
+    title: entry.title,
+    timezone: config.timezone,
+  }))
+}
