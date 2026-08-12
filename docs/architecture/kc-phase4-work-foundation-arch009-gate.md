@@ -118,8 +118,8 @@ Reject “looks fixed.”
 
 ## After coding — Phases 4–6 (ARCH-009)
 
-- **Phase 4 (audit):** Local Work CRUD; lifecycle transitions; contextual permission cases; no person mutation; no UI  
-- **Phase 5:** **READY WITH KNOWN LIMITATIONS** — no Admin/Rukn UI; no composite indexes; no production / Vercel deploy; follow-ups/annexure not yet pointed at Work; authenticated browser may be unverified without Admin credentials  
+- **Phase 4 (audit):** Local Work CRUD; lifecycle transitions; contextual permission cases; no person mutation; Rukn action surface in BATCH-04C  
+- **Phase 5:** See [Phase 4 certification](./kc-phase4-certification.md)  
 - **Phase 6:** N/A until production deploy authorised  
 
 ---
@@ -131,7 +131,5 @@ Reject “looks fixed.”
 | TASK-032 — Work | **COMPLETE** (this batch) |
 | TASK-033 — Work lifecycle | **COMPLETE** (this batch) |
 | TASK-034 — Contextual permissions | **COMPLETE** (this batch) |
-
-Official counter after this batch: **34 / 72** (31 accounted + these three). No absorption.
-
-Do **not** start TASK-035.
+| TASK-035 — Rukn Action Dashboard | **COMPLETE** (BATCH-04C) |
+| TASK-036 — Phase 4 certification | **COMPLETE** (BATCH-04C) |

@@ -32,6 +32,15 @@ export function isWorkStatusTransitionAllowed(
 }
 
 /**
+ * Sequential next status for the Rukn action surface. No skip or reverse.
+ */
+export function nextWorkActionStatus(status: WorkStatus): WorkStatus | null {
+  if (status === 'pending') return 'in_progress'
+  if (status === 'in_progress') return 'done'
+  return null
+}
+
+/**
  * Create: previous is undefined → must be pending.
  * Update: only the sequential transitions above (including idempotent same-status).
  */

@@ -6,7 +6,8 @@
  * Does not mutate people.
  */
 
-import { collection, getDocs, type DocumentData } from 'firebase/firestore'
+import { collection, getDocs, query, where, type DocumentData } from 'firebase/firestore'
+import { getFirebaseAuth } from '@/lib/firebase/firebase'
 import { getFirestoreDb } from '@/lib/firebase/firestore'
 import {
   repositoryErr,
@@ -39,12 +40,39 @@ function isPermissionDeniedError(error: unknown): boolean {
   return code === 'permission-denied' || code.includes('permission-denied')
 }
 
-async function softReadCollection<T>(
+type ClientAuthScope = { role: string | null; ruknId: string | null }
+
+async function resolveClientAuthScope(): Promise<ClientAuthScope> {
+  try {
+    const user = getFirebaseAuth().currentUser
+    if (!user) return { role: null, ruknId: null }
+    const token = await user.getIdTokenResult()
+    const role = typeof token.claims.role === 'string' ? token.claims.role : null
+    const ruknId = typeof token.claims.ruknId === 'string' ? token.claims.ruknId : null
+    return { role, ruknId }
+  } catch {
+    return { role: null, ruknId: null }
+  }
+}
+
+async function readScopedByRuknId<T>(
   collectionName: string,
   label: string,
 ): Promise<T[]> {
+  const db = getFirestoreDb()
+  const scope = await resolveClientAuthScope()
+  if (scope.role === 'rukn' && !scope.ruknId) return []
   try {
-    const snap = await getDocs(collection(getFirestoreDb(), collectionName))
+    if (scope.role === 'rukn' && scope.ruknId) {
+      const snap = await getDocs(
+        query(
+          collection(db, collectionName),
+          where('ruknId', '==', scope.ruknId),
+        ),
+      )
+      return snap.docs.map((item) => stripMeta<T>(item.data() as DocumentData))
+    }
+    const snap = await getDocs(collection(db, collectionName))
     return snap.docs.map((item) => stripMeta<T>(item.data() as DocumentData))
   } catch (error) {
     if (isPermissionDeniedError(error)) {
@@ -101,9 +129,9 @@ export function applyWorkHydrate(rows: Work[]): void {
   workCache.set([...rows])
 }
 
-/** Soft-read Work collection for background hydrate. */
+/** Soft-read Work: Admin all; Rukn own assignee (`ruknId`). */
 export async function readWorkCollectionsForClient(): Promise<Work[]> {
-  return softReadCollection<Work>(FIRESTORE_COLLECTIONS.work, 'work')
+  return readScopedByRuknId<Work>(FIRESTORE_COLLECTIONS.work, 'work')
 }
 
 export function resetWorkCachesForTests(): void {
