@@ -101,7 +101,10 @@ export function AdminPlanningPage() {
 
   const [objectiveModal, setObjectiveModal] = useState<'create' | 'edit' | null>(null)
   const [editingObjectiveId, setEditingObjectiveId] = useState<string | null>(null)
+  /** Locked when the Objective modal opens — prevents reassignment if Mansooba selection changes. */
+  const [objectiveMansoobaId, setObjectiveMansoobaId] = useState<string | null>(null)
   const [objectiveForm, setObjectiveForm] = useState<ObjectiveFormState>(emptyObjectiveForm)
+  const [formError, setFormError] = useState('')
 
   const [unitModal, setUnitModal] = useState<'create' | 'edit' | null>(null)
   const [editingUnitId, setEditingUnitId] = useState<string | null>(null)
@@ -151,10 +154,43 @@ export function AdminPlanningPage() {
     return map
   }, [units])
 
+  const objectiveMansooba = useMemo(
+    () => mansoobas.find((row) => row.id === objectiveMansoobaId) ?? null,
+    [mansoobas, objectiveMansoobaId],
+  )
+
+  const closeMansoobaModal = () => {
+    setMansoobaModal(null)
+    setFormError('')
+  }
+
+  const closeObjectiveModal = () => {
+    setObjectiveModal(null)
+    setEditingObjectiveId(null)
+    setObjectiveMansoobaId(null)
+    setObjectiveForm(emptyObjectiveForm())
+    setFormError('')
+  }
+
+  const closeUnitModal = () => {
+    setUnitModal(null)
+    setFormError('')
+  }
+
+  const selectMansooba = (id: string) => {
+    setSelectedMansoobaId(id)
+    setMessage('')
+    // Avoid stale create/edit Objective context after switching Mansooba.
+    if (objectiveModal != null) {
+      closeObjectiveModal()
+    }
+  }
+
   const openCreateMansooba = () => {
     setEditingMansoobaId(null)
     setMansoobaForm(emptyMansoobaForm())
     setMansoobaModal('create')
+    setFormError('')
     setMessage('')
   }
 
@@ -169,6 +205,7 @@ export function AdminPlanningPage() {
       summary: row.summary ?? '',
     })
     setMansoobaModal('edit')
+    setFormError('')
     setMessage('')
   }
 
@@ -177,7 +214,7 @@ export function AdminPlanningPage() {
       async () => {
         const name = mansoobaForm.name.trim()
         if (!name) {
-          setMessage('Mansooba name is required.')
+          setFormError('Mansooba name is required.')
           return
         }
         const now = new Date().toISOString()
@@ -199,10 +236,10 @@ export function AdminPlanningPage() {
         }
         const result = await getRepositories().meqatiMansooba.saveDurable(record)
         if (!result.ok) {
-          setMessage(formatRepoError(result.error))
+          setFormError(formatRepoError(result.error))
           return
         }
-        setMansoobaModal(null)
+        closeMansoobaModal()
         setSelectedMansoobaId(record.id)
         refresh()
         setMessage(existing ? 'Mansooba updated.' : 'Mansooba created.')
@@ -217,13 +254,16 @@ export function AdminPlanningPage() {
       return
     }
     setEditingObjectiveId(null)
+    setObjectiveMansoobaId(selectedMansoobaId)
     setObjectiveForm(emptyObjectiveForm())
     setObjectiveModal('create')
+    setFormError('')
     setMessage('')
   }
 
   const openEditObjective = (row: PlanningObjective) => {
     setEditingObjectiveId(row.id)
+    setObjectiveMansoobaId(row.mansoobaId)
     setObjectiveForm({
       title: row.title,
       description: row.description ?? '',
@@ -231,30 +271,38 @@ export function AdminPlanningPage() {
       sortOrder: row.sortOrder != null ? String(row.sortOrder) : '',
     })
     setObjectiveModal('edit')
+    setFormError('')
     setMessage('')
   }
 
   const saveObjective = () => {
     void run(
       async () => {
-        if (!selectedMansoobaId) {
-          setMessage('Select a Mansooba first.')
+        const parentId = objectiveMansoobaId
+        if (!parentId) {
+          setFormError('Objective must belong to a Mansooba.')
           return
         }
         const title = objectiveForm.title.trim()
         if (!title) {
-          setMessage('Objective title is required.')
+          setFormError('Objective title is required.')
           return
         }
         const now = new Date().toISOString()
         const existing = editingObjectiveId
           ? objectives.find((row) => row.id === editingObjectiveId)
           : undefined
+        // Edit preserves the original Mansooba; create uses the locked modal parent.
+        const mansoobaId = existing?.mansoobaId ?? parentId
+        if (!mansoobaId) {
+          setFormError('Objective must belong to a Mansooba.')
+          return
+        }
         const sortRaw = objectiveForm.sortOrder.trim()
         const sortOrder = sortRaw === '' ? undefined : Number(sortRaw)
         const record: PlanningObjective = {
           id: existing?.id ?? newPlanningId('objective'),
-          mansoobaId: selectedMansoobaId,
+          mansoobaId,
           title,
           description: objectiveForm.description.trim() || undefined,
           status: objectiveForm.status,
@@ -268,10 +316,10 @@ export function AdminPlanningPage() {
         }
         const result = await getRepositories().objective.saveDurable(record)
         if (!result.ok) {
-          setMessage(formatRepoError(result.error))
+          setFormError(formatRepoError(result.error))
           return
         }
-        setObjectiveModal(null)
+        closeObjectiveModal()
         refresh()
         setMessage(existing ? 'Objective updated.' : 'Objective created.')
       },
@@ -283,6 +331,7 @@ export function AdminPlanningPage() {
     setEditingUnitId(null)
     setUnitForm(emptyUnitForm())
     setUnitModal('create')
+    setFormError('')
     setMessage('')
   }
 
@@ -294,6 +343,7 @@ export function AdminPlanningPage() {
       placeAliases: (row.placeAliases ?? []).join(', '),
     })
     setUnitModal('edit')
+    setFormError('')
     setMessage('')
   }
 
@@ -302,7 +352,7 @@ export function AdminPlanningPage() {
       async () => {
         const name = unitForm.name.trim()
         if (!name) {
-          setMessage('Unit name is required.')
+          setFormError('Unit name is required.')
           return
         }
         const now = new Date().toISOString()
@@ -325,10 +375,10 @@ export function AdminPlanningPage() {
         }
         const result = await getRepositories().unit.saveDurable(record)
         if (!result.ok) {
-          setMessage(formatRepoError(result.error))
+          setFormError(formatRepoError(result.error))
           return
         }
-        setUnitModal(null)
+        closeUnitModal()
         refresh()
         setMessage(existing ? 'Unit updated.' : 'Unit created.')
       },
@@ -385,7 +435,7 @@ export function AdminPlanningPage() {
                       <button
                         type="button"
                         className="min-w-0 flex-1 text-left"
-                        onClick={() => setSelectedMansoobaId(row.id)}
+                        onClick={() => selectMansooba(row.id)}
                       >
                         <p className="font-semibold text-text-heading">{row.name}</p>
                         <p className="mt-1 text-xs text-secondary">
@@ -507,14 +557,15 @@ export function AdminPlanningPage() {
       <Modal
         isOpen={mansoobaModal != null}
         title={mansoobaModal === 'edit' ? 'Edit Mansooba' : 'New Mansooba'}
-        onClose={() => setMansoobaModal(null)}
+        onClose={closeMansoobaModal}
         footer={
           <ModalFormFooter
-            onCancel={() => setMansoobaModal(null)}
+            onCancel={closeMansoobaModal}
             primaryLabel={mansoobaModal === 'edit' ? 'Save' : 'Create'}
             onPrimaryClick={saveMansooba}
             loading={busy}
             primaryDisabled={busy || !mansoobaForm.name.trim()}
+            error={formError || undefined}
           />
         }
       >
@@ -625,14 +676,17 @@ export function AdminPlanningPage() {
       <Modal
         isOpen={objectiveModal != null}
         title={objectiveModal === 'edit' ? 'Edit Objective' : 'New Objective'}
-        onClose={() => setObjectiveModal(null)}
+        onClose={closeObjectiveModal}
         footer={
           <ModalFormFooter
-            onCancel={() => setObjectiveModal(null)}
+            onCancel={closeObjectiveModal}
             primaryLabel={objectiveModal === 'edit' ? 'Save' : 'Create'}
             onPrimaryClick={saveObjective}
             loading={busy}
-            primaryDisabled={busy || !objectiveForm.title.trim() || !selectedMansoobaId}
+            primaryDisabled={
+              busy || !objectiveForm.title.trim() || !objectiveMansoobaId
+            }
+            error={formError || undefined}
           />
         }
       >
@@ -640,7 +694,7 @@ export function AdminPlanningPage() {
           <p className="mb-4 text-sm text-secondary">
             Mansooba:{' '}
             <span className="font-medium text-text-heading">
-              {selectedMansooba?.name ?? '—'}
+              {objectiveMansooba?.name ?? '—'}
             </span>
           </p>
           <ModalFormGrid>
@@ -714,14 +768,15 @@ export function AdminPlanningPage() {
       <Modal
         isOpen={unitModal != null}
         title={unitModal === 'edit' ? 'Edit Unit' : 'New Unit'}
-        onClose={() => setUnitModal(null)}
+        onClose={closeUnitModal}
         footer={
           <ModalFormFooter
-            onCancel={() => setUnitModal(null)}
+            onCancel={closeUnitModal}
             primaryLabel={unitModal === 'edit' ? 'Save' : 'Create'}
             onPrimaryClick={saveUnit}
             loading={busy}
             primaryDisabled={busy || !unitForm.name.trim()}
+            error={formError || undefined}
           />
         }
       >
