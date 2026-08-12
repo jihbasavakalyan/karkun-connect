@@ -25,11 +25,14 @@ import {
   listWeeklyIjtemaEvents,
   saveWeeklyIjtemaSubmission,
   upsertWeeklyIjtemaKarkunMark,
+  upsertWeeklyIjtemaRuknAttendance,
 } from '@/services/weeklyIjtemaService'
 import { subscribeToWeeklyIjtemaStore } from '@/stores/weeklyIjtemaStore'
 import {
   formatWeeklyIjtemaMeetingLabel,
+  resolveWeeklyIjtemaRuknAttendanceState,
   type WeeklyIjtemaMarkStatus,
+  type WeeklyIjtemaRuknAttendanceState,
 } from '@/types/weeklyIjtema'
 
 type DraftStatus = WeeklyIjtemaMarkStatus | 'Reminded' | 'Unmarked'
@@ -56,6 +59,15 @@ function buildDraftFromWorkspace(
 
 const STATUS_OPTIONS: { value: DraftStatus; label: string; urdu: string }[] = [
   { value: 'Reminded', label: 'Reminded', urdu: 'یاد دہانی' },
+  { value: 'Present', label: 'Present', urdu: 'حاضر' },
+  { value: 'Absent', label: 'Absent', urdu: 'غیر حاضر' },
+]
+
+const RUKN_ATTENDANCE_OPTIONS: {
+  value: Exclude<WeeklyIjtemaRuknAttendanceState, 'Invited'>
+  label: string
+  urdu: string
+}[] = [
   { value: 'Present', label: 'Present', urdu: 'حاضر' },
   { value: 'Absent', label: 'Absent', urdu: 'غیر حاضر' },
 ]
@@ -163,6 +175,40 @@ export function WeeklyIjtemaRegisterPage() {
     : 0
   const allMarked = Boolean(workspace && workspace.assigned.length > 0 && unmarkedCount === 0)
   const canSubmit = Boolean(workspace?.editable && allMarked && online)
+  const ruknAttendanceState = resolveWeeklyIjtemaRuknAttendanceState(workspace?.submission)
+
+  const setRuknAttendance = (status: 'Present' | 'Absent') => {
+    if (!workspace?.editable || !ruknId) return
+    if (!online) {
+      setMessage('You are offline. Please reconnect to continue.')
+      return
+    }
+    setMessage('')
+    const actor = user?.displayName ?? user?.uid ?? ruknId
+    void run({
+      key: `weekly-ijtema-rukn-attendance:${ruknId}`,
+      queueLabels: ['compliance.weeklyIjtemaSubmissions'],
+      work: async () => {
+        const result = upsertWeeklyIjtemaRuknAttendance({
+          eventId: workspace.event.id,
+          ruknId,
+          ruknName: rukn?.name ?? ruknId,
+          status,
+          submittedBy: actor,
+        })
+        if (!result.success) {
+          throw Object.assign(new Error(result.error), { code: 'unknown' })
+        }
+        return result
+      },
+      refreshUi: () => setStoreVersion((v) => v + 1),
+    }).then((lifecycle) => {
+      if (!lifecycle) return
+      if (!lifecycle.ok) {
+        setMessage(lifecycle.message || 'Save failed.')
+      }
+    })
+  }
 
   const setStatus = (karkunId: string, status: DraftStatus) => {
     if (!workspace?.editable || !ruknId || status === 'Unmarked') return
@@ -284,7 +330,8 @@ export function WeeklyIjtemaRegisterPage() {
       <header className="app-screen-header">
         <h1 className="app-screen-title">{"Today's Weekly Ijtema Attendance"}</h1>
         <p className="app-screen-subtitle">
-          Mark Reminded, Present (حاضر), or Absent (غیر حاضر) for connected Karkuns.
+          Mark your attendance (Invited → Present / Absent), then Reminded, Present, or Absent for
+          connected Karkuns. Committed is a separate Matrix remark — not attendance.
         </p>
       </header>
 
@@ -328,6 +375,39 @@ export function WeeklyIjtemaRegisterPage() {
             {workspace.readOnlyReason ? (
               <p className="mt-2 text-sm text-amber-700">{workspace.readOnlyReason}</p>
             ) : null}
+          </div>
+
+          <div className="mb-4 rounded-lg border border-border bg-surface px-3 py-3">
+            <p className="font-semibold text-text-heading">Your attendance</p>
+            <p className="mt-1 text-xs text-secondary">
+              Invited → Present / Absent at this Weekly Ijtema. Not Matrix Committed.
+            </p>
+            <p className="mt-2 text-sm text-secondary">
+              Current:{' '}
+              <span className="font-semibold text-text-heading">{ruknAttendanceState}</span>
+            </p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {RUKN_ATTENDANCE_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  disabled={!workspace.editable || saving || !online}
+                  className={[
+                    'min-h-11 min-w-[6.5rem] rounded-lg border px-3 text-sm font-semibold',
+                    ruknAttendanceState === option.value
+                      ? 'border-primary bg-primary/10 text-primary'
+                      : 'border-border bg-surface text-text-heading',
+                    !workspace.editable ? 'opacity-60' : '',
+                  ].join(' ')}
+                  onClick={() => setRuknAttendance(option.value)}
+                >
+                  {option.label}
+                  <span className="mt-0.5 block text-[0.7rem] font-normal opacity-80">
+                    {option.urdu}
+                  </span>
+                </button>
+              ))}
+            </div>
           </div>
 
           <p className="mb-3 text-xs text-secondary">

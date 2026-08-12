@@ -62,12 +62,37 @@ export type WeeklyIjtemaKarkunMark = {
   reminded?: boolean
 }
 
+/**
+ * TASK-037 / TASK-038 — Rukn self-attendance on the existing Weekly Ijtema event.
+ * Distinct from Karkun marks and from Matrix `Committed`.
+ * Default (no status) is Invited. Present/Absent imply invited.
+ */
+export type WeeklyIjtemaRuknAttendanceState = 'Invited' | 'Present' | 'Absent'
+
+export type WeeklyIjtemaRuknAttendance = {
+  invited: true
+  status?: WeeklyIjtemaMarkStatus
+}
+
+export function resolveWeeklyIjtemaRuknAttendanceState(
+  submission?: Pick<{ ruknAttendance?: WeeklyIjtemaRuknAttendance }, 'ruknAttendance'> | null,
+): WeeklyIjtemaRuknAttendanceState {
+  const status = submission?.ruknAttendance?.status
+  if (status === 'Present' || status === 'Absent') return status
+  return 'Invited'
+}
+
 export type WeeklyIjtemaSubmission = {
   id: string
   eventId: string
   ruknId: string
   ruknName: string
   marks: WeeklyIjtemaKarkunMark[]
+  /**
+   * Rukn self-attendance at this event (TASK-038).
+   * Not Karkun marks. Not Matrix Committed. Omit = Invited.
+   */
+  ruknAttendance?: WeeklyIjtemaRuknAttendance
   submittedAt: string
   submittedBy: string
   updatedAt: string
@@ -117,6 +142,8 @@ export type WeeklyIjtemaRuknReportRow = {
   reminderPct: number
   submitted: boolean
   submittedAt?: string
+  /** Rukn self-attendance at this event — not Karkun Present/Absent counts. */
+  ruknAttendance: WeeklyIjtemaRuknAttendanceState
 }
 
 export type WeeklyIjtemaReport = {
@@ -176,6 +203,8 @@ export type SaveWeeklyIjtemaSubmissionInput = {
   ruknName: string
   marks: WeeklyIjtemaKarkunMark[]
   submittedBy: string
+  /** When omitted, existing Rukn self-attendance on the submission is preserved. */
+  ruknAttendance?: WeeklyIjtemaRuknAttendance
 }
 
 export function defaultWeeklyIjtemaTitle(

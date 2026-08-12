@@ -6,6 +6,8 @@
  * writes event submissions. Attendance never mutates Matrix Commitment.
  *
  * Full Rukn register submit remains `saveWeeklyIjtemaSubmission`.
+ * Rukn self-attendance (Invited → Present/Absent) is on the same canonical
+ * submission via `upsertWeeklyIjtemaRuknAttendance` — not a fourth writer.
  * Inventory: docs/architecture/kc-0110-weekly-ijtema-inventory.md
  */
 

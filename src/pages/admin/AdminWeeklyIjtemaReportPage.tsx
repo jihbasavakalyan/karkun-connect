@@ -140,6 +140,7 @@ export function AdminWeeklyIjtemaReportPage() {
               <thead className="border-b border-border text-xs uppercase tracking-wide text-secondary">
                 <tr>
                   <th className="px-2 py-2 font-semibold">Rukn</th>
+                  <th className="px-2 py-2 font-semibold">Rukn attendance</th>
                   <th className="px-2 py-2 font-semibold">Connected</th>
                   <th className="px-2 py-2 font-semibold">Present</th>
                   <th className="px-2 py-2 font-semibold">Absent</th>
@@ -151,6 +152,7 @@ export function AdminWeeklyIjtemaReportPage() {
                 {report.ruknRows.map((row) => (
                   <tr key={row.ruknId} className="border-b border-border/70">
                     <td className="px-2 py-2 font-medium text-text-heading">{row.ruknName}</td>
+                    <td className="px-2 py-2">{row.ruknAttendance}</td>
                     <td className="px-2 py-2">{row.assigned}</td>
                     <td className="px-2 py-2">{row.present}</td>
                     <td className="px-2 py-2">{row.absent}</td>

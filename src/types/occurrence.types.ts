@@ -50,7 +50,10 @@ export type Occurrence = {
   timezone?: string
   /** WI-style split windows only — optional */
   audienceGender?: WeeklyIjtemaAudienceGender
-  /** Wrap link to existing WI/BM SoT — optional until generation/wrap tasks */
+  /** Wrap link to existing WI/BM SoT — optional until generation/wrap tasks.
+   * Phase 5: populated for weekly_ijtema / monthly_baitul_maal when a matching
+   * event/cycle exists. Occurrence does not store attendance or contribution.
+   */
   sourceRef?: OccurrenceSourceRef
   createdAt: string
   updatedAt: string

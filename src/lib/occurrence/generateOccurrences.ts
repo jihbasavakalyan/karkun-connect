@@ -7,6 +7,8 @@
  * Callable domain operation — no scheduler invented here.
  *
  * Does NOT modify WI/BM SoTs or attendanceWindowEngine open/close behaviour.
+ * Phase 5: optional activity catalog may set Occurrence.sourceRef to an existing
+ * WI event or BM cycle. That is a wrap link only — it does not write WI/BM data.
  */
 
 import type { AttendanceWindowScheduleConfig } from '@/lib/weeklyIjtema/attendanceWindowSchedule'
@@ -16,12 +18,18 @@ import {
   type ResolvedRecurrenceRule,
   type ResolvedWeeklyRecurrenceRule,
 } from '@/lib/occurrence/recurrence'
+import {
+  withResolvedActivitySourceRef,
+  type ActivitySourceCatalog,
+} from '@/lib/occurrence/activitySourceLink'
 import type { OccurrenceRepository } from '@/repositories/interfaces/OccurrenceRepository'
 import type { LocalProgramme } from '@/types/localProgramme.types'
 import {
   buildOccurrenceGenerationKey,
   type Occurrence,
 } from '@/types/occurrence.types'
+
+export type { ActivitySourceCatalog }
 
 const DATE_KEY = /^\d{4}-\d{2}-\d{2}$/
 const SYSTEM_ACTOR = 'system:occurrence-generation'
@@ -255,6 +263,7 @@ export async function generateOccurrencesForProgramme(
   programme: LocalProgramme,
   occurrenceRepo: OccurrenceRepository,
   schedule?: AttendanceWindowScheduleConfig,
+  activitySources?: ActivitySourceCatalog,
 ): Promise<GenerateOccurrencesResult> {
   const created: Occurrence[] = []
   const preserved: Occurrence[] = []
@@ -300,11 +309,29 @@ export async function generateOccurrencesForProgramme(
   for (const candidate of candidates) {
     const existing = occurrenceRepo.getByGenerationKey(candidate.generationKey)
     if (existing.ok && existing.data) {
-      preserved.push(existing.data)
+      const linked = withResolvedActivitySourceRef(
+        existing.data,
+        programme.kind,
+        activitySources,
+      )
+      if (!existing.data.sourceRef && linked.sourceRef) {
+        const saved = await occurrenceRepo.saveDurable({
+          ...linked,
+          updatedAt: nowIso,
+          updatedBy: SYSTEM_ACTOR,
+        })
+        preserved.push(saved.ok ? saved.data : existing.data)
+      } else {
+        preserved.push(existing.data)
+      }
       continue
     }
 
-    const next = candidateToOccurrence(candidate, nowIso)
+    const next = withResolvedActivitySourceRef(
+      candidateToOccurrence(candidate, nowIso),
+      programme.kind,
+      activitySources,
+    )
     const saved = await occurrenceRepo.saveDurable(next)
     if (saved.ok) {
       created.push(saved.data)
@@ -322,6 +349,7 @@ export async function generateOccurrencesForProgrammes(
   programmes: readonly LocalProgramme[],
   occurrenceRepo: OccurrenceRepository,
   schedule?: AttendanceWindowScheduleConfig,
+  activitySources?: ActivitySourceCatalog,
 ): Promise<GenerateOccurrencesResult> {
   const created: Occurrence[] = []
   const preserved: Occurrence[] = []
@@ -332,6 +360,7 @@ export async function generateOccurrencesForProgrammes(
       programme,
       occurrenceRepo,
       schedule,
+      activitySources,
     )
     created.push(...partial.created)
     preserved.push(...partial.preserved)

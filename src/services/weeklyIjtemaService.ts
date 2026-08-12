@@ -48,6 +48,7 @@ import type { WeeklyIjtemaAudienceGender } from '@/lib/weeklyIjtema/attendanceWi
 import {
   isWeeklyIjtemaEventActive,
   matchesWeeklyIjtemaAudience,
+  resolveWeeklyIjtemaRuknAttendanceState,
 } from '@/types/weeklyIjtema'
 import type {
   CreateWeeklyIjtemaEventInput,
@@ -456,6 +457,7 @@ export function saveWeeklyIjtemaSubmission(
         reminded: mark.reminded === true || hasAttendance,
       }
     }),
+    ruknAttendance: input.ruknAttendance ?? existing?.ruknAttendance,
     submittedAt: existing?.submittedAt ?? timestamp,
     submittedBy: existing?.submittedBy ?? input.submittedBy,
     updatedAt: timestamp,
@@ -562,6 +564,62 @@ export function upsertWeeklyIjtemaKarkunMark(
     ruknId: input.ruknId,
     ruknName: input.ruknName,
     marks,
+    ruknAttendance: existing?.ruknAttendance,
+    submittedAt: existing?.submittedAt ?? timestamp,
+    submittedBy: existing?.submittedBy ?? input.submittedBy,
+    updatedAt: timestamp,
+    updatedBy: input.submittedBy,
+  }
+
+  return { success: true, submission: upsertWeeklyIjtemaSubmission(submission) }
+}
+
+export type UpsertWeeklyIjtemaRuknAttendanceInput = {
+  eventId: string
+  ruknId: string
+  ruknName: string
+  status: 'Present' | 'Absent'
+  submittedBy: string
+}
+
+/**
+ * TASK-038 — Rukn self-attendance on the existing Weekly Ijtema event.
+ * Reuses the canonical submission writer (`upsertWeeklyIjtemaSubmission`).
+ * Does not write Matrix Commitment. Does not invent a fourth WI writer.
+ * Preserves existing Karkun marks on the same submission.
+ */
+export function upsertWeeklyIjtemaRuknAttendance(
+  input: UpsertWeeklyIjtemaRuknAttendanceInput,
+): { success: true; submission: WeeklyIjtemaSubmission } | { success: false; error: string } {
+  const event = getWeeklyIjtemaEvent(input.eventId)
+  if (!event) {
+    return { success: false, error: 'Weekly Ijtema event not found.' }
+  }
+  if (!canRuknEditCycle(event)) {
+    return {
+      success: false,
+      error:
+        event.status === 'Closed'
+          ? 'Attendance is closed. Ask Admin to reopen if a correction is required.'
+          : 'Submission deadline has passed. Attendance is read-only.',
+    }
+  }
+  if (input.status !== 'Present' && input.status !== 'Absent') {
+    return { success: false, error: 'Rukn attendance must be Present or Absent.' }
+  }
+  if (!input.ruknId.trim()) {
+    return { success: false, error: 'Rukn is required.' }
+  }
+
+  const timestamp = nowIso()
+  const existing = getWeeklyIjtemaSubmission(input.eventId, input.ruknId)
+  const submission: WeeklyIjtemaSubmission = {
+    id: existing?.id ?? `${input.eventId}:${input.ruknId}`,
+    eventId: input.eventId,
+    ruknId: input.ruknId,
+    ruknName: input.ruknName,
+    marks: existing?.marks ?? [],
+    ruknAttendance: { invited: true, status: input.status },
     submittedAt: existing?.submittedAt ?? timestamp,
     submittedBy: existing?.submittedBy ?? input.submittedBy,
     updatedAt: timestamp,
@@ -634,6 +692,7 @@ function buildReportForEvent(event: WeeklyIjtemaEvent): WeeklyIjtemaReport {
 
   const ruknRows = binary.ruknRows.map((row) => {
     const counts = getRuknWeeklyIjtemaInvitationAttendanceCounts(event.id, row.ruknId)
+    const submission = getWeeklyIjtemaSubmission(event.id, row.ruknId)
     return {
       ruknId: row.ruknId,
       ruknName: row.ruknName,
@@ -649,6 +708,7 @@ function buildReportForEvent(event: WeeklyIjtemaEvent): WeeklyIjtemaReport {
       reminderPct: counts.reminderPct,
       submitted: row.submitted,
       submittedAt: row.submittedAt,
+      ruknAttendance: resolveWeeklyIjtemaRuknAttendanceState(submission),
     }
   })
 
@@ -922,6 +982,12 @@ export function getWeeklyIjtemaActiveRuknRows(
               ? existing.submittedAt
               : row.submittedAt
             : existing.submittedAt ?? row.submittedAt,
+        ruknAttendance:
+          existing.ruknAttendance === 'Present' || row.ruknAttendance === 'Present'
+            ? 'Present'
+            : existing.ruknAttendance === 'Absent' || row.ruknAttendance === 'Absent'
+              ? 'Absent'
+              : 'Invited',
       })
     }
   }
