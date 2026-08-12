@@ -25,6 +25,9 @@ export const STORAGE_KEYS = {
   karkunRequests: 'karkun-connect.karkun-requests',
   connectionLedger: 'karkun-connect.connection-ledger',
   assignmentReviews: 'karkun-connect.assignment-reviews',
+  meqatiMansoobas: 'karkun-connect.meqati-mansoobas',
+  planningObjectives: 'karkun-connect.planning-objectives',
+  units: 'karkun-connect.units',
   userPreferences: 'karkun-connect.user-preferences',
   migrationBackup: (id: string) => `karkun-connect.migration.backup.${id}`,
 } as const

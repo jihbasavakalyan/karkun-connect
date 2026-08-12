@@ -15,6 +15,12 @@ export const FIRESTORE_COLLECTIONS = {
   connectionLedger: 'connectionLedger',
   /** TD-04 / KC-032 P1 — durable assignment review requests (one doc per review) */
   assignmentReviews: 'assignmentReviews',
+  /** Phase 1 — Meqati Mansooba planning root (Admin-owned) */
+  meqatiMansoobas: 'meqatiMansoobas',
+  /** Phase 1 — Objectives under a Mansooba (Admin-owned) */
+  objectives: 'objectives',
+  /** Phase 1 — flat Unit / Scope (Admin-owned; Basavakalyan first) */
+  units: 'units',
 } as const
 
 export const FIRESTORE_DOCS = {

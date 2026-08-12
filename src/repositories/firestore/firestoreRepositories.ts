@@ -119,6 +119,16 @@ import {
   resetAssignmentReviewCacheForTests,
   subscribeAssignmentReviewCache,
 } from '@/repositories/firestore/assignmentReviewFirestoreRepository'
+import type {
+  MeqatiMansooba,
+  PlanningObjective,
+  Unit,
+} from '@/types/planning.types'
+import {
+  applyPlanningHydrate,
+  readPlanningCollectionsForClient,
+  resetPlanningCachesForTests,
+} from '@/repositories/firestore/planningFirestoreRepositories'
 
 type ConnectionMetaDoc = {
   nextSequence?: number
@@ -749,6 +759,11 @@ function applyBackgroundHydratePayload(input: {
    */
   karkunRequestsDoc: { requests?: NewKarkunRequest[] } | null
   assignmentReviews: AssignmentReviewRequest[]
+  planning: {
+    mansoobas: MeqatiMansooba[]
+    objectives: PlanningObjective[]
+    units: Unit[]
+  }
 }): void {
   const {
     activityLogs,
@@ -759,6 +774,7 @@ function applyBackgroundHydratePayload(input: {
     migrationVersion,
     karkunRequestsDoc,
     assignmentReviews,
+    planning,
   } = input
 
   activityLogCache.set(activityLogs)
@@ -854,6 +870,8 @@ function applyBackgroundHydratePayload(input: {
     : []
   karkunRequestCache.set(karkunRequests)
   applyAssignmentReviewHydrate(assignmentReviews)
+  // Phase 1 — non-critical planning foundation (Admin-only; soft-empty for Rukn).
+  applyPlanningHydrate(planning)
 }
 
 function markConnectionRepositoriesLoading(caller: string): void {
@@ -1012,6 +1030,7 @@ function readBackgroundHydratePayload(db: ReturnType<typeof getFirestoreDb>) {
       FIRESTORE_DOCS.karkunRequests,
     ),
     readAssignmentReviewsForClient(),
+    readPlanningCollectionsForClient(),
   ]).then(
     ([
       activityLogs,
@@ -1022,6 +1041,7 @@ function readBackgroundHydratePayload(db: ReturnType<typeof getFirestoreDb>) {
       migrationVersion,
       karkunRequestsDoc,
       assignmentReviews,
+      planning,
     ]) => ({
       activityLogs,
       executionSnapshots,
@@ -1031,6 +1051,7 @@ function readBackgroundHydratePayload(db: ReturnType<typeof getFirestoreDb>) {
       migrationVersion,
       karkunRequestsDoc,
       assignmentReviews,
+      planning,
     }),
   )
 }
@@ -1153,6 +1174,7 @@ async function hydrateFirestoreCachesOnce(): Promise<void> {
       migrationVersion,
       karkunRequestsDoc,
       assignmentReviews,
+      planning,
     ] = await Promise.all([
       readCollection<CampaignListItem>(db, FIRESTORE_COLLECTIONS.campaigns),
       readRuknsForClient(db),
@@ -1174,6 +1196,7 @@ async function hydrateFirestoreCachesOnce(): Promise<void> {
         FIRESTORE_DOCS.karkunRequests,
       ),
       readAssignmentReviewsForClient(),
+      readPlanningCollectionsForClient(),
     ])
 
     await applyCriticalHydratePayload({
@@ -1193,6 +1216,7 @@ async function hydrateFirestoreCachesOnce(): Promise<void> {
       migrationVersion,
       karkunRequestsDoc,
       assignmentReviews,
+      planning,
     })
     traceIncidentStage('hydrateFirestoreCachesOnce:complete', {
       caller: 'hydrateFirestoreCachesOnce',
@@ -2716,4 +2740,5 @@ export async function clearAllFirestoreCachesForTests(): Promise<void> {
   backupCache.reset(new Map())
   karkunRequestCache.reset([])
   resetAssignmentReviewCacheForTests()
+  resetPlanningCachesForTests()
 }

@@ -161,6 +161,7 @@
     "verify:kc-027.4": "npx vite-node scripts/verify-kc-027-4-backup-monitoring.ts",
     "verify:kc-027.5": "npx vite-node scripts/verify-kc-027-5-production-dr-evidence.ts",
     "verify:kc-td04-assignment-review-durable": "npx vite-node scripts/verify-kc-td04-assignment-review-durable.ts",
+    "verify:kc-phase1-planning-persistence": "npx vite-node scripts/verify-kc-phase1-planning-persistence.ts",
     "verify:kc-028b": "npx vite-node scripts/verify-kc-028b.ts",
     "verify:kc-028c": "npx vite-node scripts/verify-kc-028c-weekly-ijtema-window.ts",
     "verify:kc-bug-0130a": "npx vite-node scripts/verify-kc-bug-0130a-whatsapp-launch.ts",

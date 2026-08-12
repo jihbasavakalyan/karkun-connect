@@ -172,6 +172,22 @@ service cloud.firestore {
       allow read, write: if isAdministrator();
     }
 
+    // Phase 1 planning foundation — Admin-owned; archive via update (no client deletes).
+    match /meqatiMansoobas/{docId} {
+      allow read, create, update: if isAdministrator();
+      allow delete: if false;
+    }
+
+    match /objectives/{docId} {
+      allow read, create, update: if isAdministrator();
+      allow delete: if false;
+    }
+
+    match /units/{docId} {
+      allow read, create, update: if isAdministrator();
+      allow delete: if false;
+    }
+
     /**
      * Compliance docs:
      * - Legacy ijtema / baitulMaal: Rukn may write assigned-karkun records (KC-0084).

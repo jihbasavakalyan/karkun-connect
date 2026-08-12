@@ -5,8 +5,11 @@ import type {
   ConnectionRepository,
   ExecutionRepository,
   KarkunRepository,
+  MeqatiMansoobaRepository,
+  ObjectiveRepository,
   RuknRepository,
   SettingsRepository,
+  UnitRepository,
 } from '@/repositories/interfaces'
 import type { ConnectionLedgerRepository } from '@/repositories/interfaces/ConnectionLedgerRepository'
 import type { AssignmentReviewRepository } from '@/repositories/interfaces/AssignmentReviewRepository'
@@ -24,6 +27,11 @@ import {
 import { ConnectionLedgerLocalRepository } from '@/repositories/local/connectionLedgerLocalRepository'
 import { AssignmentReviewLocalRepository } from '@/repositories/local/assignmentReviewLocalRepository'
 import {
+  MeqatiMansoobaLocalRepository,
+  ObjectiveLocalRepository,
+  UnitLocalRepository,
+} from '@/repositories/local/planningLocalRepositories'
+import {
   CampaignFirestoreRepository,
   CommunicationFirestoreRepository,
   ComplianceFirestoreRepository,
@@ -35,6 +43,11 @@ import {
 } from '@/repositories/firestore/firestoreRepositories'
 import { ConnectionLedgerFirestoreRepository } from '@/repositories/firestore/connectionLedgerFirestoreRepository'
 import { AssignmentReviewFirestoreRepository } from '@/repositories/firestore/assignmentReviewFirestoreRepository'
+import {
+  MeqatiMansoobaFirestoreRepository,
+  ObjectiveFirestoreRepository,
+  UnitFirestoreRepository,
+} from '@/repositories/firestore/planningFirestoreRepositories'
 
 export type RepositoryBundle = {
   campaign: CampaignRepository
@@ -47,6 +60,9 @@ export type RepositoryBundle = {
   communication: CommunicationRepository
   compliance: ComplianceRepository
   settings: SettingsRepository
+  meqatiMansooba: MeqatiMansoobaRepository
+  objective: ObjectiveRepository
+  unit: UnitRepository
 }
 
 let bundle: RepositoryBundle | null = null
@@ -63,6 +79,9 @@ function createLocalRepositories(): RepositoryBundle {
     communication: new CommunicationLocalRepository(),
     compliance: new ComplianceLocalRepository(),
     settings: new SettingsLocalRepository(),
+    meqatiMansooba: new MeqatiMansoobaLocalRepository(),
+    objective: new ObjectiveLocalRepository(),
+    unit: new UnitLocalRepository(),
   }
 }
 
@@ -78,6 +97,9 @@ function createFirestoreRepositories(): RepositoryBundle {
     communication: new CommunicationFirestoreRepository(),
     compliance: new ComplianceFirestoreRepository(),
     settings: new SettingsFirestoreRepository(),
+    meqatiMansooba: new MeqatiMansoobaFirestoreRepository(),
+    objective: new ObjectiveFirestoreRepository(),
+    unit: new UnitFirestoreRepository(),
   }
 }
 
