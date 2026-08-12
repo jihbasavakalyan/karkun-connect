@@ -15,3 +15,4 @@ export type {
 export type { MeqatiMansoobaRepository } from './MeqatiMansoobaRepository'
 export type { ObjectiveRepository } from './ObjectiveRepository'
 export type { UnitRepository } from './UnitRepository'
+export type { LocalProgrammeRepository } from './LocalProgrammeRepository'

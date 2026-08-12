@@ -15,6 +15,13 @@ export type {
 } from './planning.types'
 
 export type {
+  LocalProgramme,
+  LocalProgrammeStatus,
+  ProgrammeKind,
+  ProgrammeFrequency,
+} from './localProgramme.types'
+
+export type {
   CampaignSetupState,
   CampaignSetupAction,
   WizardStep,
