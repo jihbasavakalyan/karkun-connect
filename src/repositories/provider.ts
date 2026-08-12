@@ -5,6 +5,7 @@ import type {
   ConnectionRepository,
   ExecutionRepository,
   KarkunRepository,
+  LocalProgrammeRepository,
   MeqatiMansoobaRepository,
   ObjectiveRepository,
   RuknRepository,
@@ -31,6 +32,7 @@ import {
   ObjectiveLocalRepository,
   UnitLocalRepository,
 } from '@/repositories/local/planningLocalRepositories'
+import { LocalProgrammeLocalRepository } from '@/repositories/local/localProgrammeLocalRepositories'
 import {
   CampaignFirestoreRepository,
   CommunicationFirestoreRepository,
@@ -48,6 +50,7 @@ import {
   ObjectiveFirestoreRepository,
   UnitFirestoreRepository,
 } from '@/repositories/firestore/planningFirestoreRepositories'
+import { LocalProgrammeFirestoreRepository } from '@/repositories/firestore/localProgrammeFirestoreRepositories'
 
 export type RepositoryBundle = {
   campaign: CampaignRepository
@@ -63,13 +66,15 @@ export type RepositoryBundle = {
   meqatiMansooba: MeqatiMansoobaRepository
   objective: ObjectiveRepository
   unit: UnitRepository
+  localProgramme: LocalProgrammeRepository
 }
 
 let bundle: RepositoryBundle | null = null
 
 function createLocalRepositories(): RepositoryBundle {
+  const campaign = new CampaignLocalRepository()
   return {
-    campaign: new CampaignLocalRepository(),
+    campaign,
     rukn: new RuknLocalRepository(),
     karkun: new KarkunLocalRepository(),
     connection: new ConnectionLocalRepository(),
@@ -82,12 +87,14 @@ function createLocalRepositories(): RepositoryBundle {
     meqatiMansooba: new MeqatiMansoobaLocalRepository(),
     objective: new ObjectiveLocalRepository(),
     unit: new UnitLocalRepository(),
+    localProgramme: new LocalProgrammeLocalRepository(campaign),
   }
 }
 
 function createFirestoreRepositories(): RepositoryBundle {
+  const campaign = new CampaignFirestoreRepository()
   return {
-    campaign: new CampaignFirestoreRepository(),
+    campaign,
     rukn: new RuknFirestoreRepository(),
     karkun: new KarkunFirestoreRepository(),
     connection: new ConnectionFirestoreRepository(),
@@ -100,6 +107,7 @@ function createFirestoreRepositories(): RepositoryBundle {
     meqatiMansooba: new MeqatiMansoobaFirestoreRepository(),
     objective: new ObjectiveFirestoreRepository(),
     unit: new UnitFirestoreRepository(),
+    localProgramme: new LocalProgrammeFirestoreRepository(campaign),
   }
 }
 

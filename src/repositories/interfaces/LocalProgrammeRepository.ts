@@ -4,7 +4,7 @@ import type { RepositoryResult } from '@/repositories/errors'
 /**
  * Phase 2 — Local Programme persistence contract.
  * Campaign 1 → many Local Programmes (`campaignId` required).
- * Admin-owned. No Firestore / local implementation in TASK-014.
+ * Admin-owned. Implementations must await durable writes before ok.
  */
 export interface LocalProgrammeRepository {
   loadAll(): RepositoryResult<readonly LocalProgramme[]>

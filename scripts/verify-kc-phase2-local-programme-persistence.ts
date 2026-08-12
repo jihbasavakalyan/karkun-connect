@@ -1,0 +1,213 @@
+/**
+ * Phase 2 — Local Programme persistence local smoke (no live Firestore / GCP).
+ * Run: npm run verify:kc-phase2-local-programme-persistence
+ */
+import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+import { FIRESTORE_COLLECTIONS } from '@/repositories/firestore/collections'
+import {
+  getRepositories,
+  getRepositoryProviderMode,
+  resetRepositoryProviderForTests,
+} from '@/repositories/provider'
+import { clearLocalProgrammesForTests } from '@/repositories/local/localProgrammeLocalRepositories'
+import { ACTIVE_CAMPAIGN_ID } from '@/types/assignment.types'
+import type { LocalProgramme } from '@/types/localProgramme.types'
+
+const root = resolve(process.cwd())
+
+function read(rel: string): string {
+  return readFileSync(resolve(root, rel), 'utf8')
+}
+
+function assertIncludes(haystack: string, needle: string, label: string): void {
+  assert.ok(haystack.includes(needle), `expected ${label}: ${needle}`)
+}
+
+function assertNotIncludes(haystack: string, needle: string, label: string): void {
+  assert.ok(!haystack.includes(needle), `did not expect ${label}: ${needle}`)
+}
+
+function extractRulesBlock(rules: string, matchLine: string): string {
+  const start = rules.indexOf(matchLine)
+  assert.ok(start >= 0, `missing ${matchLine}`)
+  const rest = rules.slice(start)
+  const end = rest.indexOf('\n    }')
+  return end >= 0 ? rest.slice(0, end + '\n    }'.length) : rest
+}
+
+const now = new Date().toISOString()
+
+console.log('▶ collection constants')
+{
+  assert.equal(FIRESTORE_COLLECTIONS.localProgrammes, 'localProgrammes')
+}
+
+console.log('▶ Firestore rules — Admin-only localProgrammes')
+{
+  const rules = read('firestore.rules')
+  const matchLine = 'match /localProgrammes/{docId}'
+  const block = extractRulesBlock(rules, matchLine)
+  assertIncludes(block, 'isAdministrator()', `${matchLine} Admin gate`)
+  assertIncludes(block, 'allow delete: if false', `${matchLine} no client delete`)
+  assertNotIncludes(block, 'isRukn()', `${matchLine} no Rukn access`)
+}
+
+console.log('▶ provider wiring (local + firestore; Campaign injection)')
+{
+  const provider = read('src/repositories/provider.ts')
+  assertIncludes(
+    provider,
+    'localProgramme: new LocalProgrammeLocalRepository(campaign)',
+    'local LocalProgramme repo',
+  )
+  assertIncludes(
+    provider,
+    'localProgramme: new LocalProgrammeFirestoreRepository(campaign)',
+    'firestore LocalProgramme repo',
+  )
+  assertIncludes(provider, 'getRepositoryProviderMode()', 'single mode switch')
+  assertNotIncludes(provider, 'createLocalProgrammeProvider', 'no second provider')
+
+  resetRepositoryProviderForTests()
+  assert.equal(getRepositoryProviderMode(), 'local')
+  const repos = getRepositories()
+  assert.ok(repos.localProgramme)
+  assert.ok(repos.campaign)
+}
+
+console.log('▶ local durable CRUD + Campaign parent validation')
+{
+  resetRepositoryProviderForTests()
+  clearLocalProgrammesForTests()
+  const repos = getRepositories()
+
+  assert.equal(repos.localProgramme.loadAll().data?.length, 0)
+
+  const parent = repos.campaign.getById(ACTIVE_CAMPAIGN_ID)
+  assert.equal(parent.ok, true)
+  assert.ok(parent.ok && parent.data, 'active campaign exists for valid parent test')
+
+  const programme: LocalProgramme = {
+    id: 'programme-verify-1',
+    campaignId: ACTIVE_CAMPAIGN_ID,
+    name: 'Verify Weekly Ijtema Programme',
+    kind: 'weekly_ijtema',
+    status: 'active',
+    summary: 'verify',
+    createdAt: now,
+    updatedAt: now,
+    createdBy: 'verify',
+    updatedBy: 'verify',
+  }
+
+  const saved = await repos.localProgramme.saveDurable(programme)
+  assert.equal(saved.ok, true)
+  assert.equal(repos.localProgramme.getById(programme.id).data?.name, programme.name)
+  assert.equal(repos.localProgramme.listByCampaignId(ACTIVE_CAMPAIGN_ID).data?.length, 1)
+  assert.equal(repos.localProgramme.loadAll().data?.length, 1)
+
+  const missingParentId = await repos.localProgramme.saveDurable({
+    ...programme,
+    id: 'programme-verify-bad-empty',
+    campaignId: '',
+  })
+  assert.equal(missingParentId.ok, false)
+  if (!missingParentId.ok) {
+    assert.equal(missingParentId.error.code, 'Validation')
+  }
+
+  const unknownParent = await repos.localProgramme.saveDurable({
+    ...programme,
+    id: 'programme-verify-bad-unknown',
+    campaignId: 'campaign-does-not-exist',
+  })
+  assert.equal(unknownParent.ok, false)
+  if (!unknownParent.ok) {
+    assert.equal(unknownParent.error.code, 'Validation')
+  }
+  assert.equal(repos.localProgramme.loadAll().data?.length, 1)
+
+  const archived = await repos.localProgramme.saveDurable({
+    ...programme,
+    status: 'archived',
+    updatedAt: now,
+  })
+  assert.equal(archived.ok, true)
+  assert.equal(repos.localProgramme.getById(programme.id).data?.status, 'archived')
+
+  clearLocalProgrammesForTests()
+  assert.equal(repos.localProgramme.loadAll().data?.length, 0)
+}
+
+console.log('▶ no delete path on LocalProgramme contract/impl')
+{
+  const iface = read('src/repositories/interfaces/LocalProgrammeRepository.ts')
+  assertNotIncludes(iface, 'delete', 'interface has no delete')
+  const localImpl = read('src/repositories/local/localProgrammeLocalRepositories.ts')
+  assertNotIncludes(localImpl, 'async delete', 'local has no delete')
+  const firestoreImpl = read(
+    'src/repositories/firestore/localProgrammeFirestoreRepositories.ts',
+  )
+  assertNotIncludes(firestoreImpl, 'async delete', 'firestore has no delete')
+}
+
+console.log('▶ Firestore durable write pattern (await writeDoc) + soft hydrate')
+{
+  const firestoreRepo = read(
+    'src/repositories/firestore/localProgrammeFirestoreRepositories.ts',
+  )
+  assertIncludes(firestoreRepo, 'await writeDoc(', 'await durable writeDoc')
+  assertIncludes(
+    firestoreRepo,
+    'soft-skip ${label} (permission-denied)',
+    'permission-denied soft-skip',
+  )
+  assertIncludes(firestoreRepo, 'return []', 'empty on soft-skip')
+  assertIncludes(firestoreRepo, 'campaigns.getById', 'Campaign parent lookup')
+  assertNotIncludes(firestoreRepo, 'FIRESTORE_COLLECTIONS.karkuns', 'no karkun writes')
+  assertNotIncludes(firestoreRepo, 'FIRESTORE_COLLECTIONS.rukns', 'no rukn writes')
+  assertNotIncludes(firestoreRepo, 'objectives[]', 'no objective dual-write')
+  assertNotIncludes(firestoreRepo, 'objectiveIds', 'no campaign FK writes')
+}
+
+console.log('▶ bootstrap / hydrate remains non-critical')
+{
+  const hydrate = read('src/repositories/firestore/firestoreRepositories.ts')
+  assertIncludes(hydrate, 'readLocalProgrammeCollectionsForClient', 'programme soft-read')
+  assertIncludes(hydrate, 'applyLocalProgrammeHydrate', 'programme apply')
+
+  const criticalFnStart = hydrate.indexOf('function readCriticalHydratePayload')
+  const backgroundFnStart = hydrate.indexOf('function readBackgroundHydratePayload')
+  assert.ok(criticalFnStart >= 0 && backgroundFnStart > criticalFnStart, 'hydrate fns present')
+  const criticalBody = hydrate.slice(criticalFnStart, backgroundFnStart)
+  assertNotIncludes(
+    criticalBody,
+    'readLocalProgrammeCollectionsForClient',
+    'programmes not critical',
+  )
+  assertNotIncludes(criticalBody, 'localProgrammes', 'programme collection not critical')
+
+  const backgroundBody = hydrate.slice(backgroundFnStart, backgroundFnStart + 3000)
+  assertIncludes(
+    backgroundBody,
+    'readLocalProgrammeCollectionsForClient()',
+    'programmes in background',
+  )
+}
+
+console.log('▶ Campaign schema / objective isolation')
+{
+  const campaignRepo = read('src/repositories/interfaces/CampaignRepository.ts')
+  assertNotIncludes(campaignRepo, 'mansoobaId', 'no campaign mansooba FK contract')
+  assertNotIncludes(campaignRepo, 'objectiveIds', 'no campaign objectiveIds contract')
+  assertNotIncludes(campaignRepo, 'saveDurable', 'campaign remains read-only interface')
+
+  const programmeTypes = read('src/types/localProgramme.types.ts')
+  assertIncludes(programmeTypes, 'campaignId', 'programme requires campaignId')
+  assertNotIncludes(programmeTypes, 'mansoobaId', 'no direct mansoobaId on programme')
+  assertNotIncludes(programmeTypes, 'objectiveIds', 'no objectiveIds on programme')
+}
+
+console.log('KC Phase 2 local programme persistence verify: PASS')

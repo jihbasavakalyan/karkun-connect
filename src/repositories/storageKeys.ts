@@ -28,6 +28,7 @@ export const STORAGE_KEYS = {
   meqatiMansoobas: 'karkun-connect.meqati-mansoobas',
   planningObjectives: 'karkun-connect.planning-objectives',
   units: 'karkun-connect.units',
+  localProgrammes: 'karkun-connect.local-programmes',
   userPreferences: 'karkun-connect.user-preferences',
   migrationBackup: (id: string) => `karkun-connect.migration.backup.${id}`,
 } as const

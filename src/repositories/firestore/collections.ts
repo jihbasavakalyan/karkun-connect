@@ -21,6 +21,8 @@ export const FIRESTORE_COLLECTIONS = {
   objectives: 'objectives',
   /** Phase 1 — flat Unit / Scope (Admin-owned; Basavakalyan first) */
   units: 'units',
+  /** Phase 2 — Local Programme under a Campaign (Admin-owned) */
+  localProgrammes: 'localProgrammes',
 } as const
 
 export const FIRESTORE_DOCS = {
