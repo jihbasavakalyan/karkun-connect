@@ -226,6 +226,8 @@ Source of truth: `src/repositories/firestore/collections.ts` + architecture docs
 
 **KC-027.3:** Canonical operator health contract lives in [firestore-backup-recovery-health.md](./firestore-backup-recovery-health.md) (curated ops snapshot — not live app polling). Do **not** treat Admin Settings “Backup Status” as GCP managed DR.
 
+**KC-027.4:** Operational monitoring/alerting **policy** (Stage A) lives in [firestore-backup-recovery-monitoring.md](./firestore-backup-recovery-monitoring.md). Thresholds are **our** ops policy, not a Google SLA. Live probe/notify (Stages B/C) deferred.
+
 ---
 
 ## 7. Required IAM permissions
@@ -298,6 +300,7 @@ Remaining limitations: no app connectivity test against restore DB; no destructi
 ## 10. Related
 
 - [Backup/Recovery Health (KC-027.3)](./firestore-backup-recovery-health.md)
+- [Backup/Recovery Monitoring (KC-027.4)](./firestore-backup-recovery-monitoring.md)
 - [Non-production recovery runbook](./firestore-nonprod-recovery-runbook.md)
 - [Backup Guide](./backup-guide.md) (operator summary)
 - [Recovery Guide](./recovery-guide.md)
@@ -306,6 +309,7 @@ Remaining limitations: no app connectivity test against restore DB; no destructi
 - [KC-027.1 ARCH-009 gate](../architecture/kc-027-1-arch009-gate.md)
 - [KC-027.2 ARCH-009 gate](../architecture/kc-027-2-arch009-gate.md)
 - [KC-027.3 ARCH-009 gate](../architecture/kc-027-3-arch009-gate.md)
+- [KC-027.4 ARCH-009 gate](../architecture/kc-027-4-arch009-gate.md)
 
 ### External references
 

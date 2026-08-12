@@ -153,11 +153,12 @@ Every field that can be live-checked must carry an explicit `healthState` and `v
 
 ## Acquisition boundary
 
-| Now (KC-027.3) | Later (separate ticket only if GO) |
-|----------------|-------------------------------------|
+| Now (KC-027.3 / KC-027.4 Stage A) | Later (Stage B/C — separate GO) |
+|----------------------------------|----------------------------------|
 | Ops updates this curated snapshot after CLI/Console checks and drills | Optional **server-side**, **Admin-authenticated**, **read-only**, least-privilege probe |
-| `verify:kc-027.3` asserts contract presence — **does not call GCP** | Must never expose credentials/tokens to the browser |
-| No restore / delete / import in any health endpoint | Health payload: IDs, timestamps, booleans, states only — **no PII / document contents** |
+| Monitoring/alerting **policy** in [firestore-backup-recovery-monitoring.md](./firestore-backup-recovery-monitoring.md) | Notification channel wiring (Stage C) |
+| `verify:kc-027.3` / `verify:kc-027.4` assert docs — **do not call GCP** | Must never expose credentials/tokens to the browser |
+| No restore / delete / import in any health/monitor path | Health payload: IDs, timestamps, booleans, states only — **no PII / document contents** |
 
 Documented ops probes (read-only; operator workstation — not the web app):
 
@@ -186,6 +187,8 @@ After each successful probe or drill, update this card’s fields, `healthState`
 
 - [Firestore Backup & Recovery Baseline (KC-027.1)](./firestore-backup-recovery-baseline.md)
 - [Non-production recovery runbook (KC-027.2)](./firestore-nonprod-recovery-runbook.md)
+- [Backup/Recovery Monitoring (KC-027.4)](./firestore-backup-recovery-monitoring.md)
 - [KC-027.3 ARCH-009 gate](../architecture/kc-027-3-arch009-gate.md)
+- [KC-027.4 ARCH-009 gate](../architecture/kc-027-4-arch009-gate.md)
 - [Backup Guide](./backup-guide.md)
 - [Known Limitations](./known-limitations.md) (KL-D04)

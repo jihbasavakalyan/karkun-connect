@@ -158,6 +158,7 @@
     "verify:kc-027.1": "npx vite-node scripts/verify-kc-027-1-firestore-backup-baseline.ts",
     "verify:kc-027.2": "npx vite-node scripts/verify-kc-027-2-nonprod-recovery-readiness.ts",
     "verify:kc-027.3": "npx vite-node scripts/verify-kc-027-3-backup-recovery-health.ts",
+    "verify:kc-027.4": "npx vite-node scripts/verify-kc-027-4-backup-monitoring.ts",
     "verify:kc-028b": "npx vite-node scripts/verify-kc-028b.ts",
     "verify:kc-028c": "npx vite-node scripts/verify-kc-028c-weekly-ijtema-window.ts",
     "verify:kc-bug-0130a": "npx vite-node scripts/verify-kc-bug-0130a-whatsapp-launch.ts",
