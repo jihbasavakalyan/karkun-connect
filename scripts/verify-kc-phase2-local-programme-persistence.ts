@@ -214,4 +214,24 @@ console.log('▶ Campaign schema / objective isolation')
   assertNotIncludes(programmeTypes, 'objectiveIds', 'no objectiveIds on programme')
 }
 
+console.log('▶ Admin Local Programme UI integrity (campaignId lock)')
+{
+  const page = read('src/pages/admin/AdminPlanningPage.tsx')
+  assertIncludes(page, 'programmeCampaignId', 'locked Campaign parent state')
+  assertIncludes(
+    page,
+    'setProgrammeCampaignId(selectedCampaignId)',
+    'create locks selected Campaign',
+  )
+  assertIncludes(page, 'setProgrammeCampaignId(row.campaignId)', 'edit locks row Campaign')
+  assertIncludes(
+    page,
+    'const campaignId = existing?.campaignId ?? parentId',
+    'save preserves original Campaign on edit',
+  )
+  assertIncludes(page, 'localProgramme.saveDurable', 'uses repository boundary')
+  assertNotIncludes(page, 'objectives[]', 'no Objective dual-write in Admin UI')
+  assertNotIncludes(page, 'savePlanningLinksDurable', 'no Campaign FK edits in programme UI')
+}
+
 console.log('KC Phase 2 local programme persistence verify: PASS')

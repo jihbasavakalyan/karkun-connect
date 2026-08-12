@@ -1,7 +1,7 @@
 /**
- * Phase 1 — Admin planning experience.
- * Meqati Mansooba → Objectives + Unit / Scope.
- * Calls getRepositories() directly (TASK-008: no service layer).
+ * Phase 1–2 — Admin planning experience.
+ * Meqati Mansooba → Objectives + Unit / Scope + Campaign → Local Programme.
+ * Calls getRepositories() directly (no service layer).
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
@@ -11,8 +11,16 @@ import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import { useAuth } from '@/hooks/useAuth'
 import { useBusyAction } from '@/hooks/useBusyAction'
+import type { CampaignListItem } from '@/constants/mockMissions'
 import { unwrapRepository } from '@/repositories/errors'
 import { getRepositories } from '@/repositories/provider'
+import { ACTIVE_CAMPAIGN_ID } from '@/types/assignment.types'
+import type {
+  LocalProgramme,
+  LocalProgrammeStatus,
+  ProgrammeFrequency,
+  ProgrammeKind,
+} from '@/types/localProgramme.types'
 import type {
   MeqatiMansooba,
   MeqatiMansoobaStatus,
@@ -26,6 +34,18 @@ const inputClassName =
   'w-full rounded-lg border border-border bg-surface px-4 py-3 text-base text-text-heading focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20'
 
 const labelClassName = 'mb-1 block text-sm font-medium text-text-heading'
+
+const PROGRAMME_KIND_OPTIONS: { value: ProgrammeKind; label: string }[] = [
+  { value: 'weekly_ijtema', label: 'Weekly Ijtema' },
+  { value: 'monthly_baitul_maal', label: 'Monthly Bait-ul-Maal' },
+  { value: 'campaign_execution', label: 'Campaign Execution' },
+  { value: 'follow_up', label: 'Follow-up' },
+  { value: 'other', label: 'Other' },
+]
+
+const PROGRAMME_KIND_LABELS = Object.fromEntries(
+  PROGRAMME_KIND_OPTIONS.map((row) => [row.value, row.label]),
+) as Record<ProgrammeKind, string>
 
 function newPlanningId(prefix: string): string {
   return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`
@@ -62,6 +82,20 @@ type UnitFormState = {
   placeAliases: string
 }
 
+type ProgrammeFormState = {
+  name: string
+  kind: ProgrammeKind
+  status: LocalProgrammeStatus
+  unitId: string
+  startDate: string
+  endDate: string
+  frequencyCadence: '' | ProgrammeFrequency['cadence']
+  frequencyDayOfWeek: string
+  frequencyDayOfMonth: string
+  frequencyNote: string
+  summary: string
+}
+
 const emptyMansoobaForm = (): MansoobaFormState => ({
   name: '',
   status: 'draft',
@@ -84,6 +118,75 @@ const emptyUnitForm = (): UnitFormState => ({
   placeAliases: '',
 })
 
+const emptyProgrammeForm = (): ProgrammeFormState => ({
+  name: '',
+  kind: 'weekly_ijtema',
+  status: 'draft',
+  unitId: '',
+  startDate: '',
+  endDate: '',
+  frequencyCadence: '',
+  frequencyDayOfWeek: '',
+  frequencyDayOfMonth: '',
+  frequencyNote: '',
+  summary: '',
+})
+
+function programmeFormFromRow(row: LocalProgramme): ProgrammeFormState {
+  const frequency = row.frequency
+  return {
+    name: row.name,
+    kind: row.kind,
+    status: row.status,
+    unitId: row.unitId ?? '',
+    startDate: row.startDate ?? '',
+    endDate: row.endDate ?? '',
+    frequencyCadence: frequency?.cadence ?? '',
+    frequencyDayOfWeek:
+      frequency && frequency.cadence === 'weekly' && frequency.dayOfWeek != null
+        ? String(frequency.dayOfWeek)
+        : '',
+    frequencyDayOfMonth:
+      frequency && frequency.cadence === 'monthly' && frequency.dayOfMonth != null
+        ? String(frequency.dayOfMonth)
+        : '',
+    frequencyNote:
+      frequency && frequency.cadence === 'custom' ? (frequency.note ?? '') : '',
+    summary: row.summary ?? '',
+  }
+}
+
+function buildProgrammeFrequency(
+  form: ProgrammeFormState,
+): ProgrammeFrequency | undefined {
+  if (!form.frequencyCadence) return undefined
+  if (form.frequencyCadence === 'weekly') {
+    const dayRaw = form.frequencyDayOfWeek.trim()
+    const dayOfWeek = dayRaw === '' ? undefined : Number(dayRaw)
+    return {
+      cadence: 'weekly',
+      dayOfWeek:
+        dayOfWeek != null && Number.isFinite(dayOfWeek) ? dayOfWeek : undefined,
+    }
+  }
+  if (form.frequencyCadence === 'monthly') {
+    const dayRaw = form.frequencyDayOfMonth.trim()
+    const dayOfMonth = dayRaw === '' ? undefined : Number(dayRaw)
+    return {
+      cadence: 'monthly',
+      dayOfMonth:
+        dayOfMonth != null && Number.isFinite(dayOfMonth) ? dayOfMonth : undefined,
+    }
+  }
+  if (form.frequencyCadence === 'once') {
+    return { cadence: 'once' }
+  }
+  return {
+    cadence: 'custom',
+    note: form.frequencyNote.trim() || undefined,
+  }
+}
+
 export function AdminPlanningPage() {
   const { user } = useAuth()
   const { run, busy } = useBusyAction()
@@ -92,7 +195,10 @@ export function AdminPlanningPage() {
   const [mansoobas, setMansoobas] = useState<MeqatiMansooba[]>([])
   const [objectives, setObjectives] = useState<PlanningObjective[]>([])
   const [units, setUnits] = useState<Unit[]>([])
+  const [campaigns, setCampaigns] = useState<CampaignListItem[]>([])
+  const [programmes, setProgrammes] = useState<LocalProgramme[]>([])
   const [selectedMansoobaId, setSelectedMansoobaId] = useState<string | null>(null)
+  const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null)
   const [message, setMessage] = useState('')
 
   const [mansoobaModal, setMansoobaModal] = useState<'create' | 'edit' | null>(null)
@@ -110,6 +216,12 @@ export function AdminPlanningPage() {
   const [editingUnitId, setEditingUnitId] = useState<string | null>(null)
   const [unitForm, setUnitForm] = useState<UnitFormState>(emptyUnitForm)
 
+  const [programmeModal, setProgrammeModal] = useState<'create' | 'edit' | null>(null)
+  const [editingProgrammeId, setEditingProgrammeId] = useState<string | null>(null)
+  /** Locked when the Local Programme modal opens — prevents silent Campaign reassignment. */
+  const [programmeCampaignId, setProgrammeCampaignId] = useState<string | null>(null)
+  const [programmeForm, setProgrammeForm] = useState<ProgrammeFormState>(emptyProgrammeForm)
+
   const refresh = useCallback(() => {
     const repos = getRepositories()
     const nextMansoobas = [
@@ -119,15 +231,27 @@ export function AdminPlanningPage() {
       ...unwrapRepository(repos.objective.loadAll(), []),
     ]
     const nextUnits = [...unwrapRepository(repos.unit.loadAll(), [])]
+    const nextCampaigns = [...unwrapRepository(repos.campaign.getAll(), [])]
+    const nextProgrammes = [...unwrapRepository(repos.localProgramme.loadAll(), [])]
     setMansoobas(nextMansoobas)
     setObjectives(nextObjectives)
     setUnits(nextUnits)
+    setCampaigns(nextCampaigns)
+    setProgrammes(nextProgrammes)
 
     setSelectedMansoobaId((current) => {
       if (current && nextMansoobas.some((row) => row.id === current)) return current
       const active = unwrapRepository(repos.meqatiMansooba.getActive(), undefined)
       if (active) return active.id
       return nextMansoobas[0]?.id ?? null
+    })
+
+    setSelectedCampaignId((current) => {
+      if (current && nextCampaigns.some((row) => row.id === current)) return current
+      const active = unwrapRepository(repos.campaign.getActive(), undefined)
+      if (active) return active.id
+      const preferred = nextCampaigns.find((row) => row.id === ACTIVE_CAMPAIGN_ID)
+      return preferred?.id ?? nextCampaigns[0]?.id ?? null
     })
   }, [])
 
@@ -140,6 +264,11 @@ export function AdminPlanningPage() {
     [mansoobas, selectedMansoobaId],
   )
 
+  const selectedCampaign = useMemo(
+    () => campaigns.find((row) => row.id === selectedCampaignId) ?? null,
+    [campaigns, selectedCampaignId],
+  )
+
   const selectedObjectives = useMemo(() => {
     if (!selectedMansoobaId) return []
     return objectives
@@ -147,6 +276,14 @@ export function AdminPlanningPage() {
       .slice()
       .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.title.localeCompare(b.title))
   }, [objectives, selectedMansoobaId])
+
+  const selectedProgrammes = useMemo(() => {
+    if (!selectedCampaignId) return []
+    return programmes
+      .filter((row) => row.campaignId === selectedCampaignId)
+      .slice()
+      .sort((a, b) => a.name.localeCompare(b.name))
+  }, [programmes, selectedCampaignId])
 
   const unitNameById = useMemo(() => {
     const map = new Map<string, string>()
@@ -157,6 +294,11 @@ export function AdminPlanningPage() {
   const objectiveMansooba = useMemo(
     () => mansoobas.find((row) => row.id === objectiveMansoobaId) ?? null,
     [mansoobas, objectiveMansoobaId],
+  )
+
+  const programmeCampaign = useMemo(
+    () => campaigns.find((row) => row.id === programmeCampaignId) ?? null,
+    [campaigns, programmeCampaignId],
   )
 
   const closeMansoobaModal = () => {
@@ -177,12 +319,29 @@ export function AdminPlanningPage() {
     setFormError('')
   }
 
+  const closeProgrammeModal = () => {
+    setProgrammeModal(null)
+    setEditingProgrammeId(null)
+    setProgrammeCampaignId(null)
+    setProgrammeForm(emptyProgrammeForm())
+    setFormError('')
+  }
+
   const selectMansooba = (id: string) => {
     setSelectedMansoobaId(id)
     setMessage('')
     // Avoid stale create/edit Objective context after switching Mansooba.
     if (objectiveModal != null) {
       closeObjectiveModal()
+    }
+  }
+
+  const selectCampaign = (id: string) => {
+    setSelectedCampaignId(id)
+    setMessage('')
+    // Avoid stale create/edit Local Programme context after switching Campaign.
+    if (programmeModal != null) {
+      closeProgrammeModal()
     }
   }
 
@@ -386,11 +545,85 @@ export function AdminPlanningPage() {
     )
   }
 
+  const openCreateProgramme = () => {
+    if (!selectedCampaignId) {
+      setMessage('Select a Campaign first.')
+      return
+    }
+    setEditingProgrammeId(null)
+    setProgrammeCampaignId(selectedCampaignId)
+    setProgrammeForm(emptyProgrammeForm())
+    setProgrammeModal('create')
+    setFormError('')
+    setMessage('')
+  }
+
+  const openEditProgramme = (row: LocalProgramme) => {
+    setEditingProgrammeId(row.id)
+    setProgrammeCampaignId(row.campaignId)
+    setProgrammeForm(programmeFormFromRow(row))
+    setProgrammeModal('edit')
+    setFormError('')
+    setMessage('')
+  }
+
+  const saveProgramme = () => {
+    void run(
+      async () => {
+        const parentId = programmeCampaignId
+        if (!parentId) {
+          setFormError('Local Programme must belong to a Campaign.')
+          return
+        }
+        const name = programmeForm.name.trim()
+        if (!name) {
+          setFormError('Programme name is required.')
+          return
+        }
+        const now = new Date().toISOString()
+        const existing = editingProgrammeId
+          ? programmes.find((row) => row.id === editingProgrammeId)
+          : undefined
+        // Edit preserves the original Campaign; create uses the locked modal parent.
+        const campaignId = existing?.campaignId ?? parentId
+        if (!campaignId) {
+          setFormError('Local Programme must belong to a Campaign.')
+          return
+        }
+        const record: LocalProgramme = {
+          id: existing?.id ?? newPlanningId('programme'),
+          campaignId,
+          name,
+          kind: programmeForm.kind,
+          status: programmeForm.status,
+          unitId: programmeForm.unitId.trim() || undefined,
+          startDate: programmeForm.startDate.trim() || undefined,
+          endDate: programmeForm.endDate.trim() || undefined,
+          frequency: buildProgrammeFrequency(programmeForm),
+          summary: programmeForm.summary.trim() || undefined,
+          createdAt: existing?.createdAt ?? now,
+          updatedAt: now,
+          createdBy: existing?.createdBy ?? actor,
+          updatedBy: actor,
+        }
+        const result = await getRepositories().localProgramme.saveDurable(record)
+        if (!result.ok) {
+          setFormError(formatRepoError(result.error))
+          return
+        }
+        closeProgrammeModal()
+        refresh()
+        setMessage(existing ? 'Local Programme updated.' : 'Local Programme created.')
+      },
+      { key: 'planning.programme.save' },
+    )
+  }
+
   return (
     <PageShell>
       <PageHeader
         title="Planning"
-        description="Configure Meqati Mansooba, Objectives, and Unit scope. Admin configures — Rukn acts later."
+        description="Configure Meqati Mansooba, Objectives, Unit scope, and Local Programmes under Campaigns. Admin configures — Rukn acts later."
       />
 
       {message ? (
@@ -505,6 +738,111 @@ export function AdminPlanningPage() {
                     ) : null}
                   </div>
                   <SecondaryButton type="button" onClick={() => openEditObjective(row)}>
+                    Edit
+                  </SecondaryButton>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        <section className="rounded-(--radius-card) border border-border bg-surface p-5 shadow-card">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-semibold text-text-heading">Campaign</h2>
+              <p className="mt-1 text-sm text-secondary">
+                Select a Campaign to manage its Local Programmes. Planning links
+                (Mansooba / Objectives) are optional.
+              </p>
+            </div>
+          </div>
+
+          {campaigns.length === 0 ? (
+            <p className="mt-4 text-sm text-secondary">No Campaigns available.</p>
+          ) : (
+            <ul className="mt-4 space-y-3">
+              {campaigns.map((row) => {
+                const selected = row.id === selectedCampaignId
+                return (
+                  <li
+                    key={row.id}
+                    className={`rounded-lg border p-4 ${
+                      selected
+                        ? 'border-primary bg-primary-muted/40'
+                        : 'border-border bg-surface-muted'
+                    }`}
+                  >
+                    <button
+                      type="button"
+                      className="w-full text-left"
+                      onClick={() => selectCampaign(row.id)}
+                    >
+                      <p className="font-semibold text-text-heading">{row.name}</p>
+                      <p className="mt-1 text-xs text-secondary">
+                        {row.status}
+                        {` · ${row.startDate} → ${row.endDate}`}
+                        {row.mansoobaId ? ` · Mansooba: ${row.mansoobaId}` : ''}
+                        {row.objectiveIds?.length
+                          ? ` · ${row.objectiveIds.length} objective link(s)`
+                          : ''}
+                      </p>
+                    </button>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+        </section>
+
+        <section className="rounded-(--radius-card) border border-border bg-surface p-5 shadow-card">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-semibold text-text-heading">Local Programmes</h2>
+              <p className="mt-1 text-sm text-secondary">
+                {selectedCampaign
+                  ? `Under Campaign: ${selectedCampaign.name}`
+                  : 'Select a Campaign to manage its Local Programmes.'}
+              </p>
+            </div>
+            <PrimaryButton
+              type="button"
+              onClick={openCreateProgramme}
+              disabled={!selectedCampaignId}
+            >
+              New Local Programme
+            </PrimaryButton>
+          </div>
+
+          {!selectedCampaignId ? (
+            <p className="mt-4 text-sm text-secondary">No Campaign selected.</p>
+          ) : selectedProgrammes.length === 0 ? (
+            <p className="mt-4 text-sm text-secondary">
+              No Local Programmes for this Campaign yet. Empty is valid.
+            </p>
+          ) : (
+            <ul className="mt-4 space-y-3">
+              {selectedProgrammes.map((row) => (
+                <li
+                  key={row.id}
+                  className="flex flex-wrap items-start justify-between gap-3 rounded-lg border border-border bg-surface-muted p-4"
+                >
+                  <div>
+                    <p className="font-semibold text-text-heading">{row.name}</p>
+                    <p className="mt-1 text-xs text-secondary">
+                      {PROGRAMME_KIND_LABELS[row.kind]} · {row.status}
+                      {row.unitId
+                        ? ` · Unit: ${unitNameById.get(row.unitId) ?? row.unitId}`
+                        : ''}
+                      {row.frequency ? ` · ${row.frequency.cadence}` : ''}
+                      {row.startDate || row.endDate
+                        ? ` · ${row.startDate || '—'} → ${row.endDate || '—'}`
+                        : ''}
+                    </p>
+                    {row.summary ? (
+                      <p className="mt-2 text-sm text-secondary">{row.summary}</p>
+                    ) : null}
+                  </div>
+                  <SecondaryButton type="button" onClick={() => openEditProgramme(row)}>
                     Edit
                   </SecondaryButton>
                 </li>
@@ -826,6 +1164,223 @@ export function AdminPlanningPage() {
               value={unitForm.placeAliases}
               onChange={(event) =>
                 setUnitForm((prev) => ({ ...prev, placeAliases: event.target.value }))
+              }
+            />
+          </div>
+        </ModalFormSection>
+      </Modal>
+
+      <Modal
+        isOpen={programmeModal != null}
+        title={programmeModal === 'edit' ? 'Edit Local Programme' : 'New Local Programme'}
+        onClose={closeProgrammeModal}
+        footer={
+          <ModalFormFooter
+            onCancel={closeProgrammeModal}
+            primaryLabel={programmeModal === 'edit' ? 'Save' : 'Create'}
+            onPrimaryClick={saveProgramme}
+            loading={busy}
+            primaryDisabled={busy || !programmeForm.name.trim() || !programmeCampaignId}
+            error={formError || undefined}
+          />
+        }
+      >
+        <ModalFormSection title="Details">
+          <p className="mb-3 text-sm text-secondary">
+            Campaign (locked): {programmeCampaign?.name ?? programmeCampaignId ?? '—'}
+          </p>
+          <ModalFormGrid>
+            <div>
+              <label className={labelClassName} htmlFor="programme-name">
+                Name
+              </label>
+              <input
+                id="programme-name"
+                className={inputClassName}
+                value={programmeForm.name}
+                onChange={(event) =>
+                  setProgrammeForm((prev) => ({ ...prev, name: event.target.value }))
+                }
+              />
+            </div>
+            <div>
+              <label className={labelClassName} htmlFor="programme-kind">
+                Kind
+              </label>
+              <select
+                id="programme-kind"
+                className={inputClassName}
+                value={programmeForm.kind}
+                onChange={(event) =>
+                  setProgrammeForm((prev) => ({
+                    ...prev,
+                    kind: event.target.value as ProgrammeKind,
+                  }))
+                }
+              >
+                {PROGRAMME_KIND_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className={labelClassName} htmlFor="programme-status">
+                Status
+              </label>
+              <select
+                id="programme-status"
+                className={inputClassName}
+                value={programmeForm.status}
+                onChange={(event) =>
+                  setProgrammeForm((prev) => ({
+                    ...prev,
+                    status: event.target.value as LocalProgrammeStatus,
+                  }))
+                }
+              >
+                <option value="draft">draft</option>
+                <option value="active">active</option>
+                <option value="archived">archived</option>
+              </select>
+            </div>
+            <div>
+              <label className={labelClassName} htmlFor="programme-unit">
+                Unit / Scope (optional)
+              </label>
+              <select
+                id="programme-unit"
+                className={inputClassName}
+                value={programmeForm.unitId}
+                onChange={(event) =>
+                  setProgrammeForm((prev) => ({ ...prev, unitId: event.target.value }))
+                }
+              >
+                <option value="">None</option>
+                {units.map((unit) => (
+                  <option key={unit.id} value={unit.id}>
+                    {unit.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className={labelClassName} htmlFor="programme-start">
+                Start date (optional)
+              </label>
+              <input
+                id="programme-start"
+                type="date"
+                className={inputClassName}
+                value={programmeForm.startDate}
+                onChange={(event) =>
+                  setProgrammeForm((prev) => ({ ...prev, startDate: event.target.value }))
+                }
+              />
+            </div>
+            <div>
+              <label className={labelClassName} htmlFor="programme-end">
+                End date (optional)
+              </label>
+              <input
+                id="programme-end"
+                type="date"
+                className={inputClassName}
+                value={programmeForm.endDate}
+                onChange={(event) =>
+                  setProgrammeForm((prev) => ({ ...prev, endDate: event.target.value }))
+                }
+              />
+            </div>
+            <div>
+              <label className={labelClassName} htmlFor="programme-frequency">
+                Frequency hint (optional)
+              </label>
+              <select
+                id="programme-frequency"
+                className={inputClassName}
+                value={programmeForm.frequencyCadence}
+                onChange={(event) =>
+                  setProgrammeForm((prev) => ({
+                    ...prev,
+                    frequencyCadence: event.target.value as ProgrammeFormState['frequencyCadence'],
+                  }))
+                }
+              >
+                <option value="">None</option>
+                <option value="weekly">weekly</option>
+                <option value="monthly">monthly</option>
+                <option value="once">once</option>
+                <option value="custom">custom</option>
+              </select>
+            </div>
+            {programmeForm.frequencyCadence === 'weekly' ? (
+              <div>
+                <label className={labelClassName} htmlFor="programme-dow">
+                  Day of week (0–6, optional)
+                </label>
+                <input
+                  id="programme-dow"
+                  className={inputClassName}
+                  value={programmeForm.frequencyDayOfWeek}
+                  onChange={(event) =>
+                    setProgrammeForm((prev) => ({
+                      ...prev,
+                      frequencyDayOfWeek: event.target.value,
+                    }))
+                  }
+                />
+              </div>
+            ) : null}
+            {programmeForm.frequencyCadence === 'monthly' ? (
+              <div>
+                <label className={labelClassName} htmlFor="programme-dom">
+                  Day of month (optional)
+                </label>
+                <input
+                  id="programme-dom"
+                  className={inputClassName}
+                  value={programmeForm.frequencyDayOfMonth}
+                  onChange={(event) =>
+                    setProgrammeForm((prev) => ({
+                      ...prev,
+                      frequencyDayOfMonth: event.target.value,
+                    }))
+                  }
+                />
+              </div>
+            ) : null}
+            {programmeForm.frequencyCadence === 'custom' ? (
+              <div>
+                <label className={labelClassName} htmlFor="programme-freq-note">
+                  Custom note (optional)
+                </label>
+                <input
+                  id="programme-freq-note"
+                  className={inputClassName}
+                  value={programmeForm.frequencyNote}
+                  onChange={(event) =>
+                    setProgrammeForm((prev) => ({
+                      ...prev,
+                      frequencyNote: event.target.value,
+                    }))
+                  }
+                />
+              </div>
+            ) : null}
+          </ModalFormGrid>
+          <div className="mt-4">
+            <label className={labelClassName} htmlFor="programme-summary">
+              Summary (optional)
+            </label>
+            <textarea
+              id="programme-summary"
+              className={inputClassName}
+              rows={3}
+              value={programmeForm.summary}
+              onChange={(event) =>
+                setProgrammeForm((prev) => ({ ...prev, summary: event.target.value }))
               }
             />
           </div>
