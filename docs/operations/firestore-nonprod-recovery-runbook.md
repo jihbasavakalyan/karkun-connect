@@ -3,6 +3,7 @@
 **Purpose:** Restore production backup artifacts into a **non-production** Firestore database for drills and validation.  
 **Tickets:** KC-027.1 (baseline paths) · **KC-027.2** (restore-target strategy, validation, acceptance, cleanup)  
 **Last updated:** 2026-08-12  
+**Certification:** **RECOVERY DRILL VERIFIED — NON-PRODUCTION PASS** (Path A live drill, 2026-08-12)  
 **Canonical collections/docs:** `src/repositories/firestore/collections.ts` only — do not invent names.
 
 ## Hard prohibitions
@@ -372,17 +373,98 @@ Sign-off:
 
 ---
 
-## Unresolved prerequisites (block live drill execution)
+## Completed live drill record (KC-027.2 — 2026-08-12)
 
-| Prerequisite | Status (as of KC-027.2 docs) | Blocks |
-|--------------|------------------------------|--------|
-| Confirm production `locationId` | TBD in baseline | Accurate backup resource paths |
-| Enable managed backup schedules | Ops (KC-027.1 §9) | Path A |
-| Enable PITR | Ops (KC-027.1 §9) | Path B |
+**Status:** **RECOVERY DRILL VERIFIED — NON-PRODUCTION PASS**
+
+Path A managed-backup restore into an isolated non-production database. Production `(default)` was not modified. Restore target remained isolated. Restore database was **not** deleted (retained for evidence).
+
+### Production (source)
+
+| Field | Verified value |
+|-------|----------------|
+| Database | `(default)` |
+| Location | `asia-south1` |
+
+### Managed backup (source artifact)
+
+| Field | Verified value |
+|-------|----------------|
+| Backup ID | `e58615a2-d8d7-428e-b5e5-55bf7b278f07` |
+| Snapshot | `2026-08-12T00:43:48.982318Z` |
+| State | READY |
+
+### Restore (destination)
+
+| Field | Verified value |
+|-------|----------------|
+| Target database | `kc0272-restore-20260812` |
+| Location | `asia-south1` |
+| Restore operation | SUCCESSFUL |
+| Source backup | `e58615a2-d8d7-428e-b5e5-55bf7b278f07` |
+
+> Note: Preferred naming remains `recovery-drill-YYYYMMDD`. This drill used `kc0272-restore-20260812` as the declared isolated destination ID (still ≠ `(default)`).
+
+### Validation (verified)
+
+| Check | Result |
+|-------|--------|
+| Expected collections present | **10/10** |
+| Document counts vs production | **Exact match** for all 10 collections |
+| Automated document-ID parity | **Zero** production-only and **zero** restore-only documents across all 10 collections |
+| `karkuns` | **678** production / **678** restored |
+| Production database modified? | **NO** |
+| Restore target isolated? | **YES** |
+
+### Remaining limitations
+
+- No application-level connectivity test against the restored database
+- No destructive production recovery performed
+- Field-level/byte-level equality was not independently established
+
+### Evidence template (filled)
+
+```text
+Drill ID: kc0272-restore-20260812
+Date (UTC): 2026-08-12
+Operator: Ops (KC-027.2 live drill)
+Ticket: KC-027.2
+Path (A/B/C): A
+Source (backup ID / export path / PITR timestamp): e58615a2-d8d7-428e-b5e5-55bf7b278f07 (snapshot 2026-08-12T00:43:48.982318Z, READY)
+Destination project: karkun-connect-75c68
+Destination database ID: kc0272-restore-20260812 (asia-south1)
+Pre-restore checklist (P1–P10): PASS
+P0 domains (rukns, karkuns, connections, campaigns, activityLogs, connectionLedger): PASS (included in 10/10)
+P1 domains (executions, followUps, compliance, settings): PASS (included in 10/10)
+P2 communications: PASS (included in 10/10)
+Count spot-checks (baseline → restored): exact match all 10; karkuns 678 → 678; document-ID parity zero deltas
+settings/karkunCounter present?: (covered by collection/doc parity — not separately re-tested at app layer)
+settings/migrationVersion present?: (covered by collection/doc parity — not separately re-tested at app layer)
+Preview URL (if used): N/A — no app connectivity test
+Preview project ID observed: N/A
+Production (default) modified? NO
+Cleanup: retained kc0272-restore-20260812 (explicit retain; do not delete without separate change control)
+Acceptance (AC-1…AC-7): PASS (AC-7 = retain-with-ticket; AC-6 N/A — no Preview)
+Issues: Remaining limitations — no app connectivity; no destructive prod recovery; no independent field/byte equality
+Sign-off: RECOVERY DRILL VERIFIED — NON-PRODUCTION PASS
+```
+
+---
+
+## Unresolved prerequisites (remaining after 2026-08-12 drill)
+
+| Prerequisite | Status (as of KC-027.2 drill) | Blocks |
+|--------------|-------------------------------|--------|
+| Confirm production `locationId` | **CONFIRMED** `asia-south1` | — |
+| Managed backup artifact available for Path A | **VERIFIED** (backup READY; restore SUCCESSFUL) | — |
+| Enable PITR | Ops (KC-027.1 §9) — still open | Path B |
 | Create GCS backup bucket + export | Ops (KC-027.1 §9) | Path C (unless one-shot export run under change control) |
 | Staging Firebase project + Preview env isolation | Ops | Path C Preview smoke |
+| Application-level connectivity test against restored DB | Not performed | App-boot confidence on restore DB |
+| Destructive production recovery | Out of scope / not performed | Production cutover |
+| Field-level / byte-level equality audit | Not independently established | Absolute content equality claims |
 
-This ticket **documents** readiness only — it does **not** enable the above.
+Live Path A **data-plane** drill is complete. Remaining rows above are optional Path B/C, app smoke, or production cutover — not required to hold the non-prod PASS certification.
 
 ---
 

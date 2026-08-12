@@ -4,6 +4,7 @@
 **Type:** Infrastructure / Operational Process (documentation)  
 **Standards:** KC-ARCH-009 · builds on KC-027.1  
 **Date:** 2026-08-12  
+**Certification:** **RECOVERY DRILL VERIFIED — NON-PRODUCTION PASS**  
 **Constraint:** No production Firestore changes. No backup schedule / PITR changes. No auth/rules/Connect/Assignment/app feature changes. Prefer docs/ops only. Do not invent collection names — use `src/repositories/firestore/collections.ts` only. Stop before deployment or production operations.
 
 ---
@@ -115,15 +116,25 @@
 | Item | Result |
 |------|--------|
 | `src/` changed? | **NO** |
-| GCP schedules/PITR/prod DB changed? | **NO** |
+| GCP schedules/PITR/prod DB changed by this ticket? | **NO** (drill restored to isolated non-prod DB only) |
 | Runbook expanded (strategy, validation, AC, cleanup)? | **YES** |
+| Live Path A non-prod drill executed? | **YES** — 2026-08-12 |
+| Production `(default)` modified? | **NO** |
 | `npm run verify:kc-027.1` | **PASS** |
 | `npm run verify:kc-027.2` | **PASS** |
 
 ## Phase 5 — Certification
 
-**READY WITH KNOWN LIMITATIONS** — non-prod drill procedure is documented and verifiable; live restore remains blocked until ops confirm `locationId`, managed backups, (optional) PITR, and GCS/staging prerequisites.
+**RECOVERY DRILL VERIFIED — NON-PRODUCTION PASS**
+
+Live Path A drill (2026-08-12): backup `e58615a2-d8d7-428e-b5e5-55bf7b278f07` → restore DB `kc0272-restore-20260812` (`asia-south1`); operation SUCCESSFUL; 10/10 collections present; exact document-count match; automated document-ID parity zero deltas; `karkuns` 678/678; production unmodified; restore target isolated.
+
+### Remaining limitations
+
+- No application-level connectivity test against the restored database
+- No destructive production recovery performed
+- Field-level/byte-level equality was not independently established
 
 ## Phase 6
 
-No deploy. No production operations.
+Non-production recovery drill verified (Path A). No production cutover. Restore database `kc0272-restore-20260812` retained (not deleted). No application deploy required for this documentation certification update.

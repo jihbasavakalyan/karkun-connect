@@ -1,9 +1,9 @@
 # KC-027.1 — Firestore Backup & Recovery Baseline
 
-**Status:** Baseline documentation (ops enablement required for live schedules)  
-**Ticket:** KC-027.1  
+**Status:** Baseline documentation + **KC-027.2 non-prod recovery drill verified** (2026-08-12)  
+**Ticket:** KC-027.1 (baseline) · KC-027.2 (non-prod drill)  
 **Standards:** KC-ARCH-009 · KC-0058 Data Preservation  
-**Last updated:** 2026-08-11
+**Last updated:** 2026-08-12
 
 This document is the operational-resilience foundation for Karkun Connect Firestore data. It does **not** change application workflows. It prefers Google-managed Firestore/GCP capabilities over any custom backup engine.
 
@@ -20,7 +20,7 @@ This document is the operational-resilience foundation for Karkun Connect Firest
 | Production app host | `https://karkun-connect.vercel.app` | `docs/release/VERSION-1.0.md` |
 | Auth | Firebase Auth (email/password + phone OTP) + custom claims | Auth architecture docs; not covered by Firestore backup restore of Auth users |
 | Recommended region | `asia-south1` (Mumbai) | Ops checklists (`firebase-production-audit.md`, `production-checklist.md`) |
-| Region confirmation | **Ops must confirm** via Console or CLI | Agent environment had no authenticated `gcloud` access during KC-027.1; do not assume until verified |
+| Region confirmation | **CONFIRMED** `asia-south1` | KC-027.2 live non-prod recovery drill 2026-08-12 |
 
 ### Confirm location (ops)
 
@@ -33,7 +33,7 @@ Record `locationId` here when confirmed:
 
 | Field | Confirmed value | Confirmed by | Date |
 |-------|-----------------|--------------|------|
-| `locationId` | _TBD — confirm before first restore drill_ | | |
+| `locationId` | `asia-south1` | KC-027.2 Path A recovery drill | 2026-08-12 |
 
 ### Environment isolation (hard rule)
 
@@ -222,7 +222,7 @@ Source of truth: `src/repositories/firestore/collections.ts` + architecture docs
 
 **KC-027.1 stop condition:** Practice recovery **only** into non-production databases. See [firestore-nonprod-recovery-runbook.md](./firestore-nonprod-recovery-runbook.md).
 
-**KC-027.2:** The runbook now defines restore-target strategy, pre/post verification, domain validation, acceptance criteria (AC-1…AC-7), and safe cleanup — still **no** production restore from documentation alone.
+**KC-027.2:** Runbook defines restore-target strategy, pre/post verification, domain validation, acceptance criteria (AC-1…AC-7), and safe cleanup. **Live Path A non-prod drill verified 2026-08-12** (backup `e58615a2-d8d7-428e-b5e5-55bf7b278f07` → `kc0272-restore-20260812`; 10/10 collection parity; production unmodified). Certification: **RECOVERY DRILL VERIFIED — NON-PRODUCTION PASS**. Production cutover remains out of scope.
 
 ---
 
@@ -266,14 +266,30 @@ Service account for scheduled export (example):
 
 | Step | Owner | Status |
 |------|-------|--------|
-| Confirm `locationId` for `(default)` | Ops | ☐ |
+| Confirm `locationId` for `(default)` | Ops | ☑ `asia-south1` (2026-08-12) |
 | Create GCS backup bucket + lifecycle | Ops | ☐ |
 | Enable PITR on `(default)` | Ops | ☐ |
-| Create daily + weekly backup schedules | Ops | ☐ |
+| Create daily + weekly backup schedules | Ops | ☐ (managed backup artifact READY used in drill; schedule IDs still to record) |
 | Configure scheduled GCS export | Ops | ☐ |
 | Assign IAM break-glass roles | Ops | ☐ |
-| Run **non-prod** recovery drill using runbook | Ops | ☐ |
-| Update this doc with confirmed location + schedule IDs | Ops | ☐ |
+| Run **non-prod** recovery drill using runbook | Ops | ☑ Path A PASS 2026-08-12 — see runbook drill record |
+| Update this doc with confirmed location + schedule IDs | Ops | ☑ location; ☐ schedule IDs |
+
+### KC-027.2 non-prod drill snapshot (verified)
+
+| Field | Value |
+|-------|-------|
+| Production database | `(default)` @ `asia-south1` |
+| Backup ID | `e58615a2-d8d7-428e-b5e5-55bf7b278f07` |
+| Snapshot | `2026-08-12T00:43:48.982318Z` |
+| Backup state | READY |
+| Restore target | `kc0272-restore-20260812` @ `asia-south1` |
+| Restore operation | SUCCESSFUL |
+| Validation | 10/10 collections; exact counts; document-ID parity zero deltas; `karkuns` 678/678 |
+| Production modified? | **NO** |
+| Certification | **RECOVERY DRILL VERIFIED — NON-PRODUCTION PASS** |
+
+Remaining limitations: no app connectivity test against restore DB; no destructive production recovery; field/byte-level equality not independently established. Restore DB retained (not deleted).
 
 ---
 
@@ -285,6 +301,7 @@ Service account for scheduled export (example):
 - [Data Preservation (KC-0058)](../architecture/DATA_PRESERVATION.md)
 - [Firestore architecture](../architecture/firestore.md)
 - [KC-027.1 ARCH-009 gate](../architecture/kc-027-1-arch009-gate.md)
+- [KC-027.2 ARCH-009 gate](../architecture/kc-027-2-arch009-gate.md)
 
 ### External references
 
