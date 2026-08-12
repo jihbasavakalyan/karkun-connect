@@ -109,6 +109,13 @@ export type CampaignListItem = {
   objectives: string[]
   nextMilestone: string
   motto?: string
+  /** Optional Phase 1 Meqati Mansooba link — additive; absent on legacy docs */
+  mansoobaId?: string
+  /**
+   * Optional Phase 1 Objective id links — references only.
+   * Not a dual-write of titles into `objectives[]` (copy remains separate).
+   */
+  objectiveIds?: string[]
 }
 
 export const MOCK_NEEDS_ATTENTION: NeedsAttentionSummary = {

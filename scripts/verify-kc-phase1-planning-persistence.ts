@@ -203,16 +203,20 @@ console.log('▶ bootstrap / hydrate remains non-critical')
   assertIncludes(backgroundBody, 'readPlanningCollectionsForClient()', 'planning in background')
 }
 
-console.log('▶ data isolation — people/campaign schemas untouched by planning')
+console.log('▶ data isolation — people untouched; Campaign FKs are references only')
 {
   const people = read('src/types/karkun-registry.types.ts')
   assertNotIncludes(people, 'unitId', 'no unitId on karkun registry')
   assertNotIncludes(people, 'mansoobaId', 'no mansoobaId on karkun registry')
 
   const campaignRepo = read('src/repositories/interfaces/CampaignRepository.ts')
-  assertNotIncludes(campaignRepo, 'mansoobaId', 'no campaign mansooba FK contract')
-  assertNotIncludes(campaignRepo, 'objectiveIds', 'no campaign objectiveIds contract')
-  assertNotIncludes(campaignRepo, 'saveDurable', 'campaign remains read-only interface')
+  assertNotIncludes(campaignRepo, 'saveDurable(', 'no full Campaign saveDurable')
+  assertIncludes(campaignRepo, 'savePlanningLinksDurable', 'planning links write path present')
+  assertIncludes(
+    campaignRepo,
+    'Must not synchronize Objective titles',
+    'Campaign planning links forbid Objective dual-write',
+  )
 
   const planningTypes = read('src/types/planning.types.ts')
   assertIncludes(planningTypes, 'No people unitId requirement', 'design isolation note')

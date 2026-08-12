@@ -25,6 +25,7 @@ import {
   query,
   runTransaction,
   serverTimestamp,
+  setDoc,
   where,
   type DocumentData,
   type Query,
@@ -84,6 +85,7 @@ import {
   commitBatchSetDocuments,
   createBatch,
   mapFirestoreError,
+  nowIso,
   readCollection,
   readDoc,
   removeDoc,
@@ -92,6 +94,7 @@ import {
   withMeta,
   writeDoc,
 } from '@/repositories/firestore/firestoreHelpers'
+import type { CampaignPlanningLinksPatch } from '@/repositories/interfaces/CampaignRepository'
 import {
   countPendingKarkunRequests,
   mergeKarkunRequestsById,
@@ -1508,6 +1511,86 @@ export class CampaignFirestoreRepository implements CampaignRepository {
 
   getActive(): RepositoryResult<CampaignListItem | undefined> {
     return repositoryOk(campaignCache.get().find((campaign) => campaign.id === ACTIVE_CAMPAIGN_ID))
+  }
+
+  /**
+   * Merge-only optional planning FKs. Uses setDoc({ merge: true }) — never writeDoc
+   * full replace — so existing Campaign required fields and copy stay intact.
+   */
+  async savePlanningLinksDurable(
+    links: CampaignPlanningLinksPatch,
+  ): Promise<RepositoryResult<CampaignListItem>> {
+    if (!links.id?.trim()) {
+      return repositoryErr('Validation', 'Campaign planning links require id.')
+    }
+    if (!('mansoobaId' in links) && !('objectiveIds' in links)) {
+      return repositoryErr(
+        'Validation',
+        'Campaign planning links require mansoobaId and/or objectiveIds.',
+      )
+    }
+
+    const current = campaignCache.get().find((campaign) => campaign.id === links.id)
+    if (!current) {
+      return repositoryErr('Validation', 'Campaign not found for planning links.')
+    }
+
+    const mergePayload: {
+      mansoobaId?: string
+      objectiveIds?: string[]
+    } = {}
+    if ('mansoobaId' in links) {
+      mergePayload.mansoobaId = links.mansoobaId
+    }
+    if ('objectiveIds' in links) {
+      mergePayload.objectiveIds = links.objectiveIds
+        ? [...links.objectiveIds]
+        : links.objectiveIds
+    }
+
+    try {
+      const db = getFirestoreDb()
+      await setDoc(
+        doc(db, FIRESTORE_COLLECTIONS.campaigns, links.id),
+        {
+          ...sanitizeForFirestore(mergePayload),
+          _updatedAt: nowIso(),
+          _serverTime: serverTimestamp(),
+        },
+        { merge: true },
+      )
+    } catch (error) {
+      console.error('[phase2] campaigns savePlanningLinksDurable failed', {
+        module: 'campaigns',
+        operation: 'savePlanningLinksDurable',
+        result: 'error',
+        id: links.id,
+        error,
+      })
+      return mapFirestoreError(error)
+    }
+
+    const next: CampaignListItem = {
+      ...current,
+      objectives: [...current.objectives],
+      ...mergePayload,
+    }
+    // SoT protection — never rewrite free-text objective copy from planning links.
+    next.objective = current.objective
+    next.objectives = [...current.objectives]
+
+    campaignCache.set(
+      campaignCache.get().map((campaign) => (campaign.id === links.id ? next : campaign)),
+    )
+    console.info('[phase2] campaigns savePlanningLinksDurable success', {
+      module: 'campaigns',
+      operation: 'savePlanningLinksDurable',
+      result: 'ok',
+      id: links.id,
+      mansoobaId: next.mansoobaId ?? null,
+      objectiveIdsCount: next.objectiveIds?.length ?? 0,
+    })
+    return repositoryOk(next)
   }
 }
 

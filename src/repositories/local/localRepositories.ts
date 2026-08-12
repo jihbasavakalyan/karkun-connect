@@ -26,9 +26,12 @@ import {
   saveJsonToStorage,
   saveMapToStorage,
 } from '@/lib/browserStorage'
-import { repositoryOk, tryRepository, type RepositoryResult } from '@/repositories/errors'
+import { repositoryErr, repositoryOk, tryRepository, type RepositoryResult } from '@/repositories/errors'
 import { STORAGE_KEYS } from '@/repositories/storageKeys'
-import type { CampaignRepository } from '@/repositories/interfaces/CampaignRepository'
+import type {
+  CampaignPlanningLinksPatch,
+  CampaignRepository,
+} from '@/repositories/interfaces/CampaignRepository'
 import type { RuknRepository } from '@/repositories/interfaces/RuknRepository'
 import type { KarkunRepository, KarkunRegistryState } from '@/repositories/interfaces/KarkunRepository'
 import type {
@@ -88,16 +91,68 @@ function normalizeJihPortalState(value: unknown): JihPortalState {
 let localAllocateChain: Promise<unknown> = Promise.resolve()
 
 export class CampaignLocalRepository implements CampaignRepository {
+  /** Mutable library seeded from mocks — planning FK merges must not mutate MOCK_CAMPAIGNS. */
+  private campaigns: CampaignListItem[]
+
+  constructor() {
+    this.campaigns = MOCK_CAMPAIGNS.map((campaign) => ({
+      ...campaign,
+      objectives: [...campaign.objectives],
+    }))
+  }
+
   getAll(): RepositoryResult<readonly CampaignListItem[]> {
-    return repositoryOk(MOCK_CAMPAIGNS)
+    return repositoryOk(this.campaigns)
   }
 
   getById(id: string): RepositoryResult<CampaignListItem | undefined> {
-    return repositoryOk(MOCK_CAMPAIGNS.find((campaign) => campaign.id === id))
+    return repositoryOk(this.campaigns.find((campaign) => campaign.id === id))
   }
 
   getActive(): RepositoryResult<CampaignListItem | undefined> {
-    return repositoryOk(MOCK_CAMPAIGNS.find((campaign) => campaign.id === ACTIVE_CAMPAIGN_ID))
+    return repositoryOk(this.campaigns.find((campaign) => campaign.id === ACTIVE_CAMPAIGN_ID))
+  }
+
+  async savePlanningLinksDurable(
+    links: CampaignPlanningLinksPatch,
+  ): Promise<RepositoryResult<CampaignListItem>> {
+    try {
+      if (!links.id?.trim()) {
+        return repositoryErr('Validation', 'Campaign planning links require id.')
+      }
+      if (!('mansoobaId' in links) && !('objectiveIds' in links)) {
+        return repositoryErr(
+          'Validation',
+          'Campaign planning links require mansoobaId and/or objectiveIds.',
+        )
+      }
+      const index = this.campaigns.findIndex((campaign) => campaign.id === links.id)
+      if (index < 0) {
+        return repositoryErr('Validation', 'Campaign not found for planning links.')
+      }
+      const current = this.campaigns[index]!
+      const next: CampaignListItem = {
+        ...current,
+        objectives: [...current.objectives],
+      }
+      if ('mansoobaId' in links) {
+        next.mansoobaId = links.mansoobaId
+      }
+      if ('objectiveIds' in links) {
+        next.objectiveIds = links.objectiveIds ? [...links.objectiveIds] : links.objectiveIds
+      }
+      // SoT protection — never rewrite free-text objective copy from planning links.
+      next.objective = current.objective
+      next.objectives = [...current.objectives]
+      this.campaigns = [
+        ...this.campaigns.slice(0, index),
+        next,
+        ...this.campaigns.slice(index + 1),
+      ]
+      return repositoryOk(next)
+    } catch (cause) {
+      return repositoryErr('StorageFailure', 'Local Campaign planning links save failed.', cause)
+    }
   }
 }
 

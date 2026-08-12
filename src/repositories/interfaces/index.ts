@@ -1,4 +1,4 @@
-export type { CampaignRepository } from './CampaignRepository'
+export type { CampaignRepository, CampaignPlanningLinksPatch } from './CampaignRepository'
 export type { RuknRepository } from './RuknRepository'
 export type { KarkunRepository, KarkunRegistryState } from './KarkunRepository'
 export type { ConnectionRepository, ConnectionState } from './ConnectionRepository'

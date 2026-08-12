@@ -200,9 +200,13 @@ console.log('▶ bootstrap / hydrate remains non-critical')
 console.log('▶ Campaign schema / objective isolation')
 {
   const campaignRepo = read('src/repositories/interfaces/CampaignRepository.ts')
-  assertNotIncludes(campaignRepo, 'mansoobaId', 'no campaign mansooba FK contract')
-  assertNotIncludes(campaignRepo, 'objectiveIds', 'no campaign objectiveIds contract')
-  assertNotIncludes(campaignRepo, 'saveDurable', 'campaign remains read-only interface')
+  assertIncludes(
+    campaignRepo,
+    'savePlanningLinksDurable',
+    'merge-only planning links write path',
+  )
+  assertNotIncludes(campaignRepo, 'saveDurable(', 'no full-document Campaign saveDurable')
+  assertIncludes(campaignRepo, 'Must not synchronize Objective titles', 'SoT protection note')
 
   const programmeTypes = read('src/types/localProgramme.types.ts')
   assertIncludes(programmeTypes, 'campaignId', 'programme requires campaignId')
