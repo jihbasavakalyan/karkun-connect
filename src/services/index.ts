@@ -152,3 +152,8 @@ export {
 export { getDeliverySummary } from './deliveryService'
 
 export { getNotificationRules, getRulesForTrigger } from './notificationService'
+export {
+  dispatchOccurrenceNotificationEvents,
+  evaluateOccurrenceNotificationCandidates,
+  mapOccurrenceToAutomationTrigger,
+} from '@/lib/occurrence/notifications'

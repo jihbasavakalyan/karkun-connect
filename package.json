@@ -166,6 +166,7 @@
     "verify:kc-phase2-campaign-planning-links": "npx vite-node scripts/verify-kc-phase2-campaign-planning-links.ts",
     "verify:kc-phase3-occurrence-foundation": "npx vite-node scripts/verify-kc-phase3-occurrence-foundation.ts",
     "verify:kc-phase3-occurrence-generation": "npx vite-node scripts/verify-kc-phase3-occurrence-generation.ts",
+    "verify:kc-phase3-occurrence-operations": "npx vite-node scripts/verify-kc-phase3-occurrence-operations.ts",
     "verify:kc-028b": "npx vite-node scripts/verify-kc-028b.ts",
     "verify:kc-028c": "npx vite-node scripts/verify-kc-028c-weekly-ijtema-window.ts",
     "verify:kc-bug-0130a": "npx vite-node scripts/verify-kc-bug-0130a-whatsapp-launch.ts",

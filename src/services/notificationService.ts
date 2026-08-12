@@ -4,6 +4,7 @@ import type { AutomationRule, AutomationTrigger } from '@/types/communication'
 /**
  * Sprint 17: event-driven notification dispatch.
  * Sprint 15: rule registry and architecture only.
+ * Phase 3 Occurrence evaluation: `@/lib/occurrence/notifications` (calls getRulesForTrigger).
  */
 export function getNotificationRules(): AutomationRule[] {
   return getAutomationRules()

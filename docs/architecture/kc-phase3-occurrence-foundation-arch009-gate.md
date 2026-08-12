@@ -6,7 +6,7 @@
 **Authority:** [Phase 0 — CERTIFIED](./kc-post-campaign-phase0-system-mapping.md) · [Phase 2 — CERTIFIED](./kc-phase2-local-programme-arch009-gate.md) · [Phase 2 product/data design](./kc-phase2-product-data-design.md)  
 **Date:** 2026-08-13  
 **This artifact:** ARCH-009 readiness gate for Phase 3 Occurrence foundation + generation horizon  
-**Implementation status:** Foundation COMPLETE (TASK-021 / TASK-022) · Generation horizon APPROVED (TASK-023)
+**Implementation status:** Foundation COMPLETE (TASK-021 / TASK-022) · Generation horizon APPROVED (TASK-023) · History / Calendar / Notifications COMPLETE (TASK-024–026) · Phase 3 CERTIFIED (TASK-027)
 
 ---
 
@@ -167,8 +167,8 @@ Reject “looks fixed.”
 
 ## After coding — Phases 4–6
 
-- **Phase 4:** Local Occurrence CRUD; recurrence resolve; generation within startDate–endDate; idempotent `generationKey`; WI schedule reuse for `weekly_ijtema`  
-- **Phase 5:** **READY WITH KNOWN LIMITATIONS** — no Admin Occurrence UI; no production scheduler/trigger; no composite indexes; no production / Vercel deploy  
+- **Phase 4:** Local Occurrence CRUD; recurrence resolve; generation within startDate–endDate; idempotent `generationKey`; WI schedule reuse for `weekly_ijtema`; history/calendar derived reads; notification evaluation hook  
+- **Phase 5:** **READY WITH KNOWN LIMITATIONS** — Admin Planning shows Occurrence calendar/history (derived); notification channel dispatch still stubbed (Sprint 17 / Phase 6); Work-linked pending/overdue/report triggers deferred until Phase 4 Work; no production scheduler; no composite indexes; no production / Vercel deploy  
 - **Phase 6:** N/A until production deploy authorised  
 
 ---
@@ -180,4 +180,19 @@ Reject “looks fixed.”
 | TASK-021 — Occurrence foundation | **COMPLETE** |
 | TASK-022 — Recurrence rules | **ABSORBED INTO TASK-021** |
 | TASK-023 — Generation | **COMPLETE** (horizon approved; callable generator; no scheduler) |
-| TASK-024 | NOT STARTED — STOP |
+| TASK-024 — Occurrence history | **COMPLETE** (canonical Occurrence reads; Planning UI) |
+| TASK-025 — Calendar | **COMPLETE** (derived from Occurrence; no calendar collection) |
+| TASK-026 — Notifications | **COMPLETE** (evaluate/dispatch hook via existing AutomationTrigger; Work categories deferred) |
+| TASK-027 — Phase 3 integration | **COMPLETE / PHASE 3 CERTIFIED** |
+
+---
+
+## PHASE 3 — CERTIFIED
+
+| Field | Value |
+|-------|-------|
+| Decision | **PHASE 3 — CERTIFIED** |
+| Date | 2026-08-13 |
+| Chain | Programme → Recurrence → Occurrence → History / Calendar / Notifications |
+| Verify | `verify:kc-phase3-occurrence-foundation` · `verify:kc-phase3-occurrence-generation` · `verify:kc-phase3-occurrence-operations` · `verify:kc-028c` |
+| Limitations | No durable notification inbox; no scheduler; Work-dependent trigger categories deferred; authenticated browser may be unverified without Admin credentials |

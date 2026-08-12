@@ -12,6 +12,8 @@ import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import { useAuth } from '@/hooks/useAuth'
 import { useBusyAction } from '@/hooks/useBusyAction'
 import type { CampaignListItem } from '@/constants/mockMissions'
+import { buildOccurrenceCalendar } from '@/lib/occurrence/calendar'
+import { listOccurrenceHistory } from '@/lib/occurrence/history'
 import { unwrapRepository } from '@/repositories/errors'
 import { getRepositories } from '@/repositories/provider'
 import { ACTIVE_CAMPAIGN_ID } from '@/types/assignment.types'
@@ -21,6 +23,7 @@ import type {
   ProgrammeFrequency,
   ProgrammeKind,
 } from '@/types/localProgramme.types'
+import type { Occurrence } from '@/types/occurrence.types'
 import type {
   MeqatiMansooba,
   MeqatiMansoobaStatus,
@@ -197,6 +200,8 @@ export function AdminPlanningPage() {
   const [units, setUnits] = useState<Unit[]>([])
   const [campaigns, setCampaigns] = useState<CampaignListItem[]>([])
   const [programmes, setProgrammes] = useState<LocalProgramme[]>([])
+  /** Phase 3 — canonical Occurrence rows (history / calendar consume these; no second SoT). */
+  const [occurrences, setOccurrences] = useState<Occurrence[]>([])
   const [selectedMansoobaId, setSelectedMansoobaId] = useState<string | null>(null)
   const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null)
   const [message, setMessage] = useState('')
@@ -233,11 +238,13 @@ export function AdminPlanningPage() {
     const nextUnits = [...unwrapRepository(repos.unit.loadAll(), [])]
     const nextCampaigns = [...unwrapRepository(repos.campaign.getAll(), [])]
     const nextProgrammes = [...unwrapRepository(repos.localProgramme.loadAll(), [])]
+    const nextOccurrences = [...unwrapRepository(repos.occurrence.loadAll(), [])]
     setMansoobas(nextMansoobas)
     setObjectives(nextObjectives)
     setUnits(nextUnits)
     setCampaigns(nextCampaigns)
     setProgrammes(nextProgrammes)
+    setOccurrences(nextOccurrences)
 
     setSelectedMansoobaId((current) => {
       if (current && nextMansoobas.some((row) => row.id === current)) return current
@@ -284,6 +291,33 @@ export function AdminPlanningPage() {
       .slice()
       .sort((a, b) => a.name.localeCompare(b.name))
   }, [programmes, selectedCampaignId])
+
+  const selectedProgrammeIds = useMemo(
+    () => new Set(selectedProgrammes.map((row) => row.id)),
+    [selectedProgrammes],
+  )
+
+  const programmeNameById = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const row of programmes) map.set(row.id, row.name)
+    return map
+  }, [programmes])
+
+  const campaignOccurrences = useMemo(
+    () => occurrences.filter((row) => selectedProgrammeIds.has(row.programmeId)),
+    [occurrences, selectedProgrammeIds],
+  )
+
+  const occurrenceCalendarEntries = useMemo(
+    () =>
+      buildOccurrenceCalendar(campaignOccurrences, {}, programmeNameById),
+    [campaignOccurrences, programmeNameById],
+  )
+
+  const occurrenceHistoryRows = useMemo(
+    () => listOccurrenceHistory(campaignOccurrences),
+    [campaignOccurrences],
+  )
 
   const unitNameById = useMemo(() => {
     const map = new Map<string, string>()
@@ -848,6 +882,76 @@ export function AdminPlanningPage() {
                 </li>
               ))}
             </ul>
+          )}
+        </section>
+
+        <section className="rounded-(--radius-card) border border-border bg-surface p-5 shadow-card">
+          <div>
+            <h2 className="text-lg font-semibold text-text-heading">
+              Occurrence calendar &amp; history
+            </h2>
+            <p className="mt-1 text-sm text-secondary">
+              Derived from durable Occurrence records under this Campaign&apos;s Local
+              Programmes. Calendar and history share one source of truth — no duplicate
+              event store.
+            </p>
+          </div>
+
+          {!selectedCampaignId ? (
+            <p className="mt-4 text-sm text-secondary">No Campaign selected.</p>
+          ) : campaignOccurrences.length === 0 ? (
+            <p className="mt-4 text-sm text-secondary">
+              No Occurrences for these Local Programmes yet. Generate or create
+              Occurrences to populate calendar and history.
+            </p>
+          ) : (
+            <div className="mt-4 grid gap-6 lg:grid-cols-2">
+              <div>
+                <h3 className="text-sm font-semibold text-text-heading">Calendar</h3>
+                <ul className="mt-2 max-h-72 space-y-2 overflow-y-auto">
+                  {occurrenceCalendarEntries.map((entry) => (
+                    <li
+                      key={entry.occurrenceId}
+                      className="rounded-lg border border-border bg-surface-muted px-3 py-2"
+                    >
+                      <p className="text-sm font-medium text-text-heading">
+                        {entry.occurrenceDate}
+                        {entry.title ? ` · ${entry.title}` : ''}
+                      </p>
+                      <p className="mt-0.5 text-xs text-secondary">
+                        {(entry.programmeName ?? entry.programmeId) +
+                          ` · ${entry.status}` +
+                          (entry.openTime && entry.closeTime
+                            ? ` · ${entry.openTime}–${entry.closeTime}`
+                            : '') +
+                          (entry.audienceGender ? ` · ${entry.audienceGender}` : '')}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-text-heading">History</h3>
+                <ul className="mt-2 max-h-72 space-y-2 overflow-y-auto">
+                  {occurrenceHistoryRows.map((row) => (
+                    <li
+                      key={row.id}
+                      className="rounded-lg border border-border bg-surface-muted px-3 py-2"
+                    >
+                      <p className="text-sm font-medium text-text-heading">
+                        {row.occurrenceDate}
+                        {row.title ? ` · ${row.title}` : ''}
+                      </p>
+                      <p className="mt-0.5 text-xs text-secondary">
+                        {(programmeNameById.get(row.programmeId) ?? row.programmeId) +
+                          ` · ${row.status}` +
+                          ` · ${row.generationKey}`}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
           )}
         </section>
 
