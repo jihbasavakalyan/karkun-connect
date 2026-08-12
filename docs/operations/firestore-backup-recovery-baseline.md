@@ -228,6 +228,8 @@ Source of truth: `src/repositories/firestore/collections.ts` + architecture docs
 
 **KC-027.4:** Operational monitoring/alerting **policy** (Stage A) lives in [firestore-backup-recovery-monitoring.md](./firestore-backup-recovery-monitoring.md). Thresholds are **our** ops policy, not a Google SLA. Live probe/notify (Stages B/C) deferred.
 
+**KC-027.5:** Production DR evidence reconciled from **gcloud read-only** inspection (2026-08-12): PITR enabled; daily schedule ID recorded; weekly **NOT OBSERVED**. See health card.
+
 ---
 
 ## 7. Required IAM permissions
@@ -272,12 +274,31 @@ Service account for scheduled export (example):
 |------|-------|--------|
 | Confirm `locationId` for `(default)` | Ops | ☑ `asia-south1` (2026-08-12) |
 | Create GCS backup bucket + lifecycle | Ops | ☐ |
-| Enable PITR on `(default)` | Ops | ☐ |
-| Create daily + weekly backup schedules | Ops | ☐ (managed backup artifact READY used in drill; schedule IDs still to record) |
+| Enable PITR on `(default)` | Ops | ☑ `POINT_IN_TIME_RECOVERY_ENABLED` (gcloud read-only, 2026-08-12 / KC-027.5) |
+| Create daily + weekly backup schedules | Ops | ☑ daily `013be81e-21d8-4d7b-a94f-8251414d4adc` (retention observed 98d); ☐ weekly **NOT OBSERVED** — do not claim implemented |
 | Configure scheduled GCS export | Ops | ☐ |
 | Assign IAM break-glass roles | Ops | ☐ |
 | Run **non-prod** recovery drill using runbook | Ops | ☑ Path A PASS 2026-08-12 — see runbook drill record |
-| Update this doc with confirmed location + schedule IDs | Ops | ☑ location; ☐ schedule IDs |
+| Update this doc with confirmed location + schedule IDs | Ops | ☑ location + daily schedule ID (KC-027.5); weekly still gap |
+
+### KC-027.5 production evidence reconciliation (gcloud read-only, 2026-08-12)
+
+| Field | Value |
+|-------|-------|
+| Production database | `(default)` @ `asia-south1` |
+| PITR | `POINT_IN_TIME_RECOVERY_ENABLED` |
+| Daily schedule ID | `013be81e-21d8-4d7b-a94f-8251414d4adc` |
+| Daily retention (observed) | `8467200s` = 98 days |
+| Weekly schedule | **NOT OBSERVED / GAP** |
+| Backup ID | `e58615a2-d8d7-428e-b5e5-55bf7b278f07` |
+| Snapshot | `2026-08-12T00:43:48.982318Z` |
+| Expiry | `2026-11-18T00:43:48.982318Z` |
+| Restore target | `kc0272-restore-20260812` |
+| Restore operation | SUCCESSFUL |
+| Certification | **RECOVERY DRILL VERIFIED — NON-PRODUCTION PASS** |
+| Ops posture | Operationally healthy for PITR + daily + READY backup; weekly is a configuration/design gap only |
+
+Canonical health card: [firestore-backup-recovery-health.md](./firestore-backup-recovery-health.md).
 
 ### KC-027.2 non-prod drill snapshot (verified)
 
@@ -293,7 +314,7 @@ Service account for scheduled export (example):
 | Production modified? | **NO** |
 | Certification | **RECOVERY DRILL VERIFIED — NON-PRODUCTION PASS** |
 
-Remaining limitations: no app connectivity test against restore DB; no destructive production recovery; field/byte-level equality not independently established. Restore DB retained (not deleted).
+Remaining limitations: no app connectivity test against restore DB; no destructive production recovery; field/byte-level equality not independently established; weekly schedule not observed. Restore DB retained (not deleted).
 
 ---
 
@@ -310,6 +331,7 @@ Remaining limitations: no app connectivity test against restore DB; no destructi
 - [KC-027.2 ARCH-009 gate](../architecture/kc-027-2-arch009-gate.md)
 - [KC-027.3 ARCH-009 gate](../architecture/kc-027-3-arch009-gate.md)
 - [KC-027.4 ARCH-009 gate](../architecture/kc-027-4-arch009-gate.md)
+- [KC-027.5 ARCH-009 gate](../architecture/kc-027-5-arch009-gate.md)
 
 ### External references
 

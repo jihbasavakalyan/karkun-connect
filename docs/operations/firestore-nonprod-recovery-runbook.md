@@ -457,7 +457,8 @@ Sign-off: RECOVERY DRILL VERIFIED — NON-PRODUCTION PASS
 |--------------|-------------------------------|--------|
 | Confirm production `locationId` | **CONFIRMED** `asia-south1` | — |
 | Managed backup artifact available for Path A | **VERIFIED** (backup READY; restore SUCCESSFUL) | — |
-| Enable PITR | Ops (KC-027.1 §9) — still open | Path B |
+| Enable PITR | **CONFIRMED** `POINT_IN_TIME_RECOVERY_ENABLED` (KC-027.5 gcloud read-only) | — |
+| Weekly managed backup schedule | **NOT OBSERVED / GAP** (daily only) | Optional design preference — do not invent |
 | Create GCS backup bucket + export | Ops (KC-027.1 §9) | Path C (unless one-shot export run under change control) |
 | Staging Firebase project + Preview env isolation | Ops | Path C Preview smoke |
 | Application-level connectivity test against restored DB | Not performed | App-boot confidence on restore DB |
@@ -476,6 +477,7 @@ Live Path A **data-plane** drill is complete. Remaining rows above are optional 
 - [KC-027.2 ARCH-009 gate](../architecture/kc-027-2-arch009-gate.md)
 - [KC-027.3 ARCH-009 gate](../architecture/kc-027-3-arch009-gate.md)
 - [KC-027.4 ARCH-009 gate](../architecture/kc-027-4-arch009-gate.md)
+- [KC-027.5 ARCH-009 gate](../architecture/kc-027-5-arch009-gate.md)
 - [KC-027.1 ARCH-009 gate](../architecture/kc-027-1-arch009-gate.md)
 - [Recovery Guide](./recovery-guide.md)
 - [Backup Guide](./backup-guide.md)

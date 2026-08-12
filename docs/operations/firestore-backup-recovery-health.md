@@ -3,7 +3,7 @@
 **Ticket:** KC-027.3  
 **Type:** Architecture / Operational Process (curated health contract)  
 **Last updated:** 2026-08-12  
-**Mode:** **Curated ops snapshot** — not a live GCP poll. Values below are verified evidence or explicit `unknown`.
+**Mode:** **Curated ops snapshot** — not a live continuous poll. Values below are verified evidence from **gcloud read-only inspection** (KC-027.5) and the KC-027.2 drill, or explicit gaps.
 
 This document is the **canonical Backup/Recovery Health** contract for operators. It exposes GCP managed disaster-recovery posture. It does **not** describe in-app JSON / browser migration backups.
 
@@ -75,9 +75,10 @@ Every field that can be live-checked must carry an explicit `healthState` and `v
 
 | Meta | Value |
 |------|-------|
-| **asOf** | `2026-08-12T00:00:00.000Z` (ops card date; drill evidence from same calendar day) |
-| **source** | `curated-ops-snapshot` |
-| **Live poll?** | **NO** — curated documentation only |
+| **asOf** | `2026-08-12` (KC-027.5 reconciliation) |
+| **source** | `curated-ops-snapshot` — **gcloud read-only inspection** (2026-08-12) + KC-027.2 drill |
+| **Live poll / automation?** | **NO** — curated documentation only (not Stage B probe) |
+| **Overall posture (ops)** | Backup protection is **operationally healthy** based on verified PITR, daily managed backup schedule, and latest READY backup. **Weekly schedule remains an identified configuration/design gap and is not represented as implemented.** |
 
 ### Production database
 
@@ -86,38 +87,42 @@ Every field that can be live-checked must carry an explicit `healthState` and `v
 | Project | `karkun-connect-75c68` | `verified` |
 | Database | `(default)` | `verified` |
 | Location | `asia-south1` | `verified` |
-| verificationTimestamp | `2026-08-12` (KC-027.2 drill) | |
+| verificationTimestamp | `2026-08-12` (gcloud read-only + KC-027.2) | |
 
 ### PITR
 
 | Field | Value |
 |-------|-------|
-| status | **unknown** (ops enablement checklist still open — not claimed enabled) |
-| retention (when enabled) | **7 days** (Google platform fixed window — design target from baseline) |
-| healthState | `unknown` |
-| verificationTimestamp | _n/a — not yet CLI/Console confirmed for this health card_ |
+| status | **POINT_IN_TIME_RECOVERY_ENABLED** |
+| retention (platform) | **7 days** (Google fixed window when enabled) |
+| healthState | `verified` |
+| verificationTimestamp | `2026-08-12` (gcloud `databases describe`, read-only) |
+| Evidence source | gcloud read-only inspection |
 
 ### Managed scheduled backups
 
 | Field | Value |
 |-------|-------|
-| configured | **unknown** (schedule IDs not recorded; a READY backup artifact existed for the drill) |
-| schedules | Target design: daily **14d** + weekly **14w** (baseline). **Schedule IDs: not recorded.** |
-| healthState | `unknown` |
-| verificationTimestamp | _n/a — `backups schedules list` not certified into this card_ |
+| configured (daily) | **yes** |
+| Daily schedule ID | `013be81e-21d8-4d7b-a94f-8251414d4adc` |
+| Daily retention (observed) | `8467200s` = **98 days** (platform/observed fact; baseline *design target* remains 14d — not mutated) |
+| Weekly schedule | **NOT OBSERVED / GAP** — `schedules list` showed daily only; do **not** claim weekly exists |
+| healthState (daily) | `verified` |
+| healthState (weekly) | `unknown` (gap — design preference in baseline; not mandatory Path A failure) |
+| verificationTimestamp | `2026-08-12` (gcloud `backups schedules list`, read-only) |
 | next execution time | **Not claimed** — do not invent |
 
-### Latest READY backup (verified artifact used in KC-027.2)
+### Latest READY backup
 
 | Field | Value |
 |-------|-------|
 | Backup ID | `e58615a2-d8d7-428e-b5e5-55bf7b278f07` |
 | State | `READY` |
 | Snapshot | `2026-08-12T00:43:48.982318Z` |
-| Expiry | `unknown` (not recorded in drill evidence) |
+| Expiry | `2026-11-18T00:43:48.982318Z` |
 | healthState | `verified` |
-| verificationTimestamp | `2026-08-12` (KC-027.2 Path A drill) |
-| Note | This is the backup used for the verified restore. It is **not** asserted as “still the newest READY backup in GCP” without a fresh list. |
+| verificationTimestamp | `2026-08-12` (gcloud `backups list`, read-only) |
+| Backup age (as of reconciliation day 2026-08-12) | Same calendar day as snapshot → **well under 36h** → KC-027.4 age signal **`healthy`** (OUR policy thresholds; not a Google SLA) |
 
 ### Latest verified restore
 
@@ -142,22 +147,27 @@ Every field that can be live-checked must carry an explicit `healthState` and `v
 | Path | A (managed backup → new non-prod database) |
 | healthState | `verified` |
 | verificationTimestamp | `2026-08-12` |
+| Drill freshness (KC-027.4) | Same day as reconciliation → **`healthy`** (warning only if &gt; 90d) |
 
-### Known limitations
+### Known limitations / gaps
 
+- Weekly managed backup schedule **not observed** (configuration/design gap; not implemented)
 - No application-level connectivity test against the restored database
 - No destructive production recovery performed
 - No field-level / byte-level equality verification
+- GCS export / bucket still unset (KC-027.4: warning only, not Path A failure)
+- This card is curated evidence — not continuous live automation (Stage B/C deferred)
+- A READY backup alone is not proof of ongoing recovery capability without drill freshness + schedule posture
 
 ---
 
 ## Acquisition boundary
 
-| Now (KC-027.3 / KC-027.4 Stage A) | Later (Stage B/C — separate GO) |
-|----------------------------------|----------------------------------|
+| Now (KC-027.3 / KC-027.5 curated card; KC-027.4 Stage A policy) | Later (Stage B/C — separate GO) |
+|---------------------------------------------------------------|----------------------------------|
 | Ops updates this curated snapshot after CLI/Console checks and drills | Optional **server-side**, **Admin-authenticated**, **read-only**, least-privilege probe |
 | Monitoring/alerting **policy** in [firestore-backup-recovery-monitoring.md](./firestore-backup-recovery-monitoring.md) | Notification channel wiring (Stage C) |
-| `verify:kc-027.3` / `verify:kc-027.4` assert docs — **do not call GCP** | Must never expose credentials/tokens to the browser |
+| `verify:kc-027.3` … `verify:kc-027.5` assert docs — **do not call GCP** | Must never expose credentials/tokens to the browser |
 | No restore / delete / import in any health/monitor path | Health payload: IDs, timestamps, booleans, states only — **no PII / document contents** |
 
 Documented ops probes (read-only; operator workstation — not the web app):
@@ -190,5 +200,6 @@ After each successful probe or drill, update this card’s fields, `healthState`
 - [Backup/Recovery Monitoring (KC-027.4)](./firestore-backup-recovery-monitoring.md)
 - [KC-027.3 ARCH-009 gate](../architecture/kc-027-3-arch009-gate.md)
 - [KC-027.4 ARCH-009 gate](../architecture/kc-027-4-arch009-gate.md)
+- [KC-027.5 ARCH-009 gate](../architecture/kc-027-5-arch009-gate.md)
 - [Backup Guide](./backup-guide.md)
 - [Known Limitations](./known-limitations.md) (KL-D04)

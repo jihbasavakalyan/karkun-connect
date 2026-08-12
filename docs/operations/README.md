@@ -28,7 +28,7 @@ Operational documentation for deploying and running Karkun Connect in production
 | [Backup Guide](backup-guide.md) | Export, restore, retention |
 | [Firestore Backup & Recovery Baseline (KC-027.1)](firestore-backup-recovery-baseline.md) | Managed backups, PITR, IAM, production inventory |
 | [Non-Prod Firestore Recovery Runbook (KC-027.1 / KC-027.2)](firestore-nonprod-recovery-runbook.md) | Restore-target strategy, validation, acceptance, cleanup — **RECOVERY DRILL VERIFIED — NON-PRODUCTION PASS** (Path A, 2026-08-12) |
-| [Firestore Backup/Recovery Health (KC-027.3)](firestore-backup-recovery-health.md) | Canonical curated health contract — PITR, schedules, latest READY backup, verified restore, drill cert (not Settings “Backup Status”) |
+| [Firestore Backup/Recovery Health (KC-027.3 / KC-027.5)](firestore-backup-recovery-health.md) | Canonical curated health contract — PITR + daily schedule **verified** (KC-027.5); weekly **NOT OBSERVED**; drill PASS |
 | [Firestore Backup/Recovery Monitoring (KC-027.4)](firestore-backup-recovery-monitoring.md) | Stage A ops monitoring/alerting policy — thresholds, composite severity, incident mapping (not live automation) |
 | [Monitoring](monitoring.md) | Logging and alerting recommendations |
 | [Performance Review](performance-review.md) | Firestore and listener audit |

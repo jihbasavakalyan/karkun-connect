@@ -157,19 +157,26 @@ gcloud firestore backups list --database='(default)'
 
 ## Current evidence snapshot (curated — not a live poll)
 
+**Evidence source:** gcloud read-only inspection (2026-08-12) + KC-027.2 drill.  
+**KC-027.4 thresholds unchanged.**
+
 | Field | Value |
 |-------|-------|
-| Production database | `(default)` |
-| Location | `asia-south1` |
-| Latest READY backup (drill artifact) | `e58615a2-d8d7-428e-b5e5-55bf7b278f07` |
+| Production database | `(default)` @ `asia-south1` |
+| PITR | `POINT_IN_TIME_RECOVERY_ENABLED` — **verified** |
+| Daily schedule ID | `013be81e-21d8-4d7b-a94f-8251414d4adc` — **verified** |
+| Daily retention (observed) | `8467200s` = 98 days |
+| Weekly schedule | **NOT OBSERVED / GAP** (daily only in `schedules list`) |
+| Latest READY backup | `e58615a2-d8d7-428e-b5e5-55bf7b278f07` |
 | Snapshot | `2026-08-12T00:43:48.982318Z` |
-| Restore target | `kc0272-restore-20260812` |
-| Restore result | `SUCCESSFUL` |
+| Expiry | `2026-11-18T00:43:48.982318Z` |
+| Backup age (as of 2026-08-12) | &lt; 36h → **`healthy`** per KC-027.4 (OUR policy) |
+| Restore target | `kc0272-restore-20260812` — `SUCCESSFUL` |
 | KC-027.2 certification | **RECOVERY DRILL VERIFIED — NON-PRODUCTION PASS** |
-| Monitor source | Curated ops evidence (KC-027.2 / KC-027.3) — **not** live automation |
-| Open gaps (score carefully) | PITR status `unknown`; schedule IDs not recorded; GCS unset |
+| Overall (ops wording) | Backup protection is **operationally healthy** based on verified PITR, daily managed backup schedule, and latest READY backup. Weekly schedule remains an identified configuration gap and is **not** represented as implemented. |
+| Remaining gaps | Weekly schedule; GCS export; no app connectivity on restore DB; no destructive prod recovery; no field/byte equality; no Stage B/C automation |
 
-A READY backup and a successful drill prove **past** restoreability for that artifact. Ongoing posture still requires schedule existence + fresh READY backups per thresholds above.
+A READY backup and a successful drill prove **past** restoreability for that artifact. Ongoing posture still requires schedule existence + fresh READY backups per KC-027.4 thresholds.
 
 ---
 
@@ -177,13 +184,15 @@ A READY backup and a successful drill prove **past** restoreability for that art
 
 | Prerequisite | Blocks |
 |--------------|--------|
-| PITR enablement confirmed (if policy requires) | Honest PITR scoring |
-| Daily (+ weekly) schedule IDs recorded | Schedule-existence alerts without `unknown` |
+| Weekly schedule (optional design preference — **not** mutate in KC-027.5) | Close weekly **NOT OBSERVED** gap if product decides weekly is required |
+| GCS export / bucket | Cross-project / archive Path C |
 | Least-privilege read-only SA for list/describe | Stage B probe |
 | Confirmed Admin API / client surface (do not assume `firebase-admin` covers backups) | Stage B code |
 | Notification channel (email / Cloud Monitoring / ops pager) | Stage C |
 | Scheduler (Cloud Scheduler / Vercel cron / equivalent) | Automated cadence |
 | Change control for production IAM | Any automation |
+
+PITR and **daily** schedule ID are **reconciled verified** (KC-027.5) — no longer Stage B blockers for those signals.
 
 ---
 
@@ -195,3 +204,4 @@ A READY backup and a successful drill prove **past** restoreability for that art
 - [Monitoring](./monitoring.md)
 - [Incident Response](./incident-response.md)
 - [KC-027.4 ARCH-009 gate](../architecture/kc-027-4-arch009-gate.md)
+- [KC-027.5 ARCH-009 gate](../architecture/kc-027-5-arch009-gate.md)
