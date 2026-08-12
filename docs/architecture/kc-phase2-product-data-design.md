@@ -1,9 +1,9 @@
 # KC Phase 2 — Product / Data Design
 
-**Status:** DESIGN ONLY — not implemented  
-**Authority:** [Phase 0 — CERTIFIED](./kc-post-campaign-phase0-system-mapping.md) · [Phase 1 — CERTIFIED FOR DEVELOPMENT BASELINE](./kc-phase1-product-data-design.md) · Frozen post-campaign architecture · [KC-ARCH-009](./kc-arch-009-feature-impact.md) · [KC-ARCH-001](./kc-arch-001-reliability-persistence.md)  
+**Status:** DESIGN ONLY — not implemented · [ARCH-009 Phase 2 gate: GO](./kc-phase2-local-programme-arch009-gate.md)  
+**Authority:** [Phase 0 — CERTIFIED](./kc-post-campaign-phase0-system-mapping.md) · [Phase 1 — CERTIFIED FOR DEVELOPMENT BASELINE](./kc-phase1-product-data-design.md) · Frozen post-campaign architecture · [KC-ARCH-009](./kc-arch-009-feature-impact.md) · [KC-ARCH-001](./kc-arch-001-reliability-persistence.md) · [ARCH-009 Phase 2 gate](./kc-phase2-local-programme-arch009-gate.md)  
 **Scope of this document:** Campaign → Local Programme  
-**Does not authorize:** code, Firestore collections, migrations, UI, repositories, indexes, or deploy
+**Does not authorize:** code, Firestore collections, migrations, UI, repositories, indexes, or deploy from this design alone — implementation requires the ARCH-009 GO and follow-on tickets
 
 Label every item below as **DESIGN DECISION** (locked for later implementation), **IMPLEMENTATION TASK** (belongs to ARCH-009 + coding tickets), or **PRODUCT DECISION** (cannot be closed from frozen architecture alone).
 
@@ -308,8 +308,8 @@ Phase 0 deferred decision **A** (Rukn Ijtema Present/Absent) remains Phase 5 —
 
 | Step | Kind | Work |
 |------|------|------|
-| **TASK-012** | DESIGN (this doc) | Product/data design — **complete when accepted** |
-| **Next** | ARCH-009 gate | Impact Matrix, HIGH risks, plan, verification, Go/No-Go for Phase 2 implementation |
+| **TASK-012** | DESIGN (this doc) | Product/data design — **complete** |
+| **TASK-013** | ARCH-009 gate | [GO](./kc-phase2-local-programme-arch009-gate.md) — Impact Matrix, HIGH risks, plan, verification |
 | **Then** | IMPLEMENTATION | Types + `LocalProgrammeRepository` (+ local/Firestore) |
 | **Then** | IMPLEMENTATION | Collection `localProgrammes` + Admin-only `firestore.rules` (+ indexes if queried) together |
 | **Then** | IMPLEMENTATION | Optional additive Campaign fields + extend Campaign write path if Admin linking is in scope |
@@ -318,7 +318,7 @@ Phase 0 deferred decision **A** (Rukn Ijtema Present/Absent) remains Phase 5 —
 
 **IMPLEMENTATION TASK (later phases):** Occurrence generation (Phase 3); wrap WI/BM under programme/occurrence; Work / Responsibility (Phase 4).
 
-**DESIGN DECISION:** Until ARCH-009 for Phase 2 says GO, no Phase 2 code, collections, or UI.
+**DESIGN DECISION:** ARCH-009 for Phase 2 is **GO** (`kc-phase2-local-programme-arch009-gate.md`). Phase 2 code may begin only under follow-on implementation tickets with HIGH-risk mitigations; no production deploy until implementation Phase 5 READY.
 
 ---
 
@@ -382,6 +382,7 @@ Do not expand ARCH-009 into Occurrence, Work, Responsibility, reporting, or KC-0
 | Collections created | None |
 | Production | Unchanged |
 | Architecture conflicts found | **None** (Campaign → Local Programme aligns with TASK-012 approved direction and Phase 0 REUSE+REPOSITION / INTRODUCE dispositions) |
-| Next gate | ARCH-009 for Phase 2 implementation (separate ticket) |
+| ARCH-009 gate | **GO** — see `kc-phase2-local-programme-arch009-gate.md` |
+| Next | TASK-014 — types + repository interfaces (local-first); not authorized by design doc alone |
 
-**Stop:** Do not begin Phase 2 implementation from this document alone. Do not start ARCH-009 from this task.
+**Stop:** Do not begin Phase 2 implementation from this design document alone — follow the ARCH-009 GO conditions and implementation ticket sequence.
