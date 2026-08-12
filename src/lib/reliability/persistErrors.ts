@@ -26,6 +26,7 @@ const LABEL_HINTS: Record<string, string> = {
   'executions.annexure': 'Visit / annexure progress could not be saved.',
   'settings.karkunRequests': 'New Karkun request could not be saved.',
   communications: 'Communication state could not be saved.',
+  assignmentReviews: 'Assignment review could not be saved.',
   followUps: 'Follow-up records could not be saved.',
   connections: 'Connection changes could not be saved.',
   karkuns: 'Karkun registry changes could not be saved.',

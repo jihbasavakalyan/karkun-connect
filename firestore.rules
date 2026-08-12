@@ -119,6 +119,51 @@ service cloud.firestore {
       allow delete: if isAdministrator();
     }
 
+    /**
+     * TD-04 / KC-032 P1 — assignment review requests (one doc per review).
+     * Pending locks use doc id pending_{karkunId} with _docType == 'pendingLock'.
+     * Rukn: create/read own (ruknId); cannot resolve. Admin: read all + resolve.
+     * Delete denied for review docs; Admin may delete pending-lock only.
+     */
+    function isAssignmentReviewPendingLock() {
+      return resource.data.keys().hasAll(['_docType'])
+        && resource.data._docType == 'pendingLock';
+    }
+
+    function isAssignmentReviewPendingLockCreate() {
+      return request.resource.data.keys().hasAll(['_docType', 'karkunId', 'ruknId', 'reviewId'])
+        && request.resource.data._docType == 'pendingLock';
+    }
+
+    function isAssignmentReviewCreate() {
+      return request.resource.data.keys().hasAll(['id', 'karkunId', 'ruknId', 'status'])
+        && request.resource.data.id == reviewId
+        && request.resource.data.status == 'Pending'
+        && (
+          !request.resource.data.keys().hasAll(['_docType'])
+          || request.resource.data._docType != 'pendingLock'
+        );
+    }
+
+    match /assignmentReviews/{reviewId} {
+      allow read: if isAdministrator() || assignedToRukn(resource.data);
+
+      allow create: if isAdministrator()
+        || (isRukn()
+          && request.resource.data.ruknId == ruknId()
+          && (isAssignmentReviewCreate() || isAssignmentReviewPendingLockCreate()));
+
+      allow update: if isAdministrator()
+        && !isAssignmentReviewPendingLock()
+        && resource.data.status == 'Pending'
+        && request.resource.data.status == 'Resolved'
+        && request.resource.data.id == resource.data.id
+        && request.resource.data.ruknId == resource.data.ruknId
+        && request.resource.data.karkunId == resource.data.karkunId;
+
+      allow delete: if isAdministrator() && isAssignmentReviewPendingLock();
+    }
+
     match /communications/{docId} {
       allow read, write: if isAdministrator();
     }

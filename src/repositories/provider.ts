@@ -9,6 +9,7 @@ import type {
   SettingsRepository,
 } from '@/repositories/interfaces'
 import type { ConnectionLedgerRepository } from '@/repositories/interfaces/ConnectionLedgerRepository'
+import type { AssignmentReviewRepository } from '@/repositories/interfaces/AssignmentReviewRepository'
 import { isFirebaseConfigured } from '@/lib/firebase/firebase'
 import {
   CampaignLocalRepository,
@@ -21,6 +22,7 @@ import {
   SettingsLocalRepository,
 } from '@/repositories/local/localRepositories'
 import { ConnectionLedgerLocalRepository } from '@/repositories/local/connectionLedgerLocalRepository'
+import { AssignmentReviewLocalRepository } from '@/repositories/local/assignmentReviewLocalRepository'
 import {
   CampaignFirestoreRepository,
   CommunicationFirestoreRepository,
@@ -32,6 +34,7 @@ import {
   SettingsFirestoreRepository,
 } from '@/repositories/firestore/firestoreRepositories'
 import { ConnectionLedgerFirestoreRepository } from '@/repositories/firestore/connectionLedgerFirestoreRepository'
+import { AssignmentReviewFirestoreRepository } from '@/repositories/firestore/assignmentReviewFirestoreRepository'
 
 export type RepositoryBundle = {
   campaign: CampaignRepository
@@ -39,6 +42,7 @@ export type RepositoryBundle = {
   karkun: KarkunRepository
   connection: ConnectionRepository
   connectionLedger: ConnectionLedgerRepository
+  assignmentReview: AssignmentReviewRepository
   execution: ExecutionRepository
   communication: CommunicationRepository
   compliance: ComplianceRepository
@@ -54,6 +58,7 @@ function createLocalRepositories(): RepositoryBundle {
     karkun: new KarkunLocalRepository(),
     connection: new ConnectionLocalRepository(),
     connectionLedger: new ConnectionLedgerLocalRepository(),
+    assignmentReview: new AssignmentReviewLocalRepository(),
     execution: new ExecutionLocalRepository(),
     communication: new CommunicationLocalRepository(),
     compliance: new ComplianceLocalRepository(),
@@ -68,6 +73,7 @@ function createFirestoreRepositories(): RepositoryBundle {
     karkun: new KarkunFirestoreRepository(),
     connection: new ConnectionFirestoreRepository(),
     connectionLedger: new ConnectionLedgerFirestoreRepository(),
+    assignmentReview: new AssignmentReviewFirestoreRepository(),
     execution: new ExecutionFirestoreRepository(),
     communication: new CommunicationFirestoreRepository(),
     compliance: new ComplianceFirestoreRepository(),

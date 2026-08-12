@@ -13,6 +13,8 @@ export const FIRESTORE_COLLECTIONS = {
   followUps: 'followUps',
   /** KC-0058 — append-only connection lifecycle history */
   connectionLedger: 'connectionLedger',
+  /** TD-04 / KC-032 P1 — durable assignment review requests (one doc per review) */
+  assignmentReviews: 'assignmentReviews',
 } as const
 
 export const FIRESTORE_DOCS = {
@@ -72,4 +74,12 @@ export function settingsBroadcastDocId(listId: string): string {
 
 export function executionAnnexureDocId(formId: string): string {
   return `annexure_${formId}`
+}
+
+/**
+ * TD-04 — pending-lock doc id for one Pending review per karkun.
+ * Stored in `assignmentReviews` alongside review docs (`_docType: 'pendingLock'`).
+ */
+export function assignmentReviewPendingLockDocId(karkunId: string): string {
+  return `pending_${karkunId}`
 }

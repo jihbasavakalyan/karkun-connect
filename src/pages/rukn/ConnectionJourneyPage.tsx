@@ -104,6 +104,7 @@ export function ConnectionJourneyPage() {
   const [reviewError, setReviewError] = useState('')
   const [reviewNotice, setReviewNotice] = useState('')
   const [conversionBusy, setConversionBusy] = useState(false)
+  const [reviewBusy, setReviewBusy] = useState(false)
 
   useEffect(() => {
     if (location.hash !== '#visit-details') return
@@ -545,16 +546,16 @@ export function ConnectionJourneyPage() {
           isOpen={reviewOpen}
           karkunName={karkun.name}
           onClose={() => {
-            if (conversionBusy) return
+            if (conversionBusy || reviewBusy) return
             setReviewOpen(false)
           }}
           error={reviewError}
           allowConvertToMuttafiq={getPersonCategory(karkun) === 'Karkun'}
-          confirmBusy={conversionBusy}
+          confirmBusy={conversionBusy || reviewBusy}
           onConfirm={(action: RequestReviewModalAction, notes: string) => {
             if (!authRuknId) return
             if (action === 'Convert to Muttafiq') {
-              if (conversionBusy) return
+              if (conversionBusy || reviewBusy) return
               setConversionBusy(true)
               setReviewError('')
               void (async () => {
@@ -576,19 +577,29 @@ export function ConnectionJourneyPage() {
               })()
               return
             }
-            const result = submitAssignmentReviewRequest({
-              karkunId: karkun.id,
-              ruknId: authRuknId,
-              reason: action,
-              notes,
-              createdBy: user?.displayName ?? user?.uid ?? 'Rukn',
-            })
-            if (!result.ok) {
-              setReviewError(result.error)
-              return
-            }
-            setReviewOpen(false)
-            setReviewNotice('Review request sent to Administrator. Ownership is unchanged.')
+            if (conversionBusy || reviewBusy) return
+            setReviewBusy(true)
+            setReviewError('')
+            setReviewNotice('')
+            void (async () => {
+              try {
+                const result = await submitAssignmentReviewRequest({
+                  karkunId: karkun.id,
+                  ruknId: authRuknId,
+                  reason: action,
+                  notes,
+                  createdBy: user?.displayName ?? user?.uid ?? 'Rukn',
+                })
+                if (!result.ok) {
+                  setReviewError(result.error)
+                  return
+                }
+                setReviewOpen(false)
+                setReviewNotice('Review request sent to Administrator. Ownership is unchanged.')
+              } finally {
+                setReviewBusy(false)
+              }
+            })()
           }}
         />
       )}

@@ -1,22 +1,26 @@
 /**
  * Assignment review request service (KC-008) — Rukn submits, Admin decides.
+ * TD-04 Pass A/B — durable create/resolve; await before success; CAS + ordered resolve.
  */
 
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { getRuknById } from '@/data/ruknMaster'
 import { getGuidanceForRuknKarkuns } from '@/lib/guidance/guidanceEngine'
 import { getRuknJourneyStageLabel } from '@/lib/ruknProgressPresentation'
+import { FRIENDLY_DATA_ACCESS_ERROR } from '@/repositories/errors'
+import { toOperatorPersistError } from '@/lib/reliability/persistErrors'
 import { getSubmittedMeetingForms } from '@/stores/annexure1Store'
 import { getCommunicationHistory } from '@/stores/communicationStore'
 import { getActiveAssignmentsForKarkun } from '@/stores/assignmentStore'
 import { logActivity } from '@/stores/activityLogStore'
 import {
-  appendAssignmentReviewRequest,
+  appendAssignmentReviewRequestDurable,
   getPendingAssignmentReviewRequests,
   getPendingReviewForKarkun,
   getAllAssignmentReviewRequests,
-  resolveAssignmentReviewRequest,
+  resolveAssignmentReviewRequestDurable,
   subscribeToAssignmentReviewStore,
+  syncAssignmentReviewStoreFromServer,
 } from '@/stores/assignmentReviewStore'
 import type {
   AssignmentReviewDecision,
@@ -24,6 +28,17 @@ import type {
   AssignmentReviewRequest,
   AssignmentReviewSnapshot,
 } from '@/types/assignmentReview.types'
+
+/** Operator copy when CAS loses to another Admin resolve. */
+export const ASSIGNMENT_REVIEW_ALREADY_RESOLVED_ERROR =
+  'Another administrator already resolved this review. Refresh to see the latest status.'
+
+/**
+ * Operator copy when connection/assignment mutation succeeded but durable review
+ * resolve failed — Admin must retry resolve only (do not re-run the mutation).
+ */
+export const ASSIGNMENT_REVIEW_RESOLVE_AFTER_CONNECTION_ERROR =
+  'The connection change was saved, but marking the review resolved failed. Tap Retry to finish without repeating the connection change.'
 
 function buildSnapshot(karkunId: string, ruknId: string): AssignmentReviewSnapshot {
   const karkun = getKarkunById(karkunId)
@@ -46,13 +61,44 @@ function buildSnapshot(karkunId: string, ruknId: string): AssignmentReviewSnapsh
   }
 }
 
-export function submitAssignmentReviewRequest(input: {
+function mapPersistFailure(error: unknown): string {
+  if (error && typeof error === 'object' && 'code' in error) {
+    const code = String((error as { code?: unknown }).code ?? '')
+    const message = error instanceof Error ? error.message : ''
+    if (code === 'Duplicate') {
+      return message || 'A review request is already pending for this Karkun.'
+    }
+    if (code === 'Validation' || code === 'AlreadyResolved') {
+      return ASSIGNMENT_REVIEW_ALREADY_RESOLVED_ERROR
+    }
+    if (code === 'NotFound') {
+      return message || 'Pending review request not found.'
+    }
+  }
+  const mapped = toOperatorPersistError('assignmentReviews', error)
+  // KC-ARCH-001 — never surface the optional-read friendly string for write failures.
+  if (mapped === FRIENDLY_DATA_ACCESS_ERROR) {
+    return toOperatorPersistError('assignmentReviews', {
+      code: 'Unexpected',
+      message: 'Assignment review could not be saved.',
+    })
+  }
+  return mapped
+}
+
+export type DecideAssignmentReviewResult =
+  | { ok: true; request: AssignmentReviewRequest }
+  | { ok: false; error: string; code?: 'already_resolved' | 'persist' | 'not_found' }
+
+export async function submitAssignmentReviewRequest(input: {
   karkunId: string
   ruknId: string
   reason: AssignmentReviewReason
   notes?: string
   createdBy?: string
-}): { ok: true; request: AssignmentReviewRequest } | { ok: false; error: string } {
+}): Promise<{ ok: true; request: AssignmentReviewRequest } | { ok: false; error: string }> {
+  await syncAssignmentReviewStoreFromServer()
+
   if (getPendingReviewForKarkun(input.karkunId)) {
     return {
       ok: false,
@@ -79,7 +125,7 @@ export function submitAssignmentReviewRequest(input: {
 
   const createdBy = input.createdBy?.trim() || rukn.name
   const now = new Date().toISOString()
-  const request = appendAssignmentReviewRequest({
+  const draft: AssignmentReviewRequest = {
     id: `review-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
     karkunId: karkun.id,
     karkunName: karkun.name,
@@ -94,49 +140,76 @@ export function submitAssignmentReviewRequest(input: {
     createdAt: now,
     updatedAt: now,
     createdBy,
-  })
+  }
 
-  logActivity({
-    type: 'complete',
-    message: `Review requested for ${karkun.name} by ${rukn.name}: ${input.reason}`,
-    ruknId: rukn.id,
-    karkunId: karkun.id,
-    assignmentId: assignment.assignmentId,
-    actor: createdBy,
-    severity: 'IMPORTANT',
-  })
+  try {
+    const request = await appendAssignmentReviewRequestDurable(draft)
 
-  return { ok: true, request }
+    logActivity({
+      type: 'complete',
+      message: `Review requested for ${karkun.name} by ${rukn.name}: ${input.reason}`,
+      ruknId: rukn.id,
+      karkunId: karkun.id,
+      assignmentId: assignment.assignmentId,
+      actor: createdBy,
+      severity: 'IMPORTANT',
+    })
+
+    return { ok: true, request }
+  } catch (error) {
+    return { ok: false, error: mapPersistFailure(error) }
+  }
 }
 
-export function decideAssignmentReviewRequest(input: {
+export async function decideAssignmentReviewRequest(input: {
   requestId: string
   decision: AssignmentReviewDecision
   decidedBy: string
   decisionNotes?: string
-}): { ok: true; request: AssignmentReviewRequest } | { ok: false; error: string } {
-  const resolved = resolveAssignmentReviewRequest(
-    input.requestId,
-    input.decision,
-    input.decidedBy,
-    input.decisionNotes,
-  )
+}): Promise<DecideAssignmentReviewResult> {
+  try {
+    // Multi-Admin: refresh before CAS so local cache is not the sole gate.
+    await syncAssignmentReviewStoreFromServer()
 
-  if (!resolved) {
-    return { ok: false, error: 'Pending review request not found.' }
+    const resolved = await resolveAssignmentReviewRequestDurable(
+      input.requestId,
+      input.decision,
+      input.decidedBy,
+      input.decisionNotes,
+    )
+
+    logActivity({
+      type: 'complete',
+      message: `Review ${input.decision.toLowerCase()} for ${resolved.karkunName} (${resolved.ruknName})`,
+      ruknId: resolved.ruknId,
+      karkunId: resolved.karkunId,
+      assignmentId: resolved.assignmentId,
+      actor: input.decidedBy,
+      severity: input.decision === 'Reject' || input.decision === 'Continue' ? 'INFO' : 'IMPORTANT',
+    })
+
+    return { ok: true, request: resolved }
+  } catch (error) {
+    const code =
+      error && typeof error === 'object' && 'code' in error
+        ? String((error as { code?: unknown }).code)
+        : ''
+    if (code === 'Validation' || code === 'AlreadyResolved') {
+      return {
+        ok: false,
+        error: ASSIGNMENT_REVIEW_ALREADY_RESOLVED_ERROR,
+        code: 'already_resolved',
+      }
+    }
+    if (code === 'NotFound') {
+      return {
+        ok: false,
+        error: mapPersistFailure(error),
+        code: 'not_found',
+      }
+    }
+    return { ok: false, error: mapPersistFailure(error), code: 'persist' }
   }
-
-  logActivity({
-    type: 'complete',
-    message: `Review ${input.decision.toLowerCase()} for ${resolved.karkunName} (${resolved.ruknName})`,
-    ruknId: resolved.ruknId,
-    karkunId: resolved.karkunId,
-    assignmentId: resolved.assignmentId,
-    actor: input.decidedBy,
-    severity: input.decision === 'Reject' || input.decision === 'Continue' ? 'INFO' : 'IMPORTANT',
-  })
-
-  return { ok: true, request: resolved }
 }
 
 export {

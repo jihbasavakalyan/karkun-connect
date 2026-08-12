@@ -39,6 +39,7 @@ export function ConnectedKarkunCard({ karkun, ruknId, visitPath }: ConnectedKark
   const [scheduleOpen, setScheduleOpen] = useState(false)
   const [scheduleNotice, setScheduleNotice] = useState('')
   const [conversionBusy, setConversionBusy] = useState(false)
+  const [reviewBusy, setReviewBusy] = useState(false)
 
   void version
   const guidance = getKarkunGuidance(karkun.id)
@@ -93,19 +94,30 @@ export function ConnectedKarkunCard({ karkun, ruknId, visitPath }: ConnectedKark
       return
     }
 
-    const result = submitAssignmentReviewRequest({
-      karkunId: karkun.id,
-      ruknId,
-      reason: action,
-      notes,
-    })
-    if (!result.ok) {
-      setReviewError(result.error)
-      return
-    }
-    setReviewError('')
-    setReviewOpen(false)
-    setReviewNotice('Review request sent to Administrator. Ownership is unchanged.')
+    if (reviewBusy || conversionBusy) return
+
+    void (async () => {
+      setReviewBusy(true)
+      setReviewError('')
+      setReviewNotice('')
+      try {
+        const result = await submitAssignmentReviewRequest({
+          karkunId: karkun.id,
+          ruknId,
+          reason: action,
+          notes,
+        })
+        if (!result.ok) {
+          setReviewError(result.error)
+          return
+        }
+        setReviewError('')
+        setReviewOpen(false)
+        setReviewNotice('Review request sent to Administrator. Ownership is unchanged.')
+      } finally {
+        setReviewBusy(false)
+      }
+    })()
   }
 
   const canRequestConversion = getPersonCategory(karkun) === 'Karkun'
@@ -225,13 +237,13 @@ export function ConnectedKarkunCard({ karkun, ruknId, visitPath }: ConnectedKark
         isOpen={reviewOpen}
         karkunName={karkun.name}
         onClose={() => {
-          if (conversionBusy) return
+          if (conversionBusy || reviewBusy) return
           setReviewOpen(false)
         }}
         onConfirm={handleRequestReview}
         error={reviewError}
         allowConvertToMuttafiq={canRequestConversion}
-        confirmBusy={conversionBusy}
+        confirmBusy={conversionBusy || reviewBusy}
       />
 
       <SchedulePickerModal

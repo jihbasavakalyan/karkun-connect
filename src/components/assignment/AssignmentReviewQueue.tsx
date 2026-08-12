@@ -1,6 +1,7 @@
 /**
  * Admin queue for Rukn-submitted assignment review requests (KC-008).
  * Ownership changes remain Admin-controlled; Continue/Reject only close the request.
+ * TD-04 Pass B — durable resolve after connection mutations; retry resolve-only on persist fail.
  */
 
 import { useEffect, useState } from 'react'
@@ -12,6 +13,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { changeKarkunRuknAssignment } from '@/lib/assignmentEngine'
 import {
+  ASSIGNMENT_REVIEW_RESOLVE_AFTER_CONNECTION_ERROR,
   decideAssignmentReviewRequest,
   getPendingAssignmentReviewRequests,
   subscribeToAssignmentReviewStore,
@@ -22,6 +24,12 @@ import type { AssignmentReviewDecision, AssignmentReviewRequest } from '@/types/
 
 type FollowUpAction = 'transfer' | 'replace' | null
 
+/** Connection/assignment already applied; only durable review resolve remains. */
+type ResolveAfterConnectionRetry = {
+  request: AssignmentReviewRequest
+  decision: Extract<AssignmentReviewDecision, 'Transfer' | 'Replace' | 'Release'>
+}
+
 export function AssignmentReviewQueue() {
   const { user } = useAuth()
   const { removeAssignment, assignmentVersion } = useAssignmentEngine()
@@ -31,6 +39,8 @@ export function AssignmentReviewQueue() {
   const [notice, setNotice] = useState('')
   const [activeRequest, setActiveRequest] = useState<AssignmentReviewRequest | null>(null)
   const [followUp, setFollowUp] = useState<FollowUpAction>(null)
+  const [busyRequestId, setBusyRequestId] = useState<string | null>(null)
+  const [resolveRetry, setResolveRetry] = useState<ResolveAfterConnectionRetry | null>(null)
 
   useEffect(() => {
     return subscribeToAssignmentReviewStore(() => setTick((value) => value + 1))
@@ -42,11 +52,11 @@ export function AssignmentReviewQueue() {
   const decidedBy: 'Administrator' = 'Administrator'
   const decidedByLabel = user?.displayName ?? user?.uid ?? 'Administrator'
 
-  const recordDecision = (
+  const recordDecision = async (
     request: AssignmentReviewRequest,
     decision: AssignmentReviewDecision,
-  ) => {
-    const result = decideAssignmentReviewRequest({
+  ): Promise<boolean> => {
+    const result = await decideAssignmentReviewRequest({
       requestId: request.id,
       decision,
       decidedBy: decidedByLabel,
@@ -54,48 +64,106 @@ export function AssignmentReviewQueue() {
     })
     if (!result.ok) {
       setError(result.error)
+      setNotice('')
       return false
     }
     setError('')
+    setResolveRetry(null)
     return true
+  }
+
+  const markConnectionThenResolveFailed = (
+    request: AssignmentReviewRequest,
+    decision: ResolveAfterConnectionRetry['decision'],
+  ) => {
+    setResolveRetry({ request, decision })
+    setError(ASSIGNMENT_REVIEW_RESOLVE_AFTER_CONNECTION_ERROR)
+    setNotice('')
+  }
+
+  const handleRetryResolveAfterConnection = () => {
+    if (!resolveRetry || busyRequestId) return
+    const { request, decision } = resolveRetry
+    setBusyRequestId(request.id)
+    void (async () => {
+      try {
+        if (!(await recordDecision(request, decision))) return
+        setNotice(
+          decision === 'Release'
+            ? `Released ${request.karkunName} from ${request.ruknName}.`
+            : decision === 'Transfer'
+              ? `Transferred ${request.karkunName} to the selected Rukn.`
+              : `Replaced Karkun for ${request.ruknName}.`,
+        )
+        setActiveRequest(null)
+        setFollowUp(null)
+      } finally {
+        setBusyRequestId(null)
+      }
+    })()
   }
 
   const handleContinueOrReject = (
     request: AssignmentReviewRequest,
     decision: 'Continue' | 'Reject',
   ) => {
-    if (!recordDecision(request, decision)) return
-    setNotice(
-      decision === 'Continue'
-        ? `Continue with ${request.ruknName} for ${request.karkunName}.`
-        : `Review request rejected for ${request.karkunName}.`,
-    )
+    if (busyRequestId) return
+    setBusyRequestId(request.id)
+    setNotice('')
+    setResolveRetry(null)
+    void (async () => {
+      try {
+        if (!(await recordDecision(request, decision))) return
+        setNotice(
+          decision === 'Continue'
+            ? `Continue with ${request.ruknName} for ${request.karkunName}.`
+            : `Review request rejected for ${request.karkunName}.`,
+        )
+      } finally {
+        setBusyRequestId(null)
+      }
+    })()
   }
 
   const handleRelease = async (request: AssignmentReviewRequest) => {
-    const result = await removeAssignment({
-      ruknId: request.ruknId,
-      karkunId: request.karkunId,
-      effectiveFrom: new Date().toISOString().slice(0, 10),
-      removalReason: 'Other',
-      remarks: notesById[request.id] || `Release after review: ${request.reason}`,
-      assignedBy: decidedBy,
-    })
-    if (!result.success) {
-      setError(result.error)
-      return
+    if (busyRequestId) return
+    setBusyRequestId(request.id)
+    setNotice('')
+    setResolveRetry(null)
+    try {
+      const result = await removeAssignment({
+        ruknId: request.ruknId,
+        karkunId: request.karkunId,
+        effectiveFrom: new Date().toISOString().slice(0, 10),
+        removalReason: 'Other',
+        remarks: notesById[request.id] || `Release after review: ${request.reason}`,
+        assignedBy: decidedBy,
+      })
+      if (!result.success) {
+        setError(result.error)
+        setNotice('')
+        return
+      }
+      // TD-04 ordering: connection mutation succeeded — now durable resolve.
+      if (!(await recordDecision(request, 'Release'))) {
+        markConnectionThenResolveFailed(request, 'Release')
+        return
+      }
+      setNotice(`Released ${request.karkunName} from ${request.ruknName}.`)
+    } finally {
+      setBusyRequestId(null)
     }
-    if (!recordDecision(request, 'Release')) return
-    setNotice(`Released ${request.karkunName} from ${request.ruknName}.`)
   }
 
   const openFollowUp = (request: AssignmentReviewRequest, action: FollowUpAction) => {
+    if (busyRequestId) return
     setActiveRequest(request)
     setFollowUp(action)
     setError('')
+    setResolveRetry(null)
   }
 
-  if (pending.length === 0 && !notice) {
+  if (pending.length === 0 && !notice && !error && !resolveRetry) {
     return null
   }
 
@@ -112,9 +180,21 @@ export function AssignmentReviewQueue() {
         </p>
       ) : null}
       {error ? (
-        <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
-          {error}
-        </p>
+        <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+          <p>{error}</p>
+          {resolveRetry ? (
+            <div className="mt-2">
+              <SecondaryButton
+                type="button"
+                className="min-h-10 px-3 py-2 text-sm"
+                disabled={busyRequestId === resolveRetry.request.id}
+                onClick={handleRetryResolveAfterConnection}
+              >
+                Retry mark resolved
+              </SecondaryButton>
+            </div>
+          ) : null}
+        </div>
       ) : null}
 
       {pending.length === 0 ? (
@@ -181,6 +261,7 @@ export function AssignmentReviewQueue() {
                 <PrimaryButton
                   type="button"
                   className="min-h-10 px-3 py-2 text-sm"
+                  disabled={busyRequestId === request.id}
                   onClick={() => handleContinueOrReject(request, 'Continue')}
                 >
                   Continue
@@ -188,6 +269,7 @@ export function AssignmentReviewQueue() {
                 <SecondaryButton
                   type="button"
                   className="min-h-10 px-3 py-2 text-sm"
+                  disabled={Boolean(busyRequestId)}
                   onClick={() => openFollowUp(request, 'transfer')}
                 >
                   Transfer
@@ -195,6 +277,7 @@ export function AssignmentReviewQueue() {
                 <SecondaryButton
                   type="button"
                   className="min-h-10 px-3 py-2 text-sm"
+                  disabled={Boolean(busyRequestId)}
                   onClick={() => openFollowUp(request, 'replace')}
                 >
                   Replace
@@ -202,13 +285,15 @@ export function AssignmentReviewQueue() {
                 <SecondaryButton
                   type="button"
                   className="min-h-10 px-3 py-2 text-sm"
-                  onClick={() => handleRelease(request)}
+                  disabled={busyRequestId === request.id}
+                  onClick={() => void handleRelease(request)}
                 >
                   Release
                 </SecondaryButton>
                 <SecondaryButton
                   type="button"
                   className="min-h-10 px-3 py-2 text-sm"
+                  disabled={busyRequestId === request.id}
                   onClick={() => handleContinueOrReject(request, 'Reject')}
                 >
                   Reject
@@ -230,6 +315,10 @@ export function AssignmentReviewQueue() {
             setFollowUp(null)
           }}
           onSubmit={(input) => {
+            if (busyRequestId) return
+            setBusyRequestId(activeRequest.id)
+            setNotice('')
+            setResolveRetry(null)
             void (async () => {
               try {
                 const result = await changeKarkunRuknAssignment(
@@ -244,14 +333,22 @@ export function AssignmentReviewQueue() {
                 )
                 if (!result.success) {
                   setError(result.error || 'Transfer failed. Please try again.')
+                  setNotice('')
                   return
                 }
-                if (!recordDecision(activeRequest, 'Transfer')) return
+                // TD-04 ordering: connection mutation succeeded — now durable resolve.
+                if (!(await recordDecision(activeRequest, 'Transfer'))) {
+                  markConnectionThenResolveFailed(activeRequest, 'Transfer')
+                  return
+                }
                 setNotice(`Transferred ${activeRequest.karkunName} to the selected Rukn.`)
                 setActiveRequest(null)
                 setFollowUp(null)
               } catch (err) {
                 setError(err instanceof Error ? err.message : 'Transfer failed unexpectedly.')
+                setNotice('')
+              } finally {
+                setBusyRequestId(null)
               }
             })()
           }}
@@ -269,10 +366,24 @@ export function AssignmentReviewQueue() {
             setFollowUp(null)
           }}
           onComplete={() => {
-            recordDecision(activeRequest, 'Replace')
-            setNotice(`Replaced Karkun for ${activeRequest.ruknName}.`)
-            setActiveRequest(null)
-            setFollowUp(null)
+            // ReplaceKarkunModal calls onComplete only after connection mutation succeeds.
+            if (busyRequestId) return
+            setBusyRequestId(activeRequest.id)
+            setNotice('')
+            setResolveRetry(null)
+            void (async () => {
+              try {
+                if (!(await recordDecision(activeRequest, 'Replace'))) {
+                  markConnectionThenResolveFailed(activeRequest, 'Replace')
+                  return
+                }
+                setNotice(`Replaced Karkun for ${activeRequest.ruknName}.`)
+                setActiveRequest(null)
+                setFollowUp(null)
+              } finally {
+                setBusyRequestId(null)
+              }
+            })()
           }}
         />
       ) : null}

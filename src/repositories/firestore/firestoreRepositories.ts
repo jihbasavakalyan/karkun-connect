@@ -112,6 +112,13 @@ import {
 } from '@/lib/debug/kc00584PermissionProbe'
 import { kc004cTraceRegistry } from '@/lib/debug/kc004cRegistryTrace'
 import { markStartupLifecycle } from '@/lib/startupLifecycleTrace'
+import type { AssignmentReviewRequest } from '@/types/assignmentReview.types'
+import {
+  applyAssignmentReviewHydrate,
+  readAssignmentReviewsForClient,
+  resetAssignmentReviewCacheForTests,
+  subscribeAssignmentReviewCache,
+} from '@/repositories/firestore/assignmentReviewFirestoreRepository'
 
 type ConnectionMetaDoc = {
   nextSequence?: number
@@ -741,6 +748,7 @@ function applyBackgroundHydratePayload(input: {
    * soft-read separately. Full settings collection getDocs was a verified duplicate.
    */
   karkunRequestsDoc: { requests?: NewKarkunRequest[] } | null
+  assignmentReviews: AssignmentReviewRequest[]
 }): void {
   const {
     activityLogs,
@@ -750,6 +758,7 @@ function applyBackgroundHydratePayload(input: {
     complianceSnapshots,
     migrationVersion,
     karkunRequestsDoc,
+    assignmentReviews,
   } = input
 
   activityLogCache.set(activityLogs)
@@ -844,6 +853,7 @@ function applyBackgroundHydratePayload(input: {
     ? karkunRequestsDoc.requests
     : []
   karkunRequestCache.set(karkunRequests)
+  applyAssignmentReviewHydrate(assignmentReviews)
 }
 
 function markConnectionRepositoriesLoading(caller: string): void {
@@ -1001,6 +1011,7 @@ function readBackgroundHydratePayload(db: ReturnType<typeof getFirestoreDb>) {
       FIRESTORE_COLLECTIONS.settings,
       FIRESTORE_DOCS.karkunRequests,
     ),
+    readAssignmentReviewsForClient(),
   ]).then(
     ([
       activityLogs,
@@ -1010,6 +1021,7 @@ function readBackgroundHydratePayload(db: ReturnType<typeof getFirestoreDb>) {
       complianceSnapshots,
       migrationVersion,
       karkunRequestsDoc,
+      assignmentReviews,
     ]) => ({
       activityLogs,
       executionSnapshots,
@@ -1018,6 +1030,7 @@ function readBackgroundHydratePayload(db: ReturnType<typeof getFirestoreDb>) {
       complianceSnapshots,
       migrationVersion,
       karkunRequestsDoc,
+      assignmentReviews,
     }),
   )
 }
@@ -1139,6 +1152,7 @@ async function hydrateFirestoreCachesOnce(): Promise<void> {
       complianceSnapshots,
       migrationVersion,
       karkunRequestsDoc,
+      assignmentReviews,
     ] = await Promise.all([
       readCollection<CampaignListItem>(db, FIRESTORE_COLLECTIONS.campaigns),
       readRuknsForClient(db),
@@ -1159,6 +1173,7 @@ async function hydrateFirestoreCachesOnce(): Promise<void> {
         FIRESTORE_COLLECTIONS.settings,
         FIRESTORE_DOCS.karkunRequests,
       ),
+      readAssignmentReviewsForClient(),
     ])
 
     await applyCriticalHydratePayload({
@@ -1177,6 +1192,7 @@ async function hydrateFirestoreCachesOnce(): Promise<void> {
       complianceSnapshots,
       migrationVersion,
       karkunRequestsDoc,
+      assignmentReviews,
     })
     traceIncidentStage('hydrateFirestoreCachesOnce:complete', {
       caller: 'hydrateFirestoreCachesOnce',
@@ -1364,6 +1380,14 @@ export function startFirestoreSnapshotListeners(onRemoteChange: () => void): voi
         ),
         onRemoteChange,
       )
+      watchQuery(
+        `assignmentReviews:rukn:${scope.ruknId}`,
+        query(
+          collection(db, FIRESTORE_COLLECTIONS.assignmentReviews),
+          where('ruknId', '==', scope.ruknId),
+        ),
+        onRemoteChange,
+      )
       watchCollection(FIRESTORE_COLLECTIONS.executions, onRemoteChange)
       watchCollection(FIRESTORE_COLLECTIONS.compliance, onRemoteChange)
       // KC-0102.0 — Rukn must observe New Karkun request blob updates (Admin writes / peer submits).
@@ -1395,6 +1419,7 @@ export function startFirestoreSnapshotListeners(onRemoteChange: () => void): voi
     watchCollection(FIRESTORE_COLLECTIONS.rukns, onRemoteChange)
     watchCollection(FIRESTORE_COLLECTIONS.activityLogs, onRemoteChange)
     watchCollection(FIRESTORE_COLLECTIONS.followUps, onRemoteChange)
+    watchCollection(FIRESTORE_COLLECTIONS.assignmentReviews, onRemoteChange)
     watchCollection(FIRESTORE_COLLECTIONS.executions, onRemoteChange)
     watchCollection(FIRESTORE_COLLECTIONS.compliance, onRemoteChange)
     watchCollection(FIRESTORE_COLLECTIONS.communications, onRemoteChange)
@@ -1427,6 +1452,7 @@ export function subscribeToFirestoreCacheChanges(listener: () => void): () => vo
     activityLogCache.subscribe(listener),
     broadcastCache.subscribe(listener),
     karkunRequestCache.subscribe(listener),
+    subscribeAssignmentReviewCache(listener),
   ]
   return () => unsubs.forEach((unsub) => unsub())
 }
@@ -2689,4 +2715,5 @@ export async function clearAllFirestoreCachesForTests(): Promise<void> {
   backupIndexCache.reset([])
   backupCache.reset(new Map())
   karkunRequestCache.reset([])
+  resetAssignmentReviewCacheForTests()
 }
