@@ -120,6 +120,8 @@ Reject “looks fixed.”
 | TASK-029 — Responsibility entity | **COMPLETE** (this batch) |
 | TASK-030 — Responsibility tenure | **COMPLETE** (this batch) |
 | TASK-031 — Responsibility scope / Unit | **COMPLETE** (this batch) |
-| TASK-032 — Work | **NOT STARTED** |
+| TASK-032 — Work | **COMPLETE** (BATCH-04B) |
+| TASK-033 — Work lifecycle | **COMPLETE** (BATCH-04B) |
+| TASK-034 — Contextual permissions | **COMPLETE** (BATCH-04B) |
 
 Official counter after this batch: **31 / 72** (27 accounted + these four). No absorption.

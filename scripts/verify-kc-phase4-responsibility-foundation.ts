@@ -101,8 +101,13 @@ console.log('▶ Firestore rules — Admin-only responsibilities')
   const matchLine = 'match /responsibilities/{docId}'
   const block = extractRulesBlock(rules, matchLine)
   assertIncludes(block, 'isAdministrator()', `${matchLine} Admin gate`)
+  assertIncludes(block, 'assignedToRukn(resource.data)', `${matchLine} Rukn read-own`)
+  assertIncludes(
+    block,
+    'allow create, update: if isAdministrator()',
+    `${matchLine} Admin writes`,
+  )
   assertIncludes(block, 'allow delete: if false', `${matchLine} no client delete`)
-  assertNotIncludes(block, 'isRukn()', `${matchLine} no Rukn access`)
 }
 
 console.log('▶ provider wiring (local + firestore; Unit + Rukn injection)')
@@ -110,12 +115,12 @@ console.log('▶ provider wiring (local + firestore; Unit + Rukn injection)')
   const provider = read('src/repositories/provider.ts')
   assertIncludes(
     provider,
-    'responsibility: new ResponsibilityLocalRepository(unit, rukn)',
+    'const responsibility = new ResponsibilityLocalRepository(unit, rukn)',
     'local Responsibility repo',
   )
   assertIncludes(
     provider,
-    'responsibility: new ResponsibilityFirestoreRepository(unit, rukn)',
+    'const responsibility = new ResponsibilityFirestoreRepository(unit, rukn)',
     'firestore Responsibility repo',
   )
   assertIncludes(provider, 'getRepositoryProviderMode()', 'single mode switch')

@@ -25,8 +25,10 @@ export const FIRESTORE_COLLECTIONS = {
   localProgrammes: 'localProgrammes',
   /** Phase 3 — Occurrence under a Local Programme (Admin-owned; generation later) */
   occurrences: 'occurrences',
-  /** Phase 4 — Responsibility (Admin-owned; person + Unit + tenure) */
+  /** Phase 4 — Responsibility (Admin-owned writes; Rukn read-own) */
   responsibilities: 'responsibilities',
+  /** Phase 4 — Work (operational record; Admin administers; Rukn acts in context) */
+  work: 'work',
 } as const
 
 export const FIRESTORE_DOCS = {

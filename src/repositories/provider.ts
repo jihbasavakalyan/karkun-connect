@@ -11,6 +11,7 @@ import type {
   OccurrenceRepository,
   ResponsibilityRepository,
   RuknRepository,
+  WorkRepository,
   SettingsRepository,
   UnitRepository,
 } from '@/repositories/interfaces'
@@ -37,6 +38,7 @@ import {
 import { LocalProgrammeLocalRepository } from '@/repositories/local/localProgrammeLocalRepositories'
 import { OccurrenceLocalRepository } from '@/repositories/local/occurrenceLocalRepositories'
 import { ResponsibilityLocalRepository } from '@/repositories/local/responsibilityLocalRepositories'
+import { WorkLocalRepository } from '@/repositories/local/workLocalRepositories'
 import {
   CampaignFirestoreRepository,
   CommunicationFirestoreRepository,
@@ -57,6 +59,7 @@ import {
 import { LocalProgrammeFirestoreRepository } from '@/repositories/firestore/localProgrammeFirestoreRepositories'
 import { OccurrenceFirestoreRepository } from '@/repositories/firestore/occurrenceFirestoreRepositories'
 import { ResponsibilityFirestoreRepository } from '@/repositories/firestore/responsibilityFirestoreRepositories'
+import { WorkFirestoreRepository } from '@/repositories/firestore/workFirestoreRepositories'
 
 export type RepositoryBundle = {
   campaign: CampaignRepository
@@ -75,6 +78,7 @@ export type RepositoryBundle = {
   localProgramme: LocalProgrammeRepository
   occurrence: OccurrenceRepository
   responsibility: ResponsibilityRepository
+  work: WorkRepository
 }
 
 let bundle: RepositoryBundle | null = null
@@ -84,6 +88,7 @@ function createLocalRepositories(): RepositoryBundle {
   const localProgramme = new LocalProgrammeLocalRepository(campaign)
   const rukn = new RuknLocalRepository()
   const unit = new UnitLocalRepository()
+  const responsibility = new ResponsibilityLocalRepository(unit, rukn)
   return {
     campaign,
     rukn,
@@ -100,7 +105,8 @@ function createLocalRepositories(): RepositoryBundle {
     unit,
     localProgramme,
     occurrence: new OccurrenceLocalRepository(localProgramme),
-    responsibility: new ResponsibilityLocalRepository(unit, rukn),
+    responsibility,
+    work: new WorkLocalRepository(unit, rukn, responsibility),
   }
 }
 
@@ -109,6 +115,7 @@ function createFirestoreRepositories(): RepositoryBundle {
   const localProgramme = new LocalProgrammeFirestoreRepository(campaign)
   const rukn = new RuknFirestoreRepository()
   const unit = new UnitFirestoreRepository()
+  const responsibility = new ResponsibilityFirestoreRepository(unit, rukn)
   return {
     campaign,
     rukn,
@@ -125,7 +132,8 @@ function createFirestoreRepositories(): RepositoryBundle {
     unit,
     localProgramme,
     occurrence: new OccurrenceFirestoreRepository(localProgramme),
-    responsibility: new ResponsibilityFirestoreRepository(unit, rukn),
+    responsibility,
+    work: new WorkFirestoreRepository(unit, rukn, responsibility),
   }
 }
 

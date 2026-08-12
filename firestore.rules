@@ -200,9 +200,36 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // Phase 4 Responsibility — Admin-owned; tenure/archive via update (no client deletes).
+    // Phase 4 Responsibility — Admin writes; Rukn may read own (Work contextual auth).
     match /responsibilities/{docId} {
-      allow read, create, update: if isAdministrator();
+      allow read: if isAdministrator() || assignedToRukn(resource.data);
+      allow create, update: if isAdministrator();
+      allow delete: if false;
+    }
+
+    /**
+     * Phase 4 Work — Admin administers. Rukn may read own assignee docs.
+     * Rukn update requires linked active Responsibility matching person + unit.
+     * Tenure completeness is enforced in canActOnWork (application helper).
+     * No client deletes.
+     */
+    function ruknMayActOnWork(data) {
+      return isRukn()
+        && data.ruknId == ruknId()
+        && data.keys().hasAll(['responsibilityId', 'unitId', 'ruknId'])
+        && data.responsibilityId is string
+        && data.responsibilityId != ''
+        && exists(/databases/$(database)/documents/responsibilities/$(data.responsibilityId))
+        && get(/databases/$(database)/documents/responsibilities/$(data.responsibilityId)).data.ruknId == ruknId()
+        && get(/databases/$(database)/documents/responsibilities/$(data.responsibilityId)).data.unitId == data.unitId
+        && get(/databases/$(database)/documents/responsibilities/$(data.responsibilityId)).data.status == 'active';
+    }
+
+    match /work/{docId} {
+      allow read: if isAdministrator() || assignedToRukn(resource.data);
+      allow create: if isAdministrator();
+      allow update: if isAdministrator()
+        || (assignedToRukn(resource.data) && ruknMayActOnWork(request.resource.data));
       allow delete: if false;
     }
 

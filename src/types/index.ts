@@ -20,6 +20,11 @@ export type {
 } from './responsibility.types'
 
 export type {
+  Work,
+  WorkStatus,
+} from './work.types'
+
+export type {
   LocalProgramme,
   LocalProgrammeStatus,
   ProgrammeKind,

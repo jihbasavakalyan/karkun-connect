@@ -170,10 +170,10 @@ Base Role + Active Responsibility + Unit / Scope + Tenure
 |-------|-----------|
 | **Base Role** | Keep `administrator` \| `rukn` |
 | **Writes** | Administrator only (create / update / archive). No client delete. |
-| **Reads** | Administrator only (same as Phase 1 Unit / Phase 3 Occurrence). Soft-empty hydrate for Rukn (`permission-denied`). |
-| **Active Responsibility + Unit + Tenure** | Represented on the record; **not** applied as a Work permission engine yet |
+| **Reads** | Administrator, or Rukn reading **own** (`ruknId` match). Required so Work contextual permission can be derived from Responsibility data (BATCH-04B / P4-C). |
+| **Active Responsibility + Unit + Tenure** | Represented on the record; applied as Work contextual permission in BATCH-04B |
 
-**DESIGN DECISION:** No new roles, no claim redesign, no permission-matrix UI, no contextual Work authorization.
+**DESIGN DECISION:** No new roles, no claim redesign, no permission-matrix UI. Contextual Work authorization is BATCH-04B (`canActOnWork`).
 
 ---
 
@@ -183,7 +183,7 @@ Base Role + Active Responsibility + Unit / Scope + Tenure
 |--------|-----|
 | `rukns` | Person reference via `ruknId` |
 | Phase 1 `units` / `UnitRepository` | Scope reference via `unitId`; parent validated on save |
-| `administrator` / `rukn` | Base Role; Admin-only Firestore rules |
+| `administrator` / `rukn` | Base Role; Admin writes; Rukn read-own (BATCH-04B) |
 | ID / timestamp conventions | `responsibility-{time36}-{rand}`; ISO timestamps; `YYYY-MM-DD` dates |
 | Repository + provider | Same local / Firestore bundle; soft background hydrate |
 | Archive-via-status | `active` \| `archived`; `allow delete: if false` |
@@ -221,7 +221,7 @@ Base Role + Active Responsibility + Unit / Scope + Tenure
 |---|----------|-------|
 | P4-A | Closed nature taxonomy (office titles) | Deferred — `nature` remains an open label |
 | P4-B | Whether a Karkun may hold a Responsibility | Deferred — holder is Rukn only |
-| P4-C | Whether Rukn may read own in-force Responsibilities | Deferred until Work permission work; Admin-only for now |
+| P4-C | Whether Rukn may read own in-force Responsibilities | **Resolved in BATCH-04B** — Rukn may read own (`ruknId`); writes remain Admin-only |
 
 These do **not** block this foundation.
 

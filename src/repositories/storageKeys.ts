@@ -31,6 +31,7 @@ export const STORAGE_KEYS = {
   localProgrammes: 'karkun-connect.local-programmes',
   occurrences: 'karkun-connect.occurrences',
   responsibilities: 'karkun-connect.responsibilities',
+  work: 'karkun-connect.work',
   userPreferences: 'karkun-connect.user-preferences',
   migrationBackup: (id: string) => `karkun-connect.migration.backup.${id}`,
 } as const
