@@ -146,7 +146,11 @@ service cloud.firestore {
     }
 
     match /assignmentReviews/{reviewId} {
-      allow read: if isAdministrator() || assignedToRukn(resource.data);
+      allow read: if isAdministrator()
+        || (isRukn() && (
+             resource == null
+             || resource.data.ruknId == ruknId()
+           ));
 
       allow create: if isAdministrator()
         || (isRukn()
