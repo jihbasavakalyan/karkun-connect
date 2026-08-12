@@ -92,6 +92,9 @@ const RuknModulePage = lazyWithChunkReload(() =>
 const SettingsPage = lazyWithChunkReload(() =>
   import('@/pages/admin/SettingsPage').then((m) => ({ default: m.SettingsPage })),
 )
+const AdminPlanningPage = lazyWithChunkReload(() =>
+  import('@/pages/admin/AdminPlanningPage').then((m) => ({ default: m.AdminPlanningPage })),
+)
 const RuntimeDiagnosticsPage = lazyWithChunkReload(() =>
   import('@/pages/admin/RuntimeDiagnosticsPage').then((m) => ({
     default: m.RuntimeDiagnosticsPage,
@@ -218,6 +221,7 @@ export function AppRouter() {
             />
             <Route path="mission-workspace" element={<MissionWorkspacePage />} />
             <Route path="lists" element={<CampaignListsPage />} />
+            <Route path="planning" element={<AdminPlanningPage />} />
             <Route path="settings" element={<SettingsPage />} />
             <Route path="help" element={<HelpPage />} />
             <Route path="debug/runtime" element={<RuntimeDiagnosticsPage />} />

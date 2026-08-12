@@ -39,6 +39,8 @@ export const ROUTES = {
   /** KC-0115 — Saved Lists lives under Communication (route unchanged) */
   ADMIN_LISTS: '/admin/lists',
   ADMIN_SETTINGS: '/admin/settings',
+  /** Phase 1 — Meqati Mansooba / Objectives / Unit planning (Administrator-only) */
+  ADMIN_PLANNING: '/admin/planning',
   ADMIN_HELP: '/admin/help',
   /** KC-029 — DEV/admin runtime diagnostics (gated by feature flag). */
   ADMIN_RUNTIME_DEBUG: '/admin/debug/runtime',

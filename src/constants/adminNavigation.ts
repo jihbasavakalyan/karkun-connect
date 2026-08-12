@@ -89,6 +89,7 @@ export const ADMIN_NAV_ITEMS: AdminNavEntry[] = [
       },
     ],
   },
+  { id: 'planning', label: 'Planning', icon: 'flag', to: ROUTES.ADMIN_PLANNING },
   { id: 'settings', label: 'Settings', icon: 'settings', to: ROUTES.ADMIN_SETTINGS },
   { id: 'help', label: 'Help', icon: 'help', to: ROUTES.ADMIN_HELP },
 ]
