@@ -32,7 +32,9 @@ import { getWeeklyIjtemaDashboardKpi } from '@/services/weeklyIjtemaService'
 import { getPendingKarkunRequests } from '@/services/karkunRequestService'
 import { runRegistryHealthScan } from '@/services/registryHealthService'
 import { hasContinuousDevelopmentSignal } from '@/lib/journey/continuousKarkunJourney'
+import { hasParticipationSignal } from '@/lib/guidance/journeyEngine'
 import { isWorkOverdue, todayWorkCalendarDate } from '@/lib/work/ruknActionItems'
+import { canActOnWork } from '@/lib/work/permissions'
 import { unwrapRepository } from '@/repositories/errors'
 import { getRepositories } from '@/repositories/provider'
 import { getActiveAssignmentsForKarkun } from '@/stores/assignmentStore'
@@ -206,6 +208,45 @@ export function buildAdminAttentionRequired(): CommandCenterLinkItem[] {
       description: 'Connected Karkuns with no visit, orientation, or JIH signal yet',
       route: adminAssignmentsPath(),
       tone: 'warn',
+    })
+  }
+
+  const developedWithoutParticipation = getAllKarkuns(false).filter((karkun) => {
+    if (karkun.isArchived) return false
+    const assignmentId = getActiveAssignmentsForKarkun(karkun.id)[0]?.assignmentId
+    if (!assignmentId) return false
+    if (!hasContinuousDevelopmentSignal(karkun, assignmentId)) return false
+    return !hasParticipationSignal(karkun)
+  }).length
+  if (developedWithoutParticipation > 0) {
+    items.push({
+      id: 'developed-without-participation',
+      label: 'Developed without participation',
+      count: developedWithoutParticipation,
+      description: 'Development signals exist, but Ijtema participation is still open',
+      route: adminWeeklyIjtemaPath(),
+      tone: 'warn',
+    })
+  }
+
+  const responsibilities = unwrapRepository(getRepositories().responsibility.loadAll(), [])
+  const unactionableWork = unwrapRepository(getRepositories().work.loadAll(), []).filter((row) => {
+    if (row.status === 'done') return false
+    return !canActOnWork(
+      { role: 'rukn', ruknId: row.ruknId },
+      row,
+      responsibilities,
+      asOfDate,
+    )
+  }).length
+  if (unactionableWork > 0) {
+    items.push({
+      id: 'work-without-in-force-responsibility',
+      label: 'Work without in-force responsibility',
+      count: unactionableWork,
+      description: 'Open Work the assigned Rukn cannot act on — missing or not-in-force Responsibility',
+      route: ROUTES.ADMIN_PLANNING,
+      tone: 'critical',
     })
   }
 

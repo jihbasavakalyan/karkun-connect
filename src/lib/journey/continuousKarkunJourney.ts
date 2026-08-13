@@ -14,6 +14,7 @@
 import { ROUTES, ruknVisitPath } from '@/constants/routes'
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { getConnectedKarkunCountForRukn, getConnectedKarkunsForRukn } from '@/lib/connections/getConnectedKarkunsForRukn'
+import { getAllKarkuns } from '@/lib/peopleStore'
 import {
   hasManualDevelopmentDecision,
   hasOrientationSignal,
@@ -555,4 +556,28 @@ export function countContinuousJourneyByStageForRukn(
     label: CONTINUOUS_JOURNEY_STAGE_LABELS[stageId],
     count: counts.get(stageId) ?? 0,
   })).filter((row) => row.count > 0)
+}
+
+/** TASK-060 — org-wide current-stage counts. Includes zero rows so Admin sees the full journey. */
+export function countContinuousJourneyByStage(
+  asOfDate = todayWorkCalendarDate(),
+): { stageId: ContinuousJourneyStageId; label: string; count: number }[] {
+  const responsibilities = unwrapRepository(getRepositories().responsibility.loadAll(), [])
+  const counts = new Map<ContinuousJourneyStageId, number>()
+  for (const karkun of getAllKarkuns()) {
+    const assignmentId = getActiveAssignmentsForKarkun(karkun.id)[0]?.assignmentId
+    const snapshot = resolveContinuousKarkunJourney({
+      karkun,
+      assignmentId,
+      asOfDate,
+      responsibilities,
+      connectedKarkunCount: getConnectedKarkunCountForRukn(karkun.id),
+    })
+    counts.set(snapshot.currentStage, (counts.get(snapshot.currentStage) ?? 0) + 1)
+  }
+  return CONTINUOUS_JOURNEY_STAGE_ORDER.map((stageId) => ({
+    stageId,
+    label: CONTINUOUS_JOURNEY_STAGE_LABELS[stageId],
+    count: counts.get(stageId) ?? 0,
+  }))
 }

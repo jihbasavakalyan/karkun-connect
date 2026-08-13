@@ -1,14 +1,15 @@
 /**
- * Phase 7 — TASK-054–059 journey dashboards local smoke (no live Firestore / GCP).
+ * Phase 7 — TASK-054–061 journey dashboards local smoke (no live Firestore / GCP).
  * Run: npm run verify:kc-phase7-journey-dashboards
  */
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { ROUTES, adminAssignmentsPath, ruknVisitPath } from '@/constants/routes'
+import { ROUTES, adminAssignmentsPath, adminWeeklyIjtemaPath, ruknVisitPath } from '@/constants/routes'
 import type { Rukn } from '@/data/ruknMaster'
 import {
   CONTINUOUS_JOURNEY_STAGE_ORDER,
+  countContinuousJourneyByStage,
   hasContinuousDevelopmentSignal,
   resolveContinuousKarkunJourney,
   resolveDevelopmentAction,
@@ -18,6 +19,7 @@ import {
 } from '@/lib/journey/continuousKarkunJourney'
 import { isResponsibilityInForce } from '@/lib/responsibility/tenure'
 import { buildAdminAttentionRequired } from '@/lib/missionControl/adminCommandCenterWorkflow'
+import { buildAdminOrganisationalPicture } from '@/lib/missionControl/adminOrganisationalPicture'
 import { buildRuknNowActions } from '@/lib/rukn/ruknActionDashboard'
 import { FIRESTORE_COLLECTIONS } from '@/repositories/firestore/collections'
 import {
@@ -122,6 +124,9 @@ console.log('▶ architecture — derived journey/attention, no new SoT')
   assertNotIncludes(collections, "journeys: 'journeys'", 'no journeys collection')
   assertNotIncludes(collections, 'developmentActions', 'no developmentActions collection')
   assertNotIncludes(collections, 'journeyFollowUps', 'no journeyFollowUps collection')
+  assertNotIncludes(collections, 'organisationalPicture', 'no organisationalPicture collection')
+  assertNotIncludes(collections, 'exceptions', 'no exceptions collection')
+  assertNotIncludes(collections, 'attentionRecords', 'no attentionRecords collection')
 
   const journey = read('src/lib/journey/continuousKarkunJourney.ts')
   assertIncludes(journey, 'Does NOT persist a journey entity', 'journey is a read model')
@@ -136,6 +141,9 @@ console.log('▶ architecture — derived journey/attention, no new SoT')
   assertIncludes(attention, "id: 'overdue-work'", 'overdue work attention')
   assertIncludes(attention, 'ADMIN_PLANNING', 'overdue work destination')
   assertIncludes(attention, "id: 'connection-without-development'", 'connection without development')
+  assertIncludes(attention, "id: 'developed-without-participation'", 'developed without participation')
+  assertIncludes(attention, "id: 'work-without-in-force-responsibility'", 'unactionable work exception')
+  assertIncludes(attention, 'canActOnWork', 'reuses Phase 4 work permission')
   assertIncludes(attention, 'adminAssignmentsPath()', 'assignments destination')
   assertNotIncludes(attention, 'InboxEngine', 'attention does not duplicate Inbox')
   assertNotIncludes(attention, 'evaluateActionableNotifications', 'attention does not duplicate notifications')
@@ -332,6 +340,8 @@ console.log('▶ UI wiring — existing Admin/Rukn/Person surfaces, campaign jou
   const commandCenter = read('src/components/mission-control/AdminCommandCenter.tsx')
   assertIncludes(commandCenter, 'AttentionRequiredPanel', 'existing attention panel reused')
   assertIncludes(commandCenter, 'buildAdminAttentionRequired', 'attention builder reused')
+  assertIncludes(commandCenter, 'OrganisationalPicturePanel', 'organisational picture on Command Center')
+  assertIncludes(commandCenter, 'buildAdminOrganisationalPicture', 'picture builder wired')
 
   const inbox = read('src/lib/peopleLifecycle/InboxEngine.ts')
   assertIncludes(inbox, 'Admin Inbox', 'Phase 6 inbox intact')
@@ -529,6 +539,106 @@ console.log('▶ TASK-059 — responsibility visibility reads Phase 4 in-force m
   })
   assert.equal(snapshot.responsibilities[0]?.nature, 'Weekly Ijtema in-charge')
   assert.equal(snapshot.responsibilities[0]?.relatedWorkTitle, 'Confirm attendance window')
+}
+
+console.log('▶ TASK-060 — organisational picture is a derived read model')
+{
+  await resetAndSeedParents()
+  const pictureSrc = read('src/lib/missionControl/adminOrganisationalPicture.ts')
+  assertIncludes(pictureSrc, 'Does NOT persist a picture', 'picture is a read model')
+  assertNotIncludes(pictureSrc, 'saveDurable', 'picture selectors do not persist')
+  assertNotIncludes(pictureSrc, 'evaluateActionableNotifications', 'picture does not duplicate notifications')
+  assert.equal(countContinuousJourneyByStage(asOfDate).length, 5, 'all five journey stages listed')
+
+  const picture = buildAdminOrganisationalPicture(asOfDate)
+  assert.equal(picture.journey.length, 5)
+  assert.deepEqual(
+    picture.journey.map((cell) => cell.id),
+    [
+      'journey:connection',
+      'journey:development',
+      'journey:participation',
+      'journey:responsibility',
+      'journey:leadership',
+    ],
+  )
+  assert.ok(picture.journey.every((cell) => cell.route.length > 0), 'journey cells deep-link')
+  assert.ok(picture.operations.every((cell) => cell.route.length > 0), 'operation cells deep-link')
+  assert.ok(picture.operations.some((cell) => cell.id === 'connected'))
+  assert.ok(picture.operations.some((cell) => cell.id === 'in-force-responsibility'))
+  assert.ok(picture.operations.some((cell) => cell.id === 'open-work'))
+  assert.ok(picture.operations.some((cell) => cell.id === 'open-occurrences'))
+  assert.equal(picture.operations.find((cell) => cell.id === 'open-work')?.route, ROUTES.ADMIN_PLANNING)
+  assert.equal(picture.operations.find((cell) => cell.id === 'in-force-responsibility')?.count, 0)
+}
+
+console.log('▶ TASK-061 — exceptions reuse Attention Required without a new entity')
+{
+  await resetAndSeedParents()
+  const repos = getRepositories()
+  const inForce: Responsibility = {
+    id: createResponsibilityId(),
+    ruknId: seedRukn.id,
+    nature: 'Weekly Ijtema in-charge',
+    unitId: seedUnit.id,
+    startDate: '2026-01-01',
+    status: 'active',
+    createdAt: now,
+    updatedAt: now,
+    createdBy: 'verify',
+    updatedBy: 'verify',
+  }
+  assert.equal((await repos.responsibility.saveDurable(inForce)).ok, true)
+
+  const actionable: Work = {
+    id: createWorkId(),
+    title: 'Actionable planning work',
+    ruknId: seedRukn.id,
+    unitId: seedUnit.id,
+    responsibilityId: inForce.id,
+    status: 'pending',
+    dueDate: '2099-01-01',
+    createdAt: now,
+    updatedAt: now,
+    createdBy: 'verify',
+    updatedBy: 'verify',
+  }
+  const blocked: Work = {
+    id: createWorkId(),
+    title: 'Work missing responsibility',
+    ruknId: seedRukn.id,
+    unitId: seedUnit.id,
+    status: 'pending',
+    createdAt: now,
+    updatedAt: now,
+    createdBy: 'verify',
+    updatedBy: 'verify',
+  }
+  assert.equal((await repos.work.saveDurable(actionable)).ok, true)
+  assert.equal((await repos.work.saveDurable(blocked)).ok, true)
+
+  const items = buildAdminAttentionRequired()
+  const overdueIds = items.filter((item) => item.id === 'overdue-work')
+  assert.equal(overdueIds.length, 0, 'future/undated work is not overdue')
+  const blockedItem = items.find((item) => item.id === 'work-without-in-force-responsibility')
+  assert.ok(blockedItem, 'unactionable work is an exception')
+  assert.equal(blockedItem?.count, 1, 'in-force work is not an exception')
+  assert.equal(blockedItem?.route, ROUTES.ADMIN_PLANNING)
+  assert.ok((blockedItem?.description ?? '').length > 0, 'exception has a reason')
+  assert.equal(blockedItem?.tone, 'critical')
+
+  const participationItem = items.find((item) => item.id === 'developed-without-participation')
+  if (participationItem) {
+    assert.equal(participationItem.route, adminWeeklyIjtemaPath())
+    assert.ok(participationItem.description.includes('participation'))
+  }
+
+  assert.ok(!items.some((item) => item.id.includes('inbox')), 'does not copy Inbox')
+  assert.equal(items.filter((item) => item.id === 'overdue-work').length <= 1, true)
+
+  const picture = buildAdminOrganisationalPicture(asOfDate)
+  assert.equal(picture.operations.find((cell) => cell.id === 'open-work')?.count, 2)
+  assert.equal(picture.operations.find((cell) => cell.id === 'in-force-responsibility')?.count, 1)
 }
 
 console.log('✅ verify:kc-phase7-journey-dashboards PASS')

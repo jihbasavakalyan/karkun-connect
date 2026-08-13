@@ -31,12 +31,14 @@ import {
   buildAdminNextActions,
   buildAdminQuickActions,
 } from '@/lib/missionControl/adminCommandCenterWorkflow'
+import { buildAdminOrganisationalPicture } from '@/lib/missionControl/adminOrganisationalPicture'
 import { AdminActionCenter } from './AdminActionCenter'
 import { AdminOpsThreeColumnLayout } from './AdminOpsThreeColumnLayout'
 import { NextBestActionsPanel } from './NextBestActionsPanel'
 import { NextActionsPanel } from './NextActionsPanel'
 import { ActionableNotificationsPanel } from '@/components/notifications/ActionableNotificationsPanel'
 import { AttentionRequiredPanel } from './AttentionRequiredPanel'
+import { OrganisationalPicturePanel } from './OrganisationalPicturePanel'
 import { CampaignProgressPanel } from './CampaignProgressPanel'
 import { AdminQuickActionsPanel } from './AdminQuickActionsPanel'
 import { runPriorityEngine, type PriorityItem } from '@/lib/priorityIntelligence'
@@ -649,6 +651,15 @@ export function AdminCommandCenter({
     return buildAdminAttentionRequired()
   }, [assignmentVersion, moduleTick, backgroundReady])
 
+  const organisationalPicture = useMemo(() => {
+    void assignmentVersion
+    void moduleTick
+    if (!backgroundReady) {
+      return { journey: [], operations: [] }
+    }
+    return buildAdminOrganisationalPicture()
+  }, [assignmentVersion, moduleTick, backgroundReady])
+
   const campaignProgress = useMemo(() => {
     void assignmentVersion
     void moduleTick
@@ -785,6 +796,10 @@ export function AdminCommandCenter({
 
           <WidgetErrorBoundary title="Attention Required">
             <AttentionRequiredPanel items={attentionItems} ready={backgroundReady} />
+          </WidgetErrorBoundary>
+
+          <WidgetErrorBoundary title="Organisational picture">
+            <OrganisationalPicturePanel picture={organisationalPicture} ready={backgroundReady} />
           </WidgetErrorBoundary>
 
           <WidgetErrorBoundary title="Campaign Progress">
