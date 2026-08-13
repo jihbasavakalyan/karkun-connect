@@ -74,6 +74,20 @@ export {
   loadObjectiveNextBestActions,
 } from './objectiveNextBestAction'
 
+export type {
+  BuildObjectiveContextualRecommendationInput,
+  ContextualRecommendationRefs,
+  ObjectiveContextualRecommendation,
+  RecommendationOrganisationContext,
+  RecommendationSubject,
+  RecommendationSubjectKind,
+  RecommendationTiming,
+} from './contextualRecommendation'
+export {
+  buildObjectiveContextualRecommendation,
+  loadObjectiveContextualRecommendations,
+} from './contextualRecommendation'
+
 export type { AutomationPolicy, AutomationPolicyId, AutomationPolicyResult } from './policies/types'
 export { PolicyEngine, createDefaultPolicyEngine } from './policies/PolicyEngine'
 export { phoneCallStartedPolicy } from './policies/phoneCallPolicy'
