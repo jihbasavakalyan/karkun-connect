@@ -1,18 +1,22 @@
 /**
- * Phase 7 — TASK-054–056 journey dashboards local smoke (no live Firestore / GCP).
+ * Phase 7 — TASK-054–059 journey dashboards local smoke (no live Firestore / GCP).
  * Run: npm run verify:kc-phase7-journey-dashboards
  */
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { ROUTES, adminAssignmentsPath } from '@/constants/routes'
+import { ROUTES, adminAssignmentsPath, ruknVisitPath } from '@/constants/routes'
 import type { Rukn } from '@/data/ruknMaster'
 import {
   CONTINUOUS_JOURNEY_STAGE_ORDER,
   hasContinuousDevelopmentSignal,
   resolveContinuousKarkunJourney,
+  resolveDevelopmentAction,
+  resolveJourneyFollowUp,
+  resolveJourneyResponsibilities,
   snapshotFromContinuousSignals,
 } from '@/lib/journey/continuousKarkunJourney'
+import { isResponsibilityInForce } from '@/lib/responsibility/tenure'
 import { buildAdminAttentionRequired } from '@/lib/missionControl/adminCommandCenterWorkflow'
 import { buildRuknNowActions } from '@/lib/rukn/ruknActionDashboard'
 import { FIRESTORE_COLLECTIONS } from '@/repositories/firestore/collections'
@@ -116,10 +120,16 @@ console.log('▶ architecture — derived journey/attention, no new SoT')
   assertNotIncludes(collections, 'continuousJourney', 'no continuousJourney collection')
   assertNotIncludes(collections, 'attentionRequired', 'no attention collection')
   assertNotIncludes(collections, "journeys: 'journeys'", 'no journeys collection')
+  assertNotIncludes(collections, 'developmentActions', 'no developmentActions collection')
+  assertNotIncludes(collections, 'journeyFollowUps', 'no journeyFollowUps collection')
 
   const journey = read('src/lib/journey/continuousKarkunJourney.ts')
   assertIncludes(journey, 'Does NOT persist a journey entity', 'journey is a read model')
   assertIncludes(journey, 'Connection → Development → Participation → Responsibility → Leadership', 'frozen journey')
+  assertIncludes(journey, 'isResponsibilityInForce', 'responsibility uses Phase 4 in-force matching')
+  assertIncludes(journey, 'getActiveFollowUpForKarkun', 'follow-up reads existing follow-up records')
+  assertNotIncludes(journey, 'saveDurable', 'journey selectors do not persist')
+  assertNotIncludes(journey, 'evaluateActionableNotifications', 'journey does not duplicate notifications')
   assert.equal(CONTINUOUS_JOURNEY_STAGE_ORDER.join(','), 'connection,development,participation,responsibility,leadership')
 
   const attention = read('src/lib/missionControl/adminCommandCenterWorkflow.ts')
@@ -313,12 +323,212 @@ console.log('▶ UI wiring — existing Admin/Rukn/Person surfaces, campaign jou
   assertIncludes(person360, 'Campaign Journey', 'campaign journey kept')
   assertIncludes(person360, 'ContinuousKarkunJourneyStrip', 'continuous journey on 360')
 
+  const strip = read('src/components/journey/ContinuousKarkunJourneyStrip.tsx')
+  assertIncludes(strip, 'Development action', 'development action on strip')
+  assertIncludes(strip, 'Follow-up', 'follow-up on strip')
+  assertIncludes(strip, 'Responsibility', 'responsibility visibility on strip')
+  assertIncludes(strip, 'to={action.href}', 'actions deep-link to existing surfaces')
+
   const commandCenter = read('src/components/mission-control/AdminCommandCenter.tsx')
   assertIncludes(commandCenter, 'AttentionRequiredPanel', 'existing attention panel reused')
   assertIncludes(commandCenter, 'buildAdminAttentionRequired', 'attention builder reused')
 
   const inbox = read('src/lib/peopleLifecycle/InboxEngine.ts')
   assertIncludes(inbox, 'Admin Inbox', 'Phase 6 inbox intact')
+}
+
+console.log('▶ TASK-057 — development actions from existing visit / JIH / orientation signals')
+{
+  const pendingVisit = karkun({ visitStatus: 'pending' })
+  assert.equal(resolveDevelopmentAction(pendingVisit), null, 'no development action without connection')
+  const visitAction = resolveDevelopmentAction(pendingVisit, 'asg-1')
+  assert.equal(visitAction?.kind, 'visit')
+  assert.equal(visitAction?.href, ruknVisitPath(pendingVisit.id))
+
+  const visited = karkun({ visitStatus: 'completed', jihAppRegistrationStatus: 'Not Discussed' })
+  const jihAction = resolveDevelopmentAction(visited, 'asg-1')
+  assert.equal(jihAction?.kind, 'jih-registration')
+  assert.equal(jihAction?.href, ruknVisitPath(visited.id))
+
+  const registered = karkun({
+    visitStatus: 'completed',
+    jihAppRegistrationStatus: 'Registered',
+  })
+  const orientationAction = resolveDevelopmentAction(registered, 'asg-1')
+  assert.equal(orientationAction?.kind, 'orientation')
+
+  const snapshot = resolveContinuousKarkunJourney({
+    karkun: pendingVisit,
+    assignmentId: 'asg-1',
+    asOfDate,
+    responsibilities: [],
+    connectedKarkunCount: 0,
+  })
+  assert.equal(snapshot.developmentAction?.kind, 'visit')
+  assert.equal(snapshot.followUp, null, 'development action is not duplicated as a follow-up')
+}
+
+console.log('▶ TASK-058 — follow-ups derived from existing records, not a second Work system')
+{
+  const person = karkun({ visitStatus: 'completed', jihAppRegistrationStatus: 'Registered' })
+  const scheduled = resolveJourneyFollowUp({
+    karkun: person,
+    assignmentId: 'asg-1',
+    asOfDate,
+    pendingFollowUp: {
+      followUpId: 'fu-phase7-1',
+      purpose: 'Call after visit',
+      followUpDate: '2026-08-14',
+    },
+    workRows: [],
+    occurrences: [],
+    programmes: [],
+    responsibilityUnitIds: [],
+    developmentAction: resolveDevelopmentAction(person, 'asg-1'),
+    hasDevelopment: true,
+  })
+  assert.equal(scheduled?.kind, 'follow-up-record')
+  assert.equal(scheduled?.href, ruknVisitPath(person.id))
+  assert.equal(scheduled?.id, 'follow-up:fu-phase7-1')
+
+  const openWork: Work = {
+    id: createWorkId(),
+    title: 'Prepare Ijtema list',
+    ruknId: person.id,
+    unitId: seedUnit.id,
+    status: 'pending',
+    dueDate: '2026-08-10',
+    createdAt: now,
+    updatedAt: now,
+    createdBy: 'verify',
+    updatedBy: 'verify',
+  }
+  const workFollowUp = resolveJourneyFollowUp({
+    karkun: person,
+    assignmentId: 'asg-1',
+    asOfDate,
+    workRows: [openWork],
+    occurrences: [],
+    programmes: [],
+    responsibilityUnitIds: [],
+    developmentAction: null,
+    hasDevelopment: true,
+  })
+  assert.equal(workFollowUp?.kind, 'work')
+  assert.equal(workFollowUp?.href, ROUTES.RUKN)
+  assert.equal(workFollowUp?.id, `follow-up:work:${openWork.id}`)
+
+  const occurrenceFollowUp = resolveJourneyFollowUp({
+    karkun: person,
+    assignmentId: 'asg-1',
+    asOfDate,
+    workRows: [],
+    occurrences: [
+      {
+        id: 'occ-phase7-1',
+        programmeId: 'prog-phase7-1',
+        occurrenceDate: asOfDate,
+        status: 'open',
+        title: 'Weekly Ijtema',
+      },
+    ],
+    programmes: [
+      {
+        id: 'prog-phase7-1',
+        name: 'Weekly Ijtema',
+        kind: 'weekly_ijtema',
+        unitId: seedUnit.id,
+      },
+    ],
+    responsibilityUnitIds: [seedUnit.id],
+    developmentAction: null,
+    hasDevelopment: true,
+  })
+  assert.equal(occurrenceFollowUp?.kind, 'occurrence')
+  assert.equal(occurrenceFollowUp?.href, ROUTES.RUKN_WEEKLY_IJTEMA)
+
+  const withFollowUp = resolveContinuousKarkunJourney({
+    karkun: person,
+    assignmentId: 'asg-1',
+    asOfDate,
+    responsibilities: [],
+    connectedKarkunCount: 0,
+    pendingFollowUp: {
+      followUpId: 'fu-phase7-2',
+      purpose: 'Reconnect',
+      followUpDate: asOfDate,
+    },
+  })
+  assert.ok(withFollowUp.developmentAction, 'development action remains')
+  assert.equal(withFollowUp.followUp?.kind, 'follow-up-record')
+  assert.notEqual(withFollowUp.followUp?.id, withFollowUp.developmentAction?.id)
+}
+
+console.log('▶ TASK-059 — responsibility visibility reads Phase 4 in-force matching')
+{
+  const person = karkun({ id: 'kr-phase7-responsibility' })
+  const inForce: Responsibility = {
+    id: createResponsibilityId(),
+    ruknId: person.id,
+    nature: 'Weekly Ijtema in-charge',
+    unitId: seedUnit.id,
+    startDate: '2026-01-01',
+    status: 'active',
+    createdAt: now,
+    updatedAt: now,
+    createdBy: 'verify',
+    updatedBy: 'verify',
+  }
+  const expired: Responsibility = {
+    ...inForce,
+    id: createResponsibilityId(),
+    nature: 'Past orientation lead',
+    endDate: '2026-07-01',
+  }
+  const relatedWork: Work = {
+    id: createWorkId(),
+    title: 'Confirm attendance window',
+    ruknId: person.id,
+    unitId: seedUnit.id,
+    responsibilityId: inForce.id,
+    status: 'pending',
+    dueDate: asOfDate,
+    createdAt: now,
+    updatedAt: now,
+    createdBy: 'verify',
+    updatedBy: 'verify',
+  }
+  assert.equal(isResponsibilityInForce(inForce, asOfDate), true)
+  assert.equal(isResponsibilityInForce(expired, asOfDate), false)
+
+  const rows = resolveJourneyResponsibilities(
+    person.id,
+    [inForce, expired],
+    [seedUnit],
+    [relatedWork],
+    asOfDate,
+  )
+  assert.equal(rows.length, 2)
+  assert.equal(rows[0]?.id, inForce.id)
+  assert.equal(rows[0]?.inForce, true)
+  assert.equal(rows[0]?.unitName, seedUnit.name)
+  assert.equal(rows[0]?.tenureLabel, 'Since 2026-01-01')
+  assert.equal(rows[0]?.relatedWorkTitle, relatedWork.title)
+  assert.equal(rows[0]?.href, ROUTES.RUKN)
+  assert.equal(rows[1]?.inForce, false)
+  assert.equal(rows[1]?.tenureLabel, '2026-01-01 – 2026-07-01')
+
+  const snapshot = resolveContinuousKarkunJourney({
+    karkun: person,
+    assignmentId: 'asg-1',
+    asOfDate,
+    responsibilities: [inForce],
+    connectedKarkunCount: 0,
+    units: [seedUnit],
+    workRows: [relatedWork],
+  })
+  assert.equal(snapshot.responsibilities[0]?.nature, 'Weekly Ijtema in-charge')
+  assert.equal(snapshot.responsibilities[0]?.relatedWorkTitle, 'Confirm attendance window')
 }
 
 console.log('✅ verify:kc-phase7-journey-dashboards PASS')
