@@ -1,9 +1,10 @@
 # KC Post-Phase-8 — Production Readiness & Architecture Audit
 
-**Status:** **READY WITH KNOWN LIMITATIONS**  
+**Status:** **PRODUCTION READY** — see [kc-production-signoff.md](./kc-production-signoff.md)  
 **Type:** Production-readiness execution recorded on the original audit (no product implementation)  
 **Audit date:** 2026-08-13  
 **Execution date:** 2026-08-13 / 2026-08-14  
+**Sign-off date:** 2026-08-14  
 **Product commit:** `3f54e444c08629e0359b9d77aecc71c7f99a8b4d`  
 **Audit commit:** `4f851017a839fd238589686e794ab580026e3d5a`  
 **Deployed commit:** `4f851017a839fd238589686e794ab580026e3d5a` (documentation only; product code identical to Phase 8 `3f54e44`)  
@@ -18,13 +19,13 @@ The original 2026-08-13 audit remains below. This document now also records the 
 
 ## A. Overall readiness
 
-**READY WITH KNOWN LIMITATIONS**
+**PRODUCTION READY**
 
-Phases 0–8 remain certified. Execution of the approved sequence is complete except authenticated **Rukn** smoke, which remains **UNVERIFIED** (no Rukn OTP session was already available; credentials were not recovered). Live Google TTS playback remains **UNVERIFIED**.
+Final decision: [kc-production-signoff.md](./kc-production-signoff.md) (2026-08-14).
+
+Phases 0–8 remain certified. Production deploy, Firestore rules/indexes, Admin smoke, Rukn smoke, and live Rafeeq voice are now complete. Known limitations remain documented and are not production blockers.
 
 No Phase 8 regression was found. No new intelligence database, LLM, or autonomous operational action was found. Product code was not modified.
-
-**PRODUCTION READY** is not claimed: required Rukn authenticated smoke is unverified.
 
 ---
 
@@ -32,7 +33,7 @@ No Phase 8 regression was found. No new intelligence database, LLM, or autonomou
 
 **None that require reopening Phases 0–8 or rewriting certified product code.**
 
-The following would **fail a production sign-off today**, but they are pre-deployment / verification gaps, not Phase 8 defects:
+The following would **fail a production sign-off today**, but they are pre-deployment / verification gaps, not Phase 8 defects. **Closed on 2026-08-14** — see [kc-production-signoff.md](./kc-production-signoff.md).
 
 | Item | Why it is not a code blocker | Required before sign-off |
 |------|------------------------------|--------------------------|
@@ -105,7 +106,7 @@ No localStorage → Firestore migration of existing Karkun / Rukn / Connection /
 
 ## E. Required browser smoke checklist
 
-**Admin smoke executed 2026-08-14** on production `https://karkun-connect.vercel.app` as existing session `jihbasavakalyan1@gmail.com` (Administrator). **Rukn smoke was not executed** — no Rukn OTP session was already available; credentials were not recovered. Karkun login was not tested.
+**Admin smoke executed 2026-08-14** on production `https://karkun-connect.vercel.app` as existing session `jihbasavakalyan1@gmail.com` (Administrator). **Rukn smoke PASS** on 2026-08-14 via a real authenticated Rukn session in live production (see [kc-production-signoff.md](./kc-production-signoff.md)). Karkun login was not tested.
 
 Login roles remain `administrator` \| `rukn` only (`src/types/auth.types.ts`). There is **no Karkun login**. Karkun is a registry / connected-person record.
 
@@ -321,13 +322,13 @@ No intelligence-layer extension. No second notification engine. No LLM.
 
 The completed Phase 0–8 architecture remains **coherent**. Production-readiness execution is recorded in **§K**.
 
-**Final state: READY WITH KNOWN LIMITATIONS**
+**Final state: PRODUCTION READY** — [kc-production-signoff.md](./kc-production-signoff.md)
 
 - Firestore rules/indexes published to `karkun-connect-75c68`
 - Production deploy Ready (`dpl_FriLCjMDogZhkhnyAqqZr1R3ARNt`)
 - Admin authenticated smoke **PASS**
-- Rukn authenticated smoke **UNVERIFIED**
-- Live Google TTS **UNVERIFIED**
+- Rukn authenticated smoke **PASS** (live production; recorded 2026-08-14)
+- Live Google TTS **PASS** (Urdu audio in production; recorded 2026-08-14)
 
 It does **not** require:
 
@@ -381,7 +382,7 @@ Firebase CLI output: rules compiled and released; indexes deployed successfully.
 |------|--------|
 | Firebase | Production app uses project `karkun-connect-75c68` |
 | Vercel | Project `jihbk/karkun-connect` (`prj_16kA2l3oa9MHEd5FFEwItsqLmWZz`); production env includes `VITE_FIREBASE_*`, `VITE_REPOSITORY_PROVIDER`, `VITE_ADMIN_EMAILS`, `FIREBASE_PROJECT_ID`, `FIREBASE_SERVICE_ACCOUNT_JSON` |
-| TTS | `GOOGLE_TTS_CREDENTIALS_JSON` present on Vercel (server-only). No `VITE_GOOGLE_*`. Live Google TTS playback **UNVERIFIED** |
+| TTS | `GOOGLE_TTS_CREDENTIALS_JSON` present on Vercel (server-only). No `VITE_GOOGLE_*`. Live Google TTS later **PASS** (2026-08-14 sign-off) |
 | Voice | Remains optional; application is functional without speak |
 
 Direct equality of pulled secret values against the Firebase project id could not be echoed (CLI redaction). Identity is established from `.firebaserc`, Firebase CLI targeting, Vercel project link, and live production history.
@@ -437,9 +438,9 @@ Rukn → Admin message **write** was not exercised (empty folder; no test produc
 
 ### 6. Rukn smoke
 
-**UNVERIFIED** — Browser verification: UNVERIFIED.
+**PASS** (2026-08-14 live production) — see [kc-production-signoff.md](./kc-production-signoff.md).
 
-No Rukn OTP session was already available. Credentials were not recovered. Rukn Work mutation on Firestore was not enabled. The documented Rukn planning/occurrence read gap was not changed.
+During the 2026-08-13/14 execution session, Rukn OTP credentials were not recovered and this row was **UNVERIFIED**. A real authenticated Rukn session was later inspected in production. Rukn Work mutation was not enabled. Planning/occurrence reads were not changed.
 
 ### 7. Post-deploy verification
 
@@ -453,25 +454,21 @@ No Rukn OTP session was already available. Credentials were not recovered. Rukn 
 | Admin Inbox | **PASS** |
 | Notification preferences | **PASS** |
 | Rafeeq visual | **PASS** |
-| Voice | Optional; live Google TTS **UNVERIFIED** |
+| Voice | Optional; live Google TTS **PASS** (Urdu audio, 2026-08-14) |
 | Permission-denied | None observed on Admin surfaces |
 
 ### 8. Known limitations (unchanged)
 
 - Monitoring is not wired into Phase 6 notifications
 - Monitoring history is caller-supplied
-- Live Google TTS remains UNVERIFIED
-- Authenticated **Rukn** browser smoke remains UNVERIFIED
-- Phase 2 provider-string verification failure
 - No Admin Work-create UI
 - Occurrence generator has no Admin button/scheduler
 - Rukn cannot read planning/occurrence collections; calendar notices remain empty
+- Phase 2 provider-string verification failure
 - PWA/Workbox may serve stale hashed assets until the in-app “new version” refresh (or SW unregister)
 
 ### 9. Final readiness state
 
-**READY WITH KNOWN LIMITATIONS**
+**PRODUCTION READY**
 
-Not **PRODUCTION READY**: required authenticated Rukn smoke remains unverified.
-
-Not **NOT READY — BLOCKERS FOUND**: deployment succeeded, Firestore rules/indexes published, Admin smoke passed, no architecture reopen required.
+See [kc-production-signoff.md](./kc-production-signoff.md). Known limitations remain; they are not production blockers.
