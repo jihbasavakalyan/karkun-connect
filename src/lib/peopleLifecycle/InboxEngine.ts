@@ -1,23 +1,23 @@
 /**
  * KC-0123 — People Lifecycle facade (presentation / orchestration only).
- * Business rules stay in existing request, classification, and communication services.
+ * BATCH-06A — Admin Inbox = people intake + Rukn → Admin internal messages.
+ * WhatsApp history is not an Inbox item.
  */
 
 import { getAllKarkunRequests, getPendingKarkunRequests } from '@/stores/karkunRequestStore'
-import { getCommunicationHistory } from '@/stores/communicationStore'
+import { getAllRuknAdminMessages } from '@/stores/ruknAdminMessageStore'
 import {
   getPeopleRequestKind,
   type NewKarkunRequest,
   type PeopleRequestKind,
 } from '@/types/karkunRequest.types'
-import type { CommunicationHistoryRecord } from '@/types/communication'
+import type { RuknAdminMessage } from '@/types/ruknAdminMessage.types'
 import { getPersonCategory } from '@/lib/peopleClassification'
 import { resolvePersonById } from '@/lib/personResolution'
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { getRuknById } from '@/data/ruknMaster'
 import { getActiveAssignmentsForKarkun } from '@/stores/assignmentStore'
-import { adminKarkunProfilePath } from '@/constants/routes'
-import { isRuknVisibleCommunication } from './CommunicationResolver'
+import { adminKarkunProfilePath, adminRuknDetailPath } from '@/constants/routes'
 
 export type InboxFolder = 'pending' | 'approved' | 'rejected' | 'archived'
 
@@ -42,7 +42,7 @@ export type InboxItem = {
   unread: boolean
   href?: string
   rawRequest?: NewKarkunRequest
-  rawMessage?: CommunicationHistoryRecord
+  rawInternalMessage?: RuknAdminMessage
 }
 
 function requestFolder(request: NewKarkunRequest): InboxFolder {
@@ -61,7 +61,7 @@ function kindLabel(kind: InboxItemKind): string {
     case 'karkun_to_muttafiq':
       return 'Karkun → Muttafiq Conversion'
     case 'rukn_message':
-      return 'Rukn Communication'
+      return 'Rukn → Admin message'
     case 'admin_notification':
       return 'Administrative Notification'
     default:
@@ -93,23 +93,23 @@ function mapRequest(request: NewKarkunRequest): InboxItem {
   }
 }
 
-function mapMessage(record: CommunicationHistoryRecord): InboxItem {
-  const recipientName = record.recipient?.name ?? record.recipient?.mobile ?? 'Recipient'
+function mapInternalMessage(record: RuknAdminMessage): InboxItem {
   return {
-    id: `msg:${record.id}`,
+    id: `ram:${record.id}`,
     kind: 'rukn_message',
-    folder: 'approved',
-    title: record.templateName || 'Message',
+    folder: record.status === 'unread' ? 'pending' : 'archived',
+    title: record.subject || 'Message to Administrator',
     subtitle: kindLabel('rukn_message'),
-    sender: record.actor || 'Rukn',
-    recipient: recipientName,
-    relatedPersonId: record.recipient?.personId,
-    relatedPersonName: recipientName,
-    createdAt: record.sentAt,
-    updatedAt: record.sentAt,
-    statusLabel: record.status,
-    unread: false,
-    rawMessage: record,
+    sender: record.ruknName || record.ruknId,
+    recipient: 'Administrator',
+    relatedPersonId: record.ruknId,
+    relatedPersonName: record.ruknName,
+    createdAt: record.createdAt,
+    updatedAt: record.updatedAt,
+    statusLabel: record.status === 'unread' ? 'Unread' : 'Read',
+    unread: record.status === 'unread',
+    href: adminRuknDetailPath(record.ruknId),
+    rawInternalMessage: record,
   }
 }
 
@@ -124,9 +124,7 @@ export function buildUnifiedInbox(options?: {
   const kind = options?.kind ?? 'all'
 
   const requestItems = getAllKarkunRequests().map(mapRequest)
-  const messageItems = getCommunicationHistory()
-    .filter(isRuknVisibleCommunication)
-    .map(mapMessage)
+  const messageItems = getAllRuknAdminMessages().map(mapInternalMessage)
 
   let items = [...requestItems, ...messageItems].sort(
     (a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt),
@@ -147,6 +145,7 @@ export function buildUnifiedInbox(options?: {
         item.recipient,
         item.relatedPersonName,
         item.statusLabel,
+        item.rawInternalMessage?.body,
       ]
         .filter(Boolean)
         .join(' ')

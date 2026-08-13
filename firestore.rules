@@ -317,10 +317,11 @@ service cloud.firestore {
           || docId == 'karkunCounter'
           || docId == 'migrationVersion'
           || docId == 'karkunRequests'
+          || docId == 'ruknAdminMessages'
         ));
 
       allow create: if isAdministrator()
-        || (isRukn() && docId == 'karkunRequests');
+        || (isRukn() && (docId == 'karkunRequests' || docId == 'ruknAdminMessages'));
 
       allow update: if (
         isAdministrator() && (
@@ -335,13 +336,14 @@ service cloud.firestore {
           request.resource.data.nextSequence >= resource.data.nextSequence
         )
       ) || (
-        isRukn() && docId == 'karkunRequests'
+        isRukn() && (docId == 'karkunRequests' || docId == 'ruknAdminMessages')
       );
 
       allow delete: if isAdministrator()
         && docId != 'karkunCounter'
         && docId != 'connectionMeta'
-        && docId != 'karkunRequests';
+        && docId != 'karkunRequests'
+        && docId != 'ruknAdminMessages';
     }
 
     match /{document=**} {

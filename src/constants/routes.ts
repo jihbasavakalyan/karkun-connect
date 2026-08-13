@@ -34,7 +34,7 @@ export const ROUTES = {
   ADMIN_COMMUNICATION_HISTORY: '/admin/communication-history',
   /** KC-0121 — Mission Workspace (unified operational work queue) */
   ADMIN_MISSION_WORKSPACE: '/admin/mission-workspace',
-  /** KC-0123 — Unified Inbox (people intake + Rukn communications) */
+  /** KC-0123 / BATCH-06A — Admin Inbox (people intake + Rukn → Admin internal messages) */
   ADMIN_INBOX: '/admin/inbox',
   /** KC-0115 — Saved Lists lives under Communication (route unchanged) */
   ADMIN_LISTS: '/admin/lists',

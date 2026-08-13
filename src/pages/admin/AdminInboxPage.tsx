@@ -1,6 +1,7 @@
 /**
- * KC-0123 — Admin Unified Inbox (people intake + Rukn communications).
- * KC-028B — unified write lifecycle for approve / reject.
+ * KC-0123 / BATCH-06A — Admin Inbox (people intake + Rukn → Admin internal messages).
+ * WhatsApp history is not shown here. No chat/thread.
+ * KC-028B — unified write lifecycle for approve / reject / mark read.
  */
 
 import { useEffect, useMemo, useState } from 'react'
@@ -24,7 +25,11 @@ import {
   rejectNewKarkunRequest,
   subscribeToKarkunRequestStore,
 } from '@/services/karkunRequestService'
+import { markRuknAdminMessageRead } from '@/services/ruknAdminMessageService'
+import { subscribeToRuknAdminMessageStore } from '@/stores/ruknAdminMessageStore'
 import { getPeopleRequestKind } from '@/types/karkunRequest.types'
+import { getRuknById } from '@/data/ruknMaster'
+import { buildWhatsAppLink } from '@/utils/personContactLinks'
 
 const FOLDERS: { id: InboxFolder | 'all'; label: string }[] = [
   { id: 'pending', label: 'Pending' },
@@ -56,7 +61,14 @@ export function AdminInboxPage() {
   const [notice, setNotice] = useState('')
   const { busy, busyKey, progressMessage, run } = useWriteLifecycle()
 
-  useEffect(() => subscribeToKarkunRequestStore(() => setTick((v) => v + 1)), [])
+  useEffect(() => {
+    const unsubRequests = subscribeToKarkunRequestStore(() => setTick((v) => v + 1))
+    const unsubMessages = subscribeToRuknAdminMessageStore(() => setTick((v) => v + 1))
+    return () => {
+      unsubRequests()
+      unsubMessages()
+    }
+  }, [])
 
   const items = useMemo(() => {
     void tick
@@ -139,13 +151,46 @@ export function AdminInboxPage() {
     })
   }
 
+  const handleMarkRead = (item: InboxItem) => {
+    const message = item.rawInternalMessage
+    if (!message) return
+    setError('')
+    setNotice('')
+    void run({
+      key: `inbox:read:${message.id}`,
+      queueLabels: ['settings.ruknAdminMessages'],
+      work: async () => {
+        const result = await markRuknAdminMessageRead({
+          messageId: message.id,
+          readBy: decidedBy,
+        })
+        if (!result.ok) {
+          throw Object.assign(new Error(result.error), { code: 'unknown' })
+        }
+        return result
+      },
+      refreshCounters: refreshAfterDecision,
+      refreshUi: refreshAfterDecision,
+    }).then((lifecycle) => {
+      if (!lifecycle) return
+      if (!lifecycle.ok) {
+        const classified = classifyWriteError(lifecycle.error ?? lifecycle.message)
+        setError(classified.message)
+        refreshAfterDecision()
+        return
+      }
+      setNotice('Message marked as read.')
+    })
+  }
+
   return (
     <PageShell>
       <header className="mb-6 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold text-text-heading">Inbox</h1>
           <p className="mt-1 text-sm text-secondary">
-            Unified intake for people requests and Rukn communications.
+            People intake and one-way Rukn messages. Reply to a Rukn on WhatsApp — this is not a
+            chat.
           </p>
         </div>
         {unread > 0 ? (
@@ -224,8 +269,18 @@ export function AdminInboxPage() {
           {items.map((item) => {
             const itemBusy =
               busyKey === `inbox:approve:${item.rawRequest?.id ?? ''}` ||
-              busyKey === `inbox:reject:${item.rawRequest?.id ?? ''}`
+              busyKey === `inbox:reject:${item.rawRequest?.id ?? ''}` ||
+              busyKey === `inbox:read:${item.rawInternalMessage?.id ?? ''}`
             const canDecide = Boolean(item.rawRequest && item.folder === 'pending')
+            const canMarkRead = Boolean(
+              item.rawInternalMessage && item.rawInternalMessage.status === 'unread',
+            )
+            const rukn = item.rawInternalMessage
+              ? getRuknById(item.rawInternalMessage.ruknId)
+              : undefined
+            const whatsappHref = rukn
+              ? buildWhatsAppLink(rukn.whatsapp?.trim() ? rukn.whatsapp : rukn.mobile)
+              : null
             return (
               <li
                 key={item.id}
@@ -246,9 +301,9 @@ export function AdminInboxPage() {
                         Kind: {getPeopleRequestKind(item.rawRequest)} · {item.rawRequest.mobile}
                       </p>
                     ) : null}
-                    {item.rawMessage ? (
-                      <p className="mt-2 line-clamp-2 text-sm text-text-heading">
-                        {item.rawMessage.message}
+                    {item.rawInternalMessage ? (
+                      <p className="mt-2 whitespace-pre-wrap text-sm text-text-heading">
+                        {item.rawInternalMessage.body}
                       </p>
                     ) : null}
                     <p className="mt-1 text-xs text-secondary">
@@ -264,6 +319,25 @@ export function AdminInboxPage() {
                     <Link to={item.href} className="text-sm font-semibold text-primary underline">
                       View
                     </Link>
+                  ) : null}
+                  {whatsappHref ? (
+                    <a
+                      href={whatsappHref}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm font-semibold text-primary underline"
+                    >
+                      WhatsApp Rukn
+                    </a>
+                  ) : null}
+                  {canMarkRead ? (
+                    <SecondaryButton
+                      type="button"
+                      disabled={busy}
+                      onClick={() => handleMarkRead(item)}
+                    >
+                      {itemBusy ? progressMessage || '…' : 'Mark read'}
+                    </SecondaryButton>
                   ) : null}
                   {canDecide ? (
                     <>

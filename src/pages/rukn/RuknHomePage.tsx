@@ -11,6 +11,7 @@ import { RuknExecutionSummaryCards } from '@/components/execution/RuknExecutionS
 import { CampaignExecutionMatrix } from '@/components/execution/CampaignExecutionMatrix'
 import { RuknTodaysFocus } from '@/components/execution/RuknTodaysFocus'
 import { RuknWorkActionPanel } from '@/components/execution/RuknWorkActionPanel'
+import { RuknMessageAdminPanel } from '@/components/communication/RuknMessageAdminPanel'
 import { openDigitalRafeeqAssistant } from '@/features/digitalRafeeq/launcher'
 import { buildContextualRafeeqGuidance } from '@/features/digitalRafeeq/companion/rafeeqUrduCopy'
 import { useRequiredRuknId } from '@/hooks/useRequiredRuknId'
@@ -94,6 +95,12 @@ export function RuknHomePage() {
       <WidgetErrorBoundary title="Work">
         <section className="mt-4 space-y-3" aria-label="Work">
           <RuknWorkActionPanel ruknId={ruknId} />
+        </section>
+      </WidgetErrorBoundary>
+
+      <WidgetErrorBoundary title="Message Administrator">
+        <section className="mt-4 space-y-3" aria-label="Message Administrator">
+          <RuknMessageAdminPanel />
         </section>
       </WidgetErrorBoundary>
 

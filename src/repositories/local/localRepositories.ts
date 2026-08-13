@@ -738,4 +738,25 @@ export class SettingsLocalRepository implements SettingsRepository {
   clearKarkunRequests(): RepositoryResult<void> {
     return tryRepository(() => removeFromStorage(STORAGE_KEYS.karkunRequests))
   }
+
+  loadRuknAdminMessages(): RepositoryResult<
+    import('@/types/ruknAdminMessage.types').RuknAdminMessage[]
+  > {
+    return tryRepository(() =>
+      loadJsonFromStorage(
+        STORAGE_KEYS.ruknAdminMessages,
+        [] as import('@/types/ruknAdminMessage.types').RuknAdminMessage[],
+      ),
+    )
+  }
+
+  saveRuknAdminMessages(
+    messages: import('@/types/ruknAdminMessage.types').RuknAdminMessage[],
+  ): RepositoryResult<void> {
+    return tryRepository(() => saveJsonToStorage(STORAGE_KEYS.ruknAdminMessages, messages))
+  }
+
+  clearRuknAdminMessages(): RepositoryResult<void> {
+    return tryRepository(() => removeFromStorage(STORAGE_KEYS.ruknAdminMessages))
+  }
 }

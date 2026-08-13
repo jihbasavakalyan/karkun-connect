@@ -23,7 +23,7 @@ export function RuknCommunicationPanel() {
         <h2 className="text-lg font-semibold text-text-heading">Rukn Communication</h2>
         <p className="mt-1 text-sm text-secondary">
           Daily instructions, campaign guidance, announcements, meeting notices, and operational
-          reminders for Arkaan.
+          reminders for Arkaan — sent on WhatsApp.
         </p>
 
         <dl className="mt-4 grid gap-3 sm:grid-cols-3">

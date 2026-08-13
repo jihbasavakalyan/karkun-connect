@@ -67,6 +67,7 @@ import type {
   SettingsRepository,
 } from '@/repositories/interfaces/SettingsRepository'
 import type { NewKarkunRequest } from '@/types/karkunRequest.types'
+import type { RuknAdminMessage } from '@/types/ruknAdminMessage.types'
 import { SyncCache } from '@/repositories/firestore/cache'
 import {
   FIRESTORE_COLLECTIONS,
@@ -99,6 +100,10 @@ import {
   countPendingKarkunRequests,
   mergeKarkunRequestsById,
 } from '@/lib/karkunRequestMerge'
+import {
+  countUnreadRuknAdminMessages,
+  mergeRuknAdminMessagesById,
+} from '@/lib/ruknAdminMessageMerge'
 import { mergeGuidanceState } from '@/lib/reliability/guidanceStateMerge'
 import { toOperatorPersistError } from '@/lib/reliability/persistErrors'
 import { markPendingWriteComplete, recordFirestoreConflict, trackPendingWrite } from '@/repositories/firestore/offlineSync'
@@ -184,6 +189,7 @@ const jihPortalCache = new SyncCache<JihPortalState>({ registrations: {}, monthl
 const migrationVersionCache = new SyncCache<number | null>(null)
 const broadcastCache = new SyncCache<BroadcastListRecord[]>([])
 const karkunRequestCache = new SyncCache<NewKarkunRequest[]>([])
+const ruknAdminMessageCache = new SyncCache<RuknAdminMessage[]>([])
 const backupIndexCache = new SyncCache<MigrationBackupIndexEntry[]>([])
 const backupCache = new SyncCache<Map<string, DatasetBackup>>(new Map())
 
@@ -785,6 +791,7 @@ function applyBackgroundHydratePayload(input: {
    * soft-read separately. Full settings collection getDocs was a verified duplicate.
    */
   karkunRequestsDoc: { requests?: NewKarkunRequest[] } | null
+  ruknAdminMessagesDoc: { messages?: RuknAdminMessage[] } | null
   assignmentReviews: AssignmentReviewRequest[]
   planning: {
     mansoobas: MeqatiMansooba[]
@@ -804,6 +811,7 @@ function applyBackgroundHydratePayload(input: {
     complianceSnapshots,
     migrationVersion,
     karkunRequestsDoc,
+    ruknAdminMessagesDoc,
     assignmentReviews,
     planning,
     localProgrammes,
@@ -904,6 +912,10 @@ function applyBackgroundHydratePayload(input: {
     ? karkunRequestsDoc.requests
     : []
   karkunRequestCache.set(karkunRequests)
+  const ruknAdminMessages = Array.isArray(ruknAdminMessagesDoc?.messages)
+    ? ruknAdminMessagesDoc.messages
+    : []
+  ruknAdminMessageCache.set(ruknAdminMessages)
   applyAssignmentReviewHydrate(assignmentReviews)
   // Phase 1 — non-critical planning foundation (Admin-only; soft-empty for Rukn).
   applyPlanningHydrate(planning)
@@ -1072,6 +1084,11 @@ function readBackgroundHydratePayload(db: ReturnType<typeof getFirestoreDb>) {
       FIRESTORE_COLLECTIONS.settings,
       FIRESTORE_DOCS.karkunRequests,
     ),
+    readDocSoft<{ messages?: RuknAdminMessage[] }>(
+      db,
+      FIRESTORE_COLLECTIONS.settings,
+      FIRESTORE_DOCS.ruknAdminMessages,
+    ),
     readAssignmentReviewsForClient(),
     readPlanningCollectionsForClient(),
     readLocalProgrammeCollectionsForClient(),
@@ -1087,6 +1104,7 @@ function readBackgroundHydratePayload(db: ReturnType<typeof getFirestoreDb>) {
       complianceSnapshots,
       migrationVersion,
       karkunRequestsDoc,
+      ruknAdminMessagesDoc,
       assignmentReviews,
       planning,
       localProgrammes,
@@ -1101,6 +1119,7 @@ function readBackgroundHydratePayload(db: ReturnType<typeof getFirestoreDb>) {
       complianceSnapshots,
       migrationVersion,
       karkunRequestsDoc,
+      ruknAdminMessagesDoc,
       assignmentReviews,
       planning,
       localProgrammes,
@@ -1228,6 +1247,7 @@ async function hydrateFirestoreCachesOnce(): Promise<void> {
       complianceSnapshots,
       migrationVersion,
       karkunRequestsDoc,
+      ruknAdminMessagesDoc,
       assignmentReviews,
       planning,
       localProgrammes,
@@ -1254,6 +1274,11 @@ async function hydrateFirestoreCachesOnce(): Promise<void> {
         FIRESTORE_COLLECTIONS.settings,
         FIRESTORE_DOCS.karkunRequests,
       ),
+      readDocSoft<{ messages?: RuknAdminMessage[] }>(
+        db,
+        FIRESTORE_COLLECTIONS.settings,
+        FIRESTORE_DOCS.ruknAdminMessages,
+      ),
       readAssignmentReviewsForClient(),
       readPlanningCollectionsForClient(),
       readLocalProgrammeCollectionsForClient(),
@@ -1278,6 +1303,7 @@ async function hydrateFirestoreCachesOnce(): Promise<void> {
       complianceSnapshots,
       migrationVersion,
       karkunRequestsDoc,
+      ruknAdminMessagesDoc,
       assignmentReviews,
       planning,
       localProgrammes,
@@ -1501,6 +1527,24 @@ export function startFirestoreSnapshotListeners(onRemoteChange: () => void): voi
           })
           onRemoteChange()
         }),
+        onSnapshot(doc(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.ruknAdminMessages), () => {
+          const label = 'settings:ruknAdminMessages'
+          if (!seenInitialSnapshot.has(label)) {
+            seenInitialSnapshot.add(label)
+            traceIncidentStage('snapshot_listener:initial_suppressed', {
+              caller: 'onSnapshot',
+              sourceOfTruth: 'Snapshot Listener',
+              path: label,
+            })
+            return
+          }
+          traceIncidentStage('snapshot_listener:fired', {
+            caller: 'onSnapshot',
+            sourceOfTruth: 'Snapshot Listener',
+            path: label,
+          })
+          onRemoteChange()
+        }),
       )
       return
     }
@@ -1543,6 +1587,7 @@ export function subscribeToFirestoreCacheChanges(listener: () => void): () => vo
     activityLogCache.subscribe(listener),
     broadcastCache.subscribe(listener),
     karkunRequestCache.subscribe(listener),
+    ruknAdminMessageCache.subscribe(listener),
     subscribeAssignmentReviewCache(listener),
   ]
   return () => unsubs.forEach((unsub) => unsub())
@@ -2790,6 +2835,23 @@ export class SettingsFirestoreRepository implements SettingsRepository {
     karkunRequestCache.set([])
     return repositoryOk(undefined)
   }
+
+  loadRuknAdminMessages(): RepositoryResult<RuknAdminMessage[]> {
+    return repositoryOk([...ruknAdminMessageCache.get()])
+  }
+
+  saveRuknAdminMessages(messages: RuknAdminMessage[]): RepositoryResult<void> {
+    ruknAdminMessageCache.set([...messages])
+    void queueWrite('settings.ruknAdminMessages', async () =>
+      writeMergedRuknAdminMessages(ruknAdminMessageCache.get()),
+    )
+    return repositoryOk(undefined)
+  }
+
+  clearRuknAdminMessages(): RepositoryResult<void> {
+    ruknAdminMessageCache.set([])
+    return repositoryOk(undefined)
+  }
 }
 
 /**
@@ -2863,6 +2925,57 @@ async function writeMergedKarkunRequests(
   }
 }
 
+export async function refreshRuknAdminMessageCacheFromServer(): Promise<{
+  path: string
+  total: number
+  unread: number
+}> {
+  const path = `${FIRESTORE_COLLECTIONS.settings}/${FIRESTORE_DOCS.ruknAdminMessages}`
+  const db = getFirestoreDb()
+  const data = await readDoc<{ messages?: RuknAdminMessage[] }>(
+    db,
+    FIRESTORE_COLLECTIONS.settings,
+    FIRESTORE_DOCS.ruknAdminMessages,
+  )
+  const remote = Array.isArray(data?.messages) ? data.messages : []
+  const merged = mergeRuknAdminMessagesById(remote, ruknAdminMessageCache.get())
+  ruknAdminMessageCache.set([...merged])
+  return {
+    path,
+    total: merged.length,
+    unread: countUnreadRuknAdminMessages(merged),
+  }
+}
+
+async function writeMergedRuknAdminMessages(
+  local: RuknAdminMessage[],
+): Promise<RepositoryResult<void>> {
+  const path = `${FIRESTORE_COLLECTIONS.settings}/${FIRESTORE_DOCS.ruknAdminMessages}`
+  try {
+    const db = getFirestoreDb()
+    const ref = doc(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.ruknAdminMessages)
+    const merged = await runTransaction(db, async (transaction) => {
+      const snapshot = await transaction.get(ref)
+      const remoteRaw = snapshot.exists()
+        ? (stripMeta<{ messages?: RuknAdminMessage[] }>(snapshot.data() as DocumentData).messages ??
+          [])
+        : []
+      const remote = Array.isArray(remoteRaw) ? remoteRaw : []
+      const next = mergeRuknAdminMessagesById(remote, local)
+      transaction.set(ref, {
+        ...withMeta(sanitizeForFirestore({ messages: next })),
+        _serverTime: serverTimestamp(),
+      })
+      return next
+    })
+    ruknAdminMessageCache.set([...merged])
+    return repositoryOk(undefined)
+  } catch (error) {
+    console.error('[BATCH-06A] ruknAdminMessages merge write failed', { path, error })
+    return mapFirestoreError(error)
+  }
+}
+
 export async function clearAllFirestoreCachesForTests(): Promise<void> {
   stopFirestoreSnapshotListeners()
   campaignCache.reset(MOCK_CAMPAIGNS)
@@ -2886,6 +2999,7 @@ export async function clearAllFirestoreCachesForTests(): Promise<void> {
   backupIndexCache.reset([])
   backupCache.reset(new Map())
   karkunRequestCache.reset([])
+  ruknAdminMessageCache.reset([])
   resetAssignmentReviewCacheForTests()
   resetPlanningCachesForTests()
   resetLocalProgrammeCachesForTests()

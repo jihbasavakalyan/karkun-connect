@@ -40,6 +40,8 @@ export const FIRESTORE_DOCS = {
   guidanceState: 'guidance',
   jihPortalState: 'jihPortal',
   karkunRequests: 'karkunRequests',
+  /** BATCH-06A — Rukn → Admin one-way internal messages (Admin Inbox). */
+  ruknAdminMessages: 'ruknAdminMessages',
 } as const
 
 export type FirestoreDocumentMeta = {

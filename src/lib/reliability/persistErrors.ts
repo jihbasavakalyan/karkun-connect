@@ -25,6 +25,7 @@ const LABEL_HINTS: Record<string, string> = {
   'executions.guidance': 'Guidance / commitments could not be saved (executions/guidance).',
   'executions.annexure': 'Visit / annexure progress could not be saved.',
   'settings.karkunRequests': 'New Karkun request could not be saved.',
+  'settings.ruknAdminMessages': 'Message to Administrator could not be saved.',
   communications: 'Communication state could not be saved.',
   assignmentReviews: 'Assignment review could not be saved.',
   followUps: 'Follow-up records could not be saved.',

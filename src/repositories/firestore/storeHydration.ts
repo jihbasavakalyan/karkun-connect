@@ -11,6 +11,7 @@ import { reloadMonthlyBaitulMaalStoreFromPersistence } from '@/stores/monthlyBai
 import { reloadJihWebPortalStoreFromPersistence } from '@/stores/jihWebPortalStore'
 import { reloadBroadcastListStoreFromPersistence } from '@/stores/broadcastListStore'
 import { reloadKarkunRequestStoreFromPersistence } from '@/stores/karkunRequestStore'
+import { reloadRuknAdminMessageStoreFromPersistence } from '@/stores/ruknAdminMessageStore'
 import { reloadAssignmentReviewStoreFromPersistence } from '@/stores/assignmentReviewStore'
 import { loadPeopleRegistryFromPersistence } from '@/lib/peopleRegistryPersistence'
 import { getPeopleStatistics, notifyPeopleRegistryUiOnly } from '@/lib/peopleStore'
@@ -80,6 +81,7 @@ export function hydrateStoresFromRepositories(): void {
     reloadJihWebPortalStoreFromPersistence()
     reloadBroadcastListStoreFromPersistence()
     reloadKarkunRequestStoreFromPersistence()
+    reloadRuknAdminMessageStoreFromPersistence()
     reloadAssignmentReviewStoreFromPersistence()
     const registryBeforeLoad = MOCK_KARKUN_REGISTRY.length
     loadPeopleRegistryFromPersistence()

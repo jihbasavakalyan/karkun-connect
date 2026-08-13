@@ -37,4 +37,11 @@ export interface SettingsRepository {
     requests: import('@/types/karkunRequest.types').NewKarkunRequest[],
   ): RepositoryResult<void>
   clearKarkunRequests(): RepositoryResult<void>
+  loadRuknAdminMessages(): RepositoryResult<
+    import('@/types/ruknAdminMessage.types').RuknAdminMessage[]
+  >
+  saveRuknAdminMessages(
+    messages: import('@/types/ruknAdminMessage.types').RuknAdminMessage[],
+  ): RepositoryResult<void>
+  clearRuknAdminMessages(): RepositoryResult<void>
 }

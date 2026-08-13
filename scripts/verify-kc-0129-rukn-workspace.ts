@@ -22,7 +22,7 @@ assert(
   !/Available Capacity|availableCapacity|Completed count|stats\.completedCount/.test(cardSource),
   'Overview card must not show Available Capacity or Completed',
 )
-assert(/Communicate/.test(cardSource), 'Overview card must expose Communicate')
+assert(/WhatsApp/.test(cardSource), 'Overview card must expose WhatsApp')
 assert(
   /Pending Visits|Pending Weekly Ijtema|Pending Monthly Baitul Maal|Pending App Registration/.test(
     cardSource,

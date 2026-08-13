@@ -23,6 +23,7 @@ export const STORAGE_KEYS = {
   broadcastLists: 'karkun-connect.broadcast-lists',
   migrationBackups: 'karkun-connect.migration.backups',
   karkunRequests: 'karkun-connect.karkun-requests',
+  ruknAdminMessages: 'karkun-connect.rukn-admin-messages',
   connectionLedger: 'karkun-connect.connection-ledger',
   assignmentReviews: 'karkun-connect.assignment-reviews',
   meqatiMansoobas: 'karkun-connect.meqati-mansoobas',

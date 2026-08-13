@@ -99,7 +99,7 @@ export function RuknAssignmentCard({ rukn, onCommunicate }: RuknAssignmentCardPr
           onClick={() => onCommunicate(rukn)}
         >
           <Icon name="message" size="sm" />
-          Communicate
+          WhatsApp
         </PrimaryButton>
 
         <div className="relative shrink-0" ref={menuRef}>

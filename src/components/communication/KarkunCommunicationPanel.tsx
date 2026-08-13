@@ -25,7 +25,7 @@ export function KarkunCommunicationPanel() {
         <h2 className="text-lg font-semibold text-text-heading">Karkun Communication</h2>
         <p className="mt-1 text-sm text-secondary">
           Visit reminders, meeting invitations, follow-ups, appreciation, and campaign information
-          for Karkuns.
+          for Karkuns — sent on WhatsApp.
         </p>
 
         <dl className="mt-4 grid gap-3 sm:grid-cols-3">
