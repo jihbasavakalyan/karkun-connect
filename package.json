@@ -174,6 +174,7 @@
     "verify:kc-phase5-mansooba-activity-reporting": "npx vite-node scripts/verify-kc-phase5-mansooba-activity-reporting.ts",
     "verify:kc-phase6-communication-surfaces": "npx vite-node scripts/verify-kc-phase6-communication-surfaces.ts",
     "verify:kc-phase6-notifications": "npx vite-node scripts/verify-kc-phase6-notifications.ts",
+    "verify:kc-phase7-journey-dashboards": "npx vite-node scripts/verify-kc-phase7-journey-dashboards.ts",
     "verify:kc-028b": "npx vite-node scripts/verify-kc-028b.ts",
     "verify:kc-028c": "npx vite-node scripts/verify-kc-028c-weekly-ijtema-window.ts",
     "verify:kc-bug-0130a": "npx vite-node scripts/verify-kc-bug-0130a-whatsapp-launch.ts",

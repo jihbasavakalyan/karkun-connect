@@ -31,6 +31,11 @@ import { getMonthlyBaitulMaalDashboardKpi } from '@/services/monthlyBaitulMaalSe
 import { getWeeklyIjtemaDashboardKpi } from '@/services/weeklyIjtemaService'
 import { getPendingKarkunRequests } from '@/services/karkunRequestService'
 import { runRegistryHealthScan } from '@/services/registryHealthService'
+import { hasContinuousDevelopmentSignal } from '@/lib/journey/continuousKarkunJourney'
+import { isWorkOverdue, todayWorkCalendarDate } from '@/lib/work/ruknActionItems'
+import { unwrapRepository } from '@/repositories/errors'
+import { getRepositories } from '@/repositories/provider'
+import { getActiveAssignmentsForKarkun } from '@/stores/assignmentStore'
 
 export type CommandCenterLinkItem = {
   id: string
@@ -169,6 +174,38 @@ export function buildAdminAttentionRequired(): CommandCenterLinkItem[] {
       description: 'Messages that did not deliver',
       route: ROUTES.ADMIN_COMMUNICATION_HISTORY,
       tone: 'critical',
+    })
+  }
+
+  const asOfDate = todayWorkCalendarDate()
+  const overdueWork = unwrapRepository(getRepositories().work.loadAll(), []).filter(
+    (row) => row.status !== 'done' && isWorkOverdue(row.dueDate, asOfDate),
+  ).length
+  if (overdueWork > 0) {
+    items.push({
+      id: 'overdue-work',
+      label: 'Overdue work',
+      count: overdueWork,
+      description: 'Work past its due date still not done',
+      route: ROUTES.ADMIN_PLANNING,
+      tone: 'critical',
+    })
+  }
+
+  const connectedWithoutDevelopment = getAllKarkuns(false).filter((karkun) => {
+    if (karkun.isArchived) return false
+    const assignmentId = getActiveAssignmentsForKarkun(karkun.id)[0]?.assignmentId
+    if (!assignmentId) return false
+    return !hasContinuousDevelopmentSignal(karkun, assignmentId)
+  }).length
+  if (connectedWithoutDevelopment > 0) {
+    items.push({
+      id: 'connection-without-development',
+      label: 'Connected without development',
+      count: connectedWithoutDevelopment,
+      description: 'Connected Karkuns with no visit, orientation, or JIH signal yet',
+      route: adminAssignmentsPath(),
+      tone: 'warn',
     })
   }
 

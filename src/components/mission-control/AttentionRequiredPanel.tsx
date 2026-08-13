@@ -29,7 +29,7 @@ export function AttentionRequiredPanel({ items, ready }: AttentionRequiredPanelP
           Scanning registry health…
         </p>
       ) : items.length === 0 ? (
-        <p className="exdash-muted">No attention items — registry looks healthy.</p>
+        <p className="exdash-muted">No attention items right now.</p>
       ) : (
         <ul className="cc-attention-grid">
           {items.map((item) => (

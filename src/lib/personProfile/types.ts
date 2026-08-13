@@ -3,6 +3,8 @@
  * Business rules stay in guidance, operations adapters, and people lifecycle.
  */
 
+import type { ContinuousKarkunJourneySnapshot } from '@/lib/journey/continuousKarkunJourney'
+
 export type PersonCampaignStatusItem = {
   id: string
   label: string
@@ -67,6 +69,7 @@ export type Person360Profile = {
   }
   campaignStatus: PersonCampaignStatusItem[]
   journeyStages: { id: string; label: string; complete: boolean; current: boolean }[]
+  continuousJourney: ContinuousKarkunJourneySnapshot | null
   timeline: PersonTimelineRow[]
   communications: PersonCommunicationRow[]
   quickActions: PersonQuickAction[]

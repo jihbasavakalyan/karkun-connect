@@ -18,6 +18,7 @@ import {
   getAssignmentHistoryForKarkun,
 } from '@/stores/assignmentStore'
 import { resolveActiveConnection } from '@/lib/peopleLifecycle'
+import { loadContinuousKarkunJourney } from '@/lib/journey/continuousKarkunJourney'
 import { aggregatePersonCampaignStatus } from './StatusAggregator'
 import { buildPersonCampaignTimeline } from './TimelineBuilder'
 import { buildPersonJourneyStages } from './JourneyBuilder'
@@ -56,6 +57,7 @@ export function presentPerson360Profile(personId: string): Person360Profile {
       },
       campaignStatus: [],
       journeyStages: [],
+      continuousJourney: null,
       timeline: [],
       communications: [],
       quickActions: [],
@@ -113,6 +115,7 @@ export function presentPerson360Profile(personId: string): Person360Profile {
     },
     campaignStatus: aggregatePersonCampaignStatus(personId),
     journeyStages: buildPersonJourneyStages(personId),
+    continuousJourney: loadContinuousKarkunJourney(personId),
     timeline: buildPersonCampaignTimeline(person),
     communications: aggregatePersonCommunications(personId),
     quickActions: [

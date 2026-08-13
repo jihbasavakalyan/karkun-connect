@@ -5,6 +5,7 @@
 
 import { Link } from 'react-router-dom'
 import { buildPerson360Profile } from '@/lib/personProfile'
+import { ContinuousKarkunJourneyStrip } from '@/components/journey/ContinuousKarkunJourneyStrip'
 import { formatPersonNameForDisplay } from '@/utils/formatPersonDisplay'
 import { UI_LABELS } from '@/lib/uiTerminology'
 
@@ -22,7 +23,7 @@ export function Person360Overview({ personId }: Person360OverviewProps) {
   const profile = buildPerson360Profile(personId)
   if (!profile.found) return null
 
-  const { header, responsibility, campaignStatus, journeyStages, timeline, communications, quickActions } =
+  const { header, responsibility, campaignStatus, journeyStages, continuousJourney, timeline, communications, quickActions } =
     profile
 
   return (
@@ -135,6 +136,12 @@ export function Person360Overview({ personId }: Person360OverviewProps) {
           ))}
         </ol>
       </section>
+
+      {continuousJourney ? (
+        <section className="person-360-card rounded-(--radius-card) border border-border bg-surface p-4 shadow-card sm:p-5">
+          <ContinuousKarkunJourneyStrip snapshot={continuousJourney} />
+        </section>
+      ) : null}
 
       <section className="person-360-card rounded-(--radius-card) border border-border bg-surface p-4 shadow-card sm:p-5">
         <h3 className="text-sm font-semibold text-text-heading">{UI_LABELS.responsibility}</h3>

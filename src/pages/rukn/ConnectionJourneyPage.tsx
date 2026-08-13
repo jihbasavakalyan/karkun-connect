@@ -10,6 +10,7 @@ import { ContactActionBar } from '@/components/common/ContactActionBar'
 import { MessageComposerModal } from '@/components/communication/MessageComposerModal'
 import { SchedulePickerModal } from '@/components/communication/SchedulePickerModal'
 import { ConnectionProgressTracker } from '@/components/rukn/ConnectionProgressTracker'
+import { ContinuousKarkunJourneyStrip } from '@/components/journey/ContinuousKarkunJourneyStrip'
 import {
   CommitmentPanel,
   DevelopmentAssessmentPanel,
@@ -30,6 +31,7 @@ import {
   RelationshipSummaryPanel,
 } from '@/components/relationship'
 import { buildConnectionJourney } from '@/lib/connectionJourney'
+import { loadContinuousKarkunJourney } from '@/lib/journey/continuousKarkunJourney'
 import { getConnectionStatusLabel } from '@/lib/connectionLabels'
 import { buildIndividualCommunicationContext } from '@/lib/communicationContext'
 import { resolvePostVisitWorkflowDestination } from '@/lib/workflowPresentation'
@@ -148,6 +150,7 @@ export function ConnectionJourneyPage() {
   }
 
   const journey = buildConnectionJourney(karkun, activeAssignment.assignmentId)
+  const continuousJourney = loadContinuousKarkunJourney(karkun.id)
   void guidanceVersion
   const guidance = getKarkunGuidance(karkun.id)
   const ruknName = getRuknById(activeAssignment.ruknId)?.name
@@ -392,6 +395,11 @@ export function ConnectionJourneyPage() {
             <div className="mt-2">
               <ConnectionProgressTracker snapshot={journey} />
             </div>
+            {continuousJourney ? (
+              <div className="mt-4 border-t border-border pt-3">
+                <ContinuousKarkunJourneyStrip snapshot={continuousJourney} />
+              </div>
+            ) : null}
           </section>
 
           <section className={sectionClass()} aria-label="JIH App Registration">

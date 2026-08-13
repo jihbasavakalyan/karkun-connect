@@ -109,7 +109,7 @@ console.log('▶ Home wiring — existing Rukn dashboard, no new nav/framework')
 {
   const home = read('src/pages/rukn/RuknHomePage.tsx')
   assertIncludes(home, 'RuknWorkActionPanel', 'Work panel on Rukn Home')
-  assertIncludes(home, 'WidgetErrorBoundary title="Work"', 'isolated Work section')
+  assertIncludes(home, 'What needs my action?', 'Rukn action dashboard on Home')
   assertIncludes(home, 'RuknMissionControlHero', 'existing mission hero retained')
   assertIncludes(home, 'CampaignExecutionMatrix', 'existing execution retained')
 
