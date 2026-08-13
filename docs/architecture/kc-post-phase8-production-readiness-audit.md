@@ -1,29 +1,30 @@
 # KC Post-Phase-8 — Production Readiness & Architecture Audit
 
-**Status:** **READY WITH PRE-DEPLOYMENT ACTIONS**  
-**Type:** Read-only audit (no product implementation)  
-**Date:** 2026-08-13  
-**HEAD:** `3f54e444c08629e0359b9d77aecc71c7f99a8b4d`  
+**Status:** **READY WITH KNOWN LIMITATIONS**  
+**Type:** Production-readiness execution recorded on the original audit (no product implementation)  
+**Audit date:** 2026-08-13  
+**Execution date:** 2026-08-13 / 2026-08-14  
+**Product commit:** `3f54e444c08629e0359b9d77aecc71c7f99a8b4d`  
+**Audit commit:** `4f851017a839fd238589686e794ab580026e3d5a`  
+**Deployed commit:** `4f851017a839fd238589686e794ab580026e3d5a` (documentation only; product code identical to Phase 8 `3f54e44`)  
 **Branch:** `chore/kc-027-2-nonprod-recovery-readiness`  
 **Historical counter:** **70 / 72** (TASK-071 and TASK-072 remain skipped; no substitutes created)  
 **Authority:** [Phase 8 certification](./kc-phase8-certification.md) · [Phase 7 certification](./kc-phase7-certification.md) · [Phase 6 certification](./kc-phase6-certification.md) · [Phase 5 certification](./kc-phase5-certification.md) · [Phase 4 certification](./kc-phase4-certification.md) · [Phase 0](./kc-post-campaign-phase0-system-mapping.md)  
 **Standards:** KC-ARCH-009 · KC-ARCH-001 · KC-020
 
-This audit does **not** add product functionality, renumber the historical roadmap, deploy Vercel, deploy Firestore rules, or open a new product phase.
-
-Production behaviour is unchanged until an authorised deployment of this branch.
+The original 2026-08-13 audit remains below. This document now also records the authorised production-readiness execution. No product code was changed. TASK-071 / TASK-072 were not invented. Phases 0–8 were not reopened.
 
 ---
 
 ## A. Overall readiness
 
-**READY WITH PRE-DEPLOYMENT ACTIONS**
+**READY WITH KNOWN LIMITATIONS**
 
-Phases 0–8 remain certified. Automated typecheck, production build, and Phase 3–8 verification suites pass on this commit. Remaining work is operational: publish git Firestore rules/indexes, confirm environment (including optional TTS), deploy this branch, then run authenticated smoke.
+Phases 0–8 remain certified. Execution of the approved sequence is complete except authenticated **Rukn** smoke, which remains **UNVERIFIED** (no Rukn OTP session was already available; credentials were not recovered). Live Google TTS playback remains **UNVERIFIED**.
 
-No Phase 8 regression was found. No new intelligence database, LLM, or autonomous operational action was found.
+No Phase 8 regression was found. No new intelligence database, LLM, or autonomous operational action was found. Product code was not modified.
 
-The system should **not** be signed off as production-ready until the ordered pre-deployment actions in §D and the smoke checklist in §E are completed. Those are execution steps, not architecture reopeners.
+**PRODUCTION READY** is not claimed: required Rukn authenticated smoke is unverified.
 
 ---
 
@@ -104,7 +105,7 @@ No localStorage → Firestore migration of existing Karkun / Rukn / Connection /
 
 ## E. Required browser smoke checklist
 
-**Not executed this session.** No authenticated Admin/Rukn session was used.
+**Admin smoke executed 2026-08-14** on production `https://karkun-connect.vercel.app` as existing session `jihbasavakalyan1@gmail.com` (Administrator). **Rukn smoke was not executed** — no Rukn OTP session was already available; credentials were not recovered. Karkun login was not tested.
 
 Login roles remain `administrator` \| `rukn` only (`src/types/auth.types.ts`). There is **no Karkun login**. Karkun is a registry / connected-person record.
 
@@ -318,19 +319,159 @@ No intelligence-layer extension. No second notification engine. No LLM.
 
 ## J. Explicit conclusion
 
-The completed Phase 0–8 architecture is **coherent and locally certified**. It should:
+The completed Phase 0–8 architecture remains **coherent**. Production-readiness execution is recorded in **§K**.
 
-**1. Proceed to production-readiness execution** — rules/index publish, environment confirmation, authorised production deploy of `3f54e44`, authenticated smoke, post-deploy sign-off.
+**Final state: READY WITH KNOWN LIMITATIONS**
+
+- Firestore rules/indexes published to `karkun-connect-75c68`
+- Production deploy Ready (`dpl_FriLCjMDogZhkhnyAqqZr1R3ARNt`)
+- Admin authenticated smoke **PASS**
+- Rukn authenticated smoke **UNVERIFIED**
+- Live Google TTS **UNVERIFIED**
 
 It does **not** require:
 
 - reopening Phases 6–8,
 - a new numbered product phase,
 - substitute TASK-071 / TASK-072,
-- or speculative code changes from this audit.
+- or speculative product-code changes from this execution.
 
-**2. Specific remediation first** only if the same release must enable **Rukn Work mutation** or **Rukn Occurrence-calendar notifications** on Firestore. Those need an explicit authorization decision on Rukn read of `units` (required for Work save) and optionally `occurrences` / `localProgrammes` (calendar notices). That is a rules/product decision, not a Phase 8 rewrite.
+**2. Specific remediation first** only if a later release must enable **Rukn Work mutation** or **Rukn Occurrence-calendar notifications** on Firestore. Those need an explicit authorization decision on Rukn read of `units` (required for Work save) and optionally `occurrences` / `localProgrammes` (calendar notices). That is a rules/product decision, not a Phase 8 rewrite.
 
-**3. A new product decision** is required only for Admin Work/Responsibility UI and Occurrence generation UX. Those were already known limitations. They are not blockers for deploying Planning, Inbox, messaging, derived notifications (Work-based), journey/attention panels, or optional Rafeeq.
+**3. A new product decision** is required only for Admin Work/Responsibility UI and Occurrence generation UX. Those were already known limitations. They are not blockers for the deployed Planning, Inbox, messaging, derived notifications, journey/attention panels, or optional Rafeeq.
 
-**STOP.** Wait for the next explicit implementation or deploy decision.
+**STOP.** Do not start a new product task. Do not define TASK-071/072. Do not begin Phase 9. Do not remediate the optional Rukn `units` / occurrence-read gaps unless a later explicit task authorises it.
+
+---
+
+## K. Production-readiness execution (2026-08-13 / 2026-08-14)
+
+Ordered sequence executed. No product-code changes. No architecture reopen.
+
+### 1. Code verification
+
+| Command | Result |
+|---------|--------|
+| `npm run typecheck` | **PASS** |
+| `npm run build` | **PASS** (chunk-size / ineffective-dynamic-import warnings only) |
+| Phase 8 six verifies | **PASS** |
+| Phase 3 occurrence operations | **PASS** |
+| Phase 4 Rukn action dashboard | **PASS** |
+| Phase 5 activity + Mansooba reporting | **PASS** |
+| Phase 6 communication + notifications | **PASS** |
+| Phase 7 journey dashboards | **PASS** |
+| Phase 2 `verify:kc-phase2-local-programme-persistence` | **Not “fixed”** — documented provider-string failure remains; not a production blocker for this release |
+
+### 2. Firestore
+
+| Item | Result |
+|------|--------|
+| Target project | `karkun-connect-75c68` (`.firebaserc` + `firebase use`; not assumed) |
+| Rules | **Deployed** — `npx firebase deploy --only firestore:rules,firestore:indexes --project karkun-connect-75c68` |
+| Indexes | **Deployed** for `(default)` database from existing `firestore.indexes.json` (no new Phase 1–8 composites required) |
+| Rule semantics | Unchanged |
+| Migrations | **Not required** |
+| New collections | May start empty (`meqatiMansoobas`, `objectives`, `units`, `localProgrammes`, `occurrences`, `responsibilities`, `work`, `settings/ruknAdminMessages`, `settings/notificationPreferences_{uid}`) |
+
+Firebase CLI output: rules compiled and released; indexes deployed successfully.
+
+### 3. Environment
+
+| Area | Result |
+|------|--------|
+| Firebase | Production app uses project `karkun-connect-75c68` |
+| Vercel | Project `jihbk/karkun-connect` (`prj_16kA2l3oa9MHEd5FFEwItsqLmWZz`); production env includes `VITE_FIREBASE_*`, `VITE_REPOSITORY_PROVIDER`, `VITE_ADMIN_EMAILS`, `FIREBASE_PROJECT_ID`, `FIREBASE_SERVICE_ACCOUNT_JSON` |
+| TTS | `GOOGLE_TTS_CREDENTIALS_JSON` present on Vercel (server-only). No `VITE_GOOGLE_*`. Live Google TTS playback **UNVERIFIED** |
+| Voice | Remains optional; application is functional without speak |
+
+Direct equality of pulled secret values against the Firebase project id could not be echoed (CLI redaction). Identity is established from `.firebaserc`, Firebase CLI targeting, Vercel project link, and live production history.
+
+### 4. Deployment
+
+CLI `vercel deploy --prod` from a clean worktree **failed twice** (status UNKNOWN, no usable build logs). Git-integration preview of this branch **did** build.
+
+Promoted the Ready preview to production:
+
+```text
+npx vercel promote karkun-connect-2lvgfklc5-jihbk.vercel.app --yes
+```
+
+| Field | Value |
+|-------|--------|
+| Deployed commit | `4f85101` (product code = Phase 8 `3f54e44`; preview created 2026-08-13 14:32 IST, immediately after the audit commit) |
+| Deployment ID | `dpl_FriLCjMDogZhkhnyAqqZr1R3ARNt` |
+| Deployment URL | `https://karkun-connect-nzr82guwd-jihbk.vercel.app` |
+| Environment | production |
+| Status | **Ready** |
+| Aliases | `https://karkun-connect.vercel.app`, `https://jihbasavakalyan.org`, `https://karkun-connect-jihbk.vercel.app` |
+| Functions | `api/karkun-mobile-lookup`, `api/rukn-claims-provision`, `api/stt`, `api/tts` |
+| Source preview | `https://karkun-connect-2lvgfklc5-jihbk.vercel.app` (`dpl_4GFNF4HoB4VxnhMmnUHtmmmexdAE`) |
+
+A leftover CLI production attempt `karkun-connect-oxjb407if-jihbk.vercel.app` (`dpl_2oPojnPtiToYG7ExFdA2oYs8sTLM`) remained **UNKNOWN** and is **not** the live alias target. The hung CLI process was stopped.
+
+Unrelated local untracked evidence/scripts were **not** deployed.
+
+### 5. Admin smoke
+
+Existing authenticated Admin session (credentials not recovered). After promote, a PWA/Workbox cache mismatch served stale HTML (`index-Diq-cUBQ.js` 404) until the service worker/cache was unregistered. Fresh load used `index-Ctx3yhv5.js` 200. This is an operational PWA refresh issue, not a product-code blocker.
+
+| # | Surface | Result |
+|---|---------|--------|
+| A1 | Login / session | **PASS** — existing Admin session restored after cache clear |
+| A2 | Home / Command Center | **PASS** — `/admin`; campaign فعال کارکن، فعال جماعت; 584 connected Karkuns; COMPLETED |
+| A3 | Attention Required | **PASS** — Not Connected, duplicate mobiles, journey-gap rows |
+| A4 | Organisational Picture | **PASS** — Connection → Development → … counts loaded |
+| A5 | Actionable notifications | **PASS** — panel loaded (“No actionable notifications from calendar or work.”); bell shows 3 operational alerts |
+| A6 | Planning | **PASS** — `/admin/planning`; Mansooba/Objectives empty (valid); campaigns listed |
+| A7 | Occurrence calendar / history | **PASS** — empty is valid |
+| A8 | Campaign / Local Programme | **PASS** — existing campaigns visible; Local Programmes empty (valid) |
+| A9 | Work (read) | **PASS** — Follow-up / Work Queue `/admin/operations?tab=queue` loaded; Planning work feed empty (no Admin Work-create UI) |
+| A10 | Admin Inbox | **PASS** — `/admin/inbox` pending New Karkun requests; Rukn messages folder empty. No Approve/Reject |
+| A11 | Notifications prefs | **PASS** — Settings → Notifications read; Work reminders in-app toggled off then restored on; UI showed Saved |
+| A12 | Rafeeq | **PASS** — drawer opened; Urdu visual “ڈیجیٹل رفیق / آپ کا خصوصی معاون”. Speak not exercised |
+| A13 | Hard refresh / logout-login | **Partial** — cache-clear reload restored Admin session. Logout/login cycle not performed (would drop the only available session) |
+| A14 | Existing campaign data | **PASS** — 584 connected Karkuns; campaign library intact |
+| — | Unexpected permission-denied | **None observed** on visited surfaces. Firestore Listen channels returned 200 |
+
+Rukn → Admin message **write** was not exercised (empty folder; no test production data created).
+
+### 6. Rukn smoke
+
+**UNVERIFIED** — Browser verification: UNVERIFIED.
+
+No Rukn OTP session was already available. Credentials were not recovered. Rukn Work mutation on Firestore was not enabled. The documented Rukn planning/occurrence read gap was not changed.
+
+### 7. Post-deploy verification
+
+| Check | Result |
+|-------|--------|
+| Application loads | **PASS** — `/login` HTTP 200; Admin app hydrates after PWA cache refresh |
+| Authentication | **PASS** — existing Admin session |
+| Firestore reads | **PASS** — Command Center, campaign, inbox, planning, settings |
+| Firestore writes (supported) | **PASS** — notification preference toggle Saved, then restored |
+| New rules vs existing data | **PASS** — existing campaign / Karkun counts remained intact |
+| Admin Inbox | **PASS** |
+| Notification preferences | **PASS** |
+| Rafeeq visual | **PASS** |
+| Voice | Optional; live Google TTS **UNVERIFIED** |
+| Permission-denied | None observed on Admin surfaces |
+
+### 8. Known limitations (unchanged)
+
+- Monitoring is not wired into Phase 6 notifications
+- Monitoring history is caller-supplied
+- Live Google TTS remains UNVERIFIED
+- Authenticated **Rukn** browser smoke remains UNVERIFIED
+- Phase 2 provider-string verification failure
+- No Admin Work-create UI
+- Occurrence generator has no Admin button/scheduler
+- Rukn cannot read planning/occurrence collections; calendar notices remain empty
+- PWA/Workbox may serve stale hashed assets until the in-app “new version” refresh (or SW unregister)
+
+### 9. Final readiness state
+
+**READY WITH KNOWN LIMITATIONS**
+
+Not **PRODUCTION READY**: required authenticated Rukn smoke remains unverified.
+
+Not **NOT READY — BLOCKERS FOUND**: deployment succeeded, Firestore rules/indexes published, Admin smoke passed, no architecture reopen required.
