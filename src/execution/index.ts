@@ -33,6 +33,21 @@ export { NEXT_BEST_ACTION_CODES, deriveNextBestAction } from './nextBestAction'
 export type { ObjectiveEvaluation, ObjectiveProgress } from './objectiveEvaluation'
 export { evaluateCampaignObjective } from './objectiveEvaluation'
 
+export type {
+  PlanningObjectiveEvaluation,
+  PlanningObjectiveEvaluationState,
+  PlanningObjectiveEvidenceItem,
+  PlanningObjectiveEvidenceKind,
+  PlanningObjectiveKindSignals,
+  EvaluatePlanningObjectiveInput,
+} from './planningObjectiveEvaluation'
+export {
+  PLANNING_OBJECTIVE_KIND_KEYS,
+  evaluatePlanningObjective,
+  loadPlanningObjectiveEvaluations,
+  resolvePlanningObjectiveKind,
+} from './planningObjectiveEvaluation'
+
 export type { AutomationPolicy, AutomationPolicyId, AutomationPolicyResult } from './policies/types'
 export { PolicyEngine, createDefaultPolicyEngine } from './policies/PolicyEngine'
 export { phoneCallStartedPolicy } from './policies/phoneCallPolicy'
