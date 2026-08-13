@@ -62,6 +62,18 @@ export {
   resolveActivityEvaluationPeriod,
 } from './activityDerivedEvaluation'
 
+export type {
+  DeriveObjectiveNextBestActionInput,
+  ObjectiveNextBestAction,
+  ObjectiveNextBestActionCode,
+} from './objectiveNextBestAction'
+export {
+  OBJECTIVE_NEXT_BEST_ACTION_CODES,
+  deriveObjectiveNextBestAction,
+  isObjectiveNextBestActionCode,
+  loadObjectiveNextBestActions,
+} from './objectiveNextBestAction'
+
 export type { AutomationPolicy, AutomationPolicyId, AutomationPolicyResult } from './policies/types'
 export { PolicyEngine, createDefaultPolicyEngine } from './policies/PolicyEngine'
 export { phoneCallStartedPolicy } from './policies/phoneCallPolicy'
