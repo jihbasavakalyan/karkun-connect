@@ -120,3 +120,16 @@ export {
   selectPrimaryContextualRecommendation,
   type RafeeqContextualPresentation,
 } from './rafeeq/presentContextualRecommendation'
+
+export type {
+  IntelligenceMonitorChangeKind,
+  IntelligenceMonitorEvent,
+  IntelligenceMonitorSnapshot,
+} from './intelligenceMonitor'
+export {
+  captureIntelligenceMonitorSnapshot,
+  detectMeaningfulIntelligenceChange,
+  detectMeaningfulIntelligenceChanges,
+  intelligenceMonitorFingerprint,
+  monitorLoadedRecommendations,
+} from './intelligenceMonitor'
