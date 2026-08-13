@@ -26,6 +26,7 @@ const LABEL_HINTS: Record<string, string> = {
   'executions.annexure': 'Visit / annexure progress could not be saved.',
   'settings.karkunRequests': 'New Karkun request could not be saved.',
   'settings.ruknAdminMessages': 'Message to Administrator could not be saved.',
+  'settings.notificationPreferences': 'Notification preferences could not be saved.',
   communications: 'Communication state could not be saved.',
   assignmentReviews: 'Assignment review could not be saved.',
   followUps: 'Follow-up records could not be saved.',
@@ -81,7 +82,11 @@ export function toOperatorPersistError(label: string, error: unknown): string {
     return FRIENDLY_PERSIST_OFFLINE_ERROR
   }
 
-  const hint = LABEL_HINTS[label]
+  const hint =
+    LABEL_HINTS[label] ??
+    (label.startsWith('settings.notificationPreferences')
+      ? LABEL_HINTS['settings.notificationPreferences']
+      : undefined)
   if (hint) return hint
 
   if (raw.trim() && raw.length <= 160 && raw !== FRIENDLY_DATA_ACCESS_ERROR && !/[{\[]/.test(raw)) {

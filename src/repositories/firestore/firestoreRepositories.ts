@@ -68,6 +68,10 @@ import type {
 } from '@/repositories/interfaces/SettingsRepository'
 import type { NewKarkunRequest } from '@/types/karkunRequest.types'
 import type { RuknAdminMessage } from '@/types/ruknAdminMessage.types'
+import {
+  normalizeNotificationPreferences,
+  type NotificationPreferences,
+} from '@/types/userPreferences.types'
 import { SyncCache } from '@/repositories/firestore/cache'
 import {
   FIRESTORE_COLLECTIONS,
@@ -81,6 +85,7 @@ import {
   executionAnnexureDocId,
   settingsBackupDocId,
   settingsBroadcastDocId,
+  settingsNotificationPreferencesDocId,
 } from '@/repositories/firestore/collections'
 import {
   commitBatchSetDocuments,
@@ -190,6 +195,9 @@ const migrationVersionCache = new SyncCache<number | null>(null)
 const broadcastCache = new SyncCache<BroadcastListRecord[]>([])
 const karkunRequestCache = new SyncCache<NewKarkunRequest[]>([])
 const ruknAdminMessageCache = new SyncCache<RuknAdminMessage[]>([])
+const notificationPreferencesCache = new SyncCache<Map<string, NotificationPreferences>>(
+  new Map(),
+)
 const backupIndexCache = new SyncCache<MigrationBackupIndexEntry[]>([])
 const backupCache = new SyncCache<Map<string, DatasetBackup>>(new Map())
 
@@ -2852,6 +2860,68 @@ export class SettingsFirestoreRepository implements SettingsRepository {
     ruknAdminMessageCache.set([])
     return repositoryOk(undefined)
   }
+
+  loadNotificationPreferences(
+    userId: string,
+  ): RepositoryResult<NotificationPreferences | null> {
+    const key = userId.trim()
+    if (!key) return repositoryOk(null)
+    return repositoryOk(notificationPreferencesCache.get().get(key) ?? null)
+  }
+
+  async resolveNotificationPreferences(
+    userId: string,
+  ): Promise<RepositoryResult<NotificationPreferences | null>> {
+    const key = userId.trim()
+    if (!key) return repositoryOk(null)
+    const cached = notificationPreferencesCache.get().get(key)
+    if (cached) return repositoryOk(cached)
+    try {
+      const db = getFirestoreDb()
+      const docData = await readDocSoft<{
+        userId?: string
+        notifications?: NotificationPreferences
+      }>(db, FIRESTORE_COLLECTIONS.settings, settingsNotificationPreferencesDocId(key))
+      if (!docData?.notifications) return repositoryOk(null)
+      const normalized = normalizeNotificationPreferences(docData.notifications)
+      const next = new Map(notificationPreferencesCache.get())
+      next.set(key, normalized)
+      notificationPreferencesCache.set(next)
+      return repositoryOk(normalized)
+    } catch (error) {
+      return mapFirestoreError(error)
+    }
+  }
+
+  saveNotificationPreferences(
+    userId: string,
+    preferences: NotificationPreferences,
+  ): RepositoryResult<void> {
+    const key = userId.trim()
+    if (!key) {
+      return repositoryErr('Validation', 'Notification preferences require a user id.')
+    }
+    const normalized = normalizeNotificationPreferences(preferences)
+    const next = new Map(notificationPreferencesCache.get())
+    next.set(key, normalized)
+    notificationPreferencesCache.set(next)
+    const label = `settings.notificationPreferences.${key}`
+    void queueWrite(label, async () => {
+      const latest = notificationPreferencesCache.get().get(key)
+      if (!latest) return repositoryOk(undefined)
+      const db = getFirestoreDb()
+      return writeDoc(
+        db,
+        FIRESTORE_COLLECTIONS.settings,
+        settingsNotificationPreferencesDocId(key),
+        sanitizeForFirestore({
+          userId: key,
+          notifications: latest,
+        }),
+      )
+    })
+    return repositoryOk(undefined)
+  }
 }
 
 /**
@@ -3000,6 +3070,7 @@ export async function clearAllFirestoreCachesForTests(): Promise<void> {
   backupCache.reset(new Map())
   karkunRequestCache.reset([])
   ruknAdminMessageCache.reset([])
+  notificationPreferencesCache.reset(new Map())
   resetAssignmentReviewCacheForTests()
   resetPlanningCachesForTests()
   resetLocalProgrammeCachesForTests()

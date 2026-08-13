@@ -88,6 +88,11 @@ export function settingsBroadcastDocId(listId: string): string {
   return `broadcast_${listId}`
 }
 
+/** Phase 6 — per-user notification preferences (settings collection; not a new SoT). */
+export function settingsNotificationPreferencesDocId(userId: string): string {
+  return `notificationPreferences_${userId.trim()}`
+}
+
 export function executionAnnexureDocId(formId: string): string {
   return `annexure_${formId}`
 }

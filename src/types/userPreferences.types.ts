@@ -20,6 +20,8 @@ export type NotificationPreferences = {
   ijtemaReminders: NotificationChannelPrefs
   campaignAnnouncements: NotificationChannelPrefs
   adminAnnouncements: NotificationChannelPrefs
+  /** Phase 6 — pending / overdue Work reminders (TASK-051). */
+  workReminders: NotificationChannelPrefs
 }
 
 export type RafeeqPreferences = {
@@ -57,8 +59,39 @@ export const DEFAULT_USER_PREFERENCES: UserPreferences = {
     ijtemaReminders: { push: false, inApp: true },
     campaignAnnouncements: { push: false, inApp: true },
     adminAnnouncements: { push: false, inApp: true },
+    workReminders: { push: false, inApp: true },
   },
   updatedAt: new Date(0).toISOString(),
+}
+
+export function cloneNotificationPreferences(
+  value: NotificationPreferences,
+): NotificationPreferences {
+  return {
+    followUpReminders: { ...value.followUpReminders },
+    meetingReminders: { ...value.meetingReminders },
+    ijtemaReminders: { ...value.ijtemaReminders },
+    campaignAnnouncements: { ...value.campaignAnnouncements },
+    adminAnnouncements: { ...value.adminAnnouncements },
+    workReminders: { ...value.workReminders },
+  }
+}
+
+export function normalizeNotificationPreferences(
+  value?: Partial<NotificationPreferences> | null,
+): NotificationPreferences {
+  const defaults = DEFAULT_USER_PREFERENCES.notifications
+  return {
+    followUpReminders: { ...defaults.followUpReminders, ...value?.followUpReminders },
+    meetingReminders: { ...defaults.meetingReminders, ...value?.meetingReminders },
+    ijtemaReminders: { ...defaults.ijtemaReminders, ...value?.ijtemaReminders },
+    campaignAnnouncements: {
+      ...defaults.campaignAnnouncements,
+      ...value?.campaignAnnouncements,
+    },
+    adminAnnouncements: { ...defaults.adminAnnouncements, ...value?.adminAnnouncements },
+    workReminders: { ...defaults.workReminders, ...value?.workReminders },
+  }
 }
 
 export type SettingsSectionId =

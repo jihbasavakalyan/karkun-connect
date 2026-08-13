@@ -34,5 +34,7 @@ export const STORAGE_KEYS = {
   responsibilities: 'karkun-connect.responsibilities',
   work: 'karkun-connect.work',
   userPreferences: 'karkun-connect.user-preferences',
+  /** Phase 6 — per-user notification preference slice (SettingsRepository). */
+  notificationPreferences: 'karkun-connect.notification-preferences',
   migrationBackup: (id: string) => `karkun-connect.migration.backup.${id}`,
 } as const

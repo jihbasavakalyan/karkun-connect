@@ -11,6 +11,7 @@ import { RuknExecutionSummaryCards } from '@/components/execution/RuknExecutionS
 import { CampaignExecutionMatrix } from '@/components/execution/CampaignExecutionMatrix'
 import { RuknTodaysFocus } from '@/components/execution/RuknTodaysFocus'
 import { RuknWorkActionPanel } from '@/components/execution/RuknWorkActionPanel'
+import { ActionableNotificationsPanel } from '@/components/notifications/ActionableNotificationsPanel'
 import { RuknMessageAdminPanel } from '@/components/communication/RuknMessageAdminPanel'
 import { openDigitalRafeeqAssistant } from '@/features/digitalRafeeq/launcher'
 import { buildContextualRafeeqGuidance } from '@/features/digitalRafeeq/companion/rafeeqUrduCopy'
@@ -88,6 +89,13 @@ export function RuknHomePage() {
             onOpen={openDigitalRafeeqAssistant}
             guidanceLine={rafeeqLine}
           />
+        </section>
+      </WidgetErrorBoundary>
+
+      {/* Phase 6 — actionable notifications (calendar + work; existing surfaces) */}
+      <WidgetErrorBoundary title="Actionable notifications">
+        <section className="mt-4 space-y-3" aria-label="Actionable notifications">
+          <ActionableNotificationsPanel audience="rukn" ruknId={ruknId} />
         </section>
       </WidgetErrorBoundary>
 

@@ -1,4 +1,7 @@
+import { useState } from 'react'
 import { useUserPreferences } from '@/hooks/useUserPreferences'
+import { formatPersistFailureBanner } from '@/lib/reliability/persistErrors'
+import { notificationPreferencesWriteLabel } from '@/stores/userPreferencesStore'
 import type { NotificationPreferences } from '@/types/userPreferences.types'
 import { SettingsRow, SettingsSection, SettingsToggle } from './SettingsPrimitives'
 
@@ -32,16 +35,47 @@ const ROWS: {
     label: 'Admin announcements',
     hint: 'Organisation-wide notices',
   },
+  {
+    key: 'workReminders',
+    label: 'Work reminders',
+    hint: 'Pending and overdue work due today',
+  },
 ]
 
 export function NotificationSettingsSection() {
-  const { preferences, setNotification } = useUserPreferences()
+  const { preferences, setNotification, persistNotifications } = useUserPreferences()
+  const [error, setError] = useState<string | null>(null)
+  const [pendingKey, setPendingKey] = useState<string | null>(null)
+
+  const persistChange = async (
+    key: keyof NotificationPreferences,
+    patch: Partial<NotificationPreferences[keyof NotificationPreferences]>,
+  ) => {
+    const toggleKey = `${key}:${Object.keys(patch).join(',')}`
+    setPendingKey(toggleKey)
+    setError(null)
+    setNotification(key, patch)
+    try {
+      await persistNotifications()
+    } catch (cause) {
+      setError(
+        formatPersistFailureBanner(notificationPreferencesWriteLabel(), cause),
+      )
+    } finally {
+      setPendingKey(null)
+    }
+  }
 
   return (
     <SettingsSection
       title="Notifications"
-      description="Control reminders carefully. Prefer in-app guidance over noise."
+      description="Control reminders carefully. Prefer in-app guidance over noise. These toggles change which actionable notifications appear."
     >
+      {error ? (
+        <p className="ds-banner-error mb-3" role="alert">
+          {error}
+        </p>
+      ) : null}
       {ROWS.map((row) => {
         const value = preferences.notifications[row.key]
         return (
@@ -53,14 +87,20 @@ export function NotificationSettingsSection() {
                 <SettingsToggle
                   label={`${row.label} in-app`}
                   checked={value.inApp}
-                  onChange={(inApp) => setNotification(row.key, { inApp })}
+                  disabled={pendingKey !== null}
+                  onChange={(inApp) => {
+                    void persistChange(row.key, { inApp })
+                  }}
                 />
               </SettingsRow>
               <SettingsRow label="Push" hint="Reserved for later">
                 <SettingsToggle
                   label={`${row.label} push`}
                   checked={value.push}
-                  onChange={(push) => setNotification(row.key, { push })}
+                  disabled={pendingKey !== null}
+                  onChange={(push) => {
+                    void persistChange(row.key, { push })
+                  }}
                 />
               </SettingsRow>
             </div>

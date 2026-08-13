@@ -5,12 +5,16 @@
 import { STORAGE_KEYS } from '@/repositories/storageKeys'
 import {
   DEFAULT_USER_PREFERENCES,
+  cloneNotificationPreferences,
+  normalizeNotificationPreferences,
   type AppearanceMode,
   type NotificationPreferences,
   type RafeeqPreferences,
   type UserPreferences,
 } from '@/types/userPreferences.types'
 import { applyAppearanceMode } from '@/lib/userPreferences/applyAppearance'
+import { unwrapRepository } from '@/repositories/errors'
+import { getRepositories, getRepositoryProviderMode } from '@/repositories/provider'
 
 type Listener = () => void
 
@@ -18,19 +22,61 @@ let currentUserKey = 'anonymous'
 let preferences: UserPreferences = {
   ...DEFAULT_USER_PREFERENCES,
   rafeeq: { ...DEFAULT_USER_PREFERENCES.rafeeq },
-  notifications: cloneNotifications(DEFAULT_USER_PREFERENCES.notifications),
+  notifications: cloneNotificationPreferences(DEFAULT_USER_PREFERENCES.notifications),
 }
 const listeners = new Set<Listener>()
 /** In-memory fallback when localStorage is unavailable (tests / SSR). */
 const memoryStore = new Map<string, string>()
 
 function cloneNotifications(value: NotificationPreferences): NotificationPreferences {
-  return {
-    followUpReminders: { ...value.followUpReminders },
-    meetingReminders: { ...value.meetingReminders },
-    ijtemaReminders: { ...value.ijtemaReminders },
-    campaignAnnouncements: { ...value.campaignAnnouncements },
-    adminAnnouncements: { ...value.adminAnnouncements },
+  return cloneNotificationPreferences(value)
+}
+
+function persistNotificationPreferencesToSettings(userKey: string): void {
+  const key = userKey.trim()
+  if (!key) return
+  try {
+    getRepositories().settings.saveNotificationPreferences(
+      key,
+      cloneNotificationPreferences(preferences.notifications),
+    )
+  } catch {
+    // Provider not ready — localStorage blob still holds the slice.
+  }
+}
+
+function overlayNotificationPreferencesFromSettings(userKey: string): void {
+  const key = userKey.trim()
+  if (!key) return
+  try {
+    const stored = unwrapRepository(
+      getRepositories().settings.loadNotificationPreferences(key),
+      null,
+    )
+    if (!stored) return
+    preferences = {
+      ...preferences,
+      notifications: normalizeNotificationPreferences(stored),
+    }
+  } catch {
+    // Provider not ready — keep localStorage slice.
+  }
+}
+
+async function hydrateNotificationPreferencesFromSettings(userKey: string): Promise<void> {
+  const key = userKey.trim()
+  if (!key || key !== currentUserKey) return
+  try {
+    const result = await getRepositories().settings.resolveNotificationPreferences(key)
+    if (!result.ok || !result.data || key !== currentUserKey) return
+    preferences = {
+      ...preferences,
+      notifications: normalizeNotificationPreferences(result.data),
+    }
+    persist()
+    notify()
+  } catch {
+    // Soft-empty — evaluation still uses local defaults.
   }
 }
 
@@ -84,30 +130,7 @@ function readStored(userKey: string): UserPreferences {
       version: 1,
       appearance: parsed.appearance ?? DEFAULT_USER_PREFERENCES.appearance,
       rafeeq: { ...DEFAULT_USER_PREFERENCES.rafeeq, ...parsed.rafeeq, voiceAutoPlay: false },
-      notifications: {
-        ...cloneNotifications(DEFAULT_USER_PREFERENCES.notifications),
-        ...parsed.notifications,
-        followUpReminders: {
-          ...DEFAULT_USER_PREFERENCES.notifications.followUpReminders,
-          ...parsed.notifications?.followUpReminders,
-        },
-        meetingReminders: {
-          ...DEFAULT_USER_PREFERENCES.notifications.meetingReminders,
-          ...parsed.notifications?.meetingReminders,
-        },
-        ijtemaReminders: {
-          ...DEFAULT_USER_PREFERENCES.notifications.ijtemaReminders,
-          ...parsed.notifications?.ijtemaReminders,
-        },
-        campaignAnnouncements: {
-          ...DEFAULT_USER_PREFERENCES.notifications.campaignAnnouncements,
-          ...parsed.notifications?.campaignAnnouncements,
-        },
-        adminAnnouncements: {
-          ...DEFAULT_USER_PREFERENCES.notifications.adminAnnouncements,
-          ...parsed.notifications?.adminAnnouncements,
-        },
-      },
+      notifications: normalizeNotificationPreferences(parsed.notifications),
       updatedAt: parsed.updatedAt ?? new Date().toISOString(),
     }
   } catch {
@@ -140,8 +163,10 @@ export function getUserPreferences(): UserPreferences {
 export function bindUserPreferences(userKey: string | null | undefined): UserPreferences {
   currentUserKey = userKey?.trim() || 'anonymous'
   preferences = readStored(currentUserKey)
+  overlayNotificationPreferencesFromSettings(currentUserKey)
   applyAppearanceMode(preferences.appearance)
   notify()
+  void hydrateNotificationPreferencesFromSettings(currentUserKey)
   return getUserPreferences()
 }
 
@@ -187,8 +212,19 @@ export function updateNotificationPreferences(
     updatedAt: new Date().toISOString(),
   }
   persist()
+  persistNotificationPreferencesToSettings(currentUserKey)
   notify()
   return getUserPreferences()
+}
+
+export function notificationPreferencesWriteLabel(userKey = currentUserKey): string {
+  return `settings.notificationPreferences.${userKey.trim() || 'anonymous'}`
+}
+
+export async function awaitNotificationPreferencesPersist(): Promise<void> {
+  if (getRepositoryProviderMode() !== 'firestore') return
+  const { awaitQueuedWrite } = await import('@/repositories/firestore/firestoreRepositories')
+  await awaitQueuedWrite(notificationPreferencesWriteLabel())
 }
 
 export function resetUserPreferencesForTests(): void {

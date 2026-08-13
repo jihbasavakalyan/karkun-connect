@@ -157,3 +157,8 @@ export {
   evaluateOccurrenceNotificationCandidates,
   mapOccurrenceToAutomationTrigger,
 } from '@/lib/occurrence/notifications'
+export {
+  evaluateActionableNotifications,
+  evaluateActionableNotificationsFromCalendar,
+  loadActionableNotificationsForUser,
+} from '@/lib/notifications/actionableNotifications'

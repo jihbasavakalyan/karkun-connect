@@ -35,6 +35,7 @@ import { AdminActionCenter } from './AdminActionCenter'
 import { AdminOpsThreeColumnLayout } from './AdminOpsThreeColumnLayout'
 import { NextBestActionsPanel } from './NextBestActionsPanel'
 import { NextActionsPanel } from './NextActionsPanel'
+import { ActionableNotificationsPanel } from '@/components/notifications/ActionableNotificationsPanel'
 import { AttentionRequiredPanel } from './AttentionRequiredPanel'
 import { CampaignProgressPanel } from './CampaignProgressPanel'
 import { AdminQuickActionsPanel } from './AdminQuickActionsPanel'
@@ -776,6 +777,10 @@ export function AdminCommandCenter({
 
           <WidgetErrorBoundary title="Next Actions">
             <NextActionsPanel items={nextActions} ready={backgroundReady} />
+          </WidgetErrorBoundary>
+
+          <WidgetErrorBoundary title="Actionable notifications">
+            <ActionableNotificationsPanel audience="administrator" variant="command-center" />
           </WidgetErrorBoundary>
 
           <WidgetErrorBoundary title="Attention Required">

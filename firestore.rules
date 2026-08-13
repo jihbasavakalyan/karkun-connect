@@ -318,10 +318,12 @@ service cloud.firestore {
           || docId == 'migrationVersion'
           || docId == 'karkunRequests'
           || docId == 'ruknAdminMessages'
+          || docId == 'notificationPreferences_' + request.auth.uid
         ));
 
       allow create: if isAdministrator()
-        || (isRukn() && (docId == 'karkunRequests' || docId == 'ruknAdminMessages'));
+        || (isRukn() && (docId == 'karkunRequests' || docId == 'ruknAdminMessages'))
+        || (isSignedIn() && docId == 'notificationPreferences_' + request.auth.uid);
 
       allow update: if (
         isAdministrator() && (
@@ -337,13 +339,16 @@ service cloud.firestore {
         )
       ) || (
         isRukn() && (docId == 'karkunRequests' || docId == 'ruknAdminMessages')
+      ) || (
+        isSignedIn() && docId == 'notificationPreferences_' + request.auth.uid
       );
 
       allow delete: if isAdministrator()
         && docId != 'karkunCounter'
         && docId != 'connectionMeta'
         && docId != 'karkunRequests'
-        && docId != 'ruknAdminMessages';
+        && docId != 'ruknAdminMessages'
+        && !docId.matches('^notificationPreferences_.+$');
     }
 
     match /{document=**} {

@@ -44,4 +44,23 @@ export interface SettingsRepository {
     messages: import('@/types/ruknAdminMessage.types').RuknAdminMessage[],
   ): RepositoryResult<void>
   clearRuknAdminMessages(): RepositoryResult<void>
+  /**
+   * Phase 6 — per-user notification preferences (TASK-051).
+   * Cache-first. Missing user returns null (caller applies defaults).
+   */
+  loadNotificationPreferences(
+    userId: string,
+  ): RepositoryResult<import('@/types/userPreferences.types').NotificationPreferences | null>
+  /**
+   * Cache-first; when cache is empty, reads durable storage (Firestore/local).
+   */
+  resolveNotificationPreferences(
+    userId: string,
+  ): Promise<
+    RepositoryResult<import('@/types/userPreferences.types').NotificationPreferences | null>
+  >
+  saveNotificationPreferences(
+    userId: string,
+    preferences: import('@/types/userPreferences.types').NotificationPreferences,
+  ): RepositoryResult<void>
 }

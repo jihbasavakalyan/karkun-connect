@@ -759,4 +759,40 @@ export class SettingsLocalRepository implements SettingsRepository {
   clearRuknAdminMessages(): RepositoryResult<void> {
     return tryRepository(() => removeFromStorage(STORAGE_KEYS.ruknAdminMessages))
   }
+
+  loadNotificationPreferences(
+    userId: string,
+  ): RepositoryResult<import('@/types/userPreferences.types').NotificationPreferences | null> {
+    const key = userId.trim()
+    if (!key) {
+      return repositoryOk(null)
+    }
+    return tryRepository(() => {
+      const stored = loadJsonFromStorage<
+        import('@/types/userPreferences.types').NotificationPreferences | null
+      >(`${STORAGE_KEYS.notificationPreferences}.${key}`, null)
+      return stored
+    })
+  }
+
+  async resolveNotificationPreferences(
+    userId: string,
+  ): Promise<
+    RepositoryResult<import('@/types/userPreferences.types').NotificationPreferences | null>
+  > {
+    return this.loadNotificationPreferences(userId)
+  }
+
+  saveNotificationPreferences(
+    userId: string,
+    preferences: import('@/types/userPreferences.types').NotificationPreferences,
+  ): RepositoryResult<void> {
+    const key = userId.trim()
+    if (!key) {
+      return repositoryErr('Validation', 'Notification preferences require a user id.')
+    }
+    return tryRepository(() =>
+      saveJsonToStorage(`${STORAGE_KEYS.notificationPreferences}.${key}`, preferences),
+    )
+  }
 }

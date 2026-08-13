@@ -4,6 +4,7 @@
 
 import { useSyncExternalStore } from 'react'
 import {
+  awaitNotificationPreferencesPersist,
   getUserPreferences,
   subscribeToUserPreferences,
   updateAppearance,
@@ -25,6 +26,7 @@ export function useUserPreferences(): {
     key: keyof NotificationPreferences,
     patch: Partial<NotificationPreferences[keyof NotificationPreferences]>,
   ) => void
+  persistNotifications: () => Promise<void>
 } {
   const preferences = useSyncExternalStore(
     subscribeToUserPreferences,
@@ -37,5 +39,6 @@ export function useUserPreferences(): {
     setAppearance: updateAppearance,
     setRafeeq: updateRafeeqPreferences,
     setNotification: updateNotificationPreferences,
+    persistNotifications: awaitNotificationPreferencesPersist,
   }
 }
