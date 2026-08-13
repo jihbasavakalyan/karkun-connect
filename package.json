@@ -188,6 +188,7 @@
     "verify:tts": "npx vite-node --env-file=.env.local scripts/verify-tts.ts",
     "verify:execution-automation": "npx vite-node scripts/verify-execution-automation.ts",
     "verify:kc-phase8-objective-evaluation": "npx vite-node scripts/verify-kc-phase8-objective-evaluation.ts",
+    "verify:kc-phase8-activity-derived-evaluation": "npx vite-node scripts/verify-kc-phase8-activity-derived-evaluation.ts",
     "verify:settings": "npx vite-node scripts/verify-settings-experience.ts",
     "verify:voice-conversation": "npx vite-node scripts/verify-voice-conversation.ts"
   },

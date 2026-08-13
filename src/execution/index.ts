@@ -48,6 +48,20 @@ export {
   resolvePlanningObjectiveKind,
 } from './planningObjectiveEvaluation'
 
+export type {
+  ActivityDerivedCounts,
+  ActivityDerivedEvaluation,
+  ActivityDerivedEvaluationState,
+  ActivityDerivedEvidenceItem,
+  ActivityDerivedEvidenceKind,
+  EvaluateActivityDerivedInput,
+} from './activityDerivedEvaluation'
+export {
+  evaluateActivityDerivedObjective,
+  loadActivityDerivedEvaluations,
+  resolveActivityEvaluationPeriod,
+} from './activityDerivedEvaluation'
+
 export type { AutomationPolicy, AutomationPolicyId, AutomationPolicyResult } from './policies/types'
 export { PolicyEngine, createDefaultPolicyEngine } from './policies/PolicyEngine'
 export { phoneCallStartedPolicy } from './policies/phoneCallPolicy'
