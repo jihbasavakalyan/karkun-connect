@@ -27,6 +27,8 @@ import { RafeeqSpeakButton } from './RafeeqSpeakButton'
 import { stopCloudSpeech } from './cloudSpeechPlayback'
 import { stopLocalSpeech } from './speechPlayback'
 import { markVoicePipelineEpoch, voicePipelineLog } from './voicePipelineDiag'
+import { RafeeqObjectiveGuidanceStrip } from '@/features/digitalRafeeq/companion/RafeeqObjectiveGuidanceStrip'
+import { loadPrimaryRafeeqContextualPresentation } from '@/execution'
 import {
   createVoiceConversationService,
   type ConversationPhase,
@@ -158,6 +160,11 @@ export function DigitalRafeeqVoiceDrawer({
       adminSnapshot: role === 'administrator' ? (adminSnapshot ?? undefined) : undefined,
     })
   }, [role, ruknSnapshot, adminSnapshot, preferences.rafeeq.suggestedQuestions])
+
+  const objectivePresentation = useMemo(
+    () => (open ? loadPrimaryRafeeqContextualPresentation() : null),
+    [open],
+  )
 
   const mvpSessionId = useMemo(() => `rafeeq-drawer-${role}`, [role])
 
@@ -339,6 +346,12 @@ export function DigitalRafeeqVoiceDrawer({
           ) : null}
           {messages.length === 0 && !preferences.rafeeq.dailyGreeting ? (
             <p className="dr-voice-empty">{RAFEEQ_UX.emptyBodyUr}</p>
+          ) : null}
+          {messages.length === 0 ? (
+            <RafeeqObjectiveGuidanceStrip
+              presentation={objectivePresentation}
+              onNotice={(notice) => setVoiceNotice(notice)}
+            />
           ) : null}
           {messages.map((message) => (
             <div

@@ -17,6 +17,7 @@ import { RuknActionDashboardPanel } from '@/components/rukn/RuknActionDashboardP
 import { ContinuousJourneyCountsStrip } from '@/components/journey/ContinuousKarkunJourneyStrip'
 import { openDigitalRafeeqAssistant } from '@/features/digitalRafeeq/launcher'
 import { buildContextualRafeeqGuidance } from '@/features/digitalRafeeq/companion/rafeeqUrduCopy'
+import { loadPrimaryRafeeqContextualPresentation } from '@/execution'
 import { useRequiredRuknId } from '@/hooks/useRequiredRuknId'
 import { useGuidance } from '@/hooks/useGuidance'
 import { buildRuknMissionControl } from '@/lib/missionControl/buildRuknMissionControl'
@@ -46,6 +47,15 @@ export function RuknHomePage() {
     [ruknId, snapshot],
   )
 
+  const rafeeqLine = useMemo(() => {
+    if (!ruknId) return ''
+    if (isRuknPostCampaignMode()) {
+      const presented = loadPrimaryRafeeqContextualPresentation()
+      if (presented?.spokenText) return presented.spokenText
+    }
+    return buildContextualRafeeqGuidance(ruknId)
+  }, [ruknId, snapshot])
+
   if (!ruknId) {
     return <Navigate to={ROUTES.LOGIN} replace />
   }
@@ -63,10 +73,9 @@ export function RuknHomePage() {
         undefined
       : undefined
 
-  const rafeeqLine = buildContextualRafeeqGuidance(ruknId)
+  const postCampaign = isRuknPostCampaignMode()
   const ruknName = getRuknById(ruknId)?.name ?? ''
   const campaignName = snapshot.hero?.name || getActiveCampaignName() || model.missionTitle
-  const postCampaign = isRuknPostCampaignMode()
 
   return (
     <div className="cd-page cd-page-rukn mc-page mc-page-rukn-compact mc-page-execution mc-page-onescreen">

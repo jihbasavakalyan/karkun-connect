@@ -15,7 +15,7 @@ export type RafeeqNextBestActionPresentation = {
   suggestedDelayMinutes?: number
 }
 
-const URDU_BY_CODE: Record<string, string> = {
+export const RAFEEQ_ACTION_URDU_BY_CODE: Record<string, string> = {
   SCHEDULE_MEETING: 'اب ملاقات کا وقت طے کرنا مناسب معلوم ہوتا ہے۔',
   CREATE_FOLLOW_UP: 'اس ملاقات کے بعد فالو اپ درج کرنا مفید ہوگا۔',
   RETRY_CONTACT: 'اس کارکن سے دوبارہ رابطے کا مناسب وقت معلوم ہوتا ہے۔',
@@ -26,6 +26,15 @@ const URDU_BY_CODE: Record<string, string> = {
   CLOSE_LOOP: 'یہ مرحلہ مکمل ہوا؛ مہم کے مقصد کے مطابق اگلا کام طے کریں۔',
   REVIEW_OUTCOME: 'نتیجے کا جائزہ لے کر اگلا مناسب اقدام منتخب کریں۔',
   FOLLOW_UP_DUE: 'اس کارکن سے دوبارہ رابطے کا مناسب وقت معلوم ہوتا ہے۔',
+  RECORD_PENDING_ACTIVITY: 'باقی کام مکمل کرنا اب مناسب قدم ہے۔',
+  NO_EVALUATION_ACTION: 'اس مقصد کے لیے ابھی کوئی عملی قدم طے نہیں ہوا۔',
+}
+
+export function urduForRafeeqActionCode(code: string): string {
+  return (
+    RAFEEQ_ACTION_URDU_BY_CODE[code] ??
+    'اگلا مناسب عملی قدم طے کرنا مفید معلوم ہوتا ہے۔'
+  )
 }
 
 /**
@@ -35,9 +44,7 @@ const URDU_BY_CODE: Record<string, string> = {
 export function presentNextBestActionForRafeeq(
   action: NextBestAction,
 ): RafeeqNextBestActionPresentation {
-  const urdu =
-    URDU_BY_CODE[String(action.code)] ??
-    'اگلا مناسب عملی قدم طے کرنا مفید معلوم ہوتا ہے۔'
+  const urdu = urduForRafeeqActionCode(String(action.code))
 
   return {
     actionCode: action.code,

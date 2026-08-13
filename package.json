@@ -191,6 +191,7 @@
     "verify:kc-phase8-activity-derived-evaluation": "npx vite-node scripts/verify-kc-phase8-activity-derived-evaluation.ts",
     "verify:kc-phase8-next-best-action": "npx vite-node scripts/verify-kc-phase8-next-best-action.ts",
     "verify:kc-phase8-contextual-recommendations": "npx vite-node scripts/verify-kc-phase8-contextual-recommendations.ts",
+    "verify:kc-phase8-rafeeq-presentation": "npx vite-node scripts/verify-kc-phase8-rafeeq-presentation.ts",
     "verify:settings": "npx vite-node scripts/verify-settings-experience.ts",
     "verify:voice-conversation": "npx vite-node scripts/verify-voice-conversation.ts"
   },
