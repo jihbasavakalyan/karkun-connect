@@ -5,7 +5,8 @@
 **Standards:** KC-ARCH-009 · KC-ARCH-001  
 **Authority:** [Phase 0 — CERTIFIED](./kc-post-campaign-phase0-system-mapping.md) · [Phase 5 certification](./kc-phase5-certification.md)  
 **Date:** 2026-08-13  
-**This artifact:** ARCH-009 readiness gate for communication surfaces only
+**This artifact:** ARCH-009 readiness gate for communication surfaces only  
+**Certification:** [TASK-053 — PHASE 6 CERTIFIED](./kc-phase6-certification.md) (authoritative TASK-046–049; this gate’s original TASK-052–056 label was not applied in code)
 
 Phase 0–5 of prior post-campaign work are already certified and are **not** re-analysed here.
 

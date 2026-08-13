@@ -10,7 +10,7 @@
 Phase 0–5 of prior post-campaign work are already certified and are **not** re-analysed here.  
 Communication surfaces (TASK-046–049) remain frozen and are **not** re-numbered.
 
-TASK-053 (Phase 6 certification) is **out of scope** for this batch. No Vercel deploy. Do not deploy Firestore rules.
+TASK-053 (Phase 6 certification) is recorded in [kc-phase6-certification.md](./kc-phase6-certification.md). No Vercel deploy. Do not deploy Firestore rules.
 
 ---
 
