@@ -6,7 +6,6 @@
 import {
   ROUTES,
   adminAssignmentsPath,
-  adminCommunicationPath,
   adminCompliancePath,
   adminExecutionPath,
   adminFollowUpPath,
@@ -57,7 +56,7 @@ export type QuickActionItem = {
   id: string
   label: string
   route: string
-  icon: 'plus' | 'users' | 'link' | 'location' | 'calendar' | 'handshake' | 'message' | 'file-text'
+  icon: 'plus' | 'users' | 'link' | 'flag' | 'refresh' | 'sprout' | 'calendar' | 'handshake'
 }
 
 /** Next Actions — pending operational queues with deep links. */
@@ -289,56 +288,56 @@ export function buildAdminCampaignProgressCards(): CampaignProgressCard[] {
   }))
 }
 
-/** Sticky Quick Actions — navigation only. */
+/** Sticky Quick Actions — navigation only. Organisational shortcuts, not a hierarchy. */
 export function buildAdminQuickActions(): QuickActionItem[] {
   return [
     {
       id: 'add-karkun',
-      label: 'Add Karkun',
+      label: 'کارکن شامل کریں',
       route: adminKarkunRegistryPath({ action: 'add' }),
       icon: 'plus',
     },
     {
       id: 'add-muttafiq',
-      label: 'Add Muttafiq',
+      label: 'متفق شامل کریں',
       route: `${ROUTES.ADMIN_MUTTAFIQEEN}?action=add`,
       icon: 'users',
     },
     {
       id: 'assign-rukn',
-      label: 'Assign Rukn',
+      label: 'رکن تفویض کریں',
       route: adminAssignmentsPath({ view: 'assign' }),
       icon: 'link',
     },
     {
-      id: 'record-visit',
-      label: 'Record Visit',
-      route: adminExecutionPath('pending'),
-      icon: 'location',
+      id: 'assign-responsible',
+      label: 'ذمہ داری شامل کریں',
+      route: ROUTES.ADMIN_PLANNING,
+      icon: 'flag',
+    },
+    {
+      id: 'update-activity',
+      label: 'سرگرمی کی تازہ کاری',
+      route: ROUTES.ADMIN_PLANNING,
+      icon: 'refresh',
+    },
+    {
+      id: 'tarbiyah',
+      label: 'تربیت و رہنمائی',
+      route: adminAssignmentsPath(),
+      icon: 'sprout',
     },
     {
       id: 'record-ijtema',
-      label: 'Record Weekly Ijtema',
+      label: 'اجتماع ہفتہ وار',
       route: adminWeeklyIjtemaPath(),
       icon: 'calendar',
     },
     {
       id: 'record-baitul',
-      label: 'Record Baitul Maal',
+      label: 'بیت المال',
       route: adminMonthlyBaitulMaalPath(),
       icon: 'handshake',
-    },
-    {
-      id: 'send-communication',
-      label: 'Send Communication',
-      route: adminCommunicationPath(),
-      icon: 'message',
-    },
-    {
-      id: 'export-report',
-      label: 'Export Report',
-      route: adminExecutionPath('reports'),
-      icon: 'file-text',
     },
   ]
 }

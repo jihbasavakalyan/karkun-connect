@@ -1,9 +1,9 @@
 /**
- * Dashboard information architecture contract — KC-0109 Scope 1 + KC-0102E restore.
+ * Dashboard information architecture — organisational situation view.
  * Run: npx vite-node scripts/verify-dashboard-ia-structure.ts
  *
- * Order (KC-0102E): Collective Overview → Male/Female Rukns → Campaign Health →
- * Today's Mission → Top Priority Rukns → Progress Trends → Activity Timeline
+ * Order: Hero → Ijtema → Meqati year → Shobah → Attention → Quick Actions →
+ * important activities → campaign (if active) → deeper analytics
  */
 
 import { readFileSync } from 'node:fs'
@@ -18,127 +18,86 @@ const hero = readFileSync(
   resolve('src/components/mission-control/AdminMissionControlHero.tsx'),
   'utf8',
 )
+const orgHero = readFileSync(
+  resolve('src/components/dashboard/OrganisationalSituationHero.tsx'),
+  'utf8',
+)
+const stack = readFileSync(
+  resolve('src/components/dashboard/OrganisationalDashboardStack.tsx'),
+  'utf8',
+)
 const command = readFileSync(
   resolve('src/components/mission-control/AdminCommandCenter.tsx'),
   'utf8',
 )
-const actionCenter = readFileSync(
-  resolve('src/components/mission-control/AdminActionCenter.tsx'),
+const home = readFileSync(resolve('src/pages/admin/AdminHomePage.tsx'), 'utf8')
+const quick = readFileSync(
+  resolve('src/lib/missionControl/adminCommandCenterWorkflow.ts'),
   'utf8',
 )
-const threeColumn = readFileSync(
-  resolve('src/components/mission-control/AdminOpsThreeColumnLayout.tsx'),
-  'utf8',
-)
-const experiment = readFileSync(
-  resolve('src/lib/missionControl/adminDashboardOpsExperiment.ts'),
-  'utf8',
-)
-const ops = readFileSync(
-  resolve('src/lib/missionControl/campaignOperationsCommandCenter.ts'),
-  'utf8',
-)
-const routes = readFileSync(resolve('src/constants/routes.ts'), 'utf8')
-const sidebar = readFileSync(resolve('src/components/layout/AdminSidebar.tsx'), 'utf8')
-const ccHero = readFileSync(
-  resolve('src/components/command-center/CommandCenterHero.tsx'),
+const picture = readFileSync(
+  resolve('src/lib/missionControl/adminOrganisationalPicture.ts'),
   'utf8',
 )
 const css = readFileSync(resolve('src/index.css'), 'utf8')
-const mockMissions = readFileSync(resolve('src/constants/mockMissions.ts'), 'utf8')
 
-assert(!hero.includes('Campaign Command Center'), 'Hero has no Campaign Command Center eyebrow')
-assert(!command.includes('Campaign Command Center'), 'Command center has no Campaign Command Center eyebrow')
-assert(!ccHero.includes('Campaign Command Center'), 'legacy hero has no Campaign Command Center')
-assert(hero.includes('exdash-hero-banner'), 'Urdu campaign banner present')
-assert(hero.includes('dir="rtl"'), 'banner is RTL for Urdu title')
-assert(hero.includes('Campaign Progress'), 'KC-0102E — Campaign Progress restored in hero')
-assert(hero.includes('Days Left'), 'KC-0102E — Days Left restored in hero')
-assert(hero.includes('McProgressRing'), 'KC-0102E — progress ring restored')
-assert(hero.includes('MissionControlQuickActions'), 'quick actions preserved')
-assert(!hero.includes('Campaign Achievement Progress'), 'achievement progress not in Hero')
-assert(command.includes('Collective Overview'), 'KC-0102E — Collective Overview restored')
-assert(command.includes('Male Rukns'), 'KC-0102E — Male Rukn summary restored')
-assert(command.includes('Female Rukns'), 'KC-0102E — Female Rukn summary restored')
-assert(command.includes('buildAllActiveRuknPerformance'), 'gender summaries reuse existing data helper')
-assert(command.includes('Campaign Health'), 'Campaign Health section present')
-assert(command.includes('Top Priority Rukns'), 'Top Priority Rukns section present')
-assert(command.includes('Progress Trends'), 'Progress Trends section present')
-assert(command.includes('ActivityTimeline'), 'Activity Timeline mounted')
-assert(!command.includes('LiveActivityFeed'), 'Live Activity merged into Activity Timeline')
-assert(!command.includes('Recent System History'), 'System History merged into Activity Timeline')
-assert(!command.includes('WeeklyIjtemaDashboardKpiCard'), 'Weekly Ijtema KPI card not duplicated on dashboard')
-assert(!command.includes('MonthlyBaitulMaalDashboardKpiCard'), 'Baitul Maal KPI card not duplicated on dashboard')
-assert(mockMissions.includes("endDate: '2026-08-09'"), 'campaign end date seed is 9 Aug 2026')
+assert(orgHero.includes('جماعت کی موجودہ صورتحال'), 'hero uses organisational title')
+assert(orgHero.includes('میقاتی منصوبہ — موجودہ صورتحال'), 'hero subtitle is Meqati situation')
+assert(!orgHero.includes('Campaign Progress'), 'hero has no campaign progress chrome')
+assert(!hero.includes('exdash-hero-banner'), 'campaign-green banner removed from hero wrapper')
+assert(orgHero.includes('yearSelection'), 'Meqati year selector is wired')
+assert(orgHero.includes('ارکان'), 'people metric ارکان present')
+assert(orgHero.includes('کارکنان'), 'people metric کارکنان present')
+assert(orgHero.includes('متفقین'), 'people metric متفقین present')
+assert(orgHero.includes('روابط'), 'connections metric present')
+assert(stack.includes('ہفتہ وار اجتماع'), 'Ijtema snapshot present')
+assert(stack.includes('ارکان کی حاضری رپورٹ'), 'Rukn attendance reporting kept separate')
+assert(stack.includes('شرکاء کی حاضری سے الگ میٹرک'), 'participant vs Rukn attendance not combined')
+assert(stack.includes('میقاتی منصوبہ — موجودہ سال'), 'current-year Meqati summary present')
+assert(stack.includes('میقاتی منصوبہ — شعبہ وار صورتحال'), 'Shobah-wise table present')
+assert(stack.includes('توجہ طلب'), 'compact attention present')
+assert(stack.includes('تفصیل دیکھیں'), 'attention detail action present')
+assert(stack.includes('اہم سرگرمیوں کی صورتحال'), 'important activities snapshot present')
+assert(stack.includes('فعال مہم'), 'compact campaign card present')
+assert(stack.includes('<AdminQuickActionsPanel'), 'Quick Actions mounted once in stack')
+assert(!stack.includes("Today's Mission"), "Today's Mission removed from Dashboard")
+assert(!stack.includes('Work Queue'), 'Work Queue removed from Dashboard')
+assert(!command.includes('Open work'), 'Open work not on Dashboard command center')
+assert(!command.includes('Open occurrences'), 'Open occurrences not on Dashboard command center')
+assert(!command.includes("Today's Mission"), "Today's Mission not in command center")
+assert(command.includes('OrganisationalDashboardStack'), 'command center renders organisational stack')
+assert(home.includes('orgdash-page'), 'Admin home uses organisational page class')
+assert(home.includes('AskDigitalRafeeqCard'), 'Rafeeq retained as assistance layer')
+assert(quick.includes('کارکن شامل کریں'), 'quick action: add karkun')
+assert(quick.includes('متفق شامل کریں'), 'quick action: add muttafiq')
+assert(quick.includes('رکن تفویض کریں'), 'quick action: assign rukn')
+assert(quick.includes('ذمہ داری شامل کریں'), 'quick action: assign responsible to activity')
+assert(quick.includes('سرگرمی کی تازہ کاری'), 'quick action: update activity')
+assert(quick.includes('تربیت و رہنمائی'), 'quick action: tarbiyah shortcut')
+assert(quick.includes('اجتماع ہفتہ وار'), 'quick action: weekly ijtema')
+assert(quick.includes('بیت المال'), 'quick action: baitul maal')
+assert(!quick.includes("label: 'Record Visit'"), 'Visit is not a global Quick Action')
+assert(picture.includes('Open work'), 'Open work remains in internal picture helper (not deleted)')
+assert(css.includes('.orgdash-hero'), 'organisational hero styles present')
+assert(css.includes('background: #ffffff'), 'organisational cards are white, not campaign-green')
 
-assert(
-  experiment.includes('USE_ADMIN_ACTION_CENTER_EXPERIMENT = true'),
-  'Action Center experiment flag is enabled',
-)
-assert(experiment.includes('ADMIN_TODAYS_MISSION_TOP_N = 5'), 'homepage shows top 5 mission tasks')
-assert(command.includes('AdminActionCenter'), 'Command center renders Today\'s Mission')
-assert(command.includes('AdminOpsThreeColumnLayout'), 'previous three-column layout still wired for restore')
-assert(actionCenter.includes("Today's Mission"), "Today's Mission title present")
-assert(
-  actionCenter.includes('Tasks requiring your attention today'),
-  "Today's Mission subtitle present",
-)
-assert(actionCenter.includes('View All Tasks'), 'View All Tasks footer present')
-assert(actionCenter.includes('adminAllTasksPath'), 'View All Tasks uses all-tasks path helper')
-assert(routes.includes('adminAllTasksPath'), 'adminAllTasksPath route helper present')
-assert(routes.includes('view=all-tasks'), 'all-tasks query route present')
-assert(command.includes("view') === 'all-tasks'"), 'command center handles all-tasks view')
-assert(experiment.includes('buildAdminActionCenterItems'), 'Action Center item builder present')
-assert(ops.includes('buildCampaignOperationsHealthMetrics'), 'Campaign Health builder present')
-assert(ops.includes('buildTodaysMissionOperationalItems'), "Today's Mission ops builder present")
-assert(ops.includes('buildTopPriorityRukns'), 'Top Priority Rukns builder present')
-assert(ops.includes('Visits = Completed'), 'Visits contract documented')
-assert(ops.includes('Present ÷ Assigned'), 'Weekly Ijtema contract documented')
-assert(ops.includes('Contributed ÷ Assigned'), 'Monthly Baitul Maal contract documented')
-assert(ops.includes('Registered ÷ Eligible'), 'App Registration contract documented')
-assert(ops.includes('getWeeklyIjtemaDashboardKpi'), 'Weekly Ijtema KPI reused for health/mission')
-assert(ops.includes('getMonthlyBaitulMaalDashboardKpi'), 'Monthly Baitul Maal KPI reused for health/mission')
+const ijtemaIdx = stack.indexOf('<IjtemaSnapshot')
+const meqatiIdx = stack.indexOf('<MeqatiYearSummary')
+const shobahIdx = stack.indexOf('<ShobahStatusSection')
+const attentionIdx = stack.indexOf('<AttentionCompact')
+const quickIdx = stack.indexOf('<AdminQuickActionsPanel')
+const importantIdx = stack.indexOf('<ImportantActivities')
+const campaignIdx = stack.indexOf('<ActiveCampaignCompact')
+const healthIdx = stack.indexOf('<CampaignHealthPanel')
+const trendsIdx = stack.indexOf('<ProgressTrendsPanel')
+assert(ijtemaIdx > 0, 'Ijtema snapshot rendered')
+assert(meqatiIdx > ijtemaIdx, 'Meqati year after Ijtema')
+assert(shobahIdx > meqatiIdx, 'Shobah after Meqati year')
+assert(attentionIdx > shobahIdx, 'Attention after Shobah')
+assert(quickIdx > attentionIdx, 'Quick Actions after Attention')
+assert(importantIdx > quickIdx, 'Important activities after Quick Actions')
+assert(campaignIdx > importantIdx, 'Campaign after important activities')
+assert(healthIdx > campaignIdx, 'Campaign Health moved to deeper analytics')
+assert(trendsIdx > healthIdx, 'Trends after Health')
 
-assert(threeColumn.includes('Immediate Priorities'), 'previous Immediate Priorities retained')
-assert(threeColumn.includes('Attention Required'), 'previous Attention Required retained')
-assert(threeColumn.includes('Pending Actions'), 'previous Pending Actions retained')
-assert(threeColumn.includes('exdash-ops-command'), 'previous ops grid retained')
-assert(
-  /grid-cols-1[\s\S]*md:grid-cols-2[\s\S]*xl:grid-cols-3/.test(css),
-  'ops grid is 1 / 2 / 3 columns by breakpoint',
-)
-assert(css.includes('exdash-action-center'), 'Action Center styles present')
-assert(css.includes('exdash-action-center-compact'), 'compact mission card styles present')
-assert(css.includes('exdash-action-footer'), 'mission footer styles present')
-assert(css.includes('exdash-health-pct-grid'), 'Campaign Health percentage grid styles present')
-assert(css.includes('exdash-metric-grid'), 'executive metric grid styles present')
-
-const returnIdx = command.indexOf('return (')
-const collectiveIdx = command.indexOf('Collective Overview', returnIdx)
-const maleIdx = command.indexOf('Male Rukns', collectiveIdx)
-const femaleIdx = command.indexOf('Female Rukns', maleIdx)
-const healthJsxIdx = command.indexOf('<CampaignHealthPanel', femaleIdx)
-const missionMarkerIdx = command.indexOf("Today's Mission", healthJsxIdx)
-const priorityJsxIdx = command.indexOf('Top Priority Rukns', healthJsxIdx)
-const trendsJsxIdx = command.indexOf('<ProgressTrendsPanel', healthJsxIdx)
-const timelineJsxIdx = command.indexOf('<ActivityTimeline', healthJsxIdx)
-assert(collectiveIdx > returnIdx, 'Collective Overview rendered in JSX')
-assert(maleIdx > collectiveIdx, 'Male Rukns after Collective Overview')
-assert(femaleIdx > maleIdx, 'Female Rukns after Male Rukns')
-assert(healthJsxIdx > femaleIdx, 'Campaign Health after Female Rukns')
-assert(missionMarkerIdx > healthJsxIdx, "Today's Mission after Campaign Health")
-assert(priorityJsxIdx > missionMarkerIdx, 'Top Priority Rukns after Today\'s Mission')
-assert(trendsJsxIdx > priorityJsxIdx, 'Progress Trends after Top Priority Rukns')
-assert(timelineJsxIdx > trendsJsxIdx, 'Activity Timeline after Progress Trends')
-assert(
-  command.indexOf('<AdminActionCenter', healthJsxIdx) > healthJsxIdx,
-  "Today's Mission AdminActionCenter after Campaign Health in main stack",
-)
-
-assert(sidebar.includes('<Icon name={helpItem.icon}'), 'Help uses Icon component (not raw icon name text)')
-assert(
-  !sidebar.includes('{helpItem.icon}</span>'),
-  'Help no longer renders icon name string beside label',
-)
-
-console.log('Dashboard IA structure verification passed (KC-0109 + KC-0102E).')
+console.log('Dashboard IA structure verification passed (organisational situation).')

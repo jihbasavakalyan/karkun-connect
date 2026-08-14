@@ -58,13 +58,15 @@ const command = readFileSync(
   resolve('src/components/mission-control/AdminCommandCenter.tsx'),
   'utf8',
 )
-assert(command.includes('CampaignHealthPanel'), 'Campaign Health panel mounted')
-assert(command.includes('Top Priority Rukns'), 'Top Priority Rukns mounted')
-assert(command.includes('ProgressTrendsPanel'), 'Progress Trends mounted')
-assert(command.includes('ActivityTimeline'), 'Activity Timeline mounted')
-assert(command.includes('Collective Overview'), 'KC-0102E — Collective Overview restored')
-assert(command.includes('Male Rukns'), 'KC-0102E — Male Rukn summary restored')
-assert(command.includes('Female Rukns'), 'KC-0102E — Female Rukn summary restored')
+const stack = readFileSync(
+  resolve('src/components/dashboard/OrganisationalDashboardStack.tsx'),
+  'utf8',
+)
+assert(command.includes('OrganisationalDashboardStack'), 'organisational dashboard stack mounted')
+assert(stack.includes('CampaignHealthPanel'), 'Campaign Health retained as deeper analytics')
+assert(stack.includes('ProgressTrendsPanel'), 'Progress Trends mounted')
+assert(stack.includes('ActivityTimeline'), 'Activity Timeline mounted')
+assert(!stack.includes("Today's Mission"), "Today's Mission retired from Dashboard presentation")
 assert(!command.includes('WeeklyIjtemaDashboardKpiCard'), 'no duplicate Weekly Ijtema card')
 assert(!command.includes('MonthlyBaitulMaalDashboardKpiCard'), 'no duplicate Baitul Maal card')
 

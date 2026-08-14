@@ -129,23 +129,22 @@ assert(ui.includes('View All Tasks →'), 'footer CTA present')
 assert(ui.includes("slice(0, ADMIN_TODAYS_MISSION_TOP_N)"), 'summary variant slices to top N')
 assert(ui.includes("variant = 'summary'"), 'summary is default variant')
 assert(
-  readFileSync(resolve('src/components/mission-control/AdminCommandCenter.tsx'), 'utf8').includes(
+  readFileSync(resolve('src/components/mission-control/AdminActionCenter.tsx'), 'utf8').includes(
+    "Today's Mission",
+  ),
+  "Today's Mission component retained (not deleted)",
+)
+assert(
+  !readFileSync(resolve('src/components/mission-control/AdminCommandCenter.tsx'), 'utf8').includes(
     'variant="full"',
   ),
-  'full queue variant wired from command center',
-)
-
-assert(
-  readFileSync(resolve('src/components/mission-control/AdminCommandCenter.tsx'), 'utf8').includes(
-    'buildAdminInterventionQueue',
-  ),
-  'interventions still built from existing helper',
+  "full Today's Mission queue is not mounted on Dashboard",
 )
 assert(
-  readFileSync(resolve('src/components/mission-control/AdminCommandCenter.tsx'), 'utf8').includes(
+  !readFileSync(resolve('src/components/mission-control/AdminCommandCenter.tsx'), 'utf8').includes(
     'buildTodaysMissionOperationalItems',
   ),
-  "Today's Mission uses operational item contract",
+  "Today's Mission retired from Dashboard presentation",
 )
 assert(
   readFileSync(resolve('src/components/mission-control/AdminOpsThreeColumnLayout.tsx'), 'utf8')

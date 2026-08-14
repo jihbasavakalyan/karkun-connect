@@ -9,6 +9,8 @@ export { CommandCenterQuickActions } from './CommandCenterQuickActions'
 export { CommandCenterIjtemaAttendanceMetrics } from './CommandCenterIjtemaAttendanceMetrics'
 export { CommandCenterJihWebPortalMetrics } from './CommandCenterJihWebPortalMetrics'
 export { RecentActivityPanel } from './RecentActivityPanel'
+export { OrganisationalSituationHero } from './OrganisationalSituationHero'
+export { OrganisationalDashboardStack } from './OrganisationalDashboardStack'
 export {
   CurrentVisitPanel,
   NextMissionPanel,

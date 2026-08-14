@@ -337,11 +337,12 @@ console.log('▶ UI wiring — existing Admin/Rukn/Person surfaces, campaign jou
   assertIncludes(strip, 'Responsibility', 'responsibility visibility on strip')
   assertIncludes(strip, 'to={action.href}', 'actions deep-link to existing surfaces')
 
+  const pictureHelper = read('src/lib/missionControl/adminOrganisationalPicture.ts')
+  assertIncludes(pictureHelper, 'Open work', 'open work remains in internal picture helper')
+  assertIncludes(pictureHelper, 'buildAdminOrganisationalPicture', 'picture builder retained')
   const commandCenter = read('src/components/mission-control/AdminCommandCenter.tsx')
-  assertIncludes(commandCenter, 'AttentionRequiredPanel', 'existing attention panel reused')
-  assertIncludes(commandCenter, 'buildAdminAttentionRequired', 'attention builder reused')
-  assertIncludes(commandCenter, 'OrganisationalPicturePanel', 'organisational picture on Command Center')
-  assertIncludes(commandCenter, 'buildAdminOrganisationalPicture', 'picture builder wired')
+  assertNotIncludes(commandCenter, 'OrganisationalPicturePanel', 'picture panel retired from Dashboard presentation')
+  assertNotIncludes(commandCenter, 'Open work', 'Open work not user-facing on Dashboard')
 
   const inbox = read('src/lib/peopleLifecycle/InboxEngine.ts')
   assertIncludes(inbox, 'Admin Inbox', 'Phase 6 inbox intact')

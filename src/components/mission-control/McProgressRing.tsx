@@ -6,13 +6,14 @@ type McProgressRingProps = {
   value: number
   size?: number
   stroke?: number
-  tone?: 'green' | 'blue' | 'amber' | 'red' | 'purple' | 'neutral'
+  tone?: 'green' | 'teal' | 'blue' | 'amber' | 'red' | 'purple' | 'neutral'
   label?: string
   sublabel?: string
 }
 
 const TONE_STROKE: Record<NonNullable<McProgressRingProps['tone']>, string> = {
   green: '#16a34a',
+  teal: '#0f766e',
   blue: '#2563eb',
   amber: '#d97706',
   red: '#dc2626',

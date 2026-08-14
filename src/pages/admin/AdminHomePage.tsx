@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   AdminCommandCenter,
   AdminMissionControlHero,
@@ -8,11 +8,15 @@ import { WidgetErrorBoundary } from '@/components/mission-control/WidgetErrorBou
 import { openDigitalRafeeqAssistant } from '@/features/digitalRafeeq/launcher'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { useAuth } from '@/hooks/useAuth'
+import { usePeopleStore } from '@/hooks/usePeopleStore'
 import {
   useRepositoryHydration,
   useRepositoryHydrationStatus,
 } from '@/hooks/useRepositoryHydration'
 import { buildAdminMissionControl } from '@/lib/missionControl/buildAdminMissionControl'
+import { useMeqatiYearSelection } from '@/lib/dashboard/meqatiYear'
+import { buildOrganisationalSituation } from '@/lib/dashboard/organisationalSituation'
+import { createCoalescedNotifier } from '@/lib/dashboard/coalesceStoreNotifications'
 import { useAdminCommandCenter } from '@/providers/AdminCommandCenterProvider'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import {
@@ -22,6 +26,14 @@ import {
 import { kc00584GetReport } from '@/lib/debug/kc00584PermissionProbe'
 import { markStartupLifecycle } from '@/lib/startupLifecycleTrace'
 import { logStartupTiming } from '@/lib/startupDiagnostics'
+import { subscribeToAnnexure1Store } from '@/stores/annexure1Store'
+import { subscribeToJihWebPortalStore } from '@/stores/jihWebPortalStore'
+import { subscribeToWeeklyIjtemaStore } from '@/stores/weeklyIjtemaStore'
+import { subscribeToMonthlyBaitulMaalStore } from '@/stores/monthlyBaitulMaalStore'
+import { subscribeToFollowUpStore } from '@/stores/followUpStore'
+
+const PAGE_CLASS =
+  'cd-page cd-page-admin mc-page mc-page-admin-compact mc-page-admin-command exdash-page orgdash-page'
 
 export function AdminHomePage() {
   const snapshot = useAdminCommandCenter()
@@ -29,11 +41,30 @@ export function AdminHomePage() {
   const hydration = useRepositoryHydrationStatus()
   const { isInitializing } = useAuth()
   const { assignmentVersion } = useAssignmentEngine()
+  const peopleVersion = usePeopleStore()
+  const yearSelection = useMeqatiYearSelection()
+  const [moduleTick, setModuleTick] = useState(0)
   const prevHydrated = useRef(isHydrated)
   const prevAssignmentVersion = useRef(assignmentVersion)
   const dashboardRenderedLogged = useRef(false)
 
-  // KC-0058.6 — detect hydration / assignment refresh triggers that remount metrics.
+  useEffect(() => {
+    const coalesced = createCoalescedNotifier(() => {
+      setModuleTick((v) => v + 1)
+    })
+    const unsubs = [
+      subscribeToWeeklyIjtemaStore(coalesced.bump),
+      subscribeToMonthlyBaitulMaalStore(coalesced.bump),
+      subscribeToAnnexure1Store(coalesced.bump),
+      subscribeToJihWebPortalStore(coalesced.bump),
+      subscribeToFollowUpStore(coalesced.bump),
+    ]
+    return () => {
+      coalesced.dispose()
+      for (const unsub of unsubs) unsub()
+    }
+  }, [])
+
   useEffect(() => {
     if (prevHydrated.current !== isHydrated) {
       dashState05RefreshTrigger('AdminHomePage.isHydrated.change', {
@@ -56,13 +87,19 @@ export function AdminHomePage() {
     }
   }, [assignmentVersion, isHydrated])
 
-  // KC-0058.1 — rebuild Mission Control from live MetricsService when stores hydrate.
   const model = useMemo(() => {
     const next = buildAdminMissionControl(snapshot)
-    // KC-0058.6 — DASHSTATE-01 at the exact dashboard metrics receive point.
     dashState01MetricsReceived('AdminHomePage.buildAdminMissionControl')
     return next
   }, [snapshot, assignmentVersion, isHydrated])
+
+  const situation = useMemo(() => {
+    void peopleVersion
+    void assignmentVersion
+    void moduleTick
+    void isHydrated
+    return buildOrganisationalSituation(yearSelection.year)
+  }, [peopleVersion, assignmentVersion, moduleTick, isHydrated, yearSelection.year])
 
   useEffect(() => {
     if (!isHydrated || dashboardRenderedLogged.current) return
@@ -71,7 +108,6 @@ export function AdminHomePage() {
     logStartupTiming('dashboard.rendered', { role: 'administrator' })
   }, [isHydrated])
 
-  // KC-0069 — surface first critical-read failure details (UI only; no hydrate redesign).
   const probe = hydration.failed ? kc00584GetReport() : null
   const firstFailure = probe?.firstFailure ?? null
   const claimRole = probe?.authBeforeCritical?.claims.role ?? null
@@ -81,34 +117,42 @@ export function AdminHomePage() {
     (firstFailure?.errorCode === 'permission-denied' ||
       /permission-denied|insufficient permissions/i.test(hydration.error ?? ''))
 
-  // While Auth is still initializing, do not show a hard production error for a
-  // transient permission-denied (claims race). Keep the normal loading shell.
   if (permissionDeniedWhileAuthInitializing) {
     return (
-      <div className="cd-page cd-page-admin mc-page mc-page-admin-compact mc-page-admin-command exdash-page">
-        <WidgetErrorBoundary title="Campaign Hero">
-          <AdminMissionControlHero model={model} metricsReady={false} />
+      <div className={PAGE_CLASS}>
+        <WidgetErrorBoundary title="Organisational Hero">
+          <AdminMissionControlHero
+            situation={situation}
+            yearSelection={yearSelection}
+            metricsReady={false}
+          />
         </WidgetErrorBoundary>
-        <WidgetErrorBoundary title="Command Center">
-          <AdminCommandCenter model={model} snapshot={snapshot} metricsReady={false} />
+        <WidgetErrorBoundary title="Organisational Dashboard">
+          <AdminCommandCenter
+            model={model}
+            snapshot={snapshot}
+            situation={situation}
+            metricsReady={false}
+          />
         </WidgetErrorBoundary>
         <AskDigitalRafeeqCard compact onOpen={openDigitalRafeeqAssistant} />
       </div>
     )
   }
 
-  // KC-0058.3 — never render fabricated 0/0/0% after critical hydrate failure.
   if (hydration.failed) {
     return (
-      <div className="cd-page cd-page-admin mc-page mc-page-admin-compact mc-page-admin-command exdash-page">
+      <div className={PAGE_CLASS}>
         <section
           className="enterprise-glass rounded-xl p-6"
           role="alert"
           aria-live="assertive"
         >
-          <h1 className="text-lg font-semibold text-text-heading">Unable to load campaign data</h1>
+          <h1 className="text-lg font-semibold text-text-heading">
+            Unable to load organisational data
+          </h1>
           <p className="mt-2 text-sm text-secondary">
-            Campaign metrics cannot load until critical Firestore reads succeed. This panel does not
+            Dashboard metrics cannot load until critical Firestore reads succeed. This panel does not
             change authentication or hydration — it only shows what failed.
           </p>
           {hydration.error ? (
@@ -166,12 +210,21 @@ export function AdminHomePage() {
   }
 
   return (
-    <div className="cd-page cd-page-admin mc-page mc-page-admin-compact mc-page-admin-command exdash-page">
-      <WidgetErrorBoundary title="Campaign Hero">
-        <AdminMissionControlHero model={model} metricsReady={isHydrated} />
+    <div className={PAGE_CLASS}>
+      <WidgetErrorBoundary title="Organisational Hero">
+        <AdminMissionControlHero
+          situation={situation}
+          yearSelection={yearSelection}
+          metricsReady={isHydrated}
+        />
       </WidgetErrorBoundary>
-      <WidgetErrorBoundary title="Command Center">
-        <AdminCommandCenter model={model} snapshot={snapshot} metricsReady={isHydrated} />
+      <WidgetErrorBoundary title="Organisational Dashboard">
+        <AdminCommandCenter
+          model={model}
+          snapshot={snapshot}
+          situation={situation}
+          metricsReady={isHydrated}
+        />
       </WidgetErrorBoundary>
       <WidgetErrorBoundary title="Ask Digital Rafeeq" compact>
         <AskDigitalRafeeqCard compact onOpen={openDigitalRafeeqAssistant} />

@@ -82,16 +82,15 @@ function testMessagingAndNoHardcodedOldEndInUiSeeds(): void {
   assert(!notice.includes('پہلا مرحلہ'), 'no phase 1 copy')
   assert(!notice.includes('دوسرا مرحلہ'), 'no phase 2 copy')
 
-  const hero = readFileSync(
-    resolve('src/components/mission-control/AdminMissionControlHero.tsx'),
+  const stack = readFileSync(
+    resolve('src/components/dashboard/OrganisationalDashboardStack.tsx'),
     'utf8',
   )
-  assert(hero.includes('campaignSituationUrdu'), 'Urdu situation line')
-  assert(!hero.includes('Phase II'), 'no Phase II in hero')
-  assert(!hero.includes('Extended Campaign'), 'no Extended Campaign in hero')
-  assert(hero.includes('<CampaignExtensionNotice'), 'notice mounted once on AdminMissionControlHero')
+  assert(!stack.includes('Phase II'), 'no Phase II in dashboard campaign card')
+  assert(!stack.includes('Extended Campaign'), 'no Extended Campaign in dashboard campaign card')
+  assert(stack.includes('<CampaignExtensionNotice'), 'notice mounted on compact campaign card')
   assert(
-    (hero.match(/<CampaignExtensionNotice/g) ?? []).length === 1,
+    (stack.match(/<CampaignExtensionNotice/g) ?? []).length === 1,
     'exactly one notice mount',
   )
 
