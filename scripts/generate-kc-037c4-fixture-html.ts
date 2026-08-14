@@ -16,7 +16,7 @@ const fixture: WeeklyIjtemaAttendanceReportModel = {
   cover: {
     reportTitle: 'Weekly Ijtema Attendance Report',
     campaignName: 'Faal Karkun Campaign',
-    campaignUrdu: 'فعال کارکن، فعال جماعت',
+    campaignUrdu: 'فعال رکن، فعال کارکن، فعال جماعت',
     reportingDate: '2026-08-02',
     attendanceWindow: "Men's Weekly Ijtema · 2026-08-02 · Open",
     generatedOn: '2 Aug 2026, 07:50',

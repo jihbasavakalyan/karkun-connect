@@ -30,6 +30,10 @@ import {
   resetRepositoryProviderForTests,
 } from '../src/repositories/provider'
 import { clearLocalProgrammesForTests } from '../src/repositories/local/localProgrammeLocalRepositories'
+import {
+  seedLocalPlanningParentForTests,
+  VERIFY_ACTIVITY_OBJECTIVE_ID,
+} from '../src/repositories/local/planningLocalRepositories'
 import { clearLocalOccurrencesForTests } from '../src/repositories/local/occurrenceLocalRepositories'
 import { clearAssignmentStore, replaceAllAssignments } from '../src/stores/assignmentStore'
 import { clearIjtemaAttendanceStore } from '../src/stores/ijtemaAttendanceStore'
@@ -293,6 +297,7 @@ console.log('▶ TASK-039 — Occurrence sourceRef links WI event; WI not mutate
   clearLocalProgrammesForTests()
   clearLocalOccurrencesForTests()
   clearWeeklyIjtemaStore()
+  await seedLocalPlanningParentForTests()
   const createdEvent = createWeeklyIjtemaEvent({
     meetingDate: '2026-08-09',
     title: 'Men WI',
@@ -306,6 +311,7 @@ console.log('▶ TASK-039 — Occurrence sourceRef links WI event; WI not mutate
   const repos = getRepositories()
   const programme: LocalProgramme = {
     id: 'lp-wi-phase5',
+    objectiveId: VERIFY_ACTIVITY_OBJECTIVE_ID,
     campaignId: ACTIVE_CAMPAIGN_ID,
     name: 'Weekly Ijtema',
     kind: 'weekly_ijtema',

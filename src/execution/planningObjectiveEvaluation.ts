@@ -206,8 +206,10 @@ export function evaluatePlanningObjective(
     row.objectiveIds?.includes(input.objective.id),
   )
   const linkedCampaignIds = new Set(linkedCampaigns.map((row) => row.id))
-  const linkedProgrammes = input.programmes.filter((row) =>
-    linkedCampaignIds.has(row.campaignId),
+  const linkedProgrammes = input.programmes.filter(
+    (row) =>
+      row.objectiveId === input.objective.id ||
+      (row.campaignId != null && linkedCampaignIds.has(row.campaignId)),
   )
   const programmeIds = new Set(linkedProgrammes.map((row) => row.id))
   const unitIds = new Set(

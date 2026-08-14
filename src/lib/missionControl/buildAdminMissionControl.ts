@@ -19,6 +19,7 @@ import { getCanonicalConnectedAssignments } from '@/lib/connections/getConnected
 import { getRecentActivity } from '@/stores/activityLogStore'
 import { JOURNEY_STAGE_LABELS, JOURNEY_STAGE_ORDER, type JourneyStageId } from '@/types/guidance'
 import type { AdminCommandCenterSnapshot } from '@/types/campaignAutomation.types'
+import { CAMPAIGN_HEADLINE } from '@/constants/campaignIdentity'
 import {
   ROUTES,
   adminAssignmentsPath,
@@ -105,7 +106,6 @@ function buildJourneyFunnel(): MissionControlFunnelStage[] {
 export function buildAdminMissionControl(
   snapshot: AdminCommandCenterSnapshot,
 ): AdminMissionControlModel {
-  const campaign = getActiveCampaign()
   const timeline = getCampaignTimeline()
   const assignments = getAssignmentDashboardMetrics()
   // KC-0058.1 — shared MetricsService (dashboard + integrity scanner).
@@ -146,7 +146,7 @@ export function buildAdminMissionControl(
   const profileCompletion = getConnectedProfileCompletionMetrics()
 
   return {
-    campaignName: campaign?.name ?? 'Active Campaign',
+    campaignName: CAMPAIGN_HEADLINE,
     currentDateLabel: new Date().toLocaleDateString('en-GB', {
       weekday: 'long',
       day: 'numeric',

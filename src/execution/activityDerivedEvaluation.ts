@@ -320,7 +320,11 @@ function unitIdsForObjective(
   const linkedCampaignIds = new Set(linkedCampaigns.map((row) => row.id))
   const unitIds = new Set(
     programmes
-      .filter((row) => linkedCampaignIds.has(row.campaignId))
+      .filter(
+        (row) =>
+          row.objectiveId === objectiveId ||
+          (row.campaignId != null && linkedCampaignIds.has(row.campaignId)),
+      )
       .map((row) => row.unitId?.trim())
       .filter((id): id is string => Boolean(id)),
   )

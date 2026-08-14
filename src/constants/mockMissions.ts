@@ -116,6 +116,11 @@ export type CampaignListItem = {
    * Not a dual-write of titles into `objectives[]` (copy remains separate).
    */
   objectiveIds?: string[]
+  /**
+   * Optional سرگرمی focus links — selected activities for campaign tracking.
+   * Does not own or duplicate activities.
+   */
+  activityIds?: string[]
 }
 
 export const MOCK_NEEDS_ATTENTION: NeedsAttentionSummary = {
@@ -127,7 +132,7 @@ export const MOCK_NEEDS_ATTENTION: NeedsAttentionSummary = {
 export const MOCK_CAMPAIGNS: CampaignListItem[] = [
   {
     id: 'campaign-active',
-    name: 'فعال کارکن، فعال جماعت',
+    name: 'فعال رکن، فعال کارکن، فعال جماعت',
     status: 'active',
     startDate: '2026-07-18',
     endDate: '2026-08-09',
@@ -144,7 +149,7 @@ export const MOCK_CAMPAIGNS: CampaignListItem[] = [
       'مسلسل فالو اپ',
     ],
     nextMilestone: 'Complete remaining connections, visits, and follow-up',
-    motto: 'فعال کارکن، فعال جماعت',
+    motto: 'فعال رکن، فعال کارکن، فعال جماعت',
   },
   {
     id: 'campaign-archived-1',

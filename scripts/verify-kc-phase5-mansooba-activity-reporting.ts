@@ -47,6 +47,7 @@ const objectives: PlanningObjective[] = [
   {
     id: 'o1',
     mansoobaId: 'm1',
+    shobahId: 's1',
     title: 'Objective A',
     status: 'active',
     createdAt: now,
@@ -57,6 +58,7 @@ const objectives: PlanningObjective[] = [
   {
     id: 'o2',
     mansoobaId: 'm1',
+    shobahId: 's1',
     title: 'Objective B',
     status: 'active',
     createdAt: now,
@@ -90,9 +92,11 @@ function programme(
   campaignId: string,
   kind: LocalProgramme['kind'] = 'weekly_ijtema',
   status: LocalProgramme['status'] = 'active',
+  objectiveId = 'o1',
 ): LocalProgramme {
   return {
     id,
+    objectiveId,
     campaignId,
     name: id,
     kind,
@@ -205,7 +209,7 @@ console.log('▶ weekly — filter, execution, WI attendance')
     asOfDate: '2026-08-13',
     objectives,
     campaigns: [campaign('c1', ['o1'])],
-    programmes: [programme('p1', 'c1'), programme('p-other', 'c-other')],
+    programmes: [programme('p1', 'c1'), programme('p-other', 'c-other', 'weekly_ijtema', 'active', 'other-obj')],
     occurrences: [outside, inside, otherMansoobaOcc],
     work: [],
     weeklyIjtemaEvents: [wiEvent],
@@ -291,7 +295,10 @@ console.log('▶ multiple programmes under one objective; two objectives separat
 {
   const period = resolveMansoobaReportPeriod({ kind: 'weekly', asOfDate: '2026-08-13' })!
   const campaigns = [campaign('c1', ['o1', 'o2'])]
-  const programmes = [programme('p1', 'c1'), programme('p2', 'c1', 'follow_up')]
+  const programmes = [
+    programme('p1', 'c1'),
+    programme('p2', 'c1', 'follow_up', 'active', 'o2'),
+  ]
   const occurrences = [
     occurrence('occ-1', 'p1', '2026-08-12', 'closed'),
     occurrence('occ-2', 'p2', '2026-08-13', 'scheduled'),
@@ -309,10 +316,10 @@ console.log('▶ multiple programmes under one objective; two objectives separat
   assert.equal(report.scheduled, 2, 'mansooba unique occurrences')
   const o1 = report.objectiveRows.find((row) => row.objectiveId === 'o1')
   const o2 = report.objectiveRows.find((row) => row.objectiveId === 'o2')
-  assert.equal(o1?.programmeCount, 2)
-  assert.equal(o2?.programmeCount, 2)
-  assert.equal(o1?.scheduled, 2)
-  assert.equal(o2?.scheduled, 2)
+  assert.equal(o1?.programmeCount, 1)
+  assert.equal(o2?.programmeCount, 1)
+  assert.equal(o1?.scheduled, 1)
+  assert.equal(o2?.scheduled, 1)
   assert.notEqual(o1?.title, o2?.title)
 }
 

@@ -1,8 +1,9 @@
 /**
- * Phase 2 — Firestore persistence for Local Programme.
+ * Firestore persistence for سرگرمی (collection remains `localProgrammes`).
  * Per-document upsert via existing writeDoc helpers. Admin-owned collection.
  * Soft-read on hydrate (Rukn permission-denied → empty). No LWW blob.
- * Campaign parent validated via existing CampaignRepository before durable write.
+ * Objective parent validated via ObjectiveRepository before durable write.
+ * Optional campaignId is a focus overlay and is validated when present.
  */
 
 import { collection, getDocs, type DocumentData } from 'firebase/firestore'
@@ -14,6 +15,7 @@ import {
 } from '@/repositories/errors'
 import type { CampaignRepository } from '@/repositories/interfaces/CampaignRepository'
 import type { LocalProgrammeRepository } from '@/repositories/interfaces/LocalProgrammeRepository'
+import type { ObjectiveRepository } from '@/repositories/interfaces/ObjectiveRepository'
 import type {
   LocalProgramme,
   LocalProgrammeStatus,
@@ -71,29 +73,40 @@ function upsertById<T extends { id: string }>(rows: T[], next: T): T[] {
 
 function validateProgramme(
   programme: LocalProgramme,
+  objectives: ObjectiveRepository,
   campaigns: CampaignRepository,
 ): RepositoryResult<LocalProgramme> | null {
   if (!programme.id?.trim() || !programme.name?.trim()) {
-    return repositoryErr('Validation', 'Local Programme requires id and name.')
+    return repositoryErr('Validation', 'Activity requires id and name.')
   }
-  if (!programme.campaignId?.trim()) {
+  if (!programme.objectiveId?.trim()) {
     return repositoryErr(
       'Validation',
-      'Local Programme requires campaignId (belongs to one Campaign).',
+      'Activity requires objectiveId (belongs to one اہداف).',
     )
   }
   if (!PROGRAMME_KINDS.has(programme.kind)) {
-    return repositoryErr('Validation', 'Local Programme requires a valid kind.')
+    return repositoryErr('Validation', 'Activity requires a valid kind.')
   }
   if (!PROGRAMME_STATUSES.has(programme.status)) {
-    return repositoryErr('Validation', 'Local Programme requires a valid status.')
+    return repositoryErr('Validation', 'Activity requires a valid status.')
   }
-  const parent = campaigns.getById(programme.campaignId)
+  const parent = objectives.getById(programme.objectiveId)
   if (!parent.ok || !parent.data) {
     return repositoryErr(
       'Validation',
-      'Local Programme requires an existing Campaign (campaignId).',
+      'Activity requires an existing Objective (objectiveId).',
     )
+  }
+  const campaignId = programme.campaignId?.trim()
+  if (campaignId) {
+    const campaign = campaigns.getById(campaignId)
+    if (!campaign.ok || !campaign.data) {
+      return repositoryErr(
+        'Validation',
+        'Activity campaignId must reference an existing Campaign.',
+      )
+    }
   }
   return null
 }
@@ -117,9 +130,11 @@ export function resetLocalProgrammeCachesForTests(): void {
 }
 
 export class LocalProgrammeFirestoreRepository implements LocalProgrammeRepository {
+  private readonly objectives: ObjectiveRepository
   private readonly campaigns: CampaignRepository
 
-  constructor(campaigns: CampaignRepository) {
+  constructor(objectives: ObjectiveRepository, campaigns: CampaignRepository) {
+    this.objectives = objectives
     this.campaigns = campaigns
   }
 
@@ -129,6 +144,14 @@ export class LocalProgrammeFirestoreRepository implements LocalProgrammeReposito
 
   getById(id: string): RepositoryResult<LocalProgramme | undefined> {
     return repositoryOk(programmeCache.get().find((row) => row.id === id))
+  }
+
+  listByObjectiveId(
+    objectiveId: string,
+  ): RepositoryResult<readonly LocalProgramme[]> {
+    return repositoryOk(
+      programmeCache.get().filter((row) => row.objectiveId === objectiveId),
+    )
   }
 
   listByCampaignId(
@@ -142,7 +165,7 @@ export class LocalProgrammeFirestoreRepository implements LocalProgrammeReposito
   async saveDurable(
     programme: LocalProgramme,
   ): Promise<RepositoryResult<LocalProgramme>> {
-    const invalid = validateProgramme(programme, this.campaigns)
+    const invalid = validateProgramme(programme, this.objectives, this.campaigns)
     if (invalid) return invalid
 
     const write = await writeDoc(
@@ -157,7 +180,7 @@ export class LocalProgrammeFirestoreRepository implements LocalProgrammeReposito
         operation: 'saveDurable',
         result: 'error',
         id: programme.id,
-        campaignId: programme.campaignId,
+        objectiveId: programme.objectiveId,
         error: write.error,
       })
       return write
@@ -168,7 +191,7 @@ export class LocalProgrammeFirestoreRepository implements LocalProgrammeReposito
       operation: 'saveDurable',
       result: 'ok',
       id: programme.id,
-      campaignId: programme.campaignId,
+      objectiveId: programme.objectiveId,
     })
     return repositoryOk(programme)
   }

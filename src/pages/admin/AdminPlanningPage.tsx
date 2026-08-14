@@ -1,7 +1,6 @@
 /**
- * Phase 1–2 — Admin planning experience.
- * Meqati Mansooba → Objectives + Unit / Scope + Campaign → Local Programme.
- * Calls getRepositories() directly (no service layer).
+ * Admin planning — میقاتی منصوبہ → شعبہ → اہداف → سرگرمی.
+ * Campaign is a focus overlay. Unit / Work / Occurrence are not user-facing.
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
@@ -12,6 +11,7 @@ import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import { useAuth } from '@/hooks/useAuth'
 import { useBusyAction } from '@/hooks/useBusyAction'
 import type { CampaignListItem } from '@/constants/mockMissions'
+import type { Rukn } from '@/data/ruknMaster'
 import { buildOccurrenceCalendar } from '@/lib/occurrence/calendar'
 import { listOccurrenceHistory } from '@/lib/occurrence/history'
 import { unwrapRepository } from '@/repositories/errors'
@@ -29,8 +29,8 @@ import type {
   MeqatiMansoobaStatus,
   PlanningObjective,
   PlanningObjectiveStatus,
-  Unit,
-  UnitStatus,
+  Shobah,
+  ShobahStatus,
 } from '@/types/planning.types'
 import type { Work } from '@/types/work.types'
 import { MansoobaActivityReportPanel } from '@/pages/admin/MansoobaActivityReportPanel'
@@ -50,16 +50,16 @@ const inputClassName =
 
 const labelClassName = 'mb-1 block text-sm font-medium text-text-heading'
 
-const PROGRAMME_KIND_OPTIONS: { value: ProgrammeKind; label: string }[] = [
+const ACTIVITY_KIND_OPTIONS: { value: ProgrammeKind; label: string }[] = [
   { value: 'weekly_ijtema', label: 'Weekly Ijtema' },
   { value: 'monthly_baitul_maal', label: 'Monthly Bait-ul-Maal' },
-  { value: 'campaign_execution', label: 'Campaign Execution' },
+  { value: 'campaign_execution', label: 'Campaign execution' },
   { value: 'follow_up', label: 'Follow-up' },
   { value: 'other', label: 'Other' },
 ]
 
-const PROGRAMME_KIND_LABELS = Object.fromEntries(
-  PROGRAMME_KIND_OPTIONS.map((row) => [row.value, row.label]),
+const ACTIVITY_KIND_LABELS = Object.fromEntries(
+  ACTIVITY_KIND_OPTIONS.map((row) => [row.value, row.label]),
 ) as Record<ProgrammeKind, string>
 
 function newPlanningId(prefix: string): string {
@@ -67,12 +67,26 @@ function newPlanningId(prefix: string): string {
 }
 
 function isSuccessMessage(message: string): boolean {
-  const lower = message.toLowerCase()
-  return lower.includes('saved') || lower.includes('created') || lower.includes('updated')
+  return message.includes('محفوظ') || message.includes('بن گ')
 }
 
 function formatRepoError(error: { message?: string } | undefined): string {
   return error?.message?.trim() || 'Unable to save. Please try again.'
+}
+
+function formatSchedule(frequency: ProgrammeFrequency | undefined): string {
+  if (!frequency) return 'غیر متعین'
+  if (frequency.cadence === 'weekly') {
+    return frequency.dayOfWeek != null ? `ہفتہ وار (${frequency.dayOfWeek})` : 'ہفتہ وار'
+  }
+  if (frequency.cadence === 'monthly') {
+    return frequency.dayOfMonth != null ? `ماہانہ (${frequency.dayOfMonth})` : 'ماہانہ'
+  }
+  if (frequency.cadence === 'yearly') {
+    return 'سالانہ'
+  }
+  if (frequency.cadence === 'once') return 'یک بار'
+  return frequency.note?.trim() ? `دیگر: ${frequency.note}` : 'دیگر'
 }
 
 type MansoobaFormState = {
@@ -80,7 +94,13 @@ type MansoobaFormState = {
   status: MeqatiMansoobaStatus
   startDate: string
   endDate: string
-  primaryUnitId: string
+  summary: string
+}
+
+type ShobahFormState = {
+  name: string
+  status: ShobahStatus
+  sortOrder: string
   summary: string
 }
 
@@ -91,32 +111,33 @@ type ObjectiveFormState = {
   sortOrder: string
 }
 
-type UnitFormState = {
-  name: string
-  status: UnitStatus
-  placeAliases: string
-}
-
-type ProgrammeFormState = {
+type ActivityFormState = {
   name: string
   kind: ProgrammeKind
   status: LocalProgrammeStatus
-  unitId: string
+  responsibleRuknId: string
   startDate: string
   endDate: string
   frequencyCadence: '' | ProgrammeFrequency['cadence']
   frequencyDayOfWeek: string
   frequencyDayOfMonth: string
+  frequencyMonth: string
   frequencyNote: string
   summary: string
 }
 
 const emptyMansoobaForm = (): MansoobaFormState => ({
-  name: '',
-  status: 'draft',
+  name: 'میقاتی منصوبہ',
+  status: 'active',
   startDate: '',
   endDate: '',
-  primaryUnitId: '',
+  summary: '',
+})
+
+const emptyShobahForm = (): ShobahFormState => ({
+  name: '',
+  status: 'active',
+  sortOrder: '',
   summary: '',
 })
 
@@ -127,33 +148,28 @@ const emptyObjectiveForm = (): ObjectiveFormState => ({
   sortOrder: '',
 })
 
-const emptyUnitForm = (): UnitFormState => ({
+const emptyActivityForm = (): ActivityFormState => ({
   name: '',
-  status: 'active',
-  placeAliases: '',
-})
-
-const emptyProgrammeForm = (): ProgrammeFormState => ({
-  name: '',
-  kind: 'weekly_ijtema',
+  kind: 'other',
   status: 'draft',
-  unitId: '',
+  responsibleRuknId: '',
   startDate: '',
   endDate: '',
   frequencyCadence: '',
   frequencyDayOfWeek: '',
   frequencyDayOfMonth: '',
+  frequencyMonth: '',
   frequencyNote: '',
   summary: '',
 })
 
-function programmeFormFromRow(row: LocalProgramme): ProgrammeFormState {
+function activityFormFromRow(row: LocalProgramme): ActivityFormState {
   const frequency = row.frequency
   return {
     name: row.name,
     kind: row.kind,
     status: row.status,
-    unitId: row.unitId ?? '',
+    responsibleRuknId: row.responsibleRuknId ?? '',
     startDate: row.startDate ?? '',
     endDate: row.endDate ?? '',
     frequencyCadence: frequency?.cadence ?? '',
@@ -162,26 +178,28 @@ function programmeFormFromRow(row: LocalProgramme): ProgrammeFormState {
         ? String(frequency.dayOfWeek)
         : '',
     frequencyDayOfMonth:
-      frequency && frequency.cadence === 'monthly' && frequency.dayOfMonth != null
+      frequency &&
+      (frequency.cadence === 'monthly' || frequency.cadence === 'yearly') &&
+      frequency.dayOfMonth != null
         ? String(frequency.dayOfMonth)
         : '',
-    frequencyNote:
-      frequency && frequency.cadence === 'custom' ? (frequency.note ?? '') : '',
+    frequencyMonth:
+      frequency && frequency.cadence === 'yearly' && frequency.month != null
+        ? String(frequency.month)
+        : '',
+    frequencyNote: frequency && frequency.cadence === 'custom' ? (frequency.note ?? '') : '',
     summary: row.summary ?? '',
   }
 }
 
-function buildProgrammeFrequency(
-  form: ProgrammeFormState,
-): ProgrammeFrequency | undefined {
+function buildActivityFrequency(form: ActivityFormState): ProgrammeFrequency | undefined {
   if (!form.frequencyCadence) return undefined
   if (form.frequencyCadence === 'weekly') {
     const dayRaw = form.frequencyDayOfWeek.trim()
     const dayOfWeek = dayRaw === '' ? undefined : Number(dayRaw)
     return {
       cadence: 'weekly',
-      dayOfWeek:
-        dayOfWeek != null && Number.isFinite(dayOfWeek) ? dayOfWeek : undefined,
+      dayOfWeek: dayOfWeek != null && Number.isFinite(dayOfWeek) ? dayOfWeek : undefined,
     }
   }
   if (form.frequencyCadence === 'monthly') {
@@ -189,8 +207,18 @@ function buildProgrammeFrequency(
     const dayOfMonth = dayRaw === '' ? undefined : Number(dayRaw)
     return {
       cadence: 'monthly',
-      dayOfMonth:
-        dayOfMonth != null && Number.isFinite(dayOfMonth) ? dayOfMonth : undefined,
+      dayOfMonth: dayOfMonth != null && Number.isFinite(dayOfMonth) ? dayOfMonth : undefined,
+    }
+  }
+  if (form.frequencyCadence === 'yearly') {
+    const monthRaw = form.frequencyMonth.trim()
+    const dayRaw = form.frequencyDayOfMonth.trim()
+    const month = monthRaw === '' ? undefined : Number(monthRaw)
+    const dayOfMonth = dayRaw === '' ? undefined : Number(dayRaw)
+    return {
+      cadence: 'yearly',
+      month: month != null && Number.isFinite(month) ? month : undefined,
+      dayOfMonth: dayOfMonth != null && Number.isFinite(dayOfMonth) ? dayOfMonth : undefined,
     }
   }
   if (form.frequencyCadence === 'once') {
@@ -208,59 +236,58 @@ export function AdminPlanningPage() {
   const actor = user?.displayName?.trim() || user?.email?.trim() || 'Administrator'
 
   const [mansoobas, setMansoobas] = useState<MeqatiMansooba[]>([])
+  const [shobahs, setShobahs] = useState<Shobah[]>([])
   const [objectives, setObjectives] = useState<PlanningObjective[]>([])
-  const [units, setUnits] = useState<Unit[]>([])
   const [campaigns, setCampaigns] = useState<CampaignListItem[]>([])
   const [programmes, setProgrammes] = useState<LocalProgramme[]>([])
-  /** Phase 3 — canonical Occurrence rows (history / calendar consume these; no second SoT). */
   const [occurrences, setOccurrences] = useState<Occurrence[]>([])
   const [workItems, setWorkItems] = useState<Work[]>([])
+  const [rukns, setRukns] = useState<Rukn[]>([])
   const [activityStoreVersion, setActivityStoreVersion] = useState(0)
   const [selectedMansoobaId, setSelectedMansoobaId] = useState<string | null>(null)
+  const [selectedShobahId, setSelectedShobahId] = useState<string | null>(null)
+  const [selectedObjectiveId, setSelectedObjectiveId] = useState<string | null>(null)
   const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null)
   const [message, setMessage] = useState('')
+  const [formError, setFormError] = useState('')
 
   const [mansoobaModal, setMansoobaModal] = useState<'create' | 'edit' | null>(null)
   const [editingMansoobaId, setEditingMansoobaId] = useState<string | null>(null)
   const [mansoobaForm, setMansoobaForm] = useState<MansoobaFormState>(emptyMansoobaForm)
 
+  const [shobahModal, setShobahModal] = useState<'create' | 'edit' | null>(null)
+  const [editingShobahId, setEditingShobahId] = useState<string | null>(null)
+  const [shobahMansoobaId, setShobahMansoobaId] = useState<string | null>(null)
+  const [shobahForm, setShobahForm] = useState<ShobahFormState>(emptyShobahForm)
+
   const [objectiveModal, setObjectiveModal] = useState<'create' | 'edit' | null>(null)
   const [editingObjectiveId, setEditingObjectiveId] = useState<string | null>(null)
-  /** Locked when the Objective modal opens — prevents reassignment if Mansooba selection changes. */
-  const [objectiveMansoobaId, setObjectiveMansoobaId] = useState<string | null>(null)
+  const [objectiveShobahId, setObjectiveShobahId] = useState<string | null>(null)
   const [objectiveForm, setObjectiveForm] = useState<ObjectiveFormState>(emptyObjectiveForm)
-  const [formError, setFormError] = useState('')
 
-  const [unitModal, setUnitModal] = useState<'create' | 'edit' | null>(null)
-  const [editingUnitId, setEditingUnitId] = useState<string | null>(null)
-  const [unitForm, setUnitForm] = useState<UnitFormState>(emptyUnitForm)
-
-  const [programmeModal, setProgrammeModal] = useState<'create' | 'edit' | null>(null)
-  const [editingProgrammeId, setEditingProgrammeId] = useState<string | null>(null)
-  /** Locked when the Local Programme modal opens — prevents silent Campaign reassignment. */
-  const [programmeCampaignId, setProgrammeCampaignId] = useState<string | null>(null)
-  const [programmeForm, setProgrammeForm] = useState<ProgrammeFormState>(emptyProgrammeForm)
+  const [activityModal, setActivityModal] = useState<'create' | 'edit' | null>(null)
+  const [editingActivityId, setEditingActivityId] = useState<string | null>(null)
+  const [activityObjectiveId, setActivityObjectiveId] = useState<string | null>(null)
+  const [activityForm, setActivityForm] = useState<ActivityFormState>(emptyActivityForm)
 
   const refresh = useCallback(() => {
     const repos = getRepositories()
-    const nextMansoobas = [
-      ...unwrapRepository(repos.meqatiMansooba.loadAll(), []),
-    ]
-    const nextObjectives = [
-      ...unwrapRepository(repos.objective.loadAll(), []),
-    ]
-    const nextUnits = [...unwrapRepository(repos.unit.loadAll(), [])]
+    const nextMansoobas = [...unwrapRepository(repos.meqatiMansooba.loadAll(), [])]
+    const nextShobahs = [...unwrapRepository(repos.shobah.loadAll(), [])]
+    const nextObjectives = [...unwrapRepository(repos.objective.loadAll(), [])]
     const nextCampaigns = [...unwrapRepository(repos.campaign.getAll(), [])]
     const nextProgrammes = [...unwrapRepository(repos.localProgramme.loadAll(), [])]
     const nextOccurrences = [...unwrapRepository(repos.occurrence.loadAll(), [])]
     const nextWork = [...unwrapRepository(repos.work.loadAll(), [])]
+    const nextRukns = [...unwrapRepository(repos.rukn.loadAll(), [])]
     setMansoobas(nextMansoobas)
+    setShobahs(nextShobahs)
     setObjectives(nextObjectives)
-    setUnits(nextUnits)
     setCampaigns(nextCampaigns)
     setProgrammes(nextProgrammes)
     setOccurrences(nextOccurrences)
     setWorkItems(nextWork)
+    setRukns(nextRukns)
 
     setSelectedMansoobaId((current) => {
       if (current && nextMansoobas.some((row) => row.id === current)) return current
@@ -305,25 +332,65 @@ export function AdminPlanningPage() {
     [campaigns, selectedCampaignId],
   )
 
-  const selectedObjectives = useMemo(() => {
+  const visibleShobahs = useMemo(() => {
     if (!selectedMansoobaId) return []
-    return objectives
+    return shobahs
       .filter((row) => row.mansoobaId === selectedMansoobaId)
       .slice()
-      .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.title.localeCompare(b.title))
-  }, [objectives, selectedMansoobaId])
+      .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.name.localeCompare(b.name))
+  }, [shobahs, selectedMansoobaId])
 
-  const selectedProgrammes = useMemo(() => {
-    if (!selectedCampaignId) return []
+  const selectedShobahIdResolved =
+    selectedShobahId && visibleShobahs.some((row) => row.id === selectedShobahId)
+      ? selectedShobahId
+      : (visibleShobahs[0]?.id ?? null)
+
+  const selectedShobah = useMemo(
+    () => visibleShobahs.find((row) => row.id === selectedShobahIdResolved) ?? null,
+    [visibleShobahs, selectedShobahIdResolved],
+  )
+
+  const visibleObjectives = useMemo(() => {
+    if (!selectedShobahIdResolved) return []
+    return objectives
+      .filter((row) => row.shobahId === selectedShobahIdResolved)
+      .slice()
+      .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.title.localeCompare(b.title))
+  }, [objectives, selectedShobahIdResolved])
+
+  const selectedObjectiveIdResolved =
+    selectedObjectiveId && visibleObjectives.some((row) => row.id === selectedObjectiveId)
+      ? selectedObjectiveId
+      : (visibleObjectives[0]?.id ?? null)
+
+  const selectedObjective = useMemo(
+    () => visibleObjectives.find((row) => row.id === selectedObjectiveIdResolved) ?? null,
+    [visibleObjectives, selectedObjectiveIdResolved],
+  )
+
+  const visibleActivities = useMemo(() => {
+    if (!selectedObjectiveIdResolved) return []
     return programmes
-      .filter((row) => row.campaignId === selectedCampaignId)
+      .filter((row) => row.objectiveId === selectedObjectiveIdResolved)
       .slice()
       .sort((a, b) => a.name.localeCompare(b.name))
-  }, [programmes, selectedCampaignId])
+  }, [programmes, selectedObjectiveIdResolved])
 
-  const selectedProgrammeIds = useMemo(
-    () => new Set(selectedProgrammes.map((row) => row.id)),
-    [selectedProgrammes],
+  const mansoobaObjectiveIds = useMemo(() => {
+    if (!selectedMansoobaId) return new Set<string>()
+    return new Set(
+      objectives.filter((row) => row.mansoobaId === selectedMansoobaId).map((row) => row.id),
+    )
+  }, [objectives, selectedMansoobaId])
+
+  const mansoobaActivities = useMemo(
+    () => programmes.filter((row) => mansoobaObjectiveIds.has(row.objectiveId)),
+    [programmes, mansoobaObjectiveIds],
+  )
+
+  const mansoobaActivityIds = useMemo(
+    () => new Set(mansoobaActivities.map((row) => row.id)),
+    [mansoobaActivities],
   )
 
   const programmeNameById = useMemo(() => {
@@ -332,20 +399,25 @@ export function AdminPlanningPage() {
     return map
   }, [programmes])
 
-  const campaignOccurrences = useMemo(
-    () => occurrences.filter((row) => selectedProgrammeIds.has(row.programmeId)),
-    [occurrences, selectedProgrammeIds],
+  const ruknNameById = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const row of rukns) map.set(row.id, row.name)
+    return map
+  }, [rukns])
+
+  const calendarOccurrences = useMemo(
+    () => occurrences.filter((row) => mansoobaActivityIds.has(row.programmeId)),
+    [occurrences, mansoobaActivityIds],
   )
 
   const occurrenceCalendarEntries = useMemo(
-    () =>
-      buildOccurrenceCalendar(campaignOccurrences, {}, programmeNameById),
-    [campaignOccurrences, programmeNameById],
+    () => buildOccurrenceCalendar(calendarOccurrences, {}, programmeNameById),
+    [calendarOccurrences, programmeNameById],
   )
 
   const occurrenceHistoryRows = useMemo(
-    () => listOccurrenceHistory(campaignOccurrences),
-    [campaignOccurrences],
+    () => listOccurrenceHistory(calendarOccurrences),
+    [calendarOccurrences],
   )
 
   const weeklyIjtemaEvents = useMemo(() => {
@@ -368,20 +440,23 @@ export function AdminPlanningPage() {
     return getAllMonthlyBaitulMaalSubmissions()
   }, [activityStoreVersion])
 
-  const unitNameById = useMemo(() => {
-    const map = new Map<string, string>()
-    for (const unit of units) map.set(unit.id, unit.name)
-    return map
-  }, [units])
-
-  const objectiveMansooba = useMemo(
-    () => mansoobas.find((row) => row.id === objectiveMansoobaId) ?? null,
-    [mansoobas, objectiveMansoobaId],
+  const canCreateMansooba = mansoobas.filter((row) => row.status !== 'archived').length === 0
+  const mansoobaObjectives = useMemo(
+    () =>
+      objectives
+        .filter((row) => row.mansoobaId === selectedMansoobaId)
+        .slice()
+        .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.title.localeCompare(b.title)),
+    [objectives, selectedMansoobaId],
   )
 
-  const programmeCampaign = useMemo(
-    () => campaigns.find((row) => row.id === programmeCampaignId) ?? null,
-    [campaigns, programmeCampaignId],
+  const focusedObjectiveIds = useMemo(
+    () => new Set(selectedCampaign?.objectiveIds ?? []),
+    [selectedCampaign],
+  )
+  const focusedActivityIds = useMemo(
+    () => new Set(selectedCampaign?.activityIds ?? []),
+    [selectedCampaign],
   )
 
   const closeMansoobaModal = () => {
@@ -389,46 +464,35 @@ export function AdminPlanningPage() {
     setFormError('')
   }
 
+  const closeShobahModal = () => {
+    setShobahModal(null)
+    setEditingShobahId(null)
+    setShobahMansoobaId(null)
+    setShobahForm(emptyShobahForm())
+    setFormError('')
+  }
+
   const closeObjectiveModal = () => {
     setObjectiveModal(null)
     setEditingObjectiveId(null)
-    setObjectiveMansoobaId(null)
+    setObjectiveShobahId(null)
     setObjectiveForm(emptyObjectiveForm())
     setFormError('')
   }
 
-  const closeUnitModal = () => {
-    setUnitModal(null)
+  const closeActivityModal = () => {
+    setActivityModal(null)
+    setEditingActivityId(null)
+    setActivityObjectiveId(null)
+    setActivityForm(emptyActivityForm())
     setFormError('')
-  }
-
-  const closeProgrammeModal = () => {
-    setProgrammeModal(null)
-    setEditingProgrammeId(null)
-    setProgrammeCampaignId(null)
-    setProgrammeForm(emptyProgrammeForm())
-    setFormError('')
-  }
-
-  const selectMansooba = (id: string) => {
-    setSelectedMansoobaId(id)
-    setMessage('')
-    // Avoid stale create/edit Objective context after switching Mansooba.
-    if (objectiveModal != null) {
-      closeObjectiveModal()
-    }
-  }
-
-  const selectCampaign = (id: string) => {
-    setSelectedCampaignId(id)
-    setMessage('')
-    // Avoid stale create/edit Local Programme context after switching Campaign.
-    if (programmeModal != null) {
-      closeProgrammeModal()
-    }
   }
 
   const openCreateMansooba = () => {
+    if (!canCreateMansooba) {
+      setMessage('صرف ایک میقاتی منصوبہ ہو سکتا ہے۔')
+      return
+    }
     setEditingMansoobaId(null)
     setMansoobaForm(emptyMansoobaForm())
     setMansoobaModal('create')
@@ -443,7 +507,6 @@ export function AdminPlanningPage() {
       status: row.status,
       startDate: row.startDate ?? '',
       endDate: row.endDate ?? '',
-      primaryUnitId: row.primaryUnitId ?? '',
       summary: row.summary ?? '',
     })
     setMansoobaModal('edit')
@@ -456,20 +519,23 @@ export function AdminPlanningPage() {
       async () => {
         const name = mansoobaForm.name.trim()
         if (!name) {
-          setFormError('Mansooba name is required.')
+          setFormError('میقاتی منصوبہ کا نام ضروری ہے۔')
           return
         }
         const now = new Date().toISOString()
         const existing = editingMansoobaId
           ? mansoobas.find((row) => row.id === editingMansoobaId)
           : undefined
+        if (!existing && !canCreateMansooba) {
+          setFormError('صرف ایک میقاتی منصوبہ ہو سکتا ہے۔')
+          return
+        }
         const record: MeqatiMansooba = {
           id: existing?.id ?? newPlanningId('mansooba'),
           name,
           status: mansoobaForm.status,
           startDate: mansoobaForm.startDate.trim() || undefined,
           endDate: mansoobaForm.endDate.trim() || undefined,
-          primaryUnitId: mansoobaForm.primaryUnitId.trim() || undefined,
           summary: mansoobaForm.summary.trim() || undefined,
           createdAt: existing?.createdAt ?? now,
           updatedAt: now,
@@ -484,19 +550,91 @@ export function AdminPlanningPage() {
         closeMansoobaModal()
         setSelectedMansoobaId(record.id)
         refresh()
-        setMessage(existing ? 'Mansooba updated.' : 'Mansooba created.')
+        setMessage(existing ? 'میقاتی منصوبہ محفوظ ہو گیا۔' : 'میقاتی منصوبہ بن گیا۔')
       },
       { key: 'planning.mansooba.save' },
     )
   }
 
-  const openCreateObjective = () => {
+  const openCreateShobah = () => {
     if (!selectedMansoobaId) {
-      setMessage('Select or create a Mansooba first.')
+      setMessage('پہلے میقاتی منصوبہ منتخب یا تخلیق کریں۔')
+      return
+    }
+    setEditingShobahId(null)
+    setShobahMansoobaId(selectedMansoobaId)
+    setShobahForm(emptyShobahForm())
+    setShobahModal('create')
+    setFormError('')
+    setMessage('')
+  }
+
+  const openEditShobah = (row: Shobah) => {
+    setEditingShobahId(row.id)
+    setShobahMansoobaId(row.mansoobaId)
+    setShobahForm({
+      name: row.name,
+      status: row.status,
+      sortOrder: row.sortOrder != null ? String(row.sortOrder) : '',
+      summary: row.summary ?? '',
+    })
+    setShobahModal('edit')
+    setFormError('')
+    setMessage('')
+  }
+
+  const saveShobah = () => {
+    void run(
+      async () => {
+        const parentId = shobahMansoobaId
+        if (!parentId) {
+          setFormError('شعبہ میقاتی منصوبہ کے اندر ہونا چاہیے۔')
+          return
+        }
+        const name = shobahForm.name.trim()
+        if (!name) {
+          setFormError('شعبہ کا نام ضروری ہے۔')
+          return
+        }
+        const now = new Date().toISOString()
+        const existing = editingShobahId
+          ? shobahs.find((row) => row.id === editingShobahId)
+          : undefined
+        const sortRaw = shobahForm.sortOrder.trim()
+        const sortOrder = sortRaw === '' ? undefined : Number(sortRaw)
+        const record: Shobah = {
+          id: existing?.id ?? newPlanningId('shobah'),
+          mansoobaId: existing?.mansoobaId ?? parentId,
+          name,
+          status: shobahForm.status,
+          sortOrder: sortOrder != null && Number.isFinite(sortOrder) ? sortOrder : undefined,
+          summary: shobahForm.summary.trim() || undefined,
+          createdAt: existing?.createdAt ?? now,
+          updatedAt: now,
+          createdBy: existing?.createdBy ?? actor,
+          updatedBy: actor,
+        }
+        const result = await getRepositories().shobah.saveDurable(record)
+        if (!result.ok) {
+          setFormError(formatRepoError(result.error))
+          return
+        }
+        closeShobahModal()
+        setSelectedShobahId(record.id)
+        refresh()
+        setMessage(existing ? 'شعبہ محفوظ ہو گیا۔' : 'شعبہ بن گیا۔')
+      },
+      { key: 'planning.shobah.save' },
+    )
+  }
+
+  const openCreateObjective = () => {
+    if (!selectedShobahIdResolved) {
+      setMessage('پہلے شعبہ منتخب کریں۔')
       return
     }
     setEditingObjectiveId(null)
-    setObjectiveMansoobaId(selectedMansoobaId)
+    setObjectiveShobahId(selectedShobahIdResolved)
     setObjectiveForm(emptyObjectiveForm())
     setObjectiveModal('create')
     setFormError('')
@@ -505,7 +643,7 @@ export function AdminPlanningPage() {
 
   const openEditObjective = (row: PlanningObjective) => {
     setEditingObjectiveId(row.id)
-    setObjectiveMansoobaId(row.mansoobaId)
+    setObjectiveShobahId(row.shobahId)
     setObjectiveForm({
       title: row.title,
       description: row.description ?? '',
@@ -520,36 +658,31 @@ export function AdminPlanningPage() {
   const saveObjective = () => {
     void run(
       async () => {
-        const parentId = objectiveMansoobaId
-        if (!parentId) {
-          setFormError('Objective must belong to a Mansooba.')
+        const parentShobahId = objectiveShobahId
+        const parentShobah = shobahs.find((row) => row.id === parentShobahId)
+        if (!parentShobahId || !parentShobah) {
+          setFormError('اہداف شعبہ کے اندر ہونے چاہیے۔')
           return
         }
         const title = objectiveForm.title.trim()
         if (!title) {
-          setFormError('Objective title is required.')
+          setFormError('اہداف کا عنوان ضروری ہے۔')
           return
         }
         const now = new Date().toISOString()
         const existing = editingObjectiveId
           ? objectives.find((row) => row.id === editingObjectiveId)
           : undefined
-        // Edit preserves the original Mansooba; create uses the locked modal parent.
-        const mansoobaId = existing?.mansoobaId ?? parentId
-        if (!mansoobaId) {
-          setFormError('Objective must belong to a Mansooba.')
-          return
-        }
         const sortRaw = objectiveForm.sortOrder.trim()
         const sortOrder = sortRaw === '' ? undefined : Number(sortRaw)
         const record: PlanningObjective = {
           id: existing?.id ?? newPlanningId('objective'),
-          mansoobaId,
+          mansoobaId: existing?.mansoobaId ?? parentShobah.mansoobaId,
+          shobahId: existing?.shobahId ?? parentShobahId,
           title,
           description: objectiveForm.description.trim() || undefined,
           status: objectiveForm.status,
-          sortOrder:
-            sortOrder != null && Number.isFinite(sortOrder) ? sortOrder : undefined,
+          sortOrder: sortOrder != null && Number.isFinite(sortOrder) ? sortOrder : undefined,
           legacyKey: existing?.legacyKey,
           createdAt: existing?.createdAt ?? now,
           updatedAt: now,
@@ -562,128 +695,65 @@ export function AdminPlanningPage() {
           return
         }
         closeObjectiveModal()
+        setSelectedObjectiveId(record.id)
         refresh()
-        setMessage(existing ? 'Objective updated.' : 'Objective created.')
+        setMessage(existing ? 'اہداف محفوظ ہو گئے۔' : 'اہداف بن گئے۔')
       },
       { key: 'planning.objective.save' },
     )
   }
 
-  const openCreateUnit = () => {
-    setEditingUnitId(null)
-    setUnitForm(emptyUnitForm())
-    setUnitModal('create')
-    setFormError('')
-    setMessage('')
-  }
-
-  const openEditUnit = (row: Unit) => {
-    setEditingUnitId(row.id)
-    setUnitForm({
-      name: row.name,
-      status: row.status,
-      placeAliases: (row.placeAliases ?? []).join(', '),
-    })
-    setUnitModal('edit')
-    setFormError('')
-    setMessage('')
-  }
-
-  const saveUnit = () => {
-    void run(
-      async () => {
-        const name = unitForm.name.trim()
-        if (!name) {
-          setFormError('Unit name is required.')
-          return
-        }
-        const now = new Date().toISOString()
-        const existing = editingUnitId
-          ? units.find((row) => row.id === editingUnitId)
-          : undefined
-        const aliases = unitForm.placeAliases
-          .split(',')
-          .map((part) => part.trim())
-          .filter(Boolean)
-        const record: Unit = {
-          id: existing?.id ?? newPlanningId('unit'),
-          name,
-          status: unitForm.status,
-          placeAliases: aliases.length > 0 ? aliases : undefined,
-          createdAt: existing?.createdAt ?? now,
-          updatedAt: now,
-          createdBy: existing?.createdBy ?? actor,
-          updatedBy: actor,
-        }
-        const result = await getRepositories().unit.saveDurable(record)
-        if (!result.ok) {
-          setFormError(formatRepoError(result.error))
-          return
-        }
-        closeUnitModal()
-        refresh()
-        setMessage(existing ? 'Unit updated.' : 'Unit created.')
-      },
-      { key: 'planning.unit.save' },
-    )
-  }
-
-  const openCreateProgramme = () => {
-    if (!selectedCampaignId) {
-      setMessage('Select a Campaign first.')
+  const openCreateActivity = () => {
+    if (!selectedObjectiveIdResolved) {
+      setMessage('پہلے اہداف منتخب کریں۔')
       return
     }
-    setEditingProgrammeId(null)
-    setProgrammeCampaignId(selectedCampaignId)
-    setProgrammeForm(emptyProgrammeForm())
-    setProgrammeModal('create')
+    setEditingActivityId(null)
+    setActivityObjectiveId(selectedObjectiveIdResolved)
+    setActivityForm(emptyActivityForm())
+    setActivityModal('create')
     setFormError('')
     setMessage('')
   }
 
-  const openEditProgramme = (row: LocalProgramme) => {
-    setEditingProgrammeId(row.id)
-    setProgrammeCampaignId(row.campaignId)
-    setProgrammeForm(programmeFormFromRow(row))
-    setProgrammeModal('edit')
+  const openEditActivity = (row: LocalProgramme) => {
+    setEditingActivityId(row.id)
+    setActivityObjectiveId(row.objectiveId)
+    setActivityForm(activityFormFromRow(row))
+    setActivityModal('edit')
     setFormError('')
     setMessage('')
   }
 
-  const saveProgramme = () => {
+  const saveActivity = () => {
     void run(
       async () => {
-        const parentId = programmeCampaignId
+        const parentId = activityObjectiveId
         if (!parentId) {
-          setFormError('Local Programme must belong to a Campaign.')
+          setFormError('سرگرمی اہداف کے اندر ہونی چاہیے۔')
           return
         }
-        const name = programmeForm.name.trim()
+        const name = activityForm.name.trim()
         if (!name) {
-          setFormError('Programme name is required.')
+          setFormError('سرگرمی کا نام ضروری ہے۔')
           return
         }
         const now = new Date().toISOString()
-        const existing = editingProgrammeId
-          ? programmes.find((row) => row.id === editingProgrammeId)
+        const existing = editingActivityId
+          ? programmes.find((row) => row.id === editingActivityId)
           : undefined
-        // Edit preserves the original Campaign; create uses the locked modal parent.
-        const campaignId = existing?.campaignId ?? parentId
-        if (!campaignId) {
-          setFormError('Local Programme must belong to a Campaign.')
-          return
-        }
         const record: LocalProgramme = {
-          id: existing?.id ?? newPlanningId('programme'),
-          campaignId,
+          id: existing?.id ?? newPlanningId('activity'),
+          objectiveId: existing?.objectiveId ?? parentId,
+          campaignId: existing?.campaignId,
           name,
-          kind: programmeForm.kind,
-          status: programmeForm.status,
-          unitId: programmeForm.unitId.trim() || undefined,
-          startDate: programmeForm.startDate.trim() || undefined,
-          endDate: programmeForm.endDate.trim() || undefined,
-          frequency: buildProgrammeFrequency(programmeForm),
-          summary: programmeForm.summary.trim() || undefined,
+          kind: activityForm.kind,
+          status: activityForm.status,
+          responsibleRuknId: activityForm.responsibleRuknId.trim() || undefined,
+          startDate: activityForm.startDate.trim() || undefined,
+          endDate: activityForm.endDate.trim() || undefined,
+          frequency: buildActivityFrequency(activityForm),
+          summary: activityForm.summary.trim() || undefined,
           createdAt: existing?.createdAt ?? now,
           updatedAt: now,
           createdBy: existing?.createdBy ?? actor,
@@ -694,19 +764,61 @@ export function AdminPlanningPage() {
           setFormError(formatRepoError(result.error))
           return
         }
-        closeProgrammeModal()
+        closeActivityModal()
         refresh()
-        setMessage(existing ? 'Local Programme updated.' : 'Local Programme created.')
+        setMessage(existing ? 'سرگرمی محفوظ ہو گئی۔' : 'سرگرمی بن گئی۔')
       },
-      { key: 'planning.programme.save' },
+      { key: 'planning.activity.save' },
     )
   }
+
+  const saveCampaignFocus = (next: {
+    objectiveIds?: string[]
+    activityIds?: string[]
+  }) => {
+    if (!selectedCampaignId || !selectedMansoobaId) return
+    void run(
+      async () => {
+        const result = await getRepositories().campaign.savePlanningLinksDurable({
+          id: selectedCampaignId,
+          mansoobaId: selectedMansoobaId,
+          objectiveIds: next.objectiveIds ?? selectedCampaign?.objectiveIds ?? [],
+          activityIds: next.activityIds ?? selectedCampaign?.activityIds ?? [],
+        })
+        if (!result.ok) {
+          setMessage(formatRepoError(result.error))
+          return
+        }
+        refresh()
+        setMessage('مہم کا فوکس محفوظ ہو گیا۔')
+      },
+      { key: 'planning.campaign.focus' },
+    )
+  }
+
+  const toggleCampaignObjective = (objectiveId: string) => {
+    const next = new Set(focusedObjectiveIds)
+    if (next.has(objectiveId)) next.delete(objectiveId)
+    else next.add(objectiveId)
+    saveCampaignFocus({ objectiveIds: [...next] })
+  }
+
+  const toggleCampaignActivity = (activityId: string) => {
+    const next = new Set(focusedActivityIds)
+    if (next.has(activityId)) next.delete(activityId)
+    else next.add(activityId)
+    saveCampaignFocus({ activityIds: [...next] })
+  }
+
+  const objectiveParentShobah = shobahs.find((row) => row.id === objectiveShobahId) ?? null
+  const activityParentObjective =
+    objectives.find((row) => row.id === activityObjectiveId) ?? null
 
   return (
     <PageShell>
       <PageHeader
-        title="Planning"
-        description="Configure Meqati Mansooba, Objectives, Unit scope, and Local Programmes under Campaigns. Admin configures — Rukn acts later."
+        title="میقاتی منصوبہ"
+        description="شعبہ، اہداف اور سرگرمی۔ مہم صرف منتخب اہداف اور سرگرمیوں کا فوکس ہے۔"
       />
 
       {message ? (
@@ -722,18 +834,18 @@ export function AdminPlanningPage() {
         <section className="rounded-(--radius-card) border border-border bg-surface p-5 shadow-card">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <h2 className="text-lg font-semibold text-text-heading">Meqati Mansooba</h2>
-              <p className="mt-1 text-sm text-secondary">
-                Planning root. Objectives belong to the selected Mansooba.
-              </p>
+              <h2 className="text-lg font-semibold text-text-heading">میقاتی منصوبہ</h2>
+              <p className="mt-1 text-sm text-secondary">تنظیمی جڑ۔ صرف ایک منصوبہ۔</p>
             </div>
-            <PrimaryButton type="button" onClick={openCreateMansooba}>
-              New Mansooba
-            </PrimaryButton>
+            {canCreateMansooba ? (
+              <PrimaryButton type="button" onClick={openCreateMansooba}>
+                نیا میقاتی منصوبہ
+              </PrimaryButton>
+            ) : null}
           </div>
 
           {mansoobas.length === 0 ? (
-            <p className="mt-4 text-sm text-secondary">No Mansooba yet. Create the first plan.</p>
+            <p className="mt-4 text-sm text-secondary">ابھی میقاتی منصوبہ نہیں ہے۔ پہلا منصوبہ بنائیں۔</p>
           ) : (
             <ul className="mt-4 space-y-3">
               {mansoobas.map((row) => {
@@ -751,7 +863,7 @@ export function AdminPlanningPage() {
                       <button
                         type="button"
                         className="min-w-0 flex-1 text-left"
-                        onClick={() => selectMansooba(row.id)}
+                        onClick={() => setSelectedMansoobaId(row.id)}
                       >
                         <p className="font-semibold text-text-heading">{row.name}</p>
                         <p className="mt-1 text-xs text-secondary">
@@ -759,16 +871,13 @@ export function AdminPlanningPage() {
                           {row.startDate || row.endDate
                             ? ` · ${row.startDate || '—'} → ${row.endDate || '—'}`
                             : ''}
-                          {row.primaryUnitId
-                            ? ` · Unit: ${unitNameById.get(row.primaryUnitId) ?? row.primaryUnitId}`
-                            : ''}
                         </p>
                         {row.summary ? (
                           <p className="mt-2 text-sm text-secondary">{row.summary}</p>
                         ) : null}
                       </button>
                       <SecondaryButton type="button" onClick={() => openEditMansooba(row)}>
-                        Edit
+                        ترمیم
                       </SecondaryButton>
                     </div>
                   </li>
@@ -781,47 +890,163 @@ export function AdminPlanningPage() {
         <section className="rounded-(--radius-card) border border-border bg-surface p-5 shadow-card">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <h2 className="text-lg font-semibold text-text-heading">Objectives</h2>
+              <h2 className="text-lg font-semibold text-text-heading">شعبہ</h2>
               <p className="mt-1 text-sm text-secondary">
                 {selectedMansooba
-                  ? `Under Mansooba: ${selectedMansooba.name}`
-                  : 'Select a Mansooba to manage its Objectives.'}
+                  ? `میقاتی منصوبہ: ${selectedMansooba.name}`
+                  : 'شعبہ میقاتی منصوبہ کے اندر ہے۔'}
               </p>
             </div>
-            <PrimaryButton
-              type="button"
-              onClick={openCreateObjective}
-              disabled={!selectedMansoobaId}
-            >
-              New Objective
+            <PrimaryButton type="button" onClick={openCreateShobah} disabled={!selectedMansoobaId}>
+              نیا شعبہ
             </PrimaryButton>
           </div>
 
           {!selectedMansoobaId ? (
-            <p className="mt-4 text-sm text-secondary">No Mansooba selected.</p>
-          ) : selectedObjectives.length === 0 ? (
+            <p className="mt-4 text-sm text-secondary">میقاتی منصوبہ منتخب نہیں۔</p>
+          ) : visibleShobahs.length === 0 ? (
             <p className="mt-4 text-sm text-secondary">
-              No Objectives for this Mansooba yet.
+              اس منصوبہ میں ابھی کوئی شعبہ نہیں۔ غیر تصدیق شدہ ماخذ مواد شامل نہیں کیا گیا۔
             </p>
           ) : (
             <ul className="mt-4 space-y-3">
-              {selectedObjectives.map((row) => (
+              {visibleShobahs.map((row) => {
+                const selected = row.id === selectedShobahIdResolved
+                return (
+                  <li
+                    key={row.id}
+                    className={`rounded-lg border p-4 ${
+                      selected
+                        ? 'border-primary bg-primary-muted/40'
+                        : 'border-border bg-surface-muted'
+                    }`}
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <button
+                        type="button"
+                        className="min-w-0 flex-1 text-left"
+                        onClick={() => setSelectedShobahId(row.id)}
+                      >
+                        <p className="font-semibold text-text-heading">{row.name}</p>
+                        <p className="mt-1 text-xs text-secondary">{row.status}</p>
+                        {row.summary ? (
+                          <p className="mt-2 text-sm text-secondary">{row.summary}</p>
+                        ) : null}
+                      </button>
+                      <SecondaryButton type="button" onClick={() => openEditShobah(row)}>
+                        ترمیم
+                      </SecondaryButton>
+                    </div>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+        </section>
+
+        <section className="rounded-(--radius-card) border border-border bg-surface p-5 shadow-card">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-semibold text-text-heading">اہداف</h2>
+              <p className="mt-1 text-sm text-secondary">
+                {selectedShobah ? `شعبہ: ${selectedShobah.name}` : 'اہداف شعبہ کے اندر ہیں۔'}
+              </p>
+            </div>
+            <PrimaryButton type="button" onClick={openCreateObjective} disabled={!selectedShobahIdResolved}>
+              نئے اہداف
+            </PrimaryButton>
+          </div>
+
+          {!selectedShobahIdResolved ? (
+            <p className="mt-4 text-sm text-secondary">شعبہ منتخب نہیں۔</p>
+          ) : visibleObjectives.length === 0 ? (
+            <p className="mt-4 text-sm text-secondary">اس شعبہ میں ابھی کوئی اہداف نہیں۔</p>
+          ) : (
+            <ul className="mt-4 space-y-3">
+              {visibleObjectives.map((row) => {
+                const selected = row.id === selectedObjectiveIdResolved
+                return (
+                  <li
+                    key={row.id}
+                    className={`rounded-lg border p-4 ${
+                      selected
+                        ? 'border-primary bg-primary-muted/40'
+                        : 'border-border bg-surface-muted'
+                    }`}
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <button
+                        type="button"
+                        className="min-w-0 flex-1 text-left"
+                        onClick={() => setSelectedObjectiveId(row.id)}
+                      >
+                        <p className="font-semibold text-text-heading">{row.title}</p>
+                        <p className="mt-1 text-xs text-secondary">{row.status}</p>
+                        {row.description ? (
+                          <p className="mt-2 text-sm text-secondary">{row.description}</p>
+                        ) : null}
+                      </button>
+                      <SecondaryButton type="button" onClick={() => openEditObjective(row)}>
+                        ترمیم
+                      </SecondaryButton>
+                    </div>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+        </section>
+
+        <section className="rounded-(--radius-card) border border-border bg-surface p-5 shadow-card">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-semibold text-text-heading">سرگرمی</h2>
+              <p className="mt-1 text-sm text-secondary">
+                {selectedObjective
+                  ? `اہداف: ${selectedObjective.title}`
+                  : 'سرگرمی اہداف کے اندر ہے۔ مہم اس کی مالک نہیں۔'}
+              </p>
+            </div>
+            <PrimaryButton
+              type="button"
+              onClick={openCreateActivity}
+              disabled={!selectedObjectiveIdResolved}
+            >
+              نئی سرگرمی
+            </PrimaryButton>
+          </div>
+
+          {!selectedObjectiveIdResolved ? (
+            <p className="mt-4 text-sm text-secondary">اہداف منتخب نہیں۔</p>
+          ) : visibleActivities.length === 0 ? (
+            <p className="mt-4 text-sm text-secondary">ان اہداف کے تحت ابھی کوئی سرگرمی نہیں۔</p>
+          ) : (
+            <ul className="mt-4 space-y-3">
+              {visibleActivities.map((row) => (
                 <li
                   key={row.id}
                   className="flex flex-wrap items-start justify-between gap-3 rounded-lg border border-border bg-surface-muted p-4"
                 >
                   <div>
-                    <p className="font-semibold text-text-heading">{row.title}</p>
+                    <p className="font-semibold text-text-heading">{row.name}</p>
                     <p className="mt-1 text-xs text-secondary">
-                      {row.status}
-                      {row.sortOrder != null ? ` · order ${row.sortOrder}` : ''}
+                      {ACTIVITY_KIND_LABELS[row.kind]} · {row.status}
                     </p>
-                    {row.description ? (
-                      <p className="mt-2 text-sm text-secondary">{row.description}</p>
+                    <p className="mt-1 text-xs text-secondary">
+                      ذمہ دار:{' '}
+                      {row.responsibleRuknId
+                        ? (ruknNameById.get(row.responsibleRuknId) ?? row.responsibleRuknId)
+                        : '—'}
+                    </p>
+                    <p className="mt-1 text-xs text-secondary">
+                      نظام الاوقات: {formatSchedule(row.frequency)}
+                    </p>
+                    {row.summary ? (
+                      <p className="mt-2 text-sm text-secondary">{row.summary}</p>
                     ) : null}
                   </div>
-                  <SecondaryButton type="button" onClick={() => openEditObjective(row)}>
-                    Edit
+                  <SecondaryButton type="button" onClick={() => openEditActivity(row)}>
+                    ترمیم
                   </SecondaryButton>
                 </li>
               ))}
@@ -830,18 +1055,16 @@ export function AdminPlanningPage() {
         </section>
 
         <section className="rounded-(--radius-card) border border-border bg-surface p-5 shadow-card">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h2 className="text-lg font-semibold text-text-heading">Campaign</h2>
-              <p className="mt-1 text-sm text-secondary">
-                Select a Campaign to manage its Local Programmes. Planning links
-                (Mansooba / Objectives) are optional.
-              </p>
-            </div>
+          <div>
+            <h2 className="text-lg font-semibold text-text-heading">مہم — فوکس</h2>
+            <p className="mt-1 text-sm text-secondary">
+              مہم منتخب اہداف اور سرگرمیوں کا ٹریکنگ منظر ہے۔ سرگرمی میقاتی منصوبہ کی ملکیت میں رہتی
+              ہے — نقل نہیں بنتی۔
+            </p>
           </div>
 
           {campaigns.length === 0 ? (
-            <p className="mt-4 text-sm text-secondary">No Campaigns available.</p>
+            <p className="mt-4 text-sm text-secondary">کوئی مہم دستیاب نہیں۔</p>
           ) : (
             <ul className="mt-4 space-y-3">
               {campaigns.map((row) => {
@@ -858,15 +1081,17 @@ export function AdminPlanningPage() {
                     <button
                       type="button"
                       className="w-full text-left"
-                      onClick={() => selectCampaign(row.id)}
+                      onClick={() => setSelectedCampaignId(row.id)}
                     >
                       <p className="font-semibold text-text-heading">{row.name}</p>
                       <p className="mt-1 text-xs text-secondary">
                         {row.status}
                         {` · ${row.startDate} → ${row.endDate}`}
-                        {row.mansoobaId ? ` · Mansooba: ${row.mansoobaId}` : ''}
                         {row.objectiveIds?.length
-                          ? ` · ${row.objectiveIds.length} objective link(s)`
+                          ? ` · ${row.objectiveIds.length} اہداف`
+                          : ''}
+                        {row.activityIds?.length
+                          ? ` · ${row.activityIds.length} سرگرمیاں`
                           : ''}
                       </p>
                     </button>
@@ -875,84 +1100,67 @@ export function AdminPlanningPage() {
               })}
             </ul>
           )}
-        </section>
 
-        <section className="rounded-(--radius-card) border border-border bg-surface p-5 shadow-card">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h2 className="text-lg font-semibold text-text-heading">Local Programmes</h2>
-              <p className="mt-1 text-sm text-secondary">
-                {selectedCampaign
-                  ? `Under Campaign: ${selectedCampaign.name}`
-                  : 'Select a Campaign to manage its Local Programmes.'}
-              </p>
+          {selectedCampaign && selectedMansooba ? (
+            <div className="mt-4 grid gap-4 lg:grid-cols-2">
+              <div>
+                <h3 className="text-sm font-semibold text-text-heading">منتخب اہداف</h3>
+                {mansoobaObjectives.length === 0 ? (
+                  <p className="mt-2 text-sm text-secondary">ابھی کوئی اہداف نہیں۔</p>
+                ) : (
+                  <ul className="mt-2 space-y-2">
+                    {mansoobaObjectives.map((row) => (
+                      <li key={row.id}>
+                        <label className="flex items-center gap-2 text-sm text-text-heading">
+                          <input
+                            type="checkbox"
+                            checked={focusedObjectiveIds.has(row.id)}
+                            onChange={() => toggleCampaignObjective(row.id)}
+                            disabled={busy}
+                          />
+                          {row.title}
+                        </label>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-text-heading">منتخب سرگرمیاں</h3>
+                {mansoobaActivities.length === 0 ? (
+                  <p className="mt-2 text-sm text-secondary">ابھی کوئی سرگرمی نہیں۔</p>
+                ) : (
+                  <ul className="mt-2 space-y-2">
+                    {mansoobaActivities.map((row) => (
+                      <li key={row.id}>
+                        <label className="flex items-center gap-2 text-sm text-text-heading">
+                          <input
+                            type="checkbox"
+                            checked={focusedActivityIds.has(row.id)}
+                            onChange={() => toggleCampaignActivity(row.id)}
+                            disabled={busy}
+                          />
+                          {row.name}
+                        </label>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             </div>
-            <PrimaryButton
-              type="button"
-              onClick={openCreateProgramme}
-              disabled={!selectedCampaignId}
-            >
-              New Local Programme
-            </PrimaryButton>
-          </div>
-
-          {!selectedCampaignId ? (
-            <p className="mt-4 text-sm text-secondary">No Campaign selected.</p>
-          ) : selectedProgrammes.length === 0 ? (
-            <p className="mt-4 text-sm text-secondary">
-              No Local Programmes for this Campaign yet. Empty is valid.
-            </p>
-          ) : (
-            <ul className="mt-4 space-y-3">
-              {selectedProgrammes.map((row) => (
-                <li
-                  key={row.id}
-                  className="flex flex-wrap items-start justify-between gap-3 rounded-lg border border-border bg-surface-muted p-4"
-                >
-                  <div>
-                    <p className="font-semibold text-text-heading">{row.name}</p>
-                    <p className="mt-1 text-xs text-secondary">
-                      {PROGRAMME_KIND_LABELS[row.kind]} · {row.status}
-                      {row.unitId
-                        ? ` · Unit: ${unitNameById.get(row.unitId) ?? row.unitId}`
-                        : ''}
-                      {row.frequency ? ` · ${row.frequency.cadence}` : ''}
-                      {row.startDate || row.endDate
-                        ? ` · ${row.startDate || '—'} → ${row.endDate || '—'}`
-                        : ''}
-                    </p>
-                    {row.summary ? (
-                      <p className="mt-2 text-sm text-secondary">{row.summary}</p>
-                    ) : null}
-                  </div>
-                  <SecondaryButton type="button" onClick={() => openEditProgramme(row)}>
-                    Edit
-                  </SecondaryButton>
-                </li>
-              ))}
-            </ul>
-          )}
+          ) : null}
         </section>
 
         <section className="rounded-(--radius-card) border border-border bg-surface p-5 shadow-card">
           <div>
-            <h2 className="text-lg font-semibold text-text-heading">
-              Occurrence calendar &amp; history
-            </h2>
+            <h2 className="text-lg font-semibold text-text-heading">نظام الاوقات</h2>
             <p className="mt-1 text-sm text-secondary">
-              Derived from durable Occurrence records under this Campaign&apos;s Local
-              Programmes. Calendar and history share one source of truth — no duplicate
-              event store.
+              منتخب میقاتی منصوبہ کی سرگرمیوں کا کیلنڈر۔ داخلی شیڈول ریکارڈ صارف کے سامنے نہیں آتے۔
             </p>
           </div>
 
-          {!selectedCampaignId ? (
-            <p className="mt-4 text-sm text-secondary">No Campaign selected.</p>
-          ) : campaignOccurrences.length === 0 ? (
-            <p className="mt-4 text-sm text-secondary">
-              No Occurrences for these Local Programmes yet. Generate or create
-              Occurrences to populate calendar and history.
-            </p>
+          {calendarOccurrences.length === 0 ? (
+            <p className="mt-4 text-sm text-secondary">اس منصوبہ کی سرگرمیوں کے لیے ابھی کوئی شیڈول نہیں۔</p>
           ) : (
             <div className="mt-4 grid gap-6 lg:grid-cols-2">
               <div>
@@ -968,12 +1176,7 @@ export function AdminPlanningPage() {
                         {entry.title ? ` · ${entry.title}` : ''}
                       </p>
                       <p className="mt-0.5 text-xs text-secondary">
-                        {(entry.programmeName ?? entry.programmeId) +
-                          ` · ${entry.status}` +
-                          (entry.openTime && entry.closeTime
-                            ? ` · ${entry.openTime}–${entry.closeTime}`
-                            : '') +
-                          (entry.audienceGender ? ` · ${entry.audienceGender}` : '')}
+                        {(entry.programmeName ?? entry.programmeId) + ` · ${entry.status}`}
                       </p>
                     </li>
                   ))}
@@ -993,8 +1196,7 @@ export function AdminPlanningPage() {
                       </p>
                       <p className="mt-0.5 text-xs text-secondary">
                         {(programmeNameById.get(row.programmeId) ?? row.programmeId) +
-                          ` · ${row.status}` +
-                          ` · ${row.generationKey}`}
+                          ` · ${row.status}`}
                       </p>
                     </li>
                   ))}
@@ -1016,56 +1218,16 @@ export function AdminPlanningPage() {
           baitulMaalCycles={baitulMaalCycles}
           baitulMaalSubmissions={baitulMaalSubmissions}
         />
-
-        <section className="rounded-(--radius-card) border border-border bg-surface p-5 shadow-card">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h2 className="text-lg font-semibold text-text-heading">Unit / Scope</h2>
-              <p className="mt-1 text-sm text-secondary">
-                Flat scope only (e.g. Basavakalyan). No hierarchy.
-              </p>
-            </div>
-            <PrimaryButton type="button" onClick={openCreateUnit}>
-              New Unit
-            </PrimaryButton>
-          </div>
-
-          {units.length === 0 ? (
-            <p className="mt-4 text-sm text-secondary">No Units yet.</p>
-          ) : (
-            <ul className="mt-4 space-y-3">
-              {units.map((row) => (
-                <li
-                  key={row.id}
-                  className="flex flex-wrap items-start justify-between gap-3 rounded-lg border border-border bg-surface-muted p-4"
-                >
-                  <div>
-                    <p className="font-semibold text-text-heading">{row.name}</p>
-                    <p className="mt-1 text-xs text-secondary">
-                      {row.status}
-                      {row.placeAliases?.length
-                        ? ` · aliases: ${row.placeAliases.join(', ')}`
-                        : ''}
-                    </p>
-                  </div>
-                  <SecondaryButton type="button" onClick={() => openEditUnit(row)}>
-                    Edit
-                  </SecondaryButton>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
       </div>
 
       <Modal
         isOpen={mansoobaModal != null}
-        title={mansoobaModal === 'edit' ? 'Edit Mansooba' : 'New Mansooba'}
+        title={mansoobaModal === 'edit' ? 'ترمیم میقاتی منصوبہ' : 'نیا میقاتی منصوبہ'}
         onClose={closeMansoobaModal}
         footer={
           <ModalFormFooter
             onCancel={closeMansoobaModal}
-            primaryLabel={mansoobaModal === 'edit' ? 'Save' : 'Create'}
+            primaryLabel={mansoobaModal === 'edit' ? 'محفوظ کریں' : 'بنائیں'}
             onPrimaryClick={saveMansooba}
             loading={busy}
             primaryDisabled={busy || !mansoobaForm.name.trim()}
@@ -1073,11 +1235,11 @@ export function AdminPlanningPage() {
           />
         }
       >
-        <ModalFormSection title="Details">
+        <ModalFormSection title="تفصیل">
           <ModalFormGrid>
             <div>
               <label className={labelClassName} htmlFor="mansooba-name">
-                Name
+                نام
               </label>
               <input
                 id="mansooba-name"
@@ -1090,7 +1252,7 @@ export function AdminPlanningPage() {
             </div>
             <div>
               <label className={labelClassName} htmlFor="mansooba-status">
-                Status
+                حالت
               </label>
               <select
                 id="mansooba-status"
@@ -1110,7 +1272,7 @@ export function AdminPlanningPage() {
             </div>
             <div>
               <label className={labelClassName} htmlFor="mansooba-start">
-                Start date
+                آغاز
               </label>
               <input
                 id="mansooba-start"
@@ -1124,7 +1286,7 @@ export function AdminPlanningPage() {
             </div>
             <div>
               <label className={labelClassName} htmlFor="mansooba-end">
-                End date
+                اختتام
               </label>
               <input
                 id="mansooba-end"
@@ -1136,33 +1298,10 @@ export function AdminPlanningPage() {
                 }
               />
             </div>
-            <div>
-              <label className={labelClassName} htmlFor="mansooba-unit">
-                Primary Unit (optional)
-              </label>
-              <select
-                id="mansooba-unit"
-                className={inputClassName}
-                value={mansoobaForm.primaryUnitId}
-                onChange={(event) =>
-                  setMansoobaForm((prev) => ({
-                    ...prev,
-                    primaryUnitId: event.target.value,
-                  }))
-                }
-              >
-                <option value="">—</option>
-                {units.map((unit) => (
-                  <option key={unit.id} value={unit.id}>
-                    {unit.name}
-                  </option>
-                ))}
-              </select>
-            </div>
           </ModalFormGrid>
           <div className="mt-4">
             <label className={labelClassName} htmlFor="mansooba-summary">
-              Summary
+              خلاصہ
             </label>
             <textarea
               id="mansooba-summary"
@@ -1178,33 +1317,118 @@ export function AdminPlanningPage() {
       </Modal>
 
       <Modal
-        isOpen={objectiveModal != null}
-        title={objectiveModal === 'edit' ? 'Edit Objective' : 'New Objective'}
-        onClose={closeObjectiveModal}
+        isOpen={shobahModal != null}
+        title={shobahModal === 'edit' ? 'ترمیم شعبہ' : 'نیا شعبہ'}
+        onClose={closeShobahModal}
         footer={
           <ModalFormFooter
-            onCancel={closeObjectiveModal}
-            primaryLabel={objectiveModal === 'edit' ? 'Save' : 'Create'}
-            onPrimaryClick={saveObjective}
+            onCancel={closeShobahModal}
+            primaryLabel={shobahModal === 'edit' ? 'محفوظ کریں' : 'بنائیں'}
+            onPrimaryClick={saveShobah}
             loading={busy}
-            primaryDisabled={
-              busy || !objectiveForm.title.trim() || !objectiveMansoobaId
-            }
+            primaryDisabled={busy || !shobahForm.name.trim() || !shobahMansoobaId}
             error={formError || undefined}
           />
         }
       >
-        <ModalFormSection title="Details">
+        <ModalFormSection title="تفصیل">
           <p className="mb-4 text-sm text-secondary">
-            Mansooba:{' '}
+            میقاتی منصوبہ:{' '}
             <span className="font-medium text-text-heading">
-              {objectiveMansooba?.name ?? '—'}
+              {mansoobas.find((row) => row.id === shobahMansoobaId)?.name ?? '—'}
+            </span>
+          </p>
+          <ModalFormGrid>
+            <div>
+              <label className={labelClassName} htmlFor="shobah-name">
+                نام
+              </label>
+              <input
+                id="shobah-name"
+                className={inputClassName}
+                value={shobahForm.name}
+                onChange={(event) =>
+                  setShobahForm((prev) => ({ ...prev, name: event.target.value }))
+                }
+              />
+            </div>
+            <div>
+              <label className={labelClassName} htmlFor="shobah-status">
+                حالت
+              </label>
+              <select
+                id="shobah-status"
+                className={inputClassName}
+                value={shobahForm.status}
+                onChange={(event) =>
+                  setShobahForm((prev) => ({
+                    ...prev,
+                    status: event.target.value as ShobahStatus,
+                  }))
+                }
+              >
+                <option value="active">active</option>
+                <option value="archived">archived</option>
+              </select>
+            </div>
+            <div>
+              <label className={labelClassName} htmlFor="shobah-order">
+                ترتیب
+              </label>
+              <input
+                id="shobah-order"
+                type="number"
+                className={inputClassName}
+                value={shobahForm.sortOrder}
+                onChange={(event) =>
+                  setShobahForm((prev) => ({ ...prev, sortOrder: event.target.value }))
+                }
+              />
+            </div>
+          </ModalFormGrid>
+          <div className="mt-4">
+            <label className={labelClassName} htmlFor="shobah-summary">
+              خلاصہ
+            </label>
+            <textarea
+              id="shobah-summary"
+              className={inputClassName}
+              rows={3}
+              value={shobahForm.summary}
+              onChange={(event) =>
+                setShobahForm((prev) => ({ ...prev, summary: event.target.value }))
+              }
+            />
+          </div>
+        </ModalFormSection>
+      </Modal>
+
+      <Modal
+        isOpen={objectiveModal != null}
+        title={objectiveModal === 'edit' ? 'ترمیم اہداف' : 'نئے اہداف'}
+        onClose={closeObjectiveModal}
+        footer={
+          <ModalFormFooter
+            onCancel={closeObjectiveModal}
+            primaryLabel={objectiveModal === 'edit' ? 'محفوظ کریں' : 'بنائیں'}
+            onPrimaryClick={saveObjective}
+            loading={busy}
+            primaryDisabled={busy || !objectiveForm.title.trim() || !objectiveShobahId}
+            error={formError || undefined}
+          />
+        }
+      >
+        <ModalFormSection title="تفصیل">
+          <p className="mb-4 text-sm text-secondary">
+            شعبہ:{' '}
+            <span className="font-medium text-text-heading">
+              {objectiveParentShobah?.name ?? '—'}
             </span>
           </p>
           <ModalFormGrid>
             <div>
               <label className={labelClassName} htmlFor="objective-title">
-                Title
+                عنوان
               </label>
               <input
                 id="objective-title"
@@ -1217,7 +1441,7 @@ export function AdminPlanningPage() {
             </div>
             <div>
               <label className={labelClassName} htmlFor="objective-status">
-                Status
+                حالت
               </label>
               <select
                 id="objective-status"
@@ -1236,7 +1460,7 @@ export function AdminPlanningPage() {
             </div>
             <div>
               <label className={labelClassName} htmlFor="objective-order">
-                Sort order
+                ترتیب
               </label>
               <input
                 id="objective-order"
@@ -1251,7 +1475,7 @@ export function AdminPlanningPage() {
           </ModalFormGrid>
           <div className="mt-4">
             <label className={labelClassName} htmlFor="objective-description">
-              Description
+              تفصیل
             </label>
             <textarea
               id="objective-description"
@@ -1270,121 +1494,54 @@ export function AdminPlanningPage() {
       </Modal>
 
       <Modal
-        isOpen={unitModal != null}
-        title={unitModal === 'edit' ? 'Edit Unit' : 'New Unit'}
-        onClose={closeUnitModal}
+        isOpen={activityModal != null}
+        title={activityModal === 'edit' ? 'ترمیم سرگرمی' : 'نئی سرگرمی'}
+        onClose={closeActivityModal}
         footer={
           <ModalFormFooter
-            onCancel={closeUnitModal}
-            primaryLabel={unitModal === 'edit' ? 'Save' : 'Create'}
-            onPrimaryClick={saveUnit}
+            onCancel={closeActivityModal}
+            primaryLabel={activityModal === 'edit' ? 'محفوظ کریں' : 'بنائیں'}
+            onPrimaryClick={saveActivity}
             loading={busy}
-            primaryDisabled={busy || !unitForm.name.trim()}
+            primaryDisabled={busy || !activityForm.name.trim() || !activityObjectiveId}
             error={formError || undefined}
           />
         }
       >
-        <ModalFormSection title="Details">
-          <ModalFormGrid>
-            <div>
-              <label className={labelClassName} htmlFor="unit-name">
-                Name
-              </label>
-              <input
-                id="unit-name"
-                className={inputClassName}
-                value={unitForm.name}
-                onChange={(event) =>
-                  setUnitForm((prev) => ({ ...prev, name: event.target.value }))
-                }
-              />
-            </div>
-            <div>
-              <label className={labelClassName} htmlFor="unit-status">
-                Status
-              </label>
-              <select
-                id="unit-status"
-                className={inputClassName}
-                value={unitForm.status}
-                onChange={(event) =>
-                  setUnitForm((prev) => ({
-                    ...prev,
-                    status: event.target.value as UnitStatus,
-                  }))
-                }
-              >
-                <option value="active">active</option>
-                <option value="archived">archived</option>
-              </select>
-            </div>
-          </ModalFormGrid>
-          <div className="mt-4">
-            <label className={labelClassName} htmlFor="unit-aliases">
-              Place aliases (comma-separated)
-            </label>
-            <input
-              id="unit-aliases"
-              className={inputClassName}
-              placeholder="Basavakalyan"
-              value={unitForm.placeAliases}
-              onChange={(event) =>
-                setUnitForm((prev) => ({ ...prev, placeAliases: event.target.value }))
-              }
-            />
-          </div>
-        </ModalFormSection>
-      </Modal>
-
-      <Modal
-        isOpen={programmeModal != null}
-        title={programmeModal === 'edit' ? 'Edit Local Programme' : 'New Local Programme'}
-        onClose={closeProgrammeModal}
-        footer={
-          <ModalFormFooter
-            onCancel={closeProgrammeModal}
-            primaryLabel={programmeModal === 'edit' ? 'Save' : 'Create'}
-            onPrimaryClick={saveProgramme}
-            loading={busy}
-            primaryDisabled={busy || !programmeForm.name.trim() || !programmeCampaignId}
-            error={formError || undefined}
-          />
-        }
-      >
-        <ModalFormSection title="Details">
+        <ModalFormSection title="تفصیل">
           <p className="mb-3 text-sm text-secondary">
-            Campaign (locked): {programmeCampaign?.name ?? programmeCampaignId ?? '—'}
+            اہداف: {activityParentObjective?.title ?? activityObjectiveId ?? '—'}
           </p>
           <ModalFormGrid>
             <div>
-              <label className={labelClassName} htmlFor="programme-name">
-                Name
+              <label className={labelClassName} htmlFor="activity-name">
+                نام
               </label>
               <input
-                id="programme-name"
+                id="activity-name"
                 className={inputClassName}
-                value={programmeForm.name}
+                value={activityForm.name}
                 onChange={(event) =>
-                  setProgrammeForm((prev) => ({ ...prev, name: event.target.value }))
+                  setActivityForm((prev) => ({ ...prev, name: event.target.value }))
                 }
               />
             </div>
             <div>
-              <label className={labelClassName} htmlFor="programme-kind">
-                Kind
+              <label className={labelClassName} htmlFor="activity-kind">
+                عملی تعلق
               </label>
               <select
-                id="programme-kind"
+                id="activity-kind"
                 className={inputClassName}
-                value={programmeForm.kind}
+                value={activityForm.kind}
                 onChange={(event) =>
-                  setProgrammeForm((prev) => ({
+                  setActivityForm((prev) => ({
                     ...prev,
                     kind: event.target.value as ProgrammeKind,
                   }))
                 }
               >
-                {PROGRAMME_KIND_OPTIONS.map((option) => (
+                {ACTIVITY_KIND_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}
                   </option>
@@ -1392,15 +1549,15 @@ export function AdminPlanningPage() {
               </select>
             </div>
             <div>
-              <label className={labelClassName} htmlFor="programme-status">
-                Status
+              <label className={labelClassName} htmlFor="activity-status">
+                حالت
               </label>
               <select
-                id="programme-status"
+                id="activity-status"
                 className={inputClassName}
-                value={programmeForm.status}
+                value={activityForm.status}
                 onChange={(event) =>
-                  setProgrammeForm((prev) => ({
+                  setActivityForm((prev) => ({
                     ...prev,
                     status: event.target.value as LocalProgrammeStatus,
                   }))
@@ -1412,86 +1569,90 @@ export function AdminPlanningPage() {
               </select>
             </div>
             <div>
-              <label className={labelClassName} htmlFor="programme-unit">
-                Unit / Scope (optional)
+              <label className={labelClassName} htmlFor="activity-responsible">
+                ذمہ دار
               </label>
               <select
-                id="programme-unit"
+                id="activity-responsible"
                 className={inputClassName}
-                value={programmeForm.unitId}
+                value={activityForm.responsibleRuknId}
                 onChange={(event) =>
-                  setProgrammeForm((prev) => ({ ...prev, unitId: event.target.value }))
+                  setActivityForm((prev) => ({
+                    ...prev,
+                    responsibleRuknId: event.target.value,
+                  }))
                 }
               >
-                <option value="">None</option>
-                {units.map((unit) => (
-                  <option key={unit.id} value={unit.id}>
-                    {unit.name}
+                <option value="">—</option>
+                {rukns.map((rukn) => (
+                  <option key={rukn.id} value={rukn.id}>
+                    {rukn.name}
                   </option>
                 ))}
               </select>
             </div>
             <div>
-              <label className={labelClassName} htmlFor="programme-start">
-                Start date (optional)
+              <label className={labelClassName} htmlFor="activity-start">
+                آغاز
               </label>
               <input
-                id="programme-start"
+                id="activity-start"
                 type="date"
                 className={inputClassName}
-                value={programmeForm.startDate}
+                value={activityForm.startDate}
                 onChange={(event) =>
-                  setProgrammeForm((prev) => ({ ...prev, startDate: event.target.value }))
+                  setActivityForm((prev) => ({ ...prev, startDate: event.target.value }))
                 }
               />
             </div>
             <div>
-              <label className={labelClassName} htmlFor="programme-end">
-                End date (optional)
+              <label className={labelClassName} htmlFor="activity-end">
+                اختتام
               </label>
               <input
-                id="programme-end"
+                id="activity-end"
                 type="date"
                 className={inputClassName}
-                value={programmeForm.endDate}
+                value={activityForm.endDate}
                 onChange={(event) =>
-                  setProgrammeForm((prev) => ({ ...prev, endDate: event.target.value }))
+                  setActivityForm((prev) => ({ ...prev, endDate: event.target.value }))
                 }
               />
             </div>
             <div>
-              <label className={labelClassName} htmlFor="programme-frequency">
-                Frequency hint (optional)
+              <label className={labelClassName} htmlFor="activity-frequency">
+                نظام الاوقات
               </label>
               <select
-                id="programme-frequency"
+                id="activity-frequency"
                 className={inputClassName}
-                value={programmeForm.frequencyCadence}
+                value={activityForm.frequencyCadence}
                 onChange={(event) =>
-                  setProgrammeForm((prev) => ({
+                  setActivityForm((prev) => ({
                     ...prev,
-                    frequencyCadence: event.target.value as ProgrammeFormState['frequencyCadence'],
+                    frequencyCadence: event.target.value as ActivityFormState['frequencyCadence'],
                   }))
                 }
               >
-                <option value="">None</option>
-                <option value="weekly">weekly</option>
-                <option value="monthly">monthly</option>
-                <option value="once">once</option>
-                <option value="custom">custom</option>
+                <option value="">غیر متعین</option>
+                <option value="once">یک بار</option>
+                <option value="weekly">ہفتہ وار</option>
+                <option value="monthly">ماہانہ</option>
+                <option value="yearly">سالانہ</option>
+                <option value="custom">دیگر</option>
               </select>
             </div>
-            {programmeForm.frequencyCadence === 'weekly' ? (
+            {activityForm.frequencyCadence === 'weekly' ? (
               <div>
-                <label className={labelClassName} htmlFor="programme-dow">
-                  Day of week (0–6, optional)
+                <label className={labelClassName} htmlFor="activity-dow">
+                  یوم ہفتہ (0–6)
                 </label>
                 <input
-                  id="programme-dow"
+                  id="activity-dow"
                   className={inputClassName}
-                  value={programmeForm.frequencyDayOfWeek}
+                  value={activityForm.frequencyDayOfWeek}
                   onChange={(event) =>
-                    setProgrammeForm((prev) => ({
+                    setActivityForm((prev) => ({
                       ...prev,
                       frequencyDayOfWeek: event.target.value,
                     }))
@@ -1499,17 +1660,18 @@ export function AdminPlanningPage() {
                 />
               </div>
             ) : null}
-            {programmeForm.frequencyCadence === 'monthly' ? (
+            {activityForm.frequencyCadence === 'monthly' ||
+            activityForm.frequencyCadence === 'yearly' ? (
               <div>
-                <label className={labelClassName} htmlFor="programme-dom">
-                  Day of month (optional)
+                <label className={labelClassName} htmlFor="activity-dom">
+                  یوم ماہ
                 </label>
                 <input
-                  id="programme-dom"
+                  id="activity-dom"
                   className={inputClassName}
-                  value={programmeForm.frequencyDayOfMonth}
+                  value={activityForm.frequencyDayOfMonth}
                   onChange={(event) =>
-                    setProgrammeForm((prev) => ({
+                    setActivityForm((prev) => ({
                       ...prev,
                       frequencyDayOfMonth: event.target.value,
                     }))
@@ -1517,17 +1679,35 @@ export function AdminPlanningPage() {
                 />
               </div>
             ) : null}
-            {programmeForm.frequencyCadence === 'custom' ? (
+            {activityForm.frequencyCadence === 'yearly' ? (
               <div>
-                <label className={labelClassName} htmlFor="programme-freq-note">
-                  Custom note (optional)
+                <label className={labelClassName} htmlFor="activity-month">
+                  مہینہ (1–12)
                 </label>
                 <input
-                  id="programme-freq-note"
+                  id="activity-month"
                   className={inputClassName}
-                  value={programmeForm.frequencyNote}
+                  value={activityForm.frequencyMonth}
                   onChange={(event) =>
-                    setProgrammeForm((prev) => ({
+                    setActivityForm((prev) => ({
+                      ...prev,
+                      frequencyMonth: event.target.value,
+                    }))
+                  }
+                />
+              </div>
+            ) : null}
+            {activityForm.frequencyCadence === 'custom' ? (
+              <div>
+                <label className={labelClassName} htmlFor="activity-freq-note">
+                  نوٹ
+                </label>
+                <input
+                  id="activity-freq-note"
+                  className={inputClassName}
+                  value={activityForm.frequencyNote}
+                  onChange={(event) =>
+                    setActivityForm((prev) => ({
                       ...prev,
                       frequencyNote: event.target.value,
                     }))
@@ -1537,16 +1717,16 @@ export function AdminPlanningPage() {
             ) : null}
           </ModalFormGrid>
           <div className="mt-4">
-            <label className={labelClassName} htmlFor="programme-summary">
-              Summary (optional)
+            <label className={labelClassName} htmlFor="activity-summary">
+              خلاصہ
             </label>
             <textarea
-              id="programme-summary"
+              id="activity-summary"
               className={inputClassName}
               rows={3}
-              value={programmeForm.summary}
+              value={activityForm.summary}
               onChange={(event) =>
-                setProgrammeForm((prev) => ({ ...prev, summary: event.target.value }))
+                setActivityForm((prev) => ({ ...prev, summary: event.target.value }))
               }
             />
           </div>

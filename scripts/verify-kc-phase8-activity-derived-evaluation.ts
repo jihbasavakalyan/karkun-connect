@@ -54,6 +54,7 @@ function objective(overrides: Partial<PlanningObjective> = {}): PlanningObjectiv
   return {
     id: 'objective-act-1',
     mansoobaId: mansooba.id,
+    shobahId: 'shobah-act-1',
     title: 'Ijtema participation',
     status: 'active',
     createdAt: now,
@@ -79,8 +80,9 @@ const campaign: CampaignListItem = {
 }
 
 const programme: LocalProgramme = {
-  id: 'prog-act-1',
-  campaignId: campaign.id,
+    id: 'prog-act-1',
+    objectiveId: 'objective-act-1',
+    campaignId: campaign.id,
   name: 'Weekly Ijtema',
   kind: 'weekly_ijtema',
   status: 'active',

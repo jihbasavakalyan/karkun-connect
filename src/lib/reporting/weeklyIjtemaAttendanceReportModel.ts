@@ -390,7 +390,7 @@ export function buildWeeklyIjtemaAttendanceReportModel(
     cover: {
       reportTitle,
       campaignName: campaign.cover.campaignName,
-      campaignUrdu: 'فعال کارکن، فعال جماعت',
+      campaignUrdu: 'فعال رکن، فعال کارکن، فعال جماعت',
       meetingDateGregorian: formatGregorianDate(meetingIso, language),
       meetingDateHijri: formatHijriDate(meetingIso, language),
       reportingDate,

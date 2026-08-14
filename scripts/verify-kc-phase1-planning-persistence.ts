@@ -16,6 +16,7 @@ import { clearLocalPlanningForTests } from '@/repositories/local/planningLocalRe
 import type {
   MeqatiMansooba,
   PlanningObjective,
+  Shobah,
   Unit,
 } from '@/types/planning.types'
 
@@ -47,6 +48,7 @@ const now = new Date().toISOString()
 console.log('▶ collection constants')
 {
   assert.equal(FIRESTORE_COLLECTIONS.meqatiMansoobas, 'meqatiMansoobas')
+  assert.equal(FIRESTORE_COLLECTIONS.shobahs, 'shobahs')
   assert.equal(FIRESTORE_COLLECTIONS.objectives, 'objectives')
   assert.equal(FIRESTORE_COLLECTIONS.units, 'units')
 }
@@ -56,6 +58,7 @@ console.log('▶ Firestore rules — Admin-only planning collections')
   const rules = read('firestore.rules')
   for (const matchLine of [
     'match /meqatiMansoobas/{docId}',
+    'match /shobahs/{docId}',
     'match /objectives/{docId}',
     'match /units/{docId}',
   ]) {
@@ -76,7 +79,12 @@ console.log('▶ provider wiring (local + firestore factories; single provider)'
   )
   assertIncludes(
     provider,
-    'objective: new ObjectiveLocalRepository()',
+    'shobah: new ShobahLocalRepository()',
+    'local Shobah repo',
+  )
+  assertIncludes(
+    provider,
+    'const objective = new ObjectiveLocalRepository()',
     'local Objective repo',
   )
   assertIncludes(provider, 'const unit = new UnitLocalRepository()', 'local Unit repo')
@@ -87,7 +95,12 @@ console.log('▶ provider wiring (local + firestore factories; single provider)'
   )
   assertIncludes(
     provider,
-    'objective: new ObjectiveFirestoreRepository()',
+    'shobah: new ShobahFirestoreRepository()',
+    'firestore Shobah repo',
+  )
+  assertIncludes(
+    provider,
+    'const objective = new ObjectiveFirestoreRepository()',
     'firestore Objective repo',
   )
   assertIncludes(provider, 'const unit = new UnitFirestoreRepository()', 'firestore Unit repo')
@@ -99,6 +112,7 @@ console.log('▶ provider wiring (local + firestore factories; single provider)'
   assert.equal(getRepositoryProviderMode(), 'local')
   const repos = getRepositories()
   assert.ok(repos.meqatiMansooba)
+  assert.ok(repos.shobah)
   assert.ok(repos.objective)
   assert.ok(repos.unit)
 }
@@ -142,9 +156,24 @@ console.log('▶ local durable CRUD smoke')
   assert.equal(repos.meqatiMansooba.loadAll().data?.length, 1)
   assert.equal(repos.meqatiMansooba.getById(mansooba.id).data?.name, 'Verify Mansooba')
 
+  const shobah: Shobah = {
+    id: 'shobah-verify-1',
+    mansoobaId: mansooba.id,
+    name: 'Verify Shobah',
+    status: 'active',
+    createdAt: now,
+    updatedAt: now,
+    createdBy: 'verify',
+    updatedBy: 'verify',
+  }
+  const shobahSaved = await repos.shobah.saveDurable(shobah)
+  assert.equal(shobahSaved.ok, true)
+  assert.equal(repos.shobah.listByMansoobaId(mansooba.id).data?.length, 1)
+
   const objective: PlanningObjective = {
     id: 'objective-verify-1',
     mansoobaId: mansooba.id,
+    shobahId: shobah.id,
     title: 'Verify Objective',
     status: 'active',
     createdAt: now,
@@ -155,6 +184,7 @@ console.log('▶ local durable CRUD smoke')
   const objectiveSaved = await repos.objective.saveDurable(objective)
   assert.equal(objectiveSaved.ok, true)
   assert.equal(repos.objective.listByMansoobaId(mansooba.id).data?.length, 1)
+  assert.equal(repos.objective.listByShobahId(shobah.id).data?.length, 1)
   assert.equal(repos.objective.getById(objective.id).data?.title, 'Verify Objective')
   assert.equal(repos.objective.loadAll().data?.length, 1)
 
@@ -164,8 +194,14 @@ console.log('▶ local durable CRUD smoke')
     mansoobaId: '',
   })
   assert.equal(missingParent.ok, false)
-  if (!missingParent.ok) {
-    assert.equal(missingParent.error.code, 'Validation')
+  const missingShobah = await repos.objective.saveDurable({
+    ...objective,
+    id: 'objective-verify-bad-shobah',
+    shobahId: '',
+  })
+  assert.equal(missingShobah.ok, false)
+  if (!missingShobah.ok) {
+    assert.equal(missingShobah.error.code, 'Validation')
   }
 
   clearLocalPlanningForTests()

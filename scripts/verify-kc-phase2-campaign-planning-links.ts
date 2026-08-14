@@ -30,6 +30,7 @@ console.log('▶ type: optional planning FKs on CampaignListItem')
   const types = read('src/constants/mockMissions.ts')
   assertIncludes(types, 'mansoobaId?: string', 'optional mansoobaId')
   assertIncludes(types, 'objectiveIds?: string[]', 'optional objectiveIds')
+  assertIncludes(types, 'activityIds?: string[]', 'optional activityIds')
   assertIncludes(types, 'objective: string', 'required objective copy retained')
   assertIncludes(types, 'objectives: string[]', 'required objectives copy retained')
 }

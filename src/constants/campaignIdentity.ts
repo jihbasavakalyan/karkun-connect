@@ -4,7 +4,7 @@
  * All operational numbers continue to come from the campaign engines/services.
  */
 
-export const CAMPAIGN_HEADLINE = 'فعال کارکن، فعال جماعت'
+export const CAMPAIGN_HEADLINE = 'فعال رکن، فعال کارکن، فعال جماعت'
 
 /** Original approved end before KC-038 extension (informational). */
 export const CAMPAIGN_ORIGINAL_END_DATE = '2026-08-02'
@@ -15,7 +15,7 @@ export const CAMPAIGN_EXTENDED_END_DATE = '2026-08-09'
 export const CAMPAIGN_EXTENSION_ANNOUNCEMENT_TITLE_UR = '📢 اہم اعلان'
 
 export const CAMPAIGN_EXTENSION_ANNOUNCEMENT_UR =
-  'مرکزی مہم "فعال کارکن، فعال جماعت" کی مدت میں توسیع کرتے ہوئے اب یہ مہم 9 اگست 2026 تک جاری رہے گی۔'
+  'مرکزی مہم "فعال رکن، فعال کارکن، فعال جماعت" کی مدت میں توسیع کرتے ہوئے اب یہ مہم 9 اگست 2026 تک جاری رہے گی۔'
 
 /** Extended-period operational goals — display only; no duplicate KPI engines. */
 export const CAMPAIGN_EXTENDED_OBJECTIVES_UR = [

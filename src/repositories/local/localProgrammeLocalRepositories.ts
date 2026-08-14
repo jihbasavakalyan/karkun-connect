@@ -1,10 +1,11 @@
 /**
- * Phase 2 — local/mock provider persistence for Local Programme.
- * Uses existing browserStorage + STORAGE_KEYS. Campaign parent validated via CampaignRepository.
+ * Local/mock provider persistence for سرگرمی (collection remains `localProgrammes`).
+ * Uses existing browserStorage + STORAGE_KEYS. Objective parent validated via ObjectiveRepository.
  */
 
 import type { CampaignRepository } from '@/repositories/interfaces/CampaignRepository'
 import type { LocalProgrammeRepository } from '@/repositories/interfaces/LocalProgrammeRepository'
+import type { ObjectiveRepository } from '@/repositories/interfaces/ObjectiveRepository'
 import type {
   LocalProgramme,
   LocalProgrammeStatus,
@@ -47,37 +48,50 @@ function upsertById<T extends { id: string }>(rows: T[], next: T): T[] {
 
 function validateProgramme(
   programme: LocalProgramme,
+  objectives: ObjectiveRepository,
   campaigns: CampaignRepository,
 ): RepositoryResult<LocalProgramme> | null {
   if (!programme.id?.trim() || !programme.name?.trim()) {
-    return repositoryErr('Validation', 'Local Programme requires id and name.')
+    return repositoryErr('Validation', 'Activity requires id and name.')
   }
-  if (!programme.campaignId?.trim()) {
+  if (!programme.objectiveId?.trim()) {
     return repositoryErr(
       'Validation',
-      'Local Programme requires campaignId (belongs to one Campaign).',
+      'Activity requires objectiveId (belongs to one اہداف).',
     )
   }
   if (!PROGRAMME_KINDS.has(programme.kind)) {
-    return repositoryErr('Validation', 'Local Programme requires a valid kind.')
+    return repositoryErr('Validation', 'Activity requires a valid kind.')
   }
   if (!PROGRAMME_STATUSES.has(programme.status)) {
-    return repositoryErr('Validation', 'Local Programme requires a valid status.')
+    return repositoryErr('Validation', 'Activity requires a valid status.')
   }
-  const parent = campaigns.getById(programme.campaignId)
+  const parent = objectives.getById(programme.objectiveId)
   if (!parent.ok || !parent.data) {
     return repositoryErr(
       'Validation',
-      'Local Programme requires an existing Campaign (campaignId).',
+      'Activity requires an existing Objective (objectiveId).',
     )
+  }
+  const campaignId = programme.campaignId?.trim()
+  if (campaignId) {
+    const campaign = campaigns.getById(campaignId)
+    if (!campaign.ok || !campaign.data) {
+      return repositoryErr(
+        'Validation',
+        'Activity campaignId must reference an existing Campaign.',
+      )
+    }
   }
   return null
 }
 
 export class LocalProgrammeLocalRepository implements LocalProgrammeRepository {
+  private readonly objectives: ObjectiveRepository
   private readonly campaigns: CampaignRepository
 
-  constructor(campaigns: CampaignRepository) {
+  constructor(objectives: ObjectiveRepository, campaigns: CampaignRepository) {
+    this.objectives = objectives
     this.campaigns = campaigns
   }
 
@@ -87,6 +101,14 @@ export class LocalProgrammeLocalRepository implements LocalProgrammeRepository {
 
   getById(id: string): RepositoryResult<LocalProgramme | undefined> {
     return tryRepository(() => loadProgrammes().find((row) => row.id === id))
+  }
+
+  listByObjectiveId(
+    objectiveId: string,
+  ): RepositoryResult<readonly LocalProgramme[]> {
+    return tryRepository(() =>
+      loadProgrammes().filter((row) => row.objectiveId === objectiveId),
+    )
   }
 
   listByCampaignId(
@@ -101,12 +123,12 @@ export class LocalProgrammeLocalRepository implements LocalProgrammeRepository {
     programme: LocalProgramme,
   ): Promise<RepositoryResult<LocalProgramme>> {
     try {
-      const invalid = validateProgramme(programme, this.campaigns)
+      const invalid = validateProgramme(programme, this.objectives, this.campaigns)
       if (invalid) return invalid
       saveProgrammes(upsertById(loadProgrammes(), programme))
       return repositoryOk(programme)
     } catch (cause) {
-      return repositoryErr('StorageFailure', 'Local Local Programme save failed.', cause)
+      return repositoryErr('StorageFailure', 'Local activity save failed.', cause)
     }
   }
 }

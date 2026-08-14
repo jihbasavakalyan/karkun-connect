@@ -104,18 +104,15 @@ export function MansoobaActivityReportPanel({
   return (
     <section className="rounded-(--radius-card) border border-border bg-surface p-5 shadow-card">
       <div>
-        <h2 className="text-lg font-semibold text-text-heading">
-          Mansooba activity report
-        </h2>
+        <h2 className="text-lg font-semibold text-text-heading">رپورٹ</h2>
         <p className="mt-1 text-sm text-secondary">
-          Derived weekly / monthly / yearly execution against the selected Meqati
-          Mansooba. Reads existing planning and activity sources — not a reporting
-          database.
+          منتخب میقاتی منصوبہ کی سرگرمیوں سے ماخوذ ہفتہ وار / ماہانہ / سالانہ رپورٹ۔ الگ Remarks
+          نظام نہیں۔
         </p>
       </div>
 
       {!mansooba ? (
-        <p className="mt-4 text-sm text-secondary">Select a Mansooba to view its report.</p>
+        <p className="mt-4 text-sm text-secondary">رپورٹ دیکھنے کے لیے میقاتی منصوبہ منتخب کریں۔</p>
       ) : (
         <>
           <div className="mt-4 grid gap-3 sm:grid-cols-3">
@@ -161,20 +158,20 @@ export function MansoobaActivityReportPanel({
           {report ? (
             <div className="mt-4 space-y-4">
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                <Metric label="Planned programmes" value={report.plannedProgrammeCount} />
+                <Metric label="منصوبہ شدہ سرگرمیاں" value={report.plannedProgrammeCount} />
                 <Metric label="Scheduled" value={report.scheduled} />
                 <Metric label="Occurred" value={report.occurred} />
                 <Metric label="Completed" value={report.completed} />
                 <Metric label="Pending" value={report.pending} />
-                <Metric label="Work done" value={report.workCompleted} />
-                <Metric label="Work pending" value={report.workPending} />
+                <Metric label="مکمل" value={report.workCompleted} />
+                <Metric label="زیر التوا" value={report.workPending} />
                 <Metric label="Attention items" value={report.attentionItems.length} />
               </div>
 
               <div>
-                <h3 className="text-sm font-semibold text-text-heading">Objective progress</h3>
+                <h3 className="text-sm font-semibold text-text-heading">اہداف کی پیش رفت</h3>
                 {report.objectiveRows.length === 0 ? (
-                  <p className="mt-2 text-sm text-secondary">No Objectives on this Mansooba.</p>
+                  <p className="mt-2 text-sm text-secondary">اس منصوبہ میں کوئی اہداف نہیں۔</p>
                 ) : (
                   <ul className="mt-2 space-y-2">
                     {report.objectiveRows.map((row) => (
@@ -184,7 +181,7 @@ export function MansoobaActivityReportPanel({
                       >
                         <p className="font-medium text-text-heading">{row.title}</p>
                         <p className="mt-0.5 text-xs text-secondary">
-                          {row.programmeCount} programme(s) · scheduled {row.scheduled} ·
+                          {row.programmeCount} سرگرمی(اں) · scheduled {row.scheduled} ·
                           occurred {row.occurred} · completed {row.completed} · pending{' '}
                           {row.pending}
                         </p>
@@ -195,10 +192,10 @@ export function MansoobaActivityReportPanel({
               </div>
 
               <div>
-                <h3 className="text-sm font-semibold text-text-heading">Programme activity</h3>
+                <h3 className="text-sm font-semibold text-text-heading">سرگرمی</h3>
                 {report.programmeRows.length === 0 ? (
                   <p className="mt-2 text-sm text-secondary">
-                    No Local Programmes linked through a Campaign with this Mansooba.
+                    اس میقاتی منصوبہ کے اہداف کے تحت کوئی سرگرمی نہیں۔
                   </p>
                 ) : (
                   <ul className="mt-2 space-y-2">
@@ -247,9 +244,7 @@ export function MansoobaActivityReportPanel({
               ) : null}
 
               <div>
-                <h3 className="text-sm font-semibold text-text-heading">
-                  Occurrences in period
-                </h3>
+                <h3 className="text-sm font-semibold text-text-heading">اس مدت کی سرگرمیاں</h3>
                 {report.activityRows.length === 0 ? (
                   <p className="mt-2 text-sm text-secondary">
                     No activities in this period. Empty is valid.
@@ -282,7 +277,7 @@ export function MansoobaActivityReportPanel({
 
               {report.workRows.length > 0 ? (
                 <div>
-                  <h3 className="text-sm font-semibold text-text-heading">Work in period</h3>
+                  <h3 className="text-sm font-semibold text-text-heading">اس مدت کی تکمیل</h3>
                   <ul className="mt-2 space-y-2">
                     {report.workRows.map((row) => (
                       <li

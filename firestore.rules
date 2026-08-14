@@ -183,6 +183,11 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    match /shobahs/{docId} {
+      allow read, create, update: if isAdministrator();
+      allow delete: if false;
+    }
+
     match /units/{docId} {
       allow read, create, update: if isAdministrator();
       allow delete: if false;

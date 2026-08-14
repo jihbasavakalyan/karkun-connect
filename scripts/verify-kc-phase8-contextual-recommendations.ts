@@ -53,6 +53,7 @@ function objective(overrides: Partial<PlanningObjective> = {}): PlanningObjectiv
   return {
     id: 'objective-rec-1',
     mansoobaId: mansooba.id,
+    shobahId: 'shobah-rec-1',
     title: 'Ijtema participation',
     status: 'active',
     createdAt: now,

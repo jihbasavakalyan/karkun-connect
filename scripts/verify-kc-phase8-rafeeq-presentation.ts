@@ -52,6 +52,7 @@ function objective(): PlanningObjective {
   return {
     id: 'objective-rf-1',
     mansoobaId: mansooba.id,
+    shobahId: 'shobah-rf-1',
     title: 'Ijtema participation',
     status: 'active',
     legacyKey: 'ijtema_participation',

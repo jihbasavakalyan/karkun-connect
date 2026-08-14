@@ -58,6 +58,13 @@ export type ResolvedCustomRecurrenceRule = {
   timezone: string
 }
 
+export type ResolvedYearlyRecurrenceRule = {
+  cadence: 'yearly'
+  month?: number
+  dayOfMonth?: number
+  timezone: string
+}
+
 /**
  * Deterministic, JSON-serialisable recurrence forms justified by Phase 2 frequency
  * + existing WI weekday-window behaviour. Not a generic RRULE framework.
@@ -67,6 +74,7 @@ export type ResolvedRecurrenceRule =
   | ResolvedMonthlyRecurrenceRule
   | ResolvedOnceRecurrenceRule
   | ResolvedCustomRecurrenceRule
+  | ResolvedYearlyRecurrenceRule
 
 function isValidDayOfWeek(value: unknown): value is number {
   return typeof value === 'number' && Number.isInteger(value) && value >= 0 && value <= 6
@@ -97,6 +105,19 @@ export function parseProgrammeRecurrenceRule(
     }
     case 'once':
       return { cadence: 'once' }
+    case 'yearly': {
+      const month = (row as { month?: unknown }).month
+      const dayOfMonth = (row as { dayOfMonth?: unknown }).dayOfMonth
+      if (month !== undefined && (typeof month !== 'number' || month < 1 || month > 12)) {
+        return null
+      }
+      if (dayOfMonth !== undefined && !isValidDayOfMonth(dayOfMonth)) return null
+      return {
+        cadence: 'yearly',
+        month: typeof month === 'number' ? month : undefined,
+        dayOfMonth: typeof dayOfMonth === 'number' ? dayOfMonth : undefined,
+      }
+    }
     case 'custom':
       return typeof row.note === 'string'
         ? { cadence: 'custom', note: row.note }
@@ -179,6 +200,13 @@ function resolveFromFrequency(
       }
     case 'once':
       return { cadence: 'once', timezone }
+    case 'yearly':
+      return {
+        cadence: 'yearly',
+        month: parsed.cadence === 'yearly' ? parsed.month : undefined,
+        dayOfMonth: parsed.cadence === 'yearly' ? parsed.dayOfMonth : undefined,
+        timezone,
+      }
     case 'custom':
       return { cadence: 'custom', note: parsed.note, timezone }
     default:

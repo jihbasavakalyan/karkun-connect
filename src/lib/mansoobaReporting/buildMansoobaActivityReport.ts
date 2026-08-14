@@ -48,7 +48,7 @@ export type MansoobaActivityRow = {
   programmeName: string
   programmeKind: LocalProgramme['kind']
   programmeStatus: LocalProgramme['status']
-  campaignId: string
+  campaignId?: string
   objectiveIds: string[]
   execution: OccurrenceExecutionState
   attendance?: AttendanceSnapshot
@@ -229,6 +229,7 @@ export function buildMansoobaActivityReport(
     occurrences,
     work,
   } = input
+  void campaigns
   const wiEvents = input.weeklyIjtemaEvents ?? []
   const wiSubmissions = input.weeklyIjtemaSubmissions ?? []
   const bmCycles = input.baitulMaalCycles ?? []
@@ -237,16 +238,12 @@ export function buildMansoobaActivityReport(
   const mansoobaObjectives = objectives.filter(
     (row) => row.mansoobaId === mansooba.id && row.status !== 'archived',
   )
-  const linkedCampaigns = campaigns.filter((row) => row.mansoobaId === mansooba.id)
-  const linkedCampaignIds = new Set(linkedCampaigns.map((row) => row.id))
-  const linkedProgrammes = programmes.filter((row) =>
-    linkedCampaignIds.has(row.campaignId),
-  )
+  const mansoobaObjectiveIds = new Set(mansoobaObjectives.map((row) => row.id))
+  const linkedProgrammes = programmes.filter((row) => mansoobaObjectiveIds.has(row.objectiveId))
   const programmeById = new Map(linkedProgrammes.map((row) => [row.id, row]))
-  const campaignById = new Map(linkedCampaigns.map((row) => [row.id, row]))
 
   const unlinkedProgrammeCount = programmes.filter(
-    (row) => !linkedCampaignIds.has(row.campaignId),
+    (row) => !mansoobaObjectiveIds.has(row.objectiveId),
   ).length
 
   const periodOccurrences = occurrences.filter((row) => {
@@ -260,7 +257,6 @@ export function buildMansoobaActivityReport(
   for (const occurrence of periodOccurrences) {
     const programme = programmeById.get(occurrence.programmeId)
     if (!programme) continue
-    const campaign = campaignById.get(programme.campaignId)
     const execution = resolveExecution(occurrence, wiEvents, bmCycles)
     const attention: string[] = []
 
@@ -310,9 +306,7 @@ export function buildMansoobaActivityReport(
       programmeKind: programme.kind,
       programmeStatus: programme.status,
       campaignId: programme.campaignId,
-      objectiveIds: campaign?.objectiveIds?.filter((id) =>
-        mansoobaObjectives.some((objective) => objective.id === id),
-      ) ?? [],
+      objectiveIds: [programme.objectiveId].filter((id) => mansoobaObjectiveIds.has(id)),
       execution,
       attendance,
       attention,
@@ -358,10 +352,7 @@ export function buildMansoobaActivityReport(
     .map((objective) => {
       const programmeIds = new Set(
         linkedProgrammes
-          .filter((programme) => {
-            const campaign = campaignById.get(programme.campaignId)
-            return Boolean(campaign?.objectiveIds?.includes(objective.id))
-          })
+          .filter((programme) => programme.objectiveId === objective.id)
           .map((programme) => programme.id),
       )
       const rows = countable.filter((row) => programmeIds.has(row.programmeId))

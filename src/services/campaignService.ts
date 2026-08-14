@@ -8,6 +8,7 @@ import { unwrapRepository } from '@/repositories/errors'
 import { getAllAssignments } from '@/stores/assignmentStore'
 import { getAnnexure1ExecutionMetrics } from '@/services/annexure1Service'
 import { getCanonicalCampaignHealthOverallPct } from '@/lib/operations/canonicalCampaignMetrics'
+import { CAMPAIGN_HEADLINE } from '@/constants/campaignIdentity'
 import { ACTIVE_CAMPAIGN_ID } from '@/types/assignment.types'
 
 export type CampaignTimelineStatus = 'upcoming' | 'active' | 'completed'
@@ -39,7 +40,11 @@ export function getActiveCampaign(): CampaignListItem | undefined {
 }
 
 export function getActiveCampaignName(): string {
-  return getActiveCampaign()?.name ?? ''
+  const name = getActiveCampaign()?.name ?? ''
+  if (!name || name === 'فعال کارکن، فعال جماعت') {
+    return CAMPAIGN_HEADLINE
+  }
+  return name
 }
 
 export function getActiveCampaignTheme(): string {

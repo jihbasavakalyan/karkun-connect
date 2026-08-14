@@ -28,6 +28,7 @@ export const STORAGE_KEYS = {
   assignmentReviews: 'karkun-connect.assignment-reviews',
   meqatiMansoobas: 'karkun-connect.meqati-mansoobas',
   planningObjectives: 'karkun-connect.planning-objectives',
+  shobahs: 'karkun-connect.shobahs',
   units: 'karkun-connect.units',
   localProgrammes: 'karkun-connect.local-programmes',
   occurrences: 'karkun-connect.occurrences',

@@ -14,6 +14,7 @@ export type {
 } from './SettingsRepository'
 export type { MeqatiMansoobaRepository } from './MeqatiMansoobaRepository'
 export type { ObjectiveRepository } from './ObjectiveRepository'
+export type { ShobahRepository } from './ShobahRepository'
 export type { UnitRepository } from './UnitRepository'
 export type { LocalProgrammeRepository } from './LocalProgrammeRepository'
 export type { OccurrenceRepository } from './OccurrenceRepository'

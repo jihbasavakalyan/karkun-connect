@@ -51,6 +51,7 @@ function objective(overrides: Partial<PlanningObjective> = {}): PlanningObjectiv
   return {
     id: 'objective-eval-1',
     mansoobaId: mansooba.id,
+    shobahId: 'shobah-eval-1',
     title: 'First meetings',
     status: 'active',
     createdAt: now,
@@ -139,6 +140,7 @@ console.log('▶ TASK-063 — evidence from existing operational links, not a sc
   }
   const programme: LocalProgramme = {
     id: 'prog-eval-1',
+    objectiveId: 'objective-eval-1',
     campaignId: campaign.id,
     name: 'Weekly Ijtema',
     kind: 'weekly_ijtema',

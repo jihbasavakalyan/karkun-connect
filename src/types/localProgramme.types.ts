@@ -1,19 +1,15 @@
 /**
- * Phase 2 — Local Programme (Campaign → Local Programme).
- * Authority: docs/architecture/kc-phase2-product-data-design.md
- * ARCH-009: docs/architecture/kc-phase2-local-programme-arch009-gate.md
- *
- * Admin-owned operational programme configuration under exactly one Campaign.
- * Not an Occurrence, participation table, Work entity, or Campaign clone.
- * Empty programme lists under a Campaign are valid.
+ * سرگرمی (activity) — adapted from Phase 2 Local Programme foundation.
+ * Permanent parent: اہداف (`objectiveId`). Campaign is an optional focus overlay.
+ * Not an Occurrence, Work entity, or Campaign clone.
  */
 
-/** Local Programme lifecycle. Archive via status — no soft-delete product. */
+/** Activity lifecycle. Archive via status — no soft-delete product. */
 export type LocalProgrammeStatus = 'draft' | 'active' | 'archived'
 
 /**
- * Typed programme track — maps to existing ops / Activities IA.
- * Not a free-form programme engine; wrap WI/BM later, do not replace in Phase 2.
+ * Typed operational track — maps to existing ops / Activities IA.
+ * Internal only; not a user-facing Programme Master.
  */
 export type ProgrammeKind =
   | 'weekly_ijtema'
@@ -23,42 +19,45 @@ export type ProgrammeKind =
   | 'other'
 
 /**
- * Optional frequency / recurrence configuration for Phase 3 Occurrence generation.
- * Not a calendar engine — does not open/close events by itself.
- * For `weekly_ijtema`, live weekday windows also come from `attendanceWindowSchedule`
- * (Occurrence precursor); see `src/lib/occurrence/recurrence.ts`.
+ * نظام الاوقات / recurrence configuration.
+ * Empty / omitted = Not Specified. Do not invent a frequency.
  */
 export type ProgrammeFrequency =
   | { cadence: 'weekly'; dayOfWeek?: number }
   | { cadence: 'monthly'; dayOfMonth?: number }
+  | { cadence: 'yearly'; month?: number; dayOfMonth?: number }
   | { cadence: 'once' }
   | { cadence: 'custom'; note?: string }
 
 /**
- * Phase 3 — recurrence configuration SoT on Local Programme (`frequency`).
+ * Phase 3 — recurrence configuration SoT (`frequency`).
  * Alias only — do not invent a second frequency field or RRULE engine.
  */
 export type ProgrammeRecurrenceRule = ProgrammeFrequency
 
 /**
- * Durable Local Programme belonging to exactly one Campaign (`campaignId`).
- * Reaches Mansooba / Objectives through Campaign — no direct planning FKs here.
+ * Durable سرگرمی belonging to exactly one Objective (`objectiveId`).
+ * Optional `campaignId` is a focus link only — Campaign does not own the activity.
  * No parentProgrammeId / hierarchy. No nested occurrence arrays as SoT.
  */
 export type LocalProgramme = {
   id: string
-  /** Parent Campaign (`campaigns` document id) — required in Phase 2 */
-  campaignId: string
+  /** Parent اہداف (`objectives` document id) — required */
+  objectiveId: string
+  /** Optional Campaign focus overlay — not the organisational parent */
+  campaignId?: string
   name: string
   kind: ProgrammeKind
   status: LocalProgrammeStatus
-  /** Optional Phase 1 Unit / Scope (Basavakalyan-first) */
+  /** ذمہ دار — existing `rukns` document id. Not a separate people system. */
+  responsibleRuknId?: string
+  /** Deprecated — not a planning parent. */
   unitId?: string
-  /** Programme window start — YYYY-MM-DD */
+  /** Activity window start — YYYY-MM-DD */
   startDate?: string
-  /** Programme window end — YYYY-MM-DD */
+  /** Activity window end — YYYY-MM-DD */
   endDate?: string
-  /** Configuration / recurrence SoT for Phase 3 — not an occurrence generator by itself */
+  /** نظام الاوقات configuration — omitted means Not Specified */
   frequency?: ProgrammeFrequency
   summary?: string
   createdAt: string

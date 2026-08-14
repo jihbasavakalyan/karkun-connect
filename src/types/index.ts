@@ -8,6 +8,8 @@ export type {
 export type {
   MeqatiMansooba,
   MeqatiMansoobaStatus,
+  Shobah,
+  ShobahStatus,
   PlanningObjective,
   PlanningObjectiveStatus,
   Unit,

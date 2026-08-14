@@ -5,7 +5,7 @@
 
 export const WI_EXEC_UR = {
   reportTitle: 'ہفتہ وار اجتماع کی جائزہ رپورٹ',
-  campaignTagline: 'فعال کارکن، فعال جماعت',
+  campaignTagline: 'فعال رکن، فعال کارکن، فعال جماعت',
   executiveSummary: 'خلاصۂ جائزہ',
   executiveObservation: 'اہم مشاہدات',
   comparisonGraph: 'شرکت کا جائزہ',

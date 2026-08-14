@@ -776,7 +776,7 @@ export function buildCampaignReportModel(input?: {
 
   return {
     cover: {
-      campaignName: campaign?.name?.trim() || 'فعال کارکن، فعال جماعت',
+      campaignName: campaign?.name?.trim() || 'فعال رکن، فعال کارکن، فعال جماعت',
       campaignDuration: duration,
       reportPeriod: duration,
       organization: input?.organization?.trim() || URDU_REPORT.organizationDefault,

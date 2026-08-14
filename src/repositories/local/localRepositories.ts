@@ -120,10 +120,10 @@ export class CampaignLocalRepository implements CampaignRepository {
       if (!links.id?.trim()) {
         return repositoryErr('Validation', 'Campaign planning links require id.')
       }
-      if (!('mansoobaId' in links) && !('objectiveIds' in links)) {
+      if (!('mansoobaId' in links) && !('objectiveIds' in links) && !('activityIds' in links)) {
         return repositoryErr(
           'Validation',
-          'Campaign planning links require mansoobaId and/or objectiveIds.',
+          'Campaign planning links require mansoobaId, objectiveIds, and/or activityIds.',
         )
       }
       const index = this.campaigns.findIndex((campaign) => campaign.id === links.id)
@@ -140,6 +140,9 @@ export class CampaignLocalRepository implements CampaignRepository {
       }
       if ('objectiveIds' in links) {
         next.objectiveIds = links.objectiveIds ? [...links.objectiveIds] : links.objectiveIds
+      }
+      if ('activityIds' in links) {
+        next.activityIds = links.activityIds ? [...links.activityIds] : links.activityIds
       }
       // SoT protection — never rewrite free-text objective copy from planning links.
       next.objective = current.objective

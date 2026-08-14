@@ -19,7 +19,9 @@ export const FIRESTORE_COLLECTIONS = {
   meqatiMansoobas: 'meqatiMansoobas',
   /** Phase 1 — Objectives under a Mansooba (Admin-owned) */
   objectives: 'objectives',
-  /** Phase 1 — flat Unit / Scope (Admin-owned; Basavakalyan first) */
+  /** شعبہ under Meqati Mansooba (Admin-owned). Not `units`. */
+  shobahs: 'shobahs',
+  /** Legacy Unit / Scope — not a planning layer; retained for Work/Responsibility FKs */
   units: 'units',
   /** Phase 2 — Local Programme under a Campaign (Admin-owned) */
   localProgrammes: 'localProgrammes',

@@ -1,5 +1,5 @@
 /**
- * Phase 1 — Firestore persistence for Meqati Mansooba / Objective / Unit.
+ * Planning persistence for Meqati Mansooba / شعبہ / Objective / legacy Unit.
  * Per-document upsert via existing writeDoc helpers. Admin-owned collections.
  * Soft-read on hydrate (Rukn permission-denied → empty). No LWW blob.
  */
@@ -13,10 +13,12 @@ import {
 } from '@/repositories/errors'
 import type { MeqatiMansoobaRepository } from '@/repositories/interfaces/MeqatiMansoobaRepository'
 import type { ObjectiveRepository } from '@/repositories/interfaces/ObjectiveRepository'
+import type { ShobahRepository } from '@/repositories/interfaces/ShobahRepository'
 import type { UnitRepository } from '@/repositories/interfaces/UnitRepository'
 import type {
   MeqatiMansooba,
   PlanningObjective,
+  Shobah,
   Unit,
 } from '@/types/planning.types'
 import { FIRESTORE_COLLECTIONS } from '@/repositories/firestore/collections'
@@ -28,6 +30,7 @@ import {
 import { SyncCache } from '@/repositories/firestore/cache'
 
 const mansoobaCache = new SyncCache<MeqatiMansooba[]>([])
+const shobahCache = new SyncCache<Shobah[]>([])
 const objectiveCache = new SyncCache<PlanningObjective[]>([])
 const unitCache = new SyncCache<Unit[]>([])
 
@@ -61,6 +64,10 @@ export function applyMeqatiMansoobaHydrate(rows: MeqatiMansooba[]): void {
   mansoobaCache.set([...rows])
 }
 
+export function applyShobahHydrate(rows: Shobah[]): void {
+  shobahCache.set([...rows])
+}
+
 export function applyPlanningObjectiveHydrate(rows: PlanningObjective[]): void {
   objectiveCache.set([...rows])
 }
@@ -72,35 +79,40 @@ export function applyUnitHydrate(rows: Unit[]): void {
 /** Soft-read planning collections for background hydrate (Admin-only rules). */
 export async function readPlanningCollectionsForClient(): Promise<{
   mansoobas: MeqatiMansooba[]
+  shobahs: Shobah[]
   objectives: PlanningObjective[]
   units: Unit[]
 }> {
-  const [mansoobas, objectives, units] = await Promise.all([
+  const [mansoobas, shobahs, objectives, units] = await Promise.all([
     softReadCollection<MeqatiMansooba>(
       FIRESTORE_COLLECTIONS.meqatiMansoobas,
       'meqatiMansoobas',
     ),
+    softReadCollection<Shobah>(FIRESTORE_COLLECTIONS.shobahs, 'shobahs'),
     softReadCollection<PlanningObjective>(
       FIRESTORE_COLLECTIONS.objectives,
       'objectives',
     ),
     softReadCollection<Unit>(FIRESTORE_COLLECTIONS.units, 'units'),
   ])
-  return { mansoobas, objectives, units }
+  return { mansoobas, shobahs, objectives, units }
 }
 
 export function applyPlanningHydrate(input: {
   mansoobas: MeqatiMansooba[]
+  shobahs?: Shobah[]
   objectives: PlanningObjective[]
   units: Unit[]
 }): void {
   applyMeqatiMansoobaHydrate(input.mansoobas)
+  applyShobahHydrate(input.shobahs ?? [])
   applyPlanningObjectiveHydrate(input.objectives)
   applyUnitHydrate(input.units)
 }
 
 export function resetPlanningCachesForTests(): void {
   mansoobaCache.reset([])
+  shobahCache.reset([])
   objectiveCache.reset([])
   unitCache.reset([])
 }
@@ -151,6 +163,59 @@ export class MeqatiMansoobaFirestoreRepository implements MeqatiMansoobaReposito
   }
 }
 
+export class ShobahFirestoreRepository implements ShobahRepository {
+  loadAll(): RepositoryResult<readonly Shobah[]> {
+    return repositoryOk([...shobahCache.get()])
+  }
+
+  getById(id: string): RepositoryResult<Shobah | undefined> {
+    return repositoryOk(shobahCache.get().find((row) => row.id === id))
+  }
+
+  listByMansoobaId(mansoobaId: string): RepositoryResult<readonly Shobah[]> {
+    return repositoryOk(
+      shobahCache.get().filter((row) => row.mansoobaId === mansoobaId),
+    )
+  }
+
+  async saveDurable(shobah: Shobah): Promise<RepositoryResult<Shobah>> {
+    if (!shobah.id?.trim() || !shobah.name?.trim()) {
+      return repositoryErr('Validation', 'Shobah requires id and name.')
+    }
+    if (!shobah.mansoobaId?.trim()) {
+      return repositoryErr(
+        'Validation',
+        'Shobah requires mansoobaId (belongs to one Meqati Mansooba).',
+      )
+    }
+    const write = await writeDoc(
+      getFirestoreDb(),
+      FIRESTORE_COLLECTIONS.shobahs,
+      shobah.id,
+      sanitizeForFirestore(shobah),
+    )
+    if (!write.ok) {
+      console.error('[planning] shobahs saveDurable failed', {
+        module: 'shobahs',
+        operation: 'saveDurable',
+        result: 'error',
+        id: shobah.id,
+        error: write.error,
+      })
+      return write
+    }
+    shobahCache.set(upsertById(shobahCache.get(), shobah))
+    console.info('[planning] shobahs saveDurable success', {
+      module: 'shobahs',
+      operation: 'saveDurable',
+      result: 'ok',
+      id: shobah.id,
+      mansoobaId: shobah.mansoobaId,
+    })
+    return repositoryOk(shobah)
+  }
+}
+
 export class ObjectiveFirestoreRepository implements ObjectiveRepository {
   loadAll(): RepositoryResult<readonly PlanningObjective[]> {
     return repositoryOk([...objectiveCache.get()])
@@ -168,6 +233,12 @@ export class ObjectiveFirestoreRepository implements ObjectiveRepository {
     )
   }
 
+  listByShobahId(shobahId: string): RepositoryResult<readonly PlanningObjective[]> {
+    return repositoryOk(
+      objectiveCache.get().filter((row) => row.shobahId === shobahId),
+    )
+  }
+
   async saveDurable(
     objective: PlanningObjective,
   ): Promise<RepositoryResult<PlanningObjective>> {
@@ -178,6 +249,12 @@ export class ObjectiveFirestoreRepository implements ObjectiveRepository {
       return repositoryErr(
         'Validation',
         'Objective requires mansoobaId (belongs to one Meqati Mansooba).',
+      )
+    }
+    if (!objective.shobahId?.trim()) {
+      return repositoryErr(
+        'Validation',
+        'Objective requires shobahId (belongs to one شعبہ).',
       )
     }
     const write = await writeDoc(
@@ -203,6 +280,7 @@ export class ObjectiveFirestoreRepository implements ObjectiveRepository {
       result: 'ok',
       id: objective.id,
       mansoobaId: objective.mansoobaId,
+      shobahId: objective.shobahId,
     })
     return repositoryOk(objective)
   }

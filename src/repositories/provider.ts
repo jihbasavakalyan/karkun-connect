@@ -13,6 +13,7 @@ import type {
   RuknRepository,
   WorkRepository,
   SettingsRepository,
+  ShobahRepository,
   UnitRepository,
 } from '@/repositories/interfaces'
 import type { ConnectionLedgerRepository } from '@/repositories/interfaces/ConnectionLedgerRepository'
@@ -33,6 +34,7 @@ import { AssignmentReviewLocalRepository } from '@/repositories/local/assignment
 import {
   MeqatiMansoobaLocalRepository,
   ObjectiveLocalRepository,
+  ShobahLocalRepository,
   UnitLocalRepository,
 } from '@/repositories/local/planningLocalRepositories'
 import { LocalProgrammeLocalRepository } from '@/repositories/local/localProgrammeLocalRepositories'
@@ -54,6 +56,7 @@ import { AssignmentReviewFirestoreRepository } from '@/repositories/firestore/as
 import {
   MeqatiMansoobaFirestoreRepository,
   ObjectiveFirestoreRepository,
+  ShobahFirestoreRepository,
   UnitFirestoreRepository,
 } from '@/repositories/firestore/planningFirestoreRepositories'
 import { LocalProgrammeFirestoreRepository } from '@/repositories/firestore/localProgrammeFirestoreRepositories'
@@ -73,6 +76,7 @@ export type RepositoryBundle = {
   compliance: ComplianceRepository
   settings: SettingsRepository
   meqatiMansooba: MeqatiMansoobaRepository
+  shobah: ShobahRepository
   objective: ObjectiveRepository
   unit: UnitRepository
   localProgramme: LocalProgrammeRepository
@@ -85,7 +89,8 @@ let bundle: RepositoryBundle | null = null
 
 function createLocalRepositories(): RepositoryBundle {
   const campaign = new CampaignLocalRepository()
-  const localProgramme = new LocalProgrammeLocalRepository(campaign)
+  const objective = new ObjectiveLocalRepository()
+  const localProgramme = new LocalProgrammeLocalRepository(objective, campaign)
   const rukn = new RuknLocalRepository()
   const unit = new UnitLocalRepository()
   const responsibility = new ResponsibilityLocalRepository(unit, rukn)
@@ -101,7 +106,8 @@ function createLocalRepositories(): RepositoryBundle {
     compliance: new ComplianceLocalRepository(),
     settings: new SettingsLocalRepository(),
     meqatiMansooba: new MeqatiMansoobaLocalRepository(),
-    objective: new ObjectiveLocalRepository(),
+    shobah: new ShobahLocalRepository(),
+    objective,
     unit,
     localProgramme,
     occurrence: new OccurrenceLocalRepository(localProgramme),
@@ -112,7 +118,8 @@ function createLocalRepositories(): RepositoryBundle {
 
 function createFirestoreRepositories(): RepositoryBundle {
   const campaign = new CampaignFirestoreRepository()
-  const localProgramme = new LocalProgrammeFirestoreRepository(campaign)
+  const objective = new ObjectiveFirestoreRepository()
+  const localProgramme = new LocalProgrammeFirestoreRepository(objective, campaign)
   const rukn = new RuknFirestoreRepository()
   const unit = new UnitFirestoreRepository()
   const responsibility = new ResponsibilityFirestoreRepository(unit, rukn)
@@ -128,7 +135,8 @@ function createFirestoreRepositories(): RepositoryBundle {
     compliance: new ComplianceFirestoreRepository(),
     settings: new SettingsFirestoreRepository(),
     meqatiMansooba: new MeqatiMansoobaFirestoreRepository(),
-    objective: new ObjectiveFirestoreRepository(),
+    shobah: new ShobahFirestoreRepository(),
+    objective,
     unit,
     localProgramme,
     occurrence: new OccurrenceFirestoreRepository(localProgramme),

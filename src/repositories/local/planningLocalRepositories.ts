@@ -1,14 +1,16 @@
 /**
- * Phase 1 — local/mock provider persistence for planning entities.
+ * Local/mock provider persistence for planning entities.
  * Uses existing browserStorage + STORAGE_KEYS (parity with AssignmentReview local).
  */
 
 import type { MeqatiMansoobaRepository } from '@/repositories/interfaces/MeqatiMansoobaRepository'
 import type { ObjectiveRepository } from '@/repositories/interfaces/ObjectiveRepository'
+import type { ShobahRepository } from '@/repositories/interfaces/ShobahRepository'
 import type { UnitRepository } from '@/repositories/interfaces/UnitRepository'
 import type {
   MeqatiMansooba,
   PlanningObjective,
+  Shobah,
   Unit,
 } from '@/types/planning.types'
 import {
@@ -26,6 +28,14 @@ function loadMansoobas(): MeqatiMansooba[] {
 
 function saveMansoobas(rows: MeqatiMansooba[]): void {
   saveJsonToStorage(STORAGE_KEYS.meqatiMansoobas, rows)
+}
+
+function loadShobahs(): Shobah[] {
+  return loadJsonFromStorage<Shobah[]>(STORAGE_KEYS.shobahs, [])
+}
+
+function saveShobahs(rows: Shobah[]): void {
+  saveJsonToStorage(STORAGE_KEYS.shobahs, rows)
 }
 
 function loadObjectives(): PlanningObjective[] {
@@ -76,6 +86,40 @@ export class MeqatiMansoobaLocalRepository implements MeqatiMansoobaRepository {
   }
 }
 
+export class ShobahLocalRepository implements ShobahRepository {
+  loadAll(): RepositoryResult<readonly Shobah[]> {
+    return tryRepository(() => [...loadShobahs()])
+  }
+
+  getById(id: string): RepositoryResult<Shobah | undefined> {
+    return tryRepository(() => loadShobahs().find((row) => row.id === id))
+  }
+
+  listByMansoobaId(mansoobaId: string): RepositoryResult<readonly Shobah[]> {
+    return tryRepository(() =>
+      loadShobahs().filter((row) => row.mansoobaId === mansoobaId),
+    )
+  }
+
+  async saveDurable(shobah: Shobah): Promise<RepositoryResult<Shobah>> {
+    try {
+      if (!shobah.id?.trim() || !shobah.name?.trim()) {
+        return repositoryErr('Validation', 'Shobah requires id and name.')
+      }
+      if (!shobah.mansoobaId?.trim()) {
+        return repositoryErr(
+          'Validation',
+          'Shobah requires mansoobaId (belongs to one Meqati Mansooba).',
+        )
+      }
+      saveShobahs(upsertById(loadShobahs(), shobah))
+      return repositoryOk(shobah)
+    } catch (cause) {
+      return repositoryErr('StorageFailure', 'Local Shobah save failed.', cause)
+    }
+  }
+}
+
 export class ObjectiveLocalRepository implements ObjectiveRepository {
   loadAll(): RepositoryResult<readonly PlanningObjective[]> {
     return tryRepository(() => [...loadObjectives()])
@@ -93,6 +137,12 @@ export class ObjectiveLocalRepository implements ObjectiveRepository {
     )
   }
 
+  listByShobahId(shobahId: string): RepositoryResult<readonly PlanningObjective[]> {
+    return tryRepository(() =>
+      loadObjectives().filter((row) => row.shobahId === shobahId),
+    )
+  }
+
   async saveDurable(
     objective: PlanningObjective,
   ): Promise<RepositoryResult<PlanningObjective>> {
@@ -104,6 +154,12 @@ export class ObjectiveLocalRepository implements ObjectiveRepository {
         return repositoryErr(
           'Validation',
           'Objective requires mansoobaId (belongs to one Meqati Mansooba).',
+        )
+      }
+      if (!objective.shobahId?.trim()) {
+        return repositoryErr(
+          'Validation',
+          'Objective requires shobahId (belongs to one شعبہ).',
         )
       }
       saveObjectives(upsertById(loadObjectives(), objective))
@@ -140,8 +196,50 @@ export class UnitLocalRepository implements UnitRepository {
 export function clearLocalPlanningForTests(): RepositoryResult<void> {
   return tryRepository(() => {
     saveMansoobas([])
+    saveShobahs([])
     saveObjectives([])
     saveUnits([])
     return undefined
   })
+}
+
+/** Known parent ids for local activity save tests. */
+export const VERIFY_ACTIVITY_OBJECTIVE_ID = 'objective-verify-parent'
+
+/** Seed Meqati → شعبہ → اہداف so activity saveDurable can resolve objectiveId. */
+export async function seedLocalPlanningParentForTests(): Promise<void> {
+  const now = new Date().toISOString()
+  const mansooba: MeqatiMansooba = {
+    id: 'mansooba-verify-parent',
+    name: 'Verify Mansooba',
+    status: 'active',
+    createdAt: now,
+    updatedAt: now,
+    createdBy: 'verify',
+    updatedBy: 'verify',
+  }
+  const shobah: Shobah = {
+    id: 'shobah-verify-parent',
+    mansoobaId: mansooba.id,
+    name: 'Verify Shobah',
+    status: 'active',
+    createdAt: now,
+    updatedAt: now,
+    createdBy: 'verify',
+    updatedBy: 'verify',
+  }
+  const objective: PlanningObjective = {
+    id: VERIFY_ACTIVITY_OBJECTIVE_ID,
+    mansoobaId: mansooba.id,
+    shobahId: shobah.id,
+    title: 'Verify Objective',
+    status: 'active',
+    createdAt: now,
+    updatedAt: now,
+    createdBy: 'verify',
+    updatedBy: 'verify',
+  }
+  await new MeqatiMansoobaLocalRepository().saveDurable(mansooba)
+  await new ShobahLocalRepository().saveDurable(shobah)
+  await new ObjectiveLocalRepository().saveDurable(objective)
 }

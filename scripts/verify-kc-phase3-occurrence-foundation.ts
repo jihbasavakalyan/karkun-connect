@@ -23,6 +23,10 @@ import {
   resetRepositoryProviderForTests,
 } from '@/repositories/provider'
 import { clearLocalProgrammesForTests } from '@/repositories/local/localProgrammeLocalRepositories'
+import {
+  seedLocalPlanningParentForTests,
+  VERIFY_ACTIVITY_OBJECTIVE_ID,
+} from '@/repositories/local/planningLocalRepositories'
 import { clearLocalOccurrencesForTests } from '@/repositories/local/occurrenceLocalRepositories'
 import { ACTIVE_CAMPAIGN_ID } from '@/types/assignment.types'
 import type { LocalProgramme } from '@/types/localProgramme.types'
@@ -134,12 +138,14 @@ console.log('▶ local durable CRUD + Local Programme parent validation')
   resetRepositoryProviderForTests()
   clearLocalProgrammesForTests()
   clearLocalOccurrencesForTests()
+  await seedLocalPlanningParentForTests()
   const repos = getRepositories()
 
   assert.equal(repos.occurrence.loadAll().data?.length, 0)
 
   const programme: LocalProgramme = {
     id: 'programme-occurrence-verify-1',
+    objectiveId: VERIFY_ACTIVITY_OBJECTIVE_ID,
     campaignId: ACTIVE_CAMPAIGN_ID,
     name: 'Verify WI Programme',
     kind: 'weekly_ijtema',

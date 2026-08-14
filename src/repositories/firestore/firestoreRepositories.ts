@@ -135,6 +135,7 @@ import {
 import type {
   MeqatiMansooba,
   PlanningObjective,
+  Shobah,
   Unit,
 } from '@/types/planning.types'
 import type { LocalProgramme } from '@/types/localProgramme.types'
@@ -803,6 +804,7 @@ function applyBackgroundHydratePayload(input: {
   assignmentReviews: AssignmentReviewRequest[]
   planning: {
     mansoobas: MeqatiMansooba[]
+    shobahs: Shobah[]
     objectives: PlanningObjective[]
     units: Unit[]
   }
@@ -1624,10 +1626,10 @@ export class CampaignFirestoreRepository implements CampaignRepository {
     if (!links.id?.trim()) {
       return repositoryErr('Validation', 'Campaign planning links require id.')
     }
-    if (!('mansoobaId' in links) && !('objectiveIds' in links)) {
+    if (!('mansoobaId' in links) && !('objectiveIds' in links) && !('activityIds' in links)) {
       return repositoryErr(
         'Validation',
-        'Campaign planning links require mansoobaId and/or objectiveIds.',
+        'Campaign planning links require mansoobaId, objectiveIds, and/or activityIds.',
       )
     }
 
@@ -1639,6 +1641,7 @@ export class CampaignFirestoreRepository implements CampaignRepository {
     const mergePayload: {
       mansoobaId?: string
       objectiveIds?: string[]
+      activityIds?: string[]
     } = {}
     if ('mansoobaId' in links) {
       mergePayload.mansoobaId = links.mansoobaId
@@ -1647,6 +1650,11 @@ export class CampaignFirestoreRepository implements CampaignRepository {
       mergePayload.objectiveIds = links.objectiveIds
         ? [...links.objectiveIds]
         : links.objectiveIds
+    }
+    if ('activityIds' in links) {
+      mergePayload.activityIds = links.activityIds
+        ? [...links.activityIds]
+        : links.activityIds
     }
 
     try {

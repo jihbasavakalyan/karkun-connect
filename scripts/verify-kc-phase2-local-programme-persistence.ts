@@ -12,6 +12,10 @@ import {
   resetRepositoryProviderForTests,
 } from '@/repositories/provider'
 import { clearLocalProgrammesForTests } from '@/repositories/local/localProgrammeLocalRepositories'
+import {
+  seedLocalPlanningParentForTests,
+  VERIFY_ACTIVITY_OBJECTIVE_ID,
+} from '@/repositories/local/planningLocalRepositories'
 import { ACTIVE_CAMPAIGN_ID } from '@/types/assignment.types'
 import type { LocalProgramme } from '@/types/localProgramme.types'
 
@@ -54,17 +58,17 @@ console.log('▶ Firestore rules — Admin-only localProgrammes')
   assertNotIncludes(block, 'isRukn()', `${matchLine} no Rukn access`)
 }
 
-console.log('▶ provider wiring (local + firestore; Campaign injection)')
+console.log('▶ provider wiring (local + firestore; Objective + Campaign injection)')
 {
   const provider = read('src/repositories/provider.ts')
   assertIncludes(
     provider,
-    'localProgramme: new LocalProgrammeLocalRepository(campaign)',
+    'const localProgramme = new LocalProgrammeLocalRepository(objective, campaign)',
     'local LocalProgramme repo',
   )
   assertIncludes(
     provider,
-    'localProgramme: new LocalProgrammeFirestoreRepository(campaign)',
+    'const localProgramme = new LocalProgrammeFirestoreRepository(objective, campaign)',
     'firestore LocalProgramme repo',
   )
   assertIncludes(provider, 'getRepositoryProviderMode()', 'single mode switch')
@@ -77,20 +81,22 @@ console.log('▶ provider wiring (local + firestore; Campaign injection)')
   assert.ok(repos.campaign)
 }
 
-console.log('▶ local durable CRUD + Campaign parent validation')
+console.log('▶ local durable CRUD + Objective parent validation')
 {
   resetRepositoryProviderForTests()
   clearLocalProgrammesForTests()
+  await seedLocalPlanningParentForTests()
   const repos = getRepositories()
 
   assert.equal(repos.localProgramme.loadAll().data?.length, 0)
 
-  const parent = repos.campaign.getById(ACTIVE_CAMPAIGN_ID)
+  const parent = repos.objective.getById(VERIFY_ACTIVITY_OBJECTIVE_ID)
   assert.equal(parent.ok, true)
-  assert.ok(parent.ok && parent.data, 'active campaign exists for valid parent test')
+  assert.ok(parent.ok && parent.data, 'verify objective exists for valid parent test')
 
   const programme: LocalProgramme = {
     id: 'programme-verify-1',
+    objectiveId: VERIFY_ACTIVITY_OBJECTIVE_ID,
     campaignId: ACTIVE_CAMPAIGN_ID,
     name: 'Verify Weekly Ijtema Programme',
     kind: 'weekly_ijtema',
@@ -105,13 +111,16 @@ console.log('▶ local durable CRUD + Campaign parent validation')
   const saved = await repos.localProgramme.saveDurable(programme)
   assert.equal(saved.ok, true)
   assert.equal(repos.localProgramme.getById(programme.id).data?.name, programme.name)
-  assert.equal(repos.localProgramme.listByCampaignId(ACTIVE_CAMPAIGN_ID).data?.length, 1)
+  assert.equal(
+    repos.localProgramme.listByObjectiveId(VERIFY_ACTIVITY_OBJECTIVE_ID).data?.length,
+    1,
+  )
   assert.equal(repos.localProgramme.loadAll().data?.length, 1)
 
   const missingParentId = await repos.localProgramme.saveDurable({
     ...programme,
     id: 'programme-verify-bad-empty',
-    campaignId: '',
+    objectiveId: '',
   })
   assert.equal(missingParentId.ok, false)
   if (!missingParentId.ok) {
@@ -121,13 +130,20 @@ console.log('▶ local durable CRUD + Campaign parent validation')
   const unknownParent = await repos.localProgramme.saveDurable({
     ...programme,
     id: 'programme-verify-bad-unknown',
-    campaignId: 'campaign-does-not-exist',
+    objectiveId: 'objective-does-not-exist',
   })
   assert.equal(unknownParent.ok, false)
   if (!unknownParent.ok) {
     assert.equal(unknownParent.error.code, 'Validation')
   }
   assert.equal(repos.localProgramme.loadAll().data?.length, 1)
+
+  const unknownCampaign = await repos.localProgramme.saveDurable({
+    ...programme,
+    id: 'programme-verify-bad-campaign',
+    campaignId: 'campaign-does-not-exist',
+  })
+  assert.equal(unknownCampaign.ok, false)
 
   const archived = await repos.localProgramme.saveDurable({
     ...programme,
@@ -165,7 +181,8 @@ console.log('▶ Firestore durable write pattern (await writeDoc) + soft hydrate
     'permission-denied soft-skip',
   )
   assertIncludes(firestoreRepo, 'return []', 'empty on soft-skip')
-  assertIncludes(firestoreRepo, 'campaigns.getById', 'Campaign parent lookup')
+  assertIncludes(firestoreRepo, 'objectives.getById', 'Objective parent lookup')
+  assertIncludes(firestoreRepo, 'campaigns.getById', 'optional Campaign lookup')
   assertNotIncludes(firestoreRepo, 'FIRESTORE_COLLECTIONS.karkuns', 'no karkun writes')
   assertNotIncludes(firestoreRepo, 'FIRESTORE_COLLECTIONS.rukns', 'no rukn writes')
   assertNotIncludes(firestoreRepo, 'objectives[]', 'no objective dual-write')
@@ -209,29 +226,30 @@ console.log('▶ Campaign schema / objective isolation')
   assertIncludes(campaignRepo, 'Must not synchronize Objective titles', 'SoT protection note')
 
   const programmeTypes = read('src/types/localProgramme.types.ts')
-  assertIncludes(programmeTypes, 'campaignId', 'programme requires campaignId')
+  assertIncludes(programmeTypes, 'objectiveId: string', 'activity requires objectiveId')
+  assertIncludes(programmeTypes, 'campaignId?: string', 'campaignId is optional focus')
   assertNotIncludes(programmeTypes, 'mansoobaId', 'no direct mansoobaId on programme')
   assertNotIncludes(programmeTypes, 'objectiveIds', 'no objectiveIds on programme')
 }
 
-console.log('▶ Admin Local Programme UI integrity (campaignId lock)')
+console.log('▶ Admin activity UI integrity (objectiveId lock)')
 {
   const page = read('src/pages/admin/AdminPlanningPage.tsx')
-  assertIncludes(page, 'programmeCampaignId', 'locked Campaign parent state')
+  assertIncludes(page, 'activityObjectiveId', 'locked Objective parent state')
   assertIncludes(
     page,
-    'setProgrammeCampaignId(selectedCampaignId)',
-    'create locks selected Campaign',
+    'setActivityObjectiveId(selectedObjectiveIdResolved)',
+    'create locks selected Objective',
   )
-  assertIncludes(page, 'setProgrammeCampaignId(row.campaignId)', 'edit locks row Campaign')
+  assertIncludes(page, 'setActivityObjectiveId(row.objectiveId)', 'edit locks row Objective')
   assertIncludes(
     page,
-    'const campaignId = existing?.campaignId ?? parentId',
-    'save preserves original Campaign on edit',
+    'objectiveId: existing?.objectiveId ?? parentId',
+    'save preserves original Objective on edit',
   )
   assertIncludes(page, 'localProgramme.saveDurable', 'uses repository boundary')
   assertNotIncludes(page, 'objectives[]', 'no Objective dual-write in Admin UI')
-  assertNotIncludes(page, 'savePlanningLinksDurable', 'no Campaign FK edits in programme UI')
+  assertNotIncludes(page, 'Unit / Scope', 'Unit is not a planning UI concept')
 }
 
 console.log('KC Phase 2 local programme persistence verify: PASS')

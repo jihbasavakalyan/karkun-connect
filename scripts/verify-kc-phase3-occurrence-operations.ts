@@ -26,6 +26,10 @@ import {
   resetRepositoryProviderForTests,
 } from '@/repositories/provider'
 import { clearLocalProgrammesForTests } from '@/repositories/local/localProgrammeLocalRepositories'
+import {
+  seedLocalPlanningParentForTests,
+  VERIFY_ACTIVITY_OBJECTIVE_ID,
+} from '@/repositories/local/planningLocalRepositories'
 import { clearLocalOccurrencesForTests } from '@/repositories/local/occurrenceLocalRepositories'
 import { ACTIVE_CAMPAIGN_ID } from '@/types/assignment.types'
 import type { LocalProgramme } from '@/types/localProgramme.types'
@@ -45,6 +49,7 @@ function baseProgramme(
   overrides: Partial<LocalProgramme> & Pick<LocalProgramme, 'id' | 'name' | 'kind'>,
 ): LocalProgramme {
   return {
+    objectiveId: VERIFY_ACTIVITY_OBJECTIVE_ID,
     campaignId: ACTIVE_CAMPAIGN_ID,
     status: 'active',
     createdAt: now,
@@ -59,6 +64,7 @@ async function reset(): Promise<void> {
   resetRepositoryProviderForTests()
   clearLocalProgrammesForTests()
   clearLocalOccurrencesForTests()
+  await seedLocalPlanningParentForTests()
 }
 
 console.log('▶ architecture chain — History/Calendar/Notifications consume Occurrence')
@@ -288,12 +294,9 @@ console.log('▶ WI / BM remain separate SoTs — no participation engine')
   const planning = read('src/pages/admin/AdminPlanningPage.tsx')
   assert.ok(planning.includes('buildOccurrenceCalendar'), 'planning uses calendar')
   assert.ok(planning.includes('listOccurrenceHistory'), 'planning uses history')
-  assert.ok(
-    planning.includes('no duplicate') && planning.includes('event store'),
-    'planning documents single SoT',
-  )
+  assert.ok(planning.includes('نظام الاوقات'), 'schedule section is user-facing')
   assert.ok(planning.includes('repos.occurrence.loadAll'), 'loads occurrences')
-  assert.ok(planning.includes('Occurrence calendar'), 'calendar/history section')
+  assert.ok(!planning.includes('Occurrence calendar'), 'Occurrence is not user-facing')
   assert.ok(!planning.includes('participation'), 'no participation UI')
 }
 

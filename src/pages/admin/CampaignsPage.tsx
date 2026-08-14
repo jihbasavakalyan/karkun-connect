@@ -16,8 +16,8 @@ export function CampaignsPage() {
   return (
     <PageShell variant="narrow">
       <PageHeader
-        title="Campaign"
-        description="Campaign planning and monitoring for your local Jamaat."
+        title="مہم"
+        description="منتخب اہداف اور سرگرمیوں کا فوکسڈ ٹریکنگ اور عمل۔ مہم سرگرمیوں کی مالک نہیں اور نقل نہیں بناتی۔"
         actions={
           <div className="flex flex-wrap items-center gap-2">
             <GenerateCampaignReportButton size="sm" />
