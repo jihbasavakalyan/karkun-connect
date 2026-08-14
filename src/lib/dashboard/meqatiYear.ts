@@ -52,6 +52,11 @@ export function buildMeqatiYear(startYear: number): MeqatiYear {
   }
 }
 
+/** Display-only Urdu range. Does not change April→March calculation. */
+export function meqatiYearUrduRange(year: Pick<MeqatiYear, 'startYear' | 'endYear'>): string {
+  return `اپریل ${year.startYear} — مارچ ${year.endYear}`
+}
+
 /** Resolve the Meqati year containing a Karachi civil date (default: today). */
 export function resolveMeqatiYear(asOf?: Date | string): MeqatiYear {
   const dateKey = typeof asOf === 'string' ? asOf.slice(0, 10) : karachiDateKey(asOf)

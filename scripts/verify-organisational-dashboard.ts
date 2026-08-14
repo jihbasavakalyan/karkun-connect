@@ -9,6 +9,7 @@ import {
   buildMeqatiYear,
   listMeqatiPlanYears,
   meqatiYearToReportPeriod,
+  meqatiYearUrduRange,
   resolveMeqatiYear,
 } from '../src/lib/dashboard/meqatiYear'
 import {
@@ -24,6 +25,7 @@ const year = buildMeqatiYear(2026)
 assert.equal(year.key, '2026-27')
 assert.equal(year.label, '2026–27')
 assert.equal(year.rangeLabel, 'Apr 2026 – Mar 2027')
+assert.equal(meqatiYearUrduRange(year), 'اپریل 2026 — مارچ 2027')
 assert.equal(year.startDate, '2026-04-01')
 assert.equal(year.endDate, '2027-03-31')
 assert.equal(resolveMeqatiYear('2026-08-15').key, '2026-27')
@@ -101,6 +103,11 @@ const stack = readFileSync(
 )
 assert.match(stack, /ہفتہ وار اجتماع/)
 assert.match(stack, /توجہ طلب/)
+assert.match(stack, /میقاتی منصوبہ کا ڈیٹا ابھی درج نہیں کیا گیا/)
+assert.match(stack, /اہم جاری سرگرمیاں/)
+assert.doesNotMatch(stack, /CampaignHealthPanel/)
+assert.doesNotMatch(stack, /ProgressTrendsPanel/)
+assert.doesNotMatch(stack, /ActivityTimeline/)
 assert.doesNotMatch(stack, /Work Queue/)
 assert.doesNotMatch(stack, /Open work/)
 assert.doesNotMatch(stack, /Open occurrences/)
@@ -121,6 +128,13 @@ assert.match(planning, /سال کے مطابق عمل درآمد/)
 assert.match(planning, /activity-year-status-/)
 assert.doesNotMatch(planning, /Occurrence UI/)
 assert.match(planning, /normalizeActivityYearStatuses/)
+
+const nav = readFileSync(resolve('src/constants/adminNavigation.ts'), 'utf8')
+assert.match(nav, /میقاتی منصوبہ/)
+assert.match(nav, /باہمی ربط/)
+assert.doesNotMatch(nav, /label: 'Activities'/)
+assert.doesNotMatch(nav, /جاری سرگرمیاں/)
+assert.doesNotMatch(nav, /label: 'تنظیم'/)
 
 const types = readFileSync(resolve('src/types/localProgramme.types.ts'), 'utf8')
 assert.match(types, /yearStatuses\?:/)

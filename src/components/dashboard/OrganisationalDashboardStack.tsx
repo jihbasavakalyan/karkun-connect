@@ -1,32 +1,28 @@
 /**
  * Post-campaign organisational Dashboard body (presentation).
- * Status / attention / quick actions / reports — not a reminder board.
+ * Status / attention / quick actions — not a campaign command centre.
  */
 
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { CampaignExtensionNotice } from '@/components/campaign/CampaignExtensionNotice'
 import { AdminQuickActionsPanel } from '@/components/mission-control/AdminQuickActionsPanel'
-import { ActivityTimeline } from '@/components/mission-control/ActivityTimeline'
-import { CampaignHealthPanel } from '@/components/mission-control/CampaignHealthPanel'
-import { ProgressTrendsPanel } from '@/components/mission-control/ProgressTrendsPanel'
 import { WidgetErrorBoundary } from '@/components/mission-control/WidgetErrorBoundary'
 import { Icon } from '@/components/ui/Icon'
 import { ROUTES } from '@/constants/routes'
 import type { QuickActionItem } from '@/lib/missionControl/adminCommandCenterWorkflow'
+import { meqatiYearUrduRange } from '@/lib/dashboard/meqatiYear'
 import type {
   MeqatiYearActivityStatus,
   OrganisationalSituation,
+  ShobahDrillActivity,
   ShobahStatusRow,
 } from '@/lib/dashboard/organisationalSituation'
 
 type OrganisationalDashboardStackProps = {
   situation: OrganisationalSituation
   quickActions: QuickActionItem[]
-  campaignHealth: Parameters<typeof CampaignHealthPanel>[0]['metrics']
-  trends: Parameters<typeof ProgressTrendsPanel>[0]['trends']
   metricsReady: boolean
-  backgroundReady: boolean
 }
 
 const STATUS_LABEL: Record<MeqatiYearActivityStatus, string> = {
@@ -51,6 +47,17 @@ function formatFreshness(iso: string): string {
   }
 }
 
+function EmptyMeqatiNote() {
+  return (
+    <div className="orgdash-empty">
+      <p className="orgdash-empty-copy">میقاتی منصوبہ کا ڈیٹا ابھی درج نہیں کیا گیا</p>
+      <Link to={ROUTES.ADMIN_PLANNING} className="orgdash-card-link">
+        میقاتی منصوبہ دیکھیں
+      </Link>
+    </div>
+  )
+}
+
 function IjtemaSnapshot({ situation }: { situation: OrganisationalSituation }) {
   const ijtema = situation.ijtema
   return (
@@ -69,22 +76,14 @@ function IjtemaSnapshot({ situation }: { situation: OrganisationalSituation }) {
       {!ijtema.hasOpenEvent ? (
         <p className="orgdash-muted">اس وقت کوئی کھلا اجتماع نہیں۔</p>
       ) : (
-        <div className="orgdash-ijtema-grid">
-          <div className="orgdash-ijtema-block">
+        <div className="orgdash-ijtema">
+          <div className="orgdash-ijtema-primary">
             <p className="orgdash-kicker">حاضری شرکاء</p>
-            <dl className="orgdash-stat-row">
-              <div>
-                <dt>حاضر</dt>
-                <dd>{ijtema.present}</dd>
-              </div>
-              <div>
-                <dt>اہل</dt>
-                <dd>{ijtema.eligible}</dd>
-              </div>
-              <div>
-                <dt>شرکت %</dt>
-                <dd>{ijtema.attendancePct}%</dd>
-              </div>
+            <p className="orgdash-ijtema-number">{ijtema.present}</p>
+            <p className="orgdash-hint">
+              اہل {ijtema.eligible} · شرکت {ijtema.attendancePct}%
+            </p>
+            <dl className="orgdash-ijtema-split">
               <div>
                 <dt>مرد</dt>
                 <dd>{ijtema.malePresent}</dd>
@@ -95,10 +94,10 @@ function IjtemaSnapshot({ situation }: { situation: OrganisationalSituation }) {
               </div>
             </dl>
           </div>
-          <div className="orgdash-ijtema-block">
+          <div className="orgdash-ijtema-report">
             <p className="orgdash-kicker">ارکان کی حاضری رپورٹ</p>
             <p className="orgdash-hint">شرکاء کی حاضری سے الگ میٹرک۔</p>
-            <dl className="orgdash-stat-row">
+            <dl className="orgdash-stat-row orgdash-stat-row-3">
               <div>
                 <dt>جمع</dt>
                 <dd>{ijtema.ruknsSubmitted}</dd>
@@ -122,7 +121,7 @@ function IjtemaSnapshot({ situation }: { situation: OrganisationalSituation }) {
 function MeqatiYearSummary({ situation }: { situation: OrganisationalSituation }) {
   const { year, counts, empty, mansooba } = situation.meqati
   return (
-    <section className="orgdash-card" aria-label="میقاتی منصوبہ — موجودہ سال" dir="rtl" lang="ur">
+    <section className="orgdash-card orgdash-card-foundation" aria-label="میقاتی منصوبہ — موجودہ سال" dir="rtl" lang="ur">
       <div className="orgdash-card-head">
         <h2 className="orgdash-card-title">
           <span className="orgdash-card-icon orgdash-card-icon-teal" aria-hidden="true">
@@ -130,51 +129,51 @@ function MeqatiYearSummary({ situation }: { situation: OrganisationalSituation }
           </span>
           میقاتی منصوبہ — موجودہ سال
         </h2>
-        <span className="orgdash-card-meta">
-          {year.label}
-          <span className="orgdash-card-meta-sub"> ({year.rangeLabel})</span>
-        </span>
+        <div className="orgdash-card-meta">
+          <span className="orgdash-card-meta-year">{year.label}</span>
+          <span className="orgdash-card-meta-sub">{meqatiYearUrduRange(year)}</span>
+        </div>
       </div>
       {!mansooba || empty ? (
-        <p className="orgdash-muted">
-          اس سال کے لیے میقاتی سرگرمیاں ابھی درج نہیں۔ خالی حالت درست ہے — کوئی تخمینی اعداد نہیں۔
-        </p>
+        <EmptyMeqatiNote />
       ) : (
-        <dl className="orgdash-stat-row orgdash-stat-row-5">
-          <div>
-            <dt>سرگرمیاں</dt>
-            <dd>{counts.activities}</dd>
-          </div>
-          <div>
-            <dt>مکمل</dt>
-            <dd>{counts.completed}</dd>
-          </div>
-          <div>
-            <dt>جاری</dt>
-            <dd>{counts.inProgress}</dd>
-          </div>
-          <div>
-            <dt>باقی</dt>
-            <dd>{counts.remaining}</dd>
-          </div>
-          <div>
-            <dt>پیش رفت</dt>
-            <dd>{counts.progressPct}%</dd>
-          </div>
-        </dl>
+        <>
+          <dl className="orgdash-stat-row orgdash-stat-row-5">
+            <div>
+              <dt>سرگرمیاں</dt>
+              <dd>{counts.activities}</dd>
+            </div>
+            <div>
+              <dt>مکمل</dt>
+              <dd>{counts.completed}</dd>
+            </div>
+            <div>
+              <dt>جاری</dt>
+              <dd>{counts.inProgress}</dd>
+            </div>
+            <div>
+              <dt>باقی</dt>
+              <dd>{counts.remaining}</dd>
+            </div>
+            <div>
+              <dt>پیش رفت</dt>
+              <dd>{counts.progressPct}%</dd>
+            </div>
+          </dl>
+          {counts.activities > 0 ? (
+            <div
+              className="orgdash-bar"
+              role="progressbar"
+              aria-valuenow={counts.progressPct}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label={`میقاتی پیش رفت ${counts.progressPct}%`}
+            >
+              <div className="orgdash-bar-fill" style={{ width: `${counts.progressPct}%` }} />
+            </div>
+          ) : null}
+        </>
       )}
-      {counts.activities > 0 ? (
-        <div
-          className="orgdash-bar"
-          role="progressbar"
-          aria-valuenow={counts.progressPct}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-label={`میقاتی پیش رفت ${counts.progressPct}%`}
-        >
-          <div className="orgdash-bar-fill" style={{ width: `${counts.progressPct}%` }} />
-        </div>
-      ) : null}
     </section>
   )
 }
@@ -192,11 +191,11 @@ function ShobahStatusSection({ rows, empty }: { rows: ShobahStatusRow[]; empty: 
           میقاتی منصوبہ — شعبہ وار صورتحال
         </h2>
         <Link to={ROUTES.ADMIN_PLANNING} className="orgdash-card-link">
-          منصوبہ بندی
+          میقاتی منصوبہ دیکھیں
         </Link>
       </div>
       {empty || rows.length === 0 ? (
-        <p className="orgdash-muted">شعبہ وار سرگرمیاں دستیاب نہیں۔</p>
+        <EmptyMeqatiNote />
       ) : (
         <>
           <div className="orgdash-table-wrap">
@@ -285,7 +284,7 @@ function ShobahStatusSection({ rows, empty }: { rows: ShobahStatusRow[]; empty: 
                   ))
                 )}
                 <Link to={ROUTES.ADMIN_PLANNING} className="orgdash-card-link">
-                  رپورٹ / منصوبہ کھولیں
+                  رپورٹ / میقاتی منصوبہ کھولیں
                 </Link>
               </div>
             ))}
@@ -296,8 +295,11 @@ function ShobahStatusSection({ rows, empty }: { rows: ShobahStatusRow[]; empty: 
 }
 
 function AttentionCompact({ situation }: { situation: OrganisationalSituation }) {
+  const visible = situation.attention.categories.filter(
+    (row) => row.count > 0 && row.id !== 'other',
+  )
   return (
-    <section className="orgdash-card" aria-label="توجہ طلب" dir="rtl" lang="ur">
+    <section className="orgdash-card orgdash-card-quiet" aria-label="توجہ طلب" dir="rtl" lang="ur">
       <div className="orgdash-card-head">
         <h2 className="orgdash-card-title">
           <span className="orgdash-card-icon orgdash-card-icon-amber" aria-hidden="true">
@@ -305,15 +307,12 @@ function AttentionCompact({ situation }: { situation: OrganisationalSituation })
           </span>
           توجہ طلب
         </h2>
-        <Link to={situation.attention.detailRoute} className="orgdash-card-link">
-          تفصیل دیکھیں
-        </Link>
       </div>
-      {situation.attention.total === 0 ? (
+      {visible.length === 0 ? (
         <p className="orgdash-muted">اس وقت کوئی توجہ طلب معاملہ نہیں۔</p>
       ) : (
         <ul className="orgdash-attention-grid">
-          {situation.attention.categories.map((row) => (
+          {visible.map((row) => (
             <li key={row.id} className="orgdash-attention-chip">
               <span className="orgdash-attention-count">{row.count}</span>
               <span className="orgdash-attention-label">{row.label}</span>
@@ -325,28 +324,81 @@ function AttentionCompact({ situation }: { situation: OrganisationalSituation })
   )
 }
 
+type OngoingActivity = ShobahDrillActivity & { objectiveTitle: string }
+
+function collectOngoingActivities(rows: readonly ShobahStatusRow[]): OngoingActivity[] {
+  const list: OngoingActivity[] = []
+  for (const shobah of rows) {
+    for (const objective of shobah.objectives) {
+      for (const activity of objective.activities) {
+        if (activity.status === 'in_progress' || activity.status === 'remaining') {
+          list.push({ ...activity, objectiveTitle: objective.title })
+        }
+      }
+    }
+  }
+  return list.sort((a, b) => {
+    if (a.status === b.status) return a.name.localeCompare(b.name)
+    return a.status === 'in_progress' ? -1 : 1
+  })
+}
+
 function ImportantActivities({ situation }: { situation: OrganisationalSituation }) {
+  const rows = collectOngoingActivities(situation.meqati.shobahs)
   return (
-    <section className="orgdash-card" aria-label="اہم سرگرمیوں کی صورتحال" dir="rtl" lang="ur">
+    <section className="orgdash-card" aria-label="اہم جاری سرگرمیاں" dir="rtl" lang="ur">
       <div className="orgdash-card-head">
         <h2 className="orgdash-card-title">
-          <span className="orgdash-card-icon orgdash-card-icon-blue" aria-hidden="true">
-            <Icon name="pulse-healthy" size="sm" />
+          <span className="orgdash-card-icon orgdash-card-icon-teal" aria-hidden="true">
+            <Icon name="clipboard" size="sm" />
           </span>
-          اہم سرگرمیوں کی صورتحال
+          اہم جاری سرگرمیاں
         </h2>
+        <Link to={ROUTES.ADMIN_PLANNING} className="orgdash-card-link">
+          میقاتی منصوبہ دیکھیں
+        </Link>
       </div>
-      <ul className="orgdash-important-grid">
-        {situation.importantActivities.map((row) => (
-          <li key={row.id}>
-            <Link to={row.route} className="orgdash-important-card">
-              <p className="orgdash-metric-label">{row.label}</p>
-              <p className="orgdash-metric-value">{row.value}</p>
-              {row.hint ? <p className="orgdash-hint">{row.hint}</p> : null}
-            </Link>
-          </li>
-        ))}
-      </ul>
+      {situation.meqati.empty ? (
+        <EmptyMeqatiNote />
+      ) : rows.length === 0 ? (
+        <p className="orgdash-muted">اس سال کی جاری یا باقی سرگرمیاں دستیاب نہیں۔</p>
+      ) : (
+        <>
+          <div className="orgdash-table-wrap">
+            <table className="orgdash-table">
+              <thead>
+                <tr>
+                  <th>سرگرمی</th>
+                  <th>ذمہ دار</th>
+                  <th>نظام الاوقات</th>
+                  <th>صورتحال</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((row) => (
+                  <tr key={row.id}>
+                    <td>{row.name}</td>
+                    <td>{row.responsibleName ?? 'غیر متعین'}</td>
+                    <td>{row.scheduleLabel}</td>
+                    <td>{yearStatusLabel(row.status)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <ul className="orgdash-activity-cards">
+            {rows.map((row) => (
+              <li key={`m-${row.id}`} className="orgdash-activity-card">
+                <p className="orgdash-drill-activity">{row.name}</p>
+                <p className="orgdash-hint">
+                  {yearStatusLabel(row.status)} · ذمہ دار: {row.responsibleName ?? 'غیر متعین'} · نظام
+                  الاوقات: {row.scheduleLabel}
+                </p>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
     </section>
   )
 }
@@ -355,40 +407,26 @@ function ActiveCampaignCompact({ situation }: { situation: OrganisationalSituati
   const campaign = situation.activeCampaign
   if (!campaign) {
     return (
-      <section className="orgdash-card orgdash-card-quiet" aria-label="فعال مہم" dir="rtl" lang="ur">
-        <h2 className="orgdash-card-title">فعال مہم</h2>
-        <p className="orgdash-muted">اس وقت کوئی فعال مہم نہیں۔ مہم لائبریری دستیاب ہے۔</p>
+      <p className="orgdash-campaign-line" dir="rtl" lang="ur">
+        فعال مہم: کوئی فعال مہم نہیں
         <Link to={ROUTES.ADMIN_CAMPAIGN} className="orgdash-card-link">
-          مہم لائبریری
+          مہمات دیکھیں
         </Link>
-      </section>
+      </p>
     )
   }
 
   return (
-    <section className="orgdash-card" aria-label="فعال مہم" dir="rtl" lang="ur">
+    <section className="orgdash-card orgdash-card-quiet" aria-label="فعال مہم" dir="rtl" lang="ur">
       <div className="orgdash-card-head">
-        <h2 className="orgdash-card-title">
-          <span className="orgdash-card-icon orgdash-card-icon-teal" aria-hidden="true">
-            <Icon name="megaphone" size="sm" />
-          </span>
-          فعال مہم
-        </h2>
+        <h2 className="orgdash-card-title">فعال مہم</h2>
         <Link to={campaign.route} className="orgdash-card-link">
-          مہم کھولیں
+          مہمات دیکھیں
         </Link>
       </div>
       <CampaignExtensionNotice />
       <p className="orgdash-campaign-name">{campaign.name}</p>
       <p className="orgdash-hint">{campaign.periodLabel}</p>
-      <p className="orgdash-metric-value">{campaign.progressPct}%</p>
-      {campaign.focusedLabels.length > 0 ? (
-        <ul className="orgdash-focus-list">
-          {campaign.focusedLabels.map((label) => (
-            <li key={label}>{label}</li>
-          ))}
-        </ul>
-      ) : null}
     </section>
   )
 }
@@ -396,11 +434,9 @@ function ActiveCampaignCompact({ situation }: { situation: OrganisationalSituati
 export function OrganisationalDashboardStack({
   situation,
   quickActions,
-  campaignHealth,
-  trends,
   metricsReady,
-  backgroundReady,
 }: OrganisationalDashboardStackProps) {
+  void metricsReady
   return (
     <div className="orgdash-stack">
       <WidgetErrorBoundary title="ہفتہ وار اجتماع">
@@ -425,7 +461,7 @@ export function OrganisationalDashboardStack({
         </div>
       </WidgetErrorBoundary>
 
-      <WidgetErrorBoundary title="اہم سرگرمیاں">
+      <WidgetErrorBoundary title="اہم جاری سرگرمیاں">
         <ImportantActivities situation={situation} />
       </WidgetErrorBoundary>
 
@@ -433,30 +469,9 @@ export function OrganisationalDashboardStack({
         <ActiveCampaignCompact situation={situation} />
       </WidgetErrorBoundary>
 
-      <WidgetErrorBoundary title="Campaign Health">
-        <CampaignHealthPanel
-          metrics={campaignHealth}
-          metricsReady={metricsReady}
-          backgroundReady={backgroundReady}
-        />
-      </WidgetErrorBoundary>
-
-      <WidgetErrorBoundary title="Progress Trends">
-        <ProgressTrendsPanel trends={trends} ready={backgroundReady} />
-      </WidgetErrorBoundary>
-
-      <WidgetErrorBoundary title="Activity Timeline">
-        <ActivityTimeline ready={backgroundReady} limit={12} />
-      </WidgetErrorBoundary>
-
       <p className="orgdash-freshness" dir="rtl" lang="ur">
         آخری تازہ کاری: {formatFreshness(situation.generatedAt)}
-        {situation.metricsLive ? (
-          <>
-            {' '}
-            · تمام ڈیٹا لائیو جمع شدہ معلومات پر مبنی ہے
-          </>
-        ) : null}
+        {situation.metricsLive ? <> · تمام ڈیٹا لائیو جمع شدہ معلومات پر مبنی ہے</> : null}
       </p>
     </div>
   )

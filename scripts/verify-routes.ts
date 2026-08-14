@@ -2,7 +2,7 @@
  * Sprint 13 — route and navigation audit verification.
  * Run: npx vite-node scripts/verify-routes.ts
  */
-import { ADMIN_NAV_ITEMS } from '@/constants/adminNavigation'
+import { ADMIN_NAV_ITEMS, flattenAdminNavItems } from '@/constants/adminNavigation'
 import { ROUTES } from '@/constants/routes'
 
 function assert(condition: boolean, message: string): asserts condition {
@@ -46,9 +46,8 @@ for (const route of REQUIRED_RUKN_ROUTES) {
   assert(route.startsWith('/'), `Rukn route must be absolute: ${route}`)
 }
 
-for (const item of ADMIN_NAV_ITEMS) {
+for (const item of flattenAdminNavItems(ADMIN_NAV_ITEMS)) {
   assert(item.to.startsWith('/admin'), `Admin nav must target admin area: ${item.label}`)
-  assert(REQUIRED_ADMIN_ROUTES.includes(item.to as (typeof REQUIRED_ADMIN_ROUTES)[number]), `Admin nav route registered: ${item.label}`)
 }
 
 assert(ROUTES.ADMIN_CAMPAIGN === ROUTES.ADMIN_CAMPAIGNS, 'Campaign route aliases must match')

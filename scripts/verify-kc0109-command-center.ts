@@ -63,9 +63,10 @@ const stack = readFileSync(
   'utf8',
 )
 assert(command.includes('OrganisationalDashboardStack'), 'organisational dashboard stack mounted')
-assert(stack.includes('CampaignHealthPanel'), 'Campaign Health retained as deeper analytics')
-assert(stack.includes('ProgressTrendsPanel'), 'Progress Trends mounted')
-assert(stack.includes('ActivityTimeline'), 'Activity Timeline mounted')
+assert(!stack.includes('CampaignHealthPanel'), 'Campaign Health removed from Home')
+assert(!stack.includes('ProgressTrendsPanel'), 'Campaign Trends removed from Home')
+assert(!stack.includes('ActivityTimeline'), 'campaign Activity Timeline removed from Home')
+assert(stack.includes('ہفتہ وار اجتماع'), 'Weekly Ijtema remains on Home')
 assert(!stack.includes("Today's Mission"), "Today's Mission retired from Dashboard presentation")
 assert(!command.includes('WeeklyIjtemaDashboardKpiCard'), 'no duplicate Weekly Ijtema card')
 assert(!command.includes('MonthlyBaitulMaalDashboardKpiCard'), 'no duplicate Baitul Maal card')

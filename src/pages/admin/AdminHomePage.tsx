@@ -135,7 +135,9 @@ export function AdminHomePage() {
             metricsReady={false}
           />
         </WidgetErrorBoundary>
-        <AskDigitalRafeeqCard compact onOpen={openDigitalRafeeqAssistant} />
+        <div className="orgdash-rafeeq">
+          <AskDigitalRafeeqCard compact onOpen={openDigitalRafeeqAssistant} />
+        </div>
       </div>
     )
   }
@@ -227,7 +229,9 @@ export function AdminHomePage() {
         />
       </WidgetErrorBoundary>
       <WidgetErrorBoundary title="Ask Digital Rafeeq" compact>
-        <AskDigitalRafeeqCard compact onOpen={openDigitalRafeeqAssistant} />
+        <div className="orgdash-rafeeq">
+          <AskDigitalRafeeqCard compact onOpen={openDigitalRafeeqAssistant} />
+        </div>
       </WidgetErrorBoundary>
     </div>
   )

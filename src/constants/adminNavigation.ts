@@ -1,5 +1,4 @@
-import { ACTIVITIES_MODULES } from '@/lib/activitiesNavigation'
-import { adminCommunicationPath, ROUTES } from '@/constants/routes'
+import { adminFollowUpPath, ROUTES } from '@/constants/routes'
 import type { IconName } from '@/design-system/iconNames'
 
 /** Single destination in the admin sidebar / mobile nav. */
@@ -9,6 +8,8 @@ export type AdminNavItem = {
   icon: IconName
   to: string
   end?: boolean
+  /** Visual weight only — does not change routing. */
+  emphasis?: 'home' | 'foundation' | 'muted'
 }
 
 /**
@@ -30,68 +31,48 @@ export function isAdminNavGroup(entry: AdminNavEntry): entry is AdminNavGroup {
 }
 
 /**
- * KC-0115 — V1 frozen Information Architecture.
- *
- * Top level: Dashboard · Campaign · Rukn · Karkun · Muttafiqeen · Connections ·
- * Activities · Communication · Settings
- * (Help remains footer-only.)
+ * Admin landing + functional modules.
+ * Home is the landing surface, not a functional organisational module.
+ * میقاتی منصوبہ is the permanent planning foundation.
+ * Existing routes are reused — no new destinations.
  */
 export const ADMIN_NAV_ITEMS: AdminNavEntry[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: 'home', to: ROUTES.ADMIN, end: true },
+  { id: 'home', label: 'ہوم', icon: 'home', to: ROUTES.ADMIN, end: true, emphasis: 'home' },
   {
-    id: 'mission-workspace',
-    label: 'Mission Workspace',
+    id: 'planning',
+    label: 'میقاتی منصوبہ',
     icon: 'flag',
-    to: ROUTES.ADMIN_MISSION_WORKSPACE,
+    to: ROUTES.ADMIN_PLANNING,
+    emphasis: 'foundation',
   },
-  { id: 'inbox', label: 'Inbox', icon: 'message', to: ROUTES.ADMIN_INBOX },
-  { id: 'campaign', label: 'Campaign', icon: 'chart', to: ROUTES.ADMIN_CAMPAIGN },
-  { id: 'reports', label: 'Reports', icon: 'file-text', to: ROUTES.ADMIN_REPORTS },
-  { id: 'rukn', label: 'Rukn', icon: 'user', to: ROUTES.ADMIN_RUKN },
-  { id: 'karkun', label: 'Karkun', icon: 'users', to: ROUTES.ADMIN_KARKUN },
-  { id: 'muttafiqeen', label: 'Muttafiqeen', icon: 'users', to: ROUTES.ADMIN_MUTTAFIQEEN },
-  { id: 'assignments', label: 'Connections', icon: 'link', to: ROUTES.ADMIN_ASSIGNMENTS },
+  { id: 'rukn', label: 'ارکان', icon: 'user', to: ROUTES.ADMIN_RUKN },
+  { id: 'karkun', label: 'کارکنان', icon: 'users', to: ROUTES.ADMIN_KARKUN },
+  { id: 'muttafiqeen', label: 'متفقین', icon: 'heart', to: ROUTES.ADMIN_MUTTAFIQEEN },
+  { id: 'assignments', label: 'باہمی ربط', icon: 'link', to: ROUTES.ADMIN_ASSIGNMENTS },
+  { id: 'weekly-ijtema', label: 'ہفتہ وار اجتماع', icon: 'calendar', to: ROUTES.ADMIN_WEEKLY_IJTEMA },
   {
-    id: 'activities',
-    label: 'Activities',
-    icon: 'clipboard',
-    to: ROUTES.ADMIN_ACTIVITIES,
-    children: ACTIVITIES_MODULES.map((mod) => ({
-      id: mod.id,
-      label: mod.label,
-      icon: mod.icon,
-      to: mod.to,
-    })),
+    id: 'monthly-baitul-maal',
+    label: 'بیت المال',
+    icon: 'handshake',
+    to: ROUTES.ADMIN_MONTHLY_BAITUL_MAAL,
   },
   {
-    id: 'communication',
-    label: 'Communication',
-    icon: 'megaphone',
-    to: ROUTES.ADMIN_COMMUNICATION,
-    children: [
-      {
-        id: 'broadcast',
-        label: 'Broadcast',
-        icon: 'megaphone',
-        to: adminCommunicationPath('broadcast'),
-      },
-      {
-        id: 'saved-lists',
-        label: 'Saved Lists',
-        icon: 'clipboard',
-        to: ROUTES.ADMIN_LISTS,
-      },
-      {
-        id: 'communication-history',
-        label: 'History',
-        icon: 'file-text',
-        to: ROUTES.ADMIN_COMMUNICATION_HISTORY,
-      },
-    ],
+    id: 'tarbiyah',
+    label: 'تربیت و رہنمائی',
+    icon: 'sprout',
+    to: adminFollowUpPath(),
   },
-  { id: 'planning', label: 'Planning', icon: 'flag', to: ROUTES.ADMIN_PLANNING },
-  { id: 'settings', label: 'Settings', icon: 'settings', to: ROUTES.ADMIN_SETTINGS },
-  { id: 'help', label: 'Help', icon: 'help', to: ROUTES.ADMIN_HELP },
+  { id: 'communication', label: 'مواصلات', icon: 'megaphone', to: ROUTES.ADMIN_COMMUNICATION },
+  { id: 'reports', label: 'رپورٹس', icon: 'file-text', to: ROUTES.ADMIN_REPORTS },
+  {
+    id: 'campaign',
+    label: 'مہمات',
+    icon: 'chart',
+    to: ROUTES.ADMIN_CAMPAIGN,
+    emphasis: 'muted',
+  },
+  { id: 'settings', label: 'ترتیبات', icon: 'settings', to: ROUTES.ADMIN_SETTINGS },
+  { id: 'help', label: 'رہنمائی', icon: 'help', to: ROUTES.ADMIN_HELP },
 ]
 
 /** Flat leaves for mobile strip and active-route matching. */

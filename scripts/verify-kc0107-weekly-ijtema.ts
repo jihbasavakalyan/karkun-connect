@@ -106,8 +106,9 @@ const stack = readFileSync(
   resolve('src/components/dashboard/OrganisationalDashboardStack.tsx'),
   'utf8',
 )
-assert(stack.includes('CampaignHealthPanel'), 'dashboard mounts Campaign Health (includes Weekly Ijtema %)')
+assert(stack.includes('ہفتہ وار اجتماع'), 'dashboard keeps Weekly Ijtema snapshot')
 assert(!stack.includes('WeeklyIjtemaDashboardKpiCard'), 'no duplicate Weekly Ijtema KPI card on dashboard')
+assert(!stack.includes('CampaignHealthPanel'), 'Campaign Health is not a Home block')
 
 const routes = readFileSync(resolve('src/constants/routes.ts'), 'utf8')
 assert(routes.includes('ADMIN_WEEKLY_IJTEMA'), 'admin weekly ijtema route constant present')

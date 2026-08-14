@@ -12,20 +12,17 @@ type AdminQuickActionsPanelProps = {
 
 export function AdminQuickActionsPanel({ actions }: AdminQuickActionsPanelProps) {
   return (
-    <section className="exdash-panel cc-quick-actions" aria-label="فوری اقدامات" dir="rtl" lang="ur">
+    <section className="exdash-panel cc-quick-actions orgdash-quick" aria-label="فوری اقدامات" dir="rtl" lang="ur">
       <div className="exdash-section-head">
-        <h2 className="exdash-section-title exdash-section-title-sky">
-          <span className="exdash-section-icon exdash-section-icon-sky" aria-hidden="true">
-            <Icon name="sparkles" size="sm" />
-          </span>
-          فوری اقدامات
-        </h2>
-        <span className="exdash-section-meta">براہ راست کارروائی</span>
+        <h2 className="orgdash-card-title">فوری اقدامات</h2>
       </div>
-      <ul className="cc-quick-grid">
-        {actions.map((action) => (
+      <ul className="cc-quick-grid orgdash-quick-grid">
+        {actions.map((action, index) => (
           <li key={action.id}>
-            <Link to={action.route} className="cc-quick-btn">
+            <Link
+              to={action.route}
+              className={index < 4 ? 'orgdash-quick-btn orgdash-quick-btn-primary' : 'orgdash-quick-btn'}
+            >
               <Icon name={action.icon} size="sm" />
               <span>{action.label}</span>
             </Link>

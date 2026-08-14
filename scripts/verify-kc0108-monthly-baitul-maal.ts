@@ -143,7 +143,9 @@ const stack = readFileSync(
   resolve('src/components/dashboard/OrganisationalDashboardStack.tsx'),
   'utf8',
 )
-assert(stack.includes('CampaignHealthPanel'), 'dashboard mounts Campaign Health (includes Baitul Maal %)')
+const nav = readFileSync(resolve('src/constants/adminNavigation.ts'), 'utf8')
+assert(nav.includes('بیت المال'), 'Baitul Maal remains in Admin navigation')
+assert(!stack.includes('CampaignHealthPanel'), 'Campaign Health is not a Home block')
 assert(!stack.includes('MonthlyBaitulMaalDashboardKpiCard'), 'no duplicate Baitul Maal KPI card on dashboard')
 assert(!stack.includes('WeeklyIjtemaDashboardKpiCard'), 'Weekly Ijtema KPI card still not duplicated')
 

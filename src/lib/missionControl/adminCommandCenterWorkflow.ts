@@ -317,7 +317,7 @@ export function buildAdminQuickActions(): QuickActionItem[] {
     },
     {
       id: 'update-activity',
-      label: 'سرگرمی کی تازہ کاری',
+      label: 'سرگرمی کی صورتحال',
       route: ROUTES.ADMIN_PLANNING,
       icon: 'refresh',
     },
@@ -329,7 +329,7 @@ export function buildAdminQuickActions(): QuickActionItem[] {
     },
     {
       id: 'record-ijtema',
-      label: 'اجتماع ہفتہ وار',
+      label: 'ہفتہ وار اجتماع',
       route: adminWeeklyIjtemaPath(),
       icon: 'calendar',
     },

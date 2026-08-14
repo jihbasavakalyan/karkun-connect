@@ -63,14 +63,18 @@ export function AdminTopBar({ alertCount = 0, onMenuToggle }: AdminTopBarProps) 
             <Logo size="sm" />
           </div>
           <div className="hidden min-w-0 lg:block">
-            <p className="truncate text-sm font-semibold text-text-heading">{campaignName || 'Command Center'}</p>
-            <p className="truncate text-xs text-secondary">{duration}</p>
+            <p className="truncate text-sm font-semibold text-text-heading">
+              {campaignName || 'کارکن کنیکٹ'}
+            </p>
+            {timeline?.status === 'active' && duration ? (
+              <p className="truncate text-xs text-secondary">{duration}</p>
+            ) : null}
           </div>
-          {timeline && (
+          {timeline?.status === 'active' ? (
             <EnterpriseBadge variant={timelineBadgeVariant(timeline.status)}>
-              {timeline.status}
+              فعال مہم
             </EnterpriseBadge>
-          )}
+          ) : null}
         </div>
 
         <form onSubmit={handleSearch} className="order-last w-full sm:order-none sm:max-w-xs lg:max-w-md lg:flex-1">
@@ -82,7 +86,7 @@ export function AdminTopBar({ alertCount = 0, onMenuToggle }: AdminTopBarProps) 
             type="search"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search Karkun, Rukn, connections…"
+            placeholder="ارکان، کارکنان…"
             className="w-full rounded-md border border-border bg-surface-muted px-2.5 py-1.5 text-sm text-text-heading placeholder:text-secondary-light focus:border-primary-light focus:outline-none focus:ring-2 focus:ring-primary-muted"
           />
         </form>
