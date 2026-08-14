@@ -1,17 +1,16 @@
 /**
  * Admin organisational Dashboard — derived read model.
- * Reuses people, Ijtema, Meqati report, health slices. No new collections.
- * Year status is classified from existing OccurrenceExecutionState via
- * buildMansoobaActivityReport programme rows (scheduled / occurred / completed / pending).
+ * Reuses people, Ijtema, health slices. No new collections.
+ * Year status is the Admin-maintained map on the existing سرگرمی
+ * (`localProgrammes.yearStatuses[yearKey]`). Occurrence is not the source.
  */
 
 import { ROUTES, adminAssignmentsPath, adminCompliancePath, adminMissionWorkspacePath } from '@/constants/routes'
 import { getRuknById } from '@/data/ruknMaster'
 import {
-  buildMansoobaActivityReport,
-  type ProgrammeActivityRow,
-} from '@/lib/mansoobaReporting/buildMansoobaActivityReport'
-import { karachiDateKey } from '@/lib/mansoobaReporting/periods'
+  resolveActivityYearStatus,
+  type ActivityYearStatus,
+} from '@/lib/planning/activityYearStatus'
 import { getPeopleStatistics } from '@/lib/peopleStore'
 import { unwrapRepository } from '@/repositories/errors'
 import { getRepositories } from '@/repositories/provider'
@@ -29,22 +28,11 @@ import {
   getCampaignTimeline,
 } from '@/services/campaignService'
 import { getWeeklyIjtemaDashboardKpi } from '@/services/weeklyIjtemaService'
-import {
-  getAllMonthlyBaitulMaalCycles,
-  getAllMonthlyBaitulMaalSubmissions,
-} from '@/stores/monthlyBaitulMaalStore'
-import {
-  getAllWeeklyIjtemaEvents,
-  getAllWeeklyIjtemaSubmissions,
-} from '@/stores/weeklyIjtemaStore'
 import type { LocalProgramme, ProgrammeFrequency } from '@/types/localProgramme.types'
 import type { MeqatiMansooba, PlanningObjective, Shobah } from '@/types/planning.types'
-import {
-  meqatiYearToReportPeriod,
-  type MeqatiYear,
-} from './meqatiYear'
+import type { MeqatiYear } from './meqatiYear'
 
-export type MeqatiYearActivityStatus = 'completed' | 'in_progress' | 'remaining'
+export type MeqatiYearActivityStatus = ActivityYearStatus
 
 export type OrganisationalStatusCounts = {
   activities: number
@@ -57,7 +45,8 @@ export type OrganisationalStatusCounts = {
 export type ShobahDrillActivity = {
   id: string
   name: string
-  status: MeqatiYearActivityStatus
+  /** null = unset for this Meqati year (honest empty; not inferred as باقی). */
+  status: MeqatiYearActivityStatus | null
   responsibleName: string | null
   scheduleLabel: string
 }
@@ -143,18 +132,14 @@ export type OrganisationalSituation = {
 }
 
 /**
- * Map existing report occurrence semantics onto one سرگرمی for one Meqati year.
- * completed = every scheduled occurrence in the year is closed/completed
- * in_progress = at least one occurred or completed, but not all completed
- * remaining = no occurred/completed record in this year (including no occurrences)
+ * Read the Admin-maintained status for one سرگرمی in one Meqati year.
+ * Unset (null) is honest — never infer from occurrences.
  */
-export function classifyProgrammeYearStatus(
-  row: Pick<ProgrammeActivityRow, 'scheduled' | 'occurred' | 'completed' | 'pending'>,
-): MeqatiYearActivityStatus {
-  if (row.scheduled <= 0) return 'remaining'
-  if (row.completed >= row.scheduled && row.pending === 0) return 'completed'
-  if (row.occurred > 0 || row.completed > 0) return 'in_progress'
-  return 'remaining'
+export function resolveProgrammeYearStatus(
+  programme: Pick<LocalProgramme, 'yearStatuses'>,
+  yearKey: string,
+): MeqatiYearActivityStatus | null {
+  return resolveActivityYearStatus(programme.yearStatuses, yearKey)
 }
 
 export function formatProgrammeSchedule(frequency: ProgrammeFrequency | undefined): string {
@@ -170,7 +155,9 @@ function emptyCounts(): OrganisationalStatusCounts {
   return { activities: 0, completed: 0, inProgress: 0, remaining: 0, progressPct: 0 }
 }
 
-function countsFromStatuses(statuses: readonly MeqatiYearActivityStatus[]): OrganisationalStatusCounts {
+function countsFromStatuses(
+  statuses: readonly (MeqatiYearActivityStatus | null)[],
+): OrganisationalStatusCounts {
   const activities = statuses.length
   const completed = statuses.filter((row) => row === 'completed').length
   const inProgress = statuses.filter((row) => row === 'in_progress').length
@@ -187,39 +174,10 @@ function countsFromStatuses(statuses: readonly MeqatiYearActivityStatus[]): Orga
 export function buildOrganisationalSituation(year: MeqatiYear): OrganisationalSituation {
   const people = getPeopleStatistics()
   const repos = getRepositories()
-  const asOfDate = karachiDateKey()
   const mansooba = unwrapRepository(repos.meqatiMansooba.getActive(), undefined) ?? null
   const shobahs = unwrapRepository(repos.shobah.loadAll(), [])
   const objectives = unwrapRepository(repos.objective.loadAll(), [])
   const programmes = unwrapRepository(repos.localProgramme.loadAll(), [])
-  const occurrences = unwrapRepository(repos.occurrence.loadAll(), [])
-  const work = unwrapRepository(repos.work.loadAll(), [])
-  const campaigns = unwrapRepository(repos.campaign.getAll(), [])
-
-  const period = meqatiYearToReportPeriod(year)
-  const report = mansooba
-    ? buildMansoobaActivityReport({
-        mansooba,
-        period,
-        asOfDate,
-        objectives,
-        campaigns,
-        programmes,
-        occurrences,
-        work,
-        weeklyIjtemaEvents: getAllWeeklyIjtemaEvents(),
-        weeklyIjtemaSubmissions: getAllWeeklyIjtemaSubmissions(),
-        baitulMaalCycles: getAllMonthlyBaitulMaalCycles(),
-        baitulMaalSubmissions: getAllMonthlyBaitulMaalSubmissions(),
-      })
-    : null
-
-  const statusByProgrammeId = new Map<string, MeqatiYearActivityStatus>()
-  if (report) {
-    for (const row of report.programmeRows) {
-      statusByProgrammeId.set(row.programmeId, classifyProgrammeYearStatus(row))
-    }
-  }
 
   const mansoobaObjectives = mansooba
     ? objectives.filter((row) => row.mansoobaId === mansooba.id && row.status !== 'archived')
@@ -229,8 +187,13 @@ export function buildOrganisationalSituation(year: MeqatiYear): OrganisationalSi
     (row) => mansoobaObjectiveIds.has(row.objectiveId) && row.status !== 'archived',
   )
 
+  const statusByProgrammeId = new Map<string, MeqatiYearActivityStatus | null>()
+  for (const programme of linkedProgrammes) {
+    statusByProgrammeId.set(programme.id, resolveProgrammeYearStatus(programme, year.key))
+  }
+
   const yearStatuses = linkedProgrammes.map(
-    (row) => statusByProgrammeId.get(row.id) ?? 'remaining',
+    (row) => statusByProgrammeId.get(row.id) ?? null,
   )
   const meqatiCounts = countsFromStatuses(yearStatuses)
   const assignedResponsibles = linkedProgrammes.filter((row) => Boolean(row.responsibleRuknId?.trim())).length
@@ -377,7 +340,7 @@ function buildShobahRow(
   shobah: Shobah,
   objectives: readonly PlanningObjective[],
   programmes: readonly LocalProgramme[],
-  statusByProgrammeId: ReadonlyMap<string, MeqatiYearActivityStatus>,
+  statusByProgrammeId: ReadonlyMap<string, MeqatiYearActivityStatus | null>,
 ): ShobahStatusRow {
   const shobahObjectives = objectives
     .filter((row) => row.shobahId === shobah.id)
@@ -396,7 +359,7 @@ function buildShobahRow(
         return {
           id: programme.id,
           name: programme.name,
-          status: statusByProgrammeId.get(programme.id) ?? 'remaining',
+          status: statusByProgrammeId.get(programme.id) ?? null,
           responsibleName: rukn?.name ?? null,
           scheduleLabel: formatProgrammeSchedule(programme.frequency),
         }

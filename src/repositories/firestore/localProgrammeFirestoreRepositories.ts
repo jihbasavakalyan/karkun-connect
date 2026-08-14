@@ -16,6 +16,7 @@ import {
 import type { CampaignRepository } from '@/repositories/interfaces/CampaignRepository'
 import type { LocalProgrammeRepository } from '@/repositories/interfaces/LocalProgrammeRepository'
 import type { ObjectiveRepository } from '@/repositories/interfaces/ObjectiveRepository'
+import { activityYearStatusValidationError } from '@/lib/planning/activityYearStatus'
 import type {
   LocalProgramme,
   LocalProgrammeStatus,
@@ -90,6 +91,10 @@ function validateProgramme(
   }
   if (!PROGRAMME_STATUSES.has(programme.status)) {
     return repositoryErr('Validation', 'Activity requires a valid status.')
+  }
+  const yearStatusError = activityYearStatusValidationError(programme.yearStatuses)
+  if (yearStatusError) {
+    return repositoryErr('Validation', yearStatusError)
   }
   const parent = objectives.getById(programme.objectiveId)
   if (!parent.ok || !parent.data) {

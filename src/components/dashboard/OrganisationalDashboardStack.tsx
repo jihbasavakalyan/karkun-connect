@@ -35,6 +35,10 @@ const STATUS_LABEL: Record<MeqatiYearActivityStatus, string> = {
   remaining: 'باقی',
 }
 
+function yearStatusLabel(status: MeqatiYearActivityStatus | null): string {
+  return status ? STATUS_LABEL[status] : 'غیر متعین'
+}
+
 function formatFreshness(iso: string): string {
   try {
     return new Intl.DateTimeFormat('ur-PK', {
@@ -269,7 +273,7 @@ function ShobahStatusSection({ rows, empty }: { rows: ShobahStatusRow[]; empty: 
                             <li key={activity.id}>
                               <p className="orgdash-drill-activity">{activity.name}</p>
                               <p className="orgdash-hint">
-                                {STATUS_LABEL[activity.status]} · ذمہ دار:{' '}
+                                {yearStatusLabel(activity.status)} · ذمہ دار:{' '}
                                 {activity.responsibleName ?? 'غیر متعین'} · نظام الاوقات:{' '}
                                 {activity.scheduleLabel}
                               </p>

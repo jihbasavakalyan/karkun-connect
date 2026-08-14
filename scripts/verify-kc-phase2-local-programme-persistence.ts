@@ -153,6 +153,34 @@ console.log('▶ local durable CRUD + Objective parent validation')
   assert.equal(archived.ok, true)
   assert.equal(repos.localProgramme.getById(programme.id).data?.status, 'archived')
 
+  const withYears = await repos.localProgramme.saveDurable({
+    ...programme,
+    status: 'active',
+    yearStatuses: { '2024-25': 'completed', '2025-26': 'in_progress' },
+    updatedAt: now,
+  })
+  assert.equal(withYears.ok, true)
+  assert.deepEqual(repos.localProgramme.getById(programme.id).data?.yearStatuses, {
+    '2024-25': 'completed',
+    '2025-26': 'in_progress',
+  })
+  const updateOneYear = await repos.localProgramme.saveDurable({
+    ...programme,
+    status: 'active',
+    yearStatuses: { '2024-25': 'completed', '2025-26': 'remaining' },
+    updatedAt: now,
+  })
+  assert.equal(updateOneYear.ok, true)
+  const afterYearUpdate = repos.localProgramme.getById(programme.id).data?.yearStatuses
+  assert.equal(afterYearUpdate?.['2024-25'], 'completed')
+  assert.equal(afterYearUpdate?.['2025-26'], 'remaining')
+  const invalidYear = await repos.localProgramme.saveDurable({
+    ...programme,
+    id: 'programme-verify-bad-year-status',
+    yearStatuses: { '2099-00': 'completed' },
+  })
+  assert.equal(invalidYear.ok, false)
+
   clearLocalProgrammesForTests()
   assert.equal(repos.localProgramme.loadAll().data?.length, 0)
 }
@@ -228,6 +256,7 @@ console.log('▶ Campaign schema / objective isolation')
   const programmeTypes = read('src/types/localProgramme.types.ts')
   assertIncludes(programmeTypes, 'objectiveId: string', 'activity requires objectiveId')
   assertIncludes(programmeTypes, 'campaignId?: string', 'campaignId is optional focus')
+  assertIncludes(programmeTypes, 'yearStatuses?:', 'year-specific status map on same activity')
   assertNotIncludes(programmeTypes, 'mansoobaId', 'no direct mansoobaId on programme')
   assertNotIncludes(programmeTypes, 'objectiveIds', 'no objectiveIds on programme')
 }
@@ -248,6 +277,8 @@ console.log('▶ Admin activity UI integrity (objectiveId lock)')
     'save preserves original Objective on edit',
   )
   assertIncludes(page, 'localProgramme.saveDurable', 'uses repository boundary')
+  assertIncludes(page, 'سال کے مطابق عمل درآمد', 'year-specific status editor')
+  assertIncludes(page, 'normalizeActivityYearStatuses', 'year map normalized on save')
   assertNotIncludes(page, 'objectives[]', 'no Objective dual-write in Admin UI')
   assertNotIncludes(page, 'Unit / Scope', 'Unit is not a planning UI concept')
 }

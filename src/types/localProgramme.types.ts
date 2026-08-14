@@ -59,6 +59,12 @@ export type LocalProgramme = {
   endDate?: string
   /** نظام الاوقات configuration — omitted means Not Specified */
   frequency?: ProgrammeFrequency
+  /**
+   * Manual year-specific implementation status (مکمل / جاری / باقی).
+   * Keys are Meqati year keys (e.g. `2025-26`). Omitted key = unset.
+   * Same سرگرمی across years — not a duplicate activity and not a new parent.
+   */
+  yearStatuses?: Partial<Record<string, 'completed' | 'in_progress' | 'remaining'>>
   summary?: string
   createdAt: string
   updatedAt: string

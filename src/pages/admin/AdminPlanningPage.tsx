@@ -12,6 +12,12 @@ import { useAuth } from '@/hooks/useAuth'
 import { useBusyAction } from '@/hooks/useBusyAction'
 import type { CampaignListItem } from '@/constants/mockMissions'
 import type { Rukn } from '@/data/ruknMaster'
+import { listMeqatiPlanYears } from '@/lib/dashboard/meqatiYear'
+import {
+  isActivityYearStatus,
+  normalizeActivityYearStatuses,
+  type ActivityYearStatus,
+} from '@/lib/planning/activityYearStatus'
 import { buildOccurrenceCalendar } from '@/lib/occurrence/calendar'
 import { listOccurrenceHistory } from '@/lib/occurrence/history'
 import { unwrapRepository } from '@/repositories/errors'
@@ -61,6 +67,30 @@ const ACTIVITY_KIND_OPTIONS: { value: ProgrammeKind; label: string }[] = [
 const ACTIVITY_KIND_LABELS = Object.fromEntries(
   ACTIVITY_KIND_OPTIONS.map((row) => [row.value, row.label]),
 ) as Record<ProgrammeKind, string>
+
+const ACTIVITY_YEAR_STATUS_OPTIONS: { value: '' | ActivityYearStatus; label: string }[] = [
+  { value: '', label: 'غیر متعین' },
+  { value: 'completed', label: 'مکمل' },
+  { value: 'in_progress', label: 'جاری' },
+  { value: 'remaining', label: 'باقی' },
+]
+
+const MEQATI_PLAN_YEARS = listMeqatiPlanYears()
+
+function emptyYearStatusForm(): Record<string, '' | ActivityYearStatus> {
+  return Object.fromEntries(MEQATI_PLAN_YEARS.map((year) => [year.key, ''] as const))
+}
+
+function yearStatusFormFromRow(
+  row: LocalProgramme,
+): Record<string, '' | ActivityYearStatus> {
+  const next = emptyYearStatusForm()
+  for (const year of MEQATI_PLAN_YEARS) {
+    const value = row.yearStatuses?.[year.key]
+    next[year.key] = isActivityYearStatus(value) ? value : ''
+  }
+  return next
+}
 
 function newPlanningId(prefix: string): string {
   return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`
@@ -124,6 +154,7 @@ type ActivityFormState = {
   frequencyMonth: string
   frequencyNote: string
   summary: string
+  yearStatuses: Record<string, '' | ActivityYearStatus>
 }
 
 const emptyMansoobaForm = (): MansoobaFormState => ({
@@ -161,6 +192,7 @@ const emptyActivityForm = (): ActivityFormState => ({
   frequencyMonth: '',
   frequencyNote: '',
   summary: '',
+  yearStatuses: emptyYearStatusForm(),
 })
 
 function activityFormFromRow(row: LocalProgramme): ActivityFormState {
@@ -189,6 +221,7 @@ function activityFormFromRow(row: LocalProgramme): ActivityFormState {
         : '',
     frequencyNote: frequency && frequency.cadence === 'custom' ? (frequency.note ?? '') : '',
     summary: row.summary ?? '',
+    yearStatuses: yearStatusFormFromRow(row),
   }
 }
 
@@ -754,6 +787,7 @@ export function AdminPlanningPage() {
           endDate: activityForm.endDate.trim() || undefined,
           frequency: buildActivityFrequency(activityForm),
           summary: activityForm.summary.trim() || undefined,
+          yearStatuses: normalizeActivityYearStatuses(activityForm.yearStatuses),
           createdAt: existing?.createdAt ?? now,
           updatedAt: now,
           createdBy: existing?.createdBy ?? actor,
@@ -1730,6 +1764,44 @@ export function AdminPlanningPage() {
               }
             />
           </div>
+        </ModalFormSection>
+        <ModalFormSection title="سال کے مطابق عمل درآمد">
+          <p className="mb-3 text-sm text-secondary">
+            یہ حالت اسی سرگرمی کی سالانہ عمل درآمد کی تصویر ہے۔ ہر سال الگ رہتی ہے — ایک سال کی
+            تبدیلی دوسرے سال کو نہیں بدلتی۔
+          </p>
+          <ModalFormGrid>
+            {MEQATI_PLAN_YEARS.map((year) => (
+              <div key={year.key}>
+                <label className={labelClassName} htmlFor={`activity-year-status-${year.key}`}>
+                  {year.label}
+                </label>
+                <select
+                  id={`activity-year-status-${year.key}`}
+                  className={inputClassName}
+                  value={activityForm.yearStatuses[year.key] ?? ''}
+                  onChange={(event) => {
+                    const nextValue = event.target.value
+                    const status: '' | ActivityYearStatus =
+                      nextValue === '' || isActivityYearStatus(nextValue) ? nextValue : ''
+                    setActivityForm((prev) => ({
+                      ...prev,
+                      yearStatuses: {
+                        ...prev.yearStatuses,
+                        [year.key]: status,
+                      },
+                    }))
+                  }}
+                >
+                  {ACTIVITY_YEAR_STATUS_OPTIONS.map((option) => (
+                    <option key={option.value || 'unset'} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ))}
+          </ModalFormGrid>
         </ModalFormSection>
       </Modal>
     </PageShell>
