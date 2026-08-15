@@ -15,6 +15,7 @@ export {
   getArchivedCampaigns,
   getActiveCampaignSummary,
   getCampaignTimeline,
+  getCampaignPeriodStatus,
   getCampaignProgress,
   formatActiveCampaignDuration,
   formatCampaignDate,

@@ -60,11 +60,16 @@ export function getActiveCampaignNextMilestone(): string {
 }
 
 export function getActiveCampaigns(): CampaignListItem[] {
-  return getCampaignLibraryFromRepository().filter((campaign) => campaign.status === 'active')
+  return getCampaignLibraryFromRepository().filter(
+    (campaign) => campaign.status === 'active' && getCampaignPeriodStatus(campaign) === 'active',
+  )
 }
 
 export function getArchivedCampaigns(): CampaignListItem[] {
-  return getCampaignLibraryFromRepository().filter((campaign) => campaign.status === 'archived')
+  return getCampaignLibraryFromRepository().filter((campaign) => {
+    if (campaign.status === 'archived') return true
+    return campaign.status === 'active' && getCampaignPeriodStatus(campaign) === 'completed'
+  })
 }
 
 function parseCampaignDate(isoDate: string): Date {
@@ -81,6 +86,20 @@ export function formatCampaignDate(isoDate: string): string {
   })
 }
 
+/** Date-derived period status. Stored `campaign.status` remains library lifecycle. */
+export function getCampaignPeriodStatus(
+  campaign: Pick<CampaignListItem, 'startDate' | 'endDate'>,
+  referenceDate = new Date(),
+): CampaignTimelineStatus {
+  const start = parseCampaignDate(campaign.startDate)
+  const end = parseCampaignDate(campaign.endDate)
+  const today = new Date(referenceDate)
+  today.setHours(0, 0, 0, 0)
+  if (today.getTime() < start.getTime()) return 'upcoming'
+  if (today.getTime() > end.getTime()) return 'completed'
+  return 'active'
+}
+
 export function getCampaignTimeline(referenceDate = new Date()): CampaignTimeline | null {
   const campaign = getActiveCampaign()
   if (!campaign) {
@@ -93,27 +112,28 @@ export function getCampaignTimeline(referenceDate = new Date()): CampaignTimelin
   today.setHours(0, 0, 0, 0)
 
   const totalDays = Math.max(1, Math.round((end.getTime() - start.getTime()) / 86400000) + 1)
+  const status = getCampaignPeriodStatus(campaign, referenceDate)
 
-  if (today.getTime() < start.getTime()) {
+  if (status === 'upcoming') {
     const daysUntilStart = Math.round((start.getTime() - today.getTime()) / 86400000)
     return {
       currentDay: null,
       totalDays,
       daysRemaining: null,
       daysUntilStart,
-      status: 'upcoming',
+      status,
       percentageElapsed: 0,
       dayLabel: `Starts in ${daysUntilStart} day${daysUntilStart === 1 ? '' : 's'}`,
     }
   }
 
-  if (today.getTime() > end.getTime()) {
+  if (status === 'completed') {
     return {
       currentDay: totalDays,
       totalDays,
       daysRemaining: 0,
       daysUntilStart: null,
-      status: 'completed',
+      status,
       percentageElapsed: 100,
       dayLabel: 'Campaign Completed',
     }
@@ -127,7 +147,7 @@ export function getCampaignTimeline(referenceDate = new Date()): CampaignTimelin
     totalDays,
     daysRemaining,
     daysUntilStart: null,
-    status: 'active',
+    status,
     percentageElapsed: Math.round((currentDay / totalDays) * 100),
     dayLabel: `Day ${currentDay} of ${totalDays}`,
   }

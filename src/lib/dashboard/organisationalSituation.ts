@@ -27,7 +27,10 @@ import {
   getCampaignProgress,
   getCampaignTimeline,
 } from '@/services/campaignService'
-import { getWeeklyIjtemaDashboardKpi } from '@/services/weeklyIjtemaService'
+import {
+  getWeeklyIjtemaDashboardGenderPresent,
+  getWeeklyIjtemaDashboardKpi,
+} from '@/services/weeklyIjtemaService'
 import type { LocalProgramme, ProgrammeFrequency } from '@/types/localProgramme.types'
 import type { MeqatiMansooba, PlanningObjective, Shobah } from '@/types/planning.types'
 import type { MeqatiYear } from './meqatiYear'
@@ -210,8 +213,7 @@ export function buildOrganisationalSituation(year: MeqatiYear): OrganisationalSi
   )
 
   const ijtemaAll = getWeeklyIjtemaDashboardKpi()
-  const ijtemaMale = getWeeklyIjtemaDashboardKpi({ audienceGender: 'Male' })
-  const ijtemaFemale = getWeeklyIjtemaDashboardKpi({ audienceGender: 'Female' })
+  const ijtemaGender = getWeeklyIjtemaDashboardGenderPresent()
 
   const missingResponsible = linkedProgrammes.filter((row) => !row.responsibleRuknId?.trim()).length
   const followUps = getFollowUpDashboardMetrics().pendingFollowUps
@@ -313,8 +315,8 @@ export function buildOrganisationalSituation(year: MeqatiYear): OrganisationalSi
       present: ijtemaAll.present,
       eligible: ijtemaAll.totalAssigned,
       attendancePct: ijtemaAll.attendancePct,
-      malePresent: ijtemaMale.present,
-      femalePresent: ijtemaFemale.present,
+      malePresent: ijtemaGender.malePresent,
+      femalePresent: ijtemaGender.femalePresent,
       ruknsSubmitted: ijtemaAll.ruknsSubmitted,
       ruknsTotal: ijtemaAll.ruknsTotal,
       ruknsPending: ijtemaAll.ruknsPending,

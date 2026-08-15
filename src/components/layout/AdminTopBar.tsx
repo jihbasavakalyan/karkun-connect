@@ -64,7 +64,7 @@ export function AdminTopBar({ alertCount = 0, onMenuToggle }: AdminTopBarProps) 
           </div>
           <div className="hidden min-w-0 lg:block">
             <p className="truncate text-sm font-semibold text-text-heading">
-              {campaignName || 'کارکن کنیکٹ'}
+              {timeline?.status === 'active' ? campaignName || 'کارکن کنیکٹ' : 'کارکن کنیکٹ'}
             </p>
             {timeline?.status === 'active' && duration ? (
               <p className="truncate text-xs text-secondary">{duration}</p>

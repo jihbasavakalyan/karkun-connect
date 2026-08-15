@@ -1016,6 +1016,42 @@ export function getWeeklyIjtemaDashboardKpi(
   return kpiFromEventReport(event, buildReportForEvent(event))
 }
 
+function presentFromEvents(events: readonly WeeklyIjtemaEvent[]): number {
+  let present = 0
+  for (const event of events) {
+    present += buildReportForEvent(event).present
+  }
+  return present
+}
+
+/**
+ * Admin Dashboard gender split for the SAME snapshot as unscoped
+ * `getWeeklyIjtemaDashboardKpi()` (KC-037C2E).
+ *
+ * Open Male + Open Female windows are additive. Does not independently
+ * fall back to a Closed event of one gender while totals come from Open
+ * events of the other.
+ */
+export function getWeeklyIjtemaDashboardGenderPresent(): {
+  malePresent: number
+  femalePresent: number
+} {
+  const openEvents = listOpenWeeklyIjtemaEvents()
+  if (openEvents.length > 0) {
+    return {
+      malePresent: presentFromEvents(listOpenWeeklyIjtemaEvents({ audienceGender: 'Male' })),
+      femalePresent: presentFromEvents(listOpenWeeklyIjtemaEvents({ audienceGender: 'Female' })),
+    }
+  }
+
+  const current = getCurrentWeeklyIjtemaEvent()
+  if (!current) return { malePresent: 0, femalePresent: 0 }
+  const present = buildReportForEvent(current).present
+  if (current.audienceGender === 'Male') return { malePresent: present, femalePresent: 0 }
+  if (current.audienceGender === 'Female') return { malePresent: 0, femalePresent: present }
+  return { malePresent: 0, femalePresent: 0 }
+}
+
 /** KC-037C2D — Reminder + attendance progress for one Rukn on an event. */
 export function getRuknAttendanceProgress(
   eventId: string,

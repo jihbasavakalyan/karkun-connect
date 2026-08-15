@@ -10,6 +10,8 @@ import { useRegisterSW } from 'virtual:pwa-register/react'
 const DISMISS_KEY = 'kc039.pwaInstallDismissedUntil'
 const INSTALLED_KEY = 'kc039.pwaInstalled'
 const DISMISS_MS = 30 * 24 * 60 * 60 * 1000
+/** Returning users should see a new production deploy without waiting an hour. */
+const SW_UPDATE_CHECK_MS = 5 * 60 * 1000
 
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>
@@ -90,9 +92,10 @@ export function PwaRuntimeChrome() {
   } = useRegisterSW({
     onRegisteredSW(_swUrl, registration) {
       if (!registration) return
+      void registration.update()
       window.setInterval(() => {
         void registration.update()
-      }, 60 * 60 * 1000)
+      }, SW_UPDATE_CHECK_MS)
     },
   })
 
@@ -113,6 +116,27 @@ export function PwaRuntimeChrome() {
       setShowInstall(false)
     }
   }, [])
+
+  useEffect(() => {
+    const checkForUpdate = () => {
+      if (document.visibilityState && document.visibilityState !== 'visible') return
+      void navigator.serviceWorker?.getRegistration()?.then((registration) => {
+        void registration?.update()
+      })
+    }
+    document.addEventListener('visibilitychange', checkForUpdate)
+    window.addEventListener('focus', checkForUpdate)
+    return () => {
+      document.removeEventListener('visibilitychange', checkForUpdate)
+      window.removeEventListener('focus', checkForUpdate)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!needRefresh) return
+    if (isAttendanceWorkflowPath(location.pathname)) return
+    void updateServiceWorker(true)
+  }, [needRefresh, location.pathname, updateServiceWorker])
 
   useEffect(() => {
     const onInstalled = () => {
@@ -217,7 +241,7 @@ export function PwaRuntimeChrome() {
         </div>
       ) : null}
 
-      {needRefresh ? (
+      {needRefresh && isAttendanceWorkflowPath(location.pathname) ? (
         <div
           role="status"
           className="fixed inset-x-3 top-3 z-[75] mx-auto flex max-w-md items-center justify-between gap-3 rounded-xl border border-primary/30 bg-surface px-4 py-3 shadow-card sm:inset-x-auto sm:right-4"

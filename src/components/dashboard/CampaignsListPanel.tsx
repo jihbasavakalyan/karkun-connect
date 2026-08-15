@@ -1,7 +1,11 @@
 import { Link } from 'react-router-dom'
 import { ROUTES } from '@/constants/routes'
 import type { CampaignListItem } from '@/constants/mockMissions'
-import { getCampaignProgress, formatCampaignDate } from '@/services/campaignService'
+import {
+  formatCampaignDate,
+  getCampaignPeriodStatus,
+  getCampaignProgress,
+} from '@/services/campaignService'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { MissionProgress } from '@/components/dashboard/MissionProgress'
 
@@ -10,33 +14,42 @@ type CampaignCardProps = {
 }
 
 function CampaignCard({ campaign }: CampaignCardProps) {
-  const isActive = campaign.status === 'active'
+  const periodStatus = getCampaignPeriodStatus(campaign)
+  const isLive = campaign.status === 'active' && periodStatus === 'active'
+  const statusLabel =
+    periodStatus === 'completed'
+      ? 'Completed'
+      : periodStatus === 'upcoming'
+        ? 'Upcoming'
+        : campaign.status === 'archived'
+          ? 'Archived'
+          : 'Active'
 
   return (
     <article
       className={[
         'rounded-(--radius-card) border p-5 shadow-card',
-        isActive ? 'border-primary/40 bg-primary-muted/20' : 'border-border bg-surface',
+        isLive ? 'border-primary/40 bg-primary-muted/20' : 'border-border bg-surface',
       ].join(' ')}
     >
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-secondary">
-            {isActive ? 'Active' : 'Archived'}
+            {statusLabel}
           </p>
           <h3 className="mt-1 text-lg font-semibold text-text-heading">{campaign.name}</h3>
           <p className="mt-1 text-sm text-secondary">
             {formatCampaignDate(campaign.startDate)} — {formatCampaignDate(campaign.endDate)}
           </p>
         </div>
-        {isActive && (
+        {isLive && (
           <span className="rounded-full bg-primary px-3 py-1 text-xs font-medium text-surface">
             Live
           </span>
         )}
       </div>
 
-      {isActive && (
+      {isLive && (
         <div className="mt-4">
           <MissionProgress progress={getCampaignProgress()} label="Progress" variant="inline" />
         </div>
