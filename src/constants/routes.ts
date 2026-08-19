@@ -36,6 +36,7 @@ export const ROUTES = {
   ADMIN_MISSION_WORKSPACE: '/admin/mission-workspace',
   /** KC-0123 — Unified Inbox (people intake + Rukn communications) */
   ADMIN_INBOX: '/admin/inbox',
+  REGISTER: '/register',
   /** KC-0115 — Saved Lists lives under Communication (route unchanged) */
   ADMIN_LISTS: '/admin/lists',
   ADMIN_SETTINGS: '/admin/settings',

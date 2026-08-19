@@ -234,6 +234,16 @@ service cloud.firestore {
         && docId != 'karkunRequests';
     }
 
+    /**
+     * Training gathering registrations — public clients never read or write.
+     * All public create/update goes through Admin SDK after verified phone OTP.
+     * Administrators may read for Inbox / counts. Cash-paid marking is server-authorized.
+     */
+    match /trainingRegistrations/{registrationId} {
+      allow read: if isAdministrator();
+      allow create, update, delete: if false;
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

@@ -13,6 +13,8 @@ export const FIRESTORE_COLLECTIONS = {
   followUps: 'followUps',
   /** KC-0058 — append-only connection lifecycle history */
   connectionLedger: 'connectionLedger',
+  /** Bounded training gathering registrations — Admin SDK writes; Admin read. */
+  trainingRegistrations: 'trainingRegistrations',
 } as const
 
 export const FIRESTORE_DOCS = {

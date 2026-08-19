@@ -112,6 +112,9 @@ export type PersonContactInput = {
   notes?: string
   /** Optional family name — Father Name (Male) or Husband Name (Female). Gradual enrichment. */
   fatherHusbandName?: string
+  address?: string
+  education?: string
+  profession?: string
 }
 
 /** Gender-aware label for the optional family name field. */

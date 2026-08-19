@@ -168,7 +168,8 @@
     "verify:tts": "npx vite-node --env-file=.env.local scripts/verify-tts.ts",
     "verify:execution-automation": "npx vite-node scripts/verify-execution-automation.ts",
     "verify:settings": "npx vite-node scripts/verify-settings-experience.ts",
-    "verify:voice-conversation": "npx vite-node scripts/verify-voice-conversation.ts"
+    "verify:voice-conversation": "npx vite-node scripts/verify-voice-conversation.ts",
+    "verify:training-registration": "npx vite-node scripts/verify-training-registration.ts"
   },
   "dependencies": {
     "@google-cloud/speech": "^7.5.0",

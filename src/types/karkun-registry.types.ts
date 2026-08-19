@@ -36,6 +36,10 @@ export type KarkunRegistryRecord = {
   updatedBy: string
   address: string
   area: string
+  /** Optional enrichment — shared Person field for Karkun and Muttafiq. */
+  education?: string
+  /** Optional enrichment — shared Person field for Karkun and Muttafiq. */
+  profession?: string
   assignedRukn: string
   assignedRuknId: string
   assignmentStatus: KarkunAssignmentPoolStatus

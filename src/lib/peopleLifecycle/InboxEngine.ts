@@ -52,10 +52,12 @@ function requestFolder(request: NewKarkunRequest): InboxFolder {
   return 'pending'
 }
 
-function kindLabel(kind: InboxItemKind): string {
+function kindLabel(kind: InboxItemKind, request?: NewKarkunRequest): string {
   switch (kind) {
     case 'new_karkun':
-      return 'New Karkun Request'
+      return request?.source === 'public_training_registration'
+        ? 'Training gathering — new Karkun'
+        : 'New Karkun Request'
     case 'new_muttafiq':
       return 'New Muttafiq Request'
     case 'karkun_to_muttafiq':
@@ -76,7 +78,7 @@ function mapRequest(request: NewKarkunRequest): InboxItem {
     kind,
     folder: requestFolder(request),
     title: request.fullName,
-    subtitle: kindLabel(kind),
+    subtitle: kindLabel(kind, request),
     sender: request.requestingRuknName || request.requestingRuknId,
     relatedPersonId: request.sourcePersonId || request.createdKarkunId,
     relatedPersonName: request.fullName,
