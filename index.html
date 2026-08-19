@@ -31,6 +31,19 @@
       />
     </noscript>
     <title>Karkun Connect</title>
+    <script>
+      (function () {
+        var host = String(location.hostname || '')
+          .toLowerCase()
+          .replace(/\.$/, '')
+        if (host !== 'registration.jihbasavakalyan.org') return
+        document.title = 'Training Gathering Registration'
+        document.documentElement.setAttribute('data-public-registration', '1')
+        if (location.pathname !== '/' && location.pathname !== '') {
+          history.replaceState(null, '', '/' + location.search + location.hash)
+        }
+      })()
+    </script>
     <style>
       /* KC-039 — fast branded first paint / splash atmosphere before React mounts */
       html,
@@ -60,6 +73,13 @@
         margin-top: 3rem;
         font-size: 0.85rem;
         opacity: 0.85;
+      }
+      html[data-public-registration='1'] #root:empty::before {
+        content: 'فعال کارکن، فعال رکن، فعال جماعت';
+        font-size: 1.05rem;
+      }
+      html[data-public-registration='1'] #root:empty::after {
+        content: 'Training Gathering Registration';
       }
     </style>
   </head>

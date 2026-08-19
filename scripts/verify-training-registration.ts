@@ -39,7 +39,15 @@ function testEventAndId(): void {
 function testHost(): void {
   assert(PUBLIC_REGISTRATION_HOST === 'registration.jihbasavakalyan.org', 'host')
   assert(isPublicRegistrationHost('registration.jihbasavakalyan.org'), 'match')
+  assert(isPublicRegistrationHost('REGISTRATION.jihbasavakalyan.org.'), 'normalized match')
   assert(!isPublicRegistrationHost('jihbasavakalyan.org'), 'main domain not public host')
+  assert(!isPublicRegistrationHost('karkun-connect.vercel.app'), 'vercel alias not public host')
+  const hostSrc = read('src/lib/publicRegistration/host.ts')
+  assert(hostSrc.includes('isPublicRegistrationHost(window.location.hostname)'), 'hostname branch')
+  assert(hostSrc.includes("path === '/register'"), '/register kept as internal fallback')
+  const indexHtml = read('index.html')
+  assert(indexHtml.includes("host !== 'registration.jihbasavakalyan.org'"), 'index.html hostname gate')
+  assert(indexHtml.includes("history.replaceState(null, '', '/'"), 'subdomain canonicalizes to /')
 }
 
 function testRuknOtpUntouched(): void {
