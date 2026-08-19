@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
 import { installStartupRejectionLogging, logStartupTiming } from '@/lib/startupDiagnostics'
-import { shouldMountPublicRegistrationApp } from '@/lib/publicRegistration/host'
+import { shouldMountPublicRegistrationApp, canonicalizePublicRegistrationPath } from '@/lib/publicRegistration/host'
 
 async function runDeferredBootstrap(): Promise<void> {
   logStartupTiming('bootstrap.start')
@@ -105,6 +105,7 @@ function publishBuildStamp(): void {
 function bootstrap(): void {
   installStartupRejectionLogging()
   publishBuildStamp()
+  canonicalizePublicRegistrationPath()
   logStartupTiming('react.mount.start')
 
   const root = document.getElementById('root')
