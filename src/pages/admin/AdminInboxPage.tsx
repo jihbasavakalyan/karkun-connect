@@ -27,6 +27,7 @@ import {
 } from '@/services/karkunRequestService'
 import { markRuknAdminMessageRead } from '@/services/ruknAdminMessageService'
 import { subscribeToRuknAdminMessageStore } from '@/stores/ruknAdminMessageStore'
+import { TrainingGatheringAdminPanel } from '@/components/public-registration/TrainingGatheringAdminPanel'
 import { getPeopleRequestKind } from '@/types/karkunRequest.types'
 import { getRuknById } from '@/data/ruknMaster'
 import { buildWhatsAppLink } from '@/utils/personContactLinks'
@@ -200,6 +201,8 @@ export function AdminInboxPage() {
         ) : null}
       </header>
 
+      <TrainingGatheringAdminPanel />
+
       <div className="mb-4 flex flex-wrap gap-2">
         {FOLDERS.map((entry) => (
           <button
@@ -299,6 +302,9 @@ export function AdminInboxPage() {
                     {item.rawRequest ? (
                       <p className="mt-1 text-xs text-secondary">
                         Kind: {getPeopleRequestKind(item.rawRequest)} · {item.rawRequest.mobile}
+                        {item.rawRequest.source === 'public_training_registration'
+                          ? ` · ${item.rawRequest.address ?? ''} · ${item.rawRequest.education ?? ''} · ${item.rawRequest.profession ?? ''}`
+                          : ''}
                       </p>
                     ) : null}
                     {item.rawInternalMessage ? (

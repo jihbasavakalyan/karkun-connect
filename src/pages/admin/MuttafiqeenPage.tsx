@@ -221,6 +221,9 @@ function MuttafiqGenderSection({
                 place: editingPerson.place,
                 status: editingPerson.status,
                 fatherHusbandName: editingPerson.fatherHusbandName,
+                address: editingPerson.address,
+                education: editingPerson.education,
+                profession: editingPerson.profession,
               }
             : { gender }
         }

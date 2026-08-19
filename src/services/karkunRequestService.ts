@@ -418,6 +418,10 @@ async function approveNewKarkunRequestOnce(input: {
           place: DEFAULT_PLACE,
           status: 'active',
           area: claimed.area,
+          address: claimed.address,
+          fatherHusbandName: claimed.fatherHusbandName,
+          education: claimed.education,
+          profession: claimed.profession,
           notes: claimed.remarks,
         },
         input.decidedBy || 'Administrator',
@@ -473,6 +477,32 @@ async function approveNewKarkunRequestOnce(input: {
 
     if (!karkunId) {
       return { ok: false, error: 'Could not resolve Karkun for approval.', code: 'VALIDATION' }
+    }
+
+    const isPublicTraining = claimed.source === 'public_training_registration' || !claimed.requestingRuknId.trim()
+    if (isPublicTraining) {
+      const resolvedPublic = resolveKarkunRequest(claimed.id, 'Approved', input.decidedBy, {
+        decisionNotes:
+          input.decisionNotes?.trim() ||
+          'Approved from public training registration without automatic Rukn connection.',
+        createdKarkunId: karkunId,
+      })
+      if (!resolvedPublic) {
+        return alreadyProcessedResult()
+      }
+      if (getRepositoryProviderMode() === 'firestore') {
+        const { awaitKarkunRequestsPersist } = await import(
+          '@/repositories/firestore/firestoreRepositories'
+        )
+        await awaitKarkunRequestsPersist()
+      }
+      logActivity({
+        type: 'complete',
+        message: `Approved public training Karkun candidate ${claimed.fullName} (${karkunId}).`,
+        karkunId,
+        actor: 'Administrator',
+      })
+      return { ok: true, request: resolvedPublic, karkunId }
     }
 
     // KC-0123 — Already connected to requesting Rukn: complete approval without re-assign.

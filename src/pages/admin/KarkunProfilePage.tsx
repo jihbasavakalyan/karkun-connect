@@ -144,6 +144,9 @@ function KarkunProfileForm({ karkun, karkunId }: KarkunProfileFormProps) {
   const [whatsapp, setWhatsapp] = useState(karkun.whatsapp ?? '')
   const [status, setStatus] = useState<PersonStatus>(karkun.status)
   const [fatherHusbandName, setFatherHusbandName] = useState(karkun.fatherHusbandName ?? '')
+  const [address, setAddress] = useState(karkun.address ?? '')
+  const [education, setEducation] = useState(karkun.education ?? '')
+  const [profession, setProfession] = useState(karkun.profession ?? '')
   const [assignedRuknId, setAssignedRuknId] = useState(karkun.assignedRuknId)
   const [ijtemaStatus, setIjtemaStatus] = useState<IjtemaAttendanceStatus | null>(
     initialCompliance.ijtemaStatus,
@@ -187,6 +190,9 @@ function KarkunProfileForm({ karkun, karkunId }: KarkunProfileFormProps) {
       place: DEFAULT_PLACE,
       status,
       fatherHusbandName: fatherHusbandName || undefined,
+      address: address || undefined,
+      education: education || undefined,
+      profession: profession || undefined,
     })
 
     if (!karkunResult.success) {
@@ -403,6 +409,33 @@ function KarkunProfileForm({ karkun, karkunId }: KarkunProfileFormProps) {
             onValueChange={setFatherHusbandName}
             className={compactInputClass}
             placeholder={getFatherHusbandLabel(gender)}
+          />
+
+          <InputField
+            id="profile-address"
+            label="Address"
+            value={address}
+            onValueChange={setAddress}
+            className={compactInputClass}
+            placeholder="Full address"
+          />
+
+          <InputField
+            id="profile-education"
+            label="Education"
+            value={education}
+            onValueChange={setEducation}
+            className={compactInputClass}
+            placeholder="Education"
+          />
+
+          <InputField
+            id="profile-profession"
+            label="Profession"
+            value={profession}
+            onValueChange={setProfession}
+            className={compactInputClass}
+            placeholder="Profession"
           />
         </div>
 

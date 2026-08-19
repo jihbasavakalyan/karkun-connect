@@ -79,6 +79,9 @@ function PersonFormModalContent({
   const [fatherHusbandName, setFatherHusbandName] = useState(
     initialValues?.fatherHusbandName ?? '',
   )
+  const [address, setAddress] = useState(initialValues?.address ?? '')
+  const [education, setEducation] = useState(initialValues?.education ?? '')
+  const [profession, setProfession] = useState(initialValues?.profession ?? '')
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -90,6 +93,9 @@ function PersonFormModalContent({
       place: DEFAULT_PLACE,
       status,
       fatherHusbandName: kind === 'karkun' ? fatherHusbandName || undefined : undefined,
+      address: kind === 'karkun' ? address || undefined : undefined,
+      education: kind === 'karkun' ? education || undefined : undefined,
+      profession: kind === 'karkun' ? profession || undefined : undefined,
       assignedRuknId: kind === 'karkun' && mode === 'edit' ? assignedRuknId : undefined,
     })
   }
@@ -214,6 +220,27 @@ function PersonFormModalContent({
                 value={fatherHusbandName}
                 onValueChange={setFatherHusbandName}
                 placeholder={getFatherHusbandLabel(gender)}
+              />
+              <InputField
+                id="person-address"
+                label="Address"
+                value={address}
+                onValueChange={setAddress}
+                placeholder="Full address"
+              />
+              <InputField
+                id="person-education"
+                label="Education"
+                value={education}
+                onValueChange={setEducation}
+                placeholder="Education"
+              />
+              <InputField
+                id="person-profession"
+                label="Profession"
+                value={profession}
+                onValueChange={setProfession}
+                placeholder="Profession"
               />
             </ModalFormGrid>
           </ModalFormSection>

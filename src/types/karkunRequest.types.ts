@@ -39,6 +39,15 @@ export type NewKarkunRequest = {
   sourcePersonId?: string
   /** Previous registry category before conversion. */
   previousCategory?: 'Karkun' | 'Muttafiq'
+  /**
+   * Public training gathering intake. Empty requesting Rukn is allowed.
+   * Approval creates the Person without auto-connect.
+   */
+  source?: 'rukn' | 'public_training_registration'
+  fatherHusbandName?: string
+  address?: string
+  education?: string
+  profession?: string
 }
 
 export function getPeopleRequestKind(request: NewKarkunRequest): PeopleRequestKind {

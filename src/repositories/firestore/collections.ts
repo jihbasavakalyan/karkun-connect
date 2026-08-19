@@ -31,6 +31,8 @@ export const FIRESTORE_COLLECTIONS = {
   responsibilities: 'responsibilities',
   /** Phase 4 — Work (operational record; Admin administers; Rukn acts in context) */
   work: 'work',
+  /** Bounded training gathering registrations — Admin SDK writes; Admin read. */
+  trainingRegistrations: 'trainingRegistrations',
 } as const
 
 export const FIRESTORE_DOCS = {

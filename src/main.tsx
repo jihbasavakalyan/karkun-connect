@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
 import { installStartupRejectionLogging, logStartupTiming } from '@/lib/startupDiagnostics'
+import { shouldMountPublicRegistrationApp } from '@/lib/publicRegistration/host'
 
 async function runDeferredBootstrap(): Promise<void> {
   logStartupTiming('bootstrap.start')
@@ -118,7 +119,9 @@ function bootstrap(): void {
   )
   logStartupTiming('react.mount.complete')
 
-  void runDeferredBootstrap()
+  if (!shouldMountPublicRegistrationApp()) {
+    void runDeferredBootstrap()
+  }
 }
 
 bootstrap()

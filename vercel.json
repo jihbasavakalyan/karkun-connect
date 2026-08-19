@@ -11,6 +11,9 @@
     },
     "api/karkun-mobile-lookup.ts": {
       "includeFiles": "src/server/karkunMobileLookup/**"
+    },
+    "api/training-registration.ts": {
+      "includeFiles": "src/server/trainingRegistration/**"
     }
   },
   "rewrites": [

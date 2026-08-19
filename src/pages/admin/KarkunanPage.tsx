@@ -417,6 +417,9 @@ function KarkunGenderSection({
                 whatsapp: editingKarkun.whatsapp,
                 status: editingKarkun.status,
                 fatherHusbandName: editingKarkun.fatherHusbandName,
+                address: editingKarkun.address,
+                education: editingKarkun.education,
+                profession: editingKarkun.profession,
                 assignedRuknId: editingKarkun.assignedRuknId,
               }
             : { gender }

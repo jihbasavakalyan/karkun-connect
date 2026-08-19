@@ -635,6 +635,8 @@ export function createKarkun(
     updatedBy,
     address: input.address?.trim() ?? '',
     area: input.area?.trim() ?? '',
+    education: input.education?.trim() || undefined,
+    profession: input.profession?.trim() || undefined,
     assignedRukn: '',
     assignedRuknId: '',
     assignmentStatus: 'Available',
@@ -711,6 +713,8 @@ export function createMuttafiq(
     updatedBy,
     address: input.address?.trim() ?? '',
     area: input.area?.trim() ?? '',
+    education: input.education?.trim() || undefined,
+    profession: input.profession?.trim() || undefined,
     assignedRukn: '',
     assignedRuknId: '',
     assignmentStatus: 'Available',
@@ -794,6 +798,8 @@ export function updateKarkun(
   if (input.notes !== undefined) karkun.notes = input.notes.trim()
   if (input.area !== undefined) karkun.area = input.area.trim()
   if (input.address !== undefined) karkun.address = input.address.trim()
+  if (input.education !== undefined) karkun.education = input.education.trim() || undefined
+  if (input.profession !== undefined) karkun.profession = input.profession.trim() || undefined
 
   karkun.updatedAt = nowIso()
   karkun.updatedBy = updatedBy
