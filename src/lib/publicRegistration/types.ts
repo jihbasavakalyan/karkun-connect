@@ -11,6 +11,7 @@ export type PublicRegistrationStep =
 
 export type TrainingPaymentMethod = 'cash' | 'online'
 export type TrainingPaymentStatus = 'cash_pending' | 'paid_cash' | 'paid_online' | 'unpaid'
+export type TrainingCashChoice = 'cash_pending' | 'paid_cash'
 export type TrainingRegistrationStatus = 'submitted' | 'complete'
 
 export type PublicPersonProfile = {
@@ -42,11 +43,21 @@ export type TrainingRegistrationRecord = {
   personId: string | null
   candidateRequestId: string | null
   verifiedMobile: string
+  fullName: string
   registrationStatus: TrainingRegistrationStatus
   paymentMethod: TrainingPaymentMethod
   paymentStatus: TrainingPaymentStatus
   createdAt: string
   updatedAt: string
+}
+
+export type TrainingRegisteredPersonView = {
+  karkunName: string
+  mobile: string
+  registrationId: string
+  registrationStatus: TrainingRegistrationStatus
+  paymentMethod: TrainingPaymentMethod
+  paymentStatus: TrainingPaymentStatus
 }
 
 export type TrainingRegistrationSummary = {
@@ -64,6 +75,7 @@ export type TrainingRegistrationSummary = {
     related: number
     registered: number
     remaining: number
+    registeredPeople: TrainingRegisteredPersonView[]
   }>
 }
 

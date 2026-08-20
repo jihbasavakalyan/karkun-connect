@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { JihLogoMark } from '@/components/public-registration/JihLogoMark'
 import { OtpBoxes } from '@/components/public-registration/OtpBoxes'
 import { TRAINING_GATHERING_EVENT } from '@/lib/publicRegistration/event'
+import { trainingPaymentStatusLabel } from '@/lib/publicRegistration/labels'
 import {
   lookupPublicRegistration,
   savePublicRegistrationProfile,
@@ -12,7 +13,7 @@ import type {
   PublicLookupCase,
   PublicPersonProfile,
   PublicRegistrationStep,
-  TrainingPaymentMethod,
+  TrainingCashChoice,
   TrainingRegistrationRecord,
 } from '@/lib/publicRegistration/types'
 import { isValidMobileFormat, normalizeMobile } from '@/lib/mobileValidation'
@@ -44,12 +45,12 @@ export function TrainingRegistrationPage() {
   const [resendIn, setResendIn] = useState(0)
   const [lookupCase, setLookupCase] = useState<PublicLookupCase | null>(null)
   const [profile, setProfile] = useState<PublicPersonProfile>(emptyProfile())
-  const [paymentMethod, setPaymentMethod] = useState<TrainingPaymentMethod | null>(null)
+  const [cashChoice, setCashChoice] = useState<TrainingCashChoice | null>(null)
   const [registration, setRegistration] = useState<TrainingRegistrationRecord | null>(null)
   const [savedNotice, setSavedNotice] = useState('')
 
   useEffect(() => {
-    document.title = 'Training Gathering Registration'
+    document.title = 'Tarbiyati Ijtema Registration'
   }, [])
 
   useEffect(() => {
@@ -59,6 +60,7 @@ export function TrainingRegistrationPage() {
   }, [resendIn])
 
   const progress = useMemo(() => stepIndex(step) + 1, [step])
+  const registeredName = (registration?.fullName || profile.name).trim()
 
   const sendOtp = async (nextMobile = mobile) => {
     setError('')
@@ -99,7 +101,9 @@ export function TrainingRegistrationPage() {
       })
       if (lookup.existingRegistration) {
         setRegistration(lookup.existingRegistration)
-        setPaymentMethod(lookup.existingRegistration.paymentMethod)
+        setCashChoice(
+          lookup.existingRegistration.paymentStatus === 'paid_cash' ? 'paid_cash' : 'cash_pending',
+        )
         setStep('confirmation')
         return
       }
@@ -134,15 +138,16 @@ export function TrainingRegistrationPage() {
 
   const completeRegistration = async () => {
     setError('')
-    if (!paymentMethod) {
-      setError('Choose a payment method.')
+    if (!cashChoice) {
+      setError('Choose a cash payment option.')
       return
     }
     setBusy(true)
     try {
       const result = await submitPublicRegistration({
         profile,
-        paymentMethod,
+        paymentMethod: 'cash',
+        paymentStatus: cashChoice,
       })
       setRegistration(result.registration)
       setLookupCase(result.newCandidate ? 'new_candidate' : lookupCase)
@@ -160,7 +165,7 @@ export function TrainingRegistrationPage() {
     setError('')
     setLookupCase(null)
     setRegistration(null)
-    setPaymentMethod(null)
+    setCashChoice(null)
     setStep('mobile')
   }
 
@@ -172,21 +177,25 @@ export function TrainingRegistrationPage() {
       </div>
       <main className="relative mx-auto flex min-h-dvh max-w-lg flex-col px-4 py-6 sm:py-10">
         <header className="overflow-hidden rounded-[2rem] bg-[linear-gradient(145deg,#0f3d24_0%,#14532d_42%,#1b4332_100%)] px-6 pb-8 pt-7 text-center text-white shadow-[0_20px_50px_-20px_rgb(15_23_42_/_0.45)]">
-          <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-white/10 ring-1 ring-[#c99700]/70">
-            <JihLogoMark className="h-16 w-16" />
+          <div className="mx-auto mb-4 w-[10.5rem] max-w-full rounded-2xl bg-white p-2">
+            <JihLogoMark />
           </div>
           <p className="font-urdu text-2xl leading-loose" dir="rtl">
             {TRAINING_GATHERING_EVENT.campaignTitleUrdu}
           </p>
-          <p className="mt-2 font-urdu text-lg text-[#d8f3dc]" dir="rtl">
+          <p className="mt-2 font-urdu text-xl text-[#d8f3dc]" dir="rtl">
             {TRAINING_GATHERING_EVENT.eventTitleUrdu}
           </p>
+          <p className="mt-1 text-sm tracking-wide text-[#fbf3d5]">
+            {TRAINING_GATHERING_EVENT.eventTitleEn}
+          </p>
           <p className="mt-4 text-sm text-[#fbf3d5]" dir="rtl">
-            {TRAINING_GATHERING_EVENT.dateUrdu}
+            {TRAINING_GATHERING_EVENT.dateCombined}
           </p>
           <p className="mt-1 text-sm text-white/80">
-            {TRAINING_GATHERING_EVENT.venue} • {TRAINING_GATHERING_EVENT.city}
+            {TRAINING_GATHERING_EVENT.venue}
           </p>
+          <p className="text-sm text-white/80">{TRAINING_GATHERING_EVENT.city}</p>
         </header>
 
         <div className="mt-6 mb-4 flex items-center justify-center gap-2" aria-label="Progress">
@@ -210,7 +219,12 @@ export function TrainingRegistrationPage() {
                 void sendOtp()
               }}
             >
-              <h1 className="text-2xl font-semibold text-primary">Register for the Training Gathering</h1>
+              <h1 className="text-2xl font-semibold text-primary">
+                Register for {TRAINING_GATHERING_EVENT.eventTitleEn}
+              </h1>
+              <p className="font-urdu text-lg text-slate-700" dir="rtl">
+                {TRAINING_GATHERING_EVENT.eventTitleUrdu} کے لیے اندراج
+              </p>
               <p>Enter your mobile number to continue.</p>
               <label className="block">
                 <span className="mb-2 block text-sm font-medium text-slate-800">Mobile Number</span>
@@ -365,28 +379,37 @@ export function TrainingRegistrationPage() {
 
           {step === 'payment' && (
             <div className="space-y-5">
-              <h1 className="text-2xl font-semibold text-primary">₹{TRAINING_GATHERING_EVENT.feeInr} Registration Fee</h1>
+              <h1 className="text-2xl font-semibold text-primary">
+                ₹{TRAINING_GATHERING_EVENT.feeInr} Registration Fee
+              </h1>
               {savedNotice ? <p className="rounded-2xl bg-[#d8f3dc] px-4 py-3 text-sm text-primary">{savedNotice}</p> : null}
+              <div className={paymentCardClass(false, true)} aria-disabled="true">
+                <strong>Online Payment</strong>
+                <span className="mt-1 block text-sm">Not available yet</span>
+              </div>
+              <p className="text-sm text-slate-600">
+                Online payment is not available yet. Please choose a cash payment option.
+              </p>
               <button
                 type="button"
-                onClick={() => setPaymentMethod('online')}
-                className={paymentCardClass(paymentMethod === 'online')}
+                onClick={() => setCashChoice('cash_pending')}
+                className={paymentCardClass(cashChoice === 'cash_pending')}
               >
-                <strong>Online Payment</strong>
-                <span className="mt-1 block text-sm">Pay ₹{TRAINING_GATHERING_EVENT.feeInr} now</span>
+                <strong>Cash Payment Pending</strong>
+                <span className="mt-1 block text-sm">Pay ₹{TRAINING_GATHERING_EVENT.feeInr} at the Ijtema</span>
               </button>
               <button
                 type="button"
-                onClick={() => setPaymentMethod('cash')}
-                className={paymentCardClass(paymentMethod === 'cash')}
+                onClick={() => setCashChoice('paid_cash')}
+                className={paymentCardClass(cashChoice === 'paid_cash')}
               >
-                <strong>Cash Payment</strong>
-                <span className="mt-1 block text-sm">Pay ₹{TRAINING_GATHERING_EVENT.feeInr} at the Ijtema Gah</span>
+                <strong>Cash Paid</strong>
+                <span className="mt-1 block text-sm">₹{TRAINING_GATHERING_EVENT.feeInr} paid in cash</span>
               </button>
               {error ? <p className="text-sm text-red-700">{error}</p> : null}
               <button
                 type="button"
-                disabled={busy || !paymentMethod}
+                disabled={busy || !cashChoice}
                 onClick={() => void completeRegistration()}
                 className="w-full rounded-2xl bg-primary py-3.5 text-base font-semibold text-white disabled:opacity-60"
               >
@@ -397,14 +420,31 @@ export function TrainingRegistrationPage() {
 
           {step === 'confirmation' && registration && (
             <div className="space-y-4 text-center">
+              <div className="mx-auto w-[8rem] max-w-full">
+                <JihLogoMark />
+              </div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary/80">
+                Acknowledgement
+              </p>
               <h1 className="text-2xl font-semibold text-primary">
                 {lookupCase === 'new_candidate' ? 'Registration Submitted' : 'Registration Complete'}
               </h1>
+              <p className="font-urdu text-lg text-slate-700" dir="rtl">
+                {TRAINING_GATHERING_EVENT.eventTitleUrdu}
+              </p>
+              <p className="text-sm text-slate-500">{TRAINING_GATHERING_EVENT.eventTitleEn}</p>
               {lookupCase === 'new_candidate' ? (
                 <p>Your information has been sent to the Admin for approval.</p>
               ) : null}
               <div className="rounded-2xl bg-[#fbfaf6] px-4 py-5 text-left">
                 <p>
+                  <span className="text-sm text-slate-500">Name</span>
+                  <br />
+                  <strong className="break-words text-lg text-slate-900">
+                    {registeredName || 'Name is not on this registration record'}
+                  </strong>
+                </p>
+                <p className="mt-3">
                   <span className="text-sm text-slate-500">Event</span>
                   <br />
                   {TRAINING_GATHERING_EVENT.dateLabel}
@@ -419,12 +459,12 @@ export function TrainingRegistrationPage() {
                 <p className="mt-3">
                   <span className="text-sm text-slate-500">Registration ID</span>
                   <br />
-                  <strong>{registration.id}</strong>
+                  <strong className="break-all">{registration.id}</strong>
                 </p>
                 <p className="mt-3">
                   <span className="text-sm text-slate-500">Payment Status</span>
                   <br />
-                  {paymentStatusLabel(registration.paymentStatus)}
+                  <strong>{trainingPaymentStatusLabel(registration.paymentStatus)}</strong>
                 </p>
               </div>
             </div>
@@ -474,18 +514,15 @@ function Field({
   )
 }
 
-function paymentCardClass(selected: boolean): string {
+function paymentCardClass(selected: boolean, disabled = false): string {
   return [
     'w-full rounded-2xl border px-4 py-4 text-left transition',
-    selected ? 'border-primary bg-[#d8f3dc]/60 ring-2 ring-primary/20' : 'border-[#e5e7de] bg-[#fbfaf6]',
-  ].join(' ')
-}
-
-function paymentStatusLabel(status: TrainingRegistrationRecord['paymentStatus']): string {
-  if (status === 'paid_online') return 'Paid Online'
-  if (status === 'paid_cash') return 'Paid'
-  if (status === 'cash_pending') return 'Cash Payment Pending'
-  return 'Unpaid'
+    disabled ? 'cursor-not-allowed border-[#e5e7de] bg-[#eef0ea] text-slate-500' : '',
+    !disabled && selected ? 'border-primary bg-[#d8f3dc]/60 ring-2 ring-primary/20' : '',
+    !disabled && !selected ? 'border-[#e5e7de] bg-[#fbfaf6]' : '',
+  ]
+    .filter(Boolean)
+    .join(' ')
 }
 
 export function PublicRegistrationApp() {

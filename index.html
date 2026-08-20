@@ -37,7 +37,7 @@
           .toLowerCase()
           .replace(/\.$/, '')
         if (host !== 'registration.jihbasavakalyan.org') return
-        document.title = 'Training Gathering Registration'
+        document.title = 'Tarbiyati Ijtema Registration'
         document.documentElement.setAttribute('data-public-registration', '1')
         if (location.pathname !== '/' && location.pathname !== '') {
           history.replaceState(null, '', '/' + location.search + location.hash)
@@ -79,7 +79,7 @@
         font-size: 1.05rem;
       }
       html[data-public-registration='1'] #root:empty::after {
-        content: 'Training Gathering Registration';
+        content: 'Tarbiyati Ijtema Registration';
       }
     </style>
   </head>

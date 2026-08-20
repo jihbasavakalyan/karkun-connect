@@ -4,8 +4,10 @@ import { formatRegistrationId, TRAINING_GATHERING_EVENT } from '../../lib/public
 import type {
   PublicLookupCase,
   PublicPersonProfile,
+  TrainingCashChoice,
   TrainingPaymentMethod,
   TrainingPaymentStatus,
+  TrainingRegisteredPersonView,
   TrainingRegistrationRecord,
   TrainingRegistrationStatus,
   TrainingRegistrationSummary,
@@ -121,11 +123,32 @@ function asRegistration(data: Record<string, unknown>): TrainingRegistrationReco
     personId: data.personId ? String(data.personId) : null,
     candidateRequestId: data.candidateRequestId ? String(data.candidateRequestId) : null,
     verifiedMobile: String(data.verifiedMobile || ''),
+    fullName: String(data.fullName || data.name || '').trim(),
     registrationStatus: data.registrationStatus as TrainingRegistrationStatus,
     paymentMethod: data.paymentMethod as TrainingPaymentMethod,
     paymentStatus: data.paymentStatus as TrainingPaymentStatus,
     createdAt: String(data.createdAt || ''),
     updatedAt: String(data.updatedAt || ''),
+  }
+}
+
+function isActiveConnection(data: Record<string, unknown>): boolean {
+  if (data.isArchived === true) return false
+  const status = String(data.status || '')
+  const assignmentStatus = String(data.assignmentStatus || '')
+  return status === 'Active' || assignmentStatus === 'Assigned'
+}
+
+function toRegisteredPersonView(
+  registration: TrainingRegistrationRecord,
+): TrainingRegisteredPersonView {
+  return {
+    karkunName: registration.fullName,
+    mobile: registration.verifiedMobile,
+    registrationId: registration.id,
+    registrationStatus: registration.registrationStatus,
+    paymentMethod: registration.paymentMethod,
+    paymentStatus: registration.paymentStatus,
   }
 }
 
@@ -213,6 +236,20 @@ async function handleSession(mobile10: string): Promise<TrainingRegistrationApiR
   const existingRegistration = registrationSnap.exists
     ? asRegistration((registrationSnap.data() ?? {}) as Record<string, unknown>)
     : undefined
+  if (existingRegistration && !existingRegistration.fullName && person) {
+    existingRegistration.fullName = String(person.data.name || '').trim()
+  }
+  if (existingRegistration && !existingRegistration.fullName) {
+    const requestsSnap = await admin.db.collection(SETTINGS).doc(KARKUN_REQUESTS_DOC).get()
+    const requests = Array.isArray(requestsSnap.data()?.requests) ? requestsSnap.data()!.requests : []
+    const match = (requests as Array<Record<string, unknown>>).find(
+      (row) =>
+        row.source === 'public_training_registration' &&
+        normalizeMobile(String(row.mobile || '')) === mobile10,
+    )
+    const requestName = String(match?.fullName || '').trim()
+    if (requestName) existingRegistration.fullName = requestName
+  }
 
   if (person) {
     const category =
@@ -360,6 +397,7 @@ async function handleSubmit(
   mobile10: string,
   rawProfile: unknown,
   paymentMethodRaw: unknown,
+  paymentStatusRaw: unknown,
 ): Promise<TrainingRegistrationApiResponse> {
   const paymentMethod = paymentMethodRaw === 'online' || paymentMethodRaw === 'cash' ? paymentMethodRaw : null
   if (!paymentMethod) {
@@ -370,9 +408,12 @@ async function handleSubmit(
       ok: false,
       code: 'RAZORPAY_NOT_AVAILABLE',
       error:
-        'Online payment cannot be started. This application has no Razorpay implementation to reuse.',
+        'Online payment is not available yet. Please choose a cash payment option.',
     })
   }
+
+  const requestedCash: TrainingCashChoice =
+    paymentStatusRaw === 'paid_cash' ? 'paid_cash' : 'cash_pending'
 
   const profile = sanitizeProfile(rawProfile, mobile10)
   if (typeof profile === 'string') return json(400, { ok: false, error: profile })
@@ -405,21 +446,24 @@ async function handleSubmit(
   const id = formatRegistrationId(mobile10)
   const ref = admin.db.collection(COLLECTION).doc(id)
   const existing = await ref.get()
+  const existingData = existing.exists ? (existing.data() ?? {}) as Record<string, unknown> : null
   const timestamp = nowIso()
   const registrationStatus: TrainingRegistrationStatus = 'complete'
-  const paymentStatus: TrainingPaymentStatus = 'cash_pending'
+  const alreadyPaidCash = existingData?.paymentStatus === 'paid_cash'
+  const paymentStatus: TrainingPaymentStatus = alreadyPaidCash ? 'paid_cash' : requestedCash
   const record: TrainingRegistrationRecord = {
     id,
     eventId: TRAINING_GATHERING_EVENT.id,
     personId,
-    candidateRequestId: candidateRequestId ?? (existing.exists ? String(existing.data()?.candidateRequestId || '') || null : null),
+    candidateRequestId: candidateRequestId ?? (existingData?.candidateRequestId
+      ? String(existingData.candidateRequestId)
+      : null),
     verifiedMobile: mobile10,
+    fullName: profile.name,
     registrationStatus,
     paymentMethod: 'cash',
-    paymentStatus: existing.exists && existing.data()?.paymentStatus === 'paid_cash'
-      ? 'paid_cash'
-      : paymentStatus,
-    createdAt: existing.exists ? String(existing.data()?.createdAt || timestamp) : timestamp,
+    paymentStatus,
+    createdAt: existingData ? String(existingData.createdAt || timestamp) : timestamp,
     updatedAt: timestamp,
   }
   if (personId) record.personId = personId
@@ -441,20 +485,49 @@ async function handleAdminSummary(): Promise<TrainingRegistrationApiResponse> {
     admin.db.collection('connections').get(),
   ])
 
-  const registrations = registrationsSnap.docs
-    .map((doc) => asRegistration((doc.data() ?? {}) as Record<string, unknown>))
-    .filter((row) => row.eventId === TRAINING_GATHERING_EVENT.id)
-
-  const registeredMobiles = new Set(registrations.map((row) => row.verifiedMobile))
+  const requests = Array.isArray(requestsSnap.data()?.requests) ? requestsSnap.data()!.requests : []
+  const publicRequests = (requests as Array<Record<string, unknown>>).filter(
+    (row) => row.source === 'public_training_registration',
+  )
 
   let eligible = 0
   const karkunById = new Map<string, Record<string, unknown>>()
+  const karkunByMobile = new Map<string, Record<string, unknown>>()
   for (const doc of karkunsSnap.docs) {
     const data = doc.data()
     if (isSoftRemoved(data)) continue
     eligible += 1
     karkunById.set(doc.id, data)
+    const mobile = normalizeMobile(String(data.mobile || ''))
+    if (mobile.length === 10) karkunByMobile.set(mobile, data)
   }
+
+  const requestNameByMobile = new Map<string, string>()
+  for (const row of publicRequests) {
+    const mobile = normalizeMobile(String(row.mobile || ''))
+    const name = String(row.fullName || '').trim()
+    if (mobile.length === 10 && name) requestNameByMobile.set(mobile, name)
+  }
+
+  const resolveFullName = (row: TrainingRegistrationRecord): string => {
+    if (row.fullName.trim()) return row.fullName.trim()
+    if (row.personId) {
+      const person = karkunById.get(row.personId)
+      const name = String(person?.name || '').trim()
+      if (name) return name
+    }
+    const byMobile = karkunByMobile.get(row.verifiedMobile)
+    const mobileName = String(byMobile?.name || '').trim()
+    if (mobileName) return mobileName
+    return requestNameByMobile.get(row.verifiedMobile) ?? ''
+  }
+
+  const registrations = registrationsSnap.docs
+    .map((doc) => asRegistration((doc.data() ?? {}) as Record<string, unknown>))
+    .filter((row) => row.eventId === TRAINING_GATHERING_EVENT.id)
+    .map((row) => ({ ...row, fullName: resolveFullName(row) }))
+
+  const registrationByMobile = new Map(registrations.map((row) => [row.verifiedMobile, row]))
 
   const ruknWise = ruknsSnap.docs
     .filter((doc) => doc.data().status === 'active' && doc.data().isArchived !== true)
@@ -462,33 +535,36 @@ async function handleAdminSummary(): Promise<TrainingRegistrationApiResponse> {
       const relatedIds = connectionsSnap.docs
         .filter((connection) => {
           const data = connection.data()
-          return (
-            data.ruknId === doc.id &&
-            String(data.assignmentStatus || data.status || '') === 'Assigned'
-          )
+          return data.ruknId === doc.id && isActiveConnection(data)
         })
         .map((connection) => String(connection.data().karkunId || ''))
         .filter(Boolean)
       const uniqueRelated = [...new Set(relatedIds)]
       const related = uniqueRelated.length
-      const registered = uniqueRelated.filter((karkunId) => {
-        const person = karkunById.get(karkunId)
-        if (!person) return false
-        return registeredMobiles.has(normalizeMobile(String(person.mobile || '')))
-      }).length
+      const registeredPeople = uniqueRelated
+        .map((karkunId) => {
+          const person = karkunById.get(karkunId)
+          if (!person) return null
+          const mobile = normalizeMobile(String(person.mobile || ''))
+          const registration = registrationByMobile.get(mobile)
+          if (!registration) return null
+          const karkunName = String(person.name || '').trim() || registration.fullName
+          return {
+            ...toRegisteredPersonView(registration),
+            karkunName,
+          }
+        })
+        .filter((row): row is TrainingRegisteredPersonView => row !== null)
+      const registered = registeredPeople.length
       return {
         ruknId: doc.id,
         ruknName: String(doc.data().name || doc.id),
         related,
         registered,
         remaining: Math.max(0, related - registered),
+        registeredPeople,
       }
     })
-
-  const requests = Array.isArray(requestsSnap.data()?.requests) ? requestsSnap.data()!.requests : []
-  const publicRequests = (requests as Array<Record<string, unknown>>).filter(
-    (row) => row.source === 'public_training_registration',
-  )
 
   const summary: TrainingRegistrationSummary = {
     eligible,
@@ -564,7 +640,9 @@ export async function handleTrainingRegistration(
 
     if (action === 'session') return handleSession(mobile10)
     if (action === 'save_profile') return handleSaveProfile(mobile10, body.profile)
-    if (action === 'submit') return handleSubmit(mobile10, body.profile, body.paymentMethod)
+    if (action === 'submit') {
+      return handleSubmit(mobile10, body.profile, body.paymentMethod, body.paymentStatus)
+    }
 
     return json(400, { ok: false, error: 'Unknown action.' })
   } catch (error) {

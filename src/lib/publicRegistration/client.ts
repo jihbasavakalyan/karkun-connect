@@ -1,6 +1,7 @@
 import type {
   PublicLookupResult,
   PublicPersonProfile,
+  TrainingCashChoice,
   TrainingPaymentMethod,
   TrainingRegistrationRecord,
   TrainingRegistrationSummary,
@@ -46,6 +47,7 @@ export async function savePublicRegistrationProfile(
 export async function submitPublicRegistration(input: {
   profile: PublicPersonProfile
   paymentMethod: TrainingPaymentMethod
+  paymentStatus?: TrainingCashChoice
 }): Promise<{
   ok: true
   registration: TrainingRegistrationRecord
