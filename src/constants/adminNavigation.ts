@@ -63,6 +63,7 @@ export const ADMIN_NAV_ITEMS: AdminNavEntry[] = [
     to: adminFollowUpPath(),
   },
   { id: 'communication', label: 'مواصلات', icon: 'megaphone', to: ROUTES.ADMIN_COMMUNICATION },
+  { id: 'inbox', label: 'ان باکس', icon: 'message', to: ROUTES.ADMIN_INBOX },
   { id: 'reports', label: 'رپورٹس', icon: 'file-text', to: ROUTES.ADMIN_REPORTS },
   {
     id: 'campaign',
