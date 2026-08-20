@@ -1,12 +1,14 @@
 /**
  * Firestore persistence for سرگرمی (collection remains `localProgrammes`).
- * Per-document upsert via existing writeDoc helpers. Admin-owned collection.
- * Soft-read on hydrate (Rukn permission-denied → empty). No LWW blob.
+ * Per-document upsert via existing writeDoc helpers. Admin writes.
+ * Hydrate: Admin reads all; Rukn reads own ذمہ دار rows (`responsibleRuknId`).
+ * Soft-read on hydrate (permission-denied → empty). No LWW blob.
  * Objective parent validated via ObjectiveRepository before durable write.
  * Optional campaignId is a focus overlay and is validated when present.
  */
 
-import { collection, getDocs, type DocumentData } from 'firebase/firestore'
+import { collection, getDocs, query, where, type DocumentData } from 'firebase/firestore'
+import { getFirebaseAuth } from '@/lib/firebase/firebase'
 import { getFirestoreDb } from '@/lib/firebase/firestore'
 import {
   repositoryErr,
@@ -52,12 +54,39 @@ function isPermissionDeniedError(error: unknown): boolean {
   return code === 'permission-denied' || code.includes('permission-denied')
 }
 
-async function softReadCollection<T>(
+type ClientAuthScope = { role: string | null; ruknId: string | null }
+
+async function resolveClientAuthScope(): Promise<ClientAuthScope> {
+  try {
+    const user = getFirebaseAuth().currentUser
+    if (!user) return { role: null, ruknId: null }
+    const token = await user.getIdTokenResult()
+    const role = typeof token.claims.role === 'string' ? token.claims.role : null
+    const ruknId = typeof token.claims.ruknId === 'string' ? token.claims.ruknId : null
+    return { role, ruknId }
+  } catch {
+    return { role: null, ruknId: null }
+  }
+}
+
+async function readScopedByResponsibleRuknId<T>(
   collectionName: string,
   label: string,
 ): Promise<T[]> {
+  const db = getFirestoreDb()
+  const scope = await resolveClientAuthScope()
+  if (scope.role === 'rukn' && !scope.ruknId) return []
   try {
-    const snap = await getDocs(collection(getFirestoreDb(), collectionName))
+    if (scope.role === 'rukn' && scope.ruknId) {
+      const snap = await getDocs(
+        query(
+          collection(db, collectionName),
+          where('responsibleRuknId', '==', scope.ruknId),
+        ),
+      )
+      return snap.docs.map((item) => stripMeta<T>(item.data() as DocumentData))
+    }
+    const snap = await getDocs(collection(db, collectionName))
     return snap.docs.map((item) => stripMeta<T>(item.data() as DocumentData))
   } catch (error) {
     if (isPermissionDeniedError(error)) {
@@ -120,11 +149,11 @@ export function applyLocalProgrammeHydrate(rows: LocalProgramme[]): void {
   programmeCache.set([...rows])
 }
 
-/** Soft-read Local Programme collection for background hydrate (Admin-only rules). */
+/** Soft-read Local Programme collection: Admin all; Rukn own (`responsibleRuknId`). */
 export async function readLocalProgrammeCollectionsForClient(): Promise<
   LocalProgramme[]
 > {
-  return softReadCollection<LocalProgramme>(
+  return readScopedByResponsibleRuknId<LocalProgramme>(
     FIRESTORE_COLLECTIONS.localProgrammes,
     'localProgrammes',
   )
@@ -164,6 +193,16 @@ export class LocalProgrammeFirestoreRepository implements LocalProgrammeReposito
   ): RepositoryResult<readonly LocalProgramme[]> {
     return repositoryOk(
       programmeCache.get().filter((row) => row.campaignId === campaignId),
+    )
+  }
+
+  listByResponsibleRuknId(
+    ruknId: string,
+  ): RepositoryResult<readonly LocalProgramme[]> {
+    const id = ruknId.trim()
+    if (!id) return repositoryOk([])
+    return repositoryOk(
+      programmeCache.get().filter((row) => row.responsibleRuknId === id),
     )
   }
 

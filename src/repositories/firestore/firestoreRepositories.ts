@@ -927,9 +927,9 @@ function applyBackgroundHydratePayload(input: {
     : []
   ruknAdminMessageCache.set(ruknAdminMessages)
   applyAssignmentReviewHydrate(assignmentReviews)
-  // Phase 1 — non-critical planning foundation (Admin-only; soft-empty for Rukn).
+  // Phase 1 — planning foundation (Admin writes; Rukn may read شعبہ / اہداف names).
   applyPlanningHydrate(planning)
-  // Phase 2 — non-critical Local Programme (Admin-only; soft-empty for Rukn).
+  // Phase 2 — Local Programme (Admin writes; Rukn hydrate scoped to responsibleRuknId).
   applyLocalProgrammeHydrate(localProgrammes)
   // Phase 3 — non-critical Occurrence (Admin-only; soft-empty for Rukn).
   applyOccurrenceHydrate(occurrences)

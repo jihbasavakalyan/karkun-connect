@@ -13,6 +13,11 @@ export interface LocalProgrammeRepository {
   listByObjectiveId(objectiveId: string): RepositoryResult<readonly LocalProgramme[]>
   listByCampaignId(campaignId: string): RepositoryResult<readonly LocalProgramme[]>
   /**
+   * سرگرمیاں where this Rukn is ذمہ دار (`responsibleRuknId`).
+   * Firestore hydrate already scopes Rukn reads; this is the repository filter.
+   */
+  listByResponsibleRuknId(ruknId: string): RepositoryResult<readonly LocalProgramme[]>
+  /**
    * Admin-only durable upsert (create / update / archive via `status`).
    * Must await durable persistence before reporting success (KC-ARCH-001).
    * Callers must supply a valid existing `objectiveId`.

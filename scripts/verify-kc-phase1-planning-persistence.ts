@@ -53,19 +53,27 @@ console.log('▶ collection constants')
   assert.equal(FIRESTORE_COLLECTIONS.units, 'units')
 }
 
-console.log('▶ Firestore rules — Admin-only planning collections')
+console.log('▶ Firestore rules — planning collections')
 {
   const rules = read('firestore.rules')
   for (const matchLine of [
     'match /meqatiMansoobas/{docId}',
-    'match /shobahs/{docId}',
-    'match /objectives/{docId}',
     'match /units/{docId}',
   ]) {
     const block = extractRulesBlock(rules, matchLine)
     assertIncludes(block, 'isAdministrator()', `${matchLine} Admin gate`)
     assertIncludes(block, 'allow delete: if false', `${matchLine} no client delete`)
     assertNotIncludes(block, 'isRukn()', `${matchLine} no Rukn access`)
+  }
+  for (const matchLine of [
+    'match /shobahs/{docId}',
+    'match /objectives/{docId}',
+  ]) {
+    const block = extractRulesBlock(rules, matchLine)
+    assertIncludes(block, 'isAdministrator()', `${matchLine} Admin write gate`)
+    assertIncludes(block, 'allow create, update: if isAdministrator()', `${matchLine} Admin-only writes`)
+    assertIncludes(block, 'isRukn()', `${matchLine} Rukn read for activity orientation`)
+    assertIncludes(block, 'allow delete: if false', `${matchLine} no client delete`)
   }
 }
 

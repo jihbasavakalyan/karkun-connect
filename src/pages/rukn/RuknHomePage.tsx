@@ -14,6 +14,7 @@ import { RuknWorkActionPanel } from '@/components/execution/RuknWorkActionPanel'
 import { ActionableNotificationsPanel } from '@/components/notifications/ActionableNotificationsPanel'
 import { RuknMessageAdminPanel } from '@/components/communication/RuknMessageAdminPanel'
 import { RuknActionDashboardPanel } from '@/components/rukn/RuknActionDashboardPanel'
+import { RuknMeqatiActivitiesPanel } from '@/components/rukn/RuknMeqatiActivitiesPanel'
 import { ContinuousJourneyCountsStrip } from '@/components/journey/ContinuousKarkunJourneyStrip'
 import { openDigitalRafeeqAssistant } from '@/features/digitalRafeeq/launcher'
 import { buildContextualRafeeqGuidance } from '@/features/digitalRafeeq/companion/rafeeqUrduCopy'
@@ -113,6 +114,7 @@ export function RuknHomePage() {
       {/* Phase 7 — Work + derived now-actions (TASK-055). Notifications stay above. */}
       <WidgetErrorBoundary title="What needs my action?">
         <section className="mt-4 space-y-3" aria-label="What needs my action?">
+          <RuknMeqatiActivitiesPanel ruknId={ruknId} />
           <RuknWorkActionPanel ruknId={ruknId} />
           <RuknActionDashboardPanel ruknId={ruknId} />
           <ContinuousJourneyCountsStrip ruknId={ruknId} />

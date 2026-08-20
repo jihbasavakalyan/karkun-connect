@@ -76,7 +76,10 @@ export function applyUnitHydrate(rows: Unit[]): void {
   unitCache.set([...rows])
 }
 
-/** Soft-read planning collections for background hydrate (Admin-only rules). */
+/** Soft-read planning collections for background hydrate.
+ * meqatiMansoobas / units remain Admin-only (Rukn soft-empty).
+ * shobahs / objectives are readable by Rukn for assigned-activity orientation.
+ */
 export async function readPlanningCollectionsForClient(): Promise<{
   mansoobas: MeqatiMansooba[]
   shobahs: Shobah[]

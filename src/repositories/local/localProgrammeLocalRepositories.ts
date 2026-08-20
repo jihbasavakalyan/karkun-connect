@@ -124,6 +124,16 @@ export class LocalProgrammeLocalRepository implements LocalProgrammeRepository {
     )
   }
 
+  listByResponsibleRuknId(
+    ruknId: string,
+  ): RepositoryResult<readonly LocalProgramme[]> {
+    const id = ruknId.trim()
+    if (!id) return tryRepository(() => [])
+    return tryRepository(() =>
+      loadProgrammes().filter((row) => row.responsibleRuknId === id),
+    )
+  }
+
   async saveDurable(
     programme: LocalProgramme,
   ): Promise<RepositoryResult<LocalProgramme>> {

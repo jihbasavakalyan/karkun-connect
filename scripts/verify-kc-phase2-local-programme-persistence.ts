@@ -48,14 +48,16 @@ console.log('▶ collection constants')
   assert.equal(FIRESTORE_COLLECTIONS.localProgrammes, 'localProgrammes')
 }
 
-console.log('▶ Firestore rules — Admin-only localProgrammes')
+console.log('▶ Firestore rules — Admin writes; Rukn read own responsible activities')
 {
   const rules = read('firestore.rules')
   const matchLine = 'match /localProgrammes/{docId}'
   const block = extractRulesBlock(rules, matchLine)
   assertIncludes(block, 'isAdministrator()', `${matchLine} Admin gate`)
+  assertIncludes(block, 'allow create, update: if isAdministrator()', `${matchLine} Admin-only writes`)
+  assertIncludes(block, 'responsibleRuknId', `${matchLine} Rukn scoped by responsibleRuknId`)
+  assertIncludes(block, 'isRukn()', `${matchLine} Rukn read of own ذمہ دار rows`)
   assertIncludes(block, 'allow delete: if false', `${matchLine} no client delete`)
-  assertNotIncludes(block, 'isRukn()', `${matchLine} no Rukn access`)
 }
 
 console.log('▶ provider wiring (local + firestore; Objective + Campaign injection)')

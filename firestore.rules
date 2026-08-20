@@ -179,12 +179,16 @@ service cloud.firestore {
     }
 
     match /objectives/{docId} {
-      allow read, create, update: if isAdministrator();
+      // Rukn may read اہداف names to orient assigned سرگرمیاں. Writes stay Admin.
+      allow read: if isAdministrator() || isRukn();
+      allow create, update: if isAdministrator();
       allow delete: if false;
     }
 
     match /shobahs/{docId} {
-      allow read, create, update: if isAdministrator();
+      // Rukn may read شعبہ names to orient assigned سرگرمیاں. Writes stay Admin.
+      allow read: if isAdministrator() || isRukn();
+      allow create, update: if isAdministrator();
       allow delete: if false;
     }
 
@@ -193,9 +197,11 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // Phase 2 Local Programme — Admin-owned under Campaign; archive via update (no client deletes).
+    // Phase 2 Local Programme — Admin writes; Rukn may read own ذمہ دار activities.
     match /localProgrammes/{docId} {
-      allow read, create, update: if isAdministrator();
+      allow read: if isAdministrator()
+        || (isRukn() && resource.data.responsibleRuknId == ruknId());
+      allow create, update: if isAdministrator();
       allow delete: if false;
     }
 
