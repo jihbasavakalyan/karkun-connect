@@ -18,6 +18,11 @@ import {
   normalizeActivityYearStatuses,
   type ActivityYearStatus,
 } from '@/lib/planning/activityYearStatus'
+import {
+  formatProgrammeScheduleLabel,
+  listProgrammeFrequencies,
+  normalizeProgrammeSchedule,
+} from '@/lib/planning/programmeSchedule'
 import { buildOccurrenceCalendar } from '@/lib/occurrence/calendar'
 import { listOccurrenceHistory } from '@/lib/occurrence/history'
 import { unwrapRepository } from '@/repositories/errors'
@@ -104,19 +109,8 @@ function formatRepoError(error: { message?: string } | undefined): string {
   return error?.message?.trim() || 'Unable to save. Please try again.'
 }
 
-function formatSchedule(frequency: ProgrammeFrequency | undefined): string {
-  if (!frequency) return 'غیر متعین'
-  if (frequency.cadence === 'weekly') {
-    return frequency.dayOfWeek != null ? `ہفتہ وار (${frequency.dayOfWeek})` : 'ہفتہ وار'
-  }
-  if (frequency.cadence === 'monthly') {
-    return frequency.dayOfMonth != null ? `ماہانہ (${frequency.dayOfMonth})` : 'ماہانہ'
-  }
-  if (frequency.cadence === 'yearly') {
-    return 'سالانہ'
-  }
-  if (frequency.cadence === 'once') return 'یک بار'
-  return frequency.note?.trim() ? `دیگر: ${frequency.note}` : 'دیگر'
+function formatSchedule(frequency: LocalProgramme['frequency']): string {
+  return formatProgrammeScheduleLabel(frequency)
 }
 
 type MansoobaFormState = {
@@ -149,6 +143,8 @@ type ActivityFormState = {
   startDate: string
   endDate: string
   frequencyCadence: '' | ProgrammeFrequency['cadence']
+  /** Optional second pattern (KC-DEC-015 dual schedule, e.g. Monthly + Quarterly). */
+  frequencyCadenceExtra: '' | ProgrammeFrequency['cadence']
   frequencyDayOfWeek: string
   frequencyDayOfMonth: string
   frequencyMonth: string
@@ -187,6 +183,7 @@ const emptyActivityForm = (): ActivityFormState => ({
   startDate: '',
   endDate: '',
   frequencyCadence: '',
+  frequencyCadenceExtra: '',
   frequencyDayOfWeek: '',
   frequencyDayOfMonth: '',
   frequencyMonth: '',
@@ -196,7 +193,9 @@ const emptyActivityForm = (): ActivityFormState => ({
 })
 
 function activityFormFromRow(row: LocalProgramme): ActivityFormState {
-  const frequency = row.frequency
+  const patterns = listProgrammeFrequencies(row.frequency)
+  const frequency = patterns[0]
+  const extra = patterns[1]
   return {
     name: row.name,
     kind: row.kind,
@@ -205,6 +204,8 @@ function activityFormFromRow(row: LocalProgramme): ActivityFormState {
     startDate: row.startDate ?? '',
     endDate: row.endDate ?? '',
     frequencyCadence: frequency?.cadence ?? '',
+    frequencyCadenceExtra:
+      extra && extra.cadence !== frequency?.cadence ? extra.cadence : '',
     frequencyDayOfWeek:
       frequency && frequency.cadence === 'weekly' && frequency.dayOfWeek != null
         ? String(frequency.dayOfWeek)
@@ -225,9 +226,11 @@ function activityFormFromRow(row: LocalProgramme): ActivityFormState {
   }
 }
 
-function buildActivityFrequency(form: ActivityFormState): ProgrammeFrequency | undefined {
-  if (!form.frequencyCadence) return undefined
-  if (form.frequencyCadence === 'weekly') {
+function buildOneFrequency(
+  cadence: ProgrammeFrequency['cadence'],
+  form: ActivityFormState,
+): ProgrammeFrequency {
+  if (cadence === 'weekly') {
     const dayRaw = form.frequencyDayOfWeek.trim()
     const dayOfWeek = dayRaw === '' ? undefined : Number(dayRaw)
     return {
@@ -235,7 +238,7 @@ function buildActivityFrequency(form: ActivityFormState): ProgrammeFrequency | u
       dayOfWeek: dayOfWeek != null && Number.isFinite(dayOfWeek) ? dayOfWeek : undefined,
     }
   }
-  if (form.frequencyCadence === 'monthly') {
+  if (cadence === 'monthly') {
     const dayRaw = form.frequencyDayOfMonth.trim()
     const dayOfMonth = dayRaw === '' ? undefined : Number(dayRaw)
     return {
@@ -243,7 +246,10 @@ function buildActivityFrequency(form: ActivityFormState): ProgrammeFrequency | u
       dayOfMonth: dayOfMonth != null && Number.isFinite(dayOfMonth) ? dayOfMonth : undefined,
     }
   }
-  if (form.frequencyCadence === 'yearly') {
+  if (cadence === 'quarterly') {
+    return { cadence: 'quarterly' }
+  }
+  if (cadence === 'yearly') {
     const monthRaw = form.frequencyMonth.trim()
     const dayRaw = form.frequencyDayOfMonth.trim()
     const month = monthRaw === '' ? undefined : Number(monthRaw)
@@ -254,13 +260,22 @@ function buildActivityFrequency(form: ActivityFormState): ProgrammeFrequency | u
       dayOfMonth: dayOfMonth != null && Number.isFinite(dayOfMonth) ? dayOfMonth : undefined,
     }
   }
-  if (form.frequencyCadence === 'once') {
-    return { cadence: 'once' }
+  if (cadence === 'once') return { cadence: 'once' }
+  return { cadence: 'custom', note: form.frequencyNote.trim() || undefined }
+}
+
+function buildActivityFrequency(
+  form: ActivityFormState,
+): LocalProgramme['frequency'] {
+  if (!form.frequencyCadence) return undefined
+  const patterns: ProgrammeFrequency[] = [buildOneFrequency(form.frequencyCadence, form)]
+  if (
+    form.frequencyCadenceExtra &&
+    form.frequencyCadenceExtra !== form.frequencyCadence
+  ) {
+    patterns.push(buildOneFrequency(form.frequencyCadenceExtra, form))
   }
-  return {
-    cadence: 'custom',
-    note: form.frequencyNote.trim() || undefined,
-  }
+  return normalizeProgrammeSchedule(patterns)
 }
 
 export function AdminPlanningPage() {
@@ -409,6 +424,15 @@ export function AdminPlanningPage() {
       .sort((a, b) => a.name.localeCompare(b.name))
   }, [programmes, selectedObjectiveIdResolved])
 
+  const unmappedActivities = useMemo(
+    () =>
+      programmes
+        .filter((row) => !row.objectiveId?.trim())
+        .slice()
+        .sort((a, b) => a.name.localeCompare(b.name)),
+    [programmes],
+  )
+
   const mansoobaObjectiveIds = useMemo(() => {
     if (!selectedMansoobaId) return new Set<string>()
     return new Set(
@@ -417,7 +441,11 @@ export function AdminPlanningPage() {
   }, [objectives, selectedMansoobaId])
 
   const mansoobaActivities = useMemo(
-    () => programmes.filter((row) => mansoobaObjectiveIds.has(row.objectiveId)),
+    () =>
+      programmes.filter((row) => {
+        const objectiveId = row.objectiveId?.trim()
+        return Boolean(objectiveId) && mansoobaObjectiveIds.has(objectiveId!)
+      }),
     [programmes, mansoobaObjectiveIds],
   )
 
@@ -737,10 +765,6 @@ export function AdminPlanningPage() {
   }
 
   const openCreateActivity = () => {
-    if (!selectedObjectiveIdResolved) {
-      setMessage('پہلے اہداف منتخب کریں۔')
-      return
-    }
     setEditingActivityId(null)
     setActivityObjectiveId(selectedObjectiveIdResolved)
     setActivityForm(emptyActivityForm())
@@ -751,7 +775,7 @@ export function AdminPlanningPage() {
 
   const openEditActivity = (row: LocalProgramme) => {
     setEditingActivityId(row.id)
-    setActivityObjectiveId(row.objectiveId)
+    setActivityObjectiveId(row.objectiveId?.trim() || null)
     setActivityForm(activityFormFromRow(row))
     setActivityModal('edit')
     setFormError('')
@@ -761,11 +785,7 @@ export function AdminPlanningPage() {
   const saveActivity = () => {
     void run(
       async () => {
-        const parentId = activityObjectiveId
-        if (!parentId) {
-          setFormError('سرگرمی اہداف کے اندر ہونی چاہیے۔')
-          return
-        }
+        const parentId = activityObjectiveId?.trim() || null
         const name = activityForm.name.trim()
         if (!name) {
           setFormError('سرگرمی کا نام ضروری ہے۔')
@@ -777,7 +797,7 @@ export function AdminPlanningPage() {
           : undefined
         const record: LocalProgramme = {
           id: existing?.id ?? newPlanningId('activity'),
-          objectiveId: existing?.objectiveId ?? parentId,
+          objectiveId: parentId,
           campaignId: existing?.campaignId,
           name,
           kind: activityForm.kind,
@@ -845,8 +865,6 @@ export function AdminPlanningPage() {
   }
 
   const objectiveParentShobah = shobahs.find((row) => row.id === objectiveShobahId) ?? null
-  const activityParentObjective =
-    objectives.find((row) => row.id === activityObjectiveId) ?? null
 
   return (
     <PageShell>
@@ -1038,20 +1056,18 @@ export function AdminPlanningPage() {
               <p className="mt-1 text-sm text-secondary">
                 {selectedObjective
                   ? `اہداف: ${selectedObjective.title}`
-                  : 'سرگرمی اہداف کے اندر ہے۔ مہم اس کی مالک نہیں۔'}
+                  : 'اہداف اختیاری ہے (ACTIVITY-FIRST)۔ مہم سرگرمی کی مالک نہیں۔'}
               </p>
             </div>
-            <PrimaryButton
-              type="button"
-              onClick={openCreateActivity}
-              disabled={!selectedObjectiveIdResolved}
-            >
+            <PrimaryButton type="button" onClick={openCreateActivity}>
               نئی سرگرمی
             </PrimaryButton>
           </div>
 
           {!selectedObjectiveIdResolved ? (
-            <p className="mt-4 text-sm text-secondary">اہداف منتخب نہیں۔</p>
+            <p className="mt-4 text-sm text-secondary">
+              اہداف منتخب نہیں — بغیر اہداف والی سرگرمیاں نیچے دیکھی جا سکتی ہیں۔
+            </p>
           ) : visibleActivities.length === 0 ? (
             <p className="mt-4 text-sm text-secondary">ان اہداف کے تحت ابھی کوئی سرگرمی نہیں۔</p>
           ) : (
@@ -1086,6 +1102,35 @@ export function AdminPlanningPage() {
               ))}
             </ul>
           )}
+
+          {unmappedActivities.length > 0 ? (
+            <div className="mt-6 border-t border-border pt-4">
+              <h3 className="text-sm font-semibold text-text-heading">
+                بغیر اہداف (ACTIVITY-FIRST)
+              </h3>
+              <ul className="mt-3 space-y-3">
+                {unmappedActivities.map((row) => (
+                  <li
+                    key={row.id}
+                    className="flex flex-wrap items-start justify-between gap-3 rounded-lg border border-dashed border-border bg-surface-muted p-4"
+                  >
+                    <div>
+                      <p className="font-semibold text-text-heading">{row.name}</p>
+                      <p className="mt-1 text-xs text-secondary">
+                        اہداف: — · {ACTIVITY_KIND_LABELS[row.kind]} · {row.status}
+                      </p>
+                      <p className="mt-1 text-xs text-secondary">
+                        نظام الاوقات: {formatSchedule(row.frequency)}
+                      </p>
+                    </div>
+                    <SecondaryButton type="button" onClick={() => openEditActivity(row)}>
+                      ترمیم
+                    </SecondaryButton>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
         </section>
 
         <section className="rounded-(--radius-card) border border-border bg-surface p-5 shadow-card">
@@ -1537,16 +1582,39 @@ export function AdminPlanningPage() {
             primaryLabel={activityModal === 'edit' ? 'محفوظ کریں' : 'بنائیں'}
             onPrimaryClick={saveActivity}
             loading={busy}
-            primaryDisabled={busy || !activityForm.name.trim() || !activityObjectiveId}
+            primaryDisabled={busy || !activityForm.name.trim()}
             error={formError || undefined}
           />
         }
       >
         <ModalFormSection title="تفصیل">
-          <p className="mb-3 text-sm text-secondary">
-            اہداف: {activityParentObjective?.title ?? activityObjectiveId ?? '—'}
-          </p>
           <ModalFormGrid>
+            <div>
+              <label className={labelClassName} htmlFor="activity-objective">
+                اہداف (اختیاری)
+              </label>
+              <select
+                id="activity-objective"
+                className={inputClassName}
+                value={activityObjectiveId ?? ''}
+                onChange={(event) =>
+                  setActivityObjectiveId(event.target.value.trim() || null)
+                }
+              >
+                <option value="">— بغیر اہداف —</option>
+                {objectives
+                  .filter((row) =>
+                    selectedMansoobaId
+                      ? row.mansoobaId === selectedMansoobaId
+                      : true,
+                  )
+                  .map((row) => (
+                    <option key={row.id} value={row.id}>
+                      {row.title}
+                    </option>
+                  ))}
+              </select>
+            </div>
             <div>
               <label className={labelClassName} htmlFor="activity-name">
                 نام
@@ -1670,12 +1738,40 @@ export function AdminPlanningPage() {
               >
                 <option value="">غیر متعین</option>
                 <option value="once">یک بار</option>
-                <option value="weekly">ہفتہ وار</option>
                 <option value="monthly">ماہانہ</option>
+                <option value="quarterly">سہ ماہی</option>
                 <option value="yearly">سالانہ</option>
+                <option value="weekly">ہفتہ وار</option>
                 <option value="custom">دیگر</option>
               </select>
             </div>
+            {activityForm.frequencyCadence ? (
+              <div>
+                <label className={labelClassName} htmlFor="activity-frequency-extra">
+                  دوسرا نظام الاوقات (اختیاری)
+                </label>
+                <select
+                  id="activity-frequency-extra"
+                  className={inputClassName}
+                  value={activityForm.frequencyCadenceExtra}
+                  onChange={(event) =>
+                    setActivityForm((prev) => ({
+                      ...prev,
+                      frequencyCadenceExtra: event.target
+                        .value as ActivityFormState['frequencyCadenceExtra'],
+                    }))
+                  }
+                >
+                  <option value="">—</option>
+                  <option value="once">یک بار</option>
+                  <option value="monthly">ماہانہ</option>
+                  <option value="quarterly">سہ ماہی</option>
+                  <option value="yearly">سالانہ</option>
+                  <option value="weekly">ہفتہ وار</option>
+                  <option value="custom">دیگر</option>
+                </select>
+              </div>
+            ) : null}
             {activityForm.frequencyCadence === 'weekly' ? (
               <div>
                 <label className={labelClassName} htmlFor="activity-dow">

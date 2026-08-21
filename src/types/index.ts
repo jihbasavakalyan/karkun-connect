@@ -30,7 +30,9 @@ export type {
   LocalProgramme,
   LocalProgrammeStatus,
   ProgrammeKind,
+  ProgrammeCadence,
   ProgrammeFrequency,
+  ProgrammeSchedule,
 } from './localProgramme.types'
 
 export type {

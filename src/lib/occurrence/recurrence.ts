@@ -15,7 +15,9 @@ import type {
   LocalProgramme,
   ProgrammeFrequency,
   ProgrammeRecurrenceRule,
+  ProgrammeSchedule,
 } from '@/types/localProgramme.types'
+import { listProgrammeFrequencies } from '@/lib/planning/programmeSchedule'
 import {
   DEFAULT_ATTENDANCE_WINDOW_SCHEDULE,
   listWeeklyWindowRecurrenceDescriptors,
@@ -58,6 +60,11 @@ export type ResolvedCustomRecurrenceRule = {
   timezone: string
 }
 
+export type ResolvedQuarterlyRecurrenceRule = {
+  cadence: 'quarterly'
+  timezone: string
+}
+
 export type ResolvedYearlyRecurrenceRule = {
   cadence: 'yearly'
   month?: number
@@ -72,6 +79,7 @@ export type ResolvedYearlyRecurrenceRule = {
 export type ResolvedRecurrenceRule =
   | ResolvedWeeklyRecurrenceRule
   | ResolvedMonthlyRecurrenceRule
+  | ResolvedQuarterlyRecurrenceRule
   | ResolvedOnceRecurrenceRule
   | ResolvedCustomRecurrenceRule
   | ResolvedYearlyRecurrenceRule
@@ -105,6 +113,8 @@ export function parseProgrammeRecurrenceRule(
     }
     case 'once':
       return { cadence: 'once' }
+    case 'quarterly':
+      return { cadence: 'quarterly' }
     case 'yearly': {
       const month = (row as { month?: unknown }).month
       const dayOfMonth = (row as { dayOfMonth?: unknown }).dayOfMonth
@@ -125,6 +135,20 @@ export function parseProgrammeRecurrenceRule(
     default:
       return null
   }
+}
+
+/** Parse one or many schedule patterns; skip invalid entries. */
+export function parseProgrammeSchedule(
+  raw: unknown,
+): ProgrammeFrequency[] {
+  if (raw == null) return []
+  const rows = Array.isArray(raw) ? raw : [raw]
+  const out: ProgrammeFrequency[] = []
+  for (const row of rows) {
+    const parsed = parseProgrammeRecurrenceRule(row)
+    if (parsed) out.push(parsed)
+  }
+  return out
 }
 
 /** Round-trip serialisation helper for recurrence config. */
@@ -200,6 +224,8 @@ function resolveFromFrequency(
       }
     case 'once':
       return { cadence: 'once', timezone }
+    case 'quarterly':
+      return { cadence: 'quarterly', timezone }
     case 'yearly':
       return {
         cadence: 'yearly',
@@ -218,9 +244,9 @@ function resolveFromFrequency(
  * Resolve recurrence rules for a Local Programme.
  *
  * - `weekly_ijtema`: prefer WI attendance-window schedule (Occurrence precursor).
- * - otherwise: use `programme.frequency` when present and complete enough to resolve.
+ * - otherwise: expand `programme.frequency` (single or multiple patterns).
  *
- * Returns [] when nothing deterministic is configured (valid empty state).
+ * Returns [] when nothing deterministic is configured (Not specified — valid empty state).
  */
 export function resolveProgrammeRecurrenceRules(
   programme: Pick<LocalProgramme, 'kind' | 'frequency'>,
@@ -229,7 +255,13 @@ export function resolveProgrammeRecurrenceRules(
   if (programme.kind === 'weekly_ijtema') {
     return weeklyRecurrenceFromAttendanceWindowSchedule(schedule)
   }
-  if (!programme.frequency) return []
-  const resolved = resolveFromFrequency(programme.frequency, schedule.timezone)
-  return resolved ? [resolved] : []
+  const patterns = listProgrammeFrequencies(
+    programme.frequency as ProgrammeSchedule | undefined,
+  )
+  const resolved: ResolvedRecurrenceRule[] = []
+  for (const pattern of patterns) {
+    const row = resolveFromFrequency(pattern, schedule.timezone)
+    if (row) resolved.push(row)
+  }
+  return resolved
 }

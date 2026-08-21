@@ -31,7 +31,8 @@ import {
   getWeeklyIjtemaDashboardGenderPresent,
   getWeeklyIjtemaDashboardKpi,
 } from '@/services/weeklyIjtemaService'
-import type { LocalProgramme, ProgrammeFrequency } from '@/types/localProgramme.types'
+import type { LocalProgramme } from '@/types/localProgramme.types'
+import { formatProgrammeScheduleLabel } from '@/lib/planning/programmeSchedule'
 import type { MeqatiMansooba, PlanningObjective, Shobah } from '@/types/planning.types'
 import type { MeqatiYear } from './meqatiYear'
 
@@ -145,13 +146,10 @@ export function resolveProgrammeYearStatus(
   return resolveActivityYearStatus(programme.yearStatuses, yearKey)
 }
 
-export function formatProgrammeSchedule(frequency: ProgrammeFrequency | undefined): string {
-  if (!frequency) return 'غیر متعین'
-  if (frequency.cadence === 'weekly') return 'ہفتہ وار'
-  if (frequency.cadence === 'monthly') return 'ماہانہ'
-  if (frequency.cadence === 'yearly') return 'سالانہ'
-  if (frequency.cadence === 'once') return 'یک بار'
-  return frequency.note?.trim() ? `دیگر: ${frequency.note}` : 'دیگر'
+export function formatProgrammeSchedule(
+  frequency: LocalProgramme['frequency'],
+): string {
+  return formatProgrammeScheduleLabel(frequency)
 }
 
 function emptyCounts(): OrganisationalStatusCounts {
@@ -186,9 +184,10 @@ export function buildOrganisationalSituation(year: MeqatiYear): OrganisationalSi
     ? objectives.filter((row) => row.mansoobaId === mansooba.id && row.status !== 'archived')
     : []
   const mansoobaObjectiveIds = new Set(mansoobaObjectives.map((row) => row.id))
-  const linkedProgrammes = programmes.filter(
-    (row) => mansoobaObjectiveIds.has(row.objectiveId) && row.status !== 'archived',
-  )
+  const linkedProgrammes = programmes.filter((row) => {
+    const objectiveId = row.objectiveId?.trim()
+    return Boolean(objectiveId) && mansoobaObjectiveIds.has(objectiveId!) && row.status !== 'archived'
+  })
 
   const statusByProgrammeId = new Map<string, MeqatiYearActivityStatus | null>()
   for (const programme of linkedProgrammes) {

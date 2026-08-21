@@ -239,12 +239,16 @@ export function buildMansoobaActivityReport(
     (row) => row.mansoobaId === mansooba.id && row.status !== 'archived',
   )
   const mansoobaObjectiveIds = new Set(mansoobaObjectives.map((row) => row.id))
-  const linkedProgrammes = programmes.filter((row) => mansoobaObjectiveIds.has(row.objectiveId))
+  const linkedProgrammes = programmes.filter((row) => {
+    const objectiveId = row.objectiveId?.trim()
+    return Boolean(objectiveId) && mansoobaObjectiveIds.has(objectiveId!)
+  })
   const programmeById = new Map(linkedProgrammes.map((row) => [row.id, row]))
 
-  const unlinkedProgrammeCount = programmes.filter(
-    (row) => !mansoobaObjectiveIds.has(row.objectiveId),
-  ).length
+  const unlinkedProgrammeCount = programmes.filter((row) => {
+    const objectiveId = row.objectiveId?.trim()
+    return !objectiveId || !mansoobaObjectiveIds.has(objectiveId)
+  }).length
 
   const periodOccurrences = occurrences.filter((row) => {
     if (!programmeById.has(row.programmeId)) return false
@@ -306,7 +310,9 @@ export function buildMansoobaActivityReport(
       programmeKind: programme.kind,
       programmeStatus: programme.status,
       campaignId: programme.campaignId,
-      objectiveIds: [programme.objectiveId].filter((id) => mansoobaObjectiveIds.has(id)),
+      objectiveIds: [programme.objectiveId]
+        .filter((id): id is string => Boolean(id?.trim()))
+        .filter((id) => mansoobaObjectiveIds.has(id)),
       execution,
       attendance,
       attention,

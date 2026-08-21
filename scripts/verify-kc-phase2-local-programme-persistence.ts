@@ -140,6 +140,65 @@ console.log('▶ local durable CRUD + Objective parent validation')
   }
   assert.equal(repos.localProgramme.loadAll().data?.length, 1)
 
+  // B. ACTIVITY-FIRST — objectiveId null saves
+  const unmapped: LocalProgramme = {
+    ...programme,
+    id: 'programme-verify-unmapped',
+    objectiveId: null,
+    name: 'Unmapped ACTIVITY-FIRST activity',
+    campaignId: undefined,
+  }
+  const unmappedSaved = await repos.localProgramme.saveDurable(unmapped)
+  assert.equal(unmappedSaved.ok, true)
+  assert.equal(repos.localProgramme.getById(unmapped.id).data?.objectiveId, null)
+  assert.equal(repos.localProgramme.loadAll().data?.length, 2)
+
+  // D + E — Schedule foundation: Not specified + Monthly + Quarterly (H02-A10-style)
+  const {
+    isScheduleNotSpecified,
+    listProgrammeFrequencies,
+    monthlyAndQuarterlySchedule,
+    normalizeProgrammeSchedule,
+  } = await import('@/lib/planning/programmeSchedule')
+  assert.equal(isScheduleNotSpecified(undefined), true)
+  assert.equal(isScheduleNotSpecified(null), true)
+  const dual = normalizeProgrammeSchedule(monthlyAndQuarterlySchedule())
+  assert.ok(Array.isArray(dual))
+  assert.deepEqual(
+    listProgrammeFrequencies(dual).map((row) => row.cadence),
+    ['monthly', 'quarterly'],
+  )
+  const h02Style = await repos.localProgramme.saveDurable({
+    ...unmapped,
+    id: 'programme-verify-h02-a10-schedule',
+    name: 'H02-A10 style dual schedule',
+    frequency: dual,
+  })
+  assert.equal(h02Style.ok, true)
+  assert.deepEqual(
+    listProgrammeFrequencies(repos.localProgramme.getById(h02Style.data!.id).data?.frequency).map(
+      (row) => row.cadence,
+    ),
+    ['monthly', 'quarterly'],
+  )
+  const notSpecified = await repos.localProgramme.saveDurable({
+    ...unmapped,
+    id: 'programme-verify-schedule-unspecified',
+    name: 'Schedule not specified',
+    frequency: undefined,
+  })
+  assert.equal(notSpecified.ok, true)
+  assert.equal(
+    isScheduleNotSpecified(repos.localProgramme.getById(notSpecified.data!.id).data?.frequency),
+    true,
+  )
+
+  // F — mapped activity still lists by objective
+  assert.equal(
+    repos.localProgramme.listByObjectiveId(VERIFY_ACTIVITY_OBJECTIVE_ID).data?.length,
+    1,
+  )
+
   const unknownCampaign = await repos.localProgramme.saveDurable({
     ...programme,
     id: 'programme-verify-bad-campaign',
@@ -256,33 +315,57 @@ console.log('▶ Campaign schema / objective isolation')
   assertIncludes(campaignRepo, 'Must not synchronize Objective titles', 'SoT protection note')
 
   const programmeTypes = read('src/types/localProgramme.types.ts')
-  assertIncludes(programmeTypes, 'objectiveId: string', 'activity requires objectiveId')
+  assertIncludes(programmeTypes, 'objectiveId?: string | null', 'ACTIVITY-FIRST optional objectiveId')
+  assertIncludes(programmeTypes, "cadence: 'quarterly'", 'quarterly schedule cadence')
+  assertIncludes(programmeTypes, 'ProgrammeSchedule', 'multi-pattern schedule type')
   assertIncludes(programmeTypes, 'campaignId?: string', 'campaignId is optional focus')
   assertIncludes(programmeTypes, 'yearStatuses?:', 'year-specific status map on same activity')
   assertNotIncludes(programmeTypes, 'mansoobaId', 'no direct mansoobaId on programme')
   assertNotIncludes(programmeTypes, 'objectiveIds', 'no objectiveIds on programme')
+  assertNotIncludes(programmeTypes, 'bi-monthly', 'no invented bi-monthly category')
+  assertNotIncludes(programmeTypes, 'irregular', 'no invented irregular category')
 }
 
-console.log('▶ Admin activity UI integrity (objectiveId lock)')
+console.log('▶ Admin activity UI integrity (ACTIVITY-FIRST)')
 {
   const page = read('src/pages/admin/AdminPlanningPage.tsx')
-  assertIncludes(page, 'activityObjectiveId', 'locked Objective parent state')
+  assertIncludes(page, 'activityObjectiveId', 'optional Objective parent state')
   assertIncludes(
     page,
     'setActivityObjectiveId(selectedObjectiveIdResolved)',
-    'create locks selected Objective',
+    'create preselects Objective when available',
   )
-  assertIncludes(page, 'setActivityObjectiveId(row.objectiveId)', 'edit locks row Objective')
   assertIncludes(
     page,
-    'objectiveId: existing?.objectiveId ?? parentId',
-    'save preserves original Objective on edit',
+    'setActivityObjectiveId(row.objectiveId?.trim() || null)',
+    'edit allows blank Objective',
   )
+  assertIncludes(page, 'objectiveId: parentId', 'save uses optional Objective')
+  assertIncludes(page, 'بغیر اہداف', 'unmapped activities surface')
+  assertIncludes(page, 'frequencyCadenceExtra', 'dual schedule UI')
   assertIncludes(page, 'localProgramme.saveDurable', 'uses repository boundary')
   assertIncludes(page, 'سال کے مطابق عمل درآمد', 'year-specific status editor')
   assertIncludes(page, 'normalizeActivityYearStatuses', 'year map normalized on save')
   assertNotIncludes(page, 'objectives[]', 'no Objective dual-write in Admin UI')
   assertNotIncludes(page, 'Unit / Scope', 'Unit is not a planning UI concept')
+}
+
+console.log('▶ G — LocalProgramme write path does not touch unrelated collections')
+{
+  const firestoreRepo = read(
+    'src/repositories/firestore/localProgrammeFirestoreRepositories.ts',
+  )
+  for (const needle of [
+    'FIRESTORE_COLLECTIONS.responsibilities',
+    'FIRESTORE_COLLECTIONS.work',
+    'FIRESTORE_COLLECTIONS.units',
+    'FIRESTORE_COLLECTIONS.occurrences',
+    'FIRESTORE_COLLECTIONS.campaigns',
+    'FIRESTORE_COLLECTIONS.rukns',
+    'FIRESTORE_COLLECTIONS.karkuns',
+  ] as const) {
+    assertNotIncludes(firestoreRepo, needle, `no ${needle}`)
+  }
 }
 
 console.log('KC Phase 2 local programme persistence verify: PASS')

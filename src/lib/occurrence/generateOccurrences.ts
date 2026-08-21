@@ -225,6 +225,18 @@ export function expandOccurrenceCandidates(options: {
         )
         break
       }
+      case 'quarterly': {
+        notes.push(
+          'quarterly recurrence is schedule SoT only (not date-generative yet)',
+        )
+        break
+      }
+      case 'yearly': {
+        notes.push(
+          'yearly recurrence is schedule SoT only (not date-generative yet)',
+        )
+        break
+      }
       default:
         break
     }

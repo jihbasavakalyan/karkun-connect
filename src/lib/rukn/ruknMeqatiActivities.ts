@@ -12,7 +12,8 @@ import {
 } from '@/lib/planning/activityYearStatus'
 import { unwrapRepository } from '@/repositories/errors'
 import { getRepositories } from '@/repositories/provider'
-import type { ProgrammeFrequency, ProgrammeKind } from '@/types/localProgramme.types'
+import type { LocalProgramme, ProgrammeFrequency } from '@/types/localProgramme.types'
+import { listProgrammeFrequencies } from '@/lib/planning/programmeSchedule'
 
 export type RuknMeqatiActivityAction = {
   href: string
@@ -36,13 +37,31 @@ const YEAR_STATUS_LABEL: Record<ActivityYearStatus, string> = {
   remaining: 'باقی',
 }
 
-function formatSpecifiedSchedule(frequency: ProgrammeFrequency | undefined): string | null {
-  if (!frequency) return null
-  if (frequency.cadence === 'weekly') return 'ہفتہ وار'
-  if (frequency.cadence === 'monthly') return 'ماہانہ'
-  if (frequency.cadence === 'yearly') return 'سالانہ'
-  if (frequency.cadence === 'once') return 'یک بار'
-  return frequency.note?.trim() ? `دیگر: ${frequency.note}` : 'دیگر'
+function formatOneRuknCadence(frequency: ProgrammeFrequency): string {
+  switch (frequency.cadence) {
+    case 'weekly':
+      return 'ہفتہ وار'
+    case 'monthly':
+      return 'ماہانہ'
+    case 'quarterly':
+      return 'سہ ماہی'
+    case 'yearly':
+      return 'سالانہ'
+    case 'once':
+      return 'یک بار'
+    case 'custom':
+      return frequency.note?.trim() ? `دیگر: ${frequency.note}` : 'دیگر'
+    default:
+      return 'دیگر'
+  }
+}
+
+function formatSpecifiedSchedule(
+  frequency: LocalProgramme['frequency'],
+): string | null {
+  const patterns = listProgrammeFrequencies(frequency)
+  if (patterns.length === 0) return null
+  return patterns.map(formatOneRuknCadence).join(' + ')
 }
 
 /**
@@ -85,10 +104,10 @@ export function buildRuknMeqatiActivities(
   for (const programme of programmes) {
     if (!canReadLocalProgrammeAsResponsible(actor, programme)) continue
 
-    const objective = unwrapRepository(
-      repos.objective.getById(programme.objectiveId),
-      undefined,
-    )
+    const objectiveId = programme.objectiveId?.trim()
+    const objective = objectiveId
+      ? unwrapRepository(repos.objective.getById(objectiveId), undefined)
+      : undefined
     const shobah = objective
       ? unwrapRepository(repos.shobah.getById(objective.shobahId), undefined)
       : undefined

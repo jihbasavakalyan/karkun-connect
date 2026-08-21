@@ -55,10 +55,20 @@ function validateProgramme(
   if (!programme.id?.trim() || !programme.name?.trim()) {
     return repositoryErr('Validation', 'Activity requires id and name.')
   }
-  if (!programme.objectiveId?.trim()) {
+  // ACTIVITY-FIRST: objectiveId may be null/absent. When supplied, parent must exist.
+  const objectiveId = programme.objectiveId?.trim()
+  if (objectiveId) {
+    const parent = objectives.getById(objectiveId)
+    if (!parent.ok || !parent.data) {
+      return repositoryErr(
+        'Validation',
+        'Activity requires an existing Objective (objectiveId).',
+      )
+    }
+  } else if (programme.objectiveId != null && String(programme.objectiveId).trim() === '') {
     return repositoryErr(
       'Validation',
-      'Activity requires objectiveId (belongs to one اہداف).',
+      'Activity objectiveId must be an existing Objective id or null.',
     )
   }
   if (!PROGRAMME_KINDS.has(programme.kind)) {
@@ -70,13 +80,6 @@ function validateProgramme(
   const yearStatusError = activityYearStatusValidationError(programme.yearStatuses)
   if (yearStatusError) {
     return repositoryErr('Validation', yearStatusError)
-  }
-  const parent = objectives.getById(programme.objectiveId)
-  if (!parent.ok || !parent.data) {
-    return repositoryErr(
-      'Validation',
-      'Activity requires an existing Objective (objectiveId).',
-    )
   }
   const campaignId = programme.campaignId?.trim()
   if (campaignId) {
@@ -111,8 +114,10 @@ export class LocalProgrammeLocalRepository implements LocalProgrammeRepository {
   listByObjectiveId(
     objectiveId: string,
   ): RepositoryResult<readonly LocalProgramme[]> {
+    const id = objectiveId.trim()
+    if (!id) return tryRepository(() => [])
     return tryRepository(() =>
-      loadProgrammes().filter((row) => row.objectiveId === objectiveId),
+      loadProgrammes().filter((row) => row.objectiveId === id),
     )
   }
 
