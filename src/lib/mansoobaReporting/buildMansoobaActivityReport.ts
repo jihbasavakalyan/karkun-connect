@@ -240,12 +240,14 @@ export function buildMansoobaActivityReport(
   )
   const mansoobaObjectiveIds = new Set(mansoobaObjectives.map((row) => row.id))
   const linkedProgrammes = programmes.filter((row) => {
+    if (row.mansoobaId?.trim() === mansooba.id) return true
     const objectiveId = row.objectiveId?.trim()
     return Boolean(objectiveId) && mansoobaObjectiveIds.has(objectiveId!)
   })
   const programmeById = new Map(linkedProgrammes.map((row) => [row.id, row]))
 
   const unlinkedProgrammeCount = programmes.filter((row) => {
+    if (row.mansoobaId?.trim() === mansooba.id) return false
     const objectiveId = row.objectiveId?.trim()
     return !objectiveId || !mansoobaObjectiveIds.has(objectiveId)
   }).length

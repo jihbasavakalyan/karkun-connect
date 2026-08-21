@@ -33,6 +33,8 @@ import { clearLocalProgrammesForTests } from '../src/repositories/local/localPro
 import {
   seedLocalPlanningParentForTests,
   VERIFY_ACTIVITY_OBJECTIVE_ID,
+  VERIFY_ACTIVITY_MANSOOBA_ID,
+  VERIFY_ACTIVITY_SHOBAH_ID,
 } from '../src/repositories/local/planningLocalRepositories'
 import { clearLocalOccurrencesForTests } from '../src/repositories/local/occurrenceLocalRepositories'
 import { clearAssignmentStore, replaceAllAssignments } from '../src/stores/assignmentStore'
@@ -311,6 +313,8 @@ console.log('▶ TASK-039 — Occurrence sourceRef links WI event; WI not mutate
   const repos = getRepositories()
   const programme: LocalProgramme = {
     id: 'lp-wi-phase5',
+    mansoobaId: VERIFY_ACTIVITY_MANSOOBA_ID,
+    shobahId: VERIFY_ACTIVITY_SHOBAH_ID,
     objectiveId: VERIFY_ACTIVITY_OBJECTIVE_ID,
     campaignId: ACTIVE_CAMPAIGN_ID,
     name: 'Weekly Ijtema',

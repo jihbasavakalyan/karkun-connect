@@ -17,6 +17,8 @@ import { clearLocalProgrammesForTests } from '@/repositories/local/localProgramm
 import {
   seedLocalPlanningParentForTests,
   VERIFY_ACTIVITY_OBJECTIVE_ID,
+  VERIFY_ACTIVITY_MANSOOBA_ID,
+  VERIFY_ACTIVITY_SHOBAH_ID,
 } from '@/repositories/local/planningLocalRepositories'
 import { clearLocalResponsibilitiesForTests } from '@/repositories/local/responsibilityLocalRepositories'
 import { clearLocalWorkForTests } from '@/repositories/local/workLocalRepositories'
@@ -50,6 +52,8 @@ function extractRulesBlock(rules: string, matchLine: string): string {
 function programme(overrides: Partial<LocalProgramme> = {}): LocalProgramme {
   return {
     id: 'activity-meqati-a',
+    mansoobaId: VERIFY_ACTIVITY_MANSOOBA_ID,
+    shobahId: VERIFY_ACTIVITY_SHOBAH_ID,
     objectiveId: VERIFY_ACTIVITY_OBJECTIVE_ID,
     name: 'ہفتہ وار اجتماع',
     kind: 'weekly_ijtema',

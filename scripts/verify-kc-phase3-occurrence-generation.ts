@@ -21,6 +21,8 @@ import { clearLocalProgrammesForTests } from '@/repositories/local/localProgramm
 import {
   seedLocalPlanningParentForTests,
   VERIFY_ACTIVITY_OBJECTIVE_ID,
+  VERIFY_ACTIVITY_MANSOOBA_ID,
+  VERIFY_ACTIVITY_SHOBAH_ID,
 } from '@/repositories/local/planningLocalRepositories'
 import { clearLocalOccurrencesForTests } from '@/repositories/local/occurrenceLocalRepositories'
 import { ACTIVE_CAMPAIGN_ID } from '@/types/assignment.types'
@@ -41,6 +43,8 @@ function baseProgramme(
   overrides: Partial<LocalProgramme> & Pick<LocalProgramme, 'id' | 'name' | 'kind'>,
 ): LocalProgramme {
   return {
+    mansoobaId: VERIFY_ACTIVITY_MANSOOBA_ID,
+    shobahId: VERIFY_ACTIVITY_SHOBAH_ID,
     objectiveId: VERIFY_ACTIVITY_OBJECTIVE_ID,
     campaignId: ACTIVE_CAMPAIGN_ID,
     status: 'active',

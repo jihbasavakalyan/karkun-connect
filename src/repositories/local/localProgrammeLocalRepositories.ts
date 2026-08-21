@@ -1,17 +1,14 @@
 /**
  * Local/mock provider persistence for سرگرمی (collection remains `localProgrammes`).
- * Uses existing browserStorage + STORAGE_KEYS. Objective parent validated via ObjectiveRepository.
+ * Uses existing browserStorage + STORAGE_KEYS.
+ * Head context + optional Objective validated via shared LocalProgramme validation.
  */
 
 import type { CampaignRepository } from '@/repositories/interfaces/CampaignRepository'
 import type { LocalProgrammeRepository } from '@/repositories/interfaces/LocalProgrammeRepository'
 import type { ObjectiveRepository } from '@/repositories/interfaces/ObjectiveRepository'
-import { activityYearStatusValidationError } from '@/lib/planning/activityYearStatus'
-import type {
-  LocalProgramme,
-  LocalProgrammeStatus,
-  ProgrammeKind,
-} from '@/types/localProgramme.types'
+import { validateLocalProgrammeForSave } from '@/lib/planning/localProgrammeValidation'
+import type { LocalProgramme } from '@/types/localProgramme.types'
 import {
   repositoryErr,
   repositoryOk,
@@ -20,20 +17,6 @@ import {
 } from '@/repositories/errors'
 import { STORAGE_KEYS } from '@/repositories/storageKeys'
 import { loadJsonFromStorage, saveJsonToStorage } from '@/lib/browserStorage'
-
-const PROGRAMME_KINDS: ReadonlySet<ProgrammeKind> = new Set([
-  'weekly_ijtema',
-  'monthly_baitul_maal',
-  'campaign_execution',
-  'follow_up',
-  'other',
-])
-
-const PROGRAMME_STATUSES: ReadonlySet<LocalProgrammeStatus> = new Set([
-  'draft',
-  'active',
-  'archived',
-])
 
 function loadProgrammes(): LocalProgramme[] {
   return loadJsonFromStorage<LocalProgramme[]>(STORAGE_KEYS.localProgrammes, [])
@@ -45,53 +28,6 @@ function saveProgrammes(rows: LocalProgramme[]): void {
 
 function upsertById<T extends { id: string }>(rows: T[], next: T): T[] {
   return [next, ...rows.filter((row) => row.id !== next.id)]
-}
-
-function validateProgramme(
-  programme: LocalProgramme,
-  objectives: ObjectiveRepository,
-  campaigns: CampaignRepository,
-): RepositoryResult<LocalProgramme> | null {
-  if (!programme.id?.trim() || !programme.name?.trim()) {
-    return repositoryErr('Validation', 'Activity requires id and name.')
-  }
-  // ACTIVITY-FIRST: objectiveId may be null/absent. When supplied, parent must exist.
-  const objectiveId = programme.objectiveId?.trim()
-  if (objectiveId) {
-    const parent = objectives.getById(objectiveId)
-    if (!parent.ok || !parent.data) {
-      return repositoryErr(
-        'Validation',
-        'Activity requires an existing Objective (objectiveId).',
-      )
-    }
-  } else if (programme.objectiveId != null && String(programme.objectiveId).trim() === '') {
-    return repositoryErr(
-      'Validation',
-      'Activity objectiveId must be an existing Objective id or null.',
-    )
-  }
-  if (!PROGRAMME_KINDS.has(programme.kind)) {
-    return repositoryErr('Validation', 'Activity requires a valid kind.')
-  }
-  if (!PROGRAMME_STATUSES.has(programme.status)) {
-    return repositoryErr('Validation', 'Activity requires a valid status.')
-  }
-  const yearStatusError = activityYearStatusValidationError(programme.yearStatuses)
-  if (yearStatusError) {
-    return repositoryErr('Validation', yearStatusError)
-  }
-  const campaignId = programme.campaignId?.trim()
-  if (campaignId) {
-    const campaign = campaigns.getById(campaignId)
-    if (!campaign.ok || !campaign.data) {
-      return repositoryErr(
-        'Validation',
-        'Activity campaignId must reference an existing Campaign.',
-      )
-    }
-  }
-  return null
 }
 
 export class LocalProgrammeLocalRepository implements LocalProgrammeRepository {
@@ -143,7 +79,11 @@ export class LocalProgrammeLocalRepository implements LocalProgrammeRepository {
     programme: LocalProgramme,
   ): Promise<RepositoryResult<LocalProgramme>> {
     try {
-      const invalid = validateProgramme(programme, this.objectives, this.campaigns)
+      const invalid = validateLocalProgrammeForSave(
+        programme,
+        this.objectives,
+        this.campaigns,
+      )
       if (invalid) return invalid
       saveProgrammes(upsertById(loadProgrammes(), programme))
       return repositoryOk(programme)

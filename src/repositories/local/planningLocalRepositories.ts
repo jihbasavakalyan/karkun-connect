@@ -204,13 +204,15 @@ export function clearLocalPlanningForTests(): RepositoryResult<void> {
 }
 
 /** Known parent ids for local activity save tests. */
+export const VERIFY_ACTIVITY_MANSOOBA_ID = 'mansooba-verify-parent'
+export const VERIFY_ACTIVITY_SHOBAH_ID = 'shobah-verify-parent'
 export const VERIFY_ACTIVITY_OBJECTIVE_ID = 'objective-verify-parent'
 
 /** Seed Meqati → شعبہ → اہداف so activity saveDurable can resolve objectiveId. */
 export async function seedLocalPlanningParentForTests(): Promise<void> {
   const now = new Date().toISOString()
   const mansooba: MeqatiMansooba = {
-    id: 'mansooba-verify-parent',
+    id: VERIFY_ACTIVITY_MANSOOBA_ID,
     name: 'Verify Mansooba',
     status: 'active',
     createdAt: now,
@@ -219,7 +221,7 @@ export async function seedLocalPlanningParentForTests(): Promise<void> {
     updatedBy: 'verify',
   }
   const shobah: Shobah = {
-    id: 'shobah-verify-parent',
+    id: VERIFY_ACTIVITY_SHOBAH_ID,
     mansoobaId: mansooba.id,
     name: 'Verify Shobah',
     status: 'active',

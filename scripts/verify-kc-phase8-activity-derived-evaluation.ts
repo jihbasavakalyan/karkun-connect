@@ -81,6 +81,8 @@ const campaign: CampaignListItem = {
 
 const programme: LocalProgramme = {
     id: 'prog-act-1',
+    mansoobaId: mansooba.id,
+    shobahId: 'shobah-act-1',
     objectiveId: 'objective-act-1',
     campaignId: campaign.id,
   name: 'Weekly Ijtema',

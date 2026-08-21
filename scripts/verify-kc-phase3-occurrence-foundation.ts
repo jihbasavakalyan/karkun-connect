@@ -26,6 +26,8 @@ import { clearLocalProgrammesForTests } from '@/repositories/local/localProgramm
 import {
   seedLocalPlanningParentForTests,
   VERIFY_ACTIVITY_OBJECTIVE_ID,
+  VERIFY_ACTIVITY_MANSOOBA_ID,
+  VERIFY_ACTIVITY_SHOBAH_ID,
 } from '@/repositories/local/planningLocalRepositories'
 import { clearLocalOccurrencesForTests } from '@/repositories/local/occurrenceLocalRepositories'
 import { ACTIVE_CAMPAIGN_ID } from '@/types/assignment.types'
@@ -145,6 +147,8 @@ console.log('▶ local durable CRUD + Local Programme parent validation')
 
   const programme: LocalProgramme = {
     id: 'programme-occurrence-verify-1',
+    mansoobaId: VERIFY_ACTIVITY_MANSOOBA_ID,
+    shobahId: VERIFY_ACTIVITY_SHOBAH_ID,
     objectiveId: VERIFY_ACTIVITY_OBJECTIVE_ID,
     campaignId: ACTIVE_CAMPAIGN_ID,
     name: 'Verify WI Programme',

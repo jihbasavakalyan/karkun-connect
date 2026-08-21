@@ -427,10 +427,19 @@ export function AdminPlanningPage() {
   const unmappedActivities = useMemo(
     () =>
       programmes
-        .filter((row) => !row.objectiveId?.trim())
+        .filter((row) => {
+          if (row.objectiveId?.trim()) return false
+          if (selectedShobahIdResolved) {
+            return row.shobahId === selectedShobahIdResolved
+          }
+          if (selectedMansoobaId) {
+            return row.mansoobaId === selectedMansoobaId
+          }
+          return true
+        })
         .slice()
         .sort((a, b) => a.name.localeCompare(b.name)),
-    [programmes],
+    [programmes, selectedShobahIdResolved, selectedMansoobaId],
   )
 
   const mansoobaObjectiveIds = useMemo(() => {
@@ -443,10 +452,11 @@ export function AdminPlanningPage() {
   const mansoobaActivities = useMemo(
     () =>
       programmes.filter((row) => {
+        if (selectedMansoobaId && row.mansoobaId === selectedMansoobaId) return true
         const objectiveId = row.objectiveId?.trim()
         return Boolean(objectiveId) && mansoobaObjectiveIds.has(objectiveId!)
       }),
-    [programmes, mansoobaObjectiveIds],
+    [programmes, mansoobaObjectiveIds, selectedMansoobaId],
   )
 
   const mansoobaActivityIds = useMemo(
@@ -791,12 +801,32 @@ export function AdminPlanningPage() {
           setFormError('سرگرمی کا نام ضروری ہے۔')
           return
         }
+        let mansoobaId: string | undefined
+        let shobahId: string | undefined
+        if (parentId) {
+          const parent = objectives.find((row) => row.id === parentId)
+          if (!parent) {
+            setFormError('منتخب اہداف دستیاب نہیں۔')
+            return
+          }
+          mansoobaId = parent.mansoobaId
+          shobahId = parent.shobahId
+        } else {
+          mansoobaId = selectedMansoobaId ?? undefined
+          shobahId = selectedShobahIdResolved ?? undefined
+        }
+        if (!mansoobaId?.trim() || !shobahId?.trim()) {
+          setFormError('شعبہ منتخب کریں تاکہ سرگرمی کا سیاق محفوظ رہے۔')
+          return
+        }
         const now = new Date().toISOString()
         const existing = editingActivityId
           ? programmes.find((row) => row.id === editingActivityId)
           : undefined
         const record: LocalProgramme = {
           id: existing?.id ?? newPlanningId('activity'),
+          mansoobaId,
+          shobahId,
           objectiveId: parentId,
           campaignId: existing?.campaignId,
           name,

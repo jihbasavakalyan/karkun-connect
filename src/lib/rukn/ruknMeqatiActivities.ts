@@ -108,8 +108,9 @@ export function buildRuknMeqatiActivities(
     const objective = objectiveId
       ? unwrapRepository(repos.objective.getById(objectiveId), undefined)
       : undefined
-    const shobah = objective
-      ? unwrapRepository(repos.shobah.getById(objective.shobahId), undefined)
+    const shobahId = objective?.shobahId?.trim() || programme.shobahId?.trim()
+    const shobah = shobahId
+      ? unwrapRepository(repos.shobah.getById(shobahId), undefined)
       : undefined
     const yearStatus = resolveActivityYearStatus(programme.yearStatuses, year.key)
 

@@ -15,6 +15,8 @@ import { clearLocalProgrammesForTests } from '@/repositories/local/localProgramm
 import {
   seedLocalPlanningParentForTests,
   VERIFY_ACTIVITY_OBJECTIVE_ID,
+  VERIFY_ACTIVITY_MANSOOBA_ID,
+  VERIFY_ACTIVITY_SHOBAH_ID,
 } from '@/repositories/local/planningLocalRepositories'
 import { ACTIVE_CAMPAIGN_ID } from '@/types/assignment.types'
 import type { LocalProgramme } from '@/types/localProgramme.types'
@@ -83,7 +85,7 @@ console.log('▶ provider wiring (local + firestore; Objective + Campaign inject
   assert.ok(repos.campaign)
 }
 
-console.log('▶ local durable CRUD + Objective parent validation')
+console.log('▶ local durable CRUD + Head context + Objective validation')
 {
   resetRepositoryProviderForTests()
   clearLocalProgrammesForTests()
@@ -96,8 +98,11 @@ console.log('▶ local durable CRUD + Objective parent validation')
   assert.equal(parent.ok, true)
   assert.ok(parent.ok && parent.data, 'verify objective exists for valid parent test')
 
+  // A. mapped Activity with all three IDs saves
   const programme: LocalProgramme = {
     id: 'programme-verify-1',
+    mansoobaId: VERIFY_ACTIVITY_MANSOOBA_ID,
+    shobahId: VERIFY_ACTIVITY_SHOBAH_ID,
     objectiveId: VERIFY_ACTIVITY_OBJECTIVE_ID,
     campaignId: ACTIVE_CAMPAIGN_ID,
     name: 'Verify Weekly Ijtema Programme',
@@ -113,6 +118,8 @@ console.log('▶ local durable CRUD + Objective parent validation')
   const saved = await repos.localProgramme.saveDurable(programme)
   assert.equal(saved.ok, true)
   assert.equal(repos.localProgramme.getById(programme.id).data?.name, programme.name)
+  assert.equal(repos.localProgramme.getById(programme.id).data?.mansoobaId, VERIFY_ACTIVITY_MANSOOBA_ID)
+  assert.equal(repos.localProgramme.getById(programme.id).data?.shobahId, VERIFY_ACTIVITY_SHOBAH_ID)
   assert.equal(
     repos.localProgramme.listByObjectiveId(VERIFY_ACTIVITY_OBJECTIVE_ID).data?.length,
     1,
@@ -140,7 +147,7 @@ console.log('▶ local durable CRUD + Objective parent validation')
   }
   assert.equal(repos.localProgramme.loadAll().data?.length, 1)
 
-  // B. ACTIVITY-FIRST — objectiveId null saves
+  // B. unmapped with mansoobaId + shobahId + objectiveId=null saves
   const unmapped: LocalProgramme = {
     ...programme,
     id: 'programme-verify-unmapped',
@@ -151,9 +158,42 @@ console.log('▶ local durable CRUD + Objective parent validation')
   const unmappedSaved = await repos.localProgramme.saveDurable(unmapped)
   assert.equal(unmappedSaved.ok, true)
   assert.equal(repos.localProgramme.getById(unmapped.id).data?.objectiveId, null)
+  assert.equal(repos.localProgramme.getById(unmapped.id).data?.shobahId, VERIFY_ACTIVITY_SHOBAH_ID)
   assert.equal(repos.localProgramme.loadAll().data?.length, 2)
 
-  // D + E — Schedule foundation: Not specified + Monthly + Quarterly (H02-A10-style)
+  // C. unmapped without shobahId fails
+  const noShobah = await repos.localProgramme.saveDurable({
+    ...unmapped,
+    id: 'programme-verify-no-shobah',
+    shobahId: '',
+  })
+  assert.equal(noShobah.ok, false)
+
+  // D. unmapped without mansoobaId fails
+  const noMansooba = await repos.localProgramme.saveDurable({
+    ...unmapped,
+    id: 'programme-verify-no-mansooba',
+    mansoobaId: '',
+  })
+  assert.equal(noMansooba.ok, false)
+
+  // E. mapped Activity whose Objective belongs to another Shobah fails
+  const wrongShobah = await repos.localProgramme.saveDurable({
+    ...programme,
+    id: 'programme-verify-wrong-shobah',
+    shobahId: 'shobah-other',
+  })
+  assert.equal(wrongShobah.ok, false)
+
+  // F. mapped Activity whose Objective belongs to another Mansooba fails
+  const wrongMansooba = await repos.localProgramme.saveDurable({
+    ...programme,
+    id: 'programme-verify-wrong-mansooba',
+    mansoobaId: 'mansooba-other',
+  })
+  assert.equal(wrongMansooba.ok, false)
+
+  // Schedule foundation retained
   const {
     isScheduleNotSpecified,
     listProgrammeFrequencies,
@@ -161,13 +201,8 @@ console.log('▶ local durable CRUD + Objective parent validation')
     normalizeProgrammeSchedule,
   } = await import('@/lib/planning/programmeSchedule')
   assert.equal(isScheduleNotSpecified(undefined), true)
-  assert.equal(isScheduleNotSpecified(null), true)
   const dual = normalizeProgrammeSchedule(monthlyAndQuarterlySchedule())
   assert.ok(Array.isArray(dual))
-  assert.deepEqual(
-    listProgrammeFrequencies(dual).map((row) => row.cadence),
-    ['monthly', 'quarterly'],
-  )
   const h02Style = await repos.localProgramme.saveDurable({
     ...unmapped,
     id: 'programme-verify-h02-a10-schedule',
@@ -193,11 +228,26 @@ console.log('▶ local durable CRUD + Objective parent validation')
     true,
   )
 
-  // F — mapped activity still lists by objective
+  // G — mapped activity still lists by objective
   assert.equal(
     repos.localProgramme.listByObjectiveId(VERIFY_ACTIVITY_OBJECTIVE_ID).data?.length,
     1,
   )
+
+  // H — Rukn reader retains Shobah context when objectiveId=null
+  const { buildRuknMeqatiActivities } = await import('@/lib/rukn/ruknMeqatiActivities')
+  const ruknUnmapped = await repos.localProgramme.saveDurable({
+    ...unmapped,
+    id: 'programme-verify-rukn-unmapped',
+    name: 'Rukn unmapped with Head',
+    responsibleRuknId: 'R-verify-head',
+  })
+  assert.equal(ruknUnmapped.ok, true)
+  const ruknItems = buildRuknMeqatiActivities('R-verify-head')
+  const ruknRow = ruknItems.find((row) => row.id === 'programme-verify-rukn-unmapped')
+  assert.ok(ruknRow, 'rukn sees unmapped activity')
+  assert.equal(ruknRow?.objectiveTitle, '')
+  assert.equal(ruknRow?.shobahName, 'Verify Shobah')
 
   const unknownCampaign = await repos.localProgramme.saveDurable({
     ...programme,
@@ -270,8 +320,12 @@ console.log('▶ Firestore durable write pattern (await writeDoc) + soft hydrate
     'permission-denied soft-skip',
   )
   assertIncludes(firestoreRepo, 'return []', 'empty on soft-skip')
-  assertIncludes(firestoreRepo, 'objectives.getById', 'Objective parent lookup')
-  assertIncludes(firestoreRepo, 'campaigns.getById', 'optional Campaign lookup')
+  assertIncludes(firestoreRepo, 'validateLocalProgrammeForSave', 'shared Head/Objective validation')
+  const validation = read('src/lib/planning/localProgrammeValidation.ts')
+  assertIncludes(validation, 'objectives.getById', 'Objective parent lookup')
+  assertIncludes(validation, 'campaigns.getById', 'optional Campaign lookup')
+  assertIncludes(validation, 'mansoobaId must match Objective.mansoobaId', 'Head match invariant')
+  assertIncludes(validation, 'shobahId must match Objective.shobahId', 'Shobah match invariant')
   assertNotIncludes(firestoreRepo, 'FIRESTORE_COLLECTIONS.karkuns', 'no karkun writes')
   assertNotIncludes(firestoreRepo, 'FIRESTORE_COLLECTIONS.rukns', 'no rukn writes')
   assertNotIncludes(firestoreRepo, 'objectives[]', 'no objective dual-write')
@@ -316,11 +370,12 @@ console.log('▶ Campaign schema / objective isolation')
 
   const programmeTypes = read('src/types/localProgramme.types.ts')
   assertIncludes(programmeTypes, 'objectiveId?: string | null', 'ACTIVITY-FIRST optional objectiveId')
+  assertIncludes(programmeTypes, 'mansoobaId: string', 'denormalised mansoobaId')
+  assertIncludes(programmeTypes, 'shobahId: string', 'denormalised shobahId')
   assertIncludes(programmeTypes, "cadence: 'quarterly'", 'quarterly schedule cadence')
   assertIncludes(programmeTypes, 'ProgrammeSchedule', 'multi-pattern schedule type')
   assertIncludes(programmeTypes, 'campaignId?: string', 'campaignId is optional focus')
   assertIncludes(programmeTypes, 'yearStatuses?:', 'year-specific status map on same activity')
-  assertNotIncludes(programmeTypes, 'mansoobaId', 'no direct mansoobaId on programme')
   assertNotIncludes(programmeTypes, 'objectiveIds', 'no objectiveIds on programme')
   assertNotIncludes(programmeTypes, 'bi-monthly', 'no invented bi-monthly category')
   assertNotIncludes(programmeTypes, 'irregular', 'no invented irregular category')

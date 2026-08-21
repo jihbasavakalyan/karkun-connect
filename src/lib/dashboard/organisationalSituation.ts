@@ -185,8 +185,10 @@ export function buildOrganisationalSituation(year: MeqatiYear): OrganisationalSi
     : []
   const mansoobaObjectiveIds = new Set(mansoobaObjectives.map((row) => row.id))
   const linkedProgrammes = programmes.filter((row) => {
+    if (row.status === 'archived') return false
+    if (mansooba && row.mansoobaId?.trim() === mansooba.id) return true
     const objectiveId = row.objectiveId?.trim()
-    return Boolean(objectiveId) && mansoobaObjectiveIds.has(objectiveId!) && row.status !== 'archived'
+    return Boolean(objectiveId) && mansoobaObjectiveIds.has(objectiveId!)
   })
 
   const statusByProgrammeId = new Map<string, MeqatiYearActivityStatus | null>()
@@ -368,7 +370,15 @@ function buildShobahRow(
     return { id: objective.id, title: objective.title, activities }
   })
 
-  const statuses = objectiveViews.flatMap((row) => row.activities.map((activity) => activity.status))
+  // ACTIVITY-FIRST: count unmapped Head-scoped activities without inventing an Objective row.
+  const unmappedStatuses = programmes
+    .filter((row) => row.shobahId === shobah.id && !row.objectiveId?.trim())
+    .map((row) => statusByProgrammeId.get(row.id) ?? null)
+
+  const statuses = [
+    ...objectiveViews.flatMap((row) => row.activities.map((activity) => activity.status)),
+    ...unmappedStatuses,
+  ]
   return {
     shobahId: shobah.id,
     name: shobah.name,

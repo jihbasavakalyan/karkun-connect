@@ -3,7 +3,9 @@ import type { RepositoryResult } from '@/repositories/errors'
 
 /**
  * سرگرمی persistence contract (collection remains `localProgrammes`).
- * ACTIVITY-FIRST: `objectiveId` may be null/absent; when supplied it must exist.
+ * ACTIVITY-FIRST: `objectiveId` may be null/absent; when supplied it must exist
+ * and match denormalised `mansoobaId` / `shobahId`.
+ * Head context (`mansoobaId`, `shobahId`) is required for Meqati Activities.
  * Optional `campaignId` is a focus overlay, not ownership.
  * Admin-owned. Implementations must await durable writes before ok.
  */
@@ -20,7 +22,7 @@ export interface LocalProgrammeRepository {
   /**
    * Admin-only durable upsert (create / update / archive via `status`).
    * Must await durable persistence before reporting success (KC-ARCH-001).
-   * `objectiveId` optional (ACTIVITY-FIRST); when set, must reference an existing Objective.
+   * Requires mansoobaId + shobahId; objectiveId optional (ACTIVITY-FIRST).
    */
   saveDurable(programme: LocalProgramme): Promise<RepositoryResult<LocalProgramme>>
 }

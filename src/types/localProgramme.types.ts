@@ -61,14 +61,26 @@ export type ProgrammeRecurrenceRule = ProgrammeFrequency
 
 /**
  * Durable سرگرمی. Optional `objectiveId` (ACTIVITY-FIRST).
+ * Denormalised `mansoobaId` + `shobahId` retain Head context when Objective is blank.
  * Optional `campaignId` is a focus link only — Campaign does not own the activity.
  * No parentProgrammeId / hierarchy. No nested occurrence arrays as SoT.
  */
 export type LocalProgramme = {
   id: string
   /**
+   * میقاتی منصوبہ context (denormalised). Required for Meqati Activities.
+   * Not a new hierarchy — contextual reference only.
+   */
+  mansoobaId: string
+  /**
+   * شعبہ context (denormalised). Required for Meqati Activities.
+   * Not a new hierarchy — contextual reference only.
+   */
+  shobahId: string
+  /**
    * Parent اہداف (`objectives` document id) when mapped.
    * `null` / omitted = Objective blank (ACTIVITY-FIRST). Never invent UNMAPPED parents.
+   * When set, must match this document's mansoobaId / shobahId.
    */
   objectiveId?: string | null
   /** Optional Campaign focus overlay — not the organisational parent */
