@@ -6,6 +6,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Modal, ModalFormFooter, ModalFormGrid, ModalFormSection } from '@/components/common'
 import { PageHeader, PageShell } from '@/components/ui'
+import '@/pages/admin/meqati/meqatiPlanningCanvas.css'
 import { useAuth } from '@/hooks/useAuth'
 import { useBusyAction } from '@/hooks/useBusyAction'
 import type { CampaignListItem } from '@/constants/mockMissions'
@@ -918,6 +919,7 @@ export function AdminPlanningPage() {
 
   return (
     <PageShell>
+      <div className="meqati-planning-canvas space-y-6">
       <PageHeader title="میقاتی منصوبہ" />
 
       {message ? (
@@ -1132,6 +1134,7 @@ export function AdminPlanningPage() {
         />
           </div>
         </details>
+      </div>
       </div>
 
       <Modal

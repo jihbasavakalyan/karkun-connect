@@ -1,0 +1,43 @@
+/**
+ * Local light canvas for Meqati planning only.
+ * Does not change the global Admin appearance theme.
+ */
+.meqati-planning-canvas {
+  --color-primary: #1b4332;
+  --color-primary-hover: #2d6a4f;
+  --color-primary-light: #40916c;
+  --color-primary-muted: #d8f3dc;
+  --color-secondary: #5c6b63;
+  --color-surface: #ffffff;
+  --color-surface-muted: #eef4ef;
+  --color-border: #d5e0d6;
+  --color-text: #334155;
+  --color-text-heading: #0f172a;
+  --shadow-card: 0 1px 3px 0 rgb(27 67 50 / 0.08), 0 1px 2px -1px rgb(15 23 42 / 0.06);
+  background: #eef4ef;
+  color: #334155;
+  border-radius: 1.25rem;
+  padding: 1.25rem 1.25rem 1.75rem;
+}
+
+.meqati-planning-canvas .meqati-stat-card {
+  background: #ffffff;
+  border: 1px solid #d5e0d6;
+  border-radius: 1rem;
+  box-shadow: var(--shadow-card);
+}
+
+.meqati-planning-canvas .meqati-head-card {
+  border-width: 1.5px;
+  box-shadow: var(--shadow-card);
+}
+
+@media (min-width: 1024px) {
+  .meqati-stat-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  }
+
+  .meqati-head-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}

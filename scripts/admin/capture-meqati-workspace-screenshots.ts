@@ -8,10 +8,29 @@ import { MeqatiPlanningWorkspace } from '../../src/pages/admin/meqati/MeqatiPlan
 import type { LocalProgramme } from '../../src/types/localProgramme.types'
 import type { MeqatiMansooba, PlanningObjective, Shobah } from '../../src/types/planning.types'
 
+const CANVAS_CSS = readFileSync('src/pages/admin/meqati/meqatiPlanningCanvas.css', 'utf8')
+
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;600&display=swap');
 :root { --color-primary:#1b4332; --color-secondary:#64748b; --color-surface:#fff; --color-surface-muted:#f7f7f2; --color-text-heading:#0f172a; --shadow-card:0 1px 3px rgb(0 0 0 / .06); }
-html,body { margin:0; background:#f7f7f2; font-family:'Noto Nastaliq Urdu', Tahoma, sans-serif; color:#334155; }
+html[data-theme='dark'] { --color-surface:#0f172a; --color-surface-muted:#111827; background:#111827; }
+${CANVAS_CSS}
+.meqati-stat-card { background:#fff; border:1px solid #d5e0d6; border-radius:1rem; box-shadow:var(--shadow-card); }
+.admin-shell { display:flex; min-height:100vh; background:#111827; }
+.admin-side { width:15rem; background:#0f172a; color:#cbd5e1; padding:1rem; flex-shrink:0; }
+.admin-main { flex:1; min-width:0; padding:1.5rem; }
+@media (max-width: 767px) { .admin-side { display:none; } .admin-main { padding:.75rem; } }
+.ds-page { max-width:72rem; margin:0 auto; }
+.grid-cols-2 { grid-template-columns:repeat(2,minmax(0,1fr)); }
+.min-h-28 { min-height:7rem; } .h-12 { height:3rem; } .w-12 { width:3rem; }
+.text-2xl { font-size:1.5rem; } .border { border-width:1px; border-style:solid; }
+.bg-white\\/80 { background:rgba(255,255,255,.8); } .opacity-80 { opacity:.8; } .opacity-70 { opacity:.7; }
+@media (min-width: 1024px) {
+  .min-\\[1024px\\]\\:grid-cols-3 { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .min-\\[1024px\\]\\:grid-cols-5 { grid-template-columns:repeat(5,minmax(0,1fr)); }
+  .lg\\:block { display:block !important; }
+  .lg\\:hidden { display:none !important; }
+}
 .page { margin: 0 auto; padding: 24px; }
 .page.desktop { max-width: 1100px; }
 .page.mobile { max-width: 390px; }
@@ -107,7 +126,7 @@ const noop = () => undefined
 
 function htmlFor(
   view: Parameters<typeof MeqatiPlanningWorkspace>[0]['view'],
-  layout: 'desktop' | 'mobile',
+  _layout: 'desktop' | 'mobile',
 ) {
   const shobahId = view.level === 'overview' ? 'H01' : view.shobahId
   const visibleObjectives = objectives.filter((row) => row.shobahId === shobahId)
@@ -136,7 +155,8 @@ function htmlFor(
       onOpenActivity: noop,
     }),
   )
-  return `<!doctype html><html lang="ur" dir="rtl"><head><meta charset="utf-8"><style>${CSS}</style></head><body><div class="page ${layout}">${inner}</div></body></html>`
+  const shell = `<div class="admin-shell"><aside class="admin-side">Admin</aside><main class="admin-main"><div class="ds-page"><div class="meqati-planning-canvas space-y-6"><h1 class="text-2xl font-semibold text-text-heading">میقاتی منصوبہ</h1>${inner}</div></div></main></div>`
+  return `<!doctype html><html lang="ur" dir="rtl" data-theme="dark"><head><meta charset="utf-8"><style>${CSS}</style></head><body>${shell}</body></html>`
 }
 
 const mappedActivity = programmes.find((row) => row.objectiveId === 'H01-O05')!
@@ -159,9 +179,13 @@ mkdirSync(outDir, { recursive: true })
 const h02Objective = objectives.find((row) => row.shobahId === 'H02' && programmes.some((p) => p.objectiveId === row.id))!
 
 const shots: Array<[string, string, { width: number; height: number }]> = [
-  ['meqati-visual-desktop-overview.png', htmlFor({ level: 'overview' }, 'desktop'), { width: 1280, height: 900 }],
-  ['meqati-visual-desktop-head-h02.png', htmlFor({ level: 'shobah', shobahId: 'H02' }, 'desktop'), { width: 1280, height: 900 }],
-  ['meqati-visual-desktop-objective.png', htmlFor({ level: 'objective', shobahId: 'H02', objectiveId: h02Objective.id }, 'desktop'), { width: 1280, height: 900 }],
+  ['meqati-admin-planning-1440.png', htmlFor({ level: 'overview' }, 'desktop'), { width: 1440, height: 1100 }],
+  ['meqati-admin-planning-1536.png', htmlFor({ level: 'overview' }, 'desktop'), { width: 1536, height: 1100 }],
+  ['meqati-admin-planning-390.png', htmlFor({ level: 'overview' }, 'mobile'), { width: 390, height: 844 }],
+  ['meqati-admin-planning-412.png', htmlFor({ level: 'overview' }, 'mobile'), { width: 412, height: 844 }],
+  ['meqati-visual-desktop-overview.png', htmlFor({ level: 'overview' }, 'desktop'), { width: 1440, height: 1100 }],
+  ['meqati-visual-desktop-head-h02.png', htmlFor({ level: 'shobah', shobahId: 'H02' }, 'desktop'), { width: 1440, height: 1100 }],
+  ['meqati-visual-desktop-objective.png', htmlFor({ level: 'objective', shobahId: 'H02', objectiveId: h02Objective.id }, 'desktop'), { width: 1440, height: 1100 }],
   ['meqati-visual-activity-detail.png', detail, { width: 900, height: 700 }],
   ['meqati-visual-mobile-overview.png', htmlFor({ level: 'overview' }, 'mobile'), { width: 390, height: 844 }],
   ['meqati-visual-mobile-head-h02.png', htmlFor({ level: 'shobah', shobahId: 'H02' }, 'mobile'), { width: 390, height: 844 }],
@@ -176,12 +200,21 @@ const shots: Array<[string, string, { width: number; height: number }]> = [
 ]
 
 const browser = await chromium.launch()
+const metrics: Record<string, string> = {}
 for (const [name, html, viewport] of shots) {
   const page = await browser.newPage({ viewport })
   await page.setContent(html, { waitUntil: 'networkidle' })
+  if (name.includes('1440') || name.includes('1536')) {
+    metrics[name] = await page.locator('.meqati-head-grid').evaluate((el) => getComputedStyle(el).gridTemplateColumns)
+    metrics[`${name}-stats`] = String(await page.locator('.meqati-stat-card').count())
+  }
+  if (name.includes('390') && name.includes('admin-planning')) {
+    metrics[name] = await page.locator('.meqati-head-grid').evaluate((el) => getComputedStyle(el).gridTemplateColumns)
+  }
   const path = `${outDir}/${name}`
   await page.screenshot({ path, fullPage: true })
   await page.close()
   console.log('wrote', path)
 }
+console.log('grid-metrics', metrics)
 await browser.close()

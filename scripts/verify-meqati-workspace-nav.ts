@@ -14,13 +14,21 @@ import type { MeqatiMansooba, PlanningObjective, Shobah } from '../src/types/pla
 const page = readFileSync('src/pages/admin/AdminPlanningPage.tsx', 'utf8')
 const workspace = readFileSync('src/pages/admin/meqati/MeqatiPlanningWorkspace.tsx', 'utf8')
 assert.match(page, /MeqatiPlanningWorkspace/)
+assert.match(page, /meqati-planning-canvas/)
 assert.match(workspace, /level: 'overview'/)
 assert.match(workspace, /level: 'shobah'/)
 assert.match(workspace, /level: 'objective'/)
 assert.match(workspace, /level: 'unmapped'/)
 assert.match(workspace, /اس ہدف کے لیے ابھی کوئی سرگرمی درج نہیں/)
 assert.match(workspace, /تمام شعبہ/)
-assert.match(workspace, /lg:grid-cols-3/)
+assert.match(workspace, /meqati-head-grid/)
+assert.match(workspace, /meqati-planning-canvas/)
+assert.match(workspace, /StatCard/)
+const canvasCss = readFileSync('src/pages/admin/meqati/meqatiPlanningCanvas.css', 'utf8')
+assert.match(canvasCss, /repeat\(5, minmax\(0, 1fr\)\)/)
+assert.match(canvasCss, /repeat\(3, minmax\(0, 1fr\)\)/)
+assert.doesNotMatch(workspace, /md:grid-cols-2/)
+assert.doesNotMatch(workspace, /xl:grid-cols-3/)
 assert.match(workspace, /CompactActivityList/)
 
 const manifest = JSON.parse(
@@ -147,6 +155,8 @@ function render(view: Parameters<typeof MeqatiPlanningWorkspace>[0]['view']) {
 }
 
 const overview = render({ level: 'overview' })
+assert.equal((overview.match(/meqati-stat-card/g) ?? []).length, 5)
+assert.match(overview, /meqati-head-card/)
 assert.match(overview, /2023–27/)
 assert.match(overview, /9/)
 assert.match(overview, /شعبہ/)

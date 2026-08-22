@@ -384,6 +384,8 @@ console.log('▶ Campaign schema / objective isolation')
 console.log('▶ Admin activity UI integrity (ACTIVITY-FIRST)')
 {
   const page = read('src/pages/admin/AdminPlanningPage.tsx')
+  const workspace = read('src/pages/admin/meqati/MeqatiPlanningWorkspace.tsx')
+  const ui = `${page}\n${workspace}`
   assertIncludes(page, 'activityObjectiveId', 'optional Objective parent state')
   assertIncludes(
     page,
@@ -396,7 +398,7 @@ console.log('▶ Admin activity UI integrity (ACTIVITY-FIRST)')
     'edit allows blank Objective',
   )
   assertIncludes(page, 'objectiveId: parentId', 'save uses optional Objective')
-  assertIncludes(page, 'بغیر اہداف', 'unmapped activities surface')
+  assertIncludes(ui, 'بغیر اہداف', 'unmapped activities surface')
   assertIncludes(page, 'frequencyCadenceExtra', 'dual schedule UI')
   assertIncludes(page, 'localProgramme.saveDurable', 'uses repository boundary')
   assertIncludes(page, 'سال کے مطابق عمل درآمد', 'year-specific status editor')

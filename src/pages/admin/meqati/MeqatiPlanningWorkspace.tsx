@@ -3,12 +3,15 @@
  * OVERVIEW → SHOBAH → OBJECTIVE | UNMAPPED → Activity detail (parent modal).
  */
 
+import type { ReactNode } from 'react'
 import type { LocalProgramme } from '@/types/localProgramme.types'
 import type { MeqatiMansooba, PlanningObjective, Shobah } from '@/types/planning.types'
 import { MEQATI_PLAN_END_START_YEAR, MEQATI_PLAN_START_YEAR } from '@/lib/dashboard/meqatiYear'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import { Icon } from '@/components/ui/Icon'
+import type { IconName } from '@/design-system/iconNames'
+import '@/pages/admin/meqati/meqatiPlanningCanvas.css'
 import {
   Chevron,
   CompactActivityList,
@@ -71,12 +74,47 @@ function SectionLabel({ children }: { children: string }) {
   return <h3 className="text-sm font-semibold text-text-heading">{children}</h3>
 }
 
-function StatChip({ value, label }: { value: number; label: string }) {
+const STAT_CARDS: { key: keyof Totals; label: string; icon: IconName; tint: string; ink: string }[] = [
+  { key: 'shobahs', label: 'شعبہ', icon: 'users', tint: '#e8f5ee', ink: '#1b4332' },
+  { key: 'objectives', label: 'اہداف', icon: 'flag', tint: '#eef3f8', ink: '#293241' },
+  { key: 'activities', label: 'سرگرمیاں', icon: 'clipboard', tint: '#f3f7f2', ink: '#3a5a40' },
+  { key: 'mapped', label: 'مربوط', icon: 'link', tint: '#eef7f4', ink: '#1b4332' },
+  { key: 'unmapped', label: 'بغیر ہدف', icon: 'warning', tint: '#f7f3ee', ink: '#4a4238' },
+]
+
+function StatCard({ value, label, icon, tint, ink }: {
+  value: number
+  label: string
+  icon: IconName
+  tint: string
+  ink: string
+}) {
   return (
-    <span className="inline-flex min-h-11 items-center rounded-full bg-surface px-3 py-1.5 text-sm text-text-heading shadow-card">
-      <span className="font-semibold tabular-nums">{value}</span>
-      <span className="ms-1 text-secondary">{label}</span>
-    </span>
+    <div
+      className="meqati-stat-card flex min-h-[5.5rem] items-center gap-3 px-4 py-3"
+      style={{ backgroundColor: tint }}
+    >
+      <span
+        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/80"
+        style={{ color: ink }}
+      >
+        <Icon name={icon} size="md" />
+      </span>
+      <span className="min-w-0">
+        <span className="block text-2xl font-semibold tabular-nums" style={{ color: ink }}>
+          {value}
+        </span>
+        <span className="block text-sm text-secondary">{label}</span>
+      </span>
+    </div>
+  )
+}
+
+function Canvas({ children }: { children: ReactNode }) {
+  return (
+    <div className="meqati-planning-canvas overflow-x-hidden" dir="rtl" lang="ur">
+      {children}
+    </div>
   )
 }
 
@@ -133,23 +171,14 @@ export function MeqatiPlanningWorkspace({
 
   if (view.level === 'overview') {
     return (
-      <div className="overflow-x-hidden space-y-6" dir="rtl" lang="ur">
+      <Canvas>
+        <div className="space-y-6">
         <header className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
-            <h2 className="text-2xl font-semibold text-text-heading">
+            <p className="text-sm text-secondary">میقاتی منصوبہ</p>
+            <h2 className="mt-1 text-2xl font-semibold text-text-heading">
               {mansooba ? `${mansooba.name} ${PLAN_PERIOD_LABEL}` : 'میقاتی منصوبہ'}
             </h2>
-            {mansooba ? (
-              <div className="mt-4 flex flex-wrap gap-2">
-                <StatChip value={totals.shobahs} label="شعبہ" />
-                <StatChip value={totals.objectives} label="اہداف" />
-                <StatChip value={totals.activities} label="سرگرمیاں" />
-                <StatChip value={totals.mapped} label="مربوط" />
-                <StatChip value={totals.unmapped} label="بغیر ہدف" />
-              </div>
-            ) : (
-              <p className="mt-3 text-sm text-secondary">تنظیمی جڑ۔ صرف ایک منصوبہ۔</p>
-            )}
           </div>
           <div className="flex flex-wrap gap-2">
             {canCreateMansooba ? (
@@ -168,6 +197,24 @@ export function MeqatiPlanningWorkspace({
           </div>
         </header>
 
+        {mansooba ? (
+          <ul className="meqati-stat-grid grid grid-cols-2 gap-3">
+            {STAT_CARDS.map((card) => (
+              <li key={card.key}>
+                <StatCard
+                  value={totals[card.key]}
+                  label={card.label}
+                  icon={card.icon}
+                  tint={card.tint}
+                  ink={card.ink}
+                />
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-sm text-secondary">تنظیمی جڑ۔ صرف ایک منصوبہ۔</p>
+        )}
+
         {!mansooba ? (
           <p className="text-sm text-secondary">ابھی میقاتی منصوبہ نہیں ہے۔ پہلا منصوبہ بنائیں۔</p>
         ) : shobahItems.length === 0 ? (
@@ -177,7 +224,7 @@ export function MeqatiPlanningWorkspace({
         ) : (
           <section className="space-y-3">
             <SectionLabel>شعبہ</SectionLabel>
-            <ul className="grid grid-cols-1 gap-3 lg:grid-cols-3">
+            <ul className="meqati-head-grid grid grid-cols-1 gap-3">
               {shobahItems.map((item) => (
                 <li key={item.shobah.id}>
                   <ShobahHeadCard
@@ -189,13 +236,15 @@ export function MeqatiPlanningWorkspace({
             </ul>
           </section>
         )}
-      </div>
+        </div>
+      </Canvas>
     )
   }
 
   if (view.level === 'shobah' && selectedShobah && visual && headCode) {
     return (
-      <div className="overflow-x-hidden space-y-8" dir="rtl" lang="ur">
+      <Canvas>
+      <div className="space-y-8">
         <header>
           <BackBar label="تمام شعبہ" onClick={() => onViewChange({ level: 'overview' })} />
           <div
@@ -264,7 +313,7 @@ export function MeqatiPlanningWorkspace({
 
         <button
           type="button"
-          className="flex min-h-14 w-full items-center justify-between gap-4 overflow-hidden rounded-2xl bg-surface px-5 py-4 text-start shadow-card"
+          className="flex min-h-14 w-full items-center justify-between gap-4 overflow-hidden rounded-2xl bg-white px-5 py-4 text-start shadow-card"
           onClick={() => onViewChange({ level: 'unmapped', shobahId: view.shobahId })}
         >
           <span className="flex min-w-0 items-stretch gap-3">
@@ -276,13 +325,15 @@ export function MeqatiPlanningWorkspace({
           <Chevron />
         </button>
       </div>
+      </Canvas>
     )
   }
 
   if (view.level === 'objective') {
     const mappedCount = objectiveActivities.filter(isMappedActivity).length
     return (
-      <div className="overflow-x-hidden space-y-8" dir="rtl" lang="ur">
+      <Canvas>
+      <div className="space-y-8">
         <header>
           <BackBar
             label={
@@ -331,11 +382,13 @@ export function MeqatiPlanningWorkspace({
         )}
         </section>
       </div>
+      </Canvas>
     )
   }
 
   return (
-    <div className="overflow-x-hidden space-y-8" dir="rtl" lang="ur">
+    <Canvas>
+    <div className="space-y-8">
       <header>
         <BackBar
           label={selectedShobah ? selectedShobah.shobah.name : 'شعبہ'}
@@ -365,5 +418,6 @@ export function MeqatiPlanningWorkspace({
         showUnmappedState
       />
     </div>
+    </Canvas>
   )
 }
