@@ -41,8 +41,20 @@ html,body { margin:0; background:#f7f7f2; font-family:'Noto Nastaliq Urdu', Taho
 .overflow-hidden { overflow:hidden; } .overflow-x-hidden { overflow-x:hidden; }
 .sticky { position:sticky; } .top-0 { top:0; } .z-20 { z-index:20; } .backdrop-blur-sm { backdrop-filter: blur(4px); }
 .grid { display:grid; } .grid-cols-1 { grid-template-columns:1fr; } .gap-4 { gap:1rem; }
-@media (min-width: 768px) { .md\\:grid-cols-2 { grid-template-columns:repeat(2,minmax(0,1fr)); } }
-@media (min-width: 1280px) { .xl\\:grid-cols-3 { grid-template-columns:repeat(3,minmax(0,1fr)); } }
+.hidden { display:none; }
+@media (min-width: 1024px) {
+  .lg\\:grid-cols-3 { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .lg\\:block { display:block !important; }
+  .lg\\:hidden { display:none !important; }
+}
+.table-fixed { table-layout:fixed; }
+table { width:100%; border-collapse:collapse; }
+th,td { text-align:start; }
+.border-b { border-bottom:1px solid #e5e7de; }
+.last\\:border-b-0:last-child { border-bottom:0; }
+.ms-1 { margin-inline-start:.25rem; }
+.inline-flex { display:inline-flex; }
+.tabular-nums { font-variant-numeric: tabular-nums; }
 button { font: inherit; background:none; border:0; cursor:pointer; color:inherit; }
 ul { list-style:none; padding:0; margin:0; }
 .ds-icon-md { width:1.25rem; height:1.25rem; }

@@ -5,6 +5,7 @@
 
 import type { LocalProgramme } from '@/types/localProgramme.types'
 import type { MeqatiMansooba, PlanningObjective, Shobah } from '@/types/planning.types'
+import { MEQATI_PLAN_END_START_YEAR, MEQATI_PLAN_START_YEAR } from '@/lib/dashboard/meqatiYear'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import { Icon } from '@/components/ui/Icon'
@@ -14,6 +15,7 @@ import {
   ObjectiveNavBox,
   ShobahHeadCard,
   isMappedActivity,
+  objectiveDisplayNumber,
   shobahHeadCode,
   shobahVisual,
   type ShobahOverviewItem,
@@ -61,6 +63,21 @@ type MeqatiPlanningWorkspaceProps = {
   onEditObjective: (row: PlanningObjective) => void
   onCreateActivity: () => void
   onOpenActivity: (row: LocalProgramme) => void
+}
+
+const PLAN_PERIOD_LABEL = `${MEQATI_PLAN_START_YEAR}–${String(MEQATI_PLAN_END_START_YEAR + 1).slice(-2)}`
+
+function SectionLabel({ children }: { children: string }) {
+  return <h3 className="text-sm font-semibold text-text-heading">{children}</h3>
+}
+
+function StatChip({ value, label }: { value: number; label: string }) {
+  return (
+    <span className="inline-flex min-h-11 items-center rounded-full bg-surface px-3 py-1.5 text-sm text-text-heading shadow-card">
+      <span className="font-semibold tabular-nums">{value}</span>
+      <span className="ms-1 text-secondary">{label}</span>
+    </span>
+  )
 }
 
 function BackBar({ label, onClick }: { label: string; onClick: () => void }) {
@@ -116,21 +133,20 @@ export function MeqatiPlanningWorkspace({
 
   if (view.level === 'overview') {
     return (
-      <div className="overflow-x-hidden space-y-8" dir="rtl" lang="ur">
+      <div className="overflow-x-hidden space-y-6" dir="rtl" lang="ur">
         <header className="flex flex-wrap items-start justify-between gap-3">
-          <div>
+          <div className="min-w-0">
             <h2 className="text-2xl font-semibold text-text-heading">
-              {mansooba?.name ?? 'میقاتی منصوبہ'}
+              {mansooba ? `${mansooba.name} ${PLAN_PERIOD_LABEL}` : 'میقاتی منصوبہ'}
             </h2>
             {mansooba ? (
-              <>
-                <p className="mt-3 text-sm text-secondary">
-                  {totals.shobahs} شعبہ · {totals.objectives} اہداف · {totals.activities} سرگرمیاں
-                </p>
-                <p className="mt-1 text-sm text-secondary">
-                  {totals.mapped} مربوط · {totals.unmapped} بغیر ہدف
-                </p>
-              </>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <StatChip value={totals.shobahs} label="شعبہ" />
+                <StatChip value={totals.objectives} label="اہداف" />
+                <StatChip value={totals.activities} label="سرگرمیاں" />
+                <StatChip value={totals.mapped} label="مربوط" />
+                <StatChip value={totals.unmapped} label="بغیر ہدف" />
+              </div>
             ) : (
               <p className="mt-3 text-sm text-secondary">تنظیمی جڑ۔ صرف ایک منصوبہ۔</p>
             )}
@@ -159,16 +175,19 @@ export function MeqatiPlanningWorkspace({
             اس منصوبہ میں ابھی کوئی شعبہ نہیں۔ غیر تصدیق شدہ ماخذ مواد شامل نہیں کیا گیا۔
           </p>
         ) : (
-          <ul className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {shobahItems.map((item) => (
-              <li key={item.shobah.id}>
-                <ShobahHeadCard
-                  item={item}
-                  onOpen={(id) => onViewChange({ level: 'shobah', shobahId: id })}
-                />
-              </li>
-            ))}
-          </ul>
+          <section className="space-y-3">
+            <SectionLabel>شعبہ</SectionLabel>
+            <ul className="grid grid-cols-1 gap-3 lg:grid-cols-3">
+              {shobahItems.map((item) => (
+                <li key={item.shobah.id}>
+                  <ShobahHeadCard
+                    item={item}
+                    onOpen={(id) => onViewChange({ level: 'shobah', shobahId: id })}
+                  />
+                </li>
+              ))}
+            </ul>
+          </section>
         )}
       </div>
     )
@@ -178,19 +197,16 @@ export function MeqatiPlanningWorkspace({
     return (
       <div className="overflow-x-hidden space-y-8" dir="rtl" lang="ur">
         <header>
-          <BackBar label="میقاتی منصوبہ" onClick={() => onViewChange({ level: 'overview' })} />
+          <BackBar label="تمام شعبہ" onClick={() => onViewChange({ level: 'overview' })} />
           <div
-            className="flex flex-wrap items-start justify-between gap-3 rounded-2xl px-5 py-5"
+            className="flex flex-wrap items-start justify-between gap-3 rounded-2xl px-5 py-4"
             style={{ backgroundColor: visual.wash }}
           >
             <div className="min-w-0">
-              <p className="text-xs font-semibold" style={{ color: visual.ink }}>
-                {headCode}
-              </p>
-              <h2 className="mt-1 flex items-center gap-2 text-2xl font-semibold text-text-heading">
+              <h2 className="flex items-center gap-2 text-2xl font-semibold text-text-heading">
                 <span
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-full"
-                  style={{ backgroundColor: '#fff', color: visual.accent }}
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-surface"
+                  style={{ color: visual.accent }}
                 >
                   <Icon name={visual.icon} size="md" />
                 </span>
@@ -200,7 +216,7 @@ export function MeqatiPlanningWorkspace({
                 {selectedShobah.objectiveCount} اہداف · {selectedShobah.activityCount} سرگرمیاں
               </p>
               <p className="mt-1 text-sm text-secondary">
-                {selectedShobah.mappedCount} مربوط · {selectedShobah.unmappedCount} بغیر ہدف
+                {selectedShobah.mappedCount} مربوط | {selectedShobah.unmappedCount} بغیر ہدف
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -217,7 +233,9 @@ export function MeqatiPlanningWorkspace({
         {visibleObjectives.length === 0 ? (
           <p className="text-sm text-secondary">اس شعبہ میں ابھی کوئی اہداف نہیں۔</p>
         ) : (
-          <ul className="space-y-3">
+          <section className="space-y-3">
+            <SectionLabel>اہداف</SectionLabel>
+          <ul className="space-y-2">
             {visibleObjectives.map((row, index) => {
               const count = programmes.filter((item) => item.objectiveId === row.id).length
               return (
@@ -241,20 +259,18 @@ export function MeqatiPlanningWorkspace({
               )
             })}
           </ul>
+          </section>
         )}
 
         <button
           type="button"
-          className="flex min-h-14 w-full items-center justify-between gap-4 overflow-hidden rounded-2xl bg-surface px-5 py-5 text-start shadow-card"
+          className="flex min-h-14 w-full items-center justify-between gap-4 overflow-hidden rounded-2xl bg-surface px-5 py-4 text-start shadow-card"
           onClick={() => onViewChange({ level: 'unmapped', shobahId: view.shobahId })}
         >
           <span className="flex min-w-0 items-stretch gap-3">
             <span className="w-1 shrink-0 rounded-full" style={{ backgroundColor: visual.accent }} />
-            <span>
-              <span className="block text-lg font-semibold text-text-heading">بغیر ہدف</span>
-              <span className="mt-2 block text-sm text-secondary">
-                {unmappedActivities.length} سرگرمیاں · بغیر اہداف
-              </span>
+            <span className="block text-lg font-semibold text-text-heading">
+              بغیر ہدف ({unmappedActivities.length} سرگرمیاں)
             </span>
           </span>
           <Chevron />
@@ -269,28 +285,28 @@ export function MeqatiPlanningWorkspace({
       <div className="overflow-x-hidden space-y-8" dir="rtl" lang="ur">
         <header>
           <BackBar
-            label={selectedShobah ? selectedShobah.shobah.name : 'شعبہ'}
+            label={
+              selectedShobah && headCode
+                ? `${selectedShobah.shobah.name} (${headCode})`
+                : 'شعبہ'
+            }
             onClick={() => onViewChange({ level: 'shobah', shobahId: view.shobahId })}
           />
           <div
-            className="rounded-2xl px-5 py-5"
+            className="rounded-2xl px-5 py-4"
             style={visual ? { backgroundColor: visual.wash } : undefined}
           >
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">
-                {headCode ? (
-                  <p className="text-xs font-semibold" style={{ color: visual?.ink }}>
-                    {headCode}
-                  </p>
-                ) : null}
+                <p className="text-xs font-semibold text-secondary">
+                  ہدف {selectedObjective ? objectiveDisplayNumber(selectedObjective, 0) : ''}
+                </p>
                 <h2 className="mt-1 text-xl font-semibold text-text-heading whitespace-normal break-words">
                   {selectedObjective?.title ?? 'اہداف'}
                 </h2>
                 <p className="mt-2 text-sm text-secondary">
-                  {objectiveActivities.length} سرگرمیاں
-                </p>
-                <p className="mt-1 text-sm text-secondary">
-                  {mappedCount} مربوط · {objectiveActivities.length - mappedCount} بغیر ہدف
+                  {objectiveActivities.length} سرگرمی | {mappedCount} مربوط |{' '}
+                  {objectiveActivities.length - mappedCount} بغیر ہدف
                 </p>
               </div>
               <PrimaryButton type="button" onClick={onCreateActivity}>
@@ -300,8 +316,10 @@ export function MeqatiPlanningWorkspace({
           </div>
         </header>
 
+        <section className="space-y-3">
+          <SectionLabel>سرگرمیاں</SectionLabel>
         {objectiveActivities.length === 0 ? (
-          <p className="rounded-2xl bg-surface px-5 py-8 text-center text-sm text-secondary shadow-card">
+          <p className="rounded-2xl bg-surface px-5 py-6 text-center text-sm text-secondary shadow-card">
             اس ہدف کے لیے ابھی کوئی سرگرمی درج نہیں
           </p>
         ) : (
@@ -311,6 +329,7 @@ export function MeqatiPlanningWorkspace({
             onOpen={onOpenActivity}
           />
         )}
+        </section>
       </div>
     )
   }
@@ -326,11 +345,12 @@ export function MeqatiPlanningWorkspace({
           className="rounded-2xl px-5 py-5"
           style={visual ? { backgroundColor: visual.wash } : undefined}
         >
-          <h2 className="text-2xl font-semibold text-text-heading">بغیر ہدف</h2>
+          <h2 className="text-2xl font-semibold text-text-heading">
+            بغیر ہدف ({unmappedActivities.length} سرگرمیاں)
+          </h2>
           <p className="mt-3 max-w-xl text-sm text-secondary">
-            یہ سرگرمیاں اس شعبہ سے متعلق ہیں، لیکن فی الحال کسی ہدف سے منسلک نہیں۔
+            یہ سرگرمیاں اس شعبہ سے متعلق ہیں، لیکن فی الحال کسی ہدف سے منسلک نہیں۔ ہدف: غیر متعین · بغیر اہداف
           </p>
-          <p className="mt-2 text-sm text-secondary">ہدف: غیر متعین · بغیر اہداف</p>
           <div className="mt-4">
             <PrimaryButton type="button" onClick={onCreateActivity}>
               نئی سرگرمی

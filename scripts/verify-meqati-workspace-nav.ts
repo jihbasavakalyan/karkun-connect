@@ -19,7 +19,8 @@ assert.match(workspace, /level: 'shobah'/)
 assert.match(workspace, /level: 'objective'/)
 assert.match(workspace, /level: 'unmapped'/)
 assert.match(workspace, /اس ہدف کے لیے ابھی کوئی سرگرمی درج نہیں/)
-assert.match(workspace, /بغیر اہداف/)
+assert.match(workspace, /تمام شعبہ/)
+assert.match(workspace, /lg:grid-cols-3/)
 assert.match(workspace, /CompactActivityList/)
 
 const manifest = JSON.parse(
@@ -146,9 +147,13 @@ function render(view: Parameters<typeof MeqatiPlanningWorkspace>[0]['view']) {
 }
 
 const overview = render({ level: 'overview' })
-assert.match(overview, /9 شعبہ/)
-assert.match(overview, /43 اہداف/)
-assert.match(overview, /77 سرگرمیاں/)
+assert.match(overview, /2023–27/)
+assert.match(overview, /9/)
+assert.match(overview, /شعبہ/)
+assert.match(overview, /43/)
+assert.match(overview, /اہداف/)
+assert.match(overview, /77/)
+assert.match(overview, /سرگرمیاں/)
 assert.doesNotMatch(overview, /CompactActivityList/)
 assert.doesNotMatch(overview, /قرآن پر وچن/)
 assert.match(overview, /ادارہ جات/)
