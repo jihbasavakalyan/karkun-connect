@@ -48,6 +48,7 @@ import {
   buildShobahOverviewItems,
   CompactActivityList,
   isMappedActivity,
+  ObjectiveRow,
   ShobahTile,
 } from '@/pages/admin/meqati/meqatiPlanningPresentation'
 import {
@@ -315,6 +316,7 @@ export function AdminPlanningPage() {
   const [activityObjectiveId, setActivityObjectiveId] = useState<string | null>(null)
   const [activityForm, setActivityForm] = useState<ActivityFormState>(emptyActivityForm)
   const [expandedObjectiveId, setExpandedObjectiveId] = useState<string | null>(null)
+  const [unmappedOpen, setUnmappedOpen] = useState(false)
   const [activityModalPane, setActivityModalPane] = useState<'primary' | 'more'>('primary')
 
   const refresh = useCallback(() => {
@@ -914,15 +916,10 @@ export function AdminPlanningPage() {
     shobahs.find((row) => row.id === editingActivity?.shobahId)?.name ??
     selectedShobah?.name ??
     '—'
-  const activityContextObjectiveTitle =
-    objectives.find((row) => row.id === (activityObjectiveId ?? ''))?.title ?? null
 
   return (
     <PageShell>
-      <PageHeader
-        title="میقاتی منصوبہ"
-        description="شعبہ، اہداف، سرگرمی۔"
-      />
+      <PageHeader title="میقاتی منصوبہ" />
 
       {message ? (
         <p
@@ -933,26 +930,28 @@ export function AdminPlanningPage() {
         </p>
       ) : null}
 
-      <div className="space-y-6" dir="rtl" lang="ur">
-        <section className="rounded-xl bg-surface px-5 py-4 shadow-card">
+      <div className="space-y-8" dir="rtl" lang="ur">
+        {!selectedShobahIdResolved ? (
+          <>
+        <section>
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <h2 className="text-lg font-semibold text-text-heading">
+              <h2 className="text-xl font-semibold text-text-heading">
                 {selectedMansooba?.name ?? 'میقاتی منصوبہ'}
               </h2>
               {selectedMansooba ? (
-                <p className="mt-2 text-sm text-secondary">
-                  {mansoobaTotals.shobahs} شعبہ | {mansoobaTotals.objectives} اہداف |{' '}
+                <p className="mt-3 text-sm text-secondary">
+                  {mansoobaTotals.shobahs} شعبہ · {mansoobaTotals.objectives} اہداف ·{' '}
                   {mansoobaTotals.activities} سرگرمیاں
                 </p>
-              ) : null}
-              {selectedMansooba ? (
-                <p className="mt-1 text-xs text-secondary">
-                  {mansoobaTotals.mapped} مربوط | {mansoobaTotals.unmapped} بغیر ہدف
-                </p>
               ) : (
-                <p className="mt-1 text-sm text-secondary">تنظیمی جڑ۔ صرف ایک منصوبہ۔</p>
+                <p className="mt-2 text-sm text-secondary">تنظیمی جڑ۔ صرف ایک منصوبہ۔</p>
               )}
+              {selectedMansooba ? (
+                <p className="mt-1 text-sm text-secondary">
+                  {mansoobaTotals.mapped} مربوط · {mansoobaTotals.unmapped} بغیر ہدف
+                </p>
+              ) : null}
             </div>
             <div className="flex flex-wrap gap-2">
               {canCreateMansooba ? (
@@ -990,8 +989,6 @@ export function AdminPlanningPage() {
           ) : null}
         </section>
 
-
-        {!selectedShobahIdResolved ? (
           <section>
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="text-base font-semibold text-text-heading">شعبہ</h2>
@@ -1006,15 +1003,24 @@ export function AdminPlanningPage() {
                 اس منصوبہ میں ابھی کوئی شعبہ نہیں۔ غیر تصدیق شدہ ماخذ مواد شامل نہیں کیا گیا۔
               </p>
             ) : (
-              <ul className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              <ul className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 {shobahOverviewItems.map((item) => (
                   <li key={item.shobah.id}>
-                    <ShobahTile item={item} onOpen={setSelectedShobahId} />
+                    <ShobahTile
+                      item={item}
+                      onOpen={(id) => {
+                        setSelectedShobahId(id)
+                        setSelectedObjectiveId(null)
+                        setExpandedObjectiveId(null)
+                        setUnmappedOpen(false)
+                      }}
+                    />
                   </li>
                 ))}
               </ul>
             )}
           </section>
+          </>
         ) : (
           <section>
             <div className="flex flex-wrap items-start justify-between gap-3">
@@ -1026,13 +1032,18 @@ export function AdminPlanningPage() {
                     setSelectedShobahId(null)
                     setSelectedObjectiveId(null)
                     setExpandedObjectiveId(null)
+                    setUnmappedOpen(false)
                   }}
                 >
-                  تمام شعبہ
+                  میقاتی منصوبہ
                 </button>
-                <h2 className="mt-2 text-lg font-semibold text-text-heading">{selectedShobah?.name}</h2>
-                <p className="mt-1 text-sm text-secondary">
+                <h2 className="mt-3 text-xl font-semibold text-text-heading">{selectedShobah?.name}</h2>
+                <p className="mt-2 text-sm text-secondary">
                   {visibleObjectives.length} اہداف · {shobahActivities.length} سرگرمیاں
+                </p>
+                <p className="mt-1 text-xs text-secondary">
+                  {shobahActivities.filter(isMappedActivity).length} مربوط · {unmappedActivities.length}{' '}
+                  بغیر ہدف
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -1051,69 +1062,67 @@ export function AdminPlanningPage() {
             </div>
 
             {visibleObjectives.length === 0 ? (
-              <p className="mt-4 text-sm text-secondary">اس شعبہ میں ابھی کوئی اہداف نہیں۔</p>
+              <p className="mt-6 text-sm text-secondary">اس شعبہ میں ابھی کوئی اہداف نہیں۔</p>
             ) : (
-              <ul className="mt-5 space-y-1">
-                {visibleObjectives.map((row) => {
+              <ul className="mt-6">
+                {visibleObjectives.map((row, index) => {
                   const objectiveActivities = programmes
                     .filter((item) => item.objectiveId === row.id)
                     .slice()
                     .sort((a, b) => a.name.localeCompare(b.name))
                   const expanded = expandedObjectiveId === row.id
-                  const mappedHere = objectiveActivities.length
                   return (
-                    <li key={row.id} className="py-3">
-                      <div className="flex flex-wrap items-start justify-between gap-2">
-                        <button
-                          type="button"
-                          className="min-w-0 flex-1 text-start"
-                          onClick={() => {
-                            setSelectedObjectiveId(row.id)
-                            setExpandedObjectiveId(expanded ? null : row.id)
-                          }}
-                        >
-                          <p className="font-medium text-text-heading whitespace-normal break-words">
-                            {row.title}
-                          </p>
-                          <p className="mt-1 text-xs text-secondary">{mappedHere} سرگرمیاں</p>
-                        </button>
-                        <SecondaryButton type="button" onClick={() => openEditObjective(row)}>
-                          ترمیم
-                        </SecondaryButton>
-                      </div>
-                      {expanded ? (
-                        <div className="mt-3">
-                          {objectiveActivities.length === 0 ? (
-                            <p className="text-sm text-secondary">ان اہداف کے تحت ابھی کوئی سرگرمی نہیں۔</p>
-                          ) : (
-                            <CompactActivityList
-                              rows={objectiveActivities}
-                              ruknNameById={ruknNameById}
-                              onOpen={openEditActivity}
-                            />
-                          )}
-                        </div>
-                      ) : null}
-                    </li>
+                    <ObjectiveRow
+                      key={row.id}
+                      index={index + 1}
+                      objective={row}
+                      activityCount={objectiveActivities.length}
+                      expanded={expanded}
+                      onToggle={() => {
+                        setSelectedObjectiveId(row.id)
+                        setExpandedObjectiveId(expanded ? null : row.id)
+                      }}
+                      onEdit={() => openEditObjective(row)}
+                    >
+                      {objectiveActivities.length === 0 ? (
+                        <p className="text-sm text-secondary">ان اہداف کے تحت ابھی کوئی سرگرمی نہیں۔</p>
+                      ) : (
+                        <CompactActivityList
+                          rows={objectiveActivities}
+                          ruknNameById={ruknNameById}
+                          onOpen={openEditActivity}
+                        />
+                      )}
+                    </ObjectiveRow>
                   )
                 })}
               </ul>
             )}
 
             {shobahActivities.length === 0 ? (
-              <p className="mt-6 text-sm text-secondary">اس شعبہ کے لیے ابھی کوئی سرگرمی درج نہیں</p>
+              <p className="mt-8 text-sm text-secondary">اس شعبہ کے لیے ابھی کوئی سرگرمی درج نہیں</p>
             ) : unmappedActivities.length > 0 ? (
-              <div className="mt-8">
-                <h3 className="text-sm font-semibold text-text-heading">بغیر ہدف</h3>
-                <p className="mt-1 text-xs text-secondary">بغیر اہداف — ہدف غیر متعین۔ مصنوعی ہدف نہیں بنایا گیا۔</p>
-                <div className="mt-3">
-                  <CompactActivityList
-                    rows={unmappedActivities}
-                    ruknNameById={ruknNameById}
-                    onOpen={openEditActivity}
-                    showUnmappedObjective
-                  />
-                </div>
+              <div className="mt-10">
+                <button
+                  type="button"
+                  className="text-start"
+                  onClick={() => setUnmappedOpen((open) => !open)}
+                >
+                  <h3 className="text-sm font-semibold text-text-heading">بغیر ہدف</h3>
+                  <p className="mt-1 text-xs text-secondary">
+                    {unmappedActivities.length} سرگرمیاں · بغیر اہداف · غیر متعین
+                  </p>
+                </button>
+                {unmappedOpen ? (
+                  <div className="mt-4">
+                    <CompactActivityList
+                      rows={unmappedActivities}
+                      ruknNameById={ruknNameById}
+                      onOpen={openEditActivity}
+                      showUnmappedState
+                    />
+                  </div>
+                ) : null}
               </div>
             ) : null}
           </section>
@@ -1616,7 +1625,7 @@ export function AdminPlanningPage() {
                   setActivityObjectiveId(event.target.value.trim() || null)
                 }
               >
-                <option value="">غیر متعین</option>
+                <option value="">—</option>
                 {objectives
                   .filter((row) =>
                     selectedMansoobaId
@@ -1630,9 +1639,7 @@ export function AdminPlanningPage() {
                   ))}
               </select>
               {!activityObjectiveId ? (
-                <p className="mt-1 text-xs text-secondary">
-                  {activityContextObjectiveTitle ?? 'ہدف غیر متعین'}
-                </p>
+                <p className="mt-1 text-xs text-secondary">غیر متعین</p>
               ) : null}
             </div>
             <div>
@@ -1649,28 +1656,6 @@ export function AdminPlanningPage() {
               />
             </div>
             <div>
-              <label className={labelClassName} htmlFor="activity-kind">
-                عملی تعلق
-              </label>
-              <select
-                id="activity-kind"
-                className={inputClassName}
-                value={activityForm.kind}
-                onChange={(event) =>
-                  setActivityForm((prev) => ({
-                    ...prev,
-                    kind: event.target.value as ProgrammeKind,
-                  }))
-                }
-              >
-                {ACTIVITY_KIND_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
               <label className={labelClassName} htmlFor="activity-status">
                 حالت
               </label>
@@ -1685,9 +1670,9 @@ export function AdminPlanningPage() {
                   }))
                 }
               >
-                <option value="draft">draft</option>
-                <option value="active">active</option>
-                <option value="archived">archived</option>
+                <option value="draft">مسودہ</option>
+                <option value="active">فعال</option>
+                <option value="archived">محفوظ</option>
               </select>
             </div>
             <div>
@@ -1712,34 +1697,6 @@ export function AdminPlanningPage() {
                   </option>
                 ))}
               </select>
-            </div>
-            <div>
-              <label className={labelClassName} htmlFor="activity-start">
-                آغاز
-              </label>
-              <input
-                id="activity-start"
-                type="date"
-                className={inputClassName}
-                value={activityForm.startDate}
-                onChange={(event) =>
-                  setActivityForm((prev) => ({ ...prev, startDate: event.target.value }))
-                }
-              />
-            </div>
-            <div>
-              <label className={labelClassName} htmlFor="activity-end">
-                اختتام
-              </label>
-              <input
-                id="activity-end"
-                type="date"
-                className={inputClassName}
-                value={activityForm.endDate}
-                onChange={(event) =>
-                  setActivityForm((prev) => ({ ...prev, endDate: event.target.value }))
-                }
-              />
             </div>
             <div>
               <label className={labelClassName} htmlFor="activity-frequency">
@@ -1869,6 +1826,60 @@ export function AdminPlanningPage() {
         </ModalFormSection>
         ) : (
         <>
+          <ModalFormSection title="مزید">
+          <ModalFormGrid>
+            <div>
+              <label className={labelClassName} htmlFor="activity-kind">
+                عملی تعلق
+              </label>
+              <select
+                id="activity-kind"
+                className={inputClassName}
+                value={activityForm.kind}
+                onChange={(event) =>
+                  setActivityForm((prev) => ({
+                    ...prev,
+                    kind: event.target.value as ProgrammeKind,
+                  }))
+                }
+              >
+                {ACTIVITY_KIND_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className={labelClassName} htmlFor="activity-start">
+                آغاز
+              </label>
+              <input
+                id="activity-start"
+                type="date"
+                className={inputClassName}
+                value={activityForm.startDate}
+                onChange={(event) =>
+                  setActivityForm((prev) => ({ ...prev, startDate: event.target.value }))
+                }
+              />
+            </div>
+            <div>
+              <label className={labelClassName} htmlFor="activity-end">
+                اختتام
+              </label>
+              <input
+                id="activity-end"
+                type="date"
+                className={inputClassName}
+                value={activityForm.endDate}
+                onChange={(event) =>
+                  setActivityForm((prev) => ({ ...prev, endDate: event.target.value }))
+                }
+              />
+            </div>
+          </ModalFormGrid>
+          </ModalFormSection>
           <ModalFormSection title="نوٹس">
           <div>
             <label className={labelClassName} htmlFor="activity-summary">
