@@ -6,8 +6,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Modal, ModalFormFooter, ModalFormGrid, ModalFormSection } from '@/components/common'
 import { PageHeader, PageShell } from '@/components/ui'
-import { PrimaryButton } from '@/components/ui/PrimaryButton'
-import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import { useAuth } from '@/hooks/useAuth'
 import { useBusyAction } from '@/hooks/useBusyAction'
 import type { CampaignListItem } from '@/constants/mockMissions'
@@ -44,12 +42,10 @@ import type {
 } from '@/types/planning.types'
 import type { Work } from '@/types/work.types'
 import { MansoobaActivityReportPanel } from '@/pages/admin/MansoobaActivityReportPanel'
+import { MeqatiPlanningWorkspace, type MeqatiNavView } from '@/pages/admin/meqati/MeqatiPlanningWorkspace'
 import {
   buildShobahOverviewItems,
-  CompactActivityList,
   isMappedActivity,
-  ObjectiveRow,
-  ShobahTile,
 } from '@/pages/admin/meqati/meqatiPlanningPresentation'
 import {
   getAllWeeklyIjtemaEvents,
@@ -291,7 +287,7 @@ export function AdminPlanningPage() {
   const [rukns, setRukns] = useState<Rukn[]>([])
   const [activityStoreVersion, setActivityStoreVersion] = useState(0)
   const [selectedMansoobaId, setSelectedMansoobaId] = useState<string | null>(null)
-  const [selectedShobahId, setSelectedShobahId] = useState<string | null>(null)
+  const [navView, setNavView] = useState<MeqatiNavView>({ level: 'overview' })
   const [selectedObjectiveId, setSelectedObjectiveId] = useState<string | null>(null)
   const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null)
   const [message, setMessage] = useState('')
@@ -315,8 +311,6 @@ export function AdminPlanningPage() {
   const [editingActivityId, setEditingActivityId] = useState<string | null>(null)
   const [activityObjectiveId, setActivityObjectiveId] = useState<string | null>(null)
   const [activityForm, setActivityForm] = useState<ActivityFormState>(emptyActivityForm)
-  const [expandedObjectiveId, setExpandedObjectiveId] = useState<string | null>(null)
-  const [unmappedOpen, setUnmappedOpen] = useState(false)
   const [activityModalPane, setActivityModalPane] = useState<'primary' | 'more'>('primary')
 
   const refresh = useCallback(() => {
@@ -390,9 +384,11 @@ export function AdminPlanningPage() {
   }, [shobahs, selectedMansoobaId])
 
   const selectedShobahIdResolved =
-    selectedShobahId && visibleShobahs.some((row) => row.id === selectedShobahId)
-      ? selectedShobahId
-      : null
+    navView.level === 'overview'
+      ? null
+      : visibleShobahs.some((row) => row.id === navView.shobahId)
+        ? navView.shobahId
+        : null
 
   const selectedShobah = useMemo(
     () => visibleShobahs.find((row) => row.id === selectedShobahIdResolved) ?? null,
@@ -408,9 +404,12 @@ export function AdminPlanningPage() {
   }, [objectives, selectedShobahIdResolved])
 
   const selectedObjectiveIdResolved =
-    selectedObjectiveId && visibleObjectives.some((row) => row.id === selectedObjectiveId)
-      ? selectedObjectiveId
-      : null
+    navView.level === 'objective' &&
+    visibleObjectives.some((row) => row.id === navView.objectiveId)
+      ? navView.objectiveId
+      : selectedObjectiveId && visibleObjectives.some((row) => row.id === selectedObjectiveId)
+        ? selectedObjectiveId
+        : null
 
   const unmappedActivities = useMemo(
     () =>
@@ -705,7 +704,7 @@ export function AdminPlanningPage() {
           return
         }
         closeShobahModal()
-        setSelectedShobahId(record.id)
+        setNavView({ level: 'shobah', shobahId: record.id })
         refresh()
         setMessage(existing ? 'شعبہ محفوظ ہو گیا۔' : 'شعبہ بن گیا۔')
       },
@@ -931,202 +930,36 @@ export function AdminPlanningPage() {
       ) : null}
 
       <div className="space-y-8" dir="rtl" lang="ur">
-        {!selectedShobahIdResolved ? (
-          <>
-        <section>
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h2 className="text-xl font-semibold text-text-heading">
-                {selectedMansooba?.name ?? 'میقاتی منصوبہ'}
-              </h2>
-              {selectedMansooba ? (
-                <p className="mt-3 text-sm text-secondary">
-                  {mansoobaTotals.shobahs} شعبہ · {mansoobaTotals.objectives} اہداف ·{' '}
-                  {mansoobaTotals.activities} سرگرمیاں
-                </p>
-              ) : (
-                <p className="mt-2 text-sm text-secondary">تنظیمی جڑ۔ صرف ایک منصوبہ۔</p>
-              )}
-              {selectedMansooba ? (
-                <p className="mt-1 text-sm text-secondary">
-                  {mansoobaTotals.mapped} مربوط · {mansoobaTotals.unmapped} بغیر ہدف
-                </p>
-              ) : null}
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {canCreateMansooba ? (
-                <PrimaryButton type="button" onClick={openCreateMansooba}>
-                  نیا میقاتی منصوبہ
-                </PrimaryButton>
-              ) : null}
-              {selectedMansooba ? (
-                <SecondaryButton type="button" onClick={() => openEditMansooba(selectedMansooba)}>
-                  ترمیم
-                </SecondaryButton>
-              ) : null}
-            </div>
-          </div>
-
-          {mansoobas.length === 0 ? (
-            <p className="mt-4 text-sm text-secondary">ابھی میقاتی منصوبہ نہیں ہے۔ پہلا منصوبہ بنائیں۔</p>
-          ) : mansoobas.length > 1 ? (
-            <ul className="mt-4 space-y-2">
-              {mansoobas.map((row) => (
-                <li key={row.id}>
-                  <button
-                    type="button"
-                    className={`text-sm ${row.id === selectedMansoobaId ? 'font-semibold text-primary' : 'text-secondary'}`}
-                    onClick={() => {
-                      setSelectedMansoobaId(row.id)
-                      setSelectedShobahId(null)
-                    }}
-                  >
-                    {row.name}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          ) : null}
-        </section>
-
-          <section>
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <h2 className="text-base font-semibold text-text-heading">شعبہ</h2>
-              <PrimaryButton type="button" onClick={openCreateShobah} disabled={!selectedMansoobaId}>
-                نیا شعبہ
-              </PrimaryButton>
-            </div>
-            {!selectedMansoobaId ? (
-              <p className="mt-4 text-sm text-secondary">میقاتی منصوبہ منتخب نہیں۔</p>
-            ) : visibleShobahs.length === 0 ? (
-              <p className="mt-4 text-sm text-secondary">
-                اس منصوبہ میں ابھی کوئی شعبہ نہیں۔ غیر تصدیق شدہ ماخذ مواد شامل نہیں کیا گیا۔
-              </p>
-            ) : (
-              <ul className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                {shobahOverviewItems.map((item) => (
-                  <li key={item.shobah.id}>
-                    <ShobahTile
-                      item={item}
-                      onOpen={(id) => {
-                        setSelectedShobahId(id)
-                        setSelectedObjectiveId(null)
-                        setExpandedObjectiveId(null)
-                        setUnmappedOpen(false)
-                      }}
-                    />
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-          </>
-        ) : (
-          <section>
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <button
-                  type="button"
-                  className="text-sm text-primary"
-                  onClick={() => {
-                    setSelectedShobahId(null)
-                    setSelectedObjectiveId(null)
-                    setExpandedObjectiveId(null)
-                    setUnmappedOpen(false)
-                  }}
-                >
-                  میقاتی منصوبہ
-                </button>
-                <h2 className="mt-3 text-xl font-semibold text-text-heading">{selectedShobah?.name}</h2>
-                <p className="mt-2 text-sm text-secondary">
-                  {visibleObjectives.length} اہداف · {shobahActivities.length} سرگرمیاں
-                </p>
-                <p className="mt-1 text-xs text-secondary">
-                  {shobahActivities.filter(isMappedActivity).length} مربوط · {unmappedActivities.length}{' '}
-                  بغیر ہدف
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {selectedShobah ? (
-                  <SecondaryButton type="button" onClick={() => openEditShobah(selectedShobah)}>
-                    ترمیم
-                  </SecondaryButton>
-                ) : null}
-                <PrimaryButton type="button" onClick={openCreateObjective}>
-                  نئے اہداف
-                </PrimaryButton>
-                <PrimaryButton type="button" onClick={openCreateActivity}>
-                  نئی سرگرمی
-                </PrimaryButton>
-              </div>
-            </div>
-
-            {visibleObjectives.length === 0 ? (
-              <p className="mt-6 text-sm text-secondary">اس شعبہ میں ابھی کوئی اہداف نہیں۔</p>
-            ) : (
-              <ul className="mt-6">
-                {visibleObjectives.map((row, index) => {
-                  const objectiveActivities = programmes
-                    .filter((item) => item.objectiveId === row.id)
-                    .slice()
-                    .sort((a, b) => a.name.localeCompare(b.name))
-                  const expanded = expandedObjectiveId === row.id
-                  return (
-                    <ObjectiveRow
-                      key={row.id}
-                      index={index + 1}
-                      objective={row}
-                      activityCount={objectiveActivities.length}
-                      expanded={expanded}
-                      onToggle={() => {
-                        setSelectedObjectiveId(row.id)
-                        setExpandedObjectiveId(expanded ? null : row.id)
-                      }}
-                      onEdit={() => openEditObjective(row)}
-                    >
-                      {objectiveActivities.length === 0 ? (
-                        <p className="text-sm text-secondary">ان اہداف کے تحت ابھی کوئی سرگرمی نہیں۔</p>
-                      ) : (
-                        <CompactActivityList
-                          rows={objectiveActivities}
-                          ruknNameById={ruknNameById}
-                          onOpen={openEditActivity}
-                        />
-                      )}
-                    </ObjectiveRow>
-                  )
-                })}
-              </ul>
-            )}
-
-            {shobahActivities.length === 0 ? (
-              <p className="mt-8 text-sm text-secondary">اس شعبہ کے لیے ابھی کوئی سرگرمی درج نہیں</p>
-            ) : unmappedActivities.length > 0 ? (
-              <div className="mt-10">
-                <button
-                  type="button"
-                  className="text-start"
-                  onClick={() => setUnmappedOpen((open) => !open)}
-                >
-                  <h3 className="text-sm font-semibold text-text-heading">بغیر ہدف</h3>
-                  <p className="mt-1 text-xs text-secondary">
-                    {unmappedActivities.length} سرگرمیاں · بغیر اہداف · غیر متعین
-                  </p>
-                </button>
-                {unmappedOpen ? (
-                  <div className="mt-4">
-                    <CompactActivityList
-                      rows={unmappedActivities}
-                      ruknNameById={ruknNameById}
-                      onOpen={openEditActivity}
-                      showUnmappedState
-                    />
-                  </div>
-                ) : null}
-              </div>
-            ) : null}
-          </section>
-        )}
+        <MeqatiPlanningWorkspace
+          mansooba={selectedMansooba}
+          totals={mansoobaTotals}
+          shobahItems={shobahOverviewItems}
+          visibleObjectives={visibleObjectives}
+          shobahActivities={shobahActivities}
+          unmappedActivities={unmappedActivities}
+          programmes={programmes}
+          ruknNameById={ruknNameById}
+          view={navView}
+          onViewChange={(next) => {
+            setNavView(next)
+            if (next.level === 'objective') {
+              setSelectedObjectiveId(next.objectiveId)
+            } else if (next.level === 'overview') {
+              setSelectedObjectiveId(null)
+            }
+          }}
+          canCreateMansooba={canCreateMansooba}
+          onCreateMansooba={openCreateMansooba}
+          onEditMansooba={() => {
+            if (selectedMansooba) openEditMansooba(selectedMansooba)
+          }}
+          onCreateShobah={openCreateShobah}
+          onEditShobah={openEditShobah}
+          onCreateObjective={openCreateObjective}
+          onEditObjective={openEditObjective}
+          onCreateActivity={openCreateActivity}
+          onOpenActivity={openEditActivity}
+        />
 
         <details className="rounded-xl bg-surface px-5 py-4 shadow-card">
           <summary className="cursor-pointer text-sm font-semibold text-text-heading">
@@ -1644,7 +1477,7 @@ export function AdminPlanningPage() {
             </div>
             <div>
               <label className={labelClassName} htmlFor="activity-name">
-                نام
+                سرگرمی
               </label>
               <input
                 id="activity-name"
