@@ -3,11 +3,15 @@
  *
  *   npm run meqati:populate -- --dry-run
  *
- * Production writes require --write-production plus extra safety env.
- * This task must never invoke write mode.
+ * Production write (explicit authorization required):
+ *   npx vite-node scripts/admin/meqati-populate.ts -- --write-production
+ *
+ * --write-production is refused if --dry-run is also present.
+ * Write scope is only meqatiMansoobas / shobahs / objectives / localProgrammes.
  */
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import type { Firestore } from 'firebase-admin/firestore'
 import { parseProgrammeRecurrenceRule } from '@/lib/occurrence/recurrence'
 import { normalizeProgrammeSchedule } from '@/lib/planning/programmeSchedule'
 import { validateLocalProgrammeForSave } from '@/lib/planning/localProgrammeValidation'
@@ -38,6 +42,7 @@ const FORBIDDEN_COLLECTIONS = [
   'followUps',
 ] as const
 
+const REQUIRED_PROJECT_ID = 'karkun-connect-75c68'
 const POPULATION_ACTOR = 'system:meqati-population'
 /** Fixed stamp so reruns produce identical complete payloads (not used as document IDs). */
 const POPULATION_STAMP = '2026-08-22T00:00:00.000Z'
@@ -361,6 +366,209 @@ async function compareProduction(docs: PlannedDoc[]): Promise<{
   }
 }
 
+function assertPreWriteGates(
+  docs: PlannedDoc[],
+  planErrors: string[],
+  comparison: { available: boolean; projectId: string | null },
+): string[] {
+  const stop: string[] = [...planErrors]
+  if (!comparison.available) {
+    stop.push('PRODUCTION COMPARISON UNAVAILABLE — write aborted')
+  }
+  if (comparison.projectId !== REQUIRED_PROJECT_ID) {
+    stop.push(
+      `Firebase project mismatch: ${comparison.projectId ?? 'null'} (required ${REQUIRED_PROJECT_ID})`,
+    )
+  }
+  const counts = {
+    meqatiMansoobas: docs.filter((row) => row.collection === 'meqatiMansoobas').length,
+    shobahs: docs.filter((row) => row.collection === 'shobahs').length,
+    objectives: docs.filter((row) => row.collection === 'objectives').length,
+    localProgrammes: docs.filter((row) => row.collection === 'localProgrammes').length,
+  }
+  if (counts.meqatiMansoobas !== 1 || counts.shobahs !== 9 || counts.objectives !== 43 || counts.localProgrammes !== 77) {
+    stop.push(`count mismatch: ${JSON.stringify(counts)}`)
+  }
+  if (docs.length !== 130) stop.push(`expected 130 documents, got ${docs.length}`)
+  if (docs.some((row) => row.validation === 'FAIL')) stop.push('validationFailures present')
+  if (docs.some((row) => row.errors.some((item) => item.includes('SCHEDULE BLOCKER')))) {
+    stop.push('scheduleBlockers present')
+  }
+  const present = docs.filter((row) => row.production !== 'ABSENT')
+  if (present.length) {
+    stop.push(
+      `target documents not absent: ${present.map((row) => `${row.collection}/${row.id}=${row.production}`).join(', ')}`,
+    )
+  }
+  const collections = new Set(docs.map((row) => row.collection))
+  for (const name of collections) {
+    if (!ALLOWED_COLLECTIONS.includes(name)) stop.push(`disallowed collection in plan: ${name}`)
+  }
+  const h09o = docs.filter((row) => row.collection === 'objectives' && String(row.payload.shobahId) === 'H09')
+  const h09a = docs.filter((row) => row.collection === 'localProgrammes' && String(row.payload.shobahId) === 'H09')
+  if (h09o.length !== 3 || h09a.length !== 0) stop.push('H09 structure mismatch')
+  const o09 = docs.find((row) => row.id === 'H01-O09')
+  if (o09?.payload.title !== 'کونسلنگ سنٹر اور شرعی پنچایت کو مستحکم کیا جائے گا۔') {
+    stop.push('H01-O09 wording mismatch')
+  }
+  return stop
+}
+
+async function snapshotForbidden(db: Firestore): Promise<Record<string, number>> {
+  const out: Record<string, number> = {}
+  for (const name of FORBIDDEN_COLLECTIONS) {
+    out[name] = await countCollection(db, name)
+  }
+  return out
+}
+
+function stripUndefinedDeep<T>(value: T): T {
+  if (Array.isArray(value)) {
+    return value
+      .filter((item) => item !== undefined)
+      .map((item) => stripUndefinedDeep(item)) as T
+  }
+  if (value === null || value === undefined) return value
+  if (typeof value === 'object') {
+    const sanitized: Record<string, unknown> = {}
+    for (const [key, child] of Object.entries(value as Record<string, unknown>)) {
+      if (child === undefined) continue
+      sanitized[key] = stripUndefinedDeep(child)
+    }
+    return sanitized as T
+  }
+  return value
+}
+
+async function writeProduction(docs: PlannedDoc[], projectId: string): Promise<void> {
+  if (projectId !== REQUIRED_PROJECT_ID) {
+    throw new Error(`refusing write: project ${projectId}`)
+  }
+  const { initFirebaseAdmin } = await import('./_firebase-init.mjs')
+  const admin = initFirebaseAdmin()
+  if (admin.projectId !== REQUIRED_PROJECT_ID) {
+    throw new Error(`refusing write: runtime project ${admin.projectId}`)
+  }
+  const db = admin.db
+  const batch = db.batch()
+  for (const doc of docs) {
+    if (!ALLOWED_COLLECTIONS.includes(doc.collection)) {
+      throw new Error(`refusing write to ${doc.collection}`)
+    }
+    batch.set(db.collection(doc.collection).doc(doc.id), stripUndefinedDeep(doc.payload))
+  }
+  await batch.commit()
+}
+
+async function countCollection(db: Firestore, name: string): Promise<number> {
+  const snap = await db.collection(name).count().get()
+  return snap.data().count
+}
+
+async function verifyAfterWrite(
+  docs: PlannedDoc[],
+  forbiddenBefore: Record<string, number>,
+): Promise<{
+  ok: boolean
+  details: Record<string, unknown>
+}> {
+  const { initFirebaseAdmin } = await import('./_firebase-init.mjs')
+  const admin = initFirebaseAdmin()
+  const db = admin.db
+  const details: Record<string, unknown> = { projectId: admin.projectId }
+  if (admin.projectId !== REQUIRED_PROJECT_ID) {
+    return { ok: false, details: { ...details, error: 'project mismatch after write' } }
+  }
+
+  const counts: Record<string, number> = {}
+  for (const name of ALLOWED_COLLECTIONS) {
+    counts[name] = await countCollection(db, name)
+  }
+  const forbiddenAfter: Record<string, number> = {}
+  for (const name of FORBIDDEN_COLLECTIONS) {
+    forbiddenAfter[name] = await countCollection(db, name)
+  }
+
+  let mapped = 0
+  let blank = 0
+  let h09Activities = 0
+  let h09Objectives = 0
+  const mismatches: string[] = []
+  for (const planned of docs) {
+    const snap = await db.collection(planned.collection).doc(planned.id).get()
+    if (!snap.exists) {
+      mismatches.push(`missing ${planned.collection}/${planned.id}`)
+      continue
+    }
+    const data = snap.data() as Record<string, unknown>
+    if (JSON.stringify(comparable(data)) !== JSON.stringify(comparable(planned.payload))) {
+      mismatches.push(`differs ${planned.collection}/${planned.id}`)
+    }
+    if (planned.collection === 'localProgrammes') {
+      if (typeof data.objectiveId === 'string' && data.objectiveId.trim()) mapped++
+      else blank++
+      if (data.shobahId === 'H09') h09Activities++
+    }
+    if (planned.collection === 'objectives' && data.shobahId === 'H09') h09Objectives++
+  }
+
+  const h02a10 = (await db.collection('localProgrammes').doc('H02-A10').get()).data()
+  const freq = h02a10?.frequency as Array<{ cadence?: string }> | undefined
+  const cadences = Array.isArray(freq) ? freq.map((row) => row.cadence) : []
+  const others: Record<string, unknown> = {}
+  for (const id of ['H02-A01', 'H05-A07', 'H06-A04']) {
+    const row = (await db.collection('localProgrammes').doc(id).get()).data()
+    const f = row?.frequency as { cadence?: string; note?: string } | undefined
+    others[id] = f
+  }
+  const o09 = (await db.collection('objectives').doc('H01-O09').get()).data()
+
+  const forbiddenChanged = Object.fromEntries(
+    FORBIDDEN_COLLECTIONS.map((name) => [
+      name,
+      { before: forbiddenBefore[name], after: forbiddenAfter[name] },
+    ]),
+  )
+  const unexpectedForbiddenWrites = FORBIDDEN_COLLECTIONS.filter(
+    (name) => forbiddenAfter[name] !== forbiddenBefore[name],
+  )
+
+  details.counts = counts
+  details.forbiddenChanged = forbiddenChanged
+  details.unexpectedForbiddenWrites = unexpectedForbiddenWrites
+  details.mapped = mapped
+  details.blank = blank
+  details.h09Objectives = h09Objectives
+  details.h09Activities = h09Activities
+  details.h02a10Cadences = cadences
+  details.otherConfigured = others
+  details.h01o09 = o09?.title
+  details.mismatches = mismatches
+
+  const otherCadencesOk = ['H02-A01', 'H05-A07', 'H06-A04'].every((id) => {
+    const row = others[id] as { cadence?: string } | undefined
+    return row?.cadence === 'custom'
+  })
+
+  const ok =
+    counts.meqatiMansoobas === 1 &&
+    counts.shobahs === 9 &&
+    counts.objectives === 43 &&
+    counts.localProgrammes === 77 &&
+    mapped === 37 &&
+    blank === 40 &&
+    h09Objectives === 3 &&
+    h09Activities === 0 &&
+    cadences.includes('monthly') &&
+    cadences.includes('quarterly') &&
+    otherCadencesOk &&
+    o09?.title === 'کونسلنگ سنٹر اور شرعی پنچایت کو مستحکم کیا جائے گا۔' &&
+    unexpectedForbiddenWrites.length === 0 &&
+    mismatches.length === 0
+
+  return { ok, details }
+}
+
 function printDocs(docs: PlannedDoc[]) {
   for (const doc of docs) {
     console.log('---')
@@ -378,11 +586,11 @@ function printDocs(docs: PlannedDoc[]) {
 
 async function main() {
   const writeRequested = argvHas('--write-production')
-  const dryRun = !writeRequested || argvHas('--dry-run')
+  const dryRunFlag = argvHas('--dry-run')
+  const dryRun = !writeRequested || dryRunFlag
 
-  if (writeRequested) {
-    console.error('REFUSED: --write-production is gated and must not run in this task.')
-    console.error('Use npm run meqati:populate -- --dry-run')
+  if (writeRequested && dryRunFlag) {
+    console.error('REFUSED: --write-production cannot be combined with --dry-run.')
     process.exitCode = 2
     return
   }
@@ -418,11 +626,13 @@ async function main() {
     h09Activities: activities.filter((row) => String(row.payload.shobahId) === 'H09').length,
     allowedCollections: [...ALLOWED_COLLECTIONS],
     forbiddenCollectionsUntouched: [...FORBIDDEN_COLLECTIONS],
-    firestoreWrites: false,
-    dryRun: true,
+    firestoreWrites: writeRequested && !dryRun,
+    dryRun,
   }
 
-  printDocs(docs)
+  if (dryRun) {
+    printDocs(docs)
+  }
 
   console.log('\n========== TOTALS ==========')
   console.log(JSON.stringify(totals, null, 2))
@@ -432,38 +642,79 @@ async function main() {
   console.log(
     'productionComparison:',
     comparison.available
-      ? `READ-ONLY against project ${comparison.projectId}`
+      ? `${writeRequested ? 'PRE-WRITE' : 'READ-ONLY'} against project ${comparison.projectId}`
       : `PRODUCTION COMPARISON UNAVAILABLE (${comparison.reason})`,
   )
-  console.log('NO PRODUCTION FIRESTORE WRITES')
 
-  mkdirSync(resolve(REPO_ROOT, 'docs'), { recursive: true })
+  if (!writeRequested || dryRun) {
+    console.log('NO PRODUCTION FIRESTORE WRITES')
+    mkdirSync(resolve(REPO_ROOT, 'docs'), { recursive: true })
+    writeFileSync(
+      REPORT_PATH,
+      JSON.stringify(
+        {
+          generatedAt: new Date().toISOString(),
+          dryRun: true,
+          firestoreWrites: false,
+          totals,
+          planErrors,
+          productionComparison: comparison,
+          documents: docs,
+        },
+        null,
+        2,
+      ),
+      'utf8',
+    )
+    console.log(`report: ${REPORT_PATH}`)
+    if (planErrors.length || failed.length || scheduleBlockers.length) {
+      process.exitCode = 1
+    }
+    return
+  }
+
+  const gates = assertPreWriteGates(docs, planErrors, comparison)
+  if (gates.length) {
+    console.error('PRE-WRITE SAFETY FAILED — STOP WITHOUT WRITING')
+    for (const item of gates) console.error(`- ${item}`)
+    process.exitCode = 2
+    return
+  }
+
+  console.log('PRE-WRITE SAFETY: PASS')
+  const { initFirebaseAdmin } = await import('./_firebase-init.mjs')
+  const admin = initFirebaseAdmin()
+  const forbiddenBefore = await snapshotForbidden(admin.db)
+  console.log(`Writing 130 complete documents to ${REQUIRED_PROJECT_ID} (allowed collections only)`)
+  await writeProduction(docs, comparison.projectId!)
+  console.log('WRITE COMMITTED')
+
+  const verification = await verifyAfterWrite(docs, forbiddenBefore)
+  console.log('POST-WRITE VERIFICATION')
+  console.log(JSON.stringify(verification.details, null, 2))
   writeFileSync(
-    REPORT_PATH,
+    resolve(REPO_ROOT, 'docs/meqati-population-production-write-report.json'),
     JSON.stringify(
       {
         generatedAt: new Date().toISOString(),
-        dryRun: true,
-        firestoreWrites: false,
+        dryRun: false,
+        firestoreWrites: true,
+        projectId: comparison.projectId,
         totals,
-        planErrors,
-        productionComparison: comparison,
-        documents: docs,
+        productionComparisonBefore: comparison,
+        postWrite: verification,
       },
       null,
       2,
     ),
     'utf8',
   )
-  console.log(`report: ${REPORT_PATH}`)
-
-  if (!dryRun) {
-    process.exitCode = 2
+  if (!verification.ok) {
+    console.error('POST-WRITE VALIDATION FAILED — no silent repair')
+    process.exitCode = 1
     return
   }
-  if (planErrors.length || failed.length || scheduleBlockers.length) {
-    process.exitCode = 1
-  }
+  console.log('POST-WRITE VALIDATION: PASS')
 }
 
 await main()

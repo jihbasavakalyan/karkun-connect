@@ -1,0 +1,114 @@
+{
+  "generatedAt": "2026-08-22T01:00:19.788Z",
+  "dryRun": false,
+  "firestoreWrites": true,
+  "projectId": "karkun-connect-75c68",
+  "totals": {
+    "meqatiMansoobas": 1,
+    "shobahs": 9,
+    "objectives": 43,
+    "localProgrammes": 77,
+    "activitiesApprovedObjective": 37,
+    "activitiesObjectiveNull": 40,
+    "h09Objectives": 3,
+    "h09Activities": 0,
+    "allowedCollections": [
+      "meqatiMansoobas",
+      "shobahs",
+      "objectives",
+      "localProgrammes"
+    ],
+    "forbiddenCollectionsUntouched": [
+      "rukns",
+      "karkuns",
+      "connections",
+      "responsibilities",
+      "work",
+      "units",
+      "campaigns",
+      "occurrences",
+      "followUps"
+    ],
+    "firestoreWrites": true,
+    "dryRun": false
+  },
+  "productionComparisonBefore": {
+    "available": true,
+    "projectId": "karkun-connect-75c68"
+  },
+  "postWrite": {
+    "ok": true,
+    "details": {
+      "projectId": "karkun-connect-75c68",
+      "counts": {
+        "meqatiMansoobas": 1,
+        "shobahs": 9,
+        "objectives": 43,
+        "localProgrammes": 77
+      },
+      "forbiddenChanged": {
+        "rukns": {
+          "before": 49,
+          "after": 49
+        },
+        "karkuns": {
+          "before": 678,
+          "after": 678
+        },
+        "connections": {
+          "before": 870,
+          "after": 870
+        },
+        "responsibilities": {
+          "before": 0,
+          "after": 0
+        },
+        "work": {
+          "before": 0,
+          "after": 0
+        },
+        "units": {
+          "before": 0,
+          "after": 0
+        },
+        "campaigns": {
+          "before": 0,
+          "after": 0
+        },
+        "occurrences": {
+          "before": 0,
+          "after": 0
+        },
+        "followUps": {
+          "before": 12,
+          "after": 12
+        }
+      },
+      "unexpectedForbiddenWrites": [],
+      "mapped": 37,
+      "blank": 40,
+      "h09Objectives": 3,
+      "h09Activities": 0,
+      "h02a10Cadences": [
+        "monthly",
+        "quarterly"
+      ],
+      "otherConfigured": {
+        "H02-A01": {
+          "cadence": "custom",
+          "note": "daily: روزانہ"
+        },
+        "H05-A07": {
+          "cadence": "custom",
+          "note": "every_3_months: ہر تین مہینے میں"
+        },
+        "H06-A04": {
+          "cadence": "custom",
+          "note": "twice_yearly: سال میں دو میٹنگز"
+        }
+      },
+      "h01o09": "کونسلنگ سنٹر اور شرعی پنچایت کو مستحکم کیا جائے گا۔",
+      "mismatches": []
+    }
+  }
+}
