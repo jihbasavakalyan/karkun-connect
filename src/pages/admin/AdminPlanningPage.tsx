@@ -19,7 +19,6 @@ import {
   type ActivityYearStatus,
 } from '@/lib/planning/activityYearStatus'
 import {
-  formatProgrammeScheduleLabel,
   listProgrammeFrequencies,
   normalizeProgrammeSchedule,
 } from '@/lib/planning/programmeSchedule'
@@ -46,6 +45,12 @@ import type {
 import type { Work } from '@/types/work.types'
 import { MansoobaActivityReportPanel } from '@/pages/admin/MansoobaActivityReportPanel'
 import {
+  buildShobahOverviewItems,
+  CompactActivityList,
+  isMappedActivity,
+  ShobahTile,
+} from '@/pages/admin/meqati/meqatiPlanningPresentation'
+import {
   getAllWeeklyIjtemaEvents,
   getAllWeeklyIjtemaSubmissions,
   subscribeToWeeklyIjtemaStore,
@@ -68,10 +73,6 @@ const ACTIVITY_KIND_OPTIONS: { value: ProgrammeKind; label: string }[] = [
   { value: 'follow_up', label: 'Follow-up' },
   { value: 'other', label: 'Other' },
 ]
-
-const ACTIVITY_KIND_LABELS = Object.fromEntries(
-  ACTIVITY_KIND_OPTIONS.map((row) => [row.value, row.label]),
-) as Record<ProgrammeKind, string>
 
 const ACTIVITY_YEAR_STATUS_OPTIONS: { value: '' | ActivityYearStatus; label: string }[] = [
   { value: '', label: 'غیر متعین' },
@@ -107,10 +108,6 @@ function isSuccessMessage(message: string): boolean {
 
 function formatRepoError(error: { message?: string } | undefined): string {
   return error?.message?.trim() || 'Unable to save. Please try again.'
-}
-
-function formatSchedule(frequency: LocalProgramme['frequency']): string {
-  return formatProgrammeScheduleLabel(frequency)
 }
 
 type MansoobaFormState = {
@@ -317,6 +314,8 @@ export function AdminPlanningPage() {
   const [editingActivityId, setEditingActivityId] = useState<string | null>(null)
   const [activityObjectiveId, setActivityObjectiveId] = useState<string | null>(null)
   const [activityForm, setActivityForm] = useState<ActivityFormState>(emptyActivityForm)
+  const [expandedObjectiveId, setExpandedObjectiveId] = useState<string | null>(null)
+  const [activityModalPane, setActivityModalPane] = useState<'primary' | 'more'>('primary')
 
   const refresh = useCallback(() => {
     const repos = getRepositories()
@@ -391,7 +390,7 @@ export function AdminPlanningPage() {
   const selectedShobahIdResolved =
     selectedShobahId && visibleShobahs.some((row) => row.id === selectedShobahId)
       ? selectedShobahId
-      : (visibleShobahs[0]?.id ?? null)
+      : null
 
   const selectedShobah = useMemo(
     () => visibleShobahs.find((row) => row.id === selectedShobahIdResolved) ?? null,
@@ -409,20 +408,7 @@ export function AdminPlanningPage() {
   const selectedObjectiveIdResolved =
     selectedObjectiveId && visibleObjectives.some((row) => row.id === selectedObjectiveId)
       ? selectedObjectiveId
-      : (visibleObjectives[0]?.id ?? null)
-
-  const selectedObjective = useMemo(
-    () => visibleObjectives.find((row) => row.id === selectedObjectiveIdResolved) ?? null,
-    [visibleObjectives, selectedObjectiveIdResolved],
-  )
-
-  const visibleActivities = useMemo(() => {
-    if (!selectedObjectiveIdResolved) return []
-    return programmes
-      .filter((row) => row.objectiveId === selectedObjectiveIdResolved)
-      .slice()
-      .sort((a, b) => a.name.localeCompare(b.name))
-  }, [programmes, selectedObjectiveIdResolved])
+      : null
 
   const unmappedActivities = useMemo(
     () =>
@@ -511,6 +497,31 @@ export function AdminPlanningPage() {
     return getAllMonthlyBaitulMaalSubmissions()
   }, [activityStoreVersion])
 
+  const shobahOverviewItems = useMemo(
+    () => buildShobahOverviewItems(visibleShobahs, objectives, programmes),
+    [visibleShobahs, objectives, programmes],
+  )
+
+  const mansoobaTotals = useMemo(() => {
+    const mansoobaProgrammes = programmes.filter((row) => row.mansoobaId === selectedMansoobaId)
+    const mapped = mansoobaProgrammes.filter(isMappedActivity).length
+    return {
+      shobahs: visibleShobahs.length,
+      objectives: objectives.filter((row) => row.mansoobaId === selectedMansoobaId).length,
+      activities: mansoobaProgrammes.length,
+      mapped,
+      unmapped: mansoobaProgrammes.length - mapped,
+    }
+  }, [programmes, objectives, visibleShobahs, selectedMansoobaId])
+
+  const shobahActivities = useMemo(() => {
+    if (!selectedShobahIdResolved) return []
+    return programmes
+      .filter((row) => row.shobahId === selectedShobahIdResolved)
+      .slice()
+      .sort((a, b) => a.name.localeCompare(b.name))
+  }, [programmes, selectedShobahIdResolved])
+
   const canCreateMansooba = mansoobas.filter((row) => row.status !== 'archived').length === 0
   const mansoobaObjectives = useMemo(
     () =>
@@ -556,6 +567,7 @@ export function AdminPlanningPage() {
     setEditingActivityId(null)
     setActivityObjectiveId(null)
     setActivityForm(emptyActivityForm())
+    setActivityModalPane('primary')
     setFormError('')
   }
 
@@ -778,6 +790,7 @@ export function AdminPlanningPage() {
     setEditingActivityId(null)
     setActivityObjectiveId(selectedObjectiveIdResolved)
     setActivityForm(emptyActivityForm())
+    setActivityModalPane('primary')
     setActivityModal('create')
     setFormError('')
     setMessage('')
@@ -787,6 +800,7 @@ export function AdminPlanningPage() {
     setEditingActivityId(row.id)
     setActivityObjectiveId(row.objectiveId?.trim() || null)
     setActivityForm(activityFormFromRow(row))
+    setActivityModalPane('primary')
     setActivityModal('edit')
     setFormError('')
     setMessage('')
@@ -895,12 +909,19 @@ export function AdminPlanningPage() {
   }
 
   const objectiveParentShobah = shobahs.find((row) => row.id === objectiveShobahId) ?? null
+  const editingActivity = programmes.find((row) => row.id === editingActivityId)
+  const activityContextShobahName =
+    shobahs.find((row) => row.id === editingActivity?.shobahId)?.name ??
+    selectedShobah?.name ??
+    '—'
+  const activityContextObjectiveTitle =
+    objectives.find((row) => row.id === (activityObjectiveId ?? ''))?.title ?? null
 
   return (
     <PageShell>
       <PageHeader
         title="میقاتی منصوبہ"
-        description="شعبہ، اہداف اور سرگرمی۔ مہم صرف منتخب اہداف اور سرگرمیوں کا فوکس ہے۔"
+        description="شعبہ، اہداف، سرگرمی۔"
       />
 
       {message ? (
@@ -912,260 +933,200 @@ export function AdminPlanningPage() {
         </p>
       ) : null}
 
-      <div className="space-y-8">
-        <section className="rounded-(--radius-card) border border-border bg-surface p-5 shadow-card">
+      <div className="space-y-6" dir="rtl" lang="ur">
+        <section className="rounded-xl bg-surface px-5 py-4 shadow-card">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <h2 className="text-lg font-semibold text-text-heading">میقاتی منصوبہ</h2>
-              <p className="mt-1 text-sm text-secondary">تنظیمی جڑ۔ صرف ایک منصوبہ۔</p>
+              <h2 className="text-lg font-semibold text-text-heading">
+                {selectedMansooba?.name ?? 'میقاتی منصوبہ'}
+              </h2>
+              {selectedMansooba ? (
+                <p className="mt-2 text-sm text-secondary">
+                  {mansoobaTotals.shobahs} شعبہ | {mansoobaTotals.objectives} اہداف |{' '}
+                  {mansoobaTotals.activities} سرگرمیاں
+                </p>
+              ) : null}
+              {selectedMansooba ? (
+                <p className="mt-1 text-xs text-secondary">
+                  {mansoobaTotals.mapped} مربوط | {mansoobaTotals.unmapped} بغیر ہدف
+                </p>
+              ) : (
+                <p className="mt-1 text-sm text-secondary">تنظیمی جڑ۔ صرف ایک منصوبہ۔</p>
+              )}
             </div>
-            {canCreateMansooba ? (
-              <PrimaryButton type="button" onClick={openCreateMansooba}>
-                نیا میقاتی منصوبہ
-              </PrimaryButton>
-            ) : null}
+            <div className="flex flex-wrap gap-2">
+              {canCreateMansooba ? (
+                <PrimaryButton type="button" onClick={openCreateMansooba}>
+                  نیا میقاتی منصوبہ
+                </PrimaryButton>
+              ) : null}
+              {selectedMansooba ? (
+                <SecondaryButton type="button" onClick={() => openEditMansooba(selectedMansooba)}>
+                  ترمیم
+                </SecondaryButton>
+              ) : null}
+            </div>
           </div>
 
           {mansoobas.length === 0 ? (
             <p className="mt-4 text-sm text-secondary">ابھی میقاتی منصوبہ نہیں ہے۔ پہلا منصوبہ بنائیں۔</p>
-          ) : (
-            <ul className="mt-4 space-y-3">
-              {mansoobas.map((row) => {
-                const selected = row.id === selectedMansoobaId
-                return (
-                  <li
-                    key={row.id}
-                    className={`rounded-lg border p-4 ${
-                      selected
-                        ? 'border-primary bg-primary-muted/40'
-                        : 'border-border bg-surface-muted'
-                    }`}
+          ) : mansoobas.length > 1 ? (
+            <ul className="mt-4 space-y-2">
+              {mansoobas.map((row) => (
+                <li key={row.id}>
+                  <button
+                    type="button"
+                    className={`text-sm ${row.id === selectedMansoobaId ? 'font-semibold text-primary' : 'text-secondary'}`}
+                    onClick={() => {
+                      setSelectedMansoobaId(row.id)
+                      setSelectedShobahId(null)
+                    }}
                   >
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <button
-                        type="button"
-                        className="min-w-0 flex-1 text-left"
-                        onClick={() => setSelectedMansoobaId(row.id)}
-                      >
-                        <p className="font-semibold text-text-heading">{row.name}</p>
-                        <p className="mt-1 text-xs text-secondary">
-                          {row.status}
-                          {row.startDate || row.endDate
-                            ? ` · ${row.startDate || '—'} → ${row.endDate || '—'}`
-                            : ''}
-                        </p>
-                        {row.summary ? (
-                          <p className="mt-2 text-sm text-secondary">{row.summary}</p>
-                        ) : null}
-                      </button>
-                      <SecondaryButton type="button" onClick={() => openEditMansooba(row)}>
-                        ترمیم
-                      </SecondaryButton>
-                    </div>
-                  </li>
-                )
-              })}
-            </ul>
-          )}
-        </section>
-
-        <section className="rounded-(--radius-card) border border-border bg-surface p-5 shadow-card">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h2 className="text-lg font-semibold text-text-heading">شعبہ</h2>
-              <p className="mt-1 text-sm text-secondary">
-                {selectedMansooba
-                  ? `میقاتی منصوبہ: ${selectedMansooba.name}`
-                  : 'شعبہ میقاتی منصوبہ کے اندر ہے۔'}
-              </p>
-            </div>
-            <PrimaryButton type="button" onClick={openCreateShobah} disabled={!selectedMansoobaId}>
-              نیا شعبہ
-            </PrimaryButton>
-          </div>
-
-          {!selectedMansoobaId ? (
-            <p className="mt-4 text-sm text-secondary">میقاتی منصوبہ منتخب نہیں۔</p>
-          ) : visibleShobahs.length === 0 ? (
-            <p className="mt-4 text-sm text-secondary">
-              اس منصوبہ میں ابھی کوئی شعبہ نہیں۔ غیر تصدیق شدہ ماخذ مواد شامل نہیں کیا گیا۔
-            </p>
-          ) : (
-            <ul className="mt-4 space-y-3">
-              {visibleShobahs.map((row) => {
-                const selected = row.id === selectedShobahIdResolved
-                return (
-                  <li
-                    key={row.id}
-                    className={`rounded-lg border p-4 ${
-                      selected
-                        ? 'border-primary bg-primary-muted/40'
-                        : 'border-border bg-surface-muted'
-                    }`}
-                  >
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <button
-                        type="button"
-                        className="min-w-0 flex-1 text-left"
-                        onClick={() => setSelectedShobahId(row.id)}
-                      >
-                        <p className="font-semibold text-text-heading">{row.name}</p>
-                        <p className="mt-1 text-xs text-secondary">{row.status}</p>
-                        {row.summary ? (
-                          <p className="mt-2 text-sm text-secondary">{row.summary}</p>
-                        ) : null}
-                      </button>
-                      <SecondaryButton type="button" onClick={() => openEditShobah(row)}>
-                        ترمیم
-                      </SecondaryButton>
-                    </div>
-                  </li>
-                )
-              })}
-            </ul>
-          )}
-        </section>
-
-        <section className="rounded-(--radius-card) border border-border bg-surface p-5 shadow-card">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h2 className="text-lg font-semibold text-text-heading">اہداف</h2>
-              <p className="mt-1 text-sm text-secondary">
-                {selectedShobah ? `شعبہ: ${selectedShobah.name}` : 'اہداف شعبہ کے اندر ہیں۔'}
-              </p>
-            </div>
-            <PrimaryButton type="button" onClick={openCreateObjective} disabled={!selectedShobahIdResolved}>
-              نئے اہداف
-            </PrimaryButton>
-          </div>
-
-          {!selectedShobahIdResolved ? (
-            <p className="mt-4 text-sm text-secondary">شعبہ منتخب نہیں۔</p>
-          ) : visibleObjectives.length === 0 ? (
-            <p className="mt-4 text-sm text-secondary">اس شعبہ میں ابھی کوئی اہداف نہیں۔</p>
-          ) : (
-            <ul className="mt-4 space-y-3">
-              {visibleObjectives.map((row) => {
-                const selected = row.id === selectedObjectiveIdResolved
-                return (
-                  <li
-                    key={row.id}
-                    className={`rounded-lg border p-4 ${
-                      selected
-                        ? 'border-primary bg-primary-muted/40'
-                        : 'border-border bg-surface-muted'
-                    }`}
-                  >
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <button
-                        type="button"
-                        className="min-w-0 flex-1 text-left"
-                        onClick={() => setSelectedObjectiveId(row.id)}
-                      >
-                        <p className="font-semibold text-text-heading">{row.title}</p>
-                        <p className="mt-1 text-xs text-secondary">{row.status}</p>
-                        {row.description ? (
-                          <p className="mt-2 text-sm text-secondary">{row.description}</p>
-                        ) : null}
-                      </button>
-                      <SecondaryButton type="button" onClick={() => openEditObjective(row)}>
-                        ترمیم
-                      </SecondaryButton>
-                    </div>
-                  </li>
-                )
-              })}
-            </ul>
-          )}
-        </section>
-
-        <section className="rounded-(--radius-card) border border-border bg-surface p-5 shadow-card">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h2 className="text-lg font-semibold text-text-heading">سرگرمی</h2>
-              <p className="mt-1 text-sm text-secondary">
-                {selectedObjective
-                  ? `اہداف: ${selectedObjective.title}`
-                  : 'اہداف اختیاری ہے (ACTIVITY-FIRST)۔ مہم سرگرمی کی مالک نہیں۔'}
-              </p>
-            </div>
-            <PrimaryButton type="button" onClick={openCreateActivity}>
-              نئی سرگرمی
-            </PrimaryButton>
-          </div>
-
-          {!selectedObjectiveIdResolved ? (
-            <p className="mt-4 text-sm text-secondary">
-              اہداف منتخب نہیں — بغیر اہداف والی سرگرمیاں نیچے دیکھی جا سکتی ہیں۔
-            </p>
-          ) : visibleActivities.length === 0 ? (
-            <p className="mt-4 text-sm text-secondary">ان اہداف کے تحت ابھی کوئی سرگرمی نہیں۔</p>
-          ) : (
-            <ul className="mt-4 space-y-3">
-              {visibleActivities.map((row) => (
-                <li
-                  key={row.id}
-                  className="flex flex-wrap items-start justify-between gap-3 rounded-lg border border-border bg-surface-muted p-4"
-                >
-                  <div>
-                    <p className="font-semibold text-text-heading">{row.name}</p>
-                    <p className="mt-1 text-xs text-secondary">
-                      {ACTIVITY_KIND_LABELS[row.kind]} · {row.status}
-                    </p>
-                    <p className="mt-1 text-xs text-secondary">
-                      ذمہ دار:{' '}
-                      {row.responsibleRuknId
-                        ? (ruknNameById.get(row.responsibleRuknId) ?? row.responsibleRuknId)
-                        : '—'}
-                    </p>
-                    <p className="mt-1 text-xs text-secondary">
-                      نظام الاوقات: {formatSchedule(row.frequency)}
-                    </p>
-                    {row.summary ? (
-                      <p className="mt-2 text-sm text-secondary">{row.summary}</p>
-                    ) : null}
-                  </div>
-                  <SecondaryButton type="button" onClick={() => openEditActivity(row)}>
-                    ترمیم
-                  </SecondaryButton>
+                    {row.name}
+                  </button>
                 </li>
               ))}
             </ul>
-          )}
-
-          {unmappedActivities.length > 0 ? (
-            <div className="mt-6 border-t border-border pt-4">
-              <h3 className="text-sm font-semibold text-text-heading">
-                بغیر اہداف (ACTIVITY-FIRST)
-              </h3>
-              <ul className="mt-3 space-y-3">
-                {unmappedActivities.map((row) => (
-                  <li
-                    key={row.id}
-                    className="flex flex-wrap items-start justify-between gap-3 rounded-lg border border-dashed border-border bg-surface-muted p-4"
-                  >
-                    <div>
-                      <p className="font-semibold text-text-heading">{row.name}</p>
-                      <p className="mt-1 text-xs text-secondary">
-                        اہداف: — · {ACTIVITY_KIND_LABELS[row.kind]} · {row.status}
-                      </p>
-                      <p className="mt-1 text-xs text-secondary">
-                        نظام الاوقات: {formatSchedule(row.frequency)}
-                      </p>
-                    </div>
-                    <SecondaryButton type="button" onClick={() => openEditActivity(row)}>
-                      ترمیم
-                    </SecondaryButton>
-                  </li>
-                ))}
-              </ul>
-            </div>
           ) : null}
         </section>
 
-        <section className="rounded-(--radius-card) border border-border bg-surface p-5 shadow-card">
+
+        {!selectedShobahIdResolved ? (
+          <section>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 className="text-base font-semibold text-text-heading">شعبہ</h2>
+              <PrimaryButton type="button" onClick={openCreateShobah} disabled={!selectedMansoobaId}>
+                نیا شعبہ
+              </PrimaryButton>
+            </div>
+            {!selectedMansoobaId ? (
+              <p className="mt-4 text-sm text-secondary">میقاتی منصوبہ منتخب نہیں۔</p>
+            ) : visibleShobahs.length === 0 ? (
+              <p className="mt-4 text-sm text-secondary">
+                اس منصوبہ میں ابھی کوئی شعبہ نہیں۔ غیر تصدیق شدہ ماخذ مواد شامل نہیں کیا گیا۔
+              </p>
+            ) : (
+              <ul className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                {shobahOverviewItems.map((item) => (
+                  <li key={item.shobah.id}>
+                    <ShobahTile item={item} onOpen={setSelectedShobahId} />
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        ) : (
+          <section>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <button
+                  type="button"
+                  className="text-sm text-primary"
+                  onClick={() => {
+                    setSelectedShobahId(null)
+                    setSelectedObjectiveId(null)
+                    setExpandedObjectiveId(null)
+                  }}
+                >
+                  تمام شعبہ
+                </button>
+                <h2 className="mt-2 text-lg font-semibold text-text-heading">{selectedShobah?.name}</h2>
+                <p className="mt-1 text-sm text-secondary">
+                  {visibleObjectives.length} اہداف · {shobahActivities.length} سرگرمیاں
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {selectedShobah ? (
+                  <SecondaryButton type="button" onClick={() => openEditShobah(selectedShobah)}>
+                    ترمیم
+                  </SecondaryButton>
+                ) : null}
+                <PrimaryButton type="button" onClick={openCreateObjective}>
+                  نئے اہداف
+                </PrimaryButton>
+                <PrimaryButton type="button" onClick={openCreateActivity}>
+                  نئی سرگرمی
+                </PrimaryButton>
+              </div>
+            </div>
+
+            {visibleObjectives.length === 0 ? (
+              <p className="mt-4 text-sm text-secondary">اس شعبہ میں ابھی کوئی اہداف نہیں۔</p>
+            ) : (
+              <ul className="mt-5 space-y-1">
+                {visibleObjectives.map((row) => {
+                  const objectiveActivities = programmes
+                    .filter((item) => item.objectiveId === row.id)
+                    .slice()
+                    .sort((a, b) => a.name.localeCompare(b.name))
+                  const expanded = expandedObjectiveId === row.id
+                  const mappedHere = objectiveActivities.length
+                  return (
+                    <li key={row.id} className="py-3">
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <button
+                          type="button"
+                          className="min-w-0 flex-1 text-start"
+                          onClick={() => {
+                            setSelectedObjectiveId(row.id)
+                            setExpandedObjectiveId(expanded ? null : row.id)
+                          }}
+                        >
+                          <p className="font-medium text-text-heading whitespace-normal break-words">
+                            {row.title}
+                          </p>
+                          <p className="mt-1 text-xs text-secondary">{mappedHere} سرگرمیاں</p>
+                        </button>
+                        <SecondaryButton type="button" onClick={() => openEditObjective(row)}>
+                          ترمیم
+                        </SecondaryButton>
+                      </div>
+                      {expanded ? (
+                        <div className="mt-3">
+                          {objectiveActivities.length === 0 ? (
+                            <p className="text-sm text-secondary">ان اہداف کے تحت ابھی کوئی سرگرمی نہیں۔</p>
+                          ) : (
+                            <CompactActivityList
+                              rows={objectiveActivities}
+                              ruknNameById={ruknNameById}
+                              onOpen={openEditActivity}
+                            />
+                          )}
+                        </div>
+                      ) : null}
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+
+            {shobahActivities.length === 0 ? (
+              <p className="mt-6 text-sm text-secondary">اس شعبہ کے لیے ابھی کوئی سرگرمی درج نہیں</p>
+            ) : unmappedActivities.length > 0 ? (
+              <div className="mt-8">
+                <h3 className="text-sm font-semibold text-text-heading">بغیر ہدف</h3>
+                <p className="mt-1 text-xs text-secondary">بغیر اہداف — ہدف غیر متعین۔ مصنوعی ہدف نہیں بنایا گیا۔</p>
+                <div className="mt-3">
+                  <CompactActivityList
+                    rows={unmappedActivities}
+                    ruknNameById={ruknNameById}
+                    onOpen={openEditActivity}
+                    showUnmappedObjective
+                  />
+                </div>
+              </div>
+            ) : null}
+          </section>
+        )}
+
+        <details className="rounded-xl bg-surface px-5 py-4 shadow-card">
+          <summary className="cursor-pointer text-sm font-semibold text-text-heading">
+            مہم، نظام الاوقات اور رپورٹ
+          </summary>
+          <div className="mt-4 space-y-8">
+        <section>
           <div>
-            <h2 className="text-lg font-semibold text-text-heading">مہم — فوکس</h2>
+            <h2 className="text-base font-semibold text-text-heading">مہم — فوکس</h2>
             <p className="mt-1 text-sm text-secondary">
               مہم منتخب اہداف اور سرگرمیوں کا ٹریکنگ منظر ہے۔ سرگرمی میقاتی منصوبہ کی ملکیت میں رہتی
               ہے — نقل نہیں بنتی۔
@@ -1260,9 +1221,9 @@ export function AdminPlanningPage() {
           ) : null}
         </section>
 
-        <section className="rounded-(--radius-card) border border-border bg-surface p-5 shadow-card">
+        <section>
           <div>
-            <h2 className="text-lg font-semibold text-text-heading">نظام الاوقات</h2>
+            <h2 className="text-base font-semibold text-text-heading">نظام الاوقات</h2>
             <p className="mt-1 text-sm text-secondary">
               منتخب میقاتی منصوبہ کی سرگرمیوں کا کیلنڈر۔ داخلی شیڈول ریکارڈ صارف کے سامنے نہیں آتے۔
             </p>
@@ -1273,7 +1234,7 @@ export function AdminPlanningPage() {
           ) : (
             <div className="mt-4 grid gap-6 lg:grid-cols-2">
               <div>
-                <h3 className="text-sm font-semibold text-text-heading">Calendar</h3>
+                <h3 className="text-sm font-semibold text-text-heading">کیلنڈر</h3>
                 <ul className="mt-2 max-h-72 space-y-2 overflow-y-auto">
                   {occurrenceCalendarEntries.map((entry) => (
                     <li
@@ -1292,7 +1253,7 @@ export function AdminPlanningPage() {
                 </ul>
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-text-heading">History</h3>
+                <h3 className="text-sm font-semibold text-text-heading">سابقہ</h3>
                 <ul className="mt-2 max-h-72 space-y-2 overflow-y-auto">
                   {occurrenceHistoryRows.map((row) => (
                     <li
@@ -1327,6 +1288,8 @@ export function AdminPlanningPage() {
           baitulMaalCycles={baitulMaalCycles}
           baitulMaalSubmissions={baitulMaalSubmissions}
         />
+          </div>
+        </details>
       </div>
 
       <Modal
@@ -1617,11 +1580,33 @@ export function AdminPlanningPage() {
           />
         }
       >
+        <div className="mb-4 flex gap-4 text-sm">
+          <button
+            type="button"
+            className={activityModalPane === 'primary' ? 'font-semibold text-primary' : 'text-secondary'}
+            onClick={() => setActivityModalPane('primary')}
+          >
+            اصل
+          </button>
+          <button
+            type="button"
+            className={activityModalPane === 'more' ? 'font-semibold text-primary' : 'text-secondary'}
+            onClick={() => setActivityModalPane('more')}
+          >
+            مزید
+          </button>
+        </div>
+
+        {activityModalPane === 'primary' ? (
         <ModalFormSection title="تفصیل">
           <ModalFormGrid>
+            <div className="sm:col-span-2">
+              <p className="text-xs text-secondary">شعبہ</p>
+              <p className="mt-1 text-sm text-text-heading">{activityContextShobahName}</p>
+            </div>
             <div>
               <label className={labelClassName} htmlFor="activity-objective">
-                اہداف (اختیاری)
+                ہدف
               </label>
               <select
                 id="activity-objective"
@@ -1631,7 +1616,7 @@ export function AdminPlanningPage() {
                   setActivityObjectiveId(event.target.value.trim() || null)
                 }
               >
-                <option value="">— بغیر اہداف —</option>
+                <option value="">غیر متعین</option>
                 {objectives
                   .filter((row) =>
                     selectedMansoobaId
@@ -1644,6 +1629,11 @@ export function AdminPlanningPage() {
                     </option>
                   ))}
               </select>
+              {!activityObjectiveId ? (
+                <p className="mt-1 text-xs text-secondary">
+                  {activityContextObjectiveTitle ?? 'ہدف غیر متعین'}
+                </p>
+              ) : null}
             </div>
             <div>
               <label className={labelClassName} htmlFor="activity-name">
@@ -1876,7 +1866,11 @@ export function AdminPlanningPage() {
               </div>
             ) : null}
           </ModalFormGrid>
-          <div className="mt-4">
+        </ModalFormSection>
+        ) : (
+        <>
+          <ModalFormSection title="نوٹس">
+          <div>
             <label className={labelClassName} htmlFor="activity-summary">
               خلاصہ
             </label>
@@ -1929,6 +1923,8 @@ export function AdminPlanningPage() {
             ))}
           </ModalFormGrid>
         </ModalFormSection>
+        </>
+        )}
       </Modal>
     </PageShell>
   )
