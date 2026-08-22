@@ -12,7 +12,7 @@ import {
 } from '@/lib/planning/activityYearStatus'
 import { unwrapRepository } from '@/repositories/errors'
 import { getRepositories } from '@/repositories/provider'
-import type { LocalProgramme, ProgrammeFrequency } from '@/types/localProgramme.types'
+import type { LocalProgramme, ProgrammeFrequency, ProgrammeKind } from '@/types/localProgramme.types'
 import { listProgrammeFrequencies } from '@/lib/planning/programmeSchedule'
 
 export type RuknMeqatiActivityAction = {

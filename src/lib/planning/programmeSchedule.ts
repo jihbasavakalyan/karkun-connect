@@ -9,12 +9,21 @@ import type {
   ProgrammeSchedule,
 } from '@/types/localProgramme.types'
 
+function isMultiPatternSchedule(
+  frequency: ProgrammeSchedule,
+): frequency is readonly ProgrammeFrequency[] {
+  return Array.isArray(frequency)
+}
+
 /** Flatten schedule SoT to zero or more patterns. Empty = Not specified. */
 export function listProgrammeFrequencies(
   frequency: ProgrammeSchedule | null | undefined,
 ): ProgrammeFrequency[] {
   if (frequency == null) return []
-  return Array.isArray(frequency) ? [...frequency] : [frequency]
+  if (isMultiPatternSchedule(frequency)) {
+    return [...frequency]
+  }
+  return [frequency]
 }
 
 /** True when schedule is intentionally Not specified. */
