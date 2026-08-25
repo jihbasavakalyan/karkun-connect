@@ -42,6 +42,20 @@
         if (location.pathname !== '/' && location.pathname !== '') {
           history.replaceState(null, '', '/' + location.search + location.hash)
         }
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistrations().then(function (regs) {
+            regs.forEach(function (reg) {
+              reg.unregister()
+            })
+          })
+        }
+        if (window.caches && caches.keys) {
+          caches.keys().then(function (keys) {
+            keys.forEach(function (key) {
+              caches.delete(key)
+            })
+          })
+        }
       })()
     </script>
     <style>

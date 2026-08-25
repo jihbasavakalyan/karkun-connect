@@ -7,12 +7,16 @@ import {
   applyConfirmUpiPaid,
   buildTrainingRegistrationAdminView,
   buildTrainingRegistrationCsv,
+  isRestorableRegistration,
   listCashCollectors,
   matchesRegisteredPeopleFilters,
   matchesRegisteredPeopleSearch,
+  normalizeTrainingMobile,
   paymentQueueTitle,
   PUBLIC_TRAINING_REGISTRATION_URL,
   resolveCashCollector,
+  resolveOnlinePaymentEnabled,
+  resolvePublicPaymentChoice,
   sanitizeUtr,
   TRAINING_REGISTRATION_SETTINGS_DOC,
 } from '@/lib/publicRegistration/adminTracking'
@@ -68,6 +72,8 @@ function testHost(): void {
   const indexHtml = read('index.html')
   assert(indexHtml.includes("host !== 'registration.jihbasavakalyan.org'"), 'index.html hostname gate')
   assert(indexHtml.includes("history.replaceState(null, '', '/'"), 'subdomain canonicalizes to /')
+  assert(indexHtml.includes('serviceWorker'), 'public host unregisters stale service workers')
+  assert(indexHtml.includes('reg.unregister()'), 'public host unregisters each registration')
 }
 
 function testRuknOtpUntouched(): void {
@@ -114,7 +120,11 @@ function testSecurityPath(): void {
   assert(handler.includes('admin_confirm_upi_paid'), 'UPI confirm is an admin API action')
   assert(handler.includes('admin_set_online_payment'), 'online payment activation is an admin API action')
   assert(handler.includes('readOnlinePaymentEnabled'), 'online payment flag is read from settings')
-  assert(handler.includes('TRAINING_REGISTRATION_SETTINGS_DOC'), 'reuses existing settings document id')
+  assert(handler.includes('resolveOnlinePaymentEnabled'), 'online flag uses documented resolver')
+  assert(handler.includes('findExistingRegistration'), 'existing registration lookup is dedicated')
+  assert(handler.includes("where('verifiedMobile', '==', mobile10)"), 'lookup falls back to verified mobile')
+  assert(handler.includes('isRestorableRegistration'), 'session restores completed registrations')
+  assert(handler.includes('resolvePublicPaymentChoice'), 'submit resolves paymentChoice and legacy fields')
   assert(handler.includes("identity.role !== 'administrator'"), 'admin actions require administrator role')
   assert(handler.includes('RAZORPAY_NOT_AVAILABLE'), 'razorpay submit is explicitly unavailable')
   assert(!handler.includes("from 'razorpay'"), 'no razorpay sdk import')
@@ -161,7 +171,8 @@ function testPublicCopyAndPayment(): void {
   assert(!page.includes('Not available yet'), 'old online blocked copy removed')
   assert(page.includes('Acknowledgement'), 'confirmation is an acknowledgement')
   assert(page.includes('registeredName'), 'uses registered name')
-  assert(page.includes('trainingAcknowledgementPaymentLabel'), 'acknowledgement payment labels')
+  assert(page.includes('isRestorableRegistration'), 'OTP restore uses restorable-registration helper')
+  assert(page.includes('clearPublicRegistrationServiceWorkers'), 'public page clears stale service workers')
   const labels = read('src/lib/publicRegistration/labels.ts')
   assert(labels.includes("return 'Cash Paid'"), 'historical paid_cash label remains Cash Paid')
   assert(labels.includes("return 'Cash Pending'"), 'cash pending label')
@@ -676,6 +687,63 @@ function testCashCollectorsFromRuknMaster(): void {
   }
 }
 
+function testOnlinePaymentSettingDefault(): void {
+  assert(resolveOnlinePaymentEnabled({ exists: false, data: null }) === true, '3 missing settings document defaults UPI on')
+  assert(resolveOnlinePaymentEnabled({ exists: true, data: {} }) === true, 'missing flag on existing doc defaults UPI on')
+  assert(resolveOnlinePaymentEnabled({ exists: true, data: { onlinePaymentEnabled: true } }) === true, '2 UPI enabled')
+  assert(resolveOnlinePaymentEnabled({ exists: true, data: { onlinePaymentEnabled: false } }) === false, '1 UPI disabled')
+  const page = read('src/pages/public/TrainingRegistrationPage.tsx')
+  assert(page.includes('onlinePaymentEnabled ?'), 'UPI option visibility follows setting')
+  assert(page.includes('Currently unavailable'), 'disabled UPI is not selectable')
+  assert(page.includes('using UPI'), 'enabled UPI copy is present')
+}
+
+function testMobileNormalizationAndExistingRestore(): void {
+  assert(normalizeTrainingMobile('9035551913') === '9035551913', '10 digit mobile')
+  assert(normalizeTrainingMobile('+91 9035551913') === '9035551913', '+91 with space')
+  assert(normalizeTrainingMobile('919035551913') === '9035551913', '91 prefix')
+  assert(normalizeTrainingMobile('  9035551913  ') === '9035551913', 'whitespace')
+  assert(normalizeTrainingMobile('09035551913') === '9035551913', 'leading zero')
+  const existing = sampleRegistration({
+    id: formatRegistrationId('9035551913'),
+    verifiedMobile: '9035551913',
+    fullName: 'Yaseen Ameen',
+    paymentStatus: 'cash_pending',
+  })
+  assert(isRestorableRegistration(existing), '10 existing complete registration is restorable')
+  assert(!isRestorableRegistration(null), 'missing registration is not restorable')
+  assert(!isRestorableRegistration({ ...existing, id: '', registrationStatus: 'complete' }), 'empty id is not restorable')
+  const view = buildTrainingRegistrationAdminView({
+    karkuns: [{ id: 'k-y', name: 'Yaseen Ameen', mobile: '9035551913', gender: 'Male' }],
+    rukns: [],
+    connections: [],
+    registrations: [existing, existing],
+    publicRequests: [],
+  })
+  assert(view.registrations.filter((row) => row.verifiedMobile === '9035551913').length === 2, 'builder reads both rows if present')
+  assert(formatRegistrationId('9035551913') === formatRegistrationId(normalizeTrainingMobile('+919035551913')), '11 duplicate completed registration uses the same document id')
+}
+
+function testLegacySubmitMapping(): void {
+  const upi = resolvePublicPaymentChoice({ paymentMethod: 'upi' })
+  assert(upi.ok && upi.choice === 'online', 'legacy UPI submit maps to online choice')
+  const cashPending = resolvePublicPaymentChoice({ paymentMethod: 'cash', paymentStatus: 'cash_pending' })
+  assert(cashPending.ok && cashPending.choice === 'cash_at_ijtema', 'legacy cash pending maps to pay at ijtema gah')
+  const cashPaid = resolvePublicPaymentChoice({ paymentMethod: 'cash', paymentStatus: 'paid_cash' })
+  assert(!cashPaid.ok, 'legacy generic cash paid requires collector instead of silent paid_cash')
+  const named = resolvePublicPaymentChoice({ paymentChoice: 'cash_paid_to' })
+  assert(named.ok && named.choice === 'cash_paid_to', '8 cash paid to requires the new choice')
+}
+
+function testPublicHostServiceWorkerEscape(): void {
+  const vite = read('vite.config.ts')
+  assert(vite.includes('skipWaiting: true'), 'new service worker activates immediately')
+  assert(vite.includes('clientsClaim: true'), 'new service worker claims open clients')
+  assert(vite.includes('injectRegister: false'), 'public host does not auto-register the app PWA')
+  const cleanup = read('src/lib/publicRegistration/swCleanup.ts')
+  assert(cleanup.includes('unregister()'), 'cleanup unregisters controlling workers')
+}
+
 function testFinalPaymentSemantics(): void {
   const page = read('src/pages/public/TrainingRegistrationPage.tsx')
   const handler = read('src/server/trainingRegistration/handler.ts')
@@ -722,6 +790,10 @@ const cases = [
   run('search filters and full CSV export', testSearchFiltersAndCsv),
   run('no new collection or screenshot infrastructure', testNoNewInfrastructure),
   run('cash collectors from existing rukn master', testCashCollectorsFromRuknMaster),
+  run('online payment setting default and visibility', testOnlinePaymentSettingDefault),
+  run('mobile normalization and existing registration restore', testMobileNormalizationAndExistingRestore),
+  run('legacy submit mapping without generic cash paid', testLegacySubmitMapping),
+  run('public host service worker escape', testPublicHostServiceWorkerEscape),
   run('final three-choice payment semantics', testFinalPaymentSemantics),
 ]
 

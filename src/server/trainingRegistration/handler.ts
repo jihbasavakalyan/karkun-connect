@@ -4,11 +4,15 @@ import {
   applyConfirmUpiPaid,
   buildTrainingRegistrationAdminView,
   buildTrainingRegistrationCsv,
+  isRegisteredForEvent,
+  isRestorableRegistration,
   isSoftRemovedPerson,
   listCashCollectors,
   normalizeTrainingMobile,
   organisationalCategoryFromPerson,
   resolveCashCollector,
+  resolveOnlinePaymentEnabled,
+  resolvePublicPaymentChoice,
   sanitizeUtr,
   TRAINING_REGISTRATION_SETTINGS_DOC,
   trainingRegistrationCsvFilename,
@@ -20,7 +24,6 @@ import type {
   TrainingOrganisationalCategory,
   TrainingPaymentMethod,
   TrainingPaymentStatus,
-  TrainingPublicPaymentChoice,
   TrainingRegistrationRecord,
   TrainingRegistrationStatus,
 } from '../../lib/publicRegistration/types.js'
@@ -151,11 +154,14 @@ function optionalTrimmedString(value: unknown): string | null {
   return trimmed ? trimmed : null
 }
 
-function asRegistration(data: Record<string, unknown>): TrainingRegistrationRecord {
+function asRegistration(
+  data: Record<string, unknown>,
+  docId?: string,
+): TrainingRegistrationRecord {
   const paymentMethod: TrainingPaymentMethod =
     data.paymentMethod === 'upi' || data.paymentMethod === 'online' ? data.paymentMethod : 'cash'
   return {
-    id: String(data.id || ''),
+    id: String(data.id || docId || ''),
     eventId: String(data.eventId || TRAINING_GATHERING_EVENT.id),
     personId: data.personId ? String(data.personId) : null,
     ruknId: data.ruknId ? String(data.ruknId) : null,
@@ -272,8 +278,26 @@ async function loadRuknCollectorSource(db: Firestore) {
 
 async function readOnlinePaymentEnabled(db: Firestore): Promise<boolean> {
   const snap = await db.collection(SETTINGS).doc(TRAINING_REGISTRATION_SETTINGS_DOC).get()
-  if (!snap.exists) return true
-  return snap.data()?.onlinePaymentEnabled !== false
+  return resolveOnlinePaymentEnabled({
+    exists: snap.exists,
+    data: snap.exists ? snap.data() : null,
+  })
+}
+
+async function findExistingRegistration(
+  db: Firestore,
+  mobile10: string,
+): Promise<TrainingRegistrationRecord | null> {
+  const id = formatRegistrationId(mobile10)
+  const byId = await db.collection(COLLECTION).doc(id).get()
+  if (byId.exists) {
+    return asRegistration((byId.data() ?? {}) as Record<string, unknown>, byId.id)
+  }
+  const byMobile = await db.collection(COLLECTION).where('verifiedMobile', '==', mobile10).get()
+  const match = byMobile.docs
+    .map((doc) => asRegistration((doc.data() ?? {}) as Record<string, unknown>, doc.id))
+    .find((row) => isRegisteredForEvent(row))
+  return match ?? null
 }
 
 async function writeOnlinePaymentEnabled(
@@ -318,16 +342,16 @@ async function findPublicTrainingRequest(
 
 async function handleSession(mobile10: string): Promise<TrainingRegistrationApiResponse> {
   const admin = getRuknClaimsAdmin()
-  const [person, rukn, registrationSnap, paymentOptions] = await Promise.all([
+  const [person, rukn, foundRegistration, paymentOptions] = await Promise.all([
     findPersonByMobile(admin.db, mobile10),
     findActiveRuknByMobile(admin.db, mobile10),
-    admin.db.collection(COLLECTION).doc(formatRegistrationId(mobile10)).get(),
+    findExistingRegistration(admin.db, mobile10),
     publicPaymentOptions(admin.db),
   ])
 
-  const existingRegistration = registrationSnap.exists
-    ? asRegistration((registrationSnap.data() ?? {}) as Record<string, unknown>)
-    : undefined
+  const existingRegistration = isRestorableRegistration(foundRegistration)
+    ? foundRegistration
+    : null
   if (existingRegistration && !existingRegistration.fullName && person) {
     existingRegistration.fullName = String(person.data.name || '').trim()
   }
@@ -352,7 +376,7 @@ async function handleSession(mobile10: string): Promise<TrainingRegistrationApiR
       personId: person.id,
       category,
       profile: readProfile(person.data, mobile10),
-      existingRegistration: existingRegistration ?? null,
+      existingRegistration,
       ...paymentOptions,
       message: 'Your record was found',
     })
@@ -376,7 +400,7 @@ async function handleSession(mobile10: string): Promise<TrainingRegistrationApiR
         name: rukn.name,
         gender,
       },
-      existingRegistration: existingRegistration ?? null,
+      existingRegistration,
       ...paymentOptions,
       message: 'Your Rukn record was found',
     })
@@ -405,7 +429,7 @@ async function handleSession(mobile10: string): Promise<TrainingRegistrationApiR
     case: 'new_candidate' as PublicLookupCase,
     mobile: mobile10,
     profile: requestProfile,
-    existingRegistration: existingRegistration ?? null,
+    existingRegistration,
     ...paymentOptions,
     message: 'Complete your information to continue.',
   })
@@ -512,27 +536,44 @@ async function handleSubmit(
   paymentChoiceRaw: unknown,
   utrRaw: unknown,
   cashPaidToIdRaw: unknown,
+  paymentMethodRaw: unknown,
+  paymentStatusRaw: unknown,
 ): Promise<TrainingRegistrationApiResponse> {
-  const paymentChoice: TrainingPublicPaymentChoice | null =
-    paymentChoiceRaw === 'online' ||
-    paymentChoiceRaw === 'cash_at_ijtema' ||
-    paymentChoiceRaw === 'cash_paid_to'
-      ? paymentChoiceRaw
-      : null
-  if (!paymentChoice) {
-    if (paymentChoiceRaw === 'razorpay') {
+  const admin = getRuknClaimsAdmin()
+  const existingFound = await findExistingRegistration(admin.db, mobile10)
+  const resolvedChoice = resolvePublicPaymentChoice({
+    paymentChoice: paymentChoiceRaw,
+    paymentMethod: paymentMethodRaw,
+    paymentStatus: paymentStatusRaw,
+  })
+  if (!resolvedChoice.ok) {
+    if (isRestorableRegistration(existingFound)) {
+      return json(200, {
+        ok: true,
+        registration: existingFound,
+        newCandidate: false,
+      })
+    }
+    if (resolvedChoice.code === 'RAZORPAY_NOT_AVAILABLE') {
       return json(409, {
         ok: false,
         code: RAZORPAY_NOT_AVAILABLE,
-        error: 'Razorpay is not available.',
+        error: resolvedChoice.error,
       })
     }
-    return json(400, { ok: false, error: 'Choose a payment method.' })
+    return json(400, { ok: false, error: resolvedChoice.error })
   }
+  const paymentChoice = resolvedChoice.choice
 
-  const admin = getRuknClaimsAdmin()
   const onlinePaymentEnabled = await readOnlinePaymentEnabled(admin.db)
   if (paymentChoice === 'online' && !onlinePaymentEnabled) {
+    if (isRestorableRegistration(existingFound)) {
+      return json(200, {
+        ok: true,
+        registration: existingFound,
+        newCandidate: false,
+      })
+    }
     return json(409, {
       ok: false,
       code: 'ONLINE_PAYMENT_UNAVAILABLE',
@@ -595,11 +636,9 @@ async function handleSubmit(
     organisationalCategory = 'other'
   }
 
-  const id = formatRegistrationId(mobile10)
+  const id = existingFound?.id || formatRegistrationId(mobile10)
   const ref = admin.db.collection(COLLECTION).doc(id)
-  const existing = await ref.get()
-  const existingData = existing.exists ? (existing.data() ?? {}) as Record<string, unknown> : null
-  const existingRecord = existingData ? asRegistration(existingData) : null
+  const existingRecord = existingFound
   const timestamp = nowIso()
   const alreadyPaidCash = existingRecord?.paymentStatus === 'paid_cash'
   const alreadyPaidUpi = existingRecord?.paymentStatus === 'paid_upi'
@@ -633,9 +672,7 @@ async function handleSubmit(
     eventId: TRAINING_GATHERING_EVENT.id,
     personId,
     ruknId,
-    candidateRequestId: candidateRequestId ?? (existingData?.candidateRequestId
-      ? String(existingData.candidateRequestId)
-      : null),
+    candidateRequestId: candidateRequestId ?? existingRecord?.candidateRequestId ?? null,
     organisationalCategory,
     verifiedMobile: mobile10,
     fullName: profile.name,
@@ -648,7 +685,7 @@ async function handleSubmit(
     paymentSubmittedAt,
     paymentVerifiedAt,
     paymentVerifiedBy,
-    createdAt: existingData ? String(existingData.createdAt || timestamp) : timestamp,
+    createdAt: existingRecord?.createdAt || timestamp,
     updatedAt: timestamp,
   }
   await ref.set(record, { merge: true })
@@ -705,7 +742,7 @@ async function loadAdminView() {
       }
     }),
     registrations: registrationsSnap.docs.map((doc) =>
-      asRegistration((doc.data() ?? {}) as Record<string, unknown>),
+      asRegistration((doc.data() ?? {}) as Record<string, unknown>, doc.id),
     ),
     publicRequests: requests as Array<Record<string, unknown>>,
   })
@@ -755,7 +792,7 @@ async function handleConfirmUpiPaid(
   const ref = admin.db.collection(COLLECTION).doc(id)
   const snap = await ref.get()
   if (!snap.exists) return json(404, { ok: false, error: 'Registration not found.' })
-  const current = asRegistration((snap.data() ?? {}) as Record<string, unknown>)
+  const current = asRegistration((snap.data() ?? {}) as Record<string, unknown>, snap.id)
   if (current.paymentMethod !== 'upi') {
     return json(409, { ok: false, error: 'Only UPI registrations can be confirmed here.' })
   }
@@ -838,6 +875,8 @@ export async function handleTrainingRegistration(
         body.paymentChoice,
         body.utr,
         body.cashPaidToId,
+        body.paymentMethod,
+        body.paymentStatus,
       )
     }
 

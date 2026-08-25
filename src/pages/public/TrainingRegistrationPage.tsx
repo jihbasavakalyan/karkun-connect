@@ -11,7 +11,9 @@ import {
   savePublicRegistrationProfile,
   submitPublicRegistration,
 } from '@/lib/publicRegistration/client'
+import { isRestorableRegistration } from '@/lib/publicRegistration/adminTracking'
 import { publicRegistrationPhoneAuth } from '@/lib/publicRegistration/phoneAuth'
+import { clearPublicRegistrationServiceWorkers } from '@/lib/publicRegistration/swCleanup'
 import type {
   PublicLookupCase,
   PublicPersonProfile,
@@ -58,6 +60,7 @@ export function TrainingRegistrationPage() {
 
   useEffect(() => {
     document.title = 'Tarbiyati Ijtema Registration'
+    void clearPublicRegistrationServiceWorkers()
   }, [])
 
   useEffect(() => {
@@ -108,7 +111,7 @@ export function TrainingRegistrationPage() {
         ...lookup.profile,
         mobile: lookup.mobile,
       })
-      if (lookup.existingRegistration) {
+      if (isRestorableRegistration(lookup.existingRegistration)) {
         setRegistration(lookup.existingRegistration)
         setUtr(lookup.existingRegistration.utr ?? '')
         setCashPaidToId(lookup.existingRegistration.cashPaidToId ?? '')

@@ -11,6 +11,7 @@ import type {
   TrainingCategoryCounts,
   TrainingPaymentMethod,
   TrainingPaymentStatus,
+  TrainingPublicPaymentChoice,
   TrainingRegistrationAdminRow,
   TrainingRegistrationRecord,
   TrainingRegistrationStatus,
@@ -64,8 +65,56 @@ export type AdminTrackingInput = {
 
 export function normalizeTrainingMobile(mobile: string): string {
   const digits = mobile.trim().replace(/\D/g, '')
+  if (digits.length === 13 && digits.startsWith('091')) return digits.slice(3)
   if (digits.length === 12 && digits.startsWith('91')) return digits.slice(2)
+  if (digits.length === 11 && digits.startsWith('0')) return digits.slice(1)
   return digits
+}
+
+/** Missing settings/trainingRegistration document means online/UPI payment is ON. */
+export function resolveOnlinePaymentEnabled(
+  snapshot: { exists: boolean; data: unknown },
+): boolean {
+  if (!snapshot.exists) return true
+  if (!snapshot.data || typeof snapshot.data !== 'object') return true
+  return (snapshot.data as { onlinePaymentEnabled?: unknown }).onlinePaymentEnabled !== false
+}
+
+export function isRestorableRegistration(
+  row: TrainingRegistrationRecord | null | undefined,
+): row is TrainingRegistrationRecord {
+  if (!row || !row.id) return false
+  return isRegisteredForEvent(row)
+}
+
+export function resolvePublicPaymentChoice(input: {
+  paymentChoice?: unknown
+  paymentMethod?: unknown
+  paymentStatus?: unknown
+}):
+  | { ok: true; choice: TrainingPublicPaymentChoice }
+  | { ok: false; error: string; code?: string } {
+  const paymentChoice = input.paymentChoice
+  if (
+    paymentChoice === 'online' ||
+    paymentChoice === 'cash_at_ijtema' ||
+    paymentChoice === 'cash_paid_to'
+  ) {
+    return { ok: true, choice: paymentChoice }
+  }
+  if (paymentChoice === 'razorpay' || input.paymentMethod === 'online') {
+    return { ok: false, error: 'Razorpay is not available.', code: 'RAZORPAY_NOT_AVAILABLE' }
+  }
+  if (input.paymentMethod === 'upi') {
+    return { ok: true, choice: 'online' }
+  }
+  if (input.paymentMethod === 'cash' && input.paymentStatus === 'paid_cash') {
+    return { ok: false, error: 'Select who received the cash payment.' }
+  }
+  if (input.paymentMethod === 'cash') {
+    return { ok: true, choice: 'cash_at_ijtema' }
+  }
+  return { ok: false, error: 'Choose a payment method.' }
 }
 
 export function isSoftRemovedPerson(data: { isArchived?: unknown; archiveKind?: unknown }): boolean {
@@ -86,7 +135,8 @@ export function authoritativeGender(value: unknown): PublicPersonGender {
 }
 
 export function isEventRegistration(row: TrainingRegistrationRecord): boolean {
-  return row.eventId === TRAINING_GATHERING_EVENT.id
+  if (row.eventId === TRAINING_GATHERING_EVENT.id) return true
+  return !row.eventId && row.id.startsWith('TG260913-')
 }
 
 /** Registration is independent of payment. Any event registration document counts as registered. */

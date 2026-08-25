@@ -47,6 +47,7 @@ export default defineConfig({
     digitalRafeeqTtsApiPlugin(),
     VitePWA({
       registerType: 'prompt',
+      injectRegister: false,
       includeAssets: [
         'favicon.svg',
         'offline.html',
@@ -77,6 +78,8 @@ export default defineConfig({
         icons: pwaIcons,
       },
       workbox: {
+        skipWaiting: true,
+        clientsClaim: true,
         // Pre-cache app shell + hashed assets. Do not cache Firebase/API traffic.
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2,ttf,webp}'],
         navigateFallback: '/index.html',
