@@ -16,6 +16,8 @@ import type {
   TrainingRegistrationRecord,
   TrainingRegistrationStatus,
   TrainingRegistrationSummary,
+  TrainingRuknProgressPerson,
+  TrainingRuknProgressView,
   TrainingRuknRelatedPersonView,
 } from './types.js'
 import { TRAINING_REGISTRATION_CSV_COLUMNS } from './types.js'
@@ -523,6 +525,129 @@ export function buildTrainingRegistrationAdminView(input: AdminTrackingInput): {
   }
 
   return { summary, registrations: adminRows }
+}
+
+export type RuknProgressInput = {
+  ruknId: string
+  rukn: AdminTrackingRukn | null
+  karkuns: AdminTrackingKarkun[]
+  connections: AdminTrackingConnection[]
+  registrations: TrainingRegistrationRecord[]
+}
+
+function personCategoryLabel(person: {
+  category?: unknown
+  isArchived?: unknown
+  archiveKind?: unknown
+}): TrainingRuknProgressPerson['category'] {
+  return organisationalCategoryFromPerson(person) === 'muttafiq' ? 'Muttafiq' : 'Karkun'
+}
+
+/**
+ * Rukn-facing registration progress. Active connections for this ruknId only.
+ * Own registration is separate and never counted as a connected Karkun.
+ * Registration membership is independent of payment.
+ */
+export function buildTrainingRegistrationRuknProgress(
+  input: RuknProgressInput,
+): TrainingRuknProgressView {
+  const karkunById = new Map(input.karkuns.map((person) => [person.id, person]))
+  const registeredByMobile = new Map<string, TrainingRegistrationRecord>()
+  const registeredByPersonId = new Map<string, TrainingRegistrationRecord>()
+  for (const row of input.registrations) {
+    if (!isRegisteredForEvent(row)) continue
+    const mobile = normalizeTrainingMobile(row.verifiedMobile)
+    if (mobile) registeredByMobile.set(mobile, row)
+    if (row.personId) registeredByPersonId.set(row.personId, row)
+  }
+
+  const connectedIds: string[] = []
+  const seen = new Set<string>()
+  for (const connection of input.connections) {
+    if (String(connection.ruknId || '') !== input.ruknId) continue
+    if (!isActiveConnection(connection)) continue
+    const karkunId = String(connection.karkunId || '')
+    if (!karkunId || karkunId === input.ruknId || seen.has(karkunId)) continue
+    seen.add(karkunId)
+    connectedIds.push(karkunId)
+  }
+
+  const karkuns: TrainingRuknProgressPerson[] = []
+  for (const karkunId of connectedIds) {
+    const person = karkunById.get(karkunId)
+    if (!person || isSoftRemovedPerson(person)) continue
+    const mobile = normalizeTrainingMobile(String(person.mobile || ''))
+    const registration =
+      (mobile ? registeredByMobile.get(mobile) : undefined) ?? registeredByPersonId.get(karkunId)
+    const registered = isRegisteredForEvent(registration)
+    karkuns.push({
+      karkunId,
+      name: String(person.name || '').trim() || String(registration?.fullName || '').trim() || karkunId,
+      mobile,
+      registered,
+      gender: authoritativeGender(person.gender),
+      category: personCategoryLabel(person),
+    })
+  }
+
+  karkuns.sort((a, b) => a.name.localeCompare(b.name) || a.mobile.localeCompare(b.mobile))
+
+  const registeredCount = karkuns.filter((person) => person.registered).length
+  const ruknMobile = normalizeTrainingMobile(String(input.rukn?.mobile || ''))
+  const ownByMobile = ruknMobile ? registeredByMobile.get(ruknMobile) : undefined
+  const ownByRuknId = input.registrations.find(
+    (row) => row.ruknId === input.ruknId && isRegisteredForEvent(row),
+  )
+  const ownRegistered = isRegisteredForEvent(ownByMobile) || isRegisteredForEvent(ownByRuknId)
+
+  return serializeTrainingRuknProgress({
+    eventId: TRAINING_GATHERING_EVENT.id,
+    ownRegistered,
+    connectedCount: karkuns.length,
+    registeredCount,
+    notRegisteredCount: karkuns.length - registeredCount,
+    karkuns,
+  })
+}
+
+export const RUKN_PROGRESS_FORBIDDEN_JSON_KEYS = [
+  'utr',
+  'cashPaidToId',
+  'cashPaidToName',
+  'paymentVerifiedAt',
+  'paymentVerifiedBy',
+  'paymentMethod',
+  'paymentStatus',
+  'paymentSubmittedAt',
+  'registrations',
+  'summary',
+  'ruknWise',
+  'relatedPeople',
+] as const
+
+export function serializeTrainingRuknProgress(
+  view: TrainingRuknProgressView,
+): TrainingRuknProgressView {
+  return {
+    eventId: view.eventId,
+    ownRegistered: view.ownRegistered === true,
+    connectedCount: view.connectedCount,
+    registeredCount: view.registeredCount,
+    notRegisteredCount: view.notRegisteredCount,
+    karkuns: view.karkuns.map((person) => ({
+      karkunId: person.karkunId,
+      name: person.name,
+      mobile: person.mobile,
+      registered: person.registered === true,
+      gender: authoritativeGender(person.gender),
+      category: person.category === 'Muttafiq' ? 'Muttafiq' : 'Karkun',
+    })),
+  }
+}
+
+export function forbiddenFieldsInRuknProgress(payload: unknown): string[] {
+  const json = JSON.stringify(payload)
+  return RUKN_PROGRESS_FORBIDDEN_JSON_KEYS.filter((key) => json.includes(`"${key}"`))
 }
 
 export const PUBLIC_TRAINING_REGISTRATION_URL = 'https://registration.jihbasavakalyan.org/'

@@ -4,6 +4,7 @@ import type {
   TrainingRegistrationAdminRow,
   TrainingRegistrationRecord,
   TrainingRegistrationSummary,
+  TrainingRuknProgressView,
 } from '@/lib/publicRegistration/types'
 import { publicRegistrationPhoneAuth } from '@/lib/publicRegistration/phoneAuth'
 
@@ -134,4 +135,27 @@ export async function exportTrainingRegistrationCsv(token: string): Promise<{
     csv: string
     filename: string
   }
+}
+
+export async function fetchTrainingRegistrationRuknProgress(token: string): Promise<{
+  ok: true
+  progress: TrainingRuknProgressView
+}> {
+  const response = await fetch('/api/training-registration', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ action: 'rukn_registration_progress' }),
+  })
+  const json = await readTrainingRegistrationJson(response)
+  if (!response.ok || json.ok === false) {
+    throw new Error(String(json.error || 'Unable to load registration progress.'))
+  }
+  const progress = json.progress
+  if (!progress || typeof progress !== 'object') {
+    throw new Error('Unable to load registration progress.')
+  }
+  return { ok: true, progress: progress as TrainingRuknProgressView }
 }

@@ -54,6 +54,8 @@ export const ROUTES = {
   RUKN_WEEKLY_IJTEMA: '/rukn/weekly-ijtema',
   /** KC-0108 — Rukn Monthly Baitul Maal completion */
   RUKN_MONTHLY_BAITUL_MAAL: '/rukn/baitul-maal',
+  /** Tarbiyati Ijtema connected-Karkun registration progress */
+  RUKN_TARBIYATI_IJTEMA: '/rukn/tarbiyati-ijtema',
   RUKN_SETTINGS: '/rukn/settings',
 } as const
 

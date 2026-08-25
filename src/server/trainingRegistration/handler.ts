@@ -1,9 +1,11 @@
-import { FieldValue, type Firestore } from 'firebase-admin/firestore'
+import { FieldValue, type DocumentReference, type DocumentSnapshot, type Firestore } from 'firebase-admin/firestore'
 import { getRuknClaimsAdmin } from '../ruknClaims/firebaseAdmin.js'
 import {
   applyConfirmUpiPaid,
   buildTrainingRegistrationAdminView,
   buildTrainingRegistrationCsv,
+  buildTrainingRegistrationRuknProgress,
+  isActiveConnection,
   isRegisteredForEvent,
   isRestorableRegistration,
   isSoftRemovedPerson,
@@ -14,6 +16,7 @@ import {
   resolveOnlinePaymentEnabled,
   resolvePublicPaymentChoice,
   sanitizeUtr,
+  serializeTrainingRuknProgress,
   TRAINING_REGISTRATION_SETTINGS_DOC,
   trainingRegistrationCsvFilename,
 } from '../../lib/publicRegistration/adminTracking.js'
@@ -31,8 +34,10 @@ import type {
 const COLLECTION = 'trainingRegistrations'
 const KARKUNS = 'karkuns'
 const RUKNS = 'rukns'
+const CONNECTIONS = 'connections'
 const SETTINGS = 'settings'
 const KARKUN_REQUESTS_DOC = 'karkunRequests'
+const FIRESTORE_IN_LIMIT = 30
 /** Razorpay remains deferred. Do not add SDK, keys, or fake success. */
 const RAZORPAY_NOT_AVAILABLE = 'RAZORPAY_NOT_AVAILABLE'
 
@@ -52,6 +57,7 @@ type DecodedIdentity = {
   uid: string
   role: string
   mobile10: string | null
+  ruknId: string | null
 }
 
 function json(status: number, body: Record<string, unknown>): TrainingRegistrationApiResponse {
@@ -202,10 +208,13 @@ async function requireIdentity(
     const decoded = await admin.auth.verifyIdToken(match[1])
     const phone = typeof decoded.phone_number === 'string' ? decoded.phone_number : ''
     const mobile10 = phone ? normalizeMobile(phone) : null
+    const ruknIdRaw = (decoded as { ruknId?: unknown }).ruknId
+    const ruknId = typeof ruknIdRaw === 'string' ? ruknIdRaw.trim() : ''
     return {
       uid: decoded.uid,
       role: String(decoded.role || ''),
       mobile10: mobile10 && mobile10.length === 10 ? mobile10 : null,
+      ruknId: ruknId || null,
     }
   } catch (error) {
     return json(401, {
@@ -314,6 +323,133 @@ async function writeOnlinePaymentEnabled(
     { merge: true },
   )
   return enabled
+}
+
+function chunkValues<T>(items: T[], size: number): T[][] {
+  const chunks: T[][] = []
+  for (let index = 0; index < items.length; index += size) {
+    chunks.push(items.slice(index, index + size))
+  }
+  return chunks
+}
+
+async function getAllDocuments(db: Firestore, refs: DocumentReference[]): Promise<DocumentSnapshot[]> {
+  const snapshots: DocumentSnapshot[] = []
+  for (const chunk of chunkValues(refs, 100)) {
+    if (chunk.length === 0) continue
+    snapshots.push(...(await db.getAll(...chunk)))
+  }
+  return snapshots
+}
+
+async function loadRegistrationsForMobiles(
+  db: Firestore,
+  mobiles: string[],
+): Promise<TrainingRegistrationRecord[]> {
+  const unique = [...new Set(mobiles.filter((mobile) => mobile.length === 10))]
+  const found = new Map<string, TrainingRegistrationRecord>()
+  if (unique.length === 0) return []
+
+  const byIdRefs = unique.map((mobile) => db.collection(COLLECTION).doc(formatRegistrationId(mobile)))
+  for (const snap of await getAllDocuments(db, byIdRefs)) {
+    if (!snap.exists) continue
+    const row = asRegistration((snap.data() ?? {}) as Record<string, unknown>, snap.id)
+    found.set(row.id, row)
+  }
+
+  const missing = unique.filter((mobile) => !found.has(formatRegistrationId(mobile)))
+  for (const chunk of chunkValues(missing, FIRESTORE_IN_LIMIT)) {
+    if (chunk.length === 0) continue
+    const query = await db.collection(COLLECTION).where('verifiedMobile', 'in', chunk).get()
+    for (const doc of query.docs) {
+      const row = asRegistration((doc.data() ?? {}) as Record<string, unknown>, doc.id)
+      found.set(row.id, row)
+    }
+  }
+  return [...found.values()]
+}
+
+async function handleRuknRegistrationProgress(
+  identity: DecodedIdentity,
+): Promise<TrainingRegistrationApiResponse> {
+  const ruknId = identity.ruknId
+  if (!ruknId) {
+    return json(403, { ok: false, error: 'Rukn identity is required.' })
+  }
+
+  const admin = getRuknClaimsAdmin()
+  const ruknSnap = await admin.db.collection(RUKNS).doc(ruknId).get()
+  if (!ruknSnap.exists) {
+    return json(403, { ok: false, error: 'Rukn identity is required.' })
+  }
+  const ruknData = (ruknSnap.data() ?? {}) as Record<string, unknown>
+  const ruknMobile = normalizeMobile(String(ruknData.mobile || ''))
+  if (identity.mobile10 && ruknMobile && ruknMobile !== identity.mobile10) {
+    return json(403, { ok: false, error: 'Rukn identity mismatch.' })
+  }
+
+  const connectionsSnap = await admin.db.collection(CONNECTIONS).where('ruknId', '==', ruknId).get()
+  const connections = connectionsSnap.docs.map((doc) => {
+    const data = doc.data()
+    return {
+      ruknId: data.ruknId,
+      karkunId: data.karkunId,
+      status: data.status,
+      assignmentStatus: data.assignmentStatus,
+      isArchived: data.isArchived,
+    }
+  })
+
+  const connectedIds = [
+    ...new Set(
+      connections
+        .filter((connection) => isActiveConnection(connection))
+        .map((connection) => String(connection.karkunId || ''))
+        .filter((karkunId) => karkunId && karkunId !== ruknId),
+    ),
+  ]
+
+  const karkunRefs = connectedIds.map((karkunId) => admin.db.collection(KARKUNS).doc(karkunId))
+  const karkunSnaps = await getAllDocuments(admin.db, karkunRefs)
+  const karkuns = karkunSnaps
+    .filter((snap) => snap.exists)
+    .map((snap) => {
+      const data = (snap.data() ?? {}) as Record<string, unknown>
+      return {
+        id: snap.id,
+        name: String(data.name || ''),
+        mobile: String(data.mobile || ''),
+        gender: data.gender,
+        category: data.category,
+        isArchived: data.isArchived,
+        archiveKind: data.archiveKind,
+      }
+    })
+
+  const mobiles = [
+    ruknMobile,
+    ...karkuns.map((person) => normalizeMobile(String(person.mobile || ''))),
+  ].filter((mobile) => mobile.length === 10)
+  const registrations = await loadRegistrationsForMobiles(admin.db, mobiles)
+
+  const progress = serializeTrainingRuknProgress(
+    buildTrainingRegistrationRuknProgress({
+      ruknId,
+      rukn: {
+        id: ruknSnap.id,
+        name: String(ruknData.name || ruknSnap.id),
+        status: ruknData.status,
+        isArchived: ruknData.isArchived,
+        gender: ruknData.gender,
+        mobile: ruknData.mobile,
+      },
+      karkuns,
+      connections,
+      registrations,
+    }),
+  )
+
+  return json(200, { ok: true, progress })
 }
 
 async function publicPaymentOptions(db: Firestore) {
@@ -850,6 +986,13 @@ export async function handleTrainingRegistration(
   const identity = identityOrError
 
   try {
+    if (action === 'rukn_registration_progress') {
+      if (identity.role !== 'rukn') {
+        return json(403, { ok: false, error: 'Rukn role required.' })
+      }
+      return handleRuknRegistrationProgress(identity)
+    }
+
     if (ADMIN_ACTIONS.has(action)) {
       if (identity.role !== 'administrator') {
         return json(403, { ok: false, error: 'Administrator role required.' })

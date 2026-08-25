@@ -102,6 +102,25 @@ export type TrainingRuknRelatedPersonView = {
   paymentStatus: TrainingPaymentStatus | null
 }
 
+/** Rukn-scoped registration progress. Payment fields are intentionally absent. */
+export type TrainingRuknProgressPerson = {
+  karkunId: string
+  name: string
+  mobile: string
+  registered: boolean
+  gender: PublicPersonGender
+  category: PublicPersonCategory
+}
+
+export type TrainingRuknProgressView = {
+  eventId: string
+  ownRegistered: boolean
+  connectedCount: number
+  registeredCount: number
+  notRegisteredCount: number
+  karkuns: TrainingRuknProgressPerson[]
+}
+
 export type TrainingRegistrationAdminRow = TrainingRegistrationRecord & {
   organisationalCategory: TrainingOrganisationalCategory
   gender: PublicPersonGender

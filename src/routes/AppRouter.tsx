@@ -141,6 +141,11 @@ const RuknMonthlyBaitulMaalPage = lazyWithChunkReload(() =>
     default: m.RuknMonthlyBaitulMaalPage,
   })),
 )
+const TarbiyatiIjtemaRegistrationProgressPage = lazyWithChunkReload(() =>
+  import('@/pages/rukn/TarbiyatiIjtemaRegistrationProgressPage').then((m) => ({
+    default: m.TarbiyatiIjtemaRegistrationProgressPage,
+  })),
+)
 
 function LegacyKarkunProfileRedirect() {
   const { karkunId } = useParams<{ karkunId: string }>()
@@ -259,6 +264,7 @@ export function AppRouter() {
             <Route path="campaign-record" element={<CampaignRecordPage />} />
             <Route path="weekly-ijtema" element={<WeeklyIjtemaRegisterPage />} />
             <Route path="baitul-maal" element={<RuknMonthlyBaitulMaalPage />} />
+            <Route path="tarbiyati-ijtema" element={<TarbiyatiIjtemaRegistrationProgressPage />} />
             <Route path="settings" element={<RuknSettingsPage />} />
             {/* KC-037 V1 — no Rukn Report Center; legacy /rukn/reports → Campaign Record */}
             <Route path="reports" element={<Navigate to={ROUTES.RUKN_CAMPAIGN_RECORD} replace />} />

@@ -7,6 +7,8 @@ import {
   applyConfirmUpiPaid,
   buildTrainingRegistrationAdminView,
   buildTrainingRegistrationCsv,
+  buildTrainingRegistrationRuknProgress,
+  forbiddenFieldsInRuknProgress,
   isRestorableRegistration,
   listCashCollectors,
   matchesRegisteredPeopleFilters,
@@ -116,6 +118,10 @@ function testSecurityPath(): void {
   assert(handler.includes('verifyIdToken'), 'server verifies ID token')
   assert(handler.includes('phone_number'), 'uses verified phone identity')
   assert(handler.includes("const KARKUNS = 'karkuns'"), 'looks up karkuns server-side')
+  assert(handler.includes("const CONNECTIONS = 'connections'"), 'reuses connections collection')
+  assert(handler.includes("action === 'rukn_registration_progress'"), 'rukn scoped progress action')
+  assert(handler.includes("identity.role !== 'rukn'"), 'rukn progress requires rukn role')
+  assert(handler.includes('identity.ruknId'), 'rukn scope comes from session claims')
   assert(handler.includes('RAZORPAY_NOT_AVAILABLE'), 'does not invent Razorpay')
   assert(handler.includes("case: 'existing_rukn'"), 'active rukn may register')
   assert(!handler.includes('RUKN_MOBILE'), 'rukn mobile is not blocked from event registration')
@@ -533,8 +539,18 @@ function testRuknHeroContract(): void {
   const hero = read('src/components/home/TarbiyatiIjtemaRuknHero.tsx')
   assert(hero.includes('/branding/jih-official-logo.png') || hero.includes('JihLogoMark'), 'official logo reused')
   assert(hero.includes('Register for Tarbiyati Ijtema'), 'CTA exists')
+  assert(hero.includes('View Registration Progress'), 'progress detail CTA')
+  assert(hero.includes('Connected Karkuns'), 'connected count label')
+  assert(hero.includes('Not Registered'), 'not registered count')
+  assert(hero.includes('My Registration'), 'own registration is separate')
+  assert(hero.includes('No connected Karkuns yet.'), 'empty connected state')
+  assert(hero.includes('Retry'), 'error retry')
+  assert(!hero.includes('Cash Pending'), 'hero has no cash pending')
+  assert(!hero.includes('UPI Pending'), 'hero has no upi pending')
+  assert(!hero.includes('UTR'), 'hero has no UTR')
   assert(PUBLIC_TRAINING_REGISTRATION_URL === 'https://registration.jihbasavakalyan.org/', 'opens official host')
   assert(read('src/pages/rukn/RuknHomePage.tsx').includes('<TarbiyatiIjtemaRuknHero'), 'renders on Rukn Home')
+  assert(read('src/routes/AppRouter.tsx').includes('tarbiyati-ijtema'), 'progress route registered')
 }
 
 function mixedPaymentFixture() {
@@ -1029,6 +1045,195 @@ function testUpiDeepLinkSameDevicePay(): void {
   assert(eventSrc.includes("paytm: 'paytm://upi/pay'"), 'Paytm scheme constant')
 }
 
+function testRuknDashboardRegistrationProgress(): void {
+  const ownRuknReg = sampleRegistration({
+    id: formatRegistrationId('9000000000'),
+    ruknId: 'r-1',
+    verifiedMobile: '9000000000',
+    fullName: 'Scoped Rukn',
+    paymentMethod: 'upi',
+    paymentStatus: 'paid_upi',
+    utr: 'UTR-RUKN-OWN',
+    cashPaidToId: 'admin',
+    cashPaidToName: 'Should not leak',
+    paymentVerifiedAt: '2026-08-25T11:00:00.000Z',
+    paymentVerifiedBy: 'admin-uid',
+  })
+  const cashPending = sampleRegistration({
+    id: formatRegistrationId('9000000001'),
+    personId: 'k-1',
+    verifiedMobile: '9000000001',
+    fullName: 'Cash Pending Karkun',
+    paymentStatus: 'cash_pending',
+  })
+  const paidCash = sampleRegistration({
+    id: formatRegistrationId('9000000002'),
+    personId: 'k-2',
+    verifiedMobile: '9000000002',
+    fullName: 'Paid Cash Karkun',
+    paymentStatus: 'paid_cash',
+    cashPaidToId: 'r-1',
+    cashPaidToName: 'Scoped Rukn',
+  })
+  const upiPending = sampleRegistration({
+    id: formatRegistrationId('9000000003'),
+    personId: 'k-3',
+    verifiedMobile: '9000000003',
+    fullName: 'UPI Pending Karkun',
+    paymentMethod: 'upi',
+    paymentStatus: 'upi_pending',
+    utr: 'UTR9000000003',
+  })
+  const paidUpi = sampleRegistration({
+    id: formatRegistrationId('9000000004'),
+    personId: 'k-4',
+    verifiedMobile: '9000000004',
+    fullName: 'Paid UPI Karkun',
+    paymentMethod: 'upi',
+    paymentStatus: 'paid_upi',
+    utr: 'UTR9000000004',
+  })
+  const otherRuknReg = sampleRegistration({
+    id: formatRegistrationId('9000000099'),
+    personId: 'k-other',
+    verifiedMobile: '9000000099',
+    fullName: 'Other Rukn Karkun',
+    paymentStatus: 'paid_cash',
+  })
+  const inactiveReg = sampleRegistration({
+    id: formatRegistrationId('9000000088'),
+    personId: 'k-inactive',
+    verifiedMobile: '9000000088',
+    fullName: 'Inactive Connected',
+    paymentStatus: 'cash_pending',
+  })
+  const unrelatedReg = sampleRegistration({
+    id: formatRegistrationId('9000000077'),
+    personId: 'k-unrelated',
+    verifiedMobile: '9000000077',
+    fullName: 'Unrelated Karkun',
+    paymentStatus: 'paid_upi',
+    paymentMethod: 'upi',
+  })
+  const input = {
+    ruknId: 'r-1',
+    rukn: { id: 'r-1', name: 'Scoped Rukn', status: 'active', mobile: '9000000000', gender: 'Male' },
+    karkuns: [
+      { id: 'k-1', name: 'Cash Pending Karkun', mobile: '9000000001', gender: 'Male', category: 'Karkun' },
+      { id: 'k-2', name: 'Paid Cash Karkun', mobile: '9000000002', gender: 'Female', category: 'Muttafiq' },
+      { id: 'k-3', name: 'UPI Pending Karkun', mobile: '9000000003', gender: 'Female', category: 'Karkun' },
+      { id: 'k-4', name: 'Paid UPI Karkun', mobile: '9000000004', gender: 'Male', category: 'Karkun' },
+      { id: 'k-5', name: 'Open One', mobile: '9000000005', gender: 'Male', category: 'Karkun' },
+      { id: 'k-6', name: 'Open Two', mobile: '9000000006', gender: 'Female', category: 'Karkun' },
+      { id: 'k-7', name: 'Open Three', mobile: '9000000007', gender: 'Male', category: 'Karkun' },
+      { id: 'k-8', name: 'Open Four', mobile: '9000000008', gender: 'Female', category: 'Muttafiq' },
+      { id: 'k-inactive', name: 'Inactive Connected', mobile: '9000000088', gender: 'Male', category: 'Karkun' },
+      { id: 'k-other', name: 'Other Rukn Karkun', mobile: '9000000099', gender: 'Male', category: 'Karkun' },
+      { id: 'k-unrelated', name: 'Unrelated Karkun', mobile: '9000000077', gender: 'Male', category: 'Karkun' },
+    ],
+    connections: [
+      { ruknId: 'r-1', karkunId: 'k-1', status: 'Active' },
+      { ruknId: 'r-1', karkunId: 'k-2', status: 'Active' },
+      { ruknId: 'r-1', karkunId: 'k-3', status: 'Active' },
+      { ruknId: 'r-1', karkunId: 'k-4', status: 'Active' },
+      { ruknId: 'r-1', karkunId: 'k-5', status: 'Active' },
+      { ruknId: 'r-1', karkunId: 'k-6', status: 'Active' },
+      { ruknId: 'r-1', karkunId: 'k-7', status: 'Active' },
+      { ruknId: 'r-1', karkunId: 'k-8', status: 'Active' },
+      { ruknId: 'r-1', karkunId: 'k-inactive', status: 'Inactive' },
+      { ruknId: 'r-2', karkunId: 'k-other', status: 'Active' },
+    ],
+    registrations: [
+      ownRuknReg,
+      cashPending,
+      paidCash,
+      upiPending,
+      paidUpi,
+      otherRuknReg,
+      inactiveReg,
+      unrelatedReg,
+    ],
+  }
+
+  const progress = buildTrainingRegistrationRuknProgress(input)
+  assert(progress.ownRegistered === true, '1 rukn sees own registration status')
+  assert(progress.connectedCount === 8, '2 connected karkun count')
+  assert(progress.registeredCount === 4, '3 registered count is payment-independent')
+  assert(progress.notRegisteredCount === 4, '4 not registered count')
+  assert(
+    progress.registeredCount + progress.notRegisteredCount === progress.connectedCount,
+    '5 registered + not registered = connected',
+  )
+  assert(progress.karkuns.find((row) => row.karkunId === 'k-1')?.registered === true, '7 cash pending still registered')
+  assert(progress.karkuns.find((row) => row.karkunId === 'k-2')?.registered === true, '9 paid cash still registered')
+  assert(progress.karkuns.find((row) => row.karkunId === 'k-3')?.registered === true, '8 upi pending still registered')
+  assert(progress.karkuns.find((row) => row.karkunId === 'k-4')?.registered === true, '10 paid upi still registered')
+  assert(
+    ['k-5', 'k-6', 'k-7', 'k-8'].every((id) => progress.karkuns.find((row) => row.karkunId === id)?.registered === false),
+    '6 payment does not invent registration; open people stay not registered',
+  )
+  assert(!progress.karkuns.some((row) => row.karkunId === 'k-unrelated'), '11 unrelated karkuns excluded')
+  assert(!progress.karkuns.some((row) => row.karkunId === 'k-inactive'), '12 inactive connections excluded')
+  assert(!progress.karkuns.some((row) => row.karkunId === 'r-1' || row.mobile === '9000000000'), '13 own registration not counted as connected')
+  assert(!progress.karkuns.some((row) => row.karkunId === 'k-other'), '14 cannot see another rukn karkuns')
+  assert(progress.karkuns.length === 8, '15 complete dataset is not returned; only scoped people')
+  const leaked = forbiddenFieldsInRuknProgress(progress)
+  assert(leaked.length === 0, `16 payment/admin fields not exposed: ${leaked.join(', ')}`)
+
+  const otherProgress = buildTrainingRegistrationRuknProgress({
+    ...input,
+    ruknId: 'r-2',
+    rukn: { id: 'r-2', name: 'Other Rukn', status: 'active', mobile: '9000000066' },
+  })
+  assert(otherProgress.connectedCount === 1, 'other rukn only sees own connection')
+  assert(otherProgress.karkuns[0]?.karkunId === 'k-other', 'other rukn scoped to own karkun')
+  assert(!otherProgress.karkuns.some((row) => row.karkunId === 'k-1'), '14 other rukn cannot access first rukn karkuns')
+
+  const empty = buildTrainingRegistrationRuknProgress({
+    ruknId: 'r-empty',
+    rukn: { id: 'r-empty', name: 'Empty Rukn', status: 'active', mobile: '9000000011' },
+    karkuns: [],
+    connections: [],
+    registrations: [],
+  })
+  assert(empty.connectedCount === 0 && empty.registeredCount === 0 && empty.notRegisteredCount === 0, 'empty connected is zero')
+  assert(empty.ownRegistered === false, 'empty rukn own status still computed')
+
+  const handler = read('src/server/trainingRegistration/handler.ts')
+  const ruknFn = handler.slice(
+    handler.indexOf('async function handleRuknRegistrationProgress'),
+    handler.indexOf('async function publicPaymentOptions'),
+  )
+  assert(ruknFn.includes("where('ruknId', '==', ruknId)"), 'server queries only this rukn connections')
+  assert(ruknFn.includes('identity.ruknId'), 'does not accept client ruknId')
+  assert(!ruknFn.includes('body.ruknId'), 'does not read ruknId from request body')
+  assert(!ruknFn.includes('loadAdminView'), 'does not load full admin view')
+  assert(!ruknFn.includes('buildTrainingRegistrationAdminView'), 'does not return admin dataset')
+  assert(!ruknFn.includes('utr'), 'rukn handler does not copy UTR')
+  assert(!ruknFn.includes('cashPaidTo'), 'rukn handler does not copy cash collector')
+  assert(handler.includes("ok: true, progress"), 'returns progress only')
+  const collections = read('src/repositories/firestore/collections.ts')
+  assert(collections.includes("trainingRegistrations: 'trainingRegistrations'"), '17 no new collection')
+  assert(!collections.includes('ruknRegistrationProgress'), '17 no progress collection')
+  const admin = read('src/components/public-registration/TrainingGatheringAdminPanel.tsx')
+  assert(admin.includes('Registered People'), '18 admin registered people remains')
+  assert(admin.includes('Confirm UPI Paid'), '18 admin UPI confirm remains')
+  assert(admin.includes('Export CSV'), '18 admin CSV remains')
+  const page = read('src/pages/public/TrainingRegistrationPage.tsx')
+  assert(page.includes('existing_rukn'), '19 public rukn registration remains')
+  assert(page.includes('UTR / Transaction Reference Number'), '19 public UTR remains')
+  const detail = read('src/pages/rukn/TarbiyatiIjtemaRegistrationProgressPage.tsx')
+  assert(detail.includes('All'), 'filter all')
+  assert(detail.includes('Not Registered'), 'filter not registered')
+  assert(!detail.includes('Cash Pending'), 'detail has no payment queues')
+  assert(!detail.includes('UTR'), 'detail has no UTR')
+  const client = read('src/lib/publicRegistration/client.ts')
+  assert(client.includes("'rukn_registration_progress'"), 'client calls scoped action')
+  const rules = read('firestore.rules')
+  assert(rules.includes('allow read: if isAdministrator()'), 'firestore admin-only read unchanged')
+  assert(rules.includes('allow create, update, delete: if false'), 'no client writes')
+}
+
 const cases = [
   run('event constants and registration id', testEventAndId),
   run('subdomain host detection', testHost),
@@ -1042,6 +1247,7 @@ const cases = [
   run('open registration categories', testOpenCategoryRegistration),
   run('rukn connected scope and registered vs remaining', testRuknScopeAndRegistration),
   run('rukn home hero contract', testRuknHeroContract),
+  run('rukn dashboard registration progress scope', testRuknDashboardRegistrationProgress),
   run('UPI pending to paid without leaving Registered People', testUpiFlowAndRegisteredPeople),
   run('same-device UPI deep link without marking paid', testUpiDeepLinkSameDevicePay),
   run('UTR trim empty and preserve', testUtrValidation),
