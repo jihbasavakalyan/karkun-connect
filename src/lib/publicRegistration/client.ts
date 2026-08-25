@@ -3,6 +3,7 @@ import type {
   PublicPersonProfile,
   TrainingCashChoice,
   TrainingPaymentMethod,
+  TrainingRegistrationAdminRow,
   TrainingRegistrationRecord,
   TrainingRegistrationSummary,
 } from '@/lib/publicRegistration/types'
@@ -63,7 +64,7 @@ export async function submitPublicRegistration(input: {
 export async function fetchTrainingRegistrationAdmin(token: string): Promise<{
   ok: true
   summary: TrainingRegistrationSummary
-  registrations: TrainingRegistrationRecord[]
+  registrations: TrainingRegistrationAdminRow[]
 }> {
   const response = await fetch('/api/training-registration', {
     method: 'POST',
@@ -80,7 +81,7 @@ export async function fetchTrainingRegistrationAdmin(token: string): Promise<{
   return json as unknown as {
     ok: true
     summary: TrainingRegistrationSummary
-    registrations: TrainingRegistrationRecord[]
+    registrations: TrainingRegistrationAdminRow[]
   }
 }
 

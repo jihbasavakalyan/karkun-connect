@@ -1,5 +1,11 @@
 import { FieldValue, type Firestore } from 'firebase-admin/firestore'
 import { getRuknClaimsAdmin } from '../ruknClaims/firebaseAdmin.js'
+import {
+  applyMarkCashPaid,
+  buildTrainingRegistrationAdminView,
+  isSoftRemovedPerson,
+  normalizeTrainingMobile,
+} from '../../lib/publicRegistration/adminTracking.js'
 import { formatRegistrationId, TRAINING_GATHERING_EVENT } from '../../lib/publicRegistration/event.js'
 import type {
   PublicLookupCase,
@@ -7,10 +13,8 @@ import type {
   TrainingCashChoice,
   TrainingPaymentMethod,
   TrainingPaymentStatus,
-  TrainingRegisteredPersonView,
   TrainingRegistrationRecord,
   TrainingRegistrationStatus,
-  TrainingRegistrationSummary,
 } from '../../lib/publicRegistration/types.js'
 
 const COLLECTION = 'trainingRegistrations'
@@ -50,15 +54,11 @@ function json(status: number, body: Record<string, unknown>): TrainingRegistrati
 }
 
 function normalizeMobile(mobile: string): string {
-  const digits = mobile.trim().replace(/\D/g, '')
-  if (digits.length === 12 && digits.startsWith('91')) return digits.slice(2)
-  return digits
+  return normalizeTrainingMobile(mobile)
 }
 
 function isSoftRemoved(data: Record<string, unknown>): boolean {
-  if (data.isArchived !== true) return false
-  const kind = String(data.archiveKind || '')
-  return kind === 'duplicate_merge' || kind === 'admin_delete'
+  return isSoftRemovedPerson(data)
 }
 
 function nowIso(): string {
@@ -129,26 +129,6 @@ function asRegistration(data: Record<string, unknown>): TrainingRegistrationReco
     paymentStatus: data.paymentStatus as TrainingPaymentStatus,
     createdAt: String(data.createdAt || ''),
     updatedAt: String(data.updatedAt || ''),
-  }
-}
-
-function isActiveConnection(data: Record<string, unknown>): boolean {
-  if (data.isArchived === true) return false
-  const status = String(data.status || '')
-  const assignmentStatus = String(data.assignmentStatus || '')
-  return status === 'Active' || assignmentStatus === 'Assigned'
-}
-
-function toRegisteredPersonView(
-  registration: TrainingRegistrationRecord,
-): TrainingRegisteredPersonView {
-  return {
-    karkunName: registration.fullName,
-    mobile: registration.verifiedMobile,
-    registrationId: registration.id,
-    registrationStatus: registration.registrationStatus,
-    paymentMethod: registration.paymentMethod,
-    paymentStatus: registration.paymentStatus,
   }
 }
 
@@ -486,99 +466,44 @@ async function handleAdminSummary(): Promise<TrainingRegistrationApiResponse> {
   ])
 
   const requests = Array.isArray(requestsSnap.data()?.requests) ? requestsSnap.data()!.requests : []
-  const publicRequests = (requests as Array<Record<string, unknown>>).filter(
-    (row) => row.source === 'public_training_registration',
-  )
-
-  let eligible = 0
-  const karkunById = new Map<string, Record<string, unknown>>()
-  const karkunByMobile = new Map<string, Record<string, unknown>>()
-  for (const doc of karkunsSnap.docs) {
-    const data = doc.data()
-    if (isSoftRemoved(data)) continue
-    eligible += 1
-    karkunById.set(doc.id, data)
-    const mobile = normalizeMobile(String(data.mobile || ''))
-    if (mobile.length === 10) karkunByMobile.set(mobile, data)
-  }
-
-  const requestNameByMobile = new Map<string, string>()
-  for (const row of publicRequests) {
-    const mobile = normalizeMobile(String(row.mobile || ''))
-    const name = String(row.fullName || '').trim()
-    if (mobile.length === 10 && name) requestNameByMobile.set(mobile, name)
-  }
-
-  const resolveFullName = (row: TrainingRegistrationRecord): string => {
-    if (row.fullName.trim()) return row.fullName.trim()
-    if (row.personId) {
-      const person = karkunById.get(row.personId)
-      const name = String(person?.name || '').trim()
-      if (name) return name
-    }
-    const byMobile = karkunByMobile.get(row.verifiedMobile)
-    const mobileName = String(byMobile?.name || '').trim()
-    if (mobileName) return mobileName
-    return requestNameByMobile.get(row.verifiedMobile) ?? ''
-  }
-
-  const registrations = registrationsSnap.docs
-    .map((doc) => asRegistration((doc.data() ?? {}) as Record<string, unknown>))
-    .filter((row) => row.eventId === TRAINING_GATHERING_EVENT.id)
-    .map((row) => ({ ...row, fullName: resolveFullName(row) }))
-
-  const registrationByMobile = new Map(registrations.map((row) => [row.verifiedMobile, row]))
-
-  const ruknWise = ruknsSnap.docs
-    .filter((doc) => doc.data().status === 'active' && doc.data().isArchived !== true)
-    .map((doc) => {
-      const relatedIds = connectionsSnap.docs
-        .filter((connection) => {
-          const data = connection.data()
-          return data.ruknId === doc.id && isActiveConnection(data)
-        })
-        .map((connection) => String(connection.data().karkunId || ''))
-        .filter(Boolean)
-      const uniqueRelated = [...new Set(relatedIds)]
-      const related = uniqueRelated.length
-      const registeredPeople = uniqueRelated
-        .map((karkunId) => {
-          const person = karkunById.get(karkunId)
-          if (!person) return null
-          const mobile = normalizeMobile(String(person.mobile || ''))
-          const registration = registrationByMobile.get(mobile)
-          if (!registration) return null
-          const karkunName = String(person.name || '').trim() || registration.fullName
-          return {
-            ...toRegisteredPersonView(registration),
-            karkunName,
-          }
-        })
-        .filter((row): row is TrainingRegisteredPersonView => row !== null)
-      const registered = registeredPeople.length
+  const view = buildTrainingRegistrationAdminView({
+    karkuns: karkunsSnap.docs.map((doc) => {
+      const data = doc.data()
       return {
-        ruknId: doc.id,
-        ruknName: String(doc.data().name || doc.id),
-        related,
-        registered,
-        remaining: Math.max(0, related - registered),
-        registeredPeople,
+        id: doc.id,
+        name: String(data.name || ''),
+        mobile: String(data.mobile || ''),
+        gender: data.gender,
+        isArchived: data.isArchived,
+        archiveKind: data.archiveKind,
       }
-    })
+    }),
+    rukns: ruknsSnap.docs.map((doc) => {
+      const data = doc.data()
+      return {
+        id: doc.id,
+        name: String(data.name || doc.id),
+        status: data.status,
+        isArchived: data.isArchived,
+      }
+    }),
+    connections: connectionsSnap.docs.map((doc) => {
+      const data = doc.data()
+      return {
+        ruknId: data.ruknId,
+        karkunId: data.karkunId,
+        status: data.status,
+        assignmentStatus: data.assignmentStatus,
+        isArchived: data.isArchived,
+      }
+    }),
+    registrations: registrationsSnap.docs.map((doc) =>
+      asRegistration((doc.data() ?? {}) as Record<string, unknown>),
+    ),
+    publicRequests: requests as Array<Record<string, unknown>>,
+  })
 
-  const summary: TrainingRegistrationSummary = {
-    eligible,
-    registered: registrations.length,
-    remaining: Math.max(0, eligible - registrations.filter((row) => row.personId).length),
-    onlinePaid: registrations.filter((row) => row.paymentStatus === 'paid_online').length,
-    cashPaid: registrations.filter((row) => row.paymentStatus === 'paid_cash').length,
-    cashPending: registrations.filter((row) => row.paymentStatus === 'cash_pending').length,
-    newPersonPending: publicRequests.filter((row) => row.status === 'Pending Approval').length,
-    newPersonApproved: publicRequests.filter((row) => row.status === 'Approved').length,
-    ruknWise,
-  }
-
-  return json(200, { ok: true, summary, registrations })
+  return json(200, { ok: true, summary: view.summary, registrations: view.registrations })
 }
 
 async function handleMarkCashPaid(registrationId: string): Promise<TrainingRegistrationApiResponse> {
@@ -593,8 +518,7 @@ async function handleMarkCashPaid(registrationId: string): Promise<TrainingRegis
     return json(409, { ok: false, error: 'Only cash registrations can be marked paid here.' })
   }
   const next: TrainingRegistrationRecord = {
-    ...current,
-    paymentStatus: 'paid_cash',
+    ...applyMarkCashPaid(current),
     updatedAt: nowIso(),
   }
   await ref.set(next, { merge: true })

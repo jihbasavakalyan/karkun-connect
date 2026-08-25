@@ -53,17 +53,42 @@ export type TrainingRegistrationRecord = {
 
 export type TrainingRegisteredPersonView = {
   karkunName: string
+  gender: PublicPersonGender
   mobile: string
   registrationId: string
+  ruknNames: string[]
   registrationStatus: TrainingRegistrationStatus
   paymentMethod: TrainingPaymentMethod
   paymentStatus: TrainingPaymentStatus
+}
+
+export type TrainingRuknRelatedPersonView = {
+  karkunId: string
+  karkunName: string
+  gender: PublicPersonGender
+  mobile: string
+  listStatus: 'registered' | 'not_registered'
+  registrationId: string | null
+  registrationStatus: TrainingRegistrationStatus | null
+  paymentMethod: TrainingPaymentMethod | null
+  paymentStatus: TrainingPaymentStatus | null
+}
+
+export type TrainingRegistrationAdminRow = TrainingRegistrationRecord & {
+  gender: PublicPersonGender
+  ruknNames: string[]
 }
 
 export type TrainingRegistrationSummary = {
   eligible: number
   registered: number
   remaining: number
+  eligibleMale: number
+  registeredMale: number
+  remainingMale: number
+  eligibleFemale: number
+  registeredFemale: number
+  remainingFemale: number
   onlinePaid: number
   cashPaid: number
   cashPending: number
@@ -76,6 +101,7 @@ export type TrainingRegistrationSummary = {
     registered: number
     remaining: number
     registeredPeople: TrainingRegisteredPersonView[]
+    relatedPeople: TrainingRuknRelatedPersonView[]
   }>
 }
 

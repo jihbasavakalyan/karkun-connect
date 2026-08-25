@@ -4,6 +4,7 @@ import { ROUTES } from '@/constants/routes'
 import { AskDigitalRafeeqCard, RuknMissionControlHero, RuknMissionControlPanels, RuknTodaysVisitQueue } from '@/components/mission-control'
 import { WidgetErrorBoundary } from '@/components/mission-control/WidgetErrorBoundary'
 import { RuknFloatingActionButton } from '@/components/home'
+import { TarbiyatiIjtemaRuknHero } from '@/components/home/TarbiyatiIjtemaRuknHero'
 import { ExecutionSuccessBanner } from '@/components/execution/ExecutionSuccessBanner'
 import { CampaignExecutionProgressCard } from '@/components/execution/CampaignExecutionProgressCard'
 import { WeeklyIjtemaAttendanceOpenCard } from '@/components/execution/WeeklyIjtemaAttendanceOpenCard'
@@ -93,6 +94,7 @@ export function RuknHomePage() {
             campaignName={campaignName}
             hideSummaryChips
           />
+          <TarbiyatiIjtemaRuknHero />
           <WeeklyIjtemaAttendanceOpenCard ruknId={ruknId} />
           <CampaignExecutionProgressCard ruknId={ruknId} />
           {!postCampaign ? <RuknExecutionSummaryCards ruknId={ruknId} /> : null}
