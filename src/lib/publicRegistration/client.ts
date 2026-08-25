@@ -1,7 +1,6 @@
 import type {
   PublicLookupResult,
   PublicPersonProfile,
-  TrainingCashChoice,
   TrainingPaymentMethod,
   TrainingRegistrationAdminRow,
   TrainingRegistrationRecord,
@@ -62,7 +61,7 @@ export async function savePublicRegistrationProfile(
 export async function submitPublicRegistration(input: {
   profile: PublicPersonProfile
   paymentMethod: TrainingPaymentMethod
-  paymentStatus?: TrainingCashChoice
+  utr?: string
 }): Promise<{
   ok: true
   registration: TrainingRegistrationRecord
@@ -75,24 +74,32 @@ export async function submitPublicRegistration(input: {
   }
 }
 
-export async function fetchTrainingRegistrationAdmin(token: string): Promise<{
-  ok: true
-  summary: TrainingRegistrationSummary
-  registrations: TrainingRegistrationAdminRow[]
-}> {
+async function adminJson(
+  token: string,
+  action: string,
+  body: Record<string, unknown> = {},
+): Promise<Record<string, unknown>> {
   const response = await fetch('/api/training-registration', {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ action: 'admin_summary' }),
+    body: JSON.stringify({ action, ...body }),
   })
   const json = await readTrainingRegistrationJson(response)
   if (!response.ok || json.ok === false) {
-    throw new Error(String(json.error || 'Unable to load registration summary.'))
+    throw new Error(String(json.error || 'Unable to complete administrator action.'))
   }
-  return json as unknown as {
+  return json
+}
+
+export async function fetchTrainingRegistrationAdmin(token: string): Promise<{
+  ok: true
+  summary: TrainingRegistrationSummary
+  registrations: TrainingRegistrationAdminRow[]
+}> {
+  return (await adminJson(token, 'admin_summary')) as unknown as {
     ok: true
     summary: TrainingRegistrationSummary
     registrations: TrainingRegistrationAdminRow[]
@@ -103,17 +110,28 @@ export async function markTrainingRegistrationCashPaid(input: {
   token: string
   registrationId: string
 }): Promise<{ ok: true; registration: TrainingRegistrationRecord }> {
-  const response = await fetch('/api/training-registration', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${input.token}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ action: 'admin_mark_cash_paid', registrationId: input.registrationId }),
-  })
-  const json = await readTrainingRegistrationJson(response)
-  if (!response.ok || json.ok === false) {
-    throw new Error(String(json.error || 'Unable to mark cash paid.'))
+  return (await adminJson(input.token, 'admin_mark_cash_paid', {
+    registrationId: input.registrationId,
+  })) as unknown as { ok: true; registration: TrainingRegistrationRecord }
+}
+
+export async function confirmTrainingRegistrationUpiPaid(input: {
+  token: string
+  registrationId: string
+}): Promise<{ ok: true; registration: TrainingRegistrationRecord }> {
+  return (await adminJson(input.token, 'admin_confirm_upi_paid', {
+    registrationId: input.registrationId,
+  })) as unknown as { ok: true; registration: TrainingRegistrationRecord }
+}
+
+export async function exportTrainingRegistrationCsv(token: string): Promise<{
+  ok: true
+  csv: string
+  filename: string
+}> {
+  return (await adminJson(token, 'admin_export_csv')) as unknown as {
+    ok: true
+    csv: string
+    filename: string
   }
-  return json as unknown as { ok: true; registration: TrainingRegistrationRecord }
 }

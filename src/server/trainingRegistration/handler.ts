@@ -1,16 +1,21 @@
 import { FieldValue, type Firestore } from 'firebase-admin/firestore'
 import { getRuknClaimsAdmin } from '../ruknClaims/firebaseAdmin.js'
 import {
+  applyConfirmUpiPaid,
   applyMarkCashPaid,
   buildTrainingRegistrationAdminView,
+  buildTrainingRegistrationCsv,
   isSoftRemovedPerson,
   normalizeTrainingMobile,
+  organisationalCategoryFromPerson,
+  sanitizeUtr,
+  trainingRegistrationCsvFilename,
 } from '../../lib/publicRegistration/adminTracking.js'
 import { formatRegistrationId, TRAINING_GATHERING_EVENT } from '../../lib/publicRegistration/event.js'
 import type {
   PublicLookupCase,
   PublicPersonProfile,
-  TrainingCashChoice,
+  TrainingOrganisationalCategory,
   TrainingPaymentMethod,
   TrainingPaymentStatus,
   TrainingRegistrationRecord,
@@ -116,17 +121,56 @@ function sanitizeProfile(raw: unknown, verifiedMobile: string): PublicPersonProf
   }
 }
 
+function sanitizeRuknProfile(raw: unknown, verifiedMobile: string): PublicPersonProfile | string {
+  if (!raw || typeof raw !== 'object') return 'Profile is required.'
+  const input = raw as Record<string, unknown>
+  const name = String(input.name ?? '').trim()
+  const genderRaw = String(input.gender ?? '').trim()
+  const gender = genderRaw === 'Male' || genderRaw === 'Female' ? genderRaw : ''
+  if (name.length < 2) return 'Enter your full name.'
+  if (!gender) return 'Select gender.'
+  return {
+    name,
+    fatherHusbandName: String(input.fatherHusbandName ?? '').trim(),
+    mobile: verifiedMobile,
+    address: String(input.address ?? '').trim(),
+    education: String(input.education ?? '').trim(),
+    profession: String(input.profession ?? '').trim(),
+    gender,
+  }
+}
+
+function optionalTrimmedString(value: unknown): string | null {
+  if (typeof value !== 'string') return null
+  const trimmed = value.trim()
+  return trimmed ? trimmed : null
+}
+
 function asRegistration(data: Record<string, unknown>): TrainingRegistrationRecord {
+  const paymentMethod: TrainingPaymentMethod =
+    data.paymentMethod === 'upi' || data.paymentMethod === 'online' ? data.paymentMethod : 'cash'
   return {
     id: String(data.id || ''),
     eventId: String(data.eventId || TRAINING_GATHERING_EVENT.id),
     personId: data.personId ? String(data.personId) : null,
+    ruknId: data.ruknId ? String(data.ruknId) : null,
     candidateRequestId: data.candidateRequestId ? String(data.candidateRequestId) : null,
+    organisationalCategory:
+      data.organisationalCategory === 'rukn' ||
+      data.organisationalCategory === 'karkun' ||
+      data.organisationalCategory === 'muttafiq' ||
+      data.organisationalCategory === 'other'
+        ? data.organisationalCategory
+        : undefined,
     verifiedMobile: String(data.verifiedMobile || ''),
     fullName: String(data.fullName || data.name || '').trim(),
     registrationStatus: data.registrationStatus as TrainingRegistrationStatus,
-    paymentMethod: data.paymentMethod as TrainingPaymentMethod,
+    paymentMethod,
     paymentStatus: data.paymentStatus as TrainingPaymentStatus,
+    utr: optionalTrimmedString(data.utr),
+    paymentSubmittedAt: optionalTrimmedString(data.paymentSubmittedAt),
+    paymentVerifiedAt: optionalTrimmedString(data.paymentVerifiedAt),
+    paymentVerifiedBy: optionalTrimmedString(data.paymentVerifiedBy),
     createdAt: String(data.createdAt || ''),
     updatedAt: String(data.updatedAt || ''),
   }
@@ -178,6 +222,7 @@ type PersonHit = {
 type RuknHit = {
   id: string
   name: string
+  gender: string
 }
 
 async function findPersonByMobile(db: Firestore, mobile10: string): Promise<PersonHit | null> {
@@ -199,10 +244,23 @@ async function findActiveRuknByMobile(db: Firestore, mobile10: string): Promise<
     if (data.isArchived === true) continue
     if (String(data.status || '') !== 'active') continue
     if (normalizeMobile(String(data.mobile || '')) === mobile10) {
-      return { id: doc.id, name: String(data.name || doc.id) }
+      return { id: doc.id, name: String(data.name || doc.id), gender: String(data.gender || '') }
     }
   }
   return null
+}
+
+async function findPublicTrainingRequest(
+  db: Firestore,
+  mobile10: string,
+): Promise<Record<string, unknown> | undefined> {
+  const requestsSnap = await db.collection(SETTINGS).doc(KARKUN_REQUESTS_DOC).get()
+  const requests = Array.isArray(requestsSnap.data()?.requests) ? requestsSnap.data()!.requests : []
+  return (requests as Array<Record<string, unknown>>).find(
+    (row) =>
+      row.source === 'public_training_registration' &&
+      normalizeMobile(String(row.mobile || '')) === mobile10,
+  )
 }
 
 async function handleSession(mobile10: string): Promise<TrainingRegistrationApiResponse> {
@@ -219,16 +277,8 @@ async function handleSession(mobile10: string): Promise<TrainingRegistrationApiR
   if (existingRegistration && !existingRegistration.fullName && person) {
     existingRegistration.fullName = String(person.data.name || '').trim()
   }
-  if (existingRegistration && !existingRegistration.fullName) {
-    const requestsSnap = await admin.db.collection(SETTINGS).doc(KARKUN_REQUESTS_DOC).get()
-    const requests = Array.isArray(requestsSnap.data()?.requests) ? requestsSnap.data()!.requests : []
-    const match = (requests as Array<Record<string, unknown>>).find(
-      (row) =>
-        row.source === 'public_training_registration' &&
-        normalizeMobile(String(row.mobile || '')) === mobile10,
-    )
-    const requestName = String(match?.fullName || '').trim()
-    if (requestName) existingRegistration.fullName = requestName
+  if (existingRegistration && !existingRegistration.fullName && rukn) {
+    existingRegistration.fullName = rukn.name
   }
 
   if (person) {
@@ -236,10 +286,14 @@ async function handleSession(mobile10: string): Promise<TrainingRegistrationApiR
       person.data.category === 'Muttafiq' || person.data.category === 'Karkun'
         ? person.data.category
         : 'Karkun'
-    const lookupCase: PublicLookupCase = 'existing_person'
+    if (existingRegistration && !existingRegistration.fullName) {
+      const requestMatch = await findPublicTrainingRequest(admin.db, mobile10)
+      const requestName = String(requestMatch?.fullName || '').trim()
+      if (requestName) existingRegistration.fullName = requestName
+    }
     return json(200, {
       ok: true,
-      case: lookupCase,
+      case: 'existing_person' as PublicLookupCase,
       mobile: mobile10,
       personId: person.id,
       category,
@@ -250,22 +304,51 @@ async function handleSession(mobile10: string): Promise<TrainingRegistrationApiR
   }
 
   if (rukn) {
+    const gender = rukn.gender === 'Female' || rukn.gender === 'Male' ? rukn.gender : ''
+    if (existingRegistration && !existingRegistration.fullName) {
+      const requestMatch = await findPublicTrainingRequest(admin.db, mobile10)
+      const requestName = String(requestMatch?.fullName || '').trim()
+      if (requestName) existingRegistration.fullName = requestName
+    }
     return json(200, {
       ok: true,
-      case: 'rukn_blocked',
+      case: 'existing_rukn' as PublicLookupCase,
       mobile: mobile10,
-      profile: emptyProfile(mobile10),
+      ruknId: rukn.id,
+      category: 'Rukn',
+      profile: {
+        ...emptyProfile(mobile10),
+        name: rukn.name,
+        gender,
+      },
       existingRegistration: existingRegistration ?? null,
-      message:
-        'This mobile number belongs to an active Rukn record. It cannot be registered as a Karkun or Muttafiq.',
+      message: 'Your Rukn record was found',
     })
   }
 
+  const requestMatch = await findPublicTrainingRequest(admin.db, mobile10)
+  if (existingRegistration && !existingRegistration.fullName) {
+    const requestName = String(requestMatch?.fullName || '').trim()
+    if (requestName) existingRegistration.fullName = requestName
+  }
+
+  const requestProfile = emptyProfile(mobile10)
+  if (requestMatch) {
+    requestProfile.name = String(requestMatch.fullName || '').trim()
+    requestProfile.fatherHusbandName = String(requestMatch.fatherHusbandName || '').trim()
+    requestProfile.address = String(requestMatch.address || '').trim()
+    requestProfile.education = String(requestMatch.education || '').trim()
+    requestProfile.profession = String(requestMatch.profession || '').trim()
+    const gender = requestMatch.gender === 'Female' || requestMatch.gender === 'Male' ? requestMatch.gender : ''
+    requestProfile.gender = gender
+  }
+  if (existingRegistration?.fullName) requestProfile.name = existingRegistration.fullName
+
   return json(200, {
     ok: true,
-    case: 'new_candidate',
+    case: 'new_candidate' as PublicLookupCase,
     mobile: mobile10,
-    profile: emptyProfile(mobile10),
+    profile: requestProfile,
     existingRegistration: existingRegistration ?? null,
     message: 'Complete your information to continue.',
   })
@@ -325,7 +408,7 @@ async function upsertPendingCandidate(
       id,
       fullName: profile.name,
       mobile: mobile10,
-      gender: profile.gender || 'Male',
+      gender: profile.gender,
       area: '',
       remarks: `Public training gathering ${TRAINING_GATHERING_EVENT.id}`,
       requestingRuknId: '',
@@ -350,22 +433,15 @@ async function handleSaveProfile(
   mobile10: string,
   rawProfile: unknown,
 ): Promise<TrainingRegistrationApiResponse> {
-  const profile = sanitizeProfile(rawProfile, mobile10)
-  if (typeof profile === 'string') return json(400, { ok: false, error: profile })
-
   const admin = getRuknClaimsAdmin()
   const [person, rukn] = await Promise.all([
     findPersonByMobile(admin.db, mobile10),
     findActiveRuknByMobile(admin.db, mobile10),
   ])
-  if (!person && rukn) {
-    return json(409, {
-      ok: false,
-      code: 'RUKN_MOBILE',
-      error:
-        'This mobile number belongs to an active Rukn record. It cannot be registered as a Karkun or Muttafiq.',
-    })
-  }
+  const profile = !person && rukn
+    ? sanitizeRuknProfile(rawProfile, mobile10)
+    : sanitizeProfile(rawProfile, mobile10)
+  if (typeof profile === 'string') return json(400, { ok: false, error: profile })
   if (person) {
     await updatePersonAllowedFields(person.id, profile)
     return json(200, { ok: true, savedToMaster: true })
@@ -377,9 +453,12 @@ async function handleSubmit(
   mobile10: string,
   rawProfile: unknown,
   paymentMethodRaw: unknown,
-  paymentStatusRaw: unknown,
+  utrRaw: unknown,
 ): Promise<TrainingRegistrationApiResponse> {
-  const paymentMethod = paymentMethodRaw === 'online' || paymentMethodRaw === 'cash' ? paymentMethodRaw : null
+  const paymentMethod =
+    paymentMethodRaw === 'upi' || paymentMethodRaw === 'online' || paymentMethodRaw === 'cash'
+      ? paymentMethodRaw
+      : null
   if (!paymentMethod) {
     return json(400, { ok: false, error: 'Choose a payment method.' })
   }
@@ -388,17 +467,15 @@ async function handleSubmit(
       ok: false,
       code: 'RAZORPAY_NOT_AVAILABLE',
       error:
-        'Online payment is not available yet. Please choose a cash payment option.',
+        'Online gateway payment is not available yet. Please pay by UPI or cash.',
     })
   }
 
-  const requestedCash: TrainingCashChoice =
-    paymentStatusRaw === 'paid_cash' ? 'paid_cash' : 'cash_pending'
-
-  const profile = sanitizeProfile(rawProfile, mobile10)
-  if (typeof profile === 'string') return json(400, { ok: false, error: profile })
-  if (!profile.gender) {
-    return json(400, { ok: false, error: 'Select gender. This is required for the Person record.' })
+  let utr: string | null = null
+  if (paymentMethod === 'upi') {
+    const sanitized = sanitizeUtr(utrRaw)
+    if (!sanitized.ok) return json(400, { ok: false, error: sanitized.error })
+    utr = sanitized.utr
   }
 
   const admin = getRuknClaimsAdmin()
@@ -406,56 +483,85 @@ async function handleSubmit(
     findPersonByMobile(admin.db, mobile10),
     findActiveRuknByMobile(admin.db, mobile10),
   ])
-  if (!person && rukn) {
-    return json(409, {
-      ok: false,
-      code: 'RUKN_MOBILE',
-      error:
-        'This mobile number belongs to an active Rukn record. It cannot be registered as a Karkun or Muttafiq.',
-    })
+  const profile = !person && rukn
+    ? sanitizeRuknProfile(rawProfile, mobile10)
+    : sanitizeProfile(rawProfile, mobile10)
+  if (typeof profile === 'string') return json(400, { ok: false, error: profile })
+  if (!profile.gender) {
+    return json(400, { ok: false, error: 'Select gender.' })
   }
 
   let personId: string | null = person?.id ?? null
+  let ruknId: string | null = !person && rukn ? rukn.id : null
   let candidateRequestId: string | null = null
+  let organisationalCategory: TrainingOrganisationalCategory = 'other'
   if (person) {
     await updatePersonAllowedFields(person.id, profile)
+    organisationalCategory = organisationalCategoryFromPerson(person.data)
+  } else if (rukn) {
+    organisationalCategory = 'rukn'
   } else {
     candidateRequestId = await upsertPendingCandidate(mobile10, profile)
+    organisationalCategory = 'other'
   }
 
   const id = formatRegistrationId(mobile10)
   const ref = admin.db.collection(COLLECTION).doc(id)
   const existing = await ref.get()
   const existingData = existing.exists ? (existing.data() ?? {}) as Record<string, unknown> : null
+  const existingRecord = existingData ? asRegistration(existingData) : null
   const timestamp = nowIso()
-  const registrationStatus: TrainingRegistrationStatus = 'complete'
-  const alreadyPaidCash = existingData?.paymentStatus === 'paid_cash'
-  const paymentStatus: TrainingPaymentStatus = alreadyPaidCash ? 'paid_cash' : requestedCash
+  const alreadyPaidCash = existingRecord?.paymentStatus === 'paid_cash'
+  const alreadyPaidUpi = existingRecord?.paymentStatus === 'paid_upi'
+
+  let nextMethod: TrainingPaymentMethod = paymentMethod
+  let nextStatus: TrainingPaymentStatus = paymentMethod === 'upi' ? 'upi_pending' : 'cash_pending'
+  let nextUtr = paymentMethod === 'upi' ? utr : existingRecord?.utr ?? null
+  let paymentSubmittedAt = paymentMethod === 'upi' ? timestamp : existingRecord?.paymentSubmittedAt ?? null
+  const paymentVerifiedAt = existingRecord?.paymentVerifiedAt ?? null
+  const paymentVerifiedBy = existingRecord?.paymentVerifiedBy ?? null
+  if (alreadyPaidCash) {
+    nextMethod = 'cash'
+    nextStatus = 'paid_cash'
+    nextUtr = existingRecord?.utr ?? null
+    paymentSubmittedAt = existingRecord?.paymentSubmittedAt ?? null
+  } else if (alreadyPaidUpi) {
+    nextMethod = 'upi'
+    nextStatus = 'paid_upi'
+    nextUtr = existingRecord?.utr ?? utr
+    paymentSubmittedAt = existingRecord?.paymentSubmittedAt ?? paymentSubmittedAt
+  }
+
   const record: TrainingRegistrationRecord = {
     id,
     eventId: TRAINING_GATHERING_EVENT.id,
     personId,
+    ruknId,
     candidateRequestId: candidateRequestId ?? (existingData?.candidateRequestId
       ? String(existingData.candidateRequestId)
       : null),
+    organisationalCategory,
     verifiedMobile: mobile10,
     fullName: profile.name,
-    registrationStatus,
-    paymentMethod: 'cash',
-    paymentStatus,
+    registrationStatus: 'complete',
+    paymentMethod: nextMethod,
+    paymentStatus: nextStatus,
+    utr: nextUtr,
+    paymentSubmittedAt,
+    paymentVerifiedAt,
+    paymentVerifiedBy,
     createdAt: existingData ? String(existingData.createdAt || timestamp) : timestamp,
     updatedAt: timestamp,
   }
-  if (personId) record.personId = personId
   await ref.set(record, { merge: true })
   return json(200, {
     ok: true,
     registration: record,
-    newCandidate: !person,
+    newCandidate: !person && !rukn,
   })
 }
 
-async function handleAdminSummary(): Promise<TrainingRegistrationApiResponse> {
+async function loadAdminView() {
   const admin = getRuknClaimsAdmin()
   const [registrationsSnap, karkunsSnap, ruknsSnap, requestsSnap, connectionsSnap] = await Promise.all([
     admin.db.collection(COLLECTION).get(),
@@ -466,7 +572,7 @@ async function handleAdminSummary(): Promise<TrainingRegistrationApiResponse> {
   ])
 
   const requests = Array.isArray(requestsSnap.data()?.requests) ? requestsSnap.data()!.requests : []
-  const view = buildTrainingRegistrationAdminView({
+  return buildTrainingRegistrationAdminView({
     karkuns: karkunsSnap.docs.map((doc) => {
       const data = doc.data()
       return {
@@ -474,6 +580,7 @@ async function handleAdminSummary(): Promise<TrainingRegistrationApiResponse> {
         name: String(data.name || ''),
         mobile: String(data.mobile || ''),
         gender: data.gender,
+        category: data.category,
         isArchived: data.isArchived,
         archiveKind: data.archiveKind,
       }
@@ -485,6 +592,8 @@ async function handleAdminSummary(): Promise<TrainingRegistrationApiResponse> {
         name: String(data.name || doc.id),
         status: data.status,
         isArchived: data.isArchived,
+        gender: data.gender,
+        mobile: data.mobile,
       }
     }),
     connections: connectionsSnap.docs.map((doc) => {
@@ -502,11 +611,26 @@ async function handleAdminSummary(): Promise<TrainingRegistrationApiResponse> {
     ),
     publicRequests: requests as Array<Record<string, unknown>>,
   })
+}
 
+async function handleAdminSummary(): Promise<TrainingRegistrationApiResponse> {
+  const view = await loadAdminView()
   return json(200, { ok: true, summary: view.summary, registrations: view.registrations })
 }
 
-async function handleMarkCashPaid(registrationId: string): Promise<TrainingRegistrationApiResponse> {
+async function handleAdminExportCsv(): Promise<TrainingRegistrationApiResponse> {
+  const view = await loadAdminView()
+  return json(200, {
+    ok: true,
+    csv: buildTrainingRegistrationCsv(view.registrations),
+    filename: trainingRegistrationCsvFilename(),
+  })
+}
+
+async function handleMarkCashPaid(
+  registrationId: string,
+  verifiedBy: string,
+): Promise<TrainingRegistrationApiResponse> {
   const id = registrationId.trim()
   if (!id) return json(400, { ok: false, error: 'Registration ID is required.' })
   const admin = getRuknClaimsAdmin()
@@ -517,13 +641,67 @@ async function handleMarkCashPaid(registrationId: string): Promise<TrainingRegis
   if (current.paymentMethod !== 'cash') {
     return json(409, { ok: false, error: 'Only cash registrations can be marked paid here.' })
   }
+  const timestamp = nowIso()
   const next: TrainingRegistrationRecord = {
     ...applyMarkCashPaid(current),
-    updatedAt: nowIso(),
+    paymentVerifiedAt: current.paymentVerifiedAt ?? timestamp,
+    paymentVerifiedBy: current.paymentVerifiedBy ?? verifiedBy,
+    updatedAt: timestamp,
   }
-  await ref.set(next, { merge: true })
+  await ref.set(
+    {
+      paymentStatus: next.paymentStatus,
+      paymentVerifiedAt: next.paymentVerifiedAt,
+      paymentVerifiedBy: next.paymentVerifiedBy,
+      updatedAt: timestamp,
+    },
+    { merge: true },
+  )
   return json(200, { ok: true, registration: next })
 }
+
+async function handleConfirmUpiPaid(
+  registrationId: string,
+  verifiedBy: string,
+): Promise<TrainingRegistrationApiResponse> {
+  const id = registrationId.trim()
+  if (!id) return json(400, { ok: false, error: 'Registration ID is required.' })
+  const admin = getRuknClaimsAdmin()
+  const ref = admin.db.collection(COLLECTION).doc(id)
+  const snap = await ref.get()
+  if (!snap.exists) return json(404, { ok: false, error: 'Registration not found.' })
+  const current = asRegistration((snap.data() ?? {}) as Record<string, unknown>)
+  if (current.paymentMethod !== 'upi') {
+    return json(409, { ok: false, error: 'Only UPI registrations can be confirmed here.' })
+  }
+  if (current.paymentStatus !== 'upi_pending' && current.paymentStatus !== 'paid_upi') {
+    return json(409, { ok: false, error: 'This UPI payment cannot be confirmed.' })
+  }
+  const timestamp = nowIso()
+  const next: TrainingRegistrationRecord = {
+    ...applyConfirmUpiPaid(current),
+    paymentVerifiedAt: current.paymentVerifiedAt ?? timestamp,
+    paymentVerifiedBy: current.paymentVerifiedBy ?? verifiedBy,
+    updatedAt: timestamp,
+  }
+  await ref.set(
+    {
+      paymentStatus: next.paymentStatus,
+      paymentVerifiedAt: next.paymentVerifiedAt,
+      paymentVerifiedBy: next.paymentVerifiedBy,
+      updatedAt: timestamp,
+    },
+    { merge: true },
+  )
+  return json(200, { ok: true, registration: next })
+}
+
+const ADMIN_ACTIONS = new Set([
+  'admin_summary',
+  'admin_mark_cash_paid',
+  'admin_confirm_upi_paid',
+  'admin_export_csv',
+])
 
 export async function handleTrainingRegistration(
   input: TrainingRegistrationApiRequest,
@@ -550,12 +728,16 @@ export async function handleTrainingRegistration(
   const identity = identityOrError
 
   try {
-    if (action === 'admin_summary' || action === 'admin_mark_cash_paid') {
+    if (ADMIN_ACTIONS.has(action)) {
       if (identity.role !== 'administrator') {
         return json(403, { ok: false, error: 'Administrator role required.' })
       }
       if (action === 'admin_summary') return handleAdminSummary()
-      return handleMarkCashPaid(String(body.registrationId || ''))
+      if (action === 'admin_export_csv') return handleAdminExportCsv()
+      if (action === 'admin_confirm_upi_paid') {
+        return handleConfirmUpiPaid(String(body.registrationId || ''), identity.uid)
+      }
+      return handleMarkCashPaid(String(body.registrationId || ''), identity.uid)
     }
 
     const mobileOrError = requireVerifiedMobile(identity)
@@ -565,7 +747,7 @@ export async function handleTrainingRegistration(
     if (action === 'session') return handleSession(mobile10)
     if (action === 'save_profile') return handleSaveProfile(mobile10, body.profile)
     if (action === 'submit') {
-      return handleSubmit(mobile10, body.profile, body.paymentMethod, body.paymentStatus)
+      return handleSubmit(mobile10, body.profile, body.paymentMethod, body.utr)
     }
 
     return json(400, { ok: false, error: 'Unknown action.' })

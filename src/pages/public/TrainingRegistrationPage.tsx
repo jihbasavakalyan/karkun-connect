@@ -1,8 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { JihLogoMark } from '@/components/public-registration/JihLogoMark'
 import { OtpBoxes } from '@/components/public-registration/OtpBoxes'
-import { TRAINING_GATHERING_EVENT } from '@/lib/publicRegistration/event'
-import { trainingPaymentStatusLabel } from '@/lib/publicRegistration/labels'
+import { TARBIYATI_IJTEMA_UPI_QR_SRC, TRAINING_GATHERING_EVENT } from '@/lib/publicRegistration/event'
+import {
+  trainingAcknowledgementPaymentLabel,
+  trainingOrganisationalCategoryLabel,
+  trainingPaymentMethodLabel,
+} from '@/lib/publicRegistration/labels'
 import {
   lookupPublicRegistration,
   savePublicRegistrationProfile,
@@ -13,7 +17,7 @@ import type {
   PublicLookupCase,
   PublicPersonProfile,
   PublicRegistrationStep,
-  TrainingCashChoice,
+  TrainingPaymentMethod,
   TrainingRegistrationRecord,
 } from '@/lib/publicRegistration/types'
 import { isValidMobileFormat, normalizeMobile } from '@/lib/mobileValidation'
@@ -32,7 +36,6 @@ const emptyProfile = (mobile = ''): PublicPersonProfile => ({
 const STEPS: PublicRegistrationStep[] = ['mobile', 'otp', 'profile', 'payment', 'confirmation']
 
 function stepIndex(step: PublicRegistrationStep): number {
-  if (step === 'rukn_blocked') return 2
   return Math.max(0, STEPS.indexOf(step))
 }
 
@@ -45,7 +48,8 @@ export function TrainingRegistrationPage() {
   const [resendIn, setResendIn] = useState(0)
   const [lookupCase, setLookupCase] = useState<PublicLookupCase | null>(null)
   const [profile, setProfile] = useState<PublicPersonProfile>(emptyProfile())
-  const [cashChoice, setCashChoice] = useState<TrainingCashChoice | null>(null)
+  const [paymentMethod, setPaymentMethod] = useState<Exclude<TrainingPaymentMethod, 'online'> | null>(null)
+  const [utr, setUtr] = useState('')
   const [registration, setRegistration] = useState<TrainingRegistrationRecord | null>(null)
   const [savedNotice, setSavedNotice] = useState('')
 
@@ -101,14 +105,11 @@ export function TrainingRegistrationPage() {
       })
       if (lookup.existingRegistration) {
         setRegistration(lookup.existingRegistration)
-        setCashChoice(
-          lookup.existingRegistration.paymentStatus === 'paid_cash' ? 'paid_cash' : 'cash_pending',
+        setPaymentMethod(
+          lookup.existingRegistration.paymentMethod === 'upi' ? 'upi' : 'cash',
         )
+        setUtr(lookup.existingRegistration.utr ?? '')
         setStep('confirmation')
-        return
-      }
-      if (lookup.case === 'rukn_blocked') {
-        setStep('rukn_blocked')
         return
       }
       setStep('profile')
@@ -138,16 +139,20 @@ export function TrainingRegistrationPage() {
 
   const completeRegistration = async () => {
     setError('')
-    if (!cashChoice) {
-      setError('Choose a cash payment option.')
+    if (!paymentMethod) {
+      setError('Choose a payment method.')
+      return
+    }
+    if (paymentMethod === 'upi' && !utr.trim()) {
+      setError('Enter your UTR / Transaction Reference Number.')
       return
     }
     setBusy(true)
     try {
       const result = await submitPublicRegistration({
         profile,
-        paymentMethod: 'cash',
-        paymentStatus: cashChoice,
+        paymentMethod,
+        utr: paymentMethod === 'upi' ? utr : undefined,
       })
       setRegistration(result.registration)
       setLookupCase(result.newCandidate ? 'new_candidate' : lookupCase)
@@ -165,7 +170,8 @@ export function TrainingRegistrationPage() {
     setError('')
     setLookupCase(null)
     setRegistration(null)
-    setCashChoice(null)
+    setPaymentMethod(null)
+    setUtr('')
     setStep('mobile')
   }
 
@@ -280,19 +286,6 @@ export function TrainingRegistrationPage() {
             </div>
           )}
 
-          {step === 'rukn_blocked' && (
-            <div className="space-y-4 text-center">
-              <h1 className="text-2xl font-semibold text-primary">Registration not available</h1>
-              <p>
-                This mobile number belongs to an active Rukn record. It is not converted into a Karkun
-                or Muttafiq. Please contact the Administrator.
-              </p>
-              <button type="button" className="text-primary underline" onClick={() => void changeMobile()}>
-                Use a different mobile number
-              </button>
-            </div>
-          )}
-
           {step === 'profile' && (
             <form
               className="space-y-4"
@@ -302,9 +295,13 @@ export function TrainingRegistrationPage() {
               }}
             >
               <h1 className="text-2xl font-semibold text-primary">
-                {lookupCase === 'existing_person' ? 'Your record was found' : 'Complete your information'}
+                {lookupCase === 'existing_person' || lookupCase === 'existing_rukn'
+                  ? 'Your record was found'
+                  : 'Complete your information'}
               </h1>
-              {lookupCase === 'existing_person' ? (
+              {lookupCase === 'existing_rukn' ? (
+                <p>Your Rukn record was found. Confirm your details to register for this event. A Karkun record will not be created.</p>
+              ) : lookupCase === 'existing_person' ? (
                 <p>Review and complete your details. You do not need to re-enter information that is already present.</p>
               ) : (
                 <p>Your information will be sent to the Admin for approval after you finish registration.</p>
@@ -344,6 +341,10 @@ export function TrainingRegistrationPage() {
                   }
                   className="w-full rounded-2xl border border-[#e5e7de] bg-[#fbfaf6] px-4 py-3"
                   required
+                  disabled={
+                    (lookupCase === 'existing_person' || lookupCase === 'existing_rukn') &&
+                    (profile.gender === 'Male' || profile.gender === 'Female')
+                  }
                 >
                   <option value="">Select</option>
                   <option value="Male">Male</option>
@@ -383,33 +384,71 @@ export function TrainingRegistrationPage() {
                 ₹{TRAINING_GATHERING_EVENT.feeInr} Registration Fee
               </h1>
               {savedNotice ? <p className="rounded-2xl bg-[#d8f3dc] px-4 py-3 text-sm text-primary">{savedNotice}</p> : null}
+              <button
+                type="button"
+                onClick={() => setPaymentMethod('upi')}
+                className={paymentCardClass(paymentMethod === 'upi')}
+              >
+                <strong>UPI Payment</strong>
+                <span className="mt-1 block text-sm">
+                  Scan the official QR and pay ₹{TRAINING_GATHERING_EVENT.feeInr}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setPaymentMethod('cash')}
+                className={paymentCardClass(paymentMethod === 'cash')}
+              >
+                <strong>Cash</strong>
+                <span className="mt-1 block text-sm">
+                  Pay ₹{TRAINING_GATHERING_EVENT.feeInr} in cash. Admin will mark it paid.
+                </span>
+              </button>
               <div className={paymentCardClass(false, true)} aria-disabled="true">
-                <strong>Online Payment</strong>
+                <strong>Razorpay / Online Gateway</strong>
                 <span className="mt-1 block text-sm">Not available yet</span>
               </div>
               <p className="text-sm text-slate-600">
-                Online payment is not available yet. Please choose a cash payment option.
+                Online gateway payment is not available yet. Please pay by UPI or cash.
               </p>
-              <button
-                type="button"
-                onClick={() => setCashChoice('cash_pending')}
-                className={paymentCardClass(cashChoice === 'cash_pending')}
-              >
-                <strong>Cash Payment Pending</strong>
-                <span className="mt-1 block text-sm">Pay ₹{TRAINING_GATHERING_EVENT.feeInr} at the Ijtema</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setCashChoice('paid_cash')}
-                className={paymentCardClass(cashChoice === 'paid_cash')}
-              >
-                <strong>Cash Paid</strong>
-                <span className="mt-1 block text-sm">₹{TRAINING_GATHERING_EVENT.feeInr} paid in cash</span>
-              </button>
+              {paymentMethod === 'upi' ? (
+                <div className="space-y-4 rounded-2xl border border-[#e5e7de] bg-[#fbfaf6] p-4">
+                  <p className="text-sm font-medium text-slate-800">
+                    Scan this QR code to pay ₹{TRAINING_GATHERING_EVENT.feeInr} for Tarbiyati Ijtema registration.
+                  </p>
+                  <div className="mx-auto w-full max-w-[22rem]">
+                    <img
+                      src={TARBIYATI_IJTEMA_UPI_QR_SRC}
+                      alt="Official UPI QR code for Tarbiyati Ijtema registration"
+                      className="h-auto w-full object-contain"
+                    />
+                  </div>
+                  <p className="text-sm text-slate-700">
+                    After payment, enter your UTR / Transaction Reference Number.
+                  </p>
+                  <label className="block">
+                    <span className="mb-2 block text-sm font-medium text-slate-800">
+                      UTR / Transaction Reference Number
+                    </span>
+                    <input
+                      value={utr}
+                      onChange={(event) => setUtr(event.target.value)}
+                      placeholder="Enter UTR / Transaction Reference Number"
+                      autoComplete="off"
+                      className="w-full rounded-2xl border border-[#e5e7de] bg-white px-4 py-3 text-slate-900 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                      required
+                    />
+                  </label>
+                  <p className="text-sm text-slate-600">
+                    A payment screenshot is optional. Screenshot upload is not available in this
+                    registration yet. Admin will verify the payment using your UTR.
+                  </p>
+                </div>
+              ) : null}
               {error ? <p className="text-sm text-red-700">{error}</p> : null}
               <button
                 type="button"
-                disabled={busy || !cashChoice}
+                disabled={busy || !paymentMethod || (paymentMethod === 'upi' && !utr.trim())}
                 onClick={() => void completeRegistration()}
                 className="w-full rounded-2xl bg-primary py-3.5 text-base font-semibold text-white disabled:opacity-60"
               >
@@ -445,7 +484,12 @@ export function TrainingRegistrationPage() {
                   </strong>
                 </p>
                 <p className="mt-3">
-                  <span className="text-sm text-slate-500">Event</span>
+                  <span className="text-sm text-slate-500">Registration ID</span>
+                  <br />
+                  <strong className="break-all">{registration.id}</strong>
+                </p>
+                <p className="mt-3">
+                  <span className="text-sm text-slate-500">Date</span>
                   <br />
                   {TRAINING_GATHERING_EVENT.dateLabel}
                 </p>
@@ -457,14 +501,32 @@ export function TrainingRegistrationPage() {
                   {TRAINING_GATHERING_EVENT.city}
                 </p>
                 <p className="mt-3">
-                  <span className="text-sm text-slate-500">Registration ID</span>
+                  <span className="text-sm text-slate-500">Category</span>
                   <br />
-                  <strong className="break-all">{registration.id}</strong>
+                  <strong>
+                    {registration.organisationalCategory
+                      ? trainingOrganisationalCategoryLabel(registration.organisationalCategory)
+                      : lookupCase === 'existing_rukn'
+                        ? 'Rukn'
+                        : lookupCase === 'existing_person'
+                          ? 'Karkun / Muttafiq'
+                          : 'Other'}
+                  </strong>
+                </p>
+                <p className="mt-3">
+                  <span className="text-sm text-slate-500">Gender</span>
+                  <br />
+                  <strong>{profile.gender || '—'}</strong>
+                </p>
+                <p className="mt-3">
+                  <span className="text-sm text-slate-500">Payment Method</span>
+                  <br />
+                  <strong>{trainingPaymentMethodLabel(registration.paymentMethod)}</strong>
                 </p>
                 <p className="mt-3">
                   <span className="text-sm text-slate-500">Payment Status</span>
                   <br />
-                  <strong>{trainingPaymentStatusLabel(registration.paymentStatus)}</strong>
+                  <strong>{trainingAcknowledgementPaymentLabel(registration.paymentStatus)}</strong>
                 </p>
               </div>
             </div>

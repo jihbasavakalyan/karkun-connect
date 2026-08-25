@@ -16,6 +16,7 @@ import { resetFirestoreClientForTests } from '@/lib/firebase/firestore'
 
 console.log('▶ collection constants')
 {
+  assert.equal(FIRESTORE_COLLECTIONS.trainingRegistrations, 'trainingRegistrations')
   assert.equal(FIRESTORE_COLLECTIONS.connections, 'connections')
   assert.equal(FIRESTORE_COLLECTIONS.followUps, 'followUps')
   assert.equal(FIRESTORE_COLLECTIONS.assignmentReviews, 'assignmentReviews')

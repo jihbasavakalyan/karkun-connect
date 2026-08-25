@@ -8,6 +8,7 @@ export const config = {
     'src/lib/publicRegistration/event.ts',
     'src/lib/publicRegistration/types.ts',
     'src/lib/publicRegistration/adminTracking.ts',
+    'src/lib/publicRegistration/labels.ts',
   ],
   api: {
     bodyParser: {

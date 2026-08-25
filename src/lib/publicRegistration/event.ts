@@ -13,6 +13,9 @@ export const TRAINING_GATHERING_EVENT = {
   feeInr: 100,
 } as const
 
+/** Official supplied UPI QR artwork — served as-is from public/branding. */
+export const TARBIYATI_IJTEMA_UPI_QR_SRC = '/branding/tarbiyati-ijtema-upi-qr.jpeg'
+
 export type TrainingGatheringEventId = typeof TRAINING_GATHERING_EVENT.id
 
 export function formatRegistrationId(mobile10: string): string {
