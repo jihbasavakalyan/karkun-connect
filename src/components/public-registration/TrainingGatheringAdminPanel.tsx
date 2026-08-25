@@ -4,7 +4,7 @@ import {
   confirmTrainingRegistrationUpiPaid,
   exportTrainingRegistrationCsv,
   fetchTrainingRegistrationAdmin,
-  markTrainingRegistrationCashPaid,
+  setTrainingOnlinePaymentEnabled,
 } from '@/lib/publicRegistration/client'
 import { TRAINING_GATHERING_EVENT } from '@/lib/publicRegistration/event'
 import {
@@ -56,6 +56,7 @@ export function TrainingGatheringAdminPanel() {
   const [search, setSearch] = useState('')
   const [filters, setFilters] = useState<PeopleFilters>(EMPTY_FILTERS)
   const [expandedRuknId, setExpandedRuknId] = useState('')
+  const [onlineBusy, setOnlineBusy] = useState(false)
 
   const load = async () => {
     const token = await getFirebaseAuth().currentUser?.getIdToken()
@@ -95,19 +96,26 @@ export function TrainingGatheringAdminPanel() {
     }
   }
 
-  const markPaid = (registrationId: string) =>
-    withAdminToken(
-      registrationId,
-      (token) => markTrainingRegistrationCashPaid({ token, registrationId }),
-      'Unable to mark paid.',
-    )
-
   const confirmUpi = (registrationId: string) =>
     withAdminToken(
       registrationId,
       (token) => confirmTrainingRegistrationUpiPaid({ token, registrationId }),
       'Unable to confirm UPI payment.',
     )
+
+  const setOnlinePayment = async (onlinePaymentEnabled: boolean) => {
+    const token = await getFirebaseAuth().currentUser?.getIdToken()
+    if (!token) return
+    setOnlineBusy(true)
+    try {
+      await setTrainingOnlinePaymentEnabled({ token, onlinePaymentEnabled })
+      await load()
+    } catch (toggleError) {
+      setError(toggleError instanceof Error ? toggleError.message : 'Unable to update online payment.')
+    } finally {
+      setOnlineBusy(false)
+    }
+  }
 
   const exportCsv = async () => {
     const token = await getFirebaseAuth().currentUser?.getIdToken()
@@ -191,8 +199,29 @@ export function TrainingGatheringAdminPanel() {
             <Stat label="UPI Pending" value={summary.upiPending} />
           </div>
           <p className="mt-3 rounded-lg bg-surface-muted px-3 py-2 text-sm text-secondary">
-            Razorpay / Online Gateway: Unavailable
+            Razorpay remains deferred. Online Payment uses the official UPI QR.
           </p>
+          <div className="mt-3 flex flex-col gap-2 rounded-lg border border-border px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm font-medium text-text-heading">Online Payment</p>
+              <p className="text-xs text-secondary">
+                {summary.onlinePaymentEnabled === false
+                  ? 'Currently unavailable to public registrants.'
+                  : 'Public registrants can pay ₹100 using UPI.'}
+              </p>
+            </div>
+            <PrimaryButton
+              type="button"
+              disabled={onlineBusy}
+              onClick={() => void setOnlinePayment(summary.onlinePaymentEnabled === false)}
+            >
+              {onlineBusy
+                ? 'Saving…'
+                : summary.onlinePaymentEnabled === false
+                  ? 'Enable Online Payment'
+                  : 'Disable Online Payment'}
+            </PrimaryButton>
+          </div>
           <div className="mt-4 overflow-x-auto">
             <table className="min-w-full text-left text-sm">
               <thead>
@@ -244,7 +273,7 @@ export function TrainingGatheringAdminPanel() {
           <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             <label className="block sm:col-span-2 lg:col-span-3">
               <span className="mb-1 block text-xs font-medium text-secondary">
-                Search name, mobile, registration ID, or UTR
+                Search name, mobile, registration ID, UTR, or cash collector
               </span>
               <input
                 value={search}
@@ -335,14 +364,8 @@ export function TrainingGatheringAdminPanel() {
         <h3 className="text-sm font-semibold uppercase tracking-wide text-secondary">
           Payment queues
         </h3>
-        <PaymentQueue
-          title="Cash Pending"
-          rows={cashPending}
-          actionLabel="Mark Paid"
-          busyId={busyId}
-          onAction={(id) => void markPaid(id)}
-        />
-        <PaymentQueue title="Cash Paid" rows={cashPaid} />
+        <PaymentQueue title="Cash Pending" rows={cashPending} showCashCollector />
+        <PaymentQueue title="Cash Paid" rows={cashPaid} showCashCollector />
         <PaymentQueue
           title="UPI Pending"
           rows={upiPending}
@@ -397,6 +420,7 @@ function PaymentQueue({
   busyId,
   onAction,
   showUpiEvidence = false,
+  showCashCollector = false,
 }: {
   title: string
   rows: TrainingRegistrationAdminRow[]
@@ -404,6 +428,7 @@ function PaymentQueue({
   busyId?: string
   onAction?: (registrationId: string) => void
   showUpiEvidence?: boolean
+  showCashCollector?: boolean
 }) {
   return (
     <div className="rounded-lg border border-border px-3 py-3">
@@ -424,6 +449,12 @@ function PaymentQueue({
                 <p className="font-medium">{paymentQueueTitle(row.paymentStatus, row.fullName)}</p>
                 <p className="text-xs text-secondary">{row.id}</p>
                 <p className="text-xs text-secondary">{row.verifiedMobile}</p>
+                {showCashCollector && row.cashPaidToName ? (
+                  <p className="text-xs text-secondary">Cash Paid To: {row.cashPaidToName}</p>
+                ) : null}
+                {showUpiEvidence && row.utr ? (
+                  <p className="text-xs text-secondary">UTR: {row.utr}</p>
+                ) : null}
                 {showUpiEvidence ? (
                   <dl className="mt-2 grid grid-cols-1 gap-1 text-xs sm:grid-cols-2">
                     <Detail label="Gender" value={row.gender || '—'} />
@@ -588,6 +619,7 @@ function PersonDetail({ row }: { row: TrainingRegistrationAdminRow }) {
       />
       <Detail label="Payment Method" value={trainingPaymentMethodLabel(row.paymentMethod)} />
       <Detail label="Payment Status" value={trainingPaymentStatusLabel(row.paymentStatus)} />
+      <Detail label="Cash Paid To" value={row.cashPaidToName || '—'} />
       <Detail label="UTR" value={row.utr || '—'} />
       <Detail label="Payment Submitted At" value={row.paymentSubmittedAt || '—'} />
       <Detail label="Payment Verified At" value={row.paymentVerifiedAt || '—'} />

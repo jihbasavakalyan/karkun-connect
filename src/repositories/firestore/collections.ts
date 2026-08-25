@@ -46,6 +46,8 @@ export const FIRESTORE_DOCS = {
   karkunRequests: 'karkunRequests',
   /** BATCH-06A — Rukn → Admin one-way internal messages (Admin Inbox). */
   ruknAdminMessages: 'ruknAdminMessages',
+  /** Tarbiyati Ijtema operational flags — existing settings collection, not a new SoT. */
+  trainingRegistration: 'trainingRegistration',
 } as const
 
 export type FirestoreDocumentMeta = {

@@ -5,7 +5,6 @@ import { TARBIYATI_IJTEMA_UPI_QR_SRC, TRAINING_GATHERING_EVENT } from '@/lib/pub
 import {
   trainingAcknowledgementPaymentLabel,
   trainingOrganisationalCategoryLabel,
-  trainingPaymentMethodLabel,
 } from '@/lib/publicRegistration/labels'
 import {
   lookupPublicRegistration,
@@ -17,7 +16,8 @@ import type {
   PublicLookupCase,
   PublicPersonProfile,
   PublicRegistrationStep,
-  TrainingPaymentMethod,
+  TrainingCashCollector,
+  TrainingPublicPaymentChoice,
   TrainingRegistrationRecord,
 } from '@/lib/publicRegistration/types'
 import { isValidMobileFormat, normalizeMobile } from '@/lib/mobileValidation'
@@ -48,7 +48,10 @@ export function TrainingRegistrationPage() {
   const [resendIn, setResendIn] = useState(0)
   const [lookupCase, setLookupCase] = useState<PublicLookupCase | null>(null)
   const [profile, setProfile] = useState<PublicPersonProfile>(emptyProfile())
-  const [paymentMethod, setPaymentMethod] = useState<Exclude<TrainingPaymentMethod, 'online'> | null>(null)
+  const [paymentChoice, setPaymentChoice] = useState<TrainingPublicPaymentChoice | null>(null)
+  const [onlinePaymentEnabled, setOnlinePaymentEnabled] = useState(true)
+  const [cashCollectors, setCashCollectors] = useState<TrainingCashCollector[]>([])
+  const [cashPaidToId, setCashPaidToId] = useState('')
   const [utr, setUtr] = useState('')
   const [registration, setRegistration] = useState<TrainingRegistrationRecord | null>(null)
   const [savedNotice, setSavedNotice] = useState('')
@@ -98,6 +101,8 @@ export function TrainingRegistrationPage() {
     try {
       const lookup = await lookupPublicRegistration()
       setLookupCase(lookup.case)
+      setOnlinePaymentEnabled(lookup.onlinePaymentEnabled !== false)
+      setCashCollectors(lookup.cashCollectors ?? [])
       setProfile({
         ...emptyProfile(lookup.mobile),
         ...lookup.profile,
@@ -105,10 +110,8 @@ export function TrainingRegistrationPage() {
       })
       if (lookup.existingRegistration) {
         setRegistration(lookup.existingRegistration)
-        setPaymentMethod(
-          lookup.existingRegistration.paymentMethod === 'upi' ? 'upi' : 'cash',
-        )
         setUtr(lookup.existingRegistration.utr ?? '')
+        setCashPaidToId(lookup.existingRegistration.cashPaidToId ?? '')
         setStep('confirmation')
         return
       }
@@ -139,20 +142,29 @@ export function TrainingRegistrationPage() {
 
   const completeRegistration = async () => {
     setError('')
-    if (!paymentMethod) {
+    if (!paymentChoice) {
       setError('Choose a payment method.')
       return
     }
-    if (paymentMethod === 'upi' && !utr.trim()) {
+    if (paymentChoice === 'online' && !onlinePaymentEnabled) {
+      setError('Online payment is currently unavailable. Please choose a cash option.')
+      return
+    }
+    if (paymentChoice === 'online' && !utr.trim()) {
       setError('Enter your UTR / Transaction Reference Number.')
+      return
+    }
+    if (paymentChoice === 'cash_paid_to' && !cashPaidToId) {
+      setError('Select who received the cash payment.')
       return
     }
     setBusy(true)
     try {
       const result = await submitPublicRegistration({
         profile,
-        paymentMethod,
-        utr: paymentMethod === 'upi' ? utr : undefined,
+        paymentChoice,
+        utr: paymentChoice === 'online' ? utr : undefined,
+        cashPaidToId: paymentChoice === 'cash_paid_to' ? cashPaidToId : undefined,
       })
       setRegistration(result.registration)
       setLookupCase(result.newCandidate ? 'new_candidate' : lookupCase)
@@ -170,7 +182,8 @@ export function TrainingRegistrationPage() {
     setError('')
     setLookupCase(null)
     setRegistration(null)
-    setPaymentMethod(null)
+    setPaymentChoice(null)
+    setCashPaidToId('')
     setUtr('')
     setStep('mobile')
   }
@@ -384,34 +397,45 @@ export function TrainingRegistrationPage() {
                 ₹{TRAINING_GATHERING_EVENT.feeInr} Registration Fee
               </h1>
               {savedNotice ? <p className="rounded-2xl bg-[#d8f3dc] px-4 py-3 text-sm text-primary">{savedNotice}</p> : null}
+              {onlinePaymentEnabled ? (
+                <button
+                  type="button"
+                  onClick={() => setPaymentChoice('online')}
+                  className={paymentCardClass(paymentChoice === 'online')}
+                >
+                  <strong>Online Payment</strong>
+                  <span className="mt-1 block text-sm">
+                    Pay ₹{TRAINING_GATHERING_EVENT.feeInr} using UPI
+                  </span>
+                </button>
+              ) : (
+                <div className={paymentCardClass(false, true)} aria-disabled="true">
+                  <strong>Online Payment</strong>
+                  <span className="mt-1 block text-sm">Currently unavailable</span>
+                </div>
+              )}
               <button
                 type="button"
-                onClick={() => setPaymentMethod('upi')}
-                className={paymentCardClass(paymentMethod === 'upi')}
+                onClick={() => setPaymentChoice('cash_at_ijtema')}
+                className={paymentCardClass(paymentChoice === 'cash_at_ijtema')}
               >
-                <strong>UPI Payment</strong>
+                <strong>Cash Payment</strong>
                 <span className="mt-1 block text-sm">
-                  Scan the official QR and pay ₹{TRAINING_GATHERING_EVENT.feeInr}
+                  Pay ₹{TRAINING_GATHERING_EVENT.feeInr} at the Ijtema Gah
                 </span>
               </button>
               <button
                 type="button"
-                onClick={() => setPaymentMethod('cash')}
-                className={paymentCardClass(paymentMethod === 'cash')}
+                onClick={() => setPaymentChoice('cash_paid_to')}
+                className={paymentCardClass(paymentChoice === 'cash_paid_to')}
               >
-                <strong>Cash</strong>
+                <strong>Cash Paid To</strong>
                 <span className="mt-1 block text-sm">
-                  Pay ₹{TRAINING_GATHERING_EVENT.feeInr} in cash. Admin will mark it paid.
+                  {cashCollectors.find((collector) => collector.id === cashPaidToId)?.name ||
+                    'Select Person'}
                 </span>
               </button>
-              <div className={paymentCardClass(false, true)} aria-disabled="true">
-                <strong>Razorpay / Online Gateway</strong>
-                <span className="mt-1 block text-sm">Not available yet</span>
-              </div>
-              <p className="text-sm text-slate-600">
-                Online gateway payment is not available yet. Please pay by UPI or cash.
-              </p>
-              {paymentMethod === 'upi' ? (
+              {paymentChoice === 'online' && onlinePaymentEnabled ? (
                 <div className="space-y-4 rounded-2xl border border-[#e5e7de] bg-[#fbfaf6] p-4">
                   <p className="text-sm font-medium text-slate-800">
                     Scan this QR code to pay ₹{TRAINING_GATHERING_EVENT.feeInr} for Tarbiyati Ijtema registration.
@@ -439,16 +463,35 @@ export function TrainingRegistrationPage() {
                       required
                     />
                   </label>
-                  <p className="text-sm text-slate-600">
-                    A payment screenshot is optional. Screenshot upload is not available in this
-                    registration yet. Admin will verify the payment using your UTR.
-                  </p>
                 </div>
+              ) : null}
+              {paymentChoice === 'cash_paid_to' ? (
+                <label className="block rounded-2xl border border-[#e5e7de] bg-[#fbfaf6] p-4">
+                  <span className="mb-2 block text-sm font-medium text-slate-800">Cash Paid To</span>
+                  <select
+                    value={cashPaidToId}
+                    onChange={(event) => setCashPaidToId(event.target.value)}
+                    className="w-full rounded-2xl border border-[#e5e7de] bg-white px-4 py-3"
+                    required
+                  >
+                    <option value="">Select Person</option>
+                    {cashCollectors.map((collector) => (
+                      <option key={collector.id} value={collector.id}>
+                        {collector.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
               ) : null}
               {error ? <p className="text-sm text-red-700">{error}</p> : null}
               <button
                 type="button"
-                disabled={busy || !paymentMethod || (paymentMethod === 'upi' && !utr.trim())}
+                disabled={
+                  busy ||
+                  !paymentChoice ||
+                  (paymentChoice === 'online' && (!onlinePaymentEnabled || !utr.trim())) ||
+                  (paymentChoice === 'cash_paid_to' && !cashPaidToId)
+                }
                 onClick={() => void completeRegistration()}
                 className="w-full rounded-2xl bg-primary py-3.5 text-base font-semibold text-white disabled:opacity-60"
               >
@@ -519,15 +562,22 @@ export function TrainingRegistrationPage() {
                   <strong>{profile.gender || '—'}</strong>
                 </p>
                 <p className="mt-3">
-                  <span className="text-sm text-slate-500">Payment Method</span>
+                  <span className="text-sm text-slate-500">Payment</span>
                   <br />
-                  <strong>{trainingPaymentMethodLabel(registration.paymentMethod)}</strong>
+                  <strong>
+                    {trainingAcknowledgementPaymentLabel(
+                      registration.paymentStatus,
+                      registration.cashPaidToName,
+                    )}
+                  </strong>
                 </p>
-                <p className="mt-3">
-                  <span className="text-sm text-slate-500">Payment Status</span>
-                  <br />
-                  <strong>{trainingAcknowledgementPaymentLabel(registration.paymentStatus)}</strong>
-                </p>
+                {registration.utr ? (
+                  <p className="mt-3">
+                    <span className="text-sm text-slate-500">UTR</span>
+                    <br />
+                    <strong className="break-all">{registration.utr}</strong>
+                  </p>
+                ) : null}
               </div>
             </div>
           )}

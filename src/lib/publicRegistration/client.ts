@@ -1,7 +1,6 @@
 import type {
   PublicLookupResult,
   PublicPersonProfile,
-  TrainingPaymentMethod,
   TrainingRegistrationAdminRow,
   TrainingRegistrationRecord,
   TrainingRegistrationSummary,
@@ -60,8 +59,9 @@ export async function savePublicRegistrationProfile(
 
 export async function submitPublicRegistration(input: {
   profile: PublicPersonProfile
-  paymentMethod: TrainingPaymentMethod
+  paymentChoice: import('@/lib/publicRegistration/types').TrainingPublicPaymentChoice
   utr?: string
+  cashPaidToId?: string
 }): Promise<{
   ok: true
   registration: TrainingRegistrationRecord
@@ -106,15 +106,6 @@ export async function fetchTrainingRegistrationAdmin(token: string): Promise<{
   }
 }
 
-export async function markTrainingRegistrationCashPaid(input: {
-  token: string
-  registrationId: string
-}): Promise<{ ok: true; registration: TrainingRegistrationRecord }> {
-  return (await adminJson(input.token, 'admin_mark_cash_paid', {
-    registrationId: input.registrationId,
-  })) as unknown as { ok: true; registration: TrainingRegistrationRecord }
-}
-
 export async function confirmTrainingRegistrationUpiPaid(input: {
   token: string
   registrationId: string
@@ -122,6 +113,15 @@ export async function confirmTrainingRegistrationUpiPaid(input: {
   return (await adminJson(input.token, 'admin_confirm_upi_paid', {
     registrationId: input.registrationId,
   })) as unknown as { ok: true; registration: TrainingRegistrationRecord }
+}
+
+export async function setTrainingOnlinePaymentEnabled(input: {
+  token: string
+  onlinePaymentEnabled: boolean
+}): Promise<{ ok: true; onlinePaymentEnabled: boolean }> {
+  return (await adminJson(input.token, 'admin_set_online_payment', {
+    onlinePaymentEnabled: input.onlinePaymentEnabled,
+  })) as unknown as { ok: true; onlinePaymentEnabled: boolean }
 }
 
 export async function exportTrainingRegistrationCsv(token: string): Promise<{

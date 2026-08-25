@@ -3,7 +3,7 @@ import type {
   TrainingPaymentMethod,
   TrainingPaymentStatus,
   TrainingRegistrationStatus,
-} from './types'
+} from './types.js'
 
 export function trainingPaymentStatusLabel(status: TrainingPaymentStatus): string {
   if (status === 'paid_cash') return 'Cash Paid'
@@ -14,10 +14,16 @@ export function trainingPaymentStatusLabel(status: TrainingPaymentStatus): strin
   return 'Unpaid'
 }
 
-export function trainingAcknowledgementPaymentLabel(status: TrainingPaymentStatus): string {
-  if (status === 'cash_pending') return 'Cash Payment — Pending'
-  if (status === 'paid_cash') return 'Cash Payment — Paid'
-  if (status === 'upi_pending') return 'UPI Payment — Awaiting Verification'
+export function trainingAcknowledgementPaymentLabel(
+  status: TrainingPaymentStatus,
+  cashPaidToName?: string | null,
+): string {
+  if (status === 'cash_pending') return 'Cash — Pay at Ijtema Gah'
+  if (status === 'paid_cash') {
+    const collector = String(cashPaidToName || '').trim()
+    return collector ? `Cash Paid To: ${collector}` : 'Cash Paid'
+  }
+  if (status === 'upi_pending') return 'UPI Payment — Pending Verification'
   if (status === 'paid_upi') return 'UPI Payment — Paid'
   if (status === 'paid_online') return 'Online Payment — Paid'
   return 'Payment pending'

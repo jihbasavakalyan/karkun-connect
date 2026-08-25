@@ -2,13 +2,15 @@ import { FieldValue, type Firestore } from 'firebase-admin/firestore'
 import { getRuknClaimsAdmin } from '../ruknClaims/firebaseAdmin.js'
 import {
   applyConfirmUpiPaid,
-  applyMarkCashPaid,
   buildTrainingRegistrationAdminView,
   buildTrainingRegistrationCsv,
   isSoftRemovedPerson,
+  listCashCollectors,
   normalizeTrainingMobile,
   organisationalCategoryFromPerson,
+  resolveCashCollector,
   sanitizeUtr,
+  TRAINING_REGISTRATION_SETTINGS_DOC,
   trainingRegistrationCsvFilename,
 } from '../../lib/publicRegistration/adminTracking.js'
 import { formatRegistrationId, TRAINING_GATHERING_EVENT } from '../../lib/publicRegistration/event.js'
@@ -18,6 +20,7 @@ import type {
   TrainingOrganisationalCategory,
   TrainingPaymentMethod,
   TrainingPaymentStatus,
+  TrainingPublicPaymentChoice,
   TrainingRegistrationRecord,
   TrainingRegistrationStatus,
 } from '../../lib/publicRegistration/types.js'
@@ -27,6 +30,8 @@ const KARKUNS = 'karkuns'
 const RUKNS = 'rukns'
 const SETTINGS = 'settings'
 const KARKUN_REQUESTS_DOC = 'karkunRequests'
+/** Razorpay remains deferred. Do not add SDK, keys, or fake success. */
+const RAZORPAY_NOT_AVAILABLE = 'RAZORPAY_NOT_AVAILABLE'
 
 export type TrainingRegistrationApiRequest = {
   method?: string
@@ -168,6 +173,8 @@ function asRegistration(data: Record<string, unknown>): TrainingRegistrationReco
     paymentMethod,
     paymentStatus: data.paymentStatus as TrainingPaymentStatus,
     utr: optionalTrimmedString(data.utr),
+    cashPaidToId: optionalTrimmedString(data.cashPaidToId),
+    cashPaidToName: optionalTrimmedString(data.cashPaidToName),
     paymentSubmittedAt: optionalTrimmedString(data.paymentSubmittedAt),
     paymentVerifiedAt: optionalTrimmedString(data.paymentVerifiedAt),
     paymentVerifiedBy: optionalTrimmedString(data.paymentVerifiedBy),
@@ -250,6 +257,52 @@ async function findActiveRuknByMobile(db: Firestore, mobile10: string): Promise<
   return null
 }
 
+async function loadRuknCollectorSource(db: Firestore) {
+  const snap = await db.collection(RUKNS).get()
+  return snap.docs.map((doc) => {
+    const data = doc.data()
+    return {
+      id: doc.id,
+      name: String(data.name || doc.id),
+      status: data.status,
+      isArchived: data.isArchived,
+    }
+  })
+}
+
+async function readOnlinePaymentEnabled(db: Firestore): Promise<boolean> {
+  const snap = await db.collection(SETTINGS).doc(TRAINING_REGISTRATION_SETTINGS_DOC).get()
+  if (!snap.exists) return true
+  return snap.data()?.onlinePaymentEnabled !== false
+}
+
+async function writeOnlinePaymentEnabled(
+  db: Firestore,
+  enabled: boolean,
+  updatedBy: string,
+): Promise<boolean> {
+  await db.collection(SETTINGS).doc(TRAINING_REGISTRATION_SETTINGS_DOC).set(
+    {
+      onlinePaymentEnabled: enabled,
+      updatedAt: nowIso(),
+      updatedBy,
+    },
+    { merge: true },
+  )
+  return enabled
+}
+
+async function publicPaymentOptions(db: Firestore) {
+  const [onlinePaymentEnabled, rukns] = await Promise.all([
+    readOnlinePaymentEnabled(db),
+    loadRuknCollectorSource(db),
+  ])
+  return {
+    onlinePaymentEnabled,
+    cashCollectors: listCashCollectors(rukns),
+  }
+}
+
 async function findPublicTrainingRequest(
   db: Firestore,
   mobile10: string,
@@ -265,10 +318,11 @@ async function findPublicTrainingRequest(
 
 async function handleSession(mobile10: string): Promise<TrainingRegistrationApiResponse> {
   const admin = getRuknClaimsAdmin()
-  const [person, rukn, registrationSnap] = await Promise.all([
+  const [person, rukn, registrationSnap, paymentOptions] = await Promise.all([
     findPersonByMobile(admin.db, mobile10),
     findActiveRuknByMobile(admin.db, mobile10),
     admin.db.collection(COLLECTION).doc(formatRegistrationId(mobile10)).get(),
+    publicPaymentOptions(admin.db),
   ])
 
   const existingRegistration = registrationSnap.exists
@@ -299,6 +353,7 @@ async function handleSession(mobile10: string): Promise<TrainingRegistrationApiR
       category,
       profile: readProfile(person.data, mobile10),
       existingRegistration: existingRegistration ?? null,
+      ...paymentOptions,
       message: 'Your record was found',
     })
   }
@@ -322,6 +377,7 @@ async function handleSession(mobile10: string): Promise<TrainingRegistrationApiR
         gender,
       },
       existingRegistration: existingRegistration ?? null,
+      ...paymentOptions,
       message: 'Your Rukn record was found',
     })
   }
@@ -350,6 +406,7 @@ async function handleSession(mobile10: string): Promise<TrainingRegistrationApiR
     mobile: mobile10,
     profile: requestProfile,
     existingRegistration: existingRegistration ?? null,
+    ...paymentOptions,
     message: 'Complete your information to continue.',
   })
 }
@@ -452,33 +509,66 @@ async function handleSaveProfile(
 async function handleSubmit(
   mobile10: string,
   rawProfile: unknown,
-  paymentMethodRaw: unknown,
+  paymentChoiceRaw: unknown,
   utrRaw: unknown,
+  cashPaidToIdRaw: unknown,
 ): Promise<TrainingRegistrationApiResponse> {
-  const paymentMethod =
-    paymentMethodRaw === 'upi' || paymentMethodRaw === 'online' || paymentMethodRaw === 'cash'
-      ? paymentMethodRaw
+  const paymentChoice: TrainingPublicPaymentChoice | null =
+    paymentChoiceRaw === 'online' ||
+    paymentChoiceRaw === 'cash_at_ijtema' ||
+    paymentChoiceRaw === 'cash_paid_to'
+      ? paymentChoiceRaw
       : null
-  if (!paymentMethod) {
+  if (!paymentChoice) {
+    if (paymentChoiceRaw === 'razorpay') {
+      return json(409, {
+        ok: false,
+        code: RAZORPAY_NOT_AVAILABLE,
+        error: 'Razorpay is not available.',
+      })
+    }
     return json(400, { ok: false, error: 'Choose a payment method.' })
-  }
-  if (paymentMethod === 'online') {
-    return json(409, {
-      ok: false,
-      code: 'RAZORPAY_NOT_AVAILABLE',
-      error:
-        'Online gateway payment is not available yet. Please pay by UPI or cash.',
-    })
-  }
-
-  let utr: string | null = null
-  if (paymentMethod === 'upi') {
-    const sanitized = sanitizeUtr(utrRaw)
-    if (!sanitized.ok) return json(400, { ok: false, error: sanitized.error })
-    utr = sanitized.utr
   }
 
   const admin = getRuknClaimsAdmin()
+  const onlinePaymentEnabled = await readOnlinePaymentEnabled(admin.db)
+  if (paymentChoice === 'online' && !onlinePaymentEnabled) {
+    return json(409, {
+      ok: false,
+      code: 'ONLINE_PAYMENT_UNAVAILABLE',
+      error: 'Online payment is currently unavailable. Please choose a cash option.',
+    })
+  }
+
+  let paymentMethod: TrainingPaymentMethod = 'cash'
+  let paymentStatus: TrainingPaymentStatus = 'cash_pending'
+  let utr: string | null = null
+  let cashPaidToId: string | null = null
+  let cashPaidToName: string | null = null
+
+  if (paymentChoice === 'online') {
+    const sanitized = sanitizeUtr(utrRaw)
+    if (sanitized.ok === false) {
+      return json(400, { ok: false, error: sanitized.error })
+    }
+    paymentMethod = 'upi'
+    paymentStatus = 'upi_pending'
+    utr = sanitized.utr
+  } else if (paymentChoice === 'cash_at_ijtema') {
+    paymentMethod = 'cash'
+    paymentStatus = 'cash_pending'
+  } else if (paymentChoice === 'cash_paid_to') {
+    const rukns = await loadRuknCollectorSource(admin.db)
+    const collector = resolveCashCollector(rukns, cashPaidToIdRaw)
+    if (collector.ok === false) {
+      return json(400, { ok: false, error: collector.error })
+    }
+    paymentMethod = 'cash'
+    paymentStatus = 'paid_cash'
+    cashPaidToId = collector.id
+    cashPaidToName = collector.name
+  }
+
   const [person, rukn] = await Promise.all([
     findPersonByMobile(admin.db, mobile10),
     findActiveRuknByMobile(admin.db, mobile10),
@@ -515,20 +605,26 @@ async function handleSubmit(
   const alreadyPaidUpi = existingRecord?.paymentStatus === 'paid_upi'
 
   let nextMethod: TrainingPaymentMethod = paymentMethod
-  let nextStatus: TrainingPaymentStatus = paymentMethod === 'upi' ? 'upi_pending' : 'cash_pending'
-  let nextUtr = paymentMethod === 'upi' ? utr : existingRecord?.utr ?? null
-  let paymentSubmittedAt = paymentMethod === 'upi' ? timestamp : existingRecord?.paymentSubmittedAt ?? null
+  let nextStatus: TrainingPaymentStatus = paymentStatus
+  let nextUtr = paymentChoice === 'online' ? utr : existingRecord?.utr ?? null
+  let nextCashPaidToId = cashPaidToId
+  let nextCashPaidToName = cashPaidToName
+  let paymentSubmittedAt = paymentChoice === 'online' ? timestamp : existingRecord?.paymentSubmittedAt ?? null
   const paymentVerifiedAt = existingRecord?.paymentVerifiedAt ?? null
   const paymentVerifiedBy = existingRecord?.paymentVerifiedBy ?? null
   if (alreadyPaidCash) {
     nextMethod = 'cash'
     nextStatus = 'paid_cash'
     nextUtr = existingRecord?.utr ?? null
+    nextCashPaidToId = existingRecord?.cashPaidToId ?? cashPaidToId
+    nextCashPaidToName = existingRecord?.cashPaidToName ?? cashPaidToName
     paymentSubmittedAt = existingRecord?.paymentSubmittedAt ?? null
   } else if (alreadyPaidUpi) {
     nextMethod = 'upi'
     nextStatus = 'paid_upi'
     nextUtr = existingRecord?.utr ?? utr
+    nextCashPaidToId = existingRecord?.cashPaidToId ?? null
+    nextCashPaidToName = existingRecord?.cashPaidToName ?? null
     paymentSubmittedAt = existingRecord?.paymentSubmittedAt ?? paymentSubmittedAt
   }
 
@@ -547,6 +643,8 @@ async function handleSubmit(
     paymentMethod: nextMethod,
     paymentStatus: nextStatus,
     utr: nextUtr,
+    cashPaidToId: nextCashPaidToId,
+    cashPaidToName: nextCashPaidToName,
     paymentSubmittedAt,
     paymentVerifiedAt,
     paymentVerifiedBy,
@@ -614,8 +712,16 @@ async function loadAdminView() {
 }
 
 async function handleAdminSummary(): Promise<TrainingRegistrationApiResponse> {
-  const view = await loadAdminView()
-  return json(200, { ok: true, summary: view.summary, registrations: view.registrations })
+  const admin = getRuknClaimsAdmin()
+  const [view, onlinePaymentEnabled] = await Promise.all([
+    loadAdminView(),
+    readOnlinePaymentEnabled(admin.db),
+  ])
+  return json(200, {
+    ok: true,
+    summary: { ...view.summary, onlinePaymentEnabled },
+    registrations: view.registrations,
+  })
 }
 
 async function handleAdminExportCsv(): Promise<TrainingRegistrationApiResponse> {
@@ -627,37 +733,16 @@ async function handleAdminExportCsv(): Promise<TrainingRegistrationApiResponse> 
   })
 }
 
-async function handleMarkCashPaid(
-  registrationId: string,
-  verifiedBy: string,
+async function handleSetOnlinePayment(
+  enabledRaw: unknown,
+  updatedBy: string,
 ): Promise<TrainingRegistrationApiResponse> {
-  const id = registrationId.trim()
-  if (!id) return json(400, { ok: false, error: 'Registration ID is required.' })
+  if (typeof enabledRaw !== 'boolean') {
+    return json(400, { ok: false, error: 'onlinePaymentEnabled must be true or false.' })
+  }
   const admin = getRuknClaimsAdmin()
-  const ref = admin.db.collection(COLLECTION).doc(id)
-  const snap = await ref.get()
-  if (!snap.exists) return json(404, { ok: false, error: 'Registration not found.' })
-  const current = asRegistration((snap.data() ?? {}) as Record<string, unknown>)
-  if (current.paymentMethod !== 'cash') {
-    return json(409, { ok: false, error: 'Only cash registrations can be marked paid here.' })
-  }
-  const timestamp = nowIso()
-  const next: TrainingRegistrationRecord = {
-    ...applyMarkCashPaid(current),
-    paymentVerifiedAt: current.paymentVerifiedAt ?? timestamp,
-    paymentVerifiedBy: current.paymentVerifiedBy ?? verifiedBy,
-    updatedAt: timestamp,
-  }
-  await ref.set(
-    {
-      paymentStatus: next.paymentStatus,
-      paymentVerifiedAt: next.paymentVerifiedAt,
-      paymentVerifiedBy: next.paymentVerifiedBy,
-      updatedAt: timestamp,
-    },
-    { merge: true },
-  )
-  return json(200, { ok: true, registration: next })
+  const onlinePaymentEnabled = await writeOnlinePaymentEnabled(admin.db, enabledRaw, updatedBy)
+  return json(200, { ok: true, onlinePaymentEnabled })
 }
 
 async function handleConfirmUpiPaid(
@@ -698,9 +783,9 @@ async function handleConfirmUpiPaid(
 
 const ADMIN_ACTIONS = new Set([
   'admin_summary',
-  'admin_mark_cash_paid',
   'admin_confirm_upi_paid',
   'admin_export_csv',
+  'admin_set_online_payment',
 ])
 
 export async function handleTrainingRegistration(
@@ -734,10 +819,10 @@ export async function handleTrainingRegistration(
       }
       if (action === 'admin_summary') return handleAdminSummary()
       if (action === 'admin_export_csv') return handleAdminExportCsv()
-      if (action === 'admin_confirm_upi_paid') {
-        return handleConfirmUpiPaid(String(body.registrationId || ''), identity.uid)
+      if (action === 'admin_set_online_payment') {
+        return handleSetOnlinePayment(body.onlinePaymentEnabled, identity.uid)
       }
-      return handleMarkCashPaid(String(body.registrationId || ''), identity.uid)
+      return handleConfirmUpiPaid(String(body.registrationId || ''), identity.uid)
     }
 
     const mobileOrError = requireVerifiedMobile(identity)
@@ -747,7 +832,13 @@ export async function handleTrainingRegistration(
     if (action === 'session') return handleSession(mobile10)
     if (action === 'save_profile') return handleSaveProfile(mobile10, body.profile)
     if (action === 'submit') {
-      return handleSubmit(mobile10, body.profile, body.paymentMethod, body.utr)
+      return handleSubmit(
+        mobile10,
+        body.profile,
+        body.paymentChoice,
+        body.utr,
+        body.cashPaidToId,
+      )
     }
 
     return json(400, { ok: false, error: 'Unknown action.' })

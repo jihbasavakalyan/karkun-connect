@@ -32,6 +32,9 @@ export type PublicPersonProfile = {
 
 export type PublicLookupCase = 'existing_person' | 'existing_rukn' | 'new_candidate'
 
+export type TrainingPublicPaymentChoice = 'online' | 'cash_at_ijtema' | 'cash_paid_to'
+export type TrainingCashCollector = { id: string; name: string }
+
 export type PublicLookupResult = {
   ok: true
   case: PublicLookupCase
@@ -41,6 +44,8 @@ export type PublicLookupResult = {
   category?: PublicPersonCategory | 'Rukn'
   profile: PublicPersonProfile
   existingRegistration?: TrainingRegistrationRecord
+  onlinePaymentEnabled: boolean
+  cashCollectors: TrainingCashCollector[]
   message: string
 }
 
@@ -57,6 +62,8 @@ export type TrainingRegistrationRecord = {
   paymentMethod: TrainingPaymentMethod
   paymentStatus: TrainingPaymentStatus
   utr: string | null
+  cashPaidToId: string | null
+  cashPaidToName: string | null
   paymentSubmittedAt: string | null
   paymentVerifiedAt: string | null
   paymentVerifiedBy: string | null
@@ -111,6 +118,7 @@ export type TrainingRegistrationSummary = {
   cashPending: number
   upiPaid: number
   upiPending: number
+  onlinePaymentEnabled?: boolean
   newPersonPending: number
   newPersonApproved: number
   ruknWise: Array<{
@@ -144,6 +152,8 @@ export const TRAINING_REGISTRATION_CSV_COLUMNS = [
   'Payment Method',
   'Payment Status',
   'UTR / Transaction Reference',
+  'Cash Paid To',
+  'Cash Paid To ID',
   'Payment Submitted At',
   'Payment Verified At',
   'Payment Verified By',

@@ -5,19 +5,23 @@ import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import {
   applyConfirmUpiPaid,
-  applyMarkCashPaid,
   buildTrainingRegistrationAdminView,
   buildTrainingRegistrationCsv,
+  listCashCollectors,
   matchesRegisteredPeopleFilters,
   matchesRegisteredPeopleSearch,
   paymentQueueTitle,
   PUBLIC_TRAINING_REGISTRATION_URL,
+  resolveCashCollector,
   sanitizeUtr,
+  TRAINING_REGISTRATION_SETTINGS_DOC,
 } from '@/lib/publicRegistration/adminTracking'
 import { formatRegistrationId, TARBIYATI_IJTEMA_UPI_QR_SRC, TRAINING_GATHERING_EVENT } from '@/lib/publicRegistration/event'
 import { isPublicRegistrationHost, PUBLIC_REGISTRATION_HOST } from '@/lib/publicRegistration/host'
+import { trainingAcknowledgementPaymentLabel } from '@/lib/publicRegistration/labels'
 import { TRAINING_REGISTRATION_CSV_COLUMNS } from '@/lib/publicRegistration/types'
 import type { TrainingRegistrationRecord } from '@/lib/publicRegistration/types'
+import { FIRESTORE_DOCS } from '@/repositories/firestore/collections'
 
 type CaseResult = { name: string; passed: boolean; detail: string }
 
@@ -93,20 +97,36 @@ function testSecurityPath(): void {
   assert(handler.includes("case: 'existing_rukn'"), 'active rukn may register')
   assert(!handler.includes('RUKN_MOBILE'), 'rukn mobile is not blocked from event registration')
   assert(handler.includes('buildTrainingRegistrationAdminView'), 'admin summary reuses tracking builder')
-  assert(handler.includes('applyMarkCashPaid'), 'mark paid reuses payment-only update')
+  assert(!handler.includes('applyMarkCashPaid'), 'old cash mark-paid helper is removed')
+  assert(!handler.includes('admin_mark_cash_paid'), 'old cash mark-paid admin action is removed')
   assert(handler.includes('applyConfirmUpiPaid'), 'upi confirm reuses payment-only update')
   assert(handler.includes('fullName: profile.name'), 'persists registered name')
-  assert(handler.includes("paymentMethod === 'upi'"), 'accepts UPI payment method')
+  assert(handler.includes("paymentChoice === 'online'"), 'online payment choice is accepted')
+  assert(handler.includes("paymentMethod = 'upi'"), 'online choice stores method upi')
+  assert(handler.includes("paymentStatus = 'upi_pending'"), 'online choice stores upi_pending')
+  assert(handler.includes("paymentChoice === 'cash_at_ijtema'"), 'cash at ijtema gah is accepted')
+  assert(handler.includes("paymentChoice === 'cash_paid_to'"), 'cash paid to is accepted')
+  assert(handler.includes('cashPaidToId'), 'stores cash collector id')
+  assert(handler.includes('cashPaidToName'), 'stores cash collector name')
   assert(handler.includes('sanitizeUtr'), 'UTR is sanitized server-side')
+  assert(handler.includes('listCashCollectors'), 'cash collectors come from existing rukn master')
   assert(handler.includes('admin_export_csv'), 'CSV export is an admin API action')
   assert(handler.includes('admin_confirm_upi_paid'), 'UPI confirm is an admin API action')
+  assert(handler.includes('admin_set_online_payment'), 'online payment activation is an admin API action')
+  assert(handler.includes('readOnlinePaymentEnabled'), 'online payment flag is read from settings')
+  assert(handler.includes('TRAINING_REGISTRATION_SETTINGS_DOC'), 'reuses existing settings document id')
   assert(handler.includes("identity.role !== 'administrator'"), 'admin actions require administrator role')
-  assert(!handler.includes('razorpay'), 'no razorpay client')
+  assert(handler.includes('RAZORPAY_NOT_AVAILABLE'), 'razorpay submit is explicitly unavailable')
+  assert(!handler.includes("from 'razorpay'"), 'no razorpay sdk import')
+  assert(!handler.includes('checkout.razorpay'), 'no razorpay checkout')
   assert(!handler.includes('twilio'), 'does not invent Twilio')
-  assert(!handler.includes('msg91'), 'does not invent MSG91')
+  assert(!handler.includes('msg91'), 'does not invent SMS provider')
   assert(!handler.includes('allow read: if true'), 'no public firestore open')
   assert(!handler.includes("collection('payments')"), 'no payments collection')
   assert(!handler.includes("collection('upi')"), 'no upi collection')
+  assert(!handler.includes("collection('cashCollectors')"), 'no cash collector collection')
+  assert(TRAINING_REGISTRATION_SETTINGS_DOC === FIRESTORE_DOCS.trainingRegistration, 'settings doc reuses FIRESTORE_DOCS')
+  assert(FIRESTORE_DOCS.trainingRegistration === 'trainingRegistration', 'existing settings collection document')
   const rules = read('firestore.rules')
   assert(rules.includes('match /trainingRegistrations/{registrationId}'), 'registration rules')
   assert(rules.includes('allow create, update, delete: if false'), 'no client writes')
@@ -124,27 +144,32 @@ function testPublicCopyAndPayment(): void {
   assert(page.includes('eventTitleUrdu'), 'urdu event title in public UI')
   assert(page.includes('Tarbiyati Ijtema'), 'english event title in public UI')
   assert(!page.includes('Training Gathering'), 'no training gathering in public UI')
-  assert(page.includes('Cash'), 'cash payment choice')
-  assert(page.includes('UPI Payment'), 'UPI payment choice')
+  assert(page.includes('Online Payment'), 'online payment choice')
+  assert(page.includes('Currently unavailable'), 'online inactive copy')
+  assert(page.includes('using UPI'), 'online active UPI copy')
+  assert(page.includes('Cash Payment'), 'cash at ijtema gah choice')
+  assert(page.includes('at the Ijtema Gah'), 'cash pending copy')
+  assert(page.includes('Cash Paid To'), 'cash paid to choice')
+  assert(page.includes('Select Person'), 'cash collector select')
+  assert(!page.includes('₹100 paid in cash'), 'generic cash paid choice removed')
   assert(page.includes('TARBIYATI_IJTEMA_UPI_QR_SRC'), 'official QR constant used in public UI')
   assert(page.includes('Scan this QR code to pay ₹'), 'QR scan copy')
   assert(page.includes('After payment, enter your UTR / Transaction Reference Number.'), 'UTR instruction')
   assert(page.includes('UTR / Transaction Reference Number'), 'UTR field')
   assert(!page.includes('type="file"') && !page.includes("type='file'"), 'no screenshot file input')
-  assert(page.includes('Screenshot upload is not available'), 'screenshot limitation is disclosed')
-  assert(page.includes('Razorpay / Online Gateway'), 'gateway option labelled')
-  assert(page.includes('Not available yet'), 'online blocked copy')
+  assert(!page.includes('Razorpay / Online Gateway'), 'public UI has no razorpay fourth card')
+  assert(!page.includes('Not available yet'), 'old online blocked copy removed')
   assert(page.includes('Acknowledgement'), 'confirmation is an acknowledgement')
   assert(page.includes('registeredName'), 'uses registered name')
   assert(page.includes('trainingAcknowledgementPaymentLabel'), 'acknowledgement payment labels')
   const labels = read('src/lib/publicRegistration/labels.ts')
-  assert(labels.includes("return 'Cash Paid'"), 'paid_cash label is Cash Paid')
+  assert(labels.includes("return 'Cash Paid'"), 'historical paid_cash label remains Cash Paid')
   assert(labels.includes("return 'Cash Pending'"), 'cash pending label')
   assert(labels.includes("return 'UPI Pending'"), 'upi pending label')
   assert(labels.includes("return 'UPI Paid'"), 'upi paid label')
-  assert(labels.includes('Cash Payment — Pending'), 'cash pending acknowledgement')
-  assert(labels.includes('Cash Payment — Paid'), 'cash paid acknowledgement')
-  assert(labels.includes('UPI Payment — Awaiting Verification'), 'upi pending acknowledgement')
+  assert(labels.includes('Cash — Pay at Ijtema Gah'), 'cash pending acknowledgement')
+  assert(labels.includes('Cash Paid To:'), 'cash paid to acknowledgement')
+  assert(labels.includes('UPI Payment — Pending Verification'), 'upi pending acknowledgement')
   assert(labels.includes('UPI Payment — Paid'), 'upi paid acknowledgement')
   assert(!/\breturn 'Paid'\s*$/m.test(labels), 'does not display bare Paid')
   const admin = read('src/components/public-registration/TrainingGatheringAdminPanel.tsx')
@@ -153,17 +178,23 @@ function testPublicCopyAndPayment(): void {
   assert(admin.includes('Export CSV'), 'admin CSV export button')
   assert(admin.includes('exportTrainingRegistrationCsv'), 'CSV uses admin API')
   assert(admin.includes('Confirm UPI Paid'), 'admin UPI confirm action')
+  assert(!admin.includes('Mark Paid'), 'old admin cash mark-paid action is removed')
   assert(admin.includes('Cash Pending'), 'cash pending queue')
   assert(admin.includes('Cash Paid'), 'cash paid queue')
   assert(admin.includes('UPI Pending'), 'upi pending queue')
   assert(admin.includes('UPI Paid'), 'upi paid queue')
+  assert(admin.includes('Cash Paid To'), 'admin shows cash collector')
+  assert(admin.includes('Enable Online Payment'), 'admin can activate online payment')
+  assert(admin.includes('Disable Online Payment'), 'admin can deactivate online payment')
+  assert(admin.includes('setTrainingOnlinePaymentEnabled'), 'online toggle uses admin API')
   assert(admin.includes('paymentQueueTitle'), 'payment queues identify people by name')
   assert(admin.includes('matchesRegisteredPeopleSearch'), 'registered people search')
   assert(admin.includes('matchesRegisteredPeopleFilters'), 'registered people filters')
+  assert(admin.includes('cash collector'), 'search includes cash collector')
   assert(admin.includes('relatedPeople'), 'rukn drill-down shows connected karkuns')
   assert(admin.includes('byCategory'), 'admin category table')
   assert(admin.includes('ruknOwnRegistered'), 'rukn own registration distinguished')
-  assert(admin.includes('Razorpay / Online Gateway: Unavailable'), 'razorpay unavailable in admin summary')
+  assert(admin.includes('Razorpay remains deferred'), 'razorpay unavailable in admin summary')
   assert(!admin.includes('Eligible'), 'no eligible event-capacity metric')
   assert(!page.includes('rukn_blocked'), 'public UI does not block rukn')
   assert(page.includes('existing_rukn'), 'public UI handles existing rukn')
@@ -175,7 +206,6 @@ function testPublicCopyAndPayment(): void {
   const ruknHome = read('src/pages/rukn/RuknHomePage.tsx')
   assert(ruknHome.includes('TarbiyatiIjtemaRuknHero'), 'hero on authenticated Rukn Home')
   assert(PUBLIC_TRAINING_REGISTRATION_URL === 'https://registration.jihbasavakalyan.org/', 'CTA URL')
-  assert(admin.includes('Mark Paid'), 'admin mark paid preserved')
   assert(existsSync(resolve(root, 'public/branding/jih-official-logo.png')), 'official logo asset present')
   assert(existsSync(resolve(root, 'public/branding/tarbiyati-ijtema-upi-qr.jpeg')), 'official UPI QR asset present')
   assert(TARBIYATI_IJTEMA_UPI_QR_SRC === '/branding/tarbiyati-ijtema-upi-qr.jpeg', 'QR public path')
@@ -185,6 +215,10 @@ function testPublicCopyAndPayment(): void {
   assert(!logo.includes('<svg'), 'does not use placeholder svg')
   const client = read('src/lib/publicRegistration/client.ts')
   assert(client.includes("'admin_export_csv'"), 'export action is not public')
+  assert(client.includes("'admin_set_online_payment'"), 'online activation is not public')
+  assert(client.includes('paymentChoice'), 'public submit sends paymentChoice')
+  assert(client.includes('cashPaidToId'), 'public submit sends cash collector id')
+  assert(!client.includes('markTrainingRegistrationCashPaid'), 'client has no cash mark-paid helper')
   assert(!client.includes('razorpay'), 'client has no razorpay')
 }
 
@@ -214,6 +248,8 @@ function sampleRegistration(
     registrationStatus: 'complete',
     paymentMethod: 'cash',
     utr: null,
+    cashPaidToId: null,
+    cashPaidToName: null,
     paymentSubmittedAt: null,
     paymentVerifiedAt: null,
     paymentVerifiedBy: null,
@@ -231,11 +267,20 @@ function testRegistrationPaymentSeparation(): void {
     fullName: 'Person A',
     paymentStatus: 'cash_pending',
   })
-  const paid = sampleRegistration({
+  const paidToCollector = sampleRegistration({
     id: formatRegistrationId('9000000002'),
     personId: 'k-b',
     verifiedMobile: '9000000002',
     fullName: 'Person B',
+    paymentStatus: 'paid_cash',
+    cashPaidToId: 'r-1',
+    cashPaidToName: 'Rukn One',
+  })
+  const historicalPaid = sampleRegistration({
+    id: formatRegistrationId('9000000008'),
+    personId: 'k-hist',
+    verifiedMobile: '9000000008',
+    fullName: 'Historical Paid',
     paymentStatus: 'paid_cash',
   })
   const input = {
@@ -243,6 +288,7 @@ function testRegistrationPaymentSeparation(): void {
       { id: 'k-a', name: 'Person A', mobile: '9000000001', gender: 'Male' },
       { id: 'k-b', name: 'Person B', mobile: '9000000002', gender: 'Female' },
       { id: 'k-c', name: 'Person C', mobile: '9000000003', gender: 'Male' },
+      { id: 'k-hist', name: 'Historical Paid', mobile: '9000000008', gender: 'Male' },
     ],
     rukns: [{ id: 'r-1', name: 'Rukn One', status: 'active' }],
     connections: [
@@ -251,34 +297,30 @@ function testRegistrationPaymentSeparation(): void {
       { ruknId: 'r-1', karkunId: 'k-c', status: 'Active' },
       { ruknId: 'r-1', karkunId: 'k-unrelated-skip', status: 'Inactive' },
     ],
-    registrations: [pending, paid],
+    registrations: [pending, paidToCollector, historicalPaid],
     publicRequests: [],
   }
-  const before = buildTrainingRegistrationAdminView(input)
-  assert(before.summary.registered === 2, 'registered includes cash pending and cash paid')
-  assert(before.summary.cashPending === 1, 'cash pending count')
-  assert(before.summary.cashPaid === 1, 'cash paid count')
-  assert(before.registrations.some((row) => row.id === pending.id), 'pending person in Registered People')
-  assert(before.registrations.some((row) => row.id === paid.id), 'paid person in Registered People')
+  const view = buildTrainingRegistrationAdminView(input)
+  assert(view.summary.registered === 3, 'registered includes cash pending and both cash paid records')
+  assert(view.summary.cashPending === 1, 'cash pending count')
+  assert(view.summary.cashPaid === 2, 'cash paid count includes historical records')
+  assert(view.registrations.some((row) => row.id === pending.id), 'pending person in Registered People')
+  assert(view.registrations.some((row) => row.id === paidToCollector.id), 'paid person in Registered People')
+  assert(view.registrations.some((row) => row.id === historicalPaid.id), 'historical paid_cash remains in Registered People')
+  const historicalRow = view.registrations.find((row) => row.id === historicalPaid.id)
+  assert(historicalRow?.paymentStatus === 'paid_cash', 'historical paid_cash remains readable')
+  assert(!historicalRow?.cashPaidToName, 'does not invent a historical collector')
   assert(
-    before.registrations.filter((row) => row.paymentStatus === 'cash_pending').length === 1,
-    'cash pending list is payment-filtered',
+    trainingAcknowledgementPaymentLabel('paid_cash', historicalRow?.cashPaidToName) === 'Cash Paid',
+    'historical paid_cash acknowledgement has no invented collector',
   )
-
-  const marked = applyMarkCashPaid(pending)
-  assert(marked.registrationStatus === 'complete', 'mark paid does not change registration status')
-  assert(marked.paymentStatus === 'paid_cash', 'mark paid sets cash paid')
-  const after = buildTrainingRegistrationAdminView({
-    ...input,
-    registrations: [marked, paid],
-  })
-  assert(after.summary.registered === 2, 'registered count unchanged after mark paid')
-  assert(after.summary.cashPending === 0, 'cash pending decreases')
-  assert(after.summary.cashPaid === 2, 'cash paid increases')
-  assert(after.registrations.some((row) => row.id === pending.id), 'marked person remains in Registered People')
   assert(
-    !after.registrations.some((row) => row.id === pending.id && row.paymentStatus === 'cash_pending'),
-    'marked person leaves Cash Pending',
+    trainingAcknowledgementPaymentLabel('paid_cash', 'Rukn One') === 'Cash Paid To: Rukn One',
+    'cash paid to acknowledgement names the collector',
+  )
+  assert(
+    trainingAcknowledgementPaymentLabel('cash_pending') === 'Cash — Pay at Ijtema Gah',
+    'cash at ijtema gah acknowledgement',
   )
 }
 
@@ -470,6 +512,8 @@ function mixedPaymentFixture() {
     verifiedMobile: '9000000002',
     fullName: 'Fatima',
     paymentStatus: 'paid_cash',
+    cashPaidToId: 'r-1',
+    cashPaidToName: 'Abdul Qadir',
     organisationalCategory: 'muttafiq',
   })
   const upiPending = sampleRegistration({
@@ -570,6 +614,11 @@ function testSearchFiltersAndCsv(): void {
   const ayesha = view.registrations.find((row) => row.fullName === 'Ayesha')
   assert(Boolean(ayesha), 'ayesha present')
   assert(matchesRegisteredPeopleSearch(ayesha!, 'UTR9000000003'), 'search by UTR')
+  const fatima = view.registrations.find((row) => row.fullName === 'Fatima')
+  assert(Boolean(fatima), 'fatima present')
+  assert(matchesRegisteredPeopleSearch(fatima!, 'Abdul Qadir'), 'search by cash collector')
+  assert(fatima?.cashPaidToId === 'r-1', 'cash collector id stored')
+  assert(fatima?.cashPaidToName === 'Abdul Qadir', 'cash collector name stored')
   const female = view.registrations.filter((row) =>
     matchesRegisteredPeopleFilters(row, { gender: 'Female' }),
   )
@@ -584,6 +633,8 @@ function testSearchFiltersAndCsv(): void {
   assert(csv.includes('Ayesha'), 'csv includes upi pending person')
   assert(csv.includes('Rukn Name'), 'csv includes rukn / upi paid person')
   assert(csv.includes('UTR9000000003'), 'csv includes UTR')
+  assert(csv.includes('Abdul Qadir'), 'csv includes cashPaidTo name')
+  assert(csv.includes('Cash Paid To'), 'csv has cashPaidTo column')
   assert(!csv.toLowerCase().includes('otp'), 'csv does not export otp')
   assert(!csv.toLowerCase().includes('password'), 'csv does not export password')
   assert(!csv.toLowerCase().includes('bearer'), 'csv does not export bearer token')
@@ -595,12 +646,62 @@ function testNoNewInfrastructure(): void {
   const handler = read('src/server/trainingRegistration/handler.ts')
   const collections = read('src/repositories/firestore/collections.ts')
   assert(collections.includes("trainingRegistrations: 'trainingRegistrations'"), 'reuses trainingRegistrations')
+  assert(collections.includes("trainingRegistration: 'trainingRegistration'"), 'reuses settings document id')
   assert(!collections.includes('upiPayments'), 'no upi payments collection constant')
+  assert(!collections.includes('cashCollectors'), 'no cash collector collection constant')
   assert(!handler.includes('firebase/storage'), 'does not invent storage upload')
   assert(!handler.includes('uploadBytes'), 'does not invent screenshot upload')
   const page = read('src/pages/public/TrainingRegistrationPage.tsx')
   assert(page.includes('object-contain'), 'QR preserves aspect ratio')
   assert(!page.includes('object-cover'), 'QR is not cropped with object-cover')
+}
+
+function testCashCollectorsFromRuknMaster(): void {
+  const rukns = [
+    { id: 'r-active', name: 'Md Aslam', status: 'active' },
+    { id: 'r-archived', name: 'Archived Rukn', status: 'active', isArchived: true },
+    { id: 'r-inactive', name: 'Inactive Rukn', status: 'inactive' },
+  ]
+  const collectors = listCashCollectors(rukns)
+  assert(collectors.length === 1, 'only active non-archived rukns are collectors')
+  assert(collectors[0]?.id === 'r-active' && collectors[0]?.name === 'Md Aslam', 'collector identity from rukn master')
+  const missing = resolveCashCollector(rukns, '')
+  assert(!missing.ok, 'collector id required')
+  const invalid = resolveCashCollector(rukns, 'r-archived')
+  assert(!invalid.ok, 'archived rukn cannot be selected')
+  const valid = resolveCashCollector(rukns, 'r-active')
+  assert(valid.ok, 'active rukn can be selected')
+  if (valid.ok) {
+    assert(valid.id === 'r-active' && valid.name === 'Md Aslam', 'stores both collector id and name')
+  }
+}
+
+function testFinalPaymentSemantics(): void {
+  const page = read('src/pages/public/TrainingRegistrationPage.tsx')
+  const handler = read('src/server/trainingRegistration/handler.ts')
+  const admin = read('src/components/public-registration/TrainingGatheringAdminPanel.tsx')
+  const tracking = read('src/lib/publicRegistration/adminTracking.ts')
+  assert(page.includes("setPaymentChoice('online')"), '1 online inactive/active share one online choice')
+  assert(page.includes('Currently unavailable'), '1 online inactive copy')
+  assert(page.includes('using UPI'), '2 online active copy')
+  assert(page.includes('TARBIYATI_IJTEMA_UPI_QR_SRC'), '3 UPI QR appears when online selected')
+  assert(page.includes("paymentChoice === 'online' && !utr.trim()"), '4 UTR required for online')
+  assert(handler.includes("paymentStatus = 'upi_pending'"), '5 UPI creates upi_pending')
+  assert(handler.includes('applyConfirmUpiPaid'), '6 admin confirm reuses paid_upi update')
+  assert(tracking.includes("paymentStatus: 'paid_upi'"), '6 confirm changes upi_pending to paid_upi')
+  assert(handler.includes("paymentStatus = 'cash_pending'"), '7 cash at ijtema gah creates cash_pending')
+  assert(handler.includes("paymentStatus = 'paid_cash'"), '8 cash paid to creates paid_cash')
+  assert(handler.includes('cashPaidToId = collector.id'), '9 cash collector id stored')
+  assert(handler.includes('cashPaidToName = collector.name'), '9 cash collector name stored')
+  assert(page.includes('registration.cashPaidToName'), '10 collector appears in acknowledgement')
+  assert(admin.includes('row.cashPaidToName'), '11 collector appears in admin')
+  assert(tracking.includes('isRegisteredForEvent'), '12/13 payment change does not define membership')
+  assert(!handler.includes('applyMarkCashPaid'), 'no cash mark-paid mutation')
+  assert(page.includes('useState<TrainingPublicPaymentChoice | null>'), 'exactly three public choices typed')
+  assert(!page.includes("setPaymentChoice('razorpay')"), '20 no public razorpay choice')
+  assert(handler.includes("identity.role !== 'administrator'"), '16/17 admin-only activation and UPI confirm')
+  assert(handler.includes('admin_set_online_payment'), '16 admin-only activation action')
+  assert(handler.includes('admin_confirm_upi_paid'), '17 admin-only UPI confirmation action')
 }
 
 const cases = [
@@ -611,7 +712,7 @@ const cases = [
   run('public copy, cash states, admin drill-down', testPublicCopyAndPayment),
   run('same application entry, no second app', testNoSecondApp),
   run('Person schema education/profession', testPersonSchemaDelta),
-  run('registration vs payment separation and mark paid', testRegistrationPaymentSeparation),
+  run('registration vs payment separation without cash mark-paid', testRegistrationPaymentSeparation),
   run('male female overall tracking', testGenderTracking),
   run('open registration categories', testOpenCategoryRegistration),
   run('rukn connected scope and registered vs remaining', testRuknScopeAndRegistration),
@@ -620,6 +721,8 @@ const cases = [
   run('UTR trim empty and preserve', testUtrValidation),
   run('search filters and full CSV export', testSearchFiltersAndCsv),
   run('no new collection or screenshot infrastructure', testNoNewInfrastructure),
+  run('cash collectors from existing rukn master', testCashCollectorsFromRuknMaster),
+  run('final three-choice payment semantics', testFinalPaymentSemantics),
 ]
 
 const failed = cases.filter((item) => !item.passed)

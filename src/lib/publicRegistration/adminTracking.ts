@@ -119,15 +119,6 @@ function addToCategory(
   if (gender === 'Female') bucket.female += 1
 }
 
-export function applyMarkCashPaid(
-  current: TrainingRegistrationRecord,
-): TrainingRegistrationRecord {
-  return {
-    ...current,
-    paymentStatus: 'paid_cash',
-  }
-}
-
 export function applyConfirmUpiPaid(
   current: TrainingRegistrationRecord,
 ): TrainingRegistrationRecord {
@@ -135,6 +126,35 @@ export function applyConfirmUpiPaid(
     ...current,
     paymentStatus: 'paid_upi',
   }
+}
+
+export const TRAINING_REGISTRATION_SETTINGS_DOC = 'trainingRegistration'
+
+export function listCashCollectors(
+  rukns: AdminTrackingRukn[],
+): Array<{ id: string; name: string }> {
+  return rukns
+    .filter((rukn) => rukn.status === 'active' && rukn.isArchived !== true)
+    .map((rukn) => ({
+      id: rukn.id,
+      name: String(rukn.name || rukn.id).trim() || rukn.id,
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name))
+}
+
+export function resolveCashCollector(
+  rukns: AdminTrackingRukn[],
+  collectorIdRaw: unknown,
+): { ok: true; id: string; name: string } | { ok: false; error: string } {
+  const collectorId = typeof collectorIdRaw === 'string' ? collectorIdRaw.trim() : ''
+  if (!collectorId) {
+    return { ok: false, error: 'Select who received the cash payment.' }
+  }
+  const match = listCashCollectors(rukns).find((row) => row.id === collectorId)
+  if (!match) {
+    return { ok: false, error: 'Select a valid cash collector.' }
+  }
+  return { ok: true, id: match.id, name: match.name }
 }
 
 const UTR_MAX_LENGTH = 80
@@ -174,7 +194,14 @@ export function matchesRegisteredPeopleSearch(
 ): boolean {
   const needle = query.trim().toLowerCase()
   if (!needle) return true
-  const haystacks = [row.fullName, row.verifiedMobile, row.id, row.utr ?? '']
+  const haystacks = [
+    row.fullName,
+    row.verifiedMobile,
+    row.id,
+    row.utr ?? '',
+    row.cashPaidToName ?? '',
+    row.cashPaidToId ?? '',
+  ]
   return haystacks.some((value) => value.toLowerCase().includes(needle))
 }
 
@@ -215,6 +242,8 @@ export function buildTrainingRegistrationCsv(rows: TrainingRegistrationAdminRow[
       trainingPaymentMethodLabel(row.paymentMethod),
       trainingPaymentStatusLabel(row.paymentStatus),
       row.utr ?? '',
+      row.cashPaidToName ?? '',
+      row.cashPaidToId ?? '',
       row.paymentSubmittedAt ?? '',
       row.paymentVerifiedAt ?? '',
       row.paymentVerifiedBy ?? '',
