@@ -30,6 +30,8 @@ import {
   encodeTarbiyatiIjtemaUpiQueryValue,
   formatRegistrationId,
   isLikelyMobileUpiClient,
+  TARBIYATI_IJTEMA_POSTER_ALT,
+  TARBIYATI_IJTEMA_POSTER_SRC,
   TARBIYATI_IJTEMA_UPI_APP_OPTIONS,
   TARBIYATI_IJTEMA_UPI_CURRENCY,
   TARBIYATI_IJTEMA_UPI_DESKTOP_MESSAGE,
@@ -176,6 +178,9 @@ function testPublicCopyAndPayment(): void {
   const page = read('src/pages/public/TrainingRegistrationPage.tsx')
   assert(page.includes('eventTitleUrdu'), 'urdu event title in public UI')
   assert(page.includes('Tarbiyati Ijtema'), 'english event title in public UI')
+  assert(page.includes('TARBIYATI_IJTEMA_POSTER_SRC'), 'public hero uses approved poster')
+  assert(page.includes('object-contain'), 'poster and QR preserve aspect ratio')
+  assert(!page.includes('swiper') && !page.includes('carousel'), 'does not invent a carousel')
   assert(!page.includes('Training Gathering'), 'no training gathering in public UI')
   assert(page.includes('Online Payment'), 'online payment choice')
   assert(page.includes('Currently unavailable'), 'online inactive copy')
@@ -254,7 +259,13 @@ function testPublicCopyAndPayment(): void {
   assert(PUBLIC_TRAINING_REGISTRATION_URL === 'https://registration.jihbasavakalyan.org/', 'CTA URL')
   assert(existsSync(resolve(root, 'public/branding/jih-official-logo.png')), 'official logo asset present')
   assert(existsSync(resolve(root, 'public/branding/tarbiyati-ijtema-upi-qr.jpeg')), 'official UPI QR asset present')
+  assert(existsSync(resolve(root, 'public/branding/tarbiyati-ijtema-2026-poster.jpg')), 'approved poster asset present')
   assert(TARBIYATI_IJTEMA_UPI_QR_SRC === '/branding/tarbiyati-ijtema-upi-qr.jpeg', 'QR public path')
+  assert(TARBIYATI_IJTEMA_POSTER_SRC === '/branding/tarbiyati-ijtema-2026-poster.jpg', 'poster public path')
+  assert(
+    TARBIYATI_IJTEMA_POSTER_ALT.includes('تربیتی اجتماع'),
+    'poster alt describes the approved event',
+  )
   const logo = read('src/components/public-registration/JihLogoMark.tsx')
   assert(logo.includes('/branding/jih-official-logo.png'), 'uses official logo path')
   assert(logo.includes('<img'), 'renders as static image')

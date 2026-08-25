@@ -5,6 +5,8 @@ import {
   buildTarbiyatiIjtemaUpiAppUri,
   buildTarbiyatiIjtemaUpiPayUri,
   detectTarbiyatiUpiLaunchPlatform,
+  TARBIYATI_IJTEMA_POSTER_ALT,
+  TARBIYATI_IJTEMA_POSTER_SRC,
   TARBIYATI_IJTEMA_UPI_APP_OPTIONS,
   TARBIYATI_IJTEMA_UPI_DESKTOP_MESSAGE,
   TARBIYATI_IJTEMA_UPI_NO_APP_MESSAGE,
@@ -249,26 +251,16 @@ export function TrainingRegistrationPage() {
         <div className="absolute right-0 top-0 h-72 w-72 rounded-full bg-[#fbf3d5]/80 blur-3xl" />
       </div>
       <main className="relative mx-auto flex min-h-dvh max-w-lg flex-col px-4 py-6 sm:py-10">
-        <header className="overflow-hidden rounded-[2rem] bg-[linear-gradient(145deg,#0f3d24_0%,#14532d_42%,#1b4332_100%)] px-6 pb-8 pt-7 text-center text-white shadow-[0_20px_50px_-20px_rgb(15_23_42_/_0.45)]">
-          <div className="mx-auto mb-4 w-[10.5rem] max-w-full rounded-2xl bg-white p-2">
-            <JihLogoMark />
-          </div>
-          <p className="font-urdu text-2xl leading-loose" dir="rtl">
-            {TRAINING_GATHERING_EVENT.campaignTitleUrdu}
-          </p>
-          <p className="mt-2 font-urdu text-xl text-[#d8f3dc]" dir="rtl">
-            {TRAINING_GATHERING_EVENT.eventTitleUrdu}
-          </p>
-          <p className="mt-1 text-sm tracking-wide text-[#fbf3d5]">
-            {TRAINING_GATHERING_EVENT.eventTitleEn}
-          </p>
-          <p className="mt-4 text-sm text-[#fbf3d5]" dir="rtl">
-            {TRAINING_GATHERING_EVENT.dateCombined}
-          </p>
-          <p className="mt-1 text-sm text-white/80">
-            {TRAINING_GATHERING_EVENT.venue}
-          </p>
-          <p className="text-sm text-white/80">{TRAINING_GATHERING_EVENT.city}</p>
+        <header className="overflow-hidden rounded-[2rem] bg-[#0f3d24] shadow-[0_20px_50px_-20px_rgb(15_23_42_/_0.45)]">
+          <img
+            src={TARBIYATI_IJTEMA_POSTER_SRC}
+            alt={TARBIYATI_IJTEMA_POSTER_ALT}
+            width={819}
+            height={1024}
+            decoding="async"
+            fetchPriority="high"
+            className="block h-auto w-full object-contain"
+          />
         </header>
 
         <div className="mt-6 mb-4 flex items-center justify-center gap-2" aria-label="Progress">

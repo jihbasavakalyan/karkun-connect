@@ -13,6 +13,12 @@ export const TRAINING_GATHERING_EVENT = {
   feeInr: 100,
 } as const
 
+/** Official approved event poster — served as-is from public/branding. */
+export const TARBIYATI_IJTEMA_POSTER_SRC = '/branding/tarbiyati-ijtema-2026-poster.jpg'
+
+export const TARBIYATI_IJTEMA_POSTER_ALT =
+  'فعال کارکن، فعال رکن، فعال جماعت — تربیتی اجتماع، 13 ستمبر 2026'
+
 /** Official supplied UPI QR artwork — served as-is from public/branding. */
 export const TARBIYATI_IJTEMA_UPI_QR_SRC = '/branding/tarbiyati-ijtema-upi-qr.jpeg'
 
