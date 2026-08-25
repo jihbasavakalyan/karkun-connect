@@ -1,4 +1,4 @@
-import { TRAINING_GATHERING_EVENT } from './event'
+import { TRAINING_GATHERING_EVENT } from './event.js'
 import type {
   PublicPersonGender,
   TrainingPaymentMethod,
@@ -8,7 +8,7 @@ import type {
   TrainingRegistrationStatus,
   TrainingRegistrationSummary,
   TrainingRuknRelatedPersonView,
-} from './types'
+} from './types.js'
 
 export type AdminTrackingKarkun = {
   id: string

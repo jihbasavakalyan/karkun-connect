@@ -72,6 +72,10 @@ function testRuknOtpUntouched(): void {
 function testSecurityPath(): void {
   const tracking = read('src/lib/publicRegistration/adminTracking.ts')
   assert(tracking.includes("status === 'Active'"), 'reuses Active connection semantics')
+  assert(tracking.includes("from './event.js'"), 'adminTracking uses NodeNext .js specifier for event')
+  assert(tracking.includes("from './types.js'"), 'adminTracking uses NodeNext .js specifier for types')
+  const apiRoute = read('api/training-registration.ts')
+  assert(apiRoute.includes("src/lib/publicRegistration/adminTracking.ts"), 'API packages adminTracking')
   assert(tracking.includes("authoritativeGender"), 'gender from master Male/Female only')
   assert(!tracking.includes('infer'), 'does not infer gender from names')
   const handler = read('src/server/trainingRegistration/handler.ts')

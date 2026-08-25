@@ -7,6 +7,7 @@ export const config = {
     'src/server/ruknClaims/firebaseAdmin.ts',
     'src/lib/publicRegistration/event.ts',
     'src/lib/publicRegistration/types.ts',
+    'src/lib/publicRegistration/adminTracking.ts',
   ],
   api: {
     bodyParser: {

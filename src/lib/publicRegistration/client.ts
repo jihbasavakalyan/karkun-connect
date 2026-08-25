@@ -25,11 +25,25 @@ async function authorizedJson(
     },
     body: JSON.stringify({ action, ...body }),
   })
-  const json = (await response.json()) as Record<string, unknown>
+  const json = await readTrainingRegistrationJson(response)
   if (!response.ok || json.ok === false) {
     throw new Error(String(json.error || 'Request failed. Please try again.'))
   }
   return json
+}
+
+async function readTrainingRegistrationJson(
+  response: Response,
+): Promise<Record<string, unknown>> {
+  const text = await response.text()
+  const contentType = response.headers.get('content-type') || ''
+  try {
+    return JSON.parse(text) as Record<string, unknown>
+  } catch {
+    throw new Error(
+      `Registration API returned non-JSON (${response.status} ${contentType || 'unknown type'}): ${text.slice(0, 180)}`,
+    )
+  }
 }
 
 export async function lookupPublicRegistration(): Promise<PublicLookupResult> {
@@ -74,7 +88,7 @@ export async function fetchTrainingRegistrationAdmin(token: string): Promise<{
     },
     body: JSON.stringify({ action: 'admin_summary' }),
   })
-  const json = (await response.json()) as Record<string, unknown>
+  const json = await readTrainingRegistrationJson(response)
   if (!response.ok || json.ok === false) {
     throw new Error(String(json.error || 'Unable to load registration summary.'))
   }
@@ -97,7 +111,7 @@ export async function markTrainingRegistrationCashPaid(input: {
     },
     body: JSON.stringify({ action: 'admin_mark_cash_paid', registrationId: input.registrationId }),
   })
-  const json = (await response.json()) as Record<string, unknown>
+  const json = await readTrainingRegistrationJson(response)
   if (!response.ok || json.ok === false) {
     throw new Error(String(json.error || 'Unable to mark cash paid.'))
   }
