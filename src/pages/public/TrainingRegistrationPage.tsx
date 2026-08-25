@@ -2,12 +2,16 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { JihLogoMark } from '@/components/public-registration/JihLogoMark'
 import { OtpBoxes } from '@/components/public-registration/OtpBoxes'
 import {
+  buildTarbiyatiIjtemaUpiAppUri,
   buildTarbiyatiIjtemaUpiPayUri,
-  isLikelyMobileUpiClient,
+  detectTarbiyatiUpiLaunchPlatform,
+  TARBIYATI_IJTEMA_UPI_APP_OPTIONS,
   TARBIYATI_IJTEMA_UPI_DESKTOP_MESSAGE,
   TARBIYATI_IJTEMA_UPI_NO_APP_MESSAGE,
+  TARBIYATI_IJTEMA_UPI_QR_FALLBACK_INTRO,
   TARBIYATI_IJTEMA_UPI_QR_SRC,
   TRAINING_GATHERING_EVENT,
+  type TarbiyatiUpiLaunchPlatform,
 } from '@/lib/publicRegistration/event'
 import {
   trainingAcknowledgementPaymentLabel,
@@ -67,7 +71,20 @@ export function TrainingRegistrationPage() {
   const [savedNotice, setSavedNotice] = useState('')
   const [upiLaunchNotice, setUpiLaunchNotice] = useState('')
   const upiFallbackTimer = useRef<number | null>(null)
-  const upiPayUri = useMemo(() => buildTarbiyatiIjtemaUpiPayUri(), [])
+  const upiPlatform = useMemo<TarbiyatiUpiLaunchPlatform>(
+    () =>
+      typeof navigator === 'undefined' ? 'desktop' : detectTarbiyatiUpiLaunchPlatform(navigator.userAgent),
+    [],
+  )
+  const upiAppUris = useMemo(
+    () => ({
+      gpay: buildTarbiyatiIjtemaUpiAppUri('gpay'),
+      phonepe: buildTarbiyatiIjtemaUpiAppUri('phonepe'),
+      paytm: buildTarbiyatiIjtemaUpiAppUri('paytm'),
+    }),
+    [],
+  )
+  const androidGenericUpiUri = useMemo(() => buildTarbiyatiIjtemaUpiPayUri(), [])
 
   useEffect(() => {
     document.title = 'Tarbiyati Ijtema Registration'
@@ -196,9 +213,10 @@ export function TrainingRegistrationPage() {
     }
   }
 
-  const launchUpiOnThisPhone = (event: { preventDefault: () => void }) => {
+  const launchUpiPayment = (event: { preventDefault: () => void }) => {
     setUpiLaunchNotice('')
-    if (!isLikelyMobileUpiClient(navigator.userAgent)) {
+    const platform = detectTarbiyatiUpiLaunchPlatform(navigator.userAgent)
+    if (platform === 'desktop') {
       event.preventDefault()
       setUpiLaunchNotice(TARBIYATI_IJTEMA_UPI_DESKTOP_MESSAGE)
       return
@@ -479,6 +497,34 @@ export function TrainingRegistrationPage() {
                   <p className="text-base font-semibold text-slate-900">
                     ₹{TRAINING_GATHERING_EVENT.feeInr} Registration Fee
                   </p>
+                  {upiPlatform !== 'desktop' ? (
+                    <div className="space-y-3">
+                      {TARBIYATI_IJTEMA_UPI_APP_OPTIONS.map((app) => (
+                        <a
+                          key={app.id}
+                          href={upiAppUris[app.id]}
+                          onClick={launchUpiPayment}
+                          className="flex w-full items-center justify-center rounded-2xl bg-primary px-4 py-3.5 text-center text-base font-semibold text-white shadow-md"
+                        >
+                          {app.label}
+                        </a>
+                      ))}
+                      {upiPlatform === 'android' ? (
+                        <a
+                          href={androidGenericUpiUri}
+                          onClick={launchUpiPayment}
+                          className="flex w-full items-center justify-center rounded-2xl border border-primary bg-white px-4 py-3.5 text-center text-base font-semibold text-primary"
+                        >
+                          Pay ₹{TRAINING_GATHERING_EVENT.feeInr} using UPI on this phone
+                        </a>
+                      ) : null}
+                    </div>
+                  ) : null}
+                  {upiPlatform !== 'desktop' ? (
+                    <p className="text-sm font-medium text-slate-800">{TARBIYATI_IJTEMA_UPI_QR_FALLBACK_INTRO}</p>
+                  ) : (
+                    <p className="text-sm text-slate-700">{TARBIYATI_IJTEMA_UPI_DESKTOP_MESSAGE}</p>
+                  )}
                   <div className="mx-auto w-full max-w-[22rem]">
                     <img
                       src={TARBIYATI_IJTEMA_UPI_QR_SRC}
@@ -489,19 +535,13 @@ export function TrainingRegistrationPage() {
                   <p className="text-center text-sm font-medium text-slate-800">
                     Scan this QR code using another phone
                   </p>
-                  <a
-                    href={upiPayUri}
-                    onClick={launchUpiOnThisPhone}
-                    className="flex w-full items-center justify-center rounded-2xl bg-primary px-4 py-3.5 text-center text-base font-semibold text-white shadow-md"
-                  >
-                    Pay ₹{TRAINING_GATHERING_EVENT.feeInr} using UPI on this phone
-                  </a>
                   {upiLaunchNotice ? (
                     <p className="rounded-2xl bg-[#fbf3d5] px-4 py-3 text-sm text-slate-800">{upiLaunchNotice}</p>
                   ) : null}
                   <p className="text-sm text-slate-700">
-                    Opening your UPI app does not complete payment. After you pay, return here and enter your UTR /
-                    Transaction Reference Number.
+                    Opening your UPI app does not complete payment or confirm registration. Complete the ₹
+                    {TRAINING_GATHERING_EVENT.feeInr} payment, return to this page, and enter your UTR / Transaction
+                    Reference Number. Only then can you submit your registration.
                   </p>
                   <label className="block">
                     <span className="mb-2 block text-sm font-medium text-slate-800">

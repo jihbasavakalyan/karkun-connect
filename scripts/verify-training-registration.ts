@@ -21,13 +21,19 @@ import {
   TRAINING_REGISTRATION_SETTINGS_DOC,
 } from '@/lib/publicRegistration/adminTracking'
 import {
+  buildTarbiyatiIjtemaUpiAppUri,
   buildTarbiyatiIjtemaUpiPayUri,
+  buildTarbiyatiIjtemaUpiQuery,
+  detectTarbiyatiUpiLaunchPlatform,
+  encodeTarbiyatiIjtemaUpiQueryValue,
   formatRegistrationId,
   isLikelyMobileUpiClient,
+  TARBIYATI_IJTEMA_UPI_APP_OPTIONS,
   TARBIYATI_IJTEMA_UPI_CURRENCY,
   TARBIYATI_IJTEMA_UPI_DESKTOP_MESSAGE,
   TARBIYATI_IJTEMA_UPI_NO_APP_MESSAGE,
   TARBIYATI_IJTEMA_UPI_PAYEE_NAME,
+  TARBIYATI_IJTEMA_UPI_QR_FALLBACK_INTRO,
   TARBIYATI_IJTEMA_UPI_QR_SRC,
   TARBIYATI_IJTEMA_UPI_VPA,
   TRAINING_GATHERING_EVENT,
@@ -175,7 +181,11 @@ function testPublicCopyAndPayment(): void {
   assert(!page.includes('₹100 paid in cash'), 'generic cash paid choice removed')
   assert(page.includes('TARBIYATI_IJTEMA_UPI_QR_SRC'), 'official QR constant used in public UI')
   assert(page.includes('Scan this QR code using another phone'), 'QR is for another-device payment')
-  assert(page.includes('using UPI on this phone'), 'same-device UPI button copy')
+  assert(page.includes('TARBIYATI_IJTEMA_UPI_APP_OPTIONS'), 'app-specific UPI choices')
+  assert(eventSrc.includes("label: 'Google Pay'"), 'Google Pay same-device choice')
+  assert(eventSrc.includes("label: 'PhonePe'"), 'PhonePe same-device choice')
+  assert(eventSrc.includes("label: 'Paytm'"), 'Paytm same-device choice')
+  assert(page.includes('TARBIYATI_IJTEMA_UPI_QR_FALLBACK_INTRO'), 'QR fallback intro copy')
   assert(page.includes('Opening your UPI app does not complete payment'), 'deep link is not confirmation')
   assert(page.includes('UTR / Transaction Reference Number'), 'UTR field')
   assert(!page.includes('type="file"') && !page.includes("type='file'"), 'no screenshot file input')
@@ -787,20 +797,75 @@ function testFinalPaymentSemantics(): void {
   assert(handler.includes('admin_confirm_upi_paid'), '17 admin-only UPI confirmation action')
 }
 
+function assertEncodedUpiQuery(uri: string, label: string): void {
+  const query = uri.slice(uri.indexOf('?') + 1)
+  const pairs = query.split('&').map((part) => {
+    const eq = part.indexOf('=')
+    return [part.slice(0, eq), part.slice(eq + 1)] as const
+  })
+  const params = Object.fromEntries(pairs)
+  assert(params.pa === '60741256000495@cnrb', `${label} VPA query is exact`)
+  assert(params.pn === encodeURIComponent('JAMAATEISLAMI HIND'), `${label} payee is URL encoded`)
+  assert(params.am === '100', `${label} amount is 100`)
+  assert(params.cu === 'INR', `${label} currency is INR`)
+  assert(!query.includes(' '), `${label} has no raw spaces`)
+  assert(query === buildTarbiyatiIjtemaUpiQuery(), `${label} uses shared encoded query`)
+  for (const [key, encoded] of pairs) {
+    const expected = encodeTarbiyatiIjtemaUpiQueryValue(
+      key === 'pa'
+        ? TARBIYATI_IJTEMA_UPI_VPA
+        : key === 'pn'
+          ? TARBIYATI_IJTEMA_UPI_PAYEE_NAME
+          : key === 'am'
+            ? '100'
+            : TARBIYATI_IJTEMA_UPI_CURRENCY,
+    )
+    assert(encoded === expected, `${label} ${key} is correctly URL encoded`)
+  }
+}
+
 function testUpiDeepLinkSameDevicePay(): void {
   assert(TARBIYATI_IJTEMA_UPI_VPA === '60741256000495@cnrb', '1 VPA is exact Canara ID')
-  assert(TRAINING_GATHERING_EVENT.feeInr === 100, '2 amount is exactly ₹100')
-  assert(TARBIYATI_IJTEMA_UPI_CURRENCY === 'INR', '3 currency is INR')
-  const uri = buildTarbiyatiIjtemaUpiPayUri()
-  assert(uri.startsWith('upi://pay?'), '6 standard UPI intent scheme')
-  assert(uri.includes('pa=60741256000495@cnrb'), '6 pa is unencoded VPA')
-  assert(!uri.includes('pa=60741256000495%40cnrb'), '6 VPA @ is not percent-encoded')
-  assert(uri.includes('am=100'), '6 amount query is 100')
-  assert(!uri.includes('am=0'), '6 does not copy open-amount am=0 from the static QR')
-  assert(uri.includes('cu=INR'), '6 currency query is INR')
-  assert(TARBIYATI_IJTEMA_UPI_PAYEE_NAME === 'JAMAATEISLAMI HIND', 'verified pn from official QR payload')
-  assert(uri.includes(`pn=${encodeURIComponent('JAMAATEISLAMI HIND')}`), '6 uses official QR payee name')
-  assert(uri === `upi://pay?pa=60741256000495@cnrb&pn=${encodeURIComponent('JAMAATEISLAMI HIND')}&am=100&cu=INR`, '6 exact deep-link format')
+  assert(TARBIYATI_IJTEMA_UPI_PAYEE_NAME === 'JAMAATEISLAMI HIND', '2 Payee is exact')
+  assert(TRAINING_GATHERING_EVENT.feeInr === 100, '3 amount is exactly ₹100')
+  assert(TARBIYATI_IJTEMA_UPI_CURRENCY === 'INR', '4 currency is INR')
+
+  const gpayUri = buildTarbiyatiIjtemaUpiAppUri('gpay')
+  const phonePeUri = buildTarbiyatiIjtemaUpiAppUri('phonepe')
+  const paytmUri = buildTarbiyatiIjtemaUpiAppUri('paytm')
+  const androidFallbackUri = buildTarbiyatiIjtemaUpiPayUri()
+
+  assert(gpayUri.startsWith('gpay://upi/pay?'), '5 Google Pay URI scheme')
+  assert(phonePeUri.startsWith('phonepe://upi/pay?'), '6 PhonePe URI scheme')
+  assert(paytmUri.startsWith('paytm://upi/pay?'), '7 Paytm URI scheme')
+  assertEncodedUpiQuery(gpayUri, '8 Google Pay')
+  assertEncodedUpiQuery(phonePeUri, '8 PhonePe')
+  assertEncodedUpiQuery(paytmUri, '8 Paytm')
+  assertEncodedUpiQuery(androidFallbackUri, '8 Android generic fallback')
+  assert(
+    gpayUri === `gpay://upi/pay?pa=60741256000495@cnrb&pn=${encodeURIComponent('JAMAATEISLAMI HIND')}&am=100&cu=INR`,
+    '5 exact Google Pay deep link',
+  )
+  assert(
+    phonePeUri === `phonepe://upi/pay?pa=60741256000495@cnrb&pn=${encodeURIComponent('JAMAATEISLAMI HIND')}&am=100&cu=INR`,
+    '6 exact PhonePe deep link',
+  )
+  assert(
+    paytmUri === `paytm://upi/pay?pa=60741256000495@cnrb&pn=${encodeURIComponent('JAMAATEISLAMI HIND')}&am=100&cu=INR`,
+    '7 exact Paytm deep link',
+  )
+  assert(
+    androidFallbackUri === `upi://pay?pa=60741256000495@cnrb&pn=${encodeURIComponent('JAMAATEISLAMI HIND')}&am=100&cu=INR`,
+    'Android generic fallback remains standard NPCI intent',
+  )
+  assert(!androidFallbackUri.includes('am=0'), 'does not copy open-amount am=0 from the static QR')
+
+  assert(detectTarbiyatiUpiLaunchPlatform('Mozilla/5.0 (Windows NT 10.0; Win64; x64)') === 'desktop', 'desktop platform')
+  assert(detectTarbiyatiUpiLaunchPlatform('Mozilla/5.0 (Linux; Android 14)') === 'android', 'Android platform')
+  assert(
+    detectTarbiyatiUpiLaunchPlatform('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)') === 'ios',
+    'iPhone platform',
+  )
   assert(!isLikelyMobileUpiClient('Mozilla/5.0 (Windows NT 10.0; Win64; x64)'), 'desktop is not a UPI client')
   assert(isLikelyMobileUpiClient('Mozilla/5.0 (Linux; Android 14)'), 'Android is a UPI client')
   assert(isLikelyMobileUpiClient('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)'), 'iPhone is a UPI client')
@@ -811,59 +876,85 @@ function testUpiDeepLinkSameDevicePay(): void {
   const admin = read('src/components/public-registration/TrainingGatheringAdminPanel.tsx')
   const rules = read('firestore.rules')
   const collections = read('src/repositories/firestore/collections.ts')
-  assert(page.includes('using UPI on this phone'), '4 direct UPI button exists')
-  assert(page.includes('TARBIYATI_IJTEMA_UPI_QR_SRC'), '5 QR remains present')
-  assert(page.includes('Scan this QR code using another phone'), '5 QR remains the other-device option')
-  assert(page.includes('buildTarbiyatiIjtemaUpiPayUri'), '6 page uses generated UPI URI')
-  assert(page.includes('href={upiPayUri}'), '6 button launches the UPI URI')
-  assert(page.includes('launchUpiOnThisPhone'), '6 launch handler is dedicated')
-  const launchFn = page.slice(page.indexOf('const launchUpiOnThisPhone'), page.indexOf('const changeMobile'))
-  assert(launchFn.includes('isLikelyMobileUpiClient'), '6 launch checks mobile UPI client')
+  assert(TARBIYATI_IJTEMA_UPI_APP_OPTIONS.map((app) => app.label).join(',') === 'Google Pay,PhonePe,Paytm', 'app labels')
+  assert(page.includes('TARBIYATI_IJTEMA_UPI_APP_OPTIONS'), 'Google Pay / PhonePe / Paytm choices')
+  assert(eventSrc.includes("label: 'Google Pay'"), 'Google Pay button label')
+  assert(eventSrc.includes("label: 'PhonePe'"), 'PhonePe button label')
+  assert(eventSrc.includes("label: 'Paytm'"), 'Paytm button label')
+  assert(page.includes('buildTarbiyatiIjtemaUpiAppUri'), 'page uses app-specific UPI builders')
+  assert(page.includes('href={upiAppUris[app.id]}'), 'iOS/Android primary buttons use app-specific hrefs')
+  assert(page.includes("upiPlatform !== 'desktop'"), 'app-launch buttons are not shown on desktop')
+  assert(page.includes("upiPlatform === 'android'"), '9 generic UPI is Android-gated')
+  assert(page.includes('href={androidGenericUpiUri}'), 'Android retains generic UPI fallback href')
+  assert(page.includes('buildTarbiyatiIjtemaUpiPayUri'), 'Android fallback still uses generic NPCI URI')
+  assert(!page.includes('href={upiPayUri}'), '9 generic upi://pay is not the primary iPhone button')
+  assert(!page.includes('href={`upi://pay'), '9 no hardcoded generic UPI href on iPhone')
+  assert(!page.includes("href={'upi://pay"), '9 no string generic UPI href on iPhone')
+  assert(page.includes('TARBIYATI_IJTEMA_UPI_QR_SRC'), '10 QR remains present')
+  assert(page.includes('Scan this QR code using another phone'), '10 QR remains the other-device option')
+  assert(TARBIYATI_IJTEMA_UPI_QR_SRC === '/branding/tarbiyati-ijtema-upi-qr.jpeg', '10 QR public path')
+  assert(TARBIYATI_IJTEMA_UPI_QR_FALLBACK_INTRO.includes("Don't have one of these apps"), 'QR fallback intro')
+  assert(page.includes('TARBIYATI_IJTEMA_UPI_QR_FALLBACK_INTRO'), 'QR fallback intro used in UI')
+  assert(page.includes('launchUpiPayment'), 'launch handler is dedicated')
+  const launchFn = page.slice(page.indexOf('const launchUpiPayment'), page.indexOf('const changeMobile'))
+  assert(launchFn.includes('detectTarbiyatiUpiLaunchPlatform'), 'launch checks platform')
   assert(!launchFn.includes('submitPublicRegistration'), '7 launch does not submit registration')
   assert(!launchFn.includes('completeRegistration'), '7 launch does not complete registration')
-  assert(!launchFn.includes('paid_upi'), '7 launch does not mark paid_upi')
+  assert(!launchFn.includes('paid_upi'), '13 launch does not mark paid_upi')
   assert(!launchFn.includes('upi_pending'), '7 launch does not write payment status')
-  assert(!page.includes("setPaymentStatus"), '7 public page does not set payment status')
-  assert(page.includes('Opening your UPI app does not complete payment'), '7 copy states deep link is not confirmation')
+  assert(!page.includes('setPaymentStatus'), '13 public page does not set payment status')
+  assert(page.includes('Opening your UPI app does not complete payment'), 'copy states deep link is not confirmation')
+  assert(page.includes('confirm registration'), 'copy states app launch does not confirm registration')
   assert(page.includes('TARBIYATI_IJTEMA_UPI_DESKTOP_MESSAGE'), 'desktop fallback remains QR-friendly')
-  assert(page.includes('TARBIYATI_IJTEMA_UPI_NO_APP_MESSAGE'), 'no-app fallback message is used')
-  assert(TARBIYATI_IJTEMA_UPI_NO_APP_MESSAGE.includes('scan the QR using another phone'), 'no-app path keeps QR available')
-  assert(page.includes("paymentChoice === 'online' && !utr.trim()"), '8 UTR remains mandatory in UI')
-  assert(handler.includes('sanitizeUtr'), '8 UTR remains mandatory server-side')
-  assert(handler.includes("paymentStatus = 'upi_pending'"), '9 submit stores upi_pending')
+  assert(page.includes('TARBIYATI_IJTEMA_UPI_NO_APP_MESSAGE'), 'unavailable-app fallback message is used')
+  assert(
+    TARBIYATI_IJTEMA_UPI_NO_APP_MESSAGE ===
+      'This payment app is not available on this device. Please use another payment option or scan the QR code using another phone.',
+    'unavailable-app copy',
+  )
+  assert(page.includes("paymentChoice === 'online' && !utr.trim()"), '11 UTR remains mandatory in UI')
+  assert(handler.includes('sanitizeUtr'), '11 UTR remains mandatory server-side')
+  assert(handler.includes("paymentStatus = 'upi_pending'"), '12 submit stores upi_pending')
   const onlineSubmit = handler.slice(
     handler.indexOf('const sanitized = sanitizeUtr(utrRaw)'),
     handler.indexOf("else if (paymentChoice === 'cash_at_ijtema')"),
   )
-  assert(onlineSubmit.includes("paymentMethod = 'upi'"), '9 online stores method upi')
-  assert(onlineSubmit.includes("paymentStatus = 'upi_pending'"), '9 online stores upi_pending')
-  assert(!onlineSubmit.includes('paid_upi'), '9 online submit does not mark paid_upi')
-  assert(handler.includes('applyConfirmUpiPaid'), '10 admin confirm is the paid_upi path')
+  assert(onlineSubmit.includes("paymentMethod = 'upi'"), '12 online stores method upi')
+  assert(onlineSubmit.includes("paymentStatus = 'upi_pending'"), '12 online stores upi_pending')
+  assert(!onlineSubmit.includes('paid_upi'), '13 online submit does not mark paid_upi')
+  assert(handler.includes('applyConfirmUpiPaid'), '14 admin confirm is the paid_upi path')
   const tracking = read('src/lib/publicRegistration/adminTracking.ts')
-  assert(tracking.includes("paymentStatus: 'paid_upi'"), '10 confirm changes only paymentStatus to paid_upi')
-  assert(handler.includes('paymentVerifiedAt: current.paymentVerifiedAt ?? timestamp'), '10 records paymentVerifiedAt')
-  assert(handler.includes('paymentVerifiedBy: current.paymentVerifiedBy ?? verifiedBy'), '10 records paymentVerifiedBy')
-  assert(admin.includes('Confirm UPI Paid'), '10 admin confirm action unchanged')
-  assert(admin.includes('Registered People'), '11 Registered People remains')
+  assert(tracking.includes("paymentStatus: 'paid_upi'"), '14 confirm changes only paymentStatus to paid_upi')
+  assert(handler.includes('paymentVerifiedAt: current.paymentVerifiedAt ?? timestamp'), '14 records paymentVerifiedAt')
+  assert(handler.includes('paymentVerifiedBy: current.paymentVerifiedBy ?? verifiedBy'), '14 records paymentVerifiedBy')
+  assert(admin.includes('Confirm UPI Paid'), '14 admin confirm action unchanged')
+  assert(page.includes("setPaymentChoice('cash_at_ijtema')"), '16 Cash at Ijtema Gah remains')
+  assert(page.includes('at the Ijtema Gah'), '16 Cash at Ijtema Gah copy remains')
+  assert(page.includes("setPaymentChoice('cash_paid_to')"), '17 Cash Paid To remains')
+  assert(page.includes('isRestorableRegistration'), '18 same-mobile restore remains')
+  assert(admin.includes('Registered People'), '20 Registered People remains')
   const { upiPending, input } = mixedPaymentFixture()
   const view = buildTrainingRegistrationAdminView(input)
-  assert(view.registrations.some((row) => row.id === upiPending.id), '11 UPI pending person remains in Registered People')
+  assert(view.registrations.some((row) => row.id === upiPending.id), 'UPI pending person remains in Registered People')
   const csv = buildTrainingRegistrationCsv(view.registrations)
-  assert(csv.includes('UTR9000000003'), '12 CSV retains UTR')
-  assert(csv.includes('UPI Pending') || csv.includes('upi_pending'), '12 CSV retains payment status')
-  assert(csv.includes('UPI'), '12 CSV retains payment method')
-  assert(!page.toLowerCase().includes('razorpay'), '13 no Razorpay in public page')
-  assert(!handler.includes("from 'razorpay'"), '13 no Razorpay SDK')
-  assert(!eventSrc.toLowerCase().includes('razorpay'), '13 no Razorpay in event config')
-  assert(rules.includes('match /trainingRegistrations/{registrationId}'), '14 registration rules remain')
-  assert(rules.includes('allow create, update, delete: if false'), '14 client writes remain denied')
-  assert(rules.includes('allow read: if isAdministrator()'), '14 admin read remains gated')
-  assert(!collections.includes('upiPayments'), '14 no new UPI collection')
+  assert(csv.includes('UTR9000000003'), '20 CSV retains UTR')
+  assert(csv.includes('UPI Pending') || csv.includes('upi_pending'), '20 CSV retains payment status')
+  assert(csv.includes('UPI'), '20 CSV retains payment method')
+  assert(!page.toLowerCase().includes('razorpay'), 'no Razorpay in public page')
+  assert(!handler.includes("from 'razorpay'"), 'no Razorpay SDK')
+  assert(!eventSrc.toLowerCase().includes('razorpay'), 'no Razorpay in event config')
+  assert(rules.includes('match /trainingRegistrations/{registrationId}'), 'registration rules remain')
+  assert(rules.includes('allow create, update, delete: if false'), 'client writes remain denied')
+  assert(rules.includes('allow read: if isAdministrator()'), 'admin read remains gated')
+  assert(!collections.includes('upiPayments'), 'no new UPI collection')
   assert(trainingPaymentMethodLabel('upi') === 'UPI', 'acknowledgement payment method is UPI')
   assert(
     trainingAcknowledgementPaymentLabel('upi_pending') === 'Payment verification pending',
     'acknowledgement payment status is verification pending',
   )
+  assert(eventSrc.includes("gpay: 'gpay://upi/pay'"), 'Google Pay scheme constant')
+  assert(eventSrc.includes("phonepe: 'phonepe://upi/pay'"), 'PhonePe scheme constant')
+  assert(eventSrc.includes("paytm: 'paytm://upi/pay'"), 'Paytm scheme constant')
 }
 
 const cases = [

@@ -29,25 +29,74 @@ export const TARBIYATI_IJTEMA_UPI_CURRENCY = 'INR'
 
 export type TrainingGatheringEventId = typeof TRAINING_GATHERING_EVENT.id
 
+export type TarbiyatiUpiApp = 'gpay' | 'phonepe' | 'paytm'
+
+export type TarbiyatiUpiLaunchPlatform = 'ios' | 'android' | 'desktop'
+
+export const TARBIYATI_IJTEMA_UPI_APP_OPTIONS: ReadonlyArray<{
+  id: TarbiyatiUpiApp
+  label: string
+}> = [
+  { id: 'gpay', label: 'Google Pay' },
+  { id: 'phonepe', label: 'PhonePe' },
+  { id: 'paytm', label: 'Paytm' },
+]
+
+const TARBIYATI_IJTEMA_UPI_APP_SCHEMES: Record<TarbiyatiUpiApp, string> = {
+  gpay: 'gpay://upi/pay',
+  phonepe: 'phonepe://upi/pay',
+  paytm: 'paytm://upi/pay',
+}
+
 /**
- * Standard NPCI UPI intent for same-device payment.
+ * Encode UPI query values. `@` is restored after encodeURIComponent so the VPA
+ * remains parseable by UPI apps while remaining values (including spaces) stay encoded.
+ */
+export function encodeTarbiyatiIjtemaUpiQueryValue(value: string): string {
+  return encodeURIComponent(value).replace(/%40/g, '@')
+}
+
+export function buildTarbiyatiIjtemaUpiQuery(): string {
+  const params: Array<[string, string]> = [
+    ['pa', TARBIYATI_IJTEMA_UPI_VPA],
+    ['pn', TARBIYATI_IJTEMA_UPI_PAYEE_NAME],
+    ['am', String(TRAINING_GATHERING_EVENT.feeInr)],
+    ['cu', TARBIYATI_IJTEMA_UPI_CURRENCY],
+  ]
+  return params.map(([key, value]) => `${key}=${encodeTarbiyatiIjtemaUpiQueryValue(value)}`).join('&')
+}
+
+/**
+ * Generic NPCI UPI intent. Android chooser / unsupported-environment fallback only.
+ * Do not use as the primary iPhone same-device payment button.
  * Opening this URI is not payment confirmation.
  */
 export function buildTarbiyatiIjtemaUpiPayUri(): string {
-  const amount = String(TRAINING_GATHERING_EVENT.feeInr)
-  const payee = encodeURIComponent(TARBIYATI_IJTEMA_UPI_PAYEE_NAME)
-  return `upi://pay?pa=${TARBIYATI_IJTEMA_UPI_VPA}&pn=${payee}&am=${amount}&cu=${TARBIYATI_IJTEMA_UPI_CURRENCY}`
+  return `upi://pay?${buildTarbiyatiIjtemaUpiQuery()}`
+}
+
+export function buildTarbiyatiIjtemaUpiAppUri(app: TarbiyatiUpiApp): string {
+  return `${TARBIYATI_IJTEMA_UPI_APP_SCHEMES[app]}?${buildTarbiyatiIjtemaUpiQuery()}`
+}
+
+export function detectTarbiyatiUpiLaunchPlatform(userAgent: string): TarbiyatiUpiLaunchPlatform {
+  if (/iPhone|iPad|iPod/i.test(userAgent)) return 'ios'
+  if (/Android/i.test(userAgent)) return 'android'
+  return 'desktop'
 }
 
 export function isLikelyMobileUpiClient(userAgent: string): boolean {
-  return /Android|iPhone|iPad|iPod/i.test(userAgent)
+  return detectTarbiyatiUpiLaunchPlatform(userAgent) !== 'desktop'
 }
 
 export const TARBIYATI_IJTEMA_UPI_DESKTOP_MESSAGE =
   'Open this page on a phone with a UPI app, or scan the QR using another phone.'
 
 export const TARBIYATI_IJTEMA_UPI_NO_APP_MESSAGE =
-  'No UPI app opened. Install PhonePe, Google Pay, Paytm, or BHIM, then try again — or scan the QR using another phone.'
+  'This payment app is not available on this device. Please use another payment option or scan the QR code using another phone.'
+
+export const TARBIYATI_IJTEMA_UPI_QR_FALLBACK_INTRO =
+  "Don't have one of these apps or unable to open payment?"
 
 export function formatRegistrationId(mobile10: string): string {
   return `TG260913-${mobile10}`
