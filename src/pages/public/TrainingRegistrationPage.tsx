@@ -1,10 +1,18 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { JihLogoMark } from '@/components/public-registration/JihLogoMark'
 import { OtpBoxes } from '@/components/public-registration/OtpBoxes'
-import { TARBIYATI_IJTEMA_UPI_QR_SRC, TRAINING_GATHERING_EVENT } from '@/lib/publicRegistration/event'
+import {
+  buildTarbiyatiIjtemaUpiPayUri,
+  isLikelyMobileUpiClient,
+  TARBIYATI_IJTEMA_UPI_DESKTOP_MESSAGE,
+  TARBIYATI_IJTEMA_UPI_NO_APP_MESSAGE,
+  TARBIYATI_IJTEMA_UPI_QR_SRC,
+  TRAINING_GATHERING_EVENT,
+} from '@/lib/publicRegistration/event'
 import {
   trainingAcknowledgementPaymentLabel,
   trainingOrganisationalCategoryLabel,
+  trainingPaymentMethodLabel,
 } from '@/lib/publicRegistration/labels'
 import {
   lookupPublicRegistration,
@@ -57,6 +65,9 @@ export function TrainingRegistrationPage() {
   const [utr, setUtr] = useState('')
   const [registration, setRegistration] = useState<TrainingRegistrationRecord | null>(null)
   const [savedNotice, setSavedNotice] = useState('')
+  const [upiLaunchNotice, setUpiLaunchNotice] = useState('')
+  const upiFallbackTimer = useRef<number | null>(null)
+  const upiPayUri = useMemo(() => buildTarbiyatiIjtemaUpiPayUri(), [])
 
   useEffect(() => {
     document.title = 'Tarbiyati Ijtema Registration'
@@ -68,6 +79,12 @@ export function TrainingRegistrationPage() {
     const timer = window.setTimeout(() => setResendIn((value) => value - 1), 1000)
     return () => window.clearTimeout(timer)
   }, [resendIn])
+
+  useEffect(() => {
+    return () => {
+      if (upiFallbackTimer.current != null) window.clearTimeout(upiFallbackTimer.current)
+    }
+  }, [])
 
   const progress = useMemo(() => stepIndex(step) + 1, [step])
   const registeredName = (registration?.fullName || profile.name).trim()
@@ -179,6 +196,21 @@ export function TrainingRegistrationPage() {
     }
   }
 
+  const launchUpiOnThisPhone = (event: { preventDefault: () => void }) => {
+    setUpiLaunchNotice('')
+    if (!isLikelyMobileUpiClient(navigator.userAgent)) {
+      event.preventDefault()
+      setUpiLaunchNotice(TARBIYATI_IJTEMA_UPI_DESKTOP_MESSAGE)
+      return
+    }
+    if (upiFallbackTimer.current != null) window.clearTimeout(upiFallbackTimer.current)
+    upiFallbackTimer.current = window.setTimeout(() => {
+      if (document.visibilityState === 'visible') {
+        setUpiLaunchNotice(TARBIYATI_IJTEMA_UPI_NO_APP_MESSAGE)
+      }
+    }, 2000)
+  }
+
   const changeMobile = async () => {
     await publicRegistrationPhoneAuth.changeMobile()
     setOtp('')
@@ -188,6 +220,7 @@ export function TrainingRegistrationPage() {
     setPaymentChoice(null)
     setCashPaidToId('')
     setUtr('')
+    setUpiLaunchNotice('')
     setStep('mobile')
   }
 
@@ -403,7 +436,10 @@ export function TrainingRegistrationPage() {
               {onlinePaymentEnabled ? (
                 <button
                   type="button"
-                  onClick={() => setPaymentChoice('online')}
+                  onClick={() => {
+                    setPaymentChoice('online')
+                    setUpiLaunchNotice('')
+                  }}
                   className={paymentCardClass(paymentChoice === 'online')}
                 >
                   <strong>Online Payment</strong>
@@ -440,8 +476,8 @@ export function TrainingRegistrationPage() {
               </button>
               {paymentChoice === 'online' && onlinePaymentEnabled ? (
                 <div className="space-y-4 rounded-2xl border border-[#e5e7de] bg-[#fbfaf6] p-4">
-                  <p className="text-sm font-medium text-slate-800">
-                    Scan this QR code to pay ₹{TRAINING_GATHERING_EVENT.feeInr} for Tarbiyati Ijtema registration.
+                  <p className="text-base font-semibold text-slate-900">
+                    ₹{TRAINING_GATHERING_EVENT.feeInr} Registration Fee
                   </p>
                   <div className="mx-auto w-full max-w-[22rem]">
                     <img
@@ -450,8 +486,22 @@ export function TrainingRegistrationPage() {
                       className="h-auto w-full object-contain"
                     />
                   </div>
+                  <p className="text-center text-sm font-medium text-slate-800">
+                    Scan this QR code using another phone
+                  </p>
+                  <a
+                    href={upiPayUri}
+                    onClick={launchUpiOnThisPhone}
+                    className="flex w-full items-center justify-center rounded-2xl bg-primary px-4 py-3.5 text-center text-base font-semibold text-white shadow-md"
+                  >
+                    Pay ₹{TRAINING_GATHERING_EVENT.feeInr} using UPI on this phone
+                  </a>
+                  {upiLaunchNotice ? (
+                    <p className="rounded-2xl bg-[#fbf3d5] px-4 py-3 text-sm text-slate-800">{upiLaunchNotice}</p>
+                  ) : null}
                   <p className="text-sm text-slate-700">
-                    After payment, enter your UTR / Transaction Reference Number.
+                    Opening your UPI app does not complete payment. After you pay, return here and enter your UTR /
+                    Transaction Reference Number.
                   </p>
                   <label className="block">
                     <span className="mb-2 block text-sm font-medium text-slate-800">
@@ -565,7 +615,12 @@ export function TrainingRegistrationPage() {
                   <strong>{profile.gender || '—'}</strong>
                 </p>
                 <p className="mt-3">
-                  <span className="text-sm text-slate-500">Payment</span>
+                  <span className="text-sm text-slate-500">Payment method</span>
+                  <br />
+                  <strong>{trainingPaymentMethodLabel(registration.paymentMethod)}</strong>
+                </p>
+                <p className="mt-3">
+                  <span className="text-sm text-slate-500">Payment status</span>
                   <br />
                   <strong>
                     {trainingAcknowledgementPaymentLabel(

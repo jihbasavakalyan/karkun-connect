@@ -23,7 +23,7 @@ export function trainingAcknowledgementPaymentLabel(
     const collector = String(cashPaidToName || '').trim()
     return collector ? `Cash Paid To: ${collector}` : 'Cash Paid'
   }
-  if (status === 'upi_pending') return 'UPI Payment — Pending Verification'
+  if (status === 'upi_pending') return 'Payment verification pending'
   if (status === 'paid_upi') return 'UPI Payment — Paid'
   if (status === 'paid_online') return 'Online Payment — Paid'
   return 'Payment pending'

@@ -20,9 +20,20 @@ import {
   sanitizeUtr,
   TRAINING_REGISTRATION_SETTINGS_DOC,
 } from '@/lib/publicRegistration/adminTracking'
-import { formatRegistrationId, TARBIYATI_IJTEMA_UPI_QR_SRC, TRAINING_GATHERING_EVENT } from '@/lib/publicRegistration/event'
+import {
+  buildTarbiyatiIjtemaUpiPayUri,
+  formatRegistrationId,
+  isLikelyMobileUpiClient,
+  TARBIYATI_IJTEMA_UPI_CURRENCY,
+  TARBIYATI_IJTEMA_UPI_DESKTOP_MESSAGE,
+  TARBIYATI_IJTEMA_UPI_NO_APP_MESSAGE,
+  TARBIYATI_IJTEMA_UPI_PAYEE_NAME,
+  TARBIYATI_IJTEMA_UPI_QR_SRC,
+  TARBIYATI_IJTEMA_UPI_VPA,
+  TRAINING_GATHERING_EVENT,
+} from '@/lib/publicRegistration/event'
 import { isPublicRegistrationHost, PUBLIC_REGISTRATION_HOST } from '@/lib/publicRegistration/host'
-import { trainingAcknowledgementPaymentLabel } from '@/lib/publicRegistration/labels'
+import { trainingAcknowledgementPaymentLabel, trainingPaymentMethodLabel } from '@/lib/publicRegistration/labels'
 import { TRAINING_REGISTRATION_CSV_COLUMNS } from '@/lib/publicRegistration/types'
 import type { TrainingRegistrationRecord } from '@/lib/publicRegistration/types'
 import { FIRESTORE_DOCS } from '@/repositories/firestore/collections'
@@ -163,14 +174,18 @@ function testPublicCopyAndPayment(): void {
   assert(page.includes('Select Person'), 'cash collector select')
   assert(!page.includes('₹100 paid in cash'), 'generic cash paid choice removed')
   assert(page.includes('TARBIYATI_IJTEMA_UPI_QR_SRC'), 'official QR constant used in public UI')
-  assert(page.includes('Scan this QR code to pay ₹'), 'QR scan copy')
-  assert(page.includes('After payment, enter your UTR / Transaction Reference Number.'), 'UTR instruction')
+  assert(page.includes('Scan this QR code using another phone'), 'QR is for another-device payment')
+  assert(page.includes('using UPI on this phone'), 'same-device UPI button copy')
+  assert(page.includes('Opening your UPI app does not complete payment'), 'deep link is not confirmation')
   assert(page.includes('UTR / Transaction Reference Number'), 'UTR field')
   assert(!page.includes('type="file"') && !page.includes("type='file'"), 'no screenshot file input')
   assert(!page.includes('Razorpay / Online Gateway'), 'public UI has no razorpay fourth card')
   assert(!page.includes('Not available yet'), 'old online blocked copy removed')
   assert(page.includes('Acknowledgement'), 'confirmation is an acknowledgement')
   assert(page.includes('registeredName'), 'uses registered name')
+  assert(page.includes('Payment method'), 'acknowledgement shows payment method')
+  assert(page.includes('Payment status'), 'acknowledgement shows payment status')
+  assert(page.includes('trainingPaymentMethodLabel'), 'acknowledgement uses method label')
   assert(page.includes('isRestorableRegistration'), 'OTP restore uses restorable-registration helper')
   assert(page.includes('clearPublicRegistrationServiceWorkers'), 'public page clears stale service workers')
   const labels = read('src/lib/publicRegistration/labels.ts')
@@ -180,7 +195,7 @@ function testPublicCopyAndPayment(): void {
   assert(labels.includes("return 'UPI Paid'"), 'upi paid label')
   assert(labels.includes('Cash — Pay at Ijtema Gah'), 'cash pending acknowledgement')
   assert(labels.includes('Cash Paid To:'), 'cash paid to acknowledgement')
-  assert(labels.includes('UPI Payment — Pending Verification'), 'upi pending acknowledgement')
+  assert(labels.includes('Payment verification pending'), 'upi pending acknowledgement')
   assert(labels.includes('UPI Payment — Paid'), 'upi paid acknowledgement')
   assert(!/\breturn 'Paid'\s*$/m.test(labels), 'does not display bare Paid')
   const admin = read('src/components/public-registration/TrainingGatheringAdminPanel.tsx')
@@ -772,6 +787,85 @@ function testFinalPaymentSemantics(): void {
   assert(handler.includes('admin_confirm_upi_paid'), '17 admin-only UPI confirmation action')
 }
 
+function testUpiDeepLinkSameDevicePay(): void {
+  assert(TARBIYATI_IJTEMA_UPI_VPA === '60741256000495@cnrb', '1 VPA is exact Canara ID')
+  assert(TRAINING_GATHERING_EVENT.feeInr === 100, '2 amount is exactly ₹100')
+  assert(TARBIYATI_IJTEMA_UPI_CURRENCY === 'INR', '3 currency is INR')
+  const uri = buildTarbiyatiIjtemaUpiPayUri()
+  assert(uri.startsWith('upi://pay?'), '6 standard UPI intent scheme')
+  assert(uri.includes('pa=60741256000495@cnrb'), '6 pa is unencoded VPA')
+  assert(!uri.includes('pa=60741256000495%40cnrb'), '6 VPA @ is not percent-encoded')
+  assert(uri.includes('am=100'), '6 amount query is 100')
+  assert(!uri.includes('am=0'), '6 does not copy open-amount am=0 from the static QR')
+  assert(uri.includes('cu=INR'), '6 currency query is INR')
+  assert(TARBIYATI_IJTEMA_UPI_PAYEE_NAME === 'JAMAATEISLAMI HIND', 'verified pn from official QR payload')
+  assert(uri.includes(`pn=${encodeURIComponent('JAMAATEISLAMI HIND')}`), '6 uses official QR payee name')
+  assert(uri === `upi://pay?pa=60741256000495@cnrb&pn=${encodeURIComponent('JAMAATEISLAMI HIND')}&am=100&cu=INR`, '6 exact deep-link format')
+  assert(!isLikelyMobileUpiClient('Mozilla/5.0 (Windows NT 10.0; Win64; x64)'), 'desktop is not a UPI client')
+  assert(isLikelyMobileUpiClient('Mozilla/5.0 (Linux; Android 14)'), 'Android is a UPI client')
+  assert(isLikelyMobileUpiClient('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)'), 'iPhone is a UPI client')
+
+  const page = read('src/pages/public/TrainingRegistrationPage.tsx')
+  const eventSrc = read('src/lib/publicRegistration/event.ts')
+  const handler = read('src/server/trainingRegistration/handler.ts')
+  const admin = read('src/components/public-registration/TrainingGatheringAdminPanel.tsx')
+  const rules = read('firestore.rules')
+  const collections = read('src/repositories/firestore/collections.ts')
+  assert(page.includes('using UPI on this phone'), '4 direct UPI button exists')
+  assert(page.includes('TARBIYATI_IJTEMA_UPI_QR_SRC'), '5 QR remains present')
+  assert(page.includes('Scan this QR code using another phone'), '5 QR remains the other-device option')
+  assert(page.includes('buildTarbiyatiIjtemaUpiPayUri'), '6 page uses generated UPI URI')
+  assert(page.includes('href={upiPayUri}'), '6 button launches the UPI URI')
+  assert(page.includes('launchUpiOnThisPhone'), '6 launch handler is dedicated')
+  const launchFn = page.slice(page.indexOf('const launchUpiOnThisPhone'), page.indexOf('const changeMobile'))
+  assert(launchFn.includes('isLikelyMobileUpiClient'), '6 launch checks mobile UPI client')
+  assert(!launchFn.includes('submitPublicRegistration'), '7 launch does not submit registration')
+  assert(!launchFn.includes('completeRegistration'), '7 launch does not complete registration')
+  assert(!launchFn.includes('paid_upi'), '7 launch does not mark paid_upi')
+  assert(!launchFn.includes('upi_pending'), '7 launch does not write payment status')
+  assert(!page.includes("setPaymentStatus"), '7 public page does not set payment status')
+  assert(page.includes('Opening your UPI app does not complete payment'), '7 copy states deep link is not confirmation')
+  assert(page.includes('TARBIYATI_IJTEMA_UPI_DESKTOP_MESSAGE'), 'desktop fallback remains QR-friendly')
+  assert(page.includes('TARBIYATI_IJTEMA_UPI_NO_APP_MESSAGE'), 'no-app fallback message is used')
+  assert(TARBIYATI_IJTEMA_UPI_NO_APP_MESSAGE.includes('scan the QR using another phone'), 'no-app path keeps QR available')
+  assert(page.includes("paymentChoice === 'online' && !utr.trim()"), '8 UTR remains mandatory in UI')
+  assert(handler.includes('sanitizeUtr'), '8 UTR remains mandatory server-side')
+  assert(handler.includes("paymentStatus = 'upi_pending'"), '9 submit stores upi_pending')
+  const onlineSubmit = handler.slice(
+    handler.indexOf('const sanitized = sanitizeUtr(utrRaw)'),
+    handler.indexOf("else if (paymentChoice === 'cash_at_ijtema')"),
+  )
+  assert(onlineSubmit.includes("paymentMethod = 'upi'"), '9 online stores method upi')
+  assert(onlineSubmit.includes("paymentStatus = 'upi_pending'"), '9 online stores upi_pending')
+  assert(!onlineSubmit.includes('paid_upi'), '9 online submit does not mark paid_upi')
+  assert(handler.includes('applyConfirmUpiPaid'), '10 admin confirm is the paid_upi path')
+  const tracking = read('src/lib/publicRegistration/adminTracking.ts')
+  assert(tracking.includes("paymentStatus: 'paid_upi'"), '10 confirm changes only paymentStatus to paid_upi')
+  assert(handler.includes('paymentVerifiedAt: current.paymentVerifiedAt ?? timestamp'), '10 records paymentVerifiedAt')
+  assert(handler.includes('paymentVerifiedBy: current.paymentVerifiedBy ?? verifiedBy'), '10 records paymentVerifiedBy')
+  assert(admin.includes('Confirm UPI Paid'), '10 admin confirm action unchanged')
+  assert(admin.includes('Registered People'), '11 Registered People remains')
+  const { upiPending, input } = mixedPaymentFixture()
+  const view = buildTrainingRegistrationAdminView(input)
+  assert(view.registrations.some((row) => row.id === upiPending.id), '11 UPI pending person remains in Registered People')
+  const csv = buildTrainingRegistrationCsv(view.registrations)
+  assert(csv.includes('UTR9000000003'), '12 CSV retains UTR')
+  assert(csv.includes('UPI Pending') || csv.includes('upi_pending'), '12 CSV retains payment status')
+  assert(csv.includes('UPI'), '12 CSV retains payment method')
+  assert(!page.toLowerCase().includes('razorpay'), '13 no Razorpay in public page')
+  assert(!handler.includes("from 'razorpay'"), '13 no Razorpay SDK')
+  assert(!eventSrc.toLowerCase().includes('razorpay'), '13 no Razorpay in event config')
+  assert(rules.includes('match /trainingRegistrations/{registrationId}'), '14 registration rules remain')
+  assert(rules.includes('allow create, update, delete: if false'), '14 client writes remain denied')
+  assert(rules.includes('allow read: if isAdministrator()'), '14 admin read remains gated')
+  assert(!collections.includes('upiPayments'), '14 no new UPI collection')
+  assert(trainingPaymentMethodLabel('upi') === 'UPI', 'acknowledgement payment method is UPI')
+  assert(
+    trainingAcknowledgementPaymentLabel('upi_pending') === 'Payment verification pending',
+    'acknowledgement payment status is verification pending',
+  )
+}
+
 const cases = [
   run('event constants and registration id', testEventAndId),
   run('subdomain host detection', testHost),
@@ -786,6 +880,7 @@ const cases = [
   run('rukn connected scope and registered vs remaining', testRuknScopeAndRegistration),
   run('rukn home hero contract', testRuknHeroContract),
   run('UPI pending to paid without leaving Registered People', testUpiFlowAndRegisteredPeople),
+  run('same-device UPI deep link without marking paid', testUpiDeepLinkSameDevicePay),
   run('UTR trim empty and preserve', testUtrValidation),
   run('search filters and full CSV export', testSearchFiltersAndCsv),
   run('no new collection or screenshot infrastructure', testNoNewInfrastructure),
