@@ -56,6 +56,7 @@ export function TrainingGatheringAdminPanel() {
   const [search, setSearch] = useState('')
   const [filters, setFilters] = useState<PeopleFilters>(EMPTY_FILTERS)
   const [expandedRuknId, setExpandedRuknId] = useState('')
+  const [expandedRegistrationId, setExpandedRegistrationId] = useState('')
   const [onlineBusy, setOnlineBusy] = useState(false)
 
   const load = async () => {
@@ -153,6 +154,11 @@ export function TrainingGatheringAdminPanel() {
       ),
     [registeredPeople, search, filters],
   )
+
+  useEffect(() => {
+    setExpandedRegistrationId('')
+  }, [search, filters])
+
   const cashPending = useMemo(
     () => registeredPeople.filter((row) => row.paymentStatus === 'cash_pending'),
     [registeredPeople],
@@ -349,13 +355,26 @@ export function TrainingGatheringAdminPanel() {
           {displayedPeople.length === 0 ? (
             <p className="mt-3 text-sm text-secondary">No registrations match the current view.</p>
           ) : (
-            <ul className="mt-3 space-y-2">
-              {displayedPeople.map((row) => (
-                <li key={row.id} className="rounded-lg border border-border bg-surface px-3 py-3">
-                  <PersonDetail row={row} />
-                </li>
-              ))}
-            </ul>
+            <div className="mt-3">
+              <div className="mb-1 hidden grid-cols-[1.25rem_minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1.4fr)] gap-3 px-3 text-xs font-medium text-secondary sm:grid">
+                <span className="sr-only">Details</span>
+                <span>Name</span>
+                <span>Mobile</span>
+                <span>Connected Rukn</span>
+              </div>
+              <ul className="space-y-2">
+                {displayedPeople.map((row) => (
+                  <RegisteredPersonRow
+                    key={row.id}
+                    row={row}
+                    expanded={expandedRegistrationId === row.id}
+                    onToggle={() =>
+                      setExpandedRegistrationId((current) => (current === row.id ? '' : row.id))
+                    }
+                  />
+                ))}
+              </ul>
+            </div>
           )}
         </div>
       ) : null}
@@ -598,6 +617,67 @@ function RelatedPersonDetail({ person }: { person: TrainingRuknRelatedPersonView
   )
 }
 
+function connectedRuknLabel(row: TrainingRegistrationAdminRow): string {
+  return row.ruknNames.length > 0 ? row.ruknNames.join(', ') : '—'
+}
+
+function RegisteredPersonRow({
+  row,
+  expanded,
+  onToggle,
+}: {
+  row: TrainingRegistrationAdminRow
+  expanded: boolean
+  onToggle: () => void
+}) {
+  const name = row.fullName || 'Name is not on this registration record'
+  const mobile = row.verifiedMobile || '—'
+  const connectedRukn = connectedRuknLabel(row)
+  const detailId = `registered-person-detail-${row.id}`
+  return (
+    <li
+      className={[
+        'rounded-lg border bg-surface',
+        expanded ? 'border-primary ring-1 ring-primary/20' : 'border-border',
+      ].join(' ')}
+    >
+      <button
+        type="button"
+        className="w-full min-w-0 px-3 py-2.5 text-left"
+        onClick={onToggle}
+        aria-expanded={expanded}
+        aria-controls={detailId}
+      >
+        <span className="hidden min-w-0 sm:grid sm:grid-cols-[1.25rem_minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1.4fr)] sm:items-center sm:gap-3">
+          <span className="text-secondary" aria-hidden="true">
+            {expanded ? '▾' : '▸'}
+          </span>
+          <span className="truncate font-medium text-text-heading">{name}</span>
+          <span className="truncate tabular-nums text-text-heading">{mobile}</span>
+          <span className="truncate text-text-heading">{connectedRukn}</span>
+        </span>
+        <span className="flex min-w-0 items-start gap-2 sm:hidden">
+          <span className="mt-0.5 w-5 shrink-0 text-secondary" aria-hidden="true">
+            {expanded ? '▾' : '▸'}
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block break-words font-medium text-text-heading">{name}</span>
+            <span className="mt-0.5 block break-all text-sm tabular-nums text-text-heading">{mobile}</span>
+            <span className="mt-1 block text-xs text-secondary">Connected Rukn</span>
+            <span className="block break-words text-sm text-text-heading">{connectedRukn}</span>
+          </span>
+        </span>
+        <span className="sr-only">{expanded ? 'Hide details' : 'Show details'}</span>
+      </button>
+      {expanded ? (
+        <div id={detailId} className="border-t border-border px-3 py-3">
+          <PersonDetail row={row} />
+        </div>
+      ) : null}
+    </li>
+  )
+}
+
 function PersonDetail({ row }: { row: TrainingRegistrationAdminRow }) {
   return (
     <dl className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2 lg:grid-cols-3">
@@ -620,7 +700,7 @@ function PersonDetail({ row }: { row: TrainingRegistrationAdminRow }) {
       <Detail label="Payment Method" value={trainingPaymentMethodLabel(row.paymentMethod)} />
       <Detail label="Payment Status" value={trainingPaymentStatusLabel(row.paymentStatus)} />
       <Detail label="Cash Paid To" value={row.cashPaidToName || '—'} />
-      <Detail label="UTR" value={row.utr || '—'} />
+      <Detail label="UTR / Transaction Reference" value={row.utr || '—'} />
       <Detail label="Payment Submitted At" value={row.paymentSubmittedAt || '—'} />
       <Detail label="Payment Verified At" value={row.paymentVerifiedAt || '—'} />
       <Detail label="Payment Verified By" value={row.paymentVerifiedBy || '—'} />

@@ -226,6 +226,10 @@ function testPublicCopyAndPayment(): void {
   assert(admin.includes('paymentQueueTitle'), 'payment queues identify people by name')
   assert(admin.includes('matchesRegisteredPeopleSearch'), 'registered people search')
   assert(admin.includes('matchesRegisteredPeopleFilters'), 'registered people filters')
+  assert(admin.includes('RegisteredPersonRow'), 'registered people uses compact expandable rows')
+  assert(admin.includes('Connected Rukn'), 'compact list shows connected Rukn')
+  assert(admin.includes('expandedRegistrationId'), 'only one person expands at a time')
+  assert(admin.includes('aria-expanded'), 'person rows are keyboard accessible')
   assert(admin.includes('cash collector'), 'search includes cash collector')
   assert(admin.includes('relatedPeople'), 'rukn drill-down shows connected karkuns')
   assert(admin.includes('byCategory'), 'admin category table')
@@ -678,6 +682,74 @@ function testSearchFiltersAndCsv(): void {
   assert(filteredCsv.split(/\r?\n/).filter((line) => line.includes('TG260913-')).length === 4, 'csv is the full dataset')
 }
 
+function testRegisteredPeopleCompactList(): void {
+  const admin = read('src/components/public-registration/TrainingGatheringAdminPanel.tsx')
+  const tracking = read('src/lib/publicRegistration/adminTracking.ts')
+  const types = read('src/lib/publicRegistration/types.ts')
+  const handler = read('src/server/trainingRegistration/handler.ts')
+  const rules = read('firestore.rules')
+  const collections = read('src/repositories/firestore/collections.ts')
+
+  assert(admin.includes('function RegisteredPersonRow'), 'compact row component exists')
+  assert(admin.includes('function connectedRuknLabel'), 'connected Rukn uses existing names helper')
+  assert(admin.includes('row.ruknNames'), 'connected Rukn comes from existing ruknNames')
+  assert(tracking.includes('resolveRuknNames'), 'Rukn names still resolved from connections / ruknId')
+  assert(tracking.includes('ruknIdsByKarkunId'), 'active connections still populate connected Rukn')
+  assert(admin.includes('>Name</span>'), 'compact column Name')
+  assert(admin.includes('>Mobile</span>'), 'compact column Mobile')
+  assert(admin.includes('>Connected Rukn</span>'), 'compact column Connected Rukn')
+  assert(admin.includes("useState('')"), 'rows start collapsed')
+  assert(admin.includes('expandedRegistrationId === row.id'), 'details open only for selected person')
+  assert(admin.includes("current === row.id ? '' : row.id"), 'opening another person closes the previous row')
+  assert(admin.includes('aria-expanded={expanded}'), 'expanded state is exposed to assistive tech')
+  assert(admin.includes('type="button"'), 'rows use buttons not clickable divs')
+  assert(admin.includes('sm:hidden'), 'mobile stacked compact row exists')
+  assert(admin.includes('sm:grid'), 'desktop compact columns exist')
+
+  const compact = admin.slice(
+    admin.indexOf('function RegisteredPersonRow'),
+    admin.indexOf('function PersonDetail'),
+  )
+  assert(compact.includes('connectedRuknLabel(row)'), 'compact row shows connected Rukn')
+  assert(compact.includes('row.fullName'), 'compact row shows name')
+  assert(compact.includes('row.verifiedMobile'), 'compact row shows mobile')
+  assert(!compact.includes('trainingPaymentStatusLabel'), 'compact row hides payment status')
+  assert(!compact.includes('trainingPaymentMethodLabel'), 'compact row hides payment method')
+  assert(!compact.includes('row.utr'), 'compact row hides UTR')
+  assert(!compact.includes('paymentVerifiedAt'), 'compact row hides payment verified at')
+  assert(!compact.includes('cashPaidToName'), 'compact row hides cash collector')
+
+  const detail = admin.slice(admin.indexOf('function PersonDetail'), admin.indexOf('function FilterSelect'))
+  assert(detail.includes('Full Name'), 'expanded keeps full name')
+  assert(detail.includes('Gender'), 'expanded keeps gender')
+  assert(detail.includes('Category'), 'expanded keeps category')
+  assert(detail.includes('Mobile'), 'expanded keeps mobile')
+  assert(detail.includes('Registration ID'), 'expanded keeps registration id')
+  assert(detail.includes('Registration Date/Time'), 'expanded keeps registration datetime')
+  assert(detail.includes('Rukn Name'), 'expanded keeps rukn name')
+  assert(detail.includes('Rukn ID'), 'expanded keeps rukn id')
+  assert(detail.includes('Person ID'), 'expanded keeps person id')
+  assert(detail.includes('Registration Status'), 'expanded keeps registration status')
+  assert(detail.includes('Payment Method'), 'expanded keeps payment method')
+  assert(detail.includes('Payment Status'), 'expanded keeps payment status')
+  assert(detail.includes('Cash Paid To'), 'expanded keeps cash paid to')
+  assert(detail.includes('UTR'), 'expanded keeps UTR')
+  assert(detail.includes('Payment Submitted At'), 'expanded keeps payment submitted at')
+  assert(detail.includes('Payment Verified At'), 'expanded keeps payment verified at')
+  assert(detail.includes('Payment Verified By'), 'expanded keeps payment verified by')
+
+  assert(admin.includes('Registered People (Total: {summary.registered})'), 'registered count stays summary.registered')
+  assert(admin.includes('matchesRegisteredPeopleSearch'), 'search remains')
+  assert(admin.includes('matchesRegisteredPeopleFilters'), 'filters remain')
+  assert(admin.includes('exportTrainingRegistrationCsv'), 'CSV export remains')
+  assert(admin.includes('displayedPeople'), 'filters still change only the displayed list')
+  assert(types.includes('ruknNames: string[]'), 'admin row Rukn names type unchanged')
+  assert(handler.includes("const COLLECTION = 'trainingRegistrations'"), 'no new collection in handler')
+  assert(!collections.includes('registeredPeople'), 'no new registered-people collection')
+  assert(rules.includes('allow create, update, delete: if false'), 'registration write rules unchanged')
+  assert(rules.includes('allow read: if isAdministrator()'), 'admin read remains gated')
+}
+
 function testNoNewInfrastructure(): void {
   const handler = read('src/server/trainingRegistration/handler.ts')
   const collections = read('src/repositories/firestore/collections.ts')
@@ -974,6 +1046,7 @@ const cases = [
   run('same-device UPI deep link without marking paid', testUpiDeepLinkSameDevicePay),
   run('UTR trim empty and preserve', testUtrValidation),
   run('search filters and full CSV export', testSearchFiltersAndCsv),
+  run('registered people compact expandable list', testRegisteredPeopleCompactList),
   run('no new collection or screenshot infrastructure', testNoNewInfrastructure),
   run('cash collectors from existing rukn master', testCashCollectorsFromRuknMaster),
   run('online payment setting default and visibility', testOnlinePaymentSettingDefault),
