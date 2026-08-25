@@ -1,0 +1,33 @@
+---
+description: Deploy Karkun Connect only from committed, pushed feature-branch code
+alwaysApply: true
+---
+
+# KC — Deploy From Committed Code Only
+
+Deployment is allowed only from committed code. Never deploy the working tree.
+
+## Mandatory sequence
+
+1. Implement the requested change.
+2. Run relevant verification/tests.
+3. Commit the verified changes.
+4. Push the commit to the intended feature branch.
+5. Deploy that pushed/committed version to Vercel.
+6. Verify the deployment.
+7. Never claim a change is deployed while it exists only in the working tree.
+8. Never deploy uncommitted changes.
+9. Never merge or modify `main` unless explicitly instructed.
+10. Continue using the current feature branch unless explicitly instructed otherwise.
+
+## Do
+
+- Confirm `git status` is clean for the files being deployed before `vercel --prod`
+- Deploy the pushed commit SHA; confirm the Vercel deployment meta matches that SHA
+- Keep production aliases on the new READY deployment
+
+## Do not
+
+- Run `vercel --prod` with uncommitted or unpushed feature changes
+- Deploy from a dirty tree and later commit “what was deployed”
+- Merge, rebase onto, or push `main` / `origin/main` unless the user explicitly asks
