@@ -180,6 +180,18 @@ function testPublicCopyAndPayment(): void {
   assert(page.includes('Tarbiyati Ijtema'), 'english event title in public UI')
   assert(page.includes('TARBIYATI_IJTEMA_POSTER_SRC'), 'public hero uses approved poster')
   assert(page.includes('object-contain'), 'poster and QR preserve aspect ratio')
+  assert(
+    page.includes('overflow-hidden rounded-[2rem] bg-white'),
+    'poster and registration share one outer card',
+  )
+  assert(
+    !page.includes('rounded-[1.75rem] border border-[#e5e7de] bg-white/95'),
+    'registration is not a second independent card',
+  )
+  assert(
+    !page.includes('mt-6 mb-4 flex items-center justify-center gap-2'),
+    'step indicators are not a gap between two cards',
+  )
   assert(!page.includes('swiper') && !page.includes('carousel'), 'does not invent a carousel')
   assert(!page.includes('Training Gathering'), 'no training gathering in public UI')
   assert(page.includes('Online Payment'), 'online payment choice')

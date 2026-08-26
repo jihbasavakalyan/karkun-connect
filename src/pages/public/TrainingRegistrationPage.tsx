@@ -250,32 +250,33 @@ export function TrainingRegistrationPage() {
         <div className="absolute -left-16 top-24 h-56 w-56 rounded-full bg-[#d8f3dc]/70 blur-3xl" />
         <div className="absolute right-0 top-0 h-72 w-72 rounded-full bg-[#fbf3d5]/80 blur-3xl" />
       </div>
-      <main className="relative mx-auto flex min-h-dvh max-w-lg flex-col px-4 py-6 sm:py-10">
-        <header className="overflow-hidden rounded-[2rem] bg-[#0f3d24] shadow-[0_20px_50px_-20px_rgb(15_23_42_/_0.45)]">
-          <img
-            src={TARBIYATI_IJTEMA_POSTER_SRC}
-            alt={TARBIYATI_IJTEMA_POSTER_ALT}
-            width={819}
-            height={1024}
-            decoding="async"
-            fetchPriority="high"
-            className="block h-auto w-full object-contain"
-          />
-        </header>
-
-        <div className="mt-6 mb-4 flex items-center justify-center gap-2" aria-label="Progress">
-          {STEPS.map((item, index) => (
-            <span
-              key={item}
-              className={[
-                'h-2 rounded-full transition-all',
-                index < progress ? 'w-8 bg-primary' : 'w-2 bg-[#d8f3dc]',
-              ].join(' ')}
+      <main className="relative mx-auto flex min-h-dvh w-full max-w-[40rem] flex-col px-4 py-6 sm:py-10">
+        <article className="overflow-hidden rounded-[2rem] bg-white shadow-[0_20px_50px_-20px_rgb(15_23_42_/_0.45)]">
+          <header className="bg-[#0f3d24]">
+            <img
+              src={TARBIYATI_IJTEMA_POSTER_SRC}
+              alt={TARBIYATI_IJTEMA_POSTER_ALT}
+              width={819}
+              height={1024}
+              decoding="async"
+              fetchPriority="high"
+              className="block h-auto w-full object-contain"
             />
-          ))}
-        </div>
+          </header>
 
-        <section className="rounded-[1.75rem] border border-[#e5e7de] bg-white/95 p-5 shadow-[0_10px_40px_-12px_rgb(15_23_42_/_0.16)] sm:p-7">
+          <div className="flex items-center justify-center gap-2 px-5 pt-5 sm:px-7 sm:pt-6" aria-label="Progress">
+            {STEPS.map((item, index) => (
+              <span
+                key={item}
+                className={[
+                  'h-2 rounded-full transition-all',
+                  index < progress ? 'w-8 bg-primary' : 'w-2 bg-[#d8f3dc]',
+                ].join(' ')}
+              />
+            ))}
+          </div>
+
+          <section className="bg-white p-5 pt-4 sm:p-7 sm:pt-5">
           {step === 'mobile' && (
             <form
               className="space-y-5"
@@ -671,7 +672,8 @@ export function TrainingRegistrationPage() {
               </div>
             </div>
           )}
-        </section>
+          </section>
+        </article>
         <div id={publicRegistrationPhoneAuth.recaptchaContainerId} />
       </main>
     </div>
