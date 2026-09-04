@@ -81,6 +81,12 @@ export function RuknModulePage() {
     values: PersonFormValues,
     options?: { confirmMobileOverwrite?: boolean },
   ) => {
+    // Increment C — Admin Add Rukn requires Referred By Rukn (no free-form name).
+    if (!editingRukn && !values.referredByRuknId?.trim()) {
+      setFormError('Referred By Rukn is required.')
+      return
+    }
+
     const result = editingRukn
       ? updateRukn(editingRukn.id, values, 'Administrator', options)
       : createRukn(values)
@@ -239,6 +245,7 @@ export function RuknModulePage() {
                 mobile: editingRukn.mobile,
                 whatsapp: editingRukn.whatsapp,
                 status: editingRukn.status,
+                referredByRuknId: editingRukn.referredByRuknId,
               }
             : undefined
         }

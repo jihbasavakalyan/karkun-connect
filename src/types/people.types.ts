@@ -116,8 +116,8 @@ export type PersonContactInput = {
   education?: string
   profession?: string
   /**
-   * Increment B — referring Rukn id for NEW Karkun creates (Admin form / approve path).
-   * Not used for Muttafiq / Rukn kinds.
+   * Increment B/C — referring Rukn id for NEW Karkun / NEW Rukn creates.
+   * Not used for Muttafiq. Distinct from createdBy / assignedRuknId.
    */
   referredByRuknId?: string
 }

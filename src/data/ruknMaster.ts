@@ -16,6 +16,11 @@ export interface Rukn {
   /** KC-0058 — soft archive / recovery metadata (optional; additive). */
   isArchived?: boolean
   createdBy?: string
+  /**
+   * Increment C — existing Rukn who referred/recommended this Rukn (canonical id).
+   * Distinct from createdBy / updatedBy. Optional for historical records.
+   */
+  referredByRuknId?: string
   archivedAt?: string
   archivedBy?: string
   restoredAt?: string

@@ -355,9 +355,22 @@ export function createRukn(
     return mobileCheck
   }
 
+  const referredByRuknId = input.referredByRuknId?.trim() || undefined
+  if (referredByRuknId) {
+    const referringRukn = getRuknById(referredByRuknId)
+    if (!referringRukn || referringRukn.status !== 'active') {
+      return { success: false, error: 'Referring Rukn not found or inactive.' }
+    }
+  }
+
   const timestamp = nowIso()
+  const id = getNextRuknId()
+  if (referredByRuknId && referredByRuknId === id) {
+    return { success: false, error: 'A Rukn cannot refer themselves.' }
+  }
+
   const rukn: Rukn = {
-    id: getNextRuknId(),
+    id,
     name: input.name.trim(),
     gender: input.gender,
     mobile: normalizeMobile(input.mobile),
@@ -368,6 +381,7 @@ export function createRukn(
     createdAt: timestamp,
     updatedAt: timestamp,
     updatedBy,
+    referredByRuknId,
   }
 
   ruknMaster.push(rukn)
@@ -430,6 +444,7 @@ export function updateRukn(
   if (input.place !== undefined) rukn.place = input.place.trim() || DEFAULT_PLACE
   if (input.status !== undefined) rukn.status = input.status
   if (input.notes !== undefined) rukn.notes = input.notes.trim() || undefined
+  // referredByRuknId is immutable via updateRukn (Increment C).
 
   rukn.updatedAt = nowIso()
   rukn.updatedBy = updatedBy

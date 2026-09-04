@@ -6,6 +6,8 @@
 
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { getRuknById } from '@/data/ruknMaster'
+import { ensureJwtRoleClaimPresent } from '@/lib/auth/ensureJwtRoleClaim'
+import { getFirebaseAuth } from '@/lib/firebase/firebase'
 import { assignKarkun } from '@/lib/assignmentEngine'
 import { KARKUN_ALREADY_CONNECTED_MESSAGE } from '@/lib/connectionEligibility'
 import { resolveExistingPersonRelationship } from '@/lib/existingPersonResolution'
@@ -60,6 +62,52 @@ export type SubmitNewKarkunRequestInput = {
   acknowledgeNameWarning?: boolean
   /** KC-0123 — defaults to new_karkun. */
   kind?: PeopleRequestKind
+}
+
+/**
+ * Increment D — when a Rukn session is signed in, requestingRuknId must match JWT ruknId.
+ * Unsigned / local verification paths stay permissive (Firestore still requires auth in prod).
+ */
+async function assertRequesterMatchesSignedInRukn(
+  requestingRuknId: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (!getFirebaseAuth().currentUser) {
+    return { ok: true }
+  }
+  const claims = await ensureJwtRoleClaimPresent()
+  if (!claims.ok) {
+    return { ok: false, error: claims.error }
+  }
+  if (claims.role === 'rukn') {
+    const expected = claims.ruknId?.trim() ?? ''
+    if (!expected || expected !== requestingRuknId.trim()) {
+      return {
+        ok: false,
+        error: 'You cannot submit a request on behalf of another Rukn.',
+      }
+    }
+  }
+  return { ok: true }
+}
+
+/** Increment D — approve/reject require Administrator when a session is present. */
+async function assertAdministratorDecisionSession(): Promise<
+  { ok: true } | { ok: false; error: string }
+> {
+  if (!getFirebaseAuth().currentUser) {
+    return { ok: true }
+  }
+  const claims = await ensureJwtRoleClaimPresent()
+  if (!claims.ok) {
+    return { ok: false, error: claims.error }
+  }
+  if (claims.role !== 'administrator') {
+    return {
+      ok: false,
+      error: 'Only an Administrator can approve or reject intake requests.',
+    }
+  }
+  return { ok: true }
 }
 
 export type MobileDuplicateDetails = {
@@ -209,6 +257,11 @@ export async function submitNewKarkunRequest(
   const rukn = getRuknById(input.requestingRuknId)
   if (!rukn || rukn.status !== 'active') {
     return { ok: false, error: 'Rukn not found or inactive.', code: 'VALIDATION' }
+  }
+
+  const requesterGate = await assertRequesterMatchesSignedInRukn(rukn.id)
+  if (!requesterGate.ok) {
+    return { ok: false, error: requesterGate.error, code: 'VALIDATION' }
   }
 
   const ruknGender = normalizePersonGender(rukn.gender)
@@ -621,6 +674,11 @@ export async function approveNewKarkunRequest(input: {
   decidedBy: string
   decisionNotes?: string
 }): Promise<ApproveNewKarkunRequestResult> {
+  const adminGate = await assertAdministratorDecisionSession()
+  if (!adminGate.ok) {
+    return { ok: false, error: adminGate.error, code: 'VALIDATION' }
+  }
+
   // KC-028B — duplicate clicks join the in-flight approve; do not fake ALREADY_PROCESSED
   // while the request is still Pending.
   const inflight = approveInFlight.get(input.requestId)
@@ -642,6 +700,11 @@ export async function rejectNewKarkunRequest(input: {
   decidedBy: string
   decisionNotes?: string
 }): Promise<{ ok: true; request: NewKarkunRequest } | { ok: false; error: string }> {
+  const adminGate = await assertAdministratorDecisionSession()
+  if (!adminGate.ok) {
+    return { ok: false, error: adminGate.error }
+  }
+
   const resolved = resolveKarkunRequest(input.requestId, 'Rejected', input.decidedBy, {
     decisionNotes: input.decisionNotes?.trim() || undefined,
   })
@@ -769,6 +832,11 @@ export async function submitMuttafiqRuknLinkRequest(input: {
     return { ok: false, error: 'Rukn not found or inactive.', code: 'VALIDATION' }
   }
 
+  const requesterGate = await assertRequesterMatchesSignedInRukn(rukn.id)
+  if (!requesterGate.ok) {
+    return { ok: false, error: requesterGate.error, code: 'VALIDATION' }
+  }
+
   try {
     await syncKarkunRequestStoreFromServer()
   } catch {
@@ -845,6 +913,11 @@ export async function approvePeopleIntakeRequest(input: {
   decidedBy: string
   decisionNotes?: string
 }): Promise<ApproveNewKarkunRequestResult> {
+  const adminGate = await assertAdministratorDecisionSession()
+  if (!adminGate.ok) {
+    return { ok: false, error: adminGate.error, code: 'VALIDATION' }
+  }
+
   const inflight = intakeApproveInFlight.get(input.requestId)
   if (inflight) {
     return inflight

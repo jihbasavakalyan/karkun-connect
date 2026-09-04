@@ -4,9 +4,11 @@ import { PersonContactActions } from '@/components/forms/people/PersonContactAct
 import { RuknAssignmentSelect } from '@/components/forms/people/RuknAssignmentSelect'
 import { Modal, ModalFormFooter, ModalFormGrid, ModalFormSection } from '@/components/common'
 import { getAllRukns } from '@/lib/peopleStore'
+import { getRuknById } from '@/data/ruknMaster'
 import type { PersonContactInput, PersonKind } from '@/types/people.types'
 import type { PersonGender, PersonStatus } from '@/types/karkun-registry.types'
 import { DEFAULT_PLACE, getFatherHusbandLabel } from '@/types/people.types'
+import { formatPersonNameForDisplay } from '@/utils/formatPersonDisplay'
 import { MOBILE_INPUT_PLACEHOLDER } from '@/utils/personContactLinks'
 
 export type PersonFormValues = PersonContactInput & {
@@ -85,17 +87,18 @@ function PersonFormModalContent({
   const [education, setEducation] = useState(initialValues?.education ?? '')
   const [profession, setProfession] = useState(initialValues?.profession ?? '')
 
-  const referringRuknOptions = useMemo(
-    () =>
-      getAllRukns()
-        .filter((rukn) => rukn.status === 'active' && !rukn.isArchived && rukn.gender === gender)
-        .slice()
-        .sort((a, b) => a.name.localeCompare(b.name)),
-    [gender],
-  )
+  const referringRuknOptions = useMemo(() => {
+    const active = getAllRukns().filter((rukn) => rukn.status === 'active' && !rukn.isArchived)
+    // Karkun referral: same-gender active Rukns. Rukn referral: any active Rukn.
+    const scoped = kind === 'rukn' ? active : active.filter((rukn) => rukn.gender === gender)
+    return scoped.slice().sort((a, b) => a.name.localeCompare(b.name))
+  }, [gender, kind])
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    const isKarkunAddReferral =
+      kind === 'karkun' && mode === 'add' && personLabel !== 'Muttafiq'
+    const isRuknAddReferral = kind === 'rukn' && mode === 'add'
     onSubmit({
       name,
       gender,
@@ -109,9 +112,7 @@ function PersonFormModalContent({
       profession: kind === 'karkun' ? profession || undefined : undefined,
       assignedRuknId: kind === 'karkun' && mode === 'edit' ? assignedRuknId : undefined,
       referredByRuknId:
-        kind === 'karkun' && mode === 'add' && personLabel !== 'Muttafiq'
-          ? referredByRuknId || undefined
-          : undefined,
+        isKarkunAddReferral || isRuknAddReferral ? referredByRuknId || undefined : undefined,
     })
   }
 
@@ -124,7 +125,9 @@ function PersonFormModalContent({
   const showConnectionSection =
     kind === 'karkun' && mode === 'edit' && Boolean(karkunId) && personLabel !== 'Muttafiq'
   const showReferredBySection =
-    kind === 'karkun' && mode === 'add' && personLabel !== 'Muttafiq'
+    (kind === 'karkun' && mode === 'add' && personLabel !== 'Muttafiq') ||
+    (kind === 'rukn' && mode === 'add')
+  const showReferredByDisplay = kind === 'rukn' && mode === 'edit'
   const showAdditionalSection = kind === 'karkun'
 
   return (
@@ -162,7 +165,10 @@ function PersonFormModalContent({
                 value={gender}
                 onChange={(event) => {
                   setGender(event.target.value as PersonGender)
-                  setReferredByRuknId('')
+                  // Karkun referral options are gender-scoped; clear stale selection.
+                  if (kind === 'karkun') {
+                    setReferredByRuknId('')
+                  }
                 }}
                 className={selectClassName}
                 required
@@ -237,6 +243,20 @@ function PersonFormModalContent({
                 </select>
               </div>
             </ModalFormGrid>
+          </ModalFormSection>
+        )}
+
+        {showReferredByDisplay && (
+          <ModalFormSection title="Referral">
+            <p className="text-sm text-text-heading">
+              <span className="font-medium">Referred By:</span>{' '}
+              {initialValues?.referredByRuknId
+                ? formatPersonNameForDisplay(
+                    getRuknById(initialValues.referredByRuknId)?.name ??
+                      initialValues.referredByRuknId,
+                  )
+                : '—'}
+            </p>
           </ModalFormSection>
         )}
 

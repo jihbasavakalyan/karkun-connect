@@ -31,25 +31,54 @@ service cloud.firestore {
       return value is string ? value : '';
     }
 
+    function referredByUnchanged() {
+      return stringOrEmpty(resource.data.referredByRuknId)
+        == stringOrEmpty(request.resource.data.referredByRuknId);
+    }
+
+    function categoryUnchanged() {
+      return stringOrEmpty(resource.data.category)
+        == stringOrEmpty(request.resource.data.category);
+    }
+
+    /** Increment D — Muttafiq must stay outside campaign claim/connect paths. */
+    function isMuttafiqPersonData(data) {
+      return stringOrEmpty(data.category) == 'Muttafiq';
+    }
+
+    function karkunDocExists(karkunId) {
+      return karkunId is string
+        && karkunId != ''
+        && exists(/databases/$(database)/documents/karkuns/$(karkunId));
+    }
+
+    function karkunNotMuttafiq(karkunId) {
+      return karkunDocExists(karkunId)
+        && !isMuttafiqPersonData(
+          get(/databases/$(database)/documents/karkuns/$(karkunId)).data
+        );
+    }
+
     function isAvailableKarkunData(data) {
       return stringOrEmpty(data.assignedRuknId) == ''
         || data.assignmentStatus == 'Available';
     }
 
     /**
-     * KC-0058.2 — Rukn may:
+     * KC-0058.2 / Increment D — Rukn may:
      * - enrich / release own assigned Karkun
      * - claim an Available Karkun on Connect (assignedRuknId '' → self)
      * Never reassign to a different Rukn.
+     * Never change referredByRuknId or category.
+     * Never claim/update Muttafiq via campaign karkun paths.
      */
     function ruknMayUpdateKarkun() {
       let before = stringOrEmpty(resource.data.assignedRuknId);
       let after = stringOrEmpty(request.resource.data.assignedRuknId);
-      // Increment B — Rukn must not set or replace referredByRuknId.
-      let referredBefore = stringOrEmpty(resource.data.referredByRuknId);
-      let referredAfter = stringOrEmpty(request.resource.data.referredByRuknId);
       return request.resource.data.id == resource.data.id
-        && referredBefore == referredAfter
+        && !isMuttafiqPersonData(resource.data)
+        && categoryUnchanged()
+        && referredByUnchanged()
         && (
           (before == ruknId() && after == ruknId())
           || (before == '' && after == ruknId())
@@ -66,7 +95,9 @@ service cloud.firestore {
 
     match /rukns/{docId} {
       allow read: if isAdministrator() || (isRukn() && docId == ruknId());
-      allow create, update: if isAdministrator();
+      allow create: if isAdministrator();
+      // Increment C/D — referredByRuknId immutable after create (Admin included).
+      allow update: if isAdministrator() && referredByUnchanged();
       allow delete: if false;
     }
 
@@ -78,14 +109,31 @@ service cloud.firestore {
           || isAvailableKarkunData(resource.data)
         ));
       allow create: if isAdministrator();
-      allow update: if isAdministrator() || (isRukn() && ruknMayUpdateKarkun());
+      // Increment D — Admin ordinary updates must not rewrite referral attribution.
+      allow update: if (isAdministrator() && referredByUnchanged())
+        || (isRukn() && ruknMayUpdateKarkun());
       allow delete: if false;
     }
 
     match /connections/{assignmentId} {
       allow read: if isAdministrator() || assignedToRukn(resource.data);
-      allow create: if isAdministrator() || assignedToRukn(request.resource.data);
-      allow update: if isAdministrator() || assignedToRukn(resource.data);
+      // Increment D — Rukn may create only for self + non-Muttafiq person.
+      allow create: if isAdministrator()
+        || (
+          isRukn()
+          && assignedToRukn(request.resource.data)
+          && request.resource.data.keys().hasAll(['assignmentId', 'ruknId', 'karkunId'])
+          && request.resource.data.assignmentId == assignmentId
+          && karkunNotMuttafiq(request.resource.data.karkunId)
+        );
+      // Increment D — Rukn cannot forge ownership transfer via connection update.
+      allow update: if isAdministrator()
+        || (
+          assignedToRukn(resource.data)
+          && request.resource.data.ruknId == resource.data.ruknId
+          && request.resource.data.karkunId == resource.data.karkunId
+          && request.resource.data.assignmentId == resource.data.assignmentId
+        );
       allow delete: if false;
     }
 
@@ -339,6 +387,15 @@ service cloud.firestore {
     // KC-0058 — protect connectionMeta from delete.
     // KC-0058.2 — Rukn may read hydrate counters + allocate ASN via connectionMeta;
     //             Rukn may update karkunRequests (Add New Karkun). Default deny otherwise.
+    //
+    // Increment D — RESIDUAL RISK (accepted without redesign):
+    // settings/karkunRequests is a shared blob. Any authorized Rukn may overwrite the
+    // full document. Field-level requester/status protection requires per-request docs
+    // or a trusted server writer. Mitigations in app layer:
+    // - submit validates requestingRuknId against auth/session Rukn
+    // - Admin approval is authoritative for create/link + referredBy stamp
+    // - Muttafiq relationships are Admin-only writes on muttafiqRelationships
+    // Do NOT broaden Rukn write access further.
     match /settings/{docId} {
       allow read: if isAdministrator()
         || (isRukn() && (

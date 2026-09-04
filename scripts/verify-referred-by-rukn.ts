@@ -1,5 +1,6 @@
 /**
  * Increment B — Referred By Rukn on NEW Karkun records.
+ * Increment C — Referred By Rukn on NEW Rukn records.
  * Run: npx vite-node scripts/verify-referred-by-rukn.ts
  *
  * Note: full approve→assign needs Firebase auth claims; this script verifies the
@@ -8,12 +9,14 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
-import { ruknMaster } from '@/data/ruknMaster'
+import { getRuknById, ruknMaster } from '@/data/ruknMaster'
 import {
   applyReferredByRuknIfAbsent,
   clearKarkunRegistry,
   createKarkun,
+  createRukn,
   updateKarkun,
+  updateRukn,
 } from '@/lib/peopleStore'
 import {
   clearKarkunRequestStore,
@@ -39,6 +42,9 @@ console.log('verify-referred-by-rukn: start')
   const types = read('src/types/karkun-registry.types.ts')
   assert(types.includes('referredByRuknId?: string'), 'registry field')
 
+  const ruknTypes = read('src/data/ruknMaster.ts')
+  assert(ruknTypes.includes('referredByRuknId?: string'), 'rukn model field')
+
   const peopleTypes = read('src/types/people.types.ts')
   assert(peopleTypes.includes('referredByRuknId?: string'), 'contact input field')
 
@@ -48,6 +54,11 @@ console.log('verify-referred-by-rukn: start')
     store.includes('referredByRuknId is immutable via updateKarkun'),
     'updateKarkun does not mutate referral',
   )
+  assert(
+    store.includes('referredByRuknId is immutable via updateRukn'),
+    'updateRukn does not mutate referral',
+  )
+  assert(store.includes('A Rukn cannot refer themselves.'), 'self-referral rejected')
 
   const service = read('src/services/karkunRequestService.ts')
   assert(service.includes('referredByRuknId: claimed.requestingRuknId.trim()'), 'approve stamps create')
@@ -56,15 +67,24 @@ console.log('verify-referred-by-rukn: start')
   const form = read('src/components/forms/people/PersonFormModal.tsx')
   assert(form.includes('Referred By Rukn'), 'admin add picker label')
   assert(form.includes('person-referred-by-rukn'), 'admin add picker id')
+  assert(form.includes("kind === 'rukn' && mode === 'add'"), 'rukn add referral UI')
+  assert(form.includes('Referred By:'), 'rukn edit referral display')
 
   const profile = read('src/pages/admin/KarkunProfilePage.tsx')
-  assert(profile.includes('Referred By:'), 'profile display')
+  assert(profile.includes('Referred By:'), 'karkun profile display')
 
   const rules = read('firestore.rules')
-  assert(rules.includes('referredBefore == referredAfter'), 'rukn cannot change referral')
+  assert(rules.includes('referredByUnchanged()'), 'rukn cannot change karkun referral')
+  assert(
+    /match \/rukns\/\{docId\}[\s\S]*?referredByUnchanged\(\)/.test(rules),
+    'rukn update preserves referredByRuknId',
+  )
 
   const karkunan = read('src/pages/admin/KarkunanPage.tsx')
-  assert(karkunan.includes('Referred By Rukn is required'), 'admin add requires referral')
+  assert(karkunan.includes('Referred By Rukn is required'), 'admin add karkun requires referral')
+
+  const ruknPage = read('src/pages/admin/RuknModulePage.tsx')
+  assert(ruknPage.includes('Referred By Rukn is required'), 'admin add rukn requires referral')
 
   console.log('  OK  static contracts')
 }
@@ -233,6 +253,103 @@ const otherRukn = activeMaleRukns[1]!
   assert(row!.name === 'Legacy No Referral', 'name intact')
 
   console.log('  OK  optional field + legacy readable')
+}
+
+{
+  // Increment C — Admin create Rukn with Referred By
+  const beforeIds = new Set(ruknMaster.map((row) => row.id))
+  const created = createRukn(
+    {
+      name: 'Verify New Referred Rukn',
+      gender: 'Male',
+      mobile: '9111000201',
+      place: DEFAULT_PLACE,
+      status: 'active',
+      referredByRuknId: referring.id,
+    },
+    'Administrator',
+  )
+  assert(created.success, `createRukn: ${created.error ?? ''}`)
+  const newRukn = ruknMaster.find((row) => !beforeIds.has(row.id) && row.mobile.includes('9111000201'))
+  assert(newRukn, 'new rukn in master')
+  assert(newRukn!.referredByRuknId === referring.id, 'rukn referredBy persisted')
+  assert(getRuknById(newRukn!.id)?.referredByRuknId === referring.id, 'reload preserves rukn referral')
+
+  updateRukn(newRukn!.id, { name: 'Verify New Referred Rukn Updated' }, 'Administrator')
+  assert(
+    getRuknById(newRukn!.id)?.referredByRuknId === referring.id,
+    'updateRukn does not erase referral',
+  )
+
+  updateRukn(
+    newRukn!.id,
+    { name: 'Still Same Rukn Referral', referredByRuknId: otherRukn.id },
+    'Administrator',
+  )
+  assert(
+    getRuknById(newRukn!.id)?.referredByRuknId === referring.id,
+    'updateRukn cannot replace referredBy',
+  )
+
+  const unknown = createRukn(
+    {
+      name: 'Bad Rukn Referral',
+      gender: 'Male',
+      mobile: '9111000202',
+      place: DEFAULT_PLACE,
+      status: 'active',
+      referredByRuknId: 'rk-does-not-exist',
+    },
+    'Administrator',
+  )
+  assert(!unknown.success, 'unknown referring Rukn rejected')
+
+  // Self-referral: allocate-next id cannot equal an existing referring id in normal flow;
+  // guard is covered statically + by rejecting when referredBy === allocated id.
+  const nextIdGuess = (() => {
+    const nums = ruknMaster
+      .map((row) => Number.parseInt(row.id.replace(/^R/i, ''), 10))
+      .filter((n) => Number.isFinite(n))
+    const max = nums.length ? Math.max(...nums) : 0
+    return `R${String(max + 1).padStart(3, '0')}`
+  })()
+  const self = createRukn(
+    {
+      name: 'Self Referral Block',
+      gender: 'Male',
+      mobile: '9111000203',
+      place: DEFAULT_PLACE,
+      status: 'active',
+      referredByRuknId: nextIdGuess,
+    },
+    'Administrator',
+  )
+  // Referring id does not exist yet → rejected as unknown/inactive (covers self-create race).
+  assert(!self.success, 'self / non-existent next-id referral rejected')
+
+  const legacyRukn = ruknMaster.find((row) => !row.referredByRuknId)
+  assert(legacyRukn, 'existing rukn without referral remains readable')
+  assert(Boolean(legacyRukn!.name), 'legacy rukn name intact')
+
+  // Increment B still works after Increment C changes.
+  const karkunStill = createKarkun(
+    {
+      name: 'Post C Karkun Referral',
+      gender: 'Male',
+      mobile: '9111000204',
+      place: DEFAULT_PLACE,
+      status: 'active',
+      referredByRuknId: referring.id,
+    },
+    'Administrator',
+  )
+  assert(karkunStill.success && karkunStill.karkunId, 'karkun referral still works')
+  assert(
+    getKarkunById(karkunStill.karkunId!)?.referredByRuknId === referring.id,
+    'karkun referredBy intact',
+  )
+
+  console.log('  OK  Increment C rukn referral + B compatibility')
 }
 
 console.log('verify-referred-by-rukn: PASS')
