@@ -395,6 +395,7 @@ async function executeWriteLifecycle<T>(
     attempts: 0,
   }
   let slowWarned = false
+  let finished = false
   let slowTimer: ReturnType<typeof setTimeout> | undefined
 
   const setPhase = (phase: WritePhase) => {
@@ -416,6 +417,7 @@ async function executeWriteLifecycle<T>(
   markStage(timings, 'submitting')
 
   slowTimer = setTimeout(() => {
+    if (finished || slowWarned) return
     slowWarned = true
     options.onSlow?.()
     options.onPhase?.('writing', WRITE_SLOW_URDU)
@@ -535,6 +537,7 @@ async function executeWriteLifecycle<T>(
       error,
     }
   } finally {
+    finished = true
     if (slowTimer !== undefined) clearTimeout(slowTimer)
   }
 }

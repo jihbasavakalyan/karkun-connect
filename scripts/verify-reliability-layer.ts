@@ -10,6 +10,7 @@ import {
   toOperatorPersistError,
 } from '@/lib/reliability/persistErrors'
 import { mergeGuidanceState } from '@/lib/reliability/guidanceStateMerge'
+import { runWriteLifecycle } from '@/lib/reliability/writeLifecycle'
 import type { GuidanceState } from '@/repositories/interfaces/ExecutionRepository'
 import type { Commitment, JourneyTimelineEvent } from '@/types/guidance'
 
@@ -109,6 +110,41 @@ const merged = mergeGuidanceState(remote, local)
 assert(merged.commitments.some((c) => c.id === 'c-remote'), 'merge keeps remote commitment')
 assert(merged.commitments.some((c) => c.id === 'c-local'), 'merge keeps local commitment')
 assert(merged.timelineEvents.some((t) => t.id === 't-remote'), 'merge keeps remote timeline')
+
+async function verifySlowOperationOnce(): Promise<void> {
+  let slowCallbacks = 0
+  const result = await runWriteLifecycle({
+    key: 'verify-slow-once',
+    slowAfterMs: 15,
+    timeoutMs: 5_000,
+    maxAttempts: 1,
+    work: () => new Promise((resolveWork) => setTimeout(() => resolveWork('ok'), 60)),
+    onSlow: () => {
+      slowCallbacks += 1
+    },
+  })
+  assert(result.ok, 'slow write still succeeds')
+  assert(slowCallbacks === 1, 'slow-operation callback fires at most once')
+  assert(result.slowWarned, 'slowWarned is true when work exceeds threshold')
+
+  const fast = await runWriteLifecycle({
+    key: 'verify-slow-fast',
+    slowAfterMs: 5_000,
+    timeoutMs: 5_000,
+    maxAttempts: 1,
+    work: async () => 'ok',
+    onSlow: () => {
+      slowCallbacks += 1
+    },
+  })
+  assert(fast.ok && !fast.slowWarned, 'fast write does not emit a leftover slow warning')
+  assert(slowCallbacks === 1, 'a later action does not accumulate extra slow callbacks')
+}
+
+const lifecycleSrc = readFileSync(resolve(root, 'src/lib/reliability/writeLifecycle.ts'), 'utf8')
+assert(lifecycleSrc.includes('if (finished || slowWarned) return'), 'slow timer is cancelled after completion')
+
+await verifySlowOperationOnce()
 
 console.log('verify-reliability-layer: OK', {
   mergedCommitments: merged.commitments.length,

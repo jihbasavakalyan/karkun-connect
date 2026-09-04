@@ -25,6 +25,10 @@ import {
   rejectNewKarkunRequest,
   subscribeToKarkunRequestStore,
 } from '@/services/karkunRequestService'
+import {
+  reloadKarkunRequestStoreFromPersistence,
+  syncKarkunRequestStoreFromServer,
+} from '@/stores/karkunRequestStore'
 import { markRuknAdminMessageRead } from '@/services/ruknAdminMessageService'
 import { subscribeToRuknAdminMessageStore } from '@/stores/ruknAdminMessageStore'
 import { TrainingGatheringAdminPanel } from '@/components/public-registration/TrainingGatheringAdminPanel'
@@ -83,7 +87,12 @@ export function AdminInboxPage() {
 
   const decidedBy = user?.displayName ?? user?.uid ?? 'Administrator'
 
-  const refreshAfterDecision = () => {
+  const refreshAfterDecision = async () => {
+    try {
+      await syncKarkunRequestStoreFromServer()
+    } catch {
+      reloadKarkunRequestStoreFromPersistence()
+    }
     setTick((v) => v + 1)
   }
 
@@ -111,9 +120,14 @@ export function AdminInboxPage() {
       refreshUi: refreshAfterDecision,
     }).then((lifecycle) => {
       if (!lifecycle) return
+      refreshAfterDecision()
       if (!lifecycle.ok) {
+        if (lifecycle.code === 'already_processed') {
+          setError('')
+          setNotice(`${request.fullName} was already processed.`)
+          return
+        }
         setError(lifecycle.message)
-        refreshAfterDecision()
         return
       }
       setNotice(`Approved ${request.fullName}.`)
@@ -142,10 +156,10 @@ export function AdminInboxPage() {
       refreshUi: refreshAfterDecision,
     }).then((lifecycle) => {
       if (!lifecycle) return
+      refreshAfterDecision()
       if (!lifecycle.ok) {
         const classified = classifyWriteError(lifecycle.error ?? lifecycle.message)
         setError(classified.message)
-        refreshAfterDecision()
         return
       }
       setNotice(`Rejected ${request.fullName}.`)
@@ -342,7 +356,7 @@ export function AdminInboxPage() {
                       disabled={busy}
                       onClick={() => handleMarkRead(item)}
                     >
-                      {itemBusy ? progressMessage || '…' : 'Mark read'}
+                      {itemBusy ? '…' : 'Mark read'}
                     </SecondaryButton>
                   ) : null}
                   {canDecide ? (
@@ -352,14 +366,14 @@ export function AdminInboxPage() {
                         disabled={busy}
                         onClick={() => handleApprove(item)}
                       >
-                        {itemBusy ? progressMessage || '…' : 'Approve'}
+                        {itemBusy ? '…' : 'Approve'}
                       </PrimaryButton>
                       <SecondaryButton
                         type="button"
                         disabled={busy}
                         onClick={() => handleReject(item)}
                       >
-                        {itemBusy ? progressMessage || '…' : 'Reject'}
+                        {itemBusy ? '…' : 'Reject'}
                       </SecondaryButton>
                     </>
                   ) : null}

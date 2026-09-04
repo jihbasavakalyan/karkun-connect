@@ -918,10 +918,14 @@ function applyBackgroundHydratePayload(input: {
 
   // KC-0102C — production settings has no broadcast_*/backup_* docs; caches stay empty
   // unless written in-session via settings repository APIs.
-  const karkunRequests = Array.isArray(karkunRequestsDoc?.requests)
+  // Never replace in-memory Approved/Rejected with a stale snapshot Pending
+  // (same contract as writeMergedKarkunRequests / refreshKarkunRequestCacheFromServer).
+  const remoteKarkunRequests = Array.isArray(karkunRequestsDoc?.requests)
     ? karkunRequestsDoc.requests
     : []
-  karkunRequestCache.set(karkunRequests)
+  karkunRequestCache.set(
+    mergeKarkunRequestsById(remoteKarkunRequests, karkunRequestCache.get()),
+  )
   const ruknAdminMessages = Array.isArray(ruknAdminMessagesDoc?.messages)
     ? ruknAdminMessagesDoc.messages
     : []

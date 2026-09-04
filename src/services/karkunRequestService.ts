@@ -42,8 +42,8 @@ import { getRepositories, getRepositoryProviderMode } from '@/repositories/provi
 import { unwrapRepository } from '@/repositories/errors'
 import { lookupMobileInMasterRegistry } from '@/lib/people/lookupMobileInMasterRegistry'
 import type { NewKarkunRequest, PeopleRequestKind } from '@/types/karkunRequest.types'
-import type { PersonGender } from '@/types/people.types'
-import { DEFAULT_PLACE } from '@/types/people.types'
+import { DEFAULT_PLACE, type PersonGender } from '@/types/people.types'
+import { getPersonCategory } from '@/lib/peopleClassification'
 
 export { subscribeToKarkunRequestStore, getPendingKarkunRequests, getAllKarkunRequests }
 
@@ -718,11 +718,33 @@ export async function submitKarkunToMuttafiqConversionRequest(input: {
   return { ok: true, request }
 }
 
+const intakeApproveInFlight = new Map<string, Promise<ApproveNewKarkunRequestResult>>()
+
 /**
  * KC-0123 — Approve non-karkun intake kinds (Muttafiq create / conversion).
  * New Karkun continues to use approveNewKarkunRequest.
+ * Duplicate clicks join the in-flight promise (same contract as approveNewKarkunRequest).
  */
 export async function approvePeopleIntakeRequest(input: {
+  requestId: string
+  decidedBy: string
+  decisionNotes?: string
+}): Promise<ApproveNewKarkunRequestResult> {
+  const inflight = intakeApproveInFlight.get(input.requestId)
+  if (inflight) {
+    return inflight
+  }
+
+  const work = approvePeopleIntakeRequestOnce(input)
+  intakeApproveInFlight.set(input.requestId, work)
+  try {
+    return await work
+  } finally {
+    intakeApproveInFlight.delete(input.requestId)
+  }
+}
+
+async function approvePeopleIntakeRequestOnce(input: {
   requestId: string
   decidedBy: string
   decisionNotes?: string
@@ -734,7 +756,17 @@ export async function approvePeopleIntakeRequest(input: {
   }
 
   const existing = getKarkunRequestById(input.requestId)
-  if (!existing || existing.status !== 'Pending Approval') {
+  if (!existing) {
+    return alreadyProcessedResult()
+  }
+  if (existing.status === 'Approved') {
+    return {
+      ok: true,
+      request: existing,
+      karkunId: existing.createdKarkunId ?? existing.sourcePersonId ?? existing.id,
+    }
+  }
+  if (existing.status !== 'Pending Approval') {
     return alreadyProcessedResult()
   }
 
@@ -808,16 +840,20 @@ export async function approvePeopleIntakeRequest(input: {
       if (!personId) {
         return { ok: false, error: 'Conversion request is missing source person.', code: 'VALIDATION' }
       }
-      const { convertKarkunToMuttafiqPreservingIdentity } = await import(
-        '@/lib/peopleLifecycle/conversionService'
-      )
-      const converted = await convertKarkunToMuttafiqPreservingIdentity(
-        personId,
-        input.decidedBy || 'Administrator',
-        input.decisionNotes,
-      )
-      if (!converted.success) {
-        return { ok: false, error: converted.error ?? 'Conversion failed.', code: 'VALIDATION' }
+      const person = getKarkunById(personId)
+      const alreadyMuttafiq = Boolean(person && getPersonCategory(person) === 'Muttafiq')
+      if (!alreadyMuttafiq) {
+        const { convertKarkunToMuttafiqPreservingIdentity } = await import(
+          '@/lib/peopleLifecycle/conversionService'
+        )
+        const converted = await convertKarkunToMuttafiqPreservingIdentity(
+          personId,
+          input.decidedBy || 'Administrator',
+          input.decisionNotes,
+        )
+        if (!converted.success) {
+          return { ok: false, error: converted.error ?? 'Conversion failed.', code: 'VALIDATION' }
+        }
       }
       const resolved = resolveKarkunRequest(claimed.id, 'Approved', input.decidedBy, {
         decisionNotes: input.decisionNotes?.trim() || undefined,

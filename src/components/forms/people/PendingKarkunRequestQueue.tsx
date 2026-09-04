@@ -198,7 +198,7 @@ export function PendingKarkunRequestQueue() {
                   ) : null}
                 </div>
                 <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800">
-                  {isBusy ? progressMessage || '…' : 'Pending Approval'}
+                  {isBusy ? '…' : 'Pending Approval'}
                 </span>
               </div>
 
@@ -222,14 +222,14 @@ export function PendingKarkunRequestQueue() {
                   aria-busy={isBusy}
                   onClick={() => handleApprove(request)}
                 >
-                  {isBusy ? progressMessage || '…' : 'Approve'}
+                  {isBusy ? '…' : 'Approve'}
                 </PrimaryButton>
                 <SecondaryButton
                   type="button"
                   disabled={busy}
                   onClick={() => handleReject(request)}
                 >
-                  {isBusy ? progressMessage || '…' : 'Reject'}
+                  {isBusy ? '…' : 'Reject'}
                 </SecondaryButton>
               </div>
             </li>

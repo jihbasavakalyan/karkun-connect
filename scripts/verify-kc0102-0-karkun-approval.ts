@@ -44,10 +44,15 @@ const modal = readFileSync(
 assert(modal.includes('await submitNewKarkunRequest'), 'modal awaits durable submit')
 
 const queue = readFileSync(
-  resolve(root, 'src/components/admin/PendingKarkunRequestQueue.tsx'),
+  resolve(root, 'src/components/forms/people/PendingKarkunRequestQueue.tsx'),
   'utf8',
 )
-assert(queue.includes('Admin Approval Queue refresh'), 'admin queue diagnostics present')
+assert(queue.includes('approvePeopleIntakeRequest'), 'people queue still uses canonical approve')
+assert(queue.includes('{busy && progressMessage ?'), 'queue shows a single progress banner')
+assert(
+  !queue.includes('isBusy ? progressMessage'),
+  'queue buttons must not repeat the slow-operation message',
+)
 
 // Runtime merge: peer pending must survive a stale client write.
 const now = new Date().toISOString()
@@ -88,6 +93,52 @@ assert(merged.some((r) => r.id === 'kreq-remote'), 'merge preserves remote pendi
 assert(merged.some((r) => r.id === 'kreq-approved'), 'merge preserves remote approved')
 assert(merged.some((r) => r.id === 'kreq-new'), 'merge adds local new')
 assert(merged.length === 3, 'merge keeps union of ids')
+
+const approvedLocal = [
+  base({
+    id: 'samad-pasha',
+    fullName: 'Samad Pasha',
+    status: 'Approved',
+    kind: 'karkun_to_muttafiq',
+    updatedAt: '2026-09-05T00:02:00.000Z',
+  }),
+]
+const stalePendingRemote = [
+  base({
+    id: 'samad-pasha',
+    fullName: 'Samad Pasha',
+    status: 'Pending Approval',
+    kind: 'karkun_to_muttafiq',
+    updatedAt: '2026-09-05T00:01:00.000Z',
+  }),
+]
+const afterHydrate = mergeKarkunRequestsById(stalePendingRemote, approvedLocal)
+assert(
+  afterHydrate.find((r) => r.id === 'samad-pasha')?.status === 'Approved',
+  'stale snapshot Pending cannot resurrect Approved',
+)
+assert(
+  afterHydrate.filter((r) => r.status === 'Pending Approval').length === 0,
+  'approved conversion disappears from pending projection',
+)
+
+assert(
+  firestore.includes('mergeKarkunRequestsById(remoteKarkunRequests, karkunRequestCache.get())'),
+  'background hydrate merges karkunRequests instead of replacing',
+)
+
+const inboxPage = readFileSync(resolve(root, 'src/pages/admin/AdminInboxPage.tsx'), 'utf8')
+assert(inboxPage.includes('{busy && progressMessage ?'), 'inbox shows a single page-level progress banner')
+assert(
+  !inboxPage.includes('itemBusy ? progressMessage'),
+  'inbox buttons must not repeat the slow-operation message',
+)
+
+const intake = readFileSync(resolve(root, 'src/services/karkunRequestService.ts'), 'utf8')
+assert(intake.includes("existing.status === 'Approved'"), 're-approve of Approved is idempotent success')
+assert(intake.includes('alreadyMuttafiq'), 'conversion approve reconciles already-Muttafiq person')
+assert(intake.includes('approvePeopleIntakeRequestOnce'), 'intake approve is single-flight')
+assert(intake.includes('intakeApproveInFlight'), 'duplicate intake approve joins in-flight work')
 
 console.log('KC-0102.0 verify-kc0102-0-karkun-approval: OK', {
   mergedCount: merged.length,

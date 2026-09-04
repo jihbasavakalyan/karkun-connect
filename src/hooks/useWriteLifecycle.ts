@@ -3,7 +3,7 @@
  * Immediate busy + Urdu progress + slow warning + duplicate-click prevention.
  */
 
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   endAction,
   tryBeginAction,
@@ -32,27 +32,40 @@ export function useWriteLifecycle() {
   const [slow, setSlow] = useState(false)
   const [progressMessage, setProgressMessage] = useState('')
   const busyRef = useRef(false)
+  const runGenerationRef = useRef(0)
+
+  useEffect(() => {
+    return () => {
+      runGenerationRef.current += 1
+      busyRef.current = false
+    }
+  }, [])
 
   const run = useCallback(async <T,>(options: RunOptions<T>): Promise<WriteLifecycleResult<T> | undefined> => {
     if (busyRef.current) return undefined
     if (!tryBeginAction(options.key, 400)) return undefined
 
+    const generation = ++runGenerationRef.current
     busyRef.current = true
     setBusy(true)
     setBusyKey(options.key)
     setSlow(false)
     setPhase('submitting')
     setProgressMessage(writeProgressMessage(true, false))
+    let slowFired = false
 
     try {
       return await runWriteLifecycle({
         ...options,
         onPhase: (nextPhase, message) => {
+          if (generation !== runGenerationRef.current) return
           setPhase(nextPhase)
-          if (message) setProgressMessage(message)
+          setProgressMessage(message)
           options.onPhase?.(nextPhase, message)
         },
         onSlow: () => {
+          if (generation !== runGenerationRef.current || slowFired) return
+          slowFired = true
           setSlow(true)
           setProgressMessage(writeProgressMessage(true, true))
           options.onSlow?.()
@@ -60,12 +73,14 @@ export function useWriteLifecycle() {
       })
     } finally {
       endAction(options.key)
-      busyRef.current = false
-      setBusy(false)
-      setBusyKey(null)
-      setPhase('idle')
-      setSlow(false)
-      setProgressMessage('')
+      if (generation === runGenerationRef.current) {
+        busyRef.current = false
+        setBusy(false)
+        setBusyKey(null)
+        setPhase('idle')
+        setSlow(false)
+        setProgressMessage('')
+      }
     }
   }, [])
 
