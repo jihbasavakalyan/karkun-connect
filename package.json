@@ -44,6 +44,8 @@
     "verify:kc0100.3": "npx vite-node scripts/verify-kc0100-3-activation-reliability.ts",
     "verify:kc0100.5": "npx vite-node scripts/verify-kc0100-5-activation-trace.ts",
     "verify:kc0102.0": "npx vite-node scripts/verify-kc0102-0-karkun-approval.ts",
+    "verify:muttafiq-rukn-link": "npx vite-node scripts/verify-muttafiq-rukn-link.ts",
+    "verify:referred-by-rukn": "npx vite-node scripts/verify-referred-by-rukn.ts",
     "verify:kc0101b": "npx vite-node scripts/verify-kc0101b-dashboard-integrity.ts",
     "verify:reliability": "npx vite-node scripts/verify-reliability-layer.ts",
     "admin:kc0061:p1:prove": "node scripts/admin/kc0061-p1-prove-confirm-blocker.mjs",

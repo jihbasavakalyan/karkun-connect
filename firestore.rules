@@ -45,7 +45,11 @@ service cloud.firestore {
     function ruknMayUpdateKarkun() {
       let before = stringOrEmpty(resource.data.assignedRuknId);
       let after = stringOrEmpty(request.resource.data.assignedRuknId);
+      // Increment B — Rukn must not set or replace referredByRuknId.
+      let referredBefore = stringOrEmpty(resource.data.referredByRuknId);
+      let referredAfter = stringOrEmpty(request.resource.data.referredByRuknId);
       return request.resource.data.id == resource.data.id
+        && referredBefore == referredAfter
         && (
           (before == ruknId() && after == ruknId())
           || (before == '' && after == ruknId())
@@ -166,6 +170,20 @@ service cloud.firestore {
         && request.resource.data.karkunId == resource.data.karkunId;
 
       allow delete: if isAdministrator() && isAssignmentReviewPendingLock();
+    }
+
+    /**
+     * Increment A — Rukn ↔ Muttafiq relationship (not campaign connections).
+     * Admin establishes Active links; Rukn may read own ruknId rows only.
+     */
+    match /muttafiqRelationships/{relationshipId} {
+      allow read: if isAdministrator()
+        || (isRukn() && resource.data.ruknId == ruknId());
+      allow create, update: if isAdministrator()
+        && request.resource.data.id == relationshipId
+        && request.resource.data.keys().hasAll(['id', 'ruknId', 'personId', 'status'])
+        && request.resource.data.status == 'Active';
+      allow delete: if false;
     }
 
     match /communications/{docId} {

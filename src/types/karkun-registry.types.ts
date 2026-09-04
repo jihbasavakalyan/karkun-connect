@@ -66,6 +66,12 @@ export type KarkunRegistryRecord = {
   classificationHistory?: ClassificationHistoryEntry[]
   /** KC-0058 — recovery metadata (optional; additive). */
   createdBy?: string
+  /**
+   * Increment B — Rukn who referred/recommended this Karkun (canonical id).
+   * Distinct from assignedRuknId (campaign connection) and createdBy (actor).
+   * Optional for historical records; set on new creates when known.
+   */
+  referredByRuknId?: string
   archivedAt?: string
   archivedBy?: string
   restoredAt?: string

@@ -29,6 +29,8 @@ import {
   reloadKarkunRequestStoreFromPersistence,
   syncKarkunRequestStoreFromServer,
 } from '@/stores/karkunRequestStore'
+import { reloadMuttafiqRelationshipStoreFromPersistence } from '@/stores/muttafiqRelationshipStore'
+import { getRepositoryProviderMode } from '@/repositories/provider'
 import { markRuknAdminMessageRead } from '@/services/ruknAdminMessageService'
 import { subscribeToRuknAdminMessageStore } from '@/stores/ruknAdminMessageStore'
 import { TrainingGatheringAdminPanel } from '@/components/public-registration/TrainingGatheringAdminPanel'
@@ -49,6 +51,7 @@ const KINDS: { id: InboxItemKind | 'all'; label: string }[] = [
   { id: 'new_karkun', label: 'New Karkun' },
   { id: 'new_muttafiq', label: 'New Muttafiq' },
   { id: 'karkun_to_muttafiq', label: 'Conversions' },
+  { id: 'muttafiq_rukn_link', label: 'Muttafiq links' },
   { id: 'rukn_message', label: 'Rukn messages' },
 ]
 
@@ -93,6 +96,17 @@ export function AdminInboxPage() {
     } catch {
       reloadKarkunRequestStoreFromPersistence()
     }
+    try {
+      if (getRepositoryProviderMode() === 'firestore') {
+        const { refreshMuttafiqRelationshipCacheFromServer } = await import(
+          '@/repositories/firestore/muttafiqRelationshipFirestoreRepository'
+        )
+        await refreshMuttafiqRelationshipCacheFromServer()
+      }
+    } catch {
+      // soft — local / soft-skip
+    }
+    reloadMuttafiqRelationshipStoreFromPersistence()
     setTick((v) => v + 1)
   }
 

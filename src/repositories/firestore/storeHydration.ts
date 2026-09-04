@@ -13,6 +13,7 @@ import { reloadBroadcastListStoreFromPersistence } from '@/stores/broadcastListS
 import { reloadKarkunRequestStoreFromPersistence } from '@/stores/karkunRequestStore'
 import { reloadRuknAdminMessageStoreFromPersistence } from '@/stores/ruknAdminMessageStore'
 import { reloadAssignmentReviewStoreFromPersistence } from '@/stores/assignmentReviewStore'
+import { reloadMuttafiqRelationshipStoreFromPersistence } from '@/stores/muttafiqRelationshipStore'
 import { loadPeopleRegistryFromPersistence } from '@/lib/peopleRegistryPersistence'
 import { getPeopleStatistics, notifyPeopleRegistryUiOnly } from '@/lib/peopleStore'
 import { traceRegistryStage } from '@/lib/registryHydrationTrace'
@@ -83,6 +84,7 @@ export function hydrateStoresFromRepositories(): void {
     reloadKarkunRequestStoreFromPersistence()
     reloadRuknAdminMessageStoreFromPersistence()
     reloadAssignmentReviewStoreFromPersistence()
+    reloadMuttafiqRelationshipStoreFromPersistence()
     const registryBeforeLoad = MOCK_KARKUN_REGISTRY.length
     loadPeopleRegistryFromPersistence()
     kc004cTraceRegistry({

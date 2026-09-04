@@ -1,8 +1,9 @@
-import { useState, type FormEvent } from 'react'
+import { useMemo, useState, type FormEvent } from 'react'
 import { InputField } from '@/components/forms/InputField'
 import { PersonContactActions } from '@/components/forms/people/PersonContactActions'
 import { RuknAssignmentSelect } from '@/components/forms/people/RuknAssignmentSelect'
 import { Modal, ModalFormFooter, ModalFormGrid, ModalFormSection } from '@/components/common'
+import { getAllRukns } from '@/lib/peopleStore'
 import type { PersonContactInput, PersonKind } from '@/types/people.types'
 import type { PersonGender, PersonStatus } from '@/types/karkun-registry.types'
 import { DEFAULT_PLACE, getFatherHusbandLabel } from '@/types/people.types'
@@ -47,7 +48,7 @@ export function PersonFormModal({
 
   return (
     <PersonFormModalContent
-      key={`${mode}-${initialValues?.name ?? 'new'}-${initialValues?.mobile ?? ''}-${initialValues?.assignedRuknId ?? ''}-${initialValues?.fatherHusbandName ?? ''}`}
+      key={`${mode}-${initialValues?.name ?? 'new'}-${initialValues?.mobile ?? ''}-${initialValues?.assignedRuknId ?? ''}-${initialValues?.referredByRuknId ?? ''}-${initialValues?.fatherHusbandName ?? ''}`}
       kind={kind}
       mode={mode}
       initialValues={initialValues}
@@ -76,12 +77,22 @@ function PersonFormModalContent({
   const [whatsapp, setWhatsapp] = useState(initialValues?.whatsapp ?? '')
   const [status, setStatus] = useState<PersonStatus>(initialValues?.status ?? 'active')
   const [assignedRuknId, setAssignedRuknId] = useState(initialValues?.assignedRuknId ?? '')
+  const [referredByRuknId, setReferredByRuknId] = useState(initialValues?.referredByRuknId ?? '')
   const [fatherHusbandName, setFatherHusbandName] = useState(
     initialValues?.fatherHusbandName ?? '',
   )
   const [address, setAddress] = useState(initialValues?.address ?? '')
   const [education, setEducation] = useState(initialValues?.education ?? '')
   const [profession, setProfession] = useState(initialValues?.profession ?? '')
+
+  const referringRuknOptions = useMemo(
+    () =>
+      getAllRukns()
+        .filter((rukn) => rukn.status === 'active' && !rukn.isArchived && rukn.gender === gender)
+        .slice()
+        .sort((a, b) => a.name.localeCompare(b.name)),
+    [gender],
+  )
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -97,6 +108,10 @@ function PersonFormModalContent({
       education: kind === 'karkun' ? education || undefined : undefined,
       profession: kind === 'karkun' ? profession || undefined : undefined,
       assignedRuknId: kind === 'karkun' && mode === 'edit' ? assignedRuknId : undefined,
+      referredByRuknId:
+        kind === 'karkun' && mode === 'add' && personLabel !== 'Muttafiq'
+          ? referredByRuknId || undefined
+          : undefined,
     })
   }
 
@@ -108,6 +123,8 @@ function PersonFormModalContent({
 
   const showConnectionSection =
     kind === 'karkun' && mode === 'edit' && Boolean(karkunId) && personLabel !== 'Muttafiq'
+  const showReferredBySection =
+    kind === 'karkun' && mode === 'add' && personLabel !== 'Muttafiq'
   const showAdditionalSection = kind === 'karkun'
 
   return (
@@ -143,7 +160,10 @@ function PersonFormModalContent({
               <select
                 id="person-gender"
                 value={gender}
-                onChange={(event) => setGender(event.target.value as PersonGender)}
+                onChange={(event) => {
+                  setGender(event.target.value as PersonGender)
+                  setReferredByRuknId('')
+                }}
                 className={selectClassName}
                 required
               >
@@ -193,6 +213,32 @@ function PersonFormModalContent({
 
           {mode === 'edit' && <PersonContactActions mobile={mobile} whatsapp={whatsapp} />}
         </ModalFormSection>
+
+        {showReferredBySection && (
+          <ModalFormSection title="Referral">
+            <ModalFormGrid>
+              <div className="flex flex-col gap-2 md:col-span-2">
+                <label htmlFor="person-referred-by-rukn" className="text-sm font-medium text-text-heading">
+                  Referred By Rukn
+                </label>
+                <select
+                  id="person-referred-by-rukn"
+                  value={referredByRuknId}
+                  onChange={(event) => setReferredByRuknId(event.target.value)}
+                  className={selectClassName}
+                  required
+                >
+                  <option value="">Select referring Rukn</option>
+                  {referringRuknOptions.map((rukn) => (
+                    <option key={rukn.id} value={rukn.id}>
+                      {rukn.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </ModalFormGrid>
+          </ModalFormSection>
+        )}
 
         {showConnectionSection && (
           <ModalFormSection title="Connection">

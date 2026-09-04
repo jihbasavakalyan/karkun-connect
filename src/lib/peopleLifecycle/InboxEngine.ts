@@ -62,6 +62,8 @@ function kindLabel(kind: InboxItemKind, request?: NewKarkunRequest): string {
       return 'New Muttafiq Request'
     case 'karkun_to_muttafiq':
       return 'Karkun → Muttafiq Conversion'
+    case 'muttafiq_rukn_link':
+      return 'Muttafiq → Rukn Link'
     case 'rukn_message':
       return 'Rukn → Admin message'
     case 'admin_notification':

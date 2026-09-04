@@ -12,6 +12,7 @@ import { resolveExistingPersonRelationship } from '@/lib/existingPersonResolutio
 import { getActiveAssignmentsForKarkun } from '@/stores/assignmentStore'
 import { findPossibleNameDuplicates } from '@/lib/nameMatching'
 import {
+  applyReferredByRuknIfAbsent,
   createKarkun,
   createMuttafiq,
   findMobileOwner,
@@ -423,6 +424,8 @@ async function approveNewKarkunRequestOnce(input: {
           education: claimed.education,
           profession: claimed.profession,
           notes: claimed.remarks,
+          // Increment B — requesting Rukn is the referring Rukn (no on-behalf UI).
+          referredByRuknId: claimed.requestingRuknId.trim() || undefined,
         },
         input.decidedBy || 'Administrator',
       )
@@ -477,6 +480,28 @@ async function approveNewKarkunRequestOnce(input: {
 
     if (!karkunId) {
       return { ok: false, error: 'Could not resolve Karkun for approval.', code: 'VALIDATION' }
+    }
+
+    // Increment B — stamp Referred By from intake requesting Rukn (Admin-authoritative; never overwrite).
+    const referringRuknId = claimed.requestingRuknId.trim()
+    if (referringRuknId) {
+      const referral = applyReferredByRuknIfAbsent(
+        karkunId,
+        referringRuknId,
+        input.decidedBy || 'Administrator',
+      )
+      if (referral.success) {
+        const durableReferral = await persistKarkunDurable(karkunId)
+        if (!durableReferral.success) {
+          return {
+            ok: false,
+            error:
+              durableReferral.error ||
+              'Referring Rukn could not be saved durably. Request left pending — retry approval.',
+            code: 'VALIDATION',
+          }
+        }
+      }
     }
 
     const isPublicTraining = claimed.source === 'public_training_registration' || !claimed.requestingRuknId.trim()
@@ -718,6 +743,96 @@ export async function submitKarkunToMuttafiqConversionRequest(input: {
   return { ok: true, request }
 }
 
+/**
+ * Increment A — Rukn requests Admin approval to link an existing Muttafiq
+ * (category stays Muttafiq; no campaign `connections` write).
+ */
+export async function submitMuttafiqRuknLinkRequest(input: {
+  personId: string
+  requestingRuknId: string
+  remarks?: string
+  createdBy?: string
+}): Promise<SubmitNewKarkunRequestResult> {
+  const person = getKarkunById(input.personId)
+  if (!person) {
+    return { ok: false, error: 'Person not found.', code: 'VALIDATION' }
+  }
+  if (getPersonCategory(person) !== 'Muttafiq') {
+    return {
+      ok: false,
+      error: 'Only an existing Muttafiq can be linked to a Rukn with this request.',
+      code: 'VALIDATION',
+    }
+  }
+  const rukn = getRuknById(input.requestingRuknId)
+  if (!rukn || rukn.status !== 'active') {
+    return { ok: false, error: 'Rukn not found or inactive.', code: 'VALIDATION' }
+  }
+
+  try {
+    await syncKarkunRequestStoreFromServer()
+  } catch {
+    // continue with cache
+  }
+
+  const pendingSame = getPendingKarkunRequests().find(
+    (request) =>
+      request.kind === 'muttafiq_rukn_link' &&
+      request.sourcePersonId === input.personId &&
+      request.requestingRuknId === input.requestingRuknId,
+  )
+  if (pendingSame) {
+    return {
+      ok: false,
+      error: 'A Muttafiq–Rukn link request for this person already exists.',
+      code: 'PENDING_EXISTS',
+    }
+  }
+
+  const { getActiveMuttafiqRelationshipsForPerson } = await import(
+    '@/stores/muttafiqRelationshipStore'
+  )
+  const alreadyLinked = getActiveMuttafiqRelationshipsForPerson(person.id).some(
+    (row) => row.ruknId === rukn.id,
+  )
+  if (alreadyLinked) {
+    return {
+      ok: false,
+      error: 'This Muttafiq is already linked to this Rukn.',
+      code: 'PENDING_EXISTS',
+    }
+  }
+
+  const now = new Date().toISOString()
+  const request = await appendKarkunRequestDurable({
+    id: `mrl-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    fullName: person.name,
+    mobile: normalizeMobile(person.mobile),
+    gender: normalizePersonGender(person.gender) ?? 'Male',
+    area: person.area ?? '',
+    remarks: input.remarks?.trim() ?? '',
+    requestingRuknId: rukn.id,
+    requestingRuknName: rukn.name,
+    status: 'Pending Approval',
+    kind: 'muttafiq_rukn_link',
+    sourcePersonId: person.id,
+    previousCategory: 'Muttafiq',
+    createdAt: now,
+    updatedAt: now,
+    createdBy: input.createdBy?.trim() || rukn.name,
+  })
+
+  logActivity({
+    type: 'complete',
+    message: `Muttafiq–Rukn link request: ${person.name} → ${rukn.name}.`,
+    ruknId: rukn.id,
+    karkunId: person.id,
+    actor: 'Rukn',
+  })
+
+  return { ok: true, request }
+}
+
 const intakeApproveInFlight = new Map<string, Promise<ApproveNewKarkunRequestResult>>()
 
 /**
@@ -760,6 +875,30 @@ async function approvePeopleIntakeRequestOnce(input: {
     return alreadyProcessedResult()
   }
   if (existing.status === 'Approved') {
+    if ((existing.kind ?? 'new_karkun') === 'muttafiq_rukn_link' && existing.sourcePersonId) {
+      const person = getKarkunById(existing.sourcePersonId)
+      const linkRukn = getRuknById(existing.requestingRuknId)
+      if (person && getPersonCategory(person) === 'Muttafiq' && linkRukn) {
+        const { muttafiqRuknRelationshipId } = await import('@/types/muttafiqRelationship.types')
+        const now = new Date().toISOString()
+        await getRepositories().muttafiqRelationship.upsertActiveDurable({
+          id: muttafiqRuknRelationshipId(linkRukn.id, person.id),
+          ruknId: linkRukn.id,
+          ruknName: linkRukn.name,
+          personId: person.id,
+          personName: person.name,
+          status: 'Active',
+          createdAt: now,
+          updatedAt: now,
+          establishedBy: input.decidedBy || existing.decidedBy || 'Administrator',
+          requestId: existing.id,
+        })
+        const { reloadMuttafiqRelationshipStoreFromPersistence } = await import(
+          '@/stores/muttafiqRelationshipStore'
+        )
+        reloadMuttafiqRelationshipStoreFromPersistence()
+      }
+    }
     return {
       ok: true,
       request: existing,
@@ -866,6 +1005,77 @@ async function approvePeopleIntakeRequestOnce(input: {
         )
         await awaitKarkunRequestsPersist()
       }
+      return { ok: true, request: resolved, karkunId: personId }
+    }
+
+    if (kind === 'muttafiq_rukn_link') {
+      const personId = claimed.sourcePersonId
+      if (!personId) {
+        return {
+          ok: false,
+          error: 'Muttafiq–Rukn link request is missing person id.',
+          code: 'VALIDATION',
+        }
+      }
+      const person = getKarkunById(personId)
+      if (!person || getPersonCategory(person) !== 'Muttafiq') {
+        return {
+          ok: false,
+          error: 'Person must remain an existing Muttafiq to establish this link.',
+          code: 'VALIDATION',
+        }
+      }
+      const linkRukn = getRuknById(claimed.requestingRuknId)
+      if (!linkRukn || linkRukn.status !== 'active') {
+        return { ok: false, error: 'Target Rukn not found or inactive.', code: 'VALIDATION' }
+      }
+
+      const { muttafiqRuknRelationshipId } = await import('@/types/muttafiqRelationship.types')
+      const now = new Date().toISOString()
+      const relationshipId = muttafiqRuknRelationshipId(linkRukn.id, personId)
+      const upsert = await getRepositories().muttafiqRelationship.upsertActiveDurable({
+        id: relationshipId,
+        ruknId: linkRukn.id,
+        ruknName: linkRukn.name,
+        personId,
+        personName: person.name,
+        status: 'Active',
+        createdAt: now,
+        updatedAt: now,
+        establishedBy: input.decidedBy || 'Administrator',
+        requestId: claimed.id,
+      })
+      if (!upsert.ok) {
+        return {
+          ok: false,
+          error: upsert.error.message || 'Could not save Muttafiq–Rukn relationship.',
+          code: 'VALIDATION',
+        }
+      }
+
+      const { reloadMuttafiqRelationshipStoreFromPersistence } = await import(
+        '@/stores/muttafiqRelationshipStore'
+      )
+      reloadMuttafiqRelationshipStoreFromPersistence()
+
+      const resolved = resolveKarkunRequest(claimed.id, 'Approved', input.decidedBy, {
+        decisionNotes: input.decisionNotes?.trim() || undefined,
+        createdKarkunId: personId,
+      })
+      if (!resolved) return alreadyProcessedResult()
+      if (getRepositoryProviderMode() === 'firestore') {
+        const { awaitKarkunRequestsPersist } = await import(
+          '@/repositories/firestore/firestoreRepositories'
+        )
+        await awaitKarkunRequestsPersist()
+      }
+      logActivity({
+        type: 'complete',
+        message: `Linked Muttafiq ${person.name} (${personId}) to Rukn ${linkRukn.name}.`,
+        ruknId: linkRukn.id,
+        karkunId: personId,
+        actor: 'Administrator',
+      })
       return { ok: true, request: resolved, karkunId: personId }
     }
 

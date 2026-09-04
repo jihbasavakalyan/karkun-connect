@@ -618,6 +618,14 @@ export function createKarkun(
     }
   }
 
+  const referredByRuknId = input.referredByRuknId?.trim() || undefined
+  if (referredByRuknId) {
+    const referringRukn = getRuknById(referredByRuknId)
+    if (!referringRukn || referringRukn.status !== 'active') {
+      return { success: false, error: 'Referring Rukn not found or inactive.' }
+    }
+  }
+
   const timestamp = nowIso()
   const id = allocation.id
 
@@ -649,6 +657,7 @@ export function createKarkun(
     notes: input.notes?.trim() ?? '',
     isArchived: false,
     category: 'Karkun',
+    referredByRuknId,
   }
 
   syncKarkunCampaignStatus(karkun)
@@ -667,6 +676,46 @@ export function createKarkun(
 
   notifyPeopleChange()
   return { success: true, karkunId: id }
+}
+
+/**
+ * Increment B — set referredByRuknId only when absent (never overwrite).
+ * Used on intake approve when linking an existing person, and for public-training skip.
+ */
+export function applyReferredByRuknIfAbsent(
+  personId: string,
+  referredByRuknId: string,
+  updatedBy = 'Administrator',
+): PeopleMutationResult {
+  const person = MOCK_KARKUN_REGISTRY.find((k) => k.id === personId)
+  if (!person) {
+    return { success: false, error: 'Person not found.' }
+  }
+  const next = referredByRuknId.trim()
+  if (!next) {
+    return { success: false, error: 'Referring Rukn is required.' }
+  }
+  if (person.referredByRuknId?.trim()) {
+    return { success: true, karkunId: personId }
+  }
+  const rukn = getRuknById(next)
+  if (!rukn || rukn.status !== 'active') {
+    return { success: false, error: 'Referring Rukn not found or inactive.' }
+  }
+  person.referredByRuknId = rukn.id
+  person.updatedAt = nowIso()
+  person.updatedBy = updatedBy
+  logPeopleAudit({
+    personKind: 'karkun',
+    personId: person.id,
+    personName: person.name,
+    action: 'update',
+    field: 'referredByRuknId',
+    newValue: rukn.id,
+    updatedBy,
+  })
+  notifyPeopleChange()
+  return { success: true, karkunId: personId }
 }
 
 /** KC-0101 — Add Muttafiq (same Person entity, category Muttafiq). */
@@ -800,6 +849,7 @@ export function updateKarkun(
   if (input.address !== undefined) karkun.address = input.address.trim()
   if (input.education !== undefined) karkun.education = input.education.trim() || undefined
   if (input.profession !== undefined) karkun.profession = input.profession.trim() || undefined
+  // referredByRuknId is immutable via updateKarkun — use applyReferredByRuknIfAbsent / Admin-only setter.
 
   karkun.updatedAt = nowIso()
   karkun.updatedBy = updatedBy

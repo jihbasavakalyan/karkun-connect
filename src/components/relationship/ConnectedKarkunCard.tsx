@@ -15,7 +15,6 @@ import {
 import { scheduleWhatsAppMessage } from '@/services/schedulingService'
 import { submitAssignmentReviewRequest } from '@/services/assignmentReviewService'
 import { submitKarkunToMuttafiqConversionRequest } from '@/services/karkunRequestService'
-import { getPersonCategory } from '@/lib/peopleClassification'
 import { useAuth } from '@/hooks/useAuth'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
 import { ProfileCompletionReminder } from './ProfileCompletionReminder'
@@ -120,7 +119,7 @@ export function ConnectedKarkunCard({ karkun, ruknId, visitPath }: ConnectedKark
     })()
   }
 
-  const canRequestConversion = getPersonCategory(karkun) === 'Karkun'
+  const canRequestConversion = false
 
   const handleSchedule = (scheduledForIso: string) => {
     scheduleWhatsAppMessage({

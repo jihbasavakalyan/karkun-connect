@@ -26,6 +26,7 @@ export const STORAGE_KEYS = {
   ruknAdminMessages: 'karkun-connect.rukn-admin-messages',
   connectionLedger: 'karkun-connect.connection-ledger',
   assignmentReviews: 'karkun-connect.assignment-reviews',
+  muttafiqRelationships: 'karkun-connect.muttafiq-relationships',
   meqatiMansoobas: 'karkun-connect.meqati-mansoobas',
   planningObjectives: 'karkun-connect.planning-objectives',
   shobahs: 'karkun-connect.shobahs',

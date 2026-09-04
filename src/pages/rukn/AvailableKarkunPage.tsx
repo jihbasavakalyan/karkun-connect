@@ -11,6 +11,7 @@ import {
   KarkunSearchField,
   NewKarkunRequestModal,
   NewMuttafiqRequestModal,
+  ConnectMuttafiqRequestModal,
 } from '@/components/relationship'
 import { EmptyState, PageShell } from '@/components/ui'
 import { PlanningConversationModal } from '@/features/digitalRafeeq/planning'
@@ -39,6 +40,7 @@ export function AvailableKarkunPage() {
   const [planning, setPlanning] = useState<PlanningTarget | null>(null)
   const [showNewRequest, setShowNewRequest] = useState(false)
   const [showNewMuttafiq, setShowNewMuttafiq] = useState(false)
+  const [showConnectMuttafiq, setShowConnectMuttafiq] = useState(false)
 
   const filtered = useMemo(() => {
     void peopleVersion
@@ -161,6 +163,17 @@ export function AvailableKarkunPage() {
         >
           ➕ Add Muttafiq
         </button>
+        <button
+          type="button"
+          className="connect-add-karkun-button"
+          onClick={() => {
+            setShowConnectMuttafiq(true)
+            setError('')
+            setSuccessMessage('')
+          }}
+        >
+          Link Muttafiq
+        </button>
       </div>
 
       {successMessage && (
@@ -227,6 +240,15 @@ export function AvailableKarkunPage() {
         onClose={() => setShowNewMuttafiq(false)}
         onSubmitted={() =>
           setSuccessMessage('Muttafiq request submitted for administrator approval.')
+        }
+      />
+
+      <ConnectMuttafiqRequestModal
+        isOpen={showConnectMuttafiq}
+        ruknId={ruknId}
+        onClose={() => setShowConnectMuttafiq(false)}
+        onSubmitted={() =>
+          setSuccessMessage('Muttafiq link request submitted for administrator approval.')
         }
       />
 

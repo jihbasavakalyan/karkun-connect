@@ -115,6 +115,11 @@ export type PersonContactInput = {
   address?: string
   education?: string
   profession?: string
+  /**
+   * Increment B — referring Rukn id for NEW Karkun creates (Admin form / approve path).
+   * Not used for Muttafiq / Rukn kinds.
+   */
+  referredByRuknId?: string
 }
 
 /** Gender-aware label for the optional family name field. */

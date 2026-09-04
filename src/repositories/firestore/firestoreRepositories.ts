@@ -132,6 +132,13 @@ import {
   resetAssignmentReviewCacheForTests,
   subscribeAssignmentReviewCache,
 } from '@/repositories/firestore/assignmentReviewFirestoreRepository'
+import type { MuttafiqRuknRelationship } from '@/types/muttafiqRelationship.types'
+import {
+  applyMuttafiqRelationshipHydrate,
+  readMuttafiqRelationshipsForClient,
+  resetMuttafiqRelationshipCacheForTests,
+  subscribeMuttafiqRelationshipCache,
+} from '@/repositories/firestore/muttafiqRelationshipFirestoreRepository'
 import type {
   MeqatiMansooba,
   PlanningObjective,
@@ -802,6 +809,7 @@ function applyBackgroundHydratePayload(input: {
   karkunRequestsDoc: { requests?: NewKarkunRequest[] } | null
   ruknAdminMessagesDoc: { messages?: RuknAdminMessage[] } | null
   assignmentReviews: AssignmentReviewRequest[]
+  muttafiqRelationships: MuttafiqRuknRelationship[]
   planning: {
     mansoobas: MeqatiMansooba[]
     shobahs: Shobah[]
@@ -823,6 +831,7 @@ function applyBackgroundHydratePayload(input: {
     karkunRequestsDoc,
     ruknAdminMessagesDoc,
     assignmentReviews,
+    muttafiqRelationships,
     planning,
     localProgrammes,
     occurrences,
@@ -931,6 +940,7 @@ function applyBackgroundHydratePayload(input: {
     : []
   ruknAdminMessageCache.set(ruknAdminMessages)
   applyAssignmentReviewHydrate(assignmentReviews)
+  applyMuttafiqRelationshipHydrate(muttafiqRelationships)
   // Phase 1 — planning foundation (Admin writes; Rukn may read شعبہ / اہداف names).
   applyPlanningHydrate(planning)
   // Phase 2 — Local Programme (Admin writes; Rukn hydrate scoped to responsibleRuknId).
@@ -1104,6 +1114,7 @@ function readBackgroundHydratePayload(db: ReturnType<typeof getFirestoreDb>) {
       FIRESTORE_DOCS.ruknAdminMessages,
     ),
     readAssignmentReviewsForClient(),
+    readMuttafiqRelationshipsForClient(),
     readPlanningCollectionsForClient(),
     readLocalProgrammeCollectionsForClient(),
     readOccurrenceCollectionsForClient(),
@@ -1120,6 +1131,7 @@ function readBackgroundHydratePayload(db: ReturnType<typeof getFirestoreDb>) {
       karkunRequestsDoc,
       ruknAdminMessagesDoc,
       assignmentReviews,
+      muttafiqRelationships,
       planning,
       localProgrammes,
       occurrences,
@@ -1135,6 +1147,7 @@ function readBackgroundHydratePayload(db: ReturnType<typeof getFirestoreDb>) {
       karkunRequestsDoc,
       ruknAdminMessagesDoc,
       assignmentReviews,
+      muttafiqRelationships,
       planning,
       localProgrammes,
       occurrences,
@@ -1263,6 +1276,7 @@ async function hydrateFirestoreCachesOnce(): Promise<void> {
       karkunRequestsDoc,
       ruknAdminMessagesDoc,
       assignmentReviews,
+      muttafiqRelationships,
       planning,
       localProgrammes,
       occurrences,
@@ -1294,6 +1308,7 @@ async function hydrateFirestoreCachesOnce(): Promise<void> {
         FIRESTORE_DOCS.ruknAdminMessages,
       ),
       readAssignmentReviewsForClient(),
+      readMuttafiqRelationshipsForClient(),
       readPlanningCollectionsForClient(),
       readLocalProgrammeCollectionsForClient(),
       readOccurrenceCollectionsForClient(),
@@ -1319,6 +1334,7 @@ async function hydrateFirestoreCachesOnce(): Promise<void> {
       karkunRequestsDoc,
       ruknAdminMessagesDoc,
       assignmentReviews,
+      muttafiqRelationships,
       planning,
       localProgrammes,
       occurrences,
@@ -1519,6 +1535,14 @@ export function startFirestoreSnapshotListeners(onRemoteChange: () => void): voi
         ),
         onRemoteChange,
       )
+      watchQuery(
+        `muttafiqRelationships:rukn:${scope.ruknId}`,
+        query(
+          collection(db, FIRESTORE_COLLECTIONS.muttafiqRelationships),
+          where('ruknId', '==', scope.ruknId),
+        ),
+        onRemoteChange,
+      )
       watchCollection(FIRESTORE_COLLECTIONS.executions, onRemoteChange)
       watchCollection(FIRESTORE_COLLECTIONS.compliance, onRemoteChange)
       // KC-0102.0 — Rukn must observe New Karkun request blob updates (Admin writes / peer submits).
@@ -1569,6 +1593,7 @@ export function startFirestoreSnapshotListeners(onRemoteChange: () => void): voi
     watchCollection(FIRESTORE_COLLECTIONS.activityLogs, onRemoteChange)
     watchCollection(FIRESTORE_COLLECTIONS.followUps, onRemoteChange)
     watchCollection(FIRESTORE_COLLECTIONS.assignmentReviews, onRemoteChange)
+    watchCollection(FIRESTORE_COLLECTIONS.muttafiqRelationships, onRemoteChange)
     watchCollection(FIRESTORE_COLLECTIONS.executions, onRemoteChange)
     watchCollection(FIRESTORE_COLLECTIONS.compliance, onRemoteChange)
     watchCollection(FIRESTORE_COLLECTIONS.communications, onRemoteChange)
@@ -1603,6 +1628,7 @@ export function subscribeToFirestoreCacheChanges(listener: () => void): () => vo
     karkunRequestCache.subscribe(listener),
     ruknAdminMessageCache.subscribe(listener),
     subscribeAssignmentReviewCache(listener),
+    subscribeMuttafiqRelationshipCache(listener),
   ]
   return () => unsubs.forEach((unsub) => unsub())
 }
@@ -3084,6 +3110,7 @@ export async function clearAllFirestoreCachesForTests(): Promise<void> {
   ruknAdminMessageCache.reset([])
   notificationPreferencesCache.reset(new Map())
   resetAssignmentReviewCacheForTests()
+  resetMuttafiqRelationshipCacheForTests()
   resetPlanningCachesForTests()
   resetLocalProgrammeCachesForTests()
   resetOccurrenceCachesForTests()

@@ -18,6 +18,7 @@ import type {
 } from '@/repositories/interfaces'
 import type { ConnectionLedgerRepository } from '@/repositories/interfaces/ConnectionLedgerRepository'
 import type { AssignmentReviewRepository } from '@/repositories/interfaces/AssignmentReviewRepository'
+import type { MuttafiqRelationshipRepository } from '@/repositories/interfaces/MuttafiqRelationshipRepository'
 import { isFirebaseConfigured } from '@/lib/firebase/firebase'
 import {
   CampaignLocalRepository,
@@ -31,6 +32,7 @@ import {
 } from '@/repositories/local/localRepositories'
 import { ConnectionLedgerLocalRepository } from '@/repositories/local/connectionLedgerLocalRepository'
 import { AssignmentReviewLocalRepository } from '@/repositories/local/assignmentReviewLocalRepository'
+import { MuttafiqRelationshipLocalRepository } from '@/repositories/local/muttafiqRelationshipLocalRepository'
 import {
   MeqatiMansoobaLocalRepository,
   ObjectiveLocalRepository,
@@ -53,6 +55,7 @@ import {
 } from '@/repositories/firestore/firestoreRepositories'
 import { ConnectionLedgerFirestoreRepository } from '@/repositories/firestore/connectionLedgerFirestoreRepository'
 import { AssignmentReviewFirestoreRepository } from '@/repositories/firestore/assignmentReviewFirestoreRepository'
+import { MuttafiqRelationshipFirestoreRepository } from '@/repositories/firestore/muttafiqRelationshipFirestoreRepository'
 import {
   MeqatiMansoobaFirestoreRepository,
   ObjectiveFirestoreRepository,
@@ -71,6 +74,7 @@ export type RepositoryBundle = {
   connection: ConnectionRepository
   connectionLedger: ConnectionLedgerRepository
   assignmentReview: AssignmentReviewRepository
+  muttafiqRelationship: MuttafiqRelationshipRepository
   execution: ExecutionRepository
   communication: CommunicationRepository
   compliance: ComplianceRepository
@@ -101,6 +105,7 @@ function createLocalRepositories(): RepositoryBundle {
     connection: new ConnectionLocalRepository(),
     connectionLedger: new ConnectionLedgerLocalRepository(),
     assignmentReview: new AssignmentReviewLocalRepository(),
+    muttafiqRelationship: new MuttafiqRelationshipLocalRepository(),
     execution: new ExecutionLocalRepository(),
     communication: new CommunicationLocalRepository(),
     compliance: new ComplianceLocalRepository(),
@@ -130,6 +135,7 @@ function createFirestoreRepositories(): RepositoryBundle {
     connection: new ConnectionFirestoreRepository(),
     connectionLedger: new ConnectionLedgerFirestoreRepository(),
     assignmentReview: new AssignmentReviewFirestoreRepository(),
+    muttafiqRelationship: new MuttafiqRelationshipFirestoreRepository(),
     execution: new ExecutionFirestoreRepository(),
     communication: new CommunicationFirestoreRepository(),
     compliance: new ComplianceFirestoreRepository(),

@@ -29,6 +29,7 @@ const LABEL_HINTS: Record<string, string> = {
   'settings.notificationPreferences': 'Notification preferences could not be saved.',
   communications: 'Communication state could not be saved.',
   assignmentReviews: 'Assignment review could not be saved.',
+  muttafiqRelationships: 'Muttafiq–Rukn relationship could not be saved.',
   followUps: 'Follow-up records could not be saved.',
   connections: 'Connection changes could not be saved.',
   karkuns: 'Karkun registry changes could not be saved.',

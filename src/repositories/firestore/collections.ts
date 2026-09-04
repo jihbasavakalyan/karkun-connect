@@ -33,6 +33,8 @@ export const FIRESTORE_COLLECTIONS = {
   work: 'work',
   /** Bounded training gathering registrations — Admin SDK writes; Admin read. */
   trainingRegistrations: 'trainingRegistrations',
+  /** Increment A — Rukn ↔ Muttafiq relationship (not campaign connections). */
+  muttafiqRelationships: 'muttafiqRelationships',
 } as const
 
 export const FIRESTORE_DOCS = {

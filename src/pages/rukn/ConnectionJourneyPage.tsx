@@ -39,7 +39,6 @@ import { saveAnnexure1Draft, submitAnnexure1 } from '@/services/annexure1Service
 import { scheduleWhatsAppMessage } from '@/services/schedulingService'
 import { submitAssignmentReviewRequest } from '@/services/assignmentReviewService'
 import { submitKarkunToMuttafiqConversionRequest } from '@/services/karkunRequestService'
-import { getPersonCategory } from '@/lib/peopleClassification'
 import { getRegistrationForKarkun } from '@/services/jihWebPortalService'
 import { getActiveAssignmentsForKarkun } from '@/stores/assignmentStore'
 import {
@@ -558,7 +557,7 @@ export function ConnectionJourneyPage() {
             setReviewOpen(false)
           }}
           error={reviewError}
-          allowConvertToMuttafiq={getPersonCategory(karkun) === 'Karkun'}
+          allowConvertToMuttafiq={false}
           confirmBusy={conversionBusy || reviewBusy}
           onConfirm={(action: RequestReviewModalAction, notes: string) => {
             if (!authRuknId) return

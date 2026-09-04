@@ -5,6 +5,8 @@ import { ROUTES } from '@/constants/routes'
 import { changeKarkunRuknAssignment } from '@/lib/assignmentEngine'
 import { getPersonCategory, getMuttafiqDisplayNumber } from '@/lib/peopleClassification'
 import { persistKarkunDurable, updateKarkun } from '@/lib/peopleStore'
+import { getActiveMuttafiqRelationshipsForPerson } from '@/stores/muttafiqRelationshipStore'
+import { getRuknById } from '@/data/ruknMaster'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { usePeopleStore } from '@/hooks/usePeopleStore'
 import { updateMonthlyBaitulMaalContribution } from '@/lib/operations/monthlyBaitulMaalWriteAdapter'
@@ -348,8 +350,40 @@ function KarkunProfileForm({ karkun, karkunId }: KarkunProfileFormProps) {
                 compact
                 onChange={setAssignedRuknId}
               />
+              <div className="mt-1 text-sm text-text-heading">
+                <span className="font-medium">Referred By:</span>{' '}
+                {karkun.referredByRuknId
+                  ? formatPersonNameForDisplay(
+                      getRuknById(karkun.referredByRuknId)?.name ?? karkun.referredByRuknId,
+                    )
+                  : '—'}
+              </div>
             </div>
-          ) : null}
+          ) : (
+            <div className="flex flex-col gap-2 sm:col-span-2">
+              <span className="text-sm font-medium text-text-heading">Linked Rukn</span>
+              {(() => {
+                const links = getActiveMuttafiqRelationshipsForPerson(karkunId)
+                if (links.length === 0) {
+                  return (
+                    <p className="text-sm text-secondary">
+                      No Muttafiq–Rukn link yet. Approve a link request from Admin Inbox.
+                    </p>
+                  )
+                }
+                return (
+                  <ul className="space-y-1 text-sm text-text-heading">
+                    {links.map((link) => (
+                      <li key={link.id}>
+                        Rukn: {link.ruknName}{' '}
+                        <span className="text-secondary">({link.ruknId})</span>
+                      </li>
+                    ))}
+                  </ul>
+                )
+              })()}
+            </div>
+          )}
 
           <div className="flex flex-col gap-2">
             <label htmlFor="profile-gender" className="text-sm font-medium text-text-heading">

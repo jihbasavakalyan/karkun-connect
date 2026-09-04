@@ -3,7 +3,12 @@ import type { PersonGender } from '@/types/people.types'
 export type KarkunRequestStatus = 'Pending Approval' | 'Approved' | 'Rejected'
 
 /** KC-0123 — request kinds in the unified people intake pipeline. */
-export type PeopleRequestKind = 'new_karkun' | 'new_muttafiq' | 'karkun_to_muttafiq'
+export type PeopleRequestKind =
+  | 'new_karkun'
+  | 'new_muttafiq'
+  | 'karkun_to_muttafiq'
+  /** Increment A — connect existing Muttafiq to Rukn (not campaign connection). */
+  | 'muttafiq_rukn_link'
 
 export type NewKarkunRequest = {
   id: string

@@ -153,6 +153,13 @@ function KarkunGenderSection({
     const { assignedRuknId, ...karkunPayload } = payload
 
     const editingId = editingKarkun?.id ?? null
+
+    // Increment B — Admin Add New Karkun requires Referred By Rukn (no free-form name).
+    if (!editingId && !karkunPayload.referredByRuknId?.trim()) {
+      setFormError('Referred By Rukn is required.')
+      return
+    }
+
     const result = editingId
       ? updateKarkun(editingId, karkunPayload, 'Administrator', options)
       : createKarkun(karkunPayload)
@@ -171,9 +178,10 @@ function KarkunGenderSection({
     }
 
     void (async () => {
-      // KC-0075 — edit success only after durable Firestore write.
-      if (editingId) {
-        const durable = await persistKarkunDurable(editingId)
+      const targetId = editingId ?? result.karkunId
+      // KC-0075 — success only after durable Firestore write (create + edit).
+      if (targetId) {
+        const durable = await persistKarkunDurable(targetId)
         if (!durable.success) {
           setFormError(durable.error ?? 'Unable to save Karkun. Please try again.')
           return
