@@ -13,6 +13,8 @@ export {
 export const UI_LABELS = {
   connected: 'Connected',
   notConnected: 'Not Connected',
+  pending: 'Pending',
+  connectRukn: 'Connect Rukn',
   connectedWorkers: 'Connected Karkuns',
   connectedRukn: 'Connected Rukn',
   connection: 'Connection',

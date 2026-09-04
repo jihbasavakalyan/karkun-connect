@@ -76,15 +76,31 @@ console.log('verify-muttafiq-rukn-link: start')
   const table = read('src/components/forms/people/KarkunPeopleTable.tsx')
   assert(table.includes('showMuttafiqRelationshipColumns'), 'muttafiq registry relationship columns')
   assert(table.includes('getActiveMuttafiqRelationshipsByPersonId'), 'batched relationship lookup')
+  assert(table.includes('onConnectRukn'), 'Connect Rukn action prop')
+  assert(table.includes('UI_LABELS.connectRukn'), 'Connect Rukn label')
+  assert(table.includes("kind === 'muttafiq_rukn_link'"), 'pending link detection')
   assert(
     !table.includes('showMuttafiqRelationshipColumns') ||
       table.includes('assignedRuknId'),
     'karkun assignment path retained',
   )
 
+  const connectAdminModal = read('src/components/relationship/ConnectRuknForMuttafiqModal.tsx')
+  assert(connectAdminModal.includes('submitMuttafiqRuknLinkRequest'), 'admin modal reuses submit')
+  assert(connectAdminModal.includes('personId: person.id'), 'canonical Muttafiq id')
+  assert(connectAdminModal.includes('requestingRuknId: ruknId'), 'canonical Rukn id')
+  assert(!connectAdminModal.includes('assignKarkun'), 'admin modal does not assign campaign')
+  assert(
+    !connectAdminModal.includes("assignedRuknId") &&
+      !connectAdminModal.includes('getAllAssignments'),
+    'admin modal does not touch campaign assignment fields',
+  )
+
   const muttafiqPage = read('src/pages/admin/MuttafiqeenPage.tsx')
   assert(muttafiqPage.includes('showMuttafiqRelationshipColumns'), 'muttafiqeen enables columns')
   assert(muttafiqPage.includes('showAssignmentControls={false}'), 'no campaign assignment UI')
+  assert(muttafiqPage.includes('ConnectRuknForMuttafiqModal'), 'admin connect modal wired')
+  assert(muttafiqPage.includes('onConnectRukn'), 'Connect Rukn wired on registry')
 
   const eligibility = read('src/lib/peopleClassification.ts')
   assert(
@@ -132,6 +148,18 @@ const personId = muttafiqCreate.karkunId!
   if (!submitted.ok) throw new Error(submitted.error)
   assert(submitted.request.kind === 'muttafiq_rukn_link', 'kind')
   assert(submitted.request.status === 'Pending Approval', 'pending')
+  assert(submitted.request.sourcePersonId === personId, 'request stores Muttafiq id')
+  assert(submitted.request.requestingRuknId === rukn!.id, 'request stores Rukn id')
+
+  const duplicatePending = await submitMuttafiqRuknLinkRequest({
+    personId,
+    requestingRuknId: rukn!.id,
+  })
+  assert(!duplicatePending.ok, 'duplicate pending blocked')
+  assert(
+    !duplicatePending.ok && duplicatePending.code === 'PENDING_EXISTS',
+    'duplicate pending code',
+  )
 
   const inbox = buildUnifiedInbox({ folder: 'pending', kind: 'muttafiq_rukn_link' })
   assert(
@@ -153,6 +181,12 @@ const personId = muttafiqCreate.karkunId!
   const links = getActiveMuttafiqRelationshipsForPerson(personId)
   assert(links.length === 1, 'one active relationship')
   assert(links[0]!.ruknId === rukn!.id, 'linked rukn')
+
+  const duplicateActive = await submitMuttafiqRuknLinkRequest({
+    personId,
+    requestingRuknId: rukn!.id,
+  })
+  assert(!duplicateActive.ok, 'duplicate active relationship blocked')
 
   const again = await approvePeopleIntakeRequest({
     requestId: submitted.request.id,

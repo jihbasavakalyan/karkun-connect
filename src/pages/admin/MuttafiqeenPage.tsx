@@ -23,6 +23,7 @@ import {
 } from '@/components/forms/people'
 import type { PersonFormValues } from '@/components/forms/people'
 import { MessageComposerModal } from '@/components/communication/MessageComposerModal'
+import { ConnectRuknForMuttafiqModal } from '@/components/relationship'
 import { PageHeader, PageShell } from '@/components/ui'
 import { ROUTES } from '@/constants/routes'
 
@@ -54,6 +55,8 @@ function MuttafiqGenderSection({
   const [pendingFormValues, setPendingFormValues] = useState<PersonFormValues | null>(null)
   const [mobileConflictContext, setMobileConflictContext] = useState<'add' | 'edit' | null>(null)
   const [bulkWhatsAppOpen, setBulkWhatsAppOpen] = useState(false)
+  const [connectPerson, setConnectPerson] = useState<KarkunRegistryRecord | null>(null)
+  const [connectNotice, setConnectNotice] = useState('')
 
   const openAddForm = useCallback(() => {
     setEditingPerson(null)
@@ -179,6 +182,12 @@ function MuttafiqGenderSection({
         Showing {management.records.length} of {management.totalRecords} filtered
       </p>
 
+      {connectNotice ? (
+        <div className="ds-banner-success" role="status">
+          {connectNotice}
+        </div>
+      ) : null}
+
       <KarkunPeopleTable
         records={management.records}
         selectedIds={management.selectedIds}
@@ -191,6 +200,10 @@ function MuttafiqGenderSection({
           setEditingPerson(person)
           setFormError('')
           setIsFormOpen(true)
+        }}
+        onConnectRukn={(person) => {
+          setConnectNotice('')
+          setConnectPerson(person)
         }}
         showAssignmentControls={false}
         showMuttafiqRelationshipColumns
@@ -276,6 +289,17 @@ function MuttafiqGenderSection({
           setBulkWhatsAppOpen(false)
         }}
         title={`Personalized Send All · ${management.selectedIds.length} Muttafiqeen`}
+      />
+
+      <ConnectRuknForMuttafiqModal
+        isOpen={connectPerson !== null}
+        person={connectPerson}
+        onClose={() => setConnectPerson(null)}
+        onSubmitted={() =>
+          setConnectNotice(
+            'Muttafiq–Rukn link request submitted for administrator approval.',
+          )
+        }
       />
     </div>
   )
