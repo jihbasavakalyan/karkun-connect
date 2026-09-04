@@ -41,6 +41,29 @@ export function getActiveMuttafiqRelationshipsForRukn(
   return relationships.filter((row) => row.ruknId === id && row.status === 'Active')
 }
 
+/**
+ * Increment A follow-up — one in-memory pass for registry rows (no N+1).
+ * Only Active relationships are included; Pending inbox requests are never here.
+ */
+export function getActiveMuttafiqRelationshipsByPersonId(): Map<
+  string,
+  MuttafiqRuknRelationship[]
+> {
+  const byPerson = new Map<string, MuttafiqRuknRelationship[]>()
+  for (const row of relationships) {
+    if (row.status !== 'Active') continue
+    const personId = row.personId.trim()
+    if (!personId) continue
+    const list = byPerson.get(personId)
+    if (list) {
+      list.push(row)
+    } else {
+      byPerson.set(personId, [row])
+    }
+  }
+  return byPerson
+}
+
 export function getMuttafiqRelationshipById(
   id: string,
 ): MuttafiqRuknRelationship | undefined {

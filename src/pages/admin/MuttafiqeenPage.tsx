@@ -193,6 +193,7 @@ function MuttafiqGenderSection({
           setIsFormOpen(true)
         }}
         showAssignmentControls={false}
+        showMuttafiqRelationshipColumns
         emptyTitle="No Muttafiqeen found"
         emptyLabel="No Muttafiqeen match your search or filters."
       />

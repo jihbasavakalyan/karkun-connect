@@ -14,6 +14,7 @@ import {
 import { clearLocalMuttafiqRelationshipsForTests } from '@/repositories/local/muttafiqRelationshipLocalRepository'
 import {
   clearMuttafiqRelationshipStore,
+  getActiveMuttafiqRelationshipsByPersonId,
   getActiveMuttafiqRelationshipsForPerson,
   reloadMuttafiqRelationshipStoreFromPersistence,
 } from '@/stores/muttafiqRelationshipStore'
@@ -71,6 +72,19 @@ console.log('verify-muttafiq-rukn-link: start')
 
   const card = read('src/components/relationship/ConnectedKarkunCard.tsx')
   assert(card.includes('const canRequestConversion = false'), 'conversion UI gated off')
+
+  const table = read('src/components/forms/people/KarkunPeopleTable.tsx')
+  assert(table.includes('showMuttafiqRelationshipColumns'), 'muttafiq registry relationship columns')
+  assert(table.includes('getActiveMuttafiqRelationshipsByPersonId'), 'batched relationship lookup')
+  assert(
+    !table.includes('showMuttafiqRelationshipColumns') ||
+      table.includes('assignedRuknId'),
+    'karkun assignment path retained',
+  )
+
+  const muttafiqPage = read('src/pages/admin/MuttafiqeenPage.tsx')
+  assert(muttafiqPage.includes('showMuttafiqRelationshipColumns'), 'muttafiqeen enables columns')
+  assert(muttafiqPage.includes('showAssignmentControls={false}'), 'no campaign assignment UI')
 
   const eligibility = read('src/lib/peopleClassification.ts')
   assert(
@@ -156,6 +170,19 @@ const personId = muttafiqCreate.karkunId!
     approvedInbox.some((item) => item.rawRequest?.id === submitted.request.id),
     'appears in Approved',
   )
+
+  // Registry display source: Active relationships only (batched index).
+  const byPerson = getActiveMuttafiqRelationshipsByPersonId()
+  assert(byPerson.get(personId)?.[0]?.ruknId === rukn!.id, 'registry index shows linked Rukn')
+  assert(getPersonCategory(getKarkunById(personId)!) === 'Muttafiq', 'category still Muttafiq')
+  assert(getAllAssignments().length === assignmentsBefore, 'still no campaign connections')
+
+  reloadMuttafiqRelationshipStoreFromPersistence()
+  assert(
+    getActiveMuttafiqRelationshipsByPersonId().get(personId)?.[0]?.ruknId === rukn!.id,
+    'linked Rukn survives reload from persistence',
+  )
+
   console.log('  OK  submit → inbox → approve → relationship (idempotent)')
 }
 
@@ -186,6 +213,10 @@ const personId = muttafiqCreate.karkunId!
   assert(
     getActiveMuttafiqRelationshipsForPerson(other.karkunId!).length === 0,
     'reject creates no relationship',
+  )
+  assert(
+    !getActiveMuttafiqRelationshipsByPersonId().has(other.karkunId!),
+    'rejected person not Connected in registry index',
   )
   console.log('  OK  reject creates no relationship')
 }
