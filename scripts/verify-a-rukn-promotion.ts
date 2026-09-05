@@ -11,8 +11,13 @@ import {
 } from '@/lib/peopleClassification'
 import { getAvailableKarkunan } from '@/lib/assignmentEngine'
 import { isCompleteARuknOfficer } from '@/lib/officerIdentity'
-import { setAdministratorDecisionSessionOverrideForTests } from '@/lib/auth/assertAdministratorDecisionSession'
 import {
+  assertAdministratorDecisionSession,
+  setAdministratorDecisionAuthRuntimeForTests,
+  setAdministratorDecisionSessionOverrideForTests,
+} from '@/lib/auth/assertAdministratorDecisionSession'
+import {
+  MISSING_JWT_ROLE_CLAIM_ERROR,
   setJwtRoleClaimOverrideForTests,
   synchronizeRefreshedIdTokenForFirestore,
   type JwtRoleClaimResult,
@@ -130,6 +135,7 @@ resetARuknAllocationLockForTests()
 removeFromStorage(STORAGE_KEYS.aRuknCounter)
 clearAssignmentStore()
 setAdministratorDecisionSessionOverrideForTests(null)
+setAdministratorDecisionAuthRuntimeForTests(null)
 
 const ruknBeforePromote = getNextRuknId()
 const r001 = getRuknById('R001')
@@ -312,6 +318,113 @@ assert(
 }
 
 {
+  function mockAdminRuntime(events: string[]) {
+    let token = 'existing-administrator-token'
+    const listeners: Array<() => void> = []
+    return {
+      currentUser: {
+        getIdToken: async (forceRefresh: boolean) => {
+          events.push(forceRefresh ? 'refresh' : 'read')
+          if (forceRefresh) {
+            token = 'synced-administrator-token'
+            queueMicrotask(() => {
+              for (const listener of [...listeners]) listener()
+            })
+          }
+          return token
+        },
+      },
+      subscribeIdTokenChanges: (onChange: () => void) => {
+        events.push('subscribe')
+        let initial = true
+        const wrapped = () => {
+          onChange()
+          if (!initial) events.push('notified')
+          initial = false
+        }
+        listeners.push(wrapped)
+        wrapped()
+        return () => {
+          events.push('unsubscribe')
+        }
+      },
+      yieldForFirestoreAuthQueue: async () => {
+        events.push('yield-firestore-queue')
+      },
+    }
+  }
+
+  const adminEvents: string[] = []
+  setAdministratorDecisionSessionOverrideForTests(null)
+  setJwtRoleClaimOverrideForTests(administratorJwtOverride())
+  setAdministratorDecisionAuthRuntimeForTests(mockAdminRuntime(adminEvents))
+  const adminGate = await assertAdministratorDecisionSession(
+    'Only an Administrator can promote a Karkun to A Rukn.',
+  )
+  adminEvents.push('admin-write')
+  assert(adminGate.ok, 'administrator still passes the decision gate')
+  assert(adminEvents.includes('subscribe'), 'existing administrator role still subscribes Firestore token observers')
+  assert(adminEvents.includes('refresh'), 'existing administrator role still force-refreshes for Firestore attach')
+  assert(
+    adminEvents.indexOf('yield-firestore-queue') > adminEvents.indexOf('notified'),
+    'existing administrator role still yields for Firestore AuthCredentialsProvider',
+  )
+  assert(
+    adminEvents.indexOf('admin-write') > adminEvents.indexOf('yield-firestore-queue'),
+    'Admin promotion write is sequenced after Firestore credential sync',
+  )
+  setAdministratorDecisionAuthRuntimeForTests(null)
+
+  const ruknEvents: string[] = []
+  setJwtRoleClaimOverrideForTests({
+    ok: true,
+    role: 'rukn',
+    ruknId: 'R001',
+    forceRefreshed: false,
+    timeline: {
+      t1GetIdTokenCalled: 0,
+      t2GetIdTokenResolved: 0,
+      forceRefreshed: false,
+      role: 'rukn',
+      ruknId: 'R001',
+      issuedAtTime: null,
+      expirationTime: null,
+    },
+  })
+  setAdministratorDecisionAuthRuntimeForTests(mockAdminRuntime(ruknEvents))
+  const ruknGate = await assertAdministratorDecisionSession(
+    'Only an Administrator can promote a Karkun to A Rukn.',
+  )
+  assert(!ruknGate.ok, 'non-administrator still fails')
+  assert(
+    !ruknGate.ok && ruknGate.error === 'Only an Administrator can promote a Karkun to A Rukn.',
+    'non-administrator uses the existing authorization error',
+  )
+  assert(!ruknEvents.includes('refresh'), 'non-administrator does not run Firestore credential sync')
+  setAdministratorDecisionAuthRuntimeForTests(null)
+
+  const missingEvents: string[] = []
+  setJwtRoleClaimOverrideForTests({
+    ok: false,
+    error: MISSING_JWT_ROLE_CLAIM_ERROR,
+    forceRefreshed: true,
+    timeline: null,
+  })
+  setAdministratorDecisionAuthRuntimeForTests(mockAdminRuntime(missingEvents))
+  const missingGate = await assertAdministratorDecisionSession(
+    'Only an Administrator can promote a Karkun to A Rukn.',
+  )
+  assert(!missingGate.ok, 'missing claims still fail')
+  assert(
+    !missingGate.ok && missingGate.error === MISSING_JWT_ROLE_CLAIM_ERROR,
+    'missing claims use the existing missing-claims error',
+  )
+  assert(!missingEvents.includes('refresh'), 'missing claims do not run Firestore credential sync')
+  setAdministratorDecisionAuthRuntimeForTests(null)
+  setJwtRoleClaimOverrideForTests(null)
+}
+
+{
   const service = read('src/services/aRuknPromotionService.ts')
   const ensure = read('src/lib/auth/ensureJwtRoleClaim.ts')
   const gate = read('src/lib/auth/assertAdministratorDecisionSession.ts')
@@ -321,7 +434,11 @@ assert(
   assert(!service.includes("role: 'a_rukn'"), 'no new JWT role')
   assert(!ensure.includes("role: 'a_rukn'"), 'JWT helper introduces no a_rukn role')
   assert(gate.includes('ensureJwtRoleClaimPresent'), 'Admin gate refreshes via shared JWT helper')
-  assert(ensure.includes('synchronizeRefreshedIdTokenForFirestore'), 'gate path synchronizes Auth credential')
+  assert(
+    gate.includes('synchronizeRefreshedIdTokenForFirestore'),
+    'Admin decision path synchronizes Firestore credentials after administrator validation',
+  )
+  assert(ensure.includes('synchronizeRefreshedIdTokenForFirestore'), 'shared credential sync helper remains')
   assert(ensure.includes('onIdTokenChanged'), 'waits for Auth ID-token observers')
   assert(!ensure.includes('Promise.race'), 'auth sync does not race ID-token notification against queue yield')
   assert(ensure.includes('jwtHasAppRole'), 'skips force-refresh when current JWT already has an app role')
@@ -785,5 +902,6 @@ assert(nextAlloc.ok && nextAlloc.data.aRuknId === 'AR03', 'allocator advanced pa
 }
 
 setAdministratorDecisionSessionOverrideForTests(null)
+setAdministratorDecisionAuthRuntimeForTests(null)
 setJwtRoleClaimOverrideForTests(null)
 console.log('verify-a-rukn-promotion: OK')

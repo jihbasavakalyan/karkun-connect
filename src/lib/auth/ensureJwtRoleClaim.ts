@@ -12,7 +12,9 @@
  * Auth handshake). Synchronization is: subscribe → force-refresh when the
  * current token lacks a role → wait for the post-initial ID-token notification
  * → then yield so Firestore observes `request.auth.token.role` before the next RPC.
- * Do not force-refresh when the current token already has administrator/rukn.
+ * Ordinary hydrate/assign reads still skip force-refresh when the current token
+ * already has administrator/rukn. Admin decision writes must still complete
+ * `synchronizeRefreshedIdTokenForFirestore` in `assertAdministratorDecisionSession`.
  */
 
 import { onIdTokenChanged } from 'firebase/auth'

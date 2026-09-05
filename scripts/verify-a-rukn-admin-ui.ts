@@ -355,7 +355,12 @@ assert(
   const promotion = read('src/services/aRuknPromotionService.ts')
   const helpers = read('src/repositories/firestore/firestoreHelpers.ts')
   const rules = read('firestore.rules')
+  const gate = read('src/lib/auth/assertAdministratorDecisionSession.ts')
   assert(ensure.includes('synchronizeRefreshedIdTokenForFirestore'), 'Admin UI path uses credential sync helper')
+  assert(
+    gate.includes('synchronizeRefreshedIdTokenForFirestore'),
+    'Admin decision gate still synchronizes Firestore credentials when Auth already has administrator',
+  )
   assert(
     promotion.indexOf('assertAdministratorDecisionSession') <
       promotion.indexOf('const transition = await markPromotionInProgress'),
