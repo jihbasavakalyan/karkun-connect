@@ -4,7 +4,7 @@
  */
 
 import { isValidMobileFormat, normalizeMobile } from '@/lib/mobileValidation'
-import { isCampaignEligible } from '@/lib/peopleClassification'
+import { isCampaignEligible, isUnavailableAsNormalKarkun } from '@/lib/peopleClassification'
 import { getPendingKarkunRequests } from '@/stores/karkunRequestStore'
 import { getActiveAssignmentsForKarkun } from '@/stores/assignmentStore'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
@@ -26,6 +26,7 @@ export function isKarkunSelectableForConnection(
   pendingMobiles: Set<string> = getPendingApprovalMobileSet(),
 ): boolean {
   if (!isCampaignEligible(karkun)) return false
+  if (isUnavailableAsNormalKarkun(karkun)) return false
   if (karkun.status !== 'active') return false
   if (karkun.isArchived) return false
   if (karkun.assignmentStatus !== 'Available') return false

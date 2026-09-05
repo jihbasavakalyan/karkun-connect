@@ -28,6 +28,7 @@ export type RemovalReason =
   | 'Shifted Area'
   | 'Not Available'
   | 'Personal Reason'
+  | 'PromotedToARukn'
 
 /** KC-0055 — ownership-change audit on the surviving Active connection. */
 export type TransferHistoryEntry = {

@@ -42,6 +42,13 @@ export type JwtRoleClaimResult =
       timeline: JwtRoleClaimTimeline | null
     }
 
+let testOverride: JwtRoleClaimResult | null = null
+
+/** Verify scripts only — never used by product UI. */
+export function setJwtRoleClaimOverrideForTests(result: JwtRoleClaimResult | null): void {
+  testOverride = result
+}
+
 function publishLastClaims(payload: Record<string, unknown>): void {
   try {
     if (typeof window === 'undefined') return
@@ -63,6 +70,10 @@ function publishLastClaims(payload: Record<string, unknown>): void {
  * Does not change AuthProvider / hydration architecture.
  */
 export async function ensureJwtRoleClaimPresent(): Promise<JwtRoleClaimResult> {
+  if (testOverride) {
+    return testOverride
+  }
+
   const user = getFirebaseAuth().currentUser
   if (!user) {
     return { ok: false, error: 'Not signed in.', forceRefreshed: false, timeline: null }

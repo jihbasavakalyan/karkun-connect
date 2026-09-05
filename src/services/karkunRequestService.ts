@@ -6,6 +6,7 @@
 
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { getRuknById } from '@/data/ruknMaster'
+import { assertAdministratorDecisionSession } from '@/lib/auth/assertAdministratorDecisionSession'
 import { ensureJwtRoleClaimPresent } from '@/lib/auth/ensureJwtRoleClaim'
 import { getFirebaseAuth } from '@/lib/firebase/firebase'
 import { assignKarkun } from '@/lib/assignmentEngine'
@@ -90,25 +91,7 @@ async function assertRequesterMatchesSignedInRukn(
   return { ok: true }
 }
 
-/** Increment D — approve/reject require Administrator when a session is present. */
-async function assertAdministratorDecisionSession(): Promise<
-  { ok: true } | { ok: false; error: string }
-> {
-  if (!getFirebaseAuth().currentUser) {
-    return { ok: true }
-  }
-  const claims = await ensureJwtRoleClaimPresent()
-  if (!claims.ok) {
-    return { ok: false, error: claims.error }
-  }
-  if (claims.role !== 'administrator') {
-    return {
-      ok: false,
-      error: 'Only an Administrator can approve or reject intake requests.',
-    }
-  }
-  return { ok: true }
-}
+const ADMIN_INTAKE_DENIED = 'Only an Administrator can approve or reject intake requests.'
 
 export type MobileDuplicateDetails = {
   karkunId: string
@@ -674,7 +657,7 @@ export async function approveNewKarkunRequest(input: {
   decidedBy: string
   decisionNotes?: string
 }): Promise<ApproveNewKarkunRequestResult> {
-  const adminGate = await assertAdministratorDecisionSession()
+  const adminGate = await assertAdministratorDecisionSession(ADMIN_INTAKE_DENIED)
   if (!adminGate.ok) {
     return { ok: false, error: adminGate.error, code: 'VALIDATION' }
   }
@@ -700,7 +683,7 @@ export async function rejectNewKarkunRequest(input: {
   decidedBy: string
   decisionNotes?: string
 }): Promise<{ ok: true; request: NewKarkunRequest } | { ok: false; error: string }> {
-  const adminGate = await assertAdministratorDecisionSession()
+  const adminGate = await assertAdministratorDecisionSession(ADMIN_INTAKE_DENIED)
   if (!adminGate.ok) {
     return { ok: false, error: adminGate.error }
   }
@@ -922,7 +905,7 @@ export async function assignMuttafiqRuknLinkAsAdmin(input: {
   establishedBy: string
   remarks?: string
 }): Promise<AssignMuttafiqRuknLinkResult> {
-  const adminGate = await assertAdministratorDecisionSession()
+  const adminGate = await assertAdministratorDecisionSession(ADMIN_INTAKE_DENIED)
   if (!adminGate.ok) {
     return { ok: false, error: adminGate.error, code: 'VALIDATION' }
   }
@@ -1032,7 +1015,7 @@ export async function approvePeopleIntakeRequest(input: {
   decidedBy: string
   decisionNotes?: string
 }): Promise<ApproveNewKarkunRequestResult> {
-  const adminGate = await assertAdministratorDecisionSession()
+  const adminGate = await assertAdministratorDecisionSession(ADMIN_INTAKE_DENIED)
   if (!adminGate.ok) {
     return { ok: false, error: adminGate.error, code: 'VALIDATION' }
   }

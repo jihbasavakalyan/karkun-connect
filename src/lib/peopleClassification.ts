@@ -9,6 +9,13 @@ import type {
   PersonCategory,
   KarkunRegistryRecord,
 } from '@/types/karkun-registry.types'
+import {
+  isARuknPromotionInProgress,
+  isPromotedToARukn,
+  isUnavailableAsNormalKarkun,
+} from '@/lib/promotedToARukn'
+
+export { isARuknPromotionInProgress, isPromotedToARukn, isUnavailableAsNormalKarkun }
 
 /** Soft-removed records (duplicate merge / controlled delete) — not Muttafiqeen. */
 export function isSoftRemoved(
@@ -34,11 +41,19 @@ export function getPersonCategory(
   return 'Karkun'
 }
 
-/** Campaign execution eligibility — Karkuns only, never soft-removed. */
+/** Campaign execution eligibility — Karkuns only, never soft-removed, promoted, or in promotion. */
 export function isCampaignEligible(
-  person: Pick<KarkunRegistryRecord, 'category' | 'isArchived' | 'archiveKind'>,
+  person: Pick<
+    KarkunRegistryRecord,
+    'category' | 'isArchived' | 'archiveKind' | 'promotedToARuknId' | 'aRuknPromotionInProgress'
+  >,
 ): boolean {
-  return getPersonCategory(person) === 'Karkun' && !isSoftRemoved(person) && !person.isArchived
+  return (
+    getPersonCategory(person) === 'Karkun' &&
+    !isSoftRemoved(person) &&
+    !person.isArchived &&
+    !isUnavailableAsNormalKarkun(person)
+  )
 }
 
 export function isMuttafiq(
@@ -48,9 +63,17 @@ export function isMuttafiq(
 }
 
 export function isKarkun(
-  person: Pick<KarkunRegistryRecord, 'category' | 'isArchived' | 'archiveKind'>,
+  person: Pick<
+    KarkunRegistryRecord,
+    'category' | 'isArchived' | 'archiveKind' | 'promotedToARuknId' | 'aRuknPromotionInProgress'
+  >,
 ): boolean {
-  return getPersonCategory(person) === 'Karkun' && !isSoftRemoved(person) && !person.isArchived
+  return (
+    getPersonCategory(person) === 'Karkun' &&
+    !isSoftRemoved(person) &&
+    !person.isArchived &&
+    !isUnavailableAsNormalKarkun(person)
+  )
 }
 
 export function buildClassificationHistoryEntry(input: {

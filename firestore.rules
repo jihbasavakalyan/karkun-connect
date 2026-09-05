@@ -83,9 +83,56 @@ service cloud.firestore {
         );
     }
 
+    function isPromotedToARuknData(data) {
+      return stringOrEmpty(data.promotedToARuknId) != '';
+    }
+
+    function isARuknPromotionInProgressData(data) {
+      return data.aRuknPromotionInProgress == true;
+    }
+
+    function promotedToARuknIdUnchanged() {
+      return stringOrEmpty(resource.data.promotedToARuknId)
+        == stringOrEmpty(request.resource.data.promotedToARuknId);
+    }
+
+    function aRuknPromotionInProgressUnchanged() {
+      return isARuknPromotionInProgressData(resource.data)
+        == isARuknPromotionInProgressData(request.resource.data);
+    }
+
+    function karkunNotInARuknPromotionTransition(karkunId) {
+      return karkunDocExists(karkunId)
+        && !isPromotedToARuknData(
+          get(/databases/$(database)/documents/karkuns/$(karkunId)).data
+        )
+        && !isARuknPromotionInProgressData(
+          get(/databases/$(database)/documents/karkuns/$(karkunId)).data
+        );
+    }
+
+    function officerIdentityUnchanged() {
+      return stringOrEmpty(resource.data.officerKind)
+          == stringOrEmpty(request.resource.data.officerKind)
+        && stringOrEmpty(resource.data.origin)
+          == stringOrEmpty(request.resource.data.origin)
+        && stringOrEmpty(resource.data.sourcePersonId)
+          == stringOrEmpty(request.resource.data.sourcePersonId);
+    }
+
     function isAvailableKarkunData(data) {
-      return stringOrEmpty(data.assignedRuknId) == ''
-        || data.assignmentStatus == 'Available';
+      return !isPromotedToARuknData(data)
+        && !isARuknPromotionInProgressData(data)
+        && (
+          stringOrEmpty(data.assignedRuknId) == ''
+          || data.assignmentStatus == 'Available'
+        );
+    }
+
+    /** Promoted people must stay off the Available equality query. */
+    function promotedKarkunNotAvailable() {
+      return !isPromotedToARuknData(request.resource.data)
+        || request.resource.data.assignmentStatus != 'Available';
     }
 
     /**
@@ -101,8 +148,12 @@ service cloud.firestore {
       let after = stringOrEmpty(request.resource.data.assignedRuknId);
       return request.resource.data.id == resource.data.id
         && !isMuttafiqPersonData(resource.data)
+        && !isPromotedToARuknData(resource.data)
+        && !isARuknPromotionInProgressData(resource.data)
         && categoryUnchanged()
         && referredByUnchanged()
+        && promotedToARuknIdUnchanged()
+        && aRuknPromotionInProgressUnchanged()
         && (
           (before == ruknId() && after == ruknId())
           || (before == '' && after == ruknId())
@@ -121,7 +172,7 @@ service cloud.firestore {
       allow read: if isAdministrator() || (isRukn() && docId == ruknId());
       allow create: if isAdministrator() && validRuknOfficerCreate(docId);
       // Increment C/D — referredByRuknId immutable after create (Admin included).
-      allow update: if isAdministrator() && referredByUnchanged();
+      allow update: if isAdministrator() && referredByUnchanged() && officerIdentityUnchanged();
       allow delete: if false;
     }
 
@@ -134,7 +185,7 @@ service cloud.firestore {
         ));
       allow create: if isAdministrator();
       // Increment D — Admin ordinary updates must not rewrite referral attribution.
-      allow update: if (isAdministrator() && referredByUnchanged())
+      allow update: if (isAdministrator() && referredByUnchanged() && promotedKarkunNotAvailable())
         || (isRukn() && ruknMayUpdateKarkun());
       allow delete: if false;
     }
@@ -142,14 +193,16 @@ service cloud.firestore {
     match /connections/{assignmentId} {
       allow read: if isAdministrator() || assignedToRukn(resource.data);
       // Increment D — Rukn may create only for self + non-Muttafiq person.
-      allow create: if isAdministrator()
+      allow create: if (
+        isAdministrator()
         || (
           isRukn()
           && assignedToRukn(request.resource.data)
           && request.resource.data.keys().hasAll(['assignmentId', 'ruknId', 'karkunId'])
           && request.resource.data.assignmentId == assignmentId
           && karkunNotMuttafiq(request.resource.data.karkunId)
-        );
+        )
+      ) && karkunNotInARuknPromotionTransition(request.resource.data.karkunId);
       // Increment D — Rukn cannot forge ownership transfer via connection update.
       allow update: if isAdministrator()
         || (

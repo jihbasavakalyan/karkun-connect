@@ -18,6 +18,7 @@ import {
   isCampaignEligible,
   isMuttafiq,
   isSoftRemoved,
+  isUnavailableAsNormalKarkun,
   allocateNextMuttafiqRegistryNumber,
 } from '@/lib/peopleClassification'
 import { logPeopleAudit } from '@/lib/peopleAuditLog'
@@ -281,6 +282,7 @@ export function getAllRukns(): Rukn[] {
 export function getAllKarkuns(includeArchived = false): KarkunRegistryRecord[] {
   return MOCK_KARKUN_REGISTRY.filter((k) => {
     if (getPersonCategory(k) !== 'Karkun') return false
+    if (isUnavailableAsNormalKarkun(k)) return false
     if (isSoftRemoved(k)) return includeArchived
     if (!includeArchived && k.isArchived) return false
     return true
@@ -897,6 +899,30 @@ export async function persistKarkunDurable(id: string): Promise<PeopleMutationRe
   const result = await getRepositories().karkun.upsertRecord(karkun)
   if (!result.ok) {
     console.error('[persistKarkunDurable]', result.error.code, result.error.message, result.error.cause)
+    return { success: false, error: result.error.message }
+  }
+  return { success: true }
+}
+
+/**
+ * Await durable persistence for a single officer document (Rukn or A Rukn).
+ */
+export async function persistRuknDurable(id: string): Promise<PeopleMutationResult> {
+  const rukn = getRuknById(id)
+  if (!rukn) {
+    return { success: false, error: 'Rukn not found.' }
+  }
+  const commit = getRepositories().rukn.commitRuknDocuments
+  if (!commit) {
+    const saved = getRepositories().rukn.saveAll(ruknMaster)
+    if (!saved.ok) {
+      return { success: false, error: saved.error.message }
+    }
+    return { success: true }
+  }
+  const result = await commit([rukn])
+  if (!result.ok) {
+    console.error('[persistRuknDurable]', result.error.code, result.error.message, result.error.cause)
     return { success: false, error: result.error.message }
   }
   return { success: true }

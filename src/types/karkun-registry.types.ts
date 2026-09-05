@@ -92,6 +92,20 @@ export type KarkunRegistryRecord = {
   reviewedAt?: string
   /** Set when archiveKind is admin_delete (controlled removal from active registry). */
   deleteReason?: string
+  /**
+   * A Rukn promotion link. When set, this person is not an active normal Karkun.
+   * Document id remains `kr-*`. Do not rewrite historical campaign rows.
+   */
+  promotedToARuknId?: string
+  promotedAt?: string
+  promotedBy?: string
+  /**
+   * Durable promotion transition. Set before disconnect/allocate; cleared when
+   * promotedToARuknId is persisted. Blocks ordinary assignRukn.
+   */
+  aRuknPromotionInProgress?: boolean
+  /** Snapshot of Active campaign assignment at promotion; not live ownership. */
+  previousAssignedRuknId?: string
 }
 
 /** KC-0076 — reasons for Mark for Review. */

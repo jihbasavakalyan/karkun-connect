@@ -6,7 +6,12 @@ import {
   getCanonicalConnectedKarkunCount,
   getConnectedAssignmentsForRukn,
 } from '@/lib/connections/getConnectedKarkunsForRukn'
-import { isCampaignEligible } from '@/lib/peopleClassification'
+import {
+  getPersonCategory,
+  isCampaignEligible,
+  isSoftRemoved,
+  isUnavailableAsNormalKarkun,
+} from '@/lib/peopleClassification'
 import { getAllKarkuns, getCompatibleKarkunsForRukn, notifyAndPersistKarkunRecords, notifyPeopleRegistryChange } from '@/lib/peopleStore'
 import { logPeopleAudit } from '@/lib/peopleAuditLog'
 import { isValidMobileFormat, normalizeMobile } from '@/lib/mobileValidation'
@@ -190,8 +195,11 @@ async function syncKarkunRegistryFromAssignments(
   options?: { notify?: boolean },
 ): Promise<void> {
   // KC-0103 — never sync campaign fields onto Muttafiqeen / soft-removed people.
-  const karkun = MOCK_KARKUN_REGISTRY.find((k) => k.id === karkunId && isCampaignEligible(k))
+  const karkun = MOCK_KARKUN_REGISTRY.find((k) => k.id === karkunId)
   if (!karkun) return
+  if (getPersonCategory(karkun) === 'Muttafiq' || isSoftRemoved(karkun)) return
+  if (isUnavailableAsNormalKarkun(karkun)) return
+  if (!isCampaignEligible(karkun)) return
 
   const operationId = createIncidentOperationId('sync-karkun-registry')
   const before = {
@@ -488,6 +496,16 @@ export async function assignRukn(input: AssignInput): Promise<AssignmentResult> 
       traceConnect('assign.ok', { idempotent: true, assignmentId: again.assignmentId })
       connectStepExit(serviceSpan, 'service.assignRukn', { idempotent: true })
       return { success: true, assignment: again }
+    }
+
+    const latestEligibility = validateAssignInput(input)
+    if (!latestEligibility.valid) {
+      connectStepEarlyReturn('service.validateAssignInput', latestEligibility.error)
+      connectStepExit(serviceSpan, 'service.assignRukn', {
+        aborted: 'eligibility_recheck',
+        error: latestEligibility.error,
+      })
+      return { success: false, error: latestEligibility.error }
     }
 
     let assignment

@@ -16,6 +16,7 @@ import type { JihPortalState } from '@/repositories/interfaces/ComplianceReposit
 import type { ARuknAllocationResult } from '@/lib/aRuknAllocation'
 import { getMaxARuknNumFromIds } from '@/lib/aRuknAllocation'
 import { formatARuknId } from '@/lib/officerIdentity'
+import { isUnavailableAsNormalKarkun } from '@/lib/promotedToARukn'
 import type { Rukn } from '@/data/ruknMaster'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
 import type { DatasetBackup } from '@/types/dataMigration'
@@ -478,7 +479,9 @@ function filterKarkunsForClientWrite(
       .map((row) => row.id),
   )
   return karkuns.filter(
-    (karkun) => karkun.assignedRuknId === scope.ruknId || previouslyMine.has(karkun.id),
+    (karkun) =>
+      !isUnavailableAsNormalKarkun(karkun) &&
+      (karkun.assignedRuknId === scope.ruknId || previouslyMine.has(karkun.id)),
   )
 }
 
@@ -503,7 +506,7 @@ async function readKarkunsForClient(
         ),
       ),
       getDocs(
-        query(collection(db, FIRESTORE_COLLECTIONS.karkuns), where('assignedRuknId', '==', '')),
+        query(collection(db, FIRESTORE_COLLECTIONS.karkuns), where('assignmentStatus', '==', 'Available')),
       ),
     ])
     const byId = new Map<string, KarkunRegistryRecord>()
@@ -516,7 +519,7 @@ async function readKarkunsForClient(
       available: availableSnap.size,
       merged: byId.size,
     })
-    return [...byId.values()]
+    return [...byId.values()].filter((karkun) => !isUnavailableAsNormalKarkun(karkun))
   }
   return readCollection<KarkunRegistryRecord>(db, FIRESTORE_COLLECTIONS.karkuns)
 }
@@ -1033,7 +1036,7 @@ function readCriticalHydratePayload(db: ReturnType<typeof getFirestoreDb>) {
         collection: FIRESTORE_COLLECTIONS.karkuns,
         query:
           scope.role === 'rukn' && scope.ruknId
-            ? `where assignedRuknId=="${scope.ruknId}" OR assignedRuknId==""`
+            ? `where assignedRuknId=="${scope.ruknId}" OR assignmentStatus=="Available"`
             : `collection(db, "${FIRESTORE_COLLECTIONS.karkuns}")`,
         run: () => readKarkunsForClient(db),
       }),
@@ -1511,7 +1514,7 @@ export function startFirestoreSnapshotListeners(onRemoteChange: () => void): voi
       )
       watchQuery(
         'karkuns:available',
-        query(collection(db, FIRESTORE_COLLECTIONS.karkuns), where('assignedRuknId', '==', '')),
+        query(collection(db, FIRESTORE_COLLECTIONS.karkuns), where('assignmentStatus', '==', 'Available')),
         onRemoteChange,
       )
       watchQuery(
