@@ -15,6 +15,8 @@ export const UI_LABELS = {
   notConnected: 'Not Connected',
   pending: 'Pending',
   connectRukn: 'Connect Rukn',
+  aRukn: 'عازمِ رکن',
+  promoteToARukn: 'Promote to عازمِ رکن',
   connectedWorkers: 'Connected Karkuns',
   connectedRukn: 'Connected Rukn',
   connection: 'Connection',

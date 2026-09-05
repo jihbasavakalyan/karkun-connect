@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { ROUTES } from '@/constants/routes'
 import { changeKarkunRuknAssignment } from '@/lib/assignmentEngine'
-import { getPersonCategory, getMuttafiqDisplayNumber } from '@/lib/peopleClassification'
+import { getPersonCategory, getMuttafiqDisplayNumber, isPromotedToARukn } from '@/lib/peopleClassification'
 import { persistKarkunDurable, updateKarkun } from '@/lib/peopleStore'
 import { getActiveMuttafiqRelationshipsForPerson } from '@/stores/muttafiqRelationshipStore'
 import { getRuknById } from '@/data/ruknMaster'
@@ -25,6 +25,7 @@ import { CommunicationActions } from '@/components/communication/CommunicationAc
 import { useCommunication } from '@/hooks/useCommunication'
 import { RuknAssignmentSelect } from '@/components/forms/people/RuknAssignmentSelect'
 import { RegistryMaintenancePanel } from '@/components/admin/RegistryMaintenancePanel'
+import { PromoteToARuknAction } from '@/components/admin/PromoteToARuknAction'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import { EmptyState, PageShell } from '@/components/ui'
@@ -304,7 +305,12 @@ function KarkunProfileForm({ karkun, karkunId }: KarkunProfileFormProps) {
             {formatPersonNameForDisplay(name)}
           </h1>
           <div className="mt-1 flex flex-wrap items-center gap-2">
-            <StatusBadge variant={isMuttafiq ? 'info' : 'connected'}>{category}</StatusBadge>
+            <StatusBadge variant={isMuttafiq ? 'info' : isPromotedToARukn(karkun) ? 'info' : 'connected'}>
+              {isPromotedToARukn(karkun) ? 'عازمِ رکن' : category}
+            </StatusBadge>
+            {isPromotedToARukn(karkun) && karkun.promotedToARuknId ? (
+              <span className="text-xs font-medium text-secondary">{karkun.promotedToARuknId}</span>
+            ) : null}
             {isMuttafiq && getMuttafiqDisplayNumber(karkun) ? (
               <span className="text-xs font-medium text-secondary">
                 {getMuttafiqDisplayNumber(karkun)}
@@ -316,13 +322,22 @@ function KarkunProfileForm({ karkun, karkunId }: KarkunProfileFormProps) {
           </div>
         </div>
 
-        <div className="flex shrink-0 gap-2">
-          <SecondaryButton type="button" className="px-4 py-2 text-sm" onClick={handleCancel}>
-            Cancel
-          </SecondaryButton>
-          <PrimaryButton type="submit" className="px-4 py-2 text-sm">
-            Save
-          </PrimaryButton>
+        <div className="flex shrink-0 flex-col items-end gap-2">
+          <div className="flex shrink-0 gap-2">
+            <SecondaryButton type="button" className="px-4 py-2 text-sm" onClick={handleCancel}>
+              Cancel
+            </SecondaryButton>
+            <PrimaryButton type="submit" className="px-4 py-2 text-sm">
+              Save
+            </PrimaryButton>
+          </div>
+          {!isMuttafiq ? (
+            <PromoteToARuknAction
+              person={karkun}
+              variant="button"
+              onSuccess={() => navigate(ROUTES.ADMIN_A_RUKN)}
+            />
+          ) : null}
         </div>
       </div>
 

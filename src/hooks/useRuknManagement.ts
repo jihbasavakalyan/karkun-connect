@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import type { Rukn } from '@/data/ruknMaster'
 import { getAllRukns } from '@/lib/peopleStore'
+import { isNormalRuknOfficer } from '@/lib/aRuknRegistry'
 import { usePeopleStore } from '@/hooks/usePeopleStore'
 import type { PeopleFilters, PeopleSortDirection, PeopleSortField } from '@/types/people.types'
 import { PEOPLE_PAGE_SIZE } from '@/types/people.types'
@@ -89,7 +90,7 @@ export function useRuknManagement() {
   const [selectedIds, setSelectedIds] = useState<string[]>([])
 
   const allRukns = useMemo(
-    () => getAllRukns(),
+    () => getAllRukns().filter(isNormalRuknOfficer),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- registry is module state
     [peopleVersion],
   )

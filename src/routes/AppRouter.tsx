@@ -89,6 +89,9 @@ const RuknDetailPage = lazyWithChunkReload(() =>
 const RuknModulePage = lazyWithChunkReload(() =>
   import('@/pages/admin/RuknModulePage').then((m) => ({ default: m.RuknModulePage })),
 )
+const ARuknRegistryPage = lazyWithChunkReload(() =>
+  import('@/pages/admin/ARuknRegistryPage').then((m) => ({ default: m.ARuknRegistryPage })),
+)
 const SettingsPage = lazyWithChunkReload(() =>
   import('@/pages/admin/SettingsPage').then((m) => ({ default: m.SettingsPage })),
 )
@@ -191,6 +194,7 @@ export function AppRouter() {
             <Route path="reports" element={<AdminReportCenterPage />} />
             <Route path="rukn" element={<RuknModulePage />} />
             <Route path="rukn/:ruknId" element={<RuknDetailPage />} />
+            <Route path="a-rukn" element={<ARuknRegistryPage />} />
             <Route path="karkun" element={<KarkunanPage />} />
             <Route path="karkun/:karkunId" element={<KarkunProfilePage />} />
             <Route path="muttafiqeen" element={<MuttafiqeenPage />} />

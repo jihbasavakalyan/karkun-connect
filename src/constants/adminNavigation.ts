@@ -47,6 +47,7 @@ export const ADMIN_NAV_ITEMS: AdminNavEntry[] = [
   },
   { id: 'rukn', label: 'ارکان', icon: 'user', to: ROUTES.ADMIN_RUKN },
   { id: 'karkun', label: 'کارکنان', icon: 'users', to: ROUTES.ADMIN_KARKUN },
+  { id: 'a-rukn', label: 'عازمِ رکن', icon: 'sparkles', to: ROUTES.ADMIN_A_RUKN },
   { id: 'muttafiqeen', label: 'متفقین', icon: 'heart', to: ROUTES.ADMIN_MUTTAFIQEEN },
   { id: 'assignments', label: 'باہمی ربط', icon: 'link', to: ROUTES.ADMIN_ASSIGNMENTS },
   { id: 'weekly-ijtema', label: 'ہفتہ وار اجتماع', icon: 'calendar', to: ROUTES.ADMIN_WEEKLY_IJTEMA },

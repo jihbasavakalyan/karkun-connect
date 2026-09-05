@@ -236,8 +236,10 @@ removeFromStorage(STORAGE_KEYS.aRuknCounter)
 {
   const routes = read('src/constants/routes.ts')
   const nav = read('src/constants/adminNavigation.ts')
-  assert(!routes.includes('ADMIN_A_RUKN'), 'no A Rukn registry route in this increment')
-  assert(!nav.includes('عازمِ رکن'), 'no A Rukn Admin nav in this increment')
+  const provisioner = read('src/server/ruknClaims/provisionHandler.ts')
+  assert(routes.includes('ADMIN_A_RUKN'), 'Increment 3 A Rukn registry route')
+  assert(nav.includes('عازمِ رکن'), 'Increment 3 A Rukn Admin nav')
+  assert(!provisioner.includes("role: 'a_rukn'"), 'JWT role remains rukn, not a_rukn')
 }
 
 console.log('verify-a-rukn-identity: OK')

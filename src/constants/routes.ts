@@ -8,6 +8,7 @@ export const ROUTES = {
   /** KC-037B — Report Center (configuration + generation). V1: Administrator-only. */
   ADMIN_REPORTS: '/admin/reports',
   ADMIN_RUKN: '/admin/rukn',
+  ADMIN_A_RUKN: '/admin/a-rukn',
   ADMIN_KARKUN: '/admin/karkun',
   ADMIN_MUTTAFIQEEN: '/admin/muttafiqeen',
   ADMIN_ASSIGNMENTS: '/admin/assignments',

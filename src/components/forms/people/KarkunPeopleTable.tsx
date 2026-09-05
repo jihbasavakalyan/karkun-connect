@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
 import { adminKarkunProfilePath } from '@/constants/routes'
@@ -47,6 +47,8 @@ type KarkunPeopleTableProps = {
   showMuttafiqRelationshipColumns?: boolean
   /** Increment A — open Connect Rukn request modal for this Muttafiq. */
   onConnectRukn?: (person: KarkunRegistryRecord) => void
+  /** Increment 3 — Promote to عازمِ رکن (Karkun registry only). */
+  promoteAction?: (karkun: KarkunRegistryRecord) => ReactNode
   emptyTitle?: string
   emptyLabel?: string
 }
@@ -128,6 +130,7 @@ export function KarkunPeopleTable({
   showAssignmentControls = true,
   showMuttafiqRelationshipColumns = false,
   onConnectRukn,
+  promoteAction,
   emptyTitle,
   emptyLabel = 'No Karkun match your search or filters.',
 }: KarkunPeopleTableProps) {
@@ -373,6 +376,7 @@ export function KarkunPeopleTable({
                           {UI_LABELS.connectRukn}
                         </button>
                       ) : null}
+                      {promoteAction ? promoteAction(karkun) : null}
                       {showMuttafiqRelationshipColumns &&
                       pendingMuttafiqLinkPersonIds.has(karkun.id) &&
                       muttafiqLinks.length === 0 ? (
@@ -500,6 +504,7 @@ export function KarkunPeopleTable({
                         {UI_LABELS.connectRukn}
                       </button>
                     ) : null}
+                    {promoteAction ? promoteAction(karkun) : null}
                     {showMuttafiqRelationshipColumns &&
                     pendingMuttafiqLinkPersonIds.has(karkun.id) &&
                     muttafiqLinks.length === 0 ? (

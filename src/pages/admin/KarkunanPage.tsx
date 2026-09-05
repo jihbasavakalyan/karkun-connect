@@ -47,6 +47,7 @@ import { BaitulMaalBulkUpdateModal } from '@/components/forms/baitulMaal/BaitulM
 import { IjtemaAttendanceBulkUpdateModal } from '@/components/forms/ijtema/IjtemaAttendanceBulkUpdateModal'
 import type { BaitulMaalStatus } from '@/types/baitulMaal'
 import type { IjtemaAttendanceStatus } from '@/types/ijtemaAttendance'
+import { PromoteToARuknAction } from '@/components/admin/PromoteToARuknAction'
 import { PageHeader, PageShell } from '@/components/ui'
 import {
   hasRegistryActionAdd,
@@ -122,6 +123,7 @@ function KarkunGenderSection({
   const [bulkIjtemaStatus, setBulkIjtemaStatus] = useState<IjtemaAttendanceStatus | null>(null)
   const [assignmentErrors, setAssignmentErrors] = useState<Record<string, string>>({})
   const [bulkWhatsAppOpen, setBulkWhatsAppOpen] = useState(false)
+  const [promoteNotice, setPromoteNotice] = useState('')
 
   const openAddForm = useCallback(() => {
     setEditingKarkun(null)
@@ -391,6 +393,12 @@ function KarkunGenderSection({
         Showing {management.records.length} of {management.totalRecords} filtered
       </p>
 
+      {promoteNotice ? (
+        <p className="rounded-lg border border-border bg-surface-muted px-3 py-2 text-sm text-text-heading" role="status">
+          {promoteNotice}
+        </p>
+      ) : null}
+
       <KarkunPeopleTable
         records={management.records}
         selectedIds={management.selectedIds}
@@ -402,6 +410,16 @@ function KarkunGenderSection({
         onEdit={openEditForm}
         onAssignmentChange={handleAssignmentChange}
         assignmentErrors={assignmentErrors}
+        promoteAction={(karkun) => (
+          <PromoteToARuknAction
+            person={karkun}
+            onSuccess={(aRuknId) =>
+              setPromoteNotice(
+                `${karkun.name} is now عازمِ رکن (${aRuknId}) and is no longer an active normal Karkun.`,
+              )
+            }
+          />
+        )}
       />
 
       <PeoplePagination
