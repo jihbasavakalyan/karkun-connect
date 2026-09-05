@@ -269,6 +269,14 @@ assert(
     firestoreRepo.includes("where('assignmentStatus', '==', 'Available')"),
     'Available hydrate query excludes non-Available promoted people',
   )
+  assert(
+    firestoreRepo.includes("where('promotedToARuknId', '==', '')"),
+    'Available hydrate query matches isAvailableKarkunData promotedToARuknId',
+  )
+  assert(
+    firestoreRepo.includes("where('aRuknPromotionInProgress', '==', false)"),
+    'Available hydrate query matches isAvailableKarkunData in-progress flag',
+  )
   const upsertBlock = firestoreRepo.slice(
     firestoreRepo.indexOf('async upsertRecord(karkun: KarkunRegistryRecord)'),
     firestoreRepo.indexOf('async updateRecord(id: string, patch: KarkunRecordPatch)'),

@@ -23,6 +23,7 @@
     "verify:a-rukn-identity": "npx vite-node scripts/verify-a-rukn-identity.ts",
     "verify:a-rukn-promotion": "npx vite-node scripts/verify-a-rukn-promotion.ts",
     "verify:a-rukn-admin-ui": "npx vite-node scripts/verify-a-rukn-admin-ui.ts",
+    "verify:rukn-workspace-nav": "npx vite-node scripts/verify-rukn-workspace-nav.ts",
     "verify:kc0058": "npx vite-node scripts/verify-kc0058-data-preservation.ts",
     "verify:kc0058.1": "npx vite-node scripts/verify-kc0058-1-dashboard-metrics.ts",
     "verify:kc0058.2": "npx vite-node scripts/verify-kc0058-2-rukn-stabilization.ts",

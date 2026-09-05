@@ -25,6 +25,15 @@
       ]
     },
     {
+      "collectionGroup": "karkuns",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "assignmentStatus", "order": "ASCENDING" },
+        { "fieldPath": "promotedToARuknId", "order": "ASCENDING" },
+        { "fieldPath": "aRuknPromotionInProgress", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "activityLogs",
       "queryScope": "COLLECTION",
       "fields": [

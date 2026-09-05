@@ -18,6 +18,10 @@ import { PlanningConversationModal } from '@/features/digitalRafeeq/planning'
 import { humanizeConnectionConfirmed } from '@/lib/relationshipPresentation'
 import { matchesKarkunRegistrySearch } from '@/lib/relationshipPresentation'
 import { toOperatorAssignmentError } from '@/lib/assignment/operatorFacingError'
+import {
+  getAvailableKarkunPoolHydrateFailureMessage,
+  isAvailableKarkunPoolHydrateFailed,
+} from '@/repositories/availableKarkunPoolHydrate'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
 
 type PlanningTarget = {
@@ -123,12 +127,17 @@ export function AvailableKarkunPage() {
     return <Navigate to={ROUTES.RUKN} replace />
   }
 
+  const availablePoolFailed = isAvailableKarkunPoolHydrateFailed()
+  const availablePoolError = getAvailableKarkunPoolHydrateFailureMessage()
+
   return (
     <PageShell variant="narrow" className="app-screen connect-screen max-w-3xl">
       <header className="app-screen-header">
         <h1 className="app-screen-title">Connect</h1>
         <p className="app-screen-subtitle">
-          {availableKarkunan.length} ready to connect
+          {availablePoolFailed
+            ? 'Available Karkuns could not be loaded'
+            : `${availableKarkunan.length} ready to connect`}
         </p>
       </header>
 
@@ -182,7 +191,25 @@ export function AvailableKarkunPage() {
         </div>
       )}
 
-      {availableKarkunan.length === 0 ? (
+      {availablePoolFailed ? (
+        <div className="ds-banner-error" role="alert">
+          <p className="font-semibold">Unable to load available Karkuns</p>
+          <p className="mt-1 text-sm">
+            The Connect list was not loaded. This is not a &quot;0 available&quot; campaign state.
+            Retry after signing in again if the problem continues.
+          </p>
+          {availablePoolError ? (
+            <p className="mt-1 break-words text-xs">{availablePoolError}</p>
+          ) : null}
+          <button
+            type="button"
+            className="connect-add-karkun-button mt-3"
+            onClick={() => window.location.reload()}
+          >
+            Retry
+          </button>
+        </div>
+      ) : availableKarkunan.length === 0 ? (
         <EmptyState
           icon="link"
           title="All caught up"

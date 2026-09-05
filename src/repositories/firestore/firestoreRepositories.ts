@@ -125,6 +125,10 @@ import {
 } from '@/lib/incidentTraceCollector'
 import { canonicalizeConnectionRecords } from '@/lib/connections/canonicalizeConnectionRecords'
 import {
+  markAvailableKarkunPoolHydrateFailed,
+  markAvailableKarkunPoolHydrateOk,
+} from '@/repositories/availableKarkunPoolHydrate'
+import {
   kc00584CaptureAuthBeforeCritical,
   kc00584ProbeCriticalOp,
 } from '@/lib/debug/kc00584PermissionProbe'
@@ -398,6 +402,43 @@ function isPermissionDeniedError(error: unknown): boolean {
   )
 }
 
+function isAvailableKarkunPoolQueryFailure(error: unknown): boolean {
+  if (!error || typeof error !== 'object' || !('code' in error)) return false
+  const code = String((error as { code: unknown }).code)
+  return (
+    code === 'permission-denied' ||
+    code === 'failed-precondition' ||
+    code.includes('permission-denied')
+  )
+}
+
+/** List query must imply firestore.rules `isAvailableKarkunData`. */
+function availableKarkunPoolQuery(db: ReturnType<typeof getFirestoreDb>) {
+  return query(
+    collection(db, FIRESTORE_COLLECTIONS.karkuns),
+    where('assignmentStatus', '==', 'Available'),
+    where('promotedToARuknId', '==', ''),
+    where('aRuknPromotionInProgress', '==', false),
+  )
+}
+
+async function readAvailableKarkunPoolForClient(
+  db: ReturnType<typeof getFirestoreDb>,
+): Promise<KarkunRegistryRecord[]> {
+  try {
+    const snap = await getDocs(availableKarkunPoolQuery(db))
+    markAvailableKarkunPoolHydrateOk()
+    return snap.docs.map((item) => stripMeta<KarkunRegistryRecord>(item.data()))
+  } catch (error) {
+    if (isAvailableKarkunPoolQueryFailure(error)) {
+      console.warn('[firestore:hydrate] available karkun pool query denied or unindexed', error)
+      markAvailableKarkunPoolHydrateFailed(error)
+      return []
+    }
+    throw error
+  }
+}
+
 /** Soft-read: permission denials become null so Rukn hydrate can proceed for admin-only docs. */
 async function readDocSoft<T>(
   db: ReturnType<typeof getFirestoreDb>,
@@ -499,25 +540,26 @@ async function readKarkunsForClient(
     return []
   }
   if (isScopedRuknClient(scope)) {
-    const [mineSnap, availableSnap] = await Promise.all([
+    const [mineSnap, availableRows] = await Promise.all([
       getDocs(
         query(
           collection(db, FIRESTORE_COLLECTIONS.karkuns),
           where('assignedRuknId', '==', scope.ruknId),
         ),
       ),
-      getDocs(
-        query(collection(db, FIRESTORE_COLLECTIONS.karkuns), where('assignmentStatus', '==', 'Available')),
-      ),
+      readAvailableKarkunPoolForClient(db),
     ])
     const byId = new Map<string, KarkunRegistryRecord>()
-    for (const snapshot of [...mineSnap.docs, ...availableSnap.docs]) {
+    for (const snapshot of mineSnap.docs) {
       byId.set(snapshot.id, stripMeta<KarkunRegistryRecord>(snapshot.data()))
+    }
+    for (const karkun of availableRows) {
+      byId.set(karkun.id, karkun)
     }
     console.info('[KC-0100] readKarkunsForClient', {
       ruknId: scope.ruknId,
       mine: mineSnap.size,
-      available: availableSnap.size,
+      available: availableRows.length,
       merged: byId.size,
     })
     return [...byId.values()].filter((karkun) => !isUnavailableAsNormalKarkun(karkun))
@@ -1037,7 +1079,7 @@ function readCriticalHydratePayload(db: ReturnType<typeof getFirestoreDb>) {
         collection: FIRESTORE_COLLECTIONS.karkuns,
         query:
           scope.role === 'rukn' && scope.ruknId
-            ? `where assignedRuknId=="${scope.ruknId}" OR assignmentStatus=="Available"`
+            ? `where assignedRuknId=="${scope.ruknId}" OR (assignmentStatus=="Available" AND promotedToARuknId=="" AND aRuknPromotionInProgress==false)`
             : `collection(db, "${FIRESTORE_COLLECTIONS.karkuns}")`,
         run: () => readKarkunsForClient(db),
       }),
@@ -1471,25 +1513,37 @@ export function startFirestoreSnapshotListeners(onRemoteChange: () => void): voi
     )
   }
 
-  const watchQuery = (label: string, q: Query, handler: () => void) => {
+  const watchQuery = (
+    label: string,
+    q: Query,
+    handler: () => void,
+    onError?: (error: unknown) => void,
+  ) => {
     snapshotUnsubscribers.push(
-      onSnapshot(q, () => {
-        if (!seenInitialSnapshot.has(label)) {
-          seenInitialSnapshot.add(label)
-          traceIncidentStage('snapshot_listener:initial_suppressed', {
+      onSnapshot(
+        q,
+        () => {
+          if (!seenInitialSnapshot.has(label)) {
+            seenInitialSnapshot.add(label)
+            traceIncidentStage('snapshot_listener:initial_suppressed', {
+              caller: 'onSnapshot',
+              sourceOfTruth: 'Snapshot Listener',
+              path: label,
+            })
+            return
+          }
+          traceIncidentStage('snapshot_listener:fired', {
             caller: 'onSnapshot',
             sourceOfTruth: 'Snapshot Listener',
             path: label,
           })
-          return
-        }
-        traceIncidentStage('snapshot_listener:fired', {
-          caller: 'onSnapshot',
-          sourceOfTruth: 'Snapshot Listener',
-          path: label,
-        })
-        handler()
-      }),
+          handler()
+        },
+        (error) => {
+          console.error(`[firestore:snapshot] ${label}`, error)
+          onError?.(error)
+        },
+      ),
     )
   }
 
@@ -1515,8 +1569,13 @@ export function startFirestoreSnapshotListeners(onRemoteChange: () => void): voi
       )
       watchQuery(
         'karkuns:available',
-        query(collection(db, FIRESTORE_COLLECTIONS.karkuns), where('assignmentStatus', '==', 'Available')),
+        availableKarkunPoolQuery(db),
         onRemoteChange,
+        (error) => {
+          if (isAvailableKarkunPoolQueryFailure(error)) {
+            markAvailableKarkunPoolHydrateFailed(error)
+          }
+        },
       )
       watchQuery(
         `activityLogs:rukn:${scope.ruknId}`,

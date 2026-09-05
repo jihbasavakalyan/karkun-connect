@@ -30,6 +30,7 @@ assert(
 )
 assert(initialize.includes('maybeRescopeHydrateAfterAuth'), 'post-auth Rukn rescope exists')
 assert(layout.includes('Unable to load your connections'), 'Rukn layout gates hydrate failure')
+assert(layout.includes('isRuknCampaignConnectionPath'), 'connection error does not freeze unrelated Rukn routes')
 assert(layout.includes('traceKc0100ConnectionConsistency'), 'Rukn layout emits KC-0100 trace')
 assert(trace.includes('connection consistency'), 'KC-0100 tracer present')
 

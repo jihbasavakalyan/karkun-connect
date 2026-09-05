@@ -73,4 +73,14 @@ console.log('▶ karkun updateRecord uses updateDoc')
   assert.equal(helpers.includes('await updateDoc('), true)
 }
 
+console.log('▶ karkun available pool query matches rules')
+{
+  const { readFileSync } = await import('node:fs')
+  const { resolve } = await import('node:path')
+  const repo = readFileSync(resolve('src/repositories/firestore/firestoreRepositories.ts'), 'utf8')
+  assert.equal(repo.includes("where('promotedToARuknId', '==', '')"), true)
+  assert.equal(repo.includes("where('aRuknPromotionInProgress', '==', false)"), true)
+  assert.equal(repo.includes('readAvailableKarkunPoolForClient'), true)
+}
+
 console.log('Firestore repository layer verification passed.')

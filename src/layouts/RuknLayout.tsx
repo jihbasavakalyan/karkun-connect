@@ -1,4 +1,4 @@
-import { NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
 import { ROUTES } from '@/constants/routes'
 import { Logo } from '@/components/common/Logo'
@@ -25,6 +25,7 @@ import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { HomePageSkeleton } from '@/components/ui'
 import { traceKc0100ConnectionConsistency } from '@/lib/debug/kc0100ConnectionConsistencyTrace'
+import { isRuknCampaignConnectionPath } from '@/lib/ruknCampaignConnectionPath'
 
 /** KC-0093 — Communication is primary workspace; Record remains route-only (workflow, not destination). */
 const navItems: { label: string; icon: IconName; to: string; end: boolean }[] = [
@@ -38,8 +39,8 @@ const navItems: { label: string; icon: IconName; to: string; end: boolean }[] = 
 
 /**
  * KC-0102A — Progressive Rukn shell: header + bottom nav always render.
- * Main content waits on critical hydrate (anti fake-zero). Failures stay inline
- * in main so navigation remains available.
+ * Connection hydrate failures stay on campaign-connection routes only so
+ * navigation and Logout remain usable. Failures never invent a 0-connected state.
  */
 export function RuknLayout() {
   const { user } = useAuth()
@@ -47,6 +48,8 @@ export function RuknLayout() {
   const isHydrated = useRepositoryHydration()
   const hydration = useRepositoryHydrationStatus()
   const { assignmentVersion } = useAssignmentEngine()
+  const { pathname } = useLocation()
+  const connectionScoped = isRuknCampaignConnectionPath(pathname)
   const campaignName = isHydrated ? getActiveCampaignName() : 'Loading campaign…'
   const duration = isHydrated ? formatActiveCampaignDuration() : ''
   const timeline = isHydrated ? getCampaignTimeline() : null
@@ -85,7 +88,7 @@ export function RuknLayout() {
       </header>
 
       <main className="native-main mx-auto w-full max-w-5xl flex-1 px-3 py-3 lg:px-6 lg:py-5">
-        {hydration.failed ? (
+        {hydration.failed && connectionScoped ? (
           <section className="rounded-xl border border-border bg-surface p-6 shadow-card" role="alert">
             <h1 className="text-lg font-semibold text-text-heading">Unable to load your connections</h1>
             <p className="mt-2 text-sm text-secondary">
@@ -101,17 +104,17 @@ export function RuknLayout() {
               </PrimaryButton>
             </div>
           </section>
-        ) : !isHydrated ? (
-          <HomePageSkeleton />
-        ) : (
+        ) : hydration.failed || isHydrated ? (
           <RuknCommandCenterProvider>
             <Outlet />
           </RuknCommandCenterProvider>
+        ) : (
+          <HomePageSkeleton />
         )}
       </main>
 
       <nav
-        className="native-bottom-nav fixed inset-x-0 bottom-0 z-10 border-t border-border bg-surface/95 px-2 pt-2 shadow-[0_-4px_20px_rgb(0_0_0/0.06)] backdrop-blur-md"
+        className="native-bottom-nav fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface/95 px-2 pt-2 shadow-[0_-4px_20px_rgb(0_0_0/0.06)] backdrop-blur-md"
         aria-label="Rukn navigation"
       >
         <ul className="mx-auto flex max-w-5xl items-stretch justify-around">
