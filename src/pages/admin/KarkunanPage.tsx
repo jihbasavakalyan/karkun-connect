@@ -47,7 +47,10 @@ import { BaitulMaalBulkUpdateModal } from '@/components/forms/baitulMaal/BaitulM
 import { IjtemaAttendanceBulkUpdateModal } from '@/components/forms/ijtema/IjtemaAttendanceBulkUpdateModal'
 import type { BaitulMaalStatus } from '@/types/baitulMaal'
 import type { IjtemaAttendanceStatus } from '@/types/ijtemaAttendance'
-import { PromoteToARuknAction } from '@/components/admin/PromoteToARuknAction'
+import {
+  PromoteToARuknSession,
+  PromoteToARuknTrigger,
+} from '@/components/admin/PromoteToARuknAction'
 import { PageHeader, PageShell } from '@/components/ui'
 import {
   hasRegistryActionAdd,
@@ -92,6 +95,7 @@ type KarkunGenderSectionProps = {
   initialFilters?: Partial<PeopleFilters>
   onAddFormOpened: () => void
   onRegisterHandlers: (handlers: KarkunSectionHandlers | null) => void
+  onRequestPromote: (person: KarkunRegistryRecord) => void
 }
 
 function KarkunGenderSection({
@@ -101,6 +105,7 @@ function KarkunGenderSection({
   initialFilters,
   onAddFormOpened,
   onRegisterHandlers,
+  onRequestPromote,
 }: KarkunGenderSectionProps) {
   const management = useKarkunPeopleManagement(gender, 'Karkun', {
     initialFilters: {
@@ -123,7 +128,6 @@ function KarkunGenderSection({
   const [bulkIjtemaStatus, setBulkIjtemaStatus] = useState<IjtemaAttendanceStatus | null>(null)
   const [assignmentErrors, setAssignmentErrors] = useState<Record<string, string>>({})
   const [bulkWhatsAppOpen, setBulkWhatsAppOpen] = useState(false)
-  const [promoteNotice, setPromoteNotice] = useState('')
 
   const openAddForm = useCallback(() => {
     setEditingKarkun(null)
@@ -393,12 +397,6 @@ function KarkunGenderSection({
         Showing {management.records.length} of {management.totalRecords} filtered
       </p>
 
-      {promoteNotice ? (
-        <p className="rounded-lg border border-border bg-surface-muted px-3 py-2 text-sm text-text-heading" role="status">
-          {promoteNotice}
-        </p>
-      ) : null}
-
       <KarkunPeopleTable
         records={management.records}
         selectedIds={management.selectedIds}
@@ -411,14 +409,7 @@ function KarkunGenderSection({
         onAssignmentChange={handleAssignmentChange}
         assignmentErrors={assignmentErrors}
         promoteAction={(karkun) => (
-          <PromoteToARuknAction
-            person={karkun}
-            onSuccess={(aRuknId) =>
-              setPromoteNotice(
-                `${karkun.name} is now عازمِ رکن (${aRuknId}) and is no longer an active normal Karkun.`,
-              )
-            }
-          />
+          <PromoteToARuknTrigger person={karkun} onRequest={onRequestPromote} />
         )}
       />
 
@@ -583,6 +574,18 @@ export function KarkunanPage() {
   const sectionHandlersRef = useRef<KarkunSectionHandlers | null>(null)
   const [openAddForGender, setOpenAddForGender] = useState<PersonGender | null>(null)
   const addRequestedRef = useRef(false)
+  const [promotionPerson, setPromotionPerson] = useState<KarkunRegistryRecord | null>(null)
+  const [promoteNotice, setPromoteNotice] = useState('')
+  const promotionBusyRef = useRef(false)
+
+  const handlePromotionPendingChange = useCallback((busy: boolean) => {
+    promotionBusyRef.current = busy
+  }, [])
+
+  const requestPromote = useCallback((person: KarkunRegistryRecord) => {
+    if (promotionBusyRef.current) return
+    setPromotionPerson({ ...person })
+  }, [])
 
   useEffect(() => {
     if (!hasRegistryActionAdd(searchParams) || addRequestedRef.current) return
@@ -653,6 +656,28 @@ export function KarkunanPage() {
           />
         </div>
 
+        {promoteNotice ? (
+          <p
+            className="mb-4 rounded-lg border border-border bg-surface-muted px-3 py-2 text-sm text-text-heading"
+            role="status"
+          >
+            {promoteNotice}
+          </p>
+        ) : null}
+
+        <PromoteToARuknSession
+          key={promotionPerson?.id ?? 'idle'}
+          person={promotionPerson}
+          onPendingChange={handlePromotionPendingChange}
+          onSuccess={(aRuknId, sourcePersonId) => {
+            const name = promotionPerson?.name ?? sourcePersonId
+            setPromoteNotice(
+              `${name} is now عازمِ رکن (${aRuknId}) and is no longer an active normal Karkun.`,
+            )
+          }}
+          onDismiss={() => setPromotionPerson(null)}
+        />
+
         <nav className="ds-tab-nav border-b border-border pb-px" aria-label="Karkun gender">
           {(['Male', 'Female'] as const).map((gender) => (
             <button
@@ -678,6 +703,7 @@ export function KarkunanPage() {
             shouldOpenAddForm={openAddForGender === activeGender}
             onAddFormOpened={handleAddFormOpened}
             onRegisterHandlers={registerSectionHandlers}
+            onRequestPromote={requestPromote}
           />
         </div>
       </section>

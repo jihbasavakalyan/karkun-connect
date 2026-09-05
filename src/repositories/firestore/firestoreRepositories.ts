@@ -2006,13 +2006,26 @@ export class KarkunFirestoreRepository implements KarkunRepository {
   }
 
   async upsertRecord(karkun: KarkunRegistryRecord): Promise<RepositoryResult<void>> {
-    const state = karkunCache.get()
-    const nextKarkuns = state.karkuns.some((item) => item.id === karkun.id)
-      ? state.karkuns.map((item) => (item.id === karkun.id ? karkun : item))
-      : [...state.karkuns, karkun]
-    karkunCache.set({ karkuns: nextKarkuns, nextKarkunNum: state.nextKarkunNum })
+    const previous = karkunCache.get()
+    const snapshot = {
+      karkuns: [...previous.karkuns],
+      nextKarkunNum: previous.nextKarkunNum,
+    }
+    const nextKarkuns = snapshot.karkuns.some((item) => item.id === karkun.id)
+      ? snapshot.karkuns.map((item) => (item.id === karkun.id ? karkun : item))
+      : [...snapshot.karkuns, karkun]
+    karkunCache.set({ karkuns: nextKarkuns, nextKarkunNum: snapshot.nextKarkunNum })
     const db = getFirestoreDb()
-    return writeDoc(db, FIRESTORE_COLLECTIONS.karkuns, karkun.id, sanitizeForFirestore(karkun) as object)
+    const result = await writeDoc(
+      db,
+      FIRESTORE_COLLECTIONS.karkuns,
+      karkun.id,
+      sanitizeForFirestore(karkun) as object,
+    )
+    if (!result.ok) {
+      karkunCache.set(snapshot)
+    }
+    return result
   }
 
   clear(): RepositoryResult<void> {

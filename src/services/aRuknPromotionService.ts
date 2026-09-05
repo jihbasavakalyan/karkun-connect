@@ -130,15 +130,16 @@ async function markPromotionInProgress(
   person.aRuknPromotionInProgress = true
   person.updatedAt = nowIso()
   person.updatedBy = 'Administrator'
-  emitPeopleRegistryChange()
   const persisted = await persistKarkunDurable(personId)
   if (!persisted.success) {
     person.aRuknPromotionInProgress = false
+    emitPeopleRegistryChange()
     return {
       ok: false,
       error: persisted.error || 'Could not persist promotion transition state.',
     }
   }
+  emitPeopleRegistryChange()
   return { ok: true }
 }
 

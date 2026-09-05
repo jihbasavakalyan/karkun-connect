@@ -248,6 +248,15 @@ assert(
   assert(rules.includes('karkunNotInARuknPromotionTransition'), 'connection create blocked in transition')
   assert(rules.includes('officerIdentityUnchanged'), 'officer identity fields locked')
   assert(service.includes('markPromotionInProgress'), 'marks transition before disconnect')
+  const markBlock = service.slice(
+    service.indexOf('async function markPromotionInProgress'),
+    service.indexOf('export async function promoteKarkunToARukn'),
+  )
+  const persistAt = markBlock.indexOf('persistKarkunDurable')
+  const emitAt = markBlock.indexOf('emitPeopleRegistryChange')
+  assert(persistAt >= 0 && emitAt >= 0, 'in-progress persist and registry emit exist')
+  assert(persistAt < emitAt, 'does not emit registry change before durable in-progress persist')
+  assert(markBlock.includes('aRuknPromotionInProgress = false'), 'failed persist restores local flag')
   const firestoreRepo = read('src/repositories/firestore/firestoreRepositories.ts')
   assert(
     firestoreRepo.includes("where('assignmentStatus', '==', 'Available')"),
