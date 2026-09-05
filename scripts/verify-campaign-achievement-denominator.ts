@@ -34,36 +34,56 @@ function main(): void {
   console.info('[campaign-achievement] denominator verification starting')
   resetRegistry()
 
-  createKarkun({
-    name: 'Achievement Karkun A',
-    gender: 'Male',
-    mobile: '9000000001',
-    place: DEFAULT_PLACE,
-  })
-  createKarkun({
-    name: 'Achievement Karkun B',
-    gender: 'Female',
-    mobile: '9000000002',
-    place: DEFAULT_PLACE,
-  })
-  createKarkun({
-    name: 'Achievement Karkun C',
-    gender: 'Male',
-    mobile: '9000000003',
-    place: DEFAULT_PLACE,
-  })
-  createMuttafiq({
-    name: 'Achievement Muttafiq 1',
-    gender: 'Male',
-    mobile: '9000000004',
-    place: DEFAULT_PLACE,
-  })
-  createMuttafiq({
-    name: 'Achievement Muttafiq 2',
-    gender: 'Female',
-    mobile: '9000000005',
-    place: DEFAULT_PLACE,
-  })
+  createKarkun(
+    {
+      name: 'Achievement Karkun A',
+      gender: 'Male',
+      mobile: '9000000001',
+      place: DEFAULT_PLACE,
+    },
+    'Administrator',
+    { requireNewPersonIntake: false },
+  )
+  createKarkun(
+    {
+      name: 'Achievement Karkun B',
+      gender: 'Female',
+      mobile: '9000000002',
+      place: DEFAULT_PLACE,
+    },
+    'Administrator',
+    { requireNewPersonIntake: false },
+  )
+  createKarkun(
+    {
+      name: 'Achievement Karkun C',
+      gender: 'Male',
+      mobile: '9000000003',
+      place: DEFAULT_PLACE,
+    },
+    'Administrator',
+    { requireNewPersonIntake: false },
+  )
+  createMuttafiq(
+    {
+      name: 'Achievement Muttafiq 1',
+      gender: 'Male',
+      mobile: '9000000004',
+      place: DEFAULT_PLACE,
+    },
+    'Administrator',
+    { requireNewPersonIntake: false },
+  )
+  createMuttafiq(
+    {
+      name: 'Achievement Muttafiq 2',
+      gender: 'Female',
+      mobile: '9000000005',
+      place: DEFAULT_PLACE,
+    },
+    'Administrator',
+    { requireNewPersonIntake: false },
+  )
 
   const karkuns = getAllKarkuns()
   const muttafiqeen = getAllMuttafiqeen()

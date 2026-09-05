@@ -8,6 +8,9 @@ import { getAllKarkunRequests, getPendingKarkunRequests } from '@/stores/karkunR
 import { getAllRuknAdminMessages } from '@/stores/ruknAdminMessageStore'
 import {
   getPeopleRequestKind,
+  isApprovedRequestStatus,
+  isPendingApprovalStatus,
+  isRejectedRequestStatus,
   type NewKarkunRequest,
   type PeopleRequestKind,
 } from '@/types/karkunRequest.types'
@@ -47,9 +50,10 @@ export type InboxItem = {
 
 function requestFolder(request: NewKarkunRequest): InboxFolder {
   if (request.isArchived) return 'archived'
-  if (request.status === 'Approved') return 'approved'
-  if (request.status === 'Rejected') return 'rejected'
-  return 'pending'
+  if (isApprovedRequestStatus(request.status)) return 'approved'
+  if (isRejectedRequestStatus(request.status)) return 'rejected'
+  if (isPendingApprovalStatus(request.status)) return 'pending'
+  return 'archived'
 }
 
 function kindLabel(kind: InboxItemKind, request?: NewKarkunRequest): string {
@@ -87,7 +91,7 @@ function mapRequest(request: NewKarkunRequest): InboxItem {
     createdAt: request.createdAt,
     updatedAt: request.updatedAt,
     statusLabel: request.status,
-    unread: request.status === 'Pending Approval',
+    unread: isPendingApprovalStatus(request.status),
     href: request.createdKarkunId
       ? adminKarkunProfilePath(request.createdKarkunId)
       : request.sourcePersonId
@@ -134,7 +138,13 @@ export function buildUnifiedInbox(options?: {
     (a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt),
   )
 
-  if (folder !== 'all') {
+  if (folder === 'pending') {
+    items = items.filter((item) => {
+      const request = item.rawRequest
+      if (!request) return false
+      return isPendingApprovalStatus(request.status) && !request.isArchived
+    })
+  } else if (folder !== 'all') {
     items = items.filter((item) => item.folder === folder)
   }
   if (kind !== 'all') {
@@ -162,7 +172,10 @@ export function buildUnifiedInbox(options?: {
 }
 
 export function countUnreadInboxItems(): number {
-  return buildUnifiedInbox({ folder: 'pending' }).filter((item) => item.unread).length
+  const pendingRequests = getPendingKarkunRequests().filter((request) => !request.isArchived).length
+  const unreadMessages = getAllRuknAdminMessages().filter((message) => message.status === 'unread')
+    .length
+  return pendingRequests + unreadMessages
 }
 
 export function getPendingIntakeCount(): number {

@@ -50,6 +50,7 @@
     "verify:kc0102.0": "npx vite-node scripts/verify-kc0102-0-karkun-approval.ts",
     "verify:muttafiq-rukn-link": "npx vite-node scripts/verify-muttafiq-rukn-link.ts",
     "verify:referred-by-rukn": "npx vite-node scripts/verify-referred-by-rukn.ts",
+    "verify:new-person-intake": "npx vite-node scripts/verify-new-person-intake.ts",
     "verify:security-hardening": "npx vite-node scripts/verify-security-hardening.ts",
     "verify:kc0101b": "npx vite-node scripts/verify-kc0101b-dashboard-integrity.ts",
     "verify:reliability": "npx vite-node scripts/verify-reliability-layer.ts",

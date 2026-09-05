@@ -65,6 +65,7 @@ const first = createKarkun(
     status: 'active',
   },
   'Administrator',
+  { requireNewPersonIntake: false },
 )
 assert(first.success, `first create failed: ${first.error}`)
 assert(first.karkunId === 'kr-494', `expected kr-494, got ${first.karkunId}`)
@@ -81,6 +82,7 @@ const second = createKarkun(
     status: 'active',
   },
   'Administrator',
+  { requireNewPersonIntake: false },
 )
 assert(second.success, `second create failed: ${second.error}`)
 assert(second.karkunId === 'kr-495', `expected kr-495, got ${second.karkunId}`)
@@ -117,6 +119,7 @@ const dup = createKarkun(
     status: 'active',
   },
   'Administrator',
+  { requireNewPersonIntake: false },
 )
 assert(!dup.success, 'duplicate mobile must fail')
 assert(dup.existingOwner?.kind === 'karkun', 'duplicate must report existing karkun owner')

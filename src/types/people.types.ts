@@ -110,19 +110,19 @@ export type PersonContactInput = {
   place: string
   status: PersonStatus
   notes?: string
-  /** Optional family name — Father Name (Male) or Husband Name (Female). Gradual enrichment. */
+  /** Family name — Father Name (Male) or Husband Name (Female). Required on NEW person creates. */
   fatherHusbandName?: string
   address?: string
   education?: string
   profession?: string
   /**
-   * Increment B/C — referring Rukn id for NEW Karkun / NEW Rukn creates.
-   * Not used for Muttafiq. Distinct from createdBy / assignedRuknId.
+   * Increment B/C — referring Rukn id for NEW Karkun / NEW Rukn / NEW Muttafiq creates.
+   * Distinct from createdBy / assignedRuknId.
    */
   referredByRuknId?: string
 }
 
-/** Gender-aware label for the optional family name field. */
+/** Gender-aware label for the family name field. */
 export function getFatherHusbandLabel(gender: PersonGender): string {
   return gender === 'Female' ? 'Husband Name' : 'Father Name'
 }

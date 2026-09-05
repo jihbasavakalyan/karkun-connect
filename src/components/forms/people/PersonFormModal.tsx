@@ -96,8 +96,7 @@ function PersonFormModalContent({
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    const isKarkunAddReferral =
-      kind === 'karkun' && mode === 'add' && personLabel !== 'Muttafiq'
+    const isPersonAdd = kind === 'karkun' && mode === 'add'
     const isRuknAddReferral = kind === 'rukn' && mode === 'add'
     onSubmit({
       name,
@@ -111,8 +110,7 @@ function PersonFormModalContent({
       education: kind === 'karkun' ? education || undefined : undefined,
       profession: kind === 'karkun' ? profession || undefined : undefined,
       assignedRuknId: kind === 'karkun' && mode === 'edit' ? assignedRuknId : undefined,
-      referredByRuknId:
-        isKarkunAddReferral || isRuknAddReferral ? referredByRuknId || undefined : undefined,
+      referredByRuknId: isPersonAdd || isRuknAddReferral ? referredByRuknId || undefined : undefined,
     })
   }
 
@@ -125,10 +123,10 @@ function PersonFormModalContent({
   const showConnectionSection =
     kind === 'karkun' && mode === 'edit' && Boolean(karkunId) && personLabel !== 'Muttafiq'
   const showReferredBySection =
-    (kind === 'karkun' && mode === 'add' && personLabel !== 'Muttafiq') ||
-    (kind === 'rukn' && mode === 'add')
+    (kind === 'karkun' && mode === 'add') || (kind === 'rukn' && mode === 'add')
   const showReferredByDisplay = kind === 'rukn' && mode === 'edit'
   const showAdditionalSection = kind === 'karkun'
+  const intakeRequired = kind === 'karkun' && mode === 'add'
 
   return (
     <Modal
@@ -282,10 +280,11 @@ function PersonFormModalContent({
             <ModalFormGrid>
               <InputField
                 id="person-father-husband"
-                label={`${getFatherHusbandLabel(gender)} (optional)`}
+                label={getFatherHusbandLabel(gender)}
                 value={fatherHusbandName}
                 onValueChange={setFatherHusbandName}
                 placeholder={getFatherHusbandLabel(gender)}
+                required={intakeRequired}
               />
               <InputField
                 id="person-address"
@@ -293,6 +292,7 @@ function PersonFormModalContent({
                 value={address}
                 onValueChange={setAddress}
                 placeholder="Full address"
+                required={intakeRequired}
               />
               <InputField
                 id="person-education"

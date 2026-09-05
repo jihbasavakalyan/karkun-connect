@@ -3,6 +3,7 @@
  */
 
 import type { NewKarkunRequest, KarkunRequestStatus } from '@/types/karkunRequest.types'
+import { isPendingApprovalStatus } from '@/types/karkunRequest.types'
 import { getRepositories, getRepositoryProviderMode } from '@/repositories/provider'
 import { unwrapRepository } from '@/repositories/errors'
 import { countPendingKarkunRequests } from '@/lib/karkunRequestMerge'
@@ -34,7 +35,7 @@ export function getAllKarkunRequests(): NewKarkunRequest[] {
 }
 
 export function getPendingKarkunRequests(): NewKarkunRequest[] {
-  return requests.filter((request) => request.status === 'Pending Approval')
+  return requests.filter((request) => isPendingApprovalStatus(request.status))
 }
 
 export function getKarkunRequestById(id: string): NewKarkunRequest | undefined {
@@ -109,7 +110,7 @@ export function resolveKarkunRequest(
   extras?: Partial<NewKarkunRequest>,
 ): NewKarkunRequest | undefined {
   const request = requests.find((item) => item.id === id)
-  if (!request || request.status !== 'Pending Approval') {
+  if (!request || !isPendingApprovalStatus(request.status)) {
     return undefined
   }
   Object.assign(request, extras ?? {}, {
@@ -125,7 +126,7 @@ export function resolveKarkunRequest(
 /** KC-0072C — claim a pending request for a single approval attempt (idempotent lock). */
 export function claimKarkunRequestApproval(id: string): NewKarkunRequest | undefined {
   const request = requests.find((item) => item.id === id)
-  if (!request || request.status !== 'Pending Approval') {
+  if (!request || !isPendingApprovalStatus(request.status)) {
     return undefined
   }
   if (request.approvalClaimedAt) {
@@ -140,7 +141,7 @@ export function claimKarkunRequestApproval(id: string): NewKarkunRequest | undef
 /** KC-0072C — release claim when approval fails so a retry can proceed. */
 export function releaseKarkunRequestApprovalClaim(id: string): void {
   const request = requests.find((item) => item.id === id)
-  if (!request || request.status !== 'Pending Approval') {
+  if (!request || !isPendingApprovalStatus(request.status)) {
     return
   }
   if (!request.approvalClaimedAt) {

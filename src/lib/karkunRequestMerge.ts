@@ -1,7 +1,12 @@
 import type { NewKarkunRequest } from '@/types/karkunRequest.types'
+import {
+  isApprovedRequestStatus,
+  isPendingApprovalStatus,
+  isRejectedRequestStatus,
+} from '@/types/karkunRequest.types'
 
 function isTerminalStatus(status: string | undefined): boolean {
-  return status === 'Approved' || status === 'Rejected'
+  return isApprovedRequestStatus(status) || isRejectedRequestStatus(status)
 }
 
 /**
@@ -55,5 +60,5 @@ export function mergeKarkunRequestsById(
 }
 
 export function countPendingKarkunRequests(requests: readonly NewKarkunRequest[]): number {
-  return requests.filter((request) => request.status === 'Pending Approval').length
+  return requests.filter((request) => isPendingApprovalStatus(request.status)).length
 }

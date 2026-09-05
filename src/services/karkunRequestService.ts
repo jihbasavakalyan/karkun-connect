@@ -41,15 +41,31 @@ import {
   resolveKarkunRequest,
   subscribeToKarkunRequestStore,
   syncKarkunRequestStoreFromServer,
+  updateKarkunRequest,
 } from '@/stores/karkunRequestStore'
 import { getRepositories, getRepositoryProviderMode } from '@/repositories/provider'
 import { unwrapRepository } from '@/repositories/errors'
 import { lookupMobileInMasterRegistry } from '@/lib/people/lookupMobileInMasterRegistry'
-import type { NewKarkunRequest, PeopleRequestKind } from '@/types/karkunRequest.types'
+import { validateNewPersonIntake } from '@/lib/newPersonIntakeValidation'
+import {
+  isApprovedRequestStatus,
+  isPendingApprovalStatus,
+  type NewKarkunRequest,
+  type PeopleRequestKind,
+} from '@/types/karkunRequest.types'
 import { DEFAULT_PLACE, type PersonGender } from '@/types/people.types'
 import { getPersonCategory } from '@/lib/peopleClassification'
 
 export { subscribeToKarkunRequestStore, getPendingKarkunRequests, getAllKarkunRequests }
+
+export type ApprovePeopleIntakeInput = {
+  requestId: string
+  decidedBy: string
+  decisionNotes?: string
+  referredByRuknId?: string
+  fatherHusbandName?: string
+  address?: string
+}
 
 export type SubmitNewKarkunRequestInput = {
   fullName: string
@@ -63,6 +79,8 @@ export type SubmitNewKarkunRequestInput = {
   acknowledgeNameWarning?: boolean
   /** KC-0123 — defaults to new_karkun. */
   kind?: PeopleRequestKind
+  fatherHusbandName?: string
+  address?: string
 }
 
 /**
@@ -256,6 +274,19 @@ export async function submitNewKarkunRequest(
     }
   }
 
+  const requestKind = (input.kind ?? 'new_karkun') as PeopleRequestKind
+  if (requestKind === 'new_karkun' || requestKind === 'new_muttafiq') {
+    const intake = validateNewPersonIntake({
+      referredByRuknId: rukn.id,
+      fatherHusbandName: input.fatherHusbandName,
+      address: input.address,
+      gender,
+    })
+    if (!intake.ok) {
+      return { ok: false, error: intake.error, code: 'VALIDATION' }
+    }
+  }
+
   // KC-0102.0 — sync pending list before duplicate checks / write.
   try {
     await syncKarkunRequestStoreFromServer()
@@ -359,10 +390,18 @@ export async function submitNewKarkunRequest(
     requestingRuknId: rukn.id,
     requestingRuknName: rukn.name,
     status: 'Pending Approval' as const,
-    kind: (input.kind ?? 'new_karkun') as PeopleRequestKind,
+    kind: requestKind,
     createdAt: now,
     updatedAt: now,
     createdBy: input.createdBy?.trim() || rukn.name,
+    fatherHusbandName:
+      requestKind === 'new_karkun' || requestKind === 'new_muttafiq'
+        ? input.fatherHusbandName?.trim() || undefined
+        : undefined,
+    address:
+      requestKind === 'new_karkun' || requestKind === 'new_muttafiq'
+        ? input.address?.trim() || undefined
+        : undefined,
   }
 
   console.info('[KC-0102.0] submitNewKarkunRequest writing', {
@@ -407,11 +446,9 @@ export async function submitNewKarkunRequest(
   return { ok: true, request }
 }
 
-async function approveNewKarkunRequestOnce(input: {
-  requestId: string
-  decidedBy: string
-  decisionNotes?: string
-}): Promise<ApproveNewKarkunRequestResult> {
+async function approveNewKarkunRequestOnce(
+  input: ApprovePeopleIntakeInput,
+): Promise<ApproveNewKarkunRequestResult> {
   // KC-0102.0 — refresh from server before claim (multi-client merge).
   try {
     await syncKarkunRequestStoreFromServer()
@@ -421,7 +458,7 @@ async function approveNewKarkunRequestOnce(input: {
   }
 
   const existing = getKarkunRequestById(input.requestId)
-  if (!existing || existing.status !== 'Pending Approval') {
+  if (!existing || !isPendingApprovalStatus(existing.status)) {
     return alreadyProcessedResult()
   }
 
@@ -447,6 +484,37 @@ async function approveNewKarkunRequestOnce(input: {
       // Create-or-link: mobile already exists → reuse; never allocate a second kr-*.
       karkunId = existingOwner.id
     } else {
+      const referredByRuknId = (input.referredByRuknId ?? claimed.requestingRuknId).trim()
+      const fatherHusbandName = (input.fatherHusbandName ?? claimed.fatherHusbandName)?.trim()
+      const address = (input.address ?? claimed.address)?.trim()
+      const intake = validateNewPersonIntake({
+        referredByRuknId,
+        fatherHusbandName,
+        address,
+        gender: claimed.gender,
+      })
+      if (!intake.ok) {
+        return { ok: false, error: intake.error, code: 'VALIDATION' }
+      }
+
+      if (
+        intake.referredByRuknId !== claimed.requestingRuknId.trim() ||
+        intake.fatherHusbandName !== (claimed.fatherHusbandName?.trim() ?? '') ||
+        intake.address !== (claimed.address?.trim() ?? '')
+      ) {
+        const referring = getRuknById(intake.referredByRuknId)
+        updateKarkunRequest(claimed.id, {
+          requestingRuknId: intake.referredByRuknId,
+          requestingRuknName: referring?.name || claimed.requestingRuknName,
+          fatherHusbandName: intake.fatherHusbandName,
+          address: intake.address,
+        })
+        claimed.requestingRuknId = intake.referredByRuknId
+        claimed.requestingRuknName = referring?.name || claimed.requestingRuknName
+        claimed.fatherHusbandName = intake.fatherHusbandName
+        claimed.address = intake.address
+      }
+
       const createResult = createKarkun(
         {
           name: claimed.fullName,
@@ -455,13 +523,12 @@ async function approveNewKarkunRequestOnce(input: {
           place: DEFAULT_PLACE,
           status: 'active',
           area: claimed.area,
-          address: claimed.address,
-          fatherHusbandName: claimed.fatherHusbandName,
+          address: intake.address,
+          fatherHusbandName: intake.fatherHusbandName,
           education: claimed.education,
           profession: claimed.profession,
           notes: claimed.remarks,
-          // Increment B — requesting Rukn is the referring Rukn (no on-behalf UI).
-          referredByRuknId: claimed.requestingRuknId.trim() || undefined,
+          referredByRuknId: intake.referredByRuknId,
         },
         input.decidedBy || 'Administrator',
       )
@@ -540,7 +607,7 @@ async function approveNewKarkunRequestOnce(input: {
       }
     }
 
-    const isPublicTraining = claimed.source === 'public_training_registration' || !claimed.requestingRuknId.trim()
+    const isPublicTraining = claimed.source === 'public_training_registration'
     if (isPublicTraining) {
       const resolvedPublic = resolveKarkunRequest(claimed.id, 'Approved', input.decidedBy, {
         decisionNotes:
@@ -652,11 +719,9 @@ async function approveNewKarkunRequestOnce(input: {
   }
 }
 
-export async function approveNewKarkunRequest(input: {
-  requestId: string
-  decidedBy: string
-  decisionNotes?: string
-}): Promise<ApproveNewKarkunRequestResult> {
+export async function approveNewKarkunRequest(
+  input: ApprovePeopleIntakeInput,
+): Promise<ApproveNewKarkunRequestResult> {
   const adminGate = await assertAdministratorDecisionSession(ADMIN_INTAKE_DENIED)
   if (!adminGate.ok) {
     return { ok: false, error: adminGate.error, code: 'VALIDATION' }
@@ -1010,11 +1075,9 @@ const intakeApproveInFlight = new Map<string, Promise<ApproveNewKarkunRequestRes
  * New Karkun continues to use approveNewKarkunRequest.
  * Duplicate clicks join the in-flight promise (same contract as approveNewKarkunRequest).
  */
-export async function approvePeopleIntakeRequest(input: {
-  requestId: string
-  decidedBy: string
-  decisionNotes?: string
-}): Promise<ApproveNewKarkunRequestResult> {
+export async function approvePeopleIntakeRequest(
+  input: ApprovePeopleIntakeInput,
+): Promise<ApproveNewKarkunRequestResult> {
   const adminGate = await assertAdministratorDecisionSession(ADMIN_INTAKE_DENIED)
   if (!adminGate.ok) {
     return { ok: false, error: adminGate.error, code: 'VALIDATION' }
@@ -1034,11 +1097,9 @@ export async function approvePeopleIntakeRequest(input: {
   }
 }
 
-async function approvePeopleIntakeRequestOnce(input: {
-  requestId: string
-  decidedBy: string
-  decisionNotes?: string
-}): Promise<ApproveNewKarkunRequestResult> {
+async function approvePeopleIntakeRequestOnce(
+  input: ApprovePeopleIntakeInput,
+): Promise<ApproveNewKarkunRequestResult> {
   try {
     await syncKarkunRequestStoreFromServer()
   } catch {
@@ -1049,7 +1110,7 @@ async function approvePeopleIntakeRequestOnce(input: {
   if (!existing) {
     return alreadyProcessedResult()
   }
-  if (existing.status === 'Approved') {
+  if (isApprovedRequestStatus(existing.status)) {
     if ((existing.kind ?? 'new_karkun') === 'muttafiq_rukn_link' && existing.sourcePersonId) {
       const person = getKarkunById(existing.sourcePersonId)
       const linkRukn = getRuknById(existing.requestingRuknId)
@@ -1080,7 +1141,7 @@ async function approvePeopleIntakeRequestOnce(input: {
       karkunId: existing.createdKarkunId ?? existing.sourcePersonId ?? existing.id,
     }
   }
-  if (existing.status !== 'Pending Approval') {
+  if (!isPendingApprovalStatus(existing.status)) {
     return alreadyProcessedResult()
   }
 
@@ -1104,7 +1165,10 @@ async function approvePeopleIntakeRequestOnce(input: {
           place: DEFAULT_PLACE,
           status: 'active',
           area: claimed.area,
+          address: claimed.address,
+          fatherHusbandName: claimed.fatherHusbandName,
           notes: claimed.remarks,
+          referredByRuknId: claimed.requestingRuknId.trim() || undefined,
         },
         input.decidedBy || 'Administrator',
       )

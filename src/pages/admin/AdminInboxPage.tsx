@@ -34,6 +34,10 @@ import { getRepositoryProviderMode } from '@/repositories/provider'
 import { markRuknAdminMessageRead } from '@/services/ruknAdminMessageService'
 import { subscribeToRuknAdminMessageStore } from '@/stores/ruknAdminMessageStore'
 import { TrainingGatheringAdminPanel } from '@/components/public-registration/TrainingGatheringAdminPanel'
+import {
+  isPublicTrainingRequest,
+  PublicTrainingApproveFields,
+} from '@/components/forms/people/PublicTrainingApproveFields'
 import { getPeopleRequestKind } from '@/types/karkunRequest.types'
 import { getRuknById } from '@/data/ruknMaster'
 import { buildWhatsAppLink } from '@/utils/personContactLinks'
@@ -67,6 +71,9 @@ export function AdminInboxPage() {
   const query = queryDraft ?? (searchParams.get('query') ?? '')
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
+  const [referralByRequestId, setReferralByRequestId] = useState<Record<string, string>>({})
+  const [familyByRequestId, setFamilyByRequestId] = useState<Record<string, string>>({})
+  const [addressByRequestId, setAddressByRequestId] = useState<Record<string, string>>({})
   const { busy, busyKey, progressMessage, run } = useWriteLifecycle()
 
   useEffect(() => {
@@ -122,6 +129,13 @@ export function AdminInboxPage() {
         const result = await approvePeopleIntakeRequest({
           requestId: request.id,
           decidedBy,
+          referredByRuknId: isPublicTrainingRequest(request)
+            ? referralByRequestId[request.id]
+            : undefined,
+          fatherHusbandName: isPublicTrainingRequest(request)
+            ? familyByRequestId[request.id]
+            : undefined,
+          address: isPublicTrainingRequest(request) ? addressByRequestId[request.id] : undefined,
         })
         if (!result.ok) {
           throw Object.assign(new Error(result.error), {
@@ -340,9 +354,35 @@ export function AdminInboxPage() {
                         {item.rawInternalMessage.body}
                       </p>
                     ) : null}
-                    <p className="mt-1 text-xs text-secondary">
-                      {new Date(item.updatedAt).toLocaleString()}
-                    </p>
+                    {item.rawRequest &&
+                    canDecide &&
+                    isPublicTrainingRequest(item.rawRequest) ? (
+                      <PublicTrainingApproveFields
+                        request={item.rawRequest}
+                        referredByRuknId={referralByRequestId[item.rawRequest.id] ?? ''}
+                        onReferredByRuknIdChange={(value) =>
+                          setReferralByRequestId((current) => ({
+                            ...current,
+                            [item.rawRequest!.id]: value,
+                          }))
+                        }
+                        fatherHusbandName={familyByRequestId[item.rawRequest.id] ?? ''}
+                        onFatherHusbandNameChange={(value) =>
+                          setFamilyByRequestId((current) => ({
+                            ...current,
+                            [item.rawRequest!.id]: value,
+                          }))
+                        }
+                        address={addressByRequestId[item.rawRequest.id] ?? ''}
+                        onAddressChange={(value) =>
+                          setAddressByRequestId((current) => ({
+                            ...current,
+                            [item.rawRequest!.id]: value,
+                          }))
+                        }
+                        disabled={busy}
+                      />
+                    ) : null}
                   </div>
                   <span className="rounded-full bg-surface-muted px-2.5 py-1 text-xs font-semibold">
                     {item.statusLabel}

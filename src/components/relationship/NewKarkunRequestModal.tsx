@@ -10,7 +10,7 @@ import { getRuknById } from '@/data/ruknMaster'
 import { useWriteLifecycle } from '@/hooks/useWriteLifecycle'
 import { normalizePersonGender } from '@/lib/peopleStore'
 import { submitNewKarkunRequest, type MobileDuplicateDetails } from '@/services/karkunRequestService'
-import type { PersonGender } from '@/types/people.types'
+import { getFatherHusbandLabel, type PersonGender } from '@/types/people.types'
 
 type NewKarkunRequestModalProps = {
   isOpen: boolean
@@ -31,6 +31,8 @@ export function NewKarkunRequestModal({
   const [genderOverride, setGenderOverride] = useState<PersonGender | null>(null)
   const gender = genderOverride ?? ruknGender
   const [area, setArea] = useState('')
+  const [fatherHusbandName, setFatherHusbandName] = useState('')
+  const [address, setAddress] = useState('')
   const [remarks, setRemarks] = useState('')
   const [error, setError] = useState('')
   const [nameWarning, setNameWarning] = useState(false)
@@ -43,6 +45,8 @@ export function NewKarkunRequestModal({
     setMobile('')
     setGenderOverride(null)
     setArea('')
+    setFatherHusbandName('')
+    setAddress('')
     setRemarks('')
     setError('')
     setNameWarning(false)
@@ -66,6 +70,8 @@ export function NewKarkunRequestModal({
           mobile,
           gender,
           area,
+          fatherHusbandName,
+          address,
           remarks,
           requestingRuknId: ruknId,
           acknowledgeNameWarning,
@@ -191,6 +197,32 @@ export function NewKarkunRequestModal({
             <option value="Male">Male</option>
             <option value="Female">Female</option>
           </select>
+        </div>
+
+        <div className="space-y-1.5">
+          <label className={FORM_LABEL_CLASS} htmlFor="new-karkun-father-husband">
+            {getFatherHusbandLabel(gender)} *
+          </label>
+          <input
+            id="new-karkun-father-husband"
+            className={FORM_INPUT_CLASS}
+            value={fatherHusbandName}
+            onChange={(event) => setFatherHusbandName(event.target.value)}
+            required
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <label className={FORM_LABEL_CLASS} htmlFor="new-karkun-address">
+            Address *
+          </label>
+          <input
+            id="new-karkun-address"
+            className={FORM_INPUT_CLASS}
+            value={address}
+            onChange={(event) => setAddress(event.target.value)}
+            required
+          />
         </div>
 
         <div className="space-y-1.5">

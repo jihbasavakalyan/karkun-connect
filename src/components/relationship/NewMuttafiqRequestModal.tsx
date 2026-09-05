@@ -13,7 +13,7 @@ import {
   submitNewMuttafiqRequest,
   type MobileDuplicateDetails,
 } from '@/services/karkunRequestService'
-import type { PersonGender } from '@/types/people.types'
+import { getFatherHusbandLabel, type PersonGender } from '@/types/people.types'
 
 type NewMuttafiqRequestModalProps = {
   isOpen: boolean
@@ -34,6 +34,8 @@ export function NewMuttafiqRequestModal({
   const [genderOverride, setGenderOverride] = useState<PersonGender | null>(null)
   const gender = genderOverride ?? ruknGender
   const [area, setArea] = useState('')
+  const [fatherHusbandName, setFatherHusbandName] = useState('')
+  const [address, setAddress] = useState('')
   const [remarks, setRemarks] = useState('')
   const [error, setError] = useState('')
   const [duplicate, setDuplicate] = useState<MobileDuplicateDetails | null>(null)
@@ -44,6 +46,8 @@ export function NewMuttafiqRequestModal({
     setMobile('')
     setGenderOverride(null)
     setArea('')
+    setFatherHusbandName('')
+    setAddress('')
     setRemarks('')
     setError('')
     setDuplicate(null)
@@ -65,6 +69,8 @@ export function NewMuttafiqRequestModal({
           mobile,
           gender,
           area,
+          fatherHusbandName,
+          address,
           remarks,
           requestingRuknId: ruknId,
         })
@@ -130,6 +136,24 @@ export function NewMuttafiqRequestModal({
             <option value="Male">Male</option>
             <option value="Female">Female</option>
           </select>
+        </label>
+        <label className="block">
+          <span className={FORM_LABEL_CLASS}>{getFatherHusbandLabel(gender)} *</span>
+          <input
+            className={FORM_INPUT_CLASS}
+            value={fatherHusbandName}
+            onChange={(e) => setFatherHusbandName(e.target.value)}
+            required
+          />
+        </label>
+        <label className="block">
+          <span className={FORM_LABEL_CLASS}>Address *</span>
+          <input
+            className={FORM_INPUT_CLASS}
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+            required
+          />
         </label>
         <label className="block">
           <span className={FORM_LABEL_CLASS}>Area</span>

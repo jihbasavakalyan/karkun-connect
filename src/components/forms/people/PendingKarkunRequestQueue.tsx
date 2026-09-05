@@ -18,12 +18,19 @@ import {
   subscribeToKarkunRequestStore,
   type MobileDuplicateDetails,
 } from '@/services/karkunRequestService'
+import {
+  isPublicTrainingRequest,
+  PublicTrainingApproveFields,
+} from '@/components/forms/people/PublicTrainingApproveFields'
 import type { NewKarkunRequest } from '@/types/karkunRequest.types'
 
 export function PendingKarkunRequestQueue() {
   const { user } = useAuth()
   const [, setTick] = useState(0)
   const [notesById, setNotesById] = useState<Record<string, string>>({})
+  const [referralById, setReferralById] = useState<Record<string, string>>({})
+  const [familyById, setFamilyById] = useState<Record<string, string>>({})
+  const [addressById, setAddressById] = useState<Record<string, string>>({})
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [duplicate, setDuplicate] = useState<MobileDuplicateDetails | null>(null)
@@ -62,6 +69,9 @@ export function PendingKarkunRequestQueue() {
           requestId: request.id,
           decidedBy,
           decisionNotes: notesById[request.id],
+          referredByRuknId: isPublicTrainingRequest(request) ? referralById[request.id] : undefined,
+          fatherHusbandName: isPublicTrainingRequest(request) ? familyById[request.id] : undefined,
+          address: isPublicTrainingRequest(request) ? addressById[request.id] : undefined,
         })
         if (!result.ok) {
           throw Object.assign(new Error(result.error), {
@@ -214,6 +224,25 @@ export function PendingKarkunRequestQueue() {
                   setNotesById((current) => ({ ...current, [request.id]: event.target.value }))
                 }
               />
+
+              {isPublicTrainingRequest(request) ? (
+                <PublicTrainingApproveFields
+                  request={request}
+                  referredByRuknId={referralById[request.id] ?? ''}
+                  onReferredByRuknIdChange={(value) =>
+                    setReferralById((current) => ({ ...current, [request.id]: value }))
+                  }
+                  fatherHusbandName={familyById[request.id] ?? ''}
+                  onFatherHusbandNameChange={(value) =>
+                    setFamilyById((current) => ({ ...current, [request.id]: value }))
+                  }
+                  address={addressById[request.id] ?? ''}
+                  onAddressChange={(value) =>
+                    setAddressById((current) => ({ ...current, [request.id]: value }))
+                  }
+                  disabled={busy}
+                />
+              ) : null}
 
               <div className="mt-3 flex flex-wrap gap-2">
                 <PrimaryButton

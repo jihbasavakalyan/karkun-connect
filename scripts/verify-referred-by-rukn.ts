@@ -61,7 +61,7 @@ console.log('verify-referred-by-rukn: start')
   assert(store.includes('A Rukn cannot refer themselves.'), 'self-referral rejected')
 
   const service = read('src/services/karkunRequestService.ts')
-  assert(service.includes('referredByRuknId: claimed.requestingRuknId.trim()'), 'approve stamps create')
+  assert(service.includes('referredByRuknId: intake.referredByRuknId'), 'approve stamps create')
   assert(service.includes('applyReferredByRuknIfAbsent'), 'approve stamps link path')
 
   const form = read('src/components/forms/people/PersonFormModal.tsx')
@@ -109,6 +109,8 @@ const otherRukn = activeMaleRukns[1]!
     gender: 'Male',
     mobile: '9111000101',
     createdBy: referring.name,
+    fatherHusbandName: 'Verify Father',
+    address: 'Verify Address',
   })
   assert(submitted.ok, `submit: ${!submitted.ok ? submitted.error : ''}`)
   if (!submitted.ok) throw new Error(submitted.error)
@@ -123,6 +125,8 @@ const otherRukn = activeMaleRukns[1]!
       place: DEFAULT_PLACE,
       status: 'active',
       referredByRuknId: submitted.request.requestingRuknId.trim() || undefined,
+      fatherHusbandName: 'Verify Father',
+      address: 'Verify Address',
     },
     'Administrator',
   )
@@ -144,6 +148,8 @@ const otherRukn = activeMaleRukns[1]!
       place: DEFAULT_PLACE,
       status: 'active',
       referredByRuknId: referring.id,
+      fatherHusbandName: 'Assignment Father',
+      address: 'Assignment Address',
     },
     'Administrator',
   )
@@ -190,6 +196,7 @@ const otherRukn = activeMaleRukns[1]!
       status: 'active',
     },
     'Administrator',
+    { requireNewPersonIntake: false },
   )
   assert(bare.success && bare.karkunId, 'bare create')
   const stamped = applyReferredByRuknIfAbsent(bare.karkunId!, referring.id, 'Administrator')
@@ -209,6 +216,8 @@ const otherRukn = activeMaleRukns[1]!
       place: DEFAULT_PLACE,
       status: 'active',
       referredByRuknId: referring.id,
+      fatherHusbandName: 'Admin Father',
+      address: 'Admin Address',
     },
     'Administrator',
   )
@@ -235,8 +244,8 @@ const otherRukn = activeMaleRukns[1]!
 }
 
 {
-  // Existing records without the field remain readable; create without referral still works.
-  const legacy = createKarkun(
+  // NEW creates require referral; historical-shape rows can still be seeded without backfill.
+  const blocked = createKarkun(
     {
       name: 'Legacy No Referral',
       gender: 'Male',
@@ -246,13 +255,26 @@ const otherRukn = activeMaleRukns[1]!
     },
     'Administrator',
   )
-  assert(legacy.success && legacy.karkunId, 'create without referral allowed')
+  assert(!blocked.success, 'new create without referral is rejected')
+
+  const legacy = createKarkun(
+    {
+      name: 'Legacy No Referral',
+      gender: 'Male',
+      mobile: '9111000105',
+      place: DEFAULT_PLACE,
+      status: 'active',
+    },
+    'Administrator',
+    { requireNewPersonIntake: false },
+  )
+  assert(legacy.success && legacy.karkunId, 'historical-shape create allowed only when intake is skipped')
   const row = getKarkunById(legacy.karkunId!)
   assert(row, 'legacy readable')
   assert(row!.referredByRuknId === undefined, 'no invented referral')
   assert(row!.name === 'Legacy No Referral', 'name intact')
 
-  console.log('  OK  optional field + legacy readable')
+  console.log('  OK  new create requires referral; historical-shape rows remain readable')
 }
 
 {
@@ -340,6 +362,8 @@ const otherRukn = activeMaleRukns[1]!
       place: DEFAULT_PLACE,
       status: 'active',
       referredByRuknId: referring.id,
+      fatherHusbandName: 'Post C Father',
+      address: 'Post C Address',
     },
     'Administrator',
   )

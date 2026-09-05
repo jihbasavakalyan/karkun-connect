@@ -135,7 +135,7 @@ assert(
 )
 
 const intake = readFileSync(resolve(root, 'src/services/karkunRequestService.ts'), 'utf8')
-assert(intake.includes("existing.status === 'Approved'"), 're-approve of Approved is idempotent success')
+assert(intake.includes('isApprovedRequestStatus(existing.status)'), 're-approve of Approved is idempotent success')
 assert(intake.includes('alreadyMuttafiq'), 'conversion approve reconciles already-Muttafiq person')
 assert(intake.includes('approvePeopleIntakeRequestOnce'), 'intake approve is single-flight')
 assert(intake.includes('intakeApproveInFlight'), 'duplicate intake approve joins in-flight work')

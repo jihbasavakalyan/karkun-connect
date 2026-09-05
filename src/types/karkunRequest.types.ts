@@ -2,6 +2,18 @@ import type { PersonGender } from '@/types/people.types'
 
 export type KarkunRequestStatus = 'Pending Approval' | 'Approved' | 'Rejected'
 
+export function isPendingApprovalStatus(status: unknown): boolean {
+  return String(status ?? '').trim() === 'Pending Approval'
+}
+
+export function isApprovedRequestStatus(status: unknown): boolean {
+  return String(status ?? '').trim() === 'Approved'
+}
+
+export function isRejectedRequestStatus(status: unknown): boolean {
+  return String(status ?? '').trim() === 'Rejected'
+}
+
 /** KC-0123 — request kinds in the unified people intake pipeline. */
 export type PeopleRequestKind =
   | 'new_karkun'
@@ -45,8 +57,9 @@ export type NewKarkunRequest = {
   /** Previous registry category before conversion. */
   previousCategory?: 'Karkun' | 'Muttafiq'
   /**
-   * Public training gathering intake. Empty requesting Rukn is allowed.
-   * Approval creates the Person without auto-connect.
+   * Public training gathering intake. Submit may have empty requesting Rukn.
+   * Admin must supply referring Rukn before NEW Karkun create. Approval still
+   * does not auto-connect.
    */
   source?: 'rukn' | 'public_training_registration'
   fatherHusbandName?: string

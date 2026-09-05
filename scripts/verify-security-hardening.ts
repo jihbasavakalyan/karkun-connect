@@ -186,6 +186,8 @@ const other =
       place: DEFAULT_PLACE,
       status: 'active',
       referredByRuknId: referring.id,
+      fatherHusbandName: 'Sec Father',
+      address: 'Sec Address',
     },
     'Administrator',
   )
@@ -231,6 +233,7 @@ const other =
       status: 'active',
     },
     'Administrator',
+    { requireNewPersonIntake: false },
   )
   assert(m.success && m.karkunId, 'create muttafiq')
   const person = getKarkunById(m.karkunId!)!

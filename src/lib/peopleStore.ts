@@ -43,6 +43,7 @@ import { persistPeopleRegistry, persistKarkunRecords } from '@/lib/peopleRegistr
 import { getRepositories } from '@/repositories/provider'
 import type { KarkunRecordPatch } from '@/repositories/interfaces/KarkunRepository'
 import { toOperatorPersistError } from '@/lib/reliability/persistErrors'
+import { validateNewPersonIntake } from '@/lib/newPersonIntakeValidation'
 import {
   emitPeopleRegistryChange,
   subscribeToPeopleStore,
@@ -612,9 +613,18 @@ export function clearRuknMaster(): void {
   notifyPeopleChange()
 }
 
+export type CreatePersonWriteOptions = {
+  /**
+   * Default true for Admin/Rukn/public-training NEW person writes.
+   * Data import/migration and historical-shape test fixtures pass false.
+   */
+  requireNewPersonIntake?: boolean
+}
+
 export function createKarkun(
   input: PersonContactInput & { area?: string; address?: string },
   updatedBy = 'Administrator',
+  options?: CreatePersonWriteOptions,
 ): PeopleMutationResult {
   const mobileCheck = validateMobileForPerson(input.mobile)
   if (!mobileCheck.success && !mobileCheck.needsMobileConfirm) {
@@ -622,6 +632,25 @@ export function createKarkun(
   }
   if (mobileCheck.needsMobileConfirm) {
     return mobileCheck
+  }
+
+  let referredByRuknId = input.referredByRuknId?.trim() || undefined
+  let fatherHusbandName = input.fatherHusbandName?.trim() || undefined
+  let address = input.address?.trim() ?? ''
+
+  if (options?.requireNewPersonIntake !== false) {
+    const intake = validateNewPersonIntake(input)
+    if (!intake.ok) {
+      return { success: false, error: intake.error }
+    }
+    referredByRuknId = intake.referredByRuknId
+    fatherHusbandName = intake.fatherHusbandName
+    address = intake.address
+  } else if (referredByRuknId) {
+    const referringRukn = getRuknById(referredByRuknId)
+    if (!referringRukn || referringRukn.status !== 'active') {
+      return { success: false, error: 'Referring Rukn not found or inactive.' }
+    }
   }
 
   const allocation = allocateNextKarkunId()
@@ -638,14 +667,6 @@ export function createKarkun(
     }
   }
 
-  const referredByRuknId = input.referredByRuknId?.trim() || undefined
-  if (referredByRuknId) {
-    const referringRukn = getRuknById(referredByRuknId)
-    if (!referringRukn || referringRukn.status !== 'active') {
-      return { success: false, error: 'Referring Rukn not found or inactive.' }
-    }
-  }
-
   const timestamp = nowIso()
   const id = allocation.id
 
@@ -657,11 +678,11 @@ export function createKarkun(
     whatsapp: input.whatsapp?.trim() || undefined,
     place: input.place.trim() || DEFAULT_PLACE,
     status: input.status,
-    fatherHusbandName: input.fatherHusbandName?.trim() || undefined,
+    fatherHusbandName,
     createdAt: timestamp,
     updatedAt: timestamp,
     updatedBy,
-    address: input.address?.trim() ?? '',
+    address,
     area: input.area?.trim() ?? '',
     education: input.education?.trim() || undefined,
     profession: input.profession?.trim() || undefined,
@@ -742,6 +763,7 @@ export function applyReferredByRuknIfAbsent(
 export function createMuttafiq(
   input: PersonContactInput & { area?: string; address?: string },
   updatedBy = 'Administrator',
+  options?: CreatePersonWriteOptions,
 ): PeopleMutationResult {
   const mobileCheck = validateMobileForPerson(input.mobile)
   if (!mobileCheck.success && !mobileCheck.needsMobileConfirm) {
@@ -749,6 +771,25 @@ export function createMuttafiq(
   }
   if (mobileCheck.needsMobileConfirm) {
     return mobileCheck
+  }
+
+  let referredByRuknId = input.referredByRuknId?.trim() || undefined
+  let fatherHusbandName = input.fatherHusbandName?.trim() || undefined
+  let address = input.address?.trim() ?? ''
+
+  if (options?.requireNewPersonIntake !== false) {
+    const intake = validateNewPersonIntake(input)
+    if (!intake.ok) {
+      return { success: false, error: intake.error }
+    }
+    referredByRuknId = intake.referredByRuknId
+    fatherHusbandName = intake.fatherHusbandName
+    address = intake.address
+  } else if (referredByRuknId) {
+    const referringRukn = getRuknById(referredByRuknId)
+    if (!referringRukn || referringRukn.status !== 'active') {
+      return { success: false, error: 'Referring Rukn not found or inactive.' }
+    }
   }
 
   const allocation = allocateNextKarkunId()
@@ -776,11 +817,11 @@ export function createMuttafiq(
     whatsapp: input.whatsapp?.trim() || undefined,
     place: input.place.trim() || DEFAULT_PLACE,
     status: input.status,
-    fatherHusbandName: input.fatherHusbandName?.trim() || undefined,
+    fatherHusbandName,
     createdAt: timestamp,
     updatedAt: timestamp,
     updatedBy,
-    address: input.address?.trim() ?? '',
+    address,
     area: input.area?.trim() ?? '',
     education: input.education?.trim() || undefined,
     profession: input.profession?.trim() || undefined,
@@ -797,6 +838,7 @@ export function createMuttafiq(
     isArchived: false,
     category: 'Muttafiq',
     registryNumber: allocateNextMuttafiqRegistryNumber(),
+    referredByRuknId,
   }
 
   MOCK_KARKUN_REGISTRY.push(person)
@@ -1193,7 +1235,9 @@ export function importKarkunsFromRows(
   rows: ImportRow[],
   updatedBy = 'Administrator',
 ): ImportSummary {
-  return importPeopleFromRows(rows, 'karkun', updatedBy, (input, by) => createKarkun(input, by))
+  return importPeopleFromRows(rows, 'karkun', updatedBy, (input, by) =>
+    createKarkun(input, by, { requireNewPersonIntake: false }),
+  )
 }
 
 export type PeopleRegistrySnapshot = {
@@ -1491,7 +1535,7 @@ export function importPeopleWithMigrationPolicy(
         ? (input: PersonContactInput & { area?: string; address?: string }, by: string) =>
             createRuknForMigration(input, by)
         : (input: PersonContactInput & { area?: string; address?: string }, by: string) =>
-            createKarkun(input, by)
+            createKarkun(input, by, { requireNewPersonIntake: false })
 
     const result = createFn(
       {

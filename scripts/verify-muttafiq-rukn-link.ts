@@ -127,7 +127,9 @@ console.log('verify-muttafiq-rukn-link: start')
 
   const eligibility = read('src/lib/peopleClassification.ts')
   assert(
-    eligibility.includes("getPersonCategory(person) === 'Karkun' && !isSoftRemoved(person)"),
+    eligibility.includes("getPersonCategory(person) === 'Karkun'") &&
+      eligibility.includes('!isSoftRemoved(person)') &&
+      eligibility.includes('isCampaignEligible'),
     'campaign eligibility unchanged (Karkun only)',
   )
 
@@ -157,6 +159,7 @@ const muttafiqCreate = createMuttafiq(
     status: 'active',
   },
   'verify',
+  { requireNewPersonIntake: false },
 )
 assert(muttafiqCreate.success && muttafiqCreate.karkunId, 'create muttafiq')
 const personId = muttafiqCreate.karkunId!
@@ -253,6 +256,7 @@ const personId = muttafiqCreate.karkunId!
       status: 'active',
     },
     'verify',
+    { requireNewPersonIntake: false },
   )
   assert(adminPerson.success && adminPerson.karkunId, 'admin-path muttafiq')
   const adminPersonId = adminPerson.karkunId!
@@ -320,6 +324,7 @@ const personId = muttafiqCreate.karkunId!
       status: 'active',
     },
     'verify',
+    { requireNewPersonIntake: false },
   )
   assert(other.success && other.karkunId, 'second muttafiq')
   const submitted = await submitMuttafiqRuknLinkRequest({
@@ -407,6 +412,7 @@ const personId = muttafiqCreate.karkunId!
       status: 'active',
     },
     'verify',
+    { requireNewPersonIntake: false },
   )
   assert(badKarkun.success && badKarkun.karkunId, 'karkun for negative test')
   const blocked = await submitMuttafiqRuknLinkRequest({

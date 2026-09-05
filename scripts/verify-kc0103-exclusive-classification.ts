@@ -81,13 +81,17 @@ function main(): void {
   const beforeK = getAllKarkuns().length
   const beforeM = getAllMuttafiqeen().length
 
-  const createdM = createMuttafiq({
-    name: 'Verify Muttafiq',
-    gender: 'Male',
-    mobile: '9999900101',
-    place: DEFAULT_PLACE,
-    status: 'active',
-  })
+  const createdM = createMuttafiq(
+    {
+      name: 'Verify Muttafiq',
+      gender: 'Male',
+      mobile: '9999900101',
+      place: DEFAULT_PLACE,
+      status: 'active',
+    },
+    'Administrator',
+    { requireNewPersonIntake: false },
+  )
   assert(createdM.success === true, 'createMuttafiq succeeds')
   const mid = createdM.karkunId!
   const muttafiq = MOCK_KARKUN_REGISTRY.find((k) => k.id === mid)
@@ -99,13 +103,17 @@ function main(): void {
   assert(getAllKarkuns().length === beforeK, 'Karkun total unchanged after Add Muttafiq')
   assert(getAllMuttafiqeen().length === beforeM + 1, 'Muttafiqeen total +1')
 
-  const createdK = createKarkun({
-    name: 'Verify Karkun',
-    gender: 'Female',
-    mobile: '9999900102',
-    place: DEFAULT_PLACE,
-    status: 'active',
-  })
+  const createdK = createKarkun(
+    {
+      name: 'Verify Karkun',
+      gender: 'Female',
+      mobile: '9999900102',
+      place: DEFAULT_PLACE,
+      status: 'active',
+    },
+    'Administrator',
+    { requireNewPersonIntake: false },
+  )
   assert(createdK.success === true, 'createKarkun succeeds')
   const kid = createdK.karkunId!
   assert(getAllKarkuns().some((k) => k.id === kid), 'Karkun in Karkun registry')
