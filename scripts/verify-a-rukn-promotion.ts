@@ -17,11 +17,14 @@ import {
   type JwtRoleClaimResult,
 } from '@/lib/auth/ensureJwtRoleClaim'
 import { resetARuknAllocationLockForTests } from '@/lib/aRuknAllocation'
-import { createRukn, updateKarkun } from '@/lib/peopleStore'
+import { createRukn, persistKarkunDurable, updateKarkun } from '@/lib/peopleStore'
 import { promoteKarkunToARukn } from '@/services/aRuknPromotionService'
 import { assignRukn } from '@/services/assignmentService'
 import { getRecentConnectionLedger } from '@/services/connectionLedgerService'
 import { getRepositories, resetRepositoryProviderForTests } from '@/repositories/provider'
+import { FRIENDLY_DATA_ACCESS_ERROR, repositoryErr } from '@/repositories/errors'
+import { FRIENDLY_PERSIST_PERMISSION_ERROR } from '@/lib/reliability/persistErrors'
+import { sanitizeForFirestore } from '@/repositories/firestore/firestoreHelpers'
 import { STORAGE_KEYS } from '@/repositories/storageKeys'
 import { removeFromStorage } from '@/lib/browserStorage'
 import {
@@ -262,6 +265,13 @@ assert(
     firestoreRepo.includes("where('assignmentStatus', '==', 'Available')"),
     'Available hydrate query excludes non-Available promoted people',
   )
+  const upsertBlock = firestoreRepo.slice(
+    firestoreRepo.indexOf('async upsertRecord(karkun: KarkunRegistryRecord)'),
+    firestoreRepo.indexOf('clear(): RepositoryResult<void>', firestoreRepo.indexOf('async upsertRecord(karkun: KarkunRegistryRecord)')),
+  )
+  assert(upsertBlock.includes('merge: true'), 'karkun upsert uses merge write so omitted referral is not deleted')
+  const helpers = read('src/repositories/firestore/firestoreHelpers.ts')
+  assert(helpers.includes('writeOptions?.merge'), 'writeDoc supports merge semantics')
 }
 
 const nextAlloc = await getRepositories().rukn.allocateNextARuknId()
@@ -326,8 +336,145 @@ assert(nextAlloc.ok && nextAlloc.data.aRuknId === 'AR03', 'allocator advanced pa
 }
 
 {
+  function stringOrEmpty(value: unknown): string {
+    return typeof value === 'string' ? value : ''
+  }
+  function referredByUnchanged(
+    resource: Record<string, unknown>,
+    request: Record<string, unknown>,
+  ): boolean {
+    return stringOrEmpty(resource.referredByRuknId) === stringOrEmpty(request.referredByRuknId)
+  }
+  function categoryUnchanged(
+    resource: Record<string, unknown>,
+    request: Record<string, unknown>,
+  ): boolean {
+    return stringOrEmpty(resource.category) === stringOrEmpty(request.category)
+  }
+  function promotedToARuknIdUnchanged(
+    resource: Record<string, unknown>,
+    request: Record<string, unknown>,
+  ): boolean {
+    return stringOrEmpty(resource.promotedToARuknId) === stringOrEmpty(request.promotedToARuknId)
+  }
+  function aRuknPromotionInProgressUnchanged(
+    resource: Record<string, unknown>,
+    request: Record<string, unknown>,
+  ): boolean {
+    return (resource.aRuknPromotionInProgress === true) === (request.aRuknPromotionInProgress === true)
+  }
+  function promotedKarkunNotAvailable(request: Record<string, unknown>): boolean {
+    const promoted = stringOrEmpty(request.promotedToARuknId) !== ''
+    return !promoted || request.assignmentStatus !== 'Available'
+  }
+  function adminMayUpdateKarkun(
+    resource: Record<string, unknown>,
+    request: Record<string, unknown>,
+  ): boolean {
+    return referredByUnchanged(resource, request) && promotedKarkunNotAvailable(request)
+  }
+  function ruknMayUpdateKarkun(
+    resource: Record<string, unknown>,
+    request: Record<string, unknown>,
+  ): boolean {
+    return (
+      referredByUnchanged(resource, request) &&
+      categoryUnchanged(resource, request) &&
+      promotedToARuknIdUnchanged(resource, request) &&
+      aRuknPromotionInProgressUnchanged(resource, request)
+    )
+  }
+
+  const resource = {
+    id: 'kr-8920',
+    referredByRuknId: 'R001',
+    category: 'Karkun',
+    assignmentStatus: 'Assigned',
+    assignedRuknId: 'R001',
+    promotedToARuknId: '',
+    aRuknPromotionInProgress: false,
+  }
+  const inMemoryPatch = {
+    ...resource,
+    aRuknPromotionInProgress: true,
+    referredByRuknId: undefined,
+  }
+  const overwritePayload = sanitizeForFirestore(inMemoryPatch) as Record<string, unknown>
+  assert(
+    !referredByUnchanged(resource, overwritePayload),
+    'full overwrite omitting referredByRuknId fails referredByUnchanged',
+  )
+  assert(
+    !adminMayUpdateKarkun(resource, overwritePayload),
+    'Admin overwrite without referral is denied',
+  )
+
+  const mergedAfterWrite = { ...resource, ...overwritePayload, referredByRuknId: resource.referredByRuknId }
+  assert(adminMayUpdateKarkun(resource, mergedAfterWrite), 'Admin can persist aRuknPromotionInProgress when referral is preserved')
+  assert(referredByUnchanged(resource, mergedAfterWrite), 'Admin promotion-state write does not violate referredByRuknId')
+  assert(categoryUnchanged(resource, mergedAfterWrite), 'category protection remains on merged payload')
+  assert(promotedToARuknIdUnchanged(resource, mergedAfterWrite), 'promotedToARuknId protection remains on merged payload')
+  assert(
+    !ruknMayUpdateKarkun(resource, mergedAfterWrite),
+    'Rukn cannot modify aRuknPromotionInProgress',
+  )
+  assert(
+    !ruknMayUpdateKarkun(resource, { ...resource, promotedToARuknId: 'AR01' }),
+    'Rukn cannot modify promotedToARuknId',
+  )
+  assert(
+    !ruknMayUpdateKarkun(resource, { ...resource, category: 'Muttafiq' }),
+    'Rukn cannot modify category',
+  )
+  const karkunRoleAllowUpdate = false
+  assert(!karkunRoleAllowUpdate, 'Karkun JWT cannot update karkuns/{id}')
+}
+
+{
+  MOCK_KARKUN_REGISTRY.push({
+    id: 'kr-8921',
+    name: 'Persist Mapping',
+    gender: 'Female',
+    mobile: '9000008921',
+    place: DEFAULT_PLACE,
+    status: 'active',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    updatedBy: 'Verification',
+    address: '',
+    area: '',
+    assignedRukn: '',
+    assignedRuknId: '',
+    assignmentStatus: 'Available',
+    campaignStatus: 'not_assigned',
+    visitStatus: 'none',
+    lastVisit: null,
+    commitment: null,
+    currentCommitment: '',
+    jihAppRegistrationStatus: 'Not Discussed',
+    notes: '',
+    isArchived: false,
+    category: 'Karkun',
+    referredByRuknId: 'R001',
+  })
+  const repos = getRepositories()
+  const originalUpsert = repos.karkun.upsertRecord.bind(repos.karkun)
+  repos.karkun.upsertRecord = async () =>
+    repositoryErr('Permission', FRIENDLY_DATA_ACCESS_ERROR)
+  try {
+    const failed = await persistKarkunDurable('kr-8921')
+    assert(!failed.success, 'permission-denied persist fails')
+    assert(failed.error !== FRIENDLY_DATA_ACCESS_ERROR, 'promotion persist does not use additional-information copy')
+    assert(failed.error === FRIENDLY_PERSIST_PERMISSION_ERROR, 'promotion persist uses operator write/save mapping')
+  } finally {
+    repos.karkun.upsertRecord = originalUpsert
+  }
+}
+
+{
   const peopleStore = read('src/lib/peopleStore.ts')
   assert(!peopleStore.includes('aRuknPromotionInProgress'), 'peopleStore has no transition setter')
+  assert(peopleStore.includes('toOperatorPersistError'), 'persistKarkunDurable maps write failures')
 }
 
 setAdministratorDecisionSessionOverrideForTests(null)

@@ -120,13 +120,19 @@ export async function writeDoc<T extends object>(
   id: string,
   payload: T,
   revision?: number,
+  writeOptions?: { merge?: boolean },
 ): Promise<RepositoryResult<void>> {
   try {
     const sanitizedPayload = sanitizeForFirestore(payload)
-    await setDoc(doc(db, path, id), {
+    const data = {
       ...withMeta(sanitizedPayload, revision),
       _serverTime: serverTimestamp(),
-    })
+    }
+    if (writeOptions?.merge) {
+      await setDoc(doc(db, path, id), data, { merge: true })
+    } else {
+      await setDoc(doc(db, path, id), data)
+    }
     return { ok: true, data: undefined }
   } catch (error) {
     return mapFirestoreError(error)

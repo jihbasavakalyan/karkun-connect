@@ -41,6 +41,7 @@ import type { ConflictResolution } from '@/types/dataMigration'
 import { DEFAULT_PLACE } from '@/types/people.types'
 import { persistPeopleRegistry, persistKarkunRecords } from '@/lib/peopleRegistryPersistence'
 import { getRepositories } from '@/repositories/provider'
+import { toOperatorPersistError } from '@/lib/reliability/persistErrors'
 import {
   emitPeopleRegistryChange,
   subscribeToPeopleStore,
@@ -899,7 +900,7 @@ export async function persistKarkunDurable(id: string): Promise<PeopleMutationRe
   const result = await getRepositories().karkun.upsertRecord(karkun)
   if (!result.ok) {
     console.error('[persistKarkunDurable]', result.error.code, result.error.message, result.error.cause)
-    return { success: false, error: result.error.message }
+    return { success: false, error: toOperatorPersistError('karkuns', result.error) }
   }
   return { success: true }
 }

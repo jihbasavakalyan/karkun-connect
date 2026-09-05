@@ -2016,11 +2016,16 @@ export class KarkunFirestoreRepository implements KarkunRepository {
       : [...snapshot.karkuns, karkun]
     karkunCache.set({ karkuns: nextKarkuns, nextKarkunNum: snapshot.nextKarkunNum })
     const db = getFirestoreDb()
+    // Merge write: full setDoc omits undefined fields (e.g. referredByRuknId) and
+    // fails Admin `referredByUnchanged()` on karkuns/{id}. Promotion only patches
+    // aRuknPromotionInProgress on the in-memory record.
     const result = await writeDoc(
       db,
       FIRESTORE_COLLECTIONS.karkuns,
       karkun.id,
       sanitizeForFirestore(karkun) as object,
+      undefined,
+      { merge: true },
     )
     if (!result.ok) {
       karkunCache.set(snapshot)

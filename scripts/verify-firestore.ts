@@ -46,4 +46,16 @@ console.log('▶ local repositories remain available')
   assert.ok(repos.compliance)
 }
 
+console.log('▶ karkun upsert merge write')
+{
+  const { readFileSync } = await import('node:fs')
+  const { resolve } = await import('node:path')
+  const repo = readFileSync(resolve('src/repositories/firestore/firestoreRepositories.ts'), 'utf8')
+  const upsert = repo.slice(
+    repo.indexOf('async upsertRecord(karkun: KarkunRegistryRecord)'),
+    repo.indexOf('clear(): RepositoryResult<void>', repo.indexOf('async upsertRecord(karkun: KarkunRegistryRecord)')),
+  )
+  assert.equal(upsert.includes('merge: true'), true)
+}
+
 console.log('Firestore repository layer verification passed.')
