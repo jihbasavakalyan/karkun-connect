@@ -24,6 +24,11 @@ export interface KarkunRepository {
    */
   upsertRecord(karkun: KarkunRegistryRecord): Promise<RepositoryResult<void>>
   /**
+   * Authoritative single-document read (`karkuns/{id}` / local durable store).
+   * Not MOCK_KARKUN_REGISTRY. Null when the document does not exist.
+   */
+  readRecord(id: string): Promise<RepositoryResult<KarkunRegistryRecord | null>>
+  /**
    * Awaited field patch via Firestore updateDoc (promotion transition).
    * Does not send a reconstructed Karkun document.
    */

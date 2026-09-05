@@ -23,7 +23,7 @@ import { promoteKarkunToARukn } from '@/services/aRuknPromotionService'
 import { assignRukn } from '@/services/assignmentService'
 import { getRecentConnectionLedger } from '@/services/connectionLedgerService'
 import { getRepositories, resetRepositoryProviderForTests } from '@/repositories/provider'
-import { FRIENDLY_DATA_ACCESS_ERROR, repositoryErr } from '@/repositories/errors'
+import { FRIENDLY_DATA_ACCESS_ERROR, repositoryErr, repositoryOk } from '@/repositories/errors'
 import { FRIENDLY_PERSIST_PERMISSION_ERROR } from '@/lib/reliability/persistErrors'
 import { sanitizeForFirestore } from '@/repositories/firestore/firestoreHelpers'
 import { STORAGE_KEYS } from '@/repositories/storageKeys'
@@ -136,7 +136,19 @@ MOCK_KARKUN_REGISTRY.push(
   seedKarkun('kr-8803', 'Promo Transition', '9000008803', 'R001'),
   seedKarkun('kr-8804', 'Promo Available', '9000008804', 'R001'),
 )
+for (const id of ['kr-8801', 'kr-8802', 'kr-8803', 'kr-8804']) {
+  const seeded = MOCK_KARKUN_REGISTRY.find((row) => row.id === id)
+  assert(seeded, 'seed karkun missing before durable write')
+  const stored = await getRepositories().karkun.upsertRecord(seeded)
+  assert(stored.ok, `authoritative seed persist failed for ${id}`)
+}
 await connectToR001('kr-8801')
+{
+  const connected = MOCK_KARKUN_REGISTRY.find((row) => row.id === 'kr-8801')
+  assert(connected, 'connected seed missing')
+  const stored = await getRepositories().karkun.upsertRecord(connected)
+  assert(stored.ok, 'authoritative seed persist failed after connect')
+}
 assert(getActiveAssignmentsForKarkun('kr-8801').length === 1, 'fixture has active assignment')
 const ledgerBefore = getRecentConnectionLedger(50).length
 
@@ -322,6 +334,11 @@ assert(
   assert(persistAt < emitAt, 'does not emit registry change before durable in-progress persist')
   assert(markBlock.includes('aRuknPromotionInProgress: true'), 'transition patch sets in-progress true')
   assert(markBlock.includes("updatedBy: 'Administrator'"), 'transition patch sets updatedBy')
+  assert(markBlock.includes('karkun.readRecord(personId)'), 'transition reads authoritative karkuns/{id}')
+  assert(
+    markBlock.includes('lockedReferralFromAuthoritativeDocument'),
+    'locked referral is taken from the authoritative document',
+  )
   const persistCallAt = markBlock.indexOf('persistKarkunFieldsDurable(personId, {')
   assert(persistCallAt >= 0, 'transition uses persistKarkunFieldsDurable field patch')
   const persistCall = markBlock.slice(
@@ -329,17 +346,20 @@ assert(
     markBlock.indexOf('})', persistCallAt) + 2,
   )
   assert(
-    persistCall.includes("referredByRuknId: person.referredByRuknId ?? ''"),
-    'transition patch carries hydrated referredByRuknId',
+    persistCall.includes('referredByRuknId: locked.referredByRuknId'),
+    'transition patch carries authoritative referredByRuknId',
   )
   assert(
-    persistCall.includes('assignmentStatus: person.assignmentStatus'),
-    'transition patch preserves hydrated assignmentStatus',
+    persistCall.includes('assignmentStatus: authoritative.data.assignmentStatus'),
+    'transition patch preserves authoritative assignmentStatus',
   )
+  assert(!persistCall.includes('?? \'\''), 'transition does not coerce missing referral to empty string')
+  assert(!persistCall.includes('person.referredByRuknId'), 'locked referral is not taken from in-memory person')
   assert(!persistCall.includes('R011'), 'transition patch does not hardcode kr-701 referral')
   assert(!persistCall.includes('setDoc'), 'transition patch does not replace the Karkun document')
   assert(!markBlock.includes('persistKarkunDurable'), 'transition does not upsert the full Karkun document')
   assert(markBlock.includes('aRuknPromotionInProgress = false'), 'failed persist restores local flag')
+  assert(markBlock.includes('MISSING_LOCKED_REFERRAL_ERROR'), 'missing authoritative referral fails closed')
   const firestoreRepo = read('src/repositories/firestore/firestoreRepositories.ts')
   assert(
     firestoreRepo.includes("where('assignmentStatus', '==', 'Available')"),
@@ -358,6 +378,12 @@ assert(
     firestoreRepo.indexOf('async updateRecord(id: string, patch: KarkunRecordPatch)'),
   )
   assert(upsertBlock.includes('merge: true'), 'karkun upsert uses merge write so omitted referral is not deleted')
+  const readRecordBlock = firestoreRepo.slice(
+    firestoreRepo.indexOf('async readRecord(id: string)'),
+    firestoreRepo.indexOf('async updateRecord(id: string, patch: KarkunRecordPatch)'),
+  )
+  assert(readRecordBlock.includes('readDoc<KarkunRegistryRecord>'), 'readRecord uses existing Firestore readDoc')
+  assert(readRecordBlock.includes('FIRESTORE_COLLECTIONS.karkuns'), 'readRecord targets karkuns/{id}')
   const updateBlock = firestoreRepo.slice(
     firestoreRepo.indexOf('async updateRecord(id: string, patch: KarkunRecordPatch)'),
     firestoreRepo.indexOf('clear(): RepositoryResult<void>', firestoreRepo.indexOf('async updateRecord(id: string, patch: KarkunRecordPatch)')),
@@ -367,6 +393,72 @@ assert(
   const helpers = read('src/repositories/firestore/firestoreHelpers.ts')
   assert(helpers.includes('writeOptions?.merge'), 'writeDoc supports merge semantics')
   assert(helpers.includes('await updateDoc('), 'patchDoc uses Firestore updateDoc')
+}
+
+{
+  setAdministratorDecisionSessionOverrideForTests(null)
+  setJwtRoleClaimOverrideForTests(administratorJwtOverride())
+  const repos = getRepositories()
+  const memory = seedKarkun('kr-8820', 'Stale Memory Referral', '9000008820', 'R001')
+  delete memory.referredByRuknId
+  MOCK_KARKUN_REGISTRY.push(memory)
+  const authoritative = seedKarkun('kr-8820', 'Stale Memory Referral', '9000008820', 'R011')
+  const originalRead = repos.karkun.readRecord.bind(repos.karkun)
+  const originalUpdate = repos.karkun.updateRecord.bind(repos.karkun)
+  let capturedPatch: { referredByRuknId?: string } | null = null
+  let updateCalls = 0
+  repos.karkun.readRecord = async (id) =>
+    id === 'kr-8820' ? repositoryOk(authoritative) : originalRead(id)
+  repos.karkun.updateRecord = async (id, patch) => {
+    if (id === 'kr-8820' && patch.aRuknPromotionInProgress === true) {
+      updateCalls += 1
+      capturedPatch = patch
+      return repositoryErr('StorageFailure', 'stop after capturing transition patch')
+    }
+    return originalUpdate(id, patch)
+  }
+  try {
+    const result = await promoteKarkunToARukn('kr-8820')
+    assert(!result.success, 'capture fixture must stop at transition persist')
+    assert(updateCalls === 1, 'transition write is attempted after authoritative read')
+    assert(capturedPatch?.referredByRuknId === 'R011', 'stale in-memory referral does not replace Firestore R011')
+    assert(capturedPatch?.referredByRuknId !== '', 'transition does not write empty referral')
+  } finally {
+    repos.karkun.readRecord = originalRead
+    repos.karkun.updateRecord = originalUpdate
+  }
+}
+
+{
+  setAdministratorDecisionSessionOverrideForTests(null)
+  setJwtRoleClaimOverrideForTests(administratorJwtOverride())
+  const repos = getRepositories()
+  const memory = seedKarkun('kr-8821', 'Missing Authoritative Referral', '9000008821', 'R001')
+  MOCK_KARKUN_REGISTRY.push(memory)
+  const authoritative = seedKarkun('kr-8821', 'Missing Authoritative Referral', '9000008821', 'R001')
+  delete authoritative.referredByRuknId
+  const originalRead = repos.karkun.readRecord.bind(repos.karkun)
+  const originalUpdate = repos.karkun.updateRecord.bind(repos.karkun)
+  let updateCalls = 0
+  repos.karkun.readRecord = async (id) =>
+    id === 'kr-8821' ? repositoryOk(authoritative) : originalRead(id)
+  repos.karkun.updateRecord = async (id, patch) => {
+    updateCalls += 1
+    return originalUpdate(id, patch)
+  }
+  try {
+    const result = await promoteKarkunToARukn('kr-8821')
+    assert(!result.success, 'missing authoritative referral must fail')
+    assert(
+      !result.success && result.error.includes('locked referral'),
+      'missing authoritative referral explains the stop',
+    )
+    assert(updateCalls === 0, 'missing authoritative referral does not attempt transition write')
+    assert(memory.aRuknPromotionInProgress !== true, 'in-memory flag is not set when referral is missing')
+  } finally {
+    repos.karkun.readRecord = originalRead
+    repos.karkun.updateRecord = originalUpdate
+  }
 }
 
 const nextAlloc = await getRepositories().rukn.allocateNextARuknId()
@@ -512,7 +604,7 @@ assert(nextAlloc.ok && nextAlloc.data.aRuknId === 'AR03', 'allocator advanced pa
 
   const transitionPatch = {
     aRuknPromotionInProgress: true,
-    referredByRuknId: resource.referredByRuknId ?? '',
+    referredByRuknId: resource.referredByRuknId,
     assignmentStatus: resource.assignmentStatus,
     updatedAt: '2026-09-05T10:00:00.000Z',
     updatedBy: 'Administrator',
@@ -521,7 +613,7 @@ assert(nextAlloc.ok && nextAlloc.data.aRuknId === 'AR03', 'allocator advanced pa
     Object.prototype.hasOwnProperty.call(transitionPatch, 'referredByRuknId'),
     'updateDoc transition patch supplies existing referredByRuknId',
   )
-  assert(transitionPatch.referredByRuknId === resource.referredByRuknId, 'referral is copied from the existing person')
+  assert(transitionPatch.referredByRuknId === resource.referredByRuknId, 'referral is copied from the authoritative document')
   const afterUpdateDoc = { ...resource, ...transitionPatch }
   assert(
     adminMayUpdateKarkun(resource, afterUpdateDoc),

@@ -18,6 +18,7 @@ import {
 } from '@/lib/peopleClassification'
 import { isValidMobileFormat, normalizeMobile } from '@/lib/mobileValidation'
 import { persistKarkunDurable, persistKarkunFieldsDurable, persistRuknDurable } from '@/lib/peopleStore'
+import { toOperatorPersistError } from '@/lib/reliability/persistErrors'
 import { emitPeopleRegistryChange } from '@/lib/peopleRegistryEvents'
 import { bumpVersion } from '@/lib/preservation/softDelete'
 import { DEFAULT_PLACE } from '@/types/people.types'
@@ -26,6 +27,18 @@ import { getActiveAssignmentsForKarkun } from '@/stores/assignmentStore'
 import { getRepositories } from '@/repositories/provider'
 
 const PROMOTION_DENIED = 'Only an Administrator can promote a Karkun to A Rukn.'
+const MISSING_LOCKED_REFERRAL_ERROR =
+  'This Karkun has no locked referral on record. Promotion cannot continue.'
+
+function lockedReferralFromAuthoritativeDocument(
+  record: { referredByRuknId?: string | null },
+): { ok: true; referredByRuknId: string } | { ok: false } {
+  const value = record.referredByRuknId
+  if (typeof value !== 'string' || value === '') {
+    return { ok: false }
+  }
+  return { ok: true, referredByRuknId: value }
+}
 
 export type ARuknPromotionResult =
   | {
@@ -127,13 +140,26 @@ async function markPromotionInProgress(
   if (person.aRuknPromotionInProgress === true) {
     return { ok: true }
   }
+
+  const authoritative = await getRepositories().karkun.readRecord(personId)
+  if (!authoritative.ok) {
+    return { ok: false, error: toOperatorPersistError('karkuns', authoritative.error) }
+  }
+  if (!authoritative.data) {
+    return { ok: false, error: 'Karkun not found.' }
+  }
+  const locked = lockedReferralFromAuthoritativeDocument(authoritative.data)
+  if (!locked.ok) {
+    return { ok: false, error: MISSING_LOCKED_REFERRAL_ERROR }
+  }
+
   person.aRuknPromotionInProgress = true
   person.updatedAt = nowIso()
   person.updatedBy = 'Administrator'
   const persisted = await persistKarkunFieldsDurable(personId, {
     aRuknPromotionInProgress: true,
-    referredByRuknId: person.referredByRuknId ?? '',
-    assignmentStatus: person.assignmentStatus,
+    referredByRuknId: locked.referredByRuknId,
+    assignmentStatus: authoritative.data.assignmentStatus ?? person.assignmentStatus,
     updatedAt: person.updatedAt,
     updatedBy: 'Administrator',
   })

@@ -71,6 +71,11 @@ console.log('▶ karkun updateRecord uses updateDoc')
   assert.equal(update.includes('patchDoc('), true)
   assert.equal(update.includes('writeDoc('), false)
   assert.equal(helpers.includes('await updateDoc('), true)
+  const readRecord = repo.slice(
+    repo.indexOf('async readRecord(id: string)'),
+    repo.indexOf('async updateRecord(id: string, patch: KarkunRecordPatch)'),
+  )
+  assert.equal(readRecord.includes('readDoc<KarkunRegistryRecord>'), true)
 }
 
 console.log('▶ karkun available pool query matches rules')

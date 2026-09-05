@@ -2093,6 +2093,20 @@ export class KarkunFirestoreRepository implements KarkunRepository {
     return result
   }
 
+  async readRecord(id: string): Promise<RepositoryResult<KarkunRegistryRecord | null>> {
+    try {
+      const db = getFirestoreDb()
+      const record = await readDoc<KarkunRegistryRecord>(
+        db,
+        FIRESTORE_COLLECTIONS.karkuns,
+        id,
+      )
+      return repositoryOk(record)
+    } catch (error) {
+      return mapFirestoreError(error)
+    }
+  }
+
   async updateRecord(id: string, patch: KarkunRecordPatch): Promise<RepositoryResult<void>> {
     const previous = karkunCache.get()
     const snapshot = {

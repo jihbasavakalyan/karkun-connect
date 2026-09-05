@@ -57,6 +57,7 @@ function seedKarkun(id: string, name: string, mobile: string): KarkunRegistryRec
     notes: '',
     isArchived: false,
     category: 'Karkun',
+    referredByRuknId: 'R001',
   }
 }
 
@@ -191,6 +192,12 @@ console.log('verify-a-rukn-admin-ui: start')
 resetRepositoryProviderForTests()
 setAdministratorDecisionSessionOverrideForTests(null)
 MOCK_KARKUN_REGISTRY.push(seedKarkun('kr-8903', 'UI Promo Live', '9000008903'))
+{
+  const seeded = MOCK_KARKUN_REGISTRY.find((row) => row.id === 'kr-8903')
+  assert(seeded, 'UI live seed missing')
+  const stored = await getRepositories().karkun.upsertRecord(seeded)
+  assert(stored.ok, 'UI live seed must exist on authoritative store')
+}
 assert(getAllKarkuns().some((row) => row.id === 'kr-8903'), 'eligible Karkun is in active registry')
 assert(isKarkun(MOCK_KARKUN_REGISTRY.find((row) => row.id === 'kr-8903')!), 'active normal Karkun')
 
@@ -222,6 +229,12 @@ assert(
 
 {
   MOCK_KARKUN_REGISTRY.push(seedKarkun('kr-8910', 'Emit Timing', '9000008910'))
+  {
+    const seeded = MOCK_KARKUN_REGISTRY.find((row) => row.id === 'kr-8910')
+    assert(seeded, 'emit-timing seed missing')
+    const stored = await getRepositories().karkun.upsertRecord(seeded)
+    assert(stored.ok, 'emit-timing seed must exist on authoritative store')
+  }
   const repos = getRepositories()
   const originalUpdate = repos.karkun.updateRecord.bind(repos.karkun)
   let persistEntered = false
@@ -249,6 +262,12 @@ assert(
 
 {
   MOCK_KARKUN_REGISTRY.push(seedKarkun('kr-8911', 'Persist Rollback', '9000008911'))
+  {
+    const seeded = MOCK_KARKUN_REGISTRY.find((row) => row.id === 'kr-8911')
+    assert(seeded, 'rollback seed missing')
+    const stored = await getRepositories().karkun.upsertRecord(seeded)
+    assert(stored.ok, 'rollback seed must exist on authoritative store')
+  }
   const repos = getRepositories()
   const originalUpdate = repos.karkun.updateRecord.bind(repos.karkun)
   let rollbackEmits = 0
@@ -344,9 +363,14 @@ assert(
     promotion.indexOf('export async function promoteKarkunToARukn'),
   )
   assert(
-    markBlock.includes("referredByRuknId: person.referredByRuknId ?? ''"),
-    'Admin promotion transition patch includes hydrated referredByRuknId',
+    markBlock.includes('karkun.readRecord(personId)'),
+    'Admin promotion transition reads authoritative karkuns/{id}',
   )
+  assert(
+    markBlock.includes('referredByRuknId: locked.referredByRuknId'),
+    'Admin promotion transition patch uses authoritative referredByRuknId',
+  )
+  assert(!markBlock.includes("person.referredByRuknId ?? ''"), 'Admin promotion does not coerce referral to empty string')
   assert(
     rules.includes(
       'allow update: if (isAdministrator() && referredByUnchanged() && promotedKarkunNotAvailable())',

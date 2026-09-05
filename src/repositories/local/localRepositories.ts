@@ -261,6 +261,13 @@ export class KarkunLocalRepository implements KarkunRepository {
     })
   }
 
+  async readRecord(id: string): Promise<RepositoryResult<KarkunRegistryRecord | null>> {
+    return tryRepository(() => {
+      const current = loadJsonFromStorage<KarkunRegistryRecord[]>(STORAGE_KEYS.karkunRegistry, [])
+      return current.find((item) => item.id === id) ?? null
+    })
+  }
+
   async updateRecord(id: string, patch: KarkunRecordPatch): Promise<RepositoryResult<void>> {
     return tryRepository(() => {
       const current = loadJsonFromStorage<KarkunRegistryRecord[]>(STORAGE_KEYS.karkunRegistry, [])
