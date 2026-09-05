@@ -281,7 +281,7 @@ export async function submitNewKarkunRequest(
       fatherHusbandName: input.fatherHusbandName,
       address: input.address,
       gender,
-    })
+    }, { requireReferral: true })
     if (!intake.ok) {
       return { ok: false, error: intake.error, code: 'VALIDATION' }
     }
@@ -487,30 +487,41 @@ async function approveNewKarkunRequestOnce(
       const referredByRuknId = (input.referredByRuknId ?? claimed.requestingRuknId).trim()
       const fatherHusbandName = (input.fatherHusbandName ?? claimed.fatherHusbandName)?.trim()
       const address = (input.address ?? claimed.address)?.trim()
-      const intake = validateNewPersonIntake({
-        referredByRuknId,
-        fatherHusbandName,
-        address,
-        gender: claimed.gender,
-      })
+      const isPublicTraining = claimed.source === 'public_training_registration'
+      const intake = validateNewPersonIntake(
+        {
+          referredByRuknId,
+          fatherHusbandName,
+          address,
+          gender: claimed.gender,
+        },
+        { requireReferral: !isPublicTraining },
+      )
       if (!intake.ok) {
         return { ok: false, error: intake.error, code: 'VALIDATION' }
       }
 
+      const nextReferral = intake.referredByRuknId ?? ''
       if (
-        intake.referredByRuknId !== claimed.requestingRuknId.trim() ||
+        nextReferral !== claimed.requestingRuknId.trim() ||
         intake.fatherHusbandName !== (claimed.fatherHusbandName?.trim() ?? '') ||
         intake.address !== (claimed.address?.trim() ?? '')
       ) {
-        const referring = getRuknById(intake.referredByRuknId)
+        const referring = nextReferral ? getRuknById(nextReferral) : undefined
         updateKarkunRequest(claimed.id, {
-          requestingRuknId: intake.referredByRuknId,
-          requestingRuknName: referring?.name || claimed.requestingRuknName,
+          ...(nextReferral
+            ? {
+                requestingRuknId: nextReferral,
+                requestingRuknName: referring?.name || claimed.requestingRuknName,
+              }
+            : {}),
           fatherHusbandName: intake.fatherHusbandName,
           address: intake.address,
         })
-        claimed.requestingRuknId = intake.referredByRuknId
-        claimed.requestingRuknName = referring?.name || claimed.requestingRuknName
+        if (nextReferral) {
+          claimed.requestingRuknId = nextReferral
+          claimed.requestingRuknName = referring?.name || claimed.requestingRuknName
+        }
         claimed.fatherHusbandName = intake.fatherHusbandName
         claimed.address = intake.address
       }
@@ -531,6 +542,7 @@ async function approveNewKarkunRequestOnce(
           referredByRuknId: intake.referredByRuknId,
         },
         input.decidedBy || 'Administrator',
+        { requireReferral: !isPublicTraining },
       )
 
       if (!createResult.success) {

@@ -160,12 +160,6 @@ function KarkunGenderSection({
 
     const editingId = editingKarkun?.id ?? null
 
-    // Increment B — Admin Add New Karkun requires Referred By Rukn (no free-form name).
-    if (!editingId && !karkunPayload.referredByRuknId?.trim()) {
-      setFormError('Referred By Rukn is required.')
-      return
-    }
-
     const result = editingId
       ? updateKarkun(editingId, karkunPayload, 'Administrator', options)
       : createKarkun(karkunPayload)

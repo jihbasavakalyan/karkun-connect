@@ -27,18 +27,6 @@ import { getActiveAssignmentsForKarkun } from '@/stores/assignmentStore'
 import { getRepositories } from '@/repositories/provider'
 
 const PROMOTION_DENIED = 'Only an Administrator can promote a Karkun to A Rukn.'
-const MISSING_LOCKED_REFERRAL_ERROR =
-  'This Karkun has no locked referral on record. Promotion cannot continue.'
-
-function lockedReferralFromAuthoritativeDocument(
-  record: { referredByRuknId?: string | null },
-): { ok: true; referredByRuknId: string } | { ok: false } {
-  const value = record.referredByRuknId
-  if (typeof value !== 'string' || value === '') {
-    return { ok: false }
-  }
-  return { ok: true, referredByRuknId: value }
-}
 
 export type ARuknPromotionResult =
   | {
@@ -148,21 +136,26 @@ async function markPromotionInProgress(
   if (!authoritative.data) {
     return { ok: false, error: 'Karkun not found.' }
   }
-  const locked = lockedReferralFromAuthoritativeDocument(authoritative.data)
-  if (!locked.ok) {
-    return { ok: false, error: MISSING_LOCKED_REFERRAL_ERROR }
-  }
-
   person.aRuknPromotionInProgress = true
   person.updatedAt = nowIso()
   person.updatedBy = 'Administrator'
-  const persisted = await persistKarkunFieldsDurable(personId, {
+  const transitionPatch: {
+    aRuknPromotionInProgress: true
+    referredByRuknId?: string
+    assignmentStatus: typeof person.assignmentStatus
+    updatedAt: string
+    updatedBy: string
+  } = {
     aRuknPromotionInProgress: true,
-    referredByRuknId: locked.referredByRuknId,
     assignmentStatus: authoritative.data.assignmentStatus ?? person.assignmentStatus,
     updatedAt: person.updatedAt,
     updatedBy: 'Administrator',
-  })
+  }
+  const authoritativeReferral = authoritative.data.referredByRuknId
+  if (typeof authoritativeReferral === 'string') {
+    transitionPatch.referredByRuknId = authoritativeReferral
+  }
+  const persisted = await persistKarkunFieldsDurable(personId, transitionPatch)
   if (!persisted.success) {
     person.aRuknPromotionInProgress = false
     emitPeopleRegistryChange()

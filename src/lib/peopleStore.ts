@@ -619,6 +619,11 @@ export type CreatePersonWriteOptions = {
    * Data import/migration and historical-shape test fixtures pass false.
    */
   requireNewPersonIntake?: boolean
+  /**
+   * Rukn NEW Karkun / NEW Muttafiq writes pass true.
+   * Admin create and public-training approve default false (referral optional).
+   */
+  requireReferral?: boolean
 }
 
 export function createKarkun(
@@ -639,7 +644,9 @@ export function createKarkun(
   let address = input.address?.trim() ?? ''
 
   if (options?.requireNewPersonIntake !== false) {
-    const intake = validateNewPersonIntake(input)
+    const intake = validateNewPersonIntake(input, {
+      requireReferral: options?.requireReferral === true,
+    })
     if (!intake.ok) {
       return { success: false, error: intake.error }
     }
@@ -778,7 +785,9 @@ export function createMuttafiq(
   let address = input.address?.trim() ?? ''
 
   if (options?.requireNewPersonIntake !== false) {
-    const intake = validateNewPersonIntake(input)
+    const intake = validateNewPersonIntake(input, {
+      requireReferral: options?.requireReferral === true,
+    })
     if (!intake.ok) {
       return { success: false, error: intake.error }
     }

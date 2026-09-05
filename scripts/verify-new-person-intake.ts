@@ -8,6 +8,7 @@ import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { ruknMaster } from '@/data/ruknMaster'
 import { buildUnifiedInbox } from '@/lib/peopleLifecycle/InboxEngine'
 import { createKarkun, createMuttafiq, clearKarkunRegistry } from '@/lib/peopleStore'
+import { validateNewPersonIntake } from '@/lib/newPersonIntakeValidation'
 import { resetRepositoryProviderForTests } from '@/repositories/provider'
 import { submitNewKarkunRequest, submitNewMuttafiqRequest } from '@/services/karkunRequestService'
 import {
@@ -43,8 +44,16 @@ console.log('verify-new-person-intake: start')
   const service = readFileSync(resolve(process.cwd(), 'src/services/karkunRequestService.ts'), 'utf8')
   assert(!service.includes('requireNewPersonIntake: false'), 'public-training approve no longer skips intake')
   assert(service.includes('validateNewPersonIntake'), 'approve reuses intake helper')
+  assert(service.includes('requireReferral: true'), 'Rukn submit requires referral')
+  assert(service.includes('requireReferral: !isPublicTraining'), 'public-training approve does not require referral')
   const inbox = readFileSync(resolve(process.cwd(), 'src/pages/admin/AdminInboxPage.tsx'), 'utf8')
-  assert(inbox.includes('PublicTrainingApproveFields'), 'inbox collects referring Rukn for public training')
+  assert(inbox.includes('PublicTrainingApproveFields'), 'inbox collects optional referring Rukn for public training')
+  const fields = readFileSync(
+    resolve(process.cwd(), 'src/components/forms/people/PublicTrainingApproveFields.tsx'),
+    'utf8',
+  )
+  assert(fields.includes('Referred By Rukn (optional)'), 'public-training referral is optional in UI')
+  assert(!fields.includes('Referred By Rukn *'), 'public-training referral is not marked required')
 }
 
 {
@@ -60,7 +69,53 @@ console.log('verify-new-person-intake: start')
     },
     'Administrator',
   )
-  assert(!noReferral.success, '1. no referring Rukn rejected')
+  assert(noReferral.success, `3. Admin Karkun without referral accepted: ${noReferral.error ?? ''}`)
+  assert(
+    getKarkunById(noReferral.karkunId!)?.referredByRuknId === undefined,
+    '3. Admin did not invent a referral',
+  )
+
+  const ruknBoundary = createKarkun(
+    {
+      name: 'Rukn Boundary No Referral',
+      gender: 'Male',
+      mobile: '9111990091',
+      place: DEFAULT_PLACE,
+      status: 'active',
+      fatherHusbandName: 'Father',
+      address: 'Address 1',
+    },
+    'Rukn',
+    { requireReferral: true },
+  )
+  assert(!ruknBoundary.success, '1. Rukn Karkun without referral rejected')
+
+  const ruknIntake = validateNewPersonIntake(
+    {
+      referredByRuknId: '',
+      fatherHusbandName: 'Father',
+      address: 'Address 1',
+      gender: 'Male',
+    },
+    { requireReferral: true },
+  )
+  assert(!ruknIntake.ok, '1. Rukn intake helper requires referral')
+
+  const ruknWithSelf = createKarkun(
+    {
+      name: 'Rukn Boundary With Referral',
+      gender: 'Male',
+      mobile: '9111990092',
+      place: DEFAULT_PLACE,
+      status: 'active',
+      referredByRuknId: referring.id,
+      fatherHusbandName: 'Father',
+      address: 'Address 1',
+    },
+    'Rukn',
+    { requireReferral: true },
+  )
+  assert(ruknWithSelf.success, `2. Rukn Karkun with own reference accepted: ${ruknWithSelf.error ?? ''}`)
 
   const withReferral = createKarkun(
     {
@@ -183,7 +238,41 @@ console.log('verify-new-person-intake: start')
     },
     'Administrator',
   )
-  assert(!noReferral.success, '9. Muttafiq no referring Rukn rejected')
+  assert(noReferral.success, `7. Admin Muttafiq without referral accepted: ${noReferral.error ?? ''}`)
+
+  const ruknMuttafiqNoRef = createMuttafiq(
+    {
+      name: 'Rukn Muttafiq No Referral',
+      gender: 'Male',
+      mobile: '9111990191',
+      place: DEFAULT_PLACE,
+      status: 'active',
+      fatherHusbandName: 'Father',
+      address: 'Address 1',
+    },
+    'Rukn',
+    { requireReferral: true },
+  )
+  assert(!ruknMuttafiqNoRef.success, '5. Rukn Muttafiq without referral rejected')
+
+  const ruknMuttafiqWithRef = createMuttafiq(
+    {
+      name: 'Rukn Muttafiq With Referral',
+      gender: 'Male',
+      mobile: '9111990192',
+      place: DEFAULT_PLACE,
+      status: 'active',
+      referredByRuknId: referring.id,
+      fatherHusbandName: 'Father',
+      address: 'Address 1',
+    },
+    'Rukn',
+    { requireReferral: true },
+  )
+  assert(
+    ruknMuttafiqWithRef.success,
+    `6. Rukn Muttafiq with reference accepted: ${ruknMuttafiqWithRef.error ?? ''}`,
+  )
 
   const withReferral = createMuttafiq(
     {
@@ -412,7 +501,11 @@ console.log('verify-new-person-intake: start')
     },
     'Administrator',
   )
-  assert(!noReferral.success, 'public training missing referral rejected')
+  assert(noReferral.success, `9. public training without referral accepted: ${noReferral.error ?? ''}`)
+  assert(
+    getKarkunById(noReferral.karkunId!)?.referredByRuknId === undefined,
+    '9. public training did not invent a referral',
+  )
 
   const noFamily = createKarkun(
     {
@@ -459,7 +552,7 @@ console.log('verify-new-person-intake: start')
   assert(getKarkunById(complete.karkunId!)?.referredByRuknId === referring.id, 'public training stores referral')
   assert(getKarkunById(complete.karkunId!)?.fatherHusbandName === 'Training Father', 'public training stores family name')
   assert(getKarkunById(complete.karkunId!)?.address === 'Training Address', 'public training stores address')
-  console.log('  OK  public training new-karkun intake (no exemption)')
+  console.log('  OK  public training new-karkun intake (referral optional)')
 }
 
 {

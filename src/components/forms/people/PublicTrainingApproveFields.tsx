@@ -19,7 +19,7 @@ export function isPublicTrainingRequest(request: NewKarkunRequest): boolean {
   return request.source === 'public_training_registration'
 }
 
-/** Admin must supply referring Rukn (and any missing family/address) before approving public training. */
+/** Admin may supply a referring Rukn (optional) plus any missing family/address before approving public training. */
 export function PublicTrainingApproveFields({
   request,
   referredByRuknId,
@@ -44,14 +44,13 @@ export function PublicTrainingApproveFields({
   return (
     <div className="mt-3 space-y-2">
       <label className={FORM_LABEL_CLASS} htmlFor={`pt-referred-${request.id}`}>
-        Referred By Rukn *
+        Referred By Rukn (optional)
       </label>
       <select
         id={`pt-referred-${request.id}`}
         className={FORM_INPUT_CLASS}
         value={referredByRuknId}
         disabled={disabled}
-        required
         onChange={(event) => onReferredByRuknIdChange(event.target.value)}
       >
         <option value="">Select referring Rukn</option>

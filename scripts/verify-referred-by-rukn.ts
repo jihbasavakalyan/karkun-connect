@@ -81,7 +81,11 @@ console.log('verify-referred-by-rukn: start')
   )
 
   const karkunan = read('src/pages/admin/KarkunanPage.tsx')
-  assert(karkunan.includes('Referred By Rukn is required'), 'admin add karkun requires referral')
+  assert(
+    !karkunan.includes('Referred By Rukn is required'),
+    'admin add karkun does not require referral',
+  )
+  assert(form.includes('Referred By Rukn (optional)'), 'admin person add marks referral optional')
 
   const ruknPage = read('src/pages/admin/RuknModulePage.tsx')
   assert(ruknPage.includes('Referred By Rukn is required'), 'admin add rukn requires referral')
@@ -244,24 +248,43 @@ const otherRukn = activeMaleRukns[1]!
 }
 
 {
-  // NEW creates require referral; historical-shape rows can still be seeded without backfill.
-  const blocked = createKarkun(
+  // Admin NEW Karkun: referral optional; family + address still required.
+  const adminNoReferral = createKarkun(
     {
-      name: 'Legacy No Referral',
+      name: 'Admin Optional Referral',
       gender: 'Male',
       mobile: '9111000105',
       place: DEFAULT_PLACE,
       status: 'active',
+      fatherHusbandName: 'Admin Father',
+      address: 'Admin Address',
     },
     'Administrator',
   )
-  assert(!blocked.success, 'new create without referral is rejected')
+  assert(adminNoReferral.success && adminNoReferral.karkunId, 'admin create without referral is accepted')
+  assert(
+    getKarkunById(adminNoReferral.karkunId!)?.referredByRuknId === undefined,
+    'admin create does not invent a referral',
+  )
+
+  const missingFamily = createKarkun(
+    {
+      name: 'Admin Missing Family',
+      gender: 'Male',
+      mobile: '9111000107',
+      place: DEFAULT_PLACE,
+      status: 'active',
+      address: 'Admin Address',
+    },
+    'Administrator',
+  )
+  assert(!missingFamily.success, 'new create without father/husband is rejected')
 
   const legacy = createKarkun(
     {
       name: 'Legacy No Referral',
       gender: 'Male',
-      mobile: '9111000105',
+      mobile: '9111000108',
       place: DEFAULT_PLACE,
       status: 'active',
     },
@@ -274,7 +297,7 @@ const otherRukn = activeMaleRukns[1]!
   assert(row!.referredByRuknId === undefined, 'no invented referral')
   assert(row!.name === 'Legacy No Referral', 'name intact')
 
-  console.log('  OK  new create requires referral; historical-shape rows remain readable')
+  console.log('  OK  admin referral optional; family/address required; historical-shape rows remain readable')
 }
 
 {

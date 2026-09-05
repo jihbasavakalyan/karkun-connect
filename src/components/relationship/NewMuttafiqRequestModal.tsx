@@ -108,7 +108,8 @@ export function NewMuttafiqRequestModal({
     >
       <div className="space-y-3">
         <p className="text-sm text-secondary">
-          Submit a new Muttafiq for Admin approval. This is separate from Add Karkun.
+          Submit a new Muttafiq for Admin approval. This is separate from Add Karkun. You are
+          recorded as the referring Rukn for this person.
         </p>
         <label className="block">
           <span className={FORM_LABEL_CLASS}>Full name</span>

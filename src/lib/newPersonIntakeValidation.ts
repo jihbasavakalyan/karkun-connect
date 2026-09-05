@@ -8,9 +8,17 @@ export type NewPersonIntakeInput = {
   gender?: PersonGender
 }
 
+export type NewPersonIntakeOptions = {
+  /**
+   * Rukn-submitted NEW Karkun / NEW Muttafiq: true (authenticated Rukn is the referral).
+   * Admin create and public-training approve: false (referral optional).
+   */
+  requireReferral?: boolean
+}
+
 export type NewPersonIntakeSuccess = {
   ok: true
-  referredByRuknId: string
+  referredByRuknId?: string
   fatherHusbandName: string
   address: string
 }
@@ -25,19 +33,28 @@ function isBlank(value: string | undefined): boolean {
 }
 
 /**
- * Canonical NEW Karkun / NEW Muttafiq intake: referring Rukn + father/husband name + address.
+ * Canonical NEW Karkun / NEW Muttafiq intake: father/husband name + address,
+ * plus referring Rukn when the authority path requires it.
  * Uses existing fields only (`referredByRuknId`, `fatherHusbandName`, `address`).
  */
 export function validateNewPersonIntake(
   input: NewPersonIntakeInput,
+  options?: NewPersonIntakeOptions,
 ): NewPersonIntakeSuccess | NewPersonIntakeFailure {
+  const requireReferral = options?.requireReferral === true
   const referredByRuknId = input.referredByRuknId?.trim() ?? ''
-  if (!referredByRuknId) {
+
+  if (requireReferral && !referredByRuknId) {
     return { ok: false, error: 'Referred By Rukn is required.' }
   }
-  const referringRukn = getRuknById(referredByRuknId)
-  if (!referringRukn || referringRukn.status !== 'active') {
-    return { ok: false, error: 'Referring Rukn not found or inactive.' }
+
+  let resolvedReferral: string | undefined
+  if (referredByRuknId) {
+    const referringRukn = getRuknById(referredByRuknId)
+    if (!referringRukn || referringRukn.status !== 'active') {
+      return { ok: false, error: 'Referring Rukn not found or inactive.' }
+    }
+    resolvedReferral = referringRukn.id
   }
 
   const fatherHusbandName = input.fatherHusbandName?.trim() ?? ''
@@ -53,7 +70,7 @@ export function validateNewPersonIntake(
 
   return {
     ok: true,
-    referredByRuknId: referringRukn.id,
+    referredByRuknId: resolvedReferral,
     fatherHusbandName,
     address,
   }

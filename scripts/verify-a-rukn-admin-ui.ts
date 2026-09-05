@@ -123,6 +123,11 @@ console.log('verify-a-rukn-admin-ui: start')
   assert(action.includes('finally'), 'finally always clears pending')
   assert(action.includes('isDurableARuknPromotionSuccess'), 'success only from durable result')
   assert(action.includes('no longer be a normal Karkun'), 'confirmation copy')
+  assert(
+    action.includes('Administrator-controlled promotion'),
+    'confirmation states Admin-controlled promotion',
+  )
+  assert(!action.includes('locked referral'), 'does not block on locked referral copy')
   assert(action.includes('Historical records remain preserved'), 'history preserved')
   assert(!action.includes('OTP is created'), 'does not claim OTP is created')
   const table = read('src/components/forms/people/KarkunPeopleTable.tsx')
@@ -367,8 +372,8 @@ assert(
     'Admin promotion transition reads authoritative karkuns/{id}',
   )
   assert(
-    markBlock.includes('referredByRuknId: locked.referredByRuknId'),
-    'Admin promotion transition patch uses authoritative referredByRuknId',
+    markBlock.includes('transitionPatch.referredByRuknId = authoritativeReferral'),
+    'Admin promotion transition patch uses authoritative referredByRuknId when present',
   )
   assert(!markBlock.includes("person.referredByRuknId ?? ''"), 'Admin promotion does not coerce referral to empty string')
   assert(

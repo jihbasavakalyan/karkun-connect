@@ -118,11 +118,6 @@ function MuttafiqGenderSection({
       return
     }
 
-    if (!payload.referredByRuknId?.trim()) {
-      setFormError('Referred By Rukn is required.')
-      return
-    }
-
     const result = createMuttafiq(payload, 'Administrator')
     if (!result.success) {
       if (result.needsMobileConfirm && result.existingOwner) {

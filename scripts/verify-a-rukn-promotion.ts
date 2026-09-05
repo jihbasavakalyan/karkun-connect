@@ -66,7 +66,12 @@ function read(rel: string): string {
   return readFileSync(resolve(root, rel), 'utf8')
 }
 
-function seedKarkun(id: string, name: string, mobile: string, referredByRuknId: string): KarkunRegistryRecord {
+function seedKarkun(
+  id: string,
+  name: string,
+  mobile: string,
+  referredByRuknId?: string,
+): KarkunRegistryRecord {
   const now = new Date().toISOString()
   return {
     id,
@@ -158,14 +163,21 @@ const ledgerBefore = getRecentConnectionLedger(50).length
     error: 'Only an Administrator can promote a Karkun to A Rukn.',
   })
   const denied = await promoteKarkunToARukn('kr-8801')
-  assert(!denied.success, 'non-admin must be rejected')
+  assert(!denied.success, 'CASE F: non-admin must be rejected')
   assert(
     !denied.success && denied.error.includes('Administrator'),
-    'non-admin error mentions Administrator',
+    'CASE F: non-admin error mentions Administrator',
   )
   assert(
     MOCK_KARKUN_REGISTRY.find((row) => row.id === 'kr-8801')?.aRuknPromotionInProgress !== true,
     'non-admin cannot enter promotion transition',
+  )
+
+  const deniedRukn = await promoteKarkunToARukn('kr-8801')
+  assert(!deniedRukn.success, 'CASE G: Rukn must be rejected')
+  assert(
+    !deniedRukn.success && deniedRukn.error.includes('Administrator'),
+    'CASE G: Rukn error mentions Administrator',
   )
   setAdministratorDecisionSessionOverrideForTests(null)
 }
@@ -336,30 +348,42 @@ assert(
   assert(markBlock.includes("updatedBy: 'Administrator'"), 'transition patch sets updatedBy')
   assert(markBlock.includes('karkun.readRecord(personId)'), 'transition reads authoritative karkuns/{id}')
   assert(
-    markBlock.includes('lockedReferralFromAuthoritativeDocument'),
-    'locked referral is taken from the authoritative document',
-  )
-  const persistCallAt = markBlock.indexOf('persistKarkunFieldsDurable(personId, {')
-  assert(persistCallAt >= 0, 'transition uses persistKarkunFieldsDurable field patch')
-  const persistCall = markBlock.slice(
-    persistCallAt,
-    markBlock.indexOf('})', persistCallAt) + 2,
+    !markBlock.includes('lockedReferralFromAuthoritativeDocument'),
+    'promotion does not use a locked-referral gate',
   )
   assert(
-    persistCall.includes('referredByRuknId: locked.referredByRuknId'),
-    'transition patch carries authoritative referredByRuknId',
+    !markBlock.includes('MISSING_LOCKED_REFERRAL_ERROR'),
+    'missing referral does not fail closed',
   )
   assert(
-    persistCall.includes('assignmentStatus: authoritative.data.assignmentStatus'),
+    !markBlock.includes('Promotion cannot continue'),
+    'obsolete locked-referral copy is removed',
+  )
+  assert(
+    markBlock.includes('persistKarkunFieldsDurable(personId, transitionPatch)'),
+    'transition uses persistKarkunFieldsDurable field patch',
+  )
+  assert(
+    markBlock.includes('typeof authoritativeReferral === \'string\''),
+    'transition copies referral from the authoritative document only when present',
+  )
+  assert(
+    markBlock.includes('transitionPatch.referredByRuknId = authoritativeReferral'),
+    'transition patch carries authoritative referredByRuknId when it exists',
+  )
+  assert(
+    markBlock.includes('assignmentStatus: authoritative.data.assignmentStatus'),
     'transition patch preserves authoritative assignmentStatus',
   )
-  assert(!persistCall.includes('?? \'\''), 'transition does not coerce missing referral to empty string')
-  assert(!persistCall.includes('person.referredByRuknId'), 'locked referral is not taken from in-memory person')
-  assert(!persistCall.includes('R011'), 'transition patch does not hardcode kr-701 referral')
-  assert(!persistCall.includes('setDoc'), 'transition patch does not replace the Karkun document')
-  assert(!markBlock.includes('persistKarkunDurable'), 'transition does not upsert the full Karkun document')
+  assert(!markBlock.includes("?? ''"), 'transition does not coerce missing referral to empty string')
+  assert(
+    !markBlock.includes('person.referredByRuknId'),
+    'referral is not taken from in-memory person',
+  )
+  assert(!markBlock.includes('R011'), 'transition patch does not hardcode kr-701 referral')
+  assert(!markBlock.includes('setDoc'), 'transition patch does not replace the Karkun document')
+  assert(!markBlock.includes('persistKarkunDurable(personId)'), 'transition does not upsert the full Karkun document')
   assert(markBlock.includes('aRuknPromotionInProgress = false'), 'failed persist restores local flag')
-  assert(markBlock.includes('MISSING_LOCKED_REFERRAL_ERROR'), 'missing authoritative referral fails closed')
   const firestoreRepo = read('src/repositories/firestore/firestoreRepositories.ts')
   assert(
     firestoreRepo.includes("where('assignmentStatus', '==', 'Available')"),
@@ -439,22 +463,30 @@ assert(
   delete authoritative.referredByRuknId
   const originalRead = repos.karkun.readRecord.bind(repos.karkun)
   const originalUpdate = repos.karkun.updateRecord.bind(repos.karkun)
+  let capturedPatch: { referredByRuknId?: string } | null = null
   let updateCalls = 0
   repos.karkun.readRecord = async (id) =>
     id === 'kr-8821' ? repositoryOk(authoritative) : originalRead(id)
   repos.karkun.updateRecord = async (id, patch) => {
-    updateCalls += 1
+    if (id === 'kr-8821' && patch.aRuknPromotionInProgress === true) {
+      updateCalls += 1
+      capturedPatch = patch
+      return repositoryErr('StorageFailure', 'stop after capturing transition patch')
+    }
     return originalUpdate(id, patch)
   }
   try {
     const result = await promoteKarkunToARukn('kr-8821')
-    assert(!result.success, 'missing authoritative referral must fail')
+    assert(!result.success, 'capture fixture must stop at transition persist')
     assert(
-      !result.success && result.error.includes('locked referral'),
-      'missing authoritative referral explains the stop',
+      !result.success && !result.error.includes('locked referral'),
+      'CASE B: missing referral must not use locked-referral error',
     )
-    assert(updateCalls === 0, 'missing authoritative referral does not attempt transition write')
-    assert(memory.aRuknPromotionInProgress !== true, 'in-memory flag is not set when referral is missing')
+    assert(updateCalls === 1, 'CASE B: missing referral still attempts transition write')
+    assert(
+      capturedPatch?.referredByRuknId === undefined,
+      'CASE B: omitted authoritative referral is not invented on the patch',
+    )
   } finally {
     repos.karkun.readRecord = originalRead
     repos.karkun.updateRecord = originalUpdate
@@ -701,6 +733,55 @@ assert(nextAlloc.ok && nextAlloc.data.aRuknId === 'AR03', 'allocator advanced pa
   assert(!peopleStore.includes('aRuknPromotionInProgress'), 'peopleStore has no transition setter')
   assert(peopleStore.includes('persistKarkunFieldsDurable'), 'peopleStore exposes targeted field persist')
   assert(peopleStore.includes('toOperatorPersistError'), 'persistKarkunDurable maps write failures')
+}
+
+{
+  setAdministratorDecisionSessionOverrideForTests(null)
+  setJwtRoleClaimOverrideForTests(administratorJwtOverride())
+
+  const emptyReferral = seedKarkun('kr-8832', 'Empty Referral Promo', '9000008832', '')
+  MOCK_KARKUN_REGISTRY.push(emptyReferral)
+  {
+    const stored = await getRepositories().karkun.upsertRecord(emptyReferral)
+    assert(stored.ok, 'CASE C seed persist')
+  }
+  const emptyResult = await promoteKarkunToARukn('kr-8832')
+  assert(emptyResult.success, `CASE C empty referral must ALLOW: ${emptyResult.success ? '' : emptyResult.error}`)
+
+  const connectedNoReferral = seedKarkun('kr-8831', 'Connected No Referral', '9000008831')
+  MOCK_KARKUN_REGISTRY.push(connectedNoReferral)
+  {
+    const stored = await getRepositories().karkun.upsertRecord(connectedNoReferral)
+    assert(stored.ok, 'CASE D seed persist')
+  }
+  await connectToR001('kr-8831')
+  {
+    const connected = MOCK_KARKUN_REGISTRY.find((row) => row.id === 'kr-8831')
+    assert(connected, 'CASE D connected seed missing')
+    const stored = await getRepositories().karkun.upsertRecord(connected)
+    assert(stored.ok, 'CASE D persist after connect')
+  }
+  assert(!connectedNoReferral.referredByRuknId, 'CASE D has no referral')
+  assert(connectedNoReferral.assignedRuknId === 'R001', 'CASE D has Connected Rukn')
+  const connectedResult = await promoteKarkunToARukn('kr-8831')
+  assert(
+    connectedResult.success,
+    `CASE D connected without referral must ALLOW: ${connectedResult.success ? '' : connectedResult.error}`,
+  )
+
+  const none = seedKarkun('kr-8830', 'No Connection No Referral', '9000008830')
+  MOCK_KARKUN_REGISTRY.push(none)
+  {
+    const stored = await getRepositories().karkun.upsertRecord(none)
+    assert(stored.ok, 'CASE E seed persist')
+  }
+  assert(!none.referredByRuknId, 'CASE E has no referral')
+  assert(!none.assignedRuknId, 'CASE E has no Connected Rukn')
+  const noneResult = await promoteKarkunToARukn('kr-8830')
+  assert(
+    noneResult.success,
+    `CASE E no connection and no referral must ALLOW: ${noneResult.success ? '' : noneResult.error}`,
+  )
 }
 
 setAdministratorDecisionSessionOverrideForTests(null)

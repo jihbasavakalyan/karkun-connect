@@ -223,14 +223,14 @@ function PersonFormModalContent({
             <ModalFormGrid>
               <div className="flex flex-col gap-2 md:col-span-2">
                 <label htmlFor="person-referred-by-rukn" className="text-sm font-medium text-text-heading">
-                  Referred By Rukn
+                  {kind === 'rukn' ? 'Referred By Rukn' : 'Referred By Rukn (optional)'}
                 </label>
                 <select
                   id="person-referred-by-rukn"
                   value={referredByRuknId}
                   onChange={(event) => setReferredByRuknId(event.target.value)}
                   className={selectClassName}
-                  required
+                  required={kind === 'rukn' && mode === 'add'}
                 >
                   <option value="">Select referring Rukn</option>
                   {referringRuknOptions.map((rukn) => (

@@ -146,6 +146,9 @@ export function PromoteToARuknSession({
               Existing active campaign assignments will end. Historical records remain preserved
               and are not deleted.
             </p>
+            <p className="mt-2">
+              This is an Administrator-controlled promotion. A Rukn referral is not required.
+            </p>
             <p className="mt-2">Login access continues to use the existing first-sign-in path.</p>
             {error ? (
               <p className="mt-2 text-sm text-red-600" role="alert">

@@ -118,6 +118,9 @@ export function NewKarkunRequestModal({
     >
       <div className="space-y-4">
         <p className="text-sm text-secondary">
+          You are recorded as the referring Rukn for this person.
+        </p>
+        <p className="text-sm text-secondary">
           Submit a worker who is not yet in the registry. People (Admin) must approve before they
           are added and Connected.
         </p>
