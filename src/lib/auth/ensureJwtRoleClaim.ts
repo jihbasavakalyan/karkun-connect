@@ -9,10 +9,10 @@
  * KC-0061 / Increment 3.4 — `getIdToken(true)` updates Auth's token manager, but
  * Firestore's `FirebaseAuthCredentialsProvider` applies that token on
  * `addAuthTokenListener` via `enqueueRetryable` (and its own `setTimeout(0)`
- * Auth handshake). A write that starts immediately after `getIdToken(true)`
- * can still send the previous JWT on the existing Write stream.
- * Force-refresh, wait for Auth ID-token listeners, then yield so Firestore's
- * credential queue observes `request.auth.token.role` before the next RPC.
+ * Auth handshake). Synchronization is: subscribe → force-refresh when the
+ * current token lacks a role → wait for the post-initial ID-token notification
+ * → then yield so Firestore observes `request.auth.token.role` before the next RPC.
+ * Do not force-refresh when the current token already has administrator/rukn.
  */
 
 import { onIdTokenChanged } from 'firebase/auth'
@@ -90,16 +90,18 @@ export function yieldForFirestoreAuthCredentialQueue(): Promise<void> {
   )
 }
 
+function jwtHasAppRole(role: unknown): role is 'administrator' | 'rukn' {
+  return role === 'administrator' || role === 'rukn'
+}
+
 /**
  * Force-refresh the ID token, wait until Auth has notified ID-token observers
  * (including Firestore), then yield so Firestore can attach the new credential
- * before the next RPC.
+ * before the next RPC. Never races the notification against the queue yield.
  */
 export async function synchronizeRefreshedIdTokenForFirestore(
   input: SynchronizeRefreshedIdTokenInput,
 ): Promise<string> {
-  const previousToken = await input.getIdToken(false)
-
   let skipInitial = true
   let unsubscribe = (): void => {}
   const notified = new Promise<void>((resolve) => {
@@ -114,9 +116,7 @@ export async function synchronizeRefreshedIdTokenForFirestore(
 
   try {
     const refreshedToken = await input.getIdToken(true)
-    if (refreshedToken !== previousToken) {
-      await Promise.race([notified, input.yieldForFirestoreAuthQueue()])
-    }
+    await notified
     await input.yieldForFirestoreAuthQueue()
     return refreshedToken
   } finally {
@@ -125,8 +125,9 @@ export async function synchronizeRefreshedIdTokenForFirestore(
 }
 
 /**
- * Always force-refresh the ID token, synchronize Firestore's Auth credential,
- * then require role claim. Does not change AuthProvider / hydration architecture.
+ * Require a JWT role claim. Force-refresh and synchronize Firestore credentials
+ * only when the current token lacks administrator/rukn. Does not change
+ * AuthProvider / hydration architecture.
  */
 export async function ensureJwtRoleClaimPresent(): Promise<JwtRoleClaimResult> {
   if (testOverride) {
@@ -139,14 +140,18 @@ export async function ensureJwtRoleClaimPresent(): Promise<JwtRoleClaimResult> {
   }
 
   const t1 = Date.now()
-  await synchronizeRefreshedIdTokenForFirestore({
-    getIdToken: (forceRefresh) => user.getIdToken(forceRefresh),
-    subscribeIdTokenChanges: (onChange) => onIdTokenChanged(getFirebaseAuth(), () => onChange()),
-    yieldForFirestoreAuthQueue: yieldForFirestoreAuthCredentialQueue,
-  })
+  const existing = await user.getIdTokenResult(false)
+  let forceRefreshed = false
+  if (!jwtHasAppRole(existing.claims.role)) {
+    await synchronizeRefreshedIdTokenForFirestore({
+      getIdToken: (forceRefresh) => user.getIdToken(forceRefresh),
+      subscribeIdTokenChanges: (onChange) => onIdTokenChanged(getFirebaseAuth(), () => onChange()),
+      yieldForFirestoreAuthQueue: yieldForFirestoreAuthCredentialQueue,
+    })
+    forceRefreshed = true
+  }
   const t2 = Date.now()
-  const token = await user.getIdTokenResult(false)
-  const forceRefreshed = true
+  const token = forceRefreshed ? await user.getIdTokenResult(false) : existing
 
   const timeline: JwtRoleClaimTimeline = {
     t1GetIdTokenCalled: t1,

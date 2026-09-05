@@ -248,14 +248,22 @@ assert(
       events.push(forceRefresh ? 'refresh' : 'read')
       if (forceRefresh) {
         token = 'refreshed-administrator-token'
-        for (const listener of [...listeners]) listener()
+        queueMicrotask(() => {
+          for (const listener of [...listeners]) listener()
+        })
       }
       return token
     },
     subscribeIdTokenChanges: (onChange) => {
       events.push('subscribe')
-      listeners.push(onChange)
-      onChange()
+      let initial = true
+      const wrapped = () => {
+        onChange()
+        if (!initial) events.push('notified')
+        initial = false
+      }
+      listeners.push(wrapped)
+      wrapped()
       return () => {
         events.push('unsubscribe')
       }
@@ -268,11 +276,13 @@ assert(
   assert(refreshed === 'refreshed-administrator-token', 'sync helper returns the force-refreshed token')
   const subscribeAt = events.indexOf('subscribe')
   const refreshAt = events.indexOf('refresh')
+  const notifiedAt = events.indexOf('notified')
   const yieldAt = events.indexOf('yield-firestore-queue')
   const writeAt = events.indexOf('firestore-write')
   const unsubAt = events.indexOf('unsubscribe')
   assert(subscribeAt >= 0 && subscribeAt < refreshAt, 'ID-token listener is attached before force refresh')
-  assert(refreshAt >= 0 && yieldAt > refreshAt, 'Firestore credential queue yields after force refresh')
+  assert(notifiedAt > refreshAt, 'waits for post-initial ID-token notification after force refresh')
+  assert(yieldAt > notifiedAt, 'Firestore credential queue yields only after ID-token notification')
   assert(writeAt > yieldAt, 'Firestore write is sequenced after credential sync')
   assert(unsubAt > refreshAt && unsubAt < writeAt, 'token listener is released before the write proceeds')
 }
@@ -289,6 +299,9 @@ assert(
   assert(gate.includes('ensureJwtRoleClaimPresent'), 'Admin gate refreshes via shared JWT helper')
   assert(ensure.includes('synchronizeRefreshedIdTokenForFirestore'), 'gate path synchronizes Auth credential')
   assert(ensure.includes('onIdTokenChanged'), 'waits for Auth ID-token observers')
+  assert(!ensure.includes('Promise.race'), 'auth sync does not race ID-token notification against queue yield')
+  assert(ensure.includes('jwtHasAppRole'), 'skips force-refresh when current JWT already has an app role')
+  assert(ensure.includes('await notified'), 'auth sync awaits post-initial ID-token notification')
   const gateCallAt = service.indexOf('assertAdministratorDecisionSession')
   const transitionAt = service.indexOf('const transition = await markPromotionInProgress')
   assert(gateCallAt >= 0 && transitionAt > gateCallAt, 'promotion updateDoc runs only after Admin credential gate')
@@ -307,10 +320,25 @@ assert(
   const emitAt = markBlock.indexOf('emitPeopleRegistryChange')
   assert(persistAt >= 0 && emitAt >= 0, 'in-progress persist and registry emit exist')
   assert(persistAt < emitAt, 'does not emit registry change before durable in-progress persist')
-  assert(!markBlock.includes('persistKarkunDurable'), 'transition does not upsert the full Karkun document')
   assert(markBlock.includes('aRuknPromotionInProgress: true'), 'transition patch sets in-progress true')
   assert(markBlock.includes("updatedBy: 'Administrator'"), 'transition patch sets updatedBy')
-  assert(!markBlock.includes('referredByRuknId'), 'transition patch does not send referredByRuknId')
+  const persistCallAt = markBlock.indexOf('persistKarkunFieldsDurable(personId, {')
+  assert(persistCallAt >= 0, 'transition uses persistKarkunFieldsDurable field patch')
+  const persistCall = markBlock.slice(
+    persistCallAt,
+    markBlock.indexOf('})', persistCallAt) + 2,
+  )
+  assert(
+    persistCall.includes("referredByRuknId: person.referredByRuknId ?? ''"),
+    'transition patch carries hydrated referredByRuknId',
+  )
+  assert(
+    persistCall.includes('assignmentStatus: person.assignmentStatus'),
+    'transition patch preserves hydrated assignmentStatus',
+  )
+  assert(!persistCall.includes('R011'), 'transition patch does not hardcode kr-701 referral')
+  assert(!persistCall.includes('setDoc'), 'transition patch does not replace the Karkun document')
+  assert(!markBlock.includes('persistKarkunDurable'), 'transition does not upsert the full Karkun document')
   assert(markBlock.includes('aRuknPromotionInProgress = false'), 'failed persist restores local flag')
   const firestoreRepo = read('src/repositories/firestore/firestoreRepositories.ts')
   assert(
@@ -484,13 +512,16 @@ assert(nextAlloc.ok && nextAlloc.data.aRuknId === 'AR03', 'allocator advanced pa
 
   const transitionPatch = {
     aRuknPromotionInProgress: true,
+    referredByRuknId: resource.referredByRuknId ?? '',
+    assignmentStatus: resource.assignmentStatus,
     updatedAt: '2026-09-05T10:00:00.000Z',
     updatedBy: 'Administrator',
   }
   assert(
-    !Object.prototype.hasOwnProperty.call(transitionPatch, 'referredByRuknId'),
-    'updateDoc transition patch does not supply referredByRuknId',
+    Object.prototype.hasOwnProperty.call(transitionPatch, 'referredByRuknId'),
+    'updateDoc transition patch supplies existing referredByRuknId',
   )
+  assert(transitionPatch.referredByRuknId === resource.referredByRuknId, 'referral is copied from the existing person')
   const afterUpdateDoc = { ...resource, ...transitionPatch }
   assert(
     adminMayUpdateKarkun(resource, afterUpdateDoc),
@@ -498,7 +529,7 @@ assert(nextAlloc.ok && nextAlloc.data.aRuknId === 'AR03', 'allocator advanced pa
   )
   assert(
     referredByUnchanged(resource, afterUpdateDoc),
-    'updateDoc keeps existing referredByRuknId without client reconstructing it',
+    'updateDoc keeps existing referredByRuknId without changing it',
   )
   assert(
     !ruknMayUpdateKarkun(resource, afterUpdateDoc),

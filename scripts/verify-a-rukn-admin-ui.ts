@@ -338,6 +338,15 @@ assert(
     'promotion write stays after Admin credential gate',
   )
   assert(helpers.includes('await updateDoc('), 'updateDoc transition remains intact')
+  assert(!promotion.includes('Promise.race'), 'promotion path does not reintroduce auth Promise.race')
+  const markBlock = promotion.slice(
+    promotion.indexOf('async function markPromotionInProgress'),
+    promotion.indexOf('export async function promoteKarkunToARukn'),
+  )
+  assert(
+    markBlock.includes("referredByRuknId: person.referredByRuknId ?? ''"),
+    'Admin promotion transition patch includes hydrated referredByRuknId',
+  )
   assert(
     rules.includes(
       'allow update: if (isAdministrator() && referredByUnchanged() && promotedKarkunNotAvailable())',

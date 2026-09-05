@@ -132,6 +132,8 @@ async function markPromotionInProgress(
   person.updatedBy = 'Administrator'
   const persisted = await persistKarkunFieldsDurable(personId, {
     aRuknPromotionInProgress: true,
+    referredByRuknId: person.referredByRuknId ?? '',
+    assignmentStatus: person.assignmentStatus,
     updatedAt: person.updatedAt,
     updatedBy: 'Administrator',
   })

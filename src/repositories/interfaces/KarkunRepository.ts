@@ -9,6 +9,8 @@ export type KarkunRegistryState = {
 /** Targeted Karkun field patch (A Rukn promotion transition). Never a full document. */
 export type KarkunRecordPatch = {
   aRuknPromotionInProgress?: boolean
+  referredByRuknId?: string
+  assignmentStatus?: KarkunRegistryRecord['assignmentStatus']
   updatedAt?: string
   updatedBy?: string
 }
