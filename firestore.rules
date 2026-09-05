@@ -84,7 +84,8 @@ service cloud.firestore {
     }
 
     function isPromotedToARuknData(data) {
-      return stringOrEmpty(data.promotedToARuknId) != '';
+      return ('promotedToARuknId' in data)
+        && stringOrEmpty(data.promotedToARuknId) != '';
     }
 
     function isARuknPromotionInProgressData(data) {
