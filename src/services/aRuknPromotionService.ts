@@ -158,6 +158,7 @@ export async function promoteKarkunToARukn(
   if (!adminGate.ok) {
     return { success: false, error: adminGate.error }
   }
+  // Firestore writes below use the Auth credential synchronized by the gate.
 
   const personId = sourcePersonId.trim()
   if (!isKrPersonId(personId)) {

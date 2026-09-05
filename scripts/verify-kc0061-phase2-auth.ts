@@ -18,6 +18,9 @@ assert(
 
 const ensure = readFileSync(resolve('src/lib/auth/ensureJwtRoleClaim.ts'), 'utf8')
 assert(ensure.includes('ensureJwtRoleClaimPresent'), 'claim helper present')
+assert(ensure.includes('synchronizeRefreshedIdTokenForFirestore'), 'Firestore credential sync helper present')
+assert(ensure.includes('onIdTokenChanged'), 'waits for Auth ID-token listeners')
+assert(ensure.includes('yieldForFirestoreAuthCredentialQueue'), 'yields for Firestore Auth credential queue')
 
 const auth = readFileSync(resolve('src/services/authenticationService.ts'), 'utf8')
 assert(auth.includes('claimsMatchAppRole'), 'Admin+Rukn claim mismatch refresh')

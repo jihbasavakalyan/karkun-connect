@@ -6,12 +6,16 @@
  * request.auth.token.role — without it both Admin assign and Rukn connect
  * fail at settings/connectionMeta (ASN allocate) and critical hydrate denies.
  *
- * KC-0061 production follow-up — always await getIdToken(true) before the
- * critical Firestore read so T2 (refresh resolved) completes before T3
- * (transaction start). Skipping refresh when claims appear present left a
- * window where Firestore could still use a stale Auth credential.
+ * KC-0061 / Increment 3.4 — `getIdToken(true)` updates Auth's token manager, but
+ * Firestore's `FirebaseAuthCredentialsProvider` applies that token on
+ * `addAuthTokenListener` via `enqueueRetryable` (and its own `setTimeout(0)`
+ * Auth handshake). A write that starts immediately after `getIdToken(true)`
+ * can still send the previous JWT on the existing Write stream.
+ * Force-refresh, wait for Auth ID-token listeners, then yield so Firestore's
+ * credential queue observes `request.auth.token.role` before the next RPC.
  */
 
+import { onIdTokenChanged } from 'firebase/auth'
 import { getFirebaseAuth } from '@/lib/firebase/firebase'
 
 export const MISSING_JWT_ROLE_CLAIM_ERROR =
@@ -42,6 +46,12 @@ export type JwtRoleClaimResult =
       timeline: JwtRoleClaimTimeline | null
     }
 
+export type SynchronizeRefreshedIdTokenInput = {
+  getIdToken: (forceRefresh: boolean) => Promise<string>
+  subscribeIdTokenChanges: (onChange: () => void) => () => void
+  yieldForFirestoreAuthQueue: () => Promise<void>
+}
+
 let testOverride: JwtRoleClaimResult | null = null
 
 /** Verify scripts only — never used by product UI. */
@@ -66,8 +76,57 @@ function publishLastClaims(payload: Record<string, unknown>): void {
 }
 
 /**
- * Always force-refresh the ID token, then require role claim.
- * Does not change AuthProvider / hydration architecture.
+ * Yield macrotasks matching Firestore's AuthCredentialsProvider handshake
+ * (`setTimeout(0)` + `enqueueRetryable` credential application).
+ */
+export function yieldForFirestoreAuthCredentialQueue(): Promise<void> {
+  return new Promise<void>((resolve) => {
+    setTimeout(resolve, 0)
+  }).then(
+    () =>
+      new Promise<void>((resolve) => {
+        setTimeout(resolve, 0)
+      }),
+  )
+}
+
+/**
+ * Force-refresh the ID token, wait until Auth has notified ID-token observers
+ * (including Firestore), then yield so Firestore can attach the new credential
+ * before the next RPC.
+ */
+export async function synchronizeRefreshedIdTokenForFirestore(
+  input: SynchronizeRefreshedIdTokenInput,
+): Promise<string> {
+  const previousToken = await input.getIdToken(false)
+
+  let skipInitial = true
+  let unsubscribe = (): void => {}
+  const notified = new Promise<void>((resolve) => {
+    unsubscribe = input.subscribeIdTokenChanges(() => {
+      if (skipInitial) {
+        skipInitial = false
+        return
+      }
+      resolve()
+    })
+  })
+
+  try {
+    const refreshedToken = await input.getIdToken(true)
+    if (refreshedToken !== previousToken) {
+      await Promise.race([notified, input.yieldForFirestoreAuthQueue()])
+    }
+    await input.yieldForFirestoreAuthQueue()
+    return refreshedToken
+  } finally {
+    unsubscribe()
+  }
+}
+
+/**
+ * Always force-refresh the ID token, synchronize Firestore's Auth credential,
+ * then require role claim. Does not change AuthProvider / hydration architecture.
  */
 export async function ensureJwtRoleClaimPresent(): Promise<JwtRoleClaimResult> {
   if (testOverride) {
@@ -80,9 +139,11 @@ export async function ensureJwtRoleClaimPresent(): Promise<JwtRoleClaimResult> {
   }
 
   const t1 = Date.now()
-  // Always force-refresh so Firestore's next request uses a current token
-  // that includes custom claims (Gate 3: T2 before T3).
-  await user.getIdToken(true)
+  await synchronizeRefreshedIdTokenForFirestore({
+    getIdToken: (forceRefresh) => user.getIdToken(forceRefresh),
+    subscribeIdTokenChanges: (onChange) => onIdTokenChanged(getFirebaseAuth(), () => onChange()),
+    yieldForFirestoreAuthQueue: yieldForFirestoreAuthCredentialQueue,
+  })
   const t2 = Date.now()
   const token = await user.getIdTokenResult(false)
   const forceRefreshed = true

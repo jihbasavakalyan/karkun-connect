@@ -14,6 +14,7 @@ import { isCompleteARuknOfficer } from '@/lib/officerIdentity'
 import { setAdministratorDecisionSessionOverrideForTests } from '@/lib/auth/assertAdministratorDecisionSession'
 import {
   setJwtRoleClaimOverrideForTests,
+  synchronizeRefreshedIdTokenForFirestore,
   type JwtRoleClaimResult,
 } from '@/lib/auth/ensureJwtRoleClaim'
 import { resetARuknAllocationLockForTests } from '@/lib/aRuknAllocation'
@@ -239,11 +240,58 @@ assert(
 }
 
 {
+  const events: string[] = []
+  let token = 'stale-token'
+  const listeners: Array<() => void> = []
+  const refreshed = await synchronizeRefreshedIdTokenForFirestore({
+    getIdToken: async (forceRefresh) => {
+      events.push(forceRefresh ? 'refresh' : 'read')
+      if (forceRefresh) {
+        token = 'refreshed-administrator-token'
+        for (const listener of [...listeners]) listener()
+      }
+      return token
+    },
+    subscribeIdTokenChanges: (onChange) => {
+      events.push('subscribe')
+      listeners.push(onChange)
+      onChange()
+      return () => {
+        events.push('unsubscribe')
+      }
+    },
+    yieldForFirestoreAuthQueue: async () => {
+      events.push('yield-firestore-queue')
+    },
+  })
+  events.push('firestore-write')
+  assert(refreshed === 'refreshed-administrator-token', 'sync helper returns the force-refreshed token')
+  const subscribeAt = events.indexOf('subscribe')
+  const refreshAt = events.indexOf('refresh')
+  const yieldAt = events.indexOf('yield-firestore-queue')
+  const writeAt = events.indexOf('firestore-write')
+  const unsubAt = events.indexOf('unsubscribe')
+  assert(subscribeAt >= 0 && subscribeAt < refreshAt, 'ID-token listener is attached before force refresh')
+  assert(refreshAt >= 0 && yieldAt > refreshAt, 'Firestore credential queue yields after force refresh')
+  assert(writeAt > yieldAt, 'Firestore write is sequenced after credential sync')
+  assert(unsubAt > refreshAt && unsubAt < writeAt, 'token listener is released before the write proceeds')
+}
+
+{
   const service = read('src/services/aRuknPromotionService.ts')
+  const ensure = read('src/lib/auth/ensureJwtRoleClaim.ts')
+  const gate = read('src/lib/auth/assertAdministratorDecisionSession.ts')
   assert(service.includes('allocateNextARuknId'), 'uses Increment 1 allocator')
   assert(service.includes('removeAssignment'), 'uses existing disconnect')
   assert(service.includes('assertAdministratorDecisionSession'), 'admin gate')
   assert(!service.includes("role: 'a_rukn'"), 'no new JWT role')
+  assert(!ensure.includes("role: 'a_rukn'"), 'JWT helper introduces no a_rukn role')
+  assert(gate.includes('ensureJwtRoleClaimPresent'), 'Admin gate refreshes via shared JWT helper')
+  assert(ensure.includes('synchronizeRefreshedIdTokenForFirestore'), 'gate path synchronizes Auth credential')
+  assert(ensure.includes('onIdTokenChanged'), 'waits for Auth ID-token observers')
+  const gateCallAt = service.indexOf('assertAdministratorDecisionSession')
+  const transitionAt = service.indexOf('const transition = await markPromotionInProgress')
+  assert(gateCallAt >= 0 && transitionAt > gateCallAt, 'promotion updateDoc runs only after Admin credential gate')
   const rules = read('firestore.rules')
   assert(rules.includes('isPromotedToARuknData'), 'rules exclude promoted Available')
   assert(rules.includes('promotedToARuknIdUnchanged'), 'Rukn cannot write promotion link')

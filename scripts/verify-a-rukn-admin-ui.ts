@@ -326,6 +326,26 @@ assert(
   assert(calls === 1, 'double-click remains prevented')
 }
 
+{
+  const ensure = read('src/lib/auth/ensureJwtRoleClaim.ts')
+  const promotion = read('src/services/aRuknPromotionService.ts')
+  const helpers = read('src/repositories/firestore/firestoreHelpers.ts')
+  const rules = read('firestore.rules')
+  assert(ensure.includes('synchronizeRefreshedIdTokenForFirestore'), 'Admin UI path uses credential sync helper')
+  assert(
+    promotion.indexOf('assertAdministratorDecisionSession') <
+      promotion.indexOf('const transition = await markPromotionInProgress'),
+    'promotion write stays after Admin credential gate',
+  )
+  assert(helpers.includes('await updateDoc('), 'updateDoc transition remains intact')
+  assert(
+    rules.includes(
+      'allow update: if (isAdministrator() && referredByUnchanged() && promotedKarkunNotAvailable())',
+    ),
+    'karkun Admin update rule unchanged',
+  )
+}
+
 assert(!MOCK_KARKUN_REGISTRY.some((row) => row.id === 'kr-701'), 'kr-701 was not used as a test fixture')
 
 setAdministratorDecisionSessionOverrideForTests(null)

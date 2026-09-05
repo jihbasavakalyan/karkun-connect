@@ -2,6 +2,10 @@
  * Shared Administrator session gate (Increment D / A Rukn promotion).
  * When no Firebase user is present (local verification), the gate is permissive —
  * Firestore rules still require administrator claims in production.
+ *
+ * Production path awaits `ensureJwtRoleClaimPresent()` which force-refreshes the
+ * ID token and waits until Firestore can observe that credential (KC-0061 / 3.4)
+ * before any subsequent Admin Firestore write.
  */
 
 import { ensureJwtRoleClaimPresent } from '@/lib/auth/ensureJwtRoleClaim'
