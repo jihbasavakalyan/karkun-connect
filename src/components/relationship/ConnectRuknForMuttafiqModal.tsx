@@ -1,6 +1,6 @@
 /**
- * Increment A follow-up — Admin initiates Connect Rukn for an existing Muttafiq.
- * Reuses submitMuttafiqRuknLinkRequest (Inbox approval). No campaign connections.
+ * Admin Connect Rukn — direct Active Muttafiq↔Rukn assignment (no Inbox Pending).
+ * Rukn-initiated links continue via ConnectMuttafiqRequestModal → pending request path.
  */
 
 import { useState } from 'react'
@@ -12,7 +12,7 @@ import { useMuttafiqRelationshipStore } from '@/hooks/useMuttafiqRelationshipSto
 import { useWriteLifecycle } from '@/hooks/useWriteLifecycle'
 import { getAllRukns, normalizePersonGender } from '@/lib/peopleStore'
 import { formatPersonNameForDisplay } from '@/utils/formatPersonDisplay'
-import { submitMuttafiqRuknLinkRequest } from '@/services/karkunRequestService'
+import { assignMuttafiqRuknLinkAsAdmin } from '@/services/karkunRequestService'
 import { getActiveMuttafiqRelationshipsForPerson } from '@/stores/muttafiqRelationshipStore'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
 
@@ -20,14 +20,14 @@ type ConnectRuknForMuttafiqModalProps = {
   isOpen: boolean
   person: KarkunRegistryRecord | null
   onClose: () => void
-  onSubmitted: () => void
+  onAssigned: () => void
 }
 
 export function ConnectRuknForMuttafiqModal({
   isOpen,
   person,
   onClose,
-  onSubmitted,
+  onAssigned,
 }: ConnectRuknForMuttafiqModalProps) {
   const { user } = useAuth()
   const relationshipVersion = useMuttafiqRelationshipStore()
@@ -81,14 +81,14 @@ export function ConnectRuknForMuttafiqModal({
     }
 
     void run({
-      key: `muttafiq-rukn-link-admin:${person.id}:${ruknId}`,
-      queueLabels: ['settings.karkunRequests'],
+      key: `muttafiq-rukn-assign-admin:${person.id}:${ruknId}`,
+      queueLabels: ['muttafiqRelationships'],
       work: async () => {
-        const result = await submitMuttafiqRuknLinkRequest({
+        const result = await assignMuttafiqRuknLinkAsAdmin({
           personId: person.id,
-          requestingRuknId: ruknId,
+          ruknId,
           remarks,
-          createdBy: user?.displayName ?? user?.uid ?? 'Administrator',
+          establishedBy: user?.displayName ?? user?.uid ?? 'Administrator',
         })
         if (!result.ok) {
           setError(result.error)
@@ -99,7 +99,7 @@ export function ConnectRuknForMuttafiqModal({
     }).then((lifecycle) => {
       if (!lifecycle?.ok) return
       reset()
-      onSubmitted()
+      onAssigned()
       onClose()
     })
   }
@@ -119,7 +119,7 @@ export function ConnectRuknForMuttafiqModal({
         <ModalFormFooter
           onCancel={handleClose}
           primaryLabel={
-            submitting ? progressMessage || 'محفوظ کیا جا رہا ہے...' : 'Submit Request'
+            submitting ? progressMessage || 'محفوظ کیا جا رہا ہے...' : 'Confirm Connection'
           }
           onPrimaryClick={() => handleSubmit()}
           primaryDisabled={submitting || !person}
@@ -128,8 +128,8 @@ export function ConnectRuknForMuttafiqModal({
     >
       <div className="space-y-3">
         <p className="text-sm text-secondary">
-          Request Admin Inbox approval to link this Muttafiq to a Rukn. The person stays a
-          Muttafiq — this is not a campaign Karkun connection.
+          Connect this Muttafiq to a Rukn now. The person stays a Muttafiq — this is not a campaign
+          Karkun connection and does not require Inbox approval.
         </p>
         {error ? (
           <div className="ds-banner-error" role="alert">

@@ -295,10 +295,8 @@ function MuttafiqGenderSection({
         isOpen={connectPerson !== null}
         person={connectPerson}
         onClose={() => setConnectPerson(null)}
-        onSubmitted={() =>
-          setConnectNotice(
-            'Muttafiq–Rukn link request submitted for administrator approval.',
-          )
+        onAssigned={() =>
+          setConnectNotice('Muttafiq connected to Rukn. Relationship is Active.')
         }
       />
     </div>

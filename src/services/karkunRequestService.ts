@@ -901,6 +901,125 @@ export async function submitMuttafiqRuknLinkRequest(input: {
   return { ok: true, request }
 }
 
+export type AssignMuttafiqRuknLinkResult =
+  | {
+      ok: true
+      relationship: import('@/types/muttafiqRelationship.types').MuttafiqRuknRelationship
+    }
+  | {
+      ok: false
+      error: string
+      code?: 'PENDING_EXISTS' | 'VALIDATION'
+    }
+
+/**
+ * Admin direct assignment — Active `muttafiqRelationships` without Inbox Pending.
+ * Rukn-initiated links continue to use submitMuttafiqRuknLinkRequest → approve.
+ */
+export async function assignMuttafiqRuknLinkAsAdmin(input: {
+  personId: string
+  ruknId: string
+  establishedBy: string
+  remarks?: string
+}): Promise<AssignMuttafiqRuknLinkResult> {
+  const adminGate = await assertAdministratorDecisionSession()
+  if (!adminGate.ok) {
+    return { ok: false, error: adminGate.error, code: 'VALIDATION' }
+  }
+
+  const person = getKarkunById(input.personId)
+  if (!person) {
+    return { ok: false, error: 'Person not found.', code: 'VALIDATION' }
+  }
+  if (getPersonCategory(person) !== 'Muttafiq') {
+    return {
+      ok: false,
+      error: 'Only an existing Muttafiq can be linked to a Rukn.',
+      code: 'VALIDATION',
+    }
+  }
+
+  const rukn = getRuknById(input.ruknId)
+  if (!rukn || rukn.status !== 'active') {
+    return { ok: false, error: 'Rukn not found or inactive.', code: 'VALIDATION' }
+  }
+
+  try {
+    await syncKarkunRequestStoreFromServer()
+  } catch {
+    // continue with cache
+  }
+
+  const pendingSame = getPendingKarkunRequests().find(
+    (request) =>
+      request.kind === 'muttafiq_rukn_link' &&
+      request.sourcePersonId === input.personId &&
+      request.requestingRuknId === rukn.id,
+  )
+  if (pendingSame) {
+    return {
+      ok: false,
+      error:
+        'A Muttafiq–Rukn link request for this pair is already pending. Approve or reject it in Inbox.',
+      code: 'PENDING_EXISTS',
+    }
+  }
+
+  const { getActiveMuttafiqRelationshipsForPerson } = await import(
+    '@/stores/muttafiqRelationshipStore'
+  )
+  const alreadyLinked = getActiveMuttafiqRelationshipsForPerson(person.id).some(
+    (row) => row.ruknId === rukn.id,
+  )
+  if (alreadyLinked) {
+    return {
+      ok: false,
+      error: 'This Muttafiq is already linked to this Rukn.',
+      code: 'PENDING_EXISTS',
+    }
+  }
+
+  const { muttafiqRuknRelationshipId } = await import('@/types/muttafiqRelationship.types')
+  const now = new Date().toISOString()
+  const relationshipId = muttafiqRuknRelationshipId(rukn.id, person.id)
+  const upsert = await getRepositories().muttafiqRelationship.upsertActiveDurable({
+    id: relationshipId,
+    ruknId: rukn.id,
+    ruknName: rukn.name,
+    personId: person.id,
+    personName: person.name,
+    status: 'Active',
+    createdAt: now,
+    updatedAt: now,
+    establishedBy: input.establishedBy.trim() || 'Administrator',
+  })
+  if (!upsert.ok) {
+    return {
+      ok: false,
+      error: upsert.error.message || 'Could not save Muttafiq–Rukn relationship.',
+      code: 'VALIDATION',
+    }
+  }
+
+  const { reloadMuttafiqRelationshipStoreFromPersistence } = await import(
+    '@/stores/muttafiqRelationshipStore'
+  )
+  reloadMuttafiqRelationshipStoreFromPersistence()
+
+  const note = input.remarks?.trim()
+  logActivity({
+    type: 'complete',
+    message: note
+      ? `Admin linked Muttafiq ${person.name} to Rukn ${rukn.name}. Notes: ${note}`
+      : `Admin linked Muttafiq ${person.name} to Rukn ${rukn.name}.`,
+    ruknId: rukn.id,
+    karkunId: person.id,
+    actor: 'Administrator',
+  })
+
+  return { ok: true, relationship: upsert.data }
+}
+
 const intakeApproveInFlight = new Map<string, Promise<ApproveNewKarkunRequestResult>>()
 
 /**

@@ -29,6 +29,7 @@ import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { getAllAssignments } from '@/stores/assignmentStore'
 import {
   submitMuttafiqRuknLinkRequest,
+  assignMuttafiqRuknLinkAsAdmin,
   approvePeopleIntakeRequest,
   rejectNewKarkunRequest,
 } from '@/services/karkunRequestService'
@@ -67,8 +68,16 @@ console.log('verify-muttafiq-rukn-link: start')
 
   const service = read('src/services/karkunRequestService.ts')
   assert(service.includes('submitMuttafiqRuknLinkRequest'), 'submit helper')
+  assert(service.includes('assignMuttafiqRuknLinkAsAdmin'), 'admin direct assign helper')
   assert(service.includes("kind === 'muttafiq_rukn_link'"), 'approve branch')
   assert(service.includes('upsertActiveDurable'), 'relationship upsert')
+  assert(
+    service.includes('assertAdministratorDecisionSession') &&
+      /export async function assignMuttafiqRuknLinkAsAdmin[\s\S]*?assertAdministratorDecisionSession/.test(
+        service,
+      ),
+    'admin assign requires administrator session',
+  )
 
   const card = read('src/components/relationship/ConnectedKarkunCard.tsx')
   assert(card.includes('const canRequestConversion = false'), 'conversion UI gated off')
@@ -86,9 +95,15 @@ console.log('verify-muttafiq-rukn-link: start')
   )
 
   const connectAdminModal = read('src/components/relationship/ConnectRuknForMuttafiqModal.tsx')
-  assert(connectAdminModal.includes('submitMuttafiqRuknLinkRequest'), 'admin modal reuses submit')
+  assert(connectAdminModal.includes('assignMuttafiqRuknLinkAsAdmin'), 'admin modal direct assign')
+  assert(
+    connectAdminModal.includes("from '@/services/karkunRequestService'") &&
+      !connectAdminModal.includes('submitMuttafiqRuknLinkRequest('),
+    'admin modal calls assign, not submit',
+  )
   assert(connectAdminModal.includes('personId: person.id'), 'canonical Muttafiq id')
-  assert(connectAdminModal.includes('requestingRuknId: ruknId'), 'canonical Rukn id')
+  assert(connectAdminModal.includes('ruknId,'), 'canonical Rukn id')
+  assert(connectAdminModal.includes('Confirm Connection'), 'admin confirm wording')
   assert(!connectAdminModal.includes('assignKarkun'), 'admin modal does not assign campaign')
   assert(
     !connectAdminModal.includes("assignedRuknId") &&
@@ -96,11 +111,19 @@ console.log('verify-muttafiq-rukn-link: start')
     'admin modal does not touch campaign assignment fields',
   )
 
+  const ruknModal = read('src/components/relationship/ConnectMuttafiqRequestModal.tsx')
+  assert(ruknModal.includes('submitMuttafiqRuknLinkRequest'), 'rukn modal still pending path')
+
   const muttafiqPage = read('src/pages/admin/MuttafiqeenPage.tsx')
   assert(muttafiqPage.includes('showMuttafiqRelationshipColumns'), 'muttafiqeen enables columns')
   assert(muttafiqPage.includes('showAssignmentControls={false}'), 'no campaign assignment UI')
   assert(muttafiqPage.includes('ConnectRuknForMuttafiqModal'), 'admin connect modal wired')
   assert(muttafiqPage.includes('onConnectRukn'), 'Connect Rukn wired on registry')
+  assert(muttafiqPage.includes('onAssigned'), 'admin assigned callback')
+  assert(
+    muttafiqPage.includes('Relationship is Active'),
+    'admin success is assignment not pending request',
+  )
 
   const eligibility = read('src/lib/peopleClassification.ts')
   assert(
@@ -218,6 +241,73 @@ const personId = muttafiqCreate.karkunId!
   )
 
   console.log('  OK  submit → inbox → approve → relationship (idempotent)')
+}
+
+{
+  const adminPerson = createMuttafiq(
+    {
+      name: 'Admin Direct Link Person',
+      gender: 'Male',
+      mobile: '9111000077',
+      place: DEFAULT_PLACE,
+      status: 'active',
+    },
+    'verify',
+  )
+  assert(adminPerson.success && adminPerson.karkunId, 'admin-path muttafiq')
+  const adminPersonId = adminPerson.karkunId!
+  const requestsBefore = getAllKarkunRequests().length
+  const assignmentsBefore = getAllAssignments().length
+  const pendingBefore = buildUnifiedInbox({
+    folder: 'pending',
+    kind: 'muttafiq_rukn_link',
+  }).length
+
+  const assigned = await assignMuttafiqRuknLinkAsAdmin({
+    personId: adminPersonId,
+    ruknId: rukn!.id,
+    establishedBy: 'Administrator',
+  })
+  assert(assigned.ok, `admin assign ok: ${!assigned.ok ? assigned.error : ''}`)
+  if (!assigned.ok) throw new Error(assigned.error)
+  assert(assigned.relationship.status === 'Active', 'admin relationship Active')
+  assert(assigned.relationship.ruknId === rukn!.id, 'admin relationship rukn')
+  assert(assigned.relationship.personId === adminPersonId, 'admin relationship person')
+  assert(!assigned.relationship.requestId, 'admin direct has no requestId')
+
+  assert(getAllKarkunRequests().length === requestsBefore, 'admin assign creates no request')
+  assert(
+    buildUnifiedInbox({ folder: 'pending', kind: 'muttafiq_rukn_link' }).length === pendingBefore,
+    'admin assign creates no Inbox pending item',
+  )
+
+  const person = getKarkunById(adminPersonId)
+  assert(person && getPersonCategory(person) === 'Muttafiq', 'admin path category Muttafiq')
+  assert(getAllAssignments().length === assignmentsBefore, 'admin path no campaign connection')
+
+  reloadMuttafiqRelationshipStoreFromPersistence()
+  assert(
+    getActiveMuttafiqRelationshipsForPerson(adminPersonId)[0]?.ruknId === rukn!.id,
+    'admin link in relationship store',
+  )
+  assert(
+    getActiveMuttafiqRelationshipsByPersonId().get(adminPersonId)?.[0]?.ruknId === rukn!.id,
+    'admin link in registry index',
+  )
+
+  const duplicateAdmin = await assignMuttafiqRuknLinkAsAdmin({
+    personId: adminPersonId,
+    ruknId: rukn!.id,
+    establishedBy: 'Administrator',
+  })
+  assert(!duplicateAdmin.ok, 'admin duplicate Active blocked')
+
+  reloadMuttafiqRelationshipStoreFromPersistence()
+  assert(
+    getActiveMuttafiqRelationshipsByPersonId().get(adminPersonId)?.[0]?.ruknId === rukn!.id,
+    'admin Connected survives reload',
+  )
+  console.log('  OK  admin direct assign → Active (no pending / no inbox)')
 }
 
 {
