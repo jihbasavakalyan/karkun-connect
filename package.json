@@ -33,6 +33,7 @@
     "verify:kc0060": "npx vite-node scripts/verify-kc0060-communication-workflow.ts",
     "verify:kc0060.2": "npx vite-node scripts/verify-kc0060-2-connect-optional-profile.ts",
     "verify:kc0061": "npx vite-node scripts/verify-kc0061-connect-incident.ts",
+    "verify:kc0061.hydrate": "npx vite-node scripts/verify-kc0061-promotion-hydrate-merge.ts",
     "verify:kc0061.p1": "npx vite-node scripts/verify-kc0061-p1-confirm-blocker.ts",
     "verify:kc0061.phase2": "npx vite-node scripts/verify-kc0061-phase2-auth.ts",
     "verify:kc0069": "npx vite-node scripts/verify-kc0069-duplicate-prevention.ts",

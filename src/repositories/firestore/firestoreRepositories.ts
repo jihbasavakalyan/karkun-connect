@@ -105,6 +105,7 @@ import {
   writeDoc,
   patchDoc,
 } from '@/repositories/firestore/firestoreHelpers'
+import { mergeKarkunPromotionStateOnHydrate } from '@/repositories/firestore/karkunPromotionHydrateMerge'
 import type { CampaignPlanningLinksPatch } from '@/repositories/interfaces/CampaignRepository'
 import {
   countPendingKarkunRequests,
@@ -708,8 +709,9 @@ async function applyCriticalHydratePayload(input: {
     before: karkunCache.get().karkuns.length,
     firestoreCount: karkuns.length,
   })
+  const karkunsForCache = mergeKarkunPromotionStateOnHydrate(karkunCache.get().karkuns, karkuns)
   karkunCache.set({
-    karkuns,
+    karkuns: karkunsForCache,
     nextKarkunNum: karkunCounter?.nextKarkunNum ?? 1,
   })
   kc004cTraceRegistry({
