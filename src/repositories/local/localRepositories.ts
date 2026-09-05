@@ -16,6 +16,8 @@ import type {
 } from '@/types/monthlyBaitulMaal'
 import type { JihPortalState } from '@/repositories/interfaces/ComplianceRepository'
 import type { Rukn } from '@/data/ruknMaster'
+import type { ARuknAllocationResult } from '@/lib/aRuknAllocation'
+import { allocateNextARuknIdExclusive } from '@/lib/aRuknAllocation'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
 import type { DatasetBackup } from '@/types/dataMigration'
 import {
@@ -187,6 +189,29 @@ export class RuknLocalRepository implements RuknRepository {
 
   exists(): RepositoryResult<boolean> {
     return repositoryOk(getBrowserStorage().getItem(STORAGE_KEYS.ruknMaster) !== null)
+  }
+
+  async allocateNextARuknId(): Promise<RepositoryResult<ARuknAllocationResult>> {
+    try {
+      const plan = await allocateNextARuknIdExclusive({
+        readOccupiedIds: () =>
+          loadJsonFromStorage<Rukn[]>(STORAGE_KEYS.ruknMaster, []).map((rukn) => rukn.id),
+        readNextARuknNum: () => {
+          const stored = loadJsonFromStorage<{ nextARuknNum?: number }>(
+            STORAGE_KEYS.aRuknCounter,
+            { nextARuknNum: 1 },
+          )
+          const n = Number(stored.nextARuknNum)
+          return Number.isFinite(n) && n >= 1 ? Math.floor(n) : 1
+        },
+        persistNextARuknNum: (nextARuknNum) => {
+          saveJsonToStorage(STORAGE_KEYS.aRuknCounter, { nextARuknNum })
+        },
+      })
+      return repositoryOk({ aRuknId: plan.id, nextARuknNum: plan.nextARuknNum })
+    } catch (cause) {
+      return repositoryErr('StorageFailure', 'A Rukn ID allocation failed.', cause)
+    }
   }
 }
 

@@ -1,5 +1,7 @@
 import type { PersonGender, PersonStatus } from '@/types/people.types'
 import { DEFAULT_PLACE } from '@/types/people.types'
+import type { ARuknOrigin, OfficerKind } from '@/lib/officerIdentity'
+import { formatRuknOfficerId, parseRuknOfficerNum } from '@/lib/officerIdentity'
 
 export interface Rukn {
   id: string
@@ -13,6 +15,15 @@ export interface Rukn {
   createdAt: string
   updatedAt: string
   updatedBy: string
+  /**
+   * Officer category on the shared `rukns` collection.
+   * Missing on historical Rukn documents — treat as `'rukn'`.
+   */
+  officerKind?: OfficerKind
+  /** Required for A Rukn (`officerKind: 'a_rukn'`). Omitted on normal Rukn. */
+  origin?: ARuknOrigin
+  /** Immutable `karkuns/{kr-*}` person id that was promoted. A Rukn only. */
+  sourcePersonId?: string
   /** KC-0058 — soft archive / recovery metadata (optional; additive). */
   isArchived?: boolean
   createdBy?: string
@@ -187,8 +198,8 @@ export function getActiveRuknNames(): string[] {
 
 export function getNextRuknId(): string {
   const maxNum = ruknMaster.reduce((max, rukn) => {
-    const num = Number.parseInt(rukn.id.replace('R', ''), 10)
-    return Number.isNaN(num) ? max : Math.max(max, num)
+    const num = parseRuknOfficerNum(rukn.id)
+    return num == null ? max : Math.max(max, num)
   }, 0)
-  return `R${String(maxNum + 1).padStart(3, '0')}`
+  return formatRuknOfficerId(maxNum + 1)
 }

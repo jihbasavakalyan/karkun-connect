@@ -12,12 +12,16 @@ function assert(condition: unknown, message: string): asserts condition {
 const root = resolve(process.cwd())
 
 const handler = readFileSync(resolve(root, 'src/server/ruknClaims/provisionHandler.ts'), 'utf8')
-assert(handler.includes('setCustomUserClaims'), 'server provisions claims via Admin SDK')
+assert(handler.includes('buildOfficerRuknClaims'), 'server provisions claims via shared officer helper')
 assert(handler.includes('verifyIdToken'), 'requires verified ID token')
-assert(handler.includes("role: 'rukn'"), 'only grants rukn role')
+assert(!handler.includes("role: 'a_rukn'"), 'must not grant a distinct a_rukn JWT role')
 assert(handler.includes('administrator'), 'blocks administrator claim path')
-assert(handler.includes('status === \'active\''), 'requires Active Rukn Master')
+assert(handler.includes('isActiveOfficerForRuknClaims'), 'requires Active officer on Rukn Master')
 assert(!handler.includes('createUser'), 'must not create Auth users')
+
+const identity = readFileSync(resolve(root, 'src/lib/officerIdentity.ts'), 'utf8')
+assert(identity.includes("role: 'rukn'"), 'only grants rukn role')
+assert(identity.includes('isActiveOfficerForRuknClaims'), 'active + non-archived officer gate')
 
 const admin = readFileSync(resolve(root, 'src/server/ruknClaims/firebaseAdmin.ts'), 'utf8')
 assert(admin.includes('FIREBASE_SERVICE_ACCOUNT_JSON'), 'prefers dedicated Auth SA env')

@@ -13,6 +13,9 @@ import type {
   MonthlyBaitulMaalSubmission,
 } from '@/types/monthlyBaitulMaal'
 import type { JihPortalState } from '@/repositories/interfaces/ComplianceRepository'
+import type { ARuknAllocationResult } from '@/lib/aRuknAllocation'
+import { getMaxARuknNumFromIds } from '@/lib/aRuknAllocation'
+import { formatARuknId } from '@/lib/officerIdentity'
 import type { Rukn } from '@/data/ruknMaster'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
 import type { DatasetBackup } from '@/types/dataMigration'
@@ -1813,6 +1816,61 @@ export class RuknFirestoreRepository implements RuknRepository {
 
   exists(): RepositoryResult<boolean> {
     return repositoryOk(ruknCache.get().length > 0 || ruknCache.getHydrated())
+  }
+
+  async allocateNextARuknId(): Promise<RepositoryResult<ARuknAllocationResult>> {
+    try {
+      const scope = await resolveClientAuthScope()
+      if (scope.role === 'rukn') {
+        return repositoryErr(
+          'Permission',
+          'Only an administrator can allocate an A Rukn identity.',
+        )
+      }
+
+      const db = getFirestoreDb()
+      const counterRef = doc(
+        db,
+        FIRESTORE_COLLECTIONS.settings,
+        FIRESTORE_DOCS.aRuknCounter,
+      )
+      const cacheFloor = getMaxARuknNumFromIds(ruknCache.get().map((rukn) => rukn.id)) + 1
+
+      const allocated = await runTransaction(db, async (transaction) => {
+        const snapshot = await transaction.get(counterRef)
+        const meta = snapshot.exists()
+          ? (stripMeta<{ nextARuknNum?: number }>(snapshot.data()) ?? {})
+          : {}
+        const remoteNext = Number(meta.nextARuknNum)
+        let candidate = Math.max(
+          1,
+          cacheFloor,
+          Number.isFinite(remoteNext) && remoteNext >= 1 ? Math.floor(remoteNext) : 1,
+        )
+
+        for (let attempt = 0; attempt < 10_000; attempt += 1) {
+          const aRuknId = formatARuknId(candidate)
+          const officerRef = doc(db, FIRESTORE_COLLECTIONS.rukns, aRuknId)
+          const existing = await transaction.get(officerRef)
+          if (!existing.exists()) {
+            const nextARuknNum = candidate + 1
+            transaction.set(
+              counterRef,
+              sanitizeForFirestore({ nextARuknNum }),
+              { merge: true },
+            )
+            return { aRuknId, nextARuknNum }
+          }
+          candidate += 1
+        }
+
+        throw new Error('Could not allocate a free A Rukn ID. Contact an administrator.')
+      })
+
+      return repositoryOk(allocated)
+    } catch (error) {
+      return mapFirestoreError(error)
+    }
   }
 }
 

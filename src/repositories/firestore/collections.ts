@@ -39,6 +39,8 @@ export const FIRESTORE_COLLECTIONS = {
 
 export const FIRESTORE_DOCS = {
   karkunCounter: 'karkunCounter',
+  /** A Rukn AR## allocator — Admin-only; never reused. */
+  aRuknCounter: 'aRuknCounter',
   connectionMeta: 'connectionMeta',
   migrationVersion: 'migrationVersion',
   backupIndex: 'backupIndex',

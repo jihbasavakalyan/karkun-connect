@@ -20,6 +20,7 @@
     "verify:kc004h": "npx vite-node scripts/verify-kc004h-authoritative-registry-existence.ts",
     "verify:kc0055": "npx vite-node scripts/verify-kc0055-inplace-transfer.ts",
     "verify:kc0056": "npx vite-node scripts/verify-kc0056-karkun-id-allocation.ts",
+    "verify:a-rukn-identity": "npx vite-node scripts/verify-a-rukn-identity.ts",
     "verify:kc0058": "npx vite-node scripts/verify-kc0058-data-preservation.ts",
     "verify:kc0058.1": "npx vite-node scripts/verify-kc0058-1-dashboard-metrics.ts",
     "verify:kc0058.2": "npx vite-node scripts/verify-kc0058-2-rukn-stabilization.ts",

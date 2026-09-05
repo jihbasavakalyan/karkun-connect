@@ -6,6 +6,7 @@
  */
 
 import { errorFields, logAuthTrace, summarizeClaims } from '../../lib/auth/authPipelineTrace.js'
+import { buildOfficerRuknClaims, isActiveOfficerForRuknClaims } from '../../lib/officerIdentity.js'
 import { getRuknClaimsAdmin, peekExpectedFirebaseProject } from './firebaseAdmin.js'
 
 export type ProvisionRequest = {
@@ -250,8 +251,7 @@ export async function handleRuknClaimsProvision(
       }))
       .filter(
         (rukn) =>
-          rukn.status === 'active' &&
-          !rukn.isArchived &&
+          isActiveOfficerForRuknClaims(rukn) &&
           normalizePhone(rukn.mobile) === mobile,
       )
     logAuthTrace(traceId, {
@@ -314,7 +314,9 @@ export async function handleRuknClaimsProvision(
     })
   }
 
-  if (existing.role === 'rukn' && existing.ruknId === rukn.id) {
+  const officerClaims = buildOfficerRuknClaims(rukn.id)
+
+  if (existing.role === 'rukn' && existing.ruknId === officerClaims.ruknId) {
     logAuthTrace(traceId, {
       step: 9,
       name: 'setCustomUserClaims',
@@ -338,8 +340,7 @@ export async function handleRuknClaimsProvision(
 
   const nextClaims = {
     ...existing,
-    role: 'rukn',
-    ruknId: rukn.id,
+    ...officerClaims,
   }
 
   logAuthTrace(traceId, {

@@ -381,6 +381,7 @@ export function createRukn(
     createdAt: timestamp,
     updatedAt: timestamp,
     updatedBy,
+    officerKind: 'rukn',
     referredByRuknId,
   }
 

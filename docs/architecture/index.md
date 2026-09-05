@@ -7,6 +7,7 @@
 | Document | Role |
 |----------|------|
 | [**Campaign Operating System — Product Architecture Baseline (KC-0104)**](./campaign-operating-system-product-architecture.md) | Permanent product domains, capability ownership, terminology, and principles |
+| [**A Rukn / عازمِ رکن — Architecture Lock**](./kc-a-rukn-architecture-lock.md) | Four-category model, `AR##` officer identity, promotion lifecycle (design only) |
 | [KC-0109 — Operations Model Consolidation](./operations-model-consolidation.md) | Canonical Operations execution model and incremental migration plan |
 | [KC-0110 — Weekly Ijtema Track Inventory](./kc-0110-weekly-ijtema-inventory.md) | Dual-track inventory and consolidation sequence for Weekly Ijtema |
 | [KC-0111 — Campaign Health Inventory](./kc-0111-campaign-health-inventory.md) | Campaign Health calculators, duplicates, and migration order |

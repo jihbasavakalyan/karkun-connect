@@ -23,6 +23,7 @@ console.log('▶ collection constants')
   assert.equal(FIRESTORE_DOCS.guidanceState, 'guidance')
   assert.equal(FIRESTORE_DOCS.trainingRegistration, 'trainingRegistration')
   assert.equal(FIRESTORE_DOCS.karkunRequests, 'karkunRequests')
+  assert.equal(FIRESTORE_DOCS.aRuknCounter, 'aRuknCounter')
   assert.equal(executionAnnexureDocId('form-1'), 'annexure_form-1')
   assert.equal(complianceBaitulMaalDocId('kr-1', '2026-01'), 'baitulMaal_kr-1_2026-01')
 }

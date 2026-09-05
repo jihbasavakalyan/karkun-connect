@@ -36,6 +36,30 @@ service cloud.firestore {
         == stringOrEmpty(request.resource.data.referredByRuknId);
     }
 
+    /** A Rukn officer docs use AR## ids on the shared rukns collection. */
+    function isARuknDocId(id) {
+      return id.matches('^AR[0-9]+$');
+    }
+
+    /**
+     * Admin-only officer create (existing). A Rukn docs must carry officerKind/origin/sourcePersonId.
+     * Normal Rukn docs must not be created as officerKind a_rukn.
+     */
+    function validRuknOfficerCreate(docId) {
+      return isARuknDocId(docId)
+        ? (
+            request.resource.data.id == docId
+            && request.resource.data.officerKind == 'a_rukn'
+            && request.resource.data.origin == 'promoted_karkun'
+            && request.resource.data.sourcePersonId is string
+            && request.resource.data.sourcePersonId != ''
+          )
+        : (
+            !('officerKind' in request.resource.data)
+            || request.resource.data.officerKind != 'a_rukn'
+          );
+    }
+
     function categoryUnchanged() {
       return stringOrEmpty(resource.data.category)
         == stringOrEmpty(request.resource.data.category);
@@ -95,7 +119,7 @@ service cloud.firestore {
 
     match /rukns/{docId} {
       allow read: if isAdministrator() || (isRukn() && docId == ruknId());
-      allow create: if isAdministrator();
+      allow create: if isAdministrator() && validRuknOfficerCreate(docId);
       // Increment C/D — referredByRuknId immutable after create (Admin included).
       allow update: if isAdministrator() && referredByUnchanged();
       allow delete: if false;
@@ -413,9 +437,22 @@ service cloud.firestore {
 
       allow update: if (
         isAdministrator() && (
-          docId != 'karkunCounter' ||
-          !('nextKarkunNum' in resource.data) ||
-          request.resource.data.nextKarkunNum >= resource.data.nextKarkunNum
+          (
+            docId != 'karkunCounter'
+            && docId != 'aRuknCounter'
+          )
+          || (
+            docId == 'karkunCounter' && (
+              !('nextKarkunNum' in resource.data)
+              || request.resource.data.nextKarkunNum >= resource.data.nextKarkunNum
+            )
+          )
+          || (
+            docId == 'aRuknCounter' && (
+              !('nextARuknNum' in resource.data)
+              || request.resource.data.nextARuknNum >= resource.data.nextARuknNum
+            )
+          )
         )
       ) || (
         isRukn() && docId == 'connectionMeta' &&
@@ -431,6 +468,7 @@ service cloud.firestore {
 
       allow delete: if isAdministrator()
         && docId != 'karkunCounter'
+        && docId != 'aRuknCounter'
         && docId != 'connectionMeta'
         && docId != 'karkunRequests'
         && docId != 'ruknAdminMessages'

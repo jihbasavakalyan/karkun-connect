@@ -4,6 +4,7 @@ export const STORAGE_KEYS = {
   ruknMaster: 'karkun-connect.rukn-master',
   karkunRegistry: 'karkun-connect.karkun-registry',
   karkunNextId: 'karkun-connect.karkun.next-id',
+  aRuknCounter: 'karkun-connect.a-rukn-counter',
   migrationVersion: 'karkun-connect.migration.version',
   assignments: 'karkun-connect.assignments',
   assignmentSequence: 'karkun-connect.assignments.sequence',

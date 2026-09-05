@@ -51,6 +51,16 @@ console.log('verify-security-hardening: start')
     /match \/rukns\/\{docId\}[\s\S]*?allow create: if isAdministrator\(\)/.test(rules),
     'rukn create admin-only',
   )
+  assert(rules.includes('validRuknOfficerCreate'), 'A Rukn create shape is Admin-gated')
+  assert(rules.includes("docId != 'aRuknCounter'"), 'aRuknCounter cannot be deleted')
+  {
+    const settingsBlock = rules.slice(rules.indexOf('match /settings/{docId}'))
+    const readAllow =
+      settingsBlock.match(/allow read: if isAdministrator\(\)[\s\S]*?request\.auth\.uid\s*\n\s*\)\);/)?.[0] ??
+      ''
+    assert(readAllow.length > 0, 'settings read rule located')
+    assert(!readAllow.includes('aRuknCounter'), 'Rukn settings read allowlist excludes aRuknCounter')
+  }
   assert(
     /match \/rukns\/\{docId\}[\s\S]*?allow update: if isAdministrator\(\) && referredByUnchanged\(\)/.test(
       rules,
