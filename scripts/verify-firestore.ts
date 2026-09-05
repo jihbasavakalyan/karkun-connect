@@ -58,4 +58,19 @@ console.log('▶ karkun upsert merge write')
   assert.equal(upsert.includes('merge: true'), true)
 }
 
+console.log('▶ karkun updateRecord uses updateDoc')
+{
+  const { readFileSync } = await import('node:fs')
+  const { resolve } = await import('node:path')
+  const repo = readFileSync(resolve('src/repositories/firestore/firestoreRepositories.ts'), 'utf8')
+  const helpers = readFileSync(resolve('src/repositories/firestore/firestoreHelpers.ts'), 'utf8')
+  const update = repo.slice(
+    repo.indexOf('async updateRecord(id: string, patch: KarkunRecordPatch)'),
+    repo.indexOf('clear(): RepositoryResult<void>', repo.indexOf('async updateRecord(id: string, patch: KarkunRecordPatch)')),
+  )
+  assert.equal(update.includes('patchDoc('), true)
+  assert.equal(update.includes('writeDoc('), false)
+  assert.equal(helpers.includes('await updateDoc('), true)
+}
+
 console.log('Firestore repository layer verification passed.')

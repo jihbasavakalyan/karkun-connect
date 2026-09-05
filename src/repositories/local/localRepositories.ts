@@ -35,7 +35,7 @@ import type {
   CampaignRepository,
 } from '@/repositories/interfaces/CampaignRepository'
 import type { RuknRepository } from '@/repositories/interfaces/RuknRepository'
-import type { KarkunRepository, KarkunRegistryState } from '@/repositories/interfaces/KarkunRepository'
+import type { KarkunRepository, KarkunRegistryState, KarkunRecordPatch } from '@/repositories/interfaces/KarkunRepository'
 import type {
   AllocationResult,
   ConnectionMetaUpdate,
@@ -258,6 +258,18 @@ export class KarkunLocalRepository implements KarkunRepository {
         ? current.map((item) => (item.id === karkun.id ? karkun : item))
         : [...current, karkun]
       saveJsonToStorage(STORAGE_KEYS.karkunRegistry, next)
+    })
+  }
+
+  async updateRecord(id: string, patch: KarkunRecordPatch): Promise<RepositoryResult<void>> {
+    return tryRepository(() => {
+      const current = loadJsonFromStorage<KarkunRegistryRecord[]>(STORAGE_KEYS.karkunRegistry, [])
+      const index = current.findIndex((item) => item.id === id)
+      if (index < 0) {
+        return
+      }
+      current[index] = { ...current[index], ...patch }
+      saveJsonToStorage(STORAGE_KEYS.karkunRegistry, current)
     })
   }
 

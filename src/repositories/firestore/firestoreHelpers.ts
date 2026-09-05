@@ -4,6 +4,7 @@ import {
   getDoc,
   getDocs,
   setDoc,
+  updateDoc,
   deleteDoc,
   writeBatch,
   serverTimestamp,
@@ -133,6 +134,26 @@ export async function writeDoc<T extends object>(
     } else {
       await setDoc(doc(db, path, id), data)
     }
+    return { ok: true, data: undefined }
+  } catch (error) {
+    return mapFirestoreError(error)
+  }
+}
+
+/** Field-level update. Rules see the post-write document, including omitted immutable fields. */
+export async function patchDoc<T extends object>(
+  db: Firestore,
+  path: string,
+  id: string,
+  payload: T,
+): Promise<RepositoryResult<void>> {
+  try {
+    const sanitizedPayload = sanitizeForFirestore(payload)
+    await updateDoc(doc(db, path, id), {
+      ...sanitizedPayload,
+      _updatedAt: nowIso(),
+      _serverTime: serverTimestamp(),
+    })
     return { ok: true, data: undefined }
   } catch (error) {
     return mapFirestoreError(error)

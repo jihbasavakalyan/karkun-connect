@@ -1,6 +1,6 @@
 export type { CampaignRepository, CampaignPlanningLinksPatch } from './CampaignRepository'
 export type { RuknRepository } from './RuknRepository'
-export type { KarkunRepository, KarkunRegistryState } from './KarkunRepository'
+export type { KarkunRepository, KarkunRegistryState, KarkunRecordPatch } from './KarkunRepository'
 export type { ConnectionRepository, ConnectionState } from './ConnectionRepository'
 export type { ConnectionLedgerRepository } from './ConnectionLedgerRepository'
 export type { AssignmentReviewRepository } from './AssignmentReviewRepository'

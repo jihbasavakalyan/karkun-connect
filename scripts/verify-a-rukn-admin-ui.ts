@@ -134,8 +134,10 @@ console.log('verify-a-rukn-admin-ui: start')
   const hook = read('src/hooks/useRuknManagement.ts')
   assert(hook.includes('isNormalRuknOfficer'), 'Rukn registry excludes A Rukn officers')
   const firestoreRepo = read('src/repositories/firestore/firestoreRepositories.ts')
-  const upsertIdx = firestoreRepo.indexOf('async upsertRecord(karkun: KarkunRegistryRecord)')
-  const upsertBlock = firestoreRepo.slice(upsertIdx, firestoreRepo.indexOf('clear(): RepositoryResult<void>', upsertIdx))
+  const upsertBlock = firestoreRepo.slice(
+    firestoreRepo.indexOf('async upsertRecord(karkun: KarkunRegistryRecord)'),
+    firestoreRepo.indexOf('async updateRecord(id: string, patch: KarkunRecordPatch)'),
+  )
   assert(upsertBlock.includes('karkunCache.set(snapshot)'), 'failed karkun upsert restores cache snapshot')
   assert(upsertBlock.includes('if (!result.ok)'), 'cache restore is gated on failed write')
 }
@@ -221,17 +223,17 @@ assert(
 {
   MOCK_KARKUN_REGISTRY.push(seedKarkun('kr-8910', 'Emit Timing', '9000008910'))
   const repos = getRepositories()
-  const originalUpsert = repos.karkun.upsertRecord.bind(repos.karkun)
+  const originalUpdate = repos.karkun.updateRecord.bind(repos.karkun)
   let persistEntered = false
   let emittedBeforePersist = false
   const unsub = subscribeToPeopleStore(() => {
     if (!persistEntered) emittedBeforePersist = true
   })
-  repos.karkun.upsertRecord = async (record) => {
-    if (record.id === 'kr-8910' && record.aRuknPromotionInProgress === true) {
+  repos.karkun.updateRecord = async (id, patch) => {
+    if (id === 'kr-8910' && patch.aRuknPromotionInProgress === true) {
       persistEntered = true
     }
-    return originalUpsert(record)
+    return originalUpdate(id, patch)
   }
   try {
     const result = await promoteKarkunToARukn('kr-8910')
@@ -241,23 +243,23 @@ assert(
     assert(result.success && result.aRuknId.startsWith('AR'), 'AR## only after success result')
   } finally {
     unsub()
-    repos.karkun.upsertRecord = originalUpsert
+    repos.karkun.updateRecord = originalUpdate
   }
 }
 
 {
   MOCK_KARKUN_REGISTRY.push(seedKarkun('kr-8911', 'Persist Rollback', '9000008911'))
   const repos = getRepositories()
-  const originalUpsert = repos.karkun.upsertRecord.bind(repos.karkun)
+  const originalUpdate = repos.karkun.updateRecord.bind(repos.karkun)
   let rollbackEmits = 0
   const unsub = subscribeToPeopleStore(() => {
     rollbackEmits += 1
   })
-  repos.karkun.upsertRecord = async (record) => {
-    if (record.id === 'kr-8911' && record.aRuknPromotionInProgress === true) {
+  repos.karkun.updateRecord = async (id, patch) => {
+    if (id === 'kr-8911' && patch.aRuknPromotionInProgress === true) {
       return repositoryErr('StorageFailure', 'forced in-progress persist failure')
     }
-    return originalUpsert(record)
+    return originalUpdate(id, patch)
   }
   try {
     const result = await promoteKarkunToARukn('kr-8911')
@@ -270,7 +272,7 @@ assert(
     assert(!ruknMaster.some((row) => row.sourcePersonId === 'kr-8911'), 'no AR## on failed persist')
   } finally {
     unsub()
-    repos.karkun.upsertRecord = originalUpsert
+    repos.karkun.updateRecord = originalUpdate
   }
 }
 

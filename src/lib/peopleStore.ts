@@ -41,6 +41,7 @@ import type { ConflictResolution } from '@/types/dataMigration'
 import { DEFAULT_PLACE } from '@/types/people.types'
 import { persistPeopleRegistry, persistKarkunRecords } from '@/lib/peopleRegistryPersistence'
 import { getRepositories } from '@/repositories/provider'
+import type { KarkunRecordPatch } from '@/repositories/interfaces/KarkunRepository'
 import { toOperatorPersistError } from '@/lib/reliability/persistErrors'
 import {
   emitPeopleRegistryChange,
@@ -900,6 +901,25 @@ export async function persistKarkunDurable(id: string): Promise<PeopleMutationRe
   const result = await getRepositories().karkun.upsertRecord(karkun)
   if (!result.ok) {
     console.error('[persistKarkunDurable]', result.error.code, result.error.message, result.error.cause)
+    return { success: false, error: toOperatorPersistError('karkuns', result.error) }
+  }
+  return { success: true }
+}
+
+/**
+ * Await a targeted Karkun field patch (Firestore updateDoc). Not a full-document upsert.
+ */
+export async function persistKarkunFieldsDurable(
+  id: string,
+  patch: KarkunRecordPatch,
+): Promise<PeopleMutationResult> {
+  const karkun = MOCK_KARKUN_REGISTRY.find((k) => k.id === id)
+  if (!karkun) {
+    return { success: false, error: 'Person not found.' }
+  }
+  const result = await getRepositories().karkun.updateRecord(id, patch)
+  if (!result.ok) {
+    console.error('[persistKarkunFieldsDurable]', result.error.code, result.error.message, result.error.cause)
     return { success: false, error: toOperatorPersistError('karkuns', result.error) }
   }
   return { success: true }

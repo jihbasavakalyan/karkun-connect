@@ -44,7 +44,7 @@ import {
 } from '@/lib/preservation/dangerousClearGate'
 import type { CampaignRepository } from '@/repositories/interfaces/CampaignRepository'
 import type { RuknRepository } from '@/repositories/interfaces/RuknRepository'
-import type { KarkunRepository, KarkunRegistryState } from '@/repositories/interfaces/KarkunRepository'
+import type { KarkunRepository, KarkunRegistryState, KarkunRecordPatch } from '@/repositories/interfaces/KarkunRepository'
 import type {
   AllocationResult,
   ConnectionMetaUpdate,
@@ -103,6 +103,7 @@ import {
   stripMeta,
   withMeta,
   writeDoc,
+  patchDoc,
 } from '@/repositories/firestore/firestoreHelpers'
 import type { CampaignPlanningLinksPatch } from '@/repositories/interfaces/CampaignRepository'
 import {
@@ -2017,8 +2018,8 @@ export class KarkunFirestoreRepository implements KarkunRepository {
     karkunCache.set({ karkuns: nextKarkuns, nextKarkunNum: snapshot.nextKarkunNum })
     const db = getFirestoreDb()
     // Merge write: full setDoc omits undefined fields (e.g. referredByRuknId) and
-    // fails Admin `referredByUnchanged()` on karkuns/{id}. Promotion only patches
-    // aRuknPromotionInProgress on the in-memory record.
+    // fails Admin `referredByUnchanged()` on karkuns/{id}. Unrelated callers still
+    // persist the in-memory record; promotion transition uses updateRecord.
     const result = await writeDoc(
       db,
       FIRESTORE_COLLECTIONS.karkuns,
@@ -2027,6 +2028,24 @@ export class KarkunFirestoreRepository implements KarkunRepository {
       undefined,
       { merge: true },
     )
+    if (!result.ok) {
+      karkunCache.set(snapshot)
+    }
+    return result
+  }
+
+  async updateRecord(id: string, patch: KarkunRecordPatch): Promise<RepositoryResult<void>> {
+    const previous = karkunCache.get()
+    const snapshot = {
+      karkuns: [...previous.karkuns],
+      nextKarkunNum: previous.nextKarkunNum,
+    }
+    karkunCache.set({
+      karkuns: snapshot.karkuns.map((item) => (item.id === id ? { ...item, ...patch } : item)),
+      nextKarkunNum: snapshot.nextKarkunNum,
+    })
+    const db = getFirestoreDb()
+    const result = await patchDoc(db, FIRESTORE_COLLECTIONS.karkuns, id, patch)
     if (!result.ok) {
       karkunCache.set(snapshot)
     }

@@ -17,7 +17,7 @@ import {
   isSoftRemoved,
 } from '@/lib/peopleClassification'
 import { isValidMobileFormat, normalizeMobile } from '@/lib/mobileValidation'
-import { persistKarkunDurable, persistRuknDurable } from '@/lib/peopleStore'
+import { persistKarkunDurable, persistKarkunFieldsDurable, persistRuknDurable } from '@/lib/peopleStore'
 import { emitPeopleRegistryChange } from '@/lib/peopleRegistryEvents'
 import { bumpVersion } from '@/lib/preservation/softDelete'
 import { DEFAULT_PLACE } from '@/types/people.types'
@@ -130,7 +130,11 @@ async function markPromotionInProgress(
   person.aRuknPromotionInProgress = true
   person.updatedAt = nowIso()
   person.updatedBy = 'Administrator'
-  const persisted = await persistKarkunDurable(personId)
+  const persisted = await persistKarkunFieldsDurable(personId, {
+    aRuknPromotionInProgress: true,
+    updatedAt: person.updatedAt,
+    updatedBy: 'Administrator',
+  })
   if (!persisted.success) {
     person.aRuknPromotionInProgress = false
     emitPeopleRegistryChange()

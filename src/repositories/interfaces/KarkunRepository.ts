@@ -6,6 +6,13 @@ export type KarkunRegistryState = {
   nextKarkunNum: number
 }
 
+/** Targeted Karkun field patch (A Rukn promotion transition). Never a full document. */
+export type KarkunRecordPatch = {
+  aRuknPromotionInProgress?: boolean
+  updatedAt?: string
+  updatedBy?: string
+}
+
 export interface KarkunRepository {
   loadState(): RepositoryResult<KarkunRegistryState>
   saveState(state: KarkunRegistryState): RepositoryResult<void>
@@ -14,6 +21,11 @@ export interface KarkunRepository {
    * Prefer this over saveState when success must mean durable persistence.
    */
   upsertRecord(karkun: KarkunRegistryRecord): Promise<RepositoryResult<void>>
+  /**
+   * Awaited field patch via Firestore updateDoc (promotion transition).
+   * Does not send a reconstructed Karkun document.
+   */
+  updateRecord(id: string, patch: KarkunRecordPatch): Promise<RepositoryResult<void>>
   /**
    * KC-0064 — Awaited upsert of specific karkun documents (no karkunCounter / full registry).
    */

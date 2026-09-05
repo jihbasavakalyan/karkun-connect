@@ -17,7 +17,7 @@ import {
   type JwtRoleClaimResult,
 } from '@/lib/auth/ensureJwtRoleClaim'
 import { resetARuknAllocationLockForTests } from '@/lib/aRuknAllocation'
-import { createRukn, persistKarkunDurable, updateKarkun } from '@/lib/peopleStore'
+import { createRukn, persistKarkunDurable, persistKarkunFieldsDurable, updateKarkun } from '@/lib/peopleStore'
 import { promoteKarkunToARukn } from '@/services/aRuknPromotionService'
 import { assignRukn } from '@/services/assignmentService'
 import { getRecentConnectionLedger } from '@/services/connectionLedgerService'
@@ -255,10 +255,14 @@ assert(
     service.indexOf('async function markPromotionInProgress'),
     service.indexOf('export async function promoteKarkunToARukn'),
   )
-  const persistAt = markBlock.indexOf('persistKarkunDurable')
+  const persistAt = markBlock.indexOf('persistKarkunFieldsDurable')
   const emitAt = markBlock.indexOf('emitPeopleRegistryChange')
   assert(persistAt >= 0 && emitAt >= 0, 'in-progress persist and registry emit exist')
   assert(persistAt < emitAt, 'does not emit registry change before durable in-progress persist')
+  assert(!markBlock.includes('persistKarkunDurable'), 'transition does not upsert the full Karkun document')
+  assert(markBlock.includes('aRuknPromotionInProgress: true'), 'transition patch sets in-progress true')
+  assert(markBlock.includes("updatedBy: 'Administrator'"), 'transition patch sets updatedBy')
+  assert(!markBlock.includes('referredByRuknId'), 'transition patch does not send referredByRuknId')
   assert(markBlock.includes('aRuknPromotionInProgress = false'), 'failed persist restores local flag')
   const firestoreRepo = read('src/repositories/firestore/firestoreRepositories.ts')
   assert(
@@ -267,11 +271,18 @@ assert(
   )
   const upsertBlock = firestoreRepo.slice(
     firestoreRepo.indexOf('async upsertRecord(karkun: KarkunRegistryRecord)'),
-    firestoreRepo.indexOf('clear(): RepositoryResult<void>', firestoreRepo.indexOf('async upsertRecord(karkun: KarkunRegistryRecord)')),
+    firestoreRepo.indexOf('async updateRecord(id: string, patch: KarkunRecordPatch)'),
   )
   assert(upsertBlock.includes('merge: true'), 'karkun upsert uses merge write so omitted referral is not deleted')
+  const updateBlock = firestoreRepo.slice(
+    firestoreRepo.indexOf('async updateRecord(id: string, patch: KarkunRecordPatch)'),
+    firestoreRepo.indexOf('clear(): RepositoryResult<void>', firestoreRepo.indexOf('async updateRecord(id: string, patch: KarkunRecordPatch)')),
+  )
+  assert(updateBlock.includes('patchDoc('), 'karkun updateRecord uses patchDoc')
+  assert(!updateBlock.includes('writeDoc('), 'karkun updateRecord does not use setDoc writeDoc')
   const helpers = read('src/repositories/firestore/firestoreHelpers.ts')
   assert(helpers.includes('writeOptions?.merge'), 'writeDoc supports merge semantics')
+  assert(helpers.includes('await updateDoc('), 'patchDoc uses Firestore updateDoc')
 }
 
 const nextAlloc = await getRepositories().rukn.allocateNextARuknId()
@@ -414,8 +425,27 @@ assert(nextAlloc.ok && nextAlloc.data.aRuknId === 'AR03', 'allocator advanced pa
   assert(referredByUnchanged(resource, mergedAfterWrite), 'Admin promotion-state write does not violate referredByRuknId')
   assert(categoryUnchanged(resource, mergedAfterWrite), 'category protection remains on merged payload')
   assert(promotedToARuknIdUnchanged(resource, mergedAfterWrite), 'promotedToARuknId protection remains on merged payload')
+
+  const transitionPatch = {
+    aRuknPromotionInProgress: true,
+    updatedAt: '2026-09-05T10:00:00.000Z',
+    updatedBy: 'Administrator',
+  }
   assert(
-    !ruknMayUpdateKarkun(resource, mergedAfterWrite),
+    !Object.prototype.hasOwnProperty.call(transitionPatch, 'referredByRuknId'),
+    'updateDoc transition patch does not supply referredByRuknId',
+  )
+  const afterUpdateDoc = { ...resource, ...transitionPatch }
+  assert(
+    adminMayUpdateKarkun(resource, afterUpdateDoc),
+    'Admin updateDoc transition is accepted with existing referredByRuknId intact',
+  )
+  assert(
+    referredByUnchanged(resource, afterUpdateDoc),
+    'updateDoc keeps existing referredByRuknId without client reconstructing it',
+  )
+  assert(
+    !ruknMayUpdateKarkun(resource, afterUpdateDoc),
     'Rukn cannot modify aRuknPromotionInProgress',
   )
   assert(
@@ -464,16 +494,33 @@ assert(nextAlloc.ok && nextAlloc.data.aRuknId === 'AR03', 'allocator advanced pa
   try {
     const failed = await persistKarkunDurable('kr-8921')
     assert(!failed.success, 'permission-denied persist fails')
-    assert(failed.error !== FRIENDLY_DATA_ACCESS_ERROR, 'promotion persist does not use additional-information copy')
-    assert(failed.error === FRIENDLY_PERSIST_PERMISSION_ERROR, 'promotion persist uses operator write/save mapping')
+    assert(failed.error !== FRIENDLY_DATA_ACCESS_ERROR, 'karkun persist does not use additional-information copy')
+    assert(failed.error === FRIENDLY_PERSIST_PERMISSION_ERROR, 'karkun persist uses operator write/save mapping')
   } finally {
     repos.karkun.upsertRecord = originalUpsert
+  }
+
+  const originalUpdate = repos.karkun.updateRecord.bind(repos.karkun)
+  repos.karkun.updateRecord = async () =>
+    repositoryErr('Permission', FRIENDLY_DATA_ACCESS_ERROR)
+  try {
+    const failedPatch = await persistKarkunFieldsDurable('kr-8921', {
+      aRuknPromotionInProgress: true,
+      updatedAt: new Date().toISOString(),
+      updatedBy: 'Administrator',
+    })
+    assert(!failedPatch.success, 'permission-denied transition patch fails')
+    assert(failedPatch.error !== FRIENDLY_DATA_ACCESS_ERROR, 'promotion transition does not use additional-information copy')
+    assert(failedPatch.error === FRIENDLY_PERSIST_PERMISSION_ERROR, 'promotion transition uses operator write/save mapping')
+  } finally {
+    repos.karkun.updateRecord = originalUpdate
   }
 }
 
 {
   const peopleStore = read('src/lib/peopleStore.ts')
   assert(!peopleStore.includes('aRuknPromotionInProgress'), 'peopleStore has no transition setter')
+  assert(peopleStore.includes('persistKarkunFieldsDurable'), 'peopleStore exposes targeted field persist')
   assert(peopleStore.includes('toOperatorPersistError'), 'persistKarkunDurable maps write failures')
 }
 
