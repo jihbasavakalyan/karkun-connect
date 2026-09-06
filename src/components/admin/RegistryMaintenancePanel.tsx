@@ -13,6 +13,7 @@ import {
   deleteKarkunSafely,
   flagKarkunForReview,
   getKarkunDeleteBlockers,
+  getKarkunDeleteWarnings,
   getMoveToMuttafiqeenBlockers,
   moveToKarkunSafely,
   moveToMuttafiqeenSafely,
@@ -55,15 +56,18 @@ export function RegistryMaintenancePanel({ karkun, karkunId }: RegistryMaintenan
   const softRemoved = isSoftRemoved(karkun)
   const moveBlockers = getMoveToMuttafiqeenBlockers(karkunId)
   const deleteBlockers = getKarkunDeleteBlockers(karkunId)
+  const deleteWarnings = getKarkunDeleteWarnings(karkunId)
   const canMoveToMuttafiqeen = moveBlockers.length === 0 && category === 'Karkun' && !softRemoved
   const canMoveToKarkun = category === 'Muttafiq' && !softRemoved
   const canDelete = deleteBlockers.length === 0 && Boolean(deleteReason.trim())
 
-  const runDurable = async (mutate: () => { success: boolean; error?: string }) => {
+  const runDurable = async (
+    mutate: () => { success: boolean; error?: string } | Promise<{ success: boolean; error?: string }>,
+  ) => {
     setBusy(true)
     setError('')
     setMessage('')
-    const result = mutate()
+    const result = await mutate()
     if (!result.success) {
       setError(result.error ?? 'Unable to update registry.')
       setBusy(false)
@@ -311,8 +315,8 @@ export function RegistryMaintenancePanel({ karkun, karkunId }: RegistryMaintenan
       <div className="mt-4 space-y-3 border-t border-border pt-4">
         <h3 className="text-sm font-medium text-text-heading">Delete</h3>
         <p className="text-xs text-secondary">
-          Allowed only with no connection and no campaign history. Uses controlled
-          registry removal — not available when history exists.
+          Administrator deletion is allowed regardless of connections or history. Confirmation is
+          required. Uses controlled registry removal.
         </p>
         {deleteBlockers.length > 0 ? (
           <ul className="list-disc pl-5 text-sm text-red-700">
@@ -322,6 +326,13 @@ export function RegistryMaintenancePanel({ karkun, karkunId }: RegistryMaintenan
           </ul>
         ) : (
           <>
+            {deleteWarnings.length > 0 ? (
+              <ul className="list-disc pl-5 text-sm text-amber-800">
+                {deleteWarnings.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            ) : null}
             <InputField
               id="delete-reason"
               label="Delete reason (required)"
@@ -399,8 +410,8 @@ export function RegistryMaintenancePanel({ karkun, karkunId }: RegistryMaintenan
 
       <ConfirmDialog
         isOpen={confirmDeleteOpen}
-        title="Confirm permanent removal"
-        confirmLabel="Delete"
+        title="Delete Person?"
+        confirmLabel="Delete Permanently"
         onClose={() => setConfirmDeleteOpen(false)}
         onConfirm={handleConfirmDelete}
         message={
@@ -409,6 +420,16 @@ export function RegistryMaintenancePanel({ karkun, karkunId }: RegistryMaintenan
               You are about to permanently remove this person from the active registry.
               <br />
               This action cannot be undone.
+            </p>
+            {deleteWarnings.length > 0 ? (
+              <p className="text-secondary">
+                This person has existing connections and/or history. Administrator deletion is
+                allowed.
+              </p>
+            ) : null}
+            <p className="text-secondary">
+              Deleting this person will remove the person from the active registry according to the
+              existing deletion mechanism.
             </p>
             <p className="text-secondary">Reason: {deleteReason.trim() || '—'}</p>
           </div>

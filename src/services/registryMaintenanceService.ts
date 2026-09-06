@@ -4,6 +4,7 @@
  */
 
 import { MOCK_KARKUN_REGISTRY } from '@/constants/mockKarkunRegistry'
+import { ADMINISTRATOR_REQUIRED_ERROR, assertAdministratorDecisionSession } from '@/lib/auth/assertAdministratorDecisionSession'
 import { getPersonCategory, isSoftRemoved } from '@/lib/peopleClassification'
 import { logPeopleAudit } from '@/lib/peopleAuditLog'
 import { bumpVersion } from '@/lib/preservation/softDelete'
@@ -21,6 +22,7 @@ import {
   getActiveAssignmentsForKarkun,
   getAssignmentHistoryForKarkun,
 } from '@/stores/assignmentStore'
+import { getActiveMuttafiqRelationshipsForPerson } from '@/stores/muttafiqRelationshipStore'
 import type { KarkunRegistryRecord, KarkunReviewReason } from '@/types/karkun-registry.types'
 
 export type RegistryMaintenanceResult = {
@@ -56,24 +58,41 @@ export function getKarkunArchiveBlockers(karkunId: string): string[] {
   return getMoveToMuttafiqeenBlockers(karkunId)
 }
 
-/** Blockers for controlled delete (Feature 4). */
+/**
+ * Informational warnings for Admin delete confirmation.
+ * Never used as eligibility blockers.
+ */
+export function getKarkunDeleteWarnings(karkunId: string): string[] {
+  const karkun = findKarkun(karkunId)
+  if (!karkun) return []
+
+  const warnings: string[] = []
+  if (getActiveAssignmentsForKarkun(karkunId).length > 0 || hasActiveConnection(karkun)) {
+    warnings.push('Active connections exist.')
+  }
+  if (getActiveMuttafiqRelationshipsForPerson(karkunId).length > 0) {
+    warnings.push('An active Muttafiq ↔ Rukn relationship exists.')
+  }
+  if (hasCampaignHistory(karkunId)) {
+    warnings.push('Historical records exist.')
+  }
+  if ((karkun.classificationHistory ?? []).length > 0) {
+    warnings.push('Classification history exists.')
+  }
+  return warnings
+}
+
+/**
+ * Admin delete eligibility. Connection, campaign, visit, classification, and
+ * relationship history never block an Administrator.
+ */
 export function getKarkunDeleteBlockers(karkunId: string): string[] {
   const karkun = findKarkun(karkunId)
   if (!karkun) return ['Karkun not found.']
   if (karkun.isArchived && karkun.archiveKind === 'admin_delete') {
     return ['This person is already removed from the registry.']
   }
-
-  const blockers: string[] = []
-  if (getActiveAssignmentsForKarkun(karkunId).length > 0) {
-    blockers.push('This person has an active connection.')
-  } else if (hasActiveConnection(karkun)) {
-    blockers.push('This person has an active connection.')
-  }
-  if (hasCampaignHistory(karkunId)) {
-    blockers.push('This person has campaign / visit history and cannot be deleted.')
-  }
-  return blockers
+  return []
 }
 
 export function flagKarkunForReview(
@@ -226,11 +245,16 @@ export function moveToKarkunSafely(
  * True Firestore document removal requires a repository API (not in scope).
  * Caller must await persistKarkunDurable.
  */
-export function deleteKarkunSafely(
+export async function deleteKarkunSafely(
   karkunId: string,
   deleteReason: string,
   deletedBy = 'Administrator',
-): RegistryMaintenanceResult {
+): Promise<RegistryMaintenanceResult> {
+  const adminGate = await assertAdministratorDecisionSession(ADMINISTRATOR_REQUIRED_ERROR)
+  if (!adminGate.ok) {
+    return { success: false, error: adminGate.error }
+  }
+
   const reason = deleteReason.trim()
   if (!reason) {
     return { success: false, error: 'Delete reason is required.' }
