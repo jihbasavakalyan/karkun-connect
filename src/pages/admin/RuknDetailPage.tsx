@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { Link, useLocation, useParams } from 'react-router-dom'
 import { getRuknById } from '@/data/ruknMaster'
 import { getRuknAssignmentSummary } from '@/services/assignmentService'
+import { useMuttafiqRelationshipStore } from '@/hooks/useMuttafiqRelationshipStore'
+import { getActiveMuttafiqRelationshipsForRukn } from '@/stores/muttafiqRelationshipStore'
 import { getAuditLogForPerson } from '@/lib/peopleAuditLog'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { ROUTES, adminAssignmentsPath } from '@/constants/routes'
@@ -34,8 +36,13 @@ export function RuknDetailPage() {
   const registryLabel = isARuknContext ? UI_LABELS.aRukn : 'Rukn'
   const { removeAssignment, assignmentVersion } = useAssignmentEngine()
   const { sendIndividualMessage } = useCommunication()
+  const muttafiqRelationshipVersion = useMuttafiqRelationshipStore()
   void assignmentVersion
+  void muttafiqRelationshipVersion
   const summary = ruknId ? getRuknAssignmentSummary(ruknId) : null
+  const connectedMuttafiqCount = ruknId
+    ? getActiveMuttafiqRelationshipsForRukn(ruknId).length
+    : 0
 
   const [modalMode, setModalMode] = useState<ModalMode>(null)
   const [removingKarkun, setRemovingKarkun] = useState<{ id: string; name: string } | null>(null)
@@ -222,6 +229,10 @@ export function RuknDetailPage() {
             <div>
               <dt className="text-secondary">Connected Count</dt>
               <dd className="mt-1 font-medium text-text-heading">{summary.assignedKarkunCount}</dd>
+            </div>
+            <div>
+              <dt className="text-secondary">Connected Muttafiqeen</dt>
+              <dd className="mt-1 font-medium text-text-heading">{connectedMuttafiqCount}</dd>
             </div>
             <div>
               <dt className="text-secondary">Connection Since</dt>

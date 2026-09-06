@@ -20,6 +20,7 @@ import {
   getActiveAssignmentsForKarkun,
   getBlockingAssignmentForRukn,
 } from '@/stores/assignmentStore'
+import { pickUniqueNewestActive } from '@/lib/connections/oneActiveRukn'
 
 export type ValidationResult = { valid: true } | { valid: false; error: string }
 
@@ -166,23 +167,27 @@ export function validateKarkunAvailable(karkunId: string): ValidationResult {
   return { valid: true }
 }
 
-export function validateAssignInput(input: AssignInput): ValidationResult {
-  // Business rule: one Rukn may hold many active Karkuns, so we do NOT block an
-  // assignment when the Rukn already has active assignments. The one-active-Rukn-
-  // per-Karkun rule is still enforced by validateKarkunAvailable above.
+export function validateAssignPrerequisites(input: AssignInput): ValidationResult {
   const checks = [
     validateEffectiveDate(input.effectiveFrom),
     validateRuknActive(input.ruknId),
     validateKarkunActive(input.karkunId),
-    validateKarkunAvailable(input.karkunId),
     validateKarkunMobile(input.karkunId),
     validateGenderMatch(input.ruknId, input.karkunId),
   ]
-
   for (const check of checks) {
     if (!check.valid) return check
   }
   return { valid: true }
+}
+
+export function validateAssignInput(input: AssignInput): ValidationResult {
+  // Business rule: one Rukn may hold many active Karkuns, so we do NOT block an
+  // assignment when the Rukn already has active assignments. One active Rukn per
+  // person is enforced at save time by ending previous Active rows first.
+  const identity = validateAssignPrerequisites(input)
+  if (!identity.valid) return identity
+  return validateKarkunAvailable(input.karkunId)
 }
 
 export function validateReplaceInput(input: ReplaceInput): ValidationResult {
@@ -268,9 +273,13 @@ export function validateTransferInput(input: TransferInput): ValidationResult {
     return { valid: false, error: 'This Karkun has no active connection to transfer.' }
   }
   if (active.length > 1) {
-    return {
-      valid: false,
-      error: 'This Karkun has multiple active connections. Resolve duplicates before transferring.',
+    const pick = pickUniqueNewestActive(active)
+    if (pick.status !== 'one') {
+      return {
+        valid: false,
+        error:
+          'Multiple active Rukn connections exist for this person and the current connection cannot be determined safely. Review history before transferring.',
+      }
     }
   }
 

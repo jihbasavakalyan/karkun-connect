@@ -16,4 +16,8 @@ export interface MuttafiqRelationshipRepository {
   upsertActiveDurable(
     relationship: MuttafiqRuknRelationship,
   ): Promise<RepositoryResult<MuttafiqRuknRelationship>>
+  /** End an Active relationship. Document is retained as history. */
+  endDurable(
+    relationship: MuttafiqRuknRelationship,
+  ): Promise<RepositoryResult<MuttafiqRuknRelationship>>
 }

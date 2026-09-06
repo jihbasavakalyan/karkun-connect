@@ -11,6 +11,7 @@ export type KarkunRecordPatch = {
   aRuknPromotionInProgress?: boolean
   referredByRuknId?: string
   assignmentStatus?: KarkunRegistryRecord['assignmentStatus']
+  promotedToARuknId?: string
   updatedAt?: string
   updatedBy?: string
 }

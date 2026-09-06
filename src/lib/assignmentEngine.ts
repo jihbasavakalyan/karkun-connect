@@ -14,6 +14,7 @@ import {
   transferAssignment,
 } from '@/services/assignmentService'
 import { canAssignByGender } from '@/lib/peopleStore'
+import { pickUniqueNewestActive } from '@/lib/connections/oneActiveRukn'
 import {
   filterKarkunsSelectableForConnection,
   isKarkunSelectableForConnection,
@@ -256,9 +257,11 @@ export function getCompletedAssignmentHistoryForKarkun(karkunId: string) {
 }
 
 export function getCurrentAssignmentForKarkun(karkunId: string) {
-  return getAllAssignments().find(
+  const active = getAllAssignments().filter(
     (record) => record.karkunId === karkunId && record.status === 'Active',
   )
+  const pick = pickUniqueNewestActive(active)
+  return pick.status === 'one' ? pick.current : undefined
 }
 
 export function getCompletedAssignmentHistoryForRukn(ruknId: string) {

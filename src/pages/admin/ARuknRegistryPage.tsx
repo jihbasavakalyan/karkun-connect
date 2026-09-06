@@ -10,15 +10,20 @@ import {
   PEOPLE_TABLE_WRAPPER_CLASS,
 } from '@/components/forms/people/peopleTableDisplay'
 import { ConfirmDialog } from '@/components/forms/people'
+import { Modal } from '@/components/common/Modal'
+import { PrimaryButton } from '@/components/ui/PrimaryButton'
+import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import { adminARuknDetailPath, adminKarkunProfilePath } from '@/constants/routes'
 import { listActiveARuknOfficers } from '@/lib/aRuknRegistry'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { useAuth } from '@/hooks/useAuth'
+import { useMuttafiqRelationshipStore } from '@/hooks/useMuttafiqRelationshipStore'
 import { usePeopleStore } from '@/hooks/usePeopleStore'
 import { getRuknAssignmentSummary } from '@/services/assignmentService'
+import { getActiveMuttafiqRelationshipsForRukn } from '@/stores/muttafiqRelationshipStore'
 import { useWriteLifecycle } from '@/hooks/useWriteLifecycle'
 import { UI_LABELS } from '@/lib/uiTerminology'
-import { deactivateARuknOfficer } from '@/services/archiveService'
+import { executeARuknDelete, type ARuknDeleteMode } from '@/services/archiveService'
 import { formatPersonStatus } from '@/types/people.types'
 import { formatPersonNameForDisplay } from '@/utils/formatPersonDisplay'
 import type { Rukn } from '@/data/ruknMaster'
@@ -31,10 +36,13 @@ function formatDate(value: string | undefined): string {
 export function ARuknRegistryPage() {
   const peopleVersion = usePeopleStore()
   const { assignmentVersion } = useAssignmentEngine()
+  const muttafiqRelationshipVersion = useMuttafiqRelationshipStore()
   void assignmentVersion
+  void muttafiqRelationshipVersion
   const { user } = useAuth()
   const [search, setSearch] = useState('')
   const [pendingDelete, setPendingDelete] = useState<Rukn | null>(null)
+  const [deleteMode, setDeleteMode] = useState<ARuknDeleteMode | null>(null)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const { busy, progressMessage, run } = useWriteLifecycle()
@@ -57,15 +65,17 @@ export function ARuknRegistryPage() {
 
   const confirmDelete = () => {
     const officer = pendingDelete
-    if (!officer || busy) return
+    const mode = deleteMode
+    if (!officer || !mode || busy) return
     setError('')
     setNotice('')
     void run({
-      key: `a-rukn:deactivate:${officer.id}`,
-      queueLabels: ['rukns'],
+      key: `a-rukn:deactivate:${officer.id}:${mode}`,
+      queueLabels: ['rukns', 'karkuns'],
       work: async () => {
-        const result = await deactivateARuknOfficer({
+        const result = await executeARuknDelete({
           aRuknId: officer.id,
+          mode,
           decidedBy,
         })
         if (!result.ok) {
@@ -80,7 +90,12 @@ export function ARuknRegistryPage() {
         return
       }
       setPendingDelete(null)
-      setNotice(`${officer.id} removed from the active ${UI_LABELS.aRukn} registry.`)
+      setDeleteMode(null)
+      setNotice(
+        mode === 'restore_karkun'
+          ? `${officer.id} removed from the active ${UI_LABELS.aRukn} registry. Source Karkun restored as a normal Karkun.`
+          : `${officer.id} permanently removed from the active ${UI_LABELS.aRukn} registry. Source Karkun was not restored.`,
+      )
     })
   }
 
@@ -146,6 +161,7 @@ export function ARuknRegistryPage() {
               <tbody>
                 {officers.map((officer) => {
                   const connectedCount = getRuknAssignmentSummary(officer.id).assignedKarkunCount
+                  const connectedMuttafiqCount = getActiveMuttafiqRelationshipsForRukn(officer.id).length
                   return (
                   <tr key={officer.id} className={PEOPLE_TABLE_ROW_CLASS}>
                     <td className={PEOPLE_TABLE_CELL_CLASS}>
@@ -166,6 +182,7 @@ export function ARuknRegistryPage() {
                     </td>
                     <td className={`${PEOPLE_TABLE_CELL_CLASS} text-secondary`}>
                       Connected Karkuns: {connectedCount}
+                      <span className="block">Connected Muttafiqeen: {connectedMuttafiqCount}</span>
                     </td>
                     <td className={`${PEOPLE_TABLE_CELL_CLASS} text-secondary`}>
                       {officer.mobile || '—'}
@@ -215,6 +232,7 @@ export function ARuknRegistryPage() {
           <ul className="space-y-4 md:hidden">
             {officers.map((officer) => {
               const connectedCount = getRuknAssignmentSummary(officer.id).assignedKarkunCount
+              const connectedMuttafiqCount = getActiveMuttafiqRelationshipsForRukn(officer.id).length
               return (
               <li
                 key={officer.id}
@@ -228,6 +246,7 @@ export function ARuknRegistryPage() {
                 </Link>
                 <p className="mt-1 text-text-heading">{formatPersonNameForDisplay(officer.name)}</p>
                 <p className="mt-1 text-sm text-secondary">Connected Karkuns: {connectedCount}</p>
+                <p className="mt-1 text-sm text-secondary">Connected Muttafiqeen: {connectedMuttafiqCount}</p>
                 <dl className="mt-3 space-y-2 text-sm">
                   <div className="flex justify-between gap-3">
                     <dt className="text-secondary">Mobile</dt>
@@ -277,27 +296,75 @@ export function ARuknRegistryPage() {
         </>
       )}
 
-      <ConfirmDialog
-        isOpen={Boolean(pendingDelete)}
+      <Modal
+        isOpen={Boolean(pendingDelete) && !deleteMode}
         title={`Delete ${UI_LABELS.aRukn}?`}
+        onClose={() => {
+          if (busy) return
+          setPendingDelete(null)
+        }}
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-secondary">
+            Choose how to remove <strong>{pendingDelete?.id}</strong> (
+            {pendingDelete ? formatPersonNameForDisplay(pendingDelete.name) : ''}). Historical
+            campaign and connection records are preserved either way.
+          </p>
+          <div className="flex flex-col gap-2">
+            <PrimaryButton
+              type="button"
+              onClick={() => setDeleteMode('restore_karkun')}
+            >
+              Restore as Normal Karkun
+            </PrimaryButton>
+            <SecondaryButton
+              type="button"
+              onClick={() => setDeleteMode('delete_permanently')}
+            >
+              Delete Permanently
+            </SecondaryButton>
+            <SecondaryButton
+              type="button"
+              onClick={() => setPendingDelete(null)}
+            >
+              Cancel
+            </SecondaryButton>
+          </div>
+        </div>
+      </Modal>
+
+      <ConfirmDialog
+        isOpen={Boolean(pendingDelete) && Boolean(deleteMode)}
+        title={
+          deleteMode === 'restore_karkun'
+            ? `Restore as Normal Karkun?`
+            : `Delete ${UI_LABELS.aRukn} permanently?`
+        }
         message={
-          pendingDelete ? (
+          pendingDelete && deleteMode === 'restore_karkun' ? (
             <>
-              Remove <strong>{pendingDelete.id}</strong> ({formatPersonNameForDisplay(pendingDelete.name)})
-              from the active {UI_LABELS.aRukn} registry? The officer document and source Karkun
-              remain preserved. Historical records are not deleted. The person is not restored as a
-              normal Karkun.
+              Remove <strong>{pendingDelete.id}</strong> from the active {UI_LABELS.aRukn} registry
+              and restore source Karkun <strong>{pendingDelete.sourcePersonId || '—'}</strong> as a
+              normal Karkun. Promotion state is cleared. History is preserved. No referral or Rukn
+              connection is invented.
+            </>
+          ) : pendingDelete ? (
+            <>
+              Permanently remove <strong>{pendingDelete.id}</strong> (
+              {formatPersonNameForDisplay(pendingDelete.name)}) from the active {UI_LABELS.aRukn}{' '}
+              registry. The officer document and history remain. The person is not restored as a
+              normal Karkun. Historical campaign and connection records are not deleted.
             </>
           ) : (
             ''
           )
         }
-        confirmLabel="Delete"
+        confirmLabel={deleteMode === 'restore_karkun' ? 'Restore as Normal Karkun' : 'Delete Permanently'}
         confirmLoading={busy}
         onConfirm={confirmDelete}
         onClose={() => {
           if (busy) return
-          setPendingDelete(null)
+          setDeleteMode(null)
         }}
       />
     </PageShell>

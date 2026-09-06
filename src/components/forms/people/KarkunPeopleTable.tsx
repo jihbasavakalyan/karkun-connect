@@ -6,8 +6,8 @@ import type { PersonStatus } from '@/types/karkun-registry.types'
 import { getConnectionStatusLabel } from '@/lib/connectionLabels'
 import { formatPersonStatus, type PeopleSortField } from '@/types/people.types'
 import { formatPersonNameForDisplay } from '@/utils/formatPersonDisplay'
+import { currentMuttafiqRuknLabel } from '@/lib/connections/oneActiveRukn'
 import { getMuttafiqDisplayNumber } from '@/lib/peopleClassification'
-import { getRuknById } from '@/data/ruknMaster'
 import { RuknAssignmentSelect } from '@/components/forms/people/RuknAssignmentSelect'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
@@ -86,21 +86,20 @@ function PersonStatusBadge({ status }: { status: PersonStatus }) {
   )
 }
 
-function formatLinkedRuknNames(links: MuttafiqRuknRelationship[]): string {
-  return links
-    .map((link) =>
-      formatPersonNameForDisplay(getRuknById(link.ruknId)?.name ?? link.ruknName),
-    )
-    .join(', ')
-}
-
 function resolveMuttafiqRelationshipDisplay(
   activeLinks: MuttafiqRuknRelationship[],
   hasPendingLink: boolean,
 ): { linkedRuknLabel: string; relationshipLabel: string } {
   if (activeLinks.length > 0) {
+    const current = currentMuttafiqRuknLabel(activeLinks)
+    if (current.needsReview) {
+      return {
+        linkedRuknLabel: 'Needs review',
+        relationshipLabel: UI_LABELS.connected,
+      }
+    }
     return {
-      linkedRuknLabel: formatLinkedRuknNames(activeLinks),
+      linkedRuknLabel: current.label ? formatPersonNameForDisplay(current.label) : '—',
       relationshipLabel: UI_LABELS.connected,
     }
   }

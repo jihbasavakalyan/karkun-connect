@@ -109,9 +109,11 @@ console.log('verify-a-rukn-admin-ui: start')
   assert(page.includes('getRuknAssignmentSummary'), 'registry reuses Rukn connection summary')
   assert(page.includes('Connected Karkuns'), 'registry shows connected Karkun count')
   assert(page.includes('adminARuknDetailPath'), 'registry links to A Rukn detail')
-  assert(page.includes('deactivateARuknOfficer'), 'Admin delete uses archive service')
+  assert(page.includes('executeARuknDelete'), 'Admin delete uses archive service')
+  assert(page.includes('restore_karkun'), 'Restore as Normal Karkun choice')
+  assert(page.includes('delete_permanently'), 'Delete Permanently choice')
   assert(page.includes('ConfirmDialog'), 'confirmation before A Rukn delete')
-  assert(page.includes('confirmLabel="Delete"'), 'Delete action visible to Admin')
+  assert(page.includes('Delete Permanently'), 'Delete Permanently action visible to Admin')
   assert(page.includes('isAdministrator'), 'Delete is Admin-only in the registry UI')
   assert(!page.includes('RuknHomePage'), 'does not duplicate Rukn Home')
   const karkunPage = read('src/pages/admin/KarkunanPage.tsx')
@@ -480,11 +482,17 @@ assert(!MOCK_KARKUN_REGISTRY.some((row) => row.id === 'kr-701'), 'kr-701 was not
 
 {
   const archive = read('src/services/archiveService.ts')
-  assert(archive.includes('deactivateARuknOfficer'), 'A Rukn delete reuses archive service')
+  assert(archive.includes('executeARuknDelete'), 'A Rukn delete uses archive service')
+  assert(archive.includes("'restore_karkun'"), 'restore as normal Karkun mode')
+  assert(archive.includes("'delete_permanently'"), 'permanent delete mode')
   assert(archive.includes('archiveRukn'), 'delete uses existing soft-archive convention')
   assert(archive.includes('persistRuknDurable'), 'delete persists the officer document')
   assert(archive.includes('officerKind !== \'a_rukn\''), 'only A Rukn officers can be deleted this way')
-  assert(!archive.includes('persistKarkunDurable'), 'delete does not rewrite the source Karkun')
+  assert(archive.includes('persistKarkunDurable'), 'restore as Karkun persists the source document')
+  assert(
+    archive.includes("mode === 'restore_karkun'"),
+    'source Karkun is rewritten only for restore, not permanent delete',
+  )
   const rules = read('firestore.rules')
   const ruknMatch = rules.slice(rules.indexOf('match /rukns/{docId}'), rules.indexOf('match /karkuns/{karkunId}'))
   assert(ruknMatch.includes('allow delete: if false'), 'rukns documents are never hard-deleted')

@@ -17,6 +17,7 @@ import { getFirestoreDb } from '@/lib/firebase/firestore'
 import { getFirebaseAuth } from '@/lib/firebase/firebase'
 import {
   repositoryOk,
+  repositoryErr,
   type RepositoryResult,
 } from '@/repositories/errors'
 import type { MuttafiqRelationshipRepository } from '@/repositories/interfaces/MuttafiqRelationshipRepository'
@@ -173,6 +174,39 @@ export class MuttafiqRelationshipFirestoreRepository implements MuttafiqRelation
       })
       upsertCache(payload)
       return repositoryOk(payload)
+    } catch (error) {
+      return mapFirestoreError(error)
+    }
+  }
+
+  async endDurable(
+    relationship: MuttafiqRuknRelationship,
+  ): Promise<RepositoryResult<MuttafiqRuknRelationship>> {
+    try {
+      const db = getFirestoreDb()
+      const ref = doc(db, FIRESTORE_COLLECTIONS.muttafiqRelationships, relationship.id)
+      const direct = await getDoc(ref)
+      if (!direct.exists()) {
+        return repositoryErr('NotFound', 'Muttafiq–Rukn relationship not found.')
+      }
+      const parsed = parseRelationshipDoc(direct.data() as DocumentData)
+      if (!parsed) {
+        return repositoryErr('NotFound', 'Muttafiq–Rukn relationship not found.')
+      }
+      if (parsed.status === 'Ended') {
+        upsertCache(parsed)
+        return repositoryOk(parsed)
+      }
+      const ended: MuttafiqRuknRelationship = {
+        ...parsed,
+        status: 'Ended',
+        updatedAt: relationship.updatedAt,
+      }
+      await setDoc(ref, {
+        ...withMeta(sanitizeForFirestore(ended)),
+      })
+      upsertCache(ended)
+      return repositoryOk(ended)
     } catch (error) {
       return mapFirestoreError(error)
     }

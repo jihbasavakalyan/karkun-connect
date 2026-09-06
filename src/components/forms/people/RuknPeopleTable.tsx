@@ -1,7 +1,9 @@
 import { Link } from 'react-router-dom'
 import type { Rukn } from '@/data/ruknMaster'
 import { adminRuknDetailPath } from '@/constants/routes'
+import { useMuttafiqRelationshipStore } from '@/hooks/useMuttafiqRelationshipStore'
 import { getRuknAssignmentSummary } from '@/services/assignmentService'
+import { getActiveMuttafiqRelationshipsForRukn } from '@/stores/muttafiqRelationshipStore'
 import type { PersonStatus } from '@/types/karkun-registry.types'
 import { formatPersonStatus, type PeopleSortField } from '@/types/people.types'
 import { StatusBadge } from '@/components/ui/StatusBadge'
@@ -66,6 +68,8 @@ export function RuknPeopleTable({
   onToggleSelectAll,
   onEdit,
 }: RuknPeopleTableProps) {
+  const muttafiqRelationshipVersion = useMuttafiqRelationshipStore()
+  void muttafiqRelationshipVersion
   if (records.length === 0) {
     return (
       <div className="ds-empty" role="status">
@@ -126,6 +130,7 @@ export function RuknPeopleTable({
           <tbody>
             {records.map((rukn) => {
               const connectedCount = getRuknAssignmentSummary(rukn.id).assignedKarkunCount
+              const connectedMuttafiqCount = getActiveMuttafiqRelationshipsForRukn(rukn.id).length
               return (
               <tr key={rukn.id} className={PEOPLE_TABLE_ROW_CLASS}>
                 <td className={PEOPLE_TABLE_CELL_CLASS}>
@@ -143,6 +148,7 @@ export function RuknPeopleTable({
                 </td>
                 <td className={`${PEOPLE_TABLE_CELL_CLASS} text-secondary`}>
                   Connected Karkuns: {connectedCount}
+                  <span className="block">Connected Muttafiqeen: {connectedMuttafiqCount}</span>
                 </td>
                 <td className={`${PEOPLE_TABLE_CELL_CLASS} text-secondary`}>{rukn.gender}</td>
                 <td className={`${PEOPLE_TABLE_CELL_CLASS} text-secondary`}>{rukn.mobile || '—'}</td>
@@ -169,6 +175,7 @@ export function RuknPeopleTable({
       <ul className="space-y-4 md:hidden">
         {records.map((rukn) => {
           const connectedCount = getRuknAssignmentSummary(rukn.id).assignedKarkunCount
+          const connectedMuttafiqCount = getActiveMuttafiqRelationshipsForRukn(rukn.id).length
           return (
           <li
             key={rukn.id}
@@ -190,6 +197,9 @@ export function RuknPeopleTable({
                 </div>
                 <p className="mt-1 text-sm text-secondary">
                   Connected Karkuns: {connectedCount}
+                </p>
+                <p className="mt-0.5 text-sm text-secondary">
+                  Connected Muttafiqeen: {connectedMuttafiqCount}
                 </p>
                 <p className="mt-0.5 text-sm text-secondary">
                   {rukn.gender} · {rukn.mobile || 'No mobile'}

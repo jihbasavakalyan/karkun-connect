@@ -6,7 +6,7 @@
 import { MOCK_KARKUN_REGISTRY } from '@/constants/mockKarkunRegistry'
 import { getRuknById, ruknMaster } from '@/data/ruknMaster'
 import { assertAdministratorDecisionSession } from '@/lib/auth/assertAdministratorDecisionSession'
-import { persistRuknDurable, notifyPeopleRegistryChange } from '@/lib/peopleStore'
+import { persistKarkunDurable, persistRuknDurable, notifyPeopleRegistryChange } from '@/lib/peopleStore'
 import { buildArchivePatch, buildRestorePatch, bumpVersion } from '@/lib/preservation/softDelete'
 import { appendConnectionLedgerEntry } from '@/services/connectionLedgerService'
 import { logActivity } from '@/stores/activityLogStore'
@@ -207,13 +207,11 @@ export function countActiveRukns(): number {
   return ruknMaster.filter((r) => !r.isArchived && r.status === 'active').length
 }
 
-/**
- * Admin-only A Rukn removal from the active registry.
- * Soft-archives `rukns/AR##` via existing KC-0058 archive fields.
- * Does not hard-delete the officer doc, source Karkun, connections, or history.
- */
-export async function deactivateARuknOfficer(input: {
+export type ARuknDeleteMode = 'restore_karkun' | 'delete_permanently'
+
+export async function executeARuknDelete(input: {
   aRuknId: string
+  mode: ARuknDeleteMode
   decidedBy?: string
 }): Promise<ArchiveResult> {
   const adminGate = await assertAdministratorDecisionSession(A_RUKN_DELETE_DENIED)
@@ -224,6 +222,16 @@ export async function deactivateARuknOfficer(input: {
   const officer = getRuknById(input.aRuknId.trim())
   if (!officer || officer.officerKind !== 'a_rukn') {
     return { ok: false, error: 'A Rukn not found.' }
+  }
+
+  const sourcePersonId = officer.sourcePersonId?.trim() || ''
+  const source = sourcePersonId
+    ? MOCK_KARKUN_REGISTRY.find((row) => row.id === sourcePersonId)
+    : undefined
+  if (input.mode === 'restore_karkun') {
+    if (!sourcePersonId || !source) {
+      return { ok: false, error: 'Source Karkun was not found. Restore cannot be completed safely.' }
+    }
   }
 
   const snapshot = {
@@ -247,5 +255,55 @@ export async function deactivateARuknOfficer(input: {
     return { ok: false, error: durable.error || 'Unable to delete A Rukn. Please try again.' }
   }
 
+  if (input.mode === 'delete_permanently') {
+    return archived
+  }
+
+  const person = MOCK_KARKUN_REGISTRY.find((row) => row.id === sourcePersonId)
+  if (!person) {
+    return { ok: false, error: 'Source Karkun was not found after A Rukn removal.' }
+  }
+
+  const personSnapshot = {
+    promotedToARuknId: person.promotedToARuknId,
+    aRuknPromotionInProgress: person.aRuknPromotionInProgress,
+    assignmentStatus: person.assignmentStatus,
+    assignedRuknId: person.assignedRuknId,
+    assignedRukn: person.assignedRukn,
+    updatedAt: person.updatedAt,
+    updatedBy: person.updatedBy,
+  }
+
+  person.promotedToARuknId = ''
+  person.aRuknPromotionInProgress = false
+  person.assignmentStatus = 'Available'
+  person.assignedRuknId = ''
+  person.assignedRukn = ''
+  person.updatedAt = nowIso()
+  person.updatedBy = input.decidedBy || 'Administrator'
+  notifyPeopleRegistryChange()
+
+  const restored = await persistKarkunDurable(person.id)
+  if (!restored.success) {
+    Object.assign(person, personSnapshot)
+    notifyPeopleRegistryChange()
+    return {
+      ok: false,
+      error: restored.error || 'A Rukn was removed but the source Karkun could not be restored.',
+    }
+  }
+
   return archived
+}
+
+/** Admin-only A Rukn removal from the active registry without restoring a Karkun. */
+export async function deactivateARuknOfficer(input: {
+  aRuknId: string
+  decidedBy?: string
+}): Promise<ArchiveResult> {
+  return executeARuknDelete({
+    aRuknId: input.aRuknId,
+    mode: 'delete_permanently',
+    decidedBy: input.decidedBy,
+  })
 }

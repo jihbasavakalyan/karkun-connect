@@ -49,8 +49,10 @@ import type {
   RuknAssignmentSummary,
   TransferInput,
 } from '@/types/assignment'
+import { pickUniqueNewestActive } from '@/lib/connections/oneActiveRukn'
 import {
   validateAssignInput,
+  validateAssignPrerequisites,
   validateRemoveInput,
   validateReplaceInput,
   validateRestoreInput,
@@ -300,7 +302,11 @@ async function syncKarkunRegistryFromAssignments(
     return
   }
 
-  const primary = activeAssignments[0]
+  const pick = pickUniqueNewestActive(activeAssignments)
+  if (pick.status !== 'one') {
+    return
+  }
+  const primary = pick.current
   const rukn = getRuknById(primary.ruknId)
   karkun.assignmentStatus = 'Assigned'
   karkun.assignedRuknId = primary.ruknId
@@ -426,6 +432,31 @@ function formatNames(ruknId: string, karkunId: string): { ruknName: string; kark
 /** KC-0053 — coalesce concurrent assign attempts for the same Karkun. */
 const assignInFlightByKarkun = new Map<string, Promise<AssignmentResult>>()
 
+async function endOtherActiveAssignments(
+  karkunId: string,
+  keepRuknId: string,
+  assignedBy: AssignInput['assignedBy'],
+  effectiveFrom: string,
+): Promise<AssignmentResult | { success: true }> {
+  const others = getActiveAssignmentsForKarkun(karkunId).filter(
+    (record) => record.ruknId !== keepRuknId,
+  )
+  for (const record of others) {
+    const ended = await removeAssignment({
+      ruknId: record.ruknId,
+      karkunId,
+      effectiveFrom,
+      removalReason: 'Transferred',
+      remarks: `Ended previous active connection before connecting to ${keepRuknId}.`,
+      assignedBy,
+    })
+    if (!ended.success) {
+      return ended
+    }
+  }
+  return { success: true }
+}
+
 export async function assignRukn(input: AssignInput): Promise<AssignmentResult> {
   const serviceSpan = connectStepEnter('service.assignRukn', {
     ruknId: input.ruknId,
@@ -455,19 +486,19 @@ export async function assignRukn(input: AssignInput): Promise<AssignmentResult> 
   }
 
   const validateSpan = connectStepEnter('service.validateAssignInput')
-  const validation = validateAssignInput(input)
-  connectStepExit(validateSpan, 'service.validateAssignInput', { valid: validation.valid })
-  if (!validation.valid) {
-    connectStepEarlyReturn('service.validateAssignInput', validation.error)
-    connectStepExit(serviceSpan, 'service.assignRukn', { aborted: 'validation', error: validation.error })
-    return { success: false, error: validation.error }
+  const prerequisites = validateAssignPrerequisites(input)
+  connectStepExit(validateSpan, 'service.validateAssignInput', { valid: prerequisites.valid })
+  if (!prerequisites.valid) {
+    connectStepEarlyReturn('service.validateAssignInput', prerequisites.error)
+    connectStepExit(serviceSpan, 'service.assignRukn', { aborted: 'validation', error: prerequisites.error })
+    return { success: false, error: prerequisites.error }
   }
 
   // Idempotent: same Active connection already exists.
   const existingSame = getActiveAssignmentsForKarkun(input.karkunId).find(
     (record) => record.ruknId === input.ruknId,
   )
-  if (existingSame) {
+  if (existingSame && getActiveAssignmentsForKarkun(input.karkunId).length === 1) {
     connectStepEarlyReturn('service.assignRukn', 'idempotent_existing_active', {
       assignmentId: existingSame.assignmentId,
     })
@@ -488,7 +519,20 @@ export async function assignRukn(input: AssignInput): Promise<AssignmentResult> 
       assignedBy: input.assignedBy,
     })
 
-    // Re-check after awaiting any prior work / validation.
+    const ended = await endOtherActiveAssignments(
+      input.karkunId,
+      input.ruknId,
+      input.assignedBy,
+      input.effectiveFrom,
+    )
+    if (!ended.success) {
+      connectStepExit(serviceSpan, 'service.assignRukn', {
+        aborted: 'end_previous_active',
+        error: ended.error,
+      })
+      return ended
+    }
+
     const again = getActiveAssignmentsForKarkun(input.karkunId).find(
       (record) => record.ruknId === input.ruknId,
     )
@@ -762,6 +806,30 @@ export async function transferAssignment(input: TransferInput): Promise<Assignme
     return { success: false, error: validation.error }
   }
 
+  const currentPick = pickUniqueNewestActive(getActiveAssignmentsForKarkun(input.karkunId))
+  if (currentPick.status !== 'one') {
+    return {
+      success: false,
+      error:
+        'Multiple active Rukn connections exist for this person and the current connection cannot be determined safely. Review history before transferring.',
+    }
+  }
+  const extras = getActiveAssignmentsForKarkun(input.karkunId).filter(
+    (record) => record.assignmentId !== currentPick.current.assignmentId,
+  )
+  for (const extra of extras) {
+    const ended = await removeAssignment({
+      ruknId: extra.ruknId,
+      karkunId: input.karkunId,
+      effectiveFrom: input.effectiveFrom,
+      removalReason: 'Transferred',
+      remarks: 'Ended extra active connection before transfer.',
+      assignedBy: input.assignedBy,
+    })
+    if (!ended.success) {
+      return ended
+    }
+  }
   const current = getActiveAssignmentsForKarkun(input.karkunId)[0]!
   const sourceRuknId = current.ruknId
   const targetRuknId = input.targetRuknId.trim()
@@ -1014,9 +1082,11 @@ export function getKarkunWorkloadSummary(karkunId: string): KarkunWorkloadSummar
       record.status === 'Suspended',
   )
 
-  const assignedRukns = activeAssignments
-    .map((record) => getRuknById(record.ruknId)?.name ?? record.ruknId)
-    .filter(Boolean)
+  const currentPick = pickUniqueNewestActive(activeAssignments)
+  const assignedRukns =
+    currentPick.status === 'one'
+      ? [getRuknById(currentPick.current.ruknId)?.name ?? currentPick.current.ruknId]
+      : []
 
   return {
     assignedRukns,

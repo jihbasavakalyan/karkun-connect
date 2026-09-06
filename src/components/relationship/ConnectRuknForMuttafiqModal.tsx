@@ -14,6 +14,7 @@ import { getAllRukns, normalizePersonGender } from '@/lib/peopleStore'
 import { formatPersonNameForDisplay } from '@/utils/formatPersonDisplay'
 import { assignMuttafiqRuknLinkAsAdmin } from '@/services/karkunRequestService'
 import { getActiveMuttafiqRelationshipsForPerson } from '@/stores/muttafiqRelationshipStore'
+import { pickUniqueNewestActive } from '@/lib/connections/oneActiveRukn'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
 
 type ConnectRuknForMuttafiqModalProps = {
@@ -41,7 +42,10 @@ export function ConnectRuknForMuttafiqModal({
     if (!person) return []
     const personGender = normalizePersonGender(person.gender)
     const linkedIds = new Set(
-      getActiveMuttafiqRelationshipsForPerson(person.id).map((row) => row.ruknId),
+      (() => {
+        const pick = pickUniqueNewestActive(getActiveMuttafiqRelationshipsForPerson(person.id))
+        return pick.status === 'one' ? [pick.current.ruknId] : []
+      })(),
     )
     return getAllRukns()
       .filter((rukn) => rukn.status === 'active' && !rukn.isArchived)

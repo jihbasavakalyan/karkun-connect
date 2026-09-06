@@ -22,6 +22,7 @@
     "verify:kc0056": "npx vite-node scripts/verify-kc0056-karkun-id-allocation.ts",
     "verify:a-rukn-identity": "npx vite-node scripts/verify-a-rukn-identity.ts",
     "verify:a-rukn-promotion": "npx vite-node scripts/verify-a-rukn-promotion.ts",
+    "verify:one-active-rukn": "npx vite-node scripts/verify-one-active-rukn.ts",
     "verify:a-rukn-admin-ui": "npx vite-node scripts/verify-a-rukn-admin-ui.ts",
     "verify:rukn-workspace-nav": "npx vite-node scripts/verify-rukn-workspace-nav.ts",
     "verify:kc0058": "npx vite-node scripts/verify-kc0058-data-preservation.ts",

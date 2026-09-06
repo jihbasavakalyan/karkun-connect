@@ -59,12 +59,8 @@ console.log('verify-muttafiq-rukn-link: start')
 
   const rules = read('firestore.rules')
   assert(rules.includes('match /muttafiqRelationships/{relationshipId}'), 'rules match')
-  assert(
-    /match \/muttafiqRelationships\/\{relationshipId\}[\s\S]*?allow create, update: if isAdministrator\(\)/.test(
-      rules,
-    ),
-    'admin-only relationship write',
-  )
+  assert(rules.includes("request.resource.data.status == 'Ended'"), 'admin may end a previous Active link')
+  assert(rules.includes("request.resource.data.status == 'Active'"), 'admin may create Active links')
 
   const service = read('src/services/karkunRequestService.ts')
   assert(service.includes('submitMuttafiqRuknLinkRequest'), 'submit helper')

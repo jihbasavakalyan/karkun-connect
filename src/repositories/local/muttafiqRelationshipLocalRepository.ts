@@ -51,6 +51,28 @@ export class MuttafiqRelationshipLocalRepository implements MuttafiqRelationship
       return relationship
     })
   }
+
+  async endDurable(
+    relationship: MuttafiqRuknRelationship,
+  ): Promise<RepositoryResult<MuttafiqRuknRelationship>> {
+    return tryRepository(() => {
+      const existing = loadRows()
+      const index = existing.findIndex((row) => row.id === relationship.id)
+      if (index < 0) {
+        throw new Error('Muttafiq–Rukn relationship not found.')
+      }
+      const current = existing[index]!
+      const ended: MuttafiqRuknRelationship = {
+        ...current,
+        status: 'Ended',
+        updatedAt: relationship.updatedAt,
+      }
+      const next = [...existing]
+      next[index] = ended
+      saveRows(next)
+      return ended
+    })
+  }
 }
 
 export function clearLocalMuttafiqRelationshipsForTests(): RepositoryResult<void> {

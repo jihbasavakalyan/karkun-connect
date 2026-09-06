@@ -314,10 +314,19 @@ service cloud.firestore {
     match /muttafiqRelationships/{relationshipId} {
       allow read: if isAdministrator()
         || (isRukn() && resource.data.ruknId == ruknId());
-      allow create, update: if isAdministrator()
+      allow create: if isAdministrator()
         && request.resource.data.id == relationshipId
         && request.resource.data.keys().hasAll(['id', 'ruknId', 'personId', 'status'])
         && request.resource.data.status == 'Active';
+      allow update: if isAdministrator()
+        && request.resource.data.id == relationshipId
+        && request.resource.data.keys().hasAll(['id', 'ruknId', 'personId', 'status'])
+        && resource.data.ruknId == request.resource.data.ruknId
+        && resource.data.personId == request.resource.data.personId
+        && (
+          request.resource.data.status == 'Active'
+          || (resource.data.status == 'Active' && request.resource.data.status == 'Ended')
+        );
       allow delete: if false;
     }
 

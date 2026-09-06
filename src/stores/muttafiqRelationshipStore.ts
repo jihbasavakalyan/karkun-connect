@@ -3,6 +3,7 @@
  */
 
 import type { MuttafiqRuknRelationship } from '@/types/muttafiqRelationship.types'
+import { pickUniqueNewestActive } from '@/lib/connections/oneActiveRukn'
 import { getRepositories } from '@/repositories/provider'
 import { unwrapRepository } from '@/repositories/errors'
 
@@ -38,7 +39,13 @@ export function getActiveMuttafiqRelationshipsForRukn(
   ruknId: string,
 ): MuttafiqRuknRelationship[] {
   const id = ruknId.trim()
-  return relationships.filter((row) => row.ruknId === id && row.status === 'Active')
+  return relationships.filter((row) => {
+    if (row.ruknId !== id || row.status !== 'Active') return false
+    const pick = pickUniqueNewestActive(
+      relationships.filter((candidate) => candidate.personId === row.personId && candidate.status === 'Active'),
+    )
+    return pick.status === 'one' && pick.current.id === row.id
+  })
 }
 
 /**

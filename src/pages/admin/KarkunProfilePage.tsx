@@ -5,6 +5,7 @@ import { ROUTES } from '@/constants/routes'
 import { changeKarkunRuknAssignment } from '@/lib/assignmentEngine'
 import { getPersonCategory, getMuttafiqDisplayNumber, isPromotedToARukn } from '@/lib/peopleClassification'
 import { persistKarkunDurable, updateKarkun } from '@/lib/peopleStore'
+import { currentMuttafiqRuknLabel, pickUniqueNewestActive } from '@/lib/connections/oneActiveRukn'
 import { getActiveMuttafiqRelationshipsForPerson } from '@/stores/muttafiqRelationshipStore'
 import { getRuknById } from '@/data/ruknMaster'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
@@ -379,6 +380,7 @@ function KarkunProfileForm({ karkun, karkunId }: KarkunProfileFormProps) {
               <span className="text-sm font-medium text-text-heading">Linked Rukn</span>
               {(() => {
                 const links = getActiveMuttafiqRelationshipsForPerson(karkunId)
+                const current = currentMuttafiqRuknLabel(links)
                 if (links.length === 0) {
                   return (
                     <p className="text-sm text-secondary">
@@ -386,15 +388,21 @@ function KarkunProfileForm({ karkun, karkunId }: KarkunProfileFormProps) {
                     </p>
                   )
                 }
+                if (current.needsReview) {
+                  return (
+                    <p className="text-sm text-secondary">
+                      Multiple active Rukn links exist. Review history — current Rukn cannot be
+                      determined safely.
+                    </p>
+                  )
+                }
+                const pick = pickUniqueNewestActive(links)
+                const link = pick.status === 'one' ? pick.current : links[0]!
                 return (
-                  <ul className="space-y-1 text-sm text-text-heading">
-                    {links.map((link) => (
-                      <li key={link.id}>
-                        Rukn: {link.ruknName}{' '}
-                        <span className="text-secondary">({link.ruknId})</span>
-                      </li>
-                    ))}
-                  </ul>
+                  <p className="text-sm text-text-heading">
+                    Rukn: {link.ruknName}{' '}
+                    <span className="text-secondary">({link.ruknId})</span>
+                  </p>
                 )
               })()}
             </div>
