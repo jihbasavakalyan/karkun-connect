@@ -82,6 +82,10 @@ export function adminRuknDetailPath(ruknId: string): string {
   return `${ROUTES.ADMIN_RUKN}/${ruknId}`
 }
 
+export function adminARuknDetailPath(aRuknId: string): string {
+  return `${ROUTES.ADMIN_A_RUKN}/${aRuknId}`
+}
+
 export function adminAssignmentsPath(options?: {
   ruknId?: string
   view?: 'assign' | 'mapping'

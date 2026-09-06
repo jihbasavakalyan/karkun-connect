@@ -10,10 +10,12 @@ import {
   PEOPLE_TABLE_WRAPPER_CLASS,
 } from '@/components/forms/people/peopleTableDisplay'
 import { ConfirmDialog } from '@/components/forms/people'
-import { adminKarkunProfilePath } from '@/constants/routes'
+import { adminARuknDetailPath, adminKarkunProfilePath } from '@/constants/routes'
 import { listActiveARuknOfficers } from '@/lib/aRuknRegistry'
+import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { useAuth } from '@/hooks/useAuth'
 import { usePeopleStore } from '@/hooks/usePeopleStore'
+import { getRuknAssignmentSummary } from '@/services/assignmentService'
 import { useWriteLifecycle } from '@/hooks/useWriteLifecycle'
 import { UI_LABELS } from '@/lib/uiTerminology'
 import { deactivateARuknOfficer } from '@/services/archiveService'
@@ -28,6 +30,8 @@ function formatDate(value: string | undefined): string {
 
 export function ARuknRegistryPage() {
   const peopleVersion = usePeopleStore()
+  const { assignmentVersion } = useAssignmentEngine()
+  void assignmentVersion
   const { user } = useAuth()
   const [search, setSearch] = useState('')
   const [pendingDelete, setPendingDelete] = useState<Rukn | null>(null)
@@ -47,7 +51,7 @@ export function ARuknRegistryPage() {
         .includes(query),
     )
     // eslint-disable-next-line react-hooks/exhaustive-deps -- registry is module state
-  }, [peopleVersion, search])
+  }, [peopleVersion, assignmentVersion, search])
 
   const decidedBy = user?.displayName ?? user?.uid ?? 'Administrator'
 
@@ -131,6 +135,7 @@ export function ARuknRegistryPage() {
                 <tr>
                   <th className={PEOPLE_TABLE_CELL_CLASS}>Identity</th>
                   <th className={PEOPLE_TABLE_CELL_CLASS}>Name</th>
+                  <th className={PEOPLE_TABLE_CELL_CLASS}>Connected Karkuns</th>
                   <th className={PEOPLE_TABLE_CELL_CLASS}>Mobile</th>
                   <th className={PEOPLE_TABLE_CELL_CLASS}>Source Karkun</th>
                   <th className={PEOPLE_TABLE_CELL_CLASS}>Status</th>
@@ -139,13 +144,28 @@ export function ARuknRegistryPage() {
                 </tr>
               </thead>
               <tbody>
-                {officers.map((officer) => (
+                {officers.map((officer) => {
+                  const connectedCount = getRuknAssignmentSummary(officer.id).assignedKarkunCount
+                  return (
                   <tr key={officer.id} className={PEOPLE_TABLE_ROW_CLASS}>
                     <td className={PEOPLE_TABLE_CELL_CLASS}>
-                      <span className="font-semibold text-text-heading">{officer.id}</span>
+                      <Link
+                        to={adminARuknDetailPath(officer.id)}
+                        className="font-semibold text-text-heading hover:text-primary hover:underline"
+                      >
+                        {officer.id}
+                      </Link>
                     </td>
                     <td className={PEOPLE_TABLE_CELL_CLASS}>
-                      {formatPersonNameForDisplay(officer.name)}
+                      <Link
+                        to={adminARuknDetailPath(officer.id)}
+                        className="hover:text-primary hover:underline"
+                      >
+                        {formatPersonNameForDisplay(officer.name)}
+                      </Link>
+                    </td>
+                    <td className={`${PEOPLE_TABLE_CELL_CLASS} text-secondary`}>
+                      Connected Karkuns: {connectedCount}
                     </td>
                     <td className={`${PEOPLE_TABLE_CELL_CLASS} text-secondary`}>
                       {officer.mobile || '—'}
@@ -186,19 +206,28 @@ export function ARuknRegistryPage() {
                       </td>
                     ) : null}
                   </tr>
-                ))}
+                  )
+                })}
               </tbody>
             </table>
           </div>
 
           <ul className="space-y-4 md:hidden">
-            {officers.map((officer) => (
+            {officers.map((officer) => {
+              const connectedCount = getRuknAssignmentSummary(officer.id).assignedKarkunCount
+              return (
               <li
                 key={officer.id}
                 className="rounded-(--radius-card) border border-border bg-surface p-4 shadow-card"
               >
-                <p className="font-semibold text-text-heading">{officer.id}</p>
+                <Link
+                  to={adminARuknDetailPath(officer.id)}
+                  className="font-semibold text-text-heading hover:underline"
+                >
+                  {officer.id}
+                </Link>
                 <p className="mt-1 text-text-heading">{formatPersonNameForDisplay(officer.name)}</p>
+                <p className="mt-1 text-sm text-secondary">Connected Karkuns: {connectedCount}</p>
                 <dl className="mt-3 space-y-2 text-sm">
                   <div className="flex justify-between gap-3">
                     <dt className="text-secondary">Mobile</dt>
@@ -242,7 +271,8 @@ export function ARuknRegistryPage() {
                   </button>
                 ) : null}
               </li>
-            ))}
+              )
+            })}
           </ul>
         </>
       )}

@@ -1,10 +1,11 @@
 import { useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useLocation, useParams } from 'react-router-dom'
 import { getRuknById } from '@/data/ruknMaster'
 import { getRuknAssignmentSummary } from '@/services/assignmentService'
 import { getAuditLogForPerson } from '@/lib/peopleAuditLog'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { ROUTES, adminAssignmentsPath } from '@/constants/routes'
+import { UI_LABELS } from '@/lib/uiTerminology'
 import { AssignmentHistoryTimeline } from '@/components/forms/assignment/AssignmentHistoryTimeline'
 import { ConnectedAssignmentDeskCard } from '@/components/forms/assignment/ConnectedAssignmentDeskCard'
 import { RemoveAssignmentModal } from '@/components/forms/assignment/RemoveAssignmentModal'
@@ -25,7 +26,12 @@ type ModalMode = 'remove' | 'transfer' | null
 
 export function RuknDetailPage() {
   const { ruknId } = useParams<{ ruknId: string }>()
+  const location = useLocation()
   const rukn = ruknId ? getRuknById(ruknId) : undefined
+  const isARuknContext =
+    rukn?.officerKind === 'a_rukn' || location.pathname.startsWith(`${ROUTES.ADMIN_A_RUKN}/`)
+  const registryHref = isARuknContext ? ROUTES.ADMIN_A_RUKN : ROUTES.ADMIN_RUKN
+  const registryLabel = isARuknContext ? UI_LABELS.aRukn : 'Rukn'
   const { removeAssignment, assignmentVersion } = useAssignmentEngine()
   const { sendIndividualMessage } = useCommunication()
   void assignmentVersion
@@ -42,9 +48,9 @@ export function RuknDetailPage() {
       <PageShell variant="narrow">
         <EmptyState
           icon="search"
-          title="Rukn not found"
-          description="This Rukn record does not exist or may have been removed."
-          primaryAction={{ label: 'Back to Rukn', href: ROUTES.ADMIN_RUKN }}
+          title={`${registryLabel} not found`}
+          description={`This ${registryLabel} record does not exist or may have been removed.`}
+          primaryAction={{ label: `Back to ${registryLabel}`, href: registryHref }}
         />
       </PageShell>
     )
@@ -123,8 +129,8 @@ export function RuknDetailPage() {
 
   return (
     <PageShell variant="narrow" className="max-w-4xl">
-      <Link to={ROUTES.ADMIN_RUKN} className="text-sm font-medium text-primary hover:underline">
-        ← Back to Rukn
+      <Link to={registryHref} className="text-sm font-medium text-primary hover:underline">
+        ← Back to {registryLabel}
       </Link>
       <PageHeader
         title={rukn.name}

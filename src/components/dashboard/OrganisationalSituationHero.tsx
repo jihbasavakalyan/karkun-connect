@@ -89,6 +89,12 @@ export function OrganisationalSituationHero({
               value={metricsReady ? situation.people.rukns : '—'}
             />
             <MetricChip
+              icon="sparkles"
+              tone="purple"
+              label="عازمِ رکن"
+              value={metricsReady ? situation.people.aRukns : '—'}
+            />
+            <MetricChip
               icon="users"
               tone="purple"
               label="کارکنان"

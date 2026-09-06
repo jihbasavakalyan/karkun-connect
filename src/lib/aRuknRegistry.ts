@@ -14,3 +14,19 @@ export function listActiveARuknOfficers(officers: readonly Rukn[] = ruknMaster):
 export function isNormalRuknOfficer(officer: Pick<Rukn, 'officerKind'>): boolean {
   return officer.officerKind !== 'a_rukn'
 }
+
+/** Dashboard people chips — officerKind only; A Rukn is never folded into ارکان. */
+export function countOfficerPeopleByKind(
+  officers: readonly Pick<Rukn, 'officerKind'>[] = ruknMaster,
+): {
+  rukns: number
+  aRukns: number
+} {
+  let rukns = 0
+  let aRukns = 0
+  for (const officer of officers) {
+    if (officer.officerKind === 'a_rukn') aRukns += 1
+    else rukns += 1
+  }
+  return { rukns, aRukns }
+}

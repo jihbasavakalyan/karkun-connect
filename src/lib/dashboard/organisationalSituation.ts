@@ -11,7 +11,8 @@ import {
   resolveActivityYearStatus,
   type ActivityYearStatus,
 } from '@/lib/planning/activityYearStatus'
-import { getPeopleStatistics } from '@/lib/peopleStore'
+import { countOfficerPeopleByKind } from '@/lib/aRuknRegistry'
+import { getAllRukns, getPeopleStatistics } from '@/lib/peopleStore'
 import { unwrapRepository } from '@/repositories/errors'
 import { getRepositories } from '@/repositories/provider'
 import {
@@ -109,6 +110,7 @@ export type OrganisationalSituation = {
   metricsLive: true
   people: {
     rukns: number
+    aRukns: number
     karkuns: number
     muttafiqeen: number
     connections: number
@@ -174,6 +176,7 @@ function countsFromStatuses(
 
 export function buildOrganisationalSituation(year: MeqatiYear): OrganisationalSituation {
   const people = getPeopleStatistics()
+  const officersByKind = countOfficerPeopleByKind(getAllRukns())
   const repos = getRepositories()
   const mansooba = unwrapRepository(repos.meqatiMansooba.getActive(), undefined) ?? null
   const shobahs = unwrapRepository(repos.shobah.loadAll(), [])
@@ -300,7 +303,8 @@ export function buildOrganisationalSituation(year: MeqatiYear): OrganisationalSi
     generatedAt: new Date().toISOString(),
     metricsLive: true,
     people: {
-      rukns: people.totalRukns,
+      rukns: officersByKind.rukns,
+      aRukns: officersByKind.aRukns,
       karkuns: people.totalMaleKarkuns + people.totalFemaleKarkuns,
       muttafiqeen: people.totalMuttafiqeen ?? 0,
       connections: people.assignedKarkuns,

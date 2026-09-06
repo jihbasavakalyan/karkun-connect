@@ -6,13 +6,16 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { MOCK_KARKUN_REGISTRY } from '@/constants/mockKarkunRegistry'
 import { ADMIN_NAV_ITEMS, flattenAdminNavItems } from '@/constants/adminNavigation'
-import { ROUTES } from '@/constants/routes'
+import { adminARuknDetailPath, ROUTES } from '@/constants/routes'
 import { getRuknById, ruknMaster, type Rukn } from '@/data/ruknMaster'
 import { canOfferARuknPromotion, A_RUKN_PROMOTION_SAFE_ERROR, isDurableARuknPromotionSuccess, settleARuknPromotionAttempt } from '@/lib/aRuknPromotionUi'
-import { isNormalRuknOfficer, listActiveARuknOfficers, listARuknOfficers } from '@/lib/aRuknRegistry'
+import { isNormalRuknOfficer, listActiveARuknOfficers, listARuknOfficers, countOfficerPeopleByKind } from '@/lib/aRuknRegistry'
 import { setAdministratorDecisionSessionOverrideForTests } from '@/lib/auth/assertAdministratorDecisionSession'
 import { isKarkun } from '@/lib/peopleClassification'
 import { getAllKarkuns } from '@/lib/peopleStore'
+import { getRuknAssignmentSummary } from '@/services/assignmentService'
+import { getConnectedKarkunCountForRukn, getConnectedKarkunsForRukn } from '@/lib/connections/getConnectedKarkunsForRukn'
+import { appendAssignment } from '@/stores/assignmentStore'
 import { emitPeopleRegistryChange, subscribeToPeopleStore } from '@/lib/peopleRegistryEvents'
 import { UI_LABELS } from '@/lib/uiTerminology'
 import { isPathAllowedForRole } from '@/lib/auth/authorization'
@@ -85,6 +88,8 @@ console.log('verify-a-rukn-admin-ui: start')
   const router = read('src/routes/AppRouter.tsx')
   assert(router.includes('path="a-rukn"'), 'AppRouter registers a-rukn')
   assert(router.includes('ARuknRegistryPage'), 'AppRouter uses A Rukn page')
+  assert(router.includes('path="a-rukn/:ruknId"'), 'AppRouter registers A Rukn detail')
+  assert(router.includes('RuknDetailPage'), 'A Rukn detail reuses Rukn detail')
   const adminBlock = router.slice(
     router.indexOf('allowedRole="administrator"'),
     router.indexOf('allowedRole="rukn"'),
@@ -101,6 +106,9 @@ console.log('verify-a-rukn-admin-ui: start')
 {
   const page = read('src/pages/admin/ARuknRegistryPage.tsx')
   assert(page.includes('listActiveARuknOfficers'), 'active registry excludes archived A Rukn')
+  assert(page.includes('getRuknAssignmentSummary'), 'registry reuses Rukn connection summary')
+  assert(page.includes('Connected Karkuns'), 'registry shows connected Karkun count')
+  assert(page.includes('adminARuknDetailPath'), 'registry links to A Rukn detail')
   assert(page.includes('deactivateARuknOfficer'), 'Admin delete uses archive service')
   assert(page.includes('ConfirmDialog'), 'confirmation before A Rukn delete')
   assert(page.includes('confirmLabel="Delete"'), 'Delete action visible to Admin')
@@ -142,6 +150,13 @@ console.log('verify-a-rukn-admin-ui: start')
   assert(!muttafiq.includes('PromoteToARuknTrigger'), 'Muttafiq registry has no promote trigger')
   const ruknPage = read('src/pages/admin/RuknModulePage.tsx')
   assert(!ruknPage.includes('PromoteToARuknAction'), 'Rukn registry has no promote action')
+  const detail = read('src/pages/admin/RuknDetailPage.tsx')
+  assert(detail.includes('getRuknAssignmentSummary'), 'detail reuses Rukn connection summary')
+  assert(detail.includes('Connected Karkuns'), 'detail lists connected Karkuns')
+  assert(detail.includes('ConnectedAssignmentDeskCard'), 'detail uses existing connected cards')
+  assert(detail.includes("officerKind === 'a_rukn'"), 'detail recognizes A Rukn officers')
+  assert(detail.includes('ADMIN_A_RUKN'), 'A Rukn detail returns to A Rukn registry')
+  assert(adminARuknDetailPath('AR01') === '/admin/a-rukn/AR01', 'A Rukn detail path')
   const hook = read('src/hooks/useRuknManagement.ts')
   assert(hook.includes('isNormalRuknOfficer'), 'Rukn registry excludes A Rukn officers')
   const firestoreRepo = read('src/repositories/firestore/firestoreRepositories.ts')
@@ -177,6 +192,10 @@ console.log('verify-a-rukn-admin-ui: start')
   assert(listARuknOfficers([prefixOnly, aRukn, normal!]).map((row) => row.id).join(',') === 'AR98', 'registry uses officerKind only')
   assert(isNormalRuknOfficer(normal!), 'R001 is a normal Rukn officer')
   assert(!isNormalRuknOfficer(aRukn), 'A Rukn is excluded from normal Rukn list')
+  const split = countOfficerPeopleByKind([prefixOnly, aRukn, normal!])
+  assert(split.aRukns === 1, 'dashboard A Rukn count uses officerKind a_rukn')
+  assert(split.rukns === 2, 'dashboard Rukn count excludes A Rukn')
+  assert(split.rukns + split.aRukns === 3, 'officer counts are partitioned without overlap')
   assert(
     listARuknOfficers(ruknMaster).every((row) => row.officerKind === 'a_rukn'),
     'live registry listing is A Rukn only',
@@ -235,6 +254,69 @@ assert(
   MOCK_KARKUN_REGISTRY.push(control)
   assert(getAllKarkuns().some((row) => row.id === 'kr-8912'), 'normal Karkun remains visible')
   assert(isKarkun(control), 'normal Karkun classification unchanged')
+}
+
+{
+  const normalId = 'R001'
+  const beforeNormal = getRuknAssignmentSummary(normalId).assignedKarkunCount
+  const aRuknId = 'AR94'
+  const karkunId = 'kr-8913'
+  const now = new Date().toISOString()
+  MOCK_KARKUN_REGISTRY.push(seedKarkun(karkunId, 'AR Connected', '9000008913'))
+  ruknMaster.push({
+    id: aRuknId,
+    name: 'A Rukn Connected Probe',
+    gender: 'Female',
+    mobile: '9000008913',
+    place: DEFAULT_PLACE,
+    status: 'active',
+    createdAt: now,
+    updatedAt: now,
+    updatedBy: 'Verification',
+    officerKind: 'a_rukn',
+    origin: 'promoted_karkun',
+    sourcePersonId: 'kr-8913',
+  })
+  await appendAssignment({
+    assignmentId: `asgn-ar-conn-${karkunId}`,
+    assignmentNumber: `ASN-AR-CONN-${karkunId}`,
+    ruknId: aRuknId,
+    karkunId,
+    assignedDate: now.slice(0, 10),
+    effectiveFrom: now.slice(0, 10),
+    status: 'Active',
+    assignedBy: 'Administrator',
+    createdAt: now,
+    updatedAt: now,
+  })
+  const summary = getRuknAssignmentSummary(aRuknId)
+  assert(
+    summary.assignedKarkunCount === getConnectedKarkunCountForRukn(aRuknId),
+    'A Rukn connected count matches canonical connection data',
+  )
+  assert(summary.assignedKarkunCount === 1, 'A Rukn has exactly the seeded connection')
+  assert(
+    getConnectedKarkunsForRukn(aRuknId).map((row) => row.name).join() === 'AR Connected',
+    'A Rukn connected names come from existing connection data',
+  )
+  assert(
+    summary.activeAssignments.some((row) => row.karkunId === karkunId),
+    'detail list uses the same active assignments as Rukn',
+  )
+  assert(
+    getRuknAssignmentSummary(normalId).assignedKarkunCount === beforeNormal,
+    'normal Rukn connected count is unchanged',
+  )
+  const peopleSplit = countOfficerPeopleByKind()
+  assert(peopleSplit.aRukns === listARuknOfficers().length, 'dashboard A Rukn count matches registry kind')
+  assert(
+    peopleSplit.rukns === ruknMaster.filter(isNormalRuknOfficer).length,
+    'dashboard Rukn count is normal officers only',
+  )
+  assert(
+    peopleSplit.rukns + peopleSplit.aRukns === ruknMaster.length,
+    'dashboard officer counts do not double-count',
+  )
 }
 
 {

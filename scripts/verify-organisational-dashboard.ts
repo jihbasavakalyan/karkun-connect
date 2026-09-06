@@ -16,6 +16,7 @@ import {
   formatProgrammeSchedule,
   resolveProgrammeYearStatus,
 } from '../src/lib/dashboard/organisationalSituation'
+import { countOfficerPeopleByKind } from '../src/lib/aRuknRegistry'
 import {
   normalizeActivityYearStatuses,
   resolveActivityYearStatus,
@@ -92,6 +93,17 @@ assert.equal(
 assert.equal(normalizeActivityYearStatuses({ '2025-26': 'done' }), undefined)
 assert.equal(formatProgrammeSchedule(undefined), 'غیر متعین')
 
+{
+  const split = countOfficerPeopleByKind([
+    { officerKind: 'rukn' },
+    { officerKind: 'a_rukn' },
+    { officerKind: 'a_rukn' },
+    {},
+  ])
+  assert.equal(split.rukns, 2)
+  assert.equal(split.aRukns, 2)
+}
+
 const home = readFileSync(resolve('src/pages/admin/AdminHomePage.tsx'), 'utf8')
 assert.match(home, /orgdash-page/)
 assert.match(home, /AskDigitalRafeeqCard/)
@@ -119,9 +131,22 @@ const situation = readFileSync(
 )
 assert.match(situation, /resolveProgrammeYearStatus/)
 assert.match(situation, /yearStatuses/)
+assert.match(situation, /countOfficerPeopleByKind/)
+assert.match(situation, /aRukns: officersByKind.aRukns/)
+assert.doesNotMatch(situation, /rukns: people.totalRukns/)
 assert.doesNotMatch(situation, /buildMansoobaActivityReport/)
 assert.doesNotMatch(situation, /classifyProgrammeYearStatus/)
 assert.doesNotMatch(situation, /repos\.occurrence/)
+
+const hero = readFileSync(
+  resolve('src/components/dashboard/OrganisationalSituationHero.tsx'),
+  'utf8',
+)
+assert.match(hero, /label="ارکان"/)
+assert.match(hero, /label="عازمِ رکن"/)
+assert.match(hero, /label="کارکنان"/)
+assert.match(hero, /label="متفقین"/)
+assert.match(hero, /situation.people.aRukns/)
 
 const planning = readFileSync(resolve('src/pages/admin/AdminPlanningPage.tsx'), 'utf8')
 assert.match(planning, /سال کے مطابق عمل درآمد/)

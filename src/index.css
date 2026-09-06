@@ -4951,7 +4951,7 @@ html[data-theme='dark'] {
 
 @media (min-width: 768px) {
   .orgdash-metric-grid-people {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 }
 

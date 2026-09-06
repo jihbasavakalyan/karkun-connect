@@ -195,6 +195,7 @@ export function AppRouter() {
             <Route path="rukn" element={<RuknModulePage />} />
             <Route path="rukn/:ruknId" element={<RuknDetailPage />} />
             <Route path="a-rukn" element={<ARuknRegistryPage />} />
+            <Route path="a-rukn/:ruknId" element={<RuknDetailPage />} />
             <Route path="karkun" element={<KarkunanPage />} />
             <Route path="karkun/:karkunId" element={<KarkunProfilePage />} />
             <Route path="muttafiqeen" element={<MuttafiqeenPage />} />
