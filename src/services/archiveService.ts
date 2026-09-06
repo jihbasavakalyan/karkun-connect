@@ -5,13 +5,16 @@
 
 import { MOCK_KARKUN_REGISTRY } from '@/constants/mockKarkunRegistry'
 import { getRuknById, ruknMaster } from '@/data/ruknMaster'
+import { assertAdministratorDecisionSession } from '@/lib/auth/assertAdministratorDecisionSession'
+import { persistRuknDurable, notifyPeopleRegistryChange } from '@/lib/peopleStore'
 import { buildArchivePatch, buildRestorePatch, bumpVersion } from '@/lib/preservation/softDelete'
-import { notifyPeopleRegistryChange } from '@/lib/peopleStore'
 import { appendConnectionLedgerEntry } from '@/services/connectionLedgerService'
 import { logActivity } from '@/stores/activityLogStore'
 import { getAssignmentById, patchAssignmentRecord } from '@/stores/assignmentStore'
 import { getKarkunRequestById, updateKarkunRequest } from '@/stores/karkunRequestStore'
 import type { ArchiveResult } from '@/types/preservation.types'
+
+const A_RUKN_DELETE_DENIED = 'Only an Administrator can delete an A Rukn.'
 
 function nowIso(): string {
   return new Date().toISOString()
@@ -202,4 +205,47 @@ export function archiveKarkunRequest(
 /** Count of non-archived rukns (helper for scanners / tests). */
 export function countActiveRukns(): number {
   return ruknMaster.filter((r) => !r.isArchived && r.status === 'active').length
+}
+
+/**
+ * Admin-only A Rukn removal from the active registry.
+ * Soft-archives `rukns/AR##` via existing KC-0058 archive fields.
+ * Does not hard-delete the officer doc, source Karkun, connections, or history.
+ */
+export async function deactivateARuknOfficer(input: {
+  aRuknId: string
+  decidedBy?: string
+}): Promise<ArchiveResult> {
+  const adminGate = await assertAdministratorDecisionSession(A_RUKN_DELETE_DENIED)
+  if (!adminGate.ok) {
+    return { ok: false, error: adminGate.error }
+  }
+
+  const officer = getRuknById(input.aRuknId.trim())
+  if (!officer || officer.officerKind !== 'a_rukn') {
+    return { ok: false, error: 'A Rukn not found.' }
+  }
+
+  const snapshot = {
+    isArchived: officer.isArchived,
+    archivedAt: officer.archivedAt,
+    archivedBy: officer.archivedBy,
+    status: officer.status,
+    updatedAt: officer.updatedAt,
+    updatedBy: officer.updatedBy,
+    version: officer.version,
+  }
+  const archived = archiveRukn(officer.id, input.decidedBy || 'Administrator')
+  if (!archived.ok) {
+    return archived
+  }
+
+  const durable = await persistRuknDurable(officer.id)
+  if (!durable.success) {
+    Object.assign(officer, snapshot)
+    notifyPeopleRegistryChange()
+    return { ok: false, error: durable.error || 'Unable to delete A Rukn. Please try again.' }
+  }
+
+  return archived
 }

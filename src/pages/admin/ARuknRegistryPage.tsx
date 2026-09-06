@@ -9,12 +9,17 @@ import {
   PEOPLE_TABLE_ROW_CLASS,
   PEOPLE_TABLE_WRAPPER_CLASS,
 } from '@/components/forms/people/peopleTableDisplay'
+import { ConfirmDialog } from '@/components/forms/people'
 import { adminKarkunProfilePath } from '@/constants/routes'
-import { listARuknOfficers } from '@/lib/aRuknRegistry'
+import { listActiveARuknOfficers } from '@/lib/aRuknRegistry'
+import { useAuth } from '@/hooks/useAuth'
 import { usePeopleStore } from '@/hooks/usePeopleStore'
+import { useWriteLifecycle } from '@/hooks/useWriteLifecycle'
 import { UI_LABELS } from '@/lib/uiTerminology'
+import { deactivateARuknOfficer } from '@/services/archiveService'
 import { formatPersonStatus } from '@/types/people.types'
 import { formatPersonNameForDisplay } from '@/utils/formatPersonDisplay'
+import type { Rukn } from '@/data/ruknMaster'
 
 function formatDate(value: string | undefined): string {
   if (!value?.trim()) return '—'
@@ -23,11 +28,17 @@ function formatDate(value: string | undefined): string {
 
 export function ARuknRegistryPage() {
   const peopleVersion = usePeopleStore()
+  const { user } = useAuth()
   const [search, setSearch] = useState('')
+  const [pendingDelete, setPendingDelete] = useState<Rukn | null>(null)
+  const [error, setError] = useState('')
+  const [notice, setNotice] = useState('')
+  const { busy, progressMessage, run } = useWriteLifecycle()
+  const isAdministrator = user?.role === 'administrator'
 
   const officers = useMemo(() => {
     const query = search.trim().toLowerCase()
-    const rows = listARuknOfficers().slice().sort((a, b) => a.id.localeCompare(b.id))
+    const rows = listActiveARuknOfficers().slice().sort((a, b) => a.id.localeCompare(b.id))
     if (!query) return rows
     return rows.filter((officer) =>
       [officer.id, officer.name, officer.mobile, officer.sourcePersonId ?? '']
@@ -38,12 +49,59 @@ export function ARuknRegistryPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- registry is module state
   }, [peopleVersion, search])
 
+  const decidedBy = user?.displayName ?? user?.uid ?? 'Administrator'
+
+  const confirmDelete = () => {
+    const officer = pendingDelete
+    if (!officer || busy) return
+    setError('')
+    setNotice('')
+    void run({
+      key: `a-rukn:deactivate:${officer.id}`,
+      queueLabels: ['rukns'],
+      work: async () => {
+        const result = await deactivateARuknOfficer({
+          aRuknId: officer.id,
+          decidedBy,
+        })
+        if (!result.ok) {
+          throw new Error(result.error)
+        }
+        return result
+      },
+    }).then((lifecycle) => {
+      if (!lifecycle) return
+      if (!lifecycle.ok) {
+        setError(lifecycle.message)
+        return
+      }
+      setPendingDelete(null)
+      setNotice(`${officer.id} removed from the active ${UI_LABELS.aRukn} registry.`)
+    })
+  }
+
   return (
     <PageShell>
       <PageHeader
         title={UI_LABELS.aRukn}
         description="Independent officers promoted from Karkuns. This registry is separate from ارکان."
       />
+
+      {error ? (
+        <div className="ds-banner-error mb-3" role="alert">
+          {error}
+        </div>
+      ) : null}
+      {notice ? (
+        <div className="ds-banner-success mb-3" role="status">
+          {notice}
+        </div>
+      ) : null}
+      {busy && progressMessage ? (
+        <p className="mb-3 text-sm text-secondary" role="status" aria-live="polite">
+          {progressMessage}
+        </p>
+      ) : null}
 
       <label className="block max-w-md text-sm">
         <span className="mb-1 block text-secondary">Search</span>
@@ -77,6 +135,7 @@ export function ARuknRegistryPage() {
                   <th className={PEOPLE_TABLE_CELL_CLASS}>Source Karkun</th>
                   <th className={PEOPLE_TABLE_CELL_CLASS}>Status</th>
                   <th className={PEOPLE_TABLE_CELL_CLASS}>Created</th>
+                  {isAdministrator ? <th className={PEOPLE_TABLE_CELL_CLASS}>Actions</th> : null}
                 </tr>
               </thead>
               <tbody>
@@ -111,6 +170,21 @@ export function ARuknRegistryPage() {
                     <td className={`${PEOPLE_TABLE_CELL_CLASS} text-secondary`}>
                       {formatDate(officer.createdAt)}
                     </td>
+                    {isAdministrator ? (
+                      <td className={PEOPLE_TABLE_CELL_CLASS}>
+                        <button
+                          type="button"
+                          className="text-sm font-medium text-danger hover:underline disabled:opacity-60"
+                          disabled={busy}
+                          onClick={() => {
+                            setError('')
+                            setPendingDelete(officer)
+                          }}
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    ) : null}
                   </tr>
                 ))}
               </tbody>
@@ -154,11 +228,48 @@ export function ARuknRegistryPage() {
                     <dd>{formatDate(officer.createdAt)}</dd>
                   </div>
                 </dl>
+                {isAdministrator ? (
+                  <button
+                    type="button"
+                    className="mt-3 text-sm font-medium text-danger hover:underline disabled:opacity-60"
+                    disabled={busy}
+                    onClick={() => {
+                      setError('')
+                      setPendingDelete(officer)
+                    }}
+                  >
+                    Delete
+                  </button>
+                ) : null}
               </li>
             ))}
           </ul>
         </>
       )}
+
+      <ConfirmDialog
+        isOpen={Boolean(pendingDelete)}
+        title={`Delete ${UI_LABELS.aRukn}?`}
+        message={
+          pendingDelete ? (
+            <>
+              Remove <strong>{pendingDelete.id}</strong> ({formatPersonNameForDisplay(pendingDelete.name)})
+              from the active {UI_LABELS.aRukn} registry? The officer document and source Karkun
+              remain preserved. Historical records are not deleted. The person is not restored as a
+              normal Karkun.
+            </>
+          ) : (
+            ''
+          )
+        }
+        confirmLabel="Delete"
+        confirmLoading={busy}
+        onConfirm={confirmDelete}
+        onClose={() => {
+          if (busy) return
+          setPendingDelete(null)
+        }}
+      />
     </PageShell>
   )
 }

@@ -9,7 +9,7 @@ import { ADMIN_NAV_ITEMS, flattenAdminNavItems } from '@/constants/adminNavigati
 import { ROUTES } from '@/constants/routes'
 import { getRuknById, ruknMaster, type Rukn } from '@/data/ruknMaster'
 import { canOfferARuknPromotion, A_RUKN_PROMOTION_SAFE_ERROR, isDurableARuknPromotionSuccess, settleARuknPromotionAttempt } from '@/lib/aRuknPromotionUi'
-import { isNormalRuknOfficer, listARuknOfficers } from '@/lib/aRuknRegistry'
+import { isNormalRuknOfficer, listActiveARuknOfficers, listARuknOfficers } from '@/lib/aRuknRegistry'
 import { setAdministratorDecisionSessionOverrideForTests } from '@/lib/auth/assertAdministratorDecisionSession'
 import { isKarkun } from '@/lib/peopleClassification'
 import { getAllKarkuns } from '@/lib/peopleStore'
@@ -17,6 +17,7 @@ import { emitPeopleRegistryChange, subscribeToPeopleStore } from '@/lib/peopleRe
 import { UI_LABELS } from '@/lib/uiTerminology'
 import { isPathAllowedForRole } from '@/lib/auth/authorization'
 import { promoteKarkunToARukn } from '@/services/aRuknPromotionService'
+import { deactivateARuknOfficer } from '@/services/archiveService'
 import { getRepositories, resetRepositoryProviderForTests } from '@/repositories/provider'
 import { repositoryErr } from '@/repositories/errors'
 import { DEFAULT_PLACE } from '@/types/people.types'
@@ -99,7 +100,11 @@ console.log('verify-a-rukn-admin-ui: start')
 
 {
   const page = read('src/pages/admin/ARuknRegistryPage.tsx')
-  assert(page.includes("officerKind === 'a_rukn'") || page.includes('listARuknOfficers'), 'filters A Rukn officers')
+  assert(page.includes('listActiveARuknOfficers'), 'active registry excludes archived A Rukn')
+  assert(page.includes('deactivateARuknOfficer'), 'Admin delete uses archive service')
+  assert(page.includes('ConfirmDialog'), 'confirmation before A Rukn delete')
+  assert(page.includes('confirmLabel="Delete"'), 'Delete action visible to Admin')
+  assert(page.includes('isAdministrator'), 'Delete is Admin-only in the registry UI')
   assert(!page.includes('RuknHomePage'), 'does not duplicate Rukn Home')
   const karkunPage = read('src/pages/admin/KarkunanPage.tsx')
   const genderSection = karkunPage.slice(
@@ -390,6 +395,82 @@ assert(
 }
 
 assert(!MOCK_KARKUN_REGISTRY.some((row) => row.id === 'kr-701'), 'kr-701 was not used as a test fixture')
+
+{
+  const archive = read('src/services/archiveService.ts')
+  assert(archive.includes('deactivateARuknOfficer'), 'A Rukn delete reuses archive service')
+  assert(archive.includes('archiveRukn'), 'delete uses existing soft-archive convention')
+  assert(archive.includes('persistRuknDurable'), 'delete persists the officer document')
+  assert(archive.includes('officerKind !== \'a_rukn\''), 'only A Rukn officers can be deleted this way')
+  assert(!archive.includes('persistKarkunDurable'), 'delete does not rewrite the source Karkun')
+  const rules = read('firestore.rules')
+  const ruknMatch = rules.slice(rules.indexOf('match /rukns/{docId}'), rules.indexOf('match /karkuns/{karkunId}'))
+  assert(ruknMatch.includes('allow delete: if false'), 'rukns documents are never hard-deleted')
+  assert(ruknMatch.includes('allow update: if isAdministrator()'), 'only Admin may update rukns')
+}
+
+{
+  const aRuknId = 'AR97'
+  assert(aRuknId !== 'AR01' && aRuknId !== 'AR02', 'tests do not delete production AR01/AR02')
+  const now = new Date().toISOString()
+  MOCK_KARKUN_REGISTRY.push({
+    ...seedKarkun('kr-8997', 'Delete Probe Source', '9000008997'),
+    promotedToARuknId: aRuknId,
+  })
+  ruknMaster.push({
+    id: aRuknId,
+    name: 'Delete Probe Officer',
+    gender: 'Female',
+    mobile: '9000008997',
+    place: DEFAULT_PLACE,
+    status: 'active',
+    createdAt: now,
+    updatedAt: now,
+    updatedBy: 'Verification',
+    officerKind: 'a_rukn',
+    origin: 'promoted_karkun',
+    sourcePersonId: 'kr-8997',
+    isArchived: false,
+  })
+  const ar01Before = getRuknById('AR01')
+  const ar02Before = getRuknById('AR02')
+  const sourceBefore = MOCK_KARKUN_REGISTRY.find((row) => row.id === 'kr-8997')
+  assert(sourceBefore, 'source Karkun document still exists')
+  const sourceSnapshot = {
+    promotedToARuknId: sourceBefore!.promotedToARuknId,
+    category: sourceBefore!.category,
+    isArchived: sourceBefore!.isArchived,
+  }
+
+  setAdministratorDecisionSessionOverrideForTests({
+    ok: false,
+    error: 'Only an Administrator can delete an A Rukn.',
+  })
+  const blocked = await deactivateARuknOfficer({ aRuknId, decidedBy: 'Rukn' })
+  assert(!blocked.ok, 'non-Admin is blocked from A Rukn delete')
+  assert(
+    listActiveARuknOfficers().some((row) => row.id === aRuknId),
+    'blocked delete leaves officer in the active registry',
+  )
+
+  setAdministratorDecisionSessionOverrideForTests(null)
+  const removed = await deactivateARuknOfficer({ aRuknId, decidedBy: 'Administrator' })
+  assert(removed.ok, `Admin delete failed: ${removed.ok ? '' : removed.error}`)
+  assert(!listActiveARuknOfficers().some((row) => row.id === aRuknId), 'deleted A Rukn leaves active registry')
+  const preservedOfficer = getRuknById(aRuknId)
+  assert(preservedOfficer, 'officer document was not hard-deleted')
+  assert(preservedOfficer!.officerKind === 'a_rukn', 'officerKind remains a_rukn')
+  assert(preservedOfficer!.isArchived === true, 'existing archive flag is set')
+  assert(preservedOfficer!.status === 'inactive', 'existing inactive status is set')
+  const sourceAfter = MOCK_KARKUN_REGISTRY.find((row) => row.id === 'kr-8997')
+  assert(sourceAfter, 'source Karkun remains preserved')
+  assert(sourceAfter!.promotedToARuknId === sourceSnapshot.promotedToARuknId, 'source promotion link unchanged')
+  assert(sourceAfter!.isArchived === sourceSnapshot.isArchived, 'source archive state unchanged')
+  assert(getRuknById('AR01')?.isArchived === ar01Before?.isArchived, 'AR01 was not deleted')
+  assert(getRuknById('AR02')?.isArchived === ar02Before?.isArchived, 'AR02 was not deleted')
+  assert(getRuknById('AR01')?.status === ar01Before?.status, 'AR01 status unchanged')
+  assert(getRuknById('AR02')?.status === ar02Before?.status, 'AR02 status unchanged')
+}
 
 setAdministratorDecisionSessionOverrideForTests(null)
 console.log('verify-a-rukn-admin-ui: OK')
