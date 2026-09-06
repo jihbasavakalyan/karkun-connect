@@ -33,16 +33,17 @@ import {
   RUKN_AUTH_VERIFICATION_FAILED_MESSAGE,
   RUKN_DUPLICATE_MOBILE_MESSAGE,
   RUKN_INVALID_MOBILE_MESSAGE,
+  RUKN_LOOKUP_UNAVAILABLE_MESSAGE,
   RUKN_NOT_REGISTERED_MESSAGE,
+  type EligibleRuknIdentity,
 } from '@/services/ruknIdentityService'
 import type { AuthUser, LoginResult, OtpSendResult, PasswordResetResult } from '@/types/auth.types'
-import type { Rukn } from '@/data/ruknMaster'
 
 export type AuthStateListener = (user: AuthUser | null) => void
 
 type OtpSession = {
   mobile: string
-  expectedRukn: Rukn
+  expectedRukn: EligibleRuknIdentity
   confirmation: ConfirmationResult
 }
 
@@ -137,7 +138,7 @@ function mapFirebaseUser(user: User): Promise<AuthUser | null> {
 
 async function finalizeLogin(
   user: User,
-  expectedRukn?: Pick<Rukn, 'id' | 'mobile' | 'name'>,
+  expectedRukn?: EligibleRuknIdentity,
 ): Promise<LoginResult> {
   const traceId = newAuthTraceId()
   const phone = user.phoneNumber
@@ -549,6 +550,15 @@ export const authenticationService = {
             registered: false,
           })
           return { success: false, error: RUKN_NOT_REGISTERED_MESSAGE }
+        }
+
+        if (identity.reason === 'LOOKUP_UNAVAILABLE') {
+          logRuknAuthAttempt({
+            mobile,
+            result: 'lookup_unavailable',
+            registered: false,
+          })
+          return { success: false, error: RUKN_LOOKUP_UNAVAILABLE_MESSAGE }
         }
 
         logRuknAuthAttempt({

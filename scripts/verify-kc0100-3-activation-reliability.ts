@@ -16,7 +16,7 @@ assert(handler.includes('buildOfficerRuknClaims'), 'server provisions claims via
 assert(handler.includes('verifyIdToken'), 'requires verified ID token')
 assert(!handler.includes("role: 'a_rukn'"), 'must not grant a distinct a_rukn JWT role')
 assert(handler.includes('administrator'), 'blocks administrator claim path')
-assert(handler.includes('isActiveOfficerForRuknClaims'), 'requires Active officer on Rukn Master')
+assert(handler.includes('matchRuknOfficersByNormalizedMobileFromDb'), 'requires Active officer on Rukn Master')
 assert(!handler.includes('createUser'), 'must not create Auth users')
 
 const identity = readFileSync(resolve(root, 'src/lib/officerIdentity.ts'), 'utf8')
@@ -50,6 +50,7 @@ assert(
 
 const vercel = readFileSync(resolve(root, 'vercel.json'), 'utf8')
 assert(vercel.includes('api/rukn-claims-provision.ts'), 'vercel includes provision function files')
+assert(vercel.includes('api/rukn-login-eligibility.ts'), 'vercel includes login eligibility function')
 
 const pkg = readFileSync(resolve(root, 'package.json'), 'utf8')
 assert(pkg.includes('"firebase-admin"'), 'firebase-admin available for Vercel runtime')

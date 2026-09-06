@@ -2,14 +2,16 @@
  * M7.1 — Rukn identity verification verification.
  * Run: npm run verify:rukn-identity
  */
-import { runProductionDataMigration } from '@/services/productionDataMigrationService'
 import { ruknMaster } from '@/data/ruknMaster'
+import { matchActiveOfficersByMobile } from '@/lib/officerMobileEligibility'
 import {
   findByMobile,
   findDuplicateMobilesInMaster,
   normalizeRuknMobile,
   phonesMatchRukn,
+  RUKN_LOGIN_ELIGIBILITY_PATH,
   RUKN_NOT_REGISTERED_MESSAGE,
+  setRuknEligibilityLookupForTests,
   validateRuknMobileFormat,
 } from '@/services/ruknIdentityService'
 
@@ -19,7 +21,20 @@ function assert(condition: boolean, message: string): asserts condition {
   }
 }
 
-await runProductionDataMigration()
+setRuknEligibilityLookupForTests(async (mobile) => {
+  const match = matchActiveOfficersByMobile(ruknMaster, mobile)
+  if (match.kind === 'invalid_format') return { allowed: false, reason: 'INVALID_FORMAT' }
+  if (match.kind === 'none') return { allowed: false, reason: 'NOT_REGISTERED' }
+  if (match.kind === 'duplicate') return { allowed: false, reason: 'DUPLICATE_MOBILE' }
+  return {
+    allowed: true,
+    rukn: {
+      id: match.officer.id,
+      mobile: match.officer.mobile ?? mobile,
+      name: match.officer.name ?? match.officer.id,
+    },
+  }
+})
 
 console.log('▶ mobile format validation')
 {
@@ -72,9 +87,16 @@ console.log('▶ phone match helper')
 console.log('▶ not registered message')
 {
   assert(
-    RUKN_NOT_REGISTERED_MESSAGE.includes('not registered with the campaign'),
+    RUKN_NOT_REGISTERED_MESSAGE.includes('not registered as an active Rukn'),
     'Not registered message must match product copy',
   )
 }
+
+console.log('▶ production login uses server eligibility path')
+{
+  assert(RUKN_LOGIN_ELIGIBILITY_PATH === '/api/rukn-login-eligibility', 'eligibility API path')
+}
+
+setRuknEligibilityLookupForTests(null)
 
 console.log('Rukn identity verification passed.')

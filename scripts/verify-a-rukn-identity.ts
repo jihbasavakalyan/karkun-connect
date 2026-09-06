@@ -224,9 +224,11 @@ removeFromStorage(STORAGE_KEYS.aRuknCounter)
 }
 
 {
+  const matcher = read('src/lib/officerMobileEligibility.ts')
+  assert(matcher.includes('isActiveOfficerForRuknClaims'), 'AR## Active officers are eligible')
   const handler = read('src/server/ruknClaims/provisionHandler.ts')
   assert(handler.includes('buildOfficerRuknClaims'), 'provisioner uses shared claims helper')
-  assert(handler.includes('isActiveOfficerForRuknClaims'), 'AR## Active officers are eligible')
+  assert(handler.includes('matchRuknOfficersByNormalizedMobileFromDb'), 'AR## Active officers are eligible')
   assert(!handler.includes("role: 'a_rukn'"), 'provisioner must not mint a_rukn role')
   const identity = read('src/lib/officerIdentity.ts')
   assert(identity.includes("role: 'rukn'"), 'claims helper grants rukn role')

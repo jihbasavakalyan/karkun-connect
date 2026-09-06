@@ -12,6 +12,9 @@
     "api/karkun-mobile-lookup.ts": {
       "includeFiles": "src/server/karkunMobileLookup/**"
     },
+    "api/rukn-login-eligibility.ts": {
+      "includeFiles": "src/server/ruknClaims/**"
+    },
     "api/training-registration.ts": {
       "includeFiles": "src/server/trainingRegistration/**"
     }

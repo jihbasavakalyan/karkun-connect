@@ -132,6 +132,7 @@
     "verify:rc1-cert": "npx vite-node scripts/verify-rc1-certification.ts",
     "verify:login-render": "npx vite-node scripts/verify-login-render.ts",
     "verify:rukn-identity": "npx vite-node scripts/verify-rukn-identity.ts",
+    "verify:rukn-login-eligibility": "npx vite-node scripts/verify-rukn-login-eligibility.ts",
     "verify:orchestration": "npx vite-node scripts/verify-conversation-orchestration.ts",
     "verify:digital-rafeeq": "npx vite-node scripts/verify-digital-rafeeq-service.ts",
     "verify:runtime": "npx vite-node scripts/verify-runtime.ts",

@@ -6,8 +6,10 @@
  */
 
 import { errorFields, logAuthTrace, summarizeClaims } from '../../lib/auth/authPipelineTrace.js'
-import { buildOfficerRuknClaims, isActiveOfficerForRuknClaims } from '../../lib/officerIdentity.js'
+import { buildOfficerRuknClaims } from '../../lib/officerIdentity.js'
+import { normalizeOfficerLoginMobile } from '../../lib/officerMobileEligibility.js'
 import { getRuknClaimsAdmin, peekExpectedFirebaseProject } from './firebaseAdmin.js'
+import { matchRuknOfficersByNormalizedMobileFromDb } from './loadOfficersForLogin.js'
 
 export type ProvisionRequest = {
   method?: string
@@ -19,14 +21,6 @@ export type ProvisionResponse = {
   status: number
   body: Record<string, unknown>
   headers: Record<string, string>
-}
-
-function normalizePhone(phone: string | null | undefined): string {
-  const digits = String(phone ?? '').replace(/\D/g, '')
-  if (digits.length === 10) return digits
-  if (digits.length === 12 && digits.startsWith('91')) return digits.slice(2)
-  if (digits.length === 11 && digits.startsWith('0')) return digits.slice(1)
-  return digits
 }
 
 function json(status: number, body: Record<string, unknown>): ProvisionResponse {
@@ -231,38 +225,41 @@ export async function handleRuknClaimsProvision(
     })
   }
 
-  const mobile = normalizePhone(phone)
+  const mobile = normalizeOfficerLoginMobile(phone)
   if (mobile.length !== 10) {
     return json(403, { ok: false, error: 'Phone number format is not eligible.', traceId })
   }
 
-  let matches
+  let rukn
   try {
-    const snap = await admin.db.collection('rukns').get()
-    matches = snap.docs
-      .map((doc) => ({
-        id: doc.id,
-        ...(doc.data() as {
-          mobile?: string
-          status?: string
-          isArchived?: boolean
-          name?: string
-        }),
-      }))
-      .filter(
-        (rukn) =>
-          isActiveOfficerForRuknClaims(rukn) &&
-          normalizePhone(rukn.mobile) === mobile,
-      )
+    const match = await matchRuknOfficersByNormalizedMobileFromDb(admin.db, mobile)
+    const matchCount =
+      match.kind === 'one' ? 1 : match.kind === 'duplicate' ? match.count : 0
     logAuthTrace(traceId, {
       step: 7,
       name: 'rukn_lookup_by_phone',
-      status: matches.length === 1 ? 'success' : 'failure',
+      status: match.kind === 'one' ? 'success' : 'failure',
       uid,
       phone,
-      ruknId: matches[0]?.id ?? null,
-      detail: { matchCount: matches.length, mobile },
+      ruknId: match.kind === 'one' ? match.officer.id : null,
+      detail: { matchCount, mobile },
     })
+
+    if (match.kind === 'none' || match.kind === 'invalid_format') {
+      return json(403, {
+        ok: false,
+        error: 'This mobile number is not registered as an Active Rukn.',
+        traceId,
+      })
+    }
+    if (match.kind === 'duplicate') {
+      return json(409, {
+        ok: false,
+        error: 'Duplicate Active Rukn records for this mobile. Contact administrator.',
+        traceId,
+      })
+    }
+    rukn = match.officer
   } catch (error) {
     const err = errorFields(error)
     logAuthTrace(traceId, {
@@ -275,23 +272,6 @@ export async function handleRuknClaimsProvision(
     })
     return json(500, { ok: false, error: 'Rukn Master lookup failed.', traceId })
   }
-
-  if (matches.length === 0) {
-    return json(403, {
-      ok: false,
-      error: 'This mobile number is not registered as an Active Rukn.',
-      traceId,
-    })
-  }
-  if (matches.length > 1) {
-    return json(409, {
-      ok: false,
-      error: 'Duplicate Active Rukn records for this mobile. Contact administrator.',
-      traceId,
-    })
-  }
-
-  const rukn = matches[0]!
   logAuthTrace(traceId, {
     step: 8,
     name: 'active_status_validation',

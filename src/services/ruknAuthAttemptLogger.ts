@@ -4,6 +4,7 @@ export type RuknAuthAttemptResult =
   | 'duplicate_mobile'
   | 'otp_sent'
   | 'otp_send_failed'
+  | 'lookup_unavailable'
   | 'otp_success'
   | 'otp_failed'
   | 'verification_mismatch'
