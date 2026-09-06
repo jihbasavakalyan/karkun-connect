@@ -31,9 +31,16 @@ service cloud.firestore {
       return value is string ? value : '';
     }
 
+    /** Safe for legacy docs where referredByRuknId is absent (not ''). */
+    function referredByValue(data) {
+      return ('referredByRuknId' in data)
+        ? stringOrEmpty(data.referredByRuknId)
+        : '';
+    }
+
     function referredByUnchanged() {
-      return stringOrEmpty(resource.data.referredByRuknId)
-        == stringOrEmpty(request.resource.data.referredByRuknId);
+      return referredByValue(resource.data)
+        == referredByValue(request.resource.data);
     }
 
     /** A Rukn officer docs use AR## ids on the shared rukns collection. */

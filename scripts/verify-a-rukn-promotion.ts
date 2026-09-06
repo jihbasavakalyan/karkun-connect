@@ -447,6 +447,9 @@ assert(
   const transitionAt = service.indexOf('const transition = await markPromotionInProgress')
   assert(gateCallAt >= 0 && transitionAt > gateCallAt, 'promotion updateDoc runs only after Admin credential gate')
   const rules = read('firestore.rules')
+  assert(rules.includes('function referredByValue(data)'), 'referral helper is presence-safe')
+  assert(rules.includes("('referredByRuknId' in data)"), 'missing referredByRuknId does not error the comparison')
+  assert(!rules.includes('match /aRukns/'), 'no fourth A Rukn collection')
   assert(rules.includes('isPromotedToARuknData'), 'rules exclude promoted Available')
   assert(rules.includes('promotedToARuknIdUnchanged'), 'Rukn cannot write promotion link')
   assert(rules.includes('aRuknPromotionInProgressUnchanged'), 'Rukn cannot write transition flag')
@@ -675,11 +678,16 @@ assert(nextAlloc.ok && nextAlloc.data.aRuknId === 'AR03', 'allocator advanced pa
   function stringOrEmpty(value: unknown): string {
     return typeof value === 'string' ? value : ''
   }
+  function referredByValue(data: Record<string, unknown>): string {
+    return Object.prototype.hasOwnProperty.call(data, 'referredByRuknId')
+      ? stringOrEmpty(data.referredByRuknId)
+      : ''
+  }
   function referredByUnchanged(
     resource: Record<string, unknown>,
     request: Record<string, unknown>,
   ): boolean {
-    return stringOrEmpty(resource.referredByRuknId) === stringOrEmpty(request.referredByRuknId)
+    return referredByValue(resource) === referredByValue(request)
   }
   function categoryUnchanged(
     resource: Record<string, unknown>,
@@ -786,6 +794,71 @@ assert(nextAlloc.ok && nextAlloc.data.aRuknId === 'AR03', 'allocator advanced pa
   )
   const karkunRoleAllowUpdate = false
   assert(!karkunRoleAllowUpdate, 'Karkun JWT cannot update karkuns/{id}')
+
+  const legacyMissing = {
+    id: 'kr-171',
+    category: 'Karkun',
+    assignmentStatus: 'Assigned',
+    assignedRuknId: 'R006',
+  }
+  const legacyTransition = {
+    ...legacyMissing,
+    aRuknPromotionInProgress: true,
+    assignmentStatus: 'Assigned',
+    updatedBy: 'Administrator',
+  }
+  assert(
+    !Object.prototype.hasOwnProperty.call(legacyMissing, 'referredByRuknId'),
+    'A. resource omits referredByRuknId',
+  )
+  assert(
+    !Object.prototype.hasOwnProperty.call(legacyTransition, 'referredByRuknId'),
+    'A. request omits referredByRuknId',
+  )
+  assert(referredByUnchanged(legacyMissing, legacyTransition), 'A. missing → missing is unchanged')
+  assert(
+    adminMayUpdateKarkun(legacyMissing, legacyTransition),
+    'A. Admin promotion-state update is allowed when referral is missing on both sides',
+  )
+  assert(
+    referredByUnchanged(legacyMissing, { ...legacyTransition, referredByRuknId: '' }),
+    'A. missing → empty string is unchanged under string-or-empty',
+  )
+
+  const existingReferral = {
+    id: 'kr-b',
+    referredByRuknId: 'R011',
+    category: 'Karkun',
+    assignmentStatus: 'Assigned',
+    assignedRuknId: 'R011',
+  }
+  assert(
+    adminMayUpdateKarkun(existingReferral, {
+      ...existingReferral,
+      aRuknPromotionInProgress: true,
+      referredByRuknId: 'R011',
+    }),
+    'B. existing referral unchanged remains allowed',
+  )
+  assert(
+    !referredByUnchanged(existingReferral, { ...existingReferral, referredByRuknId: 'R012' }),
+    'C. existing referral changed is denied',
+  )
+  assert(
+    !adminMayUpdateKarkun(existingReferral, { ...existingReferral, referredByRuknId: 'R012' }),
+    'C. Admin cannot rewrite referral',
+  )
+  assert(
+    !ruknMayUpdateKarkun(legacyMissing, legacyTransition),
+    'D. Rukn still cannot set aRuknPromotionInProgress',
+  )
+  assert(
+    !adminMayUpdateKarkun(
+      { ...legacyMissing, promotedToARuknId: 'AR01' },
+      { ...legacyMissing, promotedToARuknId: 'AR01', assignmentStatus: 'Available' },
+    ),
+    'E. promoted Karkun cannot be marked Available',
+  )
 }
 
 {
