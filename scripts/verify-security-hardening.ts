@@ -74,6 +74,10 @@ console.log('verify-security-hardening: start')
   assert(rules.includes('promotedToARuknIdUnchanged'), 'Rukn cannot write promotion link')
   assert(rules.includes('aRuknPromotionInProgressUnchanged'), 'Rukn cannot write promotion transition')
   assert(rules.includes('isARuknPromotionInProgressData'), 'transition excluded from Available')
+  assert(
+    rules.includes("('aRuknPromotionInProgress' in data)"),
+    'legacy karkuns missing aRuknPromotionInProgress do not fail rules evaluation',
+  )
   assert(rules.includes('karkunNotInARuknPromotionTransition'), 'connections blocked during transition')
   assert(rules.includes('officerIdentityUnchanged'), 'officer identity fields locked after create')
   assert(rules.includes('promotedKarkunNotAvailable'), 'promoted karkuns cannot be listed Available')

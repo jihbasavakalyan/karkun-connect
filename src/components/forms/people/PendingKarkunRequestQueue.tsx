@@ -20,6 +20,7 @@ import {
 } from '@/services/karkunRequestService'
 import {
   isPublicTrainingRequest,
+  publicTrainingReferralValue,
   PublicTrainingApproveFields,
 } from '@/components/forms/people/PublicTrainingApproveFields'
 import type { NewKarkunRequest } from '@/types/karkunRequest.types'
@@ -69,7 +70,9 @@ export function PendingKarkunRequestQueue() {
           requestId: request.id,
           decidedBy,
           decisionNotes: notesById[request.id],
-          referredByRuknId: isPublicTrainingRequest(request) ? referralById[request.id] : undefined,
+          referredByRuknId: isPublicTrainingRequest(request)
+            ? publicTrainingReferralValue(request, referralById)
+            : undefined,
           fatherHusbandName: isPublicTrainingRequest(request) ? familyById[request.id] : undefined,
           address: isPublicTrainingRequest(request) ? addressById[request.id] : undefined,
         })
@@ -191,6 +194,8 @@ export function PendingKarkunRequestQueue() {
           const isBusy =
             busyKey === `pending-queue:approve:${request.id}` ||
             busyKey === `pending-queue:reject:${request.id}`
+          const approveBlockedForReferral =
+            isPublicTrainingRequest(request) && !publicTrainingReferralValue(request, referralById)
           return (
             <li key={request.id} className="rounded-2xl border border-border bg-surface px-4 py-3">
               <div className="flex flex-wrap items-start justify-between gap-2">
@@ -228,7 +233,7 @@ export function PendingKarkunRequestQueue() {
               {isPublicTrainingRequest(request) ? (
                 <PublicTrainingApproveFields
                   request={request}
-                  referredByRuknId={referralById[request.id] ?? ''}
+                  referredByRuknId={referralById[request.id] ?? request.requestingRuknId ?? ''}
                   onReferredByRuknIdChange={(value) =>
                     setReferralById((current) => ({ ...current, [request.id]: value }))
                   }
@@ -247,7 +252,7 @@ export function PendingKarkunRequestQueue() {
               <div className="mt-3 flex flex-wrap gap-2">
                 <PrimaryButton
                   type="button"
-                  disabled={busy}
+                  disabled={busy || approveBlockedForReferral}
                   aria-busy={isBusy}
                   onClick={() => handleApprove(request)}
                 >

@@ -45,15 +45,24 @@ console.log('verify-new-person-intake: start')
   assert(!service.includes('requireNewPersonIntake: false'), 'public-training approve no longer skips intake')
   assert(service.includes('validateNewPersonIntake'), 'approve reuses intake helper')
   assert(service.includes('requireReferral: true'), 'Rukn submit requires referral')
-  assert(service.includes('requireReferral: !isPublicTraining'), 'public-training approve does not require referral')
+  assert(service.includes('{ requireReferral: true }'), 'new-karkun approve requires referral')
+  assert(!service.includes('requireReferral: !isPublicTraining'), 'public-training approve no longer skips referral')
   const inbox = readFileSync(resolve(process.cwd(), 'src/pages/admin/AdminInboxPage.tsx'), 'utf8')
-  assert(inbox.includes('PublicTrainingApproveFields'), 'inbox collects optional referring Rukn for public training')
+  assert(inbox.includes('PublicTrainingApproveFields'), 'inbox collects referring Rukn for public training')
+  assert(inbox.includes('approveBlockedForReferral'), 'Inbox Approve is blocked without referring Rukn')
   const fields = readFileSync(
     resolve(process.cwd(), 'src/components/forms/people/PublicTrainingApproveFields.tsx'),
     'utf8',
   )
-  assert(fields.includes('Referred By Rukn (optional)'), 'public-training referral is optional in UI')
-  assert(!fields.includes('Referred By Rukn *'), 'public-training referral is not marked required')
+  assert(fields.includes('Referred By Rukn *'), 'public-training referral is required in UI')
+  assert(!fields.includes('Referred By Rukn (optional)'), 'public-training referral is not marked optional')
+  assert(fields.includes('publicTrainingReferralValue'), 'existing request referral is preserved in the picker')
+  const queue = readFileSync(
+    resolve(process.cwd(), 'src/components/forms/people/PendingKarkunRequestQueue.tsx'),
+    'utf8',
+  )
+  assert(queue.includes('approveBlockedForReferral'), 'pending queue Approve is blocked without referring Rukn')
+  assert(queue.includes('disabled={busy || approveBlockedForReferral}'), 'Reject remains enabled without referral')
 }
 
 {
@@ -552,7 +561,36 @@ console.log('verify-new-person-intake: start')
   assert(getKarkunById(complete.karkunId!)?.referredByRuknId === referring.id, 'public training stores referral')
   assert(getKarkunById(complete.karkunId!)?.fatherHusbandName === 'Training Father', 'public training stores family name')
   assert(getKarkunById(complete.karkunId!)?.address === 'Training Address', 'public training stores address')
-  console.log('  OK  public training new-karkun intake (referral optional)')
+  const publicTrainingNoReferral = validateNewPersonIntake(
+    {
+      referredByRuknId: '',
+      fatherHusbandName: 'Training Father',
+      address: 'Training Address',
+      gender: 'Male',
+    },
+    { requireReferral: true },
+  )
+  assert(!publicTrainingNoReferral.ok, 'public-training approve without referral is blocked')
+  assert(
+    !publicTrainingNoReferral.ok && publicTrainingNoReferral.error === 'Referred By Rukn is required.',
+    'public-training uses existing referral required copy',
+  )
+
+  const publicTrainingWithReferral = validateNewPersonIntake(
+    {
+      referredByRuknId: referring.id,
+      fatherHusbandName: 'Training Father',
+      address: 'Training Address',
+      gender: 'Male',
+    },
+    { requireReferral: true },
+  )
+  assert(publicTrainingWithReferral.ok, 'public-training approve with selected Rukn succeeds')
+  assert(
+    publicTrainingWithReferral.ok && publicTrainingWithReferral.referredByRuknId === referring.id,
+    'public-training persist path keeps selected referredByRuknId',
+  )
+  console.log('  OK  public training new-karkun intake (referral required on approve)')
 }
 
 {

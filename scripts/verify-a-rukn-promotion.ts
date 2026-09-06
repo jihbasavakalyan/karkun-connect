@@ -449,6 +449,10 @@ assert(
   const rules = read('firestore.rules')
   assert(rules.includes('function referredByValue(data)'), 'referral helper is presence-safe')
   assert(rules.includes("('referredByRuknId' in data)"), 'missing referredByRuknId does not error the comparison')
+  assert(
+    rules.includes("('aRuknPromotionInProgress' in data)"),
+    'missing aRuknPromotionInProgress does not error connection/karkun rules',
+  )
   assert(!rules.includes('match /aRukns/'), 'no fourth A Rukn collection')
   assert(rules.includes('isPromotedToARuknData'), 'rules exclude promoted Available')
   assert(rules.includes('promotedToARuknIdUnchanged'), 'Rukn cannot write promotion link')
@@ -707,6 +711,23 @@ assert(nextAlloc.ok && nextAlloc.data.aRuknId === 'AR03', 'allocator advanced pa
   ): boolean {
     return (resource.aRuknPromotionInProgress === true) === (request.aRuknPromotionInProgress === true)
   }
+  function isARuknPromotionInProgressData(data: Record<string, unknown>): boolean {
+    return Object.prototype.hasOwnProperty.call(data, 'aRuknPromotionInProgress') && data.aRuknPromotionInProgress === true
+  }
+  function isPromotedToARuknData(data: Record<string, unknown>): boolean {
+    return (
+      Object.prototype.hasOwnProperty.call(data, 'promotedToARuknId') && stringOrEmpty(data.promotedToARuknId) !== ''
+    )
+  }
+  function karkunNotInARuknPromotionTransition(data: Record<string, unknown>): boolean {
+    return !isPromotedToARuknData(data) && !isARuknPromotionInProgressData(data)
+  }
+  function ruknMayForgeConnectionTransfer(
+    resource: Record<string, unknown>,
+    request: Record<string, unknown>,
+  ): boolean {
+    return request.ruknId === resource.ruknId && request.karkunId === resource.karkunId
+  }
   function promotedKarkunNotAvailable(request: Record<string, unknown>): boolean {
     const promoted = stringOrEmpty(request.promotedToARuknId) !== ''
     return !promoted || request.assignmentStatus !== 'Available'
@@ -851,6 +872,25 @@ assert(nextAlloc.ok && nextAlloc.data.aRuknId === 'AR03', 'allocator advanced pa
   assert(
     !ruknMayUpdateKarkun(legacyMissing, legacyTransition),
     'D. Rukn still cannot set aRuknPromotionInProgress',
+  )
+  assert(
+    karkunNotInARuknPromotionTransition(legacyMissing),
+    'legacy karkun missing aRuknPromotionInProgress still allows Admin connection create',
+  )
+  assert(
+    !karkunNotInARuknPromotionTransition({ ...legacyMissing, aRuknPromotionInProgress: true }),
+    'in-progress karkun still blocks connection create',
+  )
+  assert(
+    karkunNotInARuknPromotionTransition({ ...legacyMissing, aRuknPromotionInProgress: false }),
+    'explicit false is not treated as in-progress',
+  )
+  assert(
+    !ruknMayForgeConnectionTransfer(
+      { ruknId: 'R006', karkunId: 'kr-171', assignmentId: 'asgn-1' },
+      { ruknId: 'R007', karkunId: 'kr-171', assignmentId: 'asgn-1' },
+    ),
+    'Rukn still cannot change connection ruknId (transfer remains Admin-only)',
   )
   assert(
     !adminMayUpdateKarkun(

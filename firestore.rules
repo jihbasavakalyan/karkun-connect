@@ -95,8 +95,10 @@ service cloud.firestore {
         && stringOrEmpty(data.promotedToARuknId) != '';
     }
 
+    /** Safe for legacy docs where aRuknPromotionInProgress is absent. */
     function isARuknPromotionInProgressData(data) {
-      return data.aRuknPromotionInProgress == true;
+      return ('aRuknPromotionInProgress' in data)
+        && data.aRuknPromotionInProgress == true;
     }
 
     function promotedToARuknIdUnchanged() {

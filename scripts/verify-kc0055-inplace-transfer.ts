@@ -3,6 +3,7 @@
  * Run: npx vite-node scripts/verify-kc0055-inplace-transfer.ts
  */
 
+import { setJwtRoleClaimOverrideForTests } from '../src/lib/auth/ensureJwtRoleClaim'
 import { MOCK_KARKUN_REGISTRY } from '../src/constants/mockKarkunRegistry'
 import { ruknMaster } from '../src/data/ruknMaster'
 import { changeKarkunRuknAssignment } from '../src/lib/assignmentEngine'
@@ -28,6 +29,21 @@ const now = new Date().toISOString()
 const today = now.slice(0, 10)
 
 resetRepositoryProviderForTests()
+setJwtRoleClaimOverrideForTests({
+  ok: true,
+  role: 'administrator',
+  ruknId: null,
+  forceRefreshed: false,
+  timeline: {
+    t1GetIdTokenCalled: 0,
+    t2GetIdTokenResolved: 0,
+    forceRefreshed: false,
+    role: 'administrator',
+    ruknId: null,
+    issuedAtTime: null,
+    expirationTime: null,
+  },
+})
 clearAssignmentStore()
 
 const maleRukns = ruknMaster.filter((r) => r.status === 'active' && r.gender === 'Male')
@@ -122,7 +138,7 @@ assert(t2.assignment!.ruknId === ruknC!.id, 'ownership moved to C')
 assert((t2.assignment!.transferHistory?.length ?? 0) >= 2, 'two transfer history entries')
 
 // --- Disconnect after transfer ---
-const disconnect = removeAssignment({
+const disconnect = await removeAssignment({
   ruknId: ruknC!.id,
   karkunId: 'kr-kc0055',
   effectiveFrom: today,
@@ -148,6 +164,22 @@ assert(
   [...asnsAfter].every((asn) => asnsBeforeTransfer.has(asn)),
   'no new ASN values introduced by transfers',
 )
+
+setJwtRoleClaimOverrideForTests({
+  ok: false,
+  error: 'Not signed in.',
+  forceRefreshed: false,
+  timeline: null,
+})
+const unauthorized = await assignRukn({
+  ruknId: ruknA!.id,
+  karkunId: 'kr-kc0055',
+  effectiveFrom: today,
+  assignedBy: 'Rukn',
+})
+assert(!unauthorized.success, 'unsigned actor cannot save a connection')
+
+setJwtRoleClaimOverrideForTests(null)
 
 console.log(
   JSON.stringify(

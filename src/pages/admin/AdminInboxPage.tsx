@@ -36,6 +36,7 @@ import { subscribeToRuknAdminMessageStore } from '@/stores/ruknAdminMessageStore
 import { TrainingGatheringAdminPanel } from '@/components/public-registration/TrainingGatheringAdminPanel'
 import {
   isPublicTrainingRequest,
+  publicTrainingReferralValue,
   PublicTrainingApproveFields,
 } from '@/components/forms/people/PublicTrainingApproveFields'
 import { getPeopleRequestKind } from '@/types/karkunRequest.types'
@@ -130,7 +131,7 @@ export function AdminInboxPage() {
           requestId: request.id,
           decidedBy,
           referredByRuknId: isPublicTrainingRequest(request)
-            ? referralByRequestId[request.id]
+            ? publicTrainingReferralValue(request, referralByRequestId)
             : undefined,
           fatherHusbandName: isPublicTrainingRequest(request)
             ? familyByRequestId[request.id]
@@ -326,6 +327,14 @@ export function AdminInboxPage() {
             const whatsappHref = rukn
               ? buildWhatsAppLink(rukn.whatsapp?.trim() ? rukn.whatsapp : rukn.mobile)
               : null
+            const publicTrainingReferral = item.rawRequest
+              ? publicTrainingReferralValue(item.rawRequest, referralByRequestId)
+              : ''
+            const approveBlockedForReferral = Boolean(
+              item.rawRequest &&
+                isPublicTrainingRequest(item.rawRequest) &&
+                !publicTrainingReferral,
+            )
             return (
               <li
                 key={item.id}
@@ -359,7 +368,11 @@ export function AdminInboxPage() {
                     isPublicTrainingRequest(item.rawRequest) ? (
                       <PublicTrainingApproveFields
                         request={item.rawRequest}
-                        referredByRuknId={referralByRequestId[item.rawRequest.id] ?? ''}
+                        referredByRuknId={
+                          referralByRequestId[item.rawRequest.id] ??
+                          item.rawRequest.requestingRuknId ??
+                          ''
+                        }
                         onReferredByRuknIdChange={(value) =>
                           setReferralByRequestId((current) => ({
                             ...current,
@@ -417,7 +430,7 @@ export function AdminInboxPage() {
                     <>
                       <PrimaryButton
                         type="button"
-                        disabled={busy}
+                        disabled={busy || approveBlockedForReferral}
                         onClick={() => handleApprove(item)}
                       >
                         {itemBusy ? '…' : 'Approve'}

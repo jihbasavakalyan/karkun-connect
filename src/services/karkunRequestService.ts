@@ -487,7 +487,6 @@ async function approveNewKarkunRequestOnce(
       const referredByRuknId = (input.referredByRuknId ?? claimed.requestingRuknId).trim()
       const fatherHusbandName = (input.fatherHusbandName ?? claimed.fatherHusbandName)?.trim()
       const address = (input.address ?? claimed.address)?.trim()
-      const isPublicTraining = claimed.source === 'public_training_registration'
       const intake = validateNewPersonIntake(
         {
           referredByRuknId,
@@ -495,7 +494,7 @@ async function approveNewKarkunRequestOnce(
           address,
           gender: claimed.gender,
         },
-        { requireReferral: !isPublicTraining },
+        { requireReferral: true },
       )
       if (!intake.ok) {
         return { ok: false, error: intake.error, code: 'VALIDATION' }
@@ -542,7 +541,7 @@ async function approveNewKarkunRequestOnce(
           referredByRuknId: intake.referredByRuknId,
         },
         input.decidedBy || 'Administrator',
-        { requireReferral: !isPublicTraining },
+        { requireReferral: true },
       )
 
       if (!createResult.success) {

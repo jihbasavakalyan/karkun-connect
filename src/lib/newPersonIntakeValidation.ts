@@ -11,7 +11,8 @@ export type NewPersonIntakeInput = {
 export type NewPersonIntakeOptions = {
   /**
    * Rukn-submitted NEW Karkun / NEW Muttafiq: true (authenticated Rukn is the referral).
-   * Admin create and public-training approve: false (referral optional).
+   * Pending / public-training NEW Karkun approval: true (Admin must select referring Rukn).
+   * Admin-created person records: false (referral optional; do not invent).
    */
   requireReferral?: boolean
 }
