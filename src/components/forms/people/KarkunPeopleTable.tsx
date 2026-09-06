@@ -6,7 +6,7 @@ import type { PersonStatus } from '@/types/karkun-registry.types'
 import { getConnectionStatusLabel } from '@/lib/connectionLabels'
 import { formatPersonStatus, type PeopleSortField } from '@/types/people.types'
 import { formatPersonNameForDisplay } from '@/utils/formatPersonDisplay'
-import { currentMuttafiqRuknLabel } from '@/lib/connections/oneActiveRukn'
+import { presentMuttafiqConnectionView } from '@/lib/connections/muttafiqConnectionView'
 import { getMuttafiqDisplayNumber } from '@/lib/peopleClassification'
 import { RuknAssignmentSelect } from '@/components/forms/people/RuknAssignmentSelect'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
@@ -89,29 +89,13 @@ function PersonStatusBadge({ status }: { status: PersonStatus }) {
 function resolveMuttafiqRelationshipDisplay(
   activeLinks: MuttafiqRuknRelationship[],
   hasPendingLink: boolean,
-): { linkedRuknLabel: string; relationshipLabel: string } {
-  if (activeLinks.length > 0) {
-    const current = currentMuttafiqRuknLabel(activeLinks)
-    if (current.needsReview) {
-      return {
-        linkedRuknLabel: 'Needs review',
-        relationshipLabel: UI_LABELS.connected,
-      }
-    }
-    return {
-      linkedRuknLabel: current.label ? formatPersonNameForDisplay(current.label) : '—',
-      relationshipLabel: UI_LABELS.connected,
-    }
-  }
-  if (hasPendingLink) {
-    return {
-      linkedRuknLabel: '—',
-      relationshipLabel: UI_LABELS.pending,
-    }
-  }
+): { linkedRuknLabel: string; relationshipLabel: string; activeCount: number; canConnect: boolean } {
+  const view = presentMuttafiqConnectionView({ activeLinks, hasPendingLink })
   return {
-    linkedRuknLabel: '—',
-    relationshipLabel: UI_LABELS.notConnected,
+    linkedRuknLabel: view.connectedRuknLabel,
+    relationshipLabel: view.relationshipLabel,
+    activeCount: view.activeCount,
+    canConnect: view.status === 'none' || view.status === 'pending',
   }
 }
 
@@ -251,6 +235,7 @@ export function KarkunPeopleTable({
                   <th className="px-4 py-3 font-semibold text-text-heading">
                     {UI_LABELS.connectedRukn}
                   </th>
+                  <th className="px-4 py-3 font-semibold text-text-heading">Connected Count</th>
                   <th className="px-4 py-3 font-semibold text-text-heading">Relationship</th>
                 </>
               ) : null}
@@ -269,10 +254,11 @@ export function KarkunPeopleTable({
           <tbody>
             {records.map((karkun) => {
               const muttafiqLinks = activeLinksByPerson.get(karkun.id) ?? []
-              const { linkedRuknLabel, relationshipLabel } = resolveMuttafiqRelationshipDisplay(
-                muttafiqLinks,
-                pendingMuttafiqLinkPersonIds.has(karkun.id),
-              )
+              const { linkedRuknLabel, relationshipLabel, activeCount, canConnect } =
+                resolveMuttafiqRelationshipDisplay(
+                  muttafiqLinks,
+                  pendingMuttafiqLinkPersonIds.has(karkun.id),
+                )
 
               return (
                 <tr key={karkun.id} className={PEOPLE_TABLE_ROW_CLASS}>
@@ -339,6 +325,7 @@ export function KarkunPeopleTable({
                   {showMuttafiqRelationshipColumns ? (
                     <>
                       <td className={PEOPLE_TABLE_CELL_CLASS}>{linkedRuknLabel}</td>
+                      <td className={PEOPLE_TABLE_CELL_CLASS}>{activeCount}</td>
                       <td className={`${PEOPLE_TABLE_CELL_CLASS} text-secondary`}>
                         {relationshipLabel}
                       </td>
@@ -366,7 +353,7 @@ export function KarkunPeopleTable({
                       >
                         Edit
                       </button>
-                      {onConnectRukn ? (
+                      {onConnectRukn && canConnect ? (
                         <button
                           type="button"
                           className="text-sm font-medium text-primary hover:underline"
@@ -393,10 +380,11 @@ export function KarkunPeopleTable({
       <ul className="space-y-4 md:hidden">
         {records.map((karkun) => {
           const muttafiqLinks = activeLinksByPerson.get(karkun.id) ?? []
-          const { linkedRuknLabel, relationshipLabel } = resolveMuttafiqRelationshipDisplay(
-            muttafiqLinks,
-            pendingMuttafiqLinkPersonIds.has(karkun.id),
-          )
+          const { linkedRuknLabel, relationshipLabel, activeCount, canConnect } =
+            resolveMuttafiqRelationshipDisplay(
+              muttafiqLinks,
+              pendingMuttafiqLinkPersonIds.has(karkun.id),
+            )
 
           return (
             <li
@@ -480,6 +468,10 @@ export function KarkunPeopleTable({
                           <dd className="font-medium text-right">{linkedRuknLabel}</dd>
                         </div>
                         <div className="flex justify-between gap-3">
+                          <dt className="text-secondary">Connected Count</dt>
+                          <dd className="font-medium">{activeCount}</dd>
+                        </div>
+                        <div className="flex justify-between gap-3">
                           <dt className="text-secondary">Relationship</dt>
                           <dd className="font-medium">{relationshipLabel}</dd>
                         </div>
@@ -494,7 +486,7 @@ export function KarkunPeopleTable({
                     >
                       Edit
                     </button>
-                    {onConnectRukn ? (
+                    {onConnectRukn && canConnect ? (
                       <button
                         type="button"
                         className="font-medium text-primary"

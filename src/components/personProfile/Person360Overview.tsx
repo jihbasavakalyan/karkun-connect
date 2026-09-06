@@ -8,6 +8,7 @@ import { buildPerson360Profile } from '@/lib/personProfile'
 import { ContinuousKarkunJourneyStrip } from '@/components/journey/ContinuousKarkunJourneyStrip'
 import { formatPersonNameForDisplay } from '@/utils/formatPersonDisplay'
 import { UI_LABELS } from '@/lib/uiTerminology'
+import { useMuttafiqRelationshipStore } from '@/hooks/useMuttafiqRelationshipStore'
 
 type Person360OverviewProps = {
   personId: string
@@ -20,6 +21,8 @@ function toneClass(tone: 'ok' | 'pending' | 'neutral'): string {
 }
 
 export function Person360Overview({ personId }: Person360OverviewProps) {
+  const relationshipVersion = useMuttafiqRelationshipStore()
+  void relationshipVersion
   const profile = buildPerson360Profile(personId)
   if (!profile.found) return null
 
@@ -68,6 +71,12 @@ export function Person360Overview({ personId }: Person360OverviewProps) {
                 </dt>
                 <dd className="inline">{header.connectedRuknName}</dd>
               </div>
+              {typeof header.connectedCount === 'number' ? (
+                <div>
+                  <dt className="inline font-medium text-text-heading">Connected Count: </dt>
+                  <dd className="inline">{header.connectedCount}</dd>
+                </div>
+              ) : null}
               <div>
                 <dt className="inline font-medium text-text-heading">Ward / Area: </dt>
                 <dd className="inline">

@@ -55,6 +55,10 @@ import {
 } from '@/types/karkunRequest.types'
 import { DEFAULT_PLACE, type PersonGender } from '@/types/people.types'
 import { getPersonCategory } from '@/lib/peopleClassification'
+import {
+  MUTTAFIQ_ALREADY_HAS_ACTIVE_RUKN_MESSAGE,
+  MUTTAFIQ_DUPLICATE_ACTIVE_RUKN_MESSAGE,
+} from '@/lib/connections/muttafiqConnectionView'
 
 export { subscribeToKarkunRequestStore, getPendingKarkunRequests, getAllKarkunRequests }
 
@@ -919,13 +923,21 @@ export async function submitMuttafiqRuknLinkRequest(input: {
   const { getActiveMuttafiqRelationshipsForPerson } = await import(
     '@/stores/muttafiqRelationshipStore'
   )
-  const alreadyLinked = getActiveMuttafiqRelationshipsForPerson(person.id).some(
-    (row) => row.ruknId === rukn.id,
-  )
-  if (alreadyLinked) {
+  const activeLinks = getActiveMuttafiqRelationshipsForPerson(person.id)
+  if (activeLinks.length > 1) {
     return {
       ok: false,
-      error: 'This Muttafiq is already linked to this Rukn.',
+      error: MUTTAFIQ_DUPLICATE_ACTIVE_RUKN_MESSAGE,
+      code: 'VALIDATION',
+    }
+  }
+  if (activeLinks.length === 1) {
+    return {
+      ok: false,
+      error:
+        activeLinks[0]!.ruknId === rukn.id
+          ? 'This Muttafiq is already linked to this Rukn.'
+          : MUTTAFIQ_ALREADY_HAS_ACTIVE_RUKN_MESSAGE,
       code: 'PENDING_EXISTS',
     }
   }
@@ -960,32 +972,32 @@ export async function submitMuttafiqRuknLinkRequest(input: {
   return { ok: true, request }
 }
 
-async function endOtherActiveMuttafiqLinks(
-  personId: string,
-  keepRuknId: string,
-): Promise<{ ok: true } | { ok: false; error: string }> {
-  const { getActiveMuttafiqRelationshipsForPerson } = await import(
-    '@/stores/muttafiqRelationshipStore'
-  )
-  const others = getActiveMuttafiqRelationshipsForPerson(personId).filter(
-    (row) => row.ruknId !== keepRuknId,
-  )
-  const now = new Date().toISOString()
-  for (const row of others) {
-    const ended = await getRepositories().muttafiqRelationship.endDurable({
-      ...row,
-      status: 'Ended',
-      updatedAt: now,
-    })
-    if (!ended.ok) {
-      return { ok: false, error: ended.error.message || 'Could not end previous Muttafiq–Rukn link.' }
+function rejectSecondActiveMuttafiqLink(
+  targetRuknId: string,
+  activeLinks: { ruknId: string }[],
+): { ok: false; error: string; code: 'PENDING_EXISTS' | 'VALIDATION' } | null {
+  if (activeLinks.length > 1) {
+    return {
+      ok: false,
+      error: MUTTAFIQ_DUPLICATE_ACTIVE_RUKN_MESSAGE,
+      code: 'VALIDATION',
     }
   }
-  const { reloadMuttafiqRelationshipStoreFromPersistence } = await import(
-    '@/stores/muttafiqRelationshipStore'
-  )
-  reloadMuttafiqRelationshipStoreFromPersistence()
-  return { ok: true }
+  if (activeLinks.length === 1 && activeLinks[0]!.ruknId !== targetRuknId) {
+    return {
+      ok: false,
+      error: MUTTAFIQ_ALREADY_HAS_ACTIVE_RUKN_MESSAGE,
+      code: 'PENDING_EXISTS',
+    }
+  }
+  if (activeLinks.length === 1 && activeLinks[0]!.ruknId === targetRuknId) {
+    return {
+      ok: false,
+      error: 'This Muttafiq is already linked to this Rukn.',
+      code: 'PENDING_EXISTS',
+    }
+  }
+  return null
 }
 
 export type AssignMuttafiqRuknLinkResult =
@@ -1055,20 +1067,12 @@ export async function assignMuttafiqRuknLinkAsAdmin(input: {
   const { getActiveMuttafiqRelationshipsForPerson } = await import(
     '@/stores/muttafiqRelationshipStore'
   )
-  const alreadyLinked = getActiveMuttafiqRelationshipsForPerson(person.id).some(
-    (row) => row.ruknId === rukn.id,
+  const blocked = rejectSecondActiveMuttafiqLink(
+    rukn.id,
+    getActiveMuttafiqRelationshipsForPerson(person.id),
   )
-  if (alreadyLinked && getActiveMuttafiqRelationshipsForPerson(person.id).length === 1) {
-    return {
-      ok: false,
-      error: 'This Muttafiq is already linked to this Rukn.',
-      code: 'PENDING_EXISTS',
-    }
-  }
-
-  const endedOthers = await endOtherActiveMuttafiqLinks(person.id, rukn.id)
-  if (!endedOthers.ok) {
-    return { ok: false, error: endedOthers.error, code: 'VALIDATION' }
+  if (blocked) {
+    return blocked
   }
 
   const { muttafiqRuknRelationshipId } = await import('@/types/muttafiqRelationship.types')
@@ -1159,11 +1163,22 @@ async function approvePeopleIntakeRequestOnce(
       const person = getKarkunById(existing.sourcePersonId)
       const linkRukn = getRuknById(existing.requestingRuknId)
       if (person && getPersonCategory(person) === 'Muttafiq' && linkRukn) {
-        const { muttafiqRuknRelationshipId } = await import('@/types/muttafiqRelationship.types')
-        const endedOthers = await endOtherActiveMuttafiqLinks(person.id, linkRukn.id)
-        if (!endedOthers.ok) {
-          return { ok: false, error: endedOthers.error, code: 'VALIDATION' }
+        const { getActiveMuttafiqRelationshipsForPerson } = await import(
+          '@/stores/muttafiqRelationshipStore'
+        )
+        const activeLinks = getActiveMuttafiqRelationshipsForPerson(person.id)
+        const otherActive = activeLinks.find((row) => row.ruknId !== linkRukn.id)
+        if (otherActive && !activeLinks.some((row) => row.ruknId === linkRukn.id)) {
+          return {
+            ok: false,
+            error:
+              activeLinks.length > 1
+                ? MUTTAFIQ_DUPLICATE_ACTIVE_RUKN_MESSAGE
+                : MUTTAFIQ_ALREADY_HAS_ACTIVE_RUKN_MESSAGE,
+            code: 'VALIDATION',
+          }
         }
+        const { muttafiqRuknRelationshipId } = await import('@/types/muttafiqRelationship.types')
         const now = new Date().toISOString()
         await getRepositories().muttafiqRelationship.upsertActiveDurable({
           id: muttafiqRuknRelationshipId(linkRukn.id, person.id),
@@ -1317,11 +1332,19 @@ async function approvePeopleIntakeRequestOnce(
         return { ok: false, error: 'Target Rukn not found or inactive.', code: 'VALIDATION' }
       }
 
-      const { muttafiqRuknRelationshipId } = await import('@/types/muttafiqRelationship.types')
-      const endedOthers = await endOtherActiveMuttafiqLinks(personId, linkRukn.id)
-      if (!endedOthers.ok) {
-        return { ok: false, error: endedOthers.error, code: 'VALIDATION' }
+      const { getActiveMuttafiqRelationshipsForPerson } = await import(
+        '@/stores/muttafiqRelationshipStore'
+      )
+      const activeLinks = getActiveMuttafiqRelationshipsForPerson(personId)
+      const alreadySameRukn = activeLinks.some((row) => row.ruknId === linkRukn.id)
+      if (!alreadySameRukn) {
+        const blocked = rejectSecondActiveMuttafiqLink(linkRukn.id, activeLinks)
+        if (blocked) {
+          return blocked
+        }
       }
+
+      const { muttafiqRuknRelationshipId } = await import('@/types/muttafiqRelationship.types')
       const now = new Date().toISOString()
       const relationshipId = muttafiqRuknRelationshipId(linkRukn.id, personId)
       const upsert = await getRepositories().muttafiqRelationship.upsertActiveDurable({

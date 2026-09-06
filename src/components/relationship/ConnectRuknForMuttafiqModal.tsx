@@ -14,7 +14,7 @@ import { getAllRukns, normalizePersonGender } from '@/lib/peopleStore'
 import { formatPersonNameForDisplay } from '@/utils/formatPersonDisplay'
 import { assignMuttafiqRuknLinkAsAdmin } from '@/services/karkunRequestService'
 import { getActiveMuttafiqRelationshipsForPerson } from '@/stores/muttafiqRelationshipStore'
-import { pickUniqueNewestActive } from '@/lib/connections/oneActiveRukn'
+import { presentMuttafiqConnectionView } from '@/lib/connections/muttafiqConnectionView'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
 
 type ConnectRuknForMuttafiqModalProps = {
@@ -38,22 +38,21 @@ export function ConnectRuknForMuttafiqModal({
   const { busy: submitting, progressMessage, run } = useWriteLifecycle()
 
   void relationshipVersion
+  const connectionView = person
+    ? presentMuttafiqConnectionView({
+        activeLinks: getActiveMuttafiqRelationshipsForPerson(person.id),
+      })
+    : null
+  const alreadyConnected = connectionView?.status === 'one' || connectionView?.status === 'duplicate'
   const ruknOptions = (() => {
-    if (!person) return []
+    if (!person || alreadyConnected) return []
     const personGender = normalizePersonGender(person.gender)
-    const linkedIds = new Set(
-      (() => {
-        const pick = pickUniqueNewestActive(getActiveMuttafiqRelationshipsForPerson(person.id))
-        return pick.status === 'one' ? [pick.current.ruknId] : []
-      })(),
-    )
     return getAllRukns()
       .filter((rukn) => rukn.status === 'active' && !rukn.isArchived)
       .filter((rukn) => {
         if (!personGender) return true
         return normalizePersonGender(rukn.gender) === personGender
       })
-      .filter((rukn) => !linkedIds.has(rukn.id))
       .sort((a, b) => a.name.localeCompare(b.name))
   })()
 
@@ -72,6 +71,14 @@ export function ConnectRuknForMuttafiqModal({
     setError('')
     if (!person) {
       setError('Muttafiq not found.')
+      return
+    }
+    if (alreadyConnected) {
+      setError(
+        connectionView?.status === 'duplicate'
+          ? 'This Muttafiq has more than one active Rukn relationship. Resolve the duplicates before connecting.'
+          : 'This Muttafiq already has an active Rukn relationship.',
+      )
       return
     }
     if (!ruknId.trim()) {
@@ -126,7 +133,7 @@ export function ConnectRuknForMuttafiqModal({
             submitting ? progressMessage || 'محفوظ کیا جا رہا ہے...' : 'Confirm Connection'
           }
           onPrimaryClick={() => handleSubmit()}
-          primaryDisabled={submitting || !person}
+          primaryDisabled={submitting || !person || alreadyConnected}
         />
       }
     >
@@ -178,7 +185,9 @@ export function ConnectRuknForMuttafiqModal({
         </label>
         {ruknOptions.length === 0 ? (
           <p className="text-sm text-secondary">
-            No available Rukns to connect (already linked or none active for this gender).
+            {alreadyConnected
+              ? 'This Muttafiq already has an active Rukn relationship.'
+              : 'No available Rukns to connect (none active for this gender).'}
           </p>
         ) : null}
       </div>

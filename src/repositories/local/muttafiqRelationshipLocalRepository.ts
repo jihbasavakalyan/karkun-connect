@@ -1,8 +1,12 @@
 import type { MuttafiqRuknRelationship } from '@/types/muttafiqRelationship.types'
 import type { MuttafiqRelationshipRepository } from '@/repositories/interfaces/MuttafiqRelationshipRepository'
-import { tryRepository, type RepositoryResult } from '@/repositories/errors'
+import { tryRepository, repositoryErr, type RepositoryResult } from '@/repositories/errors'
 import { STORAGE_KEYS } from '@/repositories/storageKeys'
 import { loadJsonFromStorage, saveJsonToStorage } from '@/lib/browserStorage'
+import {
+  findOtherActiveMuttafiqRelationship,
+  MUTTAFIQ_ALREADY_HAS_ACTIVE_RUKN_MESSAGE,
+} from '@/lib/connections/muttafiqConnectionView'
 
 function loadRows(): MuttafiqRuknRelationship[] {
   return loadJsonFromStorage<MuttafiqRuknRelationship[]>(STORAGE_KEYS.muttafiqRelationships, [])
@@ -27,8 +31,16 @@ export class MuttafiqRelationshipLocalRepository implements MuttafiqRelationship
   async upsertActiveDurable(
     relationship: MuttafiqRuknRelationship,
   ): Promise<RepositoryResult<MuttafiqRuknRelationship>> {
+    const existing = loadRows()
+    const otherActive = findOtherActiveMuttafiqRelationship(
+      existing,
+      relationship.personId,
+      relationship.id,
+    )
+    if (otherActive) {
+      return repositoryErr('Duplicate', MUTTAFIQ_ALREADY_HAS_ACTIVE_RUKN_MESSAGE)
+    }
     return tryRepository(() => {
-      const existing = loadRows()
       const index = existing.findIndex((row) => row.id === relationship.id)
       if (index >= 0) {
         const current = existing[index]!

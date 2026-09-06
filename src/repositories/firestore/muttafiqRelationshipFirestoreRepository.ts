@@ -22,6 +22,10 @@ import {
 } from '@/repositories/errors'
 import type { MuttafiqRelationshipRepository } from '@/repositories/interfaces/MuttafiqRelationshipRepository'
 import type { MuttafiqRuknRelationship } from '@/types/muttafiqRelationship.types'
+import {
+  findOtherActiveMuttafiqRelationship,
+  MUTTAFIQ_ALREADY_HAS_ACTIVE_RUKN_MESSAGE,
+} from '@/lib/connections/muttafiqConnectionView'
 import { FIRESTORE_COLLECTIONS } from '@/repositories/firestore/collections'
 import {
   mapFirestoreError,
@@ -155,6 +159,24 @@ export class MuttafiqRelationshipFirestoreRepository implements MuttafiqRelation
           upsertCache(parsed)
           return repositoryOk(parsed)
         }
+      }
+
+      const personSnap = await getDocs(
+        query(
+          collection(db, FIRESTORE_COLLECTIONS.muttafiqRelationships),
+          where('personId', '==', relationship.personId),
+        ),
+      )
+      const personRows = personSnap.docs
+        .map((item) => parseRelationshipDoc(item.data()))
+        .filter((row): row is MuttafiqRuknRelationship => row != null)
+      const otherActive = findOtherActiveMuttafiqRelationship(
+        personRows,
+        relationship.personId,
+        relationship.id,
+      )
+      if (otherActive) {
+        return repositoryErr('Duplicate', MUTTAFIQ_ALREADY_HAS_ACTIVE_RUKN_MESSAGE)
       }
 
       const createdAt =

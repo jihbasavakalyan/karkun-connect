@@ -5,8 +5,8 @@ import { ROUTES } from '@/constants/routes'
 import { changeKarkunRuknAssignment } from '@/lib/assignmentEngine'
 import { getPersonCategory, getMuttafiqDisplayNumber, isPromotedToARukn } from '@/lib/peopleClassification'
 import { persistKarkunDurable, updateKarkun } from '@/lib/peopleStore'
-import { currentMuttafiqRuknLabel, pickUniqueNewestActive } from '@/lib/connections/oneActiveRukn'
-import { getActiveMuttafiqRelationshipsForPerson } from '@/stores/muttafiqRelationshipStore'
+import { getMuttafiqConnectionViewForPerson } from '@/stores/muttafiqRelationshipStore'
+import { useMuttafiqRelationshipStore } from '@/hooks/useMuttafiqRelationshipStore'
 import { getRuknById } from '@/data/ruknMaster'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { usePeopleStore } from '@/hooks/usePeopleStore'
@@ -136,6 +136,7 @@ type KarkunProfileFormProps = {
 function KarkunProfileForm({ karkun, karkunId }: KarkunProfileFormProps) {
   const navigate = useNavigate()
   const { sendIndividualMessage } = useCommunication()
+  const muttafiqRelationshipVersion = useMuttafiqRelationshipStore()
   const initialCompliance = readComplianceState(karkunId)
   const category = getPersonCategory(karkun)
   const isMuttafiq = category === 'Muttafiq'
@@ -377,32 +378,23 @@ function KarkunProfileForm({ karkun, karkunId }: KarkunProfileFormProps) {
             </div>
           ) : (
             <div className="flex flex-col gap-2 sm:col-span-2">
-              <span className="text-sm font-medium text-text-heading">Linked Rukn</span>
+              <span className="text-sm font-medium text-text-heading">Connected Rukn</span>
               {(() => {
-                const links = getActiveMuttafiqRelationshipsForPerson(karkunId)
-                const current = currentMuttafiqRuknLabel(links)
-                if (links.length === 0) {
-                  return (
-                    <p className="text-sm text-secondary">
-                      No Muttafiq–Rukn link yet. Approve a link request from Admin Inbox.
-                    </p>
-                  )
-                }
-                if (current.needsReview) {
-                  return (
-                    <p className="text-sm text-secondary">
-                      Multiple active Rukn links exist. Review history — current Rukn cannot be
-                      determined safely.
-                    </p>
-                  )
-                }
-                const pick = pickUniqueNewestActive(links)
-                const link = pick.status === 'one' ? pick.current : links[0]!
+                void muttafiqRelationshipVersion
+                const view = getMuttafiqConnectionViewForPerson(karkunId)
                 return (
-                  <p className="text-sm text-text-heading">
-                    Rukn: {link.ruknName}{' '}
-                    <span className="text-secondary">({link.ruknId})</span>
-                  </p>
+                  <div className="space-y-1 text-sm text-text-heading">
+                    <p>
+                      {view.status === 'none'
+                        ? 'Not Connected'
+                        : view.connectedRuknLabel}
+                      {view.status === 'one' ? (
+                        <span className="text-secondary"> ({view.current?.ruknId})</span>
+                      ) : null}
+                    </p>
+                    <p className="text-secondary">Connected Count: {view.activeCount}</p>
+                    <p className="text-secondary">Relationship: {view.relationshipLabel}</p>
+                  </div>
                 )
               })()}
             </div>

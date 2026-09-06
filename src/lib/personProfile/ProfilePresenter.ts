@@ -12,6 +12,7 @@ import {
   ROUTES,
 } from '@/constants/routes'
 import { getPersonCategory, getMuttafiqDisplayNumber } from '@/lib/peopleClassification'
+import { getMuttafiqConnectionViewForPerson } from '@/stores/muttafiqRelationshipStore'
 import { getKarkunGuidance } from '@/lib/guidance/guidanceEngine'
 import {
   getActiveAssignmentsForKarkun,
@@ -69,6 +70,8 @@ export function presentPerson360Profile(personId: string): Person360Profile {
 
   const category = getPersonCategory(person)
   const connection = resolveActiveConnection(personId)
+  const muttafiqView =
+    category === 'Muttafiq' ? getMuttafiqConnectionViewForPerson(personId) : null
   const active = getActiveAssignmentsForKarkun(personId)[0]
   const guidance = getKarkunGuidance(personId)
   const history = getAssignmentHistoryForKarkun(personId).map((record) => {
@@ -98,19 +101,30 @@ export function presentPerson360Profile(personId: string): Person360Profile {
       gender: person.gender,
       registry: registryLabel,
       campaignStatus: guidance?.stageLabel || person.campaignStatus || person.status,
-      connectedRuknName:
-        connection.ruknName || person.assignedRukn || (connection.connected ? connection.ruknId! : 'Unassigned'),
+      connectedRuknName: muttafiqView
+        ? muttafiqView.status === 'none'
+          ? 'Not Connected'
+          : muttafiqView.connectedRuknLabel
+        : connection.ruknName || person.assignedRukn || (connection.connected ? connection.ruknId! : 'Unassigned'),
+      connectedCount: muttafiqView ? muttafiqView.activeCount : undefined,
       ward: person.place || '',
       area: person.area || '',
       photoPlaceholder: initials(person.name),
     },
     responsibility: {
-      responsibleRuknName:
-        connection.ruknName || person.assignedRukn || 'Unassigned',
-      connectedSince: active?.effectiveFrom || person.assignmentDate || '—',
-      connectionStatus: connection.connected
-        ? connection.status || person.assignmentStatus || 'Active'
-        : person.assignmentStatus || 'Available',
+      responsibleRuknName: muttafiqView
+        ? muttafiqView.status === 'none'
+          ? 'Not Connected'
+          : muttafiqView.connectedRuknLabel
+        : connection.ruknName || person.assignedRukn || 'Unassigned',
+      connectedSince: muttafiqView
+        ? muttafiqView.current?.createdAt?.slice(0, 10) || '—'
+        : active?.effectiveFrom || person.assignmentDate || '—',
+      connectionStatus: muttafiqView
+        ? muttafiqView.relationshipLabel
+        : connection.connected
+          ? connection.status || person.assignmentStatus || 'Active'
+          : person.assignmentStatus || 'Available',
       assignmentHistory: history,
     },
     campaignStatus: aggregatePersonCampaignStatus(personId),

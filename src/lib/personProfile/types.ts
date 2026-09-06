@@ -57,6 +57,7 @@ export type Person360Profile = {
     registry: string
     campaignStatus: string
     connectedRuknName: string
+    connectedCount?: number
     ward: string
     area: string
     photoPlaceholder: string

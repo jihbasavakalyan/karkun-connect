@@ -100,8 +100,16 @@ export function currentMuttafiqRuknLabel(activeLinks: readonly MuttafiqRuknRelat
   label: string | null
   needsReview: boolean
 } {
-  const pick = pickUniqueNewestActive(activeLinks)
-  if (pick.status === 'none') return { label: null, needsReview: false }
-  if (pick.status === 'ambiguous') return { label: null, needsReview: true }
-  return { label: pick.current.ruknName || pick.current.ruknId, needsReview: false }
+  if (activeLinks.length === 0) return { label: null, needsReview: false }
+  if (activeLinks.length > 1) return { label: null, needsReview: true }
+  const current = activeLinks[0]!
+  return { label: current.ruknName || current.ruknId, needsReview: false }
 }
+
+export {
+  MUTTAFIQ_ALREADY_HAS_ACTIVE_RUKN_MESSAGE,
+  MUTTAFIQ_DUPLICATE_ACTIVE_RUKN_MESSAGE,
+  findOtherActiveMuttafiqRelationship,
+  presentMuttafiqConnectionView,
+} from '@/lib/connections/muttafiqConnectionView'
+export type { MuttafiqConnectionView } from '@/lib/connections/muttafiqConnectionView'

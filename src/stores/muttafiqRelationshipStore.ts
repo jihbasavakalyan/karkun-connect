@@ -3,7 +3,10 @@
  */
 
 import type { MuttafiqRuknRelationship } from '@/types/muttafiqRelationship.types'
-import { pickUniqueNewestActive } from '@/lib/connections/oneActiveRukn'
+import {
+  presentMuttafiqConnectionView,
+  type MuttafiqConnectionView,
+} from '@/lib/connections/muttafiqConnectionView'
 import { getRepositories } from '@/repositories/provider'
 import { unwrapRepository } from '@/repositories/errors'
 
@@ -41,10 +44,20 @@ export function getActiveMuttafiqRelationshipsForRukn(
   const id = ruknId.trim()
   return relationships.filter((row) => {
     if (row.ruknId !== id || row.status !== 'Active') return false
-    const pick = pickUniqueNewestActive(
-      relationships.filter((candidate) => candidate.personId === row.personId && candidate.status === 'Active'),
+    const personActives = relationships.filter(
+      (candidate) => candidate.personId === row.personId && candidate.status === 'Active',
     )
-    return pick.status === 'one' && pick.current.id === row.id
+    return personActives.length === 1 && personActives[0]!.id === row.id
+  })
+}
+
+export function getMuttafiqConnectionViewForPerson(
+  personId: string,
+  options?: { hasPendingLink?: boolean },
+): MuttafiqConnectionView {
+  return presentMuttafiqConnectionView({
+    activeLinks: getActiveMuttafiqRelationshipsForPerson(personId),
+    hasPendingLink: options?.hasPendingLink,
   })
 }
 
@@ -81,6 +94,26 @@ export function reloadMuttafiqRelationshipStoreFromPersistence(): void {
   const loaded = unwrapRepository(getRepositories().muttafiqRelationship.loadAll(), [])
   relationships.length = 0
   relationships.push(...loaded)
+  const byPerson = new Map<string, string[]>()
+  for (const row of relationships) {
+    if (row.status !== 'Active') continue
+    const personId = row.personId.trim()
+    if (!personId) continue
+    const ruknIds = byPerson.get(personId) ?? []
+    ruknIds.push(row.ruknId)
+    byPerson.set(personId, ruknIds)
+  }
+  const duplicates = [...byPerson.entries()]
+    .filter(([, ruknIds]) => ruknIds.length > 1)
+    .map(([personId, ruknIds]) => ({
+      personId,
+      kind: 'muttafiq' as const,
+      activeCount: ruknIds.length,
+      ruknIds: [...new Set(ruknIds)],
+    }))
+  if (duplicates.length > 0) {
+    console.warn('[muttafiqRelationships] duplicate active Rukn relationships (not deleted)', duplicates)
+  }
   notify()
 }
 

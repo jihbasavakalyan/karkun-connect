@@ -232,22 +232,22 @@ const ruknB = maleRukns[1]!.id
     ruknId: female[1]!.id,
     establishedBy: 'Administrator',
   })
-  assert(second.ok, `second muttafiq link failed: ${second.ok ? '' : second.error}`)
+  assert(!second.ok, 'second muttafiq active relationship is rejected')
   reloadMuttafiqRelationshipStoreFromPersistence()
   const active = getActiveMuttafiqRelationshipsForPerson(created.karkunId!)
-  assert(active.length === 1, 'muttafiq person has exactly one active Rukn')
-  assert(active[0]?.ruknId === female[1]!.id, 'latest muttafiq link is current')
+  assert(active.length === 1, 'muttafiq person keeps exactly one active Rukn')
+  assert(active[0]?.ruknId === female[0]!.id, 'original muttafiq link remains current')
   assert(
     inspectDuplicateActiveMuttafiqLinks().every((row) => row.personId !== created.karkunId),
-    'muttafiq duplicates not present after save',
+    'muttafiq duplicates not present after rejected second save',
   )
   assert(
-    getActiveMuttafiqRelationshipsForRukn(female[0]!.id).every((row) => row.personId !== created.karkunId),
-    'previous Muttafiq Rukn list excludes person',
+    getActiveMuttafiqRelationshipsForRukn(female[0]!.id).some((row) => row.personId === created.karkunId),
+    'original Muttafiq Rukn list includes person',
   )
   assert(
-    getActiveMuttafiqRelationshipsForRukn(female[1]!.id).some((row) => row.personId === created.karkunId),
-    'current Muttafiq Rukn list includes person',
+    getActiveMuttafiqRelationshipsForRukn(female[1]!.id).every((row) => row.personId !== created.karkunId),
+    'rejected second Rukn list excludes person',
   )
 }
 
