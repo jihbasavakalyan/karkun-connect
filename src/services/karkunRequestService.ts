@@ -54,7 +54,7 @@ import {
   type PeopleRequestKind,
 } from '@/types/karkunRequest.types'
 import { DEFAULT_PLACE, type PersonGender } from '@/types/people.types'
-import { getPersonCategory } from '@/lib/peopleClassification'
+import { getPersonCategory, isMuttafiq } from '@/lib/peopleClassification'
 import {
   MUTTAFIQ_ALREADY_HAS_ACTIVE_RUKN_MESSAGE,
   MUTTAFIQ_DUPLICATE_ACTIVE_RUKN_MESSAGE,
@@ -883,7 +883,7 @@ export async function submitMuttafiqRuknLinkRequest(input: {
   if (!person) {
     return { ok: false, error: 'Person not found.', code: 'VALIDATION' }
   }
-  if (getPersonCategory(person) !== 'Muttafiq') {
+  if (!isMuttafiq(person)) {
     return {
       ok: false,
       error: 'Only an existing Muttafiq can be linked to a Rukn with this request.',
@@ -1030,7 +1030,7 @@ export async function assignMuttafiqRuknLinkAsAdmin(input: {
   if (!person) {
     return { ok: false, error: 'Person not found.', code: 'VALIDATION' }
   }
-  if (getPersonCategory(person) !== 'Muttafiq') {
+  if (!isMuttafiq(person)) {
     return {
       ok: false,
       error: 'Only an existing Muttafiq can be linked to a Rukn.',
@@ -1320,7 +1320,7 @@ async function approvePeopleIntakeRequestOnce(
         }
       }
       const person = getKarkunById(personId)
-      if (!person || getPersonCategory(person) !== 'Muttafiq') {
+      if (!person || !isMuttafiq(person)) {
         return {
           ok: false,
           error: 'Person must remain an existing Muttafiq to establish this link.',

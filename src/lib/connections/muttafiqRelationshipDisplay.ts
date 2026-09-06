@@ -15,7 +15,7 @@ import {
   type MuttafiqConnectionView,
 } from '@/lib/connections/muttafiqConnectionView'
 import { isARuknId, resolveOfficerKind } from '@/lib/officerIdentity'
-import { getMuttafiqDisplayNumber, getPersonCategory } from '@/lib/peopleClassification'
+import { getMuttafiqDisplayNumber, getPersonCategory, isSoftRemoved } from '@/lib/peopleClassification'
 import { UI_LABELS } from '@/lib/uiTerminology'
 import type { MuttafiqRuknRelationship } from '@/types/muttafiqRelationship.types'
 import { formatPersonNameForDisplay } from '@/utils/formatPersonDisplay'
@@ -175,5 +175,9 @@ export function presentActiveMuttafiqRowsForRukn(
 ): MuttafiqRuknConnectionDisplayRow[] {
   return activeLinks
     .filter((row) => row.status === 'Active')
+    .filter((row) => {
+      const person = getKarkunById(row.personId)
+      return Boolean(person && !isSoftRemoved(person))
+    })
     .map((row) => presentConnectedMuttafiqRow(row))
 }

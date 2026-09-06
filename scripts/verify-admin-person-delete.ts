@@ -12,8 +12,10 @@ import {
 } from '@/lib/auth/assertAdministratorDecisionSession'
 import { setJwtRoleClaimOverrideForTests } from '@/lib/auth/ensureJwtRoleClaim'
 import { assignKarkun } from '@/lib/assignmentEngine'
-import { isSoftRemoved } from '@/lib/peopleClassification'
-import { createKarkun, createMuttafiq, persistKarkunDurable } from '@/lib/peopleStore'
+import { isMuttafiq, isSoftRemoved } from '@/lib/peopleClassification'
+import { createKarkun, createMuttafiq, getAllKarkuns, getAllMuttafiqeen, persistKarkunDurable } from '@/lib/peopleStore'
+import { presentPerson360Profile } from '@/lib/personProfile/ProfilePresenter'
+import { searchPeople } from '@/lib/personResolution'
 import { moveToMuttafiqeen } from '@/services/peopleClassificationService'
 import {
   deleteKarkunSafely,
@@ -25,6 +27,7 @@ import { getRepositories, resetRepositoryProviderForTests } from '@/repositories
 import { clearLocalMuttafiqRelationshipsForTests } from '@/repositories/local/muttafiqRelationshipLocalRepository'
 import {
   clearMuttafiqRelationshipStore,
+  getConnectedMuttafiqDisplayRowsForRukn,
   reloadMuttafiqRelationshipStoreFromPersistence,
 } from '@/stores/muttafiqRelationshipStore'
 import { DEFAULT_PLACE } from '@/types/people.types'
@@ -74,8 +77,10 @@ console.log('verify-admin-person-delete: start')
   assert(!panel.includes('cannot be deleted'), 'old blocker copy removed from panel')
   assert(panel.includes('await persistKarkunDurable'), 'TEST I: durable persist before success')
   assert(panel.includes('await mutate()'), 'TEST I: delete result awaited')
-  const profile = read('src/pages/admin/KarkunProfilePage.tsx')
-  assert(profile.includes('RegistryMaintenancePanel'), 'delete UI is Admin person profile')
+  const profilePage = read('src/pages/admin/KarkunProfilePage.tsx')
+  assert(profilePage.includes('RegistryMaintenancePanel'), 'delete UI is Admin person profile')
+  assert(profilePage.includes('isSoftRemoved'), 'profile respects soft-removed')
+  assert(profilePage.includes('Removed by:'), 'removed profile shows removed-by')
   const rules = read('firestore.rules')
   const karkuns = rules.slice(rules.indexOf('match /karkuns/{karkunId}'))
   assert(karkuns.includes('allow delete: if false;'), 'hard delete remains denied')
@@ -200,7 +205,31 @@ const rukn = maleRukn()
   )
   const deleted = await deleteKarkunSafely(personId, 'Admin delete with active Muttafiq link', 'Administrator')
   assert(deleted.success, `TEST D delete: ${deleted.success ? '' : deleted.error}`)
-  console.log('  OK  TEST D active Muttafiq relationship')
+  const after = getKarkunById(personId)
+  assert(after && isSoftRemoved(after) && after.archiveKind === 'admin_delete', 'TEST A persist: archived')
+  assert(!getAllMuttafiqeen().some((row) => row.id === personId), 'TEST B/E: not in active Muttafiq registry')
+  assert(!getAllKarkuns(false).some((row) => row.id === personId), 'TEST B: not in active Karkun registry')
+  assert(!isMuttafiq(after), 'TEST E: not an active Muttafiq')
+  assert(
+    !searchPeople('Delete Active Muttafiq Link', { includeRukns: false }).some((row) => row.personId === personId),
+    'TEST C: excluded from active search',
+  )
+  const profile = presentPerson360Profile(personId)
+  assert(profile.found && profile.removed?.label === 'Removed', 'TEST D: direct profile is Removed')
+  assert(profile.header.registry === 'Removed', 'TEST D: registry label Removed')
+  assert(!profile.relationshipDisplay, 'TEST D: no active Connected Rukn section')
+  assert(profile.header.connectedCount === undefined, 'TEST D: no active connected count')
+  reloadMuttafiqRelationshipStoreFromPersistence()
+  const relId = muttafiqRuknRelationshipId(rukn.id, personId)
+  const preserved = getRepositories().muttafiqRelationship.loadAll()
+  assert(preserved.ok, 'TEST F load relationships')
+  const rel = preserved.ok ? preserved.data.find((row) => row.id === relId) : undefined
+  assert(rel && rel.status === 'Active', 'TEST F/G: relationship document untouched (still Active)')
+  assert(
+    !getConnectedMuttafiqDisplayRowsForRukn(rukn.id).some((row) => row.counterpartId === personId),
+    'TEST E: archived person is not an active Rukn counterpart',
+  )
+  console.log('  OK  TEST D active Muttafiq relationship + visibility')
 }
 
 {

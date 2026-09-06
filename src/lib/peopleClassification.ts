@@ -76,6 +76,23 @@ export function isKarkun(
   )
 }
 
+/** Active Karkun or Muttafiq registry person — excludes admin_delete / duplicate_merge. */
+export function isActiveRegistryPerson(
+  person: Pick<
+    KarkunRegistryRecord,
+    'category' | 'isArchived' | 'archiveKind' | 'promotedToARuknId' | 'aRuknPromotionInProgress'
+  >,
+): boolean {
+  return isKarkun(person) || isMuttafiq(person)
+}
+
+export function getRemovedRegistryLabel(
+  person: Pick<KarkunRegistryRecord, 'isArchived' | 'archiveKind'>,
+): 'Removed' | 'Merged Duplicate' | null {
+  if (!isSoftRemoved(person)) return null
+  return person.archiveKind === 'admin_delete' ? 'Removed' : 'Merged Duplicate'
+}
+
 export function buildClassificationHistoryEntry(input: {
   previousCategory: PersonCategory
   newCategory: PersonCategory

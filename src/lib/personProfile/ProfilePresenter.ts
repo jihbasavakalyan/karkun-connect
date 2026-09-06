@@ -11,7 +11,12 @@ import {
   adminKarkunPendingRequestsPath,
   ROUTES,
 } from '@/constants/routes'
-import { getPersonCategory, getMuttafiqDisplayNumber } from '@/lib/peopleClassification'
+import {
+  getMuttafiqDisplayNumber,
+  getPersonCategory,
+  getRemovedRegistryLabel,
+  isMuttafiq,
+} from '@/lib/peopleClassification'
 import { UI_LABELS } from '@/lib/uiTerminology'
 import { getMuttafiqConnectedRuknDisplayForPerson } from '@/stores/muttafiqRelationshipStore'
 import { getKarkunGuidance } from '@/lib/guidance/guidanceEngine'
@@ -70,9 +75,12 @@ export function presentPerson360Profile(personId: string): Person360Profile {
   }
 
   const category = getPersonCategory(person)
+  const removedLabel = getRemovedRegistryLabel(person)
+  const operationalMuttafiq = isMuttafiq(person)
   const connection = resolveActiveConnection(personId)
-  const muttafiqDisplay =
-    category === 'Muttafiq' ? getMuttafiqConnectedRuknDisplayForPerson(personId) : null
+  const muttafiqDisplay = operationalMuttafiq
+    ? getMuttafiqConnectedRuknDisplayForPerson(personId)
+    : null
   const muttafiqView = muttafiqDisplay?.view ?? null
   const active = getActiveAssignmentsForKarkun(personId)[0]
   const guidance = getKarkunGuidance(personId)
@@ -89,49 +97,71 @@ export function presentPerson360Profile(personId: string): Person360Profile {
     }
   })
 
-  const registryLabel =
-    category === 'Muttafiq'
+  const registryLabel = removedLabel
+    ? removedLabel
+    : operationalMuttafiq
       ? `Muttafiq${getMuttafiqDisplayNumber(person) ? ` · ${getMuttafiqDisplayNumber(person)}` : ''}`
       : 'Karkun'
+
+  const removed = removedLabel
+    ? {
+        label: removedLabel,
+        by: person.archivedBy?.trim() || person.updatedBy || 'Administrator',
+        at: person.archivedAt,
+        reason: person.deleteReason,
+        relationshipHistoryPreserved: true,
+      }
+    : undefined
 
   return {
     personId,
     found: true,
+    removed,
     header: {
       name: person.name,
       mobile: person.mobile,
       gender: person.gender,
       registry: registryLabel,
-      campaignStatus: guidance?.stageLabel || person.campaignStatus || person.status,
-      connectedRuknName: muttafiqView
-        ? muttafiqView.status === 'none'
-          ? 'Not Connected'
-          : muttafiqView.connectedRuknLabel
-        : connection.ruknName || person.assignedRukn || (connection.connected ? connection.ruknId! : 'Unassigned'),
-      connectedCount: muttafiqView ? muttafiqView.activeCount : undefined,
+      campaignStatus: removed
+        ? removed.label
+        : guidance?.stageLabel || person.campaignStatus || person.status,
+      connectedRuknName: removed
+        ? '—'
+        : muttafiqView
+          ? muttafiqView.status === 'none'
+            ? 'Not Connected'
+            : muttafiqView.connectedRuknLabel
+          : connection.ruknName || person.assignedRukn || (connection.connected ? connection.ruknId! : 'Unassigned'),
+      connectedCount: removed ? undefined : muttafiqView ? muttafiqView.activeCount : undefined,
       ward: person.place || '',
       area: person.area || '',
       photoPlaceholder: initials(person.name),
     },
     responsibility: {
-      responsibleRuknName: muttafiqView
-        ? muttafiqView.status === 'none'
-          ? 'Not Connected'
-          : muttafiqView.connectedRuknLabel
-        : connection.ruknName || person.assignedRukn || 'Unassigned',
-      connectedSince: muttafiqView
-        ? muttafiqView.current?.createdAt?.slice(0, 10) || '—'
-        : active?.effectiveFrom || person.assignmentDate || '—',
-      connectionStatus: muttafiqView
-        ? muttafiqView.relationshipLabel
-        : connection.connected
-          ? connection.status || person.assignmentStatus || 'Active'
-          : person.assignmentStatus || 'Available',
+      responsibleRuknName: removed
+        ? '—'
+        : muttafiqView
+          ? muttafiqView.status === 'none'
+            ? 'Not Connected'
+            : muttafiqView.connectedRuknLabel
+          : connection.ruknName || person.assignedRukn || 'Unassigned',
+      connectedSince: removed
+        ? '—'
+        : muttafiqView
+          ? muttafiqView.current?.createdAt?.slice(0, 10) || '—'
+          : active?.effectiveFrom || person.assignmentDate || '—',
+      connectionStatus: removed
+        ? removed.label
+        : muttafiqView
+          ? muttafiqView.relationshipLabel
+          : connection.connected
+            ? connection.status || person.assignmentStatus || 'Active'
+            : person.assignmentStatus || 'Available',
       assignmentHistory: history,
     },
-    campaignStatus: aggregatePersonCampaignStatus(personId),
-    journeyStages: buildPersonJourneyStages(personId),
-    continuousJourney: loadContinuousKarkunJourney(personId),
+    campaignStatus: removed ? [] : aggregatePersonCampaignStatus(personId),
+    journeyStages: removed ? [] : buildPersonJourneyStages(personId),
+    continuousJourney: removed ? null : loadContinuousKarkunJourney(personId),
     timeline: buildPersonCampaignTimeline(person),
     communications: aggregatePersonCommunications(personId),
     quickActions: [
@@ -139,25 +169,25 @@ export function presentPerson360Profile(personId: string): Person360Profile {
         id: 'journey',
         label: 'Open Journey',
         href: adminAnnexure1Path(personId),
-        kind: 'link',
+        kind: removed ? 'placeholder' : 'link',
       },
       {
         id: 'notify',
         label: 'Notify',
         href: `${ROUTES.ADMIN_COMMUNICATION}?personId=${encodeURIComponent(personId)}`,
-        kind: 'link',
+        kind: removed ? 'placeholder' : 'link',
       },
       {
         id: 'connection',
         label: 'Open Connection',
         href: ROUTES.ADMIN_ASSIGNMENTS,
-        kind: 'link',
+        kind: removed ? 'placeholder' : 'link',
       },
       {
         id: 'conversion',
         label: 'Request Conversion',
         href: adminKarkunPendingRequestsPath(),
-        kind: category === 'Karkun' ? 'link' : 'placeholder',
+        kind: !removed && category === 'Karkun' ? 'link' : 'placeholder',
       },
       {
         id: 'inbox',
@@ -170,7 +200,7 @@ export function presentPerson360Profile(personId: string): Person360Profile {
     journeyHref: adminAnnexure1Path(personId),
     connectionHref: ROUTES.ADMIN_ASSIGNMENTS,
     relationshipDisplay:
-      muttafiqView && muttafiqDisplay
+      !removed && muttafiqView && muttafiqDisplay
         ? {
             status: muttafiqView.status,
             activeCount: muttafiqView.activeCount,

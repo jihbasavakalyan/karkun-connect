@@ -27,7 +27,7 @@ export function Person360Overview({ personId }: Person360OverviewProps) {
   const profile = buildPerson360Profile(personId)
   if (!profile.found) return null
 
-  const { header, responsibility, campaignStatus, journeyStages, continuousJourney, timeline, communications, quickActions, relationshipDisplay } =
+  const { header, responsibility, campaignStatus, journeyStages, continuousJourney, timeline, communications, quickActions, relationshipDisplay, removed } =
     profile
 
   return (
@@ -47,6 +47,12 @@ export function Person360Overview({ personId }: Person360OverviewProps) {
             <h2 className="truncate text-xl font-semibold text-text-heading sm:text-2xl">
               {formatPersonNameForDisplay(header.name)}
             </h2>
+            {removed ? (
+              <p className="mt-1 text-sm font-medium text-text-heading" role="status">
+                Status: {removed.label}
+                {removed.by ? ` · Removed by: ${removed.by}` : ''}
+              </p>
+            ) : null}
             <dl className="mt-3 grid gap-2 text-sm text-secondary sm:grid-cols-2">
               <div>
                 <dt className="inline font-medium text-text-heading">Mobile: </dt>
@@ -60,18 +66,22 @@ export function Person360Overview({ personId }: Person360OverviewProps) {
                 <dt className="inline font-medium text-text-heading">Registry: </dt>
                 <dd className="inline">{header.registry}</dd>
               </div>
+              {removed ? null : (
               <div>
                 <dt className="inline font-medium text-text-heading">
                   {UI_LABELS.campaignSituation}:{' '}
                 </dt>
                 <dd className="inline">{header.campaignStatus || '—'}</dd>
               </div>
+              )}
+              {removed ? null : (
               <div>
                 <dt className="inline font-medium text-text-heading">
                   {UI_LABELS.connectedRukn}:{' '}
                 </dt>
                 <dd className="inline">{header.connectedRuknName}</dd>
               </div>
+              )}
               {typeof header.connectedCount === 'number' ? (
                 <div>
                   <dt className="inline font-medium text-text-heading">Connected Count: </dt>
@@ -134,6 +144,15 @@ export function Person360Overview({ personId }: Person360OverviewProps) {
         </section>
       ) : null}
 
+      {removed ? (
+        <p className="text-sm text-secondary">
+          {removed.relationshipHistoryPreserved
+            ? 'Historical records remain available below. Relationship documents were not rewritten.'
+            : 'Historical information remains available below.'}
+        </p>
+      ) : null}
+
+      {!removed ? (
       <section className="person-360-card rounded-(--radius-card) border border-border bg-surface p-4 shadow-card sm:p-5">
         <h3 className="text-sm font-semibold text-text-heading">{UI_LABELS.campaignSituation}</h3>
         <ul className="mt-3 grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
@@ -148,7 +167,9 @@ export function Person360Overview({ personId }: Person360OverviewProps) {
           ))}
         </ul>
       </section>
+      ) : null}
 
+      {!removed ? (
       <section className="person-360-card rounded-(--radius-card) border border-border bg-surface p-4 shadow-card sm:p-5">
         <h3 className="text-sm font-semibold text-text-heading">Campaign Journey</h3>
         <ol className="mt-3 flex flex-wrap gap-2">
@@ -169,6 +190,7 @@ export function Person360Overview({ personId }: Person360OverviewProps) {
           ))}
         </ol>
       </section>
+      ) : null}
 
       {continuousJourney ? (
         <section className="person-360-card rounded-(--radius-card) border border-border bg-surface p-4 shadow-card sm:p-5">
@@ -176,6 +198,7 @@ export function Person360Overview({ personId }: Person360OverviewProps) {
         </section>
       ) : null}
 
+      {!removed ? (
       <section className="person-360-card rounded-(--radius-card) border border-border bg-surface p-4 shadow-card sm:p-5">
         <h3 className="text-sm font-semibold text-text-heading">{UI_LABELS.responsibility}</h3>
         <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-3">
@@ -211,6 +234,21 @@ export function Person360Overview({ personId }: Person360OverviewProps) {
           <p className="mt-3 text-sm text-secondary">No assignment history yet.</p>
         )}
       </section>
+      ) : responsibility.assignmentHistory.length > 0 ? (
+        <section className="person-360-card rounded-(--radius-card) border border-border bg-surface p-4 shadow-card sm:p-5">
+          <h3 className="text-sm font-semibold text-text-heading">Historical connections</h3>
+          <ul className="mt-3 space-y-2.5">
+            {responsibility.assignmentHistory.slice(0, 5).map((row) => (
+              <li key={row.assignmentId} className="text-sm text-secondary">
+                <span className="font-medium text-text-heading">{row.ruknName}</span>
+                {' · '}
+                {row.assignmentNumber} · {row.status} · since {row.connectedSince}
+                {row.endedDate ? ` → ${row.endedDate}` : ''}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       <div className="grid gap-5 lg:grid-cols-2">
         <section className="person-360-card rounded-(--radius-card) border border-border bg-surface p-4 shadow-card sm:p-5">

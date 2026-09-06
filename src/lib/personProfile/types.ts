@@ -48,9 +48,19 @@ export type PersonQuickAction = {
   kind: 'link' | 'placeholder'
 }
 
+export type Person360RemovedState = {
+  label: 'Removed' | 'Merged Duplicate'
+  by: string
+  at?: string
+  reason?: string
+  /** Firestore relationship rows were not rewritten; history may still exist. */
+  relationshipHistoryPreserved: boolean
+}
+
 export type Person360Profile = {
   personId: string
   found: boolean
+  removed?: Person360RemovedState
   header: {
     name: string
     mobile: string

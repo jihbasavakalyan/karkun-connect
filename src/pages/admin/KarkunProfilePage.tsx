@@ -3,9 +3,16 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { ROUTES } from '@/constants/routes'
 import { changeKarkunRuknAssignment } from '@/lib/assignmentEngine'
-import { getPersonCategory, getMuttafiqDisplayNumber, isPromotedToARukn } from '@/lib/peopleClassification'
+import {
+  getMuttafiqDisplayNumber,
+  getPersonCategory,
+  getRemovedRegistryLabel,
+  isMuttafiq as isMuttafiqPerson,
+  isPromotedToARukn,
+  isSoftRemoved,
+} from '@/lib/peopleClassification'
 import { persistKarkunDurable, updateKarkun } from '@/lib/peopleStore'
-import { getMuttafiqConnectedRuknDisplayForPerson } from '@/stores/muttafiqRelationshipStore'
+import { getMuttafiqConnectedRuknDisplayForPerson, getActiveMuttafiqRelationshipsForPerson } from '@/stores/muttafiqRelationshipStore'
 import { useMuttafiqRelationshipStore } from '@/hooks/useMuttafiqRelationshipStore'
 import { getRuknById } from '@/data/ruknMaster'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
@@ -140,7 +147,9 @@ function KarkunProfileForm({ karkun, karkunId }: KarkunProfileFormProps) {
   const muttafiqRelationshipVersion = useMuttafiqRelationshipStore()
   const initialCompliance = readComplianceState(karkunId)
   const category = getPersonCategory(karkun)
-  const isMuttafiq = category === 'Muttafiq'
+  const softRemoved = isSoftRemoved(karkun)
+  const removedLabel = getRemovedRegistryLabel(karkun)
+  const isMuttafiq = isMuttafiqPerson(karkun)
   const registryHome = isMuttafiq ? ROUTES.ADMIN_MUTTAFIQEEN : ROUTES.ADMIN_KARKUN
   const backLabel = isMuttafiq ? '← Back to Muttafiqeen' : '← Back to Karkuns'
 
@@ -186,6 +195,7 @@ function KarkunProfileForm({ karkun, karkunId }: KarkunProfileFormProps) {
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    if (softRemoved) return
     setError('')
 
     const karkunResult = updateKarkun(karkunId, {
@@ -308,9 +318,18 @@ function KarkunProfileForm({ karkun, karkunId }: KarkunProfileFormProps) {
             {formatPersonNameForDisplay(name)}
           </h1>
           <div className="mt-1 flex flex-wrap items-center gap-2">
-            <StatusBadge variant={isMuttafiq ? 'info' : isPromotedToARukn(karkun) ? 'info' : 'connected'}>
-              {isPromotedToARukn(karkun) ? 'عازمِ رکن' : category}
-            </StatusBadge>
+            {softRemoved && removedLabel ? (
+              <StatusBadge variant="dormant">{removedLabel}</StatusBadge>
+            ) : (
+              <StatusBadge variant={isMuttafiq ? 'info' : isPromotedToARukn(karkun) ? 'info' : 'connected'}>
+                {isPromotedToARukn(karkun) ? 'عازمِ رکن' : category}
+              </StatusBadge>
+            )}
+            {softRemoved ? (
+              <span className="text-xs font-medium text-secondary">
+                Removed by: {karkun.archivedBy?.trim() || karkun.updatedBy || 'Administrator'}
+              </span>
+            ) : null}
             {isPromotedToARukn(karkun) && karkun.promotedToARuknId ? (
               <span className="text-xs font-medium text-secondary">{karkun.promotedToARuknId}</span>
             ) : null}
@@ -326,15 +345,21 @@ function KarkunProfileForm({ karkun, karkunId }: KarkunProfileFormProps) {
         </div>
 
         <div className="flex shrink-0 flex-col items-end gap-2">
-          <div className="flex shrink-0 gap-2">
+          {softRemoved ? (
             <SecondaryButton type="button" className="px-4 py-2 text-sm" onClick={handleCancel}>
-              Cancel
+              Back
             </SecondaryButton>
-            <PrimaryButton type="submit" className="px-4 py-2 text-sm">
-              Save
-            </PrimaryButton>
-          </div>
-          {!isMuttafiq ? (
+          ) : (
+            <div className="flex shrink-0 gap-2">
+              <SecondaryButton type="button" className="px-4 py-2 text-sm" onClick={handleCancel}>
+                Cancel
+              </SecondaryButton>
+              <PrimaryButton type="submit" className="px-4 py-2 text-sm">
+                Save
+              </PrimaryButton>
+            </div>
+          )}
+          {!isMuttafiq && !softRemoved ? (
             <PromoteToARuknAction
               person={karkun}
               variant="button"
@@ -355,9 +380,25 @@ function KarkunProfileForm({ karkun, karkunId }: KarkunProfileFormProps) {
             onValueChange={setName}
             className={compactInputClass}
             required
+            disabled={softRemoved}
           />
 
-          {!isMuttafiq ? (
+          {softRemoved ? (
+            <div className="flex flex-col gap-2 sm:col-span-2">
+              <span className="text-sm font-medium text-text-heading">Relationship history</span>
+              {(() => {
+                void muttafiqRelationshipVersion
+                const preserved = getActiveMuttafiqRelationshipsForPerson(karkunId)
+                return (
+                  <p className="text-sm text-secondary">
+                    {preserved.length > 0
+                      ? 'Existing Muttafiq ↔ Rukn relationship records remain on file and were not ended. This person is not an active registry counterpart.'
+                      : 'No active operational relationship is shown because this person is removed from the registry.'}
+                  </p>
+                )
+              })()}
+            </div>
+          ) : !isMuttafiq ? (
             <div className="flex flex-col gap-2">
               <label htmlFor="profile-assigned-rukn" className="text-sm font-medium text-text-heading">
                 Connected Rukn
@@ -416,6 +457,7 @@ function KarkunProfileForm({ karkun, karkunId }: KarkunProfileFormProps) {
               value={gender}
               onChange={(event) => setGender(event.target.value as PersonGender)}
               className={selectClassName}
+              disabled={softRemoved}
             >
               <option value="Male">Male</option>
               <option value="Female">Female</option>
@@ -431,6 +473,7 @@ function KarkunProfileForm({ karkun, karkunId }: KarkunProfileFormProps) {
               value={status}
               onChange={(event) => setStatus(event.target.value as PersonStatus)}
               className={selectClassName}
+              disabled={softRemoved}
             >
               <option value="active">Active</option>
               <option value="inactive">Inactive</option>
@@ -525,6 +568,7 @@ function KarkunProfileForm({ karkun, karkunId }: KarkunProfileFormProps) {
         </div>
       </section>
 
+      {!softRemoved ? (
       <section className="rounded-(--radius-card) border border-border bg-surface p-4 shadow-card">
         <h2 className="text-sm font-semibold text-text-heading">Compliance</h2>
 
@@ -552,6 +596,7 @@ function KarkunProfileForm({ karkun, karkunId }: KarkunProfileFormProps) {
           />
         </div>
       </section>
+      ) : null}
 
       <RegistryMaintenancePanel karkun={karkun} karkunId={karkunId} />
 
