@@ -1340,7 +1340,7 @@ async function approvePeopleIntakeRequestOnce(
       if (!alreadySameRukn) {
         const blocked = rejectSecondActiveMuttafiqLink(linkRukn.id, activeLinks)
         if (blocked) {
-          return blocked
+          return { ok: false, error: blocked.error, code: 'VALIDATION' }
         }
       }
 

@@ -68,6 +68,12 @@ console.log('verify-muttafiq-rukn-link: start')
   assert(service.includes("kind === 'muttafiq_rukn_link'"), 'approve branch')
   assert(service.includes('upsertActiveDurable'), 'relationship upsert')
   assert(
+    /if \(blocked\) \{\s*return \{ ok: false, error: blocked\.error, code: 'VALIDATION' \}/.test(
+      service,
+    ),
+    'approve maps second-active rejection onto ApproveNewKarkunRequestResult VALIDATION',
+  )
+  assert(
     service.includes('assertAdministratorDecisionSession') &&
       /export async function assignMuttafiqRuknLinkAsAdmin[\s\S]*?assertAdministratorDecisionSession/.test(
         service,
