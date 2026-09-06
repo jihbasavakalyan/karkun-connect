@@ -14,6 +14,7 @@ import { KARKUN_ALREADY_CONNECTED_MESSAGE } from '@/lib/connectionEligibility'
 import { resolveExistingPersonRelationship } from '@/lib/existingPersonResolution'
 import { getActiveAssignmentsForKarkun } from '@/stores/assignmentStore'
 import { findPossibleNameDuplicates } from '@/lib/nameMatching'
+import { isEligibleReferringRukn } from '@/lib/referringRukn'
 import {
   applyReferredByRuknIfAbsent,
   createKarkun,
@@ -260,7 +261,7 @@ export async function submitNewKarkunRequest(
   }
 
   const rukn = getRuknById(input.requestingRuknId)
-  if (!rukn || rukn.status !== 'active') {
+  if (!rukn || !isEligibleReferringRukn(rukn)) {
     return { ok: false, error: 'Rukn not found or inactive.', code: 'VALIDATION' }
   }
 
@@ -817,7 +818,7 @@ export async function submitKarkunToMuttafiqConversionRequest(input: {
     return { ok: false, error: 'Person not found.', code: 'VALIDATION' }
   }
   const rukn = getRuknById(input.requestingRuknId)
-  if (!rukn || rukn.status !== 'active') {
+  if (!rukn || !isEligibleReferringRukn(rukn)) {
     return { ok: false, error: 'Rukn not found or inactive.', code: 'VALIDATION' }
   }
 
@@ -891,7 +892,7 @@ export async function submitMuttafiqRuknLinkRequest(input: {
     }
   }
   const rukn = getRuknById(input.requestingRuknId)
-  if (!rukn || rukn.status !== 'active') {
+  if (!rukn || !isEligibleReferringRukn(rukn)) {
     return { ok: false, error: 'Rukn not found or inactive.', code: 'VALIDATION' }
   }
 
@@ -1039,7 +1040,7 @@ export async function assignMuttafiqRuknLinkAsAdmin(input: {
   }
 
   const rukn = getRuknById(input.ruknId)
-  if (!rukn || rukn.status !== 'active') {
+  if (!rukn || !isEligibleReferringRukn(rukn)) {
     return { ok: false, error: 'Rukn not found or inactive.', code: 'VALIDATION' }
   }
 

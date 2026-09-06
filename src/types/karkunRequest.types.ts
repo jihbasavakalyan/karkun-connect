@@ -57,9 +57,9 @@ export type NewKarkunRequest = {
   /** Previous registry category before conversion. */
   previousCategory?: 'Karkun' | 'Muttafiq'
   /**
-   * Public training gathering intake. Submit may have empty requesting Rukn.
-   * Admin must supply referring Rukn before NEW Karkun create. Approval still
-   * does not auto-connect.
+   * Public training gathering intake. NEW Karkun submit stores the selected
+   * referring Rukn on requestingRuknId (canonical referredByRuknId on approve).
+   * Approval does not auto-connect.
    */
   source?: 'rukn' | 'public_training_registration'
   fatherHusbandName?: string

@@ -19,10 +19,14 @@ import {
   type MobileDuplicateDetails,
 } from '@/services/karkunRequestService'
 import {
+  isNewKarkunIntakeRequest,
   isPublicTrainingRequest,
   publicTrainingReferralValue,
   PublicTrainingApproveFields,
+  SubmittedReferringRuknDisplay,
 } from '@/components/forms/people/PublicTrainingApproveFields'
+import { getRuknById } from '@/data/ruknMaster'
+import { isEligibleReferringRukn } from '@/lib/referringRukn'
 import type { NewKarkunRequest } from '@/types/karkunRequest.types'
 
 export function PendingKarkunRequestQueue() {
@@ -70,9 +74,7 @@ export function PendingKarkunRequestQueue() {
           requestId: request.id,
           decidedBy,
           decisionNotes: notesById[request.id],
-          referredByRuknId: isPublicTrainingRequest(request)
-            ? publicTrainingReferralValue(request, referralById)
-            : undefined,
+          referredByRuknId: publicTrainingReferralValue(request, referralById) || undefined,
           fatherHusbandName: isPublicTrainingRequest(request) ? familyById[request.id] : undefined,
           address: isPublicTrainingRequest(request) ? addressById[request.id] : undefined,
         })
@@ -194,8 +196,11 @@ export function PendingKarkunRequestQueue() {
           const isBusy =
             busyKey === `pending-queue:approve:${request.id}` ||
             busyKey === `pending-queue:reject:${request.id}`
+          const referralId = publicTrainingReferralValue(request, referralById)
+          const referringRukn = referralId ? getRuknById(referralId) : undefined
           const approveBlockedForReferral =
-            isPublicTrainingRequest(request) && !publicTrainingReferralValue(request, referralById)
+            isNewKarkunIntakeRequest(request) &&
+            (!referringRukn || !isEligibleReferringRukn(referringRukn))
           return (
             <li key={request.id} className="rounded-2xl border border-border bg-surface px-4 py-3">
               <div className="flex flex-wrap items-start justify-between gap-2">
@@ -230,6 +235,12 @@ export function PendingKarkunRequestQueue() {
                 }
               />
 
+              {isNewKarkunIntakeRequest(request) && !isPublicTrainingRequest(request) ? (
+                <SubmittedReferringRuknDisplay
+                  request={request}
+                  referredByRuknId={referralId}
+                />
+              ) : null}
               {isPublicTrainingRequest(request) ? (
                 <PublicTrainingApproveFields
                   request={request}

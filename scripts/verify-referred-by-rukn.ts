@@ -19,6 +19,10 @@ import {
   updateRukn,
 } from '@/lib/peopleStore'
 import {
+  formatReferringRuknSummary,
+  matchReferringRuknQuery,
+} from '@/lib/referringRukn'
+import {
   clearKarkunRequestStore,
   reloadKarkunRequestStoreFromPersistence,
 } from '@/stores/karkunRequestStore'
@@ -82,15 +86,27 @@ console.log('verify-referred-by-rukn: start')
 
   const karkunan = read('src/pages/admin/KarkunanPage.tsx')
   assert(
-    !karkunan.includes('Referred By Rukn is required'),
-    'admin add karkun does not require referral',
+    karkunan.includes('{ requireReferral: true }'),
+    'admin add karkun requires referral at create',
   )
-  assert(form.includes('Referred By Rukn (optional)'), 'admin person add marks referral optional')
+  assert(form.includes('ReferringRuknSearchField'), 'admin add uses searchable referring Rukn field')
+  assert(!form.includes('Referred By Rukn (optional)'), 'admin karkun add referral is required')
 
   const ruknPage = read('src/pages/admin/RuknModulePage.tsx')
   assert(ruknPage.includes('Referred By Rukn is required'), 'admin add rukn requires referral')
 
   console.log('  OK  static contracts')
+}
+
+{
+  const sample = { id: 'R018', name: 'Md Aslam', mobile: '9876543210', officerKind: 'rukn' as const }
+  assert(matchReferringRuknQuery(sample, 'aslam'), 'search by name')
+  assert(matchReferringRuknQuery(sample, 'R018'), 'search by id')
+  assert(matchReferringRuknQuery(sample, '98765'), 'search by mobile')
+  assert(!matchReferringRuknQuery(sample, 'zzzz'), 'unknown free text does not match')
+  assert(formatReferringRuknSummary(sample).includes('R018'), 'summary includes id')
+  assert(formatReferringRuknSummary(sample).includes('Rukn'), 'summary includes category')
+  console.log('  OK  searchable referring Rukn matching')
 }
 
 resetRepositoryProviderForTests()
@@ -248,7 +264,7 @@ const otherRukn = activeMaleRukns[1]!
 }
 
 {
-  // Admin NEW Karkun: referral optional; family + address still required.
+  // Admin NEW Karkun addition requires referral; historical-shape import still does not invent.
   const adminNoReferral = createKarkun(
     {
       name: 'Admin Optional Referral',
@@ -260,12 +276,9 @@ const otherRukn = activeMaleRukns[1]!
       address: 'Admin Address',
     },
     'Administrator',
+    { requireReferral: true },
   )
-  assert(adminNoReferral.success && adminNoReferral.karkunId, 'admin create without referral is accepted')
-  assert(
-    getKarkunById(adminNoReferral.karkunId!)?.referredByRuknId === undefined,
-    'admin create does not invent a referral',
-  )
+  assert(!adminNoReferral.success, 'admin add Karkun without referral is rejected')
 
   const missingFamily = createKarkun(
     {
@@ -297,7 +310,7 @@ const otherRukn = activeMaleRukns[1]!
   assert(row!.referredByRuknId === undefined, 'no invented referral')
   assert(row!.name === 'Legacy No Referral', 'name intact')
 
-  console.log('  OK  admin referral optional; family/address required; historical-shape rows remain readable')
+  console.log('  OK  admin add requires referral; family/address required; historical-shape rows remain readable')
 }
 
 {

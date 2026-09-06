@@ -1,3 +1,4 @@
+import { resolveOfficerKind } from '../officerIdentity.js'
 import { TRAINING_GATHERING_EVENT } from './event.js'
 import {
   trainingOrganisationalCategoryLabel,
@@ -19,6 +20,7 @@ import type {
   TrainingRuknProgressPerson,
   TrainingRuknProgressView,
   TrainingRuknRelatedPersonView,
+  TrainingReferringRuknOption,
 } from './types.js'
 import { TRAINING_REGISTRATION_CSV_COLUMNS } from './types.js'
 
@@ -39,6 +41,7 @@ export type AdminTrackingRukn = {
   isArchived?: unknown
   gender?: unknown
   mobile?: unknown
+  officerKind?: unknown
 }
 
 export type AdminTrackingConnection = {
@@ -192,6 +195,46 @@ export function listCashCollectors(
       name: String(rukn.name || rukn.id).trim() || rukn.id,
     }))
     .sort((a, b) => a.name.localeCompare(b.name))
+}
+
+export function listReferringRukns(rukns: AdminTrackingRukn[]): TrainingReferringRuknOption[] {
+  return rukns
+    .filter((rukn) => rukn.status === 'active' && rukn.isArchived !== true)
+    .map((rukn) => {
+      const gender = rukn.gender === 'Female' || rukn.gender === 'Male' ? rukn.gender : ''
+      const officerKind = rukn.officerKind === 'a_rukn' || rukn.officerKind === 'rukn'
+        ? rukn.officerKind
+        : undefined
+      return {
+        id: rukn.id,
+        name: String(rukn.name || rukn.id).trim() || rukn.id,
+        mobile: String(rukn.mobile || '').trim(),
+        gender,
+        category: resolveOfficerKind({ id: rukn.id, officerKind }) === 'a_rukn' ? 'A Rukn' : 'Rukn',
+      } satisfies TrainingReferringRuknOption
+    })
+    .sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id))
+}
+
+export function resolveReferringRukn(
+  rukns: AdminTrackingRukn[],
+  referringIdRaw: unknown,
+  gender?: string,
+): { ok: true; id: string; name: string } | { ok: false; error: string } {
+  const referringId = typeof referringIdRaw === 'string' ? referringIdRaw.trim() : ''
+  if (!referringId) {
+    return { ok: false, error: 'Referred By Rukn is required.' }
+  }
+  const match = listReferringRukns(rukns).find((row) => row.id === referringId)
+  if (!match) {
+    return { ok: false, error: 'Select a valid referring Rukn.' }
+  }
+  if (gender === 'Male' || gender === 'Female') {
+    if (match.gender && match.gender !== gender) {
+      return { ok: false, error: 'Select a referring Rukn of the same gender.' }
+    }
+  }
+  return { ok: true, id: match.id, name: match.name }
 }
 
 export function resolveCashCollector(

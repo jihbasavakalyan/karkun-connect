@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { ReferringRuknSearchField } from '@/components/forms/people/ReferringRuknSearchField'
 import { JihLogoMark } from '@/components/public-registration/JihLogoMark'
 import { OtpBoxes } from '@/components/public-registration/OtpBoxes'
+import { listEligibleReferringRukns } from '@/lib/referringRukn'
 import {
   buildTarbiyatiIjtemaUpiAppUri,
   buildTarbiyatiIjtemaUpiPayUri,
@@ -34,6 +36,7 @@ import type {
   PublicRegistrationStep,
   TrainingCashCollector,
   TrainingPublicPaymentChoice,
+  TrainingReferringRuknOption,
   TrainingRegistrationRecord,
 } from '@/lib/publicRegistration/types'
 import { isValidMobileFormat, normalizeMobile } from '@/lib/mobileValidation'
@@ -67,6 +70,8 @@ export function TrainingRegistrationPage() {
   const [paymentChoice, setPaymentChoice] = useState<TrainingPublicPaymentChoice | null>(null)
   const [onlinePaymentEnabled, setOnlinePaymentEnabled] = useState(true)
   const [cashCollectors, setCashCollectors] = useState<TrainingCashCollector[]>([])
+  const [referringRukns, setReferringRukns] = useState<TrainingReferringRuknOption[]>([])
+  const [referredByRuknId, setReferredByRuknId] = useState('')
   const [cashPaidToId, setCashPaidToId] = useState('')
   const [utr, setUtr] = useState('')
   const [registration, setRegistration] = useState<TrainingRegistrationRecord | null>(null)
@@ -107,6 +112,20 @@ export function TrainingRegistrationPage() {
 
   const progress = useMemo(() => stepIndex(step) + 1, [step])
   const registeredName = (registration?.fullName || profile.name).trim()
+  const publicReferringOptions = useMemo(() => {
+    return listEligibleReferringRukns(
+      referringRukns.map((row) => ({
+        id: row.id,
+        name: row.name,
+        mobile: row.mobile,
+        gender: row.gender || undefined,
+        officerKind: row.category === 'A Rukn' ? 'a_rukn' : 'rukn',
+      })),
+      profile.gender === 'Male' || profile.gender === 'Female'
+        ? { gender: profile.gender }
+        : undefined,
+    )
+  }, [referringRukns, profile.gender])
 
   const sendOtp = async (nextMobile = mobile) => {
     setError('')
@@ -142,6 +161,8 @@ export function TrainingRegistrationPage() {
       setLookupCase(lookup.case)
       setOnlinePaymentEnabled(lookup.onlinePaymentEnabled !== false)
       setCashCollectors(lookup.cashCollectors ?? [])
+      setReferringRukns(lookup.referringRukns ?? [])
+      setReferredByRuknId(lookup.submittedReferredByRuknId ?? '')
       setProfile({
         ...emptyProfile(lookup.mobile),
         ...lookup.profile,
@@ -165,6 +186,10 @@ export function TrainingRegistrationPage() {
   const continueFromProfile = async () => {
     setError('')
     setSavedNotice('')
+    if (lookupCase === 'new_candidate' && !referredByRuknId.trim()) {
+      setError('Referred By Rukn is required.')
+      return
+    }
     setBusy(true)
     try {
       const result = await savePublicRegistrationProfile(profile)
@@ -204,6 +229,7 @@ export function TrainingRegistrationPage() {
         paymentChoice,
         utr: paymentChoice === 'online' ? utr : undefined,
         cashPaidToId: paymentChoice === 'cash_paid_to' ? cashPaidToId : undefined,
+        referredByRuknId: lookupCase === 'new_candidate' ? referredByRuknId : undefined,
       })
       setRegistration(result.registration)
       setLookupCase(result.newCandidate ? 'new_candidate' : lookupCase)
@@ -239,6 +265,8 @@ export function TrainingRegistrationPage() {
     setRegistration(null)
     setPaymentChoice(null)
     setCashPaidToId('')
+    setReferredByRuknId('')
+    setReferringRukns([])
     setUtr('')
     setUpiLaunchNotice('')
     setStep('mobile')
@@ -393,12 +421,17 @@ export function TrainingRegistrationPage() {
                 <span className="mb-2 block text-sm font-medium text-slate-800">Gender</span>
                 <select
                   value={profile.gender}
-                  onChange={(event) =>
+                  onChange={(event) => {
+                    const nextGender = event.target.value as PublicPersonProfile['gender']
                     setProfile((current) => ({
                       ...current,
-                      gender: event.target.value as PublicPersonProfile['gender'],
+                      gender: nextGender,
                     }))
-                  }
+                    const selected = referringRukns.find((row) => row.id === referredByRuknId)
+                    if (selected?.gender && nextGender && selected.gender !== nextGender) {
+                      setReferredByRuknId('')
+                    }
+                  }}
                   className="w-full rounded-2xl border border-[#e5e7de] bg-[#fbfaf6] px-4 py-3"
                   required
                   disabled={
@@ -411,6 +444,17 @@ export function TrainingRegistrationPage() {
                   <option value="Female">Female</option>
                 </select>
               </label>
+              {lookupCase === 'new_candidate' ? (
+                <ReferringRuknSearchField
+                  id="public-referred-by-rukn"
+                  label="Referred By Rukn *"
+                  value={referredByRuknId}
+                  onChange={setReferredByRuknId}
+                  options={publicReferringOptions}
+                  required
+                  variant="public"
+                />
+              ) : null}
               <Field
                 label="Address"
                 value={profile.address}

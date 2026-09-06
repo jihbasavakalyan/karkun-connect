@@ -162,7 +162,7 @@ function KarkunGenderSection({
 
     const result = editingId
       ? updateKarkun(editingId, karkunPayload, 'Administrator', options)
-      : createKarkun(karkunPayload)
+      : createKarkun(karkunPayload, 'Administrator', { requireReferral: true })
 
     if (!result.success) {
       if (result.needsMobileConfirm && result.existingOwner) {

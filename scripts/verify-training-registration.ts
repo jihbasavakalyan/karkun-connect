@@ -11,6 +11,7 @@ import {
   forbiddenFieldsInRuknProgress,
   isRestorableRegistration,
   listCashCollectors,
+  listReferringRukns,
   matchesRegisteredPeopleFilters,
   matchesRegisteredPeopleSearch,
   normalizeTrainingMobile,
@@ -19,6 +20,7 @@ import {
   resolveCashCollector,
   resolveOnlinePaymentEnabled,
   resolvePublicPaymentChoice,
+  resolveReferringRukn,
   sanitizeUtr,
   TRAINING_REGISTRATION_SETTINGS_DOC,
 } from '@/lib/publicRegistration/adminTracking'
@@ -140,7 +142,10 @@ function testSecurityPath(): void {
   assert(handler.includes('cashPaidToId'), 'stores cash collector id')
   assert(handler.includes('cashPaidToName'), 'stores cash collector name')
   assert(handler.includes('sanitizeUtr'), 'UTR is sanitized server-side')
-  assert(handler.includes('listCashCollectors'), 'cash collectors come from existing rukn master')
+  assert(handler.includes('listReferringRukns'), 'referring Rukns come from existing rukn master')
+  assert(handler.includes('resolveReferringRukn'), 'new candidate referral is validated server-side')
+  assert(!handler.includes("requestingRuknId: ''"), 'new candidate no longer submits empty referring Rukn')
+  assert(handler.includes('body.referredByRuknId'), 'submit receives referredByRuknId')
   assert(handler.includes('admin_export_csv'), 'CSV export is an admin API action')
   assert(handler.includes('admin_confirm_upi_paid'), 'UPI confirm is an admin API action')
   assert(handler.includes('admin_set_online_payment'), 'online payment activation is an admin API action')
@@ -201,6 +206,8 @@ function testPublicCopyAndPayment(): void {
   assert(page.includes('at the Ijtema Gah'), 'cash pending copy')
   assert(page.includes('Cash Paid To'), 'cash paid to choice')
   assert(page.includes('Select Person'), 'cash collector select')
+  assert(page.includes('ReferringRuknSearchField'), 'new candidate referring Rukn is searchable')
+  assert(page.includes('Referred By Rukn is required.'), 'new candidate cannot continue without referral')
   assert(!page.includes('₹100 paid in cash'), 'generic cash paid choice removed')
   assert(page.includes('TARBIYATI_IJTEMA_UPI_QR_SRC'), 'official QR constant used in public UI')
   assert(page.includes('Scan this QR code using another phone'), 'QR is for another-device payment')
@@ -823,6 +830,32 @@ function testCashCollectorsFromRuknMaster(): void {
   }
 }
 
+function testReferringRuknsFromRuknMaster(): void {
+  const rukns = [
+    { id: 'R001', name: 'Md Aslam', status: 'active', gender: 'Male', mobile: '9876543210', officerKind: 'rukn' },
+    { id: 'AR01', name: 'A Rukn One', status: 'active', gender: 'Male', mobile: '9876543211', officerKind: 'a_rukn' },
+    { id: 'R002', name: 'Archived Rukn', status: 'active', isArchived: true, gender: 'Male' },
+    { id: 'R003', name: 'Inactive Rukn', status: 'inactive', gender: 'Male' },
+    { id: 'R004', name: 'Female Rukn', status: 'active', gender: 'Female', mobile: '9876543222' },
+  ]
+  const options = listReferringRukns(rukns)
+  assert(options.some((row) => row.id === 'R001' && row.category === 'Rukn'), 'active Rukn is offered')
+  assert(options.some((row) => row.id === 'AR01' && row.category === 'A Rukn'), 'active A Rukn is offered')
+  assert(!options.some((row) => row.id === 'R002'), 'archived Rukn is not offered')
+  assert(!options.some((row) => row.id === 'R003'), 'inactive Rukn is not offered')
+  const missing = resolveReferringRukn(rukns, '', 'Male')
+  assert(!missing.ok, 'referring Rukn required')
+  const archived = resolveReferringRukn(rukns, 'R002', 'Male')
+  assert(!archived.ok, 'archived Rukn cannot be a new referrer')
+  const genderMismatch = resolveReferringRukn(rukns, 'R004', 'Male')
+  assert(!genderMismatch.ok, 'opposite-gender referrer rejected')
+  const valid = resolveReferringRukn(rukns, 'R001', 'Male')
+  assert(valid.ok, 'active same-gender Rukn accepted')
+  if (valid.ok) {
+    assert(valid.id === 'R001' && valid.name === 'Md Aslam', 'persists canonical referring id')
+  }
+}
+
 function testOnlinePaymentSettingDefault(): void {
   assert(resolveOnlinePaymentEnabled({ exists: false, data: null }) === true, '3 missing settings document defaults UPI on')
   assert(resolveOnlinePaymentEnabled({ exists: true, data: {} }) === true, 'missing flag on existing doc defaults UPI on')
@@ -1278,6 +1311,7 @@ const cases = [
   run('registered people compact expandable list', testRegisteredPeopleCompactList),
   run('no new collection or screenshot infrastructure', testNoNewInfrastructure),
   run('cash collectors from existing rukn master', testCashCollectorsFromRuknMaster),
+  run('referring Rukns from existing rukn master', testReferringRuknsFromRuknMaster),
   run('online payment setting default and visibility', testOnlinePaymentSettingDefault),
   run('mobile normalization and existing registration restore', testMobileNormalizationAndExistingRestore),
   run('legacy submit mapping without generic cash paid', testLegacySubmitMapping),

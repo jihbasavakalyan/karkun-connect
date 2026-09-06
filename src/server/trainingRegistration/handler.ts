@@ -10,11 +10,13 @@ import {
   isRestorableRegistration,
   isSoftRemovedPerson,
   listCashCollectors,
+  listReferringRukns,
   normalizeTrainingMobile,
   organisationalCategoryFromPerson,
   resolveCashCollector,
   resolveOnlinePaymentEnabled,
   resolvePublicPaymentChoice,
+  resolveReferringRukn,
   sanitizeUtr,
   serializeTrainingRuknProgress,
   TRAINING_REGISTRATION_SETTINGS_DOC,
@@ -281,6 +283,9 @@ async function loadRuknCollectorSource(db: Firestore) {
       name: String(data.name || doc.id),
       status: data.status,
       isArchived: data.isArchived,
+      gender: data.gender,
+      mobile: data.mobile,
+      officerKind: data.officerKind,
     }
   })
 }
@@ -460,6 +465,7 @@ async function publicPaymentOptions(db: Firestore) {
   return {
     onlinePaymentEnabled,
     cashCollectors: listCashCollectors(rukns),
+    referringRukns: listReferringRukns(rukns),
   }
 }
 
@@ -566,6 +572,7 @@ async function handleSession(mobile10: string): Promise<TrainingRegistrationApiR
     mobile: mobile10,
     profile: requestProfile,
     existingRegistration,
+    submittedReferredByRuknId: String(requestMatch?.requestingRuknId || '').trim() || undefined,
     ...paymentOptions,
     message: 'Complete your information to continue.',
   })
@@ -590,6 +597,7 @@ async function updatePersonAllowedFields(
 async function upsertPendingCandidate(
   mobile10: string,
   profile: PublicPersonProfile,
+  referring: { id: string; name: string },
 ): Promise<string> {
   const admin = getRuknClaimsAdmin()
   const ref = admin.db.collection(SETTINGS).doc(KARKUN_REQUESTS_DOC)
@@ -614,6 +622,8 @@ async function upsertPendingCandidate(
       existing.education = profile.education
       existing.profession = profile.profession
       existing.gender = profile.gender || existing.gender
+      existing.requestingRuknId = referring.id
+      existing.requestingRuknName = referring.name
       existing.updatedAt = timestamp
       existing.remarks = `Public training gathering ${TRAINING_GATHERING_EVENT.id}`
       tx.set(ref, { requests, _updatedAt: timestamp, _serverTime: FieldValue.serverTimestamp() }, { merge: true })
@@ -628,8 +638,8 @@ async function upsertPendingCandidate(
       gender: profile.gender,
       area: '',
       remarks: `Public training gathering ${TRAINING_GATHERING_EVENT.id}`,
-      requestingRuknId: '',
-      requestingRuknName: 'Public Training Registration',
+      requestingRuknId: referring.id,
+      requestingRuknName: referring.name,
       status: 'Pending Approval',
       createdAt: timestamp,
       updatedAt: timestamp,
@@ -674,6 +684,7 @@ async function handleSubmit(
   cashPaidToIdRaw: unknown,
   paymentMethodRaw: unknown,
   paymentStatusRaw: unknown,
+  referredByRuknIdRaw: unknown,
 ): Promise<TrainingRegistrationApiResponse> {
   const admin = getRuknClaimsAdmin()
   const existingFound = await findExistingRegistration(admin.db, mobile10)
@@ -768,7 +779,12 @@ async function handleSubmit(
   } else if (rukn) {
     organisationalCategory = 'rukn'
   } else {
-    candidateRequestId = await upsertPendingCandidate(mobile10, profile)
+    const rukns = await loadRuknCollectorSource(admin.db)
+    const referring = resolveReferringRukn(rukns, referredByRuknIdRaw, profile.gender)
+    if (!referring.ok) {
+      return json(400, { ok: false, error: referring.error })
+    }
+    candidateRequestId = await upsertPendingCandidate(mobile10, profile, referring)
     organisationalCategory = 'other'
   }
 
@@ -1020,6 +1036,7 @@ export async function handleTrainingRegistration(
         body.cashPaidToId,
         body.paymentMethod,
         body.paymentStatus,
+        body.referredByRuknId,
       )
     }
 

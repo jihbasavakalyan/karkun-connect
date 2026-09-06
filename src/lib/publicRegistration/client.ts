@@ -63,6 +63,7 @@ export async function submitPublicRegistration(input: {
   paymentChoice: import('@/lib/publicRegistration/types').TrainingPublicPaymentChoice
   utr?: string
   cashPaidToId?: string
+  referredByRuknId?: string
 }): Promise<{
   ok: true
   registration: TrainingRegistrationRecord

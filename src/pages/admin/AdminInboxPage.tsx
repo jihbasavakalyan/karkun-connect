@@ -35,12 +35,15 @@ import { markRuknAdminMessageRead } from '@/services/ruknAdminMessageService'
 import { subscribeToRuknAdminMessageStore } from '@/stores/ruknAdminMessageStore'
 import { TrainingGatheringAdminPanel } from '@/components/public-registration/TrainingGatheringAdminPanel'
 import {
+  isNewKarkunIntakeRequest,
   isPublicTrainingRequest,
   publicTrainingReferralValue,
   PublicTrainingApproveFields,
+  SubmittedReferringRuknDisplay,
 } from '@/components/forms/people/PublicTrainingApproveFields'
 import { getPeopleRequestKind } from '@/types/karkunRequest.types'
 import { getRuknById } from '@/data/ruknMaster'
+import { isEligibleReferringRukn } from '@/lib/referringRukn'
 import { buildWhatsAppLink } from '@/utils/personContactLinks'
 
 const FOLDERS: { id: InboxFolder | 'all'; label: string }[] = [
@@ -130,9 +133,8 @@ export function AdminInboxPage() {
         const result = await approvePeopleIntakeRequest({
           requestId: request.id,
           decidedBy,
-          referredByRuknId: isPublicTrainingRequest(request)
-            ? publicTrainingReferralValue(request, referralByRequestId)
-            : undefined,
+          referredByRuknId:
+            publicTrainingReferralValue(request, referralByRequestId) || undefined,
           fatherHusbandName: isPublicTrainingRequest(request)
             ? familyByRequestId[request.id]
             : undefined,
@@ -330,10 +332,13 @@ export function AdminInboxPage() {
             const publicTrainingReferral = item.rawRequest
               ? publicTrainingReferralValue(item.rawRequest, referralByRequestId)
               : ''
+            const referringRukn = publicTrainingReferral
+              ? getRuknById(publicTrainingReferral)
+              : undefined
             const approveBlockedForReferral = Boolean(
               item.rawRequest &&
-                isPublicTrainingRequest(item.rawRequest) &&
-                !publicTrainingReferral,
+                isNewKarkunIntakeRequest(item.rawRequest) &&
+                (!referringRukn || !isEligibleReferringRukn(referringRukn)),
             )
             return (
               <li
@@ -362,6 +367,15 @@ export function AdminInboxPage() {
                       <p className="mt-2 whitespace-pre-wrap text-sm text-text-heading">
                         {item.rawInternalMessage.body}
                       </p>
+                    ) : null}
+                    {item.rawRequest &&
+                    canDecide &&
+                    isNewKarkunIntakeRequest(item.rawRequest) &&
+                    !isPublicTrainingRequest(item.rawRequest) ? (
+                      <SubmittedReferringRuknDisplay
+                        request={item.rawRequest}
+                        referredByRuknId={publicTrainingReferral}
+                      />
                     ) : null}
                     {item.rawRequest &&
                     canDecide &&

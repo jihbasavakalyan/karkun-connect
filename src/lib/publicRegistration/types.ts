@@ -34,6 +34,13 @@ export type PublicLookupCase = 'existing_person' | 'existing_rukn' | 'new_candid
 
 export type TrainingPublicPaymentChoice = 'online' | 'cash_at_ijtema' | 'cash_paid_to'
 export type TrainingCashCollector = { id: string; name: string }
+export type TrainingReferringRuknOption = {
+  id: string
+  name: string
+  mobile: string
+  gender: PublicPersonGender
+  category: 'Rukn' | 'A Rukn'
+}
 
 export type PublicLookupResult = {
   ok: true
@@ -46,6 +53,8 @@ export type PublicLookupResult = {
   existingRegistration?: TrainingRegistrationRecord
   onlinePaymentEnabled: boolean
   cashCollectors: TrainingCashCollector[]
+  referringRukns: TrainingReferringRuknOption[]
+  submittedReferredByRuknId?: string
   message: string
 }
 

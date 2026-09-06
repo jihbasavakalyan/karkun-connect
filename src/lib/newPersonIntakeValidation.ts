@@ -1,4 +1,5 @@
 import { getRuknById } from '@/data/ruknMaster'
+import { isEligibleReferringRukn } from '@/lib/referringRukn'
 import { getFatherHusbandLabel, type PersonGender } from '@/types/people.types'
 
 export type NewPersonIntakeInput = {
@@ -10,9 +11,8 @@ export type NewPersonIntakeInput = {
 
 export type NewPersonIntakeOptions = {
   /**
-   * Rukn-submitted NEW Karkun / NEW Muttafiq: true (authenticated Rukn is the referral).
-   * Pending / public-training NEW Karkun approval: true (Admin must select referring Rukn).
-   * Admin-created person records: false (referral optional; do not invent).
+   * NEW Karkun registration/addition and NEW Karkun approval: true.
+   * Data import / historical-shape fixtures pass false (do not invent or backfill).
    */
   requireReferral?: boolean
 }
@@ -52,7 +52,7 @@ export function validateNewPersonIntake(
   let resolvedReferral: string | undefined
   if (referredByRuknId) {
     const referringRukn = getRuknById(referredByRuknId)
-    if (!referringRukn || referringRukn.status !== 'active') {
+    if (!referringRukn || !isEligibleReferringRukn(referringRukn)) {
       return { ok: false, error: 'Referring Rukn not found or inactive.' }
     }
     resolvedReferral = referringRukn.id

@@ -12,6 +12,7 @@ import {
   ruknMaster,
   type Rukn,
 } from '@/data/ruknMaster'
+import { isEligibleReferringRukn } from '@/lib/referringRukn'
 import { findPossibleNameDuplicates } from '@/lib/nameMatching'
 import {
   getPersonCategory,
@@ -363,7 +364,7 @@ export function createRukn(
   const referredByRuknId = input.referredByRuknId?.trim() || undefined
   if (referredByRuknId) {
     const referringRukn = getRuknById(referredByRuknId)
-    if (!referringRukn || referringRukn.status !== 'active') {
+    if (!referringRukn || !isEligibleReferringRukn(referringRukn)) {
       return { success: false, error: 'Referring Rukn not found or inactive.' }
     }
   }
@@ -620,8 +621,8 @@ export type CreatePersonWriteOptions = {
    */
   requireNewPersonIntake?: boolean
   /**
-   * Rukn NEW Karkun / NEW Muttafiq writes pass true.
-   * Admin create and public-training approve default false (referral optional).
+   * NEW Karkun addition / approval pass true.
+   * Imports and historical-shape fixtures pass false (do not invent).
    */
   requireReferral?: boolean
 }
@@ -655,7 +656,7 @@ export function createKarkun(
     address = intake.address
   } else if (referredByRuknId) {
     const referringRukn = getRuknById(referredByRuknId)
-    if (!referringRukn || referringRukn.status !== 'active') {
+    if (!referringRukn || !isEligibleReferringRukn(referringRukn)) {
       return { success: false, error: 'Referring Rukn not found or inactive.' }
     }
   }
@@ -747,7 +748,7 @@ export function applyReferredByRuknIfAbsent(
     return { success: true, karkunId: personId }
   }
   const rukn = getRuknById(next)
-  if (!rukn || rukn.status !== 'active') {
+  if (!rukn || !isEligibleReferringRukn(rukn)) {
     return { success: false, error: 'Referring Rukn not found or inactive.' }
   }
   person.referredByRuknId = rukn.id
@@ -796,7 +797,7 @@ export function createMuttafiq(
     address = intake.address
   } else if (referredByRuknId) {
     const referringRukn = getRuknById(referredByRuknId)
-    if (!referringRukn || referringRukn.status !== 'active') {
+    if (!referringRukn || !isEligibleReferringRukn(referringRukn)) {
       return { success: false, error: 'Referring Rukn not found or inactive.' }
     }
   }

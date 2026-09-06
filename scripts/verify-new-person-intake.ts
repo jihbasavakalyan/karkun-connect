@@ -48,14 +48,18 @@ console.log('verify-new-person-intake: start')
   assert(service.includes('{ requireReferral: true }'), 'new-karkun approve requires referral')
   assert(!service.includes('requireReferral: !isPublicTraining'), 'public-training approve no longer skips referral')
   const inbox = readFileSync(resolve(process.cwd(), 'src/pages/admin/AdminInboxPage.tsx'), 'utf8')
-  assert(inbox.includes('PublicTrainingApproveFields'), 'inbox collects referring Rukn for public training')
+  assert(inbox.includes('SubmittedReferringRuknDisplay'), 'inbox displays submitted referring Rukn')
+  assert(inbox.includes('PublicTrainingApproveFields'), 'inbox keeps referral correction for public training')
   assert(inbox.includes('approveBlockedForReferral'), 'Inbox Approve is blocked without referring Rukn')
   const fields = readFileSync(
     resolve(process.cwd(), 'src/components/forms/people/PublicTrainingApproveFields.tsx'),
     'utf8',
   )
   assert(fields.includes('Referred By Rukn *'), 'public-training referral is required in UI')
+  assert(fields.includes('Verify / correct referring Rukn'), 'admin may still verify/correct submitted referral')
   assert(!fields.includes('Referred By Rukn (optional)'), 'public-training referral is not marked optional')
+  assert(fields.includes('ReferringRuknSearchField'), 'inbox referral is searchable')
+  assert(fields.includes('SubmittedReferringRuknDisplay'), 'inbox shows name, ID, and category')
   assert(fields.includes('publicTrainingReferralValue'), 'existing request referral is preserved in the picker')
   const queue = readFileSync(
     resolve(process.cwd(), 'src/components/forms/people/PendingKarkunRequestQueue.tsx'),
@@ -77,12 +81,9 @@ console.log('verify-new-person-intake: start')
       address: 'Address 1',
     },
     'Administrator',
+    { requireReferral: true },
   )
-  assert(noReferral.success, `3. Admin Karkun without referral accepted: ${noReferral.error ?? ''}`)
-  assert(
-    getKarkunById(noReferral.karkunId!)?.referredByRuknId === undefined,
-    '3. Admin did not invent a referral',
-  )
+  assert(!noReferral.success, '3. Admin Karkun without referral rejected')
 
   const ruknBoundary = createKarkun(
     {
@@ -509,12 +510,9 @@ console.log('verify-new-person-intake: start')
       address: 'Training Address',
     },
     'Administrator',
+    { requireReferral: true },
   )
-  assert(noReferral.success, `9. public training without referral accepted: ${noReferral.error ?? ''}`)
-  assert(
-    getKarkunById(noReferral.karkunId!)?.referredByRuknId === undefined,
-    '9. public training did not invent a referral',
-  )
+  assert(!noReferral.success, '9. public training without referral rejected')
 
   const noFamily = createKarkun(
     {
@@ -590,7 +588,7 @@ console.log('verify-new-person-intake: start')
     publicTrainingWithReferral.ok && publicTrainingWithReferral.referredByRuknId === referring.id,
     'public-training persist path keeps selected referredByRuknId',
   )
-  console.log('  OK  public training new-karkun intake (referral required on approve)')
+  console.log('  OK  public training new-karkun intake (referral required at submit/approve)')
 }
 
 {

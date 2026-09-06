@@ -2,8 +2,10 @@ import { useMemo, useState, type FormEvent } from 'react'
 import { InputField } from '@/components/forms/InputField'
 import { PersonContactActions } from '@/components/forms/people/PersonContactActions'
 import { RuknAssignmentSelect } from '@/components/forms/people/RuknAssignmentSelect'
+import { ReferringRuknSearchField } from '@/components/forms/people/ReferringRuknSearchField'
 import { Modal, ModalFormFooter, ModalFormGrid, ModalFormSection } from '@/components/common'
 import { getAllRukns } from '@/lib/peopleStore'
+import { listEligibleReferringRukns } from '@/lib/referringRukn'
 import { getRuknById } from '@/data/ruknMaster'
 import type { PersonContactInput, PersonKind } from '@/types/people.types'
 import type { PersonGender, PersonStatus } from '@/types/karkun-registry.types'
@@ -88,16 +90,14 @@ function PersonFormModalContent({
   const [profession, setProfession] = useState(initialValues?.profession ?? '')
 
   const referringRuknOptions = useMemo(() => {
-    const active = getAllRukns().filter((rukn) => rukn.status === 'active' && !rukn.isArchived)
-    // Karkun referral: same-gender active Rukns. Rukn referral: any active Rukn.
-    const scoped = kind === 'rukn' ? active : active.filter((rukn) => rukn.gender === gender)
-    return scoped.slice().sort((a, b) => a.name.localeCompare(b.name))
+    return listEligibleReferringRukns(getAllRukns(), kind === 'rukn' ? undefined : { gender })
   }, [gender, kind])
+
+  const isKarkunAdd = kind === 'karkun' && mode === 'add' && personLabel !== 'Muttafiq'
+  const isRuknAddReferral = kind === 'rukn' && mode === 'add'
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    const isPersonAdd = kind === 'karkun' && mode === 'add'
-    const isRuknAddReferral = kind === 'rukn' && mode === 'add'
     onSubmit({
       name,
       gender,
@@ -110,7 +110,7 @@ function PersonFormModalContent({
       education: kind === 'karkun' ? education || undefined : undefined,
       profession: kind === 'karkun' ? profession || undefined : undefined,
       assignedRuknId: kind === 'karkun' && mode === 'edit' ? assignedRuknId : undefined,
-      referredByRuknId: isPersonAdd || isRuknAddReferral ? referredByRuknId || undefined : undefined,
+      referredByRuknId: isKarkunAdd || isRuknAddReferral ? referredByRuknId || undefined : undefined,
     })
   }
 
@@ -122,8 +122,7 @@ function PersonFormModalContent({
 
   const showConnectionSection =
     kind === 'karkun' && mode === 'edit' && Boolean(karkunId) && personLabel !== 'Muttafiq'
-  const showReferredBySection =
-    (kind === 'karkun' && mode === 'add') || (kind === 'rukn' && mode === 'add')
+  const showReferredBySection = isKarkunAdd || isRuknAddReferral
   const showReferredByDisplay = kind === 'rukn' && mode === 'edit'
   const showAdditionalSection = kind === 'karkun'
   const intakeRequired = kind === 'karkun' && mode === 'add'
@@ -222,23 +221,14 @@ function PersonFormModalContent({
           <ModalFormSection title="Referral">
             <ModalFormGrid>
               <div className="flex flex-col gap-2 md:col-span-2">
-                <label htmlFor="person-referred-by-rukn" className="text-sm font-medium text-text-heading">
-                  {kind === 'rukn' ? 'Referred By Rukn' : 'Referred By Rukn (optional)'}
-                </label>
-                <select
+                <ReferringRuknSearchField
                   id="person-referred-by-rukn"
+                  label="Referred By Rukn"
                   value={referredByRuknId}
-                  onChange={(event) => setReferredByRuknId(event.target.value)}
-                  className={selectClassName}
-                  required={kind === 'rukn' && mode === 'add'}
-                >
-                  <option value="">Select referring Rukn</option>
-                  {referringRuknOptions.map((rukn) => (
-                    <option key={rukn.id} value={rukn.id}>
-                      {rukn.name}
-                    </option>
-                  ))}
-                </select>
+                  onChange={setReferredByRuknId}
+                  options={referringRuknOptions}
+                  required={mode === 'add'}
+                />
               </div>
             </ModalFormGrid>
           </ModalFormSection>
