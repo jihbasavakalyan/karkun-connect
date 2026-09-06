@@ -29,6 +29,7 @@ import type {
 } from '@/lib/publicRegistration/types'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
+import { InboxAccordionSection } from '@/components/inbox/InboxAccordionSection'
 
 type PeopleFilters = {
   category: TrainingOrganisationalCategory | ''
@@ -58,6 +59,7 @@ export function TrainingGatheringAdminPanel() {
   const [expandedRuknId, setExpandedRuknId] = useState('')
   const [expandedRegistrationId, setExpandedRegistrationId] = useState('')
   const [onlineBusy, setOnlineBusy] = useState(false)
+  const [openQueue, setOpenQueue] = useState('')
 
   const load = async () => {
     const token = await getFirebaseAuth().currentUser?.getIdToken()
@@ -159,6 +161,10 @@ export function TrainingGatheringAdminPanel() {
     setExpandedRegistrationId('')
   }, [search, filters])
 
+  useEffect(() => {
+    if (search.trim()) setOpenQueue('registered')
+  }, [search])
+
   const cashPending = useMemo(
     () => registeredPeople.filter((row) => row.paymentStatus === 'cash_pending'),
     [registeredPeople],
@@ -175,6 +181,10 @@ export function TrainingGatheringAdminPanel() {
     () => registeredPeople.filter((row) => row.paymentStatus === 'paid_upi'),
     [registeredPeople],
   )
+
+  const toggleQueue = (id: string) => {
+    setOpenQueue((current) => (current === id ? '' : id))
+  }
 
   if (!summary && !error) {
     return <p className="text-sm text-secondary">Loading Tarbiyati Ijtema registrations…</p>
@@ -260,145 +270,178 @@ export function TrainingGatheringAdminPanel() {
       ) : null}
 
       {summary ? (
-        <div className="mt-6 rounded-xl border border-primary/20 bg-surface-muted/40 p-3 sm:p-4">
+        <div className="mt-6 space-y-3">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <h3 className="text-base font-semibold text-text-heading">Registered People</h3>
-              <p className="text-sm text-secondary">
-                Registered People (Total: {summary.registered})
-              </p>
-            </div>
+            <p className="text-sm text-secondary">
+              Registered People (Total: {summary.registered})
+            </p>
             <PrimaryButton type="button" disabled={exporting} onClick={() => void exportCsv()}>
               {exporting ? 'Exporting…' : 'Export CSV'}
             </PrimaryButton>
           </div>
-          <p className="mt-2 text-xs text-secondary">
+          <p className="text-xs text-secondary">
             This list contains every completed registration. Search and filters change only what is
             displayed. CSV export always includes all registrations.
           </p>
-          <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            <label className="block sm:col-span-2 lg:col-span-3">
-              <span className="mb-1 block text-xs font-medium text-secondary">
-                Search name, mobile, registration ID, UTR, or cash collector
-              </span>
-              <input
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm"
-                placeholder="Search registered people"
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              <label className="block sm:col-span-2 lg:col-span-3">
+                <span className="mb-1 block text-xs font-medium text-secondary">
+                  Search name, mobile, registration ID, UTR, or cash collector
+                </span>
+                <input
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm"
+                  placeholder="Search registered people"
+                />
+              </label>
+              <FilterSelect
+                label="Category"
+                value={filters.category}
+                onChange={(value) =>
+                  setFilters((current) => ({ ...current, category: value as PeopleFilters['category'] }))
+                }
+                options={[
+                  { value: '', label: 'All categories' },
+                  { value: 'rukn', label: 'Rukn' },
+                  { value: 'karkun', label: 'Karkun' },
+                  { value: 'muttafiq', label: 'Muttafiq' },
+                  { value: 'other', label: 'Other' },
+                ]}
               />
-            </label>
-            <FilterSelect
-              label="Category"
-              value={filters.category}
-              onChange={(value) =>
-                setFilters((current) => ({ ...current, category: value as PeopleFilters['category'] }))
-              }
-              options={[
-                { value: '', label: 'All categories' },
-                { value: 'rukn', label: 'Rukn' },
-                { value: 'karkun', label: 'Karkun' },
-                { value: 'muttafiq', label: 'Muttafiq' },
-                { value: 'other', label: 'Other' },
-              ]}
-            />
-            <FilterSelect
-              label="Gender"
-              value={filters.gender}
-              onChange={(value) =>
-                setFilters((current) => ({ ...current, gender: value as PublicPersonGender }))
-              }
-              options={[
-                { value: '', label: 'All genders' },
-                { value: 'Male', label: 'Male' },
-                { value: 'Female', label: 'Female' },
-              ]}
-            />
-            <FilterSelect
-              label="Payment"
-              value={filters.paymentMethod}
-              onChange={(value) =>
-                setFilters((current) => ({
-                  ...current,
-                  paymentMethod: value as PeopleFilters['paymentMethod'],
-                }))
-              }
-              options={[
-                { value: '', label: 'All payment methods' },
-                { value: 'cash', label: 'Cash' },
-                { value: 'upi', label: 'UPI' },
-              ]}
-            />
-            <FilterSelect
-              label="Payment status"
-              value={filters.paymentStatus}
-              onChange={(value) =>
-                setFilters((current) => ({
-                  ...current,
-                  paymentStatus: value as PeopleFilters['paymentStatus'],
-                }))
-              }
-              options={[
-                { value: '', label: 'All payment statuses' },
-                { value: 'cash_pending', label: 'Cash Pending' },
-                { value: 'paid_cash', label: 'Cash Paid' },
-                { value: 'upi_pending', label: 'UPI Pending' },
-                { value: 'paid_upi', label: 'UPI Paid' },
-              ]}
-            />
-            <div className="flex items-end">
-              <SecondaryButton type="button" onClick={() => setFilters(EMPTY_FILTERS)}>
-                All
-              </SecondaryButton>
-            </div>
-          </div>
-          {displayedPeople.length === 0 ? (
-            <p className="mt-3 text-sm text-secondary">No registrations match the current view.</p>
-          ) : (
-            <div className="mt-3">
-              <div className="mb-1 hidden grid-cols-[1.25rem_minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1.4fr)] gap-3 px-3 text-xs font-medium text-secondary sm:grid">
-                <span className="sr-only">Details</span>
-                <span>Name</span>
-                <span>Mobile</span>
-                <span>Connected Rukn</span>
+              <FilterSelect
+                label="Gender"
+                value={filters.gender}
+                onChange={(value) =>
+                  setFilters((current) => ({ ...current, gender: value as PublicPersonGender }))
+                }
+                options={[
+                  { value: '', label: 'All genders' },
+                  { value: 'Male', label: 'Male' },
+                  { value: 'Female', label: 'Female' },
+                ]}
+              />
+              <FilterSelect
+                label="Payment"
+                value={filters.paymentMethod}
+                onChange={(value) =>
+                  setFilters((current) => ({
+                    ...current,
+                    paymentMethod: value as PeopleFilters['paymentMethod'],
+                  }))
+                }
+                options={[
+                  { value: '', label: 'All payment methods' },
+                  { value: 'cash', label: 'Cash' },
+                  { value: 'upi', label: 'UPI' },
+                ]}
+              />
+              <FilterSelect
+                label="Payment status"
+                value={filters.paymentStatus}
+                onChange={(value) =>
+                  setFilters((current) => ({
+                    ...current,
+                    paymentStatus: value as PeopleFilters['paymentStatus'],
+                  }))
+                }
+                options={[
+                  { value: '', label: 'All payment statuses' },
+                  { value: 'cash_pending', label: 'Cash Pending' },
+                  { value: 'paid_cash', label: 'Cash Paid' },
+                  { value: 'upi_pending', label: 'UPI Pending' },
+                  { value: 'paid_upi', label: 'UPI Paid' },
+                ]}
+              />
+              <div className="flex items-end">
+                <SecondaryButton type="button" onClick={() => setFilters(EMPTY_FILTERS)}>
+                  All
+                </SecondaryButton>
               </div>
-              <ul className="space-y-2">
-                {displayedPeople.map((row) => (
-                  <RegisteredPersonRow
-                    key={row.id}
-                    row={row}
-                    expanded={expandedRegistrationId === row.id}
-                    onToggle={() =>
-                      setExpandedRegistrationId((current) => (current === row.id ? '' : row.id))
-                    }
-                  />
-                ))}
-              </ul>
-            </div>
-          )}
-        </div>
-      ) : null}
+          </div>
+          <InboxAccordionSection
+            title="Registered People"
+            count={displayedPeople.length}
+            open={openQueue === 'registered'}
+            onToggle={() => toggleQueue('registered')}
+          >
+            {displayedPeople.length === 0 ? (
+              <p className="mt-3 text-sm text-secondary">No registrations match the current view.</p>
+            ) : (
+              <div className="mt-3">
+                <div className="mb-1 hidden grid-cols-[1.25rem_minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1.4fr)] gap-3 px-3 text-xs font-medium text-secondary sm:grid">
+                  <span className="sr-only">Details</span>
+                  <span>Name</span>
+                  <span>Mobile</span>
+                  <span>Connected Rukn</span>
+                </div>
+                <ul className="space-y-2">
+                  {displayedPeople.map((row) => (
+                    <RegisteredPersonRow
+                      key={row.id}
+                      row={row}
+                      expanded={expandedRegistrationId === row.id}
+                      onToggle={() =>
+                        setExpandedRegistrationId((current) => (current === row.id ? '' : row.id))
+                      }
+                    />
+                  ))}
+                </ul>
+              </div>
+            )}
+          </InboxAccordionSection>
 
-      <div className="mt-6 space-y-4">
-        <h3 className="text-sm font-semibold uppercase tracking-wide text-secondary">
-          Payment queues
-        </h3>
-        <PaymentQueue title="Cash Pending" rows={cashPending} showCashCollector />
-        <PaymentQueue title="Cash Paid" rows={cashPaid} showCashCollector />
-        <PaymentQueue
-          title="UPI Pending"
-          rows={upiPending}
-          actionLabel="Confirm UPI Paid"
-          busyId={busyId}
-          onAction={(id) => void confirmUpi(id)}
-          showUpiEvidence
-        />
-        <PaymentQueue title="UPI Paid" rows={upiPaid} showUpiEvidence />
-      </div>
+          <h3 className="pt-2 text-sm font-semibold uppercase tracking-wide text-secondary">
+            Payment queues
+          </h3>
+          <InboxAccordionSection
+            title="Cash Pending"
+            count={cashPending.length}
+            open={openQueue === 'cash_pending'}
+            onToggle={() => toggleQueue('cash_pending')}
+          >
+            <PaymentQueue title="Cash Pending" rows={cashPending} showCashCollector />
+          </InboxAccordionSection>
+          <InboxAccordionSection
+            title="Cash Paid"
+            count={cashPaid.length}
+            open={openQueue === 'cash_paid'}
+            onToggle={() => toggleQueue('cash_paid')}
+          >
+            <PaymentQueue title="Cash Paid" rows={cashPaid} showCashCollector />
+          </InboxAccordionSection>
+          <InboxAccordionSection
+            title="UPI Pending"
+            count={upiPending.length}
+            open={openQueue === 'upi_pending'}
+            onToggle={() => toggleQueue('upi_pending')}
+          >
+            <PaymentQueue
+              title="UPI Pending"
+              rows={upiPending}
+              actionLabel="Confirm UPI Paid"
+              busyId={busyId}
+              onAction={(id) => void confirmUpi(id)}
+              showUpiEvidence
+            />
+          </InboxAccordionSection>
+          <InboxAccordionSection
+            title="UPI Paid"
+            count={upiPaid.length}
+            open={openQueue === 'upi_paid'}
+            onToggle={() => toggleQueue('upi_paid')}
+          >
+            <PaymentQueue title="UPI Paid" rows={upiPaid} showUpiEvidence />
+          </InboxAccordionSection>
 
-      {summary && summary.ruknWise.length > 0 ? (
-        <div className="mt-6 overflow-x-auto">
-          <h3 className="mb-2 text-sm font-semibold text-text-heading">Rukn tracking</h3>
+          {summary.ruknWise.length > 0 ? (
+            <InboxAccordionSection
+              title="Rukn tracking"
+              count={summary.ruknWise.length}
+              open={openQueue === 'rukn_tracking'}
+              onToggle={() => toggleQueue('rukn_tracking')}
+            >
+              <div className="overflow-x-auto">
           <table className="min-w-full text-left text-sm">
             <thead>
               <tr className="text-secondary">
@@ -426,6 +469,9 @@ export function TrainingGatheringAdminPanel() {
               ))}
             </tbody>
           </table>
+              </div>
+            </InboxAccordionSection>
+          ) : null}
         </div>
       ) : null}
     </section>

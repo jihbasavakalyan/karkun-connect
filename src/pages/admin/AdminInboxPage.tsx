@@ -6,6 +6,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
+import { InboxAccordionSection } from '@/components/inbox/InboxAccordionSection'
 import { PageShell } from '@/components/ui'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
@@ -63,6 +64,70 @@ const KINDS: { id: InboxItemKind | 'all'; label: string }[] = [
   { id: 'rukn_message', label: 'Rukn messages' },
 ]
 
+/** Existing InboxEngine kind labels — presentation grouping only. */
+const INBOX_SECTION_ORDER = [
+  'new_karkun',
+  'training_new_karkun',
+  'new_muttafiq',
+  'karkun_to_muttafiq',
+  'muttafiq_rukn_link',
+  'rukn_message',
+  'admin_notification',
+] as const
+
+function inboxSectionId(item: InboxItem): string {
+  if (item.kind === 'new_karkun') {
+    return item.rawRequest?.source === 'public_training_registration'
+      ? 'training_new_karkun'
+      : 'new_karkun'
+  }
+  return item.kind
+}
+
+function inboxSectionLabel(sectionId: string): string {
+  switch (sectionId) {
+    case 'new_karkun':
+      return 'New Karkun Request'
+    case 'training_new_karkun':
+      return 'Training gathering — new Karkun'
+    case 'new_muttafiq':
+      return 'New Muttafiq Request'
+    case 'karkun_to_muttafiq':
+      return 'Karkun → Muttafiq Conversion'
+    case 'muttafiq_rukn_link':
+      return 'Muttafiq → Rukn Link'
+    case 'rukn_message':
+      return 'Rukn → Admin message'
+    case 'admin_notification':
+      return 'Administrative Notification'
+    default:
+      return 'Inbox Item'
+  }
+}
+
+function groupInboxItems(items: InboxItem[]): { id: string; label: string; items: InboxItem[] }[] {
+  const buckets = new Map<string, InboxItem[]>()
+  for (const item of items) {
+    const id = inboxSectionId(item)
+    const list = buckets.get(id) ?? []
+    list.push(item)
+    buckets.set(id, list)
+  }
+  const ordered: { id: string; label: string; items: InboxItem[] }[] = []
+  for (const id of INBOX_SECTION_ORDER) {
+    const groupItems = buckets.get(id)
+    if (groupItems && groupItems.length > 0) {
+      ordered.push({ id, label: inboxSectionLabel(id), items: groupItems })
+    }
+  }
+  for (const [id, groupItems] of buckets) {
+    if (!INBOX_SECTION_ORDER.includes(id as (typeof INBOX_SECTION_ORDER)[number])) {
+      ordered.push({ id, label: inboxSectionLabel(id), items: groupItems })
+    }
+  }
+  return ordered
+}
+
 export function AdminInboxPage() {
   const { user } = useAuth()
   const [searchParams] = useSearchParams()
@@ -78,6 +143,7 @@ export function AdminInboxPage() {
   const [referralByRequestId, setReferralByRequestId] = useState<Record<string, string>>({})
   const [familyByRequestId, setFamilyByRequestId] = useState<Record<string, string>>({})
   const [addressByRequestId, setAddressByRequestId] = useState<Record<string, string>>({})
+  const [openInboxSection, setOpenInboxSection] = useState('')
   const { busy, busyKey, progressMessage, run } = useWriteLifecycle()
 
   useEffect(() => {
@@ -93,6 +159,16 @@ export function AdminInboxPage() {
     void tick
     return buildUnifiedInbox({ folder, kind, query })
   }, [folder, kind, query, tick])
+
+  const groupedItems = useMemo(() => groupInboxItems(items), [items])
+
+  useEffect(() => {
+    if (!query.trim()) return
+    const first = groupedItems[0]
+    if (first) setOpenInboxSection(first.id)
+    // Open matching groups when search/filter changes; do not reset on store ticks.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- groupedItems excluded on purpose
+  }, [query, folder, kind])
 
   const unread = useMemo(() => {
     void tick
@@ -313,8 +389,19 @@ export function AdminInboxPage() {
           No items in this folder.
         </p>
       ) : (
-        <ul className="space-y-3">
-          {items.map((item) => {
+        <div className="space-y-3">
+          {groupedItems.map((section) => (
+            <InboxAccordionSection
+              key={section.id}
+              title={section.label}
+              count={section.items.length}
+              open={openInboxSection === section.id}
+              onToggle={() =>
+                setOpenInboxSection((current) => (current === section.id ? '' : section.id))
+              }
+            >
+              <ul className="space-y-3">
+                {section.items.map((item) => {
             const itemBusy =
               busyKey === `inbox:approve:${item.rawRequest?.id ?? ''}` ||
               busyKey === `inbox:reject:${item.rawRequest?.id ?? ''}` ||
@@ -461,8 +548,11 @@ export function AdminInboxPage() {
                 </div>
               </li>
             )
-          })}
-        </ul>
+                })}
+              </ul>
+            </InboxAccordionSection>
+          ))}
+        </div>
       )}
     </PageShell>
   )

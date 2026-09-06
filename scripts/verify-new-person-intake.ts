@@ -51,6 +51,11 @@ console.log('verify-new-person-intake: start')
   assert(inbox.includes('SubmittedReferringRuknDisplay'), 'inbox displays submitted referring Rukn')
   assert(inbox.includes('PublicTrainingApproveFields'), 'inbox keeps referral correction for public training')
   assert(inbox.includes('approveBlockedForReferral'), 'Inbox Approve is blocked without referring Rukn')
+  assert(inbox.includes('InboxAccordionSection'), 'people inbox groups by existing kinds')
+  assert(inbox.includes('groupInboxItems'), 'inbox grouping is presentation-only')
+  assert(inbox.includes("return 'New Karkun Request'"), 'reuses New Karkun Request label')
+  assert(inbox.includes("return 'Training gathering — new Karkun'"), 'reuses training gathering label')
+  assert(inbox.includes('buildUnifiedInbox'), 'inbox still uses unified inbox engine')
   const fields = readFileSync(
     resolve(process.cwd(), 'src/components/forms/people/PublicTrainingApproveFields.tsx'),
     'utf8',
