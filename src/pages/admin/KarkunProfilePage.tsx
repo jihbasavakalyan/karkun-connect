@@ -5,7 +5,7 @@ import { ROUTES } from '@/constants/routes'
 import { changeKarkunRuknAssignment } from '@/lib/assignmentEngine'
 import { getPersonCategory, getMuttafiqDisplayNumber, isPromotedToARukn } from '@/lib/peopleClassification'
 import { persistKarkunDurable, updateKarkun } from '@/lib/peopleStore'
-import { getMuttafiqConnectionViewForPerson } from '@/stores/muttafiqRelationshipStore'
+import { getMuttafiqConnectedRuknDisplayForPerson } from '@/stores/muttafiqRelationshipStore'
 import { useMuttafiqRelationshipStore } from '@/hooks/useMuttafiqRelationshipStore'
 import { getRuknById } from '@/data/ruknMaster'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
@@ -32,6 +32,7 @@ import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import { EmptyState, PageShell } from '@/components/ui'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { Person360Overview } from '@/components/personProfile/Person360Overview'
+import { MuttafiqRuknConnectionRow } from '@/components/relationship/MuttafiqRuknConnectionRow'
 import type { KarkunRegistryRecord, PersonGender, PersonStatus } from '@/types/karkun-registry.types'
 import type { IjtemaAttendanceStatus } from '@/types/ijtemaAttendance'
 import { DEFAULT_PLACE, getFatherHusbandLabel } from '@/types/people.types'
@@ -381,17 +382,23 @@ function KarkunProfileForm({ karkun, karkunId }: KarkunProfileFormProps) {
               <span className="text-sm font-medium text-text-heading">Connected Rukn</span>
               {(() => {
                 void muttafiqRelationshipVersion
-                const view = getMuttafiqConnectionViewForPerson(karkunId)
+                const { view, row } = getMuttafiqConnectedRuknDisplayForPerson(karkunId)
                 return (
-                  <div className="space-y-1 text-sm text-text-heading">
-                    <p>
-                      {view.status === 'none'
-                        ? 'Not Connected'
-                        : view.connectedRuknLabel}
-                      {view.status === 'one' ? (
-                        <span className="text-secondary"> ({view.current?.ruknId})</span>
-                      ) : null}
-                    </p>
+                  <div className="space-y-2 text-sm text-text-heading">
+                    {row ? (
+                      <ul className="space-y-2">
+                        <MuttafiqRuknConnectionRow row={row} />
+                      </ul>
+                    ) : view.status === 'duplicate' ? (
+                      <p role="status">
+                        Needs review
+                        {view.diagnosticRuknIds.length > 0
+                          ? ` · ${view.diagnosticRuknIds.join(', ')}`
+                          : ''}
+                      </p>
+                    ) : (
+                      <p>{view.status === 'none' ? 'Not Connected' : view.connectedRuknLabel}</p>
+                    )}
                     <p className="text-secondary">Connected Count: {view.activeCount}</p>
                     <p className="text-secondary">Relationship: {view.relationshipLabel}</p>
                   </div>

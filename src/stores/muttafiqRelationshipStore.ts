@@ -3,10 +3,13 @@
  */
 
 import type { MuttafiqRuknRelationship } from '@/types/muttafiqRelationship.types'
+import type { MuttafiqConnectionView } from '@/lib/connections/muttafiqConnectionView'
 import {
-  presentMuttafiqConnectionView,
-  type MuttafiqConnectionView,
-} from '@/lib/connections/muttafiqConnectionView'
+  presentActiveMuttafiqRowsForRukn,
+  presentConnectedRuknRow,
+  presentMuttafiqConnectionViewWithLiveNames,
+  type MuttafiqRuknConnectionDisplayRow,
+} from '@/lib/connections/muttafiqRelationshipDisplay'
 import { getRepositories } from '@/repositories/provider'
 import { unwrapRepository } from '@/repositories/errors'
 
@@ -55,10 +58,30 @@ export function getMuttafiqConnectionViewForPerson(
   personId: string,
   options?: { hasPendingLink?: boolean },
 ): MuttafiqConnectionView {
-  return presentMuttafiqConnectionView({
+  return presentMuttafiqConnectionViewWithLiveNames({
     activeLinks: getActiveMuttafiqRelationshipsForPerson(personId),
     hasPendingLink: options?.hasPendingLink,
   })
+}
+
+export function getConnectedMuttafiqDisplayRowsForRukn(
+  ruknId: string,
+): MuttafiqRuknConnectionDisplayRow[] {
+  return presentActiveMuttafiqRowsForRukn(getActiveMuttafiqRelationshipsForRukn(ruknId))
+}
+
+export function getMuttafiqConnectedRuknDisplayForPerson(
+  personId: string,
+  options?: { hasPendingLink?: boolean },
+): {
+  view: MuttafiqConnectionView
+  row: MuttafiqRuknConnectionDisplayRow | null
+} {
+  const view = getMuttafiqConnectionViewForPerson(personId, options)
+  return {
+    view,
+    row: view.status === 'one' && view.current ? presentConnectedRuknRow(view.current) : null,
+  }
 }
 
 /**

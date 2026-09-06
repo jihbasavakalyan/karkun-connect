@@ -28,8 +28,10 @@ export type MuttafiqConnectionView = {
   status: 'none' | 'one' | 'duplicate' | 'pending'
   activeCount: number
   current: MuttafiqRuknRelationship | null
+  connectedRuknId: string | null
   connectedRuknLabel: string
   relationshipLabel: string
+  diagnosticRuknIds: string[]
 }
 
 /**
@@ -41,14 +43,17 @@ export function presentMuttafiqConnectionView(input: {
   hasPendingLink?: boolean
 }): MuttafiqConnectionView {
   const active = input.activeLinks.filter((row) => row.status === 'Active')
+  const diagnosticRuknIds = active.map((row) => row.ruknId)
   if (active.length === 1) {
     const current = active[0]!
     return {
       status: 'one',
       activeCount: 1,
       current,
+      connectedRuknId: current.ruknId,
       connectedRuknLabel: formatPersonNameForDisplay(current.ruknName || current.ruknId),
       relationshipLabel: UI_LABELS.connected,
+      diagnosticRuknIds,
     }
   }
   if (active.length > 1) {
@@ -56,8 +61,10 @@ export function presentMuttafiqConnectionView(input: {
       status: 'duplicate',
       activeCount: active.length,
       current: null,
+      connectedRuknId: null,
       connectedRuknLabel: 'Needs review',
       relationshipLabel: 'Needs review',
+      diagnosticRuknIds,
     }
   }
   if (input.hasPendingLink) {
@@ -65,15 +72,19 @@ export function presentMuttafiqConnectionView(input: {
       status: 'pending',
       activeCount: 0,
       current: null,
+      connectedRuknId: null,
       connectedRuknLabel: '—',
       relationshipLabel: UI_LABELS.pending,
+      diagnosticRuknIds,
     }
   }
   return {
     status: 'none',
     activeCount: 0,
     current: null,
+    connectedRuknId: null,
     connectedRuknLabel: '—',
     relationshipLabel: UI_LABELS.notConnected,
+    diagnosticRuknIds,
   }
 }

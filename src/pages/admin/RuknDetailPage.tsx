@@ -3,7 +3,7 @@ import { Link, useLocation, useParams } from 'react-router-dom'
 import { getRuknById } from '@/data/ruknMaster'
 import { getRuknAssignmentSummary } from '@/services/assignmentService'
 import { useMuttafiqRelationshipStore } from '@/hooks/useMuttafiqRelationshipStore'
-import { getActiveMuttafiqRelationshipsForRukn } from '@/stores/muttafiqRelationshipStore'
+import { getConnectedMuttafiqDisplayRowsForRukn } from '@/stores/muttafiqRelationshipStore'
 import { getAuditLogForPerson } from '@/lib/peopleAuditLog'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { ROUTES, adminAssignmentsPath } from '@/constants/routes'
@@ -23,6 +23,7 @@ import {
 } from '@/lib/assignment/operatorFacingError'
 import { formatPersonStatus } from '@/types/people.types'
 import { EmptyState, PageHeader, PageShell, Icon } from '@/components/ui'
+import { MuttafiqRuknConnectionRow } from '@/components/relationship/MuttafiqRuknConnectionRow'
 
 type ModalMode = 'remove' | 'transfer' | null
 
@@ -40,9 +41,8 @@ export function RuknDetailPage() {
   void assignmentVersion
   void muttafiqRelationshipVersion
   const summary = ruknId ? getRuknAssignmentSummary(ruknId) : null
-  const connectedMuttafiqCount = ruknId
-    ? getActiveMuttafiqRelationshipsForRukn(ruknId).length
-    : 0
+  const connectedMuttafiqRows = ruknId ? getConnectedMuttafiqDisplayRowsForRukn(ruknId) : []
+  const connectedMuttafiqCount = connectedMuttafiqRows.length
 
   const [modalMode, setModalMode] = useState<ModalMode>(null)
   const [removingKarkun, setRemovingKarkun] = useState<{ id: string; name: string } | null>(null)
@@ -274,6 +274,21 @@ export function RuknDetailPage() {
               </ul>
             ) : (
               <p className="mt-3 text-sm text-secondary">Not Connected</p>
+            )}
+          </div>
+
+          <div className="mt-6">
+            <h3 className="text-sm font-semibold text-text-heading">
+              {UI_LABELS.connectedMuttafiqeen} ({connectedMuttafiqCount})
+            </h3>
+            {connectedMuttafiqRows.length > 0 ? (
+              <ul className="mt-3 space-y-2">
+                {connectedMuttafiqRows.map((row) => (
+                  <MuttafiqRuknConnectionRow key={row.relationshipId} row={row} />
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-3 text-sm text-secondary">{UI_LABELS.notConnected}</p>
             )}
           </div>
 

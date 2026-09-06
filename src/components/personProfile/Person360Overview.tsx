@@ -9,6 +9,7 @@ import { ContinuousKarkunJourneyStrip } from '@/components/journey/ContinuousKar
 import { formatPersonNameForDisplay } from '@/utils/formatPersonDisplay'
 import { UI_LABELS } from '@/lib/uiTerminology'
 import { useMuttafiqRelationshipStore } from '@/hooks/useMuttafiqRelationshipStore'
+import { MuttafiqRuknConnectionRow } from '@/components/relationship/MuttafiqRuknConnectionRow'
 
 type Person360OverviewProps = {
   personId: string
@@ -26,7 +27,7 @@ export function Person360Overview({ personId }: Person360OverviewProps) {
   const profile = buildPerson360Profile(personId)
   if (!profile.found) return null
 
-  const { header, responsibility, campaignStatus, journeyStages, continuousJourney, timeline, communications, quickActions } =
+  const { header, responsibility, campaignStatus, journeyStages, continuousJourney, timeline, communications, quickActions, relationshipDisplay } =
     profile
 
   return (
@@ -109,6 +110,29 @@ export function Person360Overview({ personId }: Person360OverviewProps) {
           )}
         </div>
       </section>
+
+      {relationshipDisplay ? (
+        <section className="person-360-card rounded-(--radius-card) border border-border bg-surface p-4 shadow-card sm:p-5">
+          <h3 className="text-sm font-semibold text-text-heading">
+            {relationshipDisplay.title}
+            {relationshipDisplay.status === 'one' ? ` (${relationshipDisplay.activeCount})` : ''}
+          </h3>
+          {relationshipDisplay.row ? (
+            <ul className="mt-3 space-y-2">
+              <MuttafiqRuknConnectionRow row={relationshipDisplay.row} />
+            </ul>
+          ) : relationshipDisplay.status === 'duplicate' ? (
+            <p className="mt-3 text-sm text-secondary" role="status">
+              {relationshipDisplay.emptyLabel}
+              {relationshipDisplay.diagnosticRuknIds.length > 0
+                ? ` · ${relationshipDisplay.diagnosticRuknIds.join(', ')}`
+                : ''}
+            </p>
+          ) : (
+            <p className="mt-3 text-sm text-secondary">{relationshipDisplay.emptyLabel}</p>
+          )}
+        </section>
+      ) : null}
 
       <section className="person-360-card rounded-(--radius-card) border border-border bg-surface p-4 shadow-card sm:p-5">
         <h3 className="text-sm font-semibold text-text-heading">{UI_LABELS.campaignSituation}</h3>

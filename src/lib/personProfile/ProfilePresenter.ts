@@ -12,7 +12,8 @@ import {
   ROUTES,
 } from '@/constants/routes'
 import { getPersonCategory, getMuttafiqDisplayNumber } from '@/lib/peopleClassification'
-import { getMuttafiqConnectionViewForPerson } from '@/stores/muttafiqRelationshipStore'
+import { UI_LABELS } from '@/lib/uiTerminology'
+import { getMuttafiqConnectedRuknDisplayForPerson } from '@/stores/muttafiqRelationshipStore'
 import { getKarkunGuidance } from '@/lib/guidance/guidanceEngine'
 import {
   getActiveAssignmentsForKarkun,
@@ -70,8 +71,9 @@ export function presentPerson360Profile(personId: string): Person360Profile {
 
   const category = getPersonCategory(person)
   const connection = resolveActiveConnection(personId)
-  const muttafiqView =
-    category === 'Muttafiq' ? getMuttafiqConnectionViewForPerson(personId) : null
+  const muttafiqDisplay =
+    category === 'Muttafiq' ? getMuttafiqConnectedRuknDisplayForPerson(personId) : null
+  const muttafiqView = muttafiqDisplay?.view ?? null
   const active = getActiveAssignmentsForKarkun(personId)[0]
   const guidance = getKarkunGuidance(personId)
   const history = getAssignmentHistoryForKarkun(personId).map((record) => {
@@ -167,6 +169,18 @@ export function presentPerson360Profile(personId: string): Person360Profile {
     inboxHref: `${ROUTES.ADMIN_INBOX}?query=${encodeURIComponent(person.name)}`,
     journeyHref: adminAnnexure1Path(personId),
     connectionHref: ROUTES.ADMIN_ASSIGNMENTS,
+    relationshipDisplay:
+      muttafiqView && muttafiqDisplay
+        ? {
+            status: muttafiqView.status,
+            activeCount: muttafiqView.activeCount,
+            title: UI_LABELS.connectedRukn,
+            emptyLabel:
+              muttafiqView.status === 'duplicate' ? 'Needs review' : UI_LABELS.notConnected,
+            diagnosticRuknIds: muttafiqView.diagnosticRuknIds,
+            row: muttafiqDisplay.row,
+          }
+        : undefined,
   }
 }
 

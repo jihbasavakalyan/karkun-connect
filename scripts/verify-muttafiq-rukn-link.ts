@@ -127,6 +127,10 @@ console.log('verify-muttafiq-rukn-link: start')
     'admin success is assignment not pending request',
   )
 
+  const ruknDetail = read('src/pages/admin/RuknDetailPage.tsx')
+  assert(ruknDetail.includes('getConnectedMuttafiqDisplayRowsForRukn'), 'rukn detail lists Muttafiq from relationships')
+  assert(ruknDetail.includes('MuttafiqRuknConnectionRow'), 'rukn detail renders Muttafiq names')
+
   const eligibility = read('src/lib/peopleClassification.ts')
   assert(
     eligibility.includes("getPersonCategory(person) === 'Karkun'") &&

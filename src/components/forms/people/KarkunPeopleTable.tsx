@@ -7,6 +7,7 @@ import { getConnectionStatusLabel } from '@/lib/connectionLabels'
 import { formatPersonStatus, type PeopleSortField } from '@/types/people.types'
 import { formatPersonNameForDisplay } from '@/utils/formatPersonDisplay'
 import { presentMuttafiqConnectionView } from '@/lib/connections/muttafiqConnectionView'
+import { applyLiveCounterpartNames } from '@/lib/connections/muttafiqRelationshipDisplay'
 import { getMuttafiqDisplayNumber } from '@/lib/peopleClassification'
 import { RuknAssignmentSelect } from '@/components/forms/people/RuknAssignmentSelect'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
@@ -90,7 +91,9 @@ function resolveMuttafiqRelationshipDisplay(
   activeLinks: MuttafiqRuknRelationship[],
   hasPendingLink: boolean,
 ): { linkedRuknLabel: string; relationshipLabel: string; activeCount: number; canConnect: boolean } {
-  const view = presentMuttafiqConnectionView({ activeLinks, hasPendingLink })
+  const view = applyLiveCounterpartNames(
+    presentMuttafiqConnectionView({ activeLinks, hasPendingLink }),
+  )
   return {
     linkedRuknLabel: view.connectedRuknLabel,
     relationshipLabel: view.relationshipLabel,

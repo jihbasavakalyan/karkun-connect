@@ -4,6 +4,7 @@
  */
 
 import type { ContinuousKarkunJourneySnapshot } from '@/lib/journey/continuousKarkunJourney'
+import type { MuttafiqRuknConnectionDisplayRow } from '@/lib/connections/muttafiqRelationshipDisplay'
 
 export type PersonCampaignStatusItem = {
   id: string
@@ -77,4 +78,12 @@ export type Person360Profile = {
   inboxHref: string
   journeyHref: string
   connectionHref: string
+  relationshipDisplay?: {
+    status: 'none' | 'one' | 'duplicate' | 'pending'
+    activeCount: number
+    title: string
+    emptyLabel: string
+    diagnosticRuknIds: string[]
+    row: MuttafiqRuknConnectionDisplayRow | null
+  }
 }

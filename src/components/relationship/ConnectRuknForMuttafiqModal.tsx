@@ -13,8 +13,7 @@ import { useWriteLifecycle } from '@/hooks/useWriteLifecycle'
 import { getAllRukns, normalizePersonGender } from '@/lib/peopleStore'
 import { formatPersonNameForDisplay } from '@/utils/formatPersonDisplay'
 import { assignMuttafiqRuknLinkAsAdmin } from '@/services/karkunRequestService'
-import { getActiveMuttafiqRelationshipsForPerson } from '@/stores/muttafiqRelationshipStore'
-import { presentMuttafiqConnectionView } from '@/lib/connections/muttafiqConnectionView'
+import { getMuttafiqConnectionViewForPerson } from '@/stores/muttafiqRelationshipStore'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
 
 type ConnectRuknForMuttafiqModalProps = {
@@ -38,11 +37,7 @@ export function ConnectRuknForMuttafiqModal({
   const { busy: submitting, progressMessage, run } = useWriteLifecycle()
 
   void relationshipVersion
-  const connectionView = person
-    ? presentMuttafiqConnectionView({
-        activeLinks: getActiveMuttafiqRelationshipsForPerson(person.id),
-      })
-    : null
+  const connectionView = person ? getMuttafiqConnectionViewForPerson(person.id) : null
   const alreadyConnected = connectionView?.status === 'one' || connectionView?.status === 'duplicate'
   const ruknOptions = (() => {
     if (!person || alreadyConnected) return []

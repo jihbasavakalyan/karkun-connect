@@ -114,6 +114,8 @@ const ruknB = maleRukns[1]!
   assert(profile.header.connectedCount === 1, '1 active: profile count 1')
   assert(profile.header.connectedRuknName === listView.connectedRuknLabel, 'list/profile Connected Rukn match')
   assert(profile.responsibility.connectionStatus === listView.relationshipLabel, 'list/profile relationship match')
+  assert(profile.relationshipDisplay?.row?.counterpartId === ruknA.id, '360 counterpart is the Active Rukn')
+  assert(profile.relationshipDisplay?.row?.counterpartName === listView.connectedRuknLabel, '360 name matches list')
   console.log('  OK  1 active relationship + list/profile identical')
 }
 

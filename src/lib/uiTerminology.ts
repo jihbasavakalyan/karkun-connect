@@ -18,6 +18,7 @@ export const UI_LABELS = {
   aRukn: 'عازمِ رکن',
   promoteToARukn: 'Promote to عازمِ رکن',
   connectedWorkers: 'Connected Karkuns',
+  connectedMuttafiqeen: 'Connected Muttafiqeen',
   connectedRukn: 'Connected Rukn',
   connection: 'Connection',
   personStatus: 'Person status',
