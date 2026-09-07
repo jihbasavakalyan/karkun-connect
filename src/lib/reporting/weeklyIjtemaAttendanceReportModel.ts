@@ -6,13 +6,39 @@
 
 import { APP_VERSION } from '@/constants/app'
 import { getAllKarkuns } from '@/lib/peopleStore'
-import { listOpenWeeklyIjtemaEvents } from '@/services/weeklyIjtemaService'
+import {
+  getCurrentWeeklyIjtemaEvent,
+  getWeeklyIjtemaActiveRuknRows,
+  listOpenWeeklyIjtemaEvents,
+} from '@/services/weeklyIjtemaService'
 import { getWeeklyIjtemaSubmissionsForEvent } from '@/stores/weeklyIjtemaStore'
 import { getActiveAssignmentsForKarkun } from '@/stores/assignmentStore'
 import { isWeeklyIjtemaMarkReminded } from '@/lib/operations/weeklyIjtemaInvitationAttendance'
+import { resolveOfficerKind } from '@/lib/officerIdentity'
+import { getRuknById } from '@/data/ruknMaster'
+import type { WeeklyIjtemaAudienceGender } from '@/lib/weeklyIjtema/attendanceWindowSchedule'
 import type { ReportContext } from './v2/types'
 import { campaignModelFromContext } from './v2/sections/campaignModelAccess'
-import type { WeeklyIjtemaKarkunMark } from '@/types/weeklyIjtema'
+import type { WeeklyIjtemaEvent, WeeklyIjtemaKarkunMark } from '@/types/weeklyIjtema'
+import {
+  WEEKLY_IJTEMA_EXPORT_KINDS,
+  audienceGenderForWeeklyIjtemaExport,
+  buildMissedThreeConnectedKarkuns,
+  buildNonSubmittingRuknsTwoWeeks,
+  buildWeekOverWeekHighlights,
+  filterRowsForWeeklyIjtemaExport,
+  listCanonicalIjtemaMeetingsForAudience,
+  performanceRowsFromReport,
+  snapshotFromEvent,
+  splitPerformanceRows,
+  weeklyIjtemaExportMeta,
+  type ConnectedMissedThreeRow,
+  type NonSubmittingRuknRow,
+  type WeeklyIjtemaExportKind,
+  type WeeklyIjtemaPaletteId,
+  type WeeklyIjtemaPerformanceRow,
+  type WeeklyIjtemaWeekSnapshot,
+} from './weeklyIjtemaAttendanceReportWings'
 
 export const WEEKLY_IJTEMA_ATTENDANCE_SECTION_ID = 'weekly_ijtema_attendance' as const
 export const WEEKLY_IJTEMA_ATTENDANCE_MODEL_KIND = 'weekly_ijtema_executive_report_v1' as const
@@ -52,6 +78,47 @@ export type WeeklyIjtemaFollowUpGroup = {
   absent: string[]
 }
 
+export type WeeklyIjtemaGenderWingModel = WeeklyIjtemaExportSlice
+
+export type WeeklyIjtemaExportSlice = {
+  kind: WeeklyIjtemaExportKind
+  palette: WeeklyIjtemaPaletteId
+  fileSlug: string
+  showRuknPerformance: boolean
+  showAazimPerformance: boolean
+  reportTitle: string
+  gender: WeeklyIjtemaAudienceGender
+  label: string
+  currentWeek: WeeklyIjtemaWeekSnapshot | null
+  previousWeek: WeeklyIjtemaWeekSnapshot | null
+  weekOverWeekHighlights: string[]
+  ruknPerformance: WeeklyIjtemaPerformanceRow[]
+  aazimRuknPerformance: WeeklyIjtemaPerformanceRow[]
+  missedThreeConnectedKarkuns: ConnectedMissedThreeRow[]
+  nonSubmittingRuknsTwoWeeks: NonSubmittingRuknRow[]
+  executiveSummary: {
+    totalConnectedKarkuns: number
+    reminded: number
+    present: number
+    absent: number
+    reportsSubmitted: number
+    reportsPending: number
+    attendancePct: number
+  }
+  executiveObservation: string
+  comparisonGraph: {
+    reminded: number
+    present: number
+    attendancePct: number
+  }
+  reportSubmission: {
+    submitted: WeeklyIjtemaReportSubmissionRow[]
+    pendingNames: string[]
+  }
+  ruknDetails: WeeklyIjtemaRuknDetailSection[]
+  followUp: WeeklyIjtemaFollowUpGroup[]
+}
+
 export type WeeklyIjtemaAttendanceReportModel = {
   kind: typeof WEEKLY_IJTEMA_ATTENDANCE_MODEL_KIND
   language: 'ur' | 'en'
@@ -88,6 +155,9 @@ export type WeeklyIjtemaAttendanceReportModel = {
   }
   ruknDetails: WeeklyIjtemaRuknDetailSection[]
   followUp: WeeklyIjtemaFollowUpGroup[]
+  reports: WeeklyIjtemaExportSlice[]
+  /** Alias of `reports` — Men/Women WIP name kept for existing call sites. */
+  wings: WeeklyIjtemaExportSlice[]
   futureAnalyticsPlaceholders: string[]
   appendix: {
     definitions: string[]
@@ -136,9 +206,8 @@ function formatHijriDate(iso: string | null | undefined, language: 'ur' | 'en'):
   }
 }
 
-function buildMarkIndex(): Map<string, WeeklyIjtemaKarkunMark> {
+function buildMarkIndex(events: WeeklyIjtemaEvent[]): Map<string, WeeklyIjtemaKarkunMark> {
   const index = new Map<string, WeeklyIjtemaKarkunMark>()
-  const events = listOpenWeeklyIjtemaEvents()
   for (const event of events) {
     for (const submission of getWeeklyIjtemaSubmissionsForEvent(event.id)) {
       for (const mark of submission.marks) {
@@ -227,6 +296,174 @@ function buildExecutiveObservation(input: {
   return `Attendance rate is ${attendancePct}% — ${present} Karkuns attended.`
 }
 
+function officerSortKey(ruknId: string): number {
+  const officer = getRuknById(ruknId)
+  return resolveOfficerKind({ id: ruknId, officerKind: officer?.officerKind }) === 'rukn' ? 0 : 1
+}
+
+function buildExportSlice(
+  ctx: ReportContext,
+  language: 'ur' | 'en',
+  kind: WeeklyIjtemaExportKind,
+): WeeklyIjtemaExportSlice {
+  const meta = weeklyIjtemaExportMeta(kind, language)
+  const gender = audienceGenderForWeeklyIjtemaExport(kind)
+  const meetings = listCanonicalIjtemaMeetingsForAudience(gender)
+  const currentEvent =
+    meetings[0] ??
+    listOpenWeeklyIjtemaEvents({ audienceGender: gender })[0] ??
+    getCurrentWeeklyIjtemaEvent({ audienceGender: gender })
+  const currentWeek = currentEvent ? snapshotFromEvent(currentEvent, kind) : null
+  const previousEvent = meetings.find((event) => event.id !== currentEvent?.id) ?? null
+  const previousWeek = previousEvent ? snapshotFromEvent(previousEvent, kind) : null
+
+  const ruknRows = filterRowsForWeeklyIjtemaExport(
+    getWeeklyIjtemaActiveRuknRows({ audienceGender: gender }),
+    kind,
+  )
+  const openEvents = listOpenWeeklyIjtemaEvents({ audienceGender: gender })
+  const markEvents =
+    openEvents.length > 0 ? openEvents : currentEvent ? [currentEvent] : []
+  const markIndex = buildMarkIndex(markEvents)
+  const present = ruknRows.reduce((sum, row) => sum + row.present, 0)
+  const reminded = ruknRows.reduce((sum, row) => sum + row.remindedTotal, 0)
+  const absent = ruknRows.reduce((sum, row) => sum + row.absent, 0)
+  const overallPct = pctOf(present, reminded)
+  const reportsSubmitted = ruknRows.filter((row) => row.submitted).length
+  const reportsPending = ruknRows.filter((row) => !row.submitted).length
+
+  const peopleById = new Map(getAllKarkuns().map((k) => [k.id, k]))
+  const assignedRuknIds = new Set(ruknRows.map((r) => r.ruknId))
+  const summaries = ctx.providers.weeklyIjtema.getSummariesView()
+  const karkunsByRukn = new Map<string, WeeklyIjtemaKarkunDetailRow[]>()
+
+  for (const summary of summaries) {
+    const person = peopleById.get(summary.karkunId)
+    if (person?.gender && person.gender !== gender) continue
+    const assignment = getActiveAssignmentsForKarkun(summary.karkunId)[0]
+    const assignedRuknId = assignment?.ruknId?.trim() || summary.ruknId || ''
+    if (assignedRuknIds.size > 0 && assignedRuknId && !assignedRuknIds.has(assignedRuknId)) {
+      continue
+    }
+    if (assignedRuknIds.size > 0 && !assignedRuknId) continue
+
+    const mark = markIndex.get(summary.karkunId)
+    const disposition = resolveDisposition(mark, summary.status)
+    const row: WeeklyIjtemaKarkunDetailRow = {
+      karkunId: summary.karkunId,
+      karkunName: summary.karkunName || person?.name || summary.karkunId,
+      disposition,
+      statusLabel: statusLabelForDisposition(disposition, language),
+    }
+    const bucket = assignedRuknId || summary.ruknId || 'unassigned'
+    const list = karkunsByRukn.get(bucket) ?? []
+    list.push(row)
+    karkunsByRukn.set(bucket, list)
+  }
+
+  for (const [, list] of karkunsByRukn) {
+    list.sort((a, b) => a.karkunName.localeCompare(b.karkunName))
+  }
+
+  const ruknDetails: WeeklyIjtemaRuknDetailSection[] = ruknRows
+    .map((row) => ({
+      ruknId: row.ruknId,
+      ruknName: row.ruknName,
+      connected: row.assigned,
+      reminded: row.remindedTotal,
+      present: row.present,
+      absent: row.absent,
+      attendancePct: row.attendancePct,
+      karkuns: karkunsByRukn.get(row.ruknId) ?? [],
+    }))
+    .sort(
+      (a, b) => officerSortKey(a.ruknId) - officerSortKey(b.ruknId) || a.ruknName.localeCompare(b.ruknName),
+    )
+
+  const submitted: WeeklyIjtemaReportSubmissionRow[] = ruknRows
+    .filter((row) => row.submitted)
+    .map((row) => ({
+      ruknName: row.ruknName,
+      connected: row.assigned,
+      reminded: row.remindedTotal,
+      present: row.present,
+      absent: row.absent,
+    }))
+    .sort((a, b) => a.ruknName.localeCompare(b.ruknName))
+
+  const pendingNames = ruknRows
+    .filter((row) => !row.submitted)
+    .map((row) => row.ruknName)
+    .sort((a, b) => a.localeCompare(b))
+
+  const followUp: WeeklyIjtemaFollowUpGroup[] = ruknDetails
+    .map((section) => ({
+      ruknName: section.ruknName,
+      remindedOnly: section.karkuns
+        .filter((k) => k.disposition === 'reminded')
+        .map((k) => k.karkunName),
+      absent: section.karkuns.filter((k) => k.disposition === 'absent').map((k) => k.karkunName),
+    }))
+    .filter((group) => group.remindedOnly.length > 0 || group.absent.length > 0)
+
+  const followUpCount = followUp.reduce(
+    (sum, group) => sum + group.remindedOnly.length + group.absent.length,
+    0,
+  )
+
+  const performance = currentEvent
+    ? splitPerformanceRows(
+        filterRowsForWeeklyIjtemaExport(performanceRowsFromReport(currentEvent.id), kind),
+      )
+    : { rukn: [], aazim: [] }
+  const rosterIds = ruknRows.map((row) => row.ruknId)
+
+  return {
+    ...meta,
+    gender,
+    currentWeek,
+    previousWeek,
+    weekOverWeekHighlights: buildWeekOverWeekHighlights({
+      language,
+      current: currentWeek,
+      previous: previousWeek,
+    }),
+    ruknPerformance: performance.rukn,
+    aazimRuknPerformance: performance.aazim,
+    missedThreeConnectedKarkuns: buildMissedThreeConnectedKarkuns(meetings, rosterIds),
+    nonSubmittingRuknsTwoWeeks: buildNonSubmittingRuknsTwoWeeks(meetings, rosterIds),
+    executiveSummary: {
+      totalConnectedKarkuns: ruknRows.reduce((sum, row) => sum + row.assigned, 0),
+      reminded,
+      present,
+      absent,
+      reportsSubmitted,
+      reportsPending,
+      attendancePct: overallPct,
+    },
+    executiveObservation: buildExecutiveObservation({
+      language,
+      reminded,
+      present,
+      absent,
+      attendancePct: overallPct,
+      reportsPending,
+      followUpCount,
+    }),
+    comparisonGraph: {
+      reminded,
+      present,
+      attendancePct: overallPct,
+    },
+    reportSubmission: {
+      submitted,
+      pendingNames,
+    },
+    ruknDetails,
+    followUp,
+  }
+}
+
 /**
  * Build Weekly Ijtema Executive presentation model from Composer context.
  */
@@ -241,7 +478,7 @@ export function buildWeeklyIjtemaAttendanceReportModel(
   const ruknRows = p.weeklyIjtema.getActiveRuknRows()
   const summaries = p.weeklyIjtema.getSummariesView()
   const connections = p.connections.get()
-  const markIndex = buildMarkIndex()
+  const markIndex = buildMarkIndex(listOpenWeeklyIjtemaEvents())
 
   const present = health.current ?? kpi.present
   const reminded = kpi.remindedTotal ?? kpi.reminded ?? 0
@@ -336,8 +573,10 @@ export function buildWeeklyIjtemaAttendanceReportModel(
       ? 'کوئی فعال تقریب نہیں'
       : 'No active event'
 
+  const reports = WEEKLY_IJTEMA_EXPORT_KINDS.map((kind) => buildExportSlice(ctx, language, kind))
+
   const reportTitle =
-    language === 'ur' ? 'ہفتہ وار اجتماع کی جائزہ رپورٹ' : 'Weekly Ijtema Executive Review Report'
+    language === 'ur' ? 'ہفتہ وار اجتماع کی جائزہ رپورٹ' : 'Weekly Ijtema Attendance Report'
 
   const executiveObservation = buildExecutiveObservation({
     language,
@@ -357,6 +596,8 @@ export function buildWeeklyIjtemaAttendanceReportModel(
           'اجتماع میں شریک نہ ہوسکے — غیر حاضری درج ہے۔',
           'شرکت کی شرح — شرکت ÷ یاد دہانی (کل)۔',
           'رپورٹ جمع — رکن نے اس ہفتے کی رپورٹ جمع کر دی۔',
+          'تین اجتماعات غیر حاضر — مربوط کارکن پچھلے تین متواتر اجتماعات میں سے کسی میں شریک نہیں۔',
+          'دو رپورٹ غیر جمع — رکن نے پچھلے دو متواتر اجتماعات کی رپورٹ جمع نہیں کی۔',
         ]
       : [
           'Reminded — Rukn contacted the Karkun for this week’s Ijtema.',
@@ -364,6 +605,8 @@ export function buildWeeklyIjtemaAttendanceReportModel(
           'Could not attend — absent mark recorded.',
           'Attendance rate — Present ÷ Reminded (total).',
           'Report submitted — Rukn submitted this week’s report.',
+          'Missed 3 Ijtemas — connected Karkun was not Present in any of the last 3 consecutive Weekly Ijtemas.',
+          'Missed 2 reports — Rukn did not submit attendance for the last 2 consecutive Weekly Ijtemas.',
         ]
 
   const futureAnalyticsPlaceholders =
@@ -419,6 +662,8 @@ export function buildWeeklyIjtemaAttendanceReportModel(
     },
     ruknDetails,
     followUp,
+    reports,
+    wings: reports,
     futureAnalyticsPlaceholders,
     appendix: {
       definitions,
