@@ -24,6 +24,7 @@ import { useRequiredRuknId } from '@/hooks/useRequiredRuknId'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { HomePageSkeleton } from '@/components/ui'
+import { RuknAddPersonQuickActions } from '@/components/relationship/RuknAddPersonQuickActions'
 import { traceKc0100ConnectionConsistency } from '@/lib/debug/kc0100ConnectionConsistencyTrace'
 import { isRuknCampaignConnectionPath } from '@/lib/ruknCampaignConnectionPath'
 
@@ -106,6 +107,7 @@ export function RuknLayout() {
           </section>
         ) : hydration.failed || isHydrated ? (
           <RuknCommandCenterProvider>
+            {ruknId ? <RuknAddPersonQuickActions ruknId={ruknId} className="mb-3" /> : null}
             <Outlet />
           </RuknCommandCenterProvider>
         ) : (

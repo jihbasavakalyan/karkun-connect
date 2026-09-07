@@ -9,8 +9,6 @@ import {
   AvailableKarkunRow,
   ConnectKarkunConfirmModal,
   KarkunSearchField,
-  NewKarkunRequestModal,
-  NewMuttafiqRequestModal,
   ConnectMuttafiqRequestModal,
 } from '@/components/relationship'
 import { EmptyState, PageShell } from '@/components/ui'
@@ -42,8 +40,6 @@ export function AvailableKarkunPage() {
   const [connectLoading, setConnectLoading] = useState(false)
   const [successMessage, setSuccessMessage] = useState('')
   const [planning, setPlanning] = useState<PlanningTarget | null>(null)
-  const [showNewRequest, setShowNewRequest] = useState(false)
-  const [showNewMuttafiq, setShowNewMuttafiq] = useState(false)
   const [showConnectMuttafiq, setShowConnectMuttafiq] = useState(false)
 
   const filtered = useMemo(() => {
@@ -154,28 +150,6 @@ export function AvailableKarkunPage() {
           type="button"
           className="connect-add-karkun-button"
           onClick={() => {
-            setShowNewRequest(true)
-            setError('')
-            setSuccessMessage('')
-          }}
-        >
-          ➕ Add New Karkun
-        </button>
-        <button
-          type="button"
-          className="connect-add-karkun-button"
-          onClick={() => {
-            setShowNewMuttafiq(true)
-            setError('')
-            setSuccessMessage('')
-          }}
-        >
-          ➕ Add Muttafiq
-        </button>
-        <button
-          type="button"
-          className="connect-add-karkun-button"
-          onClick={() => {
             setShowConnectMuttafiq(true)
             setError('')
             setSuccessMessage('')
@@ -250,24 +224,6 @@ export function AvailableKarkunPage() {
           setError('')
         }}
         onConfirm={handleConfirmConnect}
-      />
-
-      <NewKarkunRequestModal
-        isOpen={showNewRequest}
-        ruknId={ruknId}
-        onClose={() => setShowNewRequest(false)}
-        onSubmitted={() =>
-          setSuccessMessage('Request submitted for administrator approval.')
-        }
-      />
-
-      <NewMuttafiqRequestModal
-        isOpen={showNewMuttafiq}
-        ruknId={ruknId}
-        onClose={() => setShowNewMuttafiq(false)}
-        onSubmitted={() =>
-          setSuccessMessage('Muttafiq request submitted for administrator approval.')
-        }
       />
 
       <ConnectMuttafiqRequestModal
