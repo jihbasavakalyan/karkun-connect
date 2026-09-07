@@ -81,7 +81,7 @@ export default defineConfig({
         skipWaiting: true,
         clientsClaim: true,
         // Pre-cache app shell + hashed assets. Do not cache Firebase/API traffic.
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2,ttf,webp}'],
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2,webp}'],
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/api\//],
         runtimeCaching: [
