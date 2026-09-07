@@ -16,6 +16,7 @@
     "verify:kc003": "npx vite-node scripts/verify-kc003-active-integrity.ts",
     "verify:kc003-1": "npx vite-node scripts/verify-kc003-1-active-list.ts",
     "verify:kc004b": "npx vite-node scripts/verify-kc004b-phased-hydrate.ts",
+    "verify:kc-evo014": "npx vite-node scripts/verify-kc-evo014-post-auth-hydrate-race.ts",
     "verify:kc004d": "npx vite-node scripts/verify-kc004d-migration-race.ts",
     "verify:kc004h": "npx vite-node scripts/verify-kc004h-authoritative-registry-existence.ts",
     "verify:kc0055": "npx vite-node scripts/verify-kc0055-inplace-transfer.ts",

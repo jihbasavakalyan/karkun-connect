@@ -507,26 +507,14 @@ export async function refreshFirestoreAfterAuth(): Promise<void> {
     return
   }
 
+  // KC-EVO-014 — if startup has not claimed initializeInFlight yet (React auth
+  // can beat deferred bootstrap), join the same phased initializeRepositories
+  // path. Do not await token refresh first: that yield let a competing
+  // hydrateFirestoreCachesOnce() start, and beginPhasedStartupHydrate then
+  // joined the full Promise.all. Login-after-deferred still hydrates here.
   try {
-    await ensureAuthTokenReadyForFirestore(true)
-    const ok = await runHydrateAndRebuildCycle('post-auth')
-    if (ok) {
-      criticalHydrateSucceeded = true
-      attachSnapshotListeners()
-      markBackgroundHydrationReady()
-      markRepositoryHydrationReady()
-      initialized = true
-    } else if (
-      !criticalHydrateRetryUsed &&
-      Boolean(getFirebaseAuth().currentUser)
-    ) {
-      await runCriticalHydrateRetry(
-        new Error('Post-auth Firestore hydrate failed.'),
-      )
-      initialized = true
-    } else {
-      markRepositoryHydrationFailed('Post-auth Firestore hydrate failed.')
-    }
+    await initializeRepositories()
+    await maybeRescopeHydrateAfterAuth()
   } catch (error) {
     console.warn('[kc-firestore] post-auth hydrate failed', error)
     if (!isRepositoryHydrationFailed()) {

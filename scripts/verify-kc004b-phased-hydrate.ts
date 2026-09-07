@@ -45,6 +45,19 @@ assert(
   'startup must use parallel phased hydrate, not full blocking cycle',
 )
 
+const refreshFnStart = initializeSrc.indexOf('export async function refreshFirestoreAfterAuth')
+const refreshFnEnd = initializeSrc.indexOf('async function maybeRescopeHydrateAfterAuth')
+assert(refreshFnStart >= 0 && refreshFnEnd > refreshFnStart, 'refreshFirestoreAfterAuth missing')
+const refreshFn = initializeSrc.slice(refreshFnStart, refreshFnEnd)
+assert(
+  !/runHydrateAndRebuildCycle\('post-auth'\)/.test(refreshFn),
+  'refreshFirestoreAfterAuth must not start an independent full hydrate',
+)
+assert(
+  refreshFn.includes('await initializeRepositories()'),
+  'refreshFirestoreAfterAuth must coalesce onto initializeRepositories when init has not started',
+)
+
 assert(
   reposSrc.includes('export function beginPhasedStartupHydrate') &&
     reposSrc.includes('readCriticalHydratePayload') &&
@@ -85,6 +98,7 @@ console.log(
   JSON.stringify(
     {
       startupUsesCriticalPath: true,
+      postAuthCoalescesToInitialize: refreshFn.includes('await initializeRepositories()'),
       parallelPhasedReads: initializeSrc.includes('beginPhasedStartupHydrate'),
       listenersAfterBackground: initializeSrc.includes('attachSnapshotListeners'),
       lifecycleLabels: labels,
