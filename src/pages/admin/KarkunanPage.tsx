@@ -429,6 +429,8 @@ function KarkunGenderSection({
                 status: editingKarkun.status,
                 fatherHusbandName: editingKarkun.fatherHusbandName,
                 address: editingKarkun.address,
+                area: editingKarkun.area,
+                place: editingKarkun.place,
                 education: editingKarkun.education,
                 profession: editingKarkun.profession,
                 assignedRuknId: editingKarkun.assignedRuknId,

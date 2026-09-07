@@ -77,6 +77,20 @@ const complete = {
 }
 assert(isKarkunProfileComplete(complete), 'complete profile must pass shared completeness')
 
+const reminder = readFileSync(
+  resolve('src/components/relationship/ProfileCompletionReminder.tsx'),
+  'utf8',
+)
+assert(reminder.includes('PersonFormModal'), 'completion flow must reuse PersonFormModal')
+assert(reminder.includes('hideConnectionSection'), 'Rukn completion must not edit connection')
+assert(reminder.includes('persistKarkunDurable'), 'completion save must await durable persist')
+assert(reminder.includes('updateKarkun'), 'completion save must use updateKarkun')
+assert(!reminder.includes('profile-completion-form'), 'limited completion form must be removed')
+
+const personForm = readFileSync(resolve('src/components/forms/people/PersonFormModal.tsx'), 'utf8')
+assert(personForm.includes('id="person-area"'), 'canonical form includes area')
+assert(personForm.includes('id="person-place"'), 'canonical form includes place')
+
 resetRepositoryProviderForTests()
 allowDangerousRepositoryClear(true)
 clearAssignmentStore()

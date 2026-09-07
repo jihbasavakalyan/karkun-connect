@@ -15,6 +15,7 @@ import { MOBILE_INPUT_PLACEHOLDER } from '@/utils/personContactLinks'
 
 export type PersonFormValues = PersonContactInput & {
   assignedRuknId?: string
+  area?: string
 }
 
 type PersonFormModalProps = {
@@ -28,6 +29,11 @@ type PersonFormModalProps = {
   karkunId?: string
   /** KC-0101 — display label for titles (default from kind). */
   personLabel?: 'Karkun' | 'Muttafiq' | 'Rukn'
+  /** Override default Add/Edit title (e.g. Rukn profile completion). */
+  title?: string
+  loading?: boolean
+  /** Hide Connected Rukn controls so edit cannot change relationship data. */
+  hideConnectionSection?: boolean
 }
 
 const selectClassName =
@@ -45,6 +51,9 @@ export function PersonFormModal({
   error,
   karkunId,
   personLabel,
+  title,
+  loading,
+  hideConnectionSection,
 }: PersonFormModalProps) {
   if (!isOpen) {
     return null
@@ -61,6 +70,9 @@ export function PersonFormModal({
       error={error}
       karkunId={karkunId}
       personLabel={personLabel}
+      title={title}
+      loading={loading}
+      hideConnectionSection={hideConnectionSection}
     />
   )
 }
@@ -74,6 +86,9 @@ function PersonFormModalContent({
   error,
   karkunId,
   personLabel,
+  title: titleOverride,
+  loading = false,
+  hideConnectionSection = false,
 }: Omit<PersonFormModalProps, 'isOpen'>) {
   const [name, setName] = useState(initialValues?.name ?? '')
   const [gender, setGender] = useState<PersonGender>(initialValues?.gender ?? 'Male')
@@ -86,6 +101,8 @@ function PersonFormModalContent({
     initialValues?.fatherHusbandName ?? '',
   )
   const [address, setAddress] = useState(initialValues?.address ?? '')
+  const [area, setArea] = useState(initialValues?.area ?? '')
+  const [place, setPlace] = useState(initialValues?.place ?? DEFAULT_PLACE)
   const [education, setEducation] = useState(initialValues?.education ?? '')
   const [profession, setProfession] = useState(initialValues?.profession ?? '')
 
@@ -103,10 +120,11 @@ function PersonFormModalContent({
       gender,
       mobile,
       whatsapp: whatsapp || undefined,
-      place: DEFAULT_PLACE,
+      place: kind === 'karkun' ? place.trim() || DEFAULT_PLACE : DEFAULT_PLACE,
       status,
       fatherHusbandName: kind === 'karkun' ? fatherHusbandName || undefined : undefined,
       address: kind === 'karkun' ? address || undefined : undefined,
+      area: kind === 'karkun' ? area || undefined : undefined,
       education: kind === 'karkun' ? education || undefined : undefined,
       profession: kind === 'karkun' ? profession || undefined : undefined,
       assignedRuknId: kind === 'karkun' && mode === 'edit' ? assignedRuknId : undefined,
@@ -118,10 +136,15 @@ function PersonFormModalContent({
     personLabel ?? (kind === 'rukn' ? 'Rukn' : 'Karkun')
 
   const title =
-    mode === 'add' ? `Add ${resolvedLabel}` : `Edit ${resolvedLabel}`
+    titleOverride ??
+    (mode === 'add' ? `Add ${resolvedLabel}` : `Edit ${resolvedLabel}`)
 
   const showConnectionSection =
-    kind === 'karkun' && mode === 'edit' && Boolean(karkunId) && personLabel !== 'Muttafiq'
+    kind === 'karkun' &&
+    mode === 'edit' &&
+    Boolean(karkunId) &&
+    personLabel !== 'Muttafiq' &&
+    !hideConnectionSection
   const showReferredBySection = isKarkunAdd || isRuknAddReferral
   const showReferredByDisplay = kind === 'rukn' && mode === 'edit'
   const showAdditionalSection = kind === 'karkun'
@@ -138,6 +161,8 @@ function PersonFormModalContent({
           primaryLabel={mode === 'add' ? 'Save' : 'Save Changes'}
           primaryType="submit"
           formId={PERSON_FORM_ID}
+          loading={loading}
+          primaryDisabled={loading}
         />
       }
     >
@@ -283,6 +308,20 @@ function PersonFormModalContent({
                 onValueChange={setAddress}
                 placeholder="Full address"
                 required={intakeRequired}
+              />
+              <InputField
+                id="person-area"
+                label="Area"
+                value={area}
+                onValueChange={setArea}
+                placeholder="Area"
+              />
+              <InputField
+                id="person-place"
+                label="Place"
+                value={place}
+                onValueChange={setPlace}
+                placeholder="Place"
               />
               <InputField
                 id="person-education"

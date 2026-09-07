@@ -232,10 +232,11 @@ function MuttafiqGenderSection({
                 gender: editingPerson.gender,
                 mobile: editingPerson.mobile,
                 whatsapp: editingPerson.whatsapp,
-                place: editingPerson.place,
                 status: editingPerson.status,
                 fatherHusbandName: editingPerson.fatherHusbandName,
                 address: editingPerson.address,
+                area: editingPerson.area,
+                place: editingPerson.place,
                 education: editingPerson.education,
                 profession: editingPerson.profession,
               }
