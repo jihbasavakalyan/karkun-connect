@@ -251,6 +251,21 @@ export class KarkunLocalRepository implements KarkunRepository {
     })
   }
 
+  async commitKarkunCounter(nextKarkunNum: number): Promise<RepositoryResult<void>> {
+    return tryRepository(() => {
+      const current = loadJsonFromStorage<KarkunRegistryRecord[]>(STORAGE_KEYS.karkunRegistry, [])
+      let maxExisting = 0
+      for (const karkun of current) {
+        const match = /^kr-(\d+)$/i.exec(karkun.id)
+        if (!match) continue
+        const num = Number.parseInt(match[1]!, 10)
+        if (Number.isFinite(num) && num > maxExisting) maxExisting = num
+      }
+      const healedNext = Math.max(1, nextKarkunNum || 1, maxExisting + 1)
+      saveJsonToStorage(STORAGE_KEYS.karkunNextId, healedNext)
+    })
+  }
+
   async upsertRecord(karkun: KarkunRegistryRecord): Promise<RepositoryResult<void>> {
     return tryRepository(() => {
       const current = loadJsonFromStorage<KarkunRegistryRecord[]>(STORAGE_KEYS.karkunRegistry, [])

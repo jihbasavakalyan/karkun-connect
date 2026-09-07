@@ -40,6 +40,11 @@ export interface KarkunRepository {
   commitKarkunDocuments?(
     karkuns: readonly KarkunRegistryRecord[],
   ): Promise<RepositoryResult<void>>
+  /**
+   * Persist `settings/karkunCounter` (or local next-id) without rewriting karkun docs.
+   * Rukn clients must no-op the durable write (same as saveState).
+   */
+  commitKarkunCounter?(nextKarkunNum: number): Promise<RepositoryResult<void>>
   clear(): RepositoryResult<void>
   /** Cache/local-storage synchronous existence (may be empty before hydrate). */
   exists(): RepositoryResult<boolean>

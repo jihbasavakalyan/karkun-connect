@@ -119,7 +119,7 @@ export function notifyPeopleRegistryUiOnly(): void {
   traceRegistryStage('6_after_notifyPeopleRegistryUiOnly')
 }
 
-/** Notify subscribers and persist full registry (edits, import, migration, archive). */
+/** Notify subscribers and persist full registry (Rukn mutations, import, migration, archive). */
 export function notifyPeopleRegistryChange(): void {
   const before = getPeopleStatistics()
   notifyPeopleChange()
@@ -157,13 +157,15 @@ export function notifyPeopleRegistryChange(): void {
 }
 
 /**
- * KC-0064 — Notify UI + persist only the karkun docs that changed (assign/disconnect sync).
+ * KC-0064 / KC-EVO-007 — Notify UI + persist only the karkun docs that changed.
  * Does not rewrite the full registry or rukns collection.
+ * Pass nextKarkunNum after ID allocation (create) so karkunCounter stays durable.
  */
 export async function notifyAndPersistKarkunRecords(
   karkuns: readonly KarkunRegistryRecord[],
+  options?: { nextKarkunNum?: number },
 ): Promise<void> {
-  if (karkuns.length === 0) {
+  if (karkuns.length === 0 && options?.nextKarkunNum == null) {
     return
   }
   const before = getPeopleStatistics()
@@ -190,7 +192,7 @@ export async function notifyAndPersistKarkunRecords(
     targetedCount: karkuns.length,
   })
 
-  const result = await persistKarkunRecords(karkuns)
+  const result = await persistKarkunRecords(karkuns, options)
   if (!result.ok) {
     console.error('[notifyAndPersistKarkunRecords]', result.error)
   }
@@ -723,7 +725,7 @@ export function createKarkun(
     updatedBy,
   })
 
-  notifyPeopleChange()
+  void notifyAndPersistKarkunRecords([karkun], { nextKarkunNum: getNextKarkunNum() })
   return { success: true, karkunId: id }
 }
 
@@ -763,7 +765,7 @@ export function applyReferredByRuknIfAbsent(
     newValue: rukn.id,
     updatedBy,
   })
-  notifyPeopleChange()
+  void notifyAndPersistKarkunRecords([person])
   return { success: true, karkunId: personId }
 }
 
@@ -863,7 +865,7 @@ export function createMuttafiq(
     updatedBy,
   })
 
-  notifyPeopleChange()
+  void notifyAndPersistKarkunRecords([person], { nextKarkunNum: getNextKarkunNum() })
   return { success: true, karkunId: id }
 }
 
@@ -936,7 +938,7 @@ export function updateKarkun(
     updatedBy,
   })
 
-  notifyPeopleChange()
+  void notifyAndPersistKarkunRecords([karkun])
   return { success: true }
 }
 
@@ -954,6 +956,20 @@ export async function persistKarkunDurable(id: string): Promise<PeopleMutationRe
   if (!result.ok) {
     console.error('[persistKarkunDurable]', result.error.code, result.error.message, result.error.cause)
     return { success: false, error: toOperatorPersistError('karkuns', result.error) }
+  }
+  const commitCounter = getRepositories().karkun.commitKarkunCounter
+  if (commitCounter) {
+    const healed = syncNextKarkunNumFromRegistry()
+    const counterResult = await commitCounter(healed)
+    if (!counterResult.ok) {
+      console.error(
+        '[persistKarkunDurable.counter]',
+        counterResult.error.code,
+        counterResult.error.message,
+        counterResult.error.cause,
+      )
+      return { success: false, error: toOperatorPersistError('karkuns', counterResult.error) }
+    }
   }
   return { success: true }
 }

@@ -2067,6 +2067,37 @@ export class KarkunFirestoreRepository implements KarkunRepository {
     }
   }
 
+  /** KC-EVO-007 — persist ID counter only (no full karkun registry rewrite). */
+  async commitKarkunCounter(nextKarkunNum: number): Promise<RepositoryResult<void>> {
+    try {
+      const cached = karkunCache.get()
+      let maxExisting = 0
+      for (const karkun of cached.karkuns) {
+        const match = /^kr-(\d+)$/i.exec(karkun.id)
+        if (!match) continue
+        const num = Number.parseInt(match[1]!, 10)
+        if (Number.isFinite(num) && num > maxExisting) maxExisting = num
+      }
+      const healedNext = Math.max(1, nextKarkunNum || 1, maxExisting + 1)
+      karkunCache.set({ karkuns: cached.karkuns, nextKarkunNum: healedNext })
+      const scope = await resolveClientAuthScope()
+      if (scope.role === 'rukn' && Boolean(scope.ruknId)) {
+        return repositoryOk(undefined)
+      }
+      const db = getFirestoreDb()
+      return writeDoc(
+        db,
+        FIRESTORE_COLLECTIONS.settings,
+        FIRESTORE_DOCS.karkunCounter,
+        sanitizeForFirestore({
+          nextKarkunNum: healedNext,
+        }) as object,
+      )
+    } catch (error) {
+      return mapFirestoreError(error)
+    }
+  }
+
   async upsertRecord(karkun: KarkunRegistryRecord): Promise<RepositoryResult<void>> {
     const previous = karkunCache.get()
     const snapshot = {

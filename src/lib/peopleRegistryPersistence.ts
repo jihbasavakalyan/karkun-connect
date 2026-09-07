@@ -11,7 +11,7 @@ export function hasPersistedKarkunRegistry(): boolean {
   return unwrapRepository(result, false)
 }
 
-/** Bulk path — full registry + all rukns (import, migration, profile edits). */
+/** Bulk path — full registry + all rukns (import, migration, Rukn mutations, snapshot restore). */
 export function persistPeopleRegistry(nextKarkunNum: number): void {
   getRepositories().karkun.saveState({
     karkuns: MOCK_KARKUN_REGISTRY,
@@ -20,39 +20,52 @@ export function persistPeopleRegistry(nextKarkunNum: number): void {
   getRepositories().rukn.saveAll(ruknMaster)
 }
 
-/** KC-0064 — targeted karkun upsert only (assign / disconnect sync). No rukn rewrite. */
+/** KC-0064 — targeted karkun upsert only (assign / disconnect / create / edit). No rukn rewrite. */
 export async function persistKarkunRecords(
   karkuns: readonly KarkunRegistryRecord[],
+  options?: { nextKarkunNum?: number },
 ): Promise<RepositoryResult<void>> {
-  if (karkuns.length === 0) {
+  if (karkuns.length === 0 && options?.nextKarkunNum == null) {
     return repositoryOk(undefined)
   }
-  const commit = getRepositories().karkun.commitKarkunDocuments
-  if (commit) {
-    const { connectStepEnter, connectStepExit, connectStepException } = await import(
-      '@/lib/debug/kc0061ConnectTrace'
-    )
-    const span = connectStepEnter('repo.karkun.commitDocuments', {
-      karkunIds: karkuns.map((karkun) => karkun.id),
-      count: karkuns.length,
-    })
-    const result = await commit(karkuns)
-    if (!result.ok) {
-      connectStepException('repo.karkun.commitDocuments', result.error.cause ?? result.error, {
-        errorCode: result.error.code,
-        errorMessage: result.error.message,
+  if (karkuns.length > 0) {
+    const commit = getRepositories().karkun.commitKarkunDocuments
+    if (commit) {
+      const { connectStepEnter, connectStepExit, connectStepException } = await import(
+        '@/lib/debug/kc0061ConnectTrace'
+      )
+      const span = connectStepEnter('repo.karkun.commitDocuments', {
+        karkunIds: karkuns.map((karkun) => karkun.id),
+        count: karkuns.length,
       })
-      connectStepExit(span, 'repo.karkun.commitDocuments', { ok: false })
-      console.error('[peopleRegistryPersistence.persistKarkunRecords]', result.error)
-      return result
+      const result = await commit(karkuns)
+      if (!result.ok) {
+        connectStepException('repo.karkun.commitDocuments', result.error.cause ?? result.error, {
+          errorCode: result.error.code,
+          errorMessage: result.error.message,
+        })
+        connectStepExit(span, 'repo.karkun.commitDocuments', { ok: false })
+        console.error('[peopleRegistryPersistence.persistKarkunRecords]', result.error)
+        return result
+      }
+      connectStepExit(span, 'repo.karkun.commitDocuments', { ok: true })
+    } else {
+      for (const karkun of karkuns) {
+        const upsert = await getRepositories().karkun.upsertRecord(karkun)
+        if (!upsert.ok) {
+          return upsert
+        }
+      }
     }
-    connectStepExit(span, 'repo.karkun.commitDocuments', { ok: true })
-    return result
   }
-  for (const karkun of karkuns) {
-    const upsert = await getRepositories().karkun.upsertRecord(karkun)
-    if (!upsert.ok) {
-      return upsert
+  if (options?.nextKarkunNum != null) {
+    const commitCounter = getRepositories().karkun.commitKarkunCounter
+    if (commitCounter) {
+      const counterResult = await commitCounter(options.nextKarkunNum)
+      if (!counterResult.ok) {
+        console.error('[peopleRegistryPersistence.commitKarkunCounter]', counterResult.error)
+        return counterResult
+      }
     }
   }
   return repositoryOk(undefined)

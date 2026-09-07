@@ -4,6 +4,8 @@
  */
 
 import { MOCK_KARKUN_REGISTRY } from '../src/constants/mockKarkunRegistry'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { resetRepositoryProviderForTests } from '../src/repositories/provider'
 import {
   allocateNextKarkunId,
@@ -128,6 +130,24 @@ assert(dup.existingOwner?.kind === 'karkun', 'duplicate must report existing kar
 const all = getAllKarkuns()
 assert(all.some((k) => k.id === 'kr-494' && k.name === 'Shamsheer Khan'), 'registry must list new karkun')
 assert(all.some((k) => k.id === 'kr-021' && k.name === 'MOHAMMED KAIF'), 'seed karkun preserved')
+
+{
+  const store = readFileSync(resolve('src/lib/peopleStore.ts'), 'utf8')
+  const createBlock = store.slice(
+    store.indexOf('export function createKarkun('),
+    store.indexOf('export function applyReferredByRuknIfAbsent('),
+  )
+  const updateBlock = store.slice(
+    store.indexOf('export function updateKarkun('),
+    store.indexOf('export async function persistKarkunDurable('),
+  )
+  assert(createBlock.includes('notifyAndPersistKarkunRecords'), 'create uses targeted persist')
+  assert(!createBlock.includes('notifyPeopleChange()'), 'create must not bulk persist')
+  assert(updateBlock.includes('notifyAndPersistKarkunRecords'), 'update uses targeted persist')
+  assert(!updateBlock.includes('notifyPeopleChange()'), 'update must not bulk persist')
+  assert(store.includes('function notifyPeopleChange()'), 'bulk notifyPeopleChange remains for Rukn/import')
+  assert(store.includes('persistPeopleRegistry'), 'saveState bulk path remains')
+}
 
 function getKarkunByName(name: string) {
   return MOCK_KARKUN_REGISTRY.find((k) => k.name === name && !k.isArchived)
