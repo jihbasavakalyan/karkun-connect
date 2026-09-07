@@ -48,14 +48,14 @@ export function ModalFormFooter({
   formId,
 }: ModalFormFooterProps) {
   return (
-    <div className="flex w-full flex-col gap-3">
+    <div className="flex w-full min-w-0 flex-col gap-3">
       {error ? (
         <p className="text-sm text-red-600" role="alert">
           {error}
         </p>
       ) : null}
-      <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-        <SecondaryButton type="button" onClick={onCancel} disabled={loading}>
+      <div className="flex min-w-0 flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+        <SecondaryButton type="button" onClick={onCancel} disabled={loading} className="w-full sm:w-auto">
           Cancel
         </SecondaryButton>
         <PrimaryButton
@@ -78,6 +78,7 @@ export function ModalFormFooter({
           }}
           disabled={primaryDisabled || loading}
           loading={loading}
+          className="w-full sm:w-auto"
         >
           {loading ? 'Saving…' : primaryLabel}
         </PrimaryButton>

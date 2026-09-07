@@ -141,15 +141,19 @@ html[data-theme='dark'] {
 
   /* ── M6 Phase 3: Application-wide design system (ds-*) ── */
   .ds-page {
-    @apply mx-auto w-full max-w-6xl space-y-4 sm:space-y-6;
+    @apply mx-auto w-full max-w-6xl space-y-4 overflow-x-hidden sm:space-y-6;
+    max-width: min(72rem, 100%);
+    min-width: 0;
   }
 
   .ds-page-narrow {
     @apply max-w-3xl;
+    max-width: min(48rem, 100%);
   }
 
   .ds-page-wide {
     @apply max-w-7xl;
+    max-width: min(80rem, 100%);
   }
 
   .ds-page-header {
@@ -1665,7 +1669,10 @@ html[data-theme='dark'] {
 
   .visit-sticky-actions {
     @apply sticky z-20 mt-3 space-y-1.5 rounded-xl border border-border/70 bg-surface/95 p-2.5 shadow-lg backdrop-blur-md lg:static lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none lg:backdrop-blur-none;
-    bottom: calc(4.75rem + env(safe-area-inset-bottom, 0px) + var(--keyboard-inset, 0px));
+    bottom: calc(
+      var(--native-nav-height) + env(safe-area-inset-bottom, 0px) + var(--keyboard-inset, 0px)
+    );
+    max-width: 100%;
   }
 
   .visit-more-details {
@@ -4300,6 +4307,11 @@ html[data-theme='dark'] {
     -moz-osx-font-smoothing: grayscale;
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
+    overflow-x: hidden;
+    scroll-padding-bottom: calc(
+      var(--native-nav-height) + 5.75rem + env(safe-area-inset-bottom, 0px) +
+        var(--keyboard-inset, 0px)
+    );
   }
 
   body {
@@ -4352,7 +4364,10 @@ html[data-theme='dark'] {
   .ds-form-field input,
   .ds-form-field textarea,
   .ds-form-field select {
-    scroll-margin-bottom: calc(6.5rem + env(safe-area-inset-bottom, 0px) + var(--keyboard-inset, 0px));
+    scroll-margin-bottom: calc(
+      var(--native-nav-height) + 5.75rem + env(safe-area-inset-bottom, 0px) +
+        var(--keyboard-inset, 0px)
+    );
   }
 }
 
@@ -4385,6 +4400,87 @@ html[data-theme='dark'] {
   .native-admin-main {
     /* Reserve space so pagination / bottom actions never sit under Digital Rafeeq FAB */
     padding-bottom: calc(var(--fab-clearance) + env(safe-area-inset-bottom, 0px));
+    scroll-padding-bottom: calc(
+      var(--fab-clearance) + 4.5rem + env(safe-area-inset-bottom, 0px) + var(--keyboard-inset, 0px)
+    );
+  }
+
+  /* KC-EVO-002 — shared modal viewport: keep fields + actions inside the usable screen */
+  .kc-modal-overlay {
+    @apply fixed inset-0 z-50 flex items-end justify-center sm:items-center;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100vw;
+    height: 100dvh;
+    max-height: 100dvh;
+    overflow-x: hidden;
+    overflow-y: hidden;
+    padding-top: max(0.75rem, env(safe-area-inset-top, 0px));
+    padding-right: max(0.75rem, env(safe-area-inset-right, 0px));
+    padding-bottom: max(
+      0.75rem,
+      calc(env(safe-area-inset-bottom, 0px) + var(--keyboard-inset, 0px))
+    );
+    padding-left: max(0.75rem, env(safe-area-inset-left, 0px));
+  }
+
+  @media (min-width: 640px) {
+    .kc-modal-overlay {
+      padding-top: max(1rem, env(safe-area-inset-top, 0px));
+      padding-right: max(1rem, env(safe-area-inset-right, 0px));
+      padding-bottom: max(
+        1rem,
+        calc(env(safe-area-inset-bottom, 0px) + var(--keyboard-inset, 0px))
+      );
+      padding-left: max(1rem, env(safe-area-inset-left, 0px));
+    }
+  }
+
+  .kc-modal-backdrop {
+    @apply absolute inset-0 bg-text-heading/40;
+  }
+
+  .kc-modal-panel {
+    @apply relative z-10 flex w-full flex-col overflow-hidden rounded-(--radius-card) border border-border bg-surface shadow-card;
+    box-sizing: border-box;
+    min-width: 0;
+    min-height: 0;
+    width: 100%;
+    max-width: 100%;
+    max-height: 100%;
+  }
+
+  .kc-modal-panel-form,
+  .kc-modal-panel-lg {
+    max-width: min(740px, 100%);
+  }
+
+  .kc-modal-panel-md {
+    max-width: min(32rem, 100%);
+  }
+
+  .kc-modal-header {
+    @apply flex shrink-0 items-start justify-between gap-4 border-b border-border px-5 py-4 sm:px-6;
+    min-width: 0;
+  }
+
+  .kc-modal-title {
+    @apply min-w-0 text-xl font-semibold break-words text-text-heading;
+  }
+
+  .kc-modal-close {
+    @apply shrink-0 rounded-lg px-2 py-1 text-secondary hover:bg-surface-muted hover:text-text-heading;
+  }
+
+  .kc-modal-body {
+    @apply min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-5 py-4 sm:px-6;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+
+  .kc-modal-footer {
+    @apply z-10 shrink-0 border-t border-border bg-surface px-5 py-4 sm:px-6;
+    min-width: 0;
   }
 
   .list-footer-controls {

@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom'
 import { AdminSidebar } from '@/components/layout/AdminSidebar'
 import { AdminTopBar } from '@/components/layout/AdminTopBar'
 import { DigitalRafeeqLauncher } from '@/features/digitalRafeeq/launcher'
+import { useKeyboardInset } from '@/hooks/useKeyboardInset'
 import {
   AdminCommandCenterProvider,
   useAdminCommandCenter,
@@ -12,6 +13,7 @@ function AdminLayoutShell() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const snapshot = useAdminCommandCenter()
+  useKeyboardInset()
 
   return (
     // KC-0057: viewport-bounded shell so <main> is the real wheel scrollport.
