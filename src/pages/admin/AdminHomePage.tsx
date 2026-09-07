@@ -9,15 +9,14 @@ import { openDigitalRafeeqAssistant } from '@/features/digitalRafeeq/launcher'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { useAuth } from '@/hooks/useAuth'
 import { usePeopleStore } from '@/hooks/usePeopleStore'
+import { useBackgroundHydration } from '@/hooks/useBackgroundHydration'
 import {
   useRepositoryHydration,
   useRepositoryHydrationStatus,
 } from '@/hooks/useRepositoryHydration'
-import { buildAdminMissionControl } from '@/lib/missionControl/buildAdminMissionControl'
 import { useMeqatiYearSelection } from '@/lib/dashboard/meqatiYear'
 import { buildOrganisationalSituation } from '@/lib/dashboard/organisationalSituation'
 import { createCoalescedNotifier } from '@/lib/dashboard/coalesceStoreNotifications'
-import { useAdminCommandCenter } from '@/providers/AdminCommandCenterProvider'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import {
   dashState01MetricsReceived,
@@ -36,8 +35,8 @@ const PAGE_CLASS =
   'cd-page cd-page-admin mc-page mc-page-admin-compact mc-page-admin-command exdash-page orgdash-page'
 
 export function AdminHomePage() {
-  const snapshot = useAdminCommandCenter()
   const isHydrated = useRepositoryHydration()
+  const backgroundReady = useBackgroundHydration()
   const hydration = useRepositoryHydrationStatus()
   const { isInitializing } = useAuth()
   const { assignmentVersion } = useAssignmentEngine()
@@ -87,19 +86,16 @@ export function AdminHomePage() {
     }
   }, [assignmentVersion, isHydrated])
 
-  const model = useMemo(() => {
-    const next = buildAdminMissionControl(snapshot)
-    dashState01MetricsReceived('AdminHomePage.buildAdminMissionControl')
-    return next
-  }, [snapshot, assignmentVersion, isHydrated])
-
   const situation = useMemo(() => {
     void peopleVersion
     void assignmentVersion
     void moduleTick
     void isHydrated
-    return buildOrganisationalSituation(yearSelection.year)
-  }, [peopleVersion, assignmentVersion, moduleTick, isHydrated, yearSelection.year])
+    void backgroundReady
+    const next = buildOrganisationalSituation(yearSelection.year)
+    dashState01MetricsReceived('AdminHomePage.buildOrganisationalSituation')
+    return next
+  }, [peopleVersion, assignmentVersion, moduleTick, isHydrated, backgroundReady, yearSelection.year])
 
   useEffect(() => {
     if (!isHydrated || dashboardRenderedLogged.current) return
@@ -129,10 +125,9 @@ export function AdminHomePage() {
         </WidgetErrorBoundary>
         <WidgetErrorBoundary title="Organisational Dashboard">
           <AdminCommandCenter
-            model={model}
-            snapshot={snapshot}
             situation={situation}
             metricsReady={false}
+            backgroundReady={false}
           />
         </WidgetErrorBoundary>
         <div className="orgdash-rafeeq">
@@ -222,10 +217,9 @@ export function AdminHomePage() {
       </WidgetErrorBoundary>
       <WidgetErrorBoundary title="Organisational Dashboard">
         <AdminCommandCenter
-          model={model}
-          snapshot={snapshot}
           situation={situation}
           metricsReady={isHydrated}
+          backgroundReady={backgroundReady}
         />
       </WidgetErrorBoundary>
       <WidgetErrorBoundary title="Ask Digital Rafeeq" compact>

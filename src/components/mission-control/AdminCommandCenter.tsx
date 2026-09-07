@@ -6,25 +6,19 @@
 import { useMemo } from 'react'
 import { OrganisationalDashboardStack } from '@/components/dashboard/OrganisationalDashboardStack'
 import { buildAdminQuickActions } from '@/lib/missionControl/adminCommandCenterWorkflow'
-import type { AdminMissionControlModel } from '@/lib/missionControl/buildAdminMissionControl'
-import type { AdminCommandCenterSnapshot } from '@/types/campaignAutomation.types'
 import type { OrganisationalSituation } from '@/lib/dashboard/organisationalSituation'
 
 type AdminCommandCenterProps = {
-  model: AdminMissionControlModel
-  snapshot: AdminCommandCenterSnapshot
   situation: OrganisationalSituation
   metricsReady?: boolean
+  backgroundReady?: boolean
 }
 
 export function AdminCommandCenter({
-  model,
-  snapshot,
   situation,
   metricsReady = true,
+  backgroundReady = true,
 }: AdminCommandCenterProps) {
-  void model
-  void snapshot
   const quickActions = useMemo(() => buildAdminQuickActions(), [])
 
   return (
@@ -32,6 +26,7 @@ export function AdminCommandCenter({
       situation={situation}
       quickActions={quickActions}
       metricsReady={metricsReady}
+      backgroundReady={backgroundReady}
     />
   )
 }

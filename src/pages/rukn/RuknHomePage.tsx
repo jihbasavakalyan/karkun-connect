@@ -22,6 +22,8 @@ import { buildContextualRafeeqGuidance } from '@/features/digitalRafeeq/companio
 import { loadPrimaryRafeeqContextualPresentation } from '@/execution'
 import { useRequiredRuknId } from '@/hooks/useRequiredRuknId'
 import { useGuidance } from '@/hooks/useGuidance'
+import { useBackgroundHydration } from '@/hooks/useBackgroundHydration'
+import { useRepositoryHydration } from '@/hooks/useRepositoryHydration'
 import { buildRuknMissionControl } from '@/lib/missionControl/buildRuknMissionControl'
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { getRuknById } from '@/data/ruknMaster'
@@ -31,16 +33,19 @@ import { sortGuidanceByUrgency } from '@/lib/homePresentation'
 import { getGuidanceForRuknKarkuns } from '@/lib/guidance/guidanceEngine'
 import { isRuknPostCampaignMode } from '@/lib/campaignExecutionMatrix'
 import { useRuknCommandCenter } from '@/providers/RuknCommandCenterProvider'
-import { HomePageSkeleton } from '@/components/ui'
+import { CardSkeleton } from '@/components/ui'
 
 /**
  * KC-0083 — Execution Dashboard in three sections:
  * 1) Mission Overview  2) Execution  3) Follow-up
  * KC-0102A — Section error isolation; layout progressive shell is in RuknLayout.
  * KC-037C2B revision — Attendance-first execution priority; Progress labels / OPEN / sizing only.
+ * KC-EVO-012A — Section pending until critical / background stores are ready; no fake zeros.
  */
 export function RuknHomePage() {
   const ruknId = useRequiredRuknId()
+  const isHydrated = useRepositoryHydration()
+  const backgroundReady = useBackgroundHydration()
   const { morningBrief } = useGuidance(ruknId ?? '')
   const snapshot = useRuknCommandCenter()
 
@@ -50,20 +55,34 @@ export function RuknHomePage() {
   )
 
   const rafeeqLine = useMemo(() => {
-    if (!ruknId) return ''
+    if (!ruknId || !isHydrated) return ''
     if (isRuknPostCampaignMode()) {
       const presented = loadPrimaryRafeeqContextualPresentation()
       if (presented?.spokenText) return presented.spokenText
     }
     return buildContextualRafeeqGuidance(ruknId)
-  }, [ruknId, snapshot])
+  }, [ruknId, snapshot, isHydrated])
 
   if (!ruknId) {
     return <Navigate to={ROUTES.LOGIN} replace />
   }
 
-  if (!morningBrief || !model) {
-    return <HomePageSkeleton />
+  if (!isHydrated) {
+    return (
+      <div className="cd-page cd-page-rukn mc-page mc-page-rukn-compact mc-page-execution mc-page-onescreen">
+        <ExecutionSuccessBanner />
+        <WidgetErrorBoundary title="Mission Overview">
+          <section className="space-y-3" aria-label="Mission Overview">
+            <AskDigitalRafeeqCard mini onOpen={openDigitalRafeeqAssistant} guidanceLine="" />
+            <CardSkeleton count={4} />
+          </section>
+        </WidgetErrorBoundary>
+      </div>
+    )
+  }
+
+  if (!model) {
+    return <Navigate to={ROUTES.LOGIN} replace />
   }
 
   const topGuidance = sortGuidanceByUrgency(getGuidanceForRuknKarkuns(ruknId))[0]
@@ -88,16 +107,22 @@ export function RuknHomePage() {
         <section className="space-y-3" aria-label="Mission Overview">
           <RuknMissionControlHero
             model={model}
-            greeting={morningBrief.greeting}
-            missionLine={morningBrief.mission}
+            greeting={morningBrief?.greeting ?? 'السلام علیکم'}
+            missionLine={morningBrief?.mission ?? ''}
             ruknName={ruknName}
             campaignName={campaignName}
             hideSummaryChips
           />
-          <TarbiyatiIjtemaRuknHero />
-          <WeeklyIjtemaAttendanceOpenCard ruknId={ruknId} />
-          <CampaignExecutionProgressCard ruknId={ruknId} />
-          {!postCampaign ? <RuknExecutionSummaryCards ruknId={ruknId} /> : null}
+          {backgroundReady ? (
+            <>
+              <TarbiyatiIjtemaRuknHero />
+              <WeeklyIjtemaAttendanceOpenCard ruknId={ruknId} />
+              <CampaignExecutionProgressCard ruknId={ruknId} />
+              {!postCampaign ? <RuknExecutionSummaryCards ruknId={ruknId} /> : null}
+            </>
+          ) : (
+            <CardSkeleton count={4} />
+          )}
           <AskDigitalRafeeqCard
             mini
             onOpen={openDigitalRafeeqAssistant}
@@ -109,23 +134,33 @@ export function RuknHomePage() {
       {/* Phase 6 — actionable notifications (calendar + work; existing surfaces) */}
       <WidgetErrorBoundary title="Actionable notifications">
         <section className="mt-4 space-y-3" aria-label="Actionable notifications">
-          <ActionableNotificationsPanel audience="rukn" ruknId={ruknId} />
+          {backgroundReady ? (
+            <ActionableNotificationsPanel audience="rukn" ruknId={ruknId} />
+          ) : (
+            <CardSkeleton count={1} />
+          )}
         </section>
       </WidgetErrorBoundary>
 
       {/* Phase 7 — Work + derived now-actions (TASK-055). Notifications stay above. */}
       <WidgetErrorBoundary title="What needs my action?">
         <section className="mt-4 space-y-3" aria-label="What needs my action?">
-          <RuknMeqatiActivitiesPanel ruknId={ruknId} />
-          <RuknWorkActionPanel ruknId={ruknId} />
-          <RuknActionDashboardPanel ruknId={ruknId} />
+          {backgroundReady ? (
+            <>
+              <RuknMeqatiActivitiesPanel ruknId={ruknId} />
+              <RuknWorkActionPanel ruknId={ruknId} />
+              <RuknActionDashboardPanel ruknId={ruknId} />
+            </>
+          ) : (
+            <CardSkeleton count={3} />
+          )}
           <ContinuousJourneyCountsStrip ruknId={ruknId} />
         </section>
       </WidgetErrorBoundary>
 
       <WidgetErrorBoundary title="Message Administrator">
         <section className="mt-4 space-y-3" aria-label="Message Administrator">
-          <RuknMessageAdminPanel />
+          {backgroundReady ? <RuknMessageAdminPanel /> : <CardSkeleton count={1} />}
         </section>
       </WidgetErrorBoundary>
 
@@ -133,7 +168,11 @@ export function RuknHomePage() {
       {!postCampaign ? (
         <WidgetErrorBoundary title="Execution">
           <section className="mt-4 space-y-3" aria-label="Execution">
-            <CampaignExecutionMatrix ruknId={ruknId} />
+            {backgroundReady ? (
+              <CampaignExecutionMatrix ruknId={ruknId} />
+            ) : (
+              <CardSkeleton count={2} />
+            )}
           </section>
         </WidgetErrorBoundary>
       ) : null}

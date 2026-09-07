@@ -40,6 +40,8 @@ const navItems: { label: string; icon: IconName; to: string; end: boolean }[] = 
 
 /**
  * KC-0102A — Progressive Rukn shell: header + bottom nav always render.
+ * KC-EVO-012A — Home mounts during critical hydrate with section skeletons;
+ * Connect / Connected / visit stay Outlet-blocked until critical ready.
  * Connection hydrate failures stay on campaign-connection routes only so
  * navigation and Logout remain usable. Failures never invent a 0-connected state.
  */
@@ -51,6 +53,8 @@ export function RuknLayout() {
   const { assignmentVersion } = useAssignmentEngine()
   const { pathname } = useLocation()
   const connectionScoped = isRuknCampaignConnectionPath(pathname)
+  const homePath = (pathname.replace(/\/+$/, '') || '/') === ROUTES.RUKN
+  const blockConnectionOutlet = connectionScoped && !homePath && !isHydrated && !hydration.failed
   const campaignName = isHydrated ? getActiveCampaignName() : 'Loading campaign…'
   const duration = isHydrated ? formatActiveCampaignDuration() : ''
   const timeline = isHydrated ? getCampaignTimeline() : null
@@ -105,13 +109,15 @@ export function RuknLayout() {
               </PrimaryButton>
             </div>
           </section>
-        ) : hydration.failed || isHydrated ? (
+        ) : blockConnectionOutlet ? (
+          <HomePageSkeleton />
+        ) : (
           <RuknCommandCenterProvider>
-            {ruknId ? <RuknAddPersonQuickActions ruknId={ruknId} className="mb-3" /> : null}
+            {isHydrated && ruknId ? (
+              <RuknAddPersonQuickActions ruknId={ruknId} className="mb-3" />
+            ) : null}
             <Outlet />
           </RuknCommandCenterProvider>
-        ) : (
-          <HomePageSkeleton />
         )}
       </main>
 

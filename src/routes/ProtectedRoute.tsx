@@ -5,6 +5,7 @@ import { ROUTES } from '@/constants/routes'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { useAuth } from '@/hooks/useAuth'
 import { useRepositoryHydration } from '@/hooks/useRepositoryHydration'
+import { prefetchAuthenticatedDashboard } from '@/lib/prefetchAuthenticatedDashboard'
 import { logStartupTiming } from '@/lib/startupDiagnostics'
 import { markStartupLifecycle } from '@/lib/startupLifecycleTrace'
 import type { UserRole } from '@/types/auth.types'
@@ -60,6 +61,7 @@ export function ProtectedRoute({ allowedRole, children }: ProtectedRouteProps) {
       isInitializing,
     })
     if (canRenderShell) {
+      prefetchAuthenticatedDashboard(allowedRole)
       markStartupLifecycle('ProtectedRoute.shellVisible', {
         route: location.pathname,
         role: user?.role ?? null,

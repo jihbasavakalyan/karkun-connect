@@ -42,15 +42,10 @@ assert(trends.includes('getDashboardVisitMetrics'), 'Trends daily/weekly use das
 assert(trends.includes('getDashboardConnectionProgressPct'), 'Trends connection progress from MetricsService')
 assert(trends.includes('Connection progress'), 'engagement label matches connection formula')
 
-const command = readFileSync(
-  resolve(root, 'src/components/mission-control/AdminCommandCenter.tsx'),
-  'utf8',
-)
-assert(command.includes('subscribeToFollowUpStore'), 'trends refresh listens to follow-ups')
-assert(
-  /trends[\s\S]*moduleTick[\s\S]*backgroundReady/.test(command),
-  'trends useMemo depends on moduleTick',
-)
+const home = readFileSync(resolve(root, 'src/pages/admin/AdminHomePage.tsx'), 'utf8')
+assert(home.includes('subscribeToFollowUpStore'), 'organisational Home still refreshes on follow-ups')
+assert(home.includes('moduleTick'), 'Home coalesces module store ticks')
+assert(home.includes('backgroundReady'), 'Home gates background Meqati/Ijtema on backgroundReady')
 
 const health = buildCampaignOperationsHealthMetrics()
 const slices = getDashboardHealthSlices()

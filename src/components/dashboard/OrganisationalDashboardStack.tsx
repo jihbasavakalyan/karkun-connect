@@ -10,6 +10,7 @@ import { AdminQuickActionsPanel } from '@/components/mission-control/AdminQuickA
 import { WidgetErrorBoundary } from '@/components/mission-control/WidgetErrorBoundary'
 import { Icon } from '@/components/ui/Icon'
 import { ROUTES } from '@/constants/routes'
+import { CardSkeleton } from '@/components/ui/Skeleton'
 import type { QuickActionItem } from '@/lib/missionControl/adminCommandCenterWorkflow'
 import { meqatiYearUrduRange } from '@/lib/dashboard/meqatiYear'
 import type {
@@ -23,6 +24,7 @@ type OrganisationalDashboardStackProps = {
   situation: OrganisationalSituation
   quickActions: QuickActionItem[]
   metricsReady: boolean
+  backgroundReady: boolean
 }
 
 const STATUS_LABEL: Record<MeqatiYearActivityStatus, string> = {
@@ -435,24 +437,32 @@ export function OrganisationalDashboardStack({
   situation,
   quickActions,
   metricsReady,
+  backgroundReady,
 }: OrganisationalDashboardStackProps) {
-  void metricsReady
   return (
     <div className="orgdash-stack">
       <WidgetErrorBoundary title="ہفتہ وار اجتماع">
-        <IjtemaSnapshot situation={situation} />
+        {backgroundReady ? <IjtemaSnapshot situation={situation} /> : <CardSkeleton count={1} />}
       </WidgetErrorBoundary>
 
       <WidgetErrorBoundary title="میقاتی منصوبہ">
-        <MeqatiYearSummary situation={situation} />
+        {backgroundReady ? (
+          <MeqatiYearSummary situation={situation} />
+        ) : (
+          <CardSkeleton count={1} />
+        )}
       </WidgetErrorBoundary>
 
       <WidgetErrorBoundary title="شعبہ وار صورتحال">
-        <ShobahStatusSection rows={situation.meqati.shobahs} empty={situation.meqati.empty} />
+        {backgroundReady ? (
+          <ShobahStatusSection rows={situation.meqati.shobahs} empty={situation.meqati.empty} />
+        ) : (
+          <CardSkeleton count={1} />
+        )}
       </WidgetErrorBoundary>
 
       <WidgetErrorBoundary title="توجہ طلب">
-        <AttentionCompact situation={situation} />
+        {backgroundReady ? <AttentionCompact situation={situation} /> : <CardSkeleton count={1} />}
       </WidgetErrorBoundary>
 
       <WidgetErrorBoundary title="فوری اقدامات">
@@ -462,17 +472,27 @@ export function OrganisationalDashboardStack({
       </WidgetErrorBoundary>
 
       <WidgetErrorBoundary title="اہم جاری سرگرمیاں">
-        <ImportantActivities situation={situation} />
+        {backgroundReady ? (
+          <ImportantActivities situation={situation} />
+        ) : (
+          <CardSkeleton count={1} />
+        )}
       </WidgetErrorBoundary>
 
       <WidgetErrorBoundary title="فعال مہم">
-        <ActiveCampaignCompact situation={situation} />
+        {metricsReady ? (
+          <ActiveCampaignCompact situation={situation} />
+        ) : (
+          <CardSkeleton count={1} />
+        )}
       </WidgetErrorBoundary>
 
-      <p className="orgdash-freshness" dir="rtl" lang="ur">
-        آخری تازہ کاری: {formatFreshness(situation.generatedAt)}
-        {situation.metricsLive ? <> · تمام ڈیٹا لائیو جمع شدہ معلومات پر مبنی ہے</> : null}
-      </p>
+      {metricsReady ? (
+        <p className="orgdash-freshness" dir="rtl" lang="ur">
+          آخری تازہ کاری: {formatFreshness(situation.generatedAt)}
+          {situation.metricsLive ? <> · تمام ڈیٹا لائیو جمع شدہ معلومات پر مبنی ہے</> : null}
+        </p>
+      ) : null}
     </div>
   )
 }
