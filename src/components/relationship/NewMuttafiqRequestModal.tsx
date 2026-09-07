@@ -38,6 +38,8 @@ export function NewMuttafiqRequestModal({
   const [address, setAddress] = useState('')
   const [remarks, setRemarks] = useState('')
   const [error, setError] = useState('')
+  const [nameWarning, setNameWarning] = useState(false)
+  const [nameMatches, setNameMatches] = useState<{ id: string; name: string }[]>([])
   const [duplicate, setDuplicate] = useState<MobileDuplicateDetails | null>(null)
   const { busy: submitting, progressMessage, run } = useWriteLifecycle()
 
@@ -50,6 +52,8 @@ export function NewMuttafiqRequestModal({
     setAddress('')
     setRemarks('')
     setError('')
+    setNameWarning(false)
+    setNameMatches([])
     setDuplicate(null)
   }
 
@@ -58,7 +62,7 @@ export function NewMuttafiqRequestModal({
     onClose()
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = (acknowledgeNameWarning = false) => {
     setError('')
     void run({
       key: `new-muttafiq-submit:${ruknId}`,
@@ -73,10 +77,13 @@ export function NewMuttafiqRequestModal({
           address,
           remarks,
           requestingRuknId: ruknId,
+          acknowledgeNameWarning,
         })
         if (!result.ok) {
           setError(result.error)
           setDuplicate(result.duplicate ?? null)
+          setNameWarning(result.code === 'NAME_WARNING')
+          setNameMatches(result.nameMatches ?? [])
           throw Object.assign(new Error(result.error), { code: result.code ?? 'unknown' })
         }
         return result
@@ -99,9 +106,13 @@ export function NewMuttafiqRequestModal({
         <ModalFormFooter
           onCancel={handleClose}
           primaryLabel={
-            submitting ? progressMessage || 'محفوظ کیا جا رہا ہے...' : 'Submit Request'
+            submitting
+              ? progressMessage || 'محفوظ کیا جا رہا ہے...'
+              : nameWarning
+                ? 'Continue anyway'
+                : 'Submit Request'
           }
-          onPrimaryClick={() => handleSubmit()}
+          onPrimaryClick={() => handleSubmit(nameWarning)}
           primaryDisabled={submitting}
         />
       }
@@ -116,7 +127,13 @@ export function NewMuttafiqRequestModal({
           <input
             className={FORM_INPUT_CLASS}
             value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
+            onChange={(e) => {
+              setFullName(e.target.value)
+              setNameWarning(false)
+              setNameMatches([])
+              setError('')
+              setDuplicate(null)
+            }}
           />
         </label>
         <label className="block">
@@ -124,7 +141,13 @@ export function NewMuttafiqRequestModal({
           <input
             className={FORM_INPUT_CLASS}
             value={mobile}
-            onChange={(e) => setMobile(e.target.value)}
+            onChange={(e) => {
+              setMobile(e.target.value)
+              setNameWarning(false)
+              setNameMatches([])
+              setError('')
+              setDuplicate(null)
+            }}
           />
         </label>
         <label className="block">
@@ -174,9 +197,25 @@ export function NewMuttafiqRequestModal({
           />
         </label>
         {error ? (
-          <div className="ds-banner-error" role="alert">
+          <div
+            className={
+              nameWarning
+                ? 'rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950'
+                : 'ds-banner-error'
+            }
+            role="alert"
+          >
             <p>{error}</p>
             {duplicate ? <ExistingPersonFoundPanel duplicate={duplicate} /> : null}
+            {nameWarning && nameMatches.length > 0 ? (
+              <ul className="mt-2 list-inside list-disc text-sm">
+                {nameMatches.slice(0, 5).map((match) => (
+                  <li key={match.id}>
+                    {match.name} ({match.id})
+                  </li>
+                ))}
+              </ul>
+            ) : null}
           </div>
         ) : null}
       </div>

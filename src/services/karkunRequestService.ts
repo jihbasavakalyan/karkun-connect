@@ -372,8 +372,13 @@ export async function submitNewKarkunRequest(
   }
 
   // KC-0068 Check 3 — possible duplicate name (soft warning; not a reject).
+  // Scope by gender + father/husband when present so Add Muttafiq does not flag
+  // an unrelated existing person after honorific stripping (KC-EVO-010).
   if (!input.acknowledgeNameWarning) {
-    const nameMatches = findPossibleNameDuplicates(fullName, 'karkun')
+    const nameMatches = findPossibleNameDuplicates(fullName, 'karkun', undefined, {
+      gender,
+      fatherHusbandName: input.fatherHusbandName,
+    })
     if (nameMatches.length > 0) {
       return {
         ok: false,
