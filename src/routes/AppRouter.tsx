@@ -4,12 +4,17 @@ import { ROUTES, adminOperationsPath } from '@/constants/routes'
 import { ScrollToTop } from '@/components/ux/ScrollToTop'
 import { RoutePageFallback } from '@/components/ux/RoutePageFallback'
 import { PwaRuntimeChrome } from '@/components/pwa/PwaRuntimeChrome'
-import { AdminLayout } from '@/layouts/AdminLayout'
-import { RuknLayout } from '@/layouts/RuknLayout'
 import { lazyWithChunkReload } from '@/lib/lazyWithChunkReload'
 import { LoginPage } from '@/pages/auth/LoginPage'
 import { LandingPage } from '@/pages/shared/LandingPage'
 import { GuestRoute, ProtectedRoute } from '@/routes/ProtectedRoute'
+
+const AdminLayout = lazyWithChunkReload(() =>
+  import('@/layouts/AdminLayout').then((m) => ({ default: m.AdminLayout })),
+)
+const RuknLayout = lazyWithChunkReload(() =>
+  import('@/layouts/RuknLayout').then((m) => ({ default: m.RuknLayout })),
+)
 
 // KC-0078 — Route-level code splitting; keep login/landing eager for first paint.
 const AdminHomePage = lazyWithChunkReload(() =>

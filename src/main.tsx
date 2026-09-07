@@ -68,25 +68,25 @@ async function runDeferredBootstrap(): Promise<void> {
         logStartupTiming('weeklyIjtemaAttendanceWindows.error')
       }
     })
-  }
 
-  scheduleIdle(() => {
-    void (async () => {
-      try {
-        const { initializeRuntime } = await import('@/runtime/bootstrap/initializeRuntime')
-        const runtimeResult = await initializeRuntime()
-        logStartupTiming('digitalRafeeqRuntime.complete', { status: runtimeResult.status })
-        if (runtimeResult.status === 'Failed') {
-          console.warn('[bootstrap] Digital Rafeeq runtime failed', runtimeResult.errorMessage)
-        } else if (import.meta.env.DEV && runtimeResult.status === 'Degraded') {
-          console.info('[bootstrap] Digital Rafeeq runtime degraded', runtimeResult.errorMessage)
+    scheduleIdle(() => {
+      void (async () => {
+        try {
+          const { initializeRuntime } = await import('@/runtime/bootstrap/initializeRuntime')
+          const runtimeResult = await initializeRuntime()
+          logStartupTiming('digitalRafeeqRuntime.complete', { status: runtimeResult.status })
+          if (runtimeResult.status === 'Failed') {
+            console.warn('[bootstrap] Digital Rafeeq runtime failed', runtimeResult.errorMessage)
+          } else if (import.meta.env.DEV && runtimeResult.status === 'Degraded') {
+            console.info('[bootstrap] Digital Rafeeq runtime degraded', runtimeResult.errorMessage)
+          }
+        } catch (error) {
+          console.warn('[bootstrap] Digital Rafeeq runtime initialization error', error)
+          logStartupTiming('digitalRafeeqRuntime.error')
         }
-      } catch (error) {
-        console.warn('[bootstrap] Digital Rafeeq runtime initialization error', error)
-        logStartupTiming('digitalRafeeqRuntime.error')
-      }
-    })()
-  })
+      })()
+    })
+  }
 }
 
 function publishBuildStamp(): void {

@@ -9,16 +9,13 @@
  */
 
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useAuth } from '@/hooks/useAuth'
 import {
   DEFAULT_RUNTIME_CONTEXT_VALUE,
   RuntimeContext,
   type RuntimeContextValue,
 } from './RuntimeContext'
-import {
-  getRuntimeBootstrapResult,
-  initializeRuntime,
-  type RuntimeBootstrapStatus,
-} from './initializeRuntime'
+import type { RuntimeBootstrapStatus } from './initializeRuntime'
 import type { RuntimeContainer } from '@/conversation/runtime'
 
 type RuntimeProviderProps = {
@@ -41,25 +38,21 @@ function toContextValue(
 }
 
 function readInitialContextValue(): RuntimeContextValue {
-  const current = getRuntimeBootstrapResult()
-  if (current.status === 'NotInitialized') {
-    return toContextValue('Initializing', null)
-  }
-  return toContextValue(
-    current.status,
-    current.runtime,
-    current.errorMessage,
-    current.initializedAt,
-  )
+  return toContextValue('Initializing', null)
 }
 
 export function RuntimeProvider({ children }: RuntimeProviderProps) {
+  const { isAuthenticated } = useAuth()
   const [value, setValue] = useState<RuntimeContextValue>(readInitialContextValue)
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      return
+    }
     let cancelled = false
 
-    void initializeRuntime()
+    void import('./initializeRuntime')
+      .then(({ initializeRuntime }) => initializeRuntime())
       .then((bootstrapResult) => {
         if (cancelled) return
         setValue(
@@ -81,7 +74,7 @@ export function RuntimeProvider({ children }: RuntimeProviderProps) {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [isAuthenticated])
 
   const contextValue = useMemo(() => value, [value])
 

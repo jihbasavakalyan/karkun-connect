@@ -1,11 +1,9 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { AuthContext } from '@/context/AuthContext'
-import { refreshFirestoreAfterAuth } from '@/repositories/firestore/initialize'
 import { clearAuthSession, loadAuthSession, saveAuthSession } from '@/lib/authSession'
 import { logStartupTiming } from '@/lib/startupDiagnostics'
 import { markStartupLifecycle } from '@/lib/startupLifecycleTrace'
 import { authenticationService } from '@/services/authenticationService'
-import { bindUserPreferences } from '@/stores/userPreferencesStore'
 import type {
   AuthContextValue,
   AuthStatus,
@@ -18,6 +16,9 @@ import type {
 type AuthProviderProps = {
   children: ReactNode
 }
+
+/** Avoid loading Firestore-backed preferences on the anonymous login shell. */
+let userPreferencesBound = false
 
 function readCachedUser(): AuthUser | null {
   if (typeof window === 'undefined') {
@@ -35,7 +36,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   useEffect(() => {
     logStartupTiming('AuthProvider.user-bound', { uid: user?.uid ?? null, role: user?.role ?? null })
-    bindUserPreferences(user?.uid)
+    if (user || userPreferencesBound) {
+      userPreferencesBound = true
+      void import('@/stores/userPreferencesStore').then(({ bindUserPreferences }) => {
+        bindUserPreferences(user?.uid)
+      })
+    }
     if (user && typeof sessionStorage !== 'undefined') {
       try {
         sessionStorage.setItem('karkun-connect.last-login', new Date().toLocaleString())
@@ -63,10 +69,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setStatus('authenticated')
         logStartupTiming('AuthProvider.authenticated', { uid: authUser.uid, role: authUser.role })
         markStartupLifecycle('auth.authenticated', { uid: authUser.uid, role: authUser.role })
-        void refreshFirestoreAfterAuth().then(() => {
-          logStartupTiming('AuthProvider.refreshFirestoreAfterAuth-complete')
-          markStartupLifecycle('auth.refreshFirestoreAfterAuth.complete')
-        })
+        void import('@/repositories/firestore/initialize').then(({ refreshFirestoreAfterAuth }) =>
+          refreshFirestoreAfterAuth().then(() => {
+            logStartupTiming('AuthProvider.refreshFirestoreAfterAuth-complete')
+            markStartupLifecycle('auth.refreshFirestoreAfterAuth.complete')
+          }),
+        )
         return
       }
 
