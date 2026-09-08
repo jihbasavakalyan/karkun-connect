@@ -5406,9 +5406,11 @@ html[data-theme='dark'] {
 }
 
 .orgdash-drill-title {
-  margin: 0 0 0.35rem;
+  margin: 0 0 0.45rem;
   font-weight: 700;
-  line-height: 2.15;
+  line-height: 2.6;
+  padding-block: 0.2em;
+  overflow: visible;
   color: #0f172a;
 }
 
@@ -5426,7 +5428,9 @@ html[data-theme='dark'] {
 .orgdash-drill-activity {
   margin: 0;
   font-weight: 600;
-  line-height: 2.15;
+  line-height: 2.6;
+  padding-block: 0.2em;
+  overflow: visible;
 }
 
 .orgdash-attention-grid,
