@@ -5216,6 +5216,7 @@ html[data-theme='dark'] {
 
 .orgdash-hint {
   margin-top: 0.2rem;
+  line-height: 2.15;
 }
 
 .orgdash-ijtema {
@@ -5407,6 +5408,7 @@ html[data-theme='dark'] {
 .orgdash-drill-title {
   margin: 0 0 0.35rem;
   font-weight: 700;
+  line-height: 2.15;
   color: #0f172a;
 }
 
@@ -5418,12 +5420,13 @@ html[data-theme='dark'] {
 
 .orgdash-drill-list li {
   border-bottom: 1px solid #f1f5f9;
-  padding: 0.4rem 0;
+  padding: 0.55rem 0;
 }
 
 .orgdash-drill-activity {
   margin: 0;
   font-weight: 600;
+  line-height: 2.15;
 }
 
 .orgdash-attention-grid,
