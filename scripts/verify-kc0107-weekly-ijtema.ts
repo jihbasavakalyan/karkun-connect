@@ -75,10 +75,20 @@ assert(!workspaceMissing.success, 'workspace fails for missing event')
 const adminPage = readFileSync(resolve('src/pages/admin/AdminWeeklyIjtemaPage.tsx'), 'utf8')
 assert(adminPage.includes('Create Weekly Ijtema'), 'admin management page present')
 assert(adminPage.includes('Reopen Attendance'), 'admin reopen action present')
+assert(adminPage.includes('View Attendance Report'), 'admin view attendance report action present')
+assert(adminPage.includes('size="viewport"'), 'attendance report opens in viewport modal')
+assert(adminPage.includes('setReportEventId'), 'report opens from Weekly Ijtema list without leaving the page')
+
+const reportDetail = readFileSync(
+  resolve('src/components/weekly-ijtema/WeeklyIjtemaAttendanceReportDetail.tsx'),
+  'utf8',
+)
+assert(reportDetail.includes('Rukn-wise Attendance'), 'rukn-wise % present')
+assert(reportDetail.includes('getWeeklyIjtemaReport'), 'report reuses existing attendance report source')
 
 const reportPage = readFileSync(resolve('src/pages/admin/AdminWeeklyIjtemaReportPage.tsx'), 'utf8')
 assert(reportPage.includes('Weekly Summary'), 'report page present')
-assert(reportPage.includes('Rukn-wise Attendance'), 'rukn-wise % present')
+assert(reportPage.includes('WeeklyIjtemaAttendanceReportDetail'), 'deep-link report page reuses shared report body')
 
 const ruknPage = readFileSync(resolve('src/pages/rukn/WeeklyIjtemaRegisterPage.tsx'), 'utf8')
 assert(ruknPage.includes('حاضر'), 'rukn page shows Present Urdu')

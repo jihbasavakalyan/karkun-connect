@@ -10,13 +10,14 @@ type ModalProps = {
   /** When set, stays pinned below the scrollable body (Cancel / primary actions). */
   footer?: ReactNode
   /** Desktop width; `form` is the standard ~740px layout for edit/add modals. */
-  size?: 'form' | 'md' | 'lg'
+  size?: 'form' | 'md' | 'lg' | 'viewport'
 }
 
 const MODAL_WIDTH_CLASS: Record<NonNullable<ModalProps['size']>, string> = {
   form: 'kc-modal-panel-form',
   md: 'kc-modal-panel-md',
   lg: 'kc-modal-panel-lg',
+  viewport: 'kc-modal-panel-viewport',
 }
 
 export function Modal({ isOpen, title, onClose, children, footer, size = 'form' }: ModalProps) {
@@ -54,7 +55,14 @@ export function Modal({ isOpen, title, onClose, children, footer, size = 'form' 
   }
 
   return createPortal(
-    <div className="kc-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div
+      className={['kc-modal-overlay', size === 'viewport' ? 'kc-modal-overlay-viewport' : '']
+        .filter(Boolean)
+        .join(' ')}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modal-title"
+    >
       <button
         type="button"
         className="kc-modal-backdrop"
@@ -72,7 +80,9 @@ export function Modal({ isOpen, title, onClose, children, footer, size = 'form' 
           </button>
         </div>
 
-        <div className="kc-modal-body">{children}</div>
+        <div className={size === 'viewport' ? 'kc-modal-body kc-modal-body-viewport' : 'kc-modal-body'}>
+          {children}
+        </div>
 
         {footer ? <div className="kc-modal-footer">{footer}</div> : null}
       </div>

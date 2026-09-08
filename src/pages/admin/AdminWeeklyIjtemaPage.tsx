@@ -6,17 +6,21 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { WeeklyIjtemaAttendanceReportDetail } from '@/components/weekly-ijtema/WeeklyIjtemaAttendanceReportDetail'
 import { Modal, ModalFormFooter } from '@/components/common'
 import { PageHeader, PageShell } from '@/components/ui'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import { GenerateCampaignReportButton } from '@/components/reporting/GenerateCampaignReportButton'
-import { ROUTES, adminWeeklyIjtemaReportPath } from '@/constants/routes'
+import { ROUTES } from '@/constants/routes'
 import { useAuth } from '@/hooks/useAuth'
 import { useBusyAction } from '@/hooks/useBusyAction'
 import { ensureWeeklyIjtemaAttendanceWindows } from '@/lib/weeklyIjtema/attendanceWindowEngine'
 import { getAttendanceWindowSchedule } from '@/lib/weeklyIjtema/attendanceWindowSchedule'
-import { uniqueWeeklyIjtemaMeetingsForDisplay } from '@/lib/weeklyIjtemaPresentation'
+import {
+  formatWeeklyIjtemaAudienceLabel,
+  uniqueWeeklyIjtemaMeetingsForDisplay,
+} from '@/lib/weeklyIjtemaPresentation'
 import {
   closeWeeklyIjtemaAttendance,
   createWeeklyIjtemaEvent,
@@ -64,12 +68,6 @@ function isSuccessMessage(message: string): boolean {
   )
 }
 
-function audienceLabel(event: WeeklyIjtemaEvent): string {
-  if (event.audienceGender === 'Female') return 'Women'
-  if (event.audienceGender === 'Male') return 'Men'
-  return 'All / Legacy'
-}
-
 export function AdminWeeklyIjtemaPage() {
   const { user } = useAuth()
   const [version, setVersion] = useState(0)
@@ -85,6 +83,7 @@ export function AdminWeeklyIjtemaPage() {
   const [reopenTarget, setReopenTarget] = useState<WeeklyIjtemaEvent | null>(null)
   const [reopenReason, setReopenReason] = useState('')
   const [reopenDurationHours, setReopenDurationHours] = useState('4')
+  const [reportEventId, setReportEventId] = useState<string | null>(null)
   const { busy, run } = useBusyAction()
 
   useEffect(() => {
@@ -374,7 +373,7 @@ export function AdminWeeklyIjtemaPage() {
                       <p className="font-semibold text-text-heading">{event.title}</p>
                       <p className="text-sm text-secondary">
                         {formatWeeklyIjtemaMeetingLabel(event.meetingDate)} · Audience:{' '}
-                        {audienceLabel(event)}
+                        {formatWeeklyIjtemaAudienceLabel(event)}
                         {event.openedAutomatically ? ' · Auto window' : ''}
                       </p>
                       <p className="mt-1 text-xs text-secondary">
@@ -441,12 +440,12 @@ export function AdminWeeklyIjtemaPage() {
                         Close Attendance
                       </SecondaryButton>
                     )}
-                    <Link
-                      to={adminWeeklyIjtemaReportPath(event.id)}
-                      className="inline-flex min-h-10 items-center rounded-lg border border-border px-3 text-sm font-semibold text-text-heading hover:bg-surface-muted"
+                    <SecondaryButton
+                      type="button"
+                      onClick={() => setReportEventId(event.id)}
                     >
                       View Attendance Report
-                    </Link>
+                    </SecondaryButton>
                   </div>
                 </li>
               )
@@ -460,6 +459,21 @@ export function AdminWeeklyIjtemaPage() {
           ← Back to Dashboard
         </Link>
       </p>
+
+      <Modal
+        isOpen={Boolean(reportEventId)}
+        title="Weekly Attendance Report"
+        onClose={() => setReportEventId(null)}
+        size="viewport"
+      >
+        {reportEventId ? (
+          <WeeklyIjtemaAttendanceReportDetail
+            eventId={reportEventId}
+            variant="modal"
+            onSelectEventId={setReportEventId}
+          />
+        ) : null}
+      </Modal>
 
       <Modal
         isOpen={Boolean(pendingDelete)}

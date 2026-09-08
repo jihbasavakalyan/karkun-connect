@@ -62,6 +62,14 @@ function uniquenessKey(event: WeeklyIjtemaEvent): string {
   return eventAudienceKey(event.meetingDate, event.audienceGender)
 }
 
+export function formatWeeklyIjtemaAudienceLabel(
+  event: Pick<WeeklyIjtemaEvent, 'audienceGender'>,
+): string {
+  if (event.audienceGender === 'Female') return 'Women'
+  if (event.audienceGender === 'Male') return 'Men'
+  return 'All / Legacy'
+}
+
 /**
  * Exactly one event per meetingDate + audienceGender.
  *

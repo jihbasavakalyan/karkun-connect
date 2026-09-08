@@ -4459,6 +4459,30 @@ html[data-theme='dark'] {
     max-width: min(32rem, 100%);
   }
 
+  .kc-modal-overlay-viewport {
+    @apply items-stretch;
+  }
+
+  @media (min-width: 640px) {
+    .kc-modal-overlay-viewport {
+      @apply items-center;
+    }
+  }
+
+  .kc-modal-panel-viewport {
+    height: 100%;
+    max-height: 100%;
+    max-width: 100%;
+  }
+
+  @media (min-width: 640px) {
+    .kc-modal-panel-viewport {
+      width: min(88rem, 100%);
+      height: min(92dvh, 100%);
+      max-height: min(92dvh, 100%);
+    }
+  }
+
   .kc-modal-header {
     @apply flex shrink-0 items-start justify-between gap-4 border-b border-border px-5 py-4 sm:px-6;
     min-width: 0;
@@ -4476,6 +4500,10 @@ html[data-theme='dark'] {
     @apply min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-5 py-4 sm:px-6;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
+  }
+
+  .kc-modal-body-viewport {
+    @apply flex min-h-0 flex-1 flex-col overflow-hidden px-4 py-3 sm:px-5;
   }
 
   .kc-modal-footer {
