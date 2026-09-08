@@ -21,8 +21,7 @@ const PROGRAMME_STATUS_URDU: Record<LocalProgrammeStatus, string> = {
   archived: 'محفوظ',
 }
 
-const activityNameClass =
-  'font-medium text-text-heading break-words [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2] overflow-hidden'
+const activityNameClass = 'font-medium text-text-heading break-words whitespace-normal'
 
 export function formatActivityStatus(status: LocalProgrammeStatus): string {
   return PROGRAMME_STATUS_URDU[status] ?? status

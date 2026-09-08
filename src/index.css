@@ -4897,6 +4897,15 @@ html[data-theme='dark'] {
   --orgdash-amber-soft: #fffbeb;
   background: #f1f5f9;
   font-family: var(--font-urdu), var(--font-sans);
+  /*
+   * Noto Nastaliq (and Windows fallbacks) only ship 400–700. html sets
+   * -webkit-font-smoothing: antialiased, and several orgdash titles use 800.
+   * Chromium then synthesizes extra weight by painting a second offset copy —
+   * the pale “ghost” line on activity/objective Urdu, not a second DOM node.
+   */
+  font-synthesis: none;
+  -webkit-font-smoothing: auto;
+  -moz-osx-font-smoothing: auto;
 }
 
 .orgdash-stack {
@@ -4941,7 +4950,7 @@ html[data-theme='dark'] {
 .orgdash-hero-title {
   margin: 0;
   font-size: 1.55rem;
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1.65;
   color: #0f172a;
 }
@@ -4976,7 +4985,7 @@ html[data-theme='dark'] {
 .orgdash-year-value {
   margin: 0;
   font-size: 1.35rem;
-  font-weight: 800;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
   line-height: 1.3;
   color: #0f172a;
@@ -5189,7 +5198,7 @@ html[data-theme='dark'] {
 
 .orgdash-card-meta-year {
   font-size: 1rem;
-  font-weight: 800;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
 
@@ -5232,7 +5241,7 @@ html[data-theme='dark'] {
 .orgdash-ijtema-number {
   margin: 0.15rem 0 0;
   font-size: 2rem;
-  font-weight: 800;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
   line-height: 1.15;
   color: #0f172a;

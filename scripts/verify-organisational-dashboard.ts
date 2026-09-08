@@ -312,7 +312,22 @@ const presentation = readFileSync(
 )
 assert.match(presentation, /خلاصہ: \{meta.summary\}/)
 assert.doesNotMatch(presentation, /remarks\?:/)
+assert.doesNotMatch(presentation, /-webkit-line-clamp/)
+assert.doesNotMatch(presentation, /display:-webkit-box/)
 assert.doesNotMatch(stack, /saveDurable/)
+
+const orgdashCss = readFileSync(resolve('src/index.css'), 'utf8')
+const orgdashBlock = orgdashCss.slice(orgdashCss.indexOf('.orgdash-page {'))
+assert.match(orgdashBlock, /font-synthesis:\s*none/)
+assert.match(orgdashBlock, /\.orgdash-table-wrap \{[\s\S]*display:\s*none/)
+assert.match(orgdashBlock, /\.orgdash-shobah-cards \{[\s\S]*display:\s*none/)
+assert.match(orgdashBlock, /\.orgdash-activity-cards \{[\s\S]*display:\s*none/)
+
+const meqatiCanvas = readFileSync(
+  resolve('src/pages/admin/meqati/meqatiPlanningCanvas.css'),
+  'utf8',
+)
+assert.match(meqatiCanvas, /font-synthesis:\s*none/)
 
 const situation = readFileSync(
   resolve('src/lib/dashboard/organisationalSituation.ts'),

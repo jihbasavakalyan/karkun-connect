@@ -3,6 +3,9 @@
  * Does not change the global Admin appearance theme.
  */
 .meqati-planning-canvas {
+  font-synthesis: none;
+  -webkit-font-smoothing: auto;
+  -moz-osx-font-smoothing: auto;
   --color-primary: #1b4332;
   --color-primary-hover: #2d6a4f;
   --color-primary-light: #40916c;
