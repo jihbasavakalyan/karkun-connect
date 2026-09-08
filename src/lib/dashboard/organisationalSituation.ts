@@ -70,6 +70,11 @@ export type ShobahStatusRow = OrganisationalStatusCounts & {
   shobahId: string
   name: string
   objectives: ShobahDrillObjective[]
+  /**
+   * ACTIVITY-FIRST Head-scoped سرگرمیاں with blank objectiveId.
+   * Not an Objective row — Planning label is بغیر ہدف.
+   */
+  unmappedActivities: ShobahDrillActivity[]
 }
 
 export type AttentionCategory = {
@@ -357,7 +362,30 @@ export function buildOrganisationalSituation(year: MeqatiYear): OrganisationalSi
   }
 }
 
-function buildShobahRow(
+function isHeadScopedUnmappedActivity(
+  row: Pick<LocalProgramme, 'shobahId' | 'objectiveId'>,
+  shobahId: string,
+): boolean {
+  return row.shobahId === shobahId && !row.objectiveId?.trim()
+}
+
+function toShobahDrillActivity(
+  programme: LocalProgramme,
+  statusByProgrammeId: ReadonlyMap<string, MeqatiYearActivityStatus | null>,
+): ShobahDrillActivity {
+  const rukn = programme.responsibleRuknId
+    ? getRuknById(programme.responsibleRuknId)
+    : undefined
+  return {
+    id: programme.id,
+    name: programme.name,
+    status: statusByProgrammeId.get(programme.id) ?? null,
+    responsibleName: rukn?.name ?? null,
+    scheduleLabel: formatProgrammeSchedule(programme.frequency),
+  }
+}
+
+export function buildShobahRow(
   shobah: Shobah,
   objectives: readonly PlanningObjective[],
   programmes: readonly LocalProgramme[],
@@ -373,36 +401,52 @@ function buildShobahRow(
       .filter((row) => row.objectiveId === objective.id)
       .slice()
       .sort((a, b) => a.name.localeCompare(b.name))
-      .map((programme) => {
-        const rukn = programme.responsibleRuknId
-          ? getRuknById(programme.responsibleRuknId)
-          : undefined
-        return {
-          id: programme.id,
-          name: programme.name,
-          status: statusByProgrammeId.get(programme.id) ?? null,
-          responsibleName: rukn?.name ?? null,
-          scheduleLabel: formatProgrammeSchedule(programme.frequency),
-        }
-      })
+      .map((programme) => toShobahDrillActivity(programme, statusByProgrammeId))
     return { id: objective.id, title: objective.title, activities }
   })
 
-  // ACTIVITY-FIRST: count unmapped Head-scoped activities without inventing an Objective row.
-  const unmappedStatuses = programmes
-    .filter((row) => row.shobahId === shobah.id && !row.objectiveId?.trim())
-    .map((row) => statusByProgrammeId.get(row.id) ?? null)
+  // ACTIVITY-FIRST: list Head-scoped blank-objective activities without inventing an Objective row.
+  const unmappedActivities = programmes
+    .filter((row) => isHeadScopedUnmappedActivity(row, shobah.id))
+    .slice()
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map((programme) => toShobahDrillActivity(programme, statusByProgrammeId))
 
   const statuses = [
     ...objectiveViews.flatMap((row) => row.activities.map((activity) => activity.status)),
-    ...unmappedStatuses,
+    ...unmappedActivities.map((activity) => activity.status),
   ]
   return {
     shobahId: shobah.id,
     name: shobah.name,
     ...countsFromStatuses(statuses),
     objectives: objectiveViews,
+    unmappedActivities,
   }
+}
+
+export type OngoingActivity = ShobahDrillActivity & { objectiveTitle: string }
+
+export function collectOngoingActivities(rows: readonly ShobahStatusRow[]): OngoingActivity[] {
+  const list: OngoingActivity[] = []
+  for (const shobah of rows) {
+    for (const objective of shobah.objectives) {
+      for (const activity of objective.activities) {
+        if (activity.status === 'in_progress' || activity.status === 'remaining') {
+          list.push({ ...activity, objectiveTitle: objective.title })
+        }
+      }
+    }
+    for (const activity of shobah.unmappedActivities) {
+      if (activity.status === 'in_progress' || activity.status === 'remaining') {
+        list.push({ ...activity, objectiveTitle: 'بغیر ہدف' })
+      }
+    }
+  }
+  return list.sort((a, b) => {
+    if (a.status === b.status) return a.name.localeCompare(b.name)
+    return a.status === 'in_progress' ? -1 : 1
+  })
 }
 
 function resolveCampaignFocusLabels(

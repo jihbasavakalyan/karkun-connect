@@ -13,11 +13,12 @@ import { ROUTES } from '@/constants/routes'
 import { CardSkeleton } from '@/components/ui/Skeleton'
 import type { QuickActionItem } from '@/lib/missionControl/adminCommandCenterWorkflow'
 import { meqatiYearUrduRange } from '@/lib/dashboard/meqatiYear'
-import type {
-  MeqatiYearActivityStatus,
-  OrganisationalSituation,
-  ShobahDrillActivity,
-  ShobahStatusRow,
+import {
+  collectOngoingActivities,
+  type MeqatiYearActivityStatus,
+  type OrganisationalSituation,
+  type ShobahDrillActivity,
+  type ShobahStatusRow,
 } from '@/lib/dashboard/organisationalSituation'
 
 type OrganisationalDashboardStackProps = {
@@ -35,6 +36,26 @@ const STATUS_LABEL: Record<MeqatiYearActivityStatus, string> = {
 
 function yearStatusLabel(status: MeqatiYearActivityStatus | null): string {
   return status ? STATUS_LABEL[status] : 'غیر متعین'
+}
+
+function DrillActivityList({ activities }: { activities: readonly ShobahDrillActivity[] }) {
+  if (activities.length === 0) {
+    return <p className="orgdash-muted">سرگرمی نہیں۔</p>
+  }
+  return (
+    <ul className="orgdash-drill-list">
+      {activities.map((activity) => (
+        <li key={activity.id}>
+          <p className="orgdash-drill-activity">{activity.name}</p>
+          <p className="orgdash-hint">
+            {yearStatusLabel(activity.status)} · ذمہ دار:{' '}
+            {activity.responsibleName ?? 'غیر متعین'} · نظام الاوقات:{' '}
+            {activity.scheduleLabel}
+          </p>
+        </li>
+      ))}
+    </ul>
+  )
 }
 
 function mansoobaStatusLabel(status: OrganisationalSituation['meqati']['mansooba']): string {
@@ -281,30 +302,23 @@ function ShobahStatusSection({ rows, empty }: { rows: ShobahStatusRow[]; empty: 
             .filter((row) => row.shobahId === openId)
             .map((row) => (
               <div key={`drill-${row.shobahId}`} className="orgdash-drill">
-                {row.objectives.length === 0 ? (
+                {row.objectives.length === 0 && row.unmappedActivities.length === 0 ? (
                   <p className="orgdash-muted">اس شعبہ میں اہداف نہیں۔</p>
                 ) : (
-                  row.objectives.map((objective) => (
-                    <div key={objective.id} className="orgdash-drill-objective">
-                      <p className="orgdash-drill-title">{objective.title}</p>
-                      {objective.activities.length === 0 ? (
-                        <p className="orgdash-muted">سرگرمی نہیں۔</p>
-                      ) : (
-                        <ul className="orgdash-drill-list">
-                          {objective.activities.map((activity) => (
-                            <li key={activity.id}>
-                              <p className="orgdash-drill-activity">{activity.name}</p>
-                              <p className="orgdash-hint">
-                                {yearStatusLabel(activity.status)} · ذمہ دار:{' '}
-                                {activity.responsibleName ?? 'غیر متعین'} · نظام الاوقات:{' '}
-                                {activity.scheduleLabel}
-                              </p>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
-                  ))
+                  <>
+                    {row.objectives.map((objective) => (
+                      <div key={objective.id} className="orgdash-drill-objective">
+                        <p className="orgdash-drill-title">{objective.title}</p>
+                        <DrillActivityList activities={objective.activities} />
+                      </div>
+                    ))}
+                    {row.unmappedActivities.length > 0 ? (
+                      <div className="orgdash-drill-objective">
+                        <p className="orgdash-drill-title">بغیر ہدف</p>
+                        <DrillActivityList activities={row.unmappedActivities} />
+                      </div>
+                    ) : null}
+                  </>
                 )}
                 <Link to={ROUTES.ADMIN_PLANNING} className="orgdash-card-link">
                   رپورٹ / میقاتی منصوبہ کھولیں
@@ -345,25 +359,6 @@ function AttentionCompact({ situation }: { situation: OrganisationalSituation })
       )}
     </section>
   )
-}
-
-type OngoingActivity = ShobahDrillActivity & { objectiveTitle: string }
-
-function collectOngoingActivities(rows: readonly ShobahStatusRow[]): OngoingActivity[] {
-  const list: OngoingActivity[] = []
-  for (const shobah of rows) {
-    for (const objective of shobah.objectives) {
-      for (const activity of objective.activities) {
-        if (activity.status === 'in_progress' || activity.status === 'remaining') {
-          list.push({ ...activity, objectiveTitle: objective.title })
-        }
-      }
-    }
-  }
-  return list.sort((a, b) => {
-    if (a.status === b.status) return a.name.localeCompare(b.name)
-    return a.status === 'in_progress' ? -1 : 1
-  })
 }
 
 function ImportantActivities({ situation }: { situation: OrganisationalSituation }) {

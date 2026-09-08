@@ -13,9 +13,13 @@ import {
   resolveMeqatiYear,
 } from '../src/lib/dashboard/meqatiYear'
 import {
+  buildShobahRow,
+  collectOngoingActivities,
   formatProgrammeSchedule,
   resolveProgrammeYearStatus,
 } from '../src/lib/dashboard/organisationalSituation'
+import type { LocalProgramme } from '../src/types/localProgramme.types'
+import type { PlanningObjective, Shobah } from '../src/types/planning.types'
 import {
   isMeqatiMansoobaActive,
   selectCanonicalMeqatiMansooba,
@@ -98,6 +102,129 @@ assert.equal(normalizeActivityYearStatuses({ '2025-26': 'done' }), undefined)
 assert.equal(formatProgrammeSchedule(undefined), 'غیر متعین')
 
 {
+  const shobah: Shobah = {
+    id: 'H01',
+    mansoobaId: 'MEQATI-2023-27',
+    name: 'دعوت',
+    status: 'active',
+    createdAt: '',
+    updatedAt: '',
+    createdBy: '',
+    updatedBy: '',
+  }
+  const otherShobah: Shobah = {
+    ...shobah,
+    id: 'H02',
+    name: 'تنظیم',
+  }
+  const objective: PlanningObjective = {
+    id: 'H01-O01',
+    mansoobaId: 'MEQATI-2023-27',
+    shobahId: 'H01',
+    title: 'قرآن فہمی',
+    status: 'active',
+    createdAt: '',
+    updatedAt: '',
+    createdBy: '',
+    updatedBy: '',
+  }
+  const stamp = {
+    createdAt: '',
+    updatedAt: '',
+    createdBy: '',
+    updatedBy: '',
+  }
+  const mapped: LocalProgramme = {
+    id: 'H01-A01',
+    mansoobaId: 'MEQATI-2023-27',
+    shobahId: 'H01',
+    objectiveId: 'H01-O01',
+    name: 'درس قرآن',
+    kind: 'other',
+    status: 'active',
+    yearStatuses: { '2026-27': 'completed' },
+    ...stamp,
+  }
+  const unmappedInProgress: LocalProgramme = {
+    ...mapped,
+    id: 'H01-A-UNMAPPED',
+    objectiveId: null,
+    name: 'قرآن پر وچن',
+    yearStatuses: { '2026-27': 'in_progress' },
+  }
+  const unmappedUnset: LocalProgramme = {
+    ...mapped,
+    id: 'H01-A-UNSET',
+    objectiveId: '',
+    name: 'غیر مربوط سرگرمی',
+    yearStatuses: undefined,
+  }
+  const unmappedOtherHead: LocalProgramme = {
+    ...mapped,
+    id: 'H02-A-UNMAPPED',
+    shobahId: 'H02',
+    objectiveId: null,
+    name: 'دیگر شعبہ',
+    yearStatuses: { '2026-27': 'remaining' },
+  }
+  const statusByProgrammeId = new Map([
+    [mapped.id, resolveProgrammeYearStatus(mapped, '2026-27')],
+    [unmappedInProgress.id, resolveProgrammeYearStatus(unmappedInProgress, '2026-27')],
+    [unmappedUnset.id, resolveProgrammeYearStatus(unmappedUnset, '2026-27')],
+    [unmappedOtherHead.id, resolveProgrammeYearStatus(unmappedOtherHead, '2026-27')],
+  ])
+  const row = buildShobahRow(
+    shobah,
+    [objective],
+    [mapped, unmappedInProgress, unmappedUnset, unmappedOtherHead],
+    statusByProgrammeId,
+  )
+  assert.equal(row.activities, 3)
+  assert.equal(row.completed, 1)
+  assert.equal(row.inProgress, 1)
+  assert.equal(row.remaining, 0)
+  assert.equal(row.objectives.length, 1)
+  assert.equal(row.objectives[0]?.id, 'H01-O01')
+  assert.deepEqual(
+    row.objectives[0]?.activities.map((activity) => activity.id),
+    ['H01-A01'],
+  )
+  assert.equal(row.unmappedActivities.length, 2)
+  assert.ok(
+    row.unmappedActivities.some(
+      (activity) => activity.id === 'H01-A-UNMAPPED' && activity.status === 'in_progress',
+    ),
+  )
+  assert.ok(
+    row.unmappedActivities.some(
+      (activity) => activity.id === 'H01-A-UNSET' && activity.status === null,
+    ),
+  )
+  assert.equal(
+    row.objectives.some((item) => item.id === 'UNMAPPED' || item.title === 'UNMAPPED'),
+    false,
+  )
+  const otherRow = buildShobahRow(otherShobah, [], [unmappedOtherHead], statusByProgrammeId)
+  assert.equal(otherRow.objectives.length, 0)
+  assert.deepEqual(
+    otherRow.unmappedActivities.map((activity) => activity.id),
+    ['H02-A-UNMAPPED'],
+  )
+  const ongoing = collectOngoingActivities([row, otherRow])
+  assert.deepEqual(
+    ongoing.map((activity) => ({
+      id: activity.id,
+      status: activity.status,
+      objectiveTitle: activity.objectiveTitle,
+    })),
+    [
+      { id: 'H01-A-UNMAPPED', status: 'in_progress', objectiveTitle: 'بغیر ہدف' },
+      { id: 'H02-A-UNMAPPED', status: 'remaining', objectiveTitle: 'بغیر ہدف' },
+    ],
+  )
+}
+
+{
   const draft = {
     id: 'MEQATI-2023-27',
     name: 'میقاتی منصوبہ',
@@ -147,6 +274,9 @@ assert.match(stack, /ہفتہ وار اجتماع/)
 assert.match(stack, /توجہ طلب/)
 assert.match(stack, /میقاتی منصوبہ کا ڈیٹا ابھی درج نہیں کیا گیا/)
 assert.match(stack, /اہم جاری سرگرمیاں/)
+assert.match(stack, /بغیر ہدف/)
+assert.match(stack, /unmappedActivities/)
+assert.doesNotMatch(stack, /UNMAPPED/)
 assert.doesNotMatch(stack, /CampaignHealthPanel/)
 assert.doesNotMatch(stack, /ProgressTrendsPanel/)
 assert.doesNotMatch(stack, /ActivityTimeline/)
@@ -169,6 +299,9 @@ assert.doesNotMatch(situation, /rukns: people.totalRukns/)
 assert.doesNotMatch(situation, /buildMansoobaActivityReport/)
 assert.doesNotMatch(situation, /classifyProgrammeYearStatus/)
 assert.doesNotMatch(situation, /repos\.occurrence/)
+assert.match(situation, /unmappedActivities/)
+assert.match(situation, /collectOngoingActivities/)
+assert.doesNotMatch(situation, /id: 'UNMAPPED'/)
 
 const hero = readFileSync(
   resolve('src/components/dashboard/OrganisationalSituationHero.tsx'),
