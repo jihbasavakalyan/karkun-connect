@@ -14,6 +14,7 @@ import type {
  * Prefer adapter metrics / cycle KPI when rewiring.
  */
 import { buildBaitulMaalGuidanceReminders } from '@/services/baitulMaalService'
+import { isCampaignPeriodActive } from '@/services/campaignService'
 
 export type ContextualSurface =
   | 'connect_execution'
@@ -376,22 +377,25 @@ export function buildReportGuidanceView(
   const recommendations = getGuidance(response)
   const messages = getMessages(response)
   const knowledge = response.knowledgeSummary
+  const campaignPeriodActive = isCampaignPeriodActive()
 
-  const campaignProgressSummary = knowledge
-    ? knowledge.availableDomains.length > 0
-      ? `مہم کی پیش رفت تیار ہے: ${knowledge.availableDomains.join('، ')} (${knowledge.aggregateConfidence})۔`
-      : 'مہم کی پیش رفت کا خلاصہ اس وقت محدود ہے۔'
-    : response.communicationPlan?.getPrimaryMessage()
-      ? resolveLocalizationKey(
-          (response.communicationPlan.getPrimaryMessage() as MessageLike)
-            .localizationKey,
-          (response.communicationPlan.getPrimaryMessage() as MessageLike).variables,
-        )
-      : null
+  const campaignProgressSummary = !campaignPeriodActive
+    ? null
+    : knowledge
+      ? knowledge.availableDomains.length > 0
+        ? `مہم کی پیش رفت تیار ہے: ${knowledge.availableDomains.join('، ')} (${knowledge.aggregateConfidence})۔`
+        : 'مہم کی پیش رفت کا خلاصہ اس وقت محدود ہے۔'
+      : response.communicationPlan?.getPrimaryMessage()
+        ? resolveLocalizationKey(
+            (response.communicationPlan.getPrimaryMessage() as MessageLike)
+              .localizationKey,
+            (response.communicationPlan.getPrimaryMessage() as MessageLike).variables,
+          )
+        : null
 
   const missingReporting =
     knowledge?.unavailableDomains
-      .filter((domain) => domain === 'reports' || domain === 'campaign')
+      .filter((domain) => domain === 'reports' || (campaignPeriodActive && domain === 'campaign'))
       .map((domain) => `${domain} کی رپورٹنگ کے لیے معلومات کم ہیں۔`) ?? []
 
   const suggestedReviewActions = recommendations

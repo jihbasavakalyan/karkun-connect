@@ -50,8 +50,10 @@ assert.match(topBar, /timeline\?\.status === 'active' \? campaignName/)
 assert.match(topBar, /کارکن کنیکٹ/)
 
 const subtitle = readFileSync(resolve('src/components/layout/CampaignStatusBar.tsx'), 'utf8')
-assert.match(subtitle, /timeline\?\.status === 'completed'/)
-assert.match(subtitle, /Campaign Completed|dayLabel/)
+const subtitleFn = subtitle.slice(subtitle.indexOf('export function ActiveCampaignSubtitle'))
+assert.match(subtitleFn, /isCampaignPeriodActive/)
+assert.match(subtitleFn, /if \(!isCampaignPeriodActive\(\)\)/)
+assert.doesNotMatch(subtitleFn, /timeline\?\.status === 'completed'/)
 
 const pwa = readFileSync(resolve('src/components/pwa/PwaRuntimeChrome.tsx'), 'utf8')
 assert.match(pwa, /SW_UPDATE_CHECK_MS/)

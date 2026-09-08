@@ -2,6 +2,7 @@ import {
   formatActiveCampaignDuration,
   getActiveCampaignName,
   getCampaignTimeline,
+  isCampaignPeriodActive,
 } from '@/services/campaignService'
 import { Icon } from '@/components/ui/Icon'
 
@@ -33,24 +34,12 @@ export function CampaignStatusBar() {
 }
 
 export function ActiveCampaignSubtitle() {
+  if (!isCampaignPeriodActive()) {
+    return null
+  }
+
   const duration = formatActiveCampaignDuration()
-  const timeline = getCampaignTimeline()
   const name = getActiveCampaignName()
-
-  if (timeline?.status === 'completed') {
-    return (
-      <p className="mt-0.5 text-xs text-secondary">
-        {name}
-        {duration !== '—' ? ` · ${duration}` : ''}
-        {' · '}
-        {timeline.dayLabel}
-      </p>
-    )
-  }
-
-  if (timeline?.status !== 'active') {
-    return <p className="mt-0.5 text-xs text-secondary">{name || 'No active campaign'}</p>
-  }
 
   return (
     <p className="mt-0.5 text-xs text-secondary">

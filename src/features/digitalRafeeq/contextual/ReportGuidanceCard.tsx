@@ -9,6 +9,7 @@ import {
   RAFEEQ_EMPTY_LINES,
   RAFEEQ_SUBTITLE,
 } from '@/features/digitalRafeeq/companion/rafeeqUrduCopy'
+import { isCampaignPeriodActive } from '@/services/campaignService'
 
 export type ReportGuidanceCardProps = {
   route: string
@@ -17,6 +18,7 @@ export type ReportGuidanceCardProps = {
 
 export function ReportGuidanceCard({ route, role }: ReportGuidanceCardProps) {
   const { enabled, loading, viewModel } = useReportGuidance({ route, role })
+  const campaignPeriodActive = isCampaignPeriodActive()
 
   if (!enabled) return null
   if (viewModel.visibility === 'hidden' && !loading) return null
@@ -34,12 +36,14 @@ export function ReportGuidanceCard({ route, role }: ReportGuidanceCardProps) {
       <p className="cd-caption">{RAFEEQ_SUBTITLE}</p>
       {loading ? <p className="cd-caption">{RAFEEQ_EMPTY_LINES.preparing}</p> : null}
 
-      <div className="cd-block cd-rafeeq-block">
-        <h3 className="cd-block-title">مہم کی پیش رفت</h3>
-        <p className="cd-supporting">
-          {viewModel.campaignProgressSummary ?? 'پیش رفت کا خلاصہ اس وقت دستیاب نہیں۔'}
-        </p>
-      </div>
+      {campaignPeriodActive ? (
+        <div className="cd-block cd-rafeeq-block">
+          <h3 className="cd-block-title">مہم کی پیش رفت</h3>
+          <p className="cd-supporting">
+            {viewModel.campaignProgressSummary ?? 'پیش رفت کا خلاصہ اس وقت دستیاب نہیں۔'}
+          </p>
+        </div>
+      ) : null}
 
       <div className="cd-block cd-rafeeq-block">
         <h3 className="cd-block-title">نامکمل رپورٹنگ</h3>
