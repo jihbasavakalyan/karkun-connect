@@ -5,9 +5,10 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Modal, ModalFormFooter, ModalFormGrid, ModalFormSection } from '@/components/common'
-import { PageHeader, PageShell } from '@/components/ui'
+import { CardSkeleton, PageHeader, PageShell } from '@/components/ui'
 import '@/pages/admin/meqati/meqatiPlanningCanvas.css'
 import { useAuth } from '@/hooks/useAuth'
+import { useBackgroundHydration } from '@/hooks/useBackgroundHydration'
 import { useBusyAction } from '@/hooks/useBusyAction'
 import type { CampaignListItem } from '@/constants/mockMissions'
 import type { Rukn } from '@/data/ruknMaster'
@@ -277,6 +278,7 @@ function buildActivityFrequency(
 export function AdminPlanningPage() {
   const { user } = useAuth()
   const { run, busy } = useBusyAction()
+  const backgroundReady = useBackgroundHydration()
   const actor = user?.displayName?.trim() || user?.email?.trim() || 'Administrator'
 
   const [mansoobas, setMansoobas] = useState<MeqatiMansooba[]>([])
@@ -351,8 +353,9 @@ export function AdminPlanningPage() {
   }, [])
 
   useEffect(() => {
+    if (!backgroundReady) return
     refresh()
-  }, [refresh])
+  }, [refresh, backgroundReady])
 
   useEffect(() => {
     const unsubWi = subscribeToWeeklyIjtemaStore(() =>
@@ -933,6 +936,12 @@ export function AdminPlanningPage() {
       ) : null}
 
       <div className="space-y-8" dir="rtl" lang="ur">
+        {!backgroundReady ? (
+          <div aria-busy="true">
+            <p className="mb-3 text-sm text-secondary">لوڈ ہو رہا ہے…</p>
+            <CardSkeleton count={3} />
+          </div>
+        ) : (
         <MeqatiPlanningWorkspace
           mansooba={selectedMansooba}
           totals={mansoobaTotals}
@@ -963,6 +972,7 @@ export function AdminPlanningPage() {
           onCreateActivity={openCreateActivity}
           onOpenActivity={openEditActivity}
         />
+        )}
 
         <details className="rounded-xl bg-surface px-5 py-4 shadow-card">
           <summary className="cursor-pointer text-sm font-semibold text-text-heading">
