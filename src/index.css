@@ -28,6 +28,17 @@
   --color-sidebar-text: #cbd5e1;
   --color-sidebar-text-muted: #94a3b8;
   --color-sidebar-active: #14532d;
+  /* Increment 01 — authenticated shell only. Do not remap --color-primary. */
+  --color-kc-shell: #0b3942;
+  --color-kc-shell-hover: #114954;
+  --color-kc-shell-border: #1d5c68;
+  --color-kc-shell-text: #e7f3f1;
+  --color-kc-shell-text-muted: #a8c5c4;
+  --color-kc-shell-current: #c99700;
+  --color-kc-shell-current-fg: #1a1408;
+  --color-kc-canvas: #f3eee4;
+  --color-kc-shell-ink: #102830;
+  --color-kc-shell-attention: #b4533a;
   --color-accent-glow: #40916c;
   --color-accent: #c99700;
   --color-accent-soft: #fbf3d5;
@@ -68,9 +79,92 @@ html[data-theme='dark'] {
   /* Deepen hero gradient so Mission Control stays premium in dark appearance */
   --gradient-hero: linear-gradient(135deg, #0f3d24 0%, #14532d 38%, #1b4332 100%);
   --shadow-glass: 0 8px 32px -12px rgb(0 0 0 / 0.45);
+  --color-kc-canvas: #111827;
+  --color-kc-shell-ink: #f8fafc;
 }
 
 @layer utilities {
+  .kc-shell-canvas {
+    background-color: var(--color-kc-canvas);
+    color: var(--color-kc-shell-ink);
+  }
+
+  .kc-shell-rail {
+    background-color: var(--color-kc-shell);
+    color: var(--color-kc-shell-text);
+    border-color: var(--color-kc-shell-border);
+  }
+
+  .kc-shell-topbar {
+    background-color: color-mix(in srgb, var(--color-kc-canvas) 92%, white);
+    border-color: color-mix(in srgb, var(--color-kc-shell) 12%, var(--color-border));
+    color: var(--color-kc-shell-ink);
+  }
+
+  .kc-shell-nav-item {
+    @apply flex min-h-11 items-center gap-2.5 rounded-lg px-2.5 py-2 text-[15px] font-medium transition-colors duration-200;
+  }
+
+  .kc-shell-nav-item:focus-visible {
+    outline: 2px solid var(--color-kc-shell-current);
+    outline-offset: 2px;
+  }
+
+  .kc-shell-nav-item-current {
+    background-color: var(--color-kc-shell-current);
+    color: var(--color-kc-shell-current-fg);
+    border-inline-start: 3px solid var(--color-kc-canvas);
+  }
+
+  .kc-shell-nav-item-idle {
+    color: var(--color-kc-shell-text);
+  }
+
+  .kc-shell-nav-item-idle:hover {
+    background-color: var(--color-kc-shell-hover);
+    color: white;
+  }
+
+  .kc-shell-nav-item-muted {
+    color: var(--color-kc-shell-text-muted);
+  }
+
+  .kc-shell-nav-item-muted:hover {
+    background-color: var(--color-kc-shell-hover);
+    color: white;
+  }
+
+  .kc-shell-account-menu {
+    @apply absolute end-0 z-30 mt-2 min-w-52 rounded-lg border p-1 shadow-card;
+    background-color: var(--color-kc-canvas);
+    border-color: color-mix(in srgb, var(--color-kc-shell) 16%, var(--color-border));
+  }
+
+  .kc-shell-account-item {
+    @apply flex min-h-11 w-full items-center rounded-md px-3 text-start text-sm font-medium;
+    color: var(--color-kc-shell-ink);
+  }
+
+  .kc-shell-account-item:hover,
+  .kc-shell-account-item:focus-visible {
+    background-color: color-mix(in srgb, var(--color-kc-shell) 10%, transparent);
+    outline: none;
+  }
+
+  .kc-shell-account-item:focus-visible {
+    outline: 2px solid var(--color-kc-shell-current);
+    outline-offset: -2px;
+  }
+
+  .kc-rukn-nav-current {
+    background-color: var(--color-kc-shell-current);
+    color: var(--color-kc-shell-current-fg);
+  }
+
+  .kc-rukn-nav-current .kc-rukn-nav-indicator {
+    background-color: var(--color-kc-shell-current-fg);
+  }
+
   .enterprise-card {
     @apply rounded-xl border border-border/80 bg-surface shadow-card transition-all duration-200;
   }

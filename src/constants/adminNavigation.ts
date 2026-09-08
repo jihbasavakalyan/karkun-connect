@@ -90,3 +90,37 @@ export function flattenAdminNavItems(entries: AdminNavEntry[] = ADMIN_NAV_ITEMS)
   }
   return out
 }
+
+export function adminNavPathMatches(
+  to: string,
+  pathname: string,
+  search: string,
+  end?: boolean,
+): boolean {
+  const url = new URL(to, 'https://kc.local')
+  const targetPath = url.pathname.replace(/\/$/, '') || '/'
+  const currentPath = pathname.replace(/\/$/, '') || '/'
+  const pathOk = end
+    ? currentPath === targetPath
+    : currentPath === targetPath || currentPath.startsWith(`${targetPath}/`)
+  if (!pathOk) return false
+  if (!url.search) return true
+  const want = new URLSearchParams(url.search)
+  const have = new URLSearchParams(search)
+  for (const [key, value] of want.entries()) {
+    if (have.get(key) !== value) return false
+  }
+  return true
+}
+
+export function findActiveAdminNavItem(
+  pathname: string,
+  search: string,
+  entries: AdminNavEntry[] = ADMIN_NAV_ITEMS,
+): AdminNavItem | null {
+  const leaves = flattenAdminNavItems(entries)
+  const ranked = leaves
+    .filter((item) => adminNavPathMatches(item.to, pathname, search, item.end))
+    .sort((a, b) => b.to.length - a.to.length)
+  return ranked[0] ?? null
+}

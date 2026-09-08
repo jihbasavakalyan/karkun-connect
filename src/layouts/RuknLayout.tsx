@@ -76,20 +76,20 @@ export function RuknLayout() {
   }, [isHydrated, ruknId, user, assignmentVersion])
 
   return (
-    <div className="native-shell flex min-h-svh flex-col bg-surface-muted">
-      <header className="border-b border-border bg-surface pt-[env(safe-area-inset-top)]">
-        <div className="enterprise-gradient-hero px-3 py-2 text-white lg:px-4">
+    <div className="native-shell kc-shell-canvas flex min-h-svh flex-col">
+      <header className="border-b border-kc-shell-border pt-[env(safe-area-inset-top)]">
+        <div className="kc-shell-rail px-3 py-2 lg:px-4">
           <div className="mx-auto flex max-w-5xl items-center justify-between gap-3">
             <Logo size="sm" variant="light" />
             <PortalAuthActions portalLabel="Rukn Portal" tone="on-dark" />
           </div>
           <div className="mx-auto max-w-5xl">
             <div className="mt-1.5 flex flex-wrap items-center gap-2">
-              <p className="text-sm font-semibold">{campaignName}</p>
+              <p className="text-sm font-semibold text-kc-shell-text">{campaignName}</p>
               {campaignPeriodActive && timeline ? (
                 <EnterpriseBadge variant="success">{timeline.dayLabel}</EnterpriseBadge>
               ) : null}
-              {duration ? <p className="text-xs text-white/80">{duration}</p> : null}
+              {duration ? <p className="text-xs text-kc-shell-text-muted">{duration}</p> : null}
             </div>
           </div>
         </div>
@@ -125,7 +125,7 @@ export function RuknLayout() {
       </main>
 
       <nav
-        className="native-bottom-nav fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface/95 px-2 pt-2 shadow-[0_-4px_20px_rgb(0_0_0/0.06)] backdrop-blur-md"
+        className="native-bottom-nav kc-shell-topbar fixed inset-x-0 bottom-0 z-40 border-t px-2 pt-2"
         aria-label="Rukn navigation"
       >
         <ul className="mx-auto flex max-w-5xl items-stretch justify-around">
@@ -136,15 +136,16 @@ export function RuknLayout() {
                 end={item.end}
                 className={({ isActive }) =>
                   [
-                    'native-nav-item flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 text-[10px] font-semibold leading-tight transition-all duration-200 sm:text-xs',
+                    'native-nav-item flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 text-[11px] font-semibold leading-tight transition-colors duration-200 sm:text-xs',
                     isActive
-                      ? 'bg-primary-muted text-primary native-nav-item-active'
-                      : 'text-secondary hover:bg-surface-muted hover:text-text-heading',
+                      ? 'kc-rukn-nav-current native-nav-item-active'
+                      : 'text-secondary hover:bg-kc-canvas hover:text-kc-shell-ink',
                   ].join(' ')
                 }
               >
                 <Icon name={item.icon} size="lg" className="text-current" />
-                {item.label}
+                <span>{item.label}</span>
+                <span className="kc-rukn-nav-indicator h-0.5 w-5 rounded-full bg-transparent" aria-hidden="true" />
               </NavLink>
             </li>
           ))}

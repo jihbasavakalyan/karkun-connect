@@ -10,6 +10,7 @@
     "lint": "eslint .",
     "verify:rc1": "npx vite-node scripts/verify-rc1.ts",
     "verify:routes": "npx vite-node scripts/verify-routes.ts",
+    "verify:increment-01-shell": "npx vite-node scripts/verify-increment-01-shell.ts",
     "verify:auth": "npx vite-node scripts/verify-auth-session.ts",
     "verify:assignments": "npx vite-node scripts/verify-inline-assignment.ts",
     "verify:kc002": "npx vite-node scripts/verify-kc002-assignment-allocation.ts",

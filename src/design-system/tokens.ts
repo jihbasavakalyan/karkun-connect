@@ -27,6 +27,20 @@ export const colors = {
   textSecondary: '#64748b',
 } as const
 
+/** Authenticated chrome only — Increment 01. Feature pages keep `colors.primary`. */
+export const shell = {
+  rail: '#0b3942',
+  railHover: '#114954',
+  railBorder: '#1d5c68',
+  railText: '#e7f3f1',
+  railTextMuted: '#a8c5c4',
+  current: '#c99700',
+  currentFg: '#1a1408',
+  canvas: '#f3eee4',
+  ink: '#102830',
+  attention: '#b4533a',
+} as const
+
 export const spacing = {
   1: '4px',
   2: '8px',

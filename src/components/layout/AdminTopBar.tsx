@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Logo } from '@/components/common/Logo'
 import { Icon } from '@/components/ui/Icon'
-import { ADMIN_NAV_ITEMS, flattenAdminNavItems } from '@/constants/adminNavigation'
+import { findActiveAdminNavItem } from '@/constants/adminNavigation'
 import { ROUTES } from '@/constants/routes'
 import {
   formatActiveCampaignDuration,
@@ -18,6 +18,8 @@ import { adminKarkunRegistryPath } from '@/lib/peopleRegistryNavigation'
 
 type AdminTopBarProps = {
   alertCount?: number
+  alertsReady?: boolean
+  mobileNavOpen?: boolean
   onMenuToggle?: () => void
 }
 
@@ -28,12 +30,19 @@ function timelineBadgeVariant(status: CampaignTimelineStatus): 'success' | 'warn
   return 'neutral'
 }
 
-export function AdminTopBar({ alertCount = 0, onMenuToggle }: AdminTopBarProps) {
+export function AdminTopBar({
+  alertCount = 0,
+  alertsReady = false,
+  mobileNavOpen = false,
+  onMenuToggle,
+}: AdminTopBarProps) {
   const navigate = useNavigate()
+  const location = useLocation()
   const [query, setQuery] = useState('')
   const campaignName = getActiveCampaignName()
   const duration = formatActiveCampaignDuration()
   const timeline = getCampaignTimeline()
+  const currentNav = findActiveAdminNavItem(location.pathname, location.search)
 
   const handleSearch = (event: FormEvent) => {
     event.preventDefault()
@@ -47,23 +56,34 @@ export function AdminTopBar({ alertCount = 0, onMenuToggle }: AdminTopBarProps) 
     navigate(adminKarkunRegistryPath({ search: trimmed }))
   }
 
+  const alertsLabel = alertsReady
+    ? `${alertCount} operational alerts`
+    : 'Operational alerts, count still loading'
+
   return (
-    <header className="sticky top-0 z-20 border-b border-border bg-surface/95 backdrop-blur-md lg:h-16">
+    <header className="kc-shell-topbar sticky top-0 z-20 border-b lg:h-16">
       <div className="flex items-center justify-between gap-2 px-3 py-2 lg:h-full lg:py-0 lg:px-4">
         <div className="flex min-w-0 items-center gap-3">
           <button
             type="button"
-            className="flex h-10 w-10 items-center justify-center rounded-lg border border-border text-secondary lg:hidden"
+            className="flex h-11 w-11 items-center justify-center rounded-lg border border-border text-kc-shell-ink lg:hidden"
             onClick={onMenuToggle}
             aria-label="Open navigation"
+            aria-expanded={mobileNavOpen}
+            aria-controls="admin-mobile-nav"
           >
             <Icon name="menu" size="md" />
           </button>
           <div className="min-w-0 lg:hidden">
             <Logo size="sm" />
+            {currentNav ? (
+              <p className="truncate text-xs font-medium text-secondary" aria-current="page">
+                {currentNav.label}
+              </p>
+            ) : null}
           </div>
           <div className="hidden min-w-0 lg:block">
-            <p className="truncate text-sm font-semibold text-text-heading">
+            <p className="truncate text-sm font-semibold text-kc-shell-ink">
               {timeline?.status === 'active' ? campaignName || 'کارکن کنیکٹ' : 'کارکن کنیکٹ'}
             </p>
             {timeline?.status === 'active' && duration ? (
@@ -87,46 +107,27 @@ export function AdminTopBar({ alertCount = 0, onMenuToggle }: AdminTopBarProps) 
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="ارکان، کارکنان…"
-            className="w-full rounded-md border border-border bg-surface-muted px-2.5 py-1.5 text-sm text-text-heading placeholder:text-secondary-light focus:border-primary-light focus:outline-none focus:ring-2 focus:ring-primary-muted"
+            className="w-full rounded-md border border-border bg-surface px-2.5 py-1.5 text-sm text-text-heading placeholder:text-secondary-light focus:border-kc-shell-current focus:outline-none focus:ring-2 focus:ring-kc-shell-current/40"
           />
         </form>
 
         <div className="flex items-center gap-2 sm:gap-3">
           <Link
             to={`${ROUTES.ADMIN}#operational-alerts`}
-            className="relative flex h-8 w-8 items-center justify-center rounded-md border border-border bg-surface-muted text-sm transition-colors hover:border-primary/30 hover:bg-primary-muted"
-            aria-label={`${alertCount} operational alerts`}
+            className="relative flex h-11 w-11 items-center justify-center rounded-lg border border-border bg-surface text-sm text-kc-shell-ink transition-colors hover:border-kc-shell/30 hover:bg-kc-canvas"
+            aria-label={alertsLabel}
+            aria-busy={!alertsReady}
           >
             <Icon name="bell" size="sm" />
-            {alertCount > 0 && (
-              <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-error px-1 text-[10px] font-bold text-white">
+            {alertsReady && alertCount > 0 ? (
+              <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-kc-shell-attention px-1 text-[10px] font-bold text-white">
                 {alertCount > 9 ? '9+' : alertCount}
               </span>
-            )}
-          </Link>
-          <Link
-            to={ROUTES.ADMIN_SETTINGS}
-            className="hidden h-8 w-8 items-center justify-center rounded-md border border-border bg-surface-muted text-sm transition-colors hover:border-primary/30 sm:flex"
-            aria-label="Settings"
-          >
-            <Icon name="settings" size="sm" />
+            ) : null}
           </Link>
           <PortalAuthActions portalLabel="Administrator" />
         </div>
       </div>
-
-      <nav className="flex gap-2 overflow-x-auto border-t border-border px-4 py-2 lg:hidden" aria-label="Admin mobile navigation">
-        {flattenAdminNavItems(ADMIN_NAV_ITEMS.filter((entry) => entry.id !== 'help')).map((item) => (
-          <Link
-            key={item.id}
-            to={item.to}
-            className="flex shrink-0 items-center gap-1.5 rounded-full border border-border bg-surface-muted px-3 py-1.5 text-xs font-medium text-secondary"
-          >
-            <Icon name={item.icon} size="sm" />
-            {item.label}
-          </Link>
-        ))}
-      </nav>
     </header>
   )
 }

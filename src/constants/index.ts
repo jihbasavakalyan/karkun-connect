@@ -8,6 +8,8 @@ export {
 export {
   ADMIN_NAV_ITEMS,
   flattenAdminNavItems,
+  findActiveAdminNavItem,
+  adminNavPathMatches,
   isAdminNavGroup,
   type AdminNavEntry,
   type AdminNavGroup,
