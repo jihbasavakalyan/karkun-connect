@@ -58,6 +58,8 @@ export type ShobahDrillActivity = {
   status: MeqatiYearActivityStatus | null
   responsibleName: string | null
   scheduleLabel: string
+  /** Existing LocalProgramme.summary (خلاصہ). null = unset / blank — omit in UI. */
+  summary: string | null
 }
 
 export type ShobahDrillObjective = {
@@ -376,12 +378,14 @@ function toShobahDrillActivity(
   const rukn = programme.responsibleRuknId
     ? getRuknById(programme.responsibleRuknId)
     : undefined
+  const summary = programme.summary?.trim() || null
   return {
     id: programme.id,
     name: programme.name,
     status: statusByProgrammeId.get(programme.id) ?? null,
     responsibleName: rukn?.name ?? null,
     scheduleLabel: formatProgrammeSchedule(programme.frequency),
+    summary,
   }
 }
 

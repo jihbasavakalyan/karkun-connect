@@ -51,6 +51,7 @@ function DrillActivityList({ activities }: { activities: readonly ShobahDrillAct
             {yearStatusLabel(activity.status)} · ذمہ دار:{' '}
             {activity.responsibleName ?? 'غیر متعین'} · نظام الاوقات:{' '}
             {activity.scheduleLabel}
+            {activity.summary ? ` · خلاصہ: ${activity.summary}` : null}
           </p>
         </li>
       ))}

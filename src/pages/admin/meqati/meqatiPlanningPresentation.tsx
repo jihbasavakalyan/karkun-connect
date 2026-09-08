@@ -119,10 +119,12 @@ type CompactActivityListProps = {
 }
 
 function activityMeta(row: LocalProgramme, ruknNameById: ReadonlyMap<string, string>) {
+  const summary = row.summary?.trim() || null
   return {
     responsible: row.responsibleRuknId ? (ruknNameById.get(row.responsibleRuknId) ?? '—') : '—',
     schedule: formatProgrammeScheduleLabel(row.frequency),
     status: formatActivityStatus(row.status),
+    summary,
   }
 }
 
@@ -157,6 +159,9 @@ export function CompactActivityList({
                     {showUnmappedState ? (
                       <p className="mt-1 text-xs text-secondary">ہدف: غیر متعین</p>
                     ) : null}
+                    {meta.summary ? (
+                      <p className="mt-1 text-xs text-secondary">خلاصہ: {meta.summary}</p>
+                    ) : null}
                   </td>
                   <td className="py-2.5 pe-3 text-secondary whitespace-normal break-words">
                     {meta.responsible}
@@ -189,6 +194,9 @@ export function CompactActivityList({
               <p className={activityNameClass}>{row.name}</p>
               {showUnmappedState ? (
                 <p className="mt-1 text-xs text-secondary">ہدف: غیر متعین</p>
+              ) : null}
+              {meta.summary ? (
+                <p className="mt-1 text-xs text-secondary">خلاصہ: {meta.summary}</p>
               ) : null}
               <p className="mt-1 text-xs text-secondary">
                 {meta.responsible} · {meta.schedule} · {meta.status}

@@ -34,6 +34,14 @@ assert.doesNotMatch(workspace, /md:grid-cols-2/)
 assert.doesNotMatch(workspace, /xl:grid-cols-3/)
 assert.match(workspace, /CompactActivityList/)
 
+const presentation = readFileSync(
+  'src/pages/admin/meqati/meqatiPlanningPresentation.tsx',
+  'utf8',
+)
+assert.match(presentation, /row.summary\?\.trim\(\)/)
+assert.match(presentation, /خلاصہ: \{meta.summary\}/)
+assert.doesNotMatch(presentation, /remarks\?:/)
+
 const manifest = JSON.parse(
   readFileSync('docs/meqati-population-manifest-dry-run.json', 'utf8'),
 ) as {

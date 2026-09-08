@@ -143,6 +143,7 @@ assert.equal(formatProgrammeSchedule(undefined), 'غیر متعین')
     kind: 'other',
     status: 'active',
     yearStatuses: { '2026-27': 'completed' },
+    summary: 'ہفتہ وار درس کا خلاصہ',
     ...stamp,
   }
   const unmappedInProgress: LocalProgramme = {
@@ -151,6 +152,7 @@ assert.equal(formatProgrammeSchedule(undefined), 'غیر متعین')
     objectiveId: null,
     name: 'قرآن پر وچن',
     yearStatuses: { '2026-27': 'in_progress' },
+    summary: '  بغیر ہدف نوٹ  ',
   }
   const unmappedUnset: LocalProgramme = {
     ...mapped,
@@ -158,6 +160,7 @@ assert.equal(formatProgrammeSchedule(undefined), 'غیر متعین')
     objectiveId: '',
     name: 'غیر مربوط سرگرمی',
     yearStatuses: undefined,
+    summary: undefined,
   }
   const unmappedOtherHead: LocalProgramme = {
     ...mapped,
@@ -166,6 +169,7 @@ assert.equal(formatProgrammeSchedule(undefined), 'غیر متعین')
     objectiveId: null,
     name: 'دیگر شعبہ',
     yearStatuses: { '2026-27': 'remaining' },
+    summary: '   ',
   }
   const statusByProgrammeId = new Map([
     [mapped.id, resolveProgrammeYearStatus(mapped, '2026-27')],
@@ -189,15 +193,20 @@ assert.equal(formatProgrammeSchedule(undefined), 'غیر متعین')
     row.objectives[0]?.activities.map((activity) => activity.id),
     ['H01-A01'],
   )
+  assert.equal(row.objectives[0]?.activities[0]?.summary, 'ہفتہ وار درس کا خلاصہ')
   assert.equal(row.unmappedActivities.length, 2)
   assert.ok(
     row.unmappedActivities.some(
-      (activity) => activity.id === 'H01-A-UNMAPPED' && activity.status === 'in_progress',
+      (activity) =>
+        activity.id === 'H01-A-UNMAPPED' &&
+        activity.status === 'in_progress' &&
+        activity.summary === 'بغیر ہدف نوٹ',
     ),
   )
   assert.ok(
     row.unmappedActivities.some(
-      (activity) => activity.id === 'H01-A-UNSET' && activity.status === null,
+      (activity) =>
+        activity.id === 'H01-A-UNSET' && activity.status === null && activity.summary === null,
     ),
   )
   assert.equal(
@@ -210,6 +219,7 @@ assert.equal(formatProgrammeSchedule(undefined), 'غیر متعین')
     otherRow.unmappedActivities.map((activity) => activity.id),
     ['H02-A-UNMAPPED'],
   )
+  assert.equal(otherRow.unmappedActivities[0]?.summary, null)
   const ongoing = collectOngoingActivities([row, otherRow])
   assert.deepEqual(
     ongoing.map((activity) => ({
@@ -285,6 +295,16 @@ assert.doesNotMatch(stack, /Open work/)
 assert.doesNotMatch(stack, /Open occurrences/)
 assert.match(stack, /مسودہ/)
 assert.match(stack, /progressDisplay/)
+assert.match(stack, /خلاصہ:/)
+assert.match(stack, /activity\.summary \? /)
+
+const presentation = readFileSync(
+  resolve('src/pages/admin/meqati/meqatiPlanningPresentation.tsx'),
+  'utf8',
+)
+assert.match(presentation, /خلاصہ: \{meta.summary\}/)
+assert.doesNotMatch(presentation, /remarks\?:/)
+assert.doesNotMatch(stack, /saveDurable/)
 
 const situation = readFileSync(
   resolve('src/lib/dashboard/organisationalSituation.ts'),
@@ -302,6 +322,7 @@ assert.doesNotMatch(situation, /repos\.occurrence/)
 assert.match(situation, /unmappedActivities/)
 assert.match(situation, /collectOngoingActivities/)
 assert.doesNotMatch(situation, /id: 'UNMAPPED'/)
+assert.doesNotMatch(situation, /saveDurable/)
 
 const hero = readFileSync(
   resolve('src/components/dashboard/OrganisationalSituationHero.tsx'),
