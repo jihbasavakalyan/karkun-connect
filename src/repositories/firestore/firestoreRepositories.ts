@@ -1216,9 +1216,11 @@ export type PhasedStartupHydrateHandle = {
 }
 
 /**
- * KC-004B — start critical + background Firestore reads in parallel.
- * Await `critical` to unlock ProtectedRoute; await `background` before listeners.
+ * KC-004B — critical unlocks ProtectedRoute; background must finish before listeners.
  * Each collection is read once (no duplicate getDocs).
+ *
+ * KC-EVO-016 experiment — do not start background getDocs until `background` is
+ * awaited (after critical apply / hydrationReady). Same collection sets and queries.
  */
 export function beginPhasedStartupHydrate(): PhasedStartupHydrateHandle {
   if (backgroundHydrateInFlight || hydrateInFlight) {
@@ -1237,7 +1239,6 @@ export function beginPhasedStartupHydrate(): PhasedStartupHydrateHandle {
 
   const db = getFirestoreDb()
   const criticalReads = readCriticalHydratePayload(db)
-  const backgroundReads = readBackgroundHydratePayload(db)
 
   const critical = (async () => {
     try {
@@ -1259,27 +1260,39 @@ export function beginPhasedStartupHydrate(): PhasedStartupHydrateHandle {
     }
   })()
 
-  const background = (async () => {
-    try {
-      const payload = await backgroundReads
-      applyBackgroundHydratePayload(payload)
-      traceIncidentStage('hydrateBackgroundFirestoreCaches:complete', {
-        caller: 'beginPhasedStartupHydrate',
-        sourceOfTruth: 'Firestore',
-      })
-    } catch (error) {
-      traceIncidentStage('hydrateBackgroundFirestoreCaches:failed', {
-        caller: 'beginPhasedStartupHydrate',
-        sourceOfTruth: 'Firestore',
-        error: error instanceof Error ? error.message : String(error),
-      })
-      throw error
+  const runBackground = (): Promise<void> => {
+    if (backgroundHydrateInFlight) {
+      return backgroundHydrateInFlight
     }
-  })()
+    const backgroundWork = (async () => {
+      try {
+        const payload = await readBackgroundHydratePayload(db)
+        applyBackgroundHydratePayload(payload)
+        traceIncidentStage('hydrateBackgroundFirestoreCaches:complete', {
+          caller: 'beginPhasedStartupHydrate',
+          sourceOfTruth: 'Firestore',
+        })
+      } catch (error) {
+        traceIncidentStage('hydrateBackgroundFirestoreCaches:failed', {
+          caller: 'beginPhasedStartupHydrate',
+          sourceOfTruth: 'Firestore',
+          error: error instanceof Error ? error.message : String(error),
+        })
+        throw error
+      }
+    })()
+    backgroundHydrateInFlight = backgroundWork.finally(() => {
+      backgroundHydrateInFlight = null
+    })
+    return backgroundHydrateInFlight
+  }
 
-  backgroundHydrateInFlight = background.finally(() => {
-    backgroundHydrateInFlight = null
-  })
+  const background = {
+    then: (
+      onfulfilled?: ((value: void) => unknown) | null,
+      onrejected?: ((reason: unknown) => unknown) | null,
+    ) => runBackground().then(onfulfilled, onrejected),
+  } as Promise<void>
 
   return { critical, background }
 }

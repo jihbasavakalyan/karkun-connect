@@ -218,7 +218,6 @@ function attachSnapshotListeners(): void {
 async function runPhasedStartupHydrate(): Promise<boolean> {
   markStartupLifecycle('hydrate.cycle.start', { context: 'startup-critical' })
   markStartupLifecycle('criticalHydrate.start')
-  markStartupLifecycle('backgroundHydrate.start')
   markStartupLifecycle('firestore.hydrate.start', { context: 'startup-critical' })
 
   const { critical, background } = beginPhasedStartupHydrate()
@@ -270,12 +269,19 @@ async function runPhasedStartupHydrate(): Promise<boolean> {
     },
   })
 
+  if (criticalSucceeded) {
+    markRepositoryHydrationReady()
+  }
+
   if (!backgroundHydrateScheduled) {
     backgroundHydrateScheduled = true
 
     void (async () => {
       let backgroundSucceeded = false
       try {
+        // KC-EVO-016 — start background getDocs only after critical apply (and
+        // hydrationReady on the success path, which runs before this microtask).
+        markStartupLifecycle('backgroundHydrate.start')
         markStartupLifecycle('firestore.hydrate.start', { context: 'startup-background' })
         await background
         backgroundSucceeded = true
@@ -344,7 +350,6 @@ async function runPhasedStartupHydrate(): Promise<boolean> {
         )
   }
 
-  markRepositoryHydrationReady()
   return true
 }
 
