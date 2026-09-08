@@ -16,6 +16,10 @@ import {
   formatProgrammeSchedule,
   resolveProgrammeYearStatus,
 } from '../src/lib/dashboard/organisationalSituation'
+import {
+  isMeqatiMansoobaActive,
+  selectCanonicalMeqatiMansooba,
+} from '../src/lib/planning/canonicalMeqatiMansooba'
 import { countOfficerPeopleByKind } from '../src/lib/aRuknRegistry'
 import {
   normalizeActivityYearStatuses,
@@ -94,6 +98,32 @@ assert.equal(normalizeActivityYearStatuses({ '2025-26': 'done' }), undefined)
 assert.equal(formatProgrammeSchedule(undefined), 'غیر متعین')
 
 {
+  const draft = {
+    id: 'MEQATI-2023-27',
+    name: 'میقاتی منصوبہ',
+    status: 'draft' as const,
+    createdAt: '',
+    updatedAt: '',
+    createdBy: '',
+    updatedBy: '',
+  }
+  const active = { ...draft, id: 'MEQATI-ACTIVE', status: 'active' as const }
+  const archived = { ...draft, id: 'MEQATI-OLD', status: 'archived' as const }
+  assert.equal(selectCanonicalMeqatiMansooba([draft])?.id, 'MEQATI-2023-27')
+  assert.equal(isMeqatiMansoobaActive(draft), false)
+  assert.equal(selectCanonicalMeqatiMansooba([draft, active])?.id, 'MEQATI-ACTIVE')
+  assert.equal(isMeqatiMansoobaActive(active), true)
+  assert.equal(selectCanonicalMeqatiMansooba([archived]), undefined)
+  assert.equal(
+    selectCanonicalMeqatiMansooba([
+      draft,
+      { ...draft, id: 'MEQATI-OTHER' },
+    ]),
+    undefined,
+  )
+}
+
+{
   const split = countOfficerPeopleByKind([
     { officerKind: 'rukn' },
     { officerKind: 'a_rukn' },
@@ -123,13 +153,15 @@ assert.doesNotMatch(stack, /ActivityTimeline/)
 assert.doesNotMatch(stack, /Work Queue/)
 assert.doesNotMatch(stack, /Open work/)
 assert.doesNotMatch(stack, /Open occurrences/)
-assert.match(stack, /غیر متعین/)
+assert.match(stack, /مسودہ/)
+assert.match(stack, /progressDisplay/)
 
 const situation = readFileSync(
   resolve('src/lib/dashboard/organisationalSituation.ts'),
   'utf8',
 )
-assert.match(situation, /resolveProgrammeYearStatus/)
+assert.match(situation, /selectCanonicalMeqatiMansooba/)
+assert.doesNotMatch(situation, /repos\.meqatiMansooba\.getActive/)
 assert.match(situation, /yearStatuses/)
 assert.match(situation, /countOfficerPeopleByKind/)
 assert.match(situation, /aRukns: officersByKind.aRukns/)

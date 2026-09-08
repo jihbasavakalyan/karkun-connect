@@ -37,6 +37,22 @@ function yearStatusLabel(status: MeqatiYearActivityStatus | null): string {
   return status ? STATUS_LABEL[status] : 'غیر متعین'
 }
 
+function mansoobaStatusLabel(status: OrganisationalSituation['meqati']['mansooba']): string {
+  if (!status) return ''
+  if (status.status === 'active') return 'فعال'
+  if (status.status === 'draft') return 'مسودہ'
+  return status.status
+}
+
+function recordedYearStatuses(counts: OrganisationalSituation['meqati']['counts']): number {
+  return counts.completed + counts.inProgress + counts.remaining
+}
+
+function progressDisplay(counts: OrganisationalSituation['meqati']['counts']): string {
+  if (recordedYearStatuses(counts) === 0) return 'غیر متعین'
+  return `${counts.progressPct}%`
+}
+
 function formatFreshness(iso: string): string {
   try {
     return new Intl.DateTimeFormat('ur-PK', {
@@ -134,6 +150,11 @@ function MeqatiYearSummary({ situation }: { situation: OrganisationalSituation }
         <div className="orgdash-card-meta">
           <span className="orgdash-card-meta-year">{year.label}</span>
           <span className="orgdash-card-meta-sub">{meqatiYearUrduRange(year)}</span>
+          {mansooba ? (
+            <span className="orgdash-card-meta-sub">
+              {mansooba.name} · {mansoobaStatusLabel(mansooba)}
+            </span>
+          ) : null}
         </div>
       </div>
       {!mansooba || empty ? (
@@ -159,10 +180,10 @@ function MeqatiYearSummary({ situation }: { situation: OrganisationalSituation }
             </div>
             <div>
               <dt>پیش رفت</dt>
-              <dd>{counts.progressPct}%</dd>
+              <dd>{progressDisplay(counts)}</dd>
             </div>
           </dl>
-          {counts.activities > 0 ? (
+          {recordedYearStatuses(counts) > 0 ? (
             <div
               className="orgdash-bar"
               role="progressbar"
@@ -231,7 +252,7 @@ function ShobahStatusSection({ rows, empty }: { rows: ShobahStatusRow[]; empty: 
                     <td>{row.completed}</td>
                     <td>{row.inProgress}</td>
                     <td>{row.remaining}</td>
-                    <td>{row.progressPct}%</td>
+                    <td>{progressDisplay(row)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -250,7 +271,7 @@ function ShobahStatusSection({ rows, empty }: { rows: ShobahStatusRow[]; empty: 
                 >
                   <span className="orgdash-shobah-name">{row.name}</span>
                   <span className="orgdash-shobah-meta">
-                    {row.completed}/{row.activities} مکمل · {row.progressPct}%
+                    {row.completed}/{row.activities} مکمل · {progressDisplay(row)}
                   </span>
                 </button>
               </li>

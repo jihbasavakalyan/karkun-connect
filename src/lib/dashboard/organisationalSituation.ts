@@ -34,6 +34,10 @@ import {
 } from '@/services/weeklyIjtemaService'
 import type { LocalProgramme } from '@/types/localProgramme.types'
 import { formatProgrammeScheduleLabel } from '@/lib/planning/programmeSchedule'
+import {
+  isMeqatiMansoobaActive,
+  selectCanonicalMeqatiMansooba,
+} from '@/lib/planning/canonicalMeqatiMansooba'
 import type { MeqatiMansooba, PlanningObjective, Shobah } from '@/types/planning.types'
 import type { MeqatiYear } from './meqatiYear'
 
@@ -123,7 +127,10 @@ export type OrganisationalSituation = {
   ijtema: WeeklyIjtemaSnapshot
   meqati: {
     mansooba: MeqatiMansooba | null
+    /** True when no canonical Meqati record exists (not when status is draft). */
     empty: boolean
+    /** Operational activation — independent of existence. */
+    isActive: boolean
     year: MeqatiYear
     counts: OrganisationalStatusCounts
     shobahs: ShobahStatusRow[]
@@ -178,7 +185,8 @@ export function buildOrganisationalSituation(year: MeqatiYear): OrganisationalSi
   const people = getPeopleStatistics()
   const officersByKind = countOfficerPeopleByKind(getAllRukns())
   const repos = getRepositories()
-  const mansooba = unwrapRepository(repos.meqatiMansooba.getActive(), undefined) ?? null
+  const mansooba =
+    selectCanonicalMeqatiMansooba(unwrapRepository(repos.meqatiMansooba.loadAll(), [])) ?? null
   const shobahs = unwrapRepository(repos.shobah.loadAll(), [])
   const objectives = unwrapRepository(repos.objective.loadAll(), [])
   const programmes = unwrapRepository(repos.localProgramme.loadAll(), [])
@@ -312,7 +320,12 @@ export function buildOrganisationalSituation(year: MeqatiYear): OrganisationalSi
     implementation: {
       inProgressActivities: meqatiCounts.inProgress,
       assignedResponsibles,
-      meqatiProgressPct: mansooba && linkedProgrammes.length > 0 ? meqatiCounts.progressPct : null,
+      meqatiProgressPct:
+        mansooba &&
+        linkedProgrammes.length > 0 &&
+        meqatiCounts.completed + meqatiCounts.inProgress + meqatiCounts.remaining > 0
+          ? meqatiCounts.progressPct
+          : null,
     },
     ijtema: {
       hasOpenEvent: Boolean(ijtemaAll.eventId),
@@ -328,7 +341,8 @@ export function buildOrganisationalSituation(year: MeqatiYear): OrganisationalSi
     },
     meqati: {
       mansooba,
-      empty: !mansooba || linkedProgrammes.length === 0,
+      empty: !mansooba,
+      isActive: isMeqatiMansoobaActive(mansooba),
       year,
       counts: mansooba ? meqatiCounts : emptyCounts(),
       shobahs: shobahRows,

@@ -17,6 +17,7 @@ import {
   normalizeActivityYearStatuses,
   type ActivityYearStatus,
 } from '@/lib/planning/activityYearStatus'
+import { selectCanonicalMeqatiMansooba } from '@/lib/planning/canonicalMeqatiMansooba'
 import {
   listProgrammeFrequencies,
   normalizeProgrammeSchedule,
@@ -337,7 +338,7 @@ export function AdminPlanningPage() {
       if (current && nextMansoobas.some((row) => row.id === current)) return current
       const active = unwrapRepository(repos.meqatiMansooba.getActive(), undefined)
       if (active) return active.id
-      return nextMansoobas[0]?.id ?? null
+      return selectCanonicalMeqatiMansooba(nextMansoobas)?.id ?? null
     })
 
     setSelectedCampaignId((current) => {
