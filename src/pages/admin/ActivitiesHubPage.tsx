@@ -9,15 +9,18 @@ import { ActiveCampaignSubtitle } from '@/components/layout/CampaignStatusBar'
 import { Icon } from '@/components/ui/Icon'
 import { PageHeader, PageShell } from '@/components/ui'
 import { ACTIVITIES_MODULES } from '@/lib/activitiesNavigation'
+import { isCampaignPeriodActive } from '@/services/campaignService'
 
 export function ActivitiesHubPage() {
+  const campaignPeriodActive = isCampaignPeriodActive()
+
   return (
     <PageShell>
       <PageHeader
         title="Activities"
         description="Operational workspace for recurring organizational activities. Open a module below — workflows are unchanged."
       />
-      <ActiveCampaignSubtitle />
+      {campaignPeriodActive ? <ActiveCampaignSubtitle /> : null}
 
       <ul className="mt-6 grid gap-3 sm:grid-cols-2">
         {ACTIVITIES_MODULES.map((mod) => (
@@ -30,7 +33,11 @@ export function ActivitiesHubPage() {
                 <Icon name={mod.icon} size="md" className="text-primary" />
                 {mod.label}
               </span>
-              <span className="text-sm text-secondary">{mod.description}</span>
+              <span className="text-sm text-secondary">
+                {mod.id === 'campaign-execution' && !campaignPeriodActive
+                  ? 'Historical campaign visits and execution records.'
+                  : mod.description}
+              </span>
             </Link>
           </li>
         ))}

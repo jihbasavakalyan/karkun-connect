@@ -55,9 +55,20 @@ await runProductionDataMigration()
 
 const adminSnapshot = getAdminCommandCenterSnapshot()
 assert(adminSnapshot.role === 'administrator', 'Admin snapshot role must be administrator')
-assert(adminSnapshot.hero !== null, 'Admin hero must derive from campaign library')
 const activeCampaign = getActiveCampaign()
-assert(Boolean(activeCampaign), 'Active campaign must exist in library')
+assert(Boolean(activeCampaign), 'Canonical campaign document must exist in library')
+const timeline = getCampaignTimeline()
+assert(Boolean(timeline), 'Campaign timeline must derive from library')
+assert(timeline!.totalDays >= 1, 'Official campaign must span at least 1 day')
+if (timeline!.status === 'active') {
+  assert(adminSnapshot.hero !== null, 'Admin hero must derive from campaign library while the period is active')
+  assert(adminSnapshot.hero!.progress >= 0 && adminSnapshot.hero!.progress <= 100, 'Progress must be derived')
+  assert(adminSnapshot.hero!.healthScore >= 0 && adminSnapshot.hero!.healthScore <= 100, 'Health score must be derived')
+  assert(adminSnapshot.hero!.theme.length > 0, 'Campaign theme must come from campaign library')
+  assert(adminSnapshot.hero!.objective.length > 0, 'Campaign objective must come from campaign library')
+} else {
+  assert(adminSnapshot.hero === null, 'Admin hero must not present a non-active campaign as current')
+}
 const duration = formatActiveCampaignDuration()
 assert(
   duration.includes(activeCampaign!.startDate.slice(8)) ||
@@ -80,13 +91,6 @@ assert(
   ),
   'Campaign duration end date must come from the official campaign library',
 )
-const timeline = getCampaignTimeline()
-assert(Boolean(timeline), 'Campaign timeline must derive from library')
-assert(timeline!.totalDays >= 1, 'Official campaign must span at least 1 day')
-assert(adminSnapshot.hero!.progress >= 0 && adminSnapshot.hero!.progress <= 100, 'Progress must be derived')
-assert(adminSnapshot.hero!.healthScore >= 0 && adminSnapshot.hero!.healthScore <= 100, 'Health score must be derived')
-assert(adminSnapshot.hero!.theme.length > 0, 'Campaign theme must come from campaign library')
-assert(adminSnapshot.hero!.objective.length > 0, 'Campaign objective must come from campaign library')
 assert(adminSnapshot.kpis.length >= 8, 'Admin must expose operational KPI cards')
 assert(adminSnapshot.kpis.every((kpi) => kpi.route.startsWith('/')), 'KPI routes must be absolute')
 assert(Boolean(adminSnapshot.nextAction.title), 'Admin next action must be defined')

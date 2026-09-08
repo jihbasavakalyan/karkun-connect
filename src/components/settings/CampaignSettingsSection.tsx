@@ -7,6 +7,7 @@ import {
   getActiveCampaignObjective,
   getActiveCampaignTheme,
   getCampaignTimeline,
+  isCampaignPeriodActive,
 } from '@/services/campaignService'
 import { phoneCallStartedPolicy, genericExecutionPolicy } from '@/execution'
 import {
@@ -18,16 +19,21 @@ import {
 export function CampaignSettingsSection() {
   const campaign = getActiveCampaign()
   const timeline = getCampaignTimeline()
+  const periodActive = isCampaignPeriodActive()
   const statusLabel = timeline?.status
     ? timeline.status.charAt(0).toUpperCase() + timeline.status.slice(1)
     : 'Unknown'
 
   return (
     <SettingsSection
-      title="Campaign Settings"
-      description="Campaign identity and default guidance. Execution stays in the Campaign module."
+      title="Campaign"
+      description={
+        periodActive
+          ? 'Campaign identity and default guidance. Execution stays in the Campaign module.'
+          : 'Historical campaign identity. Open مہمات for history and future campaigns.'
+      }
     >
-      <SettingsRow label="Active Campaign">
+      <SettingsRow label={periodActive ? 'Active Campaign' : 'Campaign'}>
         <SettingsReadonly value={getActiveCampaignName() || '—'} />
       </SettingsRow>
       <SettingsRow label="Campaign Dates">

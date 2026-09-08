@@ -10,6 +10,7 @@ import { formatPersonNameForDisplay } from '@/utils/formatPersonDisplay'
 import { UI_LABELS } from '@/lib/uiTerminology'
 import { useMuttafiqRelationshipStore } from '@/hooks/useMuttafiqRelationshipStore'
 import { MuttafiqRuknConnectionRow } from '@/components/relationship/MuttafiqRuknConnectionRow'
+import { isCampaignPeriodActive } from '@/services/campaignService'
 
 type Person360OverviewProps = {
   personId: string
@@ -27,6 +28,7 @@ export function Person360Overview({ personId }: Person360OverviewProps) {
   const profile = buildPerson360Profile(personId)
   if (!profile.found) return null
 
+  const campaignPeriodActive = isCampaignPeriodActive()
   const { header, responsibility, campaignStatus, journeyStages, continuousJourney, timeline, communications, quickActions, relationshipDisplay, removed } =
     profile
 
@@ -66,7 +68,7 @@ export function Person360Overview({ personId }: Person360OverviewProps) {
                 <dt className="inline font-medium text-text-heading">Registry: </dt>
                 <dd className="inline">{header.registry}</dd>
               </div>
-              {removed ? null : (
+              {removed || !campaignPeriodActive ? null : (
               <div>
                 <dt className="inline font-medium text-text-heading">
                   {UI_LABELS.campaignSituation}:{' '}
@@ -152,7 +154,7 @@ export function Person360Overview({ personId }: Person360OverviewProps) {
         </p>
       ) : null}
 
-      {!removed ? (
+      {!removed && campaignPeriodActive ? (
       <section className="person-360-card rounded-(--radius-card) border border-border bg-surface p-4 shadow-card sm:p-5">
         <h3 className="text-sm font-semibold text-text-heading">{UI_LABELS.campaignSituation}</h3>
         <ul className="mt-3 grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
@@ -169,7 +171,7 @@ export function Person360Overview({ personId }: Person360OverviewProps) {
       </section>
       ) : null}
 
-      {!removed ? (
+      {!removed && campaignPeriodActive ? (
       <section className="person-360-card rounded-(--radius-card) border border-border bg-surface p-4 shadow-card sm:p-5">
         <h3 className="text-sm font-semibold text-text-heading">Campaign Journey</h3>
         <ol className="mt-3 flex flex-wrap gap-2">

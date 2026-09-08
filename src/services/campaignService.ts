@@ -100,6 +100,11 @@ export function getCampaignPeriodStatus(
   return 'active'
 }
 
+/** Canonical “campaign is CURRENT” gate. Reuses `getCampaignTimeline` — not a second detector. */
+export function isCampaignPeriodActive(referenceDate = new Date()): boolean {
+  return getCampaignTimeline(referenceDate)?.status === 'active'
+}
+
 export function getCampaignTimeline(referenceDate = new Date()): CampaignTimeline | null {
   const campaign = getActiveCampaign()
   if (!campaign) {
@@ -173,7 +178,7 @@ export function getCampaignProgress(): number {
 export function getActiveCampaignSummary(): ActiveCampaignSummary | null {
   const campaign = getActiveCampaign()
   const timeline = getCampaignTimeline()
-  if (!campaign || !timeline) {
+  if (!campaign || !timeline || timeline.status !== 'active') {
     return null
   }
 

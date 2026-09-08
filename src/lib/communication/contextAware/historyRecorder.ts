@@ -2,7 +2,7 @@
  * KC-0119 — HistoryRecorder for context-aware Send actions.
  */
 
-import { getActiveCampaignName } from '@/services/campaignService'
+import { getActiveCampaignName, isCampaignPeriodActive } from '@/services/campaignService'
 import { appendContextAwareHistoryRecord } from './historyStore'
 import type {
   CommunicationContextId,
@@ -40,7 +40,9 @@ export function recordContextAwareHistory(
   const record: ContextAwareHistoryRecord = {
     id: createId(),
     timestamp: new Date().toISOString(),
-    campaign: getActiveCampaignName() || 'No active campaign',
+    campaign: isCampaignPeriodActive()
+      ? getActiveCampaignName() || 'No active campaign'
+      : 'No active campaign',
     context: input.draft.context,
     contextLabel: input.draft.communicationTypeLabel,
     recipientType: input.draft.recipientType,

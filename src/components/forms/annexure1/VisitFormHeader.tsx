@@ -1,5 +1,5 @@
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
-import { getActiveCampaignName } from '@/services/campaignService'
+import { getActiveCampaignName, isCampaignPeriodActive } from '@/services/campaignService'
 
 type VisitFormHeaderProps = {
   karkun: KarkunRegistryRecord
@@ -7,7 +7,7 @@ type VisitFormHeaderProps = {
 }
 
 export function VisitFormHeader({ karkun, assignmentNumber }: VisitFormHeaderProps) {
-  const campaignName = getActiveCampaignName()
+  const campaignName = isCampaignPeriodActive() ? getActiveCampaignName() : ''
 
   return (
     <header className="space-y-1">

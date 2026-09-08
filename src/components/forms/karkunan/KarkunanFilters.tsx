@@ -2,6 +2,7 @@ import { getRegistryFilterOptions } from '@/constants/mockKarkunRegistry'
 import type { KarkunRegistryFilters } from '@/types/karkun-registry.types'
 import { CAMPAIGN_STATUS_FILTER_OPTIONS } from '@/types/karkun-registry.types'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
+import { isCampaignPeriodActive } from '@/services/campaignService'
 
 type KarkunanFiltersProps = {
   filters: KarkunRegistryFilters
@@ -14,6 +15,7 @@ const selectClassName =
 
 export function KarkunanFilters({ filters, onFilterChange, onClear }: KarkunanFiltersProps) {
   const { areas, rukns } = getRegistryFilterOptions()
+  const campaignPeriodActive = isCampaignPeriodActive()
 
   return (
     <div className="rounded-(--radius-card) border border-border bg-surface p-4 shadow-card">
@@ -25,23 +27,25 @@ export function KarkunanFilters({ filters, onFilterChange, onClear }: KarkunanFi
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <div className="flex flex-col gap-2">
-          <label htmlFor="filter-status" className="text-sm font-medium text-secondary">
-            Campaign Status
-          </label>
-          <select
-            id="filter-status"
-            value={filters.campaignStatus}
-            onChange={(event) => onFilterChange('campaignStatus', event.target.value)}
-            className={selectClassName}
-          >
-            {CAMPAIGN_STATUS_FILTER_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
+        {campaignPeriodActive ? (
+          <div className="flex flex-col gap-2">
+            <label htmlFor="filter-status" className="text-sm font-medium text-secondary">
+              Campaign Status
+            </label>
+            <select
+              id="filter-status"
+              value={filters.campaignStatus}
+              onChange={(event) => onFilterChange('campaignStatus', event.target.value)}
+              className={selectClassName}
+            >
+              {CAMPAIGN_STATUS_FILTER_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : null}
 
         <div className="flex flex-col gap-2">
           <label htmlFor="filter-rukn" className="text-sm font-medium text-secondary">

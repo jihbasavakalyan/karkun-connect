@@ -11,7 +11,7 @@ import { CanonicalMetricProviders } from '@/lib/operations/canonicalCampaignMetr
 import { getLatestSubmissionForKarkun } from '@/stores/annexure1Store'
 import { getDevelopmentAssessment } from '@/stores/developmentAssessmentStore'
 import { getRegistrationForKarkun } from '@/services/jihWebPortalService'
-import { getActiveCampaignName } from '@/services/campaignService'
+import { getActiveCampaignName, isCampaignPeriodActive } from '@/services/campaignService'
 
 export type TemplateRecommendation = {
   templateId: string
@@ -79,7 +79,7 @@ export function buildIndividualCommunicationContext(
     defaultVariables: {
       name: karkun.name,
       month: monthLabel,
-      campaign: getActiveCampaignName() || 'کارکن رابطہ مہم',
+      campaign: isCampaignPeriodActive() ? getActiveCampaignName() || 'کارکن رابطہ مہم' : '',
       date: '',
       time: '',
       venue: '',

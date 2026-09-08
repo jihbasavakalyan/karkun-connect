@@ -424,16 +424,7 @@ function ImportantActivities({ situation }: { situation: OrganisationalSituation
 
 function ActiveCampaignCompact({ situation }: { situation: OrganisationalSituation }) {
   const campaign = situation.activeCampaign
-  if (!campaign) {
-    return (
-      <p className="orgdash-campaign-line" dir="rtl" lang="ur">
-        فعال مہم: کوئی فعال مہم نہیں
-        <Link to={ROUTES.ADMIN_CAMPAIGN} className="orgdash-card-link">
-          مہمات دیکھیں
-        </Link>
-      </p>
-    )
-  }
+  if (!campaign) return null
 
   return (
     <section className="orgdash-card orgdash-card-quiet" aria-label="فعال مہم" dir="rtl" lang="ur">
@@ -496,13 +487,15 @@ export function OrganisationalDashboardStack({
         )}
       </WidgetErrorBoundary>
 
-      <WidgetErrorBoundary title="فعال مہم">
-        {metricsReady ? (
-          <ActiveCampaignCompact situation={situation} />
-        ) : (
-          <CardSkeleton count={1} />
-        )}
-      </WidgetErrorBoundary>
+      {situation.activeCampaign ? (
+        <WidgetErrorBoundary title="فعال مہم">
+          {metricsReady ? (
+            <ActiveCampaignCompact situation={situation} />
+          ) : (
+            <CardSkeleton count={1} />
+          )}
+        </WidgetErrorBoundary>
+      ) : null}
 
       {metricsReady ? (
         <p className="orgdash-freshness" dir="rtl" lang="ur">

@@ -15,7 +15,7 @@ import {
   launchWhatsAppWebMessage,
   prepareWhatsAppLaunchWindows,
 } from '@/lib/communication/whatsappWebLaunch'
-import { getActiveCampaignName } from '@/services/campaignService'
+import { getActiveCampaignName, isCampaignPeriodActive } from '@/services/campaignService'
 import { sendIndividualMessage } from '@/services/communicationService'
 import { useBusyAction } from '@/hooks/useBusyAction'
 import type { MessageRecipient } from '@/types/communication'
@@ -55,7 +55,10 @@ export function OfficialBriefingModal({
     setStatus('')
   }, [isOpen, recipientId])
 
-  const campaignName = useMemo(() => getActiveCampaignName() || 'مہم', [])
+  const campaignName = useMemo(
+    () => (isCampaignPeriodActive() ? getActiveCampaignName() || 'مہم' : ''),
+    [],
+  )
 
   const campaignSummary = useMemo(() => {
     if (!recipient || recipient.personKind !== 'rukn') return null
@@ -150,10 +153,12 @@ export function OfficialBriefingModal({
               </span>
             </p>
           </div>
-          <div>
-            <p className={FORM_LABEL_CLASS}>Campaign</p>
-            <p className="mt-1 font-medium text-text-heading">{campaignName}</p>
-          </div>
+          {campaignName ? (
+            <div>
+              <p className={FORM_LABEL_CLASS}>Campaign</p>
+              <p className="mt-1 font-medium text-text-heading">{campaignName}</p>
+            </div>
+          ) : null}
           <div>
             <p className={FORM_LABEL_CLASS}>Overall Status</p>
             {overall ? (

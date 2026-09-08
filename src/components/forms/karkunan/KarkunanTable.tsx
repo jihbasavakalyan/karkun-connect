@@ -4,6 +4,7 @@ import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
 import { getConnectionStatusLabel } from '@/lib/connectionLabels'
 import { VISIT_STATUS_LABELS } from '@/types/karkun-registry.types'
 import { CampaignStatusBadge } from '@/components/forms/karkunan/CampaignStatusBadge'
+import { isCampaignPeriodActive } from '@/services/campaignService'
 
 type KarkunanActionsMenuProps = {
   karkunId: string
@@ -58,6 +59,7 @@ type KarkunanTableProps = {
 }
 
 export function KarkunanTable({ records }: KarkunanTableProps) {
+  const campaignPeriodActive = isCampaignPeriodActive()
   if (records.length === 0) {
     return (
       <div className="ds-empty" role="status">
@@ -116,7 +118,9 @@ export function KarkunanTable({ records }: KarkunanTableProps) {
                 <p className="font-semibold text-text-heading">{karkun.name}</p>
                 <p className="mt-1 text-sm text-secondary">{karkun.mobile}</p>
               </div>
-              <CampaignStatusBadge status={karkun.campaignStatus} />
+              {campaignPeriodActive ? (
+                <CampaignStatusBadge status={karkun.campaignStatus} />
+              ) : null}
             </div>
             <dl className="mt-4 space-y-2 text-sm">
               <div className="flex justify-between gap-3">

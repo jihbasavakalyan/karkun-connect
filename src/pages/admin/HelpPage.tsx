@@ -1,12 +1,13 @@
 import { Link } from 'react-router-dom'
 import { APP_VERSION } from '@/constants/app'
 import { ROUTES, adminExecutionPath, adminFollowUpPath, adminCompliancePath } from '@/constants/routes'
-import { getActiveCampaignName, formatActiveCampaignDuration } from '@/services/campaignService'
+import { getActiveCampaignName, formatActiveCampaignDuration, isCampaignPeriodActive } from '@/services/campaignService'
 import { PageHeader, PageShell } from '@/components/ui'
 
 export function HelpPage() {
   const campaignName = getActiveCampaignName()
   const campaignDuration = formatActiveCampaignDuration()
+  const campaignPeriodActive = isCampaignPeriodActive()
 
   return (
     <PageShell variant="narrow">
@@ -28,7 +29,7 @@ export function HelpPage() {
             <Link to={ROUTES.ADMIN} className="font-medium text-primary hover:underline">
               Home
             </Link>{' '}
-            first — Campaign Pulse, today&apos;s priority, and Today&apos;s Work tell you where to begin.
+            first — organisational Home (میقاتی منصوبہ) shows current Jamaat situation.
           </p>
         </section>
 
@@ -36,10 +37,25 @@ export function HelpPage() {
           <h2 className="ds-section-title">Administrator Workflow</h2>
           <ol className="mt-4 list-inside list-decimal space-y-2 text-sm text-secondary">
             <li>
-              Confirm the active campaign under{' '}
-              <Link to={ROUTES.ADMIN_CAMPAIGN} className="font-medium text-primary hover:underline">
-                Campaign
-              </Link>
+              {campaignPeriodActive ? (
+                <>
+                  Confirm the active campaign under{' '}
+                  <Link to={ROUTES.ADMIN_CAMPAIGN} className="font-medium text-primary hover:underline">
+                    Campaign
+                  </Link>
+                </>
+              ) : (
+                <>
+                  Open{' '}
+                  <Link to={ROUTES.ADMIN_PLANNING} className="font-medium text-primary hover:underline">
+                    میقاتی منصوبہ
+                  </Link>{' '}
+                  for current organisational planning. Campaign history remains under{' '}
+                  <Link to={ROUTES.ADMIN_CAMPAIGN} className="font-medium text-primary hover:underline">
+                    مہمات
+                  </Link>
+                </>
+              )}
             </li>
             <li>
               Manage Rukn records under{' '}
@@ -168,9 +184,10 @@ export function HelpPage() {
         </section>
 
         <section className="ds-section">
-          <h2 className="ds-section-title">Active Campaign</h2>
+          <h2 className="ds-section-title">{campaignPeriodActive ? 'Active Campaign' : 'Campaign history'}</h2>
           <p className="ds-section-subtitle">
             {campaignName} · {campaignDuration}
+            {campaignPeriodActive ? '' : ' · period ended'}
           </p>
           <p className="mt-2 text-sm text-secondary">Version {APP_VERSION} (Release Candidate)</p>
         </section>

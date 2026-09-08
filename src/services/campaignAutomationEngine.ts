@@ -180,7 +180,7 @@ function getActionableComplianceSummary(ruknId?: string): ActionableComplianceSu
 export function buildCampaignHeroData(): CampaignHeroData | null {
   const campaign = getActiveCampaign()
   const timeline = getCampaignTimeline()
-  if (!campaign || !timeline) {
+  if (!campaign || !timeline || timeline.status !== 'active') {
     return null
   }
 

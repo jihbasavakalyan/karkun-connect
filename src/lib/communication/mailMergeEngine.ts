@@ -13,7 +13,7 @@ import { buildCampaignExecutionSummary } from '@/lib/campaignExecutionMatrix'
 import { buildIndividualCommunicationContext } from '@/lib/communicationContext'
 import { MAIL_MERGE_FALLBACK } from '@/lib/communication/mailMergeVariables'
 import { getKarkunGuidance } from '@/lib/guidance/guidanceEngine'
-import { getActiveCampaignName } from '@/services/campaignService'
+import { getActiveCampaignName, isCampaignPeriodActive } from '@/services/campaignService'
 import { getNextFollowUpForKarkun, getPendingFollowUps } from '@/services/followUpService'
 import { getConnectionStatusLabel } from '@/lib/connectionLabels'
 import type { MessageRecipient } from '@/types/communication'
@@ -93,7 +93,9 @@ export function buildMailMergeVariablesForRecipient(
 ): Record<string, string> {
   const vars: Record<string, string> = {}
   const today = todayLabel()
-  const campaign = orFallback(getActiveCampaignName() || undefined)
+  const campaign = isCampaignPeriodActive()
+    ? orFallback(getActiveCampaignName() || undefined)
+    : MAIL_MERGE_FALLBACK
   setAliases(vars, 'TodaysDate', today)
   setAliases(vars, 'CampaignName', campaign)
   setAliases(vars, 'campaign', campaign)

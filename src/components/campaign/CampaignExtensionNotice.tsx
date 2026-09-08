@@ -6,11 +6,11 @@ import {
   CAMPAIGN_EXTENSION_ANNOUNCEMENT_TITLE_UR,
   isCampaignEndExtended,
 } from '@/constants/campaignIdentity'
-import { getActiveCampaign } from '@/services/campaignService'
+import { getActiveCampaign, isCampaignPeriodActive } from '@/services/campaignService'
 
 export function CampaignExtensionNotice() {
   const campaign = getActiveCampaign()
-  if (!campaign || !isCampaignEndExtended(campaign.endDate)) {
+  if (!isCampaignPeriodActive() || !campaign || !isCampaignEndExtended(campaign.endDate)) {
     return null
   }
 

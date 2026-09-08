@@ -18,13 +18,18 @@ import {
   type AdapterTodaysProgramme,
   type CampaignAdapter,
 } from '@/conversation/adapters'
+import { getCampaignPeriodStatus } from '@/services/campaignService'
 import type { CampaignListItem } from '@/constants/mockMissions'
 import type { CampaignRepository } from '@/repositories/interfaces'
 import { resolveAdapterAvailability } from './adapterResult'
 
-function mapCampaignStatus(status: CampaignListItem['status']): AdapterCampaignStatus {
-  if (status === 'active') return 'active'
-  if (status === 'archived') return 'completed'
+function mapPeriodToAdapterStatus(
+  campaign: CampaignListItem,
+): AdapterCampaignStatus {
+  const period = getCampaignPeriodStatus(campaign)
+  if (period === 'active') return 'active'
+  if (period === 'completed') return 'completed'
+  if (period === 'upcoming') return 'inactive'
   return 'unknown'
 }
 
@@ -33,7 +38,7 @@ function toCampaignContext(campaign: CampaignListItem): AdapterCampaignContext {
     campaignId: campaign.id,
     campaignName: campaign.name,
     campaignDayLabel: campaign.nextMilestone,
-    status: mapCampaignStatus(campaign.status),
+    status: mapPeriodToAdapterStatus(campaign),
   }
 }
 
@@ -65,7 +70,7 @@ export class CampaignRepositoryAdapter
     if (!result.ok) {
       return mapRepositoryFailureResult(this.adapterId, result.error.code, result.error.message)
     }
-    if (!result.data) {
+    if (!result.data || getCampaignPeriodStatus(result.data) !== 'active') {
       return adapterErr('RecordNotFound', 'No active campaign found.', this.adapterId, availability)
     }
     return adapterOk(toCampaignContext(result.data), availability)
@@ -83,7 +88,7 @@ export class CampaignRepositoryAdapter
     if (!result.data) {
       return adapterOk('unknown' as AdapterCampaignStatus, availability)
     }
-    return adapterOk(mapCampaignStatus(result.data.status), availability)
+    return adapterOk(mapPeriodToAdapterStatus(result.data), availability)
   }
 
   readTodaysProgramme(): AdapterResult<AdapterTodaysProgramme> {
@@ -95,7 +100,7 @@ export class CampaignRepositoryAdapter
     if (!result.ok) {
       return mapRepositoryFailureResult(this.adapterId, result.error.code, result.error.message)
     }
-    if (!result.data) {
+    if (!result.data || getCampaignPeriodStatus(result.data) !== 'active') {
       return adapterOk(
         { focusItems: [], deferredItems: [] } satisfies AdapterTodaysProgramme,
         availability,
@@ -133,7 +138,7 @@ export class CampaignRepositoryAdapter
       {
         campaignId: campaign.id,
         campaignName: campaign.name,
-        status: mapCampaignStatus(campaign.status),
+        status: mapPeriodToAdapterStatus(campaign),
         dayLabel: campaign.nextMilestone,
       } satisfies AdapterCampaignSummary,
       availability,

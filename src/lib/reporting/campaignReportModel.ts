@@ -14,6 +14,7 @@ import {
 import {
   formatCampaignDate,
   getActiveCampaign,
+  getCampaignPeriodStatus,
   getCampaignTimeline,
 } from '@/services/campaignService'
 import {
@@ -768,8 +769,8 @@ export function buildCampaignReportModel(input?: {
       ? `دن ${timeline.currentDay} از ${timeline.totalDays}`
       : timeline?.dayLabel || URDU_REPORT.status.notSet
 
-  const campaignStatus = campaign?.status
-    ? campaign.status === 'active'
+  const campaignStatus = campaign
+    ? getCampaignPeriodStatus(campaign, now) === 'active'
       ? URDU_REPORT.status.active
       : URDU_REPORT.status.archived
     : URDU_REPORT.status.none

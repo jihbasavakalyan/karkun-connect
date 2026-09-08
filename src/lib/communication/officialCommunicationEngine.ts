@@ -23,7 +23,7 @@ import { buildMailMergeVariablesForRecipient } from '@/lib/communication/mailMer
 import { buildOfficialCampaignSummary } from '@/lib/ruknWorkspacePresentation'
 import { getConnectedKarkunsForRukn } from '@/lib/connections/getConnectedKarkunsForRukn'
 import { composeWhatsAppMessage, getTemplate, listTemplates } from '@/services/templateService'
-import { getActiveCampaignName } from '@/services/campaignService'
+import { getActiveCampaignName, isCampaignPeriodActive } from '@/services/campaignService'
 import type { MessageRecipient, MessageTemplate } from '@/types/communication'
 
 function setAliases(vars: Record<string, string>, key: string, value: string): void {
@@ -140,7 +140,7 @@ export function buildOfficialCommunicationVariables(
     setAliases(vars, 'LastCommunication', '-')
   }
 
-  if (!vars.CampaignName || vars.CampaignName === '-') {
+  if (isCampaignPeriodActive() && (!vars.CampaignName || vars.CampaignName === '-')) {
     setAliases(vars, 'CampaignName', getActiveCampaignName() || '-')
   }
 

@@ -10,7 +10,7 @@ import {
   CAMPAIGN_ORIGINAL_END_DATE,
   isCampaignEndExtended,
 } from '../src/constants/campaignIdentity'
-import { getCampaignTimeline, formatActiveCampaignDuration } from '../src/services/campaignService'
+import { getCampaignTimeline, formatActiveCampaignDuration, isCampaignPeriodActive } from '../src/services/campaignService'
 
 type CaseResult = { name: string; passed: boolean; detail: string }
 
@@ -46,6 +46,7 @@ function testTimelineRecalc(): void {
   const mid = getCampaignTimeline(new Date('2026-08-05T12:00:00'))
   assert(mid !== null, 'timeline')
   assert(mid!.status === 'active', 'still active on 5 Aug')
+  assert(isCampaignPeriodActive(new Date('2026-08-05T12:00:00')), 'current-period gate true on 5 Aug')
   assert(mid!.daysRemaining === 4, `days remaining expected 4 got ${mid!.daysRemaining}`)
   assert(mid!.totalDays === 23, `total days 18 Jul–9 Aug inclusive = 23 got ${mid!.totalDays}`)
 
@@ -56,6 +57,7 @@ function testTimelineRecalc(): void {
   // After new end.
   const afterNew = getCampaignTimeline(new Date('2026-08-10T12:00:00'))
   assert(afterNew!.status === 'completed', 'completed after 9 Aug')
+  assert(!isCampaignPeriodActive(new Date('2026-08-10T12:00:00')), 'current-period gate false after 9 Aug')
 }
 
 function testDurationLabel(): void {

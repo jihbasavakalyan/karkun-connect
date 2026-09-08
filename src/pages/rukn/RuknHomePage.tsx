@@ -27,7 +27,7 @@ import { useRepositoryHydration } from '@/hooks/useRepositoryHydration'
 import { buildRuknMissionControl } from '@/lib/missionControl/buildRuknMissionControl'
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { getRuknById } from '@/data/ruknMaster'
-import { getActiveCampaignName } from '@/services/campaignService'
+import { getActiveCampaignName, isCampaignPeriodActive } from '@/services/campaignService'
 import { buildTelLink, buildWhatsAppLink } from '@/utils/personContactLinks'
 import { sortGuidanceByUrgency } from '@/lib/homePresentation'
 import { getGuidanceForRuknKarkuns } from '@/lib/guidance/guidanceEngine'
@@ -96,7 +96,10 @@ export function RuknHomePage() {
 
   const postCampaign = isRuknPostCampaignMode()
   const ruknName = getRuknById(ruknId)?.name ?? ''
-  const campaignName = snapshot.hero?.name || getActiveCampaignName() || model.missionTitle
+  const campaignPeriodActive = isCampaignPeriodActive()
+  const campaignName = campaignPeriodActive
+    ? snapshot.hero?.name || getActiveCampaignName() || model.missionTitle
+    : undefined
 
   return (
     <div className="cd-page cd-page-rukn mc-page mc-page-rukn-compact mc-page-execution mc-page-onescreen">
@@ -117,7 +120,7 @@ export function RuknHomePage() {
             <>
               <TarbiyatiIjtemaRuknHero />
               <WeeklyIjtemaAttendanceOpenCard ruknId={ruknId} />
-              <CampaignExecutionProgressCard ruknId={ruknId} />
+              {campaignPeriodActive ? <CampaignExecutionProgressCard ruknId={ruknId} /> : null}
               {!postCampaign ? <RuknExecutionSummaryCards ruknId={ruknId} /> : null}
             </>
           ) : (

@@ -253,6 +253,20 @@ export function buildOrganisationalSituation(year: MeqatiYear): OrganisationalSi
   const app = getDashboardAppRegistrationMetrics()
   const baitul = getMonthlyBaitulMaalDashboardKpi()
 
+  const timeline = getCampaignTimeline()
+  const campaign = getActiveCampaign()
+  const activeCampaign =
+    timeline?.status === 'active' && campaign
+      ? {
+          id: campaign.id,
+          name: campaign.name,
+          periodLabel: formatActiveCampaignDuration(),
+          progressPct: getCampaignProgress(),
+          focusedLabels: resolveCampaignFocusLabels(campaign.objectiveIds, campaign.activityIds, objectives, programmes),
+          route: ROUTES.ADMIN_CAMPAIGN,
+        }
+      : null
+
   const importantActivities: ImportantActivitySnapshot[] = [
     {
       id: 'weekly-ijtema',
@@ -275,22 +289,6 @@ export function buildOrganisationalSituation(year: MeqatiYear): OrganisationalSi
       hasMetric: Boolean(baitul.cycleId),
     },
     {
-      id: 'jih-app',
-      label: 'JIH App رجسٹریشن',
-      value: app.eligible > 0 ? `${app.pct}%` : '—',
-      hint: app.eligible > 0 ? `${app.registered} / ${app.eligible}` : 'اہل کارکنان دستیاب نہیں',
-      route: adminCompliancePath('jih-portal'),
-      hasMetric: app.eligible > 0,
-    },
-    {
-      id: 'visits',
-      label: 'کارکن ملاقاتیں',
-      value: visits.planned > 0 ? `${visits.pct}%` : '—',
-      hint: visits.planned > 0 ? `${visits.completed} / ${visits.planned}` : 'کوئی منصوبہ شدہ ملاقات نہیں',
-      route: adminAssignmentsPath(),
-      hasMetric: visits.planned > 0,
-    },
-    {
       id: 'tarbiyah',
       label: 'تربیت و رہنمائی',
       value: 'تفصیل',
@@ -300,19 +298,28 @@ export function buildOrganisationalSituation(year: MeqatiYear): OrganisationalSi
     },
   ]
 
-  const timeline = getCampaignTimeline()
-  const campaign = getActiveCampaign()
-  const activeCampaign =
-    timeline?.status === 'active' && campaign
-      ? {
-          id: campaign.id,
-          name: campaign.name,
-          periodLabel: formatActiveCampaignDuration(),
-          progressPct: getCampaignProgress(),
-          focusedLabels: resolveCampaignFocusLabels(campaign.objectiveIds, campaign.activityIds, objectives, programmes),
-          route: ROUTES.ADMIN_CAMPAIGN,
-        }
-      : null
+  if (timeline?.status === 'active') {
+    importantActivities.splice(
+      2,
+      0,
+      {
+        id: 'jih-app',
+        label: 'JIH App رجسٹریشن',
+        value: app.eligible > 0 ? `${app.pct}%` : '—',
+        hint: app.eligible > 0 ? `${app.registered} / ${app.eligible}` : 'اہل کارکنان دستیاب نہیں',
+        route: adminCompliancePath('jih-portal'),
+        hasMetric: app.eligible > 0,
+      },
+      {
+        id: 'visits',
+        label: 'کارکن ملاقاتیں',
+        value: visits.planned > 0 ? `${visits.pct}%` : '—',
+        hint: visits.planned > 0 ? `${visits.completed} / ${visits.planned}` : 'کوئی منصوبہ شدہ ملاقات نہیں',
+        route: adminAssignmentsPath(),
+        hasMetric: visits.planned > 0,
+      },
+    )
+  }
 
   return {
     generatedAt: new Date().toISOString(),

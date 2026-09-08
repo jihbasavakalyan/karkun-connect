@@ -55,9 +55,14 @@ export function RuknLayout() {
   const connectionScoped = isRuknCampaignConnectionPath(pathname)
   const homePath = (pathname.replace(/\/+$/, '') || '/') === ROUTES.RUKN
   const blockConnectionOutlet = connectionScoped && !homePath && !isHydrated && !hydration.failed
-  const campaignName = isHydrated ? getActiveCampaignName() : 'Loading campaign…'
-  const duration = isHydrated ? formatActiveCampaignDuration() : ''
   const timeline = isHydrated ? getCampaignTimeline() : null
+  const campaignPeriodActive = timeline?.status === 'active'
+  const campaignName = !isHydrated
+    ? '…'
+    : campaignPeriodActive
+      ? getActiveCampaignName()
+      : 'کارکن کنیکٹ'
+  const duration = isHydrated && campaignPeriodActive ? formatActiveCampaignDuration() : ''
   useKeyboardInset()
 
   // KC-0100 — trace Auth → counts whenever hydrate or assignments change.
@@ -81,11 +86,9 @@ export function RuknLayout() {
           <div className="mx-auto max-w-5xl">
             <div className="mt-1.5 flex flex-wrap items-center gap-2">
               <p className="text-sm font-semibold">{campaignName}</p>
-              {timeline && (
-                <EnterpriseBadge variant={timeline.status === 'active' ? 'success' : 'info'}>
-                  {timeline.dayLabel}
-                </EnterpriseBadge>
-              )}
+              {campaignPeriodActive && timeline ? (
+                <EnterpriseBadge variant="success">{timeline.dayLabel}</EnterpriseBadge>
+              ) : null}
               {duration ? <p className="text-xs text-white/80">{duration}</p> : null}
             </div>
           </div>

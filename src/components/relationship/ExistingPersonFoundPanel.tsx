@@ -5,6 +5,7 @@
 import { Link } from 'react-router-dom'
 import { ROUTES } from '@/constants/routes'
 import type { MobileDuplicateDetails } from '@/services/karkunRequestService'
+import { isCampaignPeriodActive } from '@/services/campaignService'
 
 type ExistingPersonFoundPanelProps = {
   duplicate: MobileDuplicateDetails
@@ -61,10 +62,12 @@ export function ExistingPersonFoundPanel({
         <span className="font-medium">Connected Since: </span>
         {duplicate.connectedSince || '—'}
       </p>
-      <p>
-        <span className="font-medium">Campaign Status: </span>
-        {duplicate.campaignStatus || '—'}
-      </p>
+      {isCampaignPeriodActive() ? (
+        <p>
+          <span className="font-medium">Campaign Status: </span>
+          {duplicate.campaignStatus || '—'}
+        </p>
+      ) : null}
       <p>
         <span className="font-medium">Ward: </span>
         {duplicate.ward || '—'}

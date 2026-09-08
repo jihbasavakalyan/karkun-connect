@@ -9,7 +9,7 @@ import { matchesKarkunRegistrySearch } from '@/lib/peopleSearch'
 import { mobilesMatch, normalizeMobile } from '@/lib/mobileValidation'
 import { adminPersonProfilePath } from '@/lib/personProfile/ProfilePresenter'
 import { adminRuknDetailPath, adminAssignmentsPath } from '@/constants/routes'
-import { getCampaignLibrary } from '@/services/campaignService'
+import { getCampaignLibrary, getCampaignPeriodStatus } from '@/services/campaignService'
 import {
   getActiveAssignmentsForKarkun,
   getAllAssignments,
@@ -275,7 +275,7 @@ function searchCampaigns(
       id: `campaign:${campaign.id}`,
       entityType: 'campaign',
       name: campaign.name,
-      description: `${campaign.status === 'active' ? 'فعال مہم' : 'آرکائیو مہم'} · ${campaign.theme}`,
+      description: `${getCampaignPeriodStatus(campaign) === 'active' ? 'فعال مہم' : 'آرکائیو مہم'} · ${campaign.theme}`,
       route: nav.route,
       score: ranked.score,
       tier: ranked.tier,
