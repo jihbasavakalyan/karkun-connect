@@ -6,7 +6,7 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { buildShobahOverviewItems } from '../src/pages/admin/meqati/meqatiPlanningPresentation'
+import { buildShobahOverviewItems, CompactActivityList } from '../src/pages/admin/meqati/meqatiPlanningPresentation'
 import { MeqatiPlanningWorkspace } from '../src/pages/admin/meqati/MeqatiPlanningWorkspace'
 import type { LocalProgramme } from '../src/types/localProgramme.types'
 import type { MeqatiMansooba, PlanningObjective, Shobah } from '../src/types/planning.types'
@@ -40,7 +40,12 @@ const presentation = readFileSync(
 )
 assert.match(presentation, /row.summary\?\.trim\(\)/)
 assert.match(presentation, /خلاصہ: \{meta.summary\}/)
+assert.match(presentation, /نظام الاوقات/)
+assert.match(presentation, /عمل درآمد/)
+assert.match(presentation, /resolveActivityYearStatus/)
+assert.match(presentation, /formatActivityYearStatusLabel/)
 assert.doesNotMatch(presentation, /remarks\?:/)
+assert.doesNotMatch(presentation, />Schedule</)
 
 const manifest = JSON.parse(
   readFileSync('docs/meqati-population-manifest-dry-run.json', 'utf8'),
@@ -208,6 +213,52 @@ const unmapped = render({ level: 'unmapped', shobahId: 'H01' })
 assert.match(unmapped, /بغیر ہدف/)
 assert.match(unmapped, /قرآن پر وچن/)
 assert.match(unmapped, /غیر متعین/)
+assert.match(unmapped, /نظام الاوقات/)
+assert.match(unmapped, /عمل درآمد/)
+assert.match(unmapped, /حالت/)
+assert.match(unmapped, /مسودہ/)
+assert.doesNotMatch(unmapped, />Schedule</)
+
+{
+  const stamp = {
+    createdAt: '',
+    updatedAt: '',
+    createdBy: '',
+    updatedBy: '',
+  }
+  const base: LocalProgramme = {
+    id: 'H01-A01',
+    mansoobaId: 'MEQATI-2023-27',
+    shobahId: 'H01',
+    objectiveId: 'H01-O01',
+    name: 'درس قرآن',
+    kind: 'other',
+    status: 'draft',
+    ...stamp,
+  }
+  const withYear: LocalProgramme = {
+    ...base,
+    id: 'H01-A02',
+    name: 'جاری سرگرمی',
+    yearStatuses: { '2026-27': 'in_progress' },
+  }
+  const html = renderToStaticMarkup(
+    createElement(CompactActivityList, {
+      rows: [base, withYear],
+      ruknNameById: new Map(),
+      onOpen: () => undefined,
+      yearKey: '2026-27',
+    }),
+  )
+  assert.match(html, /نظام الاوقات/)
+  assert.match(html, /عمل درآمد/)
+  assert.match(html, /حالت/)
+  assert.match(html, /مسودہ/)
+  assert.match(html, /جاری/)
+  assert.match(html, /غیر متعین/)
+  assert.doesNotMatch(html, />Schedule</)
+  assert.doesNotMatch(html, /saveDurable/)
+}
 
 console.log('verify-meqati-workspace-nav: ok', {
   heads: 9,

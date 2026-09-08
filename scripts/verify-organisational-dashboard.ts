@@ -26,6 +26,7 @@ import {
 } from '../src/lib/planning/canonicalMeqatiMansooba'
 import { countOfficerPeopleByKind } from '../src/lib/aRuknRegistry'
 import {
+  formatActivityYearStatusLabel,
   normalizeActivityYearStatuses,
   resolveActivityYearStatus,
 } from '../src/lib/planning/activityYearStatus'
@@ -77,6 +78,10 @@ assert.equal(
   resolveActivityYearStatus({ '2026-27': 'remaining' }, '2026-27'),
   'remaining',
 )
+assert.equal(formatActivityYearStatusLabel(null), 'غیر متعین')
+assert.equal(formatActivityYearStatusLabel('completed'), 'مکمل')
+assert.equal(formatActivityYearStatusLabel('in_progress'), 'جاری')
+assert.equal(formatActivityYearStatusLabel('remaining'), 'باقی')
 
 const isolated = normalizeActivityYearStatuses({
   '2024-25': 'completed',
@@ -275,6 +280,7 @@ const home = readFileSync(resolve('src/pages/admin/AdminHomePage.tsx'), 'utf8')
 assert.match(home, /orgdash-page/)
 assert.match(home, /AskDigitalRafeeqCard/)
 assert.doesNotMatch(home, /Today's Mission/)
+assert.doesNotMatch(home, /CompactActivityList/)
 
 const stack = readFileSync(
   resolve('src/components/dashboard/OrganisationalDashboardStack.tsx'),
@@ -295,6 +301,8 @@ assert.doesNotMatch(stack, /Open work/)
 assert.doesNotMatch(stack, /Open occurrences/)
 assert.match(stack, /مسودہ/)
 assert.match(stack, /progressDisplay/)
+assert.match(stack, /yearStatusLabel/)
+assert.match(stack, /completed: 'مکمل'/)
 assert.match(stack, /خلاصہ:/)
 assert.match(stack, /activity\.summary \? /)
 
