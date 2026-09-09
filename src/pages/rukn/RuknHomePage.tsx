@@ -7,6 +7,7 @@ import { ExecutionSuccessBanner } from '@/components/execution/ExecutionSuccessB
 import { WeeklyIjtemaAttendanceOpenCard } from '@/components/execution/WeeklyIjtemaAttendanceOpenCard'
 import { RuknHomeKarkunActions } from '@/components/rukn/RuknHomeKarkunActions'
 import { RuknHomeBaitulMaalCard } from '@/components/rukn/RuknHomeBaitulMaalCard'
+import { RuknHomeMeqatiMansooba } from '@/components/rukn/RuknHomeMeqatiMansooba'
 import { RuknHomeOrganisationalInformation } from '@/components/rukn/RuknHomeOrganisationalInformation'
 import { useRequiredRuknId } from '@/hooks/useRequiredRuknId'
 import { useGuidance } from '@/hooks/useGuidance'
@@ -21,7 +22,8 @@ import { CardSkeleton } from '@/components/ui'
 
 /**
  * Increment 03 — approved Home sequence:
- * header (shell) → Tarbiyati Ijtema → Organisational Information → Karkun → Weekly Ijtema → Baitul Maal
+ * header (shell) → greeting → Tarbiyati Ijtema → Organisational Information →
+ * Meeqati Mansooba → Karkun → Weekly Ijtema → Baitul Maal
  */
 export function RuknHomePage() {
   const ruknId = useRequiredRuknId()
@@ -72,8 +74,11 @@ export function RuknHomePage() {
           <RuknHomeOrganisationalInformation
             ruknId={ruknId}
             peopleReady={isHydrated}
-            programmesReady={backgroundReady}
           />
+        </WidgetErrorBoundary>
+
+        <WidgetErrorBoundary title="Meeqati Mansooba">
+          <RuknHomeMeqatiMansooba ruknId={ruknId} programmesReady={backgroundReady} />
         </WidgetErrorBoundary>
 
         <WidgetErrorBoundary title="Karkun">
