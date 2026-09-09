@@ -86,6 +86,11 @@ export type SubmitNewKarkunRequestInput = {
   kind?: PeopleRequestKind
   fatherHusbandName?: string
   address?: string
+  /**
+   * Selected referring Rukn id. When omitted, the requesting Rukn is used.
+   * When provided (including ''), canonical intake validation applies.
+   */
+  referredByRuknId?: string
 }
 
 /**
@@ -281,8 +286,10 @@ export async function submitNewKarkunRequest(
 
   const requestKind = (input.kind ?? 'new_karkun') as PeopleRequestKind
   if (requestKind === 'new_karkun' || requestKind === 'new_muttafiq') {
+    const referredByRuknId =
+      input.referredByRuknId !== undefined ? input.referredByRuknId.trim() : rukn.id
     const intake = validateNewPersonIntake({
-      referredByRuknId: rukn.id,
+      referredByRuknId,
       fatherHusbandName: input.fatherHusbandName,
       address: input.address,
       gender,

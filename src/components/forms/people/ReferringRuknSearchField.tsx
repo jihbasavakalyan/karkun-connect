@@ -152,8 +152,10 @@ export function ReferringRuknSearchField({
                       ? 'bg-surface-muted font-medium text-primary'
                       : 'text-text-heading'
                   }`}
-                  onMouseDown={(event) => event.preventDefault()}
-                  onClick={() => handleSelect(rukn.id)}
+                  onMouseDown={(event) => {
+                    event.preventDefault()
+                    handleSelect(rukn.id)
+                  }}
                 >
                   <span className="block">{formatReferringRuknSummary(rukn)}</span>
                   {rukn.mobile ? (
@@ -181,7 +183,7 @@ export function ReferringRuknSearchField({
       <input
         ref={inputRef}
         id={id}
-        type="search"
+        type="text"
         autoComplete="off"
         role="combobox"
         aria-expanded={isOpen}
@@ -199,7 +201,13 @@ export function ReferringRuknSearchField({
         onChange={(event) => {
           setIsOpen(true)
           setQuery(event.target.value)
-          if (value) onChange('')
+        }}
+        onKeyDown={(event) => {
+          if (event.key !== 'Enter' || disabled) return
+          const first = filteredOptions[0]
+          if (!first) return
+          event.preventDefault()
+          handleSelect(first.id)
         }}
       />
       <input id={`${id}-value`} type="hidden" value={value} required={required} readOnly />

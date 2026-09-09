@@ -91,6 +91,20 @@ console.log('verify-referred-by-rukn: start')
   )
   assert(form.includes('ReferringRuknSearchField'), 'admin add uses searchable referring Rukn field')
   assert(!form.includes('Referred By Rukn (optional)'), 'admin karkun add referral is required')
+  assert(
+    !form.includes("setReferredByRuknId('')") || form.includes('selected.gender !== nextGender'),
+    'gender change does not blindly wipe a valid referral',
+  )
+
+  const searchField = read('src/components/forms/people/ReferringRuknSearchField.tsx')
+  assert(searchField.includes('handleSelect(rukn.id)'), 'search selection writes Rukn id')
+  assert(!searchField.includes("if (value) onChange('')"), 'typing/search must not clear the committed id')
+  assert(searchField.includes("type=\"text\""), 'avoids type=search clearing the committed id')
+
+  const ruknAdd = read('src/components/relationship/NewKarkunRequestModal.tsx')
+  assert(ruknAdd.includes('ReferringRuknSearchField'), 'Rukn Add Karkun uses searchable referring Rukn field')
+  assert(ruknAdd.includes('referredByRuknId'), 'Rukn Add submits selected referral')
+  assert(ruknAdd.includes("useState(ruknId)"), 'Rukn Add starts with the current Rukn selected')
 
   const ruknPage = read('src/pages/admin/RuknModulePage.tsx')
   assert(ruknPage.includes('Referred By Rukn is required'), 'admin add rukn requires referral')
@@ -410,6 +424,40 @@ const otherRukn = activeMaleRukns[1]!
   )
 
   console.log('  OK  Increment C rukn referral + B compatibility')
+}
+
+{
+  const selected = await submitNewKarkunRequest({
+    requestingRuknId: referring.id,
+    fullName: 'Rukn Add Selected Referral',
+    gender: 'Male',
+    mobile: '9111000301',
+    createdBy: referring.name,
+    fatherHusbandName: 'Selected Father',
+    address: 'Selected Address',
+    referredByRuknId: referring.id,
+  })
+  assert(selected.ok, `selected referral submit: ${!selected.ok ? selected.error : ''}`)
+  if (!selected.ok) throw new Error(selected.error)
+  assert(selected.request.requestingRuknId === referring.id, 'selected referral reaches request payload')
+
+  const missing = await submitNewKarkunRequest({
+    requestingRuknId: referring.id,
+    fullName: 'Rukn Add Missing Referral',
+    gender: 'Male',
+    mobile: '9111000302',
+    createdBy: referring.name,
+    fatherHusbandName: 'Missing Father',
+    address: 'Missing Address',
+    referredByRuknId: '',
+  })
+  assert(!missing.ok, 'empty selected referral is rejected')
+  assert(
+    !missing.ok && missing.error === 'Referred By Rukn is required.',
+    'empty selected referral uses required copy',
+  )
+
+  console.log('  OK  Rukn Add selected referral accepted; empty referral rejected')
 }
 
 console.log('verify-referred-by-rukn: PASS')

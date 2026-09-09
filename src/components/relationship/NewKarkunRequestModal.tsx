@@ -2,13 +2,15 @@
  * Rukn form to submit a discovered worker for Admin approval (KC-018 / KC-0068).
  */
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Modal, ModalFormFooter } from '@/components/common'
+import { ReferringRuknSearchField } from '@/components/forms/people/ReferringRuknSearchField'
 import { ExistingPersonFoundPanel } from '@/components/relationship/ExistingPersonFoundPanel'
 import { FORM_INPUT_CLASS, FORM_LABEL_CLASS } from '@/components/ui/formStyles'
 import { getRuknById } from '@/data/ruknMaster'
 import { useWriteLifecycle } from '@/hooks/useWriteLifecycle'
-import { normalizePersonGender } from '@/lib/peopleStore'
+import { getAllRukns, normalizePersonGender } from '@/lib/peopleStore'
+import { listEligibleReferringRukns } from '@/lib/referringRukn'
 import { submitNewKarkunRequest, type MobileDuplicateDetails } from '@/services/karkunRequestService'
 import { getFatherHusbandLabel, type PersonGender } from '@/types/people.types'
 
@@ -25,11 +27,13 @@ export function NewKarkunRequestModal({
   onClose,
   onSubmitted,
 }: NewKarkunRequestModalProps) {
-  const ruknGender = normalizePersonGender(getRuknById(ruknId)?.gender) ?? 'Male'
+  const rukn = getRuknById(ruknId)
+  const ruknGender = normalizePersonGender(rukn?.gender) ?? 'Male'
   const [fullName, setFullName] = useState('')
   const [mobile, setMobile] = useState('')
   const [genderOverride, setGenderOverride] = useState<PersonGender | null>(null)
   const gender = genderOverride ?? ruknGender
+  const [referredByRuknId, setReferredByRuknId] = useState(ruknId)
   const [area, setArea] = useState('')
   const [fatherHusbandName, setFatherHusbandName] = useState('')
   const [address, setAddress] = useState('')
@@ -44,6 +48,7 @@ export function NewKarkunRequestModal({
     setFullName('')
     setMobile('')
     setGenderOverride(null)
+    setReferredByRuknId(ruknId)
     setArea('')
     setFatherHusbandName('')
     setAddress('')
@@ -53,6 +58,21 @@ export function NewKarkunRequestModal({
     setNameMatches([])
     setDuplicate(null)
   }
+
+  const referringRuknOptions = useMemo(() => {
+    return listEligibleReferringRukns(getAllRukns(), { gender })
+  }, [gender])
+  const selectedReferringFallback = rukn
+    ? {
+        id: rukn.id,
+        name: rukn.name,
+        mobile: rukn.mobile,
+        gender: rukn.gender,
+        officerKind: rukn.officerKind,
+        status: rukn.status,
+        isArchived: rukn.isArchived,
+      }
+    : undefined
 
   const handleClose = () => {
     reset()
@@ -74,6 +94,7 @@ export function NewKarkunRequestModal({
           address,
           remarks,
           requestingRuknId: ruknId,
+          referredByRuknId,
           acknowledgeNameWarning,
         })
 
@@ -117,9 +138,6 @@ export function NewKarkunRequestModal({
       }
     >
       <div className="space-y-4">
-        <p className="text-sm text-secondary">
-          You are recorded as the referring Rukn for this person.
-        </p>
         <p className="text-sm text-secondary">
           Submit a worker who is not yet in the registry. People (Admin) must approve before they
           are added and Connected.
@@ -195,12 +213,29 @@ export function NewKarkunRequestModal({
             id="new-karkun-gender"
             className={FORM_INPUT_CLASS}
             value={gender}
-            onChange={(event) => setGenderOverride(event.target.value as PersonGender)}
+            onChange={(event) => {
+              const nextGender = event.target.value as PersonGender
+              setGenderOverride(nextGender)
+              const selected = referringRuknOptions.find((row) => row.id === referredByRuknId)
+              if (selected?.gender && selected.gender !== nextGender) {
+                setReferredByRuknId('')
+              }
+            }}
           >
             <option value="Male">Male</option>
             <option value="Female">Female</option>
           </select>
         </div>
+
+        <ReferringRuknSearchField
+          id="new-karkun-referred-by-rukn"
+          label="Referred By Rukn"
+          value={referredByRuknId}
+          onChange={setReferredByRuknId}
+          options={referringRuknOptions}
+          selectedFallback={selectedReferringFallback}
+          required
+        />
 
         <div className="space-y-1.5">
           <label className={FORM_LABEL_CLASS} htmlFor="new-karkun-father-husband">

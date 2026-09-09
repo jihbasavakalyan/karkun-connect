@@ -186,9 +186,11 @@ function PersonFormModalContent({
                 id="person-gender"
                 value={gender}
                 onChange={(event) => {
-                  setGender(event.target.value as PersonGender)
-                  // Karkun referral options are gender-scoped; clear stale selection.
-                  if (kind === 'karkun') {
+                  const nextGender = event.target.value as PersonGender
+                  setGender(nextGender)
+                  if (kind !== 'karkun' || !referredByRuknId) return
+                  const selected = referringRuknOptions.find((rukn) => rukn.id === referredByRuknId)
+                  if (selected?.gender && selected.gender !== nextGender) {
                     setReferredByRuknId('')
                   }
                 }}
