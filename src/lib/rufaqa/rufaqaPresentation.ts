@@ -118,3 +118,12 @@ export function rufaqaDetailPathForPerson(person: ResolvedPerson): string {
   }
   return adminRuknDetailPath(person.personId)
 }
+
+export function rufaqaCategoryLabel(category: RufaqaCategory): string {
+  return RUFAQA_CATEGORIES.find((item) => item.id === category)?.label ?? RUFAQA_LABEL_EN
+}
+
+/** Back-link copy: رفقاء / Rufaqa → Category. Never “People”. */
+export function rufaqaBackLabel(category: RufaqaCategory): string {
+  return `${RUFAQA_LABEL_EN} → ${rufaqaCategoryLabel(category)}`
+}

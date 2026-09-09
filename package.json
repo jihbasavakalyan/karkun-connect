@@ -12,6 +12,7 @@
     "verify:routes": "npx vite-node scripts/verify-routes.ts",
     "verify:increment-01-shell": "npx vite-node scripts/verify-increment-01-shell.ts",
     "verify:increment-04-rufaqa": "npx vite-node scripts/verify-increment-04-rufaqa.ts",
+    "verify:increment-05-person-detail": "npx vite-node scripts/verify-increment-05-person-detail.ts",
     "verify:auth": "npx vite-node scripts/verify-auth-session.ts",
     "verify:assignments": "npx vite-node scripts/verify-inline-assignment.ts",
     "verify:kc002": "npx vite-node scripts/verify-kc002-assignment-allocation.ts",

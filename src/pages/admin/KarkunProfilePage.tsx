@@ -1,5 +1,5 @@
-import { useState, type FormEvent } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useState, type ReactNode } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { ROUTES } from '@/constants/routes'
 import { changeKarkunRuknAssignment } from '@/lib/assignmentEngine'
@@ -12,316 +12,233 @@ import {
   isSoftRemoved,
 } from '@/lib/peopleClassification'
 import { persistKarkunDurable, updateKarkun } from '@/lib/peopleStore'
-import { getMuttafiqConnectedRuknDisplayForPerson, getActiveMuttafiqRelationshipsForPerson } from '@/stores/muttafiqRelationshipStore'
+import {
+  getMuttafiqConnectedRuknDisplayForPerson,
+  getActiveMuttafiqRelationshipsForPerson,
+} from '@/stores/muttafiqRelationshipStore'
 import { useMuttafiqRelationshipStore } from '@/hooks/useMuttafiqRelationshipStore'
 import { getRuknById } from '@/data/ruknMaster'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { usePeopleStore } from '@/hooks/usePeopleStore'
-import { updateMonthlyBaitulMaalContribution } from '@/lib/operations/monthlyBaitulMaalWriteAdapter'
-import { getMonthlyBaitulMaalComplianceStatusView } from '@/lib/operations/monthlyBaitulMaalReadAdapter'
-import { getWeeklyIjtemaCurrentAttendanceView } from '@/lib/operations/weeklyIjtemaReadAdapter'
-import { markWeeklyIjtemaAttendance } from '@/lib/operations/weeklyIjtemaWriteAdapter'
-import {
-  getCurrentMonthReportingStatus,
-  getRegistrationForKarkun,
-  updateJihMonthlyReport,
-  updateJihRegistration,
-} from '@/services/jihWebPortalService'
-import { InputField } from '@/components/forms/InputField'
-import { PersonContactActions } from '@/components/forms/people/PersonContactActions'
+import { useRepositoryHydrationStatus } from '@/hooks/useRepositoryHydration'
 import { CommunicationActions } from '@/components/communication/CommunicationActions'
 import { useCommunication } from '@/hooks/useCommunication'
-import { RuknAssignmentSelect } from '@/components/forms/people/RuknAssignmentSelect'
 import { RegistryMaintenancePanel } from '@/components/admin/RegistryMaintenancePanel'
 import { PromoteToARuknAction } from '@/components/admin/PromoteToARuknAction'
-import { PrimaryButton } from '@/components/ui/PrimaryButton'
-import { SecondaryButton } from '@/components/ui/SecondaryButton'
-import { EmptyState, PageShell } from '@/components/ui'
-import { StatusBadge } from '@/components/ui/StatusBadge'
+import { PersonIdentityChrome } from '@/components/personDetail/PersonIdentityChrome'
+import { PersonOrganisationalReporting } from '@/components/personDetail/PersonOrganisationalReporting'
 import { Person360Overview } from '@/components/personProfile/Person360Overview'
+import { ConfirmDialog, PersonFormModal } from '@/components/forms/people'
+import type { PersonFormValues } from '@/components/forms/people'
 import { MuttafiqRuknConnectionRow } from '@/components/relationship/MuttafiqRuknConnectionRow'
-import type { KarkunRegistryRecord, PersonGender, PersonStatus } from '@/types/karkun-registry.types'
-import type { IjtemaAttendanceStatus } from '@/types/ijtemaAttendance'
-import { DEFAULT_PLACE, getFatherHusbandLabel } from '@/types/people.types'
+import { ConnectRuknForMuttafiqModal } from '@/components/relationship'
+import { EmptyState, ListSkeleton, PageShell, PrimaryButton, SecondaryButton, StatusBadge } from '@/components/ui'
+import { formatPersonStatus, getFatherHusbandLabel } from '@/types/people.types'
 import { formatPersonNameForDisplay } from '@/utils/formatPersonDisplay'
-import { MOBILE_INPUT_PLACEHOLDER } from '@/utils/personContactLinks'
+import {
+  rufaqaCategoryLabel,
+  rufaqaCategoryPath,
+} from '@/lib/rufaqa/rufaqaPresentation'
+import type { MobileLookupResult } from '@/lib/peopleStore'
+import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
 
-const selectClassName =
-  'w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text-heading focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20'
-
-const compactInputClass = 'px-3 py-2 text-sm'
-
-type ComplianceToggleProps = {
-  id: string
-  label: string
-  checked: boolean
-  onChange: (checked: boolean) => void
-}
-
-function ComplianceToggle({ id, label, checked, onChange }: ComplianceToggleProps) {
-  return (
-    <label
-      htmlFor={id}
-      className="flex min-h-10 cursor-pointer items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2.5 hover:border-primary/40"
-    >
-      <input
-        id={id}
-        type="checkbox"
-        checked={checked}
-        onChange={(event) => onChange(event.target.checked)}
-        className="size-4 rounded border-border text-primary focus:ring-primary/20"
-      />
-      <span className="text-sm font-medium text-text-heading">{label}</span>
-    </label>
-  )
-}
-
-function todayDate(): string {
-  return new Date().toISOString().slice(0, 10)
-}
-
-function IjtemaStatusField({
-  value,
-  onChange,
-}: {
-  value: IjtemaAttendanceStatus | null
-  onChange: (status: IjtemaAttendanceStatus) => void
-}) {
-  const options: IjtemaAttendanceStatus[] = ['Present', 'Absent', 'Excused']
-
-  return (
-    <fieldset className="rounded-lg border border-border bg-surface px-3 py-3 sm:col-span-2">
-      <legend className="text-sm font-semibold text-text-heading">Weekly Ijtema</legend>
-      <div className="mt-2 flex flex-wrap gap-3">
-        {options.map((option) => (
-          <label
-            key={option}
-            className="flex min-h-10 cursor-pointer items-center gap-2 rounded-lg border border-transparent px-2 text-sm font-medium has-[:checked]:border-primary/30 has-[:checked]:bg-primary/5"
-          >
-            <input
-              type="radio"
-              name="ijtema-status"
-              checked={value === option}
-              onChange={() => onChange(option)}
-              className="size-4 border-border text-primary focus:ring-primary/20"
-            />
-            <span className="text-text-heading">{option}</span>
-          </label>
-        ))}
-      </div>
-    </fieldset>
-  )
-}
-
-function readComplianceState(karkunId: string) {
-  // KC-0110.4
-  // People reads Weekly Ijtema through the canonical adapter.
-  // Legacy write path retained until write migration.
-  const ijtema = getWeeklyIjtemaCurrentAttendanceView(karkunId)
-  const registration = getRegistrationForKarkun(karkunId)
-  const monthly = getCurrentMonthReportingStatus(karkunId)
-  // KC-0112.4
-  // People reads Monthly Baitul Maal through the canonical adapter.
-  // Legacy write path retained until write migration.
-  const baitulMaal = getMonthlyBaitulMaalComplianceStatusView(karkunId)
-
-  const ijtemaStatus: IjtemaAttendanceStatus | null =
-    ijtema.status === 'Not recorded' ? null : ijtema.status
-
-  return {
-    ijtemaStatus,
-    jihPortalRegistered: registration.status === 'Registered',
-    monthlyReportSubmitted: monthly.status === 'Submitted',
-    baitulMaalPaid: baitulMaal.status === 'Paid',
-  }
-}
-
-type KarkunProfileFormProps = {
-  karkun: KarkunRegistryRecord
-  karkunId: string
-}
-
-function KarkunProfileForm({ karkun, karkunId }: KarkunProfileFormProps) {
+export function KarkunProfilePage() {
+  const { karkunId } = useParams<{ karkunId: string }>()
   const navigate = useNavigate()
+  useAssignmentEngine()
+  usePeopleStore()
+  const hydration = useRepositoryHydrationStatus()
   const { sendIndividualMessage } = useCommunication()
   const muttafiqRelationshipVersion = useMuttafiqRelationshipStore()
-  const initialCompliance = readComplianceState(karkunId)
+  void muttafiqRelationshipVersion
+
+  const karkun = karkunId ? getKarkunById(karkunId) : undefined
+
+  const [isFormOpen, setIsFormOpen] = useState(false)
+  const [formError, setFormError] = useState('')
+  const [formLoading, setFormLoading] = useState(false)
+  const [saveNotice, setSaveNotice] = useState('')
+  const [pendingFormValues, setPendingFormValues] = useState<PersonFormValues | null>(null)
+  const [mobileOwner, setMobileOwner] = useState<MobileLookupResult | null>(null)
+  const [connectPerson, setConnectPerson] = useState<KarkunRegistryRecord | null>(null)
+
+  if (hydration.failed) {
+    return (
+      <PageShell variant="narrow">
+        <EmptyState
+          icon="warning"
+          title="Unable to load identity"
+          description={hydration.error ?? 'Organisational records could not be loaded.'}
+        >
+          <PrimaryButton type="button" className="mt-3" onClick={hydration.retry}>
+            Retry
+          </PrimaryButton>
+        </EmptyState>
+      </PageShell>
+    )
+  }
+
+  if (!hydration.ready) {
+    return (
+      <PageShell variant="narrow">
+        <ListSkeleton rows={5} />
+      </PageShell>
+    )
+  }
+
+  if (!karkun || !karkunId) {
+    return (
+      <PageShell variant="narrow">
+        <EmptyState
+          icon="search"
+          title="Person not found"
+          description="This identity record is not in Rufaqa."
+          primaryAction={{ label: rufaqaCategoryLabel('karkun'), href: rufaqaCategoryPath('karkun') }}
+          secondaryAction={{
+            label: rufaqaCategoryLabel('muttafiqeen'),
+            href: rufaqaCategoryPath('muttafiqeen'),
+          }}
+        />
+      </PageShell>
+    )
+  }
+
   const category = getPersonCategory(karkun)
   const softRemoved = isSoftRemoved(karkun)
   const removedLabel = getRemovedRegistryLabel(karkun)
   const isMuttafiq = isMuttafiqPerson(karkun)
-  const registryHome = isMuttafiq ? ROUTES.ADMIN_MUTTAFIQEEN : ROUTES.ADMIN_KARKUN
-  const backLabel = isMuttafiq ? '← Back to Muttafiqeen' : '← Back to Karkuns'
+  const rufaqaCategory = isMuttafiq ? 'muttafiqeen' : 'karkun'
+  const { view, row } = getMuttafiqConnectedRuknDisplayForPerson(karkunId)
 
-  const [name, setName] = useState(karkun.name)
-  const [gender, setGender] = useState<PersonGender>(karkun.gender)
-  const [mobile, setMobile] = useState(karkun.mobile)
-  const [whatsapp, setWhatsapp] = useState(karkun.whatsapp ?? '')
-  const [status, setStatus] = useState<PersonStatus>(karkun.status)
-  const [fatherHusbandName, setFatherHusbandName] = useState(karkun.fatherHusbandName ?? '')
-  const [address, setAddress] = useState(karkun.address ?? '')
-  const [education, setEducation] = useState(karkun.education ?? '')
-  const [profession, setProfession] = useState(karkun.profession ?? '')
-  const [assignedRuknId, setAssignedRuknId] = useState(karkun.assignedRuknId)
-  const [ijtemaStatus, setIjtemaStatus] = useState<IjtemaAttendanceStatus | null>(
-    initialCompliance.ijtemaStatus,
-  )
-  const [jihPortalRegistered, setJihPortalRegistered] = useState(
-    initialCompliance.jihPortalRegistered,
-  )
-  const [monthlyReportSubmitted, setMonthlyReportSubmitted] = useState(
-    initialCompliance.monthlyReportSubmitted,
-  )
-  const [baitulMaalPaid, setBaitulMaalPaid] = useState(initialCompliance.baitulMaalPaid)
-  const [error, setError] = useState('')
-
-  const handleJihPortalChange = (checked: boolean) => {
-    setJihPortalRegistered(checked)
-    if (!checked) {
-      setMonthlyReportSubmitted(false)
-    }
-  }
-
-  const handleMonthlyReportChange = (checked: boolean) => {
-    setMonthlyReportSubmitted(checked)
-    if (checked) {
-      setJihPortalRegistered(true)
-    }
-  }
-
-  const handleCancel = () => {
-    navigate(registryHome)
-  }
-
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    if (softRemoved) return
-    setError('')
-
-    const karkunResult = updateKarkun(karkunId, {
-      name,
-      gender,
-      mobile,
-      whatsapp: whatsapp || undefined,
-      place: DEFAULT_PLACE,
-      status,
-      fatherHusbandName: fatherHusbandName || undefined,
-      address: address || undefined,
-      education: education || undefined,
-      profession: profession || undefined,
-    })
-
-    if (!karkunResult.success) {
-      setError(karkunResult.error ?? `Unable to save ${isMuttafiq ? 'Muttafiq' : 'Karkun'} details.`)
+  const handleFormSubmit = (
+    values: PersonFormValues,
+    options?: { confirmMobileOverwrite?: boolean },
+  ) => {
+    setFormError('')
+    setSaveNotice('')
+    const { assignedRuknId, ...karkunPayload } = values
+    const result = updateKarkun(karkunId, karkunPayload, 'Administrator', options)
+    if (!result.success) {
+      if (result.needsMobileConfirm && result.existingOwner) {
+        setMobileOwner(result.existingOwner)
+        setPendingFormValues(values)
+        return
+      }
+      setFormError(result.error ?? `Unable to save ${isMuttafiq ? 'Muttafiq' : 'Karkun'} details.`)
       return
     }
 
+    setFormLoading(true)
     void (async () => {
-      // KC-0075 — success only after durable Firestore write (same as ProfileCompletionReminder).
       const durable = await persistKarkunDurable(karkunId)
       if (!durable.success) {
-        setError(
+        setFormLoading(false)
+        setFormError(
           durable.error ??
             `Unable to save ${isMuttafiq ? 'Muttafiq' : 'Karkun'} details. Please try again.`,
         )
         return
       }
 
-      if (!isMuttafiq) {
+      if (!isMuttafiq && assignedRuknId !== undefined) {
         const assignmentResult = await changeKarkunRuknAssignment(karkunId, assignedRuknId)
         if (!assignmentResult.success) {
-          setError(assignmentResult.error ?? 'Unable to update connection.')
+          setFormLoading(false)
+          setFormError(assignmentResult.error ?? 'Unable to update connection.')
           return
         }
       }
 
-      finishProfileSave(karkunId)
+      setFormLoading(false)
+      setIsFormOpen(false)
+      setPendingFormValues(null)
+      setMobileOwner(null)
+      setSaveNotice('Identity saved.')
     })()
   }
 
-  const finishProfileSave = (karkunId: string) => {
-    const existingRegistration = getRegistrationForKarkun(karkunId)
+  const connectedRuknValue = isMuttafiq ? (
+    <div className="space-y-2">
+      {row ? (
+        <ul className="space-y-2">
+          <MuttafiqRuknConnectionRow row={row} />
+        </ul>
+      ) : view.status === 'duplicate' ? (
+        <p role="status">
+          Needs review
+          {view.diagnosticRuknIds.length > 0 ? ` · ${view.diagnosticRuknIds.join(', ')}` : ''}
+        </p>
+      ) : (
+        <p>{view.status === 'none' ? 'Not Connected' : view.connectedRuknLabel}</p>
+      )}
+      <p className="text-secondary">Connected Count: {view.activeCount}</p>
+      <p className="text-secondary">Relationship: {view.relationshipLabel}</p>
+      {!softRemoved && view.status === 'none' ? (
+        <SecondaryButton
+          type="button"
+          className="px-3 py-1.5 text-sm"
+          onClick={() => setConnectPerson(karkun)}
+        >
+          Connect Rukn
+        </SecondaryButton>
+      ) : null}
+    </div>
+  ) : karkun.assignedRuknId ? (
+    formatPersonNameForDisplay(getRuknById(karkun.assignedRuknId)?.name ?? karkun.assignedRukn)
+  ) : (
+    'Not Connected'
+  )
 
-    if (jihPortalRegistered) {
-      const registrationResult = updateJihRegistration({
-        karkunId,
-        status: 'Registered',
-        registrationDate: existingRegistration.registrationDate ?? todayDate(),
-        registrationNumber: existingRegistration.registrationNumber,
-      })
+  const identityFacts: Array<{ label: string; value: ReactNode }> = [
+    { label: 'Gender', value: karkun.gender },
+    { label: 'Status', value: formatPersonStatus(karkun.status) },
+    { label: 'Mobile', value: karkun.mobile || '—' },
+    { label: 'WhatsApp', value: karkun.whatsapp || '—' },
+    {
+      label: getFatherHusbandLabel(karkun.gender),
+      value: karkun.fatherHusbandName?.trim() || '—',
+    },
+    { label: 'Address', value: karkun.address?.trim() || '—' },
+    { label: 'Area', value: karkun.area?.trim() || '—' },
+    { label: 'Place', value: karkun.place?.trim() || '—' },
+    { label: 'Education', value: karkun.education?.trim() || '—' },
+    { label: 'Profession', value: karkun.profession?.trim() || '—' },
+    {
+      label: 'Referred By:',
+      value: karkun.referredByRuknId
+        ? formatPersonNameForDisplay(
+            getRuknById(karkun.referredByRuknId)?.name ?? karkun.referredByRuknId,
+          )
+        : '—',
+    },
+    { label: 'Connected Rukn', value: connectedRuknValue },
+    { label: 'Identity ID', value: karkun.id },
+  ]
 
-      if (!registrationResult.success) {
-        setError(registrationResult.error)
-        return
-      }
-
-      const monthlyResult = updateJihMonthlyReport({
-        karkunId,
-        status: monthlyReportSubmitted ? 'Submitted' : 'Pending',
-        submissionDate: monthlyReportSubmitted ? todayDate() : undefined,
-      })
-
-      if (!monthlyResult.success) {
-        setError(monthlyResult.error)
-        return
-      }
-    } else {
-      const registrationResult = updateJihRegistration({
-        karkunId,
-        status: 'Not Registered',
-      })
-
-      if (!registrationResult.success) {
-        setError(registrationResult.error)
-        return
-      }
-    }
-
-    if (ijtemaStatus !== null) {
-      // KC-0110.6 — People writes Weekly Ijtema through the canonical write adapter.
-      const ijtemaResult = markWeeklyIjtemaAttendance({
-        karkunId,
-        status: ijtemaStatus,
-      })
-
-      if (!ijtemaResult.success) {
-        setError(ijtemaResult.error)
-        return
-      }
-    }
-
-    const baitulMaalResult = updateMonthlyBaitulMaalContribution({
-      karkunId,
-      status: baitulMaalPaid ? 'Paid' : 'Pending',
-      paymentDate: baitulMaalPaid ? todayDate() : undefined,
+  if (softRemoved) {
+    const preserved = getActiveMuttafiqRelationshipsForPerson(karkunId)
+    identityFacts.push({
+      label: 'Relationship history',
+      value: preserved.length > 0
+        ? 'Existing Muttafiq ↔ Rukn relationship records remain on file and were not ended. This person is not an active registry counterpart.'
+        : 'No active operational relationship is shown because this person is removed from the registry.',
     })
-
-    if (!baitulMaalResult.success) {
-      setError(baitulMaalResult.error)
-      return
-    }
-
-    navigate(registryHome)
   }
 
   return (
-    <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-      <div className="flex shrink-0 items-start justify-between gap-4">
-        <div className="min-w-0">
-          <Link
-            to={registryHome}
-            className="text-sm font-medium text-primary hover:underline"
-          >
-            {backLabel}
-          </Link>
-          <h1 className="mt-1 truncate text-xl font-semibold text-text-heading">
-            {formatPersonNameForDisplay(name)}
-          </h1>
-          <div className="mt-1 flex flex-wrap items-center gap-2">
+    <PageShell className="max-w-5xl overflow-hidden">
+      <PersonIdentityChrome
+        backHref={rufaqaCategoryPath(rufaqaCategory)}
+        categoryLabel={rufaqaCategoryLabel(rufaqaCategory)}
+        name={karkun.name}
+        badges={
+          <>
             {softRemoved && removedLabel ? (
               <StatusBadge variant="dormant">{removedLabel}</StatusBadge>
             ) : (
-              <StatusBadge variant={isMuttafiq ? 'info' : isPromotedToARukn(karkun) ? 'info' : 'connected'}>
+              <StatusBadge
+                variant={isMuttafiq ? 'info' : isPromotedToARukn(karkun) ? 'info' : 'connected'}
+              >
                 {isPromotedToARukn(karkun) ? 'عازمِ رکن' : category}
               </StatusBadge>
             )}
@@ -341,297 +258,135 @@ function KarkunProfileForm({ karkun, karkunId }: KarkunProfileFormProps) {
             {karkun.needsReview && !karkun.isArchived ? (
               <StatusBadge variant="warning">Needs Review</StatusBadge>
             ) : null}
-          </div>
-        </div>
-
-        <div className="flex shrink-0 flex-col items-end gap-2">
-          {softRemoved ? (
-            <SecondaryButton type="button" className="px-4 py-2 text-sm" onClick={handleCancel}>
-              Back
-            </SecondaryButton>
-          ) : (
-            <div className="flex shrink-0 gap-2">
-              <SecondaryButton type="button" className="px-4 py-2 text-sm" onClick={handleCancel}>
-                Cancel
-              </SecondaryButton>
-              <PrimaryButton type="submit" className="px-4 py-2 text-sm">
-                Save
+          </>
+        }
+        facts={identityFacts}
+        actions={
+          <>
+            {!softRemoved ? (
+              <PrimaryButton
+                type="button"
+                className="px-4 py-2 text-sm"
+                onClick={() => {
+                  setFormError('')
+                  setSaveNotice('')
+                  setIsFormOpen(true)
+                }}
+              >
+                Edit
               </PrimaryButton>
-            </div>
-          )}
-          {!isMuttafiq && !softRemoved ? (
-            <PromoteToARuknAction
-              person={karkun}
-              variant="button"
-              onSuccess={() => navigate(ROUTES.ADMIN_A_RUKN)}
+            ) : null}
+            <CommunicationActions
+              personId={karkunId}
+              personKind="karkun"
+              name={karkun.name}
+              mobile={karkun.mobile}
+              whatsapp={karkun.whatsapp}
+              onSend={async (input) => {
+                const result = await sendIndividualMessage({
+                  channel: 'whatsapp',
+                  recipient: {
+                    personId: karkunId,
+                    personKind: 'karkun',
+                    name: karkun.name,
+                    mobile: karkun.mobile,
+                    whatsapp: karkun.whatsapp,
+                  },
+                  templateId: input.templateId,
+                  message: input.message,
+                })
+                return result.success
+                  ? { success: true }
+                  : { success: false, error: result.error }
+              }}
             />
-          ) : null}
-        </div>
-      </div>
-
-      <section className="rounded-(--radius-card) border border-border bg-surface p-4 shadow-card">
-        <h2 className="text-sm font-semibold text-text-heading">Basic Information</h2>
-
-        <div className="mt-3 grid gap-3 sm:grid-cols-2">
-          <InputField
-            id="profile-name"
-            label="Full Name"
-            value={name}
-            onValueChange={setName}
-            className={compactInputClass}
-            required
-            disabled={softRemoved}
-          />
-
-          {softRemoved ? (
-            <div className="flex flex-col gap-2 sm:col-span-2">
-              <span className="text-sm font-medium text-text-heading">Relationship history</span>
-              {(() => {
-                void muttafiqRelationshipVersion
-                const preserved = getActiveMuttafiqRelationshipsForPerson(karkunId)
-                return (
-                  <p className="text-sm text-secondary">
-                    {preserved.length > 0
-                      ? 'Existing Muttafiq ↔ Rukn relationship records remain on file and were not ended. This person is not an active registry counterpart.'
-                      : 'No active operational relationship is shown because this person is removed from the registry.'}
-                  </p>
-                )
-              })()}
-            </div>
-          ) : !isMuttafiq ? (
-            <div className="flex flex-col gap-2">
-              <label htmlFor="profile-assigned-rukn" className="text-sm font-medium text-text-heading">
-                Connected Rukn
-              </label>
-              <RuknAssignmentSelect
-                karkunId={karkunId}
-                value={assignedRuknId}
-                compact
-                onChange={setAssignedRuknId}
+            {!isMuttafiq && !softRemoved ? (
+              <PromoteToARuknAction
+                person={karkun}
+                variant="button"
+                onSuccess={() => navigate(ROUTES.ADMIN_A_RUKN)}
               />
-              <div className="mt-1 text-sm text-text-heading">
-                <span className="font-medium">Referred By:</span>{' '}
-                {karkun.referredByRuknId
-                  ? formatPersonNameForDisplay(
-                      getRuknById(karkun.referredByRuknId)?.name ?? karkun.referredByRuknId,
-                    )
-                  : '—'}
-              </div>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-2 sm:col-span-2">
-              <span className="text-sm font-medium text-text-heading">Connected Rukn</span>
-              {(() => {
-                void muttafiqRelationshipVersion
-                const { view, row } = getMuttafiqConnectedRuknDisplayForPerson(karkunId)
-                return (
-                  <div className="space-y-2 text-sm text-text-heading">
-                    {row ? (
-                      <ul className="space-y-2">
-                        <MuttafiqRuknConnectionRow row={row} />
-                      </ul>
-                    ) : view.status === 'duplicate' ? (
-                      <p role="status">
-                        Needs review
-                        {view.diagnosticRuknIds.length > 0
-                          ? ` · ${view.diagnosticRuknIds.join(', ')}`
-                          : ''}
-                      </p>
-                    ) : (
-                      <p>{view.status === 'none' ? 'Not Connected' : view.connectedRuknLabel}</p>
-                    )}
-                    <p className="text-secondary">Connected Count: {view.activeCount}</p>
-                    <p className="text-secondary">Relationship: {view.relationshipLabel}</p>
-                  </div>
-                )
-              })()}
-            </div>
-          )}
+            ) : null}
+          </>
+        }
+      />
 
-          <div className="flex flex-col gap-2">
-            <label htmlFor="profile-gender" className="text-sm font-medium text-text-heading">
-              Gender
-            </label>
-            <select
-              id="profile-gender"
-              value={gender}
-              onChange={(event) => setGender(event.target.value as PersonGender)}
-              className={selectClassName}
-              disabled={softRemoved}
-            >
-              <option value="Male">Male</option>
-              <option value="Female">Female</option>
-            </select>
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <label htmlFor="profile-status" className="text-sm font-medium text-text-heading">
-              Status
-            </label>
-            <select
-              id="profile-status"
-              value={status}
-              onChange={(event) => setStatus(event.target.value as PersonStatus)}
-              className={selectClassName}
-              disabled={softRemoved}
-            >
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-            </select>
-          </div>
-
-          <InputField
-            id="profile-mobile"
-            label="Mobile Number"
-            type="tel"
-            value={mobile}
-            onValueChange={setMobile}
-            className={compactInputClass}
-            placeholder={MOBILE_INPUT_PLACEHOLDER}
-            required
-          />
-
-          <InputField
-            id="profile-whatsapp"
-            label="WhatsApp Number"
-            type="tel"
-            value={whatsapp}
-            onValueChange={setWhatsapp}
-            className={compactInputClass}
-            placeholder={MOBILE_INPUT_PLACEHOLDER}
-          />
-
-          <InputField
-            id="profile-father-husband"
-            label={`${getFatherHusbandLabel(gender)} (optional)`}
-            value={fatherHusbandName}
-            onValueChange={setFatherHusbandName}
-            className={compactInputClass}
-            placeholder={getFatherHusbandLabel(gender)}
-          />
-
-          <InputField
-            id="profile-address"
-            label="Address"
-            value={address}
-            onValueChange={setAddress}
-            className={compactInputClass}
-            placeholder="Full address"
-          />
-
-          <InputField
-            id="profile-education"
-            label="Education"
-            value={education}
-            onValueChange={setEducation}
-            className={compactInputClass}
-            placeholder="Education"
-          />
-
-          <InputField
-            id="profile-profession"
-            label="Profession"
-            value={profession}
-            onValueChange={setProfession}
-            className={compactInputClass}
-            placeholder="Profession"
-          />
+      {saveNotice ? (
+        <div className="ds-banner-success mb-4" role="status">
+          {saveNotice}
         </div>
-
-        <PersonContactActions mobile={mobile} whatsapp={whatsapp} />
-        <div className="mt-3">
-          <p className="mb-2 text-sm font-medium text-text-heading">Communication</p>
-          <CommunicationActions
-            personId={karkunId}
-            personKind="karkun"
-            name={name}
-            mobile={mobile}
-            whatsapp={whatsapp}
-            onSend={async (input) => {
-              const result = await sendIndividualMessage({
-                channel: 'whatsapp',
-                recipient: {
-                  personId: karkunId,
-                  personKind: 'karkun',
-                  name,
-                  mobile,
-                  whatsapp: whatsapp || undefined,
-                },
-                templateId: input.templateId,
-                message: input.message,
-              })
-              return result.success
-                ? { success: true }
-                : { success: false, error: result.error }
-            }}
-          />
-        </div>
-      </section>
-
-      {!softRemoved ? (
-      <section className="rounded-(--radius-card) border border-border bg-surface p-4 shadow-card">
-        <h2 className="text-sm font-semibold text-text-heading">Compliance</h2>
-
-        <div className="mt-3 grid gap-3 sm:grid-cols-2">
-          <IjtemaStatusField value={ijtemaStatus} onChange={setIjtemaStatus} />
-          <ComplianceToggle
-            id="compliance-jih-portal"
-            label="JIH Portal Registered"
-            checked={jihPortalRegistered}
-            onChange={handleJihPortalChange}
-          />
-          {jihPortalRegistered && (
-            <ComplianceToggle
-              id="compliance-monthly-report"
-              label="Monthly Report Submitted"
-              checked={monthlyReportSubmitted}
-              onChange={handleMonthlyReportChange}
-            />
-          )}
-          <ComplianceToggle
-            id="compliance-baitul-maal"
-            label="Bait-ul-Maal Paid"
-            checked={baitulMaalPaid}
-            onChange={setBaitulMaalPaid}
-          />
-        </div>
-      </section>
       ) : null}
 
-      <RegistryMaintenancePanel karkun={karkun} karkunId={karkunId} />
+      <Person360Overview personId={karkunId} omitRelationship />
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
-    </form>
-  )
-}
+      {!softRemoved ? (
+        <div className="mt-8">
+          <PersonOrganisationalReporting key={karkunId} karkunId={karkunId} />
+        </div>
+      ) : null}
 
-export function KarkunProfilePage() {
-  const { karkunId } = useParams<{ karkunId: string }>()
-  useAssignmentEngine()
-  usePeopleStore()
-
-  const karkun = karkunId ? getKarkunById(karkunId) : undefined
-
-  if (!karkun || !karkunId) {
-    return (
-      <PageShell variant="narrow">
-        <EmptyState
-          icon="search"
-          title="Person not found"
-          description="This profile does not exist in the People registry."
-          primaryAction={{ label: 'Back to Karkuns', href: ROUTES.ADMIN_KARKUN }}
-          secondaryAction={{ label: 'Muttafiqeen', href: ROUTES.ADMIN_MUTTAFIQEEN }}
-        />
-      </PageShell>
-    )
-  }
-
-  return (
-    <PageShell className="max-w-5xl overflow-hidden">
-      <div className="mb-6">
-        <Person360Overview personId={karkunId} />
+      <div className="mt-8">
+        <RegistryMaintenancePanel karkun={karkun} karkunId={karkunId} />
       </div>
-      <KarkunProfileForm key={karkunId} karkun={karkun} karkunId={karkunId} />
+
+      <PersonFormModal
+        isOpen={isFormOpen}
+        kind="karkun"
+        mode="edit"
+        personLabel={isMuttafiq ? 'Muttafiq' : 'Karkun'}
+        karkunId={karkunId}
+        loading={formLoading}
+        initialValues={{
+          name: karkun.name,
+          gender: karkun.gender,
+          mobile: karkun.mobile,
+          whatsapp: karkun.whatsapp,
+          status: karkun.status,
+          fatherHusbandName: karkun.fatherHusbandName,
+          address: karkun.address,
+          area: karkun.area,
+          place: karkun.place,
+          education: karkun.education,
+          profession: karkun.profession,
+          assignedRuknId: karkun.assignedRuknId,
+        }}
+        error={formError}
+        onClose={() => {
+          if (formLoading) return
+          setIsFormOpen(false)
+          setFormError('')
+          setMobileOwner(null)
+          setPendingFormValues(null)
+        }}
+        onSubmit={(values) => handleFormSubmit(values)}
+      />
+
+      <ConfirmDialog
+        isOpen={Boolean(mobileOwner)}
+        title="Overwrite Mobile Number?"
+        message={
+          <>
+            This mobile number is already used by <strong>{mobileOwner?.name}</strong> (
+            {mobileOwner?.kind}). Overwriting may affect contact uniqueness. Continue?
+          </>
+        }
+        confirmLabel="Overwrite"
+        onConfirm={() => {
+          if (!pendingFormValues) return
+          handleFormSubmit(pendingFormValues, { confirmMobileOverwrite: true })
+        }}
+        onClose={() => {
+          setMobileOwner(null)
+          setPendingFormValues(null)
+        }}
+      />
+
+      <ConnectRuknForMuttafiqModal
+        isOpen={connectPerson !== null}
+        person={connectPerson}
+        onClose={() => setConnectPerson(null)}
+        onAssigned={() => setConnectPerson(null)}
+      />
     </PageShell>
   )
 }

@@ -59,14 +59,6 @@ export function CommunicationActions({
           <Icon name="message" size="sm" />
           WhatsApp
         </button>
-        <button type="button" className={actionClassName} disabled title="Coming in a future sprint">
-          <Icon name="smartphone" size="sm" />
-          SMS
-        </button>
-        <button type="button" className={actionClassName} disabled title="Coming in a future sprint">
-          <Icon name="mail" size="sm" />
-          Email
-        </button>
       </div>
 
       {onSend && (

@@ -8,7 +8,8 @@ import {
   PEOPLE_TABLE_ROW_CLASS,
   PEOPLE_TABLE_WRAPPER_CLASS,
 } from '@/components/forms/people/peopleTableDisplay'
-import { ConfirmDialog } from '@/components/forms/people'
+import { ConfirmDialog, PersonFormModal } from '@/components/forms/people'
+import type { PersonFormValues } from '@/components/forms/people'
 import { Modal } from '@/components/common/Modal'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
@@ -25,6 +26,7 @@ import { getActiveMuttafiqRelationshipsForRukn } from '@/stores/muttafiqRelation
 import { useWriteLifecycle } from '@/hooks/useWriteLifecycle'
 import { UI_LABELS } from '@/lib/uiTerminology'
 import { executeARuknDelete, type ARuknDeleteMode } from '@/services/archiveService'
+import { updateRukn, type MobileLookupResult } from '@/lib/peopleStore'
 import { formatPersonStatus } from '@/types/people.types'
 import { formatPersonNameForDisplay } from '@/utils/formatPersonDisplay'
 import type { Rukn } from '@/data/ruknMaster'
@@ -44,6 +46,10 @@ export function ARuknRegistryPage() {
   const rufaqa = useRufaqaDirectoryQuery()
   const [pendingDelete, setPendingDelete] = useState<Rukn | null>(null)
   const [deleteMode, setDeleteMode] = useState<ARuknDeleteMode | null>(null)
+  const [editingOfficer, setEditingOfficer] = useState<Rukn | null>(null)
+  const [formError, setFormError] = useState('')
+  const [pendingFormValues, setPendingFormValues] = useState<PersonFormValues | null>(null)
+  const [mobileOwner, setMobileOwner] = useState<MobileLookupResult | null>(null)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const { busy, progressMessage, run } = useWriteLifecycle()
@@ -66,6 +72,29 @@ export function ARuknRegistryPage() {
   }, [peopleVersion, assignmentVersion, rufaqa.search, rufaqa.storedGender])
 
   const decidedBy = user?.displayName ?? user?.uid ?? 'Administrator'
+
+  const handleIdentitySubmit = (
+    values: PersonFormValues,
+    options?: { confirmMobileOverwrite?: boolean },
+  ) => {
+    if (!editingOfficer) return
+    const result = updateRukn(editingOfficer.id, values, 'Administrator', options)
+    if (!result.success) {
+      if (result.needsMobileConfirm && result.existingOwner) {
+        setPendingFormValues(values)
+        setMobileOwner(result.existingOwner)
+        setFormError('')
+        return
+      }
+      setFormError(result.error ?? 'Unable to save identity.')
+      return
+    }
+    setEditingOfficer(null)
+    setFormError('')
+    setPendingFormValues(null)
+    setMobileOwner(null)
+    setNotice('Identity saved.')
+  }
 
   const confirmDelete = () => {
     const officer = pendingDelete
@@ -209,17 +238,30 @@ export function ARuknRegistryPage() {
                     </td>
                     {isAdministrator ? (
                       <td className={PEOPLE_TABLE_CELL_CLASS}>
-                        <button
-                          type="button"
-                          className="text-sm font-medium text-danger hover:underline disabled:opacity-60"
-                          disabled={busy}
-                          onClick={() => {
-                            setError('')
-                            setPendingDelete(officer)
-                          }}
-                        >
-                          Delete
-                        </button>
+                        <div className="flex flex-col items-start gap-1">
+                          <button
+                            type="button"
+                            className="text-sm font-medium text-primary hover:underline disabled:opacity-60"
+                            disabled={busy}
+                            onClick={() => {
+                              setFormError('')
+                              setEditingOfficer(officer)
+                            }}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            className="text-sm font-medium text-danger hover:underline disabled:opacity-60"
+                            disabled={busy}
+                            onClick={() => {
+                              setError('')
+                              setPendingDelete(officer)
+                            }}
+                          >
+                            Delete
+                          </button>
+                        </div>
                       </td>
                     ) : null}
                   </tr>
@@ -277,17 +319,30 @@ export function ARuknRegistryPage() {
                   </div>
                 </dl>
                 {isAdministrator ? (
-                  <button
-                    type="button"
-                    className="mt-3 text-sm font-medium text-danger hover:underline disabled:opacity-60"
-                    disabled={busy}
-                    onClick={() => {
-                      setError('')
-                      setPendingDelete(officer)
-                    }}
-                  >
-                    Delete
-                  </button>
+                  <div className="mt-3 flex flex-wrap gap-3">
+                    <button
+                      type="button"
+                      className="text-sm font-medium text-primary hover:underline disabled:opacity-60"
+                      disabled={busy}
+                      onClick={() => {
+                        setFormError('')
+                        setEditingOfficer(officer)
+                      }}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      className="text-sm font-medium text-danger hover:underline disabled:opacity-60"
+                      disabled={busy}
+                      onClick={() => {
+                        setError('')
+                        setPendingDelete(officer)
+                      }}
+                    >
+                      Delete
+                    </button>
+                  </div>
                 ) : null}
               </li>
               )
@@ -295,6 +350,53 @@ export function ARuknRegistryPage() {
           </ul>
         </>
       )}
+
+      <PersonFormModal
+        isOpen={Boolean(editingOfficer)}
+        kind="rukn"
+        mode="edit"
+        title={`Edit ${UI_LABELS.aRukn}`}
+        initialValues={
+          editingOfficer
+            ? {
+                name: editingOfficer.name,
+                gender: editingOfficer.gender,
+                mobile: editingOfficer.mobile,
+                whatsapp: editingOfficer.whatsapp,
+                status: editingOfficer.status,
+                referredByRuknId: editingOfficer.referredByRuknId,
+              }
+            : undefined
+        }
+        error={formError}
+        onClose={() => {
+          setEditingOfficer(null)
+          setFormError('')
+          setMobileOwner(null)
+          setPendingFormValues(null)
+        }}
+        onSubmit={(values) => handleIdentitySubmit(values)}
+      />
+
+      <ConfirmDialog
+        isOpen={Boolean(mobileOwner)}
+        title="Overwrite Mobile Number?"
+        message={
+          <>
+            This mobile number is already used by <strong>{mobileOwner?.name}</strong> (
+            {mobileOwner?.kind}). Overwriting may affect contact uniqueness. Continue?
+          </>
+        }
+        confirmLabel="Overwrite"
+        onConfirm={() => {
+          if (!pendingFormValues) return
+          handleIdentitySubmit(pendingFormValues, { confirmMobileOverwrite: true })
+        }}
+        onClose={() => {
+          setMobileOwner(null)
+          setPendingFormValues(null)
+        }}
+      />
 
       <Modal
         isOpen={Boolean(pendingDelete) && !deleteMode}

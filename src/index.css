@@ -4742,6 +4742,60 @@ html[data-theme='dark'] {
   scrollbar-gutter: stable;
 }
 
+.kc-person-detail-header {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-kc-shell) 16%, var(--color-border));
+}
+
+.kc-person-detail-back {
+  @apply text-sm font-medium text-primary hover:underline;
+}
+
+.kc-person-detail-name {
+  @apply break-words text-2xl font-semibold tracking-tight text-kc-shell-ink;
+}
+
+.kc-person-detail-actions {
+  @apply flex flex-wrap items-center gap-2;
+}
+
+.kc-person-detail-facts {
+  @apply mt-4 grid gap-3 text-sm sm:grid-cols-2;
+}
+
+.kc-person-detail-fact dt {
+  @apply text-xs font-medium uppercase tracking-wide text-secondary;
+}
+
+.kc-person-detail-fact dd {
+  @apply mt-0.5 font-medium text-text-heading;
+}
+
+.kc-person-detail-section {
+  @apply mb-8;
+}
+
+.kc-person-detail-section-title {
+  @apply text-sm font-semibold tracking-wide text-kc-shell;
+}
+
+.kc-person-detail-related {
+  @apply flex flex-wrap gap-x-4 gap-y-2 text-sm;
+}
+
+.kc-person-detail-related-link {
+  @apply font-medium text-primary hover:underline;
+}
+
+.kc-person-detail-disclosure {
+  @apply rounded-lg border border-border bg-surface px-4 py-3;
+}
+
+.kc-person-detail-disclosure summary {
+  @apply cursor-pointer text-sm font-semibold text-kc-shell;
+}
+
 @media (max-width: 640px) {
   .wa-preview-bubble {
     @apply max-w-full;
@@ -4753,6 +4807,10 @@ html[data-theme='dark'] {
 
   .person-360 {
     @apply space-y-4;
+  }
+
+  .kc-person-detail-name {
+    @apply text-xl;
   }
 }
 
