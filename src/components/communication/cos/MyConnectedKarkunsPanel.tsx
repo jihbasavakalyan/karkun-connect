@@ -14,10 +14,11 @@ import {
   formatRelationshipStatusLabel,
 } from '@/lib/communication/relationshipIntelligencePresentation'
 import { ruknCompanionPath } from '@/lib/ruknCommunicationNavigation'
-import { ROUTES } from '@/constants/routes'
+import { ruknKarkunPath } from '@/constants/routes'
 import { subscribeToAnnexure1Store } from '@/stores/annexure1Store'
 import { subscribeToIjtemaAttendanceStore } from '@/stores/ijtemaAttendanceStore'
 import { subscribeToBaitulMaalStore } from '@/stores/baitulMaalStore'
+import { COMMUNICATION_CONTACT_ACTION_CLASS } from '@/components/communication/CommunicationActions'
 import { buildTelLink, buildWhatsAppLink } from '@/utils/personContactLinks'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
 
@@ -69,7 +70,7 @@ export function MyConnectedKarkunsPanel({ ruknId, karkuns }: MyConnectedKarkunsP
         icon="users"
         title="No Connected Karkuns yet"
         description="Connect with a Karkun to begin relationship guidance."
-        primaryAction={{ label: 'Connect Karkun', href: ROUTES.RUKN_AVAILABLE_KARKUN }}
+        primaryAction={{ label: 'Open Karkun', href: ruknKarkunPath('available') }}
       />
     )
   }
@@ -144,7 +145,8 @@ export function MyConnectedKarkunsPanel({ ruknId, karkuns }: MyConnectedKarkunsP
                   {tel ? (
                     <a
                       href={tel}
-                      className="inline-flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-lg border border-border bg-surface-muted px-3 text-xs font-semibold text-text-heading hover:bg-surface"
+                      className={`${COMMUNICATION_CONTACT_ACTION_CLASS} flex-1 text-xs`}
+                      aria-label={`Call ${card.karkunName}`}
                     >
                       <Icon name="phone" size="sm" />
                       Call
@@ -159,7 +161,8 @@ export function MyConnectedKarkunsPanel({ ruknId, karkuns }: MyConnectedKarkunsP
                       href={whatsapp}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-lg border border-border bg-surface-muted px-3 text-xs font-semibold text-text-heading hover:bg-surface"
+                      className={`${COMMUNICATION_CONTACT_ACTION_CLASS} flex-1 text-xs`}
+                      aria-label={`WhatsApp ${card.karkunName}`}
                     >
                       <Icon name="message" size="sm" />
                       WhatsApp

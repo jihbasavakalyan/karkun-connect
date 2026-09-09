@@ -13,8 +13,8 @@ type CommunicationActionsProps = {
   onSend?: (input: { templateId?: string; message: string }) => Promise<{ success: boolean; error?: string }>
 }
 
-const actionClassName =
-  'inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-2 text-sm font-medium text-text-heading transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50'
+export const COMMUNICATION_CONTACT_ACTION_CLASS =
+  'inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-2 text-sm font-medium text-text-heading transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50'
 
 export function CommunicationActions({
   personId,
@@ -42,17 +42,18 @@ export function CommunicationActions({
 
   return (
     <>
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2" role="toolbar" aria-label={`Contact ${name}`}>
         {telLink && (
-          <a href={telLink} className={actionClassName}>
+          <a href={telLink} className={COMMUNICATION_CONTACT_ACTION_CLASS} aria-label={`Call ${name}`}>
             <Icon name="phone" size="sm" />
             Call
           </a>
         )}
         <button
           type="button"
-          className={actionClassName}
+          className={COMMUNICATION_CONTACT_ACTION_CLASS}
           disabled={!hasMobile || !onSend}
+          aria-label={`WhatsApp ${name}`}
           title={onSend ? 'Compose WhatsApp message' : 'Communication service unavailable'}
           onClick={() => setComposerOpen(true)}
         >

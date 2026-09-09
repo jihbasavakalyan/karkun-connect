@@ -272,7 +272,7 @@ function MessageComposerModalContent({
         setError(lifecycle.message)
         return
       }
-      setSuccess('Message queued for delivery. Backend integration arrives in Sprint 16.')
+      setSuccess('Message queued. Open WhatsApp to send, or keep this as a queued record.')
       setTimeout(() => onClose(), 1200)
     })
   }
@@ -290,7 +290,7 @@ function MessageComposerModalContent({
       scheduledFor: scheduledForIso,
     })
     setScheduleOpen(false)
-    setSuccess('Message scheduled. It will appear under Communication → Scheduled.')
+    setSuccess('Scheduled record saved. It will not send automatically.')
     setTimeout(() => onClose(), 1400)
   }
 
@@ -417,7 +417,7 @@ function MessageComposerModalContent({
       <SchedulePickerModal
         isOpen={scheduleOpen}
         title="Schedule Message"
-        description="Choose when this message should be sent. Automated delivery arrives in a future sprint."
+        description="Choose a date and time to remember. This saves a scheduled record; it does not send automatically."
         confirmLabel="Schedule Message"
         onClose={() => setScheduleOpen(false)}
         onConfirm={handleSchedule}

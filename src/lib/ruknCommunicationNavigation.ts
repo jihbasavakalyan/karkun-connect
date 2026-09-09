@@ -1,14 +1,20 @@
 /**
- * KC-0091 — Rukn Communication Workspace section navigation.
- * People-first sections; not channel-first.
+ * KC-0091 / Increment 07 — Rukn Communication Workspace section navigation.
+ * Primary IA is people-first: My Connected Karkuns + Follow-ups.
+ * Companion is a person drill-in route, not a tab.
  */
 
 import { ROUTES } from '@/constants/routes'
 
-export const RUKN_COMMUNICATION_SECTIONS = [
+export const RUKN_COMMUNICATION_PRIMARY_SECTIONS = [
   { id: 'my-karkuns', label: 'My Connected Karkuns' },
-  { id: 'conversations', label: 'Conversations' },
   { id: 'follow-ups', label: 'Follow-ups' },
+] as const
+
+/** Legacy query ids — still resolve, not shown as live Communication product. */
+export const RUKN_COMMUNICATION_SECTIONS = [
+  ...RUKN_COMMUNICATION_PRIMARY_SECTIONS,
+  { id: 'conversations', label: 'Conversations' },
   { id: 'companion-ledger', label: 'Companion Ledger' },
   { id: 'visit-planning', label: 'Visit Planning' },
   { id: 'notes', label: 'Notes' },
@@ -16,6 +22,13 @@ export const RUKN_COMMUNICATION_SECTIONS = [
 ] as const
 
 export type RuknCommunicationSection = (typeof RUKN_COMMUNICATION_SECTIONS)[number]['id']
+
+export type RuknCommunicationPrimarySection =
+  (typeof RUKN_COMMUNICATION_PRIMARY_SECTIONS)[number]['id']
+
+const PRIMARY_IDS = new Set<string>(
+  RUKN_COMMUNICATION_PRIMARY_SECTIONS.map((section) => section.id),
+)
 
 const SECTION_ALIASES: Record<string, RuknCommunicationSection> = {
   'my-karkuns': 'my-karkuns',
@@ -43,6 +56,12 @@ export function resolveRuknCommunicationSection(
     return sectionParam as RuknCommunicationSection
   }
   return 'my-karkuns'
+}
+
+export function isRuknCommunicationPrimarySection(
+  section: RuknCommunicationSection,
+): boolean {
+  return PRIMARY_IDS.has(section)
 }
 
 export function ruknCommunicationPath(section?: RuknCommunicationSection): string {

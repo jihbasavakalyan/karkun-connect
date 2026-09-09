@@ -14,6 +14,7 @@
     "verify:increment-04-rufaqa": "npx vite-node scripts/verify-increment-04-rufaqa.ts",
     "verify:increment-05-person-detail": "npx vite-node scripts/verify-increment-05-person-detail.ts",
     "verify:increment-06-connections": "npx vite-node scripts/verify-increment-06-connections.ts",
+    "verify:increment-07-communication": "npx vite-node scripts/verify-increment-07-communication.ts",
     "verify:auth": "npx vite-node scripts/verify-auth-session.ts",
     "verify:assignments": "npx vite-node scripts/verify-inline-assignment.ts",
     "verify:kc002": "npx vite-node scripts/verify-kc002-assignment-allocation.ts",

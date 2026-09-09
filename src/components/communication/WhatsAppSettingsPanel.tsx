@@ -77,11 +77,13 @@ export function WhatsAppSettingsPanel() {
           <PrimaryButton type="button" onClick={handleTest} disabled={testing}>
             {testing ? 'Testing…' : 'Connection Test'}
           </PrimaryButton>
-          <SecondaryButton type="button" disabled title="Coming in next release">
+          <SecondaryButton type="button" disabled title="API configuration is not available in this workspace">
             Configure API
           </SecondaryButton>
         </div>
-        <p className="mt-2 text-xs text-secondary">WhatsApp API configuration — Coming in next release</p>
+        <p className="mt-2 text-xs text-secondary">
+          Connection status is shown here. Sending from this workspace uses WhatsApp on the device.
+        </p>
 
         {testResult && <p className="mt-3 text-sm text-secondary">{testResult}</p>}
       </section>

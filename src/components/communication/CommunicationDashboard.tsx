@@ -4,9 +4,14 @@ import { CommunicationSummaryCards } from '@/components/communication/Communicat
 import { adminCommunicationPath } from '@/lib/communicationNavigation'
 import { formatHistoryTimestamp } from '@/services/historyService'
 import { useCommunication } from '@/hooks/useCommunication'
+import { ListSkeleton } from '@/components/ui'
 
-export function CommunicationDashboard() {
+export function CommunicationDashboard({ ready = true }: { ready?: boolean }) {
   const { metrics, recentActivity } = useCommunication()
+
+  if (!ready) {
+    return <ListSkeleton rows={6} />
+  }
 
   return (
     <div className="space-y-6">
@@ -34,7 +39,7 @@ export function CommunicationDashboard() {
             to={adminCommunicationPath('templates')}
             className="mt-3 inline-block text-sm font-medium text-primary hover:underline"
           >
-            Manage templates →
+            Custom Communications →
           </Link>
         </section>
 
@@ -63,7 +68,7 @@ export function CommunicationDashboard() {
             to={adminCommunicationPath('history')}
             className="mt-3 inline-block text-sm font-medium text-primary hover:underline"
           >
-            View delivery history →
+            View history →
           </Link>
         </section>
 

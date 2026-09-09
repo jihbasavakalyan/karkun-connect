@@ -1,58 +1,62 @@
 import { ROUTES } from '@/constants/routes'
 
 /**
- * KC-0091 — Admin Communication Workspace sections (COS foundation).
+ * Increment 07 — Admin Communication primary IA.
  * Query-param sections only — AppRouter path `/admin/communication` unchanged.
- *
- * Messaging Tools group preserves existing KC-0077 panels so deep links and
- * workflows keep working. No new delivery/messaging implementation in this sprint.
+ * COS placeholder ids remain resolvable for deep links; they are not primary nav.
  */
 
-export const COMMUNICATION_SECTION_GROUPS = [
-  {
-    id: 'workspace',
-    label: 'Communication Workspace',
-    sections: [
-      { id: 'mission-center', label: 'Mission Center' },
-      { id: 'queue', label: 'Communication Queue' },
-      { id: 'audiences', label: 'Audience' },
-      { id: 'journeys', label: 'Journeys' },
-      { id: 'template-library', label: 'Official Communications' },
-      { id: 'delivery', label: 'Delivery Center' },
-      { id: 'reports', label: 'Reports' },
-      { id: 'settings', label: 'Settings' },
-    ] as const,
-  },
-  {
-    id: 'messaging-tools',
-    label: 'Messaging Tools (existing)',
-    sections: [
-      { id: 'rukn', label: 'Rukn Messages' },
-      { id: 'daily-reports', label: 'Daily Reports' },
-      { id: 'broadcast', label: 'Broadcast to Arkaan' },
-      { id: 'karkun', label: 'Karkun Messages' },
-      { id: 'individual', label: 'Individual Messages' },
-      { id: 'templates', label: 'Custom Communications' },
-      { id: 'scheduled', label: 'Scheduled Messages' },
-      { id: 'automation', label: 'Automation Rules' },
-      { id: 'history', label: 'Message History' },
-      { id: 'failed', label: 'Failed Messages' },
-      { id: 'tool-settings', label: 'WhatsApp Settings' },
-    ] as const,
-  },
+export const COMMUNICATION_PRIMARY_SECTIONS = [
+  { id: 'overview', label: 'Overview' },
+  { id: 'rukn', label: 'Rukn Messages' },
+  { id: 'karkun', label: 'Karkun Messages' },
+  { id: 'daily-reports', label: 'Daily Reports' },
+  { id: 'template-library', label: 'Official Communications' },
+  { id: 'individual', label: 'Individual / Broadcast' },
+  { id: 'templates', label: 'Custom Communications' },
+  { id: 'history', label: 'History / Failed' },
+  { id: 'tool-settings', label: 'WhatsApp Settings' },
 ] as const
 
-export const COMMUNICATION_SECTIONS = COMMUNICATION_SECTION_GROUPS.flatMap((group) =>
-  group.sections.map((section) => ({ ...section, group: group.id })),
-)
+/** Deep-link / legacy sections kept off the primary nav. */
+export const COMMUNICATION_SECONDARY_SECTIONS = [
+  { id: 'broadcast', label: 'Broadcast' },
+  { id: 'scheduled', label: 'Scheduled' },
+  { id: 'failed', label: 'Failed' },
+  { id: 'automation', label: 'Automation Rules' },
+  { id: 'queue', label: 'Communication Queue' },
+  { id: 'audiences', label: 'Audience' },
+  { id: 'journeys', label: 'Journeys' },
+  { id: 'delivery', label: 'Delivery Center' },
+  { id: 'reports', label: 'Reports' },
+  { id: 'settings', label: 'Settings' },
+] as const
+
+export const COMMUNICATION_SECTIONS = [
+  ...COMMUNICATION_PRIMARY_SECTIONS,
+  ...COMMUNICATION_SECONDARY_SECTIONS,
+] as const
 
 export type CommunicationSection = (typeof COMMUNICATION_SECTIONS)[number]['id']
 
+export type CommunicationPrimarySection = (typeof COMMUNICATION_PRIMARY_SECTIONS)[number]['id']
+
+const PRIMARY_IDS = new Set<string>(COMMUNICATION_PRIMARY_SECTIONS.map((section) => section.id))
+
+const COS_PLACEHOLDER_IDS = new Set<CommunicationSection>([
+  'queue',
+  'audiences',
+  'journeys',
+  'delivery',
+  'reports',
+  'settings',
+])
+
 const SECTION_ALIASES: Record<string, CommunicationSection> = {
-  'mission-center': 'mission-center',
-  mission: 'mission-center',
-  dashboard: 'mission-center',
-  overview: 'mission-center',
+  overview: 'overview',
+  'mission-center': 'overview',
+  mission: 'overview',
+  dashboard: 'overview',
   queue: 'queue',
   'communication-queue': 'queue',
   audiences: 'audiences',
@@ -98,11 +102,29 @@ export function resolveCommunicationSection(sectionParam: string | null): Commun
   if (COMMUNICATION_SECTIONS.some((section) => section.id === sectionParam)) {
     return sectionParam as CommunicationSection
   }
-  return 'mission-center'
+  return 'overview'
 }
 
-export function adminCommunicationPath(section?: CommunicationSection): string {
-  return section && section !== 'mission-center'
-    ? `${ROUTES.ADMIN_COMMUNICATION}?section=${section}`
-    : ROUTES.ADMIN_COMMUNICATION
+export function isCommunicationPrimarySection(section: CommunicationSection): boolean {
+  return PRIMARY_IDS.has(section)
+}
+
+export function isCommunicationCosPlaceholderSection(section: CommunicationSection): boolean {
+  return COS_PLACEHOLDER_IDS.has(section)
+}
+
+export function communicationPrimaryNavId(
+  section: CommunicationSection,
+): CommunicationPrimarySection | null {
+  if (section === 'broadcast') return 'individual'
+  if (section === 'failed' || section === 'scheduled') return 'history'
+  if (PRIMARY_IDS.has(section)) return section as CommunicationPrimarySection
+  return null
+}
+
+export function adminCommunicationPath(section?: string): string {
+  const resolved = resolveCommunicationSection(section ?? null)
+  return resolved === 'overview'
+    ? ROUTES.ADMIN_COMMUNICATION
+    : `${ROUTES.ADMIN_COMMUNICATION}?section=${resolved}`
 }

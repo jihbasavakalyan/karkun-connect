@@ -167,7 +167,7 @@ export async function testWhatsAppConnection(): Promise<{
     })
     return {
       success: false,
-      message: 'Backend API not connected. Connection test will be available in Sprint 16.',
+      message: 'WhatsApp Business connection test is not available from this browser.'
     }
   }
 }

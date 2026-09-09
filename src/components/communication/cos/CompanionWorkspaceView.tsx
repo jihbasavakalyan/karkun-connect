@@ -17,6 +17,7 @@ import {
 import { subscribeToAnnexure1Store } from '@/stores/annexure1Store'
 import { subscribeToIjtemaAttendanceStore } from '@/stores/ijtemaAttendanceStore'
 import { subscribeToBaitulMaalStore } from '@/stores/baitulMaalStore'
+import { COMMUNICATION_CONTACT_ACTION_CLASS } from '@/components/communication/CommunicationActions'
 import { buildTelLink, buildWhatsAppLink } from '@/utils/personContactLinks'
 import { RAFEEQ_BRAND } from '@/features/digitalRafeeq/companion/rafeeqUrduCopy'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
@@ -122,7 +123,8 @@ export function CompanionWorkspaceView({ ruknId, karkun }: CompanionWorkspaceVie
           {tel ? (
             <a
               href={tel}
-              className="inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-lg border border-border bg-surface-muted px-3 text-xs font-semibold text-text-heading hover:bg-surface"
+              className={`${COMMUNICATION_CONTACT_ACTION_CLASS} min-h-11 flex-1 text-xs`}
+              aria-label={`Call ${karkun.name}`}
             >
               <Icon name="phone" size="sm" />
               Call
@@ -137,7 +139,8 @@ export function CompanionWorkspaceView({ ruknId, karkun }: CompanionWorkspaceVie
               href={whatsapp}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-lg border border-border bg-surface-muted px-3 text-xs font-semibold text-text-heading hover:bg-surface"
+              className={`${COMMUNICATION_CONTACT_ACTION_CLASS} min-h-11 flex-1 text-xs`}
+              aria-label={`WhatsApp ${karkun.name}`}
             >
               <Icon name="message" size="sm" />
               WhatsApp
@@ -252,27 +255,6 @@ export function CompanionWorkspaceView({ ruknId, karkun }: CompanionWorkspaceVie
         <h2 className="mt-1 text-sm font-semibold text-text-heading">Guidance for this Karkun</h2>
         <p className="mt-2 text-sm leading-relaxed text-text-heading urdu-text" dir="rtl" lang="ur">
           {rafeeqGuidance}
-        </p>
-      </section>
-
-      {/* Future placeholders */}
-      <section
-        className="rounded-(--radius-card) border border-dashed border-border bg-surface p-4 sm:p-5"
-        aria-label="Notes"
-      >
-        <h2 className="text-sm font-semibold text-text-heading">Notes</h2>
-        <p className="mt-2 text-sm leading-relaxed text-secondary">
-          Notes will be available in a future release.
-        </p>
-      </section>
-
-      <section
-        className="rounded-(--radius-card) border border-dashed border-border bg-surface p-4 sm:p-5"
-        aria-label="Relationship timeline"
-      >
-        <h2 className="text-sm font-semibold text-text-heading">Relationship Timeline</h2>
-        <p className="mt-2 text-sm leading-relaxed text-secondary">
-          Relationship timeline will be available in a future release.
         </p>
       </section>
     </div>

@@ -9,7 +9,7 @@ export function FailedMessagesPanel() {
   if (failed.length === 0) {
     return (
       <p className="rounded-lg border border-border bg-surface-muted p-6 text-center text-sm text-secondary">
-        No failed messages. Retry handling arrives in Sprint 16.
+        No failed messages.
       </p>
     )
   }
@@ -33,7 +33,7 @@ export function FailedMessagesPanel() {
             <p className="mt-2 text-sm text-red-700">{record.failureReason}</p>
           )}
           <p className="mt-2 text-xs text-secondary">
-            Retries: {record.retryCount} · Retry queue — Sprint 16
+            Retries: {record.retryCount}
           </p>
         </li>
       ))}

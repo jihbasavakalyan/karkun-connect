@@ -3,7 +3,10 @@ export { AutomationRulesPanel } from '@/components/communication/AutomationRules
 export { BroadcastComposerPanel } from '@/components/communication/BroadcastComposerPanel'
 export { CommunicationActions } from '@/components/communication/CommunicationActions'
 export { CommunicationDashboard } from '@/components/communication/CommunicationDashboard'
-export { CommunicationSectionNav } from '@/components/communication/CommunicationSectionNav'
+export {
+  CommunicationSectionNav,
+  CommunicationWorkspaceSubnav,
+} from '@/components/communication/CommunicationSectionNav'
 export { CommunicationStatusBadge } from '@/components/communication/CommunicationStatusBadge'
 export { CommunicationSummaryCards } from '@/components/communication/CommunicationSummaryCards'
 export { DailyReportsPanel } from '@/components/communication/DailyReportsPanel'

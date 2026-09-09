@@ -1,5 +1,7 @@
 import {
-  COMMUNICATION_SECTION_GROUPS,
+  COMMUNICATION_PRIMARY_SECTIONS,
+  communicationPrimaryNavId,
+  type CommunicationPrimarySection,
   type CommunicationSection,
 } from '@/lib/communicationNavigation'
 
@@ -8,34 +10,69 @@ export function CommunicationSectionNav({
   onChange,
 }: {
   active: CommunicationSection
-  onChange: (section: CommunicationSection) => void
+  onChange: (next: CommunicationPrimarySection) => void
+}) {
+  const current = communicationPrimaryNavId(active)
+
+  return (
+    <nav
+      className="mb-4 flex flex-nowrap gap-1 overflow-x-auto border-b border-border pb-px"
+      aria-label="Communication sections"
+    >
+      {COMMUNICATION_PRIMARY_SECTIONS.map((section) => {
+        const selected = current === section.id
+        return (
+          <button
+            key={section.id}
+            type="button"
+            onClick={() => onChange(section.id)}
+            aria-current={selected ? 'page' : undefined}
+            className={`ds-tab shrink-0 border-b-2 rounded-none px-4 ${
+              selected ? 'border-primary text-primary ds-tab-active' : 'border-transparent'
+            }`}
+          >
+            {section.label}
+          </button>
+        )
+      })}
+    </nav>
+  )
+}
+
+export function CommunicationWorkspaceSubnav({
+  labelledBy,
+  items,
+  active,
+  onChange,
+}: {
+  labelledBy: string
+  items: { id: string; label: string }[]
+  active: string
+  onChange: (id: string) => void
 }) {
   return (
-    <nav className="space-y-3" aria-label="Communication sections">
-      {COMMUNICATION_SECTION_GROUPS.map((group) => (
-        <div key={group.id}>
-          <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-secondary">
-            {group.label}
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {group.sections.map((section) => (
-              <button
-                key={section.id}
-                type="button"
-                onClick={() => onChange(section.id)}
-                className={[
-                  'min-h-9 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors',
-                  active === section.id
-                    ? 'bg-primary-muted text-primary'
-                    : 'bg-surface text-secondary hover:bg-surface-muted hover:text-text-heading',
-                ].join(' ')}
-              >
-                {section.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      ))}
+    <nav
+      className="mb-4 flex flex-wrap gap-2"
+      aria-label={labelledBy}
+    >
+      {items.map((item) => {
+        const selected = active === item.id
+        return (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => onChange(item.id)}
+            aria-pressed={selected}
+            className={`min-h-10 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+              selected
+                ? 'bg-primary-muted text-primary'
+                : 'bg-surface text-secondary hover:bg-surface-muted hover:text-text-heading'
+            }`}
+          >
+            {item.label}
+          </button>
+        )
+      })}
     </nav>
   )
 }
