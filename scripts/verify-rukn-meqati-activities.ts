@@ -67,30 +67,42 @@ function programme(overrides: Partial<LocalProgramme> = {}): LocalProgramme {
   }
 }
 
-console.log('▶ Home wiring — existing Rukn action surface, no planning clone')
+console.log('▶ Home wiring — compact navigation into Meeqati destination, no planning clone')
 {
   const home = read('src/pages/rukn/RuknHomePage.tsx')
-  assertIncludes(home, 'RuknMeqatiActivitiesPanel', 'Meqati activities on Rukn Home')
-  assertIncludes(home, 'RuknResponsibilitiesHomePanel', 'responsibilities on Rukn Home')
+  assertIncludes(home, 'RuknHomeMeqatiNavEntry', 'compact Meeqati Mansooba entry on Home')
+  assertNotIncludes(home, 'RuknMeqatiActivitiesPanel', 'Meqati activity list is not on Home')
+  assertNotIncludes(home, 'RuknResponsibilitiesHomePanel', 'responsibility data panel is not on Home')
   assertIncludes(home, 'TarbiyatiIjtemaRuknHero', 'protected Tarbiyat hero retained')
   assertNotIncludes(home, 'RuknWorkActionPanel', 'Work panel not composed on redesigned Home')
   assertNotIncludes(home, 'What needs my action?', 'task dashboard not on Home')
+  assertNotIncludes(home, 'Organisational Awareness', 'no Organisational Awareness')
+
+  const dest = read('src/pages/rukn/RuknMeqatiMansoobaPage.tsx')
+  assertIncludes(dest, 'RuknMeqatiActivitiesPanel', 'detailed panel on destination')
+  assertIncludes(dest, 'میقاتی منصوبہ', 'canonical Meeqati Mansooba heading')
+  assertIncludes(dest, 'میقاتی ذمہ داری', 'responsibility wording')
 
   const panel = read('src/components/rukn/RuknMeqatiActivitiesPanel.tsx')
   assertIncludes(panel, 'buildRuknMeqatiActivities', 'uses read model')
   assertIncludes(panel, 'میقاتی منصوبہ', 'canonical Meeqati Mansooba heading')
   assertIncludes(panel, 'خلاصہ', 'shows existing summary when present')
+  assertIncludes(panel, 'میقاتی ذمہ داری برقرار ہے', 'empty state does not deny responsibility')
+  assertNotIncludes(panel, 'اس وقت آپ کی ذمہ داری کی کوئی میقاتی سرگرمی نہیں۔', 'forbidden no-responsibility copy')
   assertNotIncludes(panel, 'saveDurable', 'panel is read-only')
   assertNotIncludes(panel, 'AdminPlanning', 'not an Admin Planning clone')
   assertNotIncludes(panel, '<select', 'no ذمہ دار editor')
   assertNotIncludes(panel, '<input', 'no planning fields')
 
   const routes = read('src/constants/routes.ts')
-  assertNotIncludes(routes, 'RUKN_MEQATI', 'no new Rukn Meqati route')
+  assertIncludes(routes, 'RUKN_MEQATI_MANSOOBA', 'Meeqati Mansooba destination route')
   assertNotIncludes(routes, 'RUKN_PLANNING', 'no Rukn planning route')
 
   const layout = read('src/layouts/RuknLayout.tsx')
   assertNotIncludes(layout, 'Planning', 'no Planning nav for Rukn')
+  assertIncludes(layout, "label: 'Karkun'", 'unified Karkun nav')
+  assertNotIncludes(layout, "label: 'Connect'", 'Connect is not a primary nav label')
+  assertNotIncludes(layout, "label: 'Connected'", 'Connected is not a primary nav label')
 }
 
 console.log('▶ no Work / Responsibility sync in the Rukn activity path')

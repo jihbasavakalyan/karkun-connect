@@ -117,6 +117,7 @@ console.log('▶ Home wiring — existing Rukn dashboard, no new nav/framework')
 
   const layout = read('src/layouts/RuknLayout.tsx')
   assertIncludes(layout, "label: 'Home'", 'Home nav retained')
+  assertIncludes(layout, "label: 'Karkun'", 'Karkun nav retained')
   assertNotIncludes(layout, "label: 'Work'", 'no new Work nav item')
   assertNotIncludes(layout, 'RUKN_WORK', 'no new Work route constant in layout')
 

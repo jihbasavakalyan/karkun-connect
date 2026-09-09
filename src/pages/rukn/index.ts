@@ -1,6 +1,8 @@
 export { CampaignRecordPage } from './CampaignRecordPage'
 export { RuknHomePage } from './RuknHomePage'
+export { RuknKarkunPage } from './RuknKarkunPage'
 export { AvailableKarkunPage } from './AvailableKarkunPage'
 export { MyKarkunPage } from './MyKarkunPage'
+export { RuknMeqatiMansoobaPage } from './RuknMeqatiMansoobaPage'
 export { ConnectionJourneyPage } from './ConnectionJourneyPage'
 export { TarbiyatiIjtemaRegistrationProgressPage } from './TarbiyatiIjtemaRegistrationProgressPage'

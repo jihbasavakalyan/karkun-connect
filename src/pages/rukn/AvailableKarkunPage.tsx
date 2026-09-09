@@ -28,7 +28,7 @@ type PlanningTarget = {
   assignmentId?: string
 }
 
-export function AvailableKarkunPage() {
+export function AvailableKarkunPage({ embedded = false }: { embedded?: boolean }) {
   const { user } = useAuth()
   const ruknId = useRequiredRuknId()
   const peopleVersion = usePeopleStore()
@@ -127,15 +127,17 @@ export function AvailableKarkunPage() {
   const availablePoolError = getAvailableKarkunPoolHydrateFailureMessage()
 
   return (
-    <PageShell variant="narrow" className="app-screen connect-screen max-w-3xl">
+    <PageShell variant="narrow" className={embedded ? 'app-screen-embedded' : 'app-screen connect-screen max-w-3xl'}>
+      {embedded ? null : (
       <header className="app-screen-header">
-        <h1 className="app-screen-title">Connect</h1>
+        <h1 className="app-screen-title">Available</h1>
         <p className="app-screen-subtitle">
           {availablePoolFailed
             ? 'Available Karkuns could not be loaded'
             : `${availableKarkunan.length} ready to connect`}
         </p>
       </header>
+      )}
 
       <KarkunSearchField
         id="available-karkun-search"
@@ -188,7 +190,7 @@ export function AvailableKarkunPage() {
           icon="link"
           title="All caught up"
           description="No Karkun is available to connect right now. Check back later or contact your administrator."
-          primaryAction={{ label: 'View Connected Karkuns', href: ROUTES.RUKN_MY_KARKUN }}
+          primaryAction={{ label: 'View my Karkuns', href: ROUTES.RUKN_KARKUN }}
         />
       ) : filtered.length === 0 ? (
         <EmptyState

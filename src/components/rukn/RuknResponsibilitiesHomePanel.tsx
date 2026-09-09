@@ -27,7 +27,7 @@ export function RuknResponsibilitiesHomePanel({ ruknId }: RuknResponsibilitiesHo
       </header>
       {items.length === 0 ? (
         <p className="rukn-home-empty">
-          اس وقت آپ کی ذمہ داری کی کوئی میقاتی سرگرمی نہیں۔
+          میقاتی ذمہ داری برقرار ہے۔ سرگرمی کی تفصیل ابھی ظاہر نہیں ہو رہی۔
         </p>
       ) : (
         <ul className="rukn-home-list">

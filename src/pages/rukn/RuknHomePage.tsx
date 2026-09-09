@@ -7,8 +7,7 @@ import { ExecutionSuccessBanner } from '@/components/execution/ExecutionSuccessB
 import { WeeklyIjtemaAttendanceOpenCard } from '@/components/execution/WeeklyIjtemaAttendanceOpenCard'
 import { RuknHomeKarkunActions } from '@/components/rukn/RuknHomeKarkunActions'
 import { RuknHomeBaitulMaalCard } from '@/components/rukn/RuknHomeBaitulMaalCard'
-import { RuknMeqatiActivitiesPanel } from '@/components/rukn/RuknMeqatiActivitiesPanel'
-import { RuknResponsibilitiesHomePanel } from '@/components/rukn/RuknResponsibilitiesHomePanel'
+import { RuknHomeMeqatiNavEntry } from '@/components/rukn/RuknHomeMeqatiNavEntry'
 import { useRequiredRuknId } from '@/hooks/useRequiredRuknId'
 import { useGuidance } from '@/hooks/useGuidance'
 import { useBackgroundHydration } from '@/hooks/useBackgroundHydration'
@@ -21,7 +20,7 @@ import { getGuidanceForRuknKarkuns } from '@/lib/guidance/guidanceEngine'
 import { CardSkeleton } from '@/components/ui'
 
 /**
- * Increment 03 — Rukn / A Rukn Home.
+ * Increment 03 — Rukn Home: practical landing, not a data dashboard.
  * Tarbiyati Ijtema registration hero is protected and unchanged.
  */
 export function RuknHomePage() {
@@ -64,10 +63,6 @@ export function RuknHomePage() {
         {ruknName ? <span className="rukn-home-greeting-name">{ruknName}</span> : null}
       </p>
 
-      <WidgetErrorBoundary title="Tarbiyati Ijtema registration">
-        {backgroundReady ? <TarbiyatiIjtemaRuknHero /> : <CardSkeleton count={1} />}
-      </WidgetErrorBoundary>
-
       <div className="rukn-home-stack">
         <WidgetErrorBoundary title="Karkun">
           <RuknHomeKarkunActions ruknId={ruknId} />
@@ -90,19 +85,11 @@ export function RuknHomePage() {
         </WidgetErrorBoundary>
 
         <WidgetErrorBoundary title="Meeqati Mansooba">
-          {backgroundReady ? (
-            <RuknMeqatiActivitiesPanel ruknId={ruknId} />
-          ) : (
-            <CardSkeleton count={1} />
-          )}
+          <RuknHomeMeqatiNavEntry />
         </WidgetErrorBoundary>
 
-        <WidgetErrorBoundary title="Rukn Responsibilities">
-          {backgroundReady ? (
-            <RuknResponsibilitiesHomePanel ruknId={ruknId} />
-          ) : (
-            <CardSkeleton count={1} />
-          )}
+        <WidgetErrorBoundary title="Tarbiyati Ijtema registration">
+          {backgroundReady ? <TarbiyatiIjtemaRuknHero /> : <CardSkeleton count={1} />}
         </WidgetErrorBoundary>
       </div>
 

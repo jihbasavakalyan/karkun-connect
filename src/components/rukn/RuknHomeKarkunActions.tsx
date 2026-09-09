@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { Icon } from '@/components/ui/Icon'
 import type { IconName } from '@/design-system/iconNames'
-import { ROUTES, ruknVisitPath } from '@/constants/routes'
+import { ROUTES, ruknKarkunPath, ruknVisitPath } from '@/constants/routes'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { getGuidanceForRuknKarkuns } from '@/lib/guidance/guidanceEngine'
 import { sortGuidanceByUrgency } from '@/lib/homePresentation'
@@ -31,7 +31,7 @@ export function RuknHomeKarkunActions({ ruknId }: RuknHomeKarkunActionsProps) {
     (topGuidance ? getKarkunById(topGuidance.karkunId) : undefined) ?? assigned[0]
   const visitTo = focusKarkun
     ? topGuidance?.nextAction.route || ruknVisitPath(focusKarkun.id)
-    : ROUTES.RUKN_AVAILABLE_KARKUN
+    : ruknKarkunPath('available')
   const callHref = focusKarkun?.mobile ? buildTelLink(focusKarkun.mobile) : null
   const whatsAppHref =
     focusKarkun?.mobile || focusKarkun?.whatsapp
@@ -51,26 +51,26 @@ export function RuknHomeKarkunActions({ ruknId }: RuknHomeKarkunActionsProps) {
     {
       id: 'call',
       label: 'Call',
-      hint: callHref ? 'Phone' : 'Open Connected',
+      hint: callHref ? 'Phone' : 'Open Karkun',
       icon: 'phone',
       href: callHref ?? undefined,
-      to: callHref ? undefined : ROUTES.RUKN_MY_KARKUN,
+      to: callHref ? undefined : ROUTES.RUKN_KARKUN,
     },
     {
       id: 'whatsapp',
       label: 'WhatsApp',
-      hint: whatsAppHref ? 'Message' : 'Open Connected',
+      hint: whatsAppHref ? 'Message' : 'Open Karkun',
       icon: 'message',
       href: whatsAppHref ?? undefined,
       external: Boolean(whatsAppHref),
-      to: whatsAppHref ? undefined : ROUTES.RUKN_MY_KARKUN,
+      to: whatsAppHref ? undefined : ROUTES.RUKN_KARKUN,
     },
     {
       id: 'assignments',
       label: 'Assignments',
       hint: assigned.length ? `${assigned.length} connected` : 'Connect',
       icon: 'users',
-      to: assigned.length ? ROUTES.RUKN_MY_KARKUN : ROUTES.RUKN_AVAILABLE_KARKUN,
+      to: assigned.length ? ROUTES.RUKN_KARKUN : ruknKarkunPath('available'),
     },
   ]
 
@@ -106,7 +106,7 @@ export function RuknHomeKarkunActions({ ruknId }: RuknHomeKarkunActionsProps) {
             )
           }
           return (
-            <Link key={action.id} className={className} to={action.to ?? ROUTES.RUKN_MY_KARKUN}>
+            <Link key={action.id} className={className} to={action.to ?? ROUTES.RUKN_KARKUN}>
               {inner}
             </Link>
           )

@@ -119,11 +119,13 @@ const CampaignRecordPage = lazyWithChunkReload(() =>
 const RuknHomePage = lazyWithChunkReload(() =>
   import('@/pages/rukn/RuknHomePage').then((m) => ({ default: m.RuknHomePage })),
 )
-const AvailableKarkunPage = lazyWithChunkReload(() =>
-  import('@/pages/rukn/AvailableKarkunPage').then((m) => ({ default: m.AvailableKarkunPage })),
+const RuknKarkunPage = lazyWithChunkReload(() =>
+  import('@/pages/rukn/RuknKarkunPage').then((m) => ({ default: m.RuknKarkunPage })),
 )
-const MyKarkunPage = lazyWithChunkReload(() =>
-  import('@/pages/rukn/MyKarkunPage').then((m) => ({ default: m.MyKarkunPage })),
+const RuknMeqatiMansoobaPage = lazyWithChunkReload(() =>
+  import('@/pages/rukn/RuknMeqatiMansoobaPage').then((m) => ({
+    default: m.RuknMeqatiMansoobaPage,
+  })),
 )
 const RuknCommunicationPage = lazyWithChunkReload(() =>
   import('@/pages/rukn/RuknCommunicationPage').then((m) => ({ default: m.RuknCommunicationPage })),
@@ -266,8 +268,13 @@ export function AppRouter() {
             }
           >
             <Route index element={<RuknHomePage />} />
-            <Route path="available-karkun" element={<AvailableKarkunPage />} />
-            <Route path="my-karkun" element={<MyKarkunPage />} />
+            <Route path="karkun" element={<RuknKarkunPage />} />
+            <Route
+              path="available-karkun"
+              element={<Navigate to={`${ROUTES.RUKN_KARKUN}?view=available`} replace />}
+            />
+            <Route path="my-karkun" element={<Navigate to={ROUTES.RUKN_KARKUN} replace />} />
+            <Route path="meqati-mansooba" element={<RuknMeqatiMansoobaPage />} />
             <Route path="communication" element={<RuknCommunicationPage />} />
             <Route path="communication/companion/:karkunId" element={<CompanionWorkspacePage />} />
             <Route path="visit/:karkunId" element={<ConnectionJourneyPage />} />
@@ -279,7 +286,7 @@ export function AppRouter() {
             {/* KC-037 V1 — no Rukn Report Center; legacy /rukn/reports → Campaign Record */}
             <Route path="reports" element={<Navigate to={ROUTES.RUKN_CAMPAIGN_RECORD} replace />} />
             <Route path="tasks" element={<Navigate to={ROUTES.RUKN} replace />} />
-            <Route path="visits" element={<Navigate to={ROUTES.RUKN_MY_KARKUN} replace />} />
+            <Route path="visits" element={<Navigate to={ROUTES.RUKN_KARKUN} replace />} />
           </Route>
 
           <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />

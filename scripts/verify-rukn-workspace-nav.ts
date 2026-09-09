@@ -27,8 +27,9 @@ function read(rel: string): string {
 console.log('verify-rukn-workspace-nav: start')
 
 assert(isRuknCampaignConnectionPath(ROUTES.RUKN), 'Home is connection-scoped')
-assert(isRuknCampaignConnectionPath(ROUTES.RUKN_AVAILABLE_KARKUN), 'Connect is connection-scoped')
-assert(isRuknCampaignConnectionPath(ROUTES.RUKN_MY_KARKUN), 'Connected is connection-scoped')
+assert(isRuknCampaignConnectionPath(ROUTES.RUKN_KARKUN), 'Karkun is connection-scoped')
+assert(isRuknCampaignConnectionPath(ROUTES.RUKN_AVAILABLE_KARKUN), 'legacy Connect path is connection-scoped')
+assert(isRuknCampaignConnectionPath(ROUTES.RUKN_MY_KARKUN), 'legacy Connected path is connection-scoped')
 assert(
   !isRuknCampaignConnectionPath(ROUTES.RUKN_COMMUNICATION),
   'Communication stays open when connection hydrate fails',

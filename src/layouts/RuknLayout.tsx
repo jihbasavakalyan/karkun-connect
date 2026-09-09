@@ -24,15 +24,13 @@ import { useRequiredRuknId } from '@/hooks/useRequiredRuknId'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { HomePageSkeleton } from '@/components/ui'
-import { RuknAddPersonQuickActions } from '@/components/relationship/RuknAddPersonQuickActions'
 import { traceKc0100ConnectionConsistency } from '@/lib/debug/kc0100ConnectionConsistencyTrace'
 import { isRuknCampaignConnectionPath } from '@/lib/ruknCampaignConnectionPath'
 
 /** KC-0093 — Communication is primary workspace; Record remains route-only (workflow, not destination). */
 const navItems: { label: string; icon: IconName; to: string; end: boolean }[] = [
   { label: 'Home', icon: 'home', to: ROUTES.RUKN, end: true },
-  { label: 'Connect', icon: 'search', to: ROUTES.RUKN_AVAILABLE_KARKUN, end: false },
-  { label: 'Connected', icon: 'users', to: ROUTES.RUKN_MY_KARKUN, end: false },
+  { label: 'Karkun', icon: 'users', to: ROUTES.RUKN_KARKUN, end: false },
   { label: 'Communication', icon: 'message', to: ROUTES.RUKN_COMMUNICATION, end: false },
   { label: 'Ijtema', icon: 'calendar', to: ROUTES.RUKN_WEEKLY_IJTEMA, end: false },
   { label: 'Baitul Maal', icon: 'check', to: ROUTES.RUKN_MONTHLY_BAITUL_MAAL, end: false },
@@ -41,7 +39,7 @@ const navItems: { label: string; icon: IconName; to: string; end: boolean }[] = 
 /**
  * KC-0102A — Progressive Rukn shell: header + bottom nav always render.
  * KC-EVO-012A — Home mounts during critical hydrate with section skeletons;
- * Connect / Connected / visit stay Outlet-blocked until critical ready.
+ * Karkun / visit stay Outlet-blocked until critical ready.
  * Connection hydrate failures stay on campaign-connection routes only so
  * navigation and Logout remain usable. Failures never invent a 0-connected state.
  */
@@ -84,7 +82,7 @@ export function RuknLayout() {
             <PortalAuthActions portalLabel="Rukn Portal" tone="on-dark" />
           </div>
           <div className="mx-auto max-w-5xl">
-            <div className="mt-1.5 flex flex-wrap items-center gap-2">
+            <div className="mt-0.5 flex flex-wrap items-center gap-2">
               <p className="text-sm font-semibold text-kc-shell-text">{campaignName}</p>
               {campaignPeriodActive && timeline ? (
                 <EnterpriseBadge variant="success">{timeline.dayLabel}</EnterpriseBadge>
@@ -95,7 +93,7 @@ export function RuknLayout() {
         </div>
       </header>
 
-      <main className="native-main mx-auto w-full max-w-5xl flex-1 px-3 py-3 lg:px-6 lg:py-5">
+      <main className="native-main mx-auto w-full max-w-5xl flex-1 px-3 py-2 lg:px-6 lg:py-3">
         {hydration.failed && connectionScoped ? (
           <section className="rounded-xl border border-border bg-surface p-6 shadow-card" role="alert">
             <h1 className="text-lg font-semibold text-text-heading">Unable to load your connections</h1>
@@ -116,16 +114,13 @@ export function RuknLayout() {
           <HomePageSkeleton />
         ) : (
           <RuknCommandCenterProvider>
-            {isHydrated && ruknId ? (
-              <RuknAddPersonQuickActions ruknId={ruknId} className="mb-3" />
-            ) : null}
             <Outlet />
           </RuknCommandCenterProvider>
         )}
       </main>
 
       <nav
-        className="native-bottom-nav kc-shell-topbar fixed inset-x-0 bottom-0 z-40 border-t px-2 pt-2"
+        className="native-bottom-nav kc-shell-topbar fixed inset-x-0 bottom-0 z-40 border-t px-1.5 pt-1"
         aria-label="Rukn navigation"
       >
         <ul className="mx-auto flex max-w-5xl items-stretch justify-around">
@@ -136,7 +131,7 @@ export function RuknLayout() {
                 end={item.end}
                 className={({ isActive }) =>
                   [
-                    'native-nav-item flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 text-[11px] font-semibold leading-tight transition-colors duration-200 sm:text-xs',
+                    'native-nav-item flex min-h-11 flex-col items-center justify-center gap-0.5 rounded-xl px-0.5 py-1 text-[10px] font-semibold leading-tight transition-colors duration-200 sm:text-xs',
                     isActive
                       ? 'kc-rukn-nav-current native-nav-item-active'
                       : 'text-secondary hover:bg-kc-canvas hover:text-kc-shell-ink',

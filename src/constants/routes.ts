@@ -47,6 +47,8 @@ export const ROUTES = {
   /** KC-029 — DEV/admin runtime diagnostics (gated by feature flag). */
   ADMIN_RUNTIME_DEBUG: '/admin/debug/runtime',
   RUKN: '/rukn',
+  /** Unified Rukn Karkun destination (Connect + Connected capabilities). */
+  RUKN_KARKUN: '/rukn/karkun',
   RUKN_AVAILABLE_KARKUN: '/rukn/available-karkun',
   RUKN_MY_KARKUN: '/rukn/my-karkun',
   /** KC-0091 — Rukn Communication Workspace foundation */
@@ -55,6 +57,8 @@ export const ROUTES = {
   RUKN_WEEKLY_IJTEMA: '/rukn/weekly-ijtema',
   /** KC-0108 — Rukn Monthly Baitul Maal completion */
   RUKN_MONTHLY_BAITUL_MAAL: '/rukn/baitul-maal',
+  /** Read-only Meeqati Mansooba / میقاتی ذمہ داری destination */
+  RUKN_MEQATI_MANSOOBA: '/rukn/meqati-mansooba',
   /** Tarbiyati Ijtema connected-Karkun registration progress */
   RUKN_TARBIYATI_IJTEMA: '/rukn/tarbiyati-ijtema',
   RUKN_SETTINGS: '/rukn/settings',
@@ -64,6 +68,10 @@ export type AppRoute = (typeof ROUTES)[keyof typeof ROUTES]
 
 export function ruknVisitPath(karkunId: string): string {
   return `${ROUTES.RUKN}/visit/${karkunId}`
+}
+
+export function ruknKarkunPath(view?: 'mine' | 'available'): string {
+  return view === 'available' ? `${ROUTES.RUKN_KARKUN}?view=available` : ROUTES.RUKN_KARKUN
 }
 
 export function ruknCompanionPath(karkunId: string): string {

@@ -14,7 +14,7 @@ import { matchesKarkunRegistrySearch } from '@/lib/relationshipPresentation'
 import { sortGuidanceByUrgency } from '@/lib/homePresentation'
 import { getGuidanceForRuknKarkuns } from '@/lib/guidance/guidanceEngine'
 
-export function MyKarkunPage() {
+export function MyKarkunPage({ embedded = false }: { embedded?: boolean }) {
   const { user } = useAuth()
   const ruknId = useRequiredRuknId()
   const { assignmentVersion, getAssignedKarkunanForRukn } = useAssignmentEngine()
@@ -50,13 +50,15 @@ export function MyKarkunPage() {
   }
 
   return (
-    <PageShell variant="narrow" className="app-screen connected-screen">
+    <PageShell variant="narrow" className={embedded ? 'app-screen-embedded' : 'app-screen connected-screen'}>
+      {embedded ? null : (
       <header className="app-screen-header">
-        <h1 className="app-screen-title">Connected</h1>
+        <h1 className="app-screen-title">My Karkuns</h1>
         <p className="app-screen-subtitle">
           {myKarkunan.length} Karkun{myKarkunan.length === 1 ? '' : 's'}
         </p>
       </header>
+      )}
 
       <ExecutionSuccessBanner />
 
@@ -76,7 +78,7 @@ export function MyKarkunPage() {
             icon="users"
             title="No connections yet"
             description="Connect with a Karkun to begin guiding them through the campaign journey."
-            primaryAction={{ label: 'Connect Karkun', href: ROUTES.RUKN_AVAILABLE_KARKUN }}
+            primaryAction={{ label: 'Find available Karkuns', href: `${ROUTES.RUKN_KARKUN}?view=available` }}
           />
         ) : filtered.length === 0 ? (
           <EmptyState

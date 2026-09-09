@@ -82,7 +82,7 @@ export function operationalActionForProgrammeKind(
     return { href: ROUTES.RUKN, label: 'مہم کی تکمیل' }
   }
   if (kind === 'follow_up') {
-    return { href: ROUTES.RUKN_MY_KARKUN, label: 'کارکنان کی پیروی' }
+    return { href: ROUTES.RUKN_KARKUN, label: 'کارکنان کی پیروی' }
   }
   return null
 }
