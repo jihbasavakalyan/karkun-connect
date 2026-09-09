@@ -48,7 +48,7 @@ function DrillActivityList({ activities }: { activities: readonly ShobahDrillAct
         <li key={activity.id}>
           <p className="orgdash-drill-activity">{activity.name}</p>
           <p className="orgdash-hint">
-            {yearStatusLabel(activity.status)} · ذمہ دار:{' '}
+            صورتحال: {yearStatusLabel(activity.status)} · ذمہ دار:{' '}
             {activity.responsibleName ?? 'غیر متعین'} · نظام الاوقات:{' '}
             {activity.scheduleLabel}
             {activity.summary ? ` · خلاصہ: ${activity.summary}` : null}
@@ -170,13 +170,14 @@ function MeqatiYearSummary({ situation }: { situation: OrganisationalSituation }
           میقاتی منصوبہ — موجودہ سال
         </h2>
         <div className="orgdash-card-meta">
-          <span className="orgdash-card-meta-year">{year.label}</span>
-          <span className="orgdash-card-meta-sub">{meqatiYearUrduRange(year)}</span>
           {mansooba ? (
-            <span className="orgdash-card-meta-sub">
+            <span className="orgdash-card-meta-year">
               {mansooba.name} · {mansoobaStatusLabel(mansooba)}
             </span>
           ) : null}
+          <span className="orgdash-card-meta-sub">
+            {year.label} · {meqatiYearUrduRange(year)}
+          </span>
         </div>
       </div>
       {!mansooba || empty ? (
@@ -206,15 +207,18 @@ function MeqatiYearSummary({ situation }: { situation: OrganisationalSituation }
             </div>
           </dl>
           {recordedYearStatuses(counts) > 0 ? (
-            <div
-              className="orgdash-bar"
-              role="progressbar"
-              aria-valuenow={counts.progressPct}
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-label={`میقاتی پیش رفت ${counts.progressPct}%`}
-            >
-              <div className="orgdash-bar-fill" style={{ width: `${counts.progressPct}%` }} />
+            <div className="orgdash-progress">
+              <div
+                className="orgdash-bar"
+                role="progressbar"
+                aria-valuenow={counts.progressPct}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-label={`میقاتی پیش رفت ${counts.progressPct}%`}
+              >
+                <div className="orgdash-bar-fill" style={{ width: `${counts.progressPct}%` }} />
+              </div>
+              <p className="orgdash-progress-caption">{counts.progressPct}% مکمل</p>
             </div>
           ) : null}
         </>
@@ -267,7 +271,10 @@ function ShobahStatusSection({ rows, empty }: { rows: ShobahStatusRow[]; empty: 
                           setOpenId((current) => (current === row.shobahId ? null : row.shobahId))
                         }
                       >
-                        {row.name}
+                        <span>{row.name}</span>
+                        <span className="orgdash-row-btn-hint">
+                          {openId === row.shobahId ? 'تفصیل بند کریں' : 'تفصیل کھولیں'}
+                        </span>
                       </button>
                     </td>
                     <td>{row.activities}</td>
@@ -293,7 +300,8 @@ function ShobahStatusSection({ rows, empty }: { rows: ShobahStatusRow[]; empty: 
                 >
                   <span className="orgdash-shobah-name">{row.name}</span>
                   <span className="orgdash-shobah-meta">
-                    {row.completed}/{row.activities} مکمل · {progressDisplay(row)}
+                    {row.completed}/{row.activities} مکمل · {progressDisplay(row)} ·{' '}
+                    {openId === row.shobahId ? 'تفصیل بند کریں' : 'تفصیل کھولیں'}
                   </span>
                 </button>
               </li>
@@ -410,8 +418,8 @@ function ImportantActivities({ situation }: { situation: OrganisationalSituation
               <li key={`m-${row.id}`} className="orgdash-activity-card">
                 <p className="orgdash-drill-activity">{row.name}</p>
                 <p className="orgdash-hint">
-                  {yearStatusLabel(row.status)} · ذمہ دار: {row.responsibleName ?? 'غیر متعین'} · نظام
-                  الاوقات: {row.scheduleLabel}
+                  صورتحال: {yearStatusLabel(row.status)} · ذمہ دار:{' '}
+                  {row.responsibleName ?? 'غیر متعین'} · نظام الاوقات: {row.scheduleLabel}
                 </p>
               </li>
             ))}
@@ -449,10 +457,6 @@ export function OrganisationalDashboardStack({
 }: OrganisationalDashboardStackProps) {
   return (
     <div className="orgdash-stack">
-      <WidgetErrorBoundary title="ہفتہ وار اجتماع">
-        {backgroundReady ? <IjtemaSnapshot situation={situation} /> : <CardSkeleton count={1} />}
-      </WidgetErrorBoundary>
-
       <WidgetErrorBoundary title="میقاتی منصوبہ">
         {backgroundReady ? (
           <MeqatiYearSummary situation={situation} />
@@ -467,6 +471,10 @@ export function OrganisationalDashboardStack({
         ) : (
           <CardSkeleton count={1} />
         )}
+      </WidgetErrorBoundary>
+
+      <WidgetErrorBoundary title="ہفتہ وار اجتماع">
+        {backgroundReady ? <IjtemaSnapshot situation={situation} /> : <CardSkeleton count={1} />}
       </WidgetErrorBoundary>
 
       <WidgetErrorBoundary title="توجہ طلب">

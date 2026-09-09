@@ -2,7 +2,7 @@
  * Dashboard information architecture — organisational situation view.
  * Run: npx vite-node scripts/verify-dashboard-ia-structure.ts
  *
- * Order: Hero → Ijtema → Meqati year → Shobah → Attention → Quick Actions →
+ * Order: Hero → Meqati year → Shobah → Ijtema → Attention → Quick Actions →
  * important ongoing activities → campaign (contextual) → Rafeeq
  */
 
@@ -88,7 +88,11 @@ assert(quick.includes('بیت المال'), 'quick action: baitul maal')
 assert(!quick.includes("label: 'Record Visit'"), 'Visit is not a global Quick Action')
 assert(picture.includes('Open work'), 'Open work remains in internal picture helper (not deleted)')
 assert(css.includes('.orgdash-hero'), 'organisational hero styles present')
-assert(css.includes('background: #ffffff'), 'organisational cards are white, not campaign-green')
+assert(
+  css.includes('background: var(--color-surface') || css.includes('background: #ffffff'),
+  'organisational cards use surface/white, not campaign-green',
+)
+assert(!css.includes('background: #f1f5f9'), 'Home canvas is not the old slate grey')
 assert(nav.includes("label: 'میقاتی منصوبہ'"), 'sidebar contains میقاتی منصوبہ')
 assert(nav.includes("label: 'باہمی ربط'"), 'sidebar contains باہمی ربط')
 assert(nav.includes("label: 'ہوم'"), 'sidebar Home is landing, not a module named Dashboard')
@@ -105,10 +109,10 @@ const attentionIdx = stack.indexOf('<AttentionCompact')
 const quickIdx = stack.indexOf('<AdminQuickActionsPanel')
 const importantIdx = stack.indexOf('<ImportantActivities')
 const campaignIdx = stack.indexOf('<ActiveCampaignCompact')
-assert(ijtemaIdx > 0, 'Ijtema snapshot rendered')
-assert(meqatiIdx > ijtemaIdx, 'Meqati year after Ijtema')
+assert(meqatiIdx > 0, 'Meqati year summary rendered')
 assert(shobahIdx > meqatiIdx, 'Shobah after Meqati year')
-assert(attentionIdx > shobahIdx, 'Attention after Shobah')
+assert(ijtemaIdx > shobahIdx, 'Ijtema after Shobah')
+assert(attentionIdx > ijtemaIdx, 'Attention after Ijtema')
 assert(quickIdx > attentionIdx, 'Quick Actions after Attention')
 assert(importantIdx > quickIdx, 'Important activities after Quick Actions')
 assert(campaignIdx > importantIdx, 'Campaign after important activities')
