@@ -20,6 +20,8 @@ import {
 } from '@/lib/peopleStore'
 import {
   formatReferringRuknSummary,
+  fromPublicReferringRuknList,
+  listEligibleReferringRukns,
   matchReferringRuknQuery,
 } from '@/lib/referringRukn'
 import {
@@ -100,6 +102,14 @@ console.log('verify-referred-by-rukn: start')
   assert(searchField.includes('handleSelect(rukn.id)'), 'search selection writes Rukn id')
   assert(!searchField.includes("if (value) onChange('')"), 'typing/search must not clear the committed id')
   assert(searchField.includes("type=\"text\""), 'avoids type=search clearing the committed id')
+  assert(searchField.includes('onFocus'), 'focus opens the picker')
+  assert(searchField.includes('No matching Rukn / A Rukn.'), 'empty state is match-based, not a closed picker')
+
+  const publicPage = read('src/pages/public/TrainingRegistrationPage.tsx')
+  assert(publicPage.includes('fromPublicReferringRuknList'), 'public picker maps session Rukns as eligible')
+  assert(publicPage.includes('options={publicReferringOptions}'), 'public picker receives session candidates')
+  assert(publicPage.includes("lookupCase === 'new_candidate' && !referredByRuknId.trim()"), 'empty public referral remains invalid')
+  assert(publicPage.includes('onChange={setReferredByRuknId}'), 'public selection writes referredByRuknId')
 
   const ruknAdd = read('src/components/relationship/NewKarkunRequestModal.tsx')
   assert(ruknAdd.includes('ReferringRuknSearchField'), 'Rukn Add Karkun uses searchable referring Rukn field')
@@ -121,6 +131,73 @@ console.log('verify-referred-by-rukn: start')
   assert(formatReferringRuknSummary(sample).includes('R018'), 'summary includes id')
   assert(formatReferringRuknSummary(sample).includes('Rukn'), 'summary includes category')
   console.log('  OK  searchable referring Rukn matching')
+}
+
+{
+  const sessionRows = [
+    {
+      id: 'R018',
+      name: 'Md Aslam',
+      mobile: '9876543210',
+      gender: 'Male' as const,
+      category: 'Rukn' as const,
+    },
+    {
+      id: 'AR01',
+      name: 'A Rukn One',
+      mobile: '9876543211',
+      gender: 'Male' as const,
+      category: 'A Rukn' as const,
+    },
+    {
+      id: 'R019',
+      name: 'Female Referrer',
+      mobile: '9876543222',
+      gender: 'Female' as const,
+      category: 'Rukn' as const,
+    },
+  ]
+  const unstamped = sessionRows.map((row) => ({
+    id: row.id,
+    name: row.name,
+    mobile: row.mobile,
+    gender: row.gender,
+    officerKind: row.category === 'A Rukn' ? ('a_rukn' as const) : ('rukn' as const),
+  }))
+  assert(
+    listEligibleReferringRukns(unstamped).length === 0,
+    'session rows without status must not be treated as eligible (documents the production empty-list bug)',
+  )
+
+  const publicOptions = fromPublicReferringRuknList(sessionRows)
+  const openList = listEligibleReferringRukns(publicOptions)
+  assert(openList.length === 3, 'empty query keeps all public session candidates')
+  assert(
+    openList.every((row) => matchReferringRuknQuery(row, '')),
+    'picker open with no search text still lists candidates',
+  )
+
+  const maleList = listEligibleReferringRukns(publicOptions, { gender: 'Male' })
+  assert(maleList.some((row) => row.id === 'R018'), 'male applicant can select a male Rukn')
+  assert(maleList.some((row) => row.id === 'AR01'), 'male applicant can select a male A Rukn')
+  assert(!maleList.some((row) => row.id === 'R019'), 'male applicant cannot select a female Rukn')
+
+  const femaleList = listEligibleReferringRukns(publicOptions, { gender: 'Female' })
+  assert(femaleList.some((row) => row.id === 'R019'), 'female applicant can select a female Rukn')
+  assert(!femaleList.some((row) => row.id === 'R018'), 'female applicant cannot select a male Rukn')
+
+  const named = maleList.filter((row) => matchReferringRuknQuery(row, 'aslam'))
+  assert(named.length === 1 && named[0]?.id === 'R018', 'search by name returns a candidate')
+  const byId = maleList.filter((row) => matchReferringRuknQuery(row, 'AR01'))
+  assert(byId.length === 1 && byId[0]?.id === 'AR01', 'search by id returns a candidate')
+  const byMobile = maleList.filter((row) => matchReferringRuknQuery(row, '9876543210'))
+  assert(byMobile.length === 1 && byMobile[0]?.id === 'R018', 'search by mobile returns a candidate')
+  const selectedId = named[0]!.id
+  assert(selectedId === 'R018', 'selecting a candidate yields referredByRuknId')
+  const afterMoreTyping = maleList.filter((row) => matchReferringRuknQuery(row, 'zzz'))
+  assert(afterMoreTyping.length === 0, 'unmatched search does not invent a candidate')
+  assert(selectedId === 'R018', 'committed referredByRuknId survives subsequent search text')
+  console.log('  OK  public referring Rukn picker candidates')
 }
 
 resetRepositoryProviderForTests()

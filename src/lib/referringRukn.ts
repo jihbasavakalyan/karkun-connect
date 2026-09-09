@@ -61,3 +61,27 @@ export function listEligibleReferringRukns(
     .slice()
     .sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id))
 }
+
+/**
+ * Public registration session already returns only active, non-archived Rukn / A Rukn.
+ * Stamp eligibility so listEligibleReferringRukns does not drop every row for missing status.
+ */
+export function fromPublicReferringRuknList(
+  rows: Array<{
+    id: string
+    name: string
+    mobile?: string
+    gender?: string
+    category?: ReferringRuknCategory
+  }>,
+): ReferringRuknOption[] {
+  return rows.map((row) => ({
+    id: row.id,
+    name: row.name,
+    mobile: row.mobile,
+    gender: row.gender || undefined,
+    officerKind: row.category === 'A Rukn' ? 'a_rukn' : 'rukn',
+    status: 'active',
+    isArchived: false,
+  }))
+}

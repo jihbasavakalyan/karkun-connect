@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { ReferringRuknSearchField } from '@/components/forms/people/ReferringRuknSearchField'
 import { JihLogoMark } from '@/components/public-registration/JihLogoMark'
 import { OtpBoxes } from '@/components/public-registration/OtpBoxes'
-import { listEligibleReferringRukns } from '@/lib/referringRukn'
+import { fromPublicReferringRuknList, listEligibleReferringRukns } from '@/lib/referringRukn'
 import {
   buildTarbiyatiIjtemaUpiAppUri,
   buildTarbiyatiIjtemaUpiPayUri,
@@ -114,13 +114,7 @@ export function TrainingRegistrationPage() {
   const registeredName = (registration?.fullName || profile.name).trim()
   const publicReferringOptions = useMemo(() => {
     return listEligibleReferringRukns(
-      referringRukns.map((row) => ({
-        id: row.id,
-        name: row.name,
-        mobile: row.mobile,
-        gender: row.gender || undefined,
-        officerKind: row.category === 'A Rukn' ? 'a_rukn' : 'rukn',
-      })),
+      fromPublicReferringRuknList(referringRukns),
       profile.gender === 'Male' || profile.gender === 'Female'
         ? { gender: profile.gender }
         : undefined,

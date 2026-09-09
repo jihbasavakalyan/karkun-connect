@@ -25,6 +25,11 @@ import {
   TRAINING_REGISTRATION_SETTINGS_DOC,
 } from '@/lib/publicRegistration/adminTracking'
 import {
+  fromPublicReferringRuknList,
+  listEligibleReferringRukns,
+  matchReferringRuknQuery,
+} from '@/lib/referringRukn'
+import {
   buildTarbiyatiIjtemaUpiAppUri,
   buildTarbiyatiIjtemaUpiPayUri,
   buildTarbiyatiIjtemaUpiQuery,
@@ -207,6 +212,7 @@ function testPublicCopyAndPayment(): void {
   assert(page.includes('Cash Paid To'), 'cash paid to choice')
   assert(page.includes('Select Person'), 'cash collector select')
   assert(page.includes('ReferringRuknSearchField'), 'new candidate referring Rukn is searchable')
+  assert(page.includes('fromPublicReferringRuknList'), 'public picker stamps session Rukns as eligible')
   assert(page.includes('Referred By Rukn is required.'), 'new candidate cannot continue without referral')
   assert(!page.includes('₹100 paid in cash'), 'generic cash paid choice removed')
   assert(page.includes('TARBIYATI_IJTEMA_UPI_QR_SRC'), 'official QR constant used in public UI')
@@ -859,6 +865,21 @@ function testReferringRuknsFromRuknMaster(): void {
   if (valid.ok) {
     assert(valid.id === 'R001' && valid.name === 'Md Aslam', 'persists canonical referring id')
   }
+
+  const publicOptions = listEligibleReferringRukns(fromPublicReferringRuknList(options), {
+    gender: 'Male',
+  })
+  assert(publicOptions.some((row) => row.id === 'R001'), 'public picker keeps active male Rukn')
+  assert(publicOptions.some((row) => row.id === 'AR01'), 'public picker keeps active male A Rukn')
+  assert(!publicOptions.some((row) => row.id === 'R004'), 'public picker still applies male-to-male gender rule')
+  assert(
+    publicOptions.filter((row) => matchReferringRuknQuery(row, '')).length === publicOptions.length,
+    'public picker lists candidates before any search text',
+  )
+  assert(
+    publicOptions.filter((row) => matchReferringRuknQuery(row, 'aslam'))[0]?.id === 'R001',
+    'public picker search by name returns a candidate',
+  )
 }
 
 function testOnlinePaymentSettingDefault(): void {
