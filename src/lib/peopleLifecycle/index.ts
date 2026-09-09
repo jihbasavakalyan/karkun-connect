@@ -2,8 +2,10 @@ export {
   buildUnifiedInbox,
   countUnreadInboxItems,
   getPendingIntakeCount,
+  resolveInboxFolder,
   resolvePersonLookup,
   type InboxFolder,
+  type InboxFolderFilter,
   type InboxItem,
   type InboxItemKind,
 } from './InboxEngine'

@@ -2,21 +2,25 @@
  * KC-0123 / BATCH-06A — Admin Inbox (people intake + Rukn → Admin internal messages).
  * WhatsApp history is not shown here. No chat/thread.
  * KC-028B — unified write lifecycle for approve / reject / mark read.
+ * Increment 08 — presentation/IA + Pending includes unread Rukn messages.
  */
 
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { InboxAccordionSection } from '@/components/inbox/InboxAccordionSection'
-import { PageShell } from '@/components/ui'
+import { EmptyState, ListSkeleton, PageHeader, PageShell } from '@/components/ui'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
+import { BUTTON_BASE_CLASS, BUTTON_SIZE_CLASS } from '@/components/ui/buttonBase'
 import { FORM_INPUT_CLASS, FORM_LABEL_CLASS } from '@/components/ui/formStyles'
 import { useAuth } from '@/hooks/useAuth'
+import { useRepositoryHydrationStatus } from '@/hooks/useRepositoryHydration'
 import { useWriteLifecycle } from '@/hooks/useWriteLifecycle'
 import {
   buildUnifiedInbox,
   countUnreadInboxItems,
-  type InboxFolder,
+  resolveInboxFolder,
+  type InboxFolderFilter,
   type InboxItem,
   type InboxItemKind,
 } from '@/lib/peopleLifecycle'
@@ -47,7 +51,7 @@ import { getRuknById } from '@/data/ruknMaster'
 import { isEligibleReferringRukn } from '@/lib/referringRukn'
 import { buildWhatsAppLink } from '@/utils/personContactLinks'
 
-const FOLDERS: { id: InboxFolder | 'all'; label: string }[] = [
+const FOLDERS: { id: InboxFolderFilter; label: string }[] = [
   { id: 'pending', label: 'Pending' },
   { id: 'approved', label: 'Approved' },
   { id: 'rejected', label: 'Rejected' },
@@ -63,6 +67,12 @@ const KINDS: { id: InboxItemKind | 'all'; label: string }[] = [
   { id: 'muttafiq_rukn_link', label: 'Muttafiq links' },
   { id: 'rukn_message', label: 'Rukn messages' },
 ]
+
+const INBOX_LINK_CLASS = [
+  BUTTON_BASE_CLASS,
+  BUTTON_SIZE_CLASS.md,
+  'border border-border bg-surface text-text-heading hover:border-primary/30 hover:bg-surface-muted',
+].join(' ')
 
 /** Existing InboxEngine kind labels — presentation grouping only. */
 const INBOX_SECTION_ORDER = [
@@ -128,16 +138,31 @@ function groupInboxItems(items: InboxItem[]): { id: string; label: string; items
   return ordered
 }
 
+function writeInboxSearchParams(
+  current: URLSearchParams,
+  patch: { folder?: InboxFolderFilter; query?: string },
+): URLSearchParams {
+  const next = new URLSearchParams(current)
+  if (patch.folder !== undefined) {
+    next.set('folder', patch.folder)
+  }
+  if (patch.query !== undefined) {
+    const trimmed = patch.query.trim()
+    if (trimmed) next.set('query', trimmed)
+    else next.delete('query')
+  }
+  return next
+}
+
 export function AdminInboxPage() {
   const { user } = useAuth()
-  const [searchParams] = useSearchParams()
+  const hydration = useRepositoryHydrationStatus()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const folder = resolveInboxFolder(searchParams.get('folder'))
+  const urlQuery = searchParams.get('query') ?? ''
   const [tick, setTick] = useState(0)
-  const [folder, setFolder] = useState<InboxFolder | 'all'>(
-    () => (searchParams.get('folder') as InboxFolder | null) ?? 'pending',
-  )
   const [kind, setKind] = useState<InboxItemKind | 'all'>('all')
-  const [queryDraft, setQueryDraft] = useState<string | null>(null)
-  const query = queryDraft ?? (searchParams.get('query') ?? '')
+  const [queryDraft, setQueryDraft] = useState(urlQuery)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [referralByRequestId, setReferralByRequestId] = useState<Record<string, string>>({})
@@ -145,6 +170,20 @@ export function AdminInboxPage() {
   const [addressByRequestId, setAddressByRequestId] = useState<Record<string, string>>({})
   const [openInboxSection, setOpenInboxSection] = useState('')
   const { busy, busyKey, progressMessage, run } = useWriteLifecycle()
+
+  useEffect(() => {
+    setQueryDraft(urlQuery)
+  }, [urlQuery])
+
+  useEffect(() => {
+    if (queryDraft === urlQuery) return
+    const handle = window.setTimeout(() => {
+      setSearchParams((current) => writeInboxSearchParams(current, { query: queryDraft }), {
+        replace: true,
+      })
+    }, 300)
+    return () => window.clearTimeout(handle)
+  }, [queryDraft, urlQuery, setSearchParams])
 
   useEffect(() => {
     const unsubRequests = subscribeToKarkunRequestStore(() => setTick((v) => v + 1))
@@ -157,18 +196,18 @@ export function AdminInboxPage() {
 
   const items = useMemo(() => {
     void tick
-    return buildUnifiedInbox({ folder, kind, query })
-  }, [folder, kind, query, tick])
+    return buildUnifiedInbox({ folder, kind, query: queryDraft })
+  }, [folder, kind, queryDraft, tick])
 
   const groupedItems = useMemo(() => groupInboxItems(items), [items])
 
   useEffect(() => {
-    if (!query.trim()) return
+    if (!queryDraft.trim()) return
     const first = groupedItems[0]
     if (first) setOpenInboxSection(first.id)
     // Open matching groups when search/filter changes; do not reset on store ticks.
     // eslint-disable-next-line react-hooks/exhaustive-deps -- groupedItems excluded on purpose
-  }, [query, folder, kind])
+  }, [queryDraft, folder, kind])
 
   const unread = useMemo(() => {
     void tick
@@ -176,6 +215,12 @@ export function AdminInboxPage() {
   }, [tick])
 
   const decidedBy = user?.displayName ?? user?.uid ?? 'Administrator'
+
+  const setFolder = (next: InboxFolderFilter) => {
+    setSearchParams((current) => writeInboxSearchParams(current, { folder: next }), {
+      replace: true,
+    })
+  }
 
   const refreshAfterDecision = async () => {
     try {
@@ -305,49 +350,77 @@ export function AdminInboxPage() {
     })
   }
 
+  const unreadBadge =
+    hydration.ready && unread > 0 ? (
+      <span className="rounded-full bg-primary-muted px-3 py-1 text-sm font-semibold text-primary">
+        {unread} needing attention
+      </span>
+    ) : null
+
+  if (hydration.failed) {
+    return (
+      <PageShell>
+        <PageHeader
+          title={
+            <span dir="rtl" lang="ur">
+              ان باکس
+            </span>
+          }
+          description="People intake and one-way Rukn messages. Reply to a Rukn on WhatsApp — this is not a chat."
+        />
+        <EmptyState
+          icon="warning"
+          title="Unable to load Inbox"
+          description={hydration.error ?? 'Inbox records could not be loaded.'}
+        >
+          <PrimaryButton type="button" className="mt-3" onClick={hydration.retry}>
+            Retry
+          </PrimaryButton>
+        </EmptyState>
+      </PageShell>
+    )
+  }
+
   return (
     <PageShell>
-      <header className="mb-6 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold text-text-heading">Inbox</h1>
-          <p className="mt-1 text-sm text-secondary">
-            People intake and one-way Rukn messages. Reply to a Rukn on WhatsApp — this is not a
-            chat.
-          </p>
-        </div>
-        {unread > 0 ? (
-          <span className="rounded-full bg-primary/10 px-3 py-1 text-sm font-semibold text-primary">
-            {unread} unread
+      <PageHeader
+        title={
+          <span dir="rtl" lang="ur">
+            ان باکس
           </span>
-        ) : null}
-      </header>
+        }
+        description="People intake and one-way Rukn messages. Reply to a Rukn on WhatsApp — this is not a chat."
+        actions={unreadBadge}
+      />
 
-      <TrainingGatheringAdminPanel />
-
-      <div className="mb-4 flex flex-wrap gap-2">
-        {FOLDERS.map((entry) => (
-          <button
-            key={entry.id}
-            type="button"
-            className={[
-              'rounded-full border px-3 py-1.5 text-sm font-semibold',
-              folder === entry.id
-                ? 'border-primary bg-primary/10 text-primary'
-                : 'border-border bg-surface text-text-heading',
-            ].join(' ')}
-            onClick={() => setFolder(entry.id)}
-          >
-            {entry.label}
-          </button>
-        ))}
-      </div>
+      <nav
+        className="mb-4 flex flex-nowrap gap-1 overflow-x-auto border-b border-border pb-px"
+        aria-label="Inbox folders"
+      >
+        {FOLDERS.map((entry) => {
+          const selected = folder === entry.id
+          return (
+            <button
+              key={entry.id}
+              type="button"
+              aria-current={selected ? 'page' : undefined}
+              className={`ds-tab shrink-0 border-b-2 rounded-none px-4 ${
+                selected ? 'border-primary text-primary ds-tab-active' : 'border-transparent'
+              }`}
+              onClick={() => setFolder(entry.id)}
+            >
+              {entry.label}
+            </button>
+          )
+        })}
+      </nav>
 
       <div className="mb-4 grid gap-3 sm:grid-cols-[1fr_auto]">
         <label className="block">
           <span className={FORM_LABEL_CLASS}>Search</span>
           <input
             className={FORM_INPUT_CLASS}
-            value={query}
+            value={queryDraft}
             onChange={(event) => setQueryDraft(event.target.value)}
             placeholder="Search name, sender, status…"
           />
@@ -384,7 +457,9 @@ export function AdminInboxPage() {
         </p>
       ) : null}
 
-      {items.length === 0 ? (
+      {!hydration.ready ? (
+        <ListSkeleton rows={5} />
+      ) : items.length === 0 ? (
         <p className="rounded-xl border border-border bg-surface px-4 py-6 text-sm text-secondary">
           No items in this folder.
         </p>
@@ -402,158 +477,172 @@ export function AdminInboxPage() {
             >
               <ul className="space-y-3">
                 {section.items.map((item) => {
-            const itemBusy =
-              busyKey === `inbox:approve:${item.rawRequest?.id ?? ''}` ||
-              busyKey === `inbox:reject:${item.rawRequest?.id ?? ''}` ||
-              busyKey === `inbox:read:${item.rawInternalMessage?.id ?? ''}`
-            const canDecide = Boolean(item.rawRequest && item.folder === 'pending')
-            const canMarkRead = Boolean(
-              item.rawInternalMessage && item.rawInternalMessage.status === 'unread',
-            )
-            const rukn = item.rawInternalMessage
-              ? getRuknById(item.rawInternalMessage.ruknId)
-              : undefined
-            const whatsappHref = rukn
-              ? buildWhatsAppLink(rukn.whatsapp?.trim() ? rukn.whatsapp : rukn.mobile)
-              : null
-            const publicTrainingReferral = item.rawRequest
-              ? publicTrainingReferralValue(item.rawRequest, referralByRequestId)
-              : ''
-            const referringRukn = publicTrainingReferral
-              ? getRuknById(publicTrainingReferral)
-              : undefined
-            const approveBlockedForReferral = Boolean(
-              item.rawRequest &&
-                isNewKarkunIntakeRequest(item.rawRequest) &&
-                (!referringRukn || !isEligibleReferringRukn(referringRukn)),
-            )
-            return (
-              <li
-                key={item.id}
-                className="rounded-2xl border border-border bg-surface px-4 py-3 shadow-card"
-              >
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-secondary">
-                      {item.subtitle}
-                    </p>
-                    <p className="font-semibold text-text-heading">{item.title}</p>
-                    <p className="mt-1 text-sm text-secondary">
-                      From {item.sender}
-                      {item.recipient ? ` → ${item.recipient}` : ''}
-                    </p>
-                    {item.rawRequest ? (
-                      <p className="mt-1 text-xs text-secondary">
-                        Kind: {getPeopleRequestKind(item.rawRequest)} · {item.rawRequest.mobile}
-                        {item.rawRequest.source === 'public_training_registration'
-                          ? ` · ${item.rawRequest.address ?? ''} · ${item.rawRequest.education ?? ''} · ${item.rawRequest.profession ?? ''}`
-                          : ''}
-                      </p>
-                    ) : null}
-                    {item.rawInternalMessage ? (
-                      <p className="mt-2 whitespace-pre-wrap text-sm text-text-heading">
-                        {item.rawInternalMessage.body}
-                      </p>
-                    ) : null}
-                    {item.rawRequest &&
-                    canDecide &&
-                    isNewKarkunIntakeRequest(item.rawRequest) &&
-                    !isPublicTrainingRequest(item.rawRequest) ? (
-                      <SubmittedReferringRuknDisplay
-                        request={item.rawRequest}
-                        referredByRuknId={publicTrainingReferral}
-                      />
-                    ) : null}
-                    {item.rawRequest &&
-                    canDecide &&
-                    isPublicTrainingRequest(item.rawRequest) ? (
-                      <PublicTrainingApproveFields
-                        request={item.rawRequest}
-                        referredByRuknId={
-                          referralByRequestId[item.rawRequest.id] ??
-                          item.rawRequest.requestingRuknId ??
-                          ''
-                        }
-                        onReferredByRuknIdChange={(value) =>
-                          setReferralByRequestId((current) => ({
-                            ...current,
-                            [item.rawRequest!.id]: value,
-                          }))
-                        }
-                        fatherHusbandName={familyByRequestId[item.rawRequest.id] ?? ''}
-                        onFatherHusbandNameChange={(value) =>
-                          setFamilyByRequestId((current) => ({
-                            ...current,
-                            [item.rawRequest!.id]: value,
-                          }))
-                        }
-                        address={addressByRequestId[item.rawRequest.id] ?? ''}
-                        onAddressChange={(value) =>
-                          setAddressByRequestId((current) => ({
-                            ...current,
-                            [item.rawRequest!.id]: value,
-                          }))
-                        }
-                        disabled={busy}
-                      />
-                    ) : null}
-                  </div>
-                  <span className="rounded-full bg-surface-muted px-2.5 py-1 text-xs font-semibold">
-                    {item.statusLabel}
-                  </span>
-                </div>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {item.href ? (
-                    <Link to={item.href} className="text-sm font-semibold text-primary underline">
-                      View
-                    </Link>
-                  ) : null}
-                  {whatsappHref ? (
-                    <a
-                      href={whatsappHref}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm font-semibold text-primary underline"
+                  const itemBusy =
+                    busyKey === `inbox:approve:${item.rawRequest?.id ?? ''}` ||
+                    busyKey === `inbox:reject:${item.rawRequest?.id ?? ''}` ||
+                    busyKey === `inbox:read:${item.rawInternalMessage?.id ?? ''}`
+                  const actionLabel = itemBusy
+                    ? progressMessage || 'Saving'
+                    : null
+                  const canDecide = Boolean(item.rawRequest && item.folder === 'pending')
+                  const canMarkRead = Boolean(
+                    item.rawInternalMessage && item.rawInternalMessage.status === 'unread',
+                  )
+                  const rukn = item.rawInternalMessage
+                    ? getRuknById(item.rawInternalMessage.ruknId)
+                    : undefined
+                  const whatsappHref = rukn
+                    ? buildWhatsAppLink(rukn.whatsapp?.trim() ? rukn.whatsapp : rukn.mobile)
+                    : null
+                  const publicTrainingReferral = item.rawRequest
+                    ? publicTrainingReferralValue(item.rawRequest, referralByRequestId)
+                    : ''
+                  const referringRukn = publicTrainingReferral
+                    ? getRuknById(publicTrainingReferral)
+                    : undefined
+                  const approveBlockedForReferral = Boolean(
+                    item.rawRequest &&
+                      isNewKarkunIntakeRequest(item.rawRequest) &&
+                      (!referringRukn || !isEligibleReferringRukn(referringRukn)),
+                  )
+                  const viewLabel = item.rawInternalMessage ? 'View Rukn' : 'View person'
+                  return (
+                    <li
+                      key={item.id}
+                      className="rounded-xl border border-border bg-surface px-4 py-3"
                     >
-                      WhatsApp Rukn
-                    </a>
-                  ) : null}
-                  {canMarkRead ? (
-                    <SecondaryButton
-                      type="button"
-                      disabled={busy}
-                      onClick={() => handleMarkRead(item)}
-                    >
-                      {itemBusy ? '…' : 'Mark read'}
-                    </SecondaryButton>
-                  ) : null}
-                  {canDecide ? (
-                    <>
-                      <PrimaryButton
-                        type="button"
-                        disabled={busy || approveBlockedForReferral}
-                        onClick={() => handleApprove(item)}
-                      >
-                        {itemBusy ? '…' : 'Approve'}
-                      </PrimaryButton>
-                      <SecondaryButton
-                        type="button"
-                        disabled={busy}
-                        onClick={() => handleReject(item)}
-                      >
-                        {itemBusy ? '…' : 'Reject'}
-                      </SecondaryButton>
-                    </>
-                  ) : null}
-                </div>
-              </li>
-            )
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="text-xs font-semibold uppercase tracking-wide text-secondary">
+                            {item.subtitle}
+                          </p>
+                          <p className="font-semibold text-text-heading">{item.title}</p>
+                          <p className="mt-1 text-sm text-secondary">
+                            From {item.sender}
+                            {item.recipient ? ` → ${item.recipient}` : ''}
+                          </p>
+                          {item.rawRequest ? (
+                            <p className="mt-1 text-xs text-secondary">
+                              Kind: {getPeopleRequestKind(item.rawRequest)} · {item.rawRequest.mobile}
+                              {item.rawRequest.source === 'public_training_registration'
+                                ? ` · ${item.rawRequest.address ?? ''} · ${item.rawRequest.education ?? ''} · ${item.rawRequest.profession ?? ''}`
+                                : ''}
+                            </p>
+                          ) : null}
+                          {item.rawInternalMessage ? (
+                            <p className="mt-2 whitespace-pre-wrap text-sm text-text-heading">
+                              {item.rawInternalMessage.body}
+                            </p>
+                          ) : null}
+                          {item.rawRequest &&
+                          canDecide &&
+                          isNewKarkunIntakeRequest(item.rawRequest) &&
+                          !isPublicTrainingRequest(item.rawRequest) ? (
+                            <SubmittedReferringRuknDisplay
+                              request={item.rawRequest}
+                              referredByRuknId={publicTrainingReferral}
+                            />
+                          ) : null}
+                          {item.rawRequest &&
+                          canDecide &&
+                          isPublicTrainingRequest(item.rawRequest) ? (
+                            <PublicTrainingApproveFields
+                              request={item.rawRequest}
+                              referredByRuknId={
+                                referralByRequestId[item.rawRequest.id] ??
+                                item.rawRequest.requestingRuknId ??
+                                ''
+                              }
+                              onReferredByRuknIdChange={(value) =>
+                                setReferralByRequestId((current) => ({
+                                  ...current,
+                                  [item.rawRequest!.id]: value,
+                                }))
+                              }
+                              fatherHusbandName={familyByRequestId[item.rawRequest.id] ?? ''}
+                              onFatherHusbandNameChange={(value) =>
+                                setFamilyByRequestId((current) => ({
+                                  ...current,
+                                  [item.rawRequest!.id]: value,
+                                }))
+                              }
+                              address={addressByRequestId[item.rawRequest.id] ?? ''}
+                              onAddressChange={(value) =>
+                                setAddressByRequestId((current) => ({
+                                  ...current,
+                                  [item.rawRequest!.id]: value,
+                                }))
+                              }
+                              disabled={busy}
+                            />
+                          ) : null}
+                        </div>
+                        <span className="rounded-full bg-surface-muted px-2.5 py-1 text-xs font-semibold">
+                          {item.statusLabel}
+                        </span>
+                      </div>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {item.href ? (
+                          <Link to={item.href} className={INBOX_LINK_CLASS}>
+                            {viewLabel}
+                          </Link>
+                        ) : null}
+                        {whatsappHref ? (
+                          <a
+                            href={whatsappHref}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={INBOX_LINK_CLASS}
+                          >
+                            WhatsApp Rukn
+                          </a>
+                        ) : null}
+                        {canMarkRead ? (
+                          <SecondaryButton
+                            type="button"
+                            disabled={busy}
+                            onClick={() => handleMarkRead(item)}
+                          >
+                            {actionLabel ?? 'Mark read'}
+                          </SecondaryButton>
+                        ) : null}
+                        {canDecide ? (
+                          <>
+                            <PrimaryButton
+                              type="button"
+                              disabled={busy || approveBlockedForReferral}
+                              onClick={() => handleApprove(item)}
+                            >
+                              {actionLabel ?? 'Approve'}
+                            </PrimaryButton>
+                            <SecondaryButton
+                              type="button"
+                              disabled={busy}
+                              onClick={() => handleReject(item)}
+                            >
+                              {actionLabel ?? 'Reject'}
+                            </SecondaryButton>
+                          </>
+                        ) : null}
+                      </div>
+                    </li>
+                  )
                 })}
               </ul>
             </InboxAccordionSection>
           ))}
         </div>
       )}
+
+      <section className="mt-8 border-t border-border pt-6" aria-labelledby="inbox-tarbiyati-heading">
+        <h2 id="inbox-tarbiyati-heading" className="text-lg font-semibold text-text-heading" dir="rtl" lang="ur">
+          تربیتی اجتماع
+        </h2>
+        <p className="mt-1 mb-4 text-sm text-secondary">
+          Tarbiyati Ijtema registration and payment. Separate from the Inbox queue above.
+        </p>
+        <TrainingGatheringAdminPanel />
+      </section>
     </PageShell>
   )
 }

@@ -17,7 +17,7 @@ export function InboxAccordionSection({
   children,
 }: InboxAccordionSectionProps) {
   return (
-    <section className="rounded-2xl border border-border bg-surface shadow-card">
+    <section className="rounded-xl border border-border bg-surface">
       <button
         type="button"
         className="flex min-h-11 w-full items-center justify-between gap-3 px-4 py-3 text-left"

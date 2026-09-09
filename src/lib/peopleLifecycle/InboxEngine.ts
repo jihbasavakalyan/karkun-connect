@@ -24,6 +24,18 @@ import { adminKarkunProfilePath, adminRuknDetailPath } from '@/constants/routes'
 
 export type InboxFolder = 'pending' | 'approved' | 'rejected' | 'archived'
 
+export type InboxFolderFilter = InboxFolder | 'all'
+
+const INBOX_FOLDER_FILTERS = ['pending', 'approved', 'rejected', 'archived', 'all'] as const
+
+/** Deep-link `?folder=` — missing or unknown values keep the existing Pending default. */
+export function resolveInboxFolder(raw: string | null | undefined): InboxFolderFilter {
+  if (raw && (INBOX_FOLDER_FILTERS as readonly string[]).includes(raw)) {
+    return raw as InboxFolderFilter
+  }
+  return 'pending'
+}
+
 export type InboxItemKind =
   | PeopleRequestKind
   | 'rukn_message'
@@ -123,7 +135,7 @@ function mapInternalMessage(record: RuknAdminMessage): InboxItem {
 
 /** InboxEngine — single read model for Admin Unified Inbox. */
 export function buildUnifiedInbox(options?: {
-  folder?: InboxFolder | 'all'
+  folder?: InboxFolderFilter
   query?: string
   kind?: InboxItemKind | 'all'
 }): InboxItem[] {
@@ -138,13 +150,8 @@ export function buildUnifiedInbox(options?: {
     (a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt),
   )
 
-  if (folder === 'pending') {
-    items = items.filter((item) => {
-      const request = item.rawRequest
-      if (!request) return false
-      return isPendingApprovalStatus(request.status) && !request.isArchived
-    })
-  } else if (folder !== 'all') {
+  // Pending = items needing Admin attention: pending intake + unread Rukn messages.
+  if (folder !== 'all') {
     items = items.filter((item) => item.folder === folder)
   }
   if (kind !== 'all') {
