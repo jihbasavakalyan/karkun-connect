@@ -236,8 +236,10 @@ function testHealthAndWiring(): void {
     resolve('src/components/execution/WeeklyIjtemaAttendanceOpenCard.tsx'),
     'utf8',
   )
-  assert(cardSrc.includes('Reminded'), 'dashboard Reminded')
-  assert(cardSrc.includes('Present ÷'), 'dashboard explains attendance %')
+  assert(cardSrc.includes('Invited'), 'Home Invited label')
+  assert(cardSrc.includes('progress.reminded'), 'Invited uses existing reminded semantics')
+  assert(cardSrc.includes('Present'), 'Home Present')
+  assert(cardSrc.includes('Absent'), 'Home Absent')
 }
 
 const cases = [

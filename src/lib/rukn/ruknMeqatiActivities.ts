@@ -28,6 +28,8 @@ export type RuknMeqatiActivityItem = {
   scheduleLabel: string | null
   yearKey: string
   yearStatusLabel: string | null
+  /** Existing LocalProgramme.summary (خلاصہ) — omit when blank. */
+  summary: string | null
   action: RuknMeqatiActivityAction | null
 }
 
@@ -122,6 +124,7 @@ export function buildRuknMeqatiActivities(
       scheduleLabel: formatSpecifiedSchedule(programme.frequency),
       yearKey: year.key,
       yearStatusLabel: yearStatus ? YEAR_STATUS_LABEL[yearStatus] : null,
+      summary: programme.summary?.trim() || null,
       action: operationalActionForProgrammeKind(programme.kind),
     })
   }

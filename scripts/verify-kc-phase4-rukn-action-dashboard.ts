@@ -108,10 +108,12 @@ function work(overrides: Partial<Work> = {}): Work {
 console.log('▶ Home wiring — existing Rukn dashboard, no new nav/framework')
 {
   const home = read('src/pages/rukn/RuknHomePage.tsx')
-  assertIncludes(home, 'RuknWorkActionPanel', 'Work panel on Rukn Home')
-  assertIncludes(home, 'What needs my action?', 'Rukn action dashboard on Home')
-  assertIncludes(home, 'RuknMissionControlHero', 'existing mission hero retained')
-  assertIncludes(home, 'CampaignExecutionMatrix', 'existing execution retained')
+  assertNotIncludes(home, 'RuknWorkActionPanel', 'Work panel not composed on redesigned Home')
+  assertNotIncludes(home, 'What needs my action?', 'task dashboard not on Home')
+  assertNotIncludes(home, 'RuknMissionControlHero', 'mission-control hero not on Home')
+  assertNotIncludes(home, 'CampaignExecutionMatrix', 'execution matrix not on Home')
+  assertIncludes(home, 'TarbiyatiIjtemaRuknHero', 'protected Tarbiyat hero retained')
+  assertIncludes(home, 'RuknHomeKarkunActions', 'Karkun actions on Home')
 
   const layout = read('src/layouts/RuknLayout.tsx')
   assertIncludes(layout, "label: 'Home'", 'Home nav retained')

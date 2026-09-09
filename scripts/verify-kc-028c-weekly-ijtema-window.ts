@@ -164,14 +164,15 @@ const card = readFileSync(
   'utf8',
 )
 assert(
-  card.includes("Today's Weekly Ijtema Attendance") ||
-    card.includes('Today&apos;s Weekly Ijtema Attendance'),
-  'dashboard open attendance title present',
+  card.includes('Weekly Ijtema'),
+  'dashboard Weekly Ijtema title present',
 )
 assert(card.includes('Open Attendance'), 'dashboard Open Attendance quick action present')
-assert(card.includes('Reminded') || card.includes('Present'), 'dashboard Reminded/Present metrics')
+assert(card.includes('Invited'), 'dashboard Invited metric present')
+assert(card.includes('Present'), 'dashboard Present metric present')
 assert(card.includes('Absent'), 'dashboard Absent metric present')
-assert(card.includes('Pending'), 'dashboard Pending metric present')
+assert(card.includes('progress.reminded'), 'Invited uses existing reminded semantics')
+assert(!card.includes('Pending'), 'Home does not add a Pending bucket')
 
 const rafeeq = readFileSync(
   resolve('src/features/digitalRafeeq/companion/rafeeqUrduCopy.ts'),

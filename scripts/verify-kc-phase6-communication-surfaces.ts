@@ -105,7 +105,7 @@ console.log('▶ Rukn → Admin compose surface is not an inbox')
   const home = read('src/pages/rukn/RuknHomePage.tsx')
   assertIncludes(panel, 'Send to Administrator', 'compose submit')
   assertIncludes(panel, 'not a chat', 'explicit non-chat copy')
-  assertIncludes(home, 'RuknMessageAdminPanel', 'compose on Rukn home')
+  assertNotIncludes(home, 'RuknMessageAdminPanel', 'compose is not a Home dashboard')
   assertNotIncludes(panel, '/rukn/inbox', 'Rukn compose is not an inbox route')
 }
 

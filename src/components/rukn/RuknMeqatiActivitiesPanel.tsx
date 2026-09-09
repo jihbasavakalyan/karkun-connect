@@ -1,7 +1,6 @@
 /**
- * Rukn Home — assigned Meqati سرگرمیاں (ذمہ دار = responsibleRuknId).
- * Read-only context. Operational links reuse existing Rukn surfaces.
- * Does not edit planning and does not create Work / Standing Responsibility.
+ * Rukn Home — assigned Meeqati Mansooba سرگرمیاں (ذمہ دار = responsibleRuknId).
+ * Read-only. Does not edit planning and does not create Work / Standing Responsibility.
  */
 
 import { Link } from 'react-router-dom'
@@ -16,46 +15,47 @@ export function RuknMeqatiActivitiesPanel({ ruknId }: RuknMeqatiActivitiesPanelP
 
   return (
     <section
-      className="rounded-(--radius-card) border border-border bg-surface p-4 shadow-card"
-      aria-label="میری میقاتی سرگرمیاں"
+      className="rukn-home-card"
+      aria-labelledby="rukn-home-meqati-title"
       dir="rtl"
       lang="ur"
     >
-      <h2 className="text-sm font-semibold text-text-heading">میری میقاتی سرگرمیاں</h2>
-      <p className="mt-1 text-xs text-secondary">
-        سرگرمیاں جن کے آپ ذمہ دار ہیں — مجھے ابھی کیا کرنا ہے؟
-      </p>
+      <header className="rukn-home-card-head">
+        <h2 id="rukn-home-meqati-title" className="rukn-home-card-title">
+          میقاتی منصوبہ
+        </h2>
+        <p className="rukn-home-card-sub">Meeqati Mansooba</p>
+      </header>
+      <p className="rukn-home-hint">سرگرمیاں جن کے آپ ذمہ دار ہیں — صرف مطالعہ۔</p>
       {items.length === 0 ? (
-        <p className="mt-2 text-sm text-secondary">
+        <p className="rukn-home-empty">
           اس وقت آپ کی ذمہ داری کی کوئی میقاتی سرگرمی نہیں۔
         </p>
       ) : (
-        <ul className="mt-3 divide-y divide-border">
+        <ul className="rukn-home-list">
           {items.map((item) => (
-            <li key={item.id} className="py-2.5">
-              <p className="text-sm font-semibold text-text-heading">{item.name}</p>
+            <li key={item.id}>
+              <p className="rukn-home-list-title">{item.name}</p>
               {item.shobahName || item.objectiveTitle ? (
-                <p className="mt-0.5 text-xs text-secondary">
+                <p className="rukn-home-hint">
                   {item.shobahName ? `شعبہ: ${item.shobahName}` : null}
                   {item.shobahName && item.objectiveTitle ? ' · ' : null}
                   {item.objectiveTitle ? `ہدف: ${item.objectiveTitle}` : null}
                 </p>
               ) : null}
               {item.scheduleLabel || item.yearStatusLabel ? (
-                <p className="mt-0.5 text-xs text-secondary">
+                <p className="rukn-home-hint">
                   {item.scheduleLabel ? `نظام الاوقات: ${item.scheduleLabel}` : null}
                   {item.scheduleLabel && item.yearStatusLabel ? ' · ' : null}
-                  {item.yearStatusLabel
-                    ? `${item.yearKey}: ${item.yearStatusLabel}`
-                    : null}
+                  {item.yearStatusLabel ? `${item.yearKey}: ${item.yearStatusLabel}` : null}
                 </p>
               ) : null}
+              {item.summary ? (
+                <p className="rukn-home-hint">خلاصہ: {item.summary}</p>
+              ) : null}
               {item.action ? (
-                <Link
-                  to={item.action.href}
-                  className="mt-1 inline-block text-sm font-medium text-primary"
-                >
-                  {item.action.label} →
+                <Link to={item.action.href} className="rukn-home-inline-link">
+                  {item.action.label}
                 </Link>
               ) : null}
             </li>
