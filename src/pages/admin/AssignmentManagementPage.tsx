@@ -1,9 +1,15 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { adminRuknDetailPath } from '@/constants/routes'
 import { AssignmentMappingView } from '@/components/assignment/AssignmentMappingView'
 import { AssignmentReviewQueue } from '@/components/assignment/AssignmentReviewQueue'
+import { MuttafiqRuknConnectionRow } from '@/components/relationship/MuttafiqRuknConnectionRow'
+import { resolveAdminAssignmentsView } from '@/lib/connections/adminAssignmentsPresentation'
+import { UI_LABELS } from '@/lib/uiTerminology'
+import { getConnectedMuttafiqDisplayRowsForRukn } from '@/stores/muttafiqRelationshipStore'
+import { useMuttafiqRelationshipStore } from '@/hooks/useMuttafiqRelationshipStore'
+import { useRepositoryHydrationStatus } from '@/hooks/useRepositoryHydration'
 import {
   AvailableKarkunRow,
   ConnectKarkunConfirmModal,
@@ -28,7 +34,7 @@ import { RestoreAssignmentModal } from '@/components/forms/assignment/RestoreAss
 import { TransferConnectionModal } from '@/components/forms/assignment/TransferConnectionModal'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
-import { PageHeader, PageShell } from '@/components/ui'
+import { EmptyState, ListSkeleton, PageHeader, PageShell } from '@/components/ui'
 import { ExecutionGuidanceCard } from '@/features/digitalRafeeq/contextual'
 import { changeKarkunRuknAssignment } from '@/lib/assignmentEngine'
 import {
@@ -40,6 +46,8 @@ type ModalMode = 'assign' | 'replace' | 'remove' | 'restore' | 'history' | 'tran
 
 export function AssignmentManagementPage() {
   const peopleVersion = usePeopleStore()
+  const hydration = useRepositoryHydrationStatus()
+  const muttafiqRelationshipVersion = useMuttafiqRelationshipStore()
   const {
     assignmentVersion,
     getRuknAssignmentSummary,
@@ -49,7 +57,7 @@ export function AssignmentManagementPage() {
   } = useAssignmentEngine()
 
   const [searchParams, setSearchParams] = useSearchParams()
-  const activeView = searchParams.get('view') === 'mapping' ? 'mapping' : 'assign'
+  const workspaceView = resolveAdminAssignmentsView(searchParams)
 
   const [globalSearch, setGlobalSearch] = useState('')
   const [ruknSearch, setRuknSearch] = useState('')
@@ -72,10 +80,30 @@ export function AssignmentManagementPage() {
     setSelectedKarkunId(null)
     setLastAssignmentNumber(null)
     setActionError('')
+    setSearchParams(
+      (params) => {
+        const updated = new URLSearchParams(params)
+        updated.set('rukn', ruknId)
+        updated.set('view', 'manage')
+        return updated
+      },
+      { replace: true },
+    )
   }
+
+  useEffect(() => {
+    const fromQuery = searchParams.get('rukn')
+    if (fromQuery) {
+      setSelectedRuknId(fromQuery)
+    }
+  }, [searchParams])
 
   const selectedRukn = selectedRuknId ? ruknMaster.find((r) => r.id === selectedRuknId) : null
   const ruknSummary = selectedRuknId ? getRuknAssignmentSummary(selectedRuknId) : null
+  void muttafiqRelationshipVersion
+  const connectedMuttafiqRows = selectedRuknId
+    ? getConnectedMuttafiqDisplayRowsForRukn(selectedRuknId)
+    : []
 
   const connectConfirmKarkun = connectConfirmKarkunId
     ? getKarkunById(connectConfirmKarkunId) ?? null
@@ -108,15 +136,11 @@ export function AssignmentManagementPage() {
     })
   }, [ruknSearch, globalSearch, assignmentVersion, peopleVersion])
 
-  const changeView = (next: 'assign' | 'mapping') => {
+  const changeView = (next: 'mapping' | 'manage') => {
     setSearchParams(
       (params) => {
         const updated = new URLSearchParams(params)
-        if (next === 'mapping') {
-          updated.set('view', 'mapping')
-        } else {
-          updated.delete('view')
-        }
+        updated.set('view', next)
         return updated
       },
       { replace: true },
@@ -280,11 +304,35 @@ export function AssignmentManagementPage() {
     })()
   }
 
+  if (hydration.failed) {
+    return (
+      <PageShell variant="wide">
+        <EmptyState
+          icon="warning"
+          title="Unable to load connections"
+          description={hydration.error ?? 'Organisational records could not be loaded.'}
+        >
+          <PrimaryButton type="button" className="mt-3" onClick={hydration.retry}>
+            Retry
+          </PrimaryButton>
+        </EmptyState>
+      </PageShell>
+    )
+  }
+
+  if (!hydration.ready) {
+    return (
+      <PageShell variant="wide">
+        <ListSkeleton rows={6} />
+      </PageShell>
+    )
+  }
+
   return (
     <PageShell variant="wide">
       <PageHeader
-        title="Connections"
-        description="Manage Rukn–Karkun connections. One Rukn may hold multiple active Karkuns; connection history is permanent."
+        title="باہمی ربط"
+        description="Who is connected to whom. Mapping is the operational overview; Manage is the connection desk."
         actions={
           <SecondaryButton type="button" onClick={() => exportAssignmentHistory()}>
             Export History (CSV)
@@ -296,28 +344,36 @@ export function AssignmentManagementPage() {
 
       <AssignmentReviewQueue />
 
-      <div className="ds-tab-pill-nav" role="tablist" aria-label="Connection views">
-        <button
-          type="button"
-          onClick={() => changeView('assign')}
-          className={`ds-tab-pill ${activeView === 'assign' ? 'ds-tab-pill-active' : ''}`}
-        >
-          Connection Desk
-        </button>
+      <nav className="ds-tab-nav mb-4 border-b border-border pb-px" aria-label="باہمی ربط views">
         <button
           type="button"
           onClick={() => changeView('mapping')}
-          className={`ds-tab-pill ${activeView === 'mapping' ? 'ds-tab-pill-active' : ''}`}
+          className={`ds-tab border-b-2 rounded-none px-4 ${
+            workspaceView === 'mapping'
+              ? 'border-primary text-primary ds-tab-active'
+              : 'border-transparent'
+          }`}
         >
-          Connections View
+          Mapping
         </button>
-      </div>
+        <button
+          type="button"
+          onClick={() => changeView('manage')}
+          className={`ds-tab border-b-2 rounded-none px-4 ${
+            workspaceView === 'manage'
+              ? 'border-primary text-primary ds-tab-active'
+              : 'border-transparent'
+          }`}
+        >
+          Manage
+        </button>
+      </nav>
 
-      {activeView === 'mapping' && (
+      {workspaceView === 'mapping' && (
         <AssignmentMappingView version={assignmentVersion + peopleVersion} />
       )}
 
-      {activeView === 'assign' && (
+      {workspaceView === 'manage' && (
       <>
       <div className="rounded-(--radius-card) border border-border bg-surface p-4 shadow-card">
         <label htmlFor="assignment-global-search" className="text-sm font-medium text-text-heading">
@@ -481,6 +537,24 @@ export function AssignmentManagementPage() {
               </ul>
             </div>
           )}
+
+          <div className="mt-6">
+            <h3 className="text-sm font-semibold text-text-heading">
+              {UI_LABELS.connectedMuttafiqeen} ({connectedMuttafiqRows.length})
+            </h3>
+            <p className="mt-1 text-xs text-secondary">
+              Read-only Muttafiq–Rukn visibility. Muttafiq relationships are not campaign connections.
+            </p>
+            {connectedMuttafiqRows.length > 0 ? (
+              <ul className="mt-3 space-y-2">
+                {connectedMuttafiqRows.map((row) => (
+                  <MuttafiqRuknConnectionRow key={row.relationshipId} row={row} />
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-3 text-sm text-secondary">{UI_LABELS.notConnected}</p>
+            )}
+          </div>
 
           <div className="mt-6">
             <AssignmentHistoryTimeline

@@ -16,11 +16,15 @@ import { mappingRowMatchesSearch } from '@/lib/personResolution'
 import { buildTelLink, buildWhatsAppLink } from '@/utils/personContactLinks'
 import { JourneyStageBadge, RelationshipHealthBadge } from '@/components/guidance'
 import { KarkunSearchField } from '@/components/relationship'
+import { MuttafiqRuknConnectionRow } from '@/components/relationship/MuttafiqRuknConnectionRow'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import { Icon } from '@/components/ui/Icon'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
 import type { AssignmentRecord } from '@/types/assignment'
 import { getFatherHusbandLabel } from '@/types/people.types'
+import { useMuttafiqRelationshipStore } from '@/hooks/useMuttafiqRelationshipStore'
+import { getConnectedMuttafiqDisplayRowsForRukn } from '@/stores/muttafiqRelationshipStore'
+import { UI_LABELS } from '@/lib/uiTerminology'
 
 type MappedKarkun = {
   assignment: AssignmentRecord
@@ -55,6 +59,7 @@ type AssignmentMappingViewProps = {
 }
 
 export function AssignmentMappingView({ version = 0 }: AssignmentMappingViewProps) {
+  const muttafiqRelationshipVersion = useMuttafiqRelationshipStore()
   const [search, setSearch] = useState('')
   const [genderFilter, setGenderFilter] = useState('')
   const [assignmentFilter, setAssignmentFilter] = useState('')
@@ -66,6 +71,7 @@ export function AssignmentMappingView({ version = 0 }: AssignmentMappingViewProp
 
   const rows = useMemo<MappingRow[]>(() => {
     void version
+    void muttafiqRelationshipVersion
     return ruknMaster.map((rukn) => {
       const summary = getRuknAssignmentSummary(rukn.id)
       const guidanceList = getGuidanceForRuknKarkuns(rukn.id)
@@ -100,7 +106,7 @@ export function AssignmentMappingView({ version = 0 }: AssignmentMappingViewProp
         ).length,
       }
     })
-  }, [version])
+  }, [version, muttafiqRelationshipVersion])
 
   const areaOptions = useMemo(
     () => Array.from(new Set(rows.map((row) => row.area).filter(Boolean))).sort(),
@@ -261,7 +267,7 @@ function MappingCard({ row }: { row: MappingRow }) {
 
       <div className="mt-3">
         <Link
-          to={adminAssignmentsPath({ ruknId: row.ruknId })}
+          to={adminAssignmentsPath({ ruknId: row.ruknId, view: 'manage' })}
           className="relationship-quick-action inline-flex min-h-11 items-center justify-center gap-1.5 font-semibold"
         >
           <Icon name="plus" size="sm" />
@@ -304,7 +310,27 @@ function MappingCard({ row }: { row: MappingRow }) {
           </ul>
         )}
       </div>
+
+      <MuttafiqMappingNote ruknId={row.ruknId} />
     </section>
+  )
+}
+
+function MuttafiqMappingNote({ ruknId }: { ruknId: string }) {
+  const rows = getConnectedMuttafiqDisplayRowsForRukn(ruknId)
+  if (rows.length === 0) return null
+  return (
+    <div className="mt-4 border-t border-border pt-4">
+      <p className="text-sm font-semibold text-text-heading">
+        {UI_LABELS.connectedMuttafiqeen} ({rows.length})
+      </p>
+      <p className="mt-1 text-xs text-secondary">Read-only · not campaign connections</p>
+      <ul className="mt-2 space-y-2">
+        {rows.map((row) => (
+          <MuttafiqRuknConnectionRow key={row.relationshipId} row={row} />
+        ))}
+      </ul>
+    </div>
   )
 }
 

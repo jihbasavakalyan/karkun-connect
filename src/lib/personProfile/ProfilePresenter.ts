@@ -7,6 +7,7 @@ import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import { getRuknById } from '@/data/ruknMaster'
 import {
   adminAnnexure1Path,
+  adminAssignmentsPath,
   adminKarkunProfilePath,
   adminKarkunPendingRequestsPath,
   ROUTES,
@@ -37,6 +38,19 @@ function initials(name: string): string {
   if (parts.length === 0) return '?'
   if (parts.length === 1) return parts[0]!.slice(0, 2).toUpperCase()
   return `${parts[0]![0] ?? ''}${parts[1]![0] ?? ''}`.toUpperCase()
+}
+
+/** Unique active campaign connection → Manage with that Rukn; otherwise generic باہمی ربط. */
+export function adminOpenConnectionHrefForPerson(personId: string): string {
+  const person = getKarkunById(personId)
+  if (!person || getRemovedRegistryLabel(person) || isMuttafiq(person)) {
+    return ROUTES.ADMIN_ASSIGNMENTS
+  }
+  const actives = getActiveAssignmentsForKarkun(personId)
+  if (actives.length !== 1) return ROUTES.ADMIN_ASSIGNMENTS
+  const ruknId = actives[0]?.ruknId?.trim()
+  if (!ruknId) return ROUTES.ADMIN_ASSIGNMENTS
+  return adminAssignmentsPath({ ruknId })
 }
 
 export function presentPerson360Profile(personId: string): Person360Profile {
@@ -113,6 +127,8 @@ export function presentPerson360Profile(personId: string): Person360Profile {
       }
     : undefined
 
+  const connectionHref = adminOpenConnectionHrefForPerson(personId)
+
   return {
     personId,
     found: true,
@@ -180,7 +196,7 @@ export function presentPerson360Profile(personId: string): Person360Profile {
       {
         id: 'connection',
         label: 'Open Connection',
-        href: ROUTES.ADMIN_ASSIGNMENTS,
+        href: connectionHref,
         kind: removed ? 'placeholder' : 'link',
       },
       {
@@ -198,7 +214,7 @@ export function presentPerson360Profile(personId: string): Person360Profile {
     ],
     inboxHref: `${ROUTES.ADMIN_INBOX}?query=${encodeURIComponent(person.name)}`,
     journeyHref: adminAnnexure1Path(personId),
-    connectionHref: ROUTES.ADMIN_ASSIGNMENTS,
+    connectionHref,
     relationshipDisplay:
       !removed && muttafiqView && muttafiqDisplay
         ? {

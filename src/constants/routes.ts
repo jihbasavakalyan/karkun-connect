@@ -98,14 +98,14 @@ export function adminARuknDetailPath(aRuknId: string): string {
 
 export function adminAssignmentsPath(options?: {
   ruknId?: string
-  view?: 'assign' | 'mapping'
+  view?: 'assign' | 'mapping' | 'manage'
 }): string {
   const params = new URLSearchParams()
   if (options?.ruknId) {
     params.set('rukn', options.ruknId)
   }
   if (options?.view) {
-    params.set('view', options.view)
+    params.set('view', options.view === 'manage' ? 'manage' : options.view)
   }
   const query = params.toString()
   return query ? `${ROUTES.ADMIN_ASSIGNMENTS}?${query}` : ROUTES.ADMIN_ASSIGNMENTS

@@ -381,8 +381,15 @@ export function RuknDetailPage() {
         summary && (
           <section>
             <div className="flex items-start justify-between gap-3">
-              <h2 className="kc-person-detail-section-title">Connection</h2>
-              <Link to={adminAssignmentsPath({ ruknId: rukn.id })}>
+              <div>
+                <h2 className="kc-person-detail-section-title">باہمی ربط</h2>
+                <p className="mt-1 text-sm text-secondary">
+                  Connection desk for this Rukn. Canonical Admin destination remains باہمی ربط.
+                </p>
+              </div>
+              <Link
+                to={adminAssignmentsPath({ ruknId: rukn.id, view: 'manage' })}
+              >
                 <PrimaryButton
                   type="button"
                   className="inline-flex items-center gap-1.5 px-4 py-2 text-sm"

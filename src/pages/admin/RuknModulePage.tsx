@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { ROUTES } from '@/constants/routes'
 import { useRuknManagement } from '@/hooks/useRuknManagement'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
+import { useMuttafiqRelationshipStore } from '@/hooks/useMuttafiqRelationshipStore'
 import { useRufaqaDirectoryQuery } from '@/hooks/useRufaqaDirectoryQuery'
 import { RufaqaDirectoryShell } from '@/components/admin/RufaqaDirectoryShell'
 import {
@@ -17,7 +20,7 @@ import {
 import type { Rukn } from '@/data/ruknMaster'
 import type { ImportSummary } from '@/types/people.types'
 import type { MobileLookupResult } from '@/lib/peopleStore'
-import { RuknAssignmentCard } from '@/components/forms/rukn'
+import { RuknConnectionsEntryRow } from '@/components/forms/rukn/RuknConnectionsEntryRow'
 import { OfficialBriefingModal } from '@/components/communication/OfficialBriefingModal'
 import {
   BulkActionsBar,
@@ -45,6 +48,7 @@ export function RuknModulePage() {
   const rufaqa = useRufaqaDirectoryQuery()
   const management = useRuknManagement()
   useAssignmentEngine()
+  useMuttafiqRelationshipStore()
 
   useEffect(() => {
     management.updateFilter('search', rufaqa.search)
@@ -224,19 +228,29 @@ export function RuknModulePage() {
       ) : (
         <>
           <p className="text-sm text-secondary">
-            Operational workspace — identify who needs attention and communicate in one click (
-            {management.totalCount} Rukn)
+            Operational entry into باہمی ربط — who is connected, then open the canonical Connections
+            workspace ({management.totalCount} Rukn)
+          </p>
+          <p className="text-sm">
+            <Link
+              to={ROUTES.ADMIN_ASSIGNMENTS}
+              className="font-medium text-primary hover:underline"
+            >
+              Open باہمی ربط (Mapping)
+            </Link>
           </p>
           {communicateError ? (
             <p className="text-sm text-error" role="alert">
               {communicateError}
             </p>
           ) : null}
-          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <ul className="space-y-2">
             {management.allFilteredRecords.map((rukn) => (
-              <li key={rukn.id}>
-                <RuknAssignmentCard rukn={rukn} onCommunicate={openCommunicate} />
-              </li>
+              <RuknConnectionsEntryRow
+                key={rukn.id}
+                rukn={rukn}
+                onCommunicate={openCommunicate}
+              />
             ))}
           </ul>
         </>

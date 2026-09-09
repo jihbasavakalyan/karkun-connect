@@ -168,8 +168,14 @@ export function AssignmentReviewQueue() {
   }
 
   return (
-    <section className="rounded-(--radius-card) border border-amber-200 bg-amber-50/40 p-4 shadow-card">
-      <h2 className="text-lg font-semibold text-text-heading">Review Requests</h2>
+    <>
+    <details className="rounded-lg border border-border bg-surface px-4 py-3 shadow-card">
+      <summary className="cursor-pointer text-sm font-medium text-text-heading">
+        Review queue
+        {pending.length > 0 ? ` · ${pending.length} pending` : ''}
+      </summary>
+    <section className="mt-3 border-t border-border pt-3">
+      <h2 className="text-base font-semibold text-text-heading">Review Requests</h2>
       <p className="mt-1 text-sm text-secondary">
         Rukn asked Admin to review ownership. Decide Continue, Transfer, Replace, Release, or Reject.
       </p>
@@ -303,6 +309,8 @@ export function AssignmentReviewQueue() {
           ))}
         </ul>
       )}
+    </section>
+    </details>
 
       {activeRequest && followUp === 'transfer' ? (
         <TransferConnectionModal
@@ -387,6 +395,6 @@ export function AssignmentReviewQueue() {
           }}
         />
       ) : null}
-    </section>
+    </>
   )
 }
