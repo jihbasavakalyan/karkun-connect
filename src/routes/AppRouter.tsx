@@ -127,6 +127,11 @@ const RuknMeqatiMansoobaPage = lazyWithChunkReload(() =>
     default: m.RuknMeqatiMansoobaPage,
   })),
 )
+const RuknResponsibilitiesPage = lazyWithChunkReload(() =>
+  import('@/pages/rukn/RuknResponsibilitiesPage').then((m) => ({
+    default: m.RuknResponsibilitiesPage,
+  })),
+)
 const RuknCommunicationPage = lazyWithChunkReload(() =>
   import('@/pages/rukn/RuknCommunicationPage').then((m) => ({ default: m.RuknCommunicationPage })),
 )
@@ -275,6 +280,7 @@ export function AppRouter() {
             />
             <Route path="my-karkun" element={<Navigate to={ROUTES.RUKN_KARKUN} replace />} />
             <Route path="meqati-mansooba" element={<RuknMeqatiMansoobaPage />} />
+            <Route path="responsibilities" element={<RuknResponsibilitiesPage />} />
             <Route path="communication" element={<RuknCommunicationPage />} />
             <Route path="communication/companion/:karkunId" element={<CompanionWorkspacePage />} />
             <Route path="visit/:karkunId" element={<ConnectionJourneyPage />} />

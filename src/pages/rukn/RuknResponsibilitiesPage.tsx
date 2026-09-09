@@ -1,16 +1,16 @@
 import { Navigate } from 'react-router-dom'
 import { ROUTES } from '@/constants/routes'
-import { RuknMeqatiActivitiesPanel } from '@/components/rukn/RuknMeqatiActivitiesPanel'
+import { RuknResponsibilitiesHomePanel } from '@/components/rukn/RuknResponsibilitiesHomePanel'
 import { CardSkeleton, PageShell } from '@/components/ui'
 import { useAuth } from '@/hooks/useAuth'
 import { useBackgroundHydration } from '@/hooks/useBackgroundHydration'
 import { useRequiredRuknId } from '@/hooks/useRequiredRuknId'
 
 /**
- * Read-only Meeqati Mansooba / میقاتی ذمہ داری destination.
- * Data: localProgrammes.responsibleRuknId via buildRuknMeqatiActivities.
+ * Read-only Responsibilities destination.
+ * Same localProgrammes.responsibleRuknId path as Meeqati Mansooba. Not Phase 4 Work.
  */
-export function RuknMeqatiMansoobaPage() {
+export function RuknResponsibilitiesPage() {
   const { user } = useAuth()
   const ruknId = useRequiredRuknId()
   const backgroundReady = useBackgroundHydration()
@@ -26,12 +26,16 @@ export function RuknMeqatiMansoobaPage() {
   return (
     <PageShell variant="narrow" className="app-screen">
       <header className="app-screen-header">
-        <h1 className="app-screen-title" dir="rtl" lang="ur">
-          میقاتی منصوبہ
-        </h1>
-        <p className="app-screen-subtitle">Meeqati Mansooba — planning and activity relevant to you</p>
+        <h1 className="app-screen-title">Responsibilities</h1>
+        <p className="app-screen-subtitle" dir="rtl" lang="ur">
+          رکن کی ذمہ داریاں · میقاتی ذمہ داری
+        </p>
       </header>
-      {backgroundReady ? <RuknMeqatiActivitiesPanel ruknId={ruknId} /> : <CardSkeleton count={2} />}
+      {backgroundReady ? (
+        <RuknResponsibilitiesHomePanel ruknId={ruknId} />
+      ) : (
+        <CardSkeleton count={2} />
+      )}
     </PageShell>
   )
 }

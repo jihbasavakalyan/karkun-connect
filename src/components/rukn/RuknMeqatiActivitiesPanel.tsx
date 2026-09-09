@@ -26,7 +26,7 @@ export function RuknMeqatiActivitiesPanel({ ruknId }: RuknMeqatiActivitiesPanelP
         </h2>
         <p className="rukn-home-card-sub">Meeqati Mansooba</p>
       </header>
-      <p className="rukn-home-hint">سرگرمیاں جن کے آپ ذمہ دار ہیں — صرف مطالعہ۔</p>
+      <p className="rukn-home-hint">منصوبہ اور سرگرمی — صرف مطالعہ۔</p>
       {items.length === 0 ? (
         <p className="rukn-home-empty">
           میقاتی ذمہ داری برقرار ہے۔ سرگرمی کی تفصیل ابھی ظاہر نہیں ہو رہی۔

@@ -6058,7 +6058,74 @@ html[data-theme='dark'] {
   max-width: none;
 }
 
-.app-screen-embedded.ds-page,
-.ds-page.app-screen-embedded {
-  max-width: none;
+.rukn-org-card .rukn-home-card-head {
+  margin-bottom: 0.4rem;
+}
+
+.rukn-org-year {
+  margin: 0.2rem 0 0;
+  font-size: 0.72rem;
+  color: var(--color-secondary);
+}
+
+.rukn-org-people,
+.rukn-org-activities {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.3rem;
+  margin: 0.45rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rukn-org-metric {
+  min-height: 2.75rem;
+  border: 1px solid color-mix(in srgb, var(--color-kc-shell) 12%, var(--color-border));
+  border-radius: 0.45rem;
+  padding: 0.3rem 0.25rem;
+  text-align: center;
+}
+
+.rukn-org-metric-label {
+  margin: 0;
+  font-size: 0.62rem;
+  line-height: 1.2;
+  color: var(--color-secondary);
+}
+
+.rukn-org-metric-value {
+  margin: 0.1rem 0 0;
+  font-size: 0.92rem;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-kc-shell-ink);
+}
+
+.rukn-org-metric-hint {
+  margin: 0.05rem 0 0;
+  font-size: 0.58rem;
+  color: var(--color-secondary);
+}
+
+.rukn-org-links {
+  margin: 0.45rem 0 0;
+  font-size: 0.75rem;
+}
+
+.rukn-org-links a {
+  color: var(--color-kc-shell);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.rukn-org-links a:hover,
+.rukn-org-links a:focus-visible {
+  text-decoration: underline;
+}
+
+@media (max-width: 40rem) {
+  .rukn-org-people,
+  .rukn-org-activities {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }

@@ -7,7 +7,7 @@ import { ExecutionSuccessBanner } from '@/components/execution/ExecutionSuccessB
 import { WeeklyIjtemaAttendanceOpenCard } from '@/components/execution/WeeklyIjtemaAttendanceOpenCard'
 import { RuknHomeKarkunActions } from '@/components/rukn/RuknHomeKarkunActions'
 import { RuknHomeBaitulMaalCard } from '@/components/rukn/RuknHomeBaitulMaalCard'
-import { RuknHomeMeqatiNavEntry } from '@/components/rukn/RuknHomeMeqatiNavEntry'
+import { RuknHomeOrganisationalInformation } from '@/components/rukn/RuknHomeOrganisationalInformation'
 import { useRequiredRuknId } from '@/hooks/useRequiredRuknId'
 import { useGuidance } from '@/hooks/useGuidance'
 import { useBackgroundHydration } from '@/hooks/useBackgroundHydration'
@@ -20,8 +20,8 @@ import { getGuidanceForRuknKarkuns } from '@/lib/guidance/guidanceEngine'
 import { CardSkeleton } from '@/components/ui'
 
 /**
- * Increment 03 — Rukn Home: practical landing, not a data dashboard.
- * Tarbiyati Ijtema registration hero is protected and unchanged.
+ * Increment 03 — approved Home sequence:
+ * header (shell) → Tarbiyati Ijtema → Organisational Information → Karkun → Weekly Ijtema → Baitul Maal
  */
 export function RuknHomePage() {
   const ruknId = useRequiredRuknId()
@@ -64,6 +64,18 @@ export function RuknHomePage() {
       </p>
 
       <div className="rukn-home-stack">
+        <WidgetErrorBoundary title="Tarbiyati Ijtema registration">
+          {backgroundReady ? <TarbiyatiIjtemaRuknHero /> : <CardSkeleton count={1} />}
+        </WidgetErrorBoundary>
+
+        <WidgetErrorBoundary title="Organisational Information">
+          <RuknHomeOrganisationalInformation
+            ruknId={ruknId}
+            peopleReady={isHydrated}
+            programmesReady={backgroundReady}
+          />
+        </WidgetErrorBoundary>
+
         <WidgetErrorBoundary title="Karkun">
           <RuknHomeKarkunActions ruknId={ruknId} />
         </WidgetErrorBoundary>
@@ -82,14 +94,6 @@ export function RuknHomePage() {
           ) : (
             <CardSkeleton count={1} />
           )}
-        </WidgetErrorBoundary>
-
-        <WidgetErrorBoundary title="Meeqati Mansooba">
-          <RuknHomeMeqatiNavEntry />
-        </WidgetErrorBoundary>
-
-        <WidgetErrorBoundary title="Tarbiyati Ijtema registration">
-          {backgroundReady ? <TarbiyatiIjtemaRuknHero /> : <CardSkeleton count={1} />}
         </WidgetErrorBoundary>
       </div>
 

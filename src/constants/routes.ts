@@ -59,6 +59,8 @@ export const ROUTES = {
   RUKN_MONTHLY_BAITUL_MAAL: '/rukn/baitul-maal',
   /** Read-only Meeqati Mansooba / میقاتی ذمہ داری destination */
   RUKN_MEQATI_MANSOOBA: '/rukn/meqati-mansooba',
+  /** Read-only assigned responsibilities (ذمہ دار) */
+  RUKN_RESPONSIBILITIES: '/rukn/responsibilities',
   /** Tarbiyati Ijtema connected-Karkun registration progress */
   RUKN_TARBIYATI_IJTEMA: '/rukn/tarbiyati-ijtema',
   RUKN_SETTINGS: '/rukn/settings',

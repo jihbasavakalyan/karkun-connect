@@ -31,9 +31,9 @@ import { isRuknCampaignConnectionPath } from '@/lib/ruknCampaignConnectionPath'
 const navItems: { label: string; icon: IconName; to: string; end: boolean }[] = [
   { label: 'Home', icon: 'home', to: ROUTES.RUKN, end: true },
   { label: 'Karkun', icon: 'users', to: ROUTES.RUKN_KARKUN, end: false },
+  { label: 'Meeqati Mansooba', icon: 'flag', to: ROUTES.RUKN_MEQATI_MANSOOBA, end: false },
+  { label: 'Responsibilities', icon: 'clipboard', to: ROUTES.RUKN_RESPONSIBILITIES, end: false },
   { label: 'Communication', icon: 'message', to: ROUTES.RUKN_COMMUNICATION, end: false },
-  { label: 'Ijtema', icon: 'calendar', to: ROUTES.RUKN_WEEKLY_IJTEMA, end: false },
-  { label: 'Baitul Maal', icon: 'check', to: ROUTES.RUKN_MONTHLY_BAITUL_MAAL, end: false },
 ]
 
 /**
@@ -131,7 +131,7 @@ export function RuknLayout() {
                 end={item.end}
                 className={({ isActive }) =>
                   [
-                    'native-nav-item flex min-h-11 flex-col items-center justify-center gap-0.5 rounded-xl px-0.5 py-1 text-[10px] font-semibold leading-tight transition-colors duration-200 sm:text-xs',
+                    'native-nav-item flex min-h-11 flex-col items-center justify-center gap-0.5 rounded-xl px-0.5 py-1 text-center text-[9px] font-semibold leading-tight transition-colors duration-200 sm:text-[11px]',
                     isActive
                       ? 'kc-rukn-nav-current native-nav-item-active'
                       : 'text-secondary hover:bg-kc-canvas hover:text-kc-shell-ink',
