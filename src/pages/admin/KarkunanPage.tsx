@@ -1,12 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useLocation, useSearchParams } from 'react-router-dom'
+import { useLocation, useSearchParams } from 'react-router-dom'
 import type { PersonGender } from '@/types/karkun-registry.types'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
 import type { PeopleFilters } from '@/types/people.types'
 import type { ImportSummary } from '@/types/people.types'
 import type { MobileLookupResult } from '@/lib/peopleStore'
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
-import { ROUTES } from '@/constants/routes'
 import { useKarkunPeopleManagement } from '@/hooks/useKarkunPeopleManagement'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { adminUnassignKarkun, changeKarkunRuknAssignment } from '@/lib/assignmentEngine'
@@ -14,12 +13,10 @@ import { toOperatorAssignmentError } from '@/lib/assignment/operatorFacingError'
 import {
   bulkSetKarkunStatus,
   createKarkun,
-  getAllKarkuns,
   importKarkunsFromRows,
   persistKarkunDurable,
   updateKarkun,
 } from '@/lib/peopleStore'
-import { usePeopleStore } from '@/hooks/usePeopleStore'
 import {
   exportKarkuns,
   parsePeopleImportFile,
@@ -51,13 +48,13 @@ import {
   PromoteToARuknSession,
   PromoteToARuknTrigger,
 } from '@/components/admin/PromoteToARuknAction'
-import { PageHeader, PageShell } from '@/components/ui'
+import { RufaqaDirectoryShell } from '@/components/admin/RufaqaDirectoryShell'
+import { useRufaqaDirectoryQuery } from '@/hooks/useRufaqaDirectoryQuery'
+import { UI_LABELS } from '@/lib/uiTerminology'
 import {
   hasRegistryActionAdd,
   parsePeopleFiltersFromSearchParams,
 } from '@/lib/peopleRegistryNavigation'
-
-type GenderTab = PersonGender
 
 function applyBulkJihRegistration(
   karkunIds: string[],
@@ -89,23 +86,27 @@ type KarkunSectionHandlers = {
 }
 
 type KarkunGenderSectionProps = {
-  gender: PersonGender
+  gender: PersonGender | null
+  addGender: PersonGender
   shouldOpenAddForm: boolean
   initialSearch?: string
   initialFilters?: Partial<PeopleFilters>
   onAddFormOpened: () => void
   onRegisterHandlers: (handlers: KarkunSectionHandlers | null) => void
   onRequestPromote: (person: KarkunRegistryRecord) => void
+  onClearDirectorySearch?: () => void
 }
 
 function KarkunGenderSection({
   gender,
+  addGender,
   shouldOpenAddForm,
   initialSearch = '',
   initialFilters,
   onAddFormOpened,
   onRegisterHandlers,
   onRequestPromote,
+  onClearDirectorySearch,
 }: KarkunGenderSectionProps) {
   const management = useKarkunPeopleManagement(gender, 'Karkun', {
     initialFilters: {
@@ -154,7 +155,7 @@ function KarkunGenderSection({
     const payload = {
       ...values,
       // Add stays on the active tab gender; Edit keeps the form (record) gender.
-      gender: editingKarkun ? values.gender : gender,
+      gender: editingKarkun ? values.gender : (gender ?? addGender),
     }
     const { assignedRuknId, ...karkunPayload } = payload
 
@@ -271,7 +272,9 @@ function KarkunGenderSection({
 
   const handleImport = useCallback(async (file: File) => {
     const content = await readImportFile(file)
-    const rows = parsePeopleImportFile(content, 'karkun').filter((row) => row.gender === gender)
+    const rows = parsePeopleImportFile(content, 'karkun').filter(
+      (row) => !gender || row.gender === gender,
+    )
     const summary = importKarkunsFromRows(rows)
     setImportSummary(summary)
   }, [gender])
@@ -297,9 +300,10 @@ function KarkunGenderSection({
 
   useEffect(() => {
     if (shouldOpenAddForm) {
+      openAddForm()
       onAddFormOpened()
     }
-  }, [shouldOpenAddForm, onAddFormOpened])
+  }, [shouldOpenAddForm, onAddFormOpened, openAddForm])
 
   const urlFiltersKey = useMemo(() => JSON.stringify(initialFilters ?? {}), [initialFilters])
 
@@ -320,20 +324,24 @@ function KarkunGenderSection({
     <div className="space-y-6">
       <p className="text-sm text-secondary">
         {management.filters.search.trim()
-          ? `Search results — ${management.totalRecords} match${management.totalRecords === 1 ? '' : 'es'} in ${gender} Karkuns`
-          : `${gender} Karkun registry — ${management.totalCount} members`}
+          ? `Search results — ${management.totalRecords} match${management.totalRecords === 1 ? '' : 'es'}`
+          : `${management.totalCount === 0 ? 'No Karkun in this view yet' : `Karkun — ${management.totalCount} in this view`}`}
       </p>
 
       <PeopleFiltersBar
         filters={management.filters}
         onFilterChange={management.updateFilter}
-        onClear={management.clearFilters}
+        onClear={() => {
+          management.clearFilters()
+          onClearDirectorySearch?.()
+        }}
         showAssignmentFilters
         showRegistryLifecycleFilters
         showJihPortalFilters
         showBaitulMaalFilters
         showIjtemaFilters
         hideGenderFilter
+        hideSearch
       />
 
       <BulkActionsBar
@@ -405,6 +413,14 @@ function KarkunGenderSection({
         promoteAction={(karkun) => (
           <PromoteToARuknTrigger person={karkun} onRequest={onRequestPromote} />
         )}
+        emptyTitle={
+          management.filters.search.trim() ? UI_LABELS.noSearchResults : 'No Karkun yet'
+        }
+        emptyLabel={
+          management.filters.search.trim()
+            ? UI_LABELS.noSearchResultsHint
+            : 'No Karkun match this view. Add a Karkun or change filters.'
+        }
       />
 
       <PeoplePagination
@@ -435,7 +451,7 @@ function KarkunGenderSection({
                 profession: editingKarkun.profession,
                 assignedRuknId: editingKarkun.assignedRuknId,
               }
-            : { gender }
+            : { gender: gender ?? addGender }
         }
         karkunId={editingKarkun?.id}
         error={formError}
@@ -503,7 +519,7 @@ function KarkunGenderSection({
 
       <AssignKarkunModal
         isOpen={isAssignModalOpen}
-        genderFilter={gender}
+        genderFilter={gender ?? undefined}
         onClose={() => setIsAssignModalOpen(false)}
       />
 
@@ -553,6 +569,7 @@ function KarkunGenderSection({
 export function KarkunanPage() {
   const location = useLocation()
   const [searchParams] = useSearchParams()
+  const rufaqa = useRufaqaDirectoryQuery()
   const urlFilters = useMemo(
     () => parsePeopleFiltersFromSearchParams(searchParams),
     [searchParams],
@@ -560,15 +577,11 @@ export function KarkunanPage() {
   const initialSearch =
     (location.state as { searchQuery?: string } | null)?.searchQuery?.trim() ??
     urlFilters.search?.trim() ??
-    ''
-  const [activeGender, setActiveGender] = useState<GenderTab>(() => {
-    if (urlFilters.gender === 'Male' || urlFilters.gender === 'Female') {
-      return urlFilters.gender
-    }
-    return 'Male'
-  })
+    rufaqa.search
+  const sectionGender = rufaqa.storedGender || null
+  const [addGender, setAddGender] = useState<PersonGender>('Male')
   const sectionHandlersRef = useRef<KarkunSectionHandlers | null>(null)
-  const [openAddForGender, setOpenAddForGender] = useState<PersonGender | null>(null)
+  const [shouldOpenAdd, setShouldOpenAdd] = useState(false)
   const addRequestedRef = useRef(false)
   const [promotionPerson, setPromotionPerson] = useState<KarkunRegistryRecord | null>(null)
   const [promoteNotice, setPromoteNotice] = useState('')
@@ -586,154 +599,74 @@ export function KarkunanPage() {
   useEffect(() => {
     if (!hasRegistryActionAdd(searchParams) || addRequestedRef.current) return
     addRequestedRef.current = true
-    setOpenAddForGender(activeGender)
-  }, [searchParams, activeGender])
+    setShouldOpenAdd(true)
+  }, [searchParams, sectionGender, addGender])
 
   const registerSectionHandlers = useCallback((handlers: KarkunSectionHandlers | null) => {
     sectionHandlersRef.current = handlers
   }, [])
 
   const handleAddFormOpened = useCallback(() => {
-    setOpenAddForGender(null)
+    setShouldOpenAdd(false)
   }, [])
 
   const requestAddKarkun = (gender: PersonGender) => {
-    if (gender === activeGender) {
-      sectionHandlersRef.current?.openAddForm()
+    setAddGender(gender)
+    if (sectionGender && gender !== sectionGender) {
+      rufaqa.setGenderView(gender === 'Male' ? 'men' : 'women')
+      setShouldOpenAdd(true)
       return
     }
-
-    setOpenAddForGender(gender)
-    setActiveGender(gender)
+    setShouldOpenAdd(true)
+    sectionHandlersRef.current?.openAddForm()
   }
 
   return (
-    <PageShell>
-      <PageHeader
-        title="Karkun"
-        description="Karkun registry — overview and working list. Intake and approvals live in Inbox."
+    <RufaqaDirectoryShell
+      category="karkun"
+      actions={
+        <KarkunPeopleActionBar
+          onAddMale={() => requestAddKarkun('Male')}
+          onAddFemale={() => requestAddKarkun('Female')}
+          onAssign={() => sectionHandlersRef.current?.openAssign()}
+          onImport={(file) => sectionHandlersRef.current?.handleImport(file)}
+          onExport={(format) => sectionHandlersRef.current?.handleExport(format)}
+        />
+      }
+    >
+      {promoteNotice ? (
+        <p
+          className="mb-4 rounded-lg border border-border bg-surface-muted px-3 py-2 text-sm text-text-heading"
+          role="status"
+        >
+          {promoteNotice}
+        </p>
+      ) : null}
+
+      <PromoteToARuknSession
+        key={promotionPerson?.id ?? 'idle'}
+        person={promotionPerson}
+        onPendingChange={handlePromotionPendingChange}
+        onSuccess={(aRuknId, sourcePersonId) => {
+          const name = promotionPerson?.name ?? sourcePersonId
+          setPromoteNotice(
+            `${name} is now عازمِ رکن (${aRuknId}) and is no longer an active normal Karkun.`,
+          )
+        }}
+        onDismiss={() => setPromotionPerson(null)}
       />
 
-      <div className="mb-4 flex flex-wrap items-center gap-3 text-sm">
-        <span className="font-medium text-text-heading">Karkun</span>
-        <span className="text-secondary">/</span>
-        <Link to={ROUTES.ADMIN_MUTTAFIQEEN} className="text-primary hover:underline">
-          Muttafiqeen page
-        </Link>
-      </div>
-
-      {/* KC-0115 — Overview first */}
-      <section aria-labelledby="karkun-overview-heading">
-        <h2 id="karkun-overview-heading" className="text-lg font-semibold text-text-heading">
-          Overview
-        </h2>
-        <div className="mt-3">
-          <KarkunSummaryCards />
-        </div>
-      </section>
-
-      {/* KC-0115 — Karkun Registry */}
-      <section className="mt-10" aria-labelledby="karkun-registry-heading">
-        <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h2 id="karkun-registry-heading" className="text-lg font-semibold text-text-heading">
-              Karkun Registry
-            </h2>
-            <p className="mt-1 text-sm text-secondary">
-              Primary working list for contacts, Connections, and bulk actions.
-            </p>
-          </div>
-          <KarkunPeopleActionBar
-            onAddMale={() => requestAddKarkun('Male')}
-            onAddFemale={() => requestAddKarkun('Female')}
-            onAssign={() => sectionHandlersRef.current?.openAssign()}
-            onImport={(file) => sectionHandlersRef.current?.handleImport(file)}
-            onExport={(format) => sectionHandlersRef.current?.handleExport(format)}
-          />
-        </div>
-
-        {promoteNotice ? (
-          <p
-            className="mb-4 rounded-lg border border-border bg-surface-muted px-3 py-2 text-sm text-text-heading"
-            role="status"
-          >
-            {promoteNotice}
-          </p>
-        ) : null}
-
-        <PromoteToARuknSession
-          key={promotionPerson?.id ?? 'idle'}
-          person={promotionPerson}
-          onPendingChange={handlePromotionPendingChange}
-          onSuccess={(aRuknId, sourcePersonId) => {
-            const name = promotionPerson?.name ?? sourcePersonId
-            setPromoteNotice(
-              `${name} is now عازمِ رکن (${aRuknId}) and is no longer an active normal Karkun.`,
-            )
-          }}
-          onDismiss={() => setPromotionPerson(null)}
-        />
-
-        <nav className="ds-tab-nav border-b border-border pb-px" aria-label="Karkun gender">
-          {(['Male', 'Female'] as const).map((gender) => (
-            <button
-              key={gender}
-              type="button"
-              className={`ds-tab border-b-2 rounded-none px-4 ${
-                activeGender === gender
-                  ? 'border-primary text-primary ds-tab-active'
-                  : 'border-transparent'
-              }`}
-              onClick={() => setActiveGender(gender)}
-            >
-              {gender} Karkuns
-            </button>
-          ))}
-        </nav>
-
-        <div className="mt-6">
-          <KarkunGenderSection
-            gender={activeGender}
-            initialSearch={initialSearch}
-            initialFilters={urlFilters}
-            shouldOpenAddForm={openAddForGender === activeGender}
-            onAddFormOpened={handleAddFormOpened}
-            onRegisterHandlers={registerSectionHandlers}
-            onRequestPromote={requestPromote}
-          />
-        </div>
-      </section>
-    </PageShell>
-  )
-}
-
-function KarkunSummaryCards() {
-  const peopleVersion = usePeopleStore()
-  const stats = useMemo(() => {
-    void peopleVersion
-    const all = getAllKarkuns()
-    return {
-      total: all.length,
-      male: all.filter((p) => p.gender === 'Male').length,
-      female: all.filter((p) => p.gender === 'Female').length,
-    }
-  }, [peopleVersion])
-
-  return (
-    <div className="grid gap-3 sm:grid-cols-3">
-      {[
-        { label: 'Total Karkuns', value: stats.total },
-        { label: 'Male', value: stats.male },
-        { label: 'Female', value: stats.female },
-      ].map((card) => (
-        <article
-          key={card.label}
-          className="rounded-(--radius-card) border border-border bg-surface p-4 shadow-card sm:p-6"
-        >
-          <p className="text-sm font-medium text-secondary">{card.label}</p>
-          <p className="mt-2 text-2xl font-semibold text-text-heading sm:text-3xl">{card.value}</p>
-        </article>
-      ))}
-    </div>
+      <KarkunGenderSection
+        gender={sectionGender}
+        addGender={addGender}
+        initialSearch={initialSearch}
+        initialFilters={urlFilters}
+        shouldOpenAddForm={shouldOpenAdd}
+        onAddFormOpened={handleAddFormOpened}
+        onRegisterHandlers={registerSectionHandlers}
+        onRequestPromote={requestPromote}
+        onClearDirectorySearch={() => rufaqa.setSearch('')}
+      />
+    </RufaqaDirectoryShell>
   )
 }

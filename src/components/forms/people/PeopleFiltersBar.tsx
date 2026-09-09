@@ -38,6 +38,7 @@ type PeopleFiltersBarProps = {
   showBaitulMaalFilters?: boolean
   showIjtemaFilters?: boolean
   hideGenderFilter?: boolean
+  hideSearch?: boolean
 }
 
 const selectClassName =
@@ -157,11 +158,15 @@ export function PeopleFiltersBar({
   showBaitulMaalFilters = false,
   showIjtemaFilters = false,
   hideGenderFilter = false,
+  hideSearch = false,
 }: PeopleFiltersBarProps) {
   const [advancedOpen, setAdvancedOpen] = useState(false)
   const search = useDebouncedSearchInput(
     filters.search,
-    (value) => onFilterChange('search', value),
+    (value) => {
+      if (hideSearch) return
+      onFilterChange('search', value)
+    },
     SEARCH_DEBOUNCE_MS,
   )
 
@@ -209,34 +214,38 @@ export function PeopleFiltersBar({
   return (
     <div className="people-filters-bar rounded-(--radius-card) border border-border bg-surface p-4 shadow-card sm:p-5">
       <form className="flex flex-col gap-3 lg:flex-row lg:items-end" onSubmit={handleSearchSubmit}>
-        <div className="min-w-0 flex-1">
-          <label htmlFor="people-search" className="text-sm font-medium text-text-heading">
-            Quick Search
-          </label>
-          <p className="mt-0.5 text-xs text-secondary">
-            Name, mobile, person ID, ward, or area
-          </p>
-          <input
-            id="people-search"
-            type="search"
-            value={search.draft}
-            placeholder={QUICK_SEARCH_PLACEHOLDER}
-            onChange={(event) => applySearch(event.target.value)}
-            className={`${selectClassName} mt-2`}
-          />
-        </div>
+        {hideSearch ? null : (
+          <div className="min-w-0 flex-1">
+            <label htmlFor="people-search" className="text-sm font-medium text-text-heading">
+              Quick Search
+            </label>
+            <p className="mt-0.5 text-xs text-secondary">
+              Name, mobile, person ID, ward, or area
+            </p>
+            <input
+              id="people-search"
+              type="search"
+              value={search.draft}
+              placeholder={QUICK_SEARCH_PLACEHOLDER}
+              onChange={(event) => applySearch(event.target.value)}
+              className={`${selectClassName} mt-2`}
+            />
+          </div>
+        )}
 
         <div className="flex flex-wrap gap-2">
-          <PrimaryButton type="submit" className="inline-flex items-center gap-1.5 px-4 py-2 text-sm">
-            <Icon name="search" size="sm" />
-            Search
-          </PrimaryButton>
+          {hideSearch ? null : (
+            <PrimaryButton type="submit" className="inline-flex items-center gap-1.5 px-4 py-2 text-sm">
+              <Icon name="search" size="sm" />
+              Search
+            </PrimaryButton>
+          )}
           <SecondaryButton
             type="button"
             className="px-4 py-2 text-sm"
             onClick={() => setAdvancedOpen((open) => !open)}
           >
-            Advanced Filters {advancedOpen ? '▲' : '▼'}
+            More filters {advancedOpen ? '▲' : '▼'}
           </SecondaryButton>
           <SecondaryButton type="button" className="px-4 py-2 text-sm" onClick={handleClear}>
             Clear

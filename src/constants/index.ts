@@ -10,6 +10,7 @@ export {
   flattenAdminNavItems,
   findActiveAdminNavItem,
   adminNavPathMatches,
+  adminNavItemMatches,
   isAdminNavGroup,
   type AdminNavEntry,
   type AdminNavGroup,

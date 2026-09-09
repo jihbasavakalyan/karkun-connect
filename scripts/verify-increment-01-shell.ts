@@ -22,10 +22,7 @@ function read(rel: string): string {
 const REQUIRED_ADMIN_LABELS = [
   'ہوم',
   'میقاتی منصوبہ',
-  'ارکان',
-  'کارکنان',
-  'عازمِ رکن',
-  'متفقین',
+  'رفقاء',
   'باہمی ربط',
   'ہفتہ وار اجتماع',
   'بیت المال',
@@ -47,12 +44,15 @@ assert.equal(labels.filter((label) => label === 'میقاتی منصوبہ').len
 assert.doesNotMatch(labels.join('\n'), /\bMeeqati\b(?! Mansooba)/)
 assert.ok(!labels.some((label) => label === 'Meeqati'))
 assert.ok(!flattenAdminNavItems(ADMIN_NAV_ITEMS).some((item) => item.to === '/admin/people'))
+assert.ok(!flattenAdminNavItems(ADMIN_NAV_ITEMS).some((item) => item.id === 'karkun'))
+assert.equal(flattenAdminNavItems(ADMIN_NAV_ITEMS).find((item) => item.id === 'rufaqa')?.label, 'رفقاء')
 assert.ok(!flattenAdminNavItems(ADMIN_NAV_ITEMS).some((item) => item.to === ROUTES.ADMIN_MISSION_WORKSPACE))
 assert.ok(!flattenAdminNavItems(ADMIN_NAV_ITEMS).some((item) => item.to === ROUTES.ADMIN_ACTIVITIES))
 
 assert.ok(adminNavPathMatches(ROUTES.ADMIN, '/admin', '', true))
 assert.ok(!adminNavPathMatches(ROUTES.ADMIN, '/admin/karkun', '', true))
-assert.equal(findActiveAdminNavItem('/admin/karkun/abc', '')?.id, 'karkun')
+assert.equal(findActiveAdminNavItem('/admin/karkun/abc', '')?.id, 'rufaqa')
+assert.equal(findActiveAdminNavItem('/admin/a-rukn', '')?.id, 'rufaqa')
 assert.equal(findActiveAdminNavItem('/admin', '')?.id, 'home')
 
 assert.equal(colors.primary, '#1b4332')

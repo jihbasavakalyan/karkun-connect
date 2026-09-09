@@ -69,11 +69,11 @@ console.log('verify-a-rukn-admin-ui: start')
 
 {
   const nav = flattenAdminNavItems(ADMIN_NAV_ITEMS)
-  const item = nav.find((entry) => entry.id === 'a-rukn')
-  assert(item, 'Admin nav includes عازمِ رکن')
-  assert(item!.label === UI_LABELS.aRukn, 'nav label is عازمِ رکن')
-  assert(item!.to === ROUTES.ADMIN_A_RUKN, 'nav targets /admin/a-rukn')
-  assert(ROUTES.ADMIN_A_RUKN === '/admin/a-rukn', 'canonical route')
+  const rufaqa = nav.find((entry) => entry.id === 'rufaqa')
+  assert(rufaqa, 'Admin nav includes Rufaqa')
+  assert(rufaqa!.label === 'رفقاء', 'nav label is رفقاء')
+  assert(rufaqa!.to === ROUTES.ADMIN_RUKN, 'Rufaqa lands on existing /admin/rukn')
+  assert(!nav.some((entry) => entry.id === 'a-rukn'), 'A Rukn is not a separate primary nav item')
   assert(
     isPathAllowedForRole(ROUTES.ADMIN_A_RUKN, 'administrator'),
     'Admin may access /admin/a-rukn',

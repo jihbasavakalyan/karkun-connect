@@ -37,6 +37,8 @@ function matchesRuknFilters(rukn: Rukn, filters: PeopleFilters): boolean {
       rukn.mobile,
       rukn.whatsapp ?? '',
       rukn.notes ?? '',
+      rukn.id,
+      rukn.place ?? '',
     ]
       .join(' ')
       .toLowerCase()

@@ -13,8 +13,8 @@ import {
 import { PortalAuthActions } from '@/components/layout/PortalAuthActions'
 import type { CampaignTimelineStatus } from '@/services/campaignService'
 import { EnterpriseBadge } from '@/components/enterprise'
-import { resolveUniquePersonProfilePath } from '@/lib/personProfile'
-import { adminKarkunRegistryPath } from '@/lib/peopleRegistryNavigation'
+import { resolveRufaqaSearchNavigation } from '@/lib/rufaqa/rufaqaSearchNavigation'
+import { RUFAQA_LABEL_UR } from '@/lib/rufaqa/rufaqaNav'
 
 type AdminTopBarProps = {
   alertCount?: number
@@ -48,12 +48,7 @@ export function AdminTopBar({
     event.preventDefault()
     const trimmed = query.trim()
     if (!trimmed) return
-    const profilePath = resolveUniquePersonProfilePath(trimmed)
-    if (profilePath) {
-      navigate(profilePath)
-      return
-    }
-    navigate(adminKarkunRegistryPath({ search: trimmed }))
+    navigate(resolveRufaqaSearchNavigation(trimmed))
   }
 
   const alertsLabel = alertsReady
@@ -99,14 +94,14 @@ export function AdminTopBar({
 
         <form onSubmit={handleSearch} className="order-last w-full sm:order-none sm:max-w-xs lg:max-w-md lg:flex-1">
           <label htmlFor="admin-global-search" className="sr-only">
-            Search Karkun
+            Search {RUFAQA_LABEL_UR}
           </label>
           <input
             id="admin-global-search"
             type="search"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="ارکان، کارکنان…"
+            placeholder={`${RUFAQA_LABEL_UR}…`}
             className="w-full rounded-md border border-border bg-surface px-2.5 py-1.5 text-sm text-text-heading placeholder:text-secondary-light focus:border-kc-shell-current focus:outline-none focus:ring-2 focus:ring-kc-shell-current/40"
           />
         </form>

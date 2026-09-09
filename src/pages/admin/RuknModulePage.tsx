@@ -1,6 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRuknManagement } from '@/hooks/useRuknManagement'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
+import { useRufaqaDirectoryQuery } from '@/hooks/useRufaqaDirectoryQuery'
+import { RufaqaDirectoryShell } from '@/components/admin/RufaqaDirectoryShell'
 import {
   bulkSetRuknStatus,
   createRukn,
@@ -29,7 +31,7 @@ import {
 } from '@/components/forms/people'
 import type { PersonFormValues } from '@/components/forms/people'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
-import { PageHeader, PageShell } from '@/components/ui'
+import { UI_LABELS } from '@/lib/uiTerminology'
 import type { MessageRecipient } from '@/types/communication'
 
 type ActiveTab = 'manage' | 'assignments'
@@ -40,8 +42,15 @@ const TAB_LABELS: Record<ActiveTab, string> = {
 }
 
 export function RuknModulePage() {
+  const rufaqa = useRufaqaDirectoryQuery()
   const management = useRuknManagement()
   useAssignmentEngine()
+
+  useEffect(() => {
+    management.updateFilter('search', rufaqa.search)
+    management.updateFilter('gender', rufaqa.storedGender)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- URL presentation sync only
+  }, [rufaqa.search, rufaqa.storedGender])
 
   const [activeTab, setActiveTab] = useState<ActiveTab>('manage')
   const [isFormOpen, setIsFormOpen] = useState(false)
@@ -124,25 +133,23 @@ export function RuknModulePage() {
   }
 
   return (
-    <PageShell>
-      <PageHeader
-        title="Rukn Management"
-        description={`Manage Rukn contacts, status, and connections — ${management.totalCount} members`}
-        actions={
-          activeTab === 'manage' ? (
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-              <ImportExportToolbar
-                kind="rukn"
-                onExport={(format) => exportRukns(management.allFilteredRecords, format)}
-                onImport={handleImport}
-              />
-              <PrimaryButton type="button" onClick={openAddForm}>
-                Add Rukn
-              </PrimaryButton>
-            </div>
-          ) : undefined
-        }
-      />
+    <RufaqaDirectoryShell
+      category="rukn"
+      actions={
+        activeTab === 'manage' ? (
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <ImportExportToolbar
+              kind="rukn"
+              onExport={(format) => exportRukns(management.allFilteredRecords, format)}
+              onImport={handleImport}
+            />
+            <PrimaryButton type="button" onClick={openAddForm}>
+              Add Rukn
+            </PrimaryButton>
+          </div>
+        ) : undefined
+      }
+    >
 
       <nav className="ds-tab-nav border-b border-border pb-px" aria-label="Rukn sections">
         {(['manage', 'assignments'] as const).map((tab) => (
@@ -166,7 +173,12 @@ export function RuknModulePage() {
           <PeopleFiltersBar
             filters={management.filters}
             onFilterChange={management.updateFilter}
-            onClear={management.clearFilters}
+            onClear={() => {
+              management.clearFilters()
+              rufaqa.setSearch('')
+            }}
+            hideGenderFilter
+            hideSearch
           />
 
           <BulkActionsBar
@@ -185,6 +197,9 @@ export function RuknModulePage() {
           <p className="text-sm text-secondary">
             Showing {management.records.length} of {management.totalRecords} filtered (
             {management.totalCount} total)
+            {management.filters.search.trim() && management.totalRecords === 0
+              ? ` — ${UI_LABELS.noSearchResults}`
+              : ''}
           </p>
 
           <RuknPeopleTable
@@ -282,6 +297,6 @@ export function RuknModulePage() {
         kind="rukn"
         onClose={() => setImportSummary(null)}
       />
-    </PageShell>
+    </RufaqaDirectoryShell>
   )
 }

@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import type { PersonGender } from '@/types/karkun-registry.types'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
 import type { MobileLookupResult } from '@/lib/peopleStore'
@@ -7,11 +7,9 @@ import { useKarkunPeopleManagement } from '@/hooks/useKarkunPeopleManagement'
 import {
   bulkSetKarkunStatus,
   createMuttafiq,
-  getAllMuttafiqeen,
   persistKarkunDurable,
   updateKarkun,
 } from '@/lib/peopleStore'
-import { usePeopleStore } from '@/hooks/usePeopleStore'
 import {
   BulkActionsBar,
   ConfirmDialog,
@@ -24,29 +22,36 @@ import {
 import type { PersonFormValues } from '@/components/forms/people'
 import { MessageComposerModal } from '@/components/communication/MessageComposerModal'
 import { ConnectRuknForMuttafiqModal } from '@/components/relationship'
-import { PageHeader, PageShell } from '@/components/ui'
-import { ROUTES } from '@/constants/routes'
-
-type GenderTab = PersonGender
+import { RufaqaDirectoryShell } from '@/components/admin/RufaqaDirectoryShell'
+import { useRufaqaDirectoryQuery } from '@/hooks/useRufaqaDirectoryQuery'
+import { UI_LABELS } from '@/lib/uiTerminology'
 
 type MuttafiqSectionHandlers = {
   openAddForm: () => void
 }
 
 type MuttafiqGenderSectionProps = {
-  gender: PersonGender
+  gender: PersonGender | null
+  addGender: PersonGender
   shouldOpenAddForm: boolean
+  initialSearch?: string
   onAddFormOpened: () => void
   onRegisterHandlers: (handlers: MuttafiqSectionHandlers | null) => void
+  onClearDirectorySearch?: () => void
 }
 
 function MuttafiqGenderSection({
   gender,
+  addGender,
   shouldOpenAddForm,
+  initialSearch = '',
   onAddFormOpened,
   onRegisterHandlers,
+  onClearDirectorySearch,
 }: MuttafiqGenderSectionProps) {
-  const management = useKarkunPeopleManagement(gender, 'Muttafiq')
+  const management = useKarkunPeopleManagement(gender, 'Muttafiq', {
+    initialFilters: initialSearch ? { search: initialSearch } : undefined,
+  })
 
   const [isFormOpen, setIsFormOpen] = useState(shouldOpenAddForm)
   const [editingPerson, setEditingPerson] = useState<KarkunRegistryRecord | null>(null)
@@ -68,10 +73,15 @@ function MuttafiqGenderSection({
   }, [])
 
   useEffect(() => {
+    management.updateFilter('search', initialSearch)
+  }, [initialSearch, management.updateFilter])
+
+  useEffect(() => {
     if (shouldOpenAddForm) {
+      openAddForm()
       onAddFormOpened()
     }
-  }, [shouldOpenAddForm, onAddFormOpened])
+  }, [shouldOpenAddForm, onAddFormOpened, openAddForm])
 
   useEffect(() => {
     onRegisterHandlers({ openAddForm })
@@ -91,7 +101,7 @@ function MuttafiqGenderSection({
     setFormError('')
     const payload = {
       ...values,
-      gender: editingPerson ? values.gender : gender,
+      gender: editingPerson ? values.gender : (gender ?? addGender),
     }
 
     if (editingPerson) {
@@ -150,17 +160,21 @@ function MuttafiqGenderSection({
     <div className="space-y-6">
       <p className="text-sm text-secondary">
         {management.filters.search.trim()
-          ? `Search results — ${management.totalRecords} match${management.totalRecords === 1 ? '' : 'es'} in ${gender} Muttafiqeen`
-          : `${gender} Muttafiqeen registry — ${management.totalCount} members`}
+          ? `Search results — ${management.totalRecords} match${management.totalRecords === 1 ? '' : 'es'}`
+          : `Muttafiqeen — ${management.totalCount} in this view`}
       </p>
 
       <PeopleFiltersBar
         filters={management.filters}
         onFilterChange={management.updateFilter}
-        onClear={management.clearFilters}
+        onClear={() => {
+          management.clearFilters()
+          onClearDirectorySearch?.()
+        }}
         showAssignmentFilters={false}
         showRegistryLifecycleFilters={false}
         hideGenderFilter
+        hideSearch
       />
 
       <BulkActionsBar
@@ -207,8 +221,14 @@ function MuttafiqGenderSection({
         }}
         showAssignmentControls={false}
         showMuttafiqRelationshipColumns
-        emptyTitle="No Muttafiqeen found"
-        emptyLabel="No Muttafiqeen match your search or filters."
+        emptyTitle={
+          management.filters.search.trim() ? UI_LABELS.noSearchResults : 'No Muttafiqeen yet'
+        }
+        emptyLabel={
+          management.filters.search.trim()
+            ? UI_LABELS.noSearchResultsHint
+            : 'No Muttafiqeen match this view. Add a Muttafiq or change filters.'
+        }
       />
 
       <PeoplePagination
@@ -240,7 +260,7 @@ function MuttafiqGenderSection({
                 education: editingPerson.education,
                 profession: editingPerson.profession,
               }
-            : { gender }
+            : { gender: gender ?? addGender }
         }
         error={formError}
         onClose={() => {
@@ -304,138 +324,58 @@ function MuttafiqGenderSection({
   )
 }
 
-function MuttafiqeenSummaryCards() {
-  const peopleVersion = usePeopleStore()
-  const stats = useMemo(() => {
-    void peopleVersion
-    const all = getAllMuttafiqeen()
-    return {
-      total: all.length,
-      male: all.filter((p) => p.gender === 'Male').length,
-      female: all.filter((p) => p.gender === 'Female').length,
-    }
-  }, [peopleVersion])
-
-  return (
-    <div className="grid gap-3 sm:grid-cols-3">
-      {[
-        { label: 'Total Muttafiqeen', value: stats.total },
-        { label: 'Male', value: stats.male },
-        { label: 'Female', value: stats.female },
-      ].map((card) => (
-        <article
-          key={card.label}
-          className="rounded-(--radius-card) border border-border bg-surface p-4 shadow-card sm:p-6"
-        >
-          <p className="text-sm font-medium text-secondary">{card.label}</p>
-          <p className="mt-2 text-2xl font-semibold text-text-heading sm:text-3xl">{card.value}</p>
-        </article>
-      ))}
-    </div>
-  )
-}
-
-/** KC-0114 — Muttafiqeen registry block (reusable on People page). */
-export function MuttafiqeenRegistryPanel({ showActions = true }: { showActions?: boolean }) {
+export function MuttafiqeenPage() {
   const [searchParams] = useSearchParams()
-  const [activeGender, setActiveGender] = useState<GenderTab>('Male')
+  const rufaqa = useRufaqaDirectoryQuery()
+  const sectionGender = rufaqa.storedGender || null
+  const [addGender, setAddGender] = useState<PersonGender>('Male')
   const sectionHandlersRef = useRef<MuttafiqSectionHandlers | null>(null)
-  const [openAddForGender, setOpenAddForGender] = useState<PersonGender | null>(null)
+  const [shouldOpenAdd, setShouldOpenAdd] = useState(false)
   const addRequestedRef = useRef(false)
 
   useEffect(() => {
     if (searchParams.get('action') !== 'add' || addRequestedRef.current) return
     addRequestedRef.current = true
-    setOpenAddForGender(activeGender)
-  }, [searchParams, activeGender])
+    setShouldOpenAdd(true)
+  }, [searchParams])
 
   const registerSectionHandlers = useCallback((handlers: MuttafiqSectionHandlers | null) => {
     sectionHandlersRef.current = handlers
   }, [])
 
-  const handleAddFormOpened = useCallback(() => {
-    setOpenAddForGender(null)
-  }, [])
-
   const requestAdd = (gender: PersonGender) => {
-    if (gender === activeGender) {
-      sectionHandlersRef.current?.openAddForm()
+    setAddGender(gender)
+    if (sectionGender && gender !== sectionGender) {
+      rufaqa.setGenderView(gender === 'Male' ? 'men' : 'women')
+      setShouldOpenAdd(true)
       return
     }
-    setOpenAddForGender(gender)
-    setActiveGender(gender)
+    setShouldOpenAdd(true)
+    sectionHandlersRef.current?.openAddForm()
   }
 
   return (
-    <div>
-      {showActions ? (
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <p className="text-sm text-secondary">
-            Manage Male and Female Muttafiq contacts. Classification can change over time.
-          </p>
-          <KarkunPeopleActionBar
-            personLabel="Muttafiq"
-            showAssign={false}
-            showImportExport={false}
-            onAddMale={() => requestAdd('Male')}
-            onAddFemale={() => requestAdd('Female')}
-          />
-        </div>
-      ) : null}
-
-      <MuttafiqeenSummaryCards />
-
-      <nav
-        className="ds-tab-nav mt-6 border-b border-border pb-px"
-        aria-label="Muttafiqeen gender"
-      >
-        {(['Male', 'Female'] as const).map((gender) => (
-          <button
-            key={gender}
-            type="button"
-            className={`ds-tab border-b-2 rounded-none px-4 ${
-              activeGender === gender
-                ? 'border-primary text-primary ds-tab-active'
-                : 'border-transparent'
-            }`}
-            onClick={() => setActiveGender(gender)}
-          >
-            {gender} Muttafiqeen
-          </button>
-        ))}
-      </nav>
-
-      <div className="mt-6">
-        <MuttafiqGenderSection
-          gender={activeGender}
-          shouldOpenAddForm={openAddForGender === activeGender}
-          onAddFormOpened={handleAddFormOpened}
-          onRegisterHandlers={registerSectionHandlers}
+    <RufaqaDirectoryShell
+      category="muttafiqeen"
+      actions={
+        <KarkunPeopleActionBar
+          personLabel="Muttafiq"
+          showAssign={false}
+          showImportExport={false}
+          onAddMale={() => requestAdd('Male')}
+          onAddFemale={() => requestAdd('Female')}
         />
-      </div>
-    </div>
-  )
-}
-
-export function MuttafiqeenPage() {
-  return (
-    <PageShell>
-      <PageHeader
-        title="Muttafiqeen Registry"
-        description="Manage Male and Female Muttafiq contacts separately. Classification can change over time."
+      }
+    >
+      <MuttafiqGenderSection
+        gender={sectionGender}
+        addGender={addGender}
+        initialSearch={rufaqa.search}
+        shouldOpenAddForm={shouldOpenAdd}
+        onAddFormOpened={() => setShouldOpenAdd(false)}
+        onRegisterHandlers={registerSectionHandlers}
+        onClearDirectorySearch={() => rufaqa.setSearch('')}
       />
-
-      <div className="mb-4 flex flex-wrap items-center gap-3 text-sm">
-        <span className="text-secondary">Karkun</span>
-        <span className="text-secondary">/</span>
-        <span className="font-medium text-text-heading">Muttafiqeen</span>
-        <span className="text-secondary">/</span>
-        <Link to={ROUTES.ADMIN_KARKUN} className="text-primary hover:underline">
-          Karkun
-        </Link>
-      </div>
-
-      <MuttafiqeenRegistryPanel />
-    </PageShell>
+    </RufaqaDirectoryShell>
   )
 }

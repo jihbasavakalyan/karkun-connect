@@ -1,4 +1,5 @@
 import { adminFollowUpPath, ROUTES } from '@/constants/routes'
+import { RUFAQA_LABEL_UR, RUFAQA_PATH_PREFIXES } from '@/lib/rufaqa/rufaqaNav'
 import type { IconName } from '@/design-system/iconNames'
 
 /** Single destination in the admin sidebar / mobile nav. */
@@ -8,6 +9,8 @@ export type AdminNavItem = {
   icon: IconName
   to: string
   end?: boolean
+  /** Extra path prefixes that keep this item current (presentation only). */
+  matchPrefixes?: readonly string[]
   /** Visual weight only — does not change routing. */
   emphasis?: 'home' | 'foundation' | 'muted'
 }
@@ -34,7 +37,7 @@ export function isAdminNavGroup(entry: AdminNavEntry): entry is AdminNavGroup {
  * Admin landing + functional modules.
  * Home is the landing surface, not a functional organisational module.
  * میقاتی منصوبہ is the permanent planning foundation.
- * Existing routes are reused — no new destinations.
+ * Existing registry routes remain valid deep links under Rufaqa.
  */
 export const ADMIN_NAV_ITEMS: AdminNavEntry[] = [
   { id: 'home', label: 'ہوم', icon: 'home', to: ROUTES.ADMIN, end: true, emphasis: 'home' },
@@ -45,10 +48,13 @@ export const ADMIN_NAV_ITEMS: AdminNavEntry[] = [
     to: ROUTES.ADMIN_PLANNING,
     emphasis: 'foundation',
   },
-  { id: 'rukn', label: 'ارکان', icon: 'user', to: ROUTES.ADMIN_RUKN },
-  { id: 'karkun', label: 'کارکنان', icon: 'users', to: ROUTES.ADMIN_KARKUN },
-  { id: 'a-rukn', label: 'عازمِ رکن', icon: 'sparkles', to: ROUTES.ADMIN_A_RUKN },
-  { id: 'muttafiqeen', label: 'متفقین', icon: 'heart', to: ROUTES.ADMIN_MUTTAFIQEEN },
+  {
+    id: 'rufaqa',
+    label: RUFAQA_LABEL_UR,
+    icon: 'users',
+    to: ROUTES.ADMIN_RUKN,
+    matchPrefixes: RUFAQA_PATH_PREFIXES,
+  },
   { id: 'assignments', label: 'باہمی ربط', icon: 'link', to: ROUTES.ADMIN_ASSIGNMENTS },
   { id: 'weekly-ijtema', label: 'ہفتہ وار اجتماع', icon: 'calendar', to: ROUTES.ADMIN_WEEKLY_IJTEMA },
   {
@@ -113,6 +119,15 @@ export function adminNavPathMatches(
   return true
 }
 
+export function adminNavItemMatches(
+  item: AdminNavItem,
+  pathname: string,
+  search: string,
+): boolean {
+  const prefixes = item.matchPrefixes?.length ? item.matchPrefixes : [item.to]
+  return prefixes.some((prefix) => adminNavPathMatches(prefix, pathname, search, item.end))
+}
+
 export function findActiveAdminNavItem(
   pathname: string,
   search: string,
@@ -120,7 +135,17 @@ export function findActiveAdminNavItem(
 ): AdminNavItem | null {
   const leaves = flattenAdminNavItems(entries)
   const ranked = leaves
-    .filter((item) => adminNavPathMatches(item.to, pathname, search, item.end))
-    .sort((a, b) => b.to.length - a.to.length)
+    .filter((item) => adminNavItemMatches(item, pathname, search))
+    .sort((a, b) => {
+      const aLen = Math.max(
+        a.to.length,
+        ...(a.matchPrefixes ?? []).map((prefix) => prefix.length),
+      )
+      const bLen = Math.max(
+        b.to.length,
+        ...(b.matchPrefixes ?? []).map((prefix) => prefix.length),
+      )
+      return bLen - aLen
+    })
   return ranked[0] ?? null
 }

@@ -3,8 +3,8 @@
  * People reads Monthly Baitul Maal through the canonical adapter.
  * Legacy write path retained until write migration.
  *
- * KC-BUG-0125 — Registry Quick Search uses canonical digit-aware matcher.
- * KC-038 — Search stays within the active gender tab; no auto tab switching.
+ * KC-038 — Browse stays within the selected Rufaqa gender view (All / Men / Women).
+ * Search uses the canonical matcher on that same population.
  */
 import { useMemo, useState, useEffect, useCallback } from 'react'
 import { getAllKarkuns, getAllMuttafiqeen } from '@/lib/peopleStore'
@@ -146,7 +146,7 @@ function sortKarkuns(
 }
 
 export function useKarkunPeopleManagement(
-  sectionGender: PersonGender,
+  sectionGender: PersonGender | null,
   registryCategory: PersonCategory = 'Karkun',
   options?: {
     /** KC-0127 — hydrate filters from registry deep links (values unchanged). */
@@ -205,7 +205,10 @@ export function useKarkunPeopleManagement(
   )
 
   const allKarkuns = useMemo(
-    () => registryPool.filter((k) => k.gender === sectionGender),
+    () =>
+      sectionGender
+        ? registryPool.filter((k) => k.gender === sectionGender)
+        : registryPool,
     [registryPool, sectionGender],
   )
 

@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { PageHeader, PageShell } from '@/components/ui'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import {
@@ -13,12 +12,14 @@ import { ConfirmDialog } from '@/components/forms/people'
 import { Modal } from '@/components/common/Modal'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
+import { RufaqaDirectoryShell } from '@/components/admin/RufaqaDirectoryShell'
 import { adminARuknDetailPath, adminKarkunProfilePath } from '@/constants/routes'
 import { listActiveARuknOfficers } from '@/lib/aRuknRegistry'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { useAuth } from '@/hooks/useAuth'
 import { useMuttafiqRelationshipStore } from '@/hooks/useMuttafiqRelationshipStore'
 import { usePeopleStore } from '@/hooks/usePeopleStore'
+import { useRufaqaDirectoryQuery } from '@/hooks/useRufaqaDirectoryQuery'
 import { getRuknAssignmentSummary } from '@/services/assignmentService'
 import { getActiveMuttafiqRelationshipsForRukn } from '@/stores/muttafiqRelationshipStore'
 import { useWriteLifecycle } from '@/hooks/useWriteLifecycle'
@@ -40,7 +41,7 @@ export function ARuknRegistryPage() {
   void assignmentVersion
   void muttafiqRelationshipVersion
   const { user } = useAuth()
-  const [search, setSearch] = useState('')
+  const rufaqa = useRufaqaDirectoryQuery()
   const [pendingDelete, setPendingDelete] = useState<Rukn | null>(null)
   const [deleteMode, setDeleteMode] = useState<ARuknDeleteMode | null>(null)
   const [error, setError] = useState('')
@@ -49,17 +50,20 @@ export function ARuknRegistryPage() {
   const isAdministrator = user?.role === 'administrator'
 
   const officers = useMemo(() => {
-    const query = search.trim().toLowerCase()
-    const rows = listActiveARuknOfficers().slice().sort((a, b) => a.id.localeCompare(b.id))
+    const query = rufaqa.search.trim().toLowerCase()
+    const rows = listActiveARuknOfficers()
+      .filter((officer) => !rufaqa.storedGender || officer.gender === rufaqa.storedGender)
+      .slice()
+      .sort((a, b) => a.id.localeCompare(b.id))
     if (!query) return rows
     return rows.filter((officer) =>
-      [officer.id, officer.name, officer.mobile, officer.sourcePersonId ?? '']
+      [officer.id, officer.name, officer.mobile, officer.sourcePersonId ?? '', officer.place ?? '']
         .join(' ')
         .toLowerCase()
         .includes(query),
     )
     // eslint-disable-next-line react-hooks/exhaustive-deps -- registry is module state
-  }, [peopleVersion, assignmentVersion, search])
+  }, [peopleVersion, assignmentVersion, rufaqa.search, rufaqa.storedGender])
 
   const decidedBy = user?.displayName ?? user?.uid ?? 'Administrator'
 
@@ -100,12 +104,7 @@ export function ARuknRegistryPage() {
   }
 
   return (
-    <PageShell>
-      <PageHeader
-        title={UI_LABELS.aRukn}
-        description="Independent officers promoted from Karkuns. This registry is separate from ارکان."
-      />
-
+    <RufaqaDirectoryShell category="a-rukn">
       {error ? (
         <div className="ds-banner-error mb-3" role="alert">
           {error}
@@ -122,22 +121,23 @@ export function ARuknRegistryPage() {
         </p>
       ) : null}
 
-      <label className="block max-w-md text-sm">
-        <span className="mb-1 block text-secondary">Search</span>
-        <input
-          type="search"
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text-heading focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-          placeholder="Search by AR identity, name, mobile, or source Karkun"
-        />
-      </label>
+      <p className="mb-4 text-sm text-secondary">
+        Independent officers promoted from Karkuns. This registry is separate from Rukn.
+      </p>
 
       {officers.length === 0 ? (
         <EmptyState
           icon="sparkles"
-          title={`No ${UI_LABELS.aRukn} yet`}
-          description="Promote an eligible Karkun from کارکنان. Officers appear here from the shared Rukn repository."
+          title={
+            rufaqa.search.trim()
+              ? UI_LABELS.noSearchResults
+              : `No ${UI_LABELS.aRukn} yet`
+          }
+          description={
+            rufaqa.search.trim()
+              ? UI_LABELS.noSearchResultsHint
+              : 'Promote an eligible Karkun from the Karkun category. Officers appear here from the shared Rukn repository.'
+          }
         />
       ) : (
         <>
@@ -367,6 +367,6 @@ export function ARuknRegistryPage() {
           setDeleteMode(null)
         }}
       />
-    </PageShell>
+    </RufaqaDirectoryShell>
   )
 }

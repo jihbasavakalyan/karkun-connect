@@ -3,6 +3,7 @@ import { Logo } from '@/components/common/Logo'
 import { Icon } from '@/components/ui/Icon'
 import {
   ADMIN_NAV_ITEMS,
+  adminNavItemMatches,
   adminNavPathMatches,
   isAdminNavGroup,
   type AdminNavEntry,
@@ -46,7 +47,7 @@ function NavLeafLink({
   onNavigate?: () => void
 }) {
   const location = useLocation()
-  const isCurrent = adminNavPathMatches(item.to, location.pathname, location.search, item.end)
+  const isCurrent = adminNavItemMatches(item, location.pathname, location.search)
 
   return (
     <NavLink

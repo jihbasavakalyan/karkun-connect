@@ -35,7 +35,7 @@ export const UI_LABELS = {
   registrySearchPlaceholder: 'Search by name, mobile, ID, ward, or area…',
   noSearchResults: 'No matching people',
   noSearchResultsHint:
-    'Try another name or mobile. Search covers both Male and Female while a query is active.',
+    'Try another name, mobile, area, or ID. Search uses the fields on this category of record.',
   whatsappPreview: 'WhatsApp preview',
   recipients: 'Recipients',
 } as const
