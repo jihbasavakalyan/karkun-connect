@@ -6078,10 +6078,15 @@ html[data-theme='dark'] {
   color: var(--color-secondary);
 }
 
+.rukn-karkun-workspace {
+  gap: 0.65rem;
+}
+
 .rukn-karkun-tabs {
   display: flex;
-  gap: 0.4rem;
-  margin-bottom: 0.65rem;
+  gap: 0.15rem;
+  margin-bottom: 0.15rem;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .rukn-karkun-tab {
@@ -6090,24 +6095,95 @@ html[data-theme='dark'] {
   flex: 1;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--color-border);
-  border-radius: 0.55rem;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
   padding: 0.35rem 0.5rem;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   font-weight: 600;
   color: var(--color-secondary);
   text-decoration: none;
 }
 
-.rukn-karkun-tab-current {
-  border-color: var(--color-kc-shell);
-  color: var(--color-kc-shell-ink);
-  background: var(--color-kc-canvas);
+.rukn-karkun-tab:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
-.rukn-karkun-add .connect-add-karkun-button {
+.rukn-karkun-tab-current {
+  border-bottom-color: var(--color-primary);
+  color: var(--color-primary);
+  background: transparent;
+}
+
+.rukn-karkun-view-hint {
+  margin: 0 0 0.5rem;
+  font-size: 0.82rem;
+  color: var(--color-secondary);
+}
+
+.rukn-karkun-eligibility-hint {
+  margin: 0 0 0.5rem;
+  font-size: 0.8rem;
+  color: var(--color-secondary);
+}
+
+.rukn-karkun-add {
+  margin-top: 0.85rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.rukn-karkun-add-secondary {
+  display: flex;
   min-height: 2.75rem;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border);
   border-radius: 0.55rem;
+  background: var(--color-surface);
+  padding: 0.35rem 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-heading);
+}
+
+.rukn-karkun-add-secondary:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.rukn-karkun-link-muttafiq {
+  margin-top: 0.75rem;
+}
+
+.rukn-karkun-workspace .relationship-search-input {
+  min-height: 2.75rem;
+}
+
+.rukn-karkun-workspace .connected-action {
+  min-height: 2.75rem;
+}
+
+.rukn-karkun-workspace .relationship-available-row {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.rukn-karkun-workspace .relationship-available-row-action {
+  width: 100%;
+}
+
+@media (min-width: 640px) {
+  .rukn-karkun-workspace .relationship-available-row {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .rukn-karkun-workspace .relationship-available-row-action {
+    width: auto;
+  }
 }
 
 .app-screen-embedded {

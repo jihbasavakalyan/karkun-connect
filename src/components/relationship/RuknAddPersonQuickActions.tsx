@@ -5,23 +5,31 @@ import { NewMuttafiqRequestModal } from '@/components/relationship/NewMuttafiqRe
 type RuknAddPersonQuickActionsProps = {
   ruknId: string
   className?: string
+  /** Default keeps the existing dashed Connect-style buttons. */
+  tone?: 'primary' | 'secondary'
 }
 
 /**
  * Shared Rukn Add Karkun / Add Muttafiq entry — reuses existing intake modals
  * (requesting Rukn is the referring Rukn on submit).
  */
-export function RuknAddPersonQuickActions({ ruknId, className = '' }: RuknAddPersonQuickActionsProps) {
+export function RuknAddPersonQuickActions({
+  ruknId,
+  className = '',
+  tone = 'primary',
+}: RuknAddPersonQuickActionsProps) {
   const [showKarkun, setShowKarkun] = useState(false)
   const [showMuttafiq, setShowMuttafiq] = useState(false)
   const [message, setMessage] = useState('')
+  const buttonClass =
+    tone === 'secondary' ? 'rukn-karkun-add-secondary' : 'connect-add-karkun-button'
 
   return (
     <div className={className}>
       <div className="connect-add-karkun grid grid-cols-2 gap-2" aria-label="Add person">
         <button
           type="button"
-          className="connect-add-karkun-button"
+          className={buttonClass}
           onClick={() => {
             setShowKarkun(true)
             setMessage('')
@@ -31,7 +39,7 @@ export function RuknAddPersonQuickActions({ ruknId, className = '' }: RuknAddPer
         </button>
         <button
           type="button"
-          className="connect-add-karkun-button"
+          className={buttonClass}
           onClick={() => {
             setShowMuttafiq(true)
             setMessage('')

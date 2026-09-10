@@ -13,7 +13,10 @@ import {
 } from '@/components/relationship'
 import { EmptyState, PageShell } from '@/components/ui'
 import { PlanningConversationModal } from '@/features/digitalRafeeq/planning'
-import { humanizeConnectionConfirmed } from '@/lib/relationshipPresentation'
+import {
+  humanizeAvailableKarkunStatus,
+  humanizeConnectionConfirmed,
+} from '@/lib/relationshipPresentation'
 import { matchesKarkunRegistrySearch } from '@/lib/relationshipPresentation'
 import { toOperatorAssignmentError } from '@/lib/assignment/operatorFacingError'
 import {
@@ -128,7 +131,15 @@ export function AvailableKarkunPage({ embedded = false }: { embedded?: boolean }
 
   return (
     <PageShell variant="narrow" className={embedded ? 'app-screen-embedded' : 'app-screen connect-screen max-w-3xl'}>
-      {embedded ? null : (
+      {embedded ? (
+        <p className="rukn-karkun-view-hint">
+          {availablePoolFailed
+            ? 'Available Karkuns could not be loaded'
+            : availableKarkunan.length === 1
+              ? '1 Karkun ready to connect'
+              : `${availableKarkunan.length} Karkuns ready to connect`}
+        </p>
+      ) : (
       <header className="app-screen-header">
         <h1 className="app-screen-title">Available</h1>
         <p className="app-screen-subtitle">
@@ -139,27 +150,18 @@ export function AvailableKarkunPage({ embedded = false }: { embedded?: boolean }
       </header>
       )}
 
-      <KarkunSearchField
-        id="available-karkun-search"
-        value={query}
-        onChange={setQuery}
-        resultCount={query.trim() ? filtered.length : undefined}
-        sticky
-      />
-
-      <div className="connect-add-karkun flex flex-wrap gap-2">
-        <button
-          type="button"
-          className="connect-add-karkun-button"
-          onClick={() => {
-            setShowConnectMuttafiq(true)
-            setError('')
-            setSuccessMessage('')
-          }}
-        >
-          Link Muttafiq
-        </button>
-      </div>
+      {!availablePoolFailed && availableKarkunan.length > 0 ? (
+        <>
+          <p className="rukn-karkun-eligibility-hint">{humanizeAvailableKarkunStatus()}</p>
+          <KarkunSearchField
+            id="available-karkun-search"
+            value={query}
+            onChange={setQuery}
+            resultCount={query.trim() ? filtered.length : undefined}
+            sticky
+          />
+        </>
+      ) : null}
 
       {successMessage && (
         <div className="ds-banner-success" role="status">
@@ -190,7 +192,7 @@ export function AvailableKarkunPage({ embedded = false }: { embedded?: boolean }
           icon="link"
           title="All caught up"
           description="No Karkun is available to connect right now. Check back later or contact your administrator."
-          primaryAction={{ label: 'View my Karkuns', href: ROUTES.RUKN_KARKUN }}
+          primaryAction={{ label: 'View My Karkun', href: ROUTES.RUKN_KARKUN }}
         />
       ) : filtered.length === 0 ? (
         <EmptyState
@@ -214,6 +216,22 @@ export function AvailableKarkunPage({ embedded = false }: { embedded?: boolean }
           ))}
         </ul>
       )}
+
+      {!availablePoolFailed ? (
+        <div className="rukn-karkun-link-muttafiq">
+          <button
+            type="button"
+            className="rukn-karkun-add-secondary"
+            onClick={() => {
+              setShowConnectMuttafiq(true)
+              setError('')
+              setSuccessMessage('')
+            }}
+          >
+            Link Muttafiq
+          </button>
+        </div>
+      ) : null}
 
       <ConnectKarkunConfirmModal
         isOpen={pendingKarkun !== null}

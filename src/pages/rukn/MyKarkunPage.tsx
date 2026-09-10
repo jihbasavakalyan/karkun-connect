@@ -51,9 +51,15 @@ export function MyKarkunPage({ embedded = false }: { embedded?: boolean }) {
 
   return (
     <PageShell variant="narrow" className={embedded ? 'app-screen-embedded' : 'app-screen connected-screen'}>
-      {embedded ? null : (
+      {embedded ? (
+        <p className="rukn-karkun-view-hint">
+          {myKarkunan.length === 1
+            ? '1 connected Karkun'
+            : `${myKarkunan.length} connected Karkuns`}
+        </p>
+      ) : (
       <header className="app-screen-header">
-        <h1 className="app-screen-title">My Karkuns</h1>
+        <h1 className="app-screen-title">My Karkun</h1>
         <p className="app-screen-subtitle">
           {myKarkunan.length} Karkun{myKarkunan.length === 1 ? '' : 's'}
         </p>
@@ -77,8 +83,8 @@ export function MyKarkunPage({ embedded = false }: { embedded?: boolean }) {
           <EmptyState
             icon="users"
             title="No connections yet"
-            description="Connect with a Karkun to begin guiding them through the campaign journey."
-            primaryAction={{ label: 'Find available Karkuns', href: `${ROUTES.RUKN_KARKUN}?view=available` }}
+            description="Connect with a Karkun from Available to begin guiding them through the campaign journey."
+            primaryAction={{ label: 'Find Available', href: `${ROUTES.RUKN_KARKUN}?view=available` }}
           />
         ) : filtered.length === 0 ? (
           <EmptyState
