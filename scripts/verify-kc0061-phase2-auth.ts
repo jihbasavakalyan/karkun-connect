@@ -22,19 +22,23 @@ assert(ensure.includes('synchronizeRefreshedIdTokenForFirestore'), 'Firestore cr
 assert(ensure.includes('onIdTokenChanged'), 'waits for Auth ID-token listeners')
 assert(ensure.includes('yieldForFirestoreAuthCredentialQueue'), 'yields for Firestore Auth credential queue')
 assert(!ensure.includes('Promise.race'), 'does not race ID-token notification against Firestore yield')
-assert(ensure.includes('await notified'), 'waits for post-initial ID-token notification before yield')
+assert(ensure.includes('void notified.then'), 'bounded wait for post-initial ID-token notification before yield')
 assert(ensure.includes('jwtHasAppRole'), 'skips force-refresh when administrator/rukn claim already present')
 
 const adminGate = readFileSync(resolve('src/lib/auth/assertAdministratorDecisionSession.ts'), 'utf8')
 const adminFn = adminGate.slice(adminGate.indexOf('export async function assertAdministratorDecisionSession'))
 assert(adminFn.includes('ensureJwtRoleClaimPresent'), 'Admin decision function reuses JWT role claim helper')
 assert(
-  adminFn.includes('await synchronizeRefreshedIdTokenForFirestore'),
-  'Admin decision gate synchronizes Firestore credentials even when Auth already has a role',
+  adminFn.includes('synchronizeRefreshedIdTokenForFirestore'),
+  'Admin decision gate can synchronize Firestore credentials after a claims repair',
+)
+assert(
+  adminFn.includes('claims.forceRefreshed'),
+  'Admin decision gate skips a second getIdToken(true) when the JWT already has administrator',
 )
 assert(
   adminFn.indexOf("claims.role !== 'administrator'") <
-    adminFn.indexOf('await synchronizeRefreshedIdTokenForFirestore'),
+    adminFn.indexOf('synchronizeRefreshedIdTokenForFirestore'),
   'Firestore credential sync runs only after administrator validation',
 )
 

@@ -10,6 +10,7 @@ import {
   bulkSetRuknStatus,
   createRukn,
   importRuknsFromRows,
+  persistRuknDurable,
   updateRukn,
 } from '@/lib/peopleStore'
 import {
@@ -35,6 +36,7 @@ import {
 import type { PersonFormValues } from '@/components/forms/people'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { UI_LABELS } from '@/lib/uiTerminology'
+import { classifyWriteError } from '@/lib/reliability/writeLifecycle'
 import type { MessageRecipient } from '@/types/communication'
 
 type ActiveTab = 'manage' | 'assignments'
@@ -115,11 +117,24 @@ export function RuknModulePage() {
       return
     }
 
-    setIsFormOpen(false)
-    setEditingRukn(null)
-    setFormError('')
-    setPendingFormValues(null)
-    setMobileOwner(null)
+    const persistId = editingRukn?.id ?? result.ruknId
+    if (!persistId) {
+      setFormError('Unable to save Rukn.')
+      return
+    }
+
+    void persistRuknDurable(persistId).then((persisted) => {
+      if (!persisted.success) {
+        const classified = classifyWriteError(persisted.error ?? 'Permission')
+        setFormError(classified.message)
+        return
+      }
+      setIsFormOpen(false)
+      setEditingRukn(null)
+      setFormError('')
+      setPendingFormValues(null)
+      setMobileOwner(null)
+    })
   }
 
   const confirmMobileOverwrite = () => {

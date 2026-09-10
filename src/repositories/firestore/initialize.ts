@@ -13,7 +13,7 @@ import {
   startFirestoreSnapshotListeners,
   stopFirestoreSnapshotListeners,
 } from '@/repositories/firestore/firestoreRepositories'
-import { isTransferCommitInFlight } from '@/repositories/firestore/offlineSync'
+import { isTransferCommitInFlight, getPendingWriteCount } from '@/repositories/firestore/offlineSync'
 import { hydrateStoresFromRepositories } from '@/repositories/firestore/storeHydration'
 import {
   markBackgroundHydrationReady,
@@ -230,6 +230,18 @@ async function runPhasedStartupHydrate(): Promise<boolean> {
     criticalHydrateSucceeded = true
     markStartupLifecycle('firestore.hydrate.complete', { context: 'startup-critical' })
     markStartupLifecycle('criticalHydrate.complete')
+    void import('@/lib/debug/kc00584PermissionProbe').then(({ kc00584GetReport }) => {
+      const report = kc00584GetReport()
+      logStartupTiming('criticalHydrate.ops', {
+        operations: report.operations.map((op) => ({
+          label: op.label,
+          durationMs: op.durationMs,
+          result: op.result,
+          collection: op.collection,
+        })),
+        slowest: [...report.operations].sort((a, b) => b.durationMs - a.durationMs)[0] ?? null,
+      })
+    })
   } catch (error) {
     criticalError = error
     criticalHydrateSucceeded = false
@@ -448,7 +460,11 @@ function scheduleSnapshotRefresh(): void {
       while (snapshotRefreshQueued) {
         snapshotRefreshQueued = false
         // KC-0055: do not rebuild stores over an in-flight Transfer ownership commit.
-        while (isTransferCommitInFlight()) {
+        const waitStartedAt = Date.now()
+        while (
+          (isTransferCommitInFlight() || getPendingWriteCount() > 0) &&
+          Date.now() - waitStartedAt < 15_000
+        ) {
           await new Promise((resolve) => setTimeout(resolve, 25))
         }
         void import('@/lib/debug/kc00586DashboardStateProbe').then(

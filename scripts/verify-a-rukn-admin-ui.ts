@@ -448,8 +448,9 @@ assert(
   assert(ensure.includes('synchronizeRefreshedIdTokenForFirestore'), 'Admin UI path uses credential sync helper')
   assert(
     gate.includes('synchronizeRefreshedIdTokenForFirestore'),
-    'Admin decision gate still synchronizes Firestore credentials when Auth already has administrator',
+    'Admin decision gate still synchronizes Firestore credentials after a claims repair',
   )
+  assert(gate.includes('claims.forceRefreshed'), 'Admin decision gate does not force-refresh when JWT already has administrator')
   assert(
     promotion.indexOf('assertAdministratorDecisionSession') <
       promotion.indexOf('const transition = await markPromotionInProgress'),

@@ -118,7 +118,15 @@ export async function synchronizeRefreshedIdTokenForFirestore(
 
   try {
     const refreshedToken = await input.getIdToken(true)
-    await notified
+    // If Auth does not emit a second ID-token event (token already fresh),
+    // do not hang the write path — yield so Firestore can still attach credentials.
+    await new Promise<void>((resolve) => {
+      const timer = setTimeout(resolve, 1500)
+      void notified.then(() => {
+        clearTimeout(timer)
+        resolve()
+      })
+    })
     await input.yieldForFirestoreAuthQueue()
     return refreshedToken
   } finally {

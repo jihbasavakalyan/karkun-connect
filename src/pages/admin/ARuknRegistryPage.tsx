@@ -26,7 +26,8 @@ import { getActiveMuttafiqRelationshipsForRukn } from '@/stores/muttafiqRelation
 import { useWriteLifecycle } from '@/hooks/useWriteLifecycle'
 import { UI_LABELS } from '@/lib/uiTerminology'
 import { executeARuknDelete, type ARuknDeleteMode } from '@/services/archiveService'
-import { updateRukn, type MobileLookupResult } from '@/lib/peopleStore'
+import { updateRukn, persistRuknDurable, type MobileLookupResult } from '@/lib/peopleStore'
+import { classifyWriteError } from '@/lib/reliability/writeLifecycle'
 import { formatPersonStatus } from '@/types/people.types'
 import { formatPersonNameForDisplay } from '@/utils/formatPersonDisplay'
 import type { Rukn } from '@/data/ruknMaster'
@@ -89,11 +90,17 @@ export function ARuknRegistryPage() {
       setFormError(result.error ?? 'Unable to save identity.')
       return
     }
-    setEditingOfficer(null)
-    setFormError('')
-    setPendingFormValues(null)
-    setMobileOwner(null)
-    setNotice('Identity saved.')
+    void persistRuknDurable(editingOfficer.id).then((persisted) => {
+      if (!persisted.success) {
+        setFormError(classifyWriteError(persisted.error ?? 'Permission').message)
+        return
+      }
+      setEditingOfficer(null)
+      setFormError('')
+      setPendingFormValues(null)
+      setMobileOwner(null)
+      setNotice('Identity saved.')
+    })
   }
 
   const confirmDelete = () => {

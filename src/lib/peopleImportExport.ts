@@ -1,10 +1,30 @@
 import type { Rukn } from '@/data/ruknMaster'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
 import type { PersonGender, PersonKind } from '@/types/people.types'
+import { getRuknAssignmentSummary } from '@/services/assignmentService'
+import { getActiveMuttafiqRelationshipsForRukn } from '@/stores/muttafiqRelationshipStore'
 
 export type ExportFormat = 'csv' | 'excel'
 
 const RUKN_HEADERS = [
+  'ID',
+  'Name',
+  'Gender',
+  'Mobile',
+  'WhatsApp',
+  'Place',
+  'Status',
+  'Referred By Rukn ID',
+  'Connected Karkuns',
+  'Connected Muttafiqeen',
+  'Notes',
+  'Created Date',
+  'Updated Date',
+  'Updated By',
+] as const
+
+const KARKUN_HEADERS = [
+  'ID',
   'Name',
   'Gender',
   'Mobile',
@@ -15,13 +35,10 @@ const RUKN_HEADERS = [
   'Created Date',
   'Updated Date',
   'Updated By',
-] as const
-
-const KARKUN_HEADERS = [
-  ...RUKN_HEADERS,
   'Area',
   'Address',
   'Connected Rukn',
+  'Connected Rukn ID',
   'Connection Status',
   'Connection Date',
 ] as const
@@ -54,18 +71,25 @@ function formatDate(iso: string): string {
 }
 
 export function exportRukns(records: Rukn[], format: ExportFormat): void {
-  const rows = records.map((rukn) => [
-    rukn.name,
-    rukn.gender,
-    rukn.mobile,
-    rukn.whatsapp ?? '',
-    rukn.place,
-    rukn.status,
-    rukn.notes ?? '',
-    formatDate(rukn.createdAt),
-    formatDate(rukn.updatedAt),
-    rukn.updatedBy,
-  ])
+  const rows = records.map((rukn) => {
+    const summary = getRuknAssignmentSummary(rukn.id)
+    return [
+      rukn.id,
+      rukn.name,
+      rukn.gender,
+      rukn.mobile,
+      rukn.whatsapp ?? '',
+      rukn.place,
+      rukn.status,
+      rukn.referredByRuknId ?? '',
+      String(summary.assignedKarkunCount),
+      String(getActiveMuttafiqRelationshipsForRukn(rukn.id).length),
+      rukn.notes ?? '',
+      formatDate(rukn.createdAt),
+      formatDate(rukn.updatedAt),
+      rukn.updatedBy,
+    ]
+  })
 
   const csv = rowsToCsv(RUKN_HEADERS, rows)
   const dateStamp = new Date().toISOString().slice(0, 10)
@@ -76,11 +100,12 @@ export function exportRukns(records: Rukn[], format: ExportFormat): void {
     return
   }
 
-  downloadFile(csv, `rukn-export-${dateStamp}.csv`, 'text/csv;charset=utf-8')
+  downloadFile(`\uFEFF${csv}`, `rukn-export-${dateStamp}.csv`, 'text/csv;charset=utf-8')
 }
 
 export function exportKarkuns(records: KarkunRegistryRecord[], format: ExportFormat): void {
   const rows = records.map((karkun) => [
+    karkun.id,
     karkun.name,
     karkun.gender,
     karkun.mobile,
@@ -94,6 +119,7 @@ export function exportKarkuns(records: KarkunRegistryRecord[], format: ExportFor
     karkun.area,
     karkun.address,
     karkun.assignedRukn,
+    karkun.assignedRuknId,
     karkun.assignmentStatus,
     karkun.assignmentDate ?? '',
   ])
@@ -107,7 +133,7 @@ export function exportKarkuns(records: KarkunRegistryRecord[], format: ExportFor
     return
   }
 
-  downloadFile(csv, `karkun-export-${dateStamp}.csv`, 'text/csv;charset=utf-8')
+  downloadFile(`\uFEFF${csv}`, `karkun-export-${dateStamp}.csv`, 'text/csv;charset=utf-8')
 }
 
 function parseCsvLine(line: string): string[] {
@@ -188,8 +214,9 @@ export function parsePeopleImportFile(
   content: string,
   kind: PersonKind,
 ): ParsedImportRow[] {
-  const delimiter = content.includes('\t') && !content.includes(',') ? '\t' : ','
-  const lines = content
+  const stripped = content.replace(/^\uFEFF/, '')
+  const delimiter = stripped.includes('\t') && !stripped.includes(',') ? '\t' : ','
+  const lines = stripped
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter(Boolean)

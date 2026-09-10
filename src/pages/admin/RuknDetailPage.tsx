@@ -22,6 +22,7 @@ import {
   toOperatorTransferError,
 } from '@/lib/assignment/operatorFacingError'
 import { formatPersonStatus } from '@/types/people.types'
+import { classifyWriteError } from '@/lib/reliability/writeLifecycle'
 import {
   EmptyState,
   PageShell,
@@ -34,7 +35,7 @@ import { MuttafiqRuknConnectionRow } from '@/components/relationship/MuttafiqRuk
 import { PersonIdentityChrome } from '@/components/personDetail/PersonIdentityChrome'
 import { ConfirmDialog, PersonFormModal } from '@/components/forms/people'
 import type { PersonFormValues } from '@/components/forms/people'
-import { updateRukn, type MobileLookupResult } from '@/lib/peopleStore'
+import { updateRukn, persistRuknDurable, type MobileLookupResult } from '@/lib/peopleStore'
 import { formatPersonNameForDisplay } from '@/utils/formatPersonDisplay'
 import {
   rufaqaCategoryLabel,
@@ -68,6 +69,7 @@ export function RuknDetailPage() {
     const nextParams = new URLSearchParams(searchParams)
     if (next === 'overview') nextParams.delete('tab')
     else nextParams.set('tab', 'connections')
+    if (nextParams.toString() === searchParams.toString()) return
     setSearchParams(nextParams, { replace: true })
   }
 
@@ -209,11 +211,17 @@ export function RuknDetailPage() {
       setFormError(result.error ?? 'Unable to save identity.')
       return
     }
-    setIsFormOpen(false)
-    setFormError('')
-    setPendingFormValues(null)
-    setMobileOwner(null)
-    setActionSuccess('Identity saved.')
+    void persistRuknDurable(rukn.id).then((persisted) => {
+      if (!persisted.success) {
+        setFormError(classifyWriteError(persisted.error ?? 'Permission').message)
+        return
+      }
+      setIsFormOpen(false)
+      setFormError('')
+      setPendingFormValues(null)
+      setMobileOwner(null)
+      setActionSuccess('Identity saved.')
+    })
   }
 
   return (

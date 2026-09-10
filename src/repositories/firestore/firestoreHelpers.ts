@@ -183,12 +183,19 @@ export const FIRESTORE_BATCH_CHUNK_SIZE = 450
 export async function commitBatchSetDocuments(
   db: Firestore,
   writes: ReadonlyArray<{ path: string; id: string; data: object }>,
+  options?: { merge?: boolean },
 ): Promise<RepositoryResult<void>> {
+  const merge = options?.merge === true
   for (let index = 0; index < writes.length; index += FIRESTORE_BATCH_CHUNK_SIZE) {
     const chunk = writes.slice(index, index + FIRESTORE_BATCH_CHUNK_SIZE)
     const batch = createBatch(db)
     for (const write of chunk) {
-      batch.set(doc(db, write.path, write.id), sanitizeForFirestore(write.data))
+      const payload = sanitizeForFirestore(write.data)
+      if (merge) {
+        batch.set(doc(db, write.path, write.id), payload, { merge: true })
+      } else {
+        batch.set(doc(db, write.path, write.id), payload)
+      }
     }
     try {
       await batch.commit()

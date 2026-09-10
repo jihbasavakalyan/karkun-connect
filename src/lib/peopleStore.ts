@@ -72,6 +72,8 @@ export type PeopleMutationResult = {
   existingOwner?: MobileLookupResult
   /** Set on successful createKarkun. */
   karkunId?: string
+  /** Set on successful createRukn. */
+  ruknId?: string
 }
 
 function notifyPeopleChange(): void {
@@ -401,8 +403,9 @@ export function createRukn(
     action: 'create',
     updatedBy,
   })
-  notifyPeopleChange()
-  return { success: true }
+  emitPeopleRegistryChange()
+  void persistRuknDurable(id)
+  return { success: true, ruknId: id }
 }
 
 export function updateRukn(
@@ -466,7 +469,8 @@ export function updateRukn(
     updatedBy,
   })
 
-  notifyPeopleChange()
+  emitPeopleRegistryChange()
+  void persistRuknDurable(id)
   return { success: true }
 }
 
@@ -1012,7 +1016,7 @@ export async function persistRuknDurable(id: string): Promise<PeopleMutationResu
   const result = await commit([rukn])
   if (!result.ok) {
     console.error('[persistRuknDurable]', result.error.code, result.error.message, result.error.cause)
-    return { success: false, error: result.error.message }
+    return { success: false, error: toOperatorPersistError('rukns', result.error) }
   }
   return { success: true }
 }

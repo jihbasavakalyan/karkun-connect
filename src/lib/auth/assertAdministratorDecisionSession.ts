@@ -6,9 +6,9 @@
  * Production path:
  * 1. `ensureJwtRoleClaimPresent()` — Auth JWT must carry `role=administrator`
  *    (force-refresh only when the current token lacks an app role).
- * 2. `synchronizeRefreshedIdTokenForFirestore()` — always run on the Admin
- *    decision path so Firestore's AuthCredentialsProvider can attach that
- *    credential before the next `updateDoc` (KC-0061 residual).
+ * 2. If claims were just repaired, `synchronizeRefreshedIdTokenForFirestore()`.
+ *    If `role=administrator` is already on the token, only yield for Firestore's
+ *    credential queue — do not force-refresh on every save.
  */
 
 import { onIdTokenChanged } from 'firebase/auth'
@@ -79,12 +79,17 @@ export async function assertAdministratorDecisionSession(
   if (claims.role !== 'administrator') {
     return { ok: false, error: deniedMessage }
   }
-  // Auth already has administrator (existing-role path) or just refreshed it.
-  // Either way, wait until Firestore can observe the credential before writes.
-  await synchronizeRefreshedIdTokenForFirestore({
-    getIdToken: (forceRefresh) => runtime.currentUser!.getIdToken(forceRefresh),
-    subscribeIdTokenChanges: runtime.subscribeIdTokenChanges,
-    yieldForFirestoreAuthQueue: runtime.yieldForFirestoreAuthQueue,
-  })
+  // Force-refresh only when the JWT was just repaired. A second getIdToken(true)
+  // on every Admin save waits on Auth + can hang if onIdTokenChanged does not
+  // fire again — that is the recurring "کارروائی مکمل ہونے میں معمول سے زیادہ وقت".
+  if (claims.forceRefreshed) {
+    await synchronizeRefreshedIdTokenForFirestore({
+      getIdToken: (forceRefresh) => runtime.currentUser!.getIdToken(forceRefresh),
+      subscribeIdTokenChanges: runtime.subscribeIdTokenChanges,
+      yieldForFirestoreAuthQueue: runtime.yieldForFirestoreAuthQueue,
+    })
+  } else {
+    await runtime.yieldForFirestoreAuthQueue()
+  }
   return { ok: true }
 }

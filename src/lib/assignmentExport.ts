@@ -5,7 +5,9 @@ import type { AssignmentRecord } from '@/types/assignment'
 
 const EXPORT_HEADERS = [
   'Connection Number',
+  'Rukn ID',
   'Rukn',
+  'Karkun ID',
   'Karkun',
   'Status',
   'Effective From',
@@ -32,7 +34,7 @@ function rowsToCsv(headers: readonly string[], rows: string[][]): string {
 }
 
 function downloadFile(content: string, filename: string): void {
-  const blob = new Blob([content], { type: 'text/csv;charset=utf-8' })
+  const blob = new Blob([`\uFEFF${content}`], { type: 'text/csv;charset=utf-8' })
   const url = URL.createObjectURL(blob)
   const anchor = document.createElement('a')
   anchor.href = url
@@ -44,7 +46,9 @@ function downloadFile(content: string, filename: string): void {
 function recordToRow(record: AssignmentRecord): string[] {
   return [
     record.assignmentNumber,
+    record.ruknId,
     getRuknById(record.ruknId)?.name ?? record.ruknId,
+    record.karkunId,
     getKarkunById(record.karkunId)?.name ?? record.karkunId,
     record.status,
     record.effectiveFrom,

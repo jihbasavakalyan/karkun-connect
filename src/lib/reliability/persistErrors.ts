@@ -33,6 +33,7 @@ const LABEL_HINTS: Record<string, string> = {
   followUps: 'Follow-up records could not be saved.',
   connections: 'Connection changes could not be saved.',
   karkuns: 'Karkun registry changes could not be saved.',
+  rukns: 'Rukn identity changes could not be saved.',
 }
 
 function extractRawMessage(error: unknown): string {

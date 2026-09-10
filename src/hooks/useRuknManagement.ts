@@ -111,8 +111,13 @@ export function useRuknManagement() {
   }, [filteredRecords, currentPage, totalPages])
 
   const updateFilter = (key: keyof PeopleFilters, value: string) => {
-    setFilters((previous) => ({ ...previous, [key]: value }))
-    setCurrentPage(1)
+    let changed = false
+    setFilters((previous) => {
+      if (previous[key] === value) return previous
+      changed = true
+      return { ...previous, [key]: value }
+    })
+    if (changed) setCurrentPage(1)
   }
 
   const clearFilters = () => {

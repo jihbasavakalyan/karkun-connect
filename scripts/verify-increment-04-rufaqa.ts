@@ -85,4 +85,16 @@ assert.doesNotMatch(navSource, /id: 'karkun'/)
 assert.match(read('src/lib/rufaqa/rufaqaNav.ts'), /رفقاء/)
 assert.match(read('src/components/admin/RufaqaDirectoryShell.tsx'), /RUFAQA_LABEL_UR/)
 
+assert.match(read('src/lib/peopleImportExport.ts'), /'ID'/)
+assert.match(read('src/lib/peopleImportExport.ts'), /\\uFEFF\$\{csv\}/)
+assert.match(read('src/hooks/useDebouncedSearchInput.ts'), /onCommitRef/)
+
+import { searchParamsEqual } from '@/lib/navigation/searchParamsReplace'
+const same = new URLSearchParams('search=Dr')
+const also = new URLSearchParams('search=Dr')
+assert.equal(searchParamsEqual(same, also), true)
+const changed = new URLSearchParams('search=Dr')
+changed.set('search', 'Dra')
+assert.equal(searchParamsEqual(same, changed), false)
+
 console.log('OK: increment 04 Rufaqa verification passed.')

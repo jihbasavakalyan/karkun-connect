@@ -1,5 +1,6 @@
 import { useCallback } from 'react'
 import { useLocation, useSearchParams } from 'react-router-dom'
+import { searchParamsEqual } from '@/lib/navigation/searchParamsReplace'
 import {
   parseRufaqaGenderView,
   rufaqaCategoryFromPathname,
@@ -30,9 +31,20 @@ export function useRufaqaDirectoryQuery() {
       if (nextGender) next.set('gender', nextGender)
       else next.delete('gender')
 
+      if (searchParamsEqual(searchParams, next)) return
       setSearchParams(next, { replace: true })
     },
     [genderView, search, searchParams, setSearchParams],
+  )
+
+  const setSearch = useCallback(
+    (value: string) => replaceParams({ search: value }),
+    [replaceParams],
+  )
+
+  const setGenderView = useCallback(
+    (view: RufaqaGenderView) => replaceParams({ genderView: view }),
+    [replaceParams],
   )
 
   const categoryHref = useCallback(
@@ -49,8 +61,8 @@ export function useRufaqaDirectoryQuery() {
     genderView,
     storedGender,
     search,
-    setSearch: (value: string) => replaceParams({ search: value }),
-    setGenderView: (view: RufaqaGenderView) => replaceParams({ genderView: view }),
+    setSearch,
+    setGenderView,
     categoryHref,
   }
 }

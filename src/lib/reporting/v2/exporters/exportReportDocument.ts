@@ -80,7 +80,7 @@ export async function exportReportDocument(
         [r.sectionId, r.title, r.kind, JSON.stringify(r.payload)].map((c) => `"${String(c).replace(/"/g, '""')}"`).join(','),
       )
       .join('\n')
-    downloadBlob(`${base}.csv`, new Blob([header + body], { type: 'text/csv;charset=utf-8' }))
+        downloadBlob(`${base}.csv`, new Blob([`\uFEFF${header}${body}`], { type: 'text/csv;charset=utf-8' }))
     return { mode: 'download', document: doc }
   }
 

@@ -16,14 +16,16 @@ export function useDebouncedSearchInput(
   const [draft, setDraft] = useState(committedValue)
   const debouncedDraft = useDebouncedValue(draft, delayMs)
   const pendingCommitRef = useRef<string | null>(null)
+  const onCommitRef = useRef(onCommit)
+  onCommitRef.current = onCommit
 
   useEffect(() => {
     if (debouncedDraft === committedValue) {
       return
     }
     pendingCommitRef.current = debouncedDraft
-    onCommit(debouncedDraft)
-  }, [debouncedDraft, committedValue, onCommit])
+    onCommitRef.current(debouncedDraft)
+  }, [debouncedDraft, committedValue])
 
   useEffect(() => {
     if (committedValue === pendingCommitRef.current) {

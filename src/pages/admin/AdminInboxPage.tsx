@@ -7,6 +7,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
+import { searchParamsEqual } from '@/lib/navigation/searchParamsReplace'
 import { InboxAccordionSection } from '@/components/inbox/InboxAccordionSection'
 import { EmptyState, ListSkeleton, PageHeader, PageShell } from '@/components/ui'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
@@ -178,7 +179,10 @@ export function AdminInboxPage() {
   useEffect(() => {
     if (queryDraft === urlQuery) return
     const handle = window.setTimeout(() => {
-      setSearchParams((current) => writeInboxSearchParams(current, { query: queryDraft }), {
+      setSearchParams((current) => {
+        const next = writeInboxSearchParams(current, { query: queryDraft })
+        return searchParamsEqual(current, next) ? current : next
+      }, {
         replace: true,
       })
     }, 300)
@@ -217,7 +221,10 @@ export function AdminInboxPage() {
   const decidedBy = user?.displayName ?? user?.uid ?? 'Administrator'
 
   const setFolder = (next: InboxFolderFilter) => {
-    setSearchParams((current) => writeInboxSearchParams(current, { folder: next }), {
+    setSearchParams((current) => {
+      const patched = writeInboxSearchParams(current, { folder: next })
+      return searchParamsEqual(current, patched) ? current : patched
+    }, {
       replace: true,
     })
   }

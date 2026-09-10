@@ -1835,7 +1835,7 @@ export class RuknFirestoreRepository implements RuknRepository {
         id: rukn.id,
         data: rukn,
       }))
-      return commitBatchSetDocuments(db, writes)
+      return commitBatchSetDocuments(db, writes, { merge: true })
     })
     return repositoryOk(undefined)
   }
@@ -1859,7 +1859,7 @@ export class RuknFirestoreRepository implements RuknRepository {
           id: rukn.id,
           data: rukn,
         }))
-        const result = await commitBatchSetDocuments(db, writes)
+        const result = await commitBatchSetDocuments(db, writes, { merge: true })
         if (!result.ok) {
           return result
         }
@@ -2007,7 +2007,7 @@ export class KarkunFirestoreRepository implements KarkunRepository {
         id: karkun.id,
         data: karkun,
       }))
-      const batchResult = await commitBatchSetDocuments(db, writes)
+      const batchResult = await commitBatchSetDocuments(db, writes, { merge: true })
       if (!batchResult.ok) {
         return batchResult
       }
@@ -2062,7 +2062,7 @@ export class KarkunFirestoreRepository implements KarkunRepository {
           id: karkun.id,
           data: karkun,
         }))
-        const result = await commitBatchSetDocuments(db, writes)
+        const result = await commitBatchSetDocuments(db, writes, { merge: true })
         if (!result.ok) {
           return result
         }

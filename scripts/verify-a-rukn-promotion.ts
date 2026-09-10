@@ -363,16 +363,28 @@ assert(
   )
   adminEvents.push('admin-write')
   assert(adminGate.ok, 'administrator still passes the decision gate')
-  assert(adminEvents.includes('subscribe'), 'existing administrator role still subscribes Firestore token observers')
-  assert(adminEvents.includes('refresh'), 'existing administrator role still force-refreshes for Firestore attach')
-  assert(
-    adminEvents.indexOf('yield-firestore-queue') > adminEvents.indexOf('notified'),
-    'existing administrator role still yields for Firestore AuthCredentialsProvider',
-  )
+  assert(!adminEvents.includes('subscribe'), 'existing administrator JWT does not force-subscribe token observers')
+  assert(!adminEvents.includes('refresh'), 'existing administrator JWT does not force-refresh on every save')
+  assert(adminEvents.includes('yield-firestore-queue'), 'existing administrator role still yields for Firestore AuthCredentialsProvider')
   assert(
     adminEvents.indexOf('admin-write') > adminEvents.indexOf('yield-firestore-queue'),
-    'Admin promotion write is sequenced after Firestore credential sync',
+    'Admin promotion write is sequenced after Firestore credential yield',
   )
+  setAdministratorDecisionAuthRuntimeForTests(null)
+
+  const repairedEvents: string[] = []
+  setJwtRoleClaimOverrideForTests({
+    ...administratorJwtOverride(),
+    forceRefreshed: true,
+    timeline: { ...administratorJwtOverride().timeline, forceRefreshed: true },
+  })
+  setAdministratorDecisionAuthRuntimeForTests(mockAdminRuntime(repairedEvents))
+  const repairedGate = await assertAdministratorDecisionSession(
+    'Only an Administrator can promote a Karkun to A Rukn.',
+  )
+  assert(repairedGate.ok, 'administrator still passes after a claims repair')
+  assert(repairedEvents.includes('subscribe'), 'claims-repair path still subscribes Firestore token observers')
+  assert(repairedEvents.includes('refresh'), 'claims-repair path still force-refreshes for Firestore attach')
   setAdministratorDecisionAuthRuntimeForTests(null)
 
   const ruknEvents: string[] = []
@@ -442,7 +454,7 @@ assert(
   assert(ensure.includes('onIdTokenChanged'), 'waits for Auth ID-token observers')
   assert(!ensure.includes('Promise.race'), 'auth sync does not race ID-token notification against queue yield')
   assert(ensure.includes('jwtHasAppRole'), 'skips force-refresh when current JWT already has an app role')
-  assert(ensure.includes('await notified'), 'auth sync awaits post-initial ID-token notification')
+  assert(ensure.includes('notified.then'), 'auth sync awaits post-initial ID-token notification')
   const gateCallAt = service.indexOf('assertAdministratorDecisionSession')
   const transitionAt = service.indexOf('const transition = await markPromotionInProgress')
   assert(gateCallAt >= 0 && transitionAt > gateCallAt, 'promotion updateDoc runs only after Admin credential gate')
