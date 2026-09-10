@@ -12,7 +12,7 @@ import {
   presentMuttafiqConnectionViewWithLiveNames,
   type MuttafiqRuknConnectionDisplayRow,
 } from '@/lib/connections/muttafiqRelationshipDisplay'
-import { isSoftRemoved } from '@/lib/peopleClassification'
+import { isCurrentValidMuttafiqRelationship } from '@/lib/connections/currentMuttafiqRelationship'
 import { getRepositories } from '@/repositories/provider'
 import { unwrapRepository } from '@/repositories/errors'
 
@@ -74,17 +74,29 @@ export function getConnectedMuttafiqDisplayRowsForRukn(
 }
 
 /**
- * Rukn Home list: Active `muttafiqRelationships` for this Rukn.
- * Uses stored personName when the Muttafiq person doc is not in the Rukn cache
- * (Rukn cannot read unassigned Muttafiq karkun documents).
+ * Current-valid Active Muttafiq relationships for this Rukn.
+ * Same predicate as Rukn Home list and متفقین count.
+ * Missing person docs stay current on Home only (Rukn cannot read unassigned Muttafiq karkuns).
+ */
+export function getCurrentValidMuttafiqRelationshipsForRukn(
+  ruknId: string,
+): MuttafiqRuknRelationship[] {
+  return getActiveMuttafiqRelationshipsForRukn(ruknId).filter((row) => {
+    const person = getKarkunById(row.personId)
+    return isCurrentValidMuttafiqRelationship(row, person, {
+      treatMissingPersonAsCurrent: true,
+    })
+  })
+}
+
+/**
+ * Rukn Home list: current-valid `muttafiqRelationships` for this Rukn.
+ * Uses stored personName when the Muttafiq person doc is not in the Rukn cache.
  */
 export function getRuknHomeMuttafiqRows(ruknId: string): MuttafiqRuknConnectionDisplayRow[] {
-  return getActiveMuttafiqRelationshipsForRukn(ruknId)
-    .filter((row) => {
-      const person = getKarkunById(row.personId)
-      return !person || !isSoftRemoved(person)
-    })
-    .map((row) => presentConnectedMuttafiqRow(row))
+  return getCurrentValidMuttafiqRelationshipsForRukn(ruknId).map((row) =>
+    presentConnectedMuttafiqRow(row),
+  )
 }
 
 export function getMuttafiqConnectedRuknDisplayForPerson(

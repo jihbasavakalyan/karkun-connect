@@ -59,6 +59,7 @@
     "verify:kc0100.5": "npx vite-node scripts/verify-kc0100-5-activation-trace.ts",
     "verify:kc0102.0": "npx vite-node scripts/verify-kc0102-0-karkun-approval.ts",
     "verify:muttafiq-rukn-link": "npx vite-node scripts/verify-muttafiq-rukn-link.ts",
+    "verify:current-muttafiq-relationship": "npx vite-node scripts/verify-current-muttafiq-relationship.ts",
     "verify:muttafiq-single-connection": "npx vite-node scripts/verify-muttafiq-single-connection.ts",
     "verify:muttafiq-bidirectional-display": "npx vite-node scripts/verify-muttafiq-bidirectional-display.ts",
     "verify:admin-person-delete": "npx vite-node scripts/verify-admin-person-delete.ts",

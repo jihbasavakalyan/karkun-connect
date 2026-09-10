@@ -1353,6 +1353,33 @@ function testRuknDashboardRegistrationProgress(): void {
   })
   assert(noEligibleMuttafiq.connectedCount === 1 && noEligibleMuttafiq.muttafiqConnectedCount === 0, 'E: Karkun person is not counted as Muttafiq')
 
+  const campaignMuttafiqOnly = buildTrainingRegistrationRuknProgress({
+    ruknId: 'r-g',
+    rukn: { id: 'r-g', name: 'G', status: 'active', mobile: '9000000500' },
+    karkuns: [
+      { id: 'mg', name: 'Campaign Muttafiq', mobile: '9000000501', gender: 'Male', category: 'Muttafiq' },
+    ],
+    connections: [{ ruknId: 'r-g', karkunId: 'mg', status: 'Active' }],
+    muttafiqRelationships: [],
+    registrations: [],
+  })
+  assert(
+    campaignMuttafiqOnly.muttafiqConnectedCount === 0 && campaignMuttafiqOnly.connectedCount === 0,
+    'G: historical campaign Muttafiq row is not a current relationship or Karkun',
+  )
+
+  const missingPersonRelationship = buildTrainingRegistrationRuknProgress({
+    ruknId: 'r-m',
+    rukn: { id: 'r-m', name: 'M', status: 'active', mobile: '9000000600' },
+    karkuns: [],
+    connections: [],
+    muttafiqRelationships: [
+      { ruknId: 'r-m', personId: 'missing-mt', personName: 'Ghost', status: 'Active' },
+    ],
+    registrations: [],
+  })
+  assert(missingPersonRelationship.muttafiqConnectedCount === 0, 'missing person is not current Muttafiq for registration')
+
   const handler = read('src/server/trainingRegistration/handler.ts')
   const ruknFn = handler.slice(
     handler.indexOf('async function handleRuknRegistrationProgress'),
@@ -1360,6 +1387,8 @@ function testRuknDashboardRegistrationProgress(): void {
   )
   assert(ruknFn.includes("where('ruknId', '==', ruknId)"), 'server queries only this rukn connections')
   assert(ruknFn.includes("collection(MUTTAFIQ_RELATIONSHIPS)"), 'server loads dedicated Muttafiq relationships')
+  const trackingSrc = read('src/lib/publicRegistration/adminTracking.ts')
+  assert(trackingSrc.includes('isCurrentValidMuttafiqRelationship'), 'progress uses current-valid Muttafiq predicate')
   assert(ruknFn.includes('identity.ruknId'), 'does not accept client ruknId')
   assert(!ruknFn.includes('body.ruknId'), 'does not read ruknId from request body')
   assert(!ruknFn.includes('loadAdminView'), 'does not load full admin view')

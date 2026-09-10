@@ -143,10 +143,10 @@ console.log('verify-muttafiq-rukn-link: start')
   assert(homeList.includes('useMuttafiqRelationshipStore'), 'Home list re-renders on relationship hydrate')
   assert(!homeList.includes('getConnectedKarkunsForRukn'), 'Home Muttafiq list is not campaign connections')
   const orgInfo = read('src/lib/rukn/ruknOrganisationalInformation.ts')
-  assert(orgInfo.includes('getActiveMuttafiqRelationshipsForRukn'), 'org metric counts muttafiqRelationships')
+  assert(orgInfo.includes('getRuknHomeMuttafiqRows'), 'org metric counts current Home Muttafiq rows')
   assert(
-    orgInfo.includes('muttafiqeen: getActiveMuttafiqRelationshipsForRukn(ruknId).length'),
-    'org Muttafiq count is relationship length, not a hardcoded empty value',
+    orgInfo.includes('muttafiqeen: getRuknHomeMuttafiqRows(ruknId).length'),
+    'org Muttafiq count equals Home list length',
   )
   const orgCard = read('src/components/rukn/RuknHomeOrganisationalInformation.tsx')
   assert(orgCard.includes('useMuttafiqRelationshipStore'), 'org card re-renders on relationship hydrate')

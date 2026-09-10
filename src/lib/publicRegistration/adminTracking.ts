@@ -1,3 +1,4 @@
+import { isCurrentValidMuttafiqRelationship } from '../connections/currentMuttafiqRelationship.js'
 import { resolveOfficerKind } from '../officerIdentity.js'
 import { TRAINING_GATHERING_EVENT } from './event.js'
 import {
@@ -621,7 +622,7 @@ function presentProgressPerson(input: {
 /**
  * Rukn-facing registration progress.
  * Karkun counts: Active campaign `connections` for this ruknId, person category Karkun only.
- * Muttafiq counts: Active `muttafiqRelationships` for this ruknId, person category Muttafiq.
+ * Muttafiq counts: current-valid Active `muttafiqRelationships` (Muttafiq, not soft-deleted).
  * Own registration is separate and never counted as a connected person.
  * Registration membership is independent of payment.
  */
@@ -674,8 +675,7 @@ export function buildTrainingRegistrationRuknProgress(
     const personId = String(relationship.personId || '')
     if (!personId || personId === input.ruknId || seenMuttafiq.has(personId)) continue
     const person = karkunById.get(personId)
-    if (person && isSoftRemovedPerson(person)) continue
-    if (person && organisationalCategoryFromPerson(person) !== 'muttafiq') continue
+    if (!isCurrentValidMuttafiqRelationship(relationship, person)) continue
     seenMuttafiq.add(personId)
     const mobile = normalizeTrainingMobile(String(person?.mobile || ''))
     muttafiqeen.push(

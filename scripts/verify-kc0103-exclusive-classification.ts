@@ -74,7 +74,7 @@ function resetRegistry(): void {
   MOCK_KARKUN_REGISTRY.length = 0
 }
 
-function main(): void {
+async function main(): Promise<void> {
   console.info('[KC-0103] exclusive classification verification starting')
   resetRegistry()
 
@@ -193,7 +193,7 @@ function main(): void {
   assert(parseMuttafiqRegistryNum(movedPerson.registryNumber) != null, 'MT on move')
   const mtAfterMove = movedPerson.registryNumber
 
-  const back = moveToKarkunRegistry(kid)
+  const back = await moveToKarkunRegistry(kid)
   assert(back.success === true, 'move Muttafiq → Karkun')
   assert(getAllKarkuns().some((k) => k.id === kid), 'back in Karkun registry')
   assert(!getAllMuttafiqeen().some((k) => k.id === kid), 'left Muttafiqeen')

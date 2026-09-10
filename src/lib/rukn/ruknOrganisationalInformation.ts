@@ -6,7 +6,7 @@
 import { meqatiYearUrduRange, resolveMeqatiYear, type MeqatiYear } from '@/lib/dashboard/meqatiYear'
 import { buildRuknMeqatiActivities } from '@/lib/rukn/ruknMeqatiActivities'
 import { getConnectedKarkunsForRukn } from '@/lib/connections/getConnectedKarkunsForRukn'
-import { getActiveMuttafiqRelationshipsForRukn } from '@/stores/muttafiqRelationshipStore'
+import { getRuknHomeMuttafiqRows } from '@/stores/muttafiqRelationshipStore'
 
 export type RuknOrgMetricValue = number | null
 
@@ -38,7 +38,7 @@ function countAssignedSlice(ruknId: string): {
   return {
     karkuns: connected.length,
     connections: connected.length,
-    muttafiqeen: getActiveMuttafiqRelationshipsForRukn(ruknId).length,
+    muttafiqeen: getRuknHomeMuttafiqRows(ruknId).length,
   }
 }
 

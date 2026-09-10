@@ -15,6 +15,7 @@ import { bumpVersion } from '@/lib/preservation/softDelete'
 import { notifyPeopleRegistryChange, notifyPeopleRegistryUiOnly } from '@/lib/peopleStore'
 import { appendConnectionLedgerEntry } from '@/services/connectionLedgerService'
 import { logActivity } from '@/stores/activityLogStore'
+import { endActiveMuttafiqRelationshipsForPerson } from '@/lib/connections/endActiveMuttafiqRelationshipsForPerson'
 import {
   getActiveAssignmentsForKarkun,
 } from '@/stores/assignmentStore'
@@ -110,6 +111,7 @@ function applyCategoryChange(
 
 /**
  * Move Karkun → Muttafiqeen. Replaces legacy Archive for organizational reclassification.
+ * Does not restore or recreate Ended Muttafiq–Rukn relationships.
  * Caller should await persistKarkunDurable.
  */
 export function moveToMuttafiqeen(
@@ -160,13 +162,15 @@ export function moveToMuttafiqeen(
 
 /**
  * Move Muttafiq → Karkun Registry.
+ * Ends any Active Muttafiq relationships first (documents retained as Ended).
+ * Does not restore those relationships if the person later becomes Muttafiq again.
  * Caller should await persistKarkunDurable.
  */
-export function moveToKarkunRegistry(
+export async function moveToKarkunRegistry(
   personId: string,
   changedBy = 'Administrator',
   remarks?: string,
-): ClassificationResult {
+): Promise<ClassificationResult> {
   const blockers = getMoveToKarkunBlockers(personId)
   if (blockers.length > 0) {
     return { success: false, error: blockers.join(' '), blockers }
@@ -174,6 +178,11 @@ export function moveToKarkunRegistry(
 
   const person = findPerson(personId)
   if (!person) return { success: false, error: 'Person not found.' }
+
+  const ended = await endActiveMuttafiqRelationshipsForPerson(personId)
+  if (!ended.ok) {
+    return { success: false, error: ended.error }
+  }
 
   applyCategoryChange(person, 'Karkun', changedBy, remarks)
   person.assignmentStatus = 'Available'

@@ -224,12 +224,12 @@ export function moveToMuttafiqeenSafely(
 }
 
 /** KC-0101 — Move Muttafiq back to Karkun Registry. */
-export function moveToKarkunSafely(
+export async function moveToKarkunSafely(
   karkunId: string,
   changedBy = 'Administrator',
   remarks?: string,
-): RegistryMaintenanceResult {
-  const result = moveToKarkunRegistry(karkunId, changedBy, remarks)
+): Promise<RegistryMaintenanceResult> {
+  const result = await moveToKarkunRegistry(karkunId, changedBy, remarks)
   if (!result.success) {
     return {
       success: false,
