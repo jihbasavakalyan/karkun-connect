@@ -1,8 +1,10 @@
 /**
  * Public training gathering registration — architecture and safety verification.
  */
-import { existsSync, readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { execFileSync } from 'node:child_process'
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join, resolve } from 'node:path'
 import {
   applyConfirmUpiPaid,
   buildTrainingRegistrationAdminView,
@@ -119,6 +121,11 @@ function testSecurityPath(): void {
   assert(tracking.includes("status === 'Active'"), 'reuses Active connection semantics')
   assert(tracking.includes("from './event.js'"), 'adminTracking uses NodeNext .js specifier for event')
   assert(tracking.includes("from './types.js'"), 'adminTracking uses NodeNext .js specifier for types')
+  assert(
+    !tracking.includes('currentMuttafiqRelationship'),
+    'adminTracking does not import currentMuttafiqRelationship into the serverless graph',
+  )
+  assert(!tracking.includes("from '@/"), 'adminTracking has no Vite @/ imports')
   const apiRoute = read('api/training-registration.ts')
   assert(apiRoute.includes("src/lib/publicRegistration/adminTracking.ts"), 'API packages adminTracking')
   assert(tracking.includes("authoritativeGender"), 'gender from master Male/Female only')
@@ -1388,7 +1395,16 @@ function testRuknDashboardRegistrationProgress(): void {
   assert(ruknFn.includes("where('ruknId', '==', ruknId)"), 'server queries only this rukn connections')
   assert(ruknFn.includes("collection(MUTTAFIQ_RELATIONSHIPS)"), 'server loads dedicated Muttafiq relationships')
   const trackingSrc = read('src/lib/publicRegistration/adminTracking.ts')
-  assert(trackingSrc.includes('isCurrentValidMuttafiqRelationship'), 'progress uses current-valid Muttafiq predicate')
+  assert(
+    trackingSrc.includes("organisationalCategoryFromPerson(person) !== 'muttafiq'"),
+    'progress requires current Muttafiq category from the person record',
+  )
+  assert(trackingSrc.includes('isSoftRemovedPerson(person)'), 'progress excludes soft-deleted Muttafiq')
+  assert(trackingSrc.includes("String(relationship.status || '') !== 'Active'"), 'progress requires Active relationship')
+  assert(
+    !trackingSrc.includes('currentMuttafiqRelationship'),
+    'progress does not import currentMuttafiqRelationship',
+  )
   assert(ruknFn.includes('identity.ruknId'), 'does not accept client ruknId')
   assert(!ruknFn.includes('body.ruknId'), 'does not read ruknId from request body')
   assert(!ruknFn.includes('loadAdminView'), 'does not load full admin view')
@@ -1421,6 +1437,51 @@ function testRuknDashboardRegistrationProgress(): void {
   assert(rules.includes('allow create, update, delete: if false'), 'no client writes')
 }
 
+function testProductionTrainingRegistrationBundle(): void {
+  const esbuildJs = resolve(root, 'node_modules/esbuild/bin/esbuild')
+  assert(existsSync(esbuildJs), 'local esbuild binary exists')
+  const dir = mkdtempSync(join(tmpdir(), 'kc-training-registration-bundle-'))
+  const outfile = join(dir, 'training-registration.cjs')
+  try {
+    execFileSync(
+      process.execPath,
+      [
+        esbuildJs,
+        resolve(root, 'api/training-registration.ts'),
+        '--bundle',
+        '--platform=node',
+        '--format=cjs',
+        `--outfile=${outfile}`,
+        '--log-level=error',
+      ],
+      { cwd: root, encoding: 'utf8' },
+    )
+    assert(existsSync(outfile), 'production-style bundle wrote an output file')
+    const bundle = readFileSync(outfile, 'utf8')
+    assert(bundle.length > 0, 'production-style bundle is not empty')
+    assert(!bundle.includes('@/lib/'), 'production bundle has no unresolved @/lib aliases')
+    assert(!bundle.includes('@/constants/'), 'production bundle has no unresolved @/constants aliases')
+    assert(!bundle.includes('@/stores/'), 'production bundle has no unresolved @/stores aliases')
+    assert(
+      !bundle.includes('currentMuttafiqRelationship'),
+      'serverless graph does not include currentMuttafiqRelationship',
+    )
+    assert(!bundle.includes('mockKarkunRegistry'), 'serverless graph does not include mockKarkunRegistry')
+    assert(!bundle.includes('peopleStore'), 'serverless graph does not include peopleStore')
+    assert(!bundle.includes('persistentLocalCache'), 'serverless graph does not include client Firestore cache')
+    assert(
+      !bundle.includes('import.meta.env'),
+      'serverless graph does not use Vite import.meta.env',
+    )
+    assert(
+      !bundle.includes('readFirebaseConfigFromEnv'),
+      'serverless graph does not load the client Firebase config helper',
+    )
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+}
+
 const cases = [
   run('event constants and registration id', testEventAndId),
   run('subdomain host detection', testHost),
@@ -1448,6 +1509,7 @@ const cases = [
   run('legacy submit mapping without generic cash paid', testLegacySubmitMapping),
   run('public host service worker escape', testPublicHostServiceWorkerEscape),
   run('final three-choice payment semantics', testFinalPaymentSemantics),
+  run('production-style Node bundle of training-registration API', testProductionTrainingRegistrationBundle),
 ]
 
 const failed = cases.filter((item) => !item.passed)

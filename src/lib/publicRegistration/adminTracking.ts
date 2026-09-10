@@ -1,4 +1,3 @@
-import { isCurrentValidMuttafiqRelationship } from '../connections/currentMuttafiqRelationship.js'
 import { resolveOfficerKind } from '../officerIdentity.js'
 import { TRAINING_GATHERING_EVENT } from './event.js'
 import {
@@ -675,9 +674,11 @@ export function buildTrainingRegistrationRuknProgress(
     const personId = String(relationship.personId || '')
     if (!personId || personId === input.ruknId || seenMuttafiq.has(personId)) continue
     const person = karkunById.get(personId)
-    if (!isCurrentValidMuttafiqRelationship(relationship, person)) continue
+    if (!person) continue
+    if (isSoftRemovedPerson(person)) continue
+    if (organisationalCategoryFromPerson(person) !== 'muttafiq') continue
     seenMuttafiq.add(personId)
-    const mobile = normalizeTrainingMobile(String(person?.mobile || ''))
+    const mobile = normalizeTrainingMobile(String(person.mobile || ''))
     muttafiqeen.push(
       presentProgressPerson({
         personId,
