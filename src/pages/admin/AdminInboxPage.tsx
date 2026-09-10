@@ -257,6 +257,7 @@ export function AdminInboxPage() {
     void run({
       key: `inbox:approve:${request.id}`,
       queueLabels: ['settings.karkunRequests'],
+      timeoutMs: 90_000,
       work: async () => {
         const result = await approvePeopleIntakeRequest({
           requestId: request.id,
@@ -303,6 +304,7 @@ export function AdminInboxPage() {
     void run({
       key: `inbox:reject:${request.id}`,
       queueLabels: ['settings.karkunRequests'],
+      timeoutMs: 90_000,
       work: async () => {
         const result = await rejectNewKarkunRequest({
           requestId: request.id,
