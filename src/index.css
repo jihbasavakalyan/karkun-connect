@@ -5973,6 +5973,10 @@ html[data-theme='dark'] {
   display: block;
   font-size: 0.7rem;
   color: var(--color-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
 }
 
 .rukn-home-muttafiq-empty {
@@ -6023,13 +6027,6 @@ html[data-theme='dark'] {
 .rukn-home-muttafiq-id {
   font-size: 0.72rem;
   color: var(--color-secondary);
-}
-  font-size: 0.72rem;
-  color: var(--color-secondary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 100%;
 }
 
 .rukn-home-stat-row {
