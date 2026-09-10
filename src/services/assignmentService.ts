@@ -192,7 +192,7 @@ function karkunAssignmentFieldsChanged(
   )
 }
 
-async function syncKarkunRegistryFromAssignments(
+export async function syncKarkunRegistryFromAssignments(
   karkunId: string,
   options?: { notify?: boolean },
 ): Promise<void> {

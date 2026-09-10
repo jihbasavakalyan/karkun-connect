@@ -1395,12 +1395,16 @@ function testRuknDashboardRegistrationProgress(): void {
   assert(ruknFn.includes("where('ruknId', '==', ruknId)"), 'server queries only this rukn connections')
   assert(ruknFn.includes("collection(MUTTAFIQ_RELATIONSHIPS)"), 'server loads dedicated Muttafiq relationships')
   const trackingSrc = read('src/lib/publicRegistration/adminTracking.ts')
+  assert(trackingSrc.includes('isCurrentValidMuttafiqRelationship(relationship, person)'), 'progress uses shared current-valid predicate')
   assert(
-    trackingSrc.includes("organisationalCategoryFromPerson(person) !== 'muttafiq'"),
-    'progress requires current Muttafiq category from the person record',
+    trackingSrc.includes("from '../connections/currentValidMuttafiqPredicate.js'"),
+    'progress imports serverless-safe predicate module',
   )
-  assert(trackingSrc.includes('isSoftRemovedPerson(person)'), 'progress excludes soft-deleted Muttafiq')
-  assert(trackingSrc.includes("String(relationship.status || '') !== 'Active'"), 'progress requires Active relationship')
+  const predicateSrc = read('src/lib/connections/currentValidMuttafiqPredicate.ts')
+  assert(predicateSrc.includes("organisationalCategoryFromPerson(person) === 'muttafiq'"), 'predicate requires Muttafiq category')
+  assert(predicateSrc.includes('isSoftRemovedPerson(person)'), 'predicate excludes soft-deleted')
+  assert(predicateSrc.includes("String(relationship.status || '') !== 'Active'"), 'predicate requires Active')
+  assert(!predicateSrc.includes("from '@/"), 'predicate has no Vite @/ imports')
   assert(
     !trackingSrc.includes('currentMuttafiqRelationship'),
     'progress does not import currentMuttafiqRelationship',

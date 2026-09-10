@@ -17,6 +17,10 @@ import { appendConnectionLedgerEntry } from '@/services/connectionLedgerService'
 import { logActivity } from '@/stores/activityLogStore'
 import { endActiveMuttafiqRelationshipsForPerson } from '@/lib/connections/endActiveMuttafiqRelationshipsForPerson'
 import {
+  clearCampaignAssignmentDenorm,
+  unassignActiveCampaignConnectionsForPerson,
+} from '@/lib/connections/unassignActiveCampaignConnectionsForPerson'
+import {
   getActiveAssignmentsForKarkun,
 } from '@/stores/assignmentStore'
 import type { PersonCategory, KarkunRegistryRecord } from '@/types/karkun-registry.types'
@@ -183,6 +187,19 @@ export async function moveToKarkunRegistry(
   if (!ended.ok) {
     return { success: false, error: ended.error }
   }
+
+  const cleaned = await unassignActiveCampaignConnectionsForPerson({
+    personId,
+    performedBy: changedBy,
+  })
+  if (!cleaned.ok) {
+    return { success: false, error: cleaned.error }
+  }
+  if (getActiveAssignmentsForKarkun(personId).length > 0) {
+    return { success: false, error: 'Active campaign assignment remained after unassign.' }
+  }
+
+  clearCampaignAssignmentDenorm(person)
 
   applyCategoryChange(person, 'Karkun', changedBy, remarks)
   person.assignmentStatus = 'Available'

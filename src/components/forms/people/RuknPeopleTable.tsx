@@ -3,7 +3,7 @@ import type { Rukn } from '@/data/ruknMaster'
 import { adminRuknDetailPath } from '@/constants/routes'
 import { useMuttafiqRelationshipStore } from '@/hooks/useMuttafiqRelationshipStore'
 import { getRuknAssignmentSummary } from '@/services/assignmentService'
-import { getActiveMuttafiqRelationshipsForRukn } from '@/stores/muttafiqRelationshipStore'
+import { getConnectedMuttafiqDisplayRowsForRukn } from '@/stores/muttafiqRelationshipStore'
 import type { PersonStatus } from '@/types/karkun-registry.types'
 import { formatPersonStatus, type PeopleSortField } from '@/types/people.types'
 import { StatusBadge } from '@/components/ui/StatusBadge'
@@ -130,7 +130,7 @@ export function RuknPeopleTable({
           <tbody>
             {records.map((rukn) => {
               const connectedCount = getRuknAssignmentSummary(rukn.id).assignedKarkunCount
-              const connectedMuttafiqCount = getActiveMuttafiqRelationshipsForRukn(rukn.id).length
+              const connectedMuttafiqCount = getConnectedMuttafiqDisplayRowsForRukn(rukn.id).length
               return (
               <tr key={rukn.id} className={PEOPLE_TABLE_ROW_CLASS}>
                 <td className={PEOPLE_TABLE_CELL_CLASS}>
@@ -175,7 +175,7 @@ export function RuknPeopleTable({
       <ul className="space-y-4 md:hidden">
         {records.map((rukn) => {
           const connectedCount = getRuknAssignmentSummary(rukn.id).assignedKarkunCount
-          const connectedMuttafiqCount = getActiveMuttafiqRelationshipsForRukn(rukn.id).length
+          const connectedMuttafiqCount = getConnectedMuttafiqDisplayRowsForRukn(rukn.id).length
           return (
           <li
             key={rukn.id}

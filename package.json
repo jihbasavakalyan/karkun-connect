@@ -61,6 +61,7 @@
     "verify:muttafiq-rukn-link": "npx vite-node scripts/verify-muttafiq-rukn-link.ts",
     "verify:current-muttafiq-relationship": "npx vite-node scripts/verify-current-muttafiq-relationship.ts",
     "verify:muttafiq-single-connection": "npx vite-node scripts/verify-muttafiq-single-connection.ts",
+    "verify:organisational-one-rukn": "npx vite-node scripts/verify-organisational-one-rukn.ts",
     "verify:muttafiq-bidirectional-display": "npx vite-node scripts/verify-muttafiq-bidirectional-display.ts",
     "verify:admin-person-delete": "npx vite-node scripts/verify-admin-person-delete.ts",
     "verify:referred-by-rukn": "npx vite-node scripts/verify-referred-by-rukn.ts",

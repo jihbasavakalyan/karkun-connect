@@ -39,7 +39,9 @@ export function MuttafiqRuknConnectionRow({ row }: MuttafiqRuknConnectionRowProp
               <StatusBadge variant={row.visual === 'muttafiq' ? 'warning' : 'info'}>
                 {row.categoryLabel}
               </StatusBadge>
-              <StatusBadge variant="connected">{row.statusLabel}</StatusBadge>
+              <StatusBadge variant={row.needsReview ? 'warning' : 'connected'}>
+                {row.needsReview ? row.relationshipLabel ?? 'Needs review' : row.statusLabel}
+              </StatusBadge>
             </div>
             {row.missing ? (
               <p className="mt-2 text-sm text-secondary">

@@ -1,3 +1,8 @@
+import {
+  isCurrentValidMuttafiqRelationship,
+  isSoftRemovedPerson,
+  organisationalCategoryFromPerson,
+} from '../connections/currentValidMuttafiqPredicate.js'
 import { resolveOfficerKind } from '../officerIdentity.js'
 import { TRAINING_GATHERING_EVENT } from './event.js'
 import {
@@ -129,11 +134,7 @@ export function resolvePublicPaymentChoice(input: {
   return { ok: false, error: 'Choose a payment method.' }
 }
 
-export function isSoftRemovedPerson(data: { isArchived?: unknown; archiveKind?: unknown }): boolean {
-  if (data.isArchived !== true) return false
-  const kind = String(data.archiveKind || '')
-  return kind === 'duplicate_merge' || kind === 'admin_delete'
-}
+export { isSoftRemovedPerson, organisationalCategoryFromPerson }
 
 export function isActiveConnection(data: AdminTrackingConnection): boolean {
   if (data.isArchived === true) return false
@@ -155,17 +156,6 @@ export function isEventRegistration(row: TrainingRegistrationRecord): boolean {
 export function isRegisteredForEvent(row: TrainingRegistrationRecord | null | undefined): boolean {
   if (!row || !isEventRegistration(row)) return false
   return row.registrationStatus === 'complete' || row.registrationStatus === 'submitted'
-}
-
-export function organisationalCategoryFromPerson(data: {
-  category?: unknown
-  isArchived?: unknown
-  archiveKind?: unknown
-}): 'karkun' | 'muttafiq' {
-  if (data.category === 'Muttafiq') return 'muttafiq'
-  if (data.category === 'Karkun') return 'karkun'
-  if (data.isArchived === true && !isSoftRemovedPerson(data)) return 'muttafiq'
-  return 'karkun'
 }
 
 function emptyCategoryCounts(): TrainingCategoryCounts {
@@ -621,7 +611,7 @@ function presentProgressPerson(input: {
 /**
  * Rukn-facing registration progress.
  * Karkun counts: Active campaign `connections` for this ruknId, person category Karkun only.
- * Muttafiq counts: current-valid Active `muttafiqRelationships` (Muttafiq, not soft-deleted).
+ * Muttafiq counts: currentValidMuttafiqPredicate (Active, person exists, Muttafiq, not soft-deleted).
  * Own registration is separate and never counted as a connected person.
  * Registration membership is independent of payment.
  */
@@ -674,9 +664,7 @@ export function buildTrainingRegistrationRuknProgress(
     const personId = String(relationship.personId || '')
     if (!personId || personId === input.ruknId || seenMuttafiq.has(personId)) continue
     const person = karkunById.get(personId)
-    if (!person) continue
-    if (isSoftRemovedPerson(person)) continue
-    if (organisationalCategoryFromPerson(person) !== 'muttafiq') continue
+    if (!isCurrentValidMuttafiqRelationship(relationship, person)) continue
     seenMuttafiq.add(personId)
     const mobile = normalizeTrainingMobile(String(person.mobile || ''))
     muttafiqeen.push(

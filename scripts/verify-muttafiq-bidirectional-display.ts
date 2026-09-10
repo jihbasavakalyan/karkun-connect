@@ -363,7 +363,10 @@ if (aRukn) {
   assert(display.view.diagnosticRuknIds.includes(ruknA.id), 'TEST E: diagnostic includes first')
   assert(display.view.diagnosticRuknIds.includes(ruknB.id), 'TEST E: diagnostic includes second')
   assert(profile.header.connectedRuknName === 'Needs review', 'TEST E: profile does not pick a name')
-  assert(getConnectedMuttafiqDisplayRowsForRukn(ruknA.id).every((row) => row.counterpartId !== personId), 'TEST E: exclusive Rukn list omits duplicate person')
+  const adminRows = getConnectedMuttafiqDisplayRowsForRukn(ruknA.id).filter((row) => row.counterpartId === personId)
+  assert(adminRows.length === 1, 'TEST E: exclusive Rukn list keeps duplicate person visible')
+  assert(adminRows[0]?.needsReview === true, 'TEST E: Admin list marks Needs review')
+  assert(adminRows[0]?.relationshipLabel === 'Needs review', 'TEST E: does not pick a winner')
   console.log('  OK  TEST E duplicate Active is visible, not guessed')
 }
 

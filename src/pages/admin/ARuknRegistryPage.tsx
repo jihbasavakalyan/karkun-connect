@@ -22,7 +22,7 @@ import { useMuttafiqRelationshipStore } from '@/hooks/useMuttafiqRelationshipSto
 import { usePeopleStore } from '@/hooks/usePeopleStore'
 import { useRufaqaDirectoryQuery } from '@/hooks/useRufaqaDirectoryQuery'
 import { getRuknAssignmentSummary } from '@/services/assignmentService'
-import { getActiveMuttafiqRelationshipsForRukn } from '@/stores/muttafiqRelationshipStore'
+import { getConnectedMuttafiqDisplayRowsForRukn } from '@/stores/muttafiqRelationshipStore'
 import { useWriteLifecycle } from '@/hooks/useWriteLifecycle'
 import { UI_LABELS } from '@/lib/uiTerminology'
 import { executeARuknDelete, type ARuknDeleteMode } from '@/services/archiveService'
@@ -197,7 +197,7 @@ export function ARuknRegistryPage() {
               <tbody>
                 {officers.map((officer) => {
                   const connectedCount = getRuknAssignmentSummary(officer.id).assignedKarkunCount
-                  const connectedMuttafiqCount = getActiveMuttafiqRelationshipsForRukn(officer.id).length
+                  const connectedMuttafiqCount = getConnectedMuttafiqDisplayRowsForRukn(officer.id).length
                   return (
                   <tr key={officer.id} className={PEOPLE_TABLE_ROW_CLASS}>
                     <td className={PEOPLE_TABLE_CELL_CLASS}>
@@ -281,7 +281,7 @@ export function ARuknRegistryPage() {
           <ul className="space-y-4 md:hidden">
             {officers.map((officer) => {
               const connectedCount = getRuknAssignmentSummary(officer.id).assignedKarkunCount
-              const connectedMuttafiqCount = getActiveMuttafiqRelationshipsForRukn(officer.id).length
+              const connectedMuttafiqCount = getConnectedMuttafiqDisplayRowsForRukn(officer.id).length
               return (
               <li
                 key={officer.id}

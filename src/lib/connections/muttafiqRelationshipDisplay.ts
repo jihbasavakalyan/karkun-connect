@@ -37,6 +37,8 @@ export type MuttafiqRuknConnectionDisplayRow = {
   missing: boolean
   profileHref: string | null
   visual: MuttafiqRuknConnectionVisual
+  needsReview?: boolean
+  relationshipLabel?: string
 }
 
 function initialsFrom(name: string, fallbackId: string): string {
@@ -173,10 +175,21 @@ export function presentMuttafiqConnectionViewWithLiveNames(input: {
 
 export function presentActiveMuttafiqRowsForRukn(
   activeLinks: readonly MuttafiqRuknRelationship[],
+  options?: { activeCountByPersonId?: ReadonlyMap<string, number> },
 ): MuttafiqRuknConnectionDisplayRow[] {
   return activeLinks
     .filter((row) =>
       isCurrentValidMuttafiqRelationship(row, getKarkunById(row.personId)),
     )
-    .map((row) => presentConnectedMuttafiqRow(row))
+    .map((row) => {
+      const presented = presentConnectedMuttafiqRow(row)
+      const activeCount = options?.activeCountByPersonId?.get(row.personId.trim()) ?? 1
+      if (activeCount <= 1) return presented
+      return {
+        ...presented,
+        needsReview: true,
+        relationshipLabel: 'Needs review',
+        categoryLabel: 'Needs review',
+      }
+    })
 }

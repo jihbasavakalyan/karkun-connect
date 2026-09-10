@@ -44,17 +44,15 @@ export function getActiveMuttafiqRelationshipsForPerson(
   return relationships.filter((row) => row.personId === id && row.status === 'Active')
 }
 
+/**
+ * Active Muttafiq relationships for this Rukn.
+ * Dual Active people are included (not omitted). Presentation marks Needs review.
+ */
 export function getActiveMuttafiqRelationshipsForRukn(
   ruknId: string,
 ): MuttafiqRuknRelationship[] {
   const id = ruknId.trim()
-  return relationships.filter((row) => {
-    if (row.ruknId !== id || row.status !== 'Active') return false
-    const personActives = relationships.filter(
-      (candidate) => candidate.personId === row.personId && candidate.status === 'Active',
-    )
-    return personActives.length === 1 && personActives[0]!.id === row.id
-  })
+  return relationships.filter((row) => row.ruknId === id && row.status === 'Active')
 }
 
 export function getMuttafiqConnectionViewForPerson(
@@ -70,28 +68,54 @@ export function getMuttafiqConnectionViewForPerson(
 export function getConnectedMuttafiqDisplayRowsForRukn(
   ruknId: string,
 ): MuttafiqRuknConnectionDisplayRow[] {
-  return presentActiveMuttafiqRowsForRukn(getActiveMuttafiqRelationshipsForRukn(ruknId))
+  const activeForRukn = getActiveMuttafiqRelationshipsForRukn(ruknId)
+  const activeCountByPersonId = new Map<string, number>()
+  for (const row of activeForRukn) {
+    const personId = row.personId.trim()
+    if (!personId) continue
+    activeCountByPersonId.set(personId, getActiveMuttafiqRelationshipsForPerson(personId).length)
+  }
+  return presentActiveMuttafiqRowsForRukn(activeForRukn, { activeCountByPersonId })
 }
 
 /**
- * Current-valid Active Muttafiq relationships for this Rukn.
- * Same predicate as Rukn Home list and متفقین count.
- * Missing person docs stay current on Home only (Rukn cannot read unassigned Muttafiq karkuns).
+ * Rukn Home population for this Rukn.
+ * Active `muttafiqRelationships` + current-valid person when loaded.
+ * Missing person docs stay current on Home (Rukn cannot always read Muttafiq karkuns).
+ * A person with Active relationships under more than one Rukn is omitted here
+ * (no winner). Admin lists use getConnectedMuttafiqDisplayRowsForRukn instead.
+ * Does not use campaign connections.
  */
 export function getCurrentValidMuttafiqRelationshipsForRukn(
   ruknId: string,
 ): MuttafiqRuknRelationship[] {
-  return getActiveMuttafiqRelationshipsForRukn(ruknId).filter((row) => {
-    const person = getKarkunById(row.personId)
-    return isCurrentValidMuttafiqRelationship(row, person, {
-      treatMissingPersonAsCurrent: true,
-    })
-  })
+  const id = ruknId.trim()
+  const seen = new Set<string>()
+  const current: MuttafiqRuknRelationship[] = []
+  for (const row of relationships) {
+    if (row.ruknId !== id) continue
+    const personId = row.personId.trim()
+    if (!personId || personId === id || seen.has(personId)) continue
+    if (
+      !isCurrentValidMuttafiqRelationship(row, getKarkunById(personId), {
+        treatMissingPersonAsCurrent: true,
+      })
+    ) {
+      continue
+    }
+    const personActives = relationships.filter(
+      (candidate) => candidate.personId === personId && candidate.status === 'Active',
+    )
+    if (personActives.length !== 1) continue
+    seen.add(personId)
+    current.push(row)
+  }
+  return current
 }
 
 /**
  * Rukn Home list: current-valid `muttafiqRelationships` for this Rukn.
- * Uses stored personName when the Muttafiq person doc is not in the Rukn cache.
+ * Count and list share getCurrentValidMuttafiqRelationshipsForRukn.
  */
 export function getRuknHomeMuttafiqRows(ruknId: string): MuttafiqRuknConnectionDisplayRow[] {
   return getCurrentValidMuttafiqRelationshipsForRukn(ruknId).map((row) =>

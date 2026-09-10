@@ -9,6 +9,9 @@ import { MOCK_KARKUN_REGISTRY } from '@/constants/mockKarkunRegistry'
 import { setAdministratorDecisionSessionOverrideForTests } from '@/lib/auth/assertAdministratorDecisionSession'
 import { setJwtRoleClaimOverrideForTests } from '@/lib/auth/ensureJwtRoleClaim'
 import { isCurrentValidMuttafiqRelationship } from '@/lib/connections/currentMuttafiqRelationship'
+import {
+  isCurrentValidMuttafiqRelationship as sharedPredicate,
+} from '@/lib/connections/currentValidMuttafiqPredicate'
 import { buildTrainingRegistrationRuknProgress } from '@/lib/publicRegistration/adminTracking'
 import { buildRuknOrganisationalInformation } from '@/lib/rukn/ruknOrganisationalInformation'
 import { createKarkun, createMuttafiq } from '@/lib/peopleStore'
@@ -19,6 +22,8 @@ import { moveToKarkunRegistry, moveToMuttafiqeen } from '@/services/peopleClassi
 import {
   clearMuttafiqRelationshipStore,
   getActiveMuttafiqRelationshipsForPerson,
+  getCurrentValidMuttafiqRelationshipsForRukn,
+  getConnectedMuttafiqDisplayRowsForRukn,
   getRuknHomeMuttafiqRows,
   reloadMuttafiqRelationshipStoreFromPersistence,
 } from '@/stores/muttafiqRelationshipStore'
@@ -71,22 +76,41 @@ console.log('verify-current-muttafiq-relationship: start')
   const home = read('src/stores/muttafiqRelationshipStore.ts')
   assert(home.includes('getCurrentValidMuttafiqRelationshipsForRukn'), 'Home uses current-valid query')
   assert(home.includes('treatMissingPersonAsCurrent: true'), 'Home keeps unreadable Muttafiq person docs')
+  assert(home.includes('isCurrentValidMuttafiqRelationship(row, getKarkunById(personId)'), 'Home uses client helper with loaded person')
   const org = read('src/lib/rukn/ruknOrganisationalInformation.ts')
   assert(org.includes('getRuknHomeMuttafiqRows(ruknId).length'), 'org count is Home list length')
   assert(!org.includes('getActiveMuttafiqRelationshipsForRukn(ruknId).length'), 'org count is not raw Active')
   const tracking = read('src/lib/publicRegistration/adminTracking.ts')
   assert(tracking.includes('isCurrentValidMuttafiqRelationship'), 'registration uses current-valid predicate')
+  assert(
+    tracking.includes("from '../connections/currentValidMuttafiqPredicate.js'"),
+    'registration imports the serverless-safe predicate',
+  )
+  assert(!tracking.includes('currentMuttafiqRelationship'), 'registration does not import currentMuttafiqRelationship')
+  const predicate = read('src/lib/connections/currentValidMuttafiqPredicate.ts')
+  assert(!predicate.includes("from '@/"), 'shared predicate has no Vite @/ imports')
+  assert(!predicate.includes('firebase'), 'shared predicate has no Firebase')
+  assert(!predicate.includes('import.meta.env'), 'shared predicate has no Vite env')
+  assert(!predicate.includes('mockKarkunRegistry'), 'shared predicate has no mock registry')
+  assert(!predicate.includes('assignedRuknId'), 'shared predicate does not use assignedRuknId')
+  assert(!predicate.includes('getConnectedKarkunsForRukn'), 'shared predicate does not use campaign helpers')
+  const currentLib = read('src/lib/connections/currentMuttafiqRelationship.ts')
+  assert(currentLib.includes("from './currentValidMuttafiqPredicate.js'"), 'client helper uses the shared predicate')
+  assert(currentLib.includes('treatMissingPersonAsCurrent'), 'client helper keeps Home missing-person option')
+  assert(!predicate.includes('treatMissingPersonAsCurrent'), 'pure predicate does not treat missing persons as current')
   const conversion = read('src/services/peopleClassificationService.ts')
   assert(conversion.includes('endActiveMuttafiqRelationshipsForPerson'), 'Muttafiq→Karkun ends relationships')
+  assert(
+    conversion.includes('unassignActiveCampaignConnectionsForPerson'),
+    'Muttafiq→Karkun unassigns leftover campaign connections',
+  )
   assert(
     conversion.includes('Does not restore or recreate Ended Muttafiq–Rukn relationships'),
     'Karkun→Muttafiq does not restore relationships',
   )
   const rules = read('firestore.rules')
   assert(rules.includes('match /muttafiqRelationships/{relationshipId}'), 'rules match unchanged path')
-  const currentLib = read('src/lib/connections/currentMuttafiqRelationship.ts')
-  assert(!currentLib.includes('assignmentStore'), 'current-valid predicate does not read campaign connections')
-  assert(!currentLib.includes('getConnectedKarkunsForRukn'), 'current-valid predicate does not infer from campaign helpers')
+  assert(!predicate.includes('assignmentStore'), 'shared predicate does not read campaign connections')
   const endLib = read('src/lib/connections/endActiveMuttafiqRelationshipsForPerson.ts')
   assert(!endLib.includes('FIRESTORE_COLLECTIONS.connections'), 'conversion End does not use campaign connections')
 }
@@ -246,7 +270,180 @@ console.log('  OK  A current relationship + E count equals list')
   })
   assert(campaignOnly.muttafiqConnectedCount === 0, 'G: campaign connection alone is not a current Muttafiq relationship')
   assert(campaignOnly.connectedCount === 0, 'G: Muttafiq campaign row is not a current Karkun')
-  console.log('  OK  F registration + G campaign isolation')
+
+  const missingRel: MuttafiqRuknRelationship = {
+    id: muttafiqRuknRelationshipId(rukn.id, 'missing-mt-home'),
+    ruknId: rukn.id,
+    ruknName: rukn.name,
+    personId: 'missing-mt-home',
+    personName: 'Ghost Muttafiq',
+    status: 'Active',
+    createdAt: nowIso(),
+    updatedAt: nowIso(),
+    establishedBy: 'Administrator',
+  }
+  assert(!isCurrentValidMuttafiqRelationship(missingRel, undefined), 'default client helper: missing person is not current')
+  assert(
+    isCurrentValidMuttafiqRelationship(missingRel, undefined, { treatMissingPersonAsCurrent: true }),
+    'Home option: missing person stays current',
+  )
+  assert(!sharedPredicate(missingRel, null), 'shared predicate missing person is not current')
+  seedRelationship(missingRel)
+  assert(
+    getRuknHomeMuttafiqRows(rukn.id).some((row) => row.counterpartId === 'missing-mt-home'),
+    'Home includes missing person when relationship is Active',
+  )
+  assert(
+    !getConnectedMuttafiqDisplayRowsForRukn(rukn.id).some((row) => row.counterpartId === 'missing-mt-home'),
+    'Admin display still requires a person record',
+  )
+  const orgMissing = buildRuknOrganisationalInformation(rukn.id, {
+    peopleReady: true,
+    programmesReady: false,
+  })
+  assert(orgMissing.people.muttafiqeen === getRuknHomeMuttafiqRows(rukn.id).length, 'Home count still equals list')
+  const missingProgress = buildTrainingRegistrationRuknProgress({
+    ruknId: rukn.id,
+    rukn: { id: rukn.id, name: rukn.name, status: 'active', mobile: '9000000000' },
+    karkuns: [],
+    connections: [],
+    muttafiqRelationships: [
+      { ruknId: rukn.id, personId: 'missing-mt-home', personName: 'Ghost Muttafiq', status: 'Active' },
+    ],
+    registrations: [],
+  })
+  assert(missingProgress.muttafiqConnectedCount === 0, 'registration excludes missing person')
+
+  const assignedOnlyId = 'kr-assigned-only-mt'
+  const assignedOnlyProgress = buildTrainingRegistrationRuknProgress({
+    ruknId: rukn.id,
+    rukn: { id: rukn.id, name: rukn.name, status: 'active', mobile: '9000000000' },
+    karkuns: [
+      {
+        id: assignedOnlyId,
+        name: 'Assigned Only',
+        mobile: '9111888009',
+        gender: 'Male',
+        category: 'Muttafiq',
+      },
+    ],
+    connections: [],
+    muttafiqRelationships: [],
+    registrations: [],
+  })
+  assert(assignedOnlyProgress.muttafiqConnectedCount === 0, 'person metadata without a relationship is never current')
+  assert(
+    !getRuknHomeMuttafiqRows(rukn.id).some((row) => row.counterpartId === assignedOnlyId),
+    'Home does not invent a relationship from assignedRuknId',
+  )
+  assert(isCurrentValidMuttafiqRelationship(active[0]!, person) === sharedPredicate(active[0]!, person), 'client re-export matches shared predicate')
+  console.log('  OK  F registration + G campaign + missing person + assignedRuknId isolation')
+}
+
+{
+  const storeSrc = read('src/stores/muttafiqRelationshipStore.ts')
+  const currentFn = storeSrc.slice(
+    storeSrc.indexOf('export function getCurrentValidMuttafiqRelationshipsForRukn'),
+    storeSrc.indexOf('export function getRuknHomeMuttafiqRows'),
+  )
+  assert(currentFn.includes('personActives.length !== 1'), 'Home omits dual-Active people without picking a winner')
+  assert(currentFn.includes('treatMissingPersonAsCurrent: true'), 'Home keeps missing-person-as-current')
+  const adminFn = storeSrc.slice(
+    storeSrc.indexOf('export function getActiveMuttafiqRelationshipsForRukn'),
+    storeSrc.indexOf('export function getMuttafiqConnectionViewForPerson'),
+  )
+  assert(!adminFn.includes('personActives'), 'Admin-by-Rukn Active list does not drop dual-Active people')
+  const otherRukn = ruknMaster.find((row) => row.status === 'active' && row.id !== rukn.id)
+  assert(otherRukn, 'second rukn')
+  const dual = createMuttafiq(
+    {
+      name: 'Dual Rukn Muttafiq',
+      gender: 'Male',
+      mobile: '9111888011',
+      place: DEFAULT_PLACE,
+      status: 'active',
+    },
+    'verify',
+    { requireNewPersonIntake: false },
+  )
+  assert(dual.success && dual.karkunId, 'dual person')
+  const dualId = dual.karkunId!
+  const dualPerson = MOCK_KARKUN_REGISTRY.find((row) => row.id === dualId)
+  assert(dualPerson, 'dual in registry')
+  const relA: MuttafiqRuknRelationship = {
+    id: muttafiqRuknRelationshipId(rukn.id, dualId),
+    ruknId: rukn.id,
+    ruknName: rukn.name,
+    personId: dualId,
+    personName: dualPerson.name,
+    status: 'Active',
+    createdAt: nowIso(),
+    updatedAt: nowIso(),
+    establishedBy: 'Administrator',
+  }
+  const relB: MuttafiqRuknRelationship = {
+    id: muttafiqRuknRelationshipId(otherRukn.id, dualId),
+    ruknId: otherRukn.id,
+    ruknName: otherRukn.name,
+    personId: dualId,
+    personName: dualPerson.name,
+    status: 'Active',
+    createdAt: nowIso(),
+    updatedAt: nowIso(),
+    establishedBy: 'Administrator',
+  }
+  seedRelationship(relA)
+  seedRelationship(relB)
+  assert(sharedPredicate(relA, dualPerson), 'P is current-valid for R001 regardless of R002')
+  assert(sharedPredicate(relB, dualPerson), 'P is current-valid for R002 regardless of R001')
+  assert(
+    !getCurrentValidMuttafiqRelationshipsForRukn(rukn.id).some((row) => row.personId === dualId),
+    'Home current-valid omits conflicted P on first Rukn',
+  )
+  assert(
+    !getCurrentValidMuttafiqRelationshipsForRukn(otherRukn.id).some((row) => row.personId === dualId),
+    'Home current-valid omits conflicted P on second Rukn',
+  )
+  assert(
+    !getRuknHomeMuttafiqRows(rukn.id).some((row) => row.counterpartId === dualId),
+    'first Rukn Home does not list conflicted P',
+  )
+  assert(
+    !getRuknHomeMuttafiqRows(otherRukn.id).some((row) => row.counterpartId === dualId),
+    'second Rukn Home does not list conflicted P',
+  )
+  const adminA = getConnectedMuttafiqDisplayRowsForRukn(rukn.id).filter((row) => row.counterpartId === dualId)
+  const adminB = getConnectedMuttafiqDisplayRowsForRukn(otherRukn.id).filter((row) => row.counterpartId === dualId)
+  assert(adminA.length === 1 && adminA[0]?.needsReview === true, 'Admin first Rukn keeps conflicted P as Needs review')
+  assert(adminB.length === 1 && adminB[0]?.relationshipLabel === 'Needs review', 'Admin second Rukn keeps conflicted P; no winner')
+  const personFields = {
+    id: dualId,
+    name: dualPerson.name,
+    mobile: dualPerson.mobile,
+    gender: dualPerson.gender,
+    category: 'Muttafiq' as const,
+  }
+  const progressA = buildTrainingRegistrationRuknProgress({
+    ruknId: rukn.id,
+    rukn: { id: rukn.id, name: rukn.name, status: 'active', mobile: '9000000000' },
+    karkuns: [personFields],
+    connections: [],
+    muttafiqRelationships: [relA, relB, relA],
+    registrations: [],
+  })
+  const progressB = buildTrainingRegistrationRuknProgress({
+    ruknId: otherRukn.id,
+    rukn: { id: otherRukn.id, name: otherRukn.name, status: 'active', mobile: '9000000001' },
+    karkuns: [personFields],
+    connections: [],
+    muttafiqRelationships: [relA, relB, relB],
+    registrations: [],
+  })
+  assert(progressA.muttafiqConnectedCount === 1, 'registration R001 counts P once despite duplicate input and R002 row')
+  assert(progressA.muttafiqeen.some((row) => row.karkunId === dualId), 'registration R001 includes P')
+  assert(progressB.muttafiqConnectedCount === 1, 'registration R002 counts P once despite duplicate input and R001 row')
+  assert(progressB.muttafiqeen.some((row) => row.karkunId === dualId), 'registration R002 includes P')
+  console.log('  OK  dual Active omitted on Home; Admin and registration remain independent')
 }
 
 {

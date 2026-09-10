@@ -60,6 +60,7 @@ import {
   MUTTAFIQ_ALREADY_HAS_ACTIVE_RUKN_MESSAGE,
   MUTTAFIQ_DUPLICATE_ACTIVE_RUKN_MESSAGE,
 } from '@/lib/connections/muttafiqConnectionView'
+import { unassignActiveCampaignConnectionsForPerson } from '@/lib/connections/unassignActiveCampaignConnectionsForPerson'
 
 export { subscribeToKarkunRequestStore, getPendingKarkunRequests, getAllKarkunRequests }
 
@@ -1111,6 +1112,20 @@ function rejectSecondActiveMuttafiqLink(
   return null
 }
 
+async function unassignCampaignAfterMuttafiqLinkPermitted(
+  personId: string,
+  performedBy: string,
+): Promise<{ ok: true } | { ok: false; error: string; code: 'VALIDATION' }> {
+  const cleaned = await unassignActiveCampaignConnectionsForPerson({
+    personId,
+    performedBy,
+  })
+  if (!cleaned.ok) {
+    return { ok: false, error: cleaned.error, code: 'VALIDATION' }
+  }
+  return { ok: true }
+}
+
 export type AssignMuttafiqRuknLinkResult =
   | {
       ok: true
@@ -1184,6 +1199,14 @@ export async function assignMuttafiqRuknLinkAsAdmin(input: {
   )
   if (blocked) {
     return blocked
+  }
+
+  const cleaned = await unassignCampaignAfterMuttafiqLinkPermitted(
+    person.id,
+    input.establishedBy.trim() || 'Administrator',
+  )
+  if (!cleaned.ok) {
+    return cleaned
   }
 
   const { muttafiqRuknRelationshipId } = await import('@/types/muttafiqRelationship.types')
@@ -1293,6 +1316,13 @@ async function approvePeopleIntakeRequestOnce(
                 : MUTTAFIQ_ALREADY_HAS_ACTIVE_RUKN_MESSAGE,
             code: 'VALIDATION',
           }
+        }
+        const retryCleanup = await unassignCampaignAfterMuttafiqLinkPermitted(
+          person.id,
+          input.decidedBy || existing.decidedBy || 'Administrator',
+        )
+        if (!retryCleanup.ok) {
+          return retryCleanup
         }
         const { muttafiqRuknRelationshipId } = await import('@/types/muttafiqRelationship.types')
         const now = new Date().toISOString()
@@ -1407,6 +1437,14 @@ async function approvePeopleIntakeRequestOnce(
         if (!converted.success) {
           return { ok: false, error: converted.error ?? 'Conversion failed.', code: 'VALIDATION' }
         }
+      } else {
+        const leftover = await unassignActiveCampaignConnectionsForPerson({
+          personId,
+          performedBy: input.decidedBy || 'Administrator',
+        })
+        if (!leftover.ok) {
+          return { ok: false, error: leftover.error, code: 'VALIDATION' }
+        }
       }
       const resolved = resolveKarkunRequest(claimed.id, 'Approved', input.decidedBy, {
         decisionNotes: input.decisionNotes?.trim() || undefined,
@@ -1454,6 +1492,14 @@ async function approvePeopleIntakeRequestOnce(
         if (blocked) {
           return { ok: false, error: blocked.error, code: 'VALIDATION' }
         }
+      }
+
+      const linkCleanup = await unassignCampaignAfterMuttafiqLinkPermitted(
+        personId,
+        input.decidedBy || 'Administrator',
+      )
+      if (!linkCleanup.ok) {
+        return linkCleanup
       }
 
       const { muttafiqRuknRelationshipId } = await import('@/types/muttafiqRelationship.types')

@@ -2,7 +2,7 @@ import type { Rukn } from '@/data/ruknMaster'
 import type { KarkunRegistryRecord } from '@/types/karkun-registry.types'
 import type { PersonGender, PersonKind } from '@/types/people.types'
 import { getRuknAssignmentSummary } from '@/services/assignmentService'
-import { getActiveMuttafiqRelationshipsForRukn } from '@/stores/muttafiqRelationshipStore'
+import { getConnectedMuttafiqDisplayRowsForRukn } from '@/stores/muttafiqRelationshipStore'
 
 export type ExportFormat = 'csv' | 'excel'
 
@@ -83,7 +83,7 @@ export function exportRukns(records: Rukn[], format: ExportFormat): void {
       rukn.status,
       rukn.referredByRuknId ?? '',
       String(summary.assignedKarkunCount),
-      String(getActiveMuttafiqRelationshipsForRukn(rukn.id).length),
+      String(getConnectedMuttafiqDisplayRowsForRukn(rukn.id).length),
       rukn.notes ?? '',
       formatDate(rukn.createdAt),
       formatDate(rukn.updatedAt),

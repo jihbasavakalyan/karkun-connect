@@ -1,9 +1,12 @@
 /**
- * KC-0123 — Conversion that preserves identity and active connections.
+ * KC-0123 — Conversion that preserves person identity.
  * Does not create a duplicate person record.
+ * Does not create a Muttafiq relationship from campaign data.
+ * Active campaign connections are Unassigned before category change.
  */
 
 import { getKarkunById } from '@/constants/mockKarkunRegistry'
+import { unassignActiveCampaignConnectionsForPerson } from '@/lib/connections/unassignActiveCampaignConnectionsForPerson'
 import {
   buildClassificationHistoryEntry,
   ensureMuttafiqRegistryNumber,
@@ -13,16 +16,19 @@ import {
 import { logPeopleAudit } from '@/lib/peopleAuditLog'
 import { bumpVersion } from '@/lib/preservation/softDelete'
 import { notifyPeopleRegistryChange, persistKarkunDurable } from '@/lib/peopleStore'
-import { appendConnectionLedgerEntry } from '@/services/connectionLedgerService'
 import { logActivity } from '@/stores/activityLogStore'
+import { getActiveAssignmentsForKarkun } from '@/stores/assignmentStore'
 import type { ClassificationResult } from '@/services/peopleClassificationService'
 
 function nowIso(): string {
   return new Date().toISOString()
 }
 
+const CONVERSION_REMARKS = 'Approved Karkun → Muttafiq conversion (campaign assignment ended).'
+
 /**
- * Karkun → Muttafiq while keeping connection metadata and assignment ledger intact.
+ * Karkun → Muttafiq. Unassign Active campaign connections while still Karkun,
+ * then change category. Does not establish Muttafiq↔Rukn ownership.
  */
 export async function convertKarkunToMuttafiqPreservingIdentity(
   personId: string,
@@ -38,6 +44,21 @@ export async function convertKarkunToMuttafiqPreservingIdentity(
     return { success: false, error: 'Already classified as Muttafiq.' }
   }
 
+  const cleaned = await unassignActiveCampaignConnectionsForPerson({
+    personId,
+    performedBy: changedBy,
+  })
+  if (!cleaned.ok) {
+    return { success: false, error: cleaned.error, personId }
+  }
+  if (getActiveAssignmentsForKarkun(personId).length > 0) {
+    return {
+      success: false,
+      error: 'Active campaign assignment remained after unassign.',
+      personId,
+    }
+  }
+
   const previousCategory = getPersonCategory(person)
   const at = nowIso()
   person.category = 'Muttafiq'
@@ -47,7 +68,7 @@ export async function convertKarkunToMuttafiqPreservingIdentity(
       previousCategory,
       newCategory: 'Muttafiq',
       changedBy,
-      remarks: remarks || 'Approved Karkun → Muttafiq conversion (connections preserved).',
+      remarks: remarks || CONVERSION_REMARKS,
       at,
     }),
   ]
@@ -77,18 +98,6 @@ export async function convertKarkunToMuttafiqPreservingIdentity(
     }
   }
 
-  appendConnectionLedgerEntry({
-    eventType: 'TRANSFERRED',
-    performedBy: changedBy,
-    karkunId: personId,
-    metadata: {
-      entity: 'karkun',
-      classification: 'Muttafiq',
-      action: 'convert_karkun_to_muttafiq_preserve_connections',
-      previousCategory,
-      newCategory: 'Muttafiq',
-    },
-  })
   logActivity({
     type: 'complete',
     message: `Converted ${person.name} (${personId}) Karkun → Muttafiq (identity preserved).`,

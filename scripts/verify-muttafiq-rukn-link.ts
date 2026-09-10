@@ -570,6 +570,12 @@ const personId = muttafiqCreate.karkunId!
   assert(uncached, 'Home still shows Active Muttafiq when person doc is not in cache')
   assert(uncached.counterpartName === 'Uncached Muttafiq Name', 'Home uses stored Muttafiq name')
   assert(
+    homeWithExtras.length ===
+      buildRuknOrganisationalInformation(rukn!.id, { peopleReady: true, programmesReady: false }).people
+        .muttafiqeen,
+    'Home list length equals org متفقین count',
+  )
+  assert(
     !getConnectedMuttafiqDisplayRowsForRukn(rukn!.id).some(
       (row) => row.counterpartId === 'kr-home-uncached',
     ),
