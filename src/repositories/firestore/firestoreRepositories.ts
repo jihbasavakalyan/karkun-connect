@@ -1952,6 +1952,77 @@ export class RuknFirestoreRepository implements RuknRepository {
   }
 }
 
+/**
+ * Admin karkunCounter updates must never decrease `nextKarkunNum` (Firestore rules).
+ * Blind setDoc of a cache-healed value is permission-denied when production is ahead
+ * of the Admin client's max kr-* id. Read the server value and write max(local, remote).
+ */
+async function writeKarkunCounterMonotonic(nextKarkunNum: number): Promise<RepositoryResult<void>> {
+  try {
+    const cached = karkunCache.get()
+    let maxExisting = 0
+    for (const karkun of cached.karkuns) {
+      const match = /^kr-(\d+)$/i.exec(karkun.id)
+      if (!match) continue
+      const num = Number.parseInt(match[1]!, 10)
+      if (Number.isFinite(num) && num > maxExisting) maxExisting = num
+    }
+    const localHealed = Math.max(1, nextKarkunNum || 1, maxExisting + 1)
+    const scope = await resolveClientAuthScope()
+    if (scope.role === 'rukn' && Boolean(scope.ruknId)) {
+      karkunCache.set({ karkuns: cached.karkuns, nextKarkunNum: localHealed })
+      return repositoryOk(undefined)
+    }
+    const db = getFirestoreDb()
+    const counterRef = doc(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.karkunCounter)
+    await runTransaction(db, async (transaction) => {
+      const snapshot = await transaction.get(counterRef)
+      const remoteRaw = snapshot.exists()
+        ? Number(
+            (stripMeta<{ nextKarkunNum?: number }>(snapshot.data() as DocumentData) ?? {})
+              .nextKarkunNum,
+          )
+        : 0
+      const serverNext = Number.isFinite(remoteRaw) ? remoteRaw : 0
+      const next = Math.max(localHealed, serverNext)
+      karkunCache.set({ karkuns: cached.karkuns, nextKarkunNum: next })
+      if (snapshot.exists() && next === serverNext) {
+        console.info('[karkunCounter.commit]', {
+          path: `${FIRESTORE_COLLECTIONS.settings}/${FIRESTORE_DOCS.karkunCounter}`,
+          localHealed,
+          serverNext,
+          next,
+          skipped: true,
+        })
+        return
+      }
+      console.info('[karkunCounter.commit]', {
+        path: `${FIRESTORE_COLLECTIONS.settings}/${FIRESTORE_DOCS.karkunCounter}`,
+        localHealed,
+        serverNext,
+        next,
+        skipped: false,
+        merge: true,
+      })
+      transaction.set(
+        counterRef,
+        {
+          ...withMeta(sanitizeForFirestore({ nextKarkunNum: next }) as object),
+          _serverTime: serverTimestamp(),
+        },
+        { merge: true },
+      )
+    })
+    return repositoryOk(undefined)
+  } catch (error) {
+    console.error('[karkunCounter.commit]', {
+      path: `${FIRESTORE_COLLECTIONS.settings}/${FIRESTORE_DOCS.karkunCounter}`,
+      error,
+    })
+    return mapFirestoreError(error)
+  }
+}
+
 export class KarkunFirestoreRepository implements KarkunRepository {
   loadState(): RepositoryResult<KarkunRegistryState> {
     const state = karkunCache.get()
@@ -2013,14 +2084,7 @@ export class KarkunFirestoreRepository implements KarkunRepository {
       }
       // Counter is administrator-owned; Rukn profile/connect must not touch it.
       if (!isRuknClient) {
-        const counterResult = await writeDoc(
-          db,
-          FIRESTORE_COLLECTIONS.settings,
-          FIRESTORE_DOCS.karkunCounter,
-          sanitizeForFirestore({
-            nextKarkunNum: healedState.nextKarkunNum,
-          }) as object,
-        )
+        const counterResult = await writeKarkunCounterMonotonic(healedState.nextKarkunNum)
         if (!counterResult.ok) {
           return counterResult
         }
@@ -2082,33 +2146,7 @@ export class KarkunFirestoreRepository implements KarkunRepository {
 
   /** KC-EVO-007 — persist ID counter only (no full karkun registry rewrite). */
   async commitKarkunCounter(nextKarkunNum: number): Promise<RepositoryResult<void>> {
-    try {
-      const cached = karkunCache.get()
-      let maxExisting = 0
-      for (const karkun of cached.karkuns) {
-        const match = /^kr-(\d+)$/i.exec(karkun.id)
-        if (!match) continue
-        const num = Number.parseInt(match[1]!, 10)
-        if (Number.isFinite(num) && num > maxExisting) maxExisting = num
-      }
-      const healedNext = Math.max(1, nextKarkunNum || 1, maxExisting + 1)
-      karkunCache.set({ karkuns: cached.karkuns, nextKarkunNum: healedNext })
-      const scope = await resolveClientAuthScope()
-      if (scope.role === 'rukn' && Boolean(scope.ruknId)) {
-        return repositoryOk(undefined)
-      }
-      const db = getFirestoreDb()
-      return writeDoc(
-        db,
-        FIRESTORE_COLLECTIONS.settings,
-        FIRESTORE_DOCS.karkunCounter,
-        sanitizeForFirestore({
-          nextKarkunNum: healedNext,
-        }) as object,
-      )
-    } catch (error) {
-      return mapFirestoreError(error)
-    }
+    return writeKarkunCounterMonotonic(nextKarkunNum)
   }
 
   async upsertRecord(karkun: KarkunRegistryRecord): Promise<RepositoryResult<void>> {

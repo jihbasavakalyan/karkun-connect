@@ -74,6 +74,10 @@ export type PeopleMutationResult = {
   karkunId?: string
   /** Set on successful createRukn. */
   ruknId?: string
+  /** Firestore/repository code when a durable persist fails. */
+  persistCode?: string
+  /** Exact document path of the failing durable write. */
+  persistPath?: string
 }
 
 function notifyPeopleChange(): void {
@@ -631,6 +635,11 @@ export type CreatePersonWriteOptions = {
    * Imports and historical-shape fixtures pass false (do not invent).
    */
   requireReferral?: boolean
+  /**
+   * When false, create only mutates memory. Caller must await persistKarkunDurable.
+   * Inbox approval uses this so fire-and-forget counter writes cannot race the awaited persist.
+   */
+  persistImmediately?: boolean
 }
 
 export function createKarkun(
@@ -729,7 +738,11 @@ export function createKarkun(
     updatedBy,
   })
 
-  void notifyAndPersistKarkunRecords([karkun], { nextKarkunNum: getNextKarkunNum() })
+  if (options?.persistImmediately === false) {
+    notifyPeopleRegistryUiOnly()
+  } else {
+    void notifyAndPersistKarkunRecords([karkun], { nextKarkunNum: getNextKarkunNum() })
+  }
   return { success: true, karkunId: id }
 }
 
@@ -741,6 +754,7 @@ export function applyReferredByRuknIfAbsent(
   personId: string,
   referredByRuknId: string,
   updatedBy = 'Administrator',
+  options?: { persist?: boolean },
 ): PeopleMutationResult {
   const person = MOCK_KARKUN_REGISTRY.find((k) => k.id === personId)
   if (!person) {
@@ -769,7 +783,11 @@ export function applyReferredByRuknIfAbsent(
     newValue: rukn.id,
     updatedBy,
   })
-  void notifyAndPersistKarkunRecords([person])
+  if (options?.persist === false) {
+    notifyPeopleRegistryUiOnly()
+  } else {
+    void notifyAndPersistKarkunRecords([person])
+  }
   return { success: true, karkunId: personId }
 }
 
@@ -958,21 +976,36 @@ export async function persistKarkunDurable(id: string): Promise<PeopleMutationRe
   }
   const result = await getRepositories().karkun.upsertRecord(karkun)
   if (!result.ok) {
-    console.error('[persistKarkunDurable]', result.error.code, result.error.message, result.error.cause)
-    return { success: false, error: toOperatorPersistError('karkuns', result.error) }
+    console.error('[persistKarkunDurable]', {
+      path: `karkuns/${id}`,
+      code: result.error.code,
+      message: result.error.message,
+      cause: result.error.cause,
+    })
+    return {
+      success: false,
+      error: toOperatorPersistError('karkuns', result.error),
+      persistCode: result.error.code,
+      persistPath: `karkuns/${id}`,
+    }
   }
   const commitCounter = getRepositories().karkun.commitKarkunCounter
   if (commitCounter) {
     const healed = syncNextKarkunNumFromRegistry()
     const counterResult = await commitCounter(healed)
     if (!counterResult.ok) {
-      console.error(
-        '[persistKarkunDurable.counter]',
-        counterResult.error.code,
-        counterResult.error.message,
-        counterResult.error.cause,
-      )
-      return { success: false, error: toOperatorPersistError('karkuns', counterResult.error) }
+      console.error('[persistKarkunDurable.counter]', {
+        path: 'settings/karkunCounter',
+        code: counterResult.error.code,
+        message: counterResult.error.message,
+        cause: counterResult.error.cause,
+      })
+      return {
+        success: false,
+        error: toOperatorPersistError('karkuns', counterResult.error),
+        persistCode: counterResult.error.code,
+        persistPath: 'settings/karkunCounter',
+      }
     }
   }
   return { success: true }

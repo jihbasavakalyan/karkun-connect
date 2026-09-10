@@ -41,6 +41,7 @@ export type WriteLifecycleErrorCode =
   | 'cancelled'
   | 'not_found'
   | 'validation'
+  | 'unauthenticated'
   | 'unknown'
 
 export const WRITE_ERROR_URDU: Record<WriteLifecycleErrorCode, string> = {
@@ -54,6 +55,7 @@ export const WRITE_ERROR_URDU: Record<WriteLifecycleErrorCode, string> = {
   cancelled: 'کارروائی منسوخ ہو گئی۔',
   not_found: 'مطلوبہ ریکارڈ نہیں ملا۔',
   validation: 'درج کردہ معلومات درست نہیں۔',
+  unauthenticated: 'سائن ان کی تصدیق نہیں ہو سکی۔ دوبارہ سائن ان کریں۔',
   unknown: 'محفوظ نہیں ہو سکا۔ دوبارہ کوشش کریں۔',
 }
 
@@ -189,10 +191,45 @@ export function classifyWriteError(error: unknown): {
     }
   }
 
+  if (code === 'unauthenticated' || code === 'auth_failure') {
+    return {
+      code: 'unauthenticated',
+      message: WRITE_ERROR_URDU.unauthenticated,
+    }
+  }
+
+  if (/You do not have permission to save this change/i.test(raw)) {
+    return {
+      code: 'permission_denied',
+      message: WRITE_ERROR_URDU.permission_denied,
+    }
+  }
+
+  if (
+    code === 'failed-precondition' ||
+    code === 'already-exists'
+  ) {
+    return {
+      code: code === 'already-exists' ? 'duplicate' : 'conflict',
+      message:
+        code === 'already-exists' ? WRITE_ERROR_URDU.duplicate : WRITE_ERROR_URDU.conflict,
+    }
+  }
+
   if (
     code === 'permission' ||
     code === 'permission-denied' ||
-    /permission|insufficient|اجازت نہیں/i.test(raw)
+    /اجازت نہیں/i.test(raw)
+  ) {
+    return {
+      code: 'permission_denied',
+      message: WRITE_ERROR_URDU.permission_denied,
+    }
+  }
+
+  if (
+    (code === '' || code === 'unknown') &&
+    /permission|insufficient/i.test(raw)
   ) {
     return {
       code: 'permission_denied',

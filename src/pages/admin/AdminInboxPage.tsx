@@ -271,6 +271,8 @@ export function AdminInboxPage() {
         if (!result.ok) {
           throw Object.assign(new Error(result.error), {
             code: result.code ?? 'unknown',
+            persistPath: result.persistPath,
+            persistCode: result.persistCode,
           })
         }
         return result

@@ -75,6 +75,21 @@ assert(
 )
 assert(classifyWriteError({ code: 'duplicate', message: 'dup' }).code === 'duplicate', 'duplicate')
 assert(classifyWriteError({ code: 'conflict', message: 'conflict' }).code === 'conflict', 'conflict')
+assert(
+  classifyWriteError({ code: 'AUTH_FAILURE', message: 'Only an Administrator can approve.' }).code ===
+    'unauthenticated',
+  'auth failure is not permission-denied',
+)
+assert(
+  classifyWriteError({ code: 'validation', message: 'Father / Husband name is required.' }).code ===
+    'validation',
+  'validation copy is not permission-denied',
+)
+assert(
+  classifyWriteError({ code: 'failed-precondition', message: 'x' }).code === 'conflict',
+  'failed-precondition is conflict not permission',
+)
+assert(WRITE_ERROR_URDU.unauthenticated.includes('سائن ان'), 'unauthenticated Urdu')
 assert(WRITE_ERROR_URDU.already_processed.includes('پہلے ہی'), 'already processed Urdu')
 assert(WRITE_ERROR_URDU.offline.includes('آف لائن'), 'offline Urdu')
 assert(isRetryableWriteError({ code: 'timeout' }), 'timeout retryable')

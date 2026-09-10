@@ -147,6 +147,26 @@ assert(all.some((k) => k.id === 'kr-021' && k.name === 'MOHAMMED KAIF'), 'seed k
   assert(!updateBlock.includes('notifyPeopleChange()'), 'update must not bulk persist')
   assert(store.includes('function notifyPeopleChange()'), 'bulk notifyPeopleChange remains for Rukn/import')
   assert(store.includes('persistPeopleRegistry'), 'saveState bulk path remains')
+  assert(store.includes('persistImmediately'), 'create can defer persist for Inbox approval')
+}
+
+{
+  const repo = readFileSync(resolve('src/repositories/firestore/firestoreRepositories.ts'), 'utf8')
+  const helper = repo.slice(
+    repo.indexOf('async function writeKarkunCounterMonotonic'),
+    repo.indexOf('export class KarkunFirestoreRepository'),
+  )
+  assert(helper.includes('runTransaction'), 'karkunCounter commit is transactional')
+  assert(helper.includes('{ merge: true }'), 'karkunCounter commit merges')
+  assert(helper.includes('Math.max(localHealed, serverNext)'), 'karkunCounter never decreases vs server')
+  assert(!helper.includes('writeDoc('), 'karkunCounter no longer blind-replaces the counter doc')
+}
+
+{
+  const intake = readFileSync(resolve('src/services/karkunRequestService.ts'), 'utf8')
+  assert(intake.includes('persistImmediately: false'), 'Inbox create defers karkun persist')
+  assert(intake.includes("persistPath: 'settings/karkunCounter'") || intake.includes('resultFromPersistFailure'), 'Inbox persist failures keep path/code')
+  assert(intake.includes('hadReferral'), 'Inbox skips redundant referral persist when already stamped')
 }
 
 function getKarkunByName(name: string) {

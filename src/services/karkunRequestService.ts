@@ -121,6 +121,66 @@ async function assertRequesterMatchesSignedInRukn(
 
 const ADMIN_INTAKE_DENIED = 'Only an Administrator can approve or reject intake requests.'
 
+async function logInboxApprove(event: Record<string, unknown>): Promise<void> {
+  try {
+    const user = getFirebaseAuth().currentUser
+    let claims: Record<string, unknown> | null = null
+    if (user) {
+      const token = await user.getIdTokenResult(false)
+      claims = {
+        role: token.claims.role ?? null,
+        ruknId: token.claims.ruknId ?? null,
+        administrator: token.claims.administrator ?? null,
+      }
+    }
+    console.info('[inbox.approve]', {
+      ...event,
+      uid: user?.uid ?? null,
+      email: user?.email ?? null,
+      claims,
+    })
+  } catch (error) {
+    console.info('[inbox.approve]', { ...event, logError: String(error) })
+  }
+}
+
+function resultFromPersistFailure(
+  durable: { error?: string; persistCode?: string; persistPath?: string },
+  fallback: string,
+): Extract<ApproveNewKarkunRequestResult, { ok: false }> {
+  const persistCode = durable.persistCode
+  const code: NonNullable<Extract<ApproveNewKarkunRequestResult, { ok: false }>['code']> =
+    persistCode === 'Permission'
+      ? 'permission-denied'
+      : persistCode === 'StorageFailure'
+        ? 'StorageFailure'
+        : persistCode === 'Duplicate'
+          ? 'conflict'
+          : 'VALIDATION'
+  const kind =
+    persistCode === 'Permission'
+      ? 'FIRESTORE_PERMISSION_DENIED'
+      : persistCode === 'StorageFailure'
+        ? 'NETWORK_OR_UNAVAILABLE'
+        : persistCode === 'Duplicate'
+          ? 'SECONDARY_WRITE_CONFLICT'
+          : 'APPLICATION_OR_UNEXPECTED'
+  void logInboxApprove({
+    step: 'persist_failed',
+    kind,
+    persistCode: persistCode ?? null,
+    persistPath: durable.persistPath ?? null,
+    error: durable.error || fallback,
+  })
+  return {
+    ok: false,
+    error: durable.error || fallback,
+    code,
+    persistPath: durable.persistPath,
+    persistCode,
+  }
+}
+
 export type MobileDuplicateDetails = {
   karkunId: string
   name: string
@@ -163,7 +223,16 @@ export type ApproveNewKarkunRequestResult =
   | {
       ok: false
       error: string
-      code?: 'MOBILE_EXISTS' | 'VALIDATION' | 'ALREADY_PROCESSED'
+      code?:
+        | 'MOBILE_EXISTS'
+        | 'VALIDATION'
+        | 'ALREADY_PROCESSED'
+        | 'AUTH_FAILURE'
+        | 'permission-denied'
+        | 'StorageFailure'
+        | 'conflict'
+      persistPath?: string
+      persistCode?: string
       duplicate?: MobileDuplicateDetails
     }
 
@@ -484,6 +553,14 @@ async function approveNewKarkunRequestOnce(
     return alreadyProcessedResult()
   }
 
+  void logInboxApprove({
+    step: 'claimed',
+    requestId: claimed.id,
+    source: claimed.source ?? null,
+    kind: claimed.kind ?? 'new_karkun',
+    adminGate: 'ok',
+  })
+
   try {
     // KC-0072C — durable mobile verification immediately before create-or-link.
     const existingOwner = findMobileOwnerDurable(claimed.mobile)
@@ -558,7 +635,7 @@ async function approveNewKarkunRequestOnce(
           referredByRuknId: intake.referredByRuknId,
         },
         input.decidedBy || 'Administrator',
-        { requireReferral: true },
+        { requireReferral: true, persistImmediately: false },
       )
 
       if (!createResult.success) {
@@ -598,14 +675,16 @@ async function approveNewKarkunRequestOnce(
         // KC-0072C — await durable confirmation before assignment.
         const durable = await persistKarkunDurable(karkunId)
         if (!durable.success) {
-          return {
-            ok: false,
-            error:
-              durable.error ||
-              'Karkun could not be saved durably. Request left pending — retry approval.',
-            code: 'VALIDATION',
-          }
+          return resultFromPersistFailure(
+            durable,
+            'Karkun could not be saved durably. Request left pending — retry approval.',
+          )
         }
+        void logInboxApprove({
+          step: 'karkun_persisted',
+          karkunId,
+          path: `karkuns/${karkunId}`,
+        })
       }
     }
 
@@ -616,22 +695,28 @@ async function approveNewKarkunRequestOnce(
     // Increment B — stamp Referred By from intake requesting Rukn (Admin-authoritative; never overwrite).
     const referringRuknId = claimed.requestingRuknId.trim()
     if (referringRuknId) {
+      const personBeforeStamp = getKarkunById(karkunId)
+      const hadReferral = Boolean(personBeforeStamp?.referredByRuknId?.trim())
       const referral = applyReferredByRuknIfAbsent(
         karkunId,
         referringRuknId,
         input.decidedBy || 'Administrator',
+        { persist: false },
       )
-      if (referral.success) {
+      if (referral.success && !hadReferral) {
         const durableReferral = await persistKarkunDurable(karkunId)
         if (!durableReferral.success) {
-          return {
-            ok: false,
-            error:
-              durableReferral.error ||
-              'Referring Rukn could not be saved durably. Request left pending — retry approval.',
-            code: 'VALIDATION',
-          }
+          return resultFromPersistFailure(
+            durableReferral,
+            'Referring Rukn could not be saved durably. Request left pending — retry approval.',
+          )
         }
+        void logInboxApprove({
+          step: 'referral_stamped',
+          karkunId,
+          path: `karkuns/${karkunId}`,
+          referredByRuknId: referringRuknId,
+        })
       }
     }
 
@@ -652,6 +737,14 @@ async function approveNewKarkunRequestOnce(
         )
         await awaitKarkunRequestsPersist()
       }
+      void logInboxApprove({
+        step: 'karkun_requests_persisted',
+        path: 'settings/karkunRequests',
+        requestId: claimed.id,
+        karkunId,
+        status: 'Approved',
+        source: 'public_training_registration',
+      })
       logActivity({
         type: 'complete',
         message: `Approved public training Karkun candidate ${claimed.fullName} (${karkunId}).`,
@@ -752,7 +845,12 @@ export async function approveNewKarkunRequest(
 ): Promise<ApproveNewKarkunRequestResult> {
   const adminGate = await assertAdministratorDecisionSession(ADMIN_INTAKE_DENIED)
   if (!adminGate.ok) {
-    return { ok: false, error: adminGate.error, code: 'VALIDATION' }
+    void logInboxApprove({
+      step: 'admin_session_denied',
+      kind: 'AUTH_FAILURE',
+      error: adminGate.error,
+    })
+    return { ok: false, error: adminGate.error, code: 'AUTH_FAILURE' }
   }
 
   // KC-028B — duplicate clicks join the in-flight approve; do not fake ALREADY_PROCESSED
@@ -1141,7 +1239,12 @@ export async function approvePeopleIntakeRequest(
 ): Promise<ApproveNewKarkunRequestResult> {
   const adminGate = await assertAdministratorDecisionSession(ADMIN_INTAKE_DENIED)
   if (!adminGate.ok) {
-    return { ok: false, error: adminGate.error, code: 'VALIDATION' }
+    void logInboxApprove({
+      step: 'admin_session_denied',
+      kind: 'AUTH_FAILURE',
+      error: adminGate.error,
+    })
+    return { ok: false, error: adminGate.error, code: 'AUTH_FAILURE' }
   }
 
   const inflight = intakeApproveInFlight.get(input.requestId)
@@ -1257,11 +1360,7 @@ async function approvePeopleIntakeRequestOnce(
       }
       const durable = await persistKarkunDurable(createResult.karkunId)
       if (!durable.success) {
-        return {
-          ok: false,
-          error: durable.error || 'Muttafiq could not be saved durably.',
-          code: 'VALIDATION',
-        }
+        return resultFromPersistFailure(durable, 'Muttafiq could not be saved durably.')
       }
 
       let assignmentId: string | undefined
