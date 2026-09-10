@@ -75,7 +75,7 @@ assert(!isRuknCampaignConnectionPath(ROUTES.ADMIN), 'Admin routes are unaffected
   assert(rules.includes('!isPromotedToARuknData(data)'), 'promotion exclusion remains in rules')
   assert(rules.includes('!isARuknPromotionInProgressData(data)'), 'transition exclusion remains in rules')
   assert(
-    rules.includes('allow update: if (isAdministrator() && referredByUnchanged() && promotedKarkunNotAvailable())'),
+    rules.includes('allow update: if (isAdministrator() && referredByAdminUpdateAllowed() && promotedKarkunNotAvailable())'),
     'Admin karkun update rule unchanged',
   )
 }

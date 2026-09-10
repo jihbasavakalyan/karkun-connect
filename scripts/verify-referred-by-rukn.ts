@@ -81,6 +81,7 @@ console.log('verify-referred-by-rukn: start')
 
   const rules = read('firestore.rules')
   assert(rules.includes('referredByUnchanged()'), 'rukn cannot change karkun referral')
+  assert(rules.includes('referredByAdminUpdateAllowed()'), 'Admin may fill empty karkun referral')
   assert(
     /match \/rukns\/\{docId\}[\s\S]*?referredByUnchanged\(\)/.test(rules),
     'rukn update preserves referredByRuknId',

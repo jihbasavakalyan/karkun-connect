@@ -44,16 +44,16 @@ console.log('verify-security-hardening: start')
   assert(rules.includes('referredByUnchanged()'), 'referral immutable helper used')
 
   assert(
-    /match \/karkuns\/\{karkunId\}[\s\S]*?isAdministrator\(\) && referredByUnchanged\(\)/.test(rules),
-    'admin karkun update preserves referral',
+    /match \/karkuns\/\{karkunId\}[\s\S]*?isAdministrator\(\) && referredByAdminUpdateAllowed\(\)/.test(rules),
+    'admin karkun update preserves referral except fill-empty stamp',
   )
   const karkunMatch = rules.slice(
     rules.indexOf('match /karkuns/{karkunId}'),
     rules.indexOf('match /connections/{assignmentId}'),
   )
   assert(
-    karkunMatch.includes('isAdministrator() && referredByUnchanged() && promotedKarkunNotAvailable()'),
-    'Admin karkun update is referral + promoted-not-Available only',
+    karkunMatch.includes('isAdministrator() && referredByAdminUpdateAllowed() && promotedKarkunNotAvailable()'),
+    'Admin karkun update is referral-fill-or-unchanged + promoted-not-Available only',
   )
   assert(
     !/allow update: if \(isAdministrator\(\) && referredByUnchanged\(\) && promotedKarkunNotAvailable\(\) && aRuknPromotionInProgressUnchanged/.test(

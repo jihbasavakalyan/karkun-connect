@@ -473,7 +473,7 @@ assert(
   assert(!markBlock.includes("person.referredByRuknId ?? ''"), 'Admin promotion does not coerce referral to empty string')
   assert(
     rules.includes(
-      'allow update: if (isAdministrator() && referredByUnchanged() && promotedKarkunNotAvailable())',
+      'allow update: if (isAdministrator() && referredByAdminUpdateAllowed() && promotedKarkunNotAvailable())',
     ),
     'karkun Admin update rule unchanged',
   )

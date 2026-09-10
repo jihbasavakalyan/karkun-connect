@@ -43,6 +43,18 @@ service cloud.firestore {
         == referredByValue(request.resource.data);
     }
 
+    /**
+     * Admin may fill an empty referredByRuknId (Inbox stamp-if-absent).
+     * Admin may not overwrite a referral that is already set.
+     */
+    function referredByAdminUpdateAllowed() {
+      return referredByUnchanged()
+        || (
+          referredByValue(resource.data) == ''
+          && referredByValue(request.resource.data) != ''
+        );
+    }
+
     /** A Rukn officer docs use AR## ids on the shared rukns collection. */
     function isARuknDocId(id) {
       return id.matches('^AR[0-9]+$');
@@ -195,7 +207,7 @@ service cloud.firestore {
         ));
       allow create: if isAdministrator();
       // Increment D — Admin ordinary updates must not rewrite referral attribution.
-      allow update: if (isAdministrator() && referredByUnchanged() && promotedKarkunNotAvailable())
+      allow update: if (isAdministrator() && referredByAdminUpdateAllowed() && promotedKarkunNotAvailable())
         || (isRukn() && ruknMayUpdateKarkun());
       allow delete: if false;
     }
