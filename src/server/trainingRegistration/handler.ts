@@ -37,6 +37,7 @@ const COLLECTION = 'trainingRegistrations'
 const KARKUNS = 'karkuns'
 const RUKNS = 'rukns'
 const CONNECTIONS = 'connections'
+const MUTTAFIQ_RELATIONSHIPS = 'muttafiqRelationships'
 const SETTINGS = 'settings'
 const KARKUN_REQUESTS_DOC = 'karkunRequests'
 const FIRESTORE_IN_LIMIT = 30
@@ -374,6 +375,23 @@ async function loadRegistrationsForMobiles(
   return [...found.values()]
 }
 
+async function loadRegistrationsForPersonIds(
+  db: Firestore,
+  personIds: string[],
+): Promise<TrainingRegistrationRecord[]> {
+  const unique = [...new Set(personIds.map((id) => id.trim()).filter(Boolean))]
+  const found = new Map<string, TrainingRegistrationRecord>()
+  for (const chunk of chunkValues(unique, FIRESTORE_IN_LIMIT)) {
+    if (chunk.length === 0) continue
+    const query = await db.collection(COLLECTION).where('personId', 'in', chunk).get()
+    for (const doc of query.docs) {
+      const row = asRegistration((doc.data() ?? {}) as Record<string, unknown>, doc.id)
+      found.set(row.id, row)
+    }
+  }
+  return [...found.values()]
+}
+
 async function handleRuknRegistrationProgress(
   identity: DecodedIdentity,
 ): Promise<TrainingRegistrationApiResponse> {
@@ -405,6 +423,20 @@ async function handleRuknRegistrationProgress(
     }
   })
 
+  const relationshipSnap = await admin.db
+    .collection(MUTTAFIQ_RELATIONSHIPS)
+    .where('ruknId', '==', ruknId)
+    .get()
+  const muttafiqRelationships = relationshipSnap.docs.map((doc) => {
+    const data = doc.data()
+    return {
+      ruknId: data.ruknId,
+      personId: data.personId,
+      personName: data.personName,
+      status: data.status,
+    }
+  })
+
   const connectedIds = [
     ...new Set(
       connections
@@ -413,8 +445,17 @@ async function handleRuknRegistrationProgress(
         .filter((karkunId) => karkunId && karkunId !== ruknId),
     ),
   ]
+  const muttafiqIds = [
+    ...new Set(
+      muttafiqRelationships
+        .filter((row) => String(row.status || '') === 'Active')
+        .map((row) => String(row.personId || ''))
+        .filter((personId) => personId && personId !== ruknId),
+    ),
+  ]
+  const personIds = [...new Set([...connectedIds, ...muttafiqIds])]
 
-  const karkunRefs = connectedIds.map((karkunId) => admin.db.collection(KARKUNS).doc(karkunId))
+  const karkunRefs = personIds.map((karkunId) => admin.db.collection(KARKUNS).doc(karkunId))
   const karkunSnaps = await getAllDocuments(admin.db, karkunRefs)
   const karkuns = karkunSnaps
     .filter((snap) => snap.exists)
@@ -435,7 +476,15 @@ async function handleRuknRegistrationProgress(
     ruknMobile,
     ...karkuns.map((person) => normalizeMobile(String(person.mobile || ''))),
   ].filter((mobile) => mobile.length === 10)
-  const registrations = await loadRegistrationsForMobiles(admin.db, mobiles)
+  const [registrationsByMobile, registrationsByPerson] = await Promise.all([
+    loadRegistrationsForMobiles(admin.db, mobiles),
+    loadRegistrationsForPersonIds(admin.db, personIds),
+  ])
+  const registrations = [
+    ...new Map(
+      [...registrationsByMobile, ...registrationsByPerson].map((row) => [row.id, row]),
+    ).values(),
+  ]
 
   const progress = serializeTrainingRuknProgress(
     buildTrainingRegistrationRuknProgress({
@@ -450,6 +499,7 @@ async function handleRuknRegistrationProgress(
       },
       karkuns,
       connections,
+      muttafiqRelationships,
       registrations,
     }),
   )

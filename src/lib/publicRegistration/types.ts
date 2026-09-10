@@ -128,6 +128,10 @@ export type TrainingRuknProgressView = {
   registeredCount: number
   notRegisteredCount: number
   karkuns: TrainingRuknProgressPerson[]
+  muttafiqConnectedCount: number
+  muttafiqRegisteredCount: number
+  muttafiqNotRegisteredCount: number
+  muttafiqeen: TrainingRuknProgressPerson[]
 }
 
 export type TrainingRegistrationAdminRow = TrainingRegistrationRecord & {

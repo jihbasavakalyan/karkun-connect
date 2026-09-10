@@ -7,6 +7,7 @@ import { ROUTES, ruknVisitPath } from '@/constants/routes'
 import { useRequiredRuknId } from '@/hooks/useRequiredRuknId'
 import { useTrainingRuknProgress } from '@/hooks/useTrainingRuknProgress'
 import { TRAINING_GATHERING_EVENT } from '@/lib/publicRegistration/event'
+import { TrainingRegistrationProgressMetrics } from '@/components/home/TrainingRegistrationProgressMetrics'
 import type { TrainingRuknProgressPerson } from '@/lib/publicRegistration/types'
 
 type ProgressFilter = 'all' | 'registered' | 'not_registered'
@@ -23,14 +24,59 @@ function matchesFilter(person: TrainingRuknProgressPerson, filter: ProgressFilte
   return true
 }
 
+function ProgressPeopleList({
+  title,
+  people,
+}: {
+  title: string
+  people: TrainingRuknProgressPerson[]
+}) {
+  return (
+    <section className="mt-4" aria-label={title}>
+      <h3 className="mb-2 text-sm font-semibold text-text-heading">{title}</h3>
+      {people.length === 0 ? (
+        <p className="text-sm text-secondary">No people in this filter.</p>
+      ) : (
+        <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface">
+          {people.map((person) => (
+            <li key={person.karkunId}>
+              <Link
+                to={ruknVisitPath(person.karkunId)}
+                className="flex flex-col gap-1 px-3 py-3 hover:bg-surface-muted sm:grid sm:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_auto] sm:items-center sm:gap-3"
+              >
+                <span className="min-w-0">
+                  <span className="block truncate font-medium text-text-heading">{person.name}</span>
+                  {person.gender || person.category ? (
+                    <span className="block text-xs text-secondary">
+                      {[person.gender, person.category].filter(Boolean).join(' · ')}
+                    </span>
+                  ) : null}
+                </span>
+                <span className="break-all text-sm text-secondary">{person.mobile}</span>
+                <StatusBadge variant={person.registered ? 'success' : 'warning'}>
+                  {person.registered ? 'Registered' : 'Not Registered'}
+                </StatusBadge>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  )
+}
+
 export function TarbiyatiIjtemaRegistrationProgressPage() {
   const ruknId = useRequiredRuknId()
   const { status, progress, error, retry } = useTrainingRuknProgress()
   const [filter, setFilter] = useState<ProgressFilter>('all')
 
-  const visible = useMemo(() => {
+  const visibleKarkuns = useMemo(() => {
     if (!progress) return []
     return progress.karkuns.filter((person) => matchesFilter(person, filter))
+  }, [filter, progress])
+  const visibleMuttafiqeen = useMemo(() => {
+    if (!progress) return []
+    return progress.muttafiqeen.filter((person) => matchesFilter(person, filter))
   }, [filter, progress])
 
   if (!ruknId) {
@@ -80,30 +126,13 @@ export function TarbiyatiIjtemaRegistrationProgressPage() {
                 {progress.ownRegistered ? '✅ Registered' : '❌ Not Registered'}
               </span>
             </p>
-            <dl className="mt-3 grid grid-cols-3 gap-2 text-center">
-              <div className="rounded-lg bg-surface-muted px-2 py-2">
-                <dt className="text-[11px] text-secondary sm:text-xs">Connected Karkuns</dt>
-                <dd className="text-lg font-semibold tabular-nums text-text-heading">
-                  {progress.connectedCount}
-                </dd>
-              </div>
-              <div className="rounded-lg bg-surface-muted px-2 py-2">
-                <dt className="text-[11px] text-secondary sm:text-xs">Registered</dt>
-                <dd className="text-lg font-semibold tabular-nums text-text-heading">
-                  {progress.registeredCount}
-                </dd>
-              </div>
-              <div className="rounded-lg bg-surface-muted px-2 py-2">
-                <dt className="text-[11px] text-secondary sm:text-xs">Not Registered</dt>
-                <dd className="text-lg font-semibold tabular-nums text-text-heading">
-                  {progress.notRegisteredCount}
-                </dd>
-              </div>
-            </dl>
+            <div className="mt-3">
+              <TrainingRegistrationProgressMetrics progress={progress} />
+            </div>
           </section>
 
-          {progress.connectedCount === 0 ? (
-            <p className="mt-4 text-sm text-secondary">No connected Karkuns yet.</p>
+          {progress.connectedCount === 0 && progress.muttafiqConnectedCount === 0 ? (
+            <p className="mt-4 text-sm text-secondary">No connected Karkuns or Muttafiq yet.</p>
           ) : (
             <>
               <div
@@ -133,34 +162,8 @@ export function TarbiyatiIjtemaRegistrationProgressPage() {
                 })}
               </div>
 
-              <ul className="mt-3 divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface">
-                {visible.map((person) => (
-                  <li key={person.karkunId}>
-                    <Link
-                      to={ruknVisitPath(person.karkunId)}
-                      className="flex flex-col gap-1 px-3 py-3 hover:bg-surface-muted sm:grid sm:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_auto] sm:items-center sm:gap-3"
-                    >
-                      <span className="min-w-0">
-                        <span className="block truncate font-medium text-text-heading">
-                          {person.name}
-                        </span>
-                        {person.gender || person.category ? (
-                          <span className="block text-xs text-secondary">
-                            {[person.gender, person.category].filter(Boolean).join(' · ')}
-                          </span>
-                        ) : null}
-                      </span>
-                      <span className="break-all text-sm text-secondary">{person.mobile}</span>
-                      <StatusBadge variant={person.registered ? 'success' : 'warning'}>
-                        {person.registered ? 'Registered' : 'Not Registered'}
-                      </StatusBadge>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-              {visible.length === 0 ? (
-                <p className="mt-3 text-sm text-secondary">No people in this filter.</p>
-              ) : null}
+              <ProgressPeopleList title="Karkun" people={visibleKarkuns} />
+              <ProgressPeopleList title="Muttafiq" people={visibleMuttafiqeen} />
             </>
           )}
         </>

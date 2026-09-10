@@ -52,6 +52,13 @@ export type AdminTrackingConnection = {
   isArchived?: unknown
 }
 
+export type AdminTrackingMuttafiqRelationship = {
+  ruknId: unknown
+  personId: unknown
+  personName?: unknown
+  status?: unknown
+}
+
 export type AdminTrackingRequest = {
   source?: unknown
   mobile?: unknown
@@ -575,20 +582,47 @@ export type RuknProgressInput = {
   rukn: AdminTrackingRukn | null
   karkuns: AdminTrackingKarkun[]
   connections: AdminTrackingConnection[]
+  muttafiqRelationships?: AdminTrackingMuttafiqRelationship[]
   registrations: TrainingRegistrationRecord[]
 }
 
-function personCategoryLabel(person: {
-  category?: unknown
-  isArchived?: unknown
-  archiveKind?: unknown
-}): TrainingRuknProgressPerson['category'] {
-  return organisationalCategoryFromPerson(person) === 'muttafiq' ? 'Muttafiq' : 'Karkun'
+function lookupRegistration(
+  personId: string,
+  mobile: string,
+  registeredByMobile: Map<string, TrainingRegistrationRecord>,
+  registeredByPersonId: Map<string, TrainingRegistrationRecord>,
+): TrainingRegistrationRecord | undefined {
+  return (mobile ? registeredByMobile.get(mobile) : undefined) ?? registeredByPersonId.get(personId)
+}
+
+function presentProgressPerson(input: {
+  personId: string
+  person: AdminTrackingKarkun | undefined
+  storedName: string
+  category: TrainingRuknProgressPerson['category']
+  registration: TrainingRegistrationRecord | undefined
+}): TrainingRuknProgressPerson {
+  const mobile = normalizeTrainingMobile(String(input.person?.mobile || ''))
+  const name =
+    String(input.person?.name || '').trim() ||
+    input.storedName.trim() ||
+    String(input.registration?.fullName || '').trim() ||
+    input.personId
+  return {
+    karkunId: input.personId,
+    name,
+    mobile,
+    registered: isRegisteredForEvent(input.registration),
+    gender: authoritativeGender(input.person?.gender),
+    category: input.category,
+  }
 }
 
 /**
- * Rukn-facing registration progress. Active connections for this ruknId only.
- * Own registration is separate and never counted as a connected Karkun.
+ * Rukn-facing registration progress.
+ * Karkun counts: Active campaign `connections` for this ruknId, person category Karkun only.
+ * Muttafiq counts: Active `muttafiqRelationships` for this ruknId, person category Muttafiq.
+ * Own registration is separate and never counted as a connected person.
  * Registration membership is independent of payment.
  */
 export function buildTrainingRegistrationRuknProgress(
@@ -605,13 +639,13 @@ export function buildTrainingRegistrationRuknProgress(
   }
 
   const connectedIds: string[] = []
-  const seen = new Set<string>()
+  const seenConnections = new Set<string>()
   for (const connection of input.connections) {
     if (String(connection.ruknId || '') !== input.ruknId) continue
     if (!isActiveConnection(connection)) continue
     const karkunId = String(connection.karkunId || '')
-    if (!karkunId || karkunId === input.ruknId || seen.has(karkunId)) continue
-    seen.add(karkunId)
+    if (!karkunId || karkunId === input.ruknId || seenConnections.has(karkunId)) continue
+    seenConnections.add(karkunId)
     connectedIds.push(karkunId)
   }
 
@@ -619,23 +653,47 @@ export function buildTrainingRegistrationRuknProgress(
   for (const karkunId of connectedIds) {
     const person = karkunById.get(karkunId)
     if (!person || isSoftRemovedPerson(person)) continue
+    if (organisationalCategoryFromPerson(person) !== 'karkun') continue
     const mobile = normalizeTrainingMobile(String(person.mobile || ''))
-    const registration =
-      (mobile ? registeredByMobile.get(mobile) : undefined) ?? registeredByPersonId.get(karkunId)
-    const registered = isRegisteredForEvent(registration)
-    karkuns.push({
-      karkunId,
-      name: String(person.name || '').trim() || String(registration?.fullName || '').trim() || karkunId,
-      mobile,
-      registered,
-      gender: authoritativeGender(person.gender),
-      category: personCategoryLabel(person),
-    })
+    karkuns.push(
+      presentProgressPerson({
+        personId: karkunId,
+        person,
+        storedName: '',
+        category: 'Karkun',
+        registration: lookupRegistration(karkunId, mobile, registeredByMobile, registeredByPersonId),
+      }),
+    )
+  }
+
+  const muttafiqeen: TrainingRuknProgressPerson[] = []
+  const seenMuttafiq = new Set<string>()
+  for (const relationship of input.muttafiqRelationships ?? []) {
+    if (String(relationship.ruknId || '') !== input.ruknId) continue
+    if (String(relationship.status || '') !== 'Active') continue
+    const personId = String(relationship.personId || '')
+    if (!personId || personId === input.ruknId || seenMuttafiq.has(personId)) continue
+    const person = karkunById.get(personId)
+    if (person && isSoftRemovedPerson(person)) continue
+    if (person && organisationalCategoryFromPerson(person) !== 'muttafiq') continue
+    seenMuttafiq.add(personId)
+    const mobile = normalizeTrainingMobile(String(person?.mobile || ''))
+    muttafiqeen.push(
+      presentProgressPerson({
+        personId,
+        person,
+        storedName: String(relationship.personName || ''),
+        category: 'Muttafiq',
+        registration: lookupRegistration(personId, mobile, registeredByMobile, registeredByPersonId),
+      }),
+    )
   }
 
   karkuns.sort((a, b) => a.name.localeCompare(b.name) || a.mobile.localeCompare(b.mobile))
+  muttafiqeen.sort((a, b) => a.name.localeCompare(b.name) || a.mobile.localeCompare(b.mobile))
 
   const registeredCount = karkuns.filter((person) => person.registered).length
+  const muttafiqRegisteredCount = muttafiqeen.filter((person) => person.registered).length
   const ruknMobile = normalizeTrainingMobile(String(input.rukn?.mobile || ''))
   const ownByMobile = ruknMobile ? registeredByMobile.get(ruknMobile) : undefined
   const ownByRuknId = input.registrations.find(
@@ -650,6 +708,10 @@ export function buildTrainingRegistrationRuknProgress(
     registeredCount,
     notRegisteredCount: karkuns.length - registeredCount,
     karkuns,
+    muttafiqConnectedCount: muttafiqeen.length,
+    muttafiqRegisteredCount,
+    muttafiqNotRegisteredCount: muttafiqeen.length - muttafiqRegisteredCount,
+    muttafiqeen,
   })
 }
 
@@ -668,23 +730,36 @@ export const RUKN_PROGRESS_FORBIDDEN_JSON_KEYS = [
   'relatedPeople',
 ] as const
 
+function serializeProgressPeople(
+  rows: TrainingRuknProgressPerson[] | undefined,
+  category: TrainingRuknProgressPerson['category'],
+): TrainingRuknProgressPerson[] {
+  return (rows ?? []).map((person) => ({
+    karkunId: person.karkunId,
+    name: person.name,
+    mobile: person.mobile,
+    registered: person.registered === true,
+    gender: authoritativeGender(person.gender),
+    category,
+  }))
+}
+
 export function serializeTrainingRuknProgress(
   view: TrainingRuknProgressView,
 ): TrainingRuknProgressView {
+  const karkuns = serializeProgressPeople(view.karkuns, 'Karkun')
+  const muttafiqeen = serializeProgressPeople(view.muttafiqeen, 'Muttafiq')
   return {
     eventId: view.eventId,
     ownRegistered: view.ownRegistered === true,
-    connectedCount: view.connectedCount,
-    registeredCount: view.registeredCount,
-    notRegisteredCount: view.notRegisteredCount,
-    karkuns: view.karkuns.map((person) => ({
-      karkunId: person.karkunId,
-      name: person.name,
-      mobile: person.mobile,
-      registered: person.registered === true,
-      gender: authoritativeGender(person.gender),
-      category: person.category === 'Muttafiq' ? 'Muttafiq' : 'Karkun',
-    })),
+    connectedCount: karkuns.length,
+    registeredCount: karkuns.filter((row) => row.registered).length,
+    notRegisteredCount: karkuns.filter((row) => !row.registered).length,
+    karkuns,
+    muttafiqConnectedCount: muttafiqeen.length,
+    muttafiqRegisteredCount: muttafiqeen.filter((row) => row.registered).length,
+    muttafiqNotRegisteredCount: muttafiqeen.filter((row) => !row.registered).length,
+    muttafiqeen,
   }
 }
 

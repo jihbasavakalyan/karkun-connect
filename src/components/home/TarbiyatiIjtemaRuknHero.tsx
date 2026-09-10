@@ -3,17 +3,9 @@ import { JihLogoMark } from '@/components/public-registration/JihLogoMark'
 import { SecondaryButton, Skeleton } from '@/components/ui'
 import { ROUTES } from '@/constants/routes'
 import { useTrainingRuknProgress } from '@/hooks/useTrainingRuknProgress'
+import { TrainingRegistrationProgressMetrics } from '@/components/home/TrainingRegistrationProgressMetrics'
 import { TRAINING_GATHERING_EVENT } from '@/lib/publicRegistration/event'
 import { PUBLIC_TRAINING_REGISTRATION_URL } from '@/lib/publicRegistration/adminTracking'
-
-function Metric({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="rounded-lg border border-border bg-surface-muted px-2 py-2 text-center sm:px-3">
-      <p className="text-[11px] leading-tight text-secondary sm:text-xs">{label}</p>
-      <p className="mt-0.5 text-lg font-semibold tabular-nums text-text-heading">{value}</p>
-    </div>
-  )
-}
 
 function OwnRegistrationStatus({ registered }: { registered: boolean }) {
   return (
@@ -83,13 +75,9 @@ export function TarbiyatiIjtemaRuknHero() {
         {status === 'ready' && progress ? (
           <>
             <OwnRegistrationStatus registered={progress.ownRegistered} />
-            <div className="grid grid-cols-3 gap-2">
-              <Metric label="Connected Karkuns" value={progress.connectedCount} />
-              <Metric label="Registered" value={progress.registeredCount} />
-              <Metric label="Not Registered" value={progress.notRegisteredCount} />
-            </div>
-            {progress.connectedCount === 0 ? (
-              <p className="text-sm text-secondary">No connected Karkuns yet.</p>
+            <TrainingRegistrationProgressMetrics progress={progress} />
+            {progress.connectedCount === 0 && progress.muttafiqConnectedCount === 0 ? (
+              <p className="text-sm text-secondary">No connected Karkuns or Muttafiq yet.</p>
             ) : null}
             <Link
               to={ROUTES.RUKN_TARBIYATI_IJTEMA}

@@ -578,13 +578,16 @@ function testRuknScopeAndRegistration(): void {
 
 function testRuknHeroContract(): void {
   const hero = read('src/components/home/TarbiyatiIjtemaRuknHero.tsx')
+  const metrics = read('src/components/home/TrainingRegistrationProgressMetrics.tsx')
   assert(hero.includes('/branding/jih-official-logo.png') || hero.includes('JihLogoMark'), 'official logo reused')
   assert(hero.includes('Register for Tarbiyati Ijtema'), 'CTA exists')
   assert(hero.includes('View Registration Progress'), 'progress detail CTA')
-  assert(hero.includes('Connected Karkuns'), 'connected count label')
-  assert(hero.includes('Not Registered'), 'not registered count')
+  assert(hero.includes('TrainingRegistrationProgressMetrics'), 'hero uses category-separated metrics')
+  assert(metrics.includes('Connected Karkuns'), 'connected Karkun count label')
+  assert(metrics.includes('Connected Muttafiq'), 'connected Muttafiq count label')
+  assert(metrics.includes('Not Registered'), 'not registered count')
   assert(hero.includes('My Registration'), 'own registration is separate')
-  assert(hero.includes('No connected Karkuns yet.'), 'empty connected state')
+  assert(hero.includes('No connected Karkuns or Muttafiq yet.'), 'empty connected state')
   assert(hero.includes('Retry'), 'error retry')
   assert(!hero.includes('Cash Pending'), 'hero has no cash pending')
   assert(!hero.includes('UPI Pending'), 'hero has no upi pending')
@@ -1225,6 +1228,11 @@ function testRuknDashboardRegistrationProgress(): void {
       { ruknId: 'r-1', karkunId: 'k-inactive', status: 'Inactive' },
       { ruknId: 'r-2', karkunId: 'k-other', status: 'Active' },
     ],
+    muttafiqRelationships: [
+      { ruknId: 'r-1', personId: 'k-2', personName: 'Paid Cash Karkun', status: 'Active' },
+      { ruknId: 'r-1', personId: 'k-8', personName: 'Open Four', status: 'Active' },
+      { ruknId: 'r-1', personId: 'k-ended', personName: 'Ended Muttafiq', status: 'Ended' },
+    ],
     registrations: [
       ownRuknReg,
       cashPending,
@@ -1239,26 +1247,34 @@ function testRuknDashboardRegistrationProgress(): void {
 
   const progress = buildTrainingRegistrationRuknProgress(input)
   assert(progress.ownRegistered === true, '1 rukn sees own registration status')
-  assert(progress.connectedCount === 8, '2 connected karkun count')
-  assert(progress.registeredCount === 4, '3 registered count is payment-independent')
-  assert(progress.notRegisteredCount === 4, '4 not registered count')
+  assert(progress.connectedCount === 6, '2 connected Karkun count excludes Muttafiq')
+  assert(progress.registeredCount === 3, '3 registered Karkun count is payment-independent')
+  assert(progress.notRegisteredCount === 3, '4 not registered Karkun count')
   assert(
     progress.registeredCount + progress.notRegisteredCount === progress.connectedCount,
-    '5 registered + not registered = connected',
+    '5 registered + not registered = connected Karkuns',
   )
+  assert(progress.muttafiqConnectedCount === 2, 'Muttafiq connected from relationships only')
+  assert(progress.muttafiqRegisteredCount === 1, 'registered Muttafiq counted separately')
+  assert(progress.muttafiqNotRegisteredCount === 1, 'not registered Muttafiq counted separately')
+  assert(progress.karkuns.every((row) => row.category === 'Karkun'), 'Karkun list is Karkun-only')
+  assert(progress.muttafiqeen.every((row) => row.category === 'Muttafiq'), 'Muttafiq list is Muttafiq-only')
+  assert(!progress.karkuns.some((row) => row.karkunId === 'k-2' || row.karkunId === 'k-8'), 'Muttafiq not mixed into Karkun counts')
   assert(progress.karkuns.find((row) => row.karkunId === 'k-1')?.registered === true, '7 cash pending still registered')
-  assert(progress.karkuns.find((row) => row.karkunId === 'k-2')?.registered === true, '9 paid cash still registered')
+  assert(progress.muttafiqeen.find((row) => row.karkunId === 'k-2')?.registered === true, '9 paid cash Muttafiq still registered')
   assert(progress.karkuns.find((row) => row.karkunId === 'k-3')?.registered === true, '8 upi pending still registered')
   assert(progress.karkuns.find((row) => row.karkunId === 'k-4')?.registered === true, '10 paid upi still registered')
   assert(
-    ['k-5', 'k-6', 'k-7', 'k-8'].every((id) => progress.karkuns.find((row) => row.karkunId === id)?.registered === false),
-    '6 payment does not invent registration; open people stay not registered',
+    ['k-5', 'k-6', 'k-7'].every((id) => progress.karkuns.find((row) => row.karkunId === id)?.registered === false),
+    '6 payment does not invent registration; open Karkuns stay not registered',
   )
+  assert(progress.muttafiqeen.find((row) => row.karkunId === 'k-8')?.registered === false, 'open Muttafiq stays not registered')
+  assert(!progress.muttafiqeen.some((row) => row.karkunId === 'k-ended'), 'Ended relationship excluded')
   assert(!progress.karkuns.some((row) => row.karkunId === 'k-unrelated'), '11 unrelated karkuns excluded')
   assert(!progress.karkuns.some((row) => row.karkunId === 'k-inactive'), '12 inactive connections excluded')
   assert(!progress.karkuns.some((row) => row.karkunId === 'r-1' || row.mobile === '9000000000'), '13 own registration not counted as connected')
   assert(!progress.karkuns.some((row) => row.karkunId === 'k-other'), '14 cannot see another rukn karkuns')
-  assert(progress.karkuns.length === 8, '15 complete dataset is not returned; only scoped people')
+  assert(progress.karkuns.length === 6, '15 complete dataset is not returned; only scoped Karkuns')
   const leaked = forbiddenFieldsInRuknProgress(progress)
   assert(leaked.length === 0, `16 payment/admin fields not exposed: ${leaked.join(', ')}`)
 
@@ -1269,17 +1285,73 @@ function testRuknDashboardRegistrationProgress(): void {
   })
   assert(otherProgress.connectedCount === 1, 'other rukn only sees own connection')
   assert(otherProgress.karkuns[0]?.karkunId === 'k-other', 'other rukn scoped to own karkun')
+  assert(otherProgress.muttafiqConnectedCount === 0, 'other rukn does not inherit first rukn Muttafiq without own Active category match')
   assert(!otherProgress.karkuns.some((row) => row.karkunId === 'k-1'), '14 other rukn cannot access first rukn karkuns')
+  assert(!otherProgress.muttafiqeen.some((row) => row.karkunId === 'k-2'), 'other rukn cannot see first rukn Muttafiq as Karkun or mix')
 
   const empty = buildTrainingRegistrationRuknProgress({
     ruknId: 'r-empty',
     rukn: { id: 'r-empty', name: 'Empty Rukn', status: 'active', mobile: '9000000011' },
     karkuns: [],
     connections: [],
+    muttafiqRelationships: [],
     registrations: [],
   })
   assert(empty.connectedCount === 0 && empty.registeredCount === 0 && empty.notRegisteredCount === 0, 'empty connected is zero')
+  assert(empty.muttafiqConnectedCount === 0 && empty.muttafiqRegisteredCount === 0, 'empty Muttafiq is zero')
   assert(empty.ownRegistered === false, 'empty rukn own status still computed')
+
+  const karkunOnly = buildTrainingRegistrationRuknProgress({
+    ruknId: 'r-a',
+    rukn: { id: 'r-a', name: 'A', status: 'active', mobile: '9000000100' },
+    karkuns: [{ id: 'ka', name: 'Only Karkun', mobile: '9000000101', gender: 'Male', category: 'Karkun' }],
+    connections: [{ ruknId: 'r-a', karkunId: 'ka', status: 'Active' }],
+    muttafiqRelationships: [],
+    registrations: [],
+  })
+  assert(karkunOnly.connectedCount === 1 && karkunOnly.muttafiqConnectedCount === 0, 'A: Karkun only')
+
+  const muttafiqOnly = buildTrainingRegistrationRuknProgress({
+    ruknId: 'r-b',
+    rukn: { id: 'r-b', name: 'B', status: 'active', mobile: '9000000200' },
+    karkuns: [{ id: 'mb', name: 'Only Muttafiq', mobile: '9000000201', gender: 'Female', category: 'Muttafiq' }],
+    connections: [],
+    muttafiqRelationships: [{ ruknId: 'r-b', personId: 'mb', personName: 'Only Muttafiq', status: 'Active' }],
+    registrations: [
+      sampleRegistration({
+        id: formatRegistrationId('9000000201'),
+        personId: 'mb',
+        verifiedMobile: '9000000201',
+        fullName: 'Only Muttafiq',
+        paymentStatus: 'cash_pending',
+      }),
+    ],
+  })
+  assert(muttafiqOnly.connectedCount === 0 && muttafiqOnly.muttafiqConnectedCount === 1, 'B: Muttafiq only')
+  assert(muttafiqOnly.muttafiqRegisteredCount === 1 && muttafiqOnly.registeredCount === 0, 'B: Muttafiq registration is not a Karkun registration')
+
+  const mixed = buildTrainingRegistrationRuknProgress({
+    ruknId: 'r-c',
+    rukn: { id: 'r-c', name: 'C', status: 'active', mobile: '9000000300' },
+    karkuns: [
+      { id: 'kc', name: 'Mix Karkun', mobile: '9000000301', gender: 'Male', category: 'Karkun' },
+      { id: 'mc', name: 'Mix Muttafiq', mobile: '9000000302', gender: 'Female', category: 'Muttafiq' },
+    ],
+    connections: [{ ruknId: 'r-c', karkunId: 'kc', status: 'Active' }],
+    muttafiqRelationships: [{ ruknId: 'r-c', personId: 'mc', personName: 'Mix Muttafiq', status: 'Active' }],
+    registrations: [],
+  })
+  assert(mixed.connectedCount === 1 && mixed.muttafiqConnectedCount === 1, 'C: Karkun + Muttafiq stay separate')
+
+  const noEligibleMuttafiq = buildTrainingRegistrationRuknProgress({
+    ruknId: 'r-e',
+    rukn: { id: 'r-e', name: 'E', status: 'active', mobile: '9000000400' },
+    karkuns: [{ id: 'ke', name: 'Still Karkun', mobile: '9000000401', gender: 'Male', category: 'Karkun' }],
+    connections: [{ ruknId: 'r-e', karkunId: 'ke', status: 'Active' }],
+    muttafiqRelationships: [{ ruknId: 'r-e', personId: 'ke', personName: 'Wrong category', status: 'Active' }],
+    registrations: [],
+  })
+  assert(noEligibleMuttafiq.connectedCount === 1 && noEligibleMuttafiq.muttafiqConnectedCount === 0, 'E: Karkun person is not counted as Muttafiq')
 
   const handler = read('src/server/trainingRegistration/handler.ts')
   const ruknFn = handler.slice(
@@ -1287,6 +1359,7 @@ function testRuknDashboardRegistrationProgress(): void {
     handler.indexOf('async function publicPaymentOptions'),
   )
   assert(ruknFn.includes("where('ruknId', '==', ruknId)"), 'server queries only this rukn connections')
+  assert(ruknFn.includes("collection(MUTTAFIQ_RELATIONSHIPS)"), 'server loads dedicated Muttafiq relationships')
   assert(ruknFn.includes('identity.ruknId'), 'does not accept client ruknId')
   assert(!ruknFn.includes('body.ruknId'), 'does not read ruknId from request body')
   assert(!ruknFn.includes('loadAdminView'), 'does not load full admin view')
@@ -1305,6 +1378,9 @@ function testRuknDashboardRegistrationProgress(): void {
   assert(page.includes('existing_rukn'), '19 public rukn registration remains')
   assert(page.includes('UTR / Transaction Reference Number'), '19 public UTR remains')
   const detail = read('src/pages/rukn/TarbiyatiIjtemaRegistrationProgressPage.tsx')
+  assert(detail.includes('TrainingRegistrationProgressMetrics'), 'detail uses category-separated metrics')
+  assert(detail.includes('title="Karkun"'), 'detail lists Karkuns separately')
+  assert(detail.includes('title="Muttafiq"'), 'detail lists Muttafiq separately')
   assert(detail.includes('All'), 'filter all')
   assert(detail.includes('Not Registered'), 'filter not registered')
   assert(!detail.includes('Cash Pending'), 'detail has no payment queues')
