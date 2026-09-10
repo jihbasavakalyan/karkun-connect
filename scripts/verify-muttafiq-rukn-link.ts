@@ -6,6 +6,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import {
   muttafiqRuknRelationshipId,
+  type MuttafiqRuknRelationship,
 } from '@/types/muttafiqRelationship.types'
 import {
   getRepositories,
@@ -16,8 +17,12 @@ import {
   clearMuttafiqRelationshipStore,
   getActiveMuttafiqRelationshipsByPersonId,
   getActiveMuttafiqRelationshipsForPerson,
+  getActiveMuttafiqRelationshipsForRukn,
+  getConnectedMuttafiqDisplayRowsForRukn,
+  getRuknHomeMuttafiqRows,
   reloadMuttafiqRelationshipStoreFromPersistence,
 } from '@/stores/muttafiqRelationshipStore'
+import { buildRuknOrganisationalInformation } from '@/lib/rukn/ruknOrganisationalInformation'
 import {
   clearKarkunRequestStore,
   getAllKarkunRequests,
@@ -130,6 +135,21 @@ console.log('verify-muttafiq-rukn-link: start')
   const ruknDetail = read('src/pages/admin/RuknDetailPage.tsx')
   assert(ruknDetail.includes('getConnectedMuttafiqDisplayRowsForRukn'), 'rukn detail lists Muttafiq from relationships')
   assert(ruknDetail.includes('MuttafiqRuknConnectionRow'), 'rukn detail renders Muttafiq names')
+
+  const ruknHome = read('src/pages/rukn/RuknHomePage.tsx')
+  assert(ruknHome.includes('RuknHomeMuttafiqConnections'), 'Rukn Home lists connected Muttafiq')
+  const homeList = read('src/components/rukn/RuknHomeMuttafiqConnections.tsx')
+  assert(homeList.includes('getRuknHomeMuttafiqRows'), 'Home list reads dedicated relationships')
+  assert(homeList.includes('useMuttafiqRelationshipStore'), 'Home list re-renders on relationship hydrate')
+  assert(!homeList.includes('getConnectedKarkunsForRukn'), 'Home Muttafiq list is not campaign connections')
+  const orgInfo = read('src/lib/rukn/ruknOrganisationalInformation.ts')
+  assert(orgInfo.includes('getActiveMuttafiqRelationshipsForRukn'), 'org metric counts muttafiqRelationships')
+  assert(
+    orgInfo.includes('muttafiqeen: getActiveMuttafiqRelationshipsForRukn(ruknId).length'),
+    'org Muttafiq count is relationship length, not a hardcoded empty value',
+  )
+  const orgCard = read('src/components/rukn/RuknHomeOrganisationalInformation.tsx')
+  assert(orgCard.includes('useMuttafiqRelationshipStore'), 'org card re-renders on relationship hydrate')
 
   const eligibility = read('src/lib/peopleClassification.ts')
   assert(
@@ -427,6 +447,135 @@ const personId = muttafiqCreate.karkunId!
   })
   assert(!blocked.ok, 'cannot link a Karkun via muttafiq_rukn_link')
   console.log('  OK  unauthorized person category blocked')
+}
+
+{
+  const otherRukn = ruknMaster.find((row) => row.id !== rukn!.id)
+  assert(otherRukn, 'second rukn for Home scoping')
+  const scopedPerson = createMuttafiq(
+    {
+      name: 'Home Scope Muttafiq B',
+      gender: 'Male',
+      mobile: '9111000055',
+      place: DEFAULT_PLACE,
+      status: 'active',
+    },
+    'verify',
+    { requireNewPersonIntake: false },
+  )
+  assert(scopedPerson.success && scopedPerson.karkunId, 'second rukn muttafiq')
+  const scopedAssign = await assignMuttafiqRuknLinkAsAdmin({
+    personId: scopedPerson.karkunId!,
+    ruknId: otherRukn!.id,
+    establishedBy: 'Administrator',
+  })
+  assert(scopedAssign.ok, 'second rukn relationship')
+  reloadMuttafiqRelationshipStoreFromPersistence()
+
+  const homeA = getRuknHomeMuttafiqRows(rukn!.id)
+  const homeB = getRuknHomeMuttafiqRows(otherRukn!.id)
+  assert(
+    homeA.some((row) => row.counterpartId === personId),
+    'Rukn Home A shows Muttafiq A',
+  )
+  assert(
+    !homeA.some((row) => row.counterpartId === scopedPerson.karkunId),
+    'Rukn Home A does not show Muttafiq B',
+  )
+  assert(
+    homeB.some((row) => row.counterpartId === scopedPerson.karkunId),
+    'Rukn Home B shows Muttafiq B',
+  )
+  assert(
+    !homeB.some((row) => row.counterpartId === personId),
+    'Rukn Home B does not show Muttafiq A',
+  )
+  assert(
+    getActiveMuttafiqRelationshipsForRukn(rukn!.id).every((row) => row.status === 'Active'),
+    'Home query is Active-only',
+  )
+
+  const orgA = buildRuknOrganisationalInformation(rukn!.id, {
+    peopleReady: true,
+    programmesReady: false,
+  })
+  const orgB = buildRuknOrganisationalInformation(otherRukn!.id, {
+    peopleReady: true,
+    programmesReady: false,
+  })
+  assert(orgA.people.muttafiqeen === homeA.length, 'org metric matches Home list for Rukn A')
+  assert(orgB.people.muttafiqeen === homeB.length, 'org metric matches Home list for Rukn B')
+
+  const pendingPerson = createMuttafiq(
+    {
+      name: 'Pending Home Muttafiq',
+      gender: 'Female',
+      mobile: '9111000044',
+      place: DEFAULT_PLACE,
+      status: 'active',
+    },
+    'verify',
+    { requireNewPersonIntake: false },
+  )
+  assert(pendingPerson.success && pendingPerson.karkunId, 'pending home muttafiq')
+  const pending = await submitMuttafiqRuknLinkRequest({
+    personId: pendingPerson.karkunId!,
+    requestingRuknId: rukn!.id,
+  })
+  assert(pending.ok, 'pending submit for Home negative')
+  reloadMuttafiqRelationshipStoreFromPersistence()
+  assert(
+    !getRuknHomeMuttafiqRows(rukn!.id).some((row) => row.counterpartId === pendingPerson.karkunId),
+    'pending Inbox link does not appear on Rukn Home',
+  )
+
+  const now = new Date().toISOString()
+  const endedId = muttafiqRuknRelationshipId(rukn!.id, 'kr-home-ended')
+  const missingId = muttafiqRuknRelationshipId(rukn!.id, 'kr-home-uncached')
+  const extra: MuttafiqRuknRelationship[] = [
+    {
+      id: endedId,
+      ruknId: rukn!.id,
+      ruknName: rukn!.name,
+      personId: 'kr-home-ended',
+      personName: 'Ended Muttafiq',
+      status: 'Ended',
+      createdAt: now,
+      updatedAt: now,
+      establishedBy: 'Administrator',
+    },
+    {
+      id: missingId,
+      ruknId: rukn!.id,
+      ruknName: rukn!.name,
+      personId: 'kr-home-uncached',
+      personName: 'Uncached Muttafiq Name',
+      status: 'Active',
+      createdAt: now,
+      updatedAt: now,
+      establishedBy: 'Administrator',
+    },
+  ]
+  const repos = getRepositories()
+  const existing = repos.muttafiqRelationship.loadAll()
+  assert(existing.ok, 'load relationships for Home extras')
+  repos.muttafiqRelationship.saveAll([...existing.data, ...extra])
+  reloadMuttafiqRelationshipStoreFromPersistence()
+  const homeWithExtras = getRuknHomeMuttafiqRows(rukn!.id)
+  assert(
+    !homeWithExtras.some((row) => row.counterpartId === 'kr-home-ended'),
+    'Ended relationship stays off Rukn Home',
+  )
+  const uncached = homeWithExtras.find((row) => row.counterpartId === 'kr-home-uncached')
+  assert(uncached, 'Home still shows Active Muttafiq when person doc is not in cache')
+  assert(uncached.counterpartName === 'Uncached Muttafiq Name', 'Home uses stored Muttafiq name')
+  assert(
+    !getConnectedMuttafiqDisplayRowsForRukn(rukn!.id).some(
+      (row) => row.counterpartId === 'kr-home-uncached',
+    ),
+    'Admin display still requires a person record; Home does not drop it',
+  )
+  console.log('  OK  Rukn Home reads Active muttafiqRelationships with Rukn scoping')
 }
 
 console.log('verify-muttafiq-rukn-link: OK')

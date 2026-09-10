@@ -2,14 +2,17 @@
  * In-memory Rukn ↔ Muttafiq relationship store (reload from repository cache).
  */
 
+import { getKarkunById } from '@/constants/mockKarkunRegistry'
 import type { MuttafiqRuknRelationship } from '@/types/muttafiqRelationship.types'
 import type { MuttafiqConnectionView } from '@/lib/connections/muttafiqConnectionView'
 import {
   presentActiveMuttafiqRowsForRukn,
+  presentConnectedMuttafiqRow,
   presentConnectedRuknRow,
   presentMuttafiqConnectionViewWithLiveNames,
   type MuttafiqRuknConnectionDisplayRow,
 } from '@/lib/connections/muttafiqRelationshipDisplay'
+import { isSoftRemoved } from '@/lib/peopleClassification'
 import { getRepositories } from '@/repositories/provider'
 import { unwrapRepository } from '@/repositories/errors'
 
@@ -68,6 +71,20 @@ export function getConnectedMuttafiqDisplayRowsForRukn(
   ruknId: string,
 ): MuttafiqRuknConnectionDisplayRow[] {
   return presentActiveMuttafiqRowsForRukn(getActiveMuttafiqRelationshipsForRukn(ruknId))
+}
+
+/**
+ * Rukn Home list: Active `muttafiqRelationships` for this Rukn.
+ * Uses stored personName when the Muttafiq person doc is not in the Rukn cache
+ * (Rukn cannot read unassigned Muttafiq karkun documents).
+ */
+export function getRuknHomeMuttafiqRows(ruknId: string): MuttafiqRuknConnectionDisplayRow[] {
+  return getActiveMuttafiqRelationshipsForRukn(ruknId)
+    .filter((row) => {
+      const person = getKarkunById(row.personId)
+      return !person || !isSoftRemoved(person)
+    })
+    .map((row) => presentConnectedMuttafiqRow(row))
 }
 
 export function getMuttafiqConnectedRuknDisplayForPerson(

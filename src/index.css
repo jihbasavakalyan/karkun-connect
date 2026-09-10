@@ -5970,6 +5970,60 @@ html[data-theme='dark'] {
 }
 
 .rukn-home-karkun-action-hint {
+  display: block;
+  font-size: 0.7rem;
+  color: var(--color-secondary);
+}
+
+.rukn-home-muttafiq-empty {
+  margin: 0.45rem 0 0;
+  font-size: 0.85rem;
+  color: var(--color-secondary);
+}
+
+.rukn-home-muttafiq-list {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0.55rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rukn-home-muttafiq-item {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  border: 1px solid color-mix(in srgb, var(--color-kc-shell) 12%, var(--color-border));
+  border-radius: 0.5rem;
+  padding: 0.45rem 0.55rem;
+}
+
+.rukn-home-muttafiq-initials {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, #d97706 22%, transparent);
+  font-size: 0.72rem;
+  font-weight: 650;
+}
+
+.rukn-home-muttafiq-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.rukn-home-muttafiq-name {
+  font-weight: 650;
+  color: var(--color-kc-shell-ink);
+}
+
+.rukn-home-muttafiq-id {
+  font-size: 0.72rem;
+  color: var(--color-secondary);
+}
   font-size: 0.72rem;
   color: var(--color-secondary);
   overflow: hidden;

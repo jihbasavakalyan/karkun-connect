@@ -4,6 +4,7 @@ import {
 } from '@/lib/rukn/ruknOrganisationalInformation'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { usePeopleStore } from '@/hooks/usePeopleStore'
+import { useMuttafiqRelationshipStore } from '@/hooks/useMuttafiqRelationshipStore'
 import { RuknHomeOrgMetric } from '@/components/rukn/RuknHomeOrgMetric'
 
 type RuknHomeOrganisationalInformationProps = {
@@ -21,8 +22,10 @@ export function RuknHomeOrganisationalInformation({
   peopleReady,
 }: RuknHomeOrganisationalInformationProps) {
   const peopleVersion = usePeopleStore()
+  const relationshipVersion = useMuttafiqRelationshipStore()
   const { assignmentVersion } = useAssignmentEngine()
   void peopleVersion
+  void relationshipVersion
   void assignmentVersion
 
   const info = buildRuknOrganisationalInformation(ruknId, {
@@ -47,7 +50,7 @@ export function RuknHomeOrganisationalInformation({
           value={formatRuknOrgMetric(info.people.karkuns)}
           hint="منسلک"
         />
-        <RuknHomeOrgMetric label="متفقین" value={formatRuknOrgMetric(info.people.muttafiqeen)} />
+        <RuknHomeOrgMetric label="متفقین" value={formatRuknOrgMetric(info.people.muttafiqeen)} hint="منسلک" />
         <RuknHomeOrgMetric label="باہمی ربط" value={formatRuknOrgMetric(info.people.connections)} />
       </ul>
     </section>
