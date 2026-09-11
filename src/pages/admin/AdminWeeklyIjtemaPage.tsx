@@ -2,6 +2,7 @@
  * KC-0107 — Admin Weekly Ijtema Management.
  * KC-0113.2 — Deduped meeting cards; Edit/Delete reuse create form + cascade delete.
  * KC-028C — Automatic windows; reopen requires reason + duration (audit log).
+ * Increment 11 — presentation/UX only; canonical event/cycle path unchanged.
  */
 
 import { useEffect, useMemo, useState } from 'react'
@@ -16,7 +17,10 @@ import { ROUTES } from '@/constants/routes'
 import { useAuth } from '@/hooks/useAuth'
 import { useBusyAction } from '@/hooks/useBusyAction'
 import { ensureWeeklyIjtemaAttendanceWindows } from '@/lib/weeklyIjtema/attendanceWindowEngine'
-import { getAttendanceWindowSchedule } from '@/lib/weeklyIjtema/attendanceWindowSchedule'
+import {
+  getAttendanceWindowSchedule,
+  isWithinAttendanceWindow,
+} from '@/lib/weeklyIjtema/attendanceWindowSchedule'
 import {
   formatWeeklyIjtemaAudienceLabel,
   uniqueWeeklyIjtemaMeetingsForDisplay,
@@ -26,6 +30,8 @@ import {
   createWeeklyIjtemaEvent,
   deleteWeeklyIjtemaEvent,
   getWeeklyIjtemaEventById,
+  getWeeklyIjtemaReport,
+  listOpenWeeklyIjtemaEvents,
   listWeeklyIjtemaEvents,
   openWeeklyIjtemaAttendance,
   reopenWeeklyIjtemaAttendance,
@@ -39,6 +45,8 @@ import {
   type WeeklyIjtemaEvent,
   type WeeklyIjtemaEventStatus,
 } from '@/types/weeklyIjtema'
+
+const WEEKDAY_LABEL = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
 function todayDate(): string {
   return new Date().toISOString().slice(0, 10)
@@ -68,10 +76,21 @@ function isSuccessMessage(message: string): boolean {
   )
 }
 
+function formatDeadline(iso: string): string {
+  return new Date(iso).toLocaleString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'Asia/Karachi',
+  })
+}
+
 export function AdminWeeklyIjtemaPage() {
   const { user } = useAuth()
   const [version, setVersion] = useState(0)
   const [editingEventId, setEditingEventId] = useState<string | null>(null)
+  const [focusEventId, setFocusEventId] = useState<string | null>(null)
   const [meetingDate, setMeetingDate] = useState(todayDate)
   const [title, setTitle] = useState(defaultWeeklyIjtemaTitle())
   const [status, setStatus] = useState<WeeklyIjtemaEventStatus>('Open')
@@ -98,6 +117,35 @@ export function AdminWeeklyIjtemaPage() {
     return uniqueWeeklyIjtemaMeetingsForDisplay(listWeeklyIjtemaEvents())
   }, [version])
 
+  const windowRows = useMemo(() => {
+    void version
+    const now = new Date()
+    return schedule.entries.map((entry) => {
+      const within = isWithinAttendanceWindow(entry, now, schedule.timezone)
+      const openEvents = listOpenWeeklyIjtemaEvents({ audienceGender: entry.audienceGender })
+      const openEvent = openEvents[0]
+      return {
+        entry,
+        within,
+        open: Boolean(openEvent),
+        meeting: openEvent,
+      }
+    })
+  }, [schedule, version])
+
+  const focusEvent = useMemo(() => {
+    if (focusEventId) {
+      return events.find((event) => event.id === focusEventId) ?? null
+    }
+    return events.find((event) => event.status === 'Open') ?? events[0] ?? null
+  }, [events, focusEventId])
+
+  const focusReport = useMemo(() => {
+    void version
+    if (!focusEvent) return null
+    return getWeeklyIjtemaReport(focusEvent.id)
+  }, [focusEvent, version])
+
   const actor = user?.displayName ?? user?.uid ?? 'Administrator'
   const isEditing = Boolean(editingEventId)
 
@@ -112,12 +160,12 @@ export function AdminWeeklyIjtemaPage() {
 
   const startEdit = (event: WeeklyIjtemaEvent) => {
     setEditingEventId(event.id)
+    setFocusEventId(event.id)
     setMeetingDate(event.meetingDate)
     setTitle(event.title)
     setStatus(event.status)
     setDeadlineLocal(toDatetimeLocalValue(event.submissionDeadline))
     setMessage('')
-    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   const startEditById = (eventId: string, notice?: string) => {
@@ -257,159 +305,139 @@ export function AdminWeeklyIjtemaPage() {
   }
 
   return (
-    <PageShell>
+    <PageShell className="app-screen">
       <PageHeader
         title="Weekly Ijtema"
-        description="Attendance windows open automatically from the configured schedule. Use this page for corrections, reports, and late reopen."
+        description="Attendance windows open automatically on the scheduled day in Asia/Karachi. Use this page to review the current window, meetings, and reports — not to mark individual Karkuns."
         actions={<GenerateCampaignReportButton size="sm" />}
       />
 
-      <section className="rounded-xl border border-border bg-surface-muted p-4 text-sm text-secondary">
-        <p className="font-semibold text-text-heading">Automatic attendance windows</p>
-        <ul className="mt-2 list-disc space-y-1 pl-5">
-          {schedule.entries.map((entry) => (
-            <li key={entry.id}>
-              {entry.label}: day {entry.dayOfWeek} · {entry.openTime}–{entry.closeTime} (
-              {schedule.timezone})
+      <section
+        className="rounded-xl border border-border bg-surface p-4"
+        aria-labelledby="wi-admin-window-title"
+      >
+        <h2 id="wi-admin-window-title" className="text-sm font-semibold text-text-heading">
+          Current attendance window
+        </h2>
+        <p className="mt-1 text-sm text-secondary">Automatic attendance windows · {schedule.timezone}</p>
+        <ul className="mt-3 space-y-2">
+          {windowRows.map((row) => (
+            <li
+              key={row.entry.id}
+              className="flex flex-wrap items-start justify-between gap-2 rounded-lg border border-border bg-surface-muted px-3 py-2"
+            >
+              <div>
+                <p className="font-medium text-text-heading">{row.entry.label}</p>
+                <p className="text-xs text-secondary">
+                  {WEEKDAY_LABEL[row.entry.dayOfWeek] ?? `day ${row.entry.dayOfWeek}`} ·{' '}
+                  {row.entry.openTime}–{row.entry.closeTime} ({schedule.timezone})
+                </p>
+                {row.meeting ? (
+                  <p className="mt-1 text-xs text-secondary">
+                    {row.meeting.title} · {formatWeeklyIjtemaMeetingLabel(row.meeting.meetingDate)}
+                  </p>
+                ) : null}
+              </div>
+              <span className="text-xs font-semibold text-text-heading">
+                {row.open ? 'Open' : row.within ? 'Window (no meeting yet)' : 'Closed'}
+              </span>
             </li>
           ))}
         </ul>
-        <p className="mt-2 text-xs">
-          No weekly Administrator open is required. Manual create remains available for
-          exceptions.
+        <p className="mt-2 text-xs text-secondary">
+          No weekly Administrator open is required. Manual create remains available for exceptions.
         </p>
       </section>
 
-      <section className="mt-4 rounded-xl border border-border bg-surface p-4 shadow-card sm:p-5">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-secondary">
-          {isEditing ? 'Edit Weekly Ijtema' : 'Create Weekly Ijtema'}
-        </h2>
-        <div className="mt-3 grid gap-3 sm:grid-cols-2">
-          <label className="block text-sm">
-            <span className="mb-1 block text-secondary">Meeting Date</span>
-            <input
-              type="date"
-              className="w-full rounded-lg border border-border bg-surface px-3 py-2"
-              value={meetingDate}
-              onChange={(event) => onMeetingDateChange(event.target.value)}
-            />
-          </label>
-          <label className="block text-sm">
-            <span className="mb-1 block text-secondary">Title</span>
-            <input
-              type="text"
-              className="w-full rounded-lg border border-border bg-surface px-3 py-2"
-              value={title}
-              onChange={(event) => setTitle(event.target.value)}
-            />
-          </label>
-          <label className="block text-sm sm:col-span-2">
-            <span className="mb-1 block text-secondary">Submission Deadline</span>
-            <input
-              type="datetime-local"
-              className="w-full rounded-lg border border-border bg-surface px-3 py-2"
-              value={deadlineLocal}
-              onChange={(event) => setDeadlineLocal(event.target.value)}
-            />
-            <span className="mt-1 block text-xs text-secondary">
-              Default is Meeting Date + 24 hours. Auto windows use same-day close time.
-            </span>
-          </label>
-          {isEditing ? (
-            <label className="block text-sm">
-              <span className="mb-1 block text-secondary">Status</span>
-              <select
-                className="w-full rounded-lg border border-border bg-surface px-3 py-2"
-                value={status}
-                onChange={(event) => setStatus(event.target.value as WeeklyIjtemaEventStatus)}
-              >
-                <option value="Open">Open</option>
-                <option value="Closed">Closed</option>
-              </select>
-            </label>
-          ) : null}
-        </div>
-        <div className="mt-4 flex flex-wrap gap-2">
-          <PrimaryButton type="button" onClick={handleSubmit} disabled={busy} loading={busy}>
-            {isEditing ? 'Save Changes' : 'Create & Open Attendance'}
-          </PrimaryButton>
-          {isEditing ? (
-            <SecondaryButton type="button" onClick={resetForm} disabled={busy}>
-              Cancel Edit
-            </SecondaryButton>
-          ) : null}
-        </div>
-      </section>
-
-      {message ? (
-        <p
-          className={`mt-3 text-sm ${isSuccessMessage(message) ? 'text-green-700' : 'text-red-600'}`}
-          role="status"
+      {focusEvent && focusReport ? (
+        <section
+          className="mt-4 rounded-xl border border-border bg-surface p-4"
+          aria-labelledby="wi-admin-summary-title"
         >
-          {message}
-        </p>
+          <h2 id="wi-admin-summary-title" className="text-sm font-semibold text-text-heading">
+            {focusEvent.title}
+          </h2>
+          <p className="mt-1 text-xs text-secondary">
+            {formatWeeklyIjtemaMeetingLabel(focusEvent.meetingDate)} ·{' '}
+            {formatWeeklyIjtemaAudienceLabel(focusEvent)} · {focusEvent.status}
+          </p>
+          <dl className="rukn-home-stat-row mt-3">
+            <div>
+              <dt>Connected</dt>
+              <dd>{focusReport.totalAssigned}</dd>
+            </div>
+            <div>
+              <dt>Invited / Reminded</dt>
+              <dd>{focusReport.remindedTotal}</dd>
+            </div>
+            <div>
+              <dt>Present</dt>
+              <dd>{focusReport.present}</dd>
+            </div>
+            <div>
+              <dt>Absent</dt>
+              <dd>{focusReport.absent}</dd>
+            </div>
+            <div>
+              <dt>Pending</dt>
+              <dd>{focusReport.pendingNotInvited}</dd>
+            </div>
+          </dl>
+          <p className="mt-2 text-xs text-secondary">
+            Attendance {focusReport.attendancePct}% (Present ÷ RemindedTotal)
+          </p>
+        </section>
       ) : null}
 
       <section className="mt-6 space-y-3" aria-label="Weekly Ijtema events">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-secondary">
-          Meetings
-        </h2>
+        <h2 className="text-sm font-semibold text-text-heading">Meetings</h2>
         {events.length === 0 ? (
           <p className="rounded-lg border border-border bg-surface p-4 text-sm text-secondary">
-            No Weekly Ijtema events yet. Windows open automatically on scheduled days, or create
-            one above.
+            No Weekly Ijtema meetings yet. Windows open automatically on scheduled days. Manual
+            create below is only for exceptions.
           </p>
         ) : (
           <ul className="space-y-3">
             {events.map((event) => {
               const lastAudit = event.reopenAudit?.[event.reopenAudit.length - 1]
+              const selected = focusEvent?.id === event.id
               return (
                 <li
                   key={event.id}
-                  className="rounded-xl border border-border bg-surface p-4 shadow-card"
+                  className={[
+                    'rounded-xl border bg-surface p-4',
+                    selected ? 'border-primary' : 'border-border',
+                  ].join(' ')}
                 >
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <p className="font-semibold text-text-heading">{event.title}</p>
-                      <p className="text-sm text-secondary">
-                        {formatWeeklyIjtemaMeetingLabel(event.meetingDate)} · Audience:{' '}
-                        {formatWeeklyIjtemaAudienceLabel(event)}
-                        {event.openedAutomatically ? ' · Auto window' : ''}
-                      </p>
-                      <p className="mt-1 text-xs text-secondary">
-                        Deadline{' '}
-                        {new Date(event.submissionDeadline).toLocaleString('en-GB', {
-                          day: 'numeric',
-                          month: 'short',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
-                      </p>
-                      {lastAudit ? (
-                        <p className="mt-1 text-xs text-secondary">
-                          Last reopen: {lastAudit.by} · {lastAudit.reason} ·{' '}
-                          {lastAudit.durationHours}h ·{' '}
-                          {new Date(lastAudit.at).toLocaleString('en-GB')}
+                  <button
+                    type="button"
+                    className="w-full text-start"
+                    onClick={() => setFocusEventId(event.id)}
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <p className="font-semibold text-text-heading">{event.title}</p>
+                        <p className="text-sm text-secondary">
+                          {formatWeeklyIjtemaMeetingLabel(event.meetingDate)} · Audience:{' '}
+                          {formatWeeklyIjtemaAudienceLabel(event)}
+                          {event.openedAutomatically ? ' · Auto window' : ''}
                         </p>
-                      ) : null}
+                        <p className="mt-1 text-xs text-secondary">
+                          Deadline {formatDeadline(event.submissionDeadline)}
+                        </p>
+                        {lastAudit ? (
+                          <p className="mt-1 text-xs text-secondary">
+                            Last reopen: {lastAudit.by} · {lastAudit.reason} ·{' '}
+                            {lastAudit.durationHours}h ·{' '}
+                            {new Date(lastAudit.at).toLocaleString('en-GB')}
+                          </p>
+                        ) : null}
+                      </div>
+                      <span className="text-xs font-semibold text-text-heading">{event.status}</span>
                     </div>
-                    <span
-                      className={[
-                        'rounded-full px-3 py-1 text-xs font-semibold',
-                        event.status === 'Open'
-                          ? 'bg-emerald-50 text-emerald-800'
-                          : 'bg-slate-100 text-slate-700',
-                      ].join(' ')}
-                    >
-                      {event.status}
-                    </span>
-                  </div>
+                  </button>
                   <div className="mt-3 flex flex-wrap gap-2">
-                    <SecondaryButton
-                      type="button"
-                      onClick={() => startEdit(event)}
-                      disabled={busy}
-                    >
+                    <SecondaryButton type="button" onClick={() => startEdit(event)} disabled={busy}>
                       Edit
                     </SecondaryButton>
                     <SecondaryButton
@@ -440,10 +468,7 @@ export function AdminWeeklyIjtemaPage() {
                         Close Attendance
                       </SecondaryButton>
                     )}
-                    <SecondaryButton
-                      type="button"
-                      onClick={() => setReportEventId(event.id)}
-                    >
+                    <SecondaryButton type="button" onClick={() => setReportEventId(event.id)}>
                       View Attendance Report
                     </SecondaryButton>
                   </div>
@@ -452,6 +477,79 @@ export function AdminWeeklyIjtemaPage() {
             })}
           </ul>
         )}
+      </section>
+
+      {message ? (
+        <p
+          className={`mt-3 text-sm ${isSuccessMessage(message) ? 'text-green-700' : 'text-red-600'}`}
+          role="status"
+        >
+          {message}
+        </p>
+      ) : null}
+
+      <section className="mt-8 rounded-xl border border-border bg-surface-muted p-4 sm:p-5">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-secondary">
+          {isEditing ? 'Edit Weekly Ijtema' : 'Create Weekly Ijtema'}
+        </h2>
+        <p className="mt-1 text-xs text-secondary">
+          Corrections only. Automatic windows already open attendance on the scheduled day.
+        </p>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <label className="block text-sm">
+            <span className="mb-1 block text-secondary">Meeting Date</span>
+            <input
+              type="date"
+              className="w-full min-h-11 rounded-lg border border-border bg-surface px-3 py-2"
+              value={meetingDate}
+              onChange={(event) => onMeetingDateChange(event.target.value)}
+            />
+          </label>
+          <label className="block text-sm">
+            <span className="mb-1 block text-secondary">Title</span>
+            <input
+              type="text"
+              className="w-full min-h-11 rounded-lg border border-border bg-surface px-3 py-2"
+              value={title}
+              onChange={(event) => setTitle(event.target.value)}
+            />
+          </label>
+          <label className="block text-sm sm:col-span-2">
+            <span className="mb-1 block text-secondary">Submission Deadline</span>
+            <input
+              type="datetime-local"
+              className="w-full min-h-11 rounded-lg border border-border bg-surface px-3 py-2"
+              value={deadlineLocal}
+              onChange={(event) => setDeadlineLocal(event.target.value)}
+            />
+            <span className="mt-1 block text-xs text-secondary">
+              Default is Meeting Date + 24 hours. Auto windows use same-day close time.
+            </span>
+          </label>
+          {isEditing ? (
+            <label className="block text-sm">
+              <span className="mb-1 block text-secondary">Status</span>
+              <select
+                className="w-full min-h-11 rounded-lg border border-border bg-surface px-3 py-2"
+                value={status}
+                onChange={(event) => setStatus(event.target.value as WeeklyIjtemaEventStatus)}
+              >
+                <option value="Open">Open</option>
+                <option value="Closed">Closed</option>
+              </select>
+            </label>
+          ) : null}
+        </div>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <PrimaryButton type="button" onClick={handleSubmit} disabled={busy} loading={busy}>
+            {isEditing ? 'Save Changes' : 'Create & Open Attendance'}
+          </PrimaryButton>
+          {isEditing ? (
+            <SecondaryButton type="button" onClick={resetForm} disabled={busy}>
+              Cancel Edit
+            </SecondaryButton>
+          ) : null}
+        </div>
       </section>
 
       <p className="mt-6 text-sm">
@@ -544,7 +642,7 @@ export function AdminWeeklyIjtemaPage() {
               type="number"
               min={1}
               step={1}
-              className="w-full rounded-lg border border-border bg-surface px-3 py-2"
+              className="w-full min-h-11 rounded-lg border border-border bg-surface px-3 py-2"
               value={reopenDurationHours}
               onChange={(event) => setReopenDurationHours(event.target.value)}
             />

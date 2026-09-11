@@ -14,7 +14,10 @@ export function AdminWeeklyIjtemaReportPage() {
 
   return (
     <PageShell>
-      <PageHeader title="Weekly Summary" description="Weekly Ijtema summary" />
+      <PageHeader
+        title="Weekly Summary"
+        description="Canonical Weekly Ijtema attendance for this meeting. Commitment is a separate Matrix record."
+      />
       {eventId ? (
         <WeeklyIjtemaAttendanceReportDetail eventId={eventId} variant="page" />
       ) : (

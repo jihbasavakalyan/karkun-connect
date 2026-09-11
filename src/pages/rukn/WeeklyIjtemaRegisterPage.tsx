@@ -1,14 +1,16 @@
 /**
  * KC-0107 — Rukn Weekly Ijtema attendance (Present / Absent only).
+ * Increment 11 — presentation/UX only; canonical persistence unchanged.
  */
 
 import { useEffect, useMemo, useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
-import { PageShell } from '@/components/ui'
+import { CardSkeleton, PageShell } from '@/components/ui'
 import { ROUTES } from '@/constants/routes'
 import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
 import { useAuth } from '@/hooks/useAuth'
+import { useBackgroundHydration } from '@/hooks/useBackgroundHydration'
 import { useWriteLifecycle } from '@/hooks/useWriteLifecycle'
 import { useRequiredRuknId } from '@/hooks/useRequiredRuknId'
 import { getRuknById } from '@/data/ruknMaster'
@@ -72,14 +74,24 @@ const RUKN_ATTENDANCE_OPTIONS: {
   { value: 'Absent', label: 'Absent', urdu: 'غیر حاضر' },
 ]
 
+function markControlClass(active: boolean, disabled: boolean): string {
+  return [
+    'min-h-11 min-w-[6.5rem] rounded-lg border px-3 text-sm font-semibold',
+    active ? 'border-primary bg-primary/10 text-primary' : 'border-border bg-surface text-text-heading',
+    disabled ? 'opacity-60' : '',
+  ].join(' ')
+}
+
 export function WeeklyIjtemaRegisterPage() {
   const { user } = useAuth()
   const ruknId = useRequiredRuknId()
+  const backgroundReady = useBackgroundHydration()
   const { assignmentVersion } = useAssignmentEngine()
   const [storeVersion, setStoreVersion] = useState(0)
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null)
   const [draft, setDraft] = useState<Record<string, DraftStatus>>({})
   const [draftSeedKey, setDraftSeedKey] = useState('')
+  const [rosterQuery, setRosterQuery] = useState('')
   const [message, setMessage] = useState('')
   const [online, setOnline] = useState(
     typeof navigator === 'undefined' ? true : navigator.onLine,
@@ -169,6 +181,17 @@ export function WeeklyIjtemaRegisterPage() {
     return <Navigate to={ROUTES.LOGIN} replace />
   }
 
+  if (!backgroundReady) {
+    return (
+      <PageShell variant="narrow" className="app-screen">
+        <header className="app-screen-header">
+          <h1 className="app-screen-title">{"Today's Weekly Ijtema Attendance"}</h1>
+        </header>
+        <CardSkeleton count={3} />
+      </PageShell>
+    )
+  }
+
   const rukn = getRuknById(ruknId)
   const unmarkedCount = workspace
     ? workspace.assigned.filter((karkun) => (draft[karkun.id] ?? 'Unmarked') === 'Unmarked').length
@@ -176,6 +199,12 @@ export function WeeklyIjtemaRegisterPage() {
   const allMarked = Boolean(workspace && workspace.assigned.length > 0 && unmarkedCount === 0)
   const canSubmit = Boolean(workspace?.editable && allMarked && online)
   const ruknAttendanceState = resolveWeeklyIjtemaRuknAttendanceState(workspace?.submission)
+  const query = rosterQuery.trim().toLowerCase()
+  const visibleAssigned = workspace
+    ? workspace.assigned.filter((karkun) =>
+        query ? karkun.name.toLowerCase().includes(query) : true,
+      )
+    : []
 
   const setRuknAttendance = (status: 'Present' | 'Absent') => {
     if (!workspace?.editable || !ruknId) return
@@ -246,7 +275,6 @@ export function WeeklyIjtemaRegisterPage() {
       refreshUi: () => setStoreVersion((v) => v + 1),
     }).then((lifecycle) => {
       if (!lifecycle) {
-        // Duplicate click while busy — leave optimistic draft; next mark waits.
         return
       }
       if (!lifecycle.ok) {
@@ -325,13 +353,14 @@ export function WeeklyIjtemaRegisterPage() {
     })
   }
 
+  const controlsDisabled = Boolean(!workspace?.editable || saving || !online)
+
   return (
     <PageShell variant="narrow" className="app-screen">
       <header className="app-screen-header">
         <h1 className="app-screen-title">{"Today's Weekly Ijtema Attendance"}</h1>
         <p className="app-screen-subtitle">
-          Mark your attendance (Invited → Present / Absent), then Reminded, Present, or Absent for
-          connected Karkuns. Committed is a separate Matrix remark — not attendance.
+          Your attendance, then calling/reminder and Present or Absent for connected Karkuns.
         </p>
       </header>
 
@@ -339,7 +368,7 @@ export function WeeklyIjtemaRegisterPage() {
         <label className="mb-3 block text-sm">
           <span className="mb-1 block text-secondary">Meeting</span>
           <select
-            className="w-full rounded-lg border border-border bg-surface px-3 py-2"
+            className="w-full min-h-11 rounded-lg border border-border bg-surface px-3 py-2"
             value={currentEvent?.id ?? ''}
             onChange={(event) => setSelectedEventId(event.target.value || null)}
           >
@@ -354,13 +383,19 @@ export function WeeklyIjtemaRegisterPage() {
 
       {!currentEvent || !workspace ? (
         <p className="rounded-lg border border-border bg-surface p-4 text-sm text-secondary">
-          No open Weekly Ijtema meeting yet. Please wait for Admin to create and open attendance.
+          There is currently no open Weekly Ijtema. Attendance windows open automatically on the
+          scheduled day (Asia/Karachi).
         </p>
       ) : (
         <>
-          <div className="mb-3 rounded-lg border border-border bg-surface px-3 py-3">
-            <p className="font-semibold text-text-heading">{workspace.event.title}</p>
-            <p className="text-sm text-secondary">
+          <section
+            className="app-screen-block mb-3"
+            aria-labelledby="wi-rukn-meeting-title"
+          >
+            <h2 id="wi-rukn-meeting-title" className="app-screen-block-title">
+              {workspace.event.title}
+            </h2>
+            <p className="mt-1 text-sm text-secondary">
               {formatWeeklyIjtemaMeetingLabel(workspace.event.meetingDate)} · {workspace.event.status}
             </p>
             <p className="mt-1 text-xs text-secondary">
@@ -370,17 +405,23 @@ export function WeeklyIjtemaRegisterPage() {
                 month: 'short',
                 hour: '2-digit',
                 minute: '2-digit',
+                timeZone: 'Asia/Karachi',
               })}
             </p>
             {workspace.readOnlyReason ? (
               <p className="mt-2 text-sm text-amber-700">{workspace.readOnlyReason}</p>
             ) : null}
-          </div>
+          </section>
 
-          <div className="mb-4 rounded-lg border border-border bg-surface px-3 py-3">
-            <p className="font-semibold text-text-heading">Your attendance</p>
+          <section
+            className="app-screen-block mb-3"
+            aria-labelledby="wi-rukn-self-title"
+          >
+            <h2 id="wi-rukn-self-title" className="app-screen-block-title">
+              Your attendance
+            </h2>
             <p className="mt-1 text-xs text-secondary">
-              Invited → Present / Absent at this Weekly Ijtema. Not Matrix Committed.
+              Invited → Present / Absent. Not Matrix Committed.
             </p>
             <p className="mt-2 text-sm text-secondary">
               Current:{' '}
@@ -391,14 +432,11 @@ export function WeeklyIjtemaRegisterPage() {
                 <button
                   key={option.value}
                   type="button"
-                  disabled={!workspace.editable || saving || !online}
-                  className={[
-                    'min-h-11 min-w-[6.5rem] rounded-lg border px-3 text-sm font-semibold',
-                    ruknAttendanceState === option.value
-                      ? 'border-primary bg-primary/10 text-primary'
-                      : 'border-border bg-surface text-text-heading',
-                    !workspace.editable ? 'opacity-60' : '',
-                  ].join(' ')}
+                  disabled={controlsDisabled}
+                  className={markControlClass(
+                    ruknAttendanceState === option.value,
+                    controlsDisabled,
+                  )}
                   onClick={() => setRuknAttendance(option.value)}
                 >
                   {option.label}
@@ -408,54 +446,88 @@ export function WeeklyIjtemaRegisterPage() {
                 </button>
               ))}
             </div>
-          </div>
+          </section>
 
-          <p className="mb-3 text-xs text-secondary">
-            {workspace.assigned.length} connected · {unmarkedCount} unmarked
-            {workspace.submission ? ' · previously submitted' : ''}
-          </p>
+          <section
+            className="mb-3"
+            aria-labelledby="wi-rukn-connected-title"
+          >
+            <div className="mb-2 flex flex-wrap items-end justify-between gap-2">
+              <div>
+                <h2 id="wi-rukn-connected-title" className="app-screen-block-title">
+                  Connected Karkuns
+                </h2>
+                <p className="mt-1 text-xs text-secondary">
+                  {workspace.assigned.length} connected · {unmarkedCount} unmarked
+                  {workspace.submission ? ' · previously submitted' : ''}
+                </p>
+              </div>
+            </div>
 
-          {workspace.assigned.length === 0 ? (
-            <p className="rounded-lg border border-border bg-surface p-4 text-sm text-secondary">
-              No connected Karkuns yet. Connect Karkuns to record attendance.
-            </p>
-          ) : (
-            <ul className="space-y-3">
-              {workspace.assigned.map((karkun) => {
-                const status = draft[karkun.id] ?? 'Unmarked'
-                return (
-                  <li
-                    key={karkun.id}
-                    className="rounded-lg border border-border bg-surface px-3 py-3 shadow-card"
-                  >
-                    <p className="font-semibold text-text-heading">{karkun.name}</p>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {STATUS_OPTIONS.map((option) => (
-                        <button
-                          key={option.value}
-                          type="button"
-                          disabled={!workspace.editable || saving || !online}
-                          className={[
-                            'min-h-11 min-w-[6.5rem] rounded-lg border px-3 text-sm font-semibold',
-                            status === option.value
-                              ? 'border-primary bg-primary/10 text-primary'
-                              : 'border-border bg-surface text-text-heading',
-                            !workspace.editable ? 'opacity-60' : '',
-                          ].join(' ')}
-                          onClick={() => setStatus(karkun.id, option.value)}
-                        >
-                          {option.label}
-                          <span className="mt-0.5 block text-[0.7rem] font-normal opacity-80">
-                            {option.urdu}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  </li>
-                )
-              })}
-            </ul>
-          )}
+            {workspace.assigned.length > 0 ? (
+              <label className="mb-3 block text-sm">
+                <span className="mb-1 block text-secondary">Find connected Karkun</span>
+                <input
+                  type="search"
+                  value={rosterQuery}
+                  onChange={(event) => setRosterQuery(event.target.value)}
+                  className="w-full min-h-11 rounded-lg border border-border bg-surface px-3 py-2"
+                  placeholder="Search by name"
+                  autoComplete="off"
+                />
+              </label>
+            ) : null}
+
+            {workspace.assigned.length === 0 ? (
+              <p className="rounded-lg border border-border bg-surface p-4 text-sm text-secondary">
+                No connected Karkuns yet. Connect Karkuns to record attendance. This is not the same
+                as “no open Weekly Ijtema”.
+              </p>
+            ) : visibleAssigned.length === 0 ? (
+              <p className="rounded-lg border border-border bg-surface p-4 text-sm text-secondary">
+                No connected Karkun matches this search. Eligibility is unchanged — every connected
+                Karkun still needs a mark before submit.
+              </p>
+            ) : (
+              <ul className="space-y-2">
+                {visibleAssigned.map((karkun) => {
+                  const status = draft[karkun.id] ?? 'Unmarked'
+                  return (
+                    <li
+                      key={karkun.id}
+                      className="rounded-lg border border-border bg-surface px-3 py-3"
+                    >
+                      <div className="flex flex-wrap items-baseline justify-between gap-2">
+                        <p className="font-semibold text-text-heading">{karkun.name}</p>
+                        <p className="text-xs text-secondary">
+                          {status === 'Unmarked' ? 'Unmarked' : status}
+                          {status === 'Present' || status === 'Absent'
+                            ? ' · Reminded kept'
+                            : null}
+                        </p>
+                      </div>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {STATUS_OPTIONS.map((option) => (
+                          <button
+                            key={option.value}
+                            type="button"
+                            disabled={controlsDisabled}
+                            className={markControlClass(status === option.value, controlsDisabled)}
+                            onClick={() => setStatus(karkun.id, option.value)}
+                          >
+                            {option.label}
+                            <span className="mt-0.5 block text-[0.7rem] font-normal opacity-80">
+                              {option.urdu}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+          </section>
 
           {!online ? (
             <p className="mt-3 text-sm text-amber-700" role="status">
