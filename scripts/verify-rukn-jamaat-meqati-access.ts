@@ -159,8 +159,10 @@ console.log('▶ C — Meeqati highlights are Jamaat-wide, not responsible-Rukn 
   assert.equal(assignedA.length, 1)
   assert.ok(situation.meqati.shobahs.length >= 1)
   const meqatiHome = read('src/components/rukn/RuknHomeMeqatiMansooba.tsx')
-  assertIncludes(meqatiHome, 'useMeqatiYearSelection', 'Admin year vocabulary')
-  assertIncludes(meqatiHome, 'situation.meqati.shobahs', 'same شعبہ breakdown')
+  assertIncludes(meqatiHome, 'میقاتی منصوبہ', 'Home keeps Meeqati section')
+  assertIncludes(meqatiHome, 'ROUTES.RUKN_MEQATI_MANSOOBA', 'Home opens dedicated Meeqati page')
+  assertNotIncludes(meqatiHome, 'MeqatiYearSummary', 'Home does not embed year summary')
+  assertNotIncludes(meqatiHome, 'ShobahStatusSection', 'Home does not embed شعبہ table')
   assert.ok(!meqatiHome.includes('buildRuknMeqatiActivities'), 'no responsible-only filtering')
 }
 
@@ -251,11 +253,18 @@ console.log('▶ F — live settings listeners + critical-path publish')
   assertIncludes(adminLayout, 'useRepositoryHydration', 'publish after critical hydrate')
   assertNotIncludes(adminLayout, 'useBackgroundHydration', 'does not wait for background planning')
   const adminHome = read('src/pages/admin/AdminHomePage.tsx')
-  assertIncludes(adminHome, 'publishJamaatReadModelsIfAdministrator', 'Admin Home publishes')
+  assertIncludes(adminHome, 'scheduleJamaatReadModelPublish', 'Admin Home publishes via coalesced trusted path')
+  assertNotIncludes(adminHome, 'persistJamaatCurrentSituation', 'Admin Home does not persist situation locally')
+  assertNotIncludes(adminHome, 'persistRuknNameDirectory', 'Admin Home does not persist names locally')
   assert.ok(
     !adminHome.includes('if (!isHydrated || !backgroundReady) return'),
     'Admin Home publish does not wait for background planning',
   )
+  const adminPublisher = read('src/lib/jamaat/publishJamaatReadModels.ts')
+  assertIncludes(adminPublisher, 'requestJamaatCurrentSituationPublish', 'Admin publisher calls trusted API')
+  assertNotIncludes(adminPublisher, 'persistJamaatCurrentSituation', 'Admin publisher does not write situation from client')
+  assertNotIncludes(adminPublisher, 'persistRuknNameDirectory', 'Admin publisher does not write names from client')
+  assertNotIncludes(adminPublisher, 'computeJamaatCurrentSituation', 'Admin publisher does not compute counts locally')
 }
 
 console.log('▶ serverless @/ import guard (api/)')

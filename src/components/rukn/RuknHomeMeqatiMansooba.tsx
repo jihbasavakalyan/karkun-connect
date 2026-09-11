@@ -1,30 +1,11 @@
-import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { ROUTES } from '@/constants/routes'
-import { useMeqatiYearSelection } from '@/lib/dashboard/meqatiYear'
-import { buildOrganisationalSituation } from '@/lib/dashboard/organisationalSituation'
-import {
-  MeqatiYearSummary,
-  ShobahStatusSection,
-} from '@/components/dashboard/OrganisationalDashboardStack'
-import { CardSkeleton } from '@/components/ui/Skeleton'
-
-type RuknHomeMeqatiMansoobaProps = {
-  programmesReady: boolean
-}
 
 /**
- * Jamaat-wide Meeqati Mansooba highlights (canonical linked plan).
- * Uses buildOrganisationalSituation().meqati after planning hydration.
- * Highlights are Jamaat-wide, not the responsible-Rukn activity slice.
+ * Compact Home entry for Jamaat-wide Meeqati Mansooba.
+ * Year/status figures and شعبہ-wise tables live on the dedicated page.
  */
-export function RuknHomeMeqatiMansooba({ programmesReady }: RuknHomeMeqatiMansoobaProps) {
-  const yearSelection = useMeqatiYearSelection()
-  const situation = useMemo(
-    () => (programmesReady ? buildOrganisationalSituation(yearSelection.year) : null),
-    [programmesReady, yearSelection.year],
-  )
-
+export function RuknHomeMeqatiMansooba() {
   return (
     <section
       className="rukn-home-card rukn-org-card"
@@ -36,25 +17,12 @@ export function RuknHomeMeqatiMansooba({ programmesReady }: RuknHomeMeqatiMansoo
         <h2 id="rukn-home-meqati-mansooba-title" className="rukn-home-card-title">
           میقاتی منصوبہ
         </h2>
-        <p className="rukn-home-card-sub">Meeqati Mansooba — Jamaat-wide current-year highlights</p>
+        <p className="rukn-home-card-sub">Meeqati Mansooba — Jamaat-wide plan</p>
       </header>
 
-      {!programmesReady || !situation ? (
-        <CardSkeleton count={2} />
-      ) : (
-        <div className="rukn-meqati-highlights orgdash-stack">
-          <MeqatiYearSummary
-            situation={situation}
-            yearSelection={yearSelection}
-            planHref={ROUTES.RUKN_MEQATI_MANSOOBA}
-          />
-          <ShobahStatusSection
-            rows={situation.meqati.shobahs}
-            empty={situation.meqati.empty}
-            planHref={ROUTES.RUKN_MEQATI_MANSOOBA}
-          />
-        </div>
-      )}
+      <p className="rukn-home-card-sub">
+        جماعت بھر کی میقاتی منصوبہ معلومات الگ صفحے پر دستیاب ہیں۔
+      </p>
 
       <p className="rukn-org-links">
         <Link to={ROUTES.RUKN_MEQATI_MANSOOBA}>میقاتی منصوبہ</Link>

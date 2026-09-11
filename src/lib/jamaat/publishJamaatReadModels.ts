@@ -1,15 +1,11 @@
 /**
- * Admin-authoritative publisher for Jamaat read models.
- * Rukn never writes. Freshness is explicit via generatedAt.
+ * Administrator trigger for Jamaat read-model publication.
+ * Does not compute counts or write settings docs from the client.
+ * The trusted API recomputes and persists both read models.
  */
 
-import { computeJamaatCurrentSituation } from '@/lib/jamaat/computeJamaatCurrentSituation'
-import { computeRuknNameDirectory } from '@/lib/jamaat/computeRuknNameDirectory'
-import {
-  persistJamaatCurrentSituation,
-  persistRuknNameDirectory,
-} from '@/repositories/firestore/jamaatReadModelFirestore'
 import { getFirebaseAuth } from '@/lib/firebase/firebase'
+import { requestJamaatCurrentSituationPublish } from '@/lib/jamaat/requestJamaatCurrentSituationPublish'
 
 async function isAdministratorClient(): Promise<boolean> {
   try {
@@ -26,42 +22,29 @@ export async function publishJamaatReadModelsIfAdministrator(): Promise<void> {
   const isAdmin = await isAdministratorClient()
   if (!isAdmin) return
 
-  const generatedAt = new Date().toISOString()
-  const situation = computeJamaatCurrentSituation(generatedAt)
-  const names = computeRuknNameDirectory(generatedAt)
-
-  const situationWrite = await persistJamaatCurrentSituation(situation)
-  if (!situationWrite.ok) {
-    console.error('[jamaat-read-model] jamaatCurrentSituation publish failed', {
-      module: 'jamaatCurrentSituation',
-      operation: 'publish',
-      result: 'error',
-      error: situationWrite.error,
-    })
-  } else {
-    console.info('[jamaat-read-model] jamaatCurrentSituation publish ok', {
+  try {
+    const result = await requestJamaatCurrentSituationPublish()
+    if (!result.ok) {
+      console.error('[jamaat-read-model] trusted publish failed', {
+        module: 'jamaatCurrentSituation',
+        operation: 'publish',
+        result: 'error',
+        error: result.error,
+      })
+      return
+    }
+    console.info('[jamaat-read-model] trusted publish ok', {
       module: 'jamaatCurrentSituation',
       operation: 'publish',
       result: 'ok',
-      generatedAt,
+      generatedAt: result.generatedAt,
     })
-  }
-
-  const namesWrite = await persistRuknNameDirectory(names)
-  if (!namesWrite.ok) {
-    console.error('[jamaat-read-model] ruknNameDirectory publish failed', {
-      module: 'ruknNameDirectory',
+  } catch (error) {
+    console.error('[jamaat-read-model] trusted publish threw', {
+      module: 'jamaatCurrentSituation',
       operation: 'publish',
       result: 'error',
-      error: namesWrite.error,
-    })
-  } else {
-    console.info('[jamaat-read-model] ruknNameDirectory publish ok', {
-      module: 'ruknNameDirectory',
-      operation: 'publish',
-      result: 'ok',
-      generatedAt,
-      nameCount: names.entries.length,
+      error: error instanceof Error ? error.message : String(error),
     })
   }
 }

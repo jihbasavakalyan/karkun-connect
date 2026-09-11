@@ -16,7 +16,7 @@ import {
 } from '@/hooks/useRepositoryHydration'
 import { useMeqatiYearSelection } from '@/lib/dashboard/meqatiYear'
 import { buildOrganisationalSituation } from '@/lib/dashboard/organisationalSituation'
-import { publishJamaatReadModelsIfAdministrator } from '@/lib/jamaat/publishJamaatReadModels'
+import { scheduleJamaatReadModelPublish } from '@/lib/jamaat/scheduleJamaatReadModelPublish'
 import { createCoalescedNotifier } from '@/lib/dashboard/coalesceStoreNotifications'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import {
@@ -100,7 +100,7 @@ export function AdminHomePage() {
 
   useEffect(() => {
     if (!isHydrated) return
-    void publishJamaatReadModelsIfAdministrator()
+    scheduleJamaatReadModelPublish()
   }, [isHydrated, peopleVersion, assignmentVersion, situation.people])
 
   useEffect(() => {

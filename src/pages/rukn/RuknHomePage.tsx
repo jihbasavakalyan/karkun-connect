@@ -81,7 +81,7 @@ export function RuknHomePage() {
         </WidgetErrorBoundary>
 
         <WidgetErrorBoundary title="Meeqati Mansooba">
-          <RuknHomeMeqatiMansooba programmesReady={backgroundReady} />
+          <RuknHomeMeqatiMansooba />
         </WidgetErrorBoundary>
 
         <WidgetErrorBoundary title="Organisational Information">

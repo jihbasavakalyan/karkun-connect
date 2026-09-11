@@ -157,6 +157,13 @@ console.log('▶ D — connection flow invokes publisher after commit')
   assertIncludes(client, "token.claims.role !== 'rukn'", 'Admin client publisher skipped')
   assertIncludes(client, '/api/jamaat-current-situation-publish', 'uses trusted endpoint')
   assertIncludes(client, 'JSON.stringify({})', 'does not send counts')
+  const adminPublisher = read('src/lib/jamaat/publishJamaatReadModels.ts')
+  assertIncludes(adminPublisher, 'requestJamaatCurrentSituationPublish', 'Admin uses trusted endpoint')
+  assertNotIncludes(adminPublisher, 'persistJamaatCurrentSituation', 'Admin does not persist situation locally')
+  assertNotIncludes(adminPublisher, 'persistRuknNameDirectory', 'Admin does not persist names locally')
+  const persistRepo = read('src/repositories/firestore/jamaatReadModelFirestore.ts')
+  assertNotIncludes(persistRepo, 'export async function persistJamaatCurrentSituation', 'client persist helper removed')
+  assertNotIncludes(persistRepo, 'export async function persistRuknNameDirectory', 'client name persist helper removed')
 }
 
 console.log('▶ E — publisher failure does not imply connection rollback')

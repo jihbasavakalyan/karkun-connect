@@ -2,7 +2,7 @@
  * Allowlisted settings read models:
  * - settings/jamaatCurrentSituation (five Jamaat metrics)
  * - settings/ruknNameDirectory (officer id → display name only)
- * Admin writes; Rukn reads. No person registries.
+ * Trusted publisher writes; Admin and Rukn read. No person registries.
  */
 
 import {
@@ -13,11 +13,8 @@ import {
   isRuknNameDirectory,
   type RuknNameDirectory,
 } from '@/lib/jamaat/ruknNameDirectory'
-import { FIRESTORE_COLLECTIONS, FIRESTORE_DOCS } from '@/repositories/firestore/collections'
+import { FIRESTORE_DOCS } from '@/repositories/firestore/collections'
 import { SyncCache } from '@/repositories/firestore/cache'
-import { sanitizeForFirestore, writeDoc } from '@/repositories/firestore/firestoreHelpers'
-import { getFirestoreDb } from '@/lib/firebase/firestore'
-import type { RepositoryResult } from '@/repositories/errors'
 
 const situationCache = new SyncCache<JamaatCurrentSituation | null>(null)
 const nameDirectoryCache = new SyncCache<RuknNameDirectory | null>(null)
@@ -52,35 +49,6 @@ export function subscribeJamaatReadModels(listener: () => void): () => void {
 export function resetJamaatReadModelCachesForTests(): void {
   situationCache.reset(null)
   nameDirectoryCache.reset(null)
-}
-
-export async function persistJamaatCurrentSituation(
-  situation: JamaatCurrentSituation,
-): Promise<RepositoryResult<void>> {
-  const write = await writeDoc(
-    getFirestoreDb(),
-    FIRESTORE_COLLECTIONS.settings,
-    FIRESTORE_DOCS.jamaatCurrentSituation,
-    sanitizeForFirestore(situation),
-  )
-  if (write.ok) applyJamaatCurrentSituationHydrate(situation)
-  return write
-}
-
-export async function persistRuknNameDirectory(
-  directory: RuknNameDirectory,
-): Promise<RepositoryResult<void>> {
-  const write = await writeDoc(
-    getFirestoreDb(),
-    FIRESTORE_COLLECTIONS.settings,
-    FIRESTORE_DOCS.ruknNameDirectory,
-    sanitizeForFirestore({
-      generatedAt: directory.generatedAt,
-      entries: [...directory.entries],
-    }),
-  )
-  if (write.ok) applyRuknNameDirectoryHydrate(directory)
-  return write
 }
 
 export function applyJamaatReadModelHydrateFromSettingsDocs(input: {

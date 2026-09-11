@@ -42,7 +42,7 @@ export async function requestJamaatCurrentSituationPublish(): Promise<JamaatTrus
 
 /**
  * After a durable connection write: Rukn asks the trusted publisher to recompute.
- * Admin sessions already publish from the layout; skip to avoid duplicate client work.
+ * Admin sessions already publish from the layout/home via the same API; skip here.
  * Never throws — connection success must remain independent of refresh.
  */
 export async function refreshJamaatReadModelsAfterConnectionWrite(): Promise<JamaatTrustedPublishResult | null> {
