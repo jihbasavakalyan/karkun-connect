@@ -80,8 +80,8 @@ export function RuknHomePage() {
           )}
         </WidgetErrorBoundary>
 
-        <WidgetErrorBoundary title="Meeqati Mansooba">
-          <RuknHomeMeqatiMansooba />
+        <WidgetErrorBoundary title="میقاتی منصوبہ — موجودہ سال">
+          <RuknHomeMeqatiMansooba programmesReady={backgroundReady} />
         </WidgetErrorBoundary>
 
         <WidgetErrorBoundary title="Organisational Information">

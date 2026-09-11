@@ -1,32 +1,36 @@
+import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { ROUTES } from '@/constants/routes'
+import { resolveMeqatiYear } from '@/lib/dashboard/meqatiYear'
+import { buildOrganisationalSituation } from '@/lib/dashboard/organisationalSituation'
+import { MeqatiYearSummary } from '@/components/dashboard/OrganisationalDashboardStack'
+import { CardSkeleton } from '@/components/ui/Skeleton'
+
+type RuknHomeMeqatiMansoobaProps = {
+  programmesReady: boolean
+}
 
 /**
- * Compact Home entry for Jamaat-wide Meeqati Mansooba.
- * Year/status figures and شعبہ-wise tables live on the dedicated page.
+ * Concise Jamaat-wide current-year Meeqati snapshot on Home.
+ * Full plan hierarchy lives on the dedicated Meeqati Mansooba page.
  */
-export function RuknHomeMeqatiMansooba() {
+export function RuknHomeMeqatiMansooba({ programmesReady }: RuknHomeMeqatiMansoobaProps) {
+  const year = useMemo(() => resolveMeqatiYear(), [])
+  const situation = useMemo(
+    () => (programmesReady ? buildOrganisationalSituation(year) : null),
+    [programmesReady, year],
+  )
+
+  if (!programmesReady || !situation) {
+    return <CardSkeleton count={1} />
+  }
+
   return (
-    <section
-      className="rukn-home-card rukn-org-card"
-      aria-labelledby="rukn-home-meqati-mansooba-title"
-      dir="rtl"
-      lang="ur"
-    >
-      <header className="rukn-home-card-head">
-        <h2 id="rukn-home-meqati-mansooba-title" className="rukn-home-card-title">
-          میقاتی منصوبہ
-        </h2>
-        <p className="rukn-home-card-sub">Meeqati Mansooba — Jamaat-wide plan</p>
-      </header>
-
-      <p className="rukn-home-card-sub">
-        جماعت بھر کی میقاتی منصوبہ معلومات الگ صفحے پر دستیاب ہیں۔
-      </p>
-
+    <div className="rukn-meqati-year-home">
+      <MeqatiYearSummary situation={situation} planHref={ROUTES.RUKN_MEQATI_MANSOOBA} />
       <p className="rukn-org-links">
         <Link to={ROUTES.RUKN_MEQATI_MANSOOBA}>میقاتی منصوبہ</Link>
       </p>
-    </section>
+    </div>
   )
 }

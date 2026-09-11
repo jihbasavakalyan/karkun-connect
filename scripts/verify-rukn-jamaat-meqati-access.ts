@@ -159,10 +159,11 @@ console.log('▶ C — Meeqati highlights are Jamaat-wide, not responsible-Rukn 
   assert.equal(assignedA.length, 1)
   assert.ok(situation.meqati.shobahs.length >= 1)
   const meqatiHome = read('src/components/rukn/RuknHomeMeqatiMansooba.tsx')
-  assertIncludes(meqatiHome, 'میقاتی منصوبہ', 'Home keeps Meeqati section')
+  assertIncludes(meqatiHome, 'MeqatiYearSummary', 'Home keeps current-year Meeqati summary')
+  assertIncludes(meqatiHome, 'resolveMeqatiYear', 'Home uses Admin current-year default')
   assertIncludes(meqatiHome, 'ROUTES.RUKN_MEQATI_MANSOOBA', 'Home opens dedicated Meeqati page')
-  assertNotIncludes(meqatiHome, 'MeqatiYearSummary', 'Home does not embed year summary')
   assertNotIncludes(meqatiHome, 'ShobahStatusSection', 'Home does not embed شعبہ table')
+  assertNotIncludes(meqatiHome, 'useMeqatiYearSelection', 'Home has no Meeqati year selector')
   assert.ok(!meqatiHome.includes('buildRuknMeqatiActivities'), 'no responsible-only filtering')
 }
 
