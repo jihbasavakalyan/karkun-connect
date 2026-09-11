@@ -184,8 +184,8 @@ export function CampaignLibraryWorkStrip() {
         Campaign work
       </h2>
       <p className="mt-1 text-sm text-secondary">
-        Follow-up, Campaign Execution, Review, and Reports use the existing operational modules —
-        not a separate campaign detail system.
+        Follow-up (تربیت و رہنمائی), Campaign Execution, Review, and Reports use the existing
+        operational modules — not a separate campaign detail system.
       </p>
       <nav className="mt-3 flex flex-wrap gap-2" aria-label="Campaign operational destinations">
         <Link to={adminFollowUpPath()} className={OPS_LINK_CLASS}>

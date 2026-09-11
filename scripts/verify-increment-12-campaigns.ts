@@ -6,7 +6,7 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { ADMIN_NAV_ITEMS, flattenAdminNavItems } from '@/constants/adminNavigation'
+import { ADMIN_NAV_ITEMS, findActiveAdminNavItem, flattenAdminNavItems } from '@/constants/adminNavigation'
 import {
   adminCompliancePath,
   adminExecutionPath,
@@ -35,10 +35,18 @@ assert.equal(
   flattenAdminNavItems(ADMIN_NAV_ITEMS).find((item) => item.id === 'campaign')?.to,
   ROUTES.ADMIN_CAMPAIGN,
 )
-
+assert.ok(!flattenAdminNavItems(ADMIN_NAV_ITEMS).some((item) => item.id === 'tarbiyah'))
+assert.ok(
+  !flattenAdminNavItems(ADMIN_NAV_ITEMS).some((item) => item.label === 'تربیت و رہنمائی'),
+)
 assert.equal(adminFollowUpPath(), '/admin/operations?tab=queue')
 assert.equal(adminExecutionPath(), '/admin/operations?tab=execute')
 assert.equal(adminCompliancePath(), '/admin/operations?tab=review')
+
+assert.equal(findActiveAdminNavItem('/admin/operations', '?tab=queue')?.id, 'campaign')
+assert.equal(findActiveAdminNavItem('/admin/operations', '?tab=execute')?.id, 'campaign')
+assert.equal(findActiveAdminNavItem('/admin/operations', '?tab=review')?.id, 'campaign')
+assert.equal(findActiveAdminNavItem('/admin/reports', '')?.id, 'reports')
 
 const periodEnded = { startDate: '2026-07-18', endDate: '2026-08-09' }
 assert.equal(getCampaignPeriodStatus(periodEnded, new Date('2026-08-10T00:00:00')), 'completed')
@@ -68,7 +76,7 @@ assert.match(panel, /adminFollowUpPath/)
 assert.match(panel, /adminExecutionPath/)
 assert.match(panel, /adminCompliancePath/)
 assert.match(panel, /ADMIN_REPORTS/)
-assert.match(panel, /Follow-up/)
+assert.match(panel, /Follow-up \(تربیت و رہنمائی\)/)
 assert.match(panel, /Campaign Execution/)
 assert.match(panel, /Review/)
 assert.match(panel, /Reports/)

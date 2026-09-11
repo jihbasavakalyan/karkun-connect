@@ -26,7 +26,6 @@ const REQUIRED_ADMIN_LABELS = [
   'باہمی ربط',
   'ہفتہ وار اجتماع',
   'بیت المال',
-  'تربیت و رہنمائی',
   'مواصلات',
   'ان باکس',
   'رپورٹس',
@@ -39,6 +38,17 @@ const labels = flattenAdminNavItems(ADMIN_NAV_ITEMS).map((item) => item.label)
 for (const label of REQUIRED_ADMIN_LABELS) {
   assert.ok(labels.includes(label), `Admin nav must keep ${label}`)
 }
+
+assert.ok(
+  !labels.includes('تربیت و رہنمائی'),
+  'تربیت و رہنمائی is a Campaigns capability, not a separate primary nav product',
+)
+assert.ok(!flattenAdminNavItems(ADMIN_NAV_ITEMS).some((item) => item.id === 'tarbiyah'))
+assert.equal(findActiveAdminNavItem('/admin/operations', '?tab=queue')?.id, 'campaign')
+assert.equal(findActiveAdminNavItem('/admin/operations', '?tab=execute')?.id, 'campaign')
+assert.equal(findActiveAdminNavItem('/admin/operations', '?tab=review')?.id, 'campaign')
+assert.equal(findActiveAdminNavItem('/admin/campaign', '')?.id, 'campaign')
+assert.equal(findActiveAdminNavItem('/admin/reports', '')?.id, 'reports')
 
 assert.equal(labels.filter((label) => label === 'میقاتی منصوبہ').length, 1)
 assert.doesNotMatch(labels.join('\n'), /\bMeeqati\b(?! Mansooba)/)

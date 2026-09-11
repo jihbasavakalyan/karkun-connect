@@ -1,4 +1,4 @@
-import { adminFollowUpPath, ROUTES } from '@/constants/routes'
+import { ROUTES } from '@/constants/routes'
 import { RUFAQA_LABEL_UR, RUFAQA_PATH_PREFIXES } from '@/lib/rufaqa/rufaqaNav'
 import type { IconName } from '@/design-system/iconNames'
 
@@ -34,10 +34,25 @@ export function isAdminNavGroup(entry: AdminNavEntry): entry is AdminNavGroup {
 }
 
 /**
+ * Paths that belong to the مہمات product surface while using existing ops routes.
+ * Presentation matching only — does not change Follow-up / Execution / Review modules.
+ */
+export const CAMPAIGN_PRODUCT_PATH_PREFIXES = [
+  ROUTES.ADMIN_CAMPAIGN,
+  ROUTES.ADMIN_OPERATIONS,
+  ROUTES.ADMIN_ACTIVITIES,
+  ROUTES.ADMIN_FOLLOW_UP,
+  ROUTES.ADMIN_EXECUTION,
+  ROUTES.ADMIN_COMPLIANCE,
+  ROUTES.ADMIN_REVIEW,
+] as const
+
+/**
  * Admin landing + functional modules.
  * Home is the landing surface, not a functional organisational module.
  * میقاتی منصوبہ is the permanent planning foundation.
  * Existing registry routes remain valid deep links under Rufaqa.
+ * Follow-up (تربیت و رہنمائی) is a capability inside مہمات — not a separate product.
  */
 export const ADMIN_NAV_ITEMS: AdminNavEntry[] = [
   { id: 'home', label: 'ہوم', icon: 'home', to: ROUTES.ADMIN, end: true, emphasis: 'home' },
@@ -64,21 +79,15 @@ export const ADMIN_NAV_ITEMS: AdminNavEntry[] = [
     to: ROUTES.ADMIN_MONTHLY_BAITUL_MAAL,
   },
   {
-    id: 'tarbiyah',
-    label: 'تربیت و رہنمائی',
-    icon: 'sprout',
-    to: adminFollowUpPath(),
-  },
-  { id: 'communication', label: 'مواصلات', icon: 'megaphone', to: ROUTES.ADMIN_COMMUNICATION },
-  { id: 'inbox', label: 'ان باکس', icon: 'message', to: ROUTES.ADMIN_INBOX },
-  { id: 'reports', label: 'رپورٹس', icon: 'file-text', to: ROUTES.ADMIN_REPORTS },
-  {
     id: 'campaign',
     label: 'مہمات',
     icon: 'chart',
     to: ROUTES.ADMIN_CAMPAIGN,
-    emphasis: 'muted',
+    matchPrefixes: CAMPAIGN_PRODUCT_PATH_PREFIXES,
   },
+  { id: 'communication', label: 'مواصلات', icon: 'megaphone', to: ROUTES.ADMIN_COMMUNICATION },
+  { id: 'inbox', label: 'ان باکس', icon: 'message', to: ROUTES.ADMIN_INBOX },
+  { id: 'reports', label: 'رپورٹس', icon: 'file-text', to: ROUTES.ADMIN_REPORTS },
   { id: 'settings', label: 'ترتیبات', icon: 'settings', to: ROUTES.ADMIN_SETTINGS },
   { id: 'help', label: 'رہنمائی', icon: 'help', to: ROUTES.ADMIN_HELP },
 ]
