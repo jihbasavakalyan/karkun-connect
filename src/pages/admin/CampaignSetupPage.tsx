@@ -9,7 +9,6 @@ import {
   StepLaunchCampaign,
   StepRukn,
 } from '@/components/forms/campaign-setup'
-import { TOTAL_WIZARD_STEPS } from '@/constants/mockCampaignSetup'
 import { useCampaignSetupWizard } from '@/hooks/useCampaignSetupWizard'
 import { PageHeader, PageShell } from '@/components/ui'
 
@@ -20,7 +19,7 @@ export function CampaignSetupPage() {
     <PageShell>
       <PageHeader
         title="Campaign Setup"
-        description={`Configure your campaign in ${TOTAL_WIZARD_STEPS} steps before launch.`}
+        description="Preparatory wizard only. Launch confirms a local preview — it does not create a durable campaign document."
       />
 
       <div className="mb-6 lg:hidden">

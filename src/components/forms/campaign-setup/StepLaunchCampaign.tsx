@@ -27,15 +27,20 @@ export function StepLaunchCampaign({ state, onLaunch }: StepLaunchCampaignProps)
         </div>
 
         <div>
-          <h2 className="text-2xl font-semibold text-text-heading">Campaign Launched</h2>
+          <h2 className="text-2xl font-semibold text-text-heading">Setup preview complete</h2>
           <p className="mt-2 text-secondary">
-            {state.name || 'Your campaign'} is now active and ready for field execution.
+            {state.name || 'This campaign draft'} was confirmed in the setup wizard only. No durable
+            campaign document was created or updated. The live مہمات library is unchanged.
           </p>
         </div>
 
-        <div className="rounded-(--radius-card) border border-primary/30 bg-primary-muted/30 p-6 text-left">
-          <p className="text-sm text-secondary">Campaign Status</p>
-          <p className="mt-1 text-xl font-semibold text-primary">Active</p>
+        <div className="rounded-xl border border-border bg-surface p-6 text-left">
+          <p className="text-sm text-secondary">Wizard status</p>
+          <p className="mt-1 text-xl font-semibold text-text-heading">Local preview</p>
+          <p className="mt-2 text-sm text-secondary">
+            The live Campaign library under مہمات remains unchanged. Return to مہمات to open
+            Follow-up, Campaign Execution, Review, or Reports.
+          </p>
         </div>
       </div>
     )
@@ -49,7 +54,8 @@ export function StepLaunchCampaign({ state, onLaunch }: StepLaunchCampaignProps)
         </p>
         <h2 className="mt-2 text-2xl font-semibold text-text-heading">Launch Campaign</h2>
         <p className="mt-2 text-secondary">
-          Confirm the details below and launch your campaign.
+          Confirm the details below. Launch is a local setup preview — it does not write a new
+          campaign to the library.
         </p>
       </div>
 
