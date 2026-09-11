@@ -3,7 +3,7 @@ import { DangerZone } from '@/components/admin/DangerZone'
 import { DataIntegrityReportPanel } from '@/components/admin/DataIntegrityReportPanel'
 import { DuplicateResolutionWizard } from '@/components/admin/DuplicateResolutionWizard'
 import { DataMigrationWizard } from '@/components/migration/DataMigrationWizard'
-import { adminExecutionPath } from '@/constants/routes'
+import { ROUTES } from '@/constants/routes'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import {
   SettingsReadonly,
@@ -18,9 +18,9 @@ export function DataManagementSettingsSection() {
       title="Data Management"
       description="Exports, backups, integrity audit, duplicate resolution, and migration tools for administrators."
     >
-      <SettingsRow label="Export Reports" hint="Use module reports for campaign exports">
-        <Link to={adminExecutionPath('reports')}>
-          <SecondaryButton type="button">Open Execution Reports</SecondaryButton>
+      <SettingsRow label="Export Reports" hint="Open رپورٹس to configure and generate campaign exports">
+        <Link to={ROUTES.ADMIN_REPORTS}>
+          <SecondaryButton type="button">Open Reports</SecondaryButton>
         </Link>
       </SettingsRow>
       <SettingsRow label="Backup Status">

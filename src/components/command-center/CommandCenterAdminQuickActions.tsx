@@ -11,7 +11,7 @@ const ADMIN_ACTIONS: { id: string; label: string; icon: IconName; to: string }[]
   { id: 'compliance', label: 'Compliance', icon: 'check', to: adminCompliancePath('ijtema') },
   { id: 'campaign', label: 'Campaign', icon: 'chart', to: ROUTES.ADMIN_CAMPAIGN },
   { id: 'search', label: 'Search', icon: 'search', to: ROUTES.ADMIN_KARKUN },
-  { id: 'export', label: 'Export', icon: 'export', to: adminExecutionPath('reports') },
+  { id: 'export', label: 'Export', icon: 'export', to: ROUTES.ADMIN_REPORTS },
   { id: 'follow-up', label: 'Follow-up', icon: 'refresh', to: adminFollowUpPath() },
 ]
 

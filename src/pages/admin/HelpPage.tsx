@@ -101,11 +101,14 @@ export function HelpPage() {
               </Link>
             </li>
             <li>
-              View submitted visit reports under{' '}
+              View submitted visit records under{' '}
               <Link to={adminExecutionPath('reports')} className="font-medium text-primary hover:underline">
-                Activities → Campaign Execution → Reports
+                Campaign Execution → Visit Records
               </Link>{' '}
-              (not Saved Lists)
+              (not Saved Lists). Generate PDFs under{' '}
+              <Link to={ROUTES.ADMIN_REPORTS} className="font-medium text-primary hover:underline">
+                رپورٹس
+              </Link>
             </li>
             <li>
               Send messages under{' '}

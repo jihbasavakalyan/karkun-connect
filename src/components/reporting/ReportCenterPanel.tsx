@@ -103,10 +103,26 @@ function SelectField<T extends string>(props: {
 /**
  * KC-037B — Report Center configuration workspace.
  * Driven by report-type / section / preset registries — no hardcoded section lists.
+ * Increment 13 may pass `initialReportType` from the curated رپورٹس landing.
  */
-export function ReportCenterPanel() {
+export function ReportCenterPanel({
+  initialReportType,
+}: {
+  initialReportType?: ReportTypeId
+} = {}) {
   const { user } = useAuth()
-  const [config, setConfig] = useState<ReportConfig>(() => defaultKc034Config())
+  const [config, setConfig] = useState<ReportConfig>(() => {
+    if (!initialReportType) return defaultKc034Config()
+    const next = getReportType(initialReportType)
+    if (!next) return defaultKc034Config()
+    return defaultKc034Config({
+      reportType: initialReportType,
+      scope: next.defaultScope,
+      detailLevel: next.defaultDetailLevel,
+      outputType: next.defaultOutput,
+      enabledSections: blueprintSectionsFor(initialReportType),
+    })
+  })
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')

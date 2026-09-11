@@ -18,6 +18,7 @@
     "verify:increment-08-inbox": "npx vite-node scripts/verify-increment-08-inbox.ts",
     "verify:increment-10-karkun": "npx vite-node scripts/verify-increment-10-karkun.ts",
     "verify:increment-12-campaigns": "npx vite-node scripts/verify-increment-12-campaigns.ts",
+    "verify:increment-13-reports": "npx vite-node scripts/verify-increment-13-reports.ts",
     "verify:auth": "npx vite-node scripts/verify-auth-session.ts",
     "verify:assignments": "npx vite-node scripts/verify-inline-assignment.ts",
     "verify:kc002": "npx vite-node scripts/verify-kc002-assignment-allocation.ts",

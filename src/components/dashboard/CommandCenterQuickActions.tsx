@@ -6,7 +6,7 @@ const quickActions = [
   { id: 'open-rukn', label: 'Open Rukn', to: ROUTES.ADMIN_RUKN },
   { id: 'open-karkun', label: 'Open Karkun', to: ROUTES.ADMIN_KARKUN },
   { id: 'start-execution', label: 'Start Execution', to: adminExecutionPath() },
-  { id: 'review-reports', label: 'Execution Reports', to: adminExecutionPath('reports') },
+  { id: 'review-reports', label: 'Visit Records', to: adminExecutionPath('reports') },
 ] as const
 
 export function CommandCenterQuickActions() {

@@ -9,8 +9,8 @@ type GenerateCampaignReportButtonProps = {
 }
 
 /**
- * KC-0114 / KC-037B — Opens Report Center configuration workflow
- * (replaces direct one-click PDF export).
+ * KC-0114 / KC-037B / Increment 13 — Opens Reports Composer for executive campaign.
+ * Navigates to رپورٹس with type preselected. Does not download a PDF by itself.
  */
 export function GenerateCampaignReportButton({
   className = '',
@@ -20,7 +20,11 @@ export function GenerateCampaignReportButton({
 
   return (
     <div className={className}>
-      <PrimaryButton type="button" size={size} onClick={() => navigate(ROUTES.ADMIN_REPORTS)}>
+      <PrimaryButton
+        type="button"
+        size={size}
+        onClick={() => navigate(`${ROUTES.ADMIN_REPORTS}?type=executive_campaign`)}
+      >
         {URDU_REPORT.button}
       </PrimaryButton>
     </div>

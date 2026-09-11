@@ -29,7 +29,7 @@ const sections = [
   { id: 'in-progress', label: 'In Progress' },
   { id: 'follow-up', label: 'Follow-up Required' },
   { id: 'completed-today', label: 'Completed' },
-  { id: 'reports', label: 'Reports' },
+  { id: 'reports', label: 'Visit Records' },
 ] as const
 
 type ExecutionSection = (typeof sections)[number]['id']

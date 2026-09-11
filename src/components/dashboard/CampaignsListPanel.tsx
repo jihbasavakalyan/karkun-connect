@@ -13,7 +13,6 @@ import {
 } from '@/services/campaignService'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { MissionProgress } from '@/components/dashboard/MissionProgress'
-import { URDU_REPORT } from '@/lib/reporting/campaignReportUrdu'
 
 const OPS_LINK_CLASS =
   'inline-flex min-h-11 items-center justify-center rounded-lg border border-border bg-surface px-3 text-sm font-medium text-text-heading hover:border-primary/30 hover:bg-surface-muted'
@@ -198,7 +197,7 @@ export function CampaignLibraryWorkStrip() {
           Review
         </Link>
         <Link to={ROUTES.ADMIN_REPORTS} className={OPS_LINK_CLASS}>
-          Reports · {URDU_REPORT.button}
+          Reports
         </Link>
       </nav>
     </section>
