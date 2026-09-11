@@ -52,6 +52,10 @@ export const FIRESTORE_DOCS = {
   ruknAdminMessages: 'ruknAdminMessages',
   /** Tarbiyati Ijtema operational flags — existing settings collection, not a new SoT. */
   trainingRegistration: 'trainingRegistration',
+  /** Five Jamaat people metrics for Rukn Home (Admin-authored aggregate). */
+  jamaatCurrentSituation: 'jamaatCurrentSituation',
+  /** Officer id → display name only (planning ذمہ دار). */
+  ruknNameDirectory: 'ruknNameDirectory',
 } as const
 
 export type FirestoreDocumentMeta = {

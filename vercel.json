@@ -17,6 +17,13 @@
     },
     "api/training-registration.ts": {
       "includeFiles": "src/server/trainingRegistration/**"
+    },
+    "api/jamaat-current-situation-publish.ts": {
+      "includeFiles": [
+        "src/server/jamaat/**",
+        "src/server/ruknClaims/firebaseAdmin.ts",
+        "src/lib/jamaat/jamaatSituationMetrics.ts"
+      ]
     }
   },
   "rewrites": [

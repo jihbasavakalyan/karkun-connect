@@ -1,32 +1,29 @@
+import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { ROUTES } from '@/constants/routes'
+import { useMeqatiYearSelection } from '@/lib/dashboard/meqatiYear'
+import { buildOrganisationalSituation } from '@/lib/dashboard/organisationalSituation'
 import {
-  buildRuknOrganisationalInformation,
-  formatRuknOrgMetric,
-} from '@/lib/rukn/ruknOrganisationalInformation'
-import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
-import { usePeopleStore } from '@/hooks/usePeopleStore'
-import { RuknHomeOrgMetric } from '@/components/rukn/RuknHomeOrgMetric'
+  MeqatiYearSummary,
+  ShobahStatusSection,
+} from '@/components/dashboard/OrganisationalDashboardStack'
+import { CardSkeleton } from '@/components/ui/Skeleton'
 
 type RuknHomeMeqatiMansoobaProps = {
-  ruknId: string
   programmesReady: boolean
 }
 
 /**
- * Compact Home Meeqati Mansooba snapshot. Read-only.
- * Reuses the existing organisational-information read model; not a new data layer.
+ * Jamaat-wide Meeqati Mansooba highlights (canonical linked plan).
+ * Uses buildOrganisationalSituation().meqati after planning hydration.
+ * Highlights are Jamaat-wide, not the responsible-Rukn activity slice.
  */
-export function RuknHomeMeqatiMansooba({ ruknId, programmesReady }: RuknHomeMeqatiMansoobaProps) {
-  const peopleVersion = usePeopleStore()
-  const { assignmentVersion } = useAssignmentEngine()
-  void peopleVersion
-  void assignmentVersion
-
-  const info = buildRuknOrganisationalInformation(ruknId, {
-    peopleReady: false,
-    programmesReady,
-  })
+export function RuknHomeMeqatiMansooba({ programmesReady }: RuknHomeMeqatiMansoobaProps) {
+  const yearSelection = useMeqatiYearSelection()
+  const situation = useMemo(
+    () => (programmesReady ? buildOrganisationalSituation(yearSelection.year) : null),
+    [programmesReady, yearSelection.year],
+  )
 
   return (
     <section
@@ -39,43 +36,28 @@ export function RuknHomeMeqatiMansooba({ ruknId, programmesReady }: RuknHomeMeqa
         <h2 id="rukn-home-meqati-mansooba-title" className="rukn-home-card-title">
           میقاتی منصوبہ
         </h2>
-        <p className="rukn-home-card-sub">Meeqati Mansooba</p>
-        <p className="rukn-org-year">
-          {info.year.label} · {info.yearUrduRange}
-        </p>
+        <p className="rukn-home-card-sub">Meeqati Mansooba — Jamaat-wide current-year highlights</p>
       </header>
 
-      <ul className="rukn-org-activities" aria-label="ذمہ دار سرگرمیاں">
-        <RuknHomeOrgMetric
-          label="سرگرمیاں"
-          value={formatRuknOrgMetric(info.assignedActivities.activities)}
-        />
-        <RuknHomeOrgMetric
-          label="مکمل"
-          value={formatRuknOrgMetric(info.assignedActivities.completed)}
-        />
-        <RuknHomeOrgMetric
-          label="جاری"
-          value={formatRuknOrgMetric(info.assignedActivities.inProgress)}
-        />
-        <RuknHomeOrgMetric
-          label="باقی"
-          value={formatRuknOrgMetric(info.assignedActivities.remaining)}
-        />
-        <RuknHomeOrgMetric
-          label="پیش رفت"
-          value={
-            info.assignedActivities.progressPct == null
-              ? '—'
-              : `${info.assignedActivities.progressPct}%`
-          }
-        />
-      </ul>
+      {!programmesReady || !situation ? (
+        <CardSkeleton count={2} />
+      ) : (
+        <div className="rukn-meqati-highlights orgdash-stack">
+          <MeqatiYearSummary
+            situation={situation}
+            yearSelection={yearSelection}
+            planHref={ROUTES.RUKN_MEQATI_MANSOOBA}
+          />
+          <ShobahStatusSection
+            rows={situation.meqati.shobahs}
+            empty={situation.meqati.empty}
+            planHref={ROUTES.RUKN_MEQATI_MANSOOBA}
+          />
+        </div>
+      )}
 
       <p className="rukn-org-links">
         <Link to={ROUTES.RUKN_MEQATI_MANSOOBA}>میقاتی منصوبہ</Link>
-        <span aria-hidden="true"> · </span>
-        <Link to={ROUTES.RUKN_RESPONSIBILITIES}>ذمہ داریاں</Link>
       </p>
     </section>
   )

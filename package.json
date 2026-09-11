@@ -221,7 +221,9 @@
     "verify:kc-phase8-intelligent-monitoring": "npx vite-node scripts/verify-kc-phase8-intelligent-monitoring.ts",
     "verify:settings": "npx vite-node scripts/verify-settings-experience.ts",
     "verify:voice-conversation": "npx vite-node scripts/verify-voice-conversation.ts",
-    "verify:training-registration": "npx vite-node scripts/verify-training-registration.ts"
+    "verify:training-registration": "npx vite-node scripts/verify-training-registration.ts",
+    "verify:rukn-jamaat-meqati-access": "npx vite-node scripts/verify-rukn-jamaat-meqati-access.ts",
+    "verify:jamaat-trusted-publisher": "npx vite-node scripts/verify-jamaat-trusted-publisher.ts"
   },
   "dependencies": {
     "@google-cloud/speech": "^7.5.0",

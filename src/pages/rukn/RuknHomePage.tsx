@@ -9,6 +9,7 @@ import { RuknHomeKarkunActions } from '@/components/rukn/RuknHomeKarkunActions'
 import { RuknHomeMuttafiqConnections } from '@/components/rukn/RuknHomeMuttafiqConnections'
 import { RuknHomeBaitulMaalCard } from '@/components/rukn/RuknHomeBaitulMaalCard'
 import { RuknHomeMeqatiMansooba } from '@/components/rukn/RuknHomeMeqatiMansooba'
+import { RuknHomeJamaatCurrentSituation } from '@/components/rukn/RuknHomeJamaatCurrentSituation'
 import { RuknHomeOrganisationalInformation } from '@/components/rukn/RuknHomeOrganisationalInformation'
 import { useRequiredRuknId } from '@/hooks/useRequiredRuknId'
 import { useGuidance } from '@/hooks/useGuidance'
@@ -23,8 +24,8 @@ import { CardSkeleton } from '@/components/ui'
 
 /**
  * Increment 03 — approved Home sequence:
- * header (shell) → greeting → Tarbiyati Ijtema → Organisational Information →
- * Meeqati Mansooba → Karkun → Muttafiq → Weekly Ijtema → Baitul Maal
+ * header (shell) → greeting → Tarbiyati Ijtema → Jamaat situation →
+ * Meeqati Mansooba → connected organisational information → Karkun → Muttafiq → Weekly Ijtema → Baitul Maal
  */
 export function RuknHomePage() {
   const ruknId = useRequiredRuknId()
@@ -71,15 +72,23 @@ export function RuknHomePage() {
           {backgroundReady ? <TarbiyatiIjtemaRuknHero /> : <CardSkeleton count={1} />}
         </WidgetErrorBoundary>
 
+        <WidgetErrorBoundary title="جماعت کی موجودہ صورتحال">
+          {backgroundReady ? (
+            <RuknHomeJamaatCurrentSituation metricsReady={backgroundReady} />
+          ) : (
+            <CardSkeleton count={1} />
+          )}
+        </WidgetErrorBoundary>
+
+        <WidgetErrorBoundary title="Meeqati Mansooba">
+          <RuknHomeMeqatiMansooba programmesReady={backgroundReady} />
+        </WidgetErrorBoundary>
+
         <WidgetErrorBoundary title="Organisational Information">
           <RuknHomeOrganisationalInformation
             ruknId={ruknId}
             peopleReady={isHydrated}
           />
-        </WidgetErrorBoundary>
-
-        <WidgetErrorBoundary title="Meeqati Mansooba">
-          <RuknHomeMeqatiMansooba ruknId={ruknId} programmesReady={backgroundReady} />
         </WidgetErrorBoundary>
 
         <WidgetErrorBoundary title="Karkun">

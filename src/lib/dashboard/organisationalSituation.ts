@@ -6,13 +6,13 @@
  */
 
 import { ROUTES, adminAssignmentsPath, adminCompliancePath, adminMissionWorkspacePath } from '@/constants/routes'
-import { getRuknById } from '@/data/ruknMaster'
 import {
   resolveActivityYearStatus,
   type ActivityYearStatus,
 } from '@/lib/planning/activityYearStatus'
-import { countOfficerPeopleByKind } from '@/lib/aRuknRegistry'
-import { getAllRukns, getPeopleStatistics } from '@/lib/peopleStore'
+import { computeJamaatCurrentSituationCounts } from '@/lib/jamaat/computeJamaatCurrentSituation'
+import { resolveResponsibleRuknDisplayName } from '@/lib/jamaat/resolveResponsibleRuknDisplayName'
+import { getPeopleStatistics } from '@/lib/peopleStore'
 import { unwrapRepository } from '@/repositories/errors'
 import { getRepositories } from '@/repositories/provider'
 import {
@@ -190,7 +190,7 @@ function countsFromStatuses(
 
 export function buildOrganisationalSituation(year: MeqatiYear): OrganisationalSituation {
   const people = getPeopleStatistics()
-  const officersByKind = countOfficerPeopleByKind(getAllRukns())
+  const jamaatPeople = computeJamaatCurrentSituationCounts()
   const repos = getRepositories()
   const mansooba =
     selectCanonicalMeqatiMansooba(unwrapRepository(repos.meqatiMansooba.loadAll(), [])) ?? null
@@ -324,13 +324,7 @@ export function buildOrganisationalSituation(year: MeqatiYear): OrganisationalSi
   return {
     generatedAt: new Date().toISOString(),
     metricsLive: true,
-    people: {
-      rukns: officersByKind.rukns,
-      aRukns: officersByKind.aRukns,
-      karkuns: people.totalMaleKarkuns + people.totalFemaleKarkuns,
-      muttafiqeen: people.totalMuttafiqeen ?? 0,
-      connections: people.assignedKarkuns,
-    },
+    people: jamaatPeople,
     implementation: {
       inProgressActivities: meqatiCounts.inProgress,
       assignedResponsibles,
@@ -382,15 +376,12 @@ function toShobahDrillActivity(
   programme: LocalProgramme,
   statusByProgrammeId: ReadonlyMap<string, MeqatiYearActivityStatus | null>,
 ): ShobahDrillActivity {
-  const rukn = programme.responsibleRuknId
-    ? getRuknById(programme.responsibleRuknId)
-    : undefined
   const summary = programme.summary?.trim() || null
   return {
     id: programme.id,
     name: programme.name,
     status: statusByProgrammeId.get(programme.id) ?? null,
-    responsibleName: rukn?.name ?? null,
+    responsibleName: resolveResponsibleRuknDisplayName(programme.responsibleRuknId),
     scheduleLabel: formatProgrammeSchedule(programme.frequency),
     summary,
   }

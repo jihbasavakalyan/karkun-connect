@@ -12,7 +12,10 @@ import { Icon } from '@/components/ui/Icon'
 import { ROUTES } from '@/constants/routes'
 import { CardSkeleton } from '@/components/ui/Skeleton'
 import type { QuickActionItem } from '@/lib/missionControl/adminCommandCenterWorkflow'
-import { meqatiYearUrduRange } from '@/lib/dashboard/meqatiYear'
+import {
+  meqatiYearUrduRange,
+  type MeqatiYearSelection,
+} from '@/lib/dashboard/meqatiYear'
 import {
   collectOngoingActivities,
   type MeqatiYearActivityStatus,
@@ -26,6 +29,21 @@ type OrganisationalDashboardStackProps = {
   quickActions: QuickActionItem[]
   metricsReady: boolean
   backgroundReady: boolean
+}
+
+type MeqatiPlanLinkProps = {
+  planHref?: string
+}
+
+function EmptyMeqatiNote({ planHref = ROUTES.ADMIN_PLANNING }: MeqatiPlanLinkProps) {
+  return (
+    <div className="orgdash-empty">
+      <p className="orgdash-empty-copy">میقاتی منصوبہ کا ڈیٹا ابھی درج نہیں کیا گیا</p>
+      <Link to={planHref} className="orgdash-card-link">
+        میقاتی منصوبہ دیکھیں
+      </Link>
+    </div>
+  )
 }
 
 const STATUS_LABEL: Record<MeqatiYearActivityStatus, string> = {
@@ -85,17 +103,6 @@ function formatFreshness(iso: string): string {
   } catch {
     return iso
   }
-}
-
-function EmptyMeqatiNote() {
-  return (
-    <div className="orgdash-empty">
-      <p className="orgdash-empty-copy">میقاتی منصوبہ کا ڈیٹا ابھی درج نہیں کیا گیا</p>
-      <Link to={ROUTES.ADMIN_PLANNING} className="orgdash-card-link">
-        میقاتی منصوبہ دیکھیں
-      </Link>
-    </div>
-  )
 }
 
 function IjtemaSnapshot({ situation }: { situation: OrganisationalSituation }) {
@@ -158,7 +165,15 @@ function IjtemaSnapshot({ situation }: { situation: OrganisationalSituation }) {
   )
 }
 
-function MeqatiYearSummary({ situation }: { situation: OrganisationalSituation }) {
+export function MeqatiYearSummary({
+  situation,
+  yearSelection,
+  planHref = ROUTES.ADMIN_PLANNING,
+}: {
+  situation: OrganisationalSituation
+  yearSelection?: MeqatiYearSelection
+  planHref?: string
+}) {
   const { year, counts, empty, mansooba } = situation.meqati
   return (
     <section className="orgdash-card orgdash-card-foundation" aria-label="میقاتی منصوبہ — موجودہ سال" dir="rtl" lang="ur">
@@ -180,8 +195,25 @@ function MeqatiYearSummary({ situation }: { situation: OrganisationalSituation }
           </span>
         </div>
       </div>
+      {yearSelection ? (
+        <label className="orgdash-year-field">
+          <span className="sr-only">میقاتی سال منتخب کریں</span>
+          <select
+            className="orgdash-year-select"
+            value={yearSelection.year.key}
+            onChange={(event) => yearSelection.setYearKey(event.target.value)}
+            aria-label="میقاتی سال منتخب کریں"
+          >
+            {yearSelection.years.map((row) => (
+              <option key={row.key} value={row.key}>
+                {row.label} · {meqatiYearUrduRange(row)}
+              </option>
+            ))}
+          </select>
+        </label>
+      ) : null}
       {!mansooba || empty ? (
-        <EmptyMeqatiNote />
+        <EmptyMeqatiNote planHref={planHref} />
       ) : (
         <>
           <dl className="orgdash-stat-row orgdash-stat-row-5">
@@ -227,7 +259,15 @@ function MeqatiYearSummary({ situation }: { situation: OrganisationalSituation }
   )
 }
 
-function ShobahStatusSection({ rows, empty }: { rows: ShobahStatusRow[]; empty: boolean }) {
+export function ShobahStatusSection({
+  rows,
+  empty,
+  planHref = ROUTES.ADMIN_PLANNING,
+}: {
+  rows: ShobahStatusRow[]
+  empty: boolean
+  planHref?: string
+}) {
   const [openId, setOpenId] = useState<string | null>(null)
 
   return (
@@ -239,12 +279,12 @@ function ShobahStatusSection({ rows, empty }: { rows: ShobahStatusRow[]; empty: 
           </span>
           میقاتی منصوبہ — شعبہ وار صورتحال
         </h2>
-        <Link to={ROUTES.ADMIN_PLANNING} className="orgdash-card-link">
+        <Link to={planHref} className="orgdash-card-link">
           میقاتی منصوبہ دیکھیں
         </Link>
       </div>
       {empty || rows.length === 0 ? (
-        <EmptyMeqatiNote />
+        <EmptyMeqatiNote planHref={planHref} />
       ) : (
         <>
           <div className="orgdash-table-wrap">
@@ -329,7 +369,7 @@ function ShobahStatusSection({ rows, empty }: { rows: ShobahStatusRow[]; empty: 
                     ) : null}
                   </>
                 )}
-                <Link to={ROUTES.ADMIN_PLANNING} className="orgdash-card-link">
+                <Link to={planHref} className="orgdash-card-link">
                   رپورٹ / میقاتی منصوبہ کھولیں
                 </Link>
               </div>

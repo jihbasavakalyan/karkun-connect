@@ -348,7 +348,8 @@ service cloud.firestore {
 
     // Phase 1 planning foundation — Admin-owned; archive via update (no client deletes).
     match /meqatiMansoobas/{docId} {
-      allow read, create, update: if isAdministrator();
+      allow read: if isAdministrator() || isRukn();
+      allow create, update: if isAdministrator();
       allow delete: if false;
     }
 
@@ -371,10 +372,9 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // Phase 2 Local Programme — Admin writes; Rukn may read own ذمہ دار activities.
+    // Phase 2 Local Programme — Admin writes; Rukn may read the canonical plan.
     match /localProgrammes/{docId} {
-      allow read: if isAdministrator()
-        || (isRukn() && resource.data.responsibleRuknId == ruknId());
+      allow read: if isAdministrator() || isRukn();
       allow create, update: if isAdministrator();
       allow delete: if false;
     }
@@ -512,6 +512,8 @@ service cloud.firestore {
           || docId == 'migrationVersion'
           || docId == 'karkunRequests'
           || docId == 'ruknAdminMessages'
+          || docId == 'jamaatCurrentSituation'
+          || docId == 'ruknNameDirectory'
           || docId == 'notificationPreferences_' + request.auth.uid
         ));
 

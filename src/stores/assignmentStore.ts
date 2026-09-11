@@ -184,6 +184,9 @@ async function persistAssignmentRecords(
         return result
       }
       connectStepExit(span, 'repo.connection.commitDocuments', { ok: true, softTimedOut })
+      void import('@/lib/jamaat/requestJamaatCurrentSituationPublish').then((mod) => {
+        void mod.refreshJamaatReadModelsAfterConnectionWrite()
+      })
       return result
     } catch (error) {
       connectStepException('repo.connection.commitDocuments', error)

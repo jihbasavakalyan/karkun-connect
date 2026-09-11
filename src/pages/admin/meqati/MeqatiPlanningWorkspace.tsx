@@ -30,14 +30,6 @@ export type MeqatiNavView =
   | { level: 'objective'; shobahId: string; objectiveId: string }
   | { level: 'unmapped'; shobahId: string }
 
-export function meqatiShobahId(view: MeqatiNavView): string | null {
-  return view.level === 'overview' ? null : view.shobahId
-}
-
-export function meqatiObjectiveId(view: MeqatiNavView): string | null {
-  return view.level === 'objective' ? view.objectiveId : null
-}
-
 type Totals = {
   shobahs: number
   objectives: number
@@ -46,7 +38,7 @@ type Totals = {
   unmapped: number
 }
 
-type MeqatiPlanningWorkspaceProps = {
+type MeqatiPlanningWorkspaceBase = {
   mansooba: MeqatiMansooba | null
   totals: Totals
   shobahItems: readonly ShobahOverviewItem[]
@@ -57,6 +49,11 @@ type MeqatiPlanningWorkspaceProps = {
   ruknNameById: ReadonlyMap<string, string>
   view: MeqatiNavView
   onViewChange: (view: MeqatiNavView) => void
+  onOpenActivity: (row: LocalProgramme) => void
+}
+
+type MeqatiPlanningWorkspaceWriteProps = {
+  readOnly?: false
   canCreateMansooba: boolean
   onCreateMansooba: () => void
   onEditMansooba: () => void
@@ -65,8 +62,14 @@ type MeqatiPlanningWorkspaceProps = {
   onCreateObjective: () => void
   onEditObjective: (row: PlanningObjective) => void
   onCreateActivity: () => void
-  onOpenActivity: (row: LocalProgramme) => void
 }
+
+type MeqatiPlanningWorkspaceReadOnlyProps = {
+  readOnly: true
+}
+
+export type MeqatiPlanningWorkspaceProps = MeqatiPlanningWorkspaceBase &
+  (MeqatiPlanningWorkspaceWriteProps | MeqatiPlanningWorkspaceReadOnlyProps)
 
 const PLAN_PERIOD_LABEL = `${MEQATI_PLAN_START_YEAR}–${String(MEQATI_PLAN_END_START_YEAR + 1).slice(-2)}`
 
@@ -131,26 +134,28 @@ function BackBar({ label, onClick }: { label: string; onClick: () => void }) {
   )
 }
 
-export function MeqatiPlanningWorkspace({
-  mansooba,
-  totals,
-  shobahItems,
-  visibleObjectives,
-  unmappedActivities,
-  programmes,
-  ruknNameById,
-  view,
-  onViewChange,
-  canCreateMansooba,
-  onCreateMansooba,
-  onEditMansooba,
-  onCreateShobah,
-  onEditShobah,
-  onCreateObjective,
-  onEditObjective,
-  onCreateActivity,
-  onOpenActivity,
-}: MeqatiPlanningWorkspaceProps) {
+export function MeqatiPlanningWorkspace(props: MeqatiPlanningWorkspaceProps) {
+  const {
+    mansooba,
+    totals,
+    shobahItems,
+    visibleObjectives,
+    unmappedActivities,
+    programmes,
+    ruknNameById,
+    view,
+    onViewChange,
+    onOpenActivity,
+  } = props
+  const readOnly = props.readOnly === true
+  const canCreateMansooba = !readOnly && props.canCreateMansooba
+  const onCreateMansooba = readOnly ? undefined : props.onCreateMansooba
+  const onEditMansooba = readOnly ? undefined : props.onEditMansooba
+  const onCreateShobah = readOnly ? undefined : props.onCreateShobah
+  const onEditShobah = readOnly ? undefined : props.onEditShobah
+  const onCreateObjective = readOnly ? undefined : props.onCreateObjective
+  const onEditObjective = readOnly ? undefined : props.onEditObjective
+  const onCreateActivity = readOnly ? undefined : props.onCreateActivity
   const selectedShobah =
     view.level === 'overview'
       ? null
@@ -181,19 +186,21 @@ export function MeqatiPlanningWorkspace({
             </h2>
           </div>
           <div className="flex flex-wrap gap-2">
-            {canCreateMansooba ? (
+            {canCreateMansooba && onCreateMansooba ? (
               <PrimaryButton type="button" onClick={onCreateMansooba}>
                 نیا میقاتی منصوبہ
               </PrimaryButton>
             ) : null}
-            {mansooba ? (
+            {mansooba && onEditMansooba ? (
               <SecondaryButton type="button" onClick={onEditMansooba}>
                 ترمیم
               </SecondaryButton>
             ) : null}
-            <PrimaryButton type="button" onClick={onCreateShobah} disabled={!mansooba}>
-              نیا شعبہ
-            </PrimaryButton>
+            {onCreateShobah ? (
+              <PrimaryButton type="button" onClick={onCreateShobah} disabled={!mansooba}>
+                نیا شعبہ
+              </PrimaryButton>
+            ) : null}
           </div>
         </header>
 
@@ -269,12 +276,16 @@ export function MeqatiPlanningWorkspace({
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
-              <SecondaryButton type="button" onClick={() => onEditShobah(selectedShobah.shobah)}>
-                ترمیم
-              </SecondaryButton>
-              <PrimaryButton type="button" onClick={onCreateObjective}>
-                نئے اہداف
-              </PrimaryButton>
+              {onEditShobah && selectedShobah ? (
+                <SecondaryButton type="button" onClick={() => onEditShobah(selectedShobah.shobah)}>
+                  ترمیم
+                </SecondaryButton>
+              ) : null}
+              {onCreateObjective ? (
+                <PrimaryButton type="button" onClick={onCreateObjective}>
+                  نئے اہداف
+                </PrimaryButton>
+              ) : null}
             </div>
           </div>
         </header>
@@ -303,7 +314,11 @@ export function MeqatiPlanningWorkspace({
                       objectiveId: row.id,
                     })
                   }
-                  onEdit={() => onEditObjective(row)}
+                  onEdit={
+                    onEditObjective
+                      ? () => onEditObjective(row)
+                      : undefined
+                  }
                 />
               )
             })}
@@ -360,9 +375,11 @@ export function MeqatiPlanningWorkspace({
                   {objectiveActivities.length - mappedCount} بغیر ہدف
                 </p>
               </div>
-              <PrimaryButton type="button" onClick={onCreateActivity}>
-                نئی سرگرمی
-              </PrimaryButton>
+              {onCreateActivity ? (
+                <PrimaryButton type="button" onClick={onCreateActivity}>
+                  نئی سرگرمی
+                </PrimaryButton>
+              ) : null}
             </div>
           </div>
         </header>
@@ -404,11 +421,13 @@ export function MeqatiPlanningWorkspace({
           <p className="mt-3 max-w-xl text-sm text-secondary">
             یہ سرگرمیاں اس شعبہ سے متعلق ہیں، لیکن فی الحال کسی ہدف سے منسلک نہیں۔ ہدف: غیر متعین · بغیر اہداف
           </p>
-          <div className="mt-4">
-            <PrimaryButton type="button" onClick={onCreateActivity}>
-              نئی سرگرمی
-            </PrimaryButton>
-          </div>
+          {onCreateActivity ? (
+            <div className="mt-4">
+              <PrimaryButton type="button" onClick={onCreateActivity}>
+                نئی سرگرمی
+              </PrimaryButton>
+            </div>
+          ) : null}
         </div>
       </header>
       <CompactActivityList

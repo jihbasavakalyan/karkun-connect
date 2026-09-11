@@ -56,15 +56,17 @@ console.log('▶ collection constants')
 console.log('▶ Firestore rules — planning collections')
 {
   const rules = read('firestore.rules')
-  for (const matchLine of [
-    'match /meqatiMansoobas/{docId}',
-    'match /units/{docId}',
-  ]) {
-    const block = extractRulesBlock(rules, matchLine)
-    assertIncludes(block, 'isAdministrator()', `${matchLine} Admin gate`)
-    assertIncludes(block, 'allow delete: if false', `${matchLine} no client delete`)
-    assertNotIncludes(block, 'isRukn()', `${matchLine} no Rukn access`)
-  }
+  const mansoobaBlock = extractRulesBlock(rules, 'match /meqatiMansoobas/{docId}')
+  assertIncludes(mansoobaBlock, 'isAdministrator()', 'meqatiMansoobas Admin write gate')
+  assertIncludes(mansoobaBlock, 'isRukn()', 'meqatiMansoobas Rukn read')
+  assertIncludes(mansoobaBlock, 'allow create, update: if isAdministrator()', 'meqatiMansoobas Admin-only writes')
+  assertIncludes(mansoobaBlock, 'allow delete: if false', 'meqatiMansoobas no client delete')
+
+  const unitsBlock = extractRulesBlock(rules, 'match /units/{docId}')
+  assertIncludes(unitsBlock, 'isAdministrator()', 'units Admin gate')
+  assertIncludes(unitsBlock, 'allow delete: if false', 'units no client delete')
+  assertNotIncludes(unitsBlock, 'isRukn()', 'units no Rukn access')
+
   for (const matchLine of [
     'match /shobahs/{docId}',
     'match /objectives/{docId}',

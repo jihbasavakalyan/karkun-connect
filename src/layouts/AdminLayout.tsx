@@ -5,6 +5,9 @@ import { AdminTopBar } from '@/components/layout/AdminTopBar'
 import { DigitalRafeeqLauncher } from '@/features/digitalRafeeq/launcher'
 import { useKeyboardInset } from '@/hooks/useKeyboardInset'
 import { useRepositoryHydration } from '@/hooks/useRepositoryHydration'
+import { useAssignmentEngine } from '@/hooks/useAssignmentEngine'
+import { usePeopleStore } from '@/hooks/usePeopleStore'
+import { scheduleJamaatReadModelPublish } from '@/lib/jamaat/scheduleJamaatReadModelPublish'
 import {
   AdminCommandCenterProvider,
   useAdminCommandCenter,
@@ -15,7 +18,14 @@ function AdminLayoutShell() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const snapshot = useAdminCommandCenter()
   const alertsReady = useRepositoryHydration()
+  const peopleVersion = usePeopleStore()
+  const { assignmentVersion } = useAssignmentEngine()
   useKeyboardInset()
+
+  useEffect(() => {
+    if (!alertsReady) return
+    scheduleJamaatReadModelPublish()
+  }, [alertsReady, peopleVersion, assignmentVersion])
 
   useEffect(() => {
     if (!mobileNavOpen) return

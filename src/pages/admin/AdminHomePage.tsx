@@ -16,6 +16,7 @@ import {
 } from '@/hooks/useRepositoryHydration'
 import { useMeqatiYearSelection } from '@/lib/dashboard/meqatiYear'
 import { buildOrganisationalSituation } from '@/lib/dashboard/organisationalSituation'
+import { publishJamaatReadModelsIfAdministrator } from '@/lib/jamaat/publishJamaatReadModels'
 import { createCoalescedNotifier } from '@/lib/dashboard/coalesceStoreNotifications'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import {
@@ -96,6 +97,11 @@ export function AdminHomePage() {
     dashState01MetricsReceived('AdminHomePage.buildOrganisationalSituation')
     return next
   }, [peopleVersion, assignmentVersion, moduleTick, isHydrated, backgroundReady, yearSelection.year])
+
+  useEffect(() => {
+    if (!isHydrated) return
+    void publishJamaatReadModelsIfAdministrator()
+  }, [isHydrated, peopleVersion, assignmentVersion, situation.people])
 
   useEffect(() => {
     if (!isHydrated || dashboardRenderedLogged.current) return

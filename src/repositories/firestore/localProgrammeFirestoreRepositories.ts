@@ -1,13 +1,13 @@
 /**
  * Firestore persistence for سرگرمی (collection remains `localProgrammes`).
  * Per-document upsert via existing writeDoc helpers. Admin writes.
- * Hydrate: Admin reads all; Rukn reads own ذمہ دار rows (`responsibleRuknId`).
+ * Hydrate: Admin and Rukn read the canonical plan (writes stay Admin).
  * Soft-read on hydrate (permission-denied → empty). No LWW blob.
  * Head context (mansoobaId/shobahId) + optional Objective validated before durable write.
  * Optional campaignId is a focus overlay and is validated when present.
  */
 
-import { collection, getDocs, query, where, type DocumentData } from 'firebase/firestore'
+import { collection, getDocs, type DocumentData } from 'firebase/firestore'
 import { getFirebaseAuth } from '@/lib/firebase/firebase'
 import { getFirestoreDb } from '@/lib/firebase/firestore'
 import { repositoryOk, type RepositoryResult } from '@/repositories/errors'
@@ -47,28 +47,19 @@ async function resolveClientAuthScope(): Promise<ClientAuthScope> {
   }
 }
 
-async function readScopedByResponsibleRuknId<T>(
-  collectionName: string,
-  label: string,
-): Promise<T[]> {
+/** Soft-read Local Programme collection: Admin and Rukn read the canonical plan. */
+export async function readLocalProgrammeCollectionsForClient(): Promise<
+  LocalProgramme[]
+> {
   const db = getFirestoreDb()
   const scope = await resolveClientAuthScope()
   if (scope.role === 'rukn' && !scope.ruknId) return []
   try {
-    if (scope.role === 'rukn' && scope.ruknId) {
-      const snap = await getDocs(
-        query(
-          collection(db, collectionName),
-          where('responsibleRuknId', '==', scope.ruknId),
-        ),
-      )
-      return snap.docs.map((item) => stripMeta<T>(item.data() as DocumentData))
-    }
-    const snap = await getDocs(collection(db, collectionName))
-    return snap.docs.map((item) => stripMeta<T>(item.data() as DocumentData))
+    const snap = await getDocs(collection(db, FIRESTORE_COLLECTIONS.localProgrammes))
+    return snap.docs.map((item) => stripMeta<LocalProgramme>(item.data() as DocumentData))
   } catch (error) {
     if (isPermissionDeniedError(error)) {
-      console.warn(`[firestore:hydrate] soft-skip ${label} (permission-denied)`)
+      console.warn('[firestore:hydrate] soft-skip localProgrammes (permission-denied)')
       return []
     }
     throw error
@@ -81,16 +72,6 @@ function upsertById<T extends { id: string }>(rows: T[], next: T): T[] {
 
 export function applyLocalProgrammeHydrate(rows: LocalProgramme[]): void {
   programmeCache.set([...rows])
-}
-
-/** Soft-read Local Programme collection: Admin all; Rukn own (`responsibleRuknId`). */
-export async function readLocalProgrammeCollectionsForClient(): Promise<
-  LocalProgramme[]
-> {
-  return readScopedByResponsibleRuknId<LocalProgramme>(
-    FIRESTORE_COLLECTIONS.localProgrammes,
-    'localProgrammes',
-  )
 }
 
 export function resetLocalProgrammeCachesForTests(): void {

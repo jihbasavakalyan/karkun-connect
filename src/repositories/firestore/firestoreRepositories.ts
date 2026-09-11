@@ -184,6 +184,11 @@ import {
   readWorkCollectionsForClient,
   resetWorkCachesForTests,
 } from '@/repositories/firestore/workFirestoreRepositories'
+import {
+  applyJamaatReadModelHydrateFromSettingsDocs,
+  applyJamaatSettingsDocumentSnapshot,
+  resetJamaatReadModelCachesForTests,
+} from '@/repositories/firestore/jamaatReadModelFirestore'
 
 type ConnectionMetaDoc = {
   nextSequence?: number
@@ -861,6 +866,8 @@ function applyBackgroundHydratePayload(input: {
   ruknAdminMessagesDoc: { messages?: RuknAdminMessage[] } | null
   assignmentReviews: AssignmentReviewRequest[]
   muttafiqRelationships: MuttafiqRuknRelationship[]
+  jamaatCurrentSituationDoc: unknown
+  ruknNameDirectoryDoc: unknown
   planning: {
     mansoobas: MeqatiMansooba[]
     shobahs: Shobah[]
@@ -883,6 +890,8 @@ function applyBackgroundHydratePayload(input: {
     ruknAdminMessagesDoc,
     assignmentReviews,
     muttafiqRelationships,
+    jamaatCurrentSituationDoc,
+    ruknNameDirectoryDoc,
     planning,
     localProgrammes,
     occurrences,
@@ -992,9 +1001,13 @@ function applyBackgroundHydratePayload(input: {
   ruknAdminMessageCache.set(ruknAdminMessages)
   applyAssignmentReviewHydrate(assignmentReviews)
   applyMuttafiqRelationshipHydrate(muttafiqRelationships)
-  // Phase 1 — planning foundation (Admin writes; Rukn may read شعبہ / اہداف names).
+  applyJamaatReadModelHydrateFromSettingsDocs({
+    situationDoc: jamaatCurrentSituationDoc,
+    nameDirectoryDoc: ruknNameDirectoryDoc,
+  })
+  // Phase 1 — planning foundation (Admin writes; Rukn may read canonical meqatiMansoobas).
   applyPlanningHydrate(planning)
-  // Phase 2 — Local Programme (Admin writes; Rukn hydrate scoped to responsibleRuknId).
+  // Phase 2 — Local Programme (Admin writes; Rukn hydrates the canonical plan).
   applyLocalProgrammeHydrate(localProgrammes)
   // Phase 3 — non-critical Occurrence (Admin-only; soft-empty for Rukn).
   applyOccurrenceHydrate(occurrences)
@@ -1166,6 +1179,8 @@ function readBackgroundHydratePayload(db: ReturnType<typeof getFirestoreDb>) {
     ),
     readAssignmentReviewsForClient(),
     readMuttafiqRelationshipsForClient(),
+    readDocSoft(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.jamaatCurrentSituation),
+    readDocSoft(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.ruknNameDirectory),
     readPlanningCollectionsForClient(),
     readLocalProgrammeCollectionsForClient(),
     readOccurrenceCollectionsForClient(),
@@ -1183,6 +1198,8 @@ function readBackgroundHydratePayload(db: ReturnType<typeof getFirestoreDb>) {
       ruknAdminMessagesDoc,
       assignmentReviews,
       muttafiqRelationships,
+      jamaatCurrentSituationDoc,
+      ruknNameDirectoryDoc,
       planning,
       localProgrammes,
       occurrences,
@@ -1199,6 +1216,8 @@ function readBackgroundHydratePayload(db: ReturnType<typeof getFirestoreDb>) {
       ruknAdminMessagesDoc,
       assignmentReviews,
       muttafiqRelationships,
+      jamaatCurrentSituationDoc,
+      ruknNameDirectoryDoc,
       planning,
       localProgrammes,
       occurrences,
@@ -1341,6 +1360,8 @@ async function hydrateFirestoreCachesOnce(): Promise<void> {
       ruknAdminMessagesDoc,
       assignmentReviews,
       muttafiqRelationships,
+      jamaatCurrentSituationDoc,
+      ruknNameDirectoryDoc,
       planning,
       localProgrammes,
       occurrences,
@@ -1373,6 +1394,8 @@ async function hydrateFirestoreCachesOnce(): Promise<void> {
       ),
       readAssignmentReviewsForClient(),
       readMuttafiqRelationshipsForClient(),
+      readDocSoft(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.jamaatCurrentSituation),
+      readDocSoft(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.ruknNameDirectory),
       readPlanningCollectionsForClient(),
       readLocalProgrammeCollectionsForClient(),
       readOccurrenceCollectionsForClient(),
@@ -1399,6 +1422,8 @@ async function hydrateFirestoreCachesOnce(): Promise<void> {
       ruknAdminMessagesDoc,
       assignmentReviews,
       muttafiqRelationships,
+      jamaatCurrentSituationDoc,
+      ruknNameDirectoryDoc,
       planning,
       localProgrammes,
       occurrences,
@@ -1528,6 +1553,24 @@ export function startFirestoreSnapshotListeners(onRemoteChange: () => void): voi
     )
   }
 
+  const watchJamaatReadModelDocs = () => {
+    const watchOne = (docId: string) => {
+      snapshotUnsubscribers.push(
+        onSnapshot(doc(db, FIRESTORE_COLLECTIONS.settings, docId), (snap) => {
+          const label = `settings:${docId}`
+          traceIncidentStage('snapshot_listener:fired', {
+            caller: 'onSnapshot',
+            sourceOfTruth: 'Snapshot Listener',
+            path: label,
+          })
+          applyJamaatSettingsDocumentSnapshot(docId, snap.exists() ? snap.data() : null)
+        }),
+      )
+    }
+    watchOne(FIRESTORE_DOCS.jamaatCurrentSituation)
+    watchOne(FIRESTORE_DOCS.ruknNameDirectory)
+  }
+
   const watchQuery = (
     label: string,
     q: Query,
@@ -1626,6 +1669,8 @@ export function startFirestoreSnapshotListeners(onRemoteChange: () => void): voi
       )
       watchCollection(FIRESTORE_COLLECTIONS.executions, onRemoteChange)
       watchCollection(FIRESTORE_COLLECTIONS.compliance, onRemoteChange)
+      // Jamaat aggregates: document listeners (Rukn cannot list /settings).
+      watchJamaatReadModelDocs()
       // KC-0102.0 — Rukn must observe New Karkun request blob updates (Admin writes / peer submits).
       snapshotUnsubscribers.push(
         onSnapshot(doc(db, FIRESTORE_COLLECTIONS.settings, FIRESTORE_DOCS.karkunRequests), () => {
@@ -3366,6 +3411,7 @@ export async function clearAllFirestoreCachesForTests(): Promise<void> {
   notificationPreferencesCache.reset(new Map())
   resetAssignmentReviewCacheForTests()
   resetMuttafiqRelationshipCacheForTests()
+  resetJamaatReadModelCachesForTests()
   resetPlanningCachesForTests()
   resetLocalProgrammeCachesForTests()
   resetOccurrenceCachesForTests()

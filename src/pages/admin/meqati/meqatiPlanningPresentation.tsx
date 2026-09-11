@@ -3,6 +3,7 @@
  * میقاتی منصوبہ → شعبہ → اہداف → سرگرمی → ذمہ دار → Schedule → Remarks / Report
  * Presentation only. Persistence stays on AdminPlanningPage.
  */
+/* eslint-disable react-refresh/only-export-components -- helpers colocated with canvas UI */
 
 import type { LocalProgramme, LocalProgrammeStatus } from '@/types/localProgramme.types'
 import type { PlanningObjective, Shobah } from '@/types/planning.types'
@@ -288,7 +289,7 @@ type ObjectiveNavBoxProps = {
   unmappedCount: number
   accent: string
   onOpen: () => void
-  onEdit: () => void
+  onEdit?: () => void
 }
 
 export function ObjectiveNavBox({
@@ -323,13 +324,15 @@ export function ObjectiveNavBox({
           </span>
         </button>
         <span className="flex shrink-0 flex-col items-end justify-between gap-2 px-3 py-3">
-          <button
-            type="button"
-            className="min-h-11 text-sm text-primary"
-            onClick={onEdit}
-          >
-            ترمیم
-          </button>
+          {onEdit ? (
+            <button
+              type="button"
+              className="min-h-11 text-sm text-primary"
+              onClick={onEdit}
+            >
+              ترمیم
+            </button>
+          ) : null}
           <Chevron />
         </span>
       </div>

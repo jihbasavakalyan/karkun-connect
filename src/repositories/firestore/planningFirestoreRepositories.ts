@@ -5,6 +5,7 @@
  */
 
 import { collection, getDocs, type DocumentData } from 'firebase/firestore'
+import { getFirebaseAuth } from '@/lib/firebase/firebase'
 import { getFirestoreDb } from '@/lib/firebase/firestore'
 import {
   repositoryErr,
@@ -77,8 +78,8 @@ export function applyUnitHydrate(rows: Unit[]): void {
 }
 
 /** Soft-read planning collections for background hydrate.
- * meqatiMansoobas / units remain Admin-only (Rukn soft-empty).
- * shobahs / objectives are readable by Rukn for assigned-activity orientation.
+ * Rukn may read meqatiMansoobas / shobahs / objectives for the full plan canvas.
+ * units remain Admin-only (skipped for Rukn — no permission-denied round trip).
  */
 export async function readPlanningCollectionsForClient(): Promise<{
   mansoobas: MeqatiMansooba[]
@@ -86,6 +87,8 @@ export async function readPlanningCollectionsForClient(): Promise<{
   objectives: PlanningObjective[]
   units: Unit[]
 }> {
+  const role = await resolvePlanningClientRole()
+  const skipUnits = role === 'rukn'
   const [mansoobas, shobahs, objectives, units] = await Promise.all([
     softReadCollection<MeqatiMansooba>(
       FIRESTORE_COLLECTIONS.meqatiMansoobas,
@@ -96,9 +99,22 @@ export async function readPlanningCollectionsForClient(): Promise<{
       FIRESTORE_COLLECTIONS.objectives,
       'objectives',
     ),
-    softReadCollection<Unit>(FIRESTORE_COLLECTIONS.units, 'units'),
+    skipUnits
+      ? Promise.resolve([] as Unit[])
+      : softReadCollection<Unit>(FIRESTORE_COLLECTIONS.units, 'units'),
   ])
   return { mansoobas, shobahs, objectives, units }
+}
+
+async function resolvePlanningClientRole(): Promise<string | null> {
+  try {
+    const user = getFirebaseAuth().currentUser
+    if (!user) return null
+    const token = await user.getIdTokenResult()
+    return typeof token.claims.role === 'string' ? token.claims.role : null
+  } catch {
+    return null
+  }
 }
 
 export function applyPlanningHydrate(input: {
