@@ -89,7 +89,7 @@ export function buildSmartNotifications(
   if (bundle.pendingCount > 0) {
     items.push({
       id: 'n-unread',
-      text: `Unread communication / inbox: ${bundle.pendingCount}.`,
+      text: `ان باکس: ${bundle.pendingCount} items require your attention.`,
       kind: 'communication',
       openRoute:
         role === 'administrator' ? ROUTES.ADMIN_INBOX : ROUTES.RUKN_MY_KARKUN,

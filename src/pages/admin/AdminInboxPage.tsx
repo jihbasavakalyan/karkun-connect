@@ -6,10 +6,12 @@
  */
 
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { searchParamsEqual } from '@/lib/navigation/searchParamsReplace'
+import { CommunicationSectionNav } from '@/components/communication/CommunicationSectionNav'
 import { InboxAccordionSection } from '@/components/inbox/InboxAccordionSection'
 import { EmptyState, ListSkeleton, PageHeader, PageShell } from '@/components/ui'
+import { adminCommunicationPath } from '@/lib/communicationNavigation'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import { BUTTON_BASE_CLASS, BUTTON_SIZE_CLASS } from '@/components/ui/buttonBase'
@@ -157,6 +159,7 @@ function writeInboxSearchParams(
 
 export function AdminInboxPage() {
   const { user } = useAuth()
+  const navigate = useNavigate()
   const hydration = useRepositoryHydrationStatus()
   const [searchParams, setSearchParams] = useSearchParams()
   const folder = resolveInboxFolder(searchParams.get('folder'))
@@ -400,8 +403,14 @@ export function AdminInboxPage() {
             ان باکس
           </span>
         }
-        description="People intake and one-way Rukn messages. Reply to a Rukn on WhatsApp — this is not a chat."
+        description="People intake and one-way Rukn messages. Reply to a Rukn on WhatsApp — this is not a chat. Part of مواصلات."
         actions={unreadBadge}
+      />
+
+      <CommunicationSectionNav
+        active="overview"
+        inboxActive
+        onChange={(section) => navigate(adminCommunicationPath(section))}
       />
 
       <nav

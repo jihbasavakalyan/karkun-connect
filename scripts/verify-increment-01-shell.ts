@@ -27,7 +27,6 @@ const REQUIRED_ADMIN_LABELS = [
   'ہفتہ وار اجتماع',
   'بیت المال',
   'مواصلات',
-  'ان باکس',
   'رپورٹس',
   'مہمات',
   'ترتیبات',
@@ -44,6 +43,10 @@ assert.ok(
   'تربیت و رہنمائی is a Campaigns capability, not a separate primary nav product',
 )
 assert.ok(!flattenAdminNavItems(ADMIN_NAV_ITEMS).some((item) => item.id === 'tarbiyah'))
+/** Increment 14 — ان باکس is under مواصلات, not a separate primary destination. */
+assert.ok(!flattenAdminNavItems(ADMIN_NAV_ITEMS).some((item) => item.id === 'inbox'))
+assert.ok(!labels.includes('ان باکس'))
+assert.equal(findActiveAdminNavItem('/admin/inbox', '')?.id, 'communication')
 assert.equal(findActiveAdminNavItem('/admin/operations', '?tab=queue')?.id, 'campaign')
 assert.equal(findActiveAdminNavItem('/admin/operations', '?tab=execute')?.id, 'campaign')
 assert.equal(findActiveAdminNavItem('/admin/operations', '?tab=review')?.id, 'campaign')

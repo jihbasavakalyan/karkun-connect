@@ -16,6 +16,7 @@
     "verify:increment-06-connections": "npx vite-node scripts/verify-increment-06-connections.ts",
     "verify:increment-07-communication": "npx vite-node scripts/verify-increment-07-communication.ts",
     "verify:increment-08-inbox": "npx vite-node scripts/verify-increment-08-inbox.ts",
+    "verify:increment-14-communication-inbox": "npx vite-node scripts/verify-increment-14-communication-inbox.ts",
     "verify:increment-10-karkun": "npx vite-node scripts/verify-increment-10-karkun.ts",
     "verify:increment-12-campaigns": "npx vite-node scripts/verify-increment-12-campaigns.ts",
     "verify:increment-13-reports": "npx vite-node scripts/verify-increment-13-reports.ts",

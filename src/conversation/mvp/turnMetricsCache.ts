@@ -18,7 +18,7 @@ import {
   getCampaignTimeline,
 } from '@/services/campaignService'
 import { getPeopleStatistics } from '@/lib/peopleStore'
-import { getPendingKarkunRequests } from '@/services/karkunRequestService'
+import { countUnreadInboxItems } from '@/lib/peopleLifecycle'
 import { getAssignmentDashboardMetrics } from '@/services/assignmentService'
 import { getWeeklyIjtemaDashboardMetricsView } from '@/lib/operations/weeklyIjtemaReadAdapter'
 
@@ -58,7 +58,7 @@ function fresh(ruknId?: string | null): Bundle {
     at: now,
     campaign: getCampaignConnectionMetrics(),
     people: getPeopleStatistics(),
-    pendingCount: getPendingKarkunRequests().length,
+    pendingCount: countUnreadInboxItems(),
     assignments: getAssignmentDashboardMetrics(),
     ijtema: getWeeklyIjtemaDashboardMetricsView(),
     visits,

@@ -1,13 +1,16 @@
 import { Link } from 'react-router-dom'
 import { CommunicationStatusBadge } from '@/components/communication/CommunicationStatusBadge'
 import { CommunicationSummaryCards } from '@/components/communication/CommunicationSummaryCards'
-import { adminCommunicationPath } from '@/lib/communicationNavigation'
+import { ROUTES } from '@/constants/routes'
+import { adminCommunicationPath, COMMUNICATION_INBOX_NAV } from '@/lib/communicationNavigation'
+import { countUnreadInboxItems } from '@/lib/peopleLifecycle'
 import { formatHistoryTimestamp } from '@/services/historyService'
 import { useCommunication } from '@/hooks/useCommunication'
 import { ListSkeleton } from '@/components/ui'
 
 export function CommunicationDashboard({ ready = true }: { ready?: boolean }) {
   const { metrics, recentActivity } = useCommunication()
+  const inboxAttention = ready ? countUnreadInboxItems() : null
 
   if (!ready) {
     return <ListSkeleton rows={6} />
@@ -16,6 +19,39 @@ export function CommunicationDashboard({ ready = true }: { ready?: boolean }) {
   return (
     <div className="space-y-6">
       <CommunicationSummaryCards />
+
+      <section
+        className="rounded-(--radius-card) border border-border bg-surface p-4 shadow-card sm:p-5"
+        aria-labelledby="comm-inbox-heading"
+      >
+        <h2
+          id="comm-inbox-heading"
+          className="text-lg font-semibold text-text-heading"
+          dir="rtl"
+          lang="ur"
+        >
+          {COMMUNICATION_INBOX_NAV.label}
+        </h2>
+        <p className="mt-2 text-sm text-secondary">
+          Administrative intake and one-way Rukn messages. Opens the existing Inbox workflow — not
+          communication history.
+        </p>
+        {inboxAttention != null && inboxAttention > 0 ? (
+          <p className="mt-2 text-sm font-medium text-text-heading" role="status">
+            {inboxAttention} item{inboxAttention === 1 ? '' : 's'} require your attention
+          </p>
+        ) : (
+          <p className="mt-2 text-sm text-secondary" role="status">
+            No items requiring attention right now.
+          </p>
+        )}
+        <Link
+          to={ROUTES.ADMIN_INBOX}
+          className="mt-3 inline-flex min-h-11 items-center text-sm font-medium text-primary hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        >
+          Open {COMMUNICATION_INBOX_NAV.label} →
+        </Link>
+      </section>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <section className="rounded-(--radius-card) border border-border bg-surface p-4 shadow-card sm:p-5">

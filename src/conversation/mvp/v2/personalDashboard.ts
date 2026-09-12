@@ -32,8 +32,8 @@ export function buildPersonalDashboard(
     : 'Weekly Ijtema inactive'
   const messagesHeadline =
     bundle.pendingCount > 0
-      ? `${bundle.pendingCount} inbox request(s)`
-      : 'No pending inbox requests'
+      ? `ان باکس: ${bundle.pendingCount} items require attention`
+      : 'ان باکس میں کوئی توجہ طلب معاملہ نہیں'
   const campaignHeadline = `Campaign ${bundle.campaign.progressPct}% (${bundle.campaign.connected}/${bundle.campaign.total})`
 
   const actions =
@@ -41,7 +41,7 @@ export function buildPersonalDashboard(
       ? [
           { id: 'pd-assign', label: 'روابط', route: adminAssignmentsPath() },
           { id: 'pd-ijtema', label: 'اجتماع', route: ROUTES.ADMIN_WEEKLY_IJTEMA },
-          { id: 'pd-inbox', label: 'پیغامات', route: ROUTES.ADMIN_INBOX },
+          { id: 'pd-inbox', label: 'ان باکس', route: ROUTES.ADMIN_INBOX },
         ]
       : [
           { id: 'pd-my', label: 'آج کا کام', route: ROUTES.RUKN_MY_KARKUN },

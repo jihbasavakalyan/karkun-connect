@@ -12,6 +12,7 @@ import {
 } from '@/lib/planning/activityYearStatus'
 import { computeJamaatCurrentSituationCounts } from '@/lib/jamaat/computeJamaatCurrentSituation'
 import { resolveResponsibleRuknDisplayName } from '@/lib/jamaat/resolveResponsibleRuknDisplayName'
+import { countUnreadInboxItems } from '@/lib/peopleLifecycle'
 import { getPeopleStatistics } from '@/lib/peopleStore'
 import { unwrapRepository } from '@/repositories/errors'
 import { getRepositories } from '@/repositories/provider'
@@ -20,7 +21,6 @@ import {
   getDashboardVisitMetrics,
 } from '@/services/dashboardMetricsService'
 import { getFollowUpDashboardMetrics } from '@/services/followUpService'
-import { getPendingKarkunRequests } from '@/services/karkunRequestService'
 import { getMonthlyBaitulMaalDashboardKpi } from '@/services/monthlyBaitulMaalService'
 import {
   formatActiveCampaignDuration,
@@ -80,9 +80,11 @@ export type ShobahStatusRow = OrganisationalStatusCounts & {
 }
 
 export type AttentionCategory = {
-  id: 'activities' | 'responsibilities' | 'follow-up' | 'other'
+  id: 'inbox' | 'activities' | 'responsibilities' | 'follow-up' | 'other'
   label: string
   count: number
+  /** Optional deep link for actionable attention chips. */
+  route?: string
 }
 
 export type ImportantActivitySnapshot = {
@@ -236,9 +238,16 @@ export function buildOrganisationalSituation(year: MeqatiYear): OrganisationalSi
 
   const missingResponsible = linkedProgrammes.filter((row) => !row.responsibleRuknId?.trim()).length
   const followUps = getFollowUpDashboardMetrics().pendingFollowUps
-  const pendingRequests = getPendingKarkunRequests().length
-  const otherCount = people.unassignedKarkuns + pendingRequests
+  /** Increment 14 — same active attention set as Inbox Pending (intake + unread Rukn→Admin). */
+  const inboxAttention = countUnreadInboxItems()
+  const otherCount = people.unassignedKarkuns
   const attentionCategories: AttentionCategory[] = [
+    {
+      id: 'inbox',
+      label: 'ان باکس',
+      count: inboxAttention,
+      route: ROUTES.ADMIN_INBOX,
+    },
     {
       id: 'activities',
       label: 'سرگرمیاں',

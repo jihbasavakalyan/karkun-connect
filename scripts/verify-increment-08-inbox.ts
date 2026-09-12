@@ -20,13 +20,19 @@ function read(rel: string): string {
 }
 
 assert.equal(ROUTES.ADMIN_INBOX, '/admin/inbox')
+/** Increment 14 — ان باکس is under مواصلات; not a separate primary sidebar item. */
 assert.equal(
-  flattenAdminNavItems(ADMIN_NAV_ITEMS).find((item) => item.id === 'inbox')?.label,
-  'ان باکس',
+  flattenAdminNavItems(ADMIN_NAV_ITEMS).find((item) => item.id === 'inbox'),
+  undefined,
 )
 assert.equal(
-  flattenAdminNavItems(ADMIN_NAV_ITEMS).find((item) => item.id === 'inbox')?.to,
-  ROUTES.ADMIN_INBOX,
+  flattenAdminNavItems(ADMIN_NAV_ITEMS).find((item) => item.id === 'communication')?.label,
+  'مواصلات',
+)
+assert.ok(
+  flattenAdminNavItems(ADMIN_NAV_ITEMS)
+    .find((item) => item.id === 'communication')
+    ?.matchPrefixes?.includes(ROUTES.ADMIN_INBOX),
 )
 
 assert.equal(isPathAllowedForRole('/admin/inbox', 'administrator'), true)

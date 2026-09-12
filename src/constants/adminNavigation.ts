@@ -85,8 +85,17 @@ export const ADMIN_NAV_ITEMS: AdminNavEntry[] = [
     to: ROUTES.ADMIN_CAMPAIGN,
     matchPrefixes: CAMPAIGN_PRODUCT_PATH_PREFIXES,
   },
-  { id: 'communication', label: 'مواصلات', icon: 'megaphone', to: ROUTES.ADMIN_COMMUNICATION },
-  { id: 'inbox', label: 'ان باکس', icon: 'message', to: ROUTES.ADMIN_INBOX },
+  /**
+   * Increment 14 — مواصلات is the primary Communication product.
+   * ان باکس remains at /admin/inbox (deep link) and is matched under مواصلات.
+   */
+  {
+    id: 'communication',
+    label: 'مواصلات',
+    icon: 'megaphone',
+    to: ROUTES.ADMIN_COMMUNICATION,
+    matchPrefixes: [ROUTES.ADMIN_COMMUNICATION, ROUTES.ADMIN_INBOX, ROUTES.ADMIN_LISTS, ROUTES.ADMIN_COMMUNICATION_HISTORY],
+  },
   { id: 'reports', label: 'رپورٹس', icon: 'file-text', to: ROUTES.ADMIN_REPORTS },
   { id: 'settings', label: 'ترتیبات', icon: 'settings', to: ROUTES.ADMIN_SETTINGS },
   { id: 'help', label: 'رہنمائی', icon: 'help', to: ROUTES.ADMIN_HELP },

@@ -18,6 +18,16 @@ export const COMMUNICATION_PRIMARY_SECTIONS = [
   { id: 'tool-settings', label: 'WhatsApp Settings' },
 ] as const
 
+/**
+ * Increment 14 — ان باکس is part of the Communication product IA.
+ * Navigates to the existing /admin/inbox workflow (not a Communication section).
+ */
+export const COMMUNICATION_INBOX_NAV = {
+  id: 'inbox',
+  label: 'ان باکس',
+  to: ROUTES.ADMIN_INBOX,
+} as const
+
 /** Deep-link / legacy sections kept off the primary nav. */
 export const COMMUNICATION_SECONDARY_SECTIONS = [
   { id: 'broadcast', label: 'Broadcast' },

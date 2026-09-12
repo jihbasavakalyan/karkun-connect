@@ -398,12 +398,34 @@ function AttentionCompact({ situation }: { situation: OrganisationalSituation })
         <p className="orgdash-muted">اس وقت کوئی توجہ طلب معاملہ نہیں۔</p>
       ) : (
         <ul className="orgdash-attention-grid">
-          {visible.map((row) => (
-            <li key={row.id} className="orgdash-attention-chip">
-              <span className="orgdash-attention-count">{row.count}</span>
-              <span className="orgdash-attention-label">{row.label}</span>
-            </li>
-          ))}
+          {visible.map((row) => {
+            const label =
+              row.id === 'inbox'
+                ? `${row.label} — ${row.count} items require your attention`
+                : `${row.label}: ${row.count}`
+            if (row.route) {
+              return (
+                <li key={row.id} className="orgdash-attention-chip">
+                  <Link
+                    to={row.route}
+                    className="orgdash-attention-link"
+                    aria-label={label}
+                  >
+                    <span className="orgdash-attention-count" aria-hidden="true">
+                      {row.count}
+                    </span>
+                    <span className="orgdash-attention-label">{row.label}</span>
+                  </Link>
+                </li>
+              )
+            }
+            return (
+              <li key={row.id} className="orgdash-attention-chip">
+                <span className="orgdash-attention-count">{row.count}</span>
+                <span className="orgdash-attention-label">{row.label}</span>
+              </li>
+            )
+          })}
         </ul>
       )}
     </section>
