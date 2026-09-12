@@ -12,14 +12,16 @@ import { useBackgroundHydration } from '@/hooks/useBackgroundHydration'
 import { useBusyAction } from '@/hooks/useBusyAction'
 import type { CampaignListItem } from '@/constants/mockMissions'
 import type { Rukn } from '@/data/ruknMaster'
-import { listMeqatiPlanYears } from '@/lib/dashboard/meqatiYear'
+import { listMeqatiPlanYears, resolveMeqatiYear } from '@/lib/dashboard/meqatiYear'
 import {
   isActivityYearStatus,
   normalizeActivityYearStatuses,
   type ActivityYearStatus,
 } from '@/lib/planning/activityYearStatus'
+import { computeActivityProgress } from '@/lib/planning/activityProgress'
 import { selectCanonicalMeqatiMansooba } from '@/lib/planning/canonicalMeqatiMansooba'
 import {
+  formatProgrammeScheduleLabel,
   listProgrammeFrequencies,
   normalizeProgrammeSchedule,
 } from '@/lib/planning/programmeSchedule'
@@ -49,6 +51,8 @@ import { MeqatiPlanningWorkspace, type MeqatiNavView } from '@/pages/admin/meqat
 import {
   buildShobahOverviewItems,
   isMappedActivity,
+  shobahHeadCode,
+  shobahVisual,
 } from '@/pages/admin/meqati/meqatiPlanningPresentation'
 import {
   getAllWeeklyIjtemaEvents,
@@ -275,6 +279,19 @@ function buildActivityFrequency(
   return normalizeProgrammeSchedule(patterns)
 }
 
+function formatAuditTimestamp(iso: string | undefined): string {
+  if (!iso) return '—'
+  try {
+    return new Intl.DateTimeFormat('ur-PK', {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+      timeZone: 'Asia/Karachi',
+    }).format(new Date(iso))
+  } catch {
+    return iso.slice(0, 16)
+  }
+}
+
 export function AdminPlanningPage() {
   const { user } = useAuth()
   const { run, busy } = useBusyAction()
@@ -315,7 +332,6 @@ export function AdminPlanningPage() {
   const [editingActivityId, setEditingActivityId] = useState<string | null>(null)
   const [activityObjectiveId, setActivityObjectiveId] = useState<string | null>(null)
   const [activityForm, setActivityForm] = useState<ActivityFormState>(emptyActivityForm)
-  const [activityModalPane, setActivityModalPane] = useState<'primary' | 'more'>('primary')
 
   const refresh = useCallback(() => {
     const repos = getRepositories()
@@ -573,7 +589,6 @@ export function AdminPlanningPage() {
     setEditingActivityId(null)
     setActivityObjectiveId(null)
     setActivityForm(emptyActivityForm())
-    setActivityModalPane('primary')
     setFormError('')
   }
 
@@ -796,7 +811,6 @@ export function AdminPlanningPage() {
     setEditingActivityId(null)
     setActivityObjectiveId(selectedObjectiveIdResolved)
     setActivityForm(emptyActivityForm())
-    setActivityModalPane('primary')
     setActivityModal('create')
     setFormError('')
     setMessage('')
@@ -806,7 +820,6 @@ export function AdminPlanningPage() {
     setEditingActivityId(row.id)
     setActivityObjectiveId(row.objectiveId?.trim() || null)
     setActivityForm(activityFormFromRow(row))
-    setActivityModalPane('primary')
     setActivityModal('edit')
     setFormError('')
     setMessage('')
@@ -821,6 +834,9 @@ export function AdminPlanningPage() {
           setFormError('سرگرمی کا نام ضروری ہے۔')
           return
         }
+        const existing = editingActivityId
+          ? programmes.find((row) => row.id === editingActivityId)
+          : undefined
         let mansoobaId: string | undefined
         let shobahId: string | undefined
         if (parentId) {
@@ -831,6 +847,9 @@ export function AdminPlanningPage() {
           }
           mansoobaId = parent.mansoobaId
           shobahId = parent.shobahId
+        } else if (existing) {
+          mansoobaId = existing.mansoobaId
+          shobahId = existing.shobahId
         } else {
           mansoobaId = selectedMansoobaId ?? undefined
           shobahId = selectedShobahIdResolved ?? undefined
@@ -840,9 +859,6 @@ export function AdminPlanningPage() {
           return
         }
         const now = new Date().toISOString()
-        const existing = editingActivityId
-          ? programmes.find((row) => row.id === editingActivityId)
-          : undefined
         const record: LocalProgramme = {
           id: existing?.id ?? newPlanningId('activity'),
           mansoobaId,
@@ -920,6 +936,68 @@ export function AdminPlanningPage() {
     shobahs.find((row) => row.id === editingActivity?.shobahId)?.name ??
     selectedShobah?.name ??
     '—'
+
+  const editingActivityShobah =
+    shobahs.find((row) => row.id === editingActivity?.shobahId) ??
+    selectedShobah ??
+    null
+  const editingActivityVisual = editingActivityShobah ? shobahVisual(editingActivityShobah) : null
+  const editingActivityHeadCode = editingActivityShobah ? shobahHeadCode(editingActivityShobah) : null
+
+  const activityTargetShobahId =
+    editingActivity?.shobahId ??
+    (activityObjectiveId
+      ? objectives.find((row) => row.id === activityObjectiveId)?.shobahId
+      : null) ??
+    selectedShobahIdResolved
+
+  const shobahObjectives = useMemo(() => {
+    return objectives.filter((row) => {
+      if (row.status === 'archived') return false
+      if (selectedMansoobaId && row.mansoobaId !== selectedMansoobaId) return false
+      return activityTargetShobahId ? row.shobahId === activityTargetShobahId : true
+    })
+  }, [objectives, selectedMansoobaId, activityTargetShobahId])
+
+  const currentMeqatiYear = useMemo(() => resolveMeqatiYear(), [])
+  const currentYearKey = currentMeqatiYear.key
+  const currentYearStatus = activityForm.yearStatuses[currentYearKey] ?? ''
+
+  const activityRequiresAttention =
+    !activityObjectiveId?.trim() ||
+    !activityForm.responsibleRuknId.trim() ||
+    !activityForm.frequencyCadence
+
+  const calculatedProgress = useMemo(() => {
+    return computeActivityProgress({
+      activity: {
+        id: editingActivityId ?? 'new',
+        name: activityForm.name,
+        summary: activityForm.summary,
+        yearStatuses: normalizeActivityYearStatuses(activityForm.yearStatuses),
+        objectiveId: activityObjectiveId,
+        responsibleRuknId: activityForm.responsibleRuknId,
+        frequency: buildActivityFrequency(activityForm),
+      },
+      yearKey: currentYearKey,
+      occurrences,
+    })
+  }, [
+    editingActivityId,
+    activityForm.name,
+    activityForm.summary,
+    activityForm.yearStatuses,
+    activityForm.responsibleRuknId,
+    activityForm.frequencyCadence,
+    activityForm.frequencyCadenceExtra,
+    activityForm.frequencyDayOfWeek,
+    activityForm.frequencyDayOfMonth,
+    activityForm.frequencyMonth,
+    activityForm.frequencyNote,
+    activityObjectiveId,
+    currentYearKey,
+    occurrences,
+  ])
 
   return (
     <PageShell>
@@ -1423,8 +1501,9 @@ export function AdminPlanningPage() {
 
       <Modal
         isOpen={activityModal != null}
-        title={activityModal === 'edit' ? 'ترمیم سرگرمی' : 'نئی سرگرمی'}
+        title={activityModal === 'edit' ? 'سرگرمی اپ ڈیٹ سینٹر' : 'نئی سرگرمی'}
         onClose={closeActivityModal}
+        size="form"
         footer={
           <ModalFormFooter
             onCancel={closeActivityModal}
@@ -1436,95 +1515,241 @@ export function AdminPlanningPage() {
           />
         }
       >
-        <div className="mb-4 flex gap-4 text-sm">
-          <button
-            type="button"
-            className={activityModalPane === 'primary' ? 'font-semibold text-primary' : 'text-secondary'}
-            onClick={() => setActivityModalPane('primary')}
+        <div className="space-y-5" dir="rtl" lang="ur">
+          {/* Header context card */}
+          <div
+            className="rounded-xl border p-4 flex flex-wrap items-center justify-between gap-3"
+            style={
+              editingActivityVisual
+                ? {
+                    backgroundColor: editingActivityVisual.wash,
+                    borderColor: `color-mix(in srgb, ${editingActivityVisual.accent} 25%, #e2e5ea)`,
+                  }
+                : {
+                    backgroundColor: '#f8fafc',
+                    borderColor: 'var(--color-border)',
+                  }
+            }
           >
-            اصل
-          </button>
-          <button
-            type="button"
-            className={activityModalPane === 'more' ? 'font-semibold text-primary' : 'text-secondary'}
-            onClick={() => setActivityModalPane('more')}
-          >
-            مزید
-          </button>
-        </div>
-
-        {activityModalPane === 'primary' ? (
-        <ModalFormSection title="تفصیل">
-          <ModalFormGrid>
-            <div className="sm:col-span-2">
-              <p className="text-xs text-secondary">شعبہ</p>
-              <p className="mt-1 text-sm text-text-heading">{activityContextShobahName}</p>
-            </div>
             <div>
-              <label className={labelClassName} htmlFor="activity-objective">
-                ہدف
-              </label>
-              <select
-                id="activity-objective"
-                className={inputClassName}
-                value={activityObjectiveId ?? ''}
-                onChange={(event) =>
-                  setActivityObjectiveId(event.target.value.trim() || null)
-                }
-              >
-                <option value="">—</option>
-                {objectives
-                  .filter((row) =>
-                    selectedMansoobaId
-                      ? row.mansoobaId === selectedMansoobaId
-                      : true,
-                  )
-                  .map((row) => (
+              <span className="inline-block text-xs font-semibold px-2 py-0.5 rounded-full bg-white/80 text-text-heading border border-border/40">
+                {editingActivityHeadCode ? `${editingActivityHeadCode} — ` : ''}
+                {activityContextShobahName}
+              </span>
+              <p className="mt-1 text-xs text-secondary">
+                میقاتی منصوبہ: {selectedMansooba?.name ?? 'میقاتی منصوبہ'}
+              </p>
+            </div>
+            {editingActivity ? (
+              <span className="text-xs text-secondary bg-white/70 px-2 py-1 rounded">
+                شناخت: {editingActivity.id}
+              </span>
+            ) : null}
+          </div>
+
+          {/* Activity Name */}
+          <div>
+            <label className={labelClassName} htmlFor="activity-name">
+              سرگرمی کا نام
+            </label>
+            <input
+              id="activity-name"
+              className={inputClassName}
+              placeholder="سرگرمی کا عنوان..."
+              value={activityForm.name}
+              onChange={(event) =>
+                setActivityForm((prev) => ({ ...prev, name: event.target.value }))
+              }
+            />
+          </div>
+
+          {/* Objective Mapping & Data-Quality Section */}
+          {!activityObjectiveId ? (
+            <div className="rounded-xl border border-amber-300 bg-amber-50/90 p-4 text-amber-900">
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-semibold text-sm flex items-center gap-1.5">
+                  <span aria-hidden>⚠️</span>
+                  سرگرمی بغیر ہدف ہے (ہدف: غیر متعین)
+                </span>
+                <span className="rounded bg-amber-200/90 px-2 py-0.5 text-xs font-semibold text-amber-900">
+                  توجہ درکار
+                </span>
+              </div>
+              <p className="mt-1 text-xs text-amber-800">
+                اس سرگرمی کو تصدیق شدہ ہدف سے جوڑیں۔ نظام خود سے ہدف کا اندازہ نہیں لگاتا۔
+              </p>
+              <div className="mt-3">
+                <label htmlFor="activity-link-objective" className="block text-xs font-medium text-amber-900 mb-1">
+                  شعبہ کے تصدیق شدہ اہداف سے انتخاب کریں:
+                </label>
+                <select
+                  id="activity-link-objective"
+                  className="w-full rounded-lg border border-amber-300 bg-white px-3 py-2 text-sm text-text-heading focus:border-primary focus:outline-none"
+                  value=""
+                  onChange={(event) =>
+                    setActivityObjectiveId(event.target.value.trim() || null)
+                  }
+                >
+                  <option value="">— تصدیق شدہ ہدف منتخب کریں —</option>
+                  {shobahObjectives.map((row) => (
                     <option key={row.id} value={row.id}>
                       {row.title}
                     </option>
                   ))}
+                </select>
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-xl border border-border bg-surface-muted/50 p-3.5 flex flex-wrap items-center justify-between gap-2">
+              <div className="min-w-0 flex-1">
+                <span className="block text-xs text-secondary">منسلک ہدف</span>
+                <span className="mt-0.5 block text-sm font-semibold text-text-heading whitespace-normal break-words">
+                  {objectives.find((row) => row.id === activityObjectiveId)?.title ?? 'اہداف'}
+                </span>
+              </div>
+              <select
+                id="activity-change-objective"
+                className="rounded-lg border border-border bg-surface px-2.5 py-1.5 text-xs text-text-heading focus:border-primary focus:outline-none"
+                value={activityObjectiveId}
+                onChange={(event) =>
+                  setActivityObjectiveId(event.target.value.trim() || null)
+                }
+              >
+                <option value="">ہدف الگ کریں (بغیر ہدف)</option>
+                {shobahObjectives.map((row) => (
+                  <option key={row.id} value={row.id}>
+                    تبدیل: {row.title}
+                  </option>
+                ))}
               </select>
-              {!activityObjectiveId ? (
-                <p className="mt-1 text-xs text-secondary">غیر متعین</p>
+            </div>
+          )}
+
+          {/* Implementation Status (Current Year) */}
+          <div className="rounded-xl border border-border bg-surface p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="text-sm font-semibold text-text-heading">
+                  عمل درآمد صورتحال ({currentMeqatiYear.label})
+                </h4>
+                <p className="text-xs text-secondary">
+                  موجودہ میقاتی سال کے لیے حالت کا تعین ایک کلک سے کریں۔
+                </p>
+              </div>
+              {activityRequiresAttention ? (
+                <span className="inline-flex items-center gap-1 rounded bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+                  ⚠️ توجہ درکار
+                </span>
               ) : null}
             </div>
-            <div>
-              <label className={labelClassName} htmlFor="activity-name">
-                سرگرمی
-              </label>
-              <input
-                id="activity-name"
-                className={inputClassName}
-                value={activityForm.name}
-                onChange={(event) =>
-                  setActivityForm((prev) => ({ ...prev, name: event.target.value }))
-                }
-              />
-            </div>
-            <div>
-              <label className={labelClassName} htmlFor="activity-status">
-                حالت
-              </label>
-              <select
-                id="activity-status"
-                className={inputClassName}
-                value={activityForm.status}
-                onChange={(event) =>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <button
+                type="button"
+                className={`rounded-lg border px-3 py-2.5 text-sm font-semibold transition-all ${
+                  currentYearStatus === 'remaining'
+                    ? 'border-zinc-700 bg-zinc-700 text-white shadow-sm ring-2 ring-zinc-700/20'
+                    : 'border-border bg-surface hover:bg-surface-muted text-text-heading'
+                }`}
+                onClick={() =>
                   setActivityForm((prev) => ({
                     ...prev,
-                    status: event.target.value as LocalProgrammeStatus,
+                    yearStatuses: {
+                      ...prev.yearStatuses,
+                      [currentYearKey]: 'remaining',
+                    },
                   }))
                 }
               >
-                <option value="draft">مسودہ</option>
-                <option value="active">فعال</option>
-                <option value="archived">محفوظ</option>
-              </select>
+                شروع نہیں
+              </button>
+              <button
+                type="button"
+                className={`rounded-lg border px-3 py-2.5 text-sm font-semibold transition-all ${
+                  currentYearStatus === 'in_progress'
+                    ? 'border-blue-600 bg-blue-600 text-white shadow-sm ring-2 ring-blue-600/20'
+                    : 'border-border bg-surface hover:bg-surface-muted text-text-heading'
+                }`}
+                onClick={() =>
+                  setActivityForm((prev) => ({
+                    ...prev,
+                    yearStatuses: {
+                      ...prev.yearStatuses,
+                      [currentYearKey]: 'in_progress',
+                    },
+                  }))
+                }
+              >
+                جاری
+              </button>
+              <button
+                type="button"
+                className={`rounded-lg border px-3 py-2.5 text-sm font-semibold transition-all ${
+                  currentYearStatus === 'completed'
+                    ? 'border-emerald-600 bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-600/20'
+                    : 'border-border bg-surface hover:bg-surface-muted text-text-heading'
+                }`}
+                onClick={() =>
+                  setActivityForm((prev) => ({
+                    ...prev,
+                    yearStatuses: {
+                      ...prev.yearStatuses,
+                      [currentYearKey]: 'completed',
+                    },
+                  }))
+                }
+              >
+                مکمل
+              </button>
+              <button
+                type="button"
+                className={`rounded-lg border px-3 py-2.5 text-xs transition-all ${
+                  !currentYearStatus
+                    ? 'border-primary/60 bg-primary/10 text-primary font-medium'
+                    : 'border-border bg-surface text-secondary hover:bg-surface-muted'
+                }`}
+                onClick={() =>
+                  setActivityForm((prev) => ({
+                    ...prev,
+                    yearStatuses: {
+                      ...prev.yearStatuses,
+                      [currentYearKey]: '',
+                    },
+                  }))
+                }
+              >
+                غیر متعین
+              </button>
             </div>
+          </div>
+
+          {/* Progress Section */}
+          <div className="rounded-xl border border-border bg-surface-muted/40 p-3.5">
+            <div className="flex items-center justify-between text-xs mb-1.5">
+              <span className="font-semibold text-text-heading">پیش رفت (Progress)</span>
+              <span className="font-semibold text-primary tabular-nums">
+                {calculatedProgress.displayUrdu}
+              </span>
+            </div>
+            {calculatedProgress.kind === 'numeric' || calculatedProgress.kind === 'recurring' ? (
+              <div className="h-2 w-full overflow-hidden rounded-full bg-border/60">
+                <div
+                  className="h-full bg-primary transition-all duration-300"
+                  style={{ width: `${calculatedProgress.percentage}%` }}
+                />
+              </div>
+            ) : (
+              <p className="text-xs text-secondary">
+                معیاری سرگرمی: صورتحال کے مطابق ٹریک ہو رہی ہے۔ کوئی مصنوعی فیصد فرض نہیں کیا گیا۔
+              </p>
+            )}
+          </div>
+
+          {/* Responsible & Schedule Section */}
+          <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label className={labelClassName} htmlFor="activity-responsible">
-                ذمہ دار
+                ذمہ دار (Responsible)
               </label>
               <select
                 id="activity-responsible"
@@ -1537,7 +1762,7 @@ export function AdminPlanningPage() {
                   }))
                 }
               >
-                <option value="">—</option>
+                <option value="">— غیر متعین —</option>
                 {rukns.map((rukn) => (
                   <option key={rukn.id} value={rukn.id}>
                     {rukn.name}
@@ -1545,9 +1770,10 @@ export function AdminPlanningPage() {
                 ))}
               </select>
             </div>
+
             <div>
               <label className={labelClassName} htmlFor="activity-frequency">
-                نظام الاوقات
+                نظام الاوقات (Schedule)
               </label>
               <select
                 id="activity-frequency"
@@ -1569,220 +1795,261 @@ export function AdminPlanningPage() {
                 <option value="custom">دیگر</option>
               </select>
             </div>
-            {activityForm.frequencyCadence ? (
-              <div>
-                <label className={labelClassName} htmlFor="activity-frequency-extra">
-                  دوسرا نظام الاوقات (اختیاری)
-                </label>
-                <select
-                  id="activity-frequency-extra"
-                  className={inputClassName}
-                  value={activityForm.frequencyCadenceExtra}
-                  onChange={(event) =>
-                    setActivityForm((prev) => ({
-                      ...prev,
-                      frequencyCadenceExtra: event.target
-                        .value as ActivityFormState['frequencyCadenceExtra'],
-                    }))
-                  }
-                >
-                  <option value="">—</option>
-                  <option value="once">یک بار</option>
-                  <option value="monthly">ماہانہ</option>
-                  <option value="quarterly">سہ ماہی</option>
-                  <option value="yearly">سالانہ</option>
-                  <option value="weekly">ہفتہ وار</option>
-                  <option value="custom">دیگر</option>
-                </select>
+          </div>
+
+          {/* Conditional Schedule Fields */}
+          {activityForm.frequencyCadence ? (
+            <div className="rounded-lg border border-border bg-surface-muted/30 p-3 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-secondary">
+                  موجودہ نظام الاوقات: {formatProgrammeScheduleLabel(buildActivityFrequency(activityForm))}
+                </span>
+                <span className="text-xs text-secondary">KC-DEC-015 مطابقت</span>
               </div>
-            ) : null}
-            {activityForm.frequencyCadence === 'weekly' ? (
-              <div>
-                <label className={labelClassName} htmlFor="activity-dow">
-                  یوم ہفتہ (0–6)
-                </label>
-                <input
-                  id="activity-dow"
-                  className={inputClassName}
-                  value={activityForm.frequencyDayOfWeek}
-                  onChange={(event) =>
-                    setActivityForm((prev) => ({
-                      ...prev,
-                      frequencyDayOfWeek: event.target.value,
-                    }))
-                  }
-                />
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="block text-xs font-medium text-text-heading mb-1" htmlFor="activity-frequency-extra">
+                    دوسرا نظام الاوقات (اختیاری — مثلاً سہ ماہی جائزہ)
+                  </label>
+                  <select
+                    id="activity-frequency-extra"
+                    className="w-full rounded border border-border bg-surface px-3 py-2 text-xs text-text-heading focus:border-primary focus:outline-none"
+                    value={activityForm.frequencyCadenceExtra}
+                    onChange={(event) =>
+                      setActivityForm((prev) => ({
+                        ...prev,
+                        frequencyCadenceExtra: event.target
+                          .value as ActivityFormState['frequencyCadenceExtra'],
+                      }))
+                    }
+                  >
+                    <option value="">— کوئی نہیں —</option>
+                    <option value="once">یک بار</option>
+                    <option value="monthly">ماہانہ</option>
+                    <option value="quarterly">سہ ماہی</option>
+                    <option value="yearly">سالانہ</option>
+                    <option value="weekly">ہفتہ وار</option>
+                    <option value="custom">دیگر</option>
+                  </select>
+                </div>
+
+                {activityForm.frequencyCadence === 'weekly' ? (
+                  <div>
+                    <label className="block text-xs font-medium text-text-heading mb-1" htmlFor="activity-dow">
+                      یوم ہفتہ (0–6)
+                    </label>
+                    <input
+                      id="activity-dow"
+                      className="w-full rounded border border-border bg-surface px-3 py-2 text-xs text-text-heading"
+                      value={activityForm.frequencyDayOfWeek}
+                      onChange={(event) =>
+                        setActivityForm((prev) => ({
+                          ...prev,
+                          frequencyDayOfWeek: event.target.value,
+                        }))
+                      }
+                    />
+                  </div>
+                ) : null}
+
+                {activityForm.frequencyCadence === 'monthly' || activityForm.frequencyCadence === 'yearly' ? (
+                  <div>
+                    <label className="block text-xs font-medium text-text-heading mb-1" htmlFor="activity-dom">
+                      یوم ماہ (Day of Month)
+                    </label>
+                    <input
+                      id="activity-dom"
+                      className="w-full rounded border border-border bg-surface px-3 py-2 text-xs text-text-heading"
+                      value={activityForm.frequencyDayOfMonth}
+                      onChange={(event) =>
+                        setActivityForm((prev) => ({
+                          ...prev,
+                          frequencyDayOfMonth: event.target.value,
+                        }))
+                      }
+                    />
+                  </div>
+                ) : null}
+
+                {activityForm.frequencyCadence === 'yearly' ? (
+                  <div>
+                    <label className="block text-xs font-medium text-text-heading mb-1" htmlFor="activity-month">
+                      مہینہ (1–12)
+                    </label>
+                    <input
+                      id="activity-month"
+                      className="w-full rounded border border-border bg-surface px-3 py-2 text-xs text-text-heading"
+                      value={activityForm.frequencyMonth}
+                      onChange={(event) =>
+                        setActivityForm((prev) => ({
+                          ...prev,
+                          frequencyMonth: event.target.value,
+                        }))
+                      }
+                    />
+                  </div>
+                ) : null}
+
+                {activityForm.frequencyCadence === 'custom' ? (
+                  <div>
+                    <label className="block text-xs font-medium text-text-heading mb-1" htmlFor="activity-freq-note">
+                      نوٹ (تکرار کی تفصیل)
+                    </label>
+                    <input
+                      id="activity-freq-note"
+                      className="w-full rounded border border-border bg-surface px-3 py-2 text-xs text-text-heading"
+                      value={activityForm.frequencyNote}
+                      onChange={(event) =>
+                        setActivityForm((prev) => ({
+                          ...prev,
+                          frequencyNote: event.target.value,
+                        }))
+                      }
+                    />
+                  </div>
+                ) : null}
               </div>
-            ) : null}
-            {activityForm.frequencyCadence === 'monthly' ||
-            activityForm.frequencyCadence === 'yearly' ? (
-              <div>
-                <label className={labelClassName} htmlFor="activity-dom">
-                  یوم ماہ
-                </label>
-                <input
-                  id="activity-dom"
-                  className={inputClassName}
-                  value={activityForm.frequencyDayOfMonth}
-                  onChange={(event) =>
-                    setActivityForm((prev) => ({
-                      ...prev,
-                      frequencyDayOfMonth: event.target.value,
-                    }))
-                  }
-                />
-              </div>
-            ) : null}
-            {activityForm.frequencyCadence === 'yearly' ? (
-              <div>
-                <label className={labelClassName} htmlFor="activity-month">
-                  مہینہ (1–12)
-                </label>
-                <input
-                  id="activity-month"
-                  className={inputClassName}
-                  value={activityForm.frequencyMonth}
-                  onChange={(event) =>
-                    setActivityForm((prev) => ({
-                      ...prev,
-                      frequencyMonth: event.target.value,
-                    }))
-                  }
-                />
-              </div>
-            ) : null}
-            {activityForm.frequencyCadence === 'custom' ? (
-              <div>
-                <label className={labelClassName} htmlFor="activity-freq-note">
-                  نوٹ
-                </label>
-                <input
-                  id="activity-freq-note"
-                  className={inputClassName}
-                  value={activityForm.frequencyNote}
-                  onChange={(event) =>
-                    setActivityForm((prev) => ({
-                      ...prev,
-                      frequencyNote: event.target.value,
-                    }))
-                  }
-                />
-              </div>
-            ) : null}
-          </ModalFormGrid>
-        </ModalFormSection>
-        ) : (
-        <>
-          <ModalFormSection title="مزید">
-          <ModalFormGrid>
-            <div>
-              <label className={labelClassName} htmlFor="activity-kind">
-                عملی تعلق
-              </label>
-              <select
-                id="activity-kind"
-                className={inputClassName}
-                value={activityForm.kind}
-                onChange={(event) =>
-                  setActivityForm((prev) => ({
-                    ...prev,
-                    kind: event.target.value as ProgrammeKind,
-                  }))
-                }
-              >
-                {ACTIVITY_KIND_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
             </div>
-            <div>
-              <label className={labelClassName} htmlFor="activity-start">
-                آغاز
-              </label>
-              <input
-                id="activity-start"
-                type="date"
-                className={inputClassName}
-                value={activityForm.startDate}
-                onChange={(event) =>
-                  setActivityForm((prev) => ({ ...prev, startDate: event.target.value }))
-                }
-              />
-            </div>
-            <div>
-              <label className={labelClassName} htmlFor="activity-end">
-                اختتام
-              </label>
-              <input
-                id="activity-end"
-                type="date"
-                className={inputClassName}
-                value={activityForm.endDate}
-                onChange={(event) =>
-                  setActivityForm((prev) => ({ ...prev, endDate: event.target.value }))
-                }
-              />
-            </div>
-          </ModalFormGrid>
-          </ModalFormSection>
-          <ModalFormSection title="نوٹس">
+          ) : null}
+
+          {/* Remarks / Report */}
           <div>
             <label className={labelClassName} htmlFor="activity-summary">
-              خلاصہ
+              مختصر کیفیت / حالیہ رپورٹ
             </label>
             <textarea
               id="activity-summary"
               className={inputClassName}
-              rows={3}
+              rows={2}
+              placeholder="مختصر کیفیت یا پیش رفت درج کریں (اختیاری)... عددی ہدف کے لیے 32/50 بھی درج کر سکتے ہیں"
               value={activityForm.summary}
               onChange={(event) =>
                 setActivityForm((prev) => ({ ...prev, summary: event.target.value }))
               }
             />
           </div>
-        </ModalFormSection>
-        <ModalFormSection title="سال کے مطابق عمل درآمد">
-          <p className="mb-3 text-sm text-secondary">
-            یہ حالت اسی سرگرمی کی سالانہ عمل درآمد کی تصویر ہے۔ ہر سال الگ رہتی ہے — ایک سال کی
-            تبدیلی دوسرے سال کو نہیں بدلتی۔
-          </p>
-          <ModalFormGrid>
-            {MEQATI_PLAN_YEARS.map((year) => (
-              <div key={year.key}>
-                <label className={labelClassName} htmlFor={`activity-year-status-${year.key}`}>
-                  {year.label}
-                </label>
-                <select
-                  id={`activity-year-status-${year.key}`}
-                  className={inputClassName}
-                  value={activityForm.yearStatuses[year.key] ?? ''}
-                  onChange={(event) => {
-                    const nextValue = event.target.value
-                    const status: '' | ActivityYearStatus =
-                      nextValue === '' || isActivityYearStatus(nextValue) ? nextValue : ''
-                    setActivityForm((prev) => ({
-                      ...prev,
-                      yearStatuses: {
-                        ...prev.yearStatuses,
-                        [year.key]: status,
-                      },
-                    }))
-                  }}
-                >
-                  {ACTIVITY_YEAR_STATUS_OPTIONS.map((option) => (
-                    <option key={option.value || 'unset'} value={option.value}>
-                      {option.label}
-                    </option>
+
+          {/* Advanced / Multi-Year Accordion */}
+          <details className="rounded-xl border border-border bg-surface p-3.5">
+            <summary className="cursor-pointer text-xs font-semibold text-secondary hover:text-text-heading">
+              مزید ترتیبات (سال بہ سال عمل درآمد، زمرہ، تاریخ)
+            </summary>
+            <div className="mt-4 space-y-4 pt-3 border-t border-border">
+              <div>
+                <p className="text-xs font-semibold text-text-heading mb-2">
+                  سال کے مطابق عمل درآمد (2023–27):
+                </p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {MEQATI_PLAN_YEARS.map((year) => (
+                    <div key={year.key}>
+                      <label className="block text-xs text-secondary mb-1" htmlFor={`activity-year-status-${year.key}`}>
+                        {year.label}
+                      </label>
+                      <select
+                        id={`activity-year-status-${year.key}`}
+                        className="w-full rounded border border-border bg-surface px-2 py-1.5 text-xs text-text-heading focus:border-primary focus:outline-none"
+                        value={activityForm.yearStatuses[year.key] ?? ''}
+                        onChange={(event) => {
+                          const nextValue = event.target.value
+                          const status: '' | ActivityYearStatus =
+                            nextValue === '' || isActivityYearStatus(nextValue) ? nextValue : ''
+                          setActivityForm((prev) => ({
+                            ...prev,
+                            yearStatuses: {
+                              ...prev.yearStatuses,
+                              [year.key]: status,
+                            },
+                          }))
+                        }}
+                      >
+                        {ACTIVITY_YEAR_STATUS_OPTIONS.map((option) => (
+                          <option key={option.value || 'unset'} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   ))}
-                </select>
+                </div>
               </div>
-            ))}
-          </ModalFormGrid>
-        </ModalFormSection>
-        </>
-        )}
+
+              <div className="grid gap-3 sm:grid-cols-3 pt-2">
+                <div>
+                  <label className="block text-xs text-secondary mb-1" htmlFor="activity-kind">
+                    عملی زمرہ
+                  </label>
+                  <select
+                    id="activity-kind"
+                    className="w-full rounded border border-border bg-surface px-2 py-1.5 text-xs text-text-heading focus:border-primary focus:outline-none"
+                    value={activityForm.kind}
+                    onChange={(event) =>
+                      setActivityForm((prev) => ({
+                        ...prev,
+                        kind: event.target.value as ProgrammeKind,
+                      }))
+                    }
+                  >
+                    {ACTIVITY_KIND_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs text-secondary mb-1" htmlFor="activity-status">
+                    لائف سائیکل
+                  </label>
+                  <select
+                    id="activity-status"
+                    className="w-full rounded border border-border bg-surface px-2 py-1.5 text-xs text-text-heading focus:border-primary focus:outline-none"
+                    value={activityForm.status}
+                    onChange={(event) =>
+                      setActivityForm((prev) => ({
+                        ...prev,
+                        status: event.target.value as LocalProgrammeStatus,
+                      }))
+                    }
+                  >
+                    <option value="draft">مسودہ</option>
+                    <option value="active">فعال</option>
+                    <option value="archived">محفوظ</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs text-secondary mb-1" htmlFor="activity-start">
+                    آغاز
+                  </label>
+                  <input
+                    id="activity-start"
+                    type="date"
+                    className="w-full rounded border border-border bg-surface px-2 py-1 text-xs text-text-heading"
+                    value={activityForm.startDate}
+                    onChange={(event) =>
+                      setActivityForm((prev) => ({ ...prev, startDate: event.target.value }))
+                    }
+                  />
+                </div>
+              </div>
+            </div>
+          </details>
+
+          {/* Audit trail */}
+          {editingActivity ? (
+            <div className="border-t border-border/80 pt-3 text-xs text-secondary flex flex-wrap items-center justify-between gap-2">
+              <span>
+                آخری ترمیم: {editingActivity.updatedAt ? formatAuditTimestamp(editingActivity.updatedAt) : '—'}
+                {editingActivity.updatedBy ? ` · بذریعہ ${editingActivity.updatedBy}` : ''}
+              </span>
+              <span>
+                تخلیق: {editingActivity.createdAt ? editingActivity.createdAt.slice(0, 10) : '—'}
+              </span>
+            </div>
+          ) : null}
+        </div>
       </Modal>
     </PageShell>
   )

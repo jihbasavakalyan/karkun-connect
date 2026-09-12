@@ -193,12 +193,30 @@ export function CompactActivityList({
           <tbody>
             {rows.map((row) => {
               const meta = activityMeta(row, ruknNameById, resolvedYearKey)
+              const unmapped = showUnmappedState || !isMappedActivity(row)
               return (
-                <tr key={row.id} className="align-top border-b border-border/60 last:border-b-0">
+                <tr
+                  key={row.id}
+                  className="align-top border-b border-border/60 last:border-b-0 cursor-pointer hover:bg-surface-muted/70 transition-colors"
+                  onClick={() => onOpen(row)}
+                  tabIndex={0}
+                  role="button"
+                  aria-label={`سرگرمی ${row.name}`}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      onOpen(row)
+                    }
+                  }}
+                >
                   <td className="py-3 pe-3">
                     <p className={activityNameClass}>{row.name}</p>
-                    {showUnmappedState ? (
-                      <p className="mt-1 text-xs text-secondary">ہدف: غیر متعین</p>
+                    {unmapped ? (
+                      <p className="mt-1 text-xs text-amber-700">
+                        <span className="inline-flex items-center gap-1 rounded bg-amber-500/10 px-1.5 py-0.5 text-xs font-medium text-amber-800 border border-amber-300/60">
+                          بغیر ہدف
+                        </span>
+                      </p>
                     ) : null}
                     {meta.summary ? (
                       <p className="mt-1 text-xs text-secondary">خلاصہ: {meta.summary}</p>
@@ -215,8 +233,11 @@ export function CompactActivityList({
                   <td className="py-2.5 pe-0">
                     <button
                       type="button"
-                      className="min-h-11 text-sm font-medium text-primary"
-                      onClick={() => onOpen(row)}
+                      className="min-h-11 text-sm font-medium text-primary hover:underline"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onOpen(row)
+                      }}
                     >
                       تفصیل
                     </button>
@@ -231,11 +252,29 @@ export function CompactActivityList({
       <ul className="overflow-x-hidden lg:hidden">
         {rows.map((row) => {
           const meta = activityMeta(row, ruknNameById, resolvedYearKey)
+          const unmapped = showUnmappedState || !isMappedActivity(row)
           return (
-            <li key={row.id} className="border-b border-border/60 py-3 last:border-b-0">
+            <li
+              key={row.id}
+              className="border-b border-border/60 py-3 last:border-b-0 cursor-pointer hover:bg-surface-muted/70 transition-colors rounded-lg p-2.5 -mx-2"
+              onClick={() => onOpen(row)}
+              tabIndex={0}
+              role="button"
+              aria-label={`سرگرمی ${row.name}`}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  onOpen(row)
+                }
+              }}
+            >
               <p className={activityNameClass}>{row.name}</p>
-              {showUnmappedState ? (
-                <p className="mt-1 text-xs text-secondary">ہدف: غیر متعین</p>
+              {unmapped ? (
+                <p className="mt-1 text-xs text-amber-700">
+                  <span className="inline-flex items-center gap-1 rounded bg-amber-500/10 px-1.5 py-0.5 text-xs font-medium text-amber-800 border border-amber-300/60">
+                    بغیر ہدف
+                  </span>
+                </p>
               ) : null}
               {meta.summary ? (
                 <p className="mt-1 text-xs text-secondary">خلاصہ: {meta.summary}</p>
@@ -246,8 +285,11 @@ export function CompactActivityList({
               </p>
               <button
                 type="button"
-                className="mt-1 min-h-11 text-sm font-medium text-primary"
-                onClick={() => onOpen(row)}
+                className="mt-1 min-h-11 text-sm font-medium text-primary hover:underline"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onOpen(row)
+                }}
               >
                 تفصیل
               </button>
