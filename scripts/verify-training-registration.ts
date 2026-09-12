@@ -30,6 +30,13 @@ import {
   TRAINING_REGISTRATION_SETTINGS_DOC,
 } from '@/lib/publicRegistration/adminTracking'
 import {
+  buildTrainingAdminPeopleExcelRows,
+  buildTrainingAdminPeopleWorkbook,
+  trainingAdminPeopleExcelFilename,
+  TRAINING_ADMIN_PEOPLE_EXCEL_HEADERS,
+} from '@/lib/publicRegistration/peopleDirectoryExcel'
+import * as XLSX from 'xlsx'
+import {
   fromPublicReferringRuknList,
   listEligibleReferringRukns,
   matchReferringRuknQuery,
@@ -257,8 +264,11 @@ function testPublicCopyAndPayment(): void {
   const admin = read('src/components/public-registration/TrainingGatheringAdminPanel.tsx')
   assert(admin.includes('Registered People'), 'admin people list')
   assert(admin.includes('Registered People (Total:'), 'registered people total is prominent')
-  assert(admin.includes('Export CSV'), 'admin CSV export button')
-  assert(admin.includes('exportTrainingRegistrationCsv'), 'CSV uses admin API')
+  assert(admin.includes('Export Excel'), 'admin Excel export button')
+  assert(admin.includes('downloadTrainingAdminPeopleExcel'), 'Excel uses filtered people helper')
+  assert(admin.includes('displayedPeople'), 'Excel export uses displayed people')
+  assert(!admin.includes('Export CSV'), 'admin button no longer says CSV')
+  assert(!admin.includes('exportTrainingRegistrationCsv'), 'people export no longer uses registration CSV API')
   assert(admin.includes('Confirm UPI Paid'), 'admin UPI confirm action')
   assert(!admin.includes('Mark Paid'), 'old admin cash mark-paid action is removed')
   assert(admin.includes('Cash Pending'), 'cash pending queue')
@@ -819,7 +829,8 @@ function testRegisteredPeopleCompactList(): void {
   assert(admin.includes('Registered People (Total: {summary.registered})'), 'registered count stays summary.registered')
   assert(admin.includes('matchesAdminPeopleDirectorySearch'), 'directory search remains')
   assert(admin.includes('matchesAdminPeopleDirectoryFilters'), 'directory filters remain')
-  assert(admin.includes('exportTrainingRegistrationCsv'), 'CSV export remains')
+  assert(admin.includes('downloadTrainingAdminPeopleExcel'), 'Excel export remains')
+  assert(admin.includes('Export Excel'), 'Excel button label remains')
   assert(admin.includes('displayedPeople'), 'filters still change only the displayed list')
   assert(types.includes('ruknNames: string[]'), 'admin row Rukn names type unchanged')
   assert(types.includes('TrainingAdminSearchPerson'), 'people directory type exists')
@@ -999,6 +1010,101 @@ function testAdminPeopleDirectorySearch(): void {
   assert(ruknProgress.connectedCount === 2, 'rukn progress behaviour remains intact')
   assert(ruknProgress.registeredCount === 1, 'rukn progress registered count intact')
   assert(ruknProgress.notRegisteredCount === 1, 'rukn progress not-registered count intact')
+}
+
+function testAdminPeopleDirectoryExcelExport(): void {
+  const many: import('@/lib/publicRegistration/types').TrainingAdminSearchPerson[] = []
+  for (let index = 1; index <= 15; index += 1) {
+    many.push({
+      personId: `k-${index}`,
+      name: index <= 2 ? 'Muhammad Ali' : `Person ${index}`,
+      mobile: `9000000${String(100 + index).slice(-3)}`,
+      gender: index % 2 === 0 ? 'Female' : 'Male',
+      organisationalCategory: index % 3 === 0 ? 'muttafiq' : 'karkun',
+      registered: index <= 5,
+      registrationId: index <= 5 ? `TG260913-9000000${String(100 + index).slice(-3)}` : null,
+      registrationStatus: index <= 5 ? 'complete' : null,
+      paymentMethod: index <= 5 ? (index % 2 === 0 ? 'upi' : 'cash') : null,
+      paymentStatus: index <= 5 ? (index % 2 === 0 ? 'upi_pending' : 'cash_pending') : null,
+      utr: index <= 5 && index % 2 === 0 ? `UTR-${index}` : null,
+      cashPaidToId: null,
+      cashPaidToName: null,
+      ruknNames: [],
+    })
+  }
+
+  const notRegisteredMale = many.filter(
+    (row) =>
+      matchesAdminPeopleDirectoryFilters(row, {
+        registration: 'not_registered',
+        gender: 'Male',
+      }),
+  )
+  assert(notRegisteredMale.length > 0, 'not-registered male filter has rows')
+  assert(notRegisteredMale.every((row) => !row.registered && row.gender === 'Male'), 'not-registered male filter correct')
+
+  const filteredRows = buildTrainingAdminPeopleExcelRows(notRegisteredMale)
+  assert(filteredRows.length === notRegisteredMale.length, 'Excel rows match filtered people count')
+  assert(filteredRows.every((row) => row['Registration Status'] === 'Not Registered'), 'unregistered status exported')
+  assert(filteredRows.every((row) => row['Registration ID'] === ''), 'unregistered registration id blank')
+  assert(filteredRows.every((row) => row['Payment Method'] === ''), 'unregistered payment method blank')
+  assert(filteredRows.every((row) => row['Payment Status'] === ''), 'unregistered payment status blank')
+
+  const registeredOnly = many.filter((row) =>
+    matchesAdminPeopleDirectoryFilters(row, { registration: 'registered' }),
+  )
+  const registeredRows = buildTrainingAdminPeopleExcelRows(registeredOnly)
+  assert(registeredRows.every((row) => row['Registration Status'] === 'Registered'), 'registered status exported')
+  assert(registeredRows.every((row) => row['Registration ID'].startsWith('TG260913-')), 'registered keeps registration id')
+  assert(registeredRows.every((row) => row['Payment Method'] !== ''), 'registered keeps payment method')
+  assert(registeredRows.every((row) => row['Payment Status'] !== ''), 'registered keeps payment status')
+
+  const karkunOnly = many.filter((row) =>
+    matchesAdminPeopleDirectoryFilters(row, { category: 'karkun' }),
+  )
+  assert(
+    buildTrainingAdminPeopleExcelRows(karkunOnly).every((row) => row.Category === 'Karkun'),
+    'category filter respected in Excel',
+  )
+
+  const searchHits = many.filter((row) => matchesAdminPeopleDirectorySearch(row, 'muhammad'))
+  const searchRows = buildTrainingAdminPeopleExcelRows(searchHits)
+  assert(searchRows.length === 2, 'search filtering respected')
+  assert(new Set(searchRows.map((row) => row['Person ID'])).size === 2, 'same-name people remain separate by personId')
+
+  const fullExport = buildTrainingAdminPeopleExcelRows(many)
+  assert(fullExport.length === 15, 'export has no 10-result cap')
+  assert(fullExport.length > 10, 'more than 10 matching people are exported')
+
+  const workbook = buildTrainingAdminPeopleWorkbook(many)
+  assert(Boolean(workbook.SheetNames.includes('Tarbiyati Ijtema')), 'worksheet Tarbiyati Ijtema exists')
+  const sheet = workbook.Sheets['Tarbiyati Ijtema']
+  assert(Boolean(sheet), 'worksheet exists')
+  const matrix = XLSX.utils.sheet_to_json<string[]>(sheet!, { header: 1 }) as string[][]
+  assert(Array.isArray(matrix[0]), 'header row exists')
+  for (const header of TRAINING_ADMIN_PEOPLE_EXCEL_HEADERS) {
+    assert(matrix[0]!.includes(header), `header ${header} exists`)
+  }
+  assert(matrix.length - 1 === many.length, 'row count matches filtered dataset')
+
+  const binary = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' }) as Buffer
+  assert(binary.length > 100, 'workbook binary exists')
+  const reopened = XLSX.read(binary, { type: 'buffer' })
+  assert(reopened.SheetNames.includes('Tarbiyati Ijtema'), 'reopened workbook has worksheet')
+
+  const filename = trainingAdminPeopleExcelFilename(new Date('2026-09-12T10:00:00.000Z'))
+  assert(filename.endsWith('.xlsx'), 'filename ends in .xlsx')
+  assert(filename === 'Tarbiyati-Ijtema-People-2026-09-12.xlsx', 'filename format Tarbiyati-Ijtema-People-YYYY-MM-DD.xlsx')
+
+  const admin = read('src/components/public-registration/TrainingGatheringAdminPanel.tsx')
+  assert(admin.includes('downloadTrainingAdminPeopleExcel(displayedPeople)'), 'UI exports displayedPeople single source')
+  assert(!admin.includes('slice(0, 10)'), 'export path has no slice(0, 10)')
+  assert(!admin.includes('pageSize: 10'), 'export path has no pageSize 10')
+  const excelSrc = read('src/lib/publicRegistration/peopleDirectoryExcel.ts')
+  assert(excelSrc.includes("from 'xlsx'"), 'uses existing xlsx dependency')
+  assert(excelSrc.includes('bookType'), 'writes xlsx workbook')
+  assert(!excelSrc.includes('FIRESTORE'), 'no new Firestore path')
+  assert(!excelSrc.includes('collection('), 'no new collection access')
 }
 
 function testNoNewInfrastructure(): void {
@@ -1606,7 +1712,8 @@ function testRuknDashboardRegistrationProgress(): void {
   const admin = read('src/components/public-registration/TrainingGatheringAdminPanel.tsx')
   assert(admin.includes('Registered People'), '18 admin registered people remains')
   assert(admin.includes('Confirm UPI Paid'), '18 admin UPI confirm remains')
-  assert(admin.includes('Export CSV'), '18 admin CSV remains')
+  assert(admin.includes('Export Excel'), '18 admin Excel export remains')
+  assert(!admin.includes('Export CSV'), '18 admin people export is Excel not CSV')
   const page = read('src/pages/public/TrainingRegistrationPage.tsx')
   assert(page.includes('existing_rukn'), '19 public rukn registration remains')
   assert(page.includes('UTR / Transaction Reference Number'), '19 public UTR remains')
@@ -1690,6 +1797,7 @@ const cases = [
   run('search filters and full CSV export', testSearchFiltersAndCsv),
   run('registered people compact expandable list', testRegisteredPeopleCompactList),
   run('admin people directory search registered and unregistered', testAdminPeopleDirectorySearch),
+  run('admin people directory Excel export', testAdminPeopleDirectoryExcelExport),
   run('no new collection or screenshot infrastructure', testNoNewInfrastructure),
   run('cash collectors from existing rukn master', testCashCollectorsFromRuknMaster),
   run('referring Rukns from existing rukn master', testReferringRuknsFromRuknMaster),

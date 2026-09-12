@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react'
 import { getFirebaseAuth } from '@/lib/firebase/firebase'
 import {
   confirmTrainingRegistrationUpiPaid,
-  exportTrainingRegistrationCsv,
   fetchTrainingRegistrationAdmin,
   setTrainingOnlinePaymentEnabled,
 } from '@/lib/publicRegistration/client'
@@ -12,6 +11,7 @@ import {
   matchesAdminPeopleDirectorySearch,
   paymentQueueTitle,
 } from '@/lib/publicRegistration/adminTracking'
+import { downloadTrainingAdminPeopleExcel } from '@/lib/publicRegistration/peopleDirectoryExcel'
 import {
   trainingOrganisationalCategoryLabel,
   trainingPaymentMethodLabel,
@@ -127,29 +127,6 @@ export function TrainingGatheringAdminPanel() {
     }
   }
 
-  const exportCsv = async () => {
-    const token = await getFirebaseAuth().currentUser?.getIdToken()
-    if (!token) return
-    setExporting(true)
-    try {
-      const result = await exportTrainingRegistrationCsv(token)
-      const blob = new Blob([result.csv], { type: 'text/csv;charset=utf-8' })
-      const url = URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = result.filename
-      document.body.appendChild(link)
-      link.click()
-      link.remove()
-      URL.revokeObjectURL(url)
-      setError('')
-    } catch (exportError) {
-      setError(exportError instanceof Error ? exportError.message : 'Unable to export CSV.')
-    } finally {
-      setExporting(false)
-    }
-  }
-
   const registrationById = useMemo(() => {
     const map = new Map<string, TrainingRegistrationAdminRow>()
     for (const row of registrations) map.set(row.id, row)
@@ -169,6 +146,21 @@ export function TrainingGatheringAdminPanel() {
     )
   }, [peopleDirectory, search, filters])
 
+  const exportExcel = () => {
+    if (!peopleDirectory) {
+      setError('People directory is still loading.')
+      return
+    }
+    setExporting(true)
+    try {
+      downloadTrainingAdminPeopleExcel(displayedPeople)
+      setError('')
+    } catch (exportError) {
+      setError(exportError instanceof Error ? exportError.message : 'Unable to export Excel.')
+    } finally {
+      setExporting(false)
+    }
+  }
   useEffect(() => {
     setExpandedPersonId('')
   }, [search, filters])
@@ -287,13 +279,18 @@ export function TrainingGatheringAdminPanel() {
             <p className="text-sm text-secondary">
               Registered People (Total: {summary.registered})
             </p>
-            <PrimaryButton type="button" disabled={exporting} onClick={() => void exportCsv()}>
-              {exporting ? 'Exporting…' : 'Export CSV'}
+            <PrimaryButton
+              type="button"
+              disabled={exporting || !peopleDirectory}
+              onClick={exportExcel}
+            >
+              {exporting ? 'Exporting…' : 'Export Excel'}
             </PrimaryButton>
           </div>
           <p className="text-xs text-secondary">
             Search eligible Karkun and Muttafiq by name, mobile, or person ID. Registration status
-            shows who is already registered. CSV export always includes all registration documents.
+            shows who is already registered. Export Excel downloads the currently filtered people
+            list.
           </p>
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
               <label className="block sm:col-span-2 lg:col-span-3">
