@@ -689,6 +689,7 @@ export function buildTrainingRegistrationAdminView(input: AdminTrackingInput): {
     upiPending: registrations.filter((row) => row.paymentStatus === 'upi_pending').length,
     newPersonPending: publicRequests.filter((row) => row.status === 'Pending Approval').length,
     newPersonApproved: publicRequests.filter((row) => row.status === 'Approved').length,
+    cashCollectors: listCashCollectors(input.rukns),
     ruknWise,
   }
 

@@ -32,6 +32,7 @@ import type {
 } from '@/lib/publicRegistration/types'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
+import { Modal } from '@/components/common/Modal'
 import { InboxAccordionSection } from '@/components/inbox/InboxAccordionSection'
 import { StatusBadge } from '@/components/ui'
 
@@ -65,6 +66,8 @@ export function TrainingGatheringAdminPanel() {
   const [filters, setFilters] = useState<PeopleFilters>(EMPTY_FILTERS)
   const [expandedRuknId, setExpandedRuknId] = useState('')
   const [expandedPersonId, setExpandedPersonId] = useState('')
+  const [cashMarkPaidTarget, setCashMarkPaidTarget] = useState<TrainingRegistrationAdminRow | null>(null)
+  const [selectedCollectorId, setSelectedCollectorId] = useState('')
   const [onlineBusy, setOnlineBusy] = useState(false)
   const [openQueue, setOpenQueue] = useState('')
 
@@ -86,6 +89,7 @@ export function TrainingGatheringAdminPanel() {
   }
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void load()
   }, [])
 
@@ -114,12 +118,24 @@ export function TrainingGatheringAdminPanel() {
       'Unable to confirm UPI payment.',
     )
 
-  const markCashPaid = (registrationId: string) =>
+  const markCashPaid = (registrationId: string, cashPaidToId: string) =>
     withAdminToken(
       registrationId,
-      (token) => markTrainingRegistrationCashPaid({ token, registrationId }),
+      (token) => markTrainingRegistrationCashPaid({ token, registrationId, cashPaidToId }),
       'Unable to mark cash payment as paid.',
     )
+
+  const cashCollectors = useMemo(() => {
+    if (summary?.cashCollectors && summary.cashCollectors.length > 0) {
+      return summary.cashCollectors
+    }
+    if (summary?.ruknWise) {
+      return summary.ruknWise
+        .map((r) => ({ id: r.ruknId, name: r.ruknName }))
+        .sort((a, b) => a.name.localeCompare(b.name))
+    }
+    return []
+  }, [summary])
 
   const setOnlinePayment = async (onlinePaymentEnabled: boolean) => {
     const token = await getFirebaseAuth().currentUser?.getIdToken()
@@ -170,10 +186,12 @@ export function TrainingGatheringAdminPanel() {
     }
   }
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setExpandedPersonId('')
   }, [search, filters])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (search.trim()) setOpenQueue('people')
   }, [search])
 
@@ -447,7 +465,13 @@ export function TrainingGatheringAdminPanel() {
               rows={cashPending}
               actionLabel="Mark Paid"
               busyId={busyId}
-              onAction={(id) => void markCashPaid(id)}
+              onAction={(id) => {
+                const target = cashPending.find((row) => row.id === id)
+                if (target) {
+                  setCashMarkPaidTarget(target)
+                  setSelectedCollectorId(target.cashPaidToId || '')
+                }
+              }}
               showCashCollector
             />
           </InboxAccordionSection>
@@ -522,6 +546,90 @@ export function TrainingGatheringAdminPanel() {
             </InboxAccordionSection>
           ) : null}
         </div>
+      ) : null}
+
+      {cashMarkPaidTarget ? (
+        <Modal
+          isOpen={Boolean(cashMarkPaidTarget)}
+          title="Confirm Cash Payment"
+          onClose={() => {
+            if (!busyId) {
+              setCashMarkPaidTarget(null)
+              setSelectedCollectorId('')
+            }
+          }}
+          size="md"
+          footer={
+            <div className="flex justify-end gap-2">
+              <SecondaryButton
+                type="button"
+                disabled={Boolean(busyId)}
+                onClick={() => {
+                  setCashMarkPaidTarget(null)
+                  setSelectedCollectorId('')
+                }}
+              >
+                Cancel
+              </SecondaryButton>
+              <PrimaryButton
+                type="button"
+                disabled={!selectedCollectorId || Boolean(busyId)}
+                onClick={async () => {
+                  if (!selectedCollectorId || !cashMarkPaidTarget) return
+                  const targetId = cashMarkPaidTarget.id
+                  const collectorId = selectedCollectorId
+                  await markCashPaid(targetId, collectorId)
+                  setCashMarkPaidTarget(null)
+                  setSelectedCollectorId('')
+                }}
+              >
+                {busyId === cashMarkPaidTarget.id ? 'Saving…' : 'Mark Paid'}
+              </PrimaryButton>
+            </div>
+          }
+        >
+          <div className="space-y-4">
+            <div className="rounded-lg bg-surface-muted p-3 text-sm">
+              <p className="font-semibold text-text-heading">{cashMarkPaidTarget.fullName}</p>
+              <p className="text-xs text-secondary">Registration ID: {cashMarkPaidTarget.id}</p>
+              <p className="text-xs text-secondary">Mobile: {cashMarkPaidTarget.verifiedMobile}</p>
+              <p className="mt-1 font-medium text-text-heading">
+                Registration Fee: ₹{TRAINING_GATHERING_EVENT.feeInr}
+              </p>
+            </div>
+
+            <div>
+              <label
+                htmlFor="admin-cash-paid-to-select"
+                className="mb-1 block text-sm font-medium text-text-heading"
+              >
+                Cash paid to:
+              </label>
+              <select
+                id="admin-cash-paid-to-select"
+                value={selectedCollectorId}
+                onChange={(event) => setSelectedCollectorId(event.target.value)}
+                className="min-h-11 w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm"
+              >
+                <option value="">Select Person</option>
+                {cashCollectors.map((collector) => (
+                  <option key={collector.id} value={collector.id}>
+                    {collector.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {selectedCollectorId ? (
+              <p className="text-xs text-secondary">
+                Selected collector:{' '}
+                <strong className="text-text-heading">
+                  {cashCollectors.find((c) => c.id === selectedCollectorId)?.name || selectedCollectorId}
+                </strong>
+              </p>
+            ) : null}
+          </div>
+        </Modal>
       ) : null}
     </section>
   )

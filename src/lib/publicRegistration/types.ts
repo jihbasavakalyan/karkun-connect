@@ -177,6 +177,7 @@ export type TrainingRegistrationSummary = {
   onlinePaymentEnabled?: boolean
   newPersonPending: number
   newPersonApproved: number
+  cashCollectors?: Array<{ id: string; name: string }>
   ruknWise: Array<{
     ruknId: string
     ruknName: string

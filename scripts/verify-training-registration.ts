@@ -447,17 +447,61 @@ function testRegistrationPaymentSeparation(): void {
   const personHistRelated = ruknOne?.relatedPeople.find((p) => p.karkunId === 'k-hist')
   assert(!personHistRelated?.cashPaidToName, 'historical record in drill-down does not invent cashPaidTo')
 
-  // Verify applyMarkCashPaid transitions cash_pending to paid_cash and records collector
+  // A. cash_pending + valid collector -> paid_cash, paymentMethod cash, cashPaidToId & cashPaidToName populated
   const markedPaid = applyMarkCashPaid(pending, { id: 'r-1', name: 'Rukn One' })
-  assert(markedPaid.paymentStatus === 'paid_cash', 'markedPaid status is paid_cash')
-  assert(markedPaid.paymentMethod === 'cash', 'markedPaid method is cash')
-  assert(markedPaid.cashPaidToId === 'r-1', 'markedPaid records collector id')
-  assert(markedPaid.cashPaidToName === 'Rukn One', 'markedPaid records collector name')
+  assert(markedPaid.paymentStatus === 'paid_cash', 'A: markedPaid status is paid_cash')
+  assert(markedPaid.paymentMethod === 'cash', 'A: markedPaid method is cash')
+  assert(markedPaid.cashPaidToId === 'r-1', 'A: markedPaid records collector id')
+  assert(markedPaid.cashPaidToName === 'Rukn One', 'A: markedPaid records collector name')
 
-  // Marking paid without a specific collector preserves existing payee or leaves null
+  // B & C. cash_pending + missing/invalid/inactive collector validation
+  const testRukns = [
+    { id: 'r-1', name: 'Rukn One', status: 'active' },
+    { id: 'r-archived', name: 'Archived Rukn', status: 'active', isArchived: true },
+    { id: 'r-inactive', name: 'Inactive Rukn', status: 'inactive' },
+  ]
+  const missingCollector = resolveCashCollector(testRukns, '')
+  assert(!missingCollector.ok, 'B: missing collector is rejected')
+  const invalidCollector = resolveCashCollector(testRukns, 'non-existent')
+  assert(!invalidCollector.ok, 'C: invalid collector is rejected')
+  const inactiveCollector = resolveCashCollector(testRukns, 'r-inactive')
+  assert(!inactiveCollector.ok, 'C: inactive collector is rejected')
+  const archivedCollector = resolveCashCollector(testRukns, 'r-archived')
+  assert(!archivedCollector.ok, 'C: archived collector is rejected')
+
+  // D. historical paid_cash with existing payee -> unchanged
+  assert(paidToCollector.paymentStatus === 'paid_cash', 'D: historical paid_cash with payee remains paid_cash')
+  assert(paidToCollector.cashPaidToId === 'r-1', 'D: historical paid_cash retains cashPaidToId')
+  assert(paidToCollector.cashPaidToName === 'Rukn One', 'D: historical paid_cash retains cashPaidToName')
+
+  // E. historical paid_cash without payee -> no fabricated payee
+  assert(historicalPaid.paymentStatus === 'paid_cash', 'E: historical paid_cash without payee remains paid_cash')
+  assert(historicalPaid.cashPaidToId === null, 'E: historical paid_cash without payee has null cashPaidToId')
+  assert(historicalPaid.cashPaidToName === null, 'E: historical paid_cash without payee has null cashPaidToName')
+
+  // F. applyMarkCashPaid preserves existing payee when operating on an already-populated record
+  const preservedPopulated = applyMarkCashPaid(paidToCollector)
+  assert(preservedPopulated.cashPaidToId === 'r-1', 'F: preserves existing cashPaidToId on populated record')
+  assert(preservedPopulated.cashPaidToName === 'Rukn One', 'F: preserves existing cashPaidToName on populated record')
+
+  // Marking paid without a specific collector on a blank record leaves null without fabricating
   const markedPaidNoCollector = applyMarkCashPaid(pending)
   assert(markedPaidNoCollector.paymentStatus === 'paid_cash', 'markedPaid without collector status is paid_cash')
   assert(markedPaidNoCollector.cashPaidToName === null, 'markedPaid without collector leaves cashPaidToName null without fabricating')
+
+  // G. Admin UI & Server validation requirements
+  const adminUiSrc = read('src/components/public-registration/TrainingGatheringAdminPanel.tsx')
+  assert(adminUiSrc.includes('Cash paid to:'), 'G: Admin UI asks Cash paid to:')
+  assert(adminUiSrc.includes('admin-cash-paid-to-select'), 'G: Admin UI provides collector select')
+  assert(adminUiSrc.includes('Selected collector:'), 'G: Admin UI displays selected collector name')
+  assert(adminUiSrc.includes('!selectedCollectorId'), 'G: Admin UI keeps Mark Paid disabled until collector selected')
+  assert(adminUiSrc.includes('Cancel'), 'G: Admin UI allows cancel without mutation')
+  assert(adminUiSrc.includes('markCashPaid(targetId, collectorId)'), 'G: Admin UI calls markCashPaid with targetId and collectorId')
+  assert(adminUiSrc.includes('markTrainingRegistrationCashPaid({ token, registrationId, cashPaidToId })'), 'G: Admin UI passes selected cashPaidToId to client helper')
+
+  const handlerSrc = read('src/server/trainingRegistration/handler.ts')
+  assert(handlerSrc.includes("error: 'Select who received the cash payment.'"), 'server handler rejects missing collector for new transition')
+  assert(handlerSrc.includes('resolveCashCollector(rukns, cashPaidToIdRaw)'), 'server handler resolves collector against authoritative rukns')
 }
 
 function testGenderTracking(): void {

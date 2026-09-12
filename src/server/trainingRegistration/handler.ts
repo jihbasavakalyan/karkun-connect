@@ -1002,7 +1002,7 @@ async function handleMarkCashPaid(
     return json(409, { ok: false, error: 'Only cash registrations can be marked paid here.' })
   }
 
-  let collector: { id: string; name: string } | null = null
+  let collector: { id: string; name: string }
   if (typeof cashPaidToIdRaw === 'string' && cashPaidToIdRaw.trim()) {
     const rukns = await loadRuknCollectorSource(admin.db)
     const resolved = resolveCashCollector(rukns, cashPaidToIdRaw)
@@ -1010,6 +1010,10 @@ async function handleMarkCashPaid(
       return json(400, { ok: false, error: resolved.error })
     }
     collector = { id: resolved.id, name: resolved.name }
+  } else if (current.cashPaidToId && current.cashPaidToName) {
+    collector = { id: current.cashPaidToId, name: current.cashPaidToName }
+  } else {
+    return json(400, { ok: false, error: 'Select who received the cash payment.' })
   }
 
   const timestamp = nowIso()
