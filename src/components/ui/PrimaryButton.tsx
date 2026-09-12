@@ -25,7 +25,7 @@ export function PrimaryButton({
       className={[
         BUTTON_BASE_CLASS,
         BUTTON_SIZE_CLASS[size],
-        'bg-primary text-white shadow-sm hover:bg-primary-hover hover:shadow-card-hover',
+        'bg-primary text-white shadow-sm hover:bg-primary-hover',
         fullWidth ? 'w-full' : '',
         className,
       ]

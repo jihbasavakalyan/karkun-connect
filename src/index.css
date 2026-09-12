@@ -1,10 +1,11 @@
 @import 'tailwindcss';
 
 @theme {
-  --color-primary: #1b4332;
-  --color-primary-hover: #2d6a4f;
-  --color-primary-light: #40916c;
-  --color-primary-muted: #d8f3dc;
+  /* Claude: teal primary / interactive */
+  --color-primary: #0f766e;
+  --color-primary-hover: #0d9488;
+  --color-primary-light: #14b8a6;
+  --color-primary-muted: #ccfbf1;
   --color-secondary: #64748b;
   --color-secondary-light: #94a3b8;
   --color-surface: #ffffff;
@@ -15,21 +16,28 @@
   --color-error: #b91c1c;
   --color-error-bg: #fef2f2;
   --color-error-border: #fecaca;
-  --font-sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --font-urdu: 'Noto Nastaliq Urdu', 'Segoe UI', Tahoma, sans-serif;
-  --shadow-card: 0 1px 2px 0 rgb(15 23 42 / 0.04);
-  --shadow-card-hover: 0 2px 8px -2px rgb(15 23 42 / 0.08);
-  --radius-card: 0.75rem;
+  /* Claude: Admin/English = IBM Plex Sans; Rukn/Urdu = Noto Nastaliq */
+  --font-sans: 'IBM Plex Sans', system-ui, 'Segoe UI', sans-serif;
+  --font-urdu: 'Noto Nastaliq Urdu', 'Segoe UI', Tahoma, serif;
+  --shadow-card: 0 1px 2px 0 rgb(15 23 42 / 0.05);
+  --shadow-card-hover:
+    0 4px 6px -1px rgb(15 23 42 / 0.08), 0 2px 4px -2px rgb(15 23 42 / 0.06);
+  /* Claude radius: 4 / 8 / 16 */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1rem;
+  --radius-card: 1rem;
   --color-sidebar: #0f172a;
   --color-sidebar-hover: #1e293b;
   --color-sidebar-border: #334155;
   --color-sidebar-text: #cbd5e1;
   --color-sidebar-text-muted: #94a3b8;
-  --color-sidebar-active: #14532d;
+  --color-sidebar-active: #0f766e;
   /*
    * Authenticated shell — Claude institutional language.
-   * Deep navy / slate rail; restrained teal accent; warm-neutral canvas.
-   * Do not remap --color-primary (product action green remains).
+   * Navy chrome · teal interactive · soft amber attention · neutral canvas.
    */
   --color-kc-shell: #0f172a;
   --color-kc-shell-hover: #1e293b;
@@ -42,7 +50,7 @@
   --color-kc-shell-current-fg: #1a1408;
   --color-kc-canvas: #f5f3ef;
   --color-kc-shell-ink: #0f172a;
-  --color-kc-shell-attention: #b4533a;
+  --color-kc-shell-attention: #b45309;
   --color-accent-glow: #0f766e;
   --color-accent: #c99700;
   --color-accent-soft: #fbf3d5;
@@ -50,22 +58,24 @@
   --color-info-soft: #eff6ff;
   --color-warning: #b45309;
   --color-warning-soft: #fffbeb;
-  /* Institutional hero: navy slate, not decorative green glass. */
-  --gradient-hero: linear-gradient(160deg, #0f172a 0%, #1e293b 55%, #0f766e 140%);
+  /* Claude: navy hero — no decorative multi-stop gradient */
+  --gradient-hero: #0f172a;
   --gradient-card: #ffffff;
   --gradient-warm-bg: #f5f3ef;
-  --shadow-enterprise: 0 8px 24px -12px rgb(15 23 42 / 0.12);
-  --shadow-enterprise-lg: 0 12px 32px -16px rgb(15 23 42 / 0.14);
-  --shadow-glass: 0 1px 2px 0 rgb(15 23 42 / 0.04);
+  --shadow-enterprise:
+    0 4px 6px -1px rgb(15 23 42 / 0.08), 0 2px 4px -2px rgb(15 23 42 / 0.06);
+  --shadow-enterprise-lg:
+    0 4px 6px -1px rgb(15 23 42 / 0.08), 0 2px 4px -2px rgb(15 23 42 / 0.06);
+  --shadow-glass: 0 1px 2px 0 rgb(15 23 42 / 0.05);
 }
 
 /* KC-026 — Appearance themes (calm dark support) */
 html[data-theme='dark'] {
   color-scheme: dark;
-  --color-primary: #52b788;
-  --color-primary-hover: #74c69d;
-  --color-primary-light: #95d5b2;
-  --color-primary-muted: #1b4332;
+  --color-primary: #2dd4bf;
+  --color-primary-hover: #5eead4;
+  --color-primary-light: #99f6e4;
+  --color-primary-muted: #134e4a;
   --color-secondary: #94a3b8;
   --color-secondary-light: #64748b;
   --color-surface: #0f172a;
@@ -81,12 +91,13 @@ html[data-theme='dark'] {
   --color-warning-soft: #3f2e12;
   --gradient-warm-bg: #111827;
   --gradient-card: #0f172a;
-  --gradient-hero: linear-gradient(160deg, #020617 0%, #0f172a 60%, #134e4a 140%);
+  --gradient-hero: #020617;
   --shadow-glass: 0 1px 2px 0 rgb(0 0 0 / 0.35);
   --color-kc-canvas: #111827;
   --color-kc-shell-ink: #f8fafc;
   --color-kc-shell-teal: #2dd4bf;
   --color-kc-shell-teal-soft: #134e4a;
+  --color-kc-shell-attention: #fbbf24;
 }
 
 @layer utilities {
@@ -172,22 +183,35 @@ html[data-theme='dark'] {
   }
 
   .enterprise-card {
-    @apply rounded-xl border border-border bg-surface transition-colors duration-200;
+    border-radius: var(--radius-card);
+    border: 1px solid color-mix(in srgb, var(--color-kc-shell) 10%, var(--color-border));
+    background-color: var(--color-surface);
     box-shadow: none;
+    transition: border-color 200ms ease;
   }
 
   .enterprise-card-interactive {
-    @apply rounded-xl border border-border bg-surface transition-colors duration-200 hover:border-kc-shell/25;
+    border-radius: var(--radius-card);
+    border: 1px solid color-mix(in srgb, var(--color-kc-shell) 10%, var(--color-border));
+    background-color: var(--color-surface);
     box-shadow: none;
+    transition: border-color 200ms ease;
+  }
+
+  .enterprise-card-interactive:hover {
+    border-color: color-mix(in srgb, var(--color-kc-shell-teal) 35%, var(--color-border));
   }
 
   .enterprise-gradient-hero {
     background: var(--gradient-hero);
+    color: var(--color-kc-shell-text);
   }
 
   /* Legacy name — solid institutional panel, not glassmorphism. */
   .enterprise-glass {
-    @apply rounded-xl border border-border bg-surface;
+    border-radius: var(--radius-card);
+    border: 1px solid color-mix(in srgb, var(--color-kc-shell) 10%, var(--color-border));
+    background-color: var(--color-surface);
   }
 
   .enterprise-section-title {
@@ -199,23 +223,44 @@ html[data-theme='dark'] {
   }
 
   .campaign-glass-card {
-    @apply rounded-xl border border-border bg-surface transition-colors duration-200;
+    border-radius: var(--radius-card);
+    border: 1px solid color-mix(in srgb, var(--color-kc-shell) 10%, var(--color-border));
+    background-color: var(--color-surface);
     box-shadow: none;
+    transition: border-color 200ms ease;
   }
 
   .campaign-glass-card-interactive {
-    @apply rounded-xl border border-border bg-surface transition-colors duration-200 hover:border-kc-shell/25;
+    border-radius: var(--radius-card);
+    border: 1px solid color-mix(in srgb, var(--color-kc-shell) 10%, var(--color-border));
+    background-color: var(--color-surface);
+    box-shadow: none;
+    transition: border-color 200ms ease;
+  }
+
+  .campaign-glass-card-interactive:hover {
+    border-color: color-mix(in srgb, var(--color-kc-shell-teal) 35%, var(--color-border));
+  }
+
+  /* Claude institutional surfaces */
+  .kc-panel {
+    border-radius: var(--radius-card);
+    border: 1px solid color-mix(in srgb, var(--color-kc-shell) 10%, var(--color-border));
+    background-color: var(--color-surface);
     box-shadow: none;
   }
 
-  /* Claude institutional surfaces — open grouping without card chrome */
-  .kc-panel {
-    @apply rounded-xl border border-border bg-surface;
-    box-shadow: none;
+  .kc-panel-raised {
+    border-radius: var(--radius-card);
+    border: 1px solid color-mix(in srgb, var(--color-kc-shell) 10%, var(--color-border));
+    background-color: var(--color-surface);
+    box-shadow: var(--shadow-card);
   }
 
   .kc-panel-muted {
-    @apply rounded-xl border border-border/70 bg-surface-muted;
+    border-radius: var(--radius-card);
+    border: 1px solid color-mix(in srgb, var(--color-kc-shell) 8%, var(--color-border));
+    background-color: var(--color-surface-muted);
     box-shadow: none;
   }
 
@@ -244,17 +289,32 @@ html[data-theme='dark'] {
   }
 
   .kc-accent-teal-bg {
-    background-color: color-mix(in srgb, var(--color-kc-shell-teal) 12%, white);
+    background-color: var(--color-kc-shell-teal-soft);
     color: var(--color-kc-shell-teal);
   }
 
+  .kc-attention {
+    color: var(--color-kc-shell-attention);
+  }
+
+  .kc-attention-soft {
+    background-color: var(--color-accent-soft);
+    color: var(--color-kc-shell-attention);
+  }
+
   .cc-card-sm {
-    @apply rounded-xl border border-border bg-surface p-4;
+    border-radius: var(--radius-card);
+    border: 1px solid color-mix(in srgb, var(--color-kc-shell) 10%, var(--color-border));
+    background-color: var(--color-surface);
+    padding: 1rem;
     box-shadow: none;
   }
 
   .cc-card-md {
-    @apply rounded-xl border border-border bg-surface p-5;
+    border-radius: var(--radius-card);
+    border: 1px solid color-mix(in srgb, var(--color-kc-shell) 10%, var(--color-border));
+    background-color: var(--color-surface);
+    padding: 1.25rem;
     box-shadow: none;
   }
 
@@ -291,6 +351,7 @@ html[data-theme='dark'] {
     @apply mx-auto w-full max-w-6xl space-y-4 overflow-x-hidden sm:space-y-6;
     max-width: min(72rem, 100%);
     min-width: 0;
+    font-family: var(--font-sans);
   }
 
   .ds-page-narrow {
@@ -333,12 +394,25 @@ html[data-theme='dark'] {
   }
 
   .ds-section {
-    @apply rounded-xl border border-border bg-surface p-3 sm:p-5;
+    border-radius: var(--radius-card);
+    border: 1px solid color-mix(in srgb, var(--color-kc-shell) 10%, var(--color-border));
+    background-color: var(--color-surface);
+    padding: 0.75rem;
     box-shadow: none;
   }
 
+  @media (min-width: 640px) {
+    .ds-section {
+      padding: 1.25rem;
+    }
+  }
+
   .ds-section-dense {
-    @apply mt-3 rounded-xl border border-border/70 bg-surface p-3 sm:p-3.5;
+    margin-top: 0.75rem;
+    border-radius: var(--radius-card);
+    border: 1px solid color-mix(in srgb, var(--color-kc-shell) 8%, var(--color-border));
+    background-color: var(--color-surface);
+    padding: 0.75rem;
     box-shadow: none;
   }
 
@@ -708,7 +782,8 @@ html[data-theme='dark'] {
   }
 
   .ds-tab-pill-nav {
-    @apply inline-flex rounded-lg border border-border bg-surface p-1 shadow-card;
+    @apply inline-flex rounded-lg border border-border bg-surface p-1;
+    box-shadow: none;
   }
 
   .ds-tab-pill {
@@ -800,7 +875,8 @@ html[data-theme='dark'] {
   }
 
   .ds-table-wrap {
-    @apply overflow-x-auto rounded-xl border border-border/80 bg-surface shadow-card;
+    @apply overflow-x-auto rounded-xl border border-border/80 bg-surface;
+    box-shadow: none;
   }
 
   .ds-table {
@@ -3147,10 +3223,10 @@ html[data-theme='dark'] {
   .urdu-text {
     font-family: var(--font-urdu);
     font-size: 1.125rem;
-    line-height: 2.15;
+    line-height: 1.85;
     letter-spacing: 0;
     text-align: right;
-    -webkit-font-smoothing: antialiased;
+    -webkit-font-smoothing: auto;
     text-rendering: optimizeLegibility;
     overflow-wrap: anywhere;
     word-break: break-word;
@@ -4471,8 +4547,9 @@ html[data-theme='dark'] {
     margin: 0;
     font-family: var(--font-sans);
     color: var(--color-text);
-    background-color: var(--color-surface);
+    background-color: var(--color-kc-canvas);
     font-size: 15px;
+    line-height: 1.6;
     overscroll-behavior-y: none;
   }
 
@@ -5160,7 +5237,7 @@ html[data-theme='dark'] {
 
 .orgdash-hero,
 .orgdash-card {
-  border: 1px solid color-mix(in srgb, var(--color-kc-shell) 12%, var(--color-border));
+  border: 1px solid color-mix(in srgb, var(--color-kc-shell) 10%, var(--color-border));
   border-radius: 1rem;
   background: var(--color-surface, #ffffff);
   box-shadow: none;
@@ -5256,8 +5333,8 @@ html[data-theme='dark'] {
 
 .orgdash-year-select {
   min-height: 2.75rem;
-  border: 1px solid color-mix(in srgb, var(--color-kc-shell) 16%, var(--color-border));
-  border-radius: 0.75rem;
+  border: 1px solid color-mix(in srgb, var(--color-kc-shell) 12%, var(--color-border));
+  border-radius: 0.5rem;
   background: var(--color-kc-canvas);
   padding: 0.5rem 0.75rem;
   font-size: 0.875rem;
@@ -5414,19 +5491,27 @@ html[data-theme='dark'] {
   align-items: center;
   justify-content: center;
   border-radius: 0.5rem;
-  color: #ffffff;
+  border: 1px solid color-mix(in srgb, var(--orgdash-teal) 22%, var(--color-border));
+  background: var(--orgdash-teal-soft);
+  color: var(--orgdash-teal);
 }
 
 .orgdash-card-icon-teal {
-  background: var(--orgdash-teal);
+  background: var(--orgdash-teal-soft);
+  color: var(--orgdash-teal);
+  border-color: color-mix(in srgb, var(--orgdash-teal) 22%, var(--color-border));
 }
 
 .orgdash-card-icon-blue {
-  background: var(--orgdash-teal);
+  background: var(--orgdash-blue-soft);
+  color: var(--orgdash-blue);
+  border-color: color-mix(in srgb, var(--orgdash-blue) 18%, var(--color-border));
 }
 
 .orgdash-card-icon-amber {
-  background: var(--orgdash-amber);
+  background: var(--orgdash-amber-soft);
+  color: var(--orgdash-amber);
+  border-color: color-mix(in srgb, var(--orgdash-amber) 22%, var(--color-border));
 }
 
 .orgdash-card-link {
@@ -5994,9 +6079,9 @@ html[data-theme='dark'] {
 
 .rukn-home-card {
   border: 1px solid color-mix(in srgb, var(--color-kc-shell) 10%, var(--color-border));
-  border-radius: var(--radius-card);
+  border-radius: 1rem;
   background: var(--color-surface);
-  padding: 0.85rem 0.95rem 0.9rem;
+  padding: 1rem;
   box-shadow: none;
 }
 

@@ -78,11 +78,11 @@ function SectionLabel({ children }: { children: string }) {
 }
 
 const STAT_CARDS: { key: keyof Totals; label: string; icon: IconName; tint: string; ink: string }[] = [
-  { key: 'shobahs', label: 'شعبہ', icon: 'users', tint: '#e8f5ee', ink: '#1b4332' },
-  { key: 'objectives', label: 'اہداف', icon: 'flag', tint: '#eef3f8', ink: '#293241' },
-  { key: 'activities', label: 'سرگرمیاں', icon: 'clipboard', tint: '#f3f7f2', ink: '#3a5a40' },
-  { key: 'mapped', label: 'مربوط', icon: 'link', tint: '#eef7f4', ink: '#1b4332' },
-  { key: 'unmapped', label: 'بغیر ہدف', icon: 'warning', tint: '#f7f3ee', ink: '#4a4238' },
+  { key: 'shobahs', label: 'شعبہ', icon: 'users', tint: '#ccfbf1', ink: '#0f766e' },
+  { key: 'objectives', label: 'اہداف', icon: 'flag', tint: '#e2e8f0', ink: '#0f172a' },
+  { key: 'activities', label: 'سرگرمیاں', icon: 'clipboard', tint: '#f5f3ef', ink: '#0f172a' },
+  { key: 'mapped', label: 'مربوط', icon: 'link', tint: '#f0fdfa', ink: '#0f766e' },
+  { key: 'unmapped', label: 'بغیر ہدف', icon: 'warning', tint: '#fffbeb', ink: '#b45309' },
 ]
 
 function StatCard({ value, label, icon, tint, ink }: {

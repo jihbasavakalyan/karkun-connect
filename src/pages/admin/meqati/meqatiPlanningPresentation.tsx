@@ -85,22 +85,23 @@ export type ShobahVisual = {
   icon: IconName
 }
 
+/** Claude-restrained shobah accents — navy / teal / slate / soft amber only. */
 const HEAD_VISUAL_BY_CODE: Record<string, ShobahVisual> = {
-  H01: { accent: '#2d6a4f', wash: '#dceee4', ink: '#1b4332', icon: 'clipboard' },
-  H02: { accent: '#3d5a80', wash: '#dfe8f2', ink: '#293241', icon: 'users' },
-  H03: { accent: '#52796f', wash: '#e0ece7', ink: '#354f52', icon: 'handshake' },
-  H04: { accent: '#6d6875', wash: '#e8e6ec', ink: '#4a4458', icon: 'flag' },
-  H05: { accent: '#457b9d', wash: '#dce8f0', ink: '#1d3557', icon: 'megaphone' },
-  H06: { accent: '#588157', wash: '#e0ecd9', ink: '#3a5a40', icon: 'file-text' },
-  H07: { accent: '#7c6f57', wash: '#eee8dc', ink: '#4a4238', icon: 'sprout' },
-  H08: { accent: '#5c677d', wash: '#e2e5ed', ink: '#3d4454', icon: 'chart' },
-  H09: { accent: '#6b705c', wash: '#e6e7dc', ink: '#414833', icon: 'home' },
+  H01: { accent: '#0f766e', wash: '#ccfbf1', ink: '#0f172a', icon: 'clipboard' },
+  H02: { accent: '#1e293b', wash: '#e2e8f0', ink: '#0f172a', icon: 'users' },
+  H03: { accent: '#0f766e', wash: '#e6fffa', ink: '#134e4a', icon: 'handshake' },
+  H04: { accent: '#334155', wash: '#f1f5f9', ink: '#0f172a', icon: 'flag' },
+  H05: { accent: '#0d9488', wash: '#f0fdfa', ink: '#0f172a', icon: 'megaphone' },
+  H06: { accent: '#475569', wash: '#f8fafc', ink: '#0f172a', icon: 'file-text' },
+  H07: { accent: '#b45309', wash: '#fffbeb', ink: '#0f172a', icon: 'sprout' },
+  H08: { accent: '#1e293b', wash: '#eef2f7', ink: '#0f172a', icon: 'chart' },
+  H09: { accent: '#0f766e', wash: '#f5f3ef', ink: '#0f172a', icon: 'home' },
 }
 
 const FALLBACK_VISUAL: ShobahVisual = {
-  accent: '#4a6359',
-  wash: '#f4f6f5',
-  ink: '#2f3e37',
+  accent: '#0f766e',
+  wash: '#f4f5f7',
+  ink: '#0f172a',
   icon: 'clipboard',
 }
 
