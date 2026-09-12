@@ -901,13 +901,15 @@ async function handleSubmit(
 
 async function loadAdminView() {
   const admin = getRuknClaimsAdmin()
-  const [registrationsSnap, karkunsSnap, ruknsSnap, requestsSnap, connectionsSnap] = await Promise.all([
-    admin.db.collection(COLLECTION).get(),
-    admin.db.collection(KARKUNS).get(),
-    admin.db.collection(RUKNS).get(),
-    admin.db.collection(SETTINGS).doc(KARKUN_REQUESTS_DOC).get(),
-    admin.db.collection('connections').get(),
-  ])
+  const [registrationsSnap, karkunsSnap, ruknsSnap, requestsSnap, connectionsSnap, relationshipsSnap] =
+    await Promise.all([
+      admin.db.collection(COLLECTION).get(),
+      admin.db.collection(KARKUNS).get(),
+      admin.db.collection(RUKNS).get(),
+      admin.db.collection(SETTINGS).doc(KARKUN_REQUESTS_DOC).get(),
+      admin.db.collection('connections').get(),
+      admin.db.collection(MUTTAFIQ_RELATIONSHIPS).get(),
+    ])
 
   const requests = Array.isArray(requestsSnap.data()?.requests) ? requestsSnap.data()!.requests : []
   return buildTrainingRegistrationAdminView({
@@ -942,6 +944,15 @@ async function loadAdminView() {
         status: data.status,
         assignmentStatus: data.assignmentStatus,
         isArchived: data.isArchived,
+      }
+    }),
+    muttafiqRelationships: relationshipsSnap.docs.map((doc) => {
+      const data = doc.data()
+      return {
+        ruknId: data.ruknId,
+        personId: data.personId,
+        personName: data.personName,
+        status: data.status,
       }
     }),
     registrations: registrationsSnap.docs.map((doc) =>

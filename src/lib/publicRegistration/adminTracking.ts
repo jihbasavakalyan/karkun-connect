@@ -78,6 +78,7 @@ export type AdminTrackingInput = {
   karkuns: AdminTrackingKarkun[]
   rukns: AdminTrackingRukn[]
   connections: AdminTrackingConnection[]
+  muttafiqRelationships?: AdminTrackingMuttafiqRelationship[]
   registrations: TrainingRegistrationRecord[]
   publicRequests: AdminTrackingRequest[]
 }
@@ -508,9 +509,26 @@ export function buildTrainingRegistrationAdminView(input: AdminTrackingInput): {
     const karkunId = String(connection.karkunId || '')
     const ruknId = String(connection.ruknId || '')
     if (!karkunId || !ruknId) continue
+    const person = karkunById.get(karkunId)
+    if (!person || isSoftRemovedPerson(person)) continue
+    // Only attribute Karkun connections to Rukn if current category is karkun
+    if (organisationalCategoryFromPerson(person) !== 'karkun') continue
     const current = ruknIdsByKarkunId.get(karkunId) ?? []
     if (!current.includes(ruknId)) current.push(ruknId)
     ruknIdsByKarkunId.set(karkunId, current)
+  }
+
+  // Muttafiq relationship links for registration/people directory attribution
+  for (const relationship of input.muttafiqRelationships ?? []) {
+    if (String(relationship.status || '') !== 'Active') continue
+    const personId = String(relationship.personId || '').trim()
+    const ruknId = String(relationship.ruknId || '').trim()
+    if (!personId || !ruknId) continue
+    const person = karkunById.get(personId)
+    if (!isCurrentValidMuttafiqRelationship(relationship, person)) continue
+    const current = ruknIdsByKarkunId.get(personId) ?? []
+    if (!current.includes(ruknId)) current.push(ruknId)
+    ruknIdsByKarkunId.set(personId, current)
   }
 
   const resolveRuknNames = (row: TrainingRegistrationRecord): string[] => {
@@ -610,25 +628,50 @@ export function buildTrainingRegistrationAdminView(input: AdminTrackingInput): {
   const ruknWise = input.rukns
     .filter((rukn) => rukn.status === 'active' && rukn.isArchived !== true)
     .map((rukn) => {
-      const relatedIds = input.connections
-        .filter((connection) => String(connection.ruknId || '') === rukn.id && isActiveConnection(connection))
-        .map((connection) => String(connection.karkunId || ''))
-        .filter(Boolean)
-      const uniqueRelated = [...new Set(relatedIds)]
+      // 1. Current Karkuns from active campaign connections (only if currently category === 'karkun')
+      const connectedKarkunIds: string[] = []
+      const seenKarkunIds = new Set<string>()
+      for (const connection of input.connections) {
+        if (String(connection.ruknId || '') !== rukn.id) continue
+        if (!isActiveConnection(connection)) continue
+        const karkunId = String(connection.karkunId || '')
+        if (!karkunId || karkunId === rukn.id || seenKarkunIds.has(karkunId)) continue
+        const person = karkunById.get(karkunId)
+        if (!person || isSoftRemovedPerson(person)) continue
+        if (organisationalCategoryFromPerson(person) !== 'karkun') continue
+        seenKarkunIds.add(karkunId)
+        connectedKarkunIds.push(karkunId)
+      }
+
+      // 2. Current Muttafiqs from Active muttafiqRelationships
+      const connectedMuttafiqIds: string[] = []
+      const seenMuttafiqIds = new Set<string>()
+      for (const relationship of input.muttafiqRelationships ?? []) {
+        if (String(relationship.ruknId || '') !== rukn.id) continue
+        if (String(relationship.status || '') !== 'Active') continue
+        const personId = String(relationship.personId || '').trim()
+        if (!personId || personId === rukn.id || seenMuttafiqIds.has(personId)) continue
+        const person = karkunById.get(personId)
+        if (!isCurrentValidMuttafiqRelationship(relationship, person)) continue
+        seenMuttafiqIds.add(personId)
+        connectedMuttafiqIds.push(personId)
+      }
+
+      // Combined authoritative current population (deduplicated by stable ID)
+      const uniqueRelated = [...new Set([...connectedKarkunIds, ...connectedMuttafiqIds])]
+
       const relatedPeople: TrainingRuknRelatedPersonView[] = uniqueRelated
-        .map((karkunId): TrainingRuknRelatedPersonView | null => {
-          const person = karkunById.get(karkunId)
+        .map((personId): TrainingRuknRelatedPersonView | null => {
+          const person = karkunById.get(personId)
           if (!person) return null
           const mobile = normalizeTrainingMobile(String(person.mobile || ''))
           const registration = mobile ? registrationByMobile.get(mobile) : undefined
           const registered = isRegisteredForEvent(registration)
           const karkunName = String(person.name || '').trim() || registration?.fullName || ''
           return {
-            karkunId,
+            karkunId: personId,
             karkunName,
-            organisationalCategory: registration
-              ? resolveOrganisationalCategory(registration, person, ruknByMobile)
-              : organisationalCategoryFromPerson(person),
+            organisationalCategory: organisationalCategoryFromPerson(person),
             gender: authoritativeGender(person.gender),
             mobile,
             listStatus: registered ? ('registered' as const) : ('not_registered' as const),
@@ -644,13 +687,10 @@ export function buildTrainingRegistrationAdminView(input: AdminTrackingInput): {
       const registeredPeople = relatedPeople
         .filter((person) => person.listStatus === 'registered')
         .map((person) => {
-          const registration = registrationByMobile.get(person.mobile)
           const master = karkunById.get(person.karkunId)
           return {
             karkunName: person.karkunName,
-            organisationalCategory: registration
-              ? resolveOrganisationalCategory(registration, master, ruknByMobile)
-              : organisationalCategoryFromPerson(master ?? {}),
+            organisationalCategory: organisationalCategoryFromPerson(master ?? {}),
             gender: person.gender,
             mobile: person.mobile,
             registrationId: person.registrationId ?? '',

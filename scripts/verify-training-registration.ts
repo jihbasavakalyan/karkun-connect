@@ -1812,6 +1812,123 @@ function testRuknDashboardRegistrationProgress(): void {
   assert(rules.includes('allow create, update, delete: if false'), 'no client writes')
 }
 
+function testAdminMuttafiqRegistrationTracking(): void {
+  // A. A Rukn with an Active muttafiqRelationship and NO campaign connection -> Muttafiq appears in Admin Tracking.
+  const viewA = buildTrainingRegistrationAdminView({
+    karkuns: [
+      { id: 'm-only', name: 'Muttafiq Only', mobile: '9444444441', gender: 'Male', category: 'Muttafiq' },
+    ],
+    rukns: [
+      { id: 'r-auth', name: 'Auth Rukn', status: 'active', gender: 'Male', mobile: '9444444499' },
+    ],
+    connections: [],
+    muttafiqRelationships: [
+      { ruknId: 'r-auth', personId: 'm-only', personName: 'Muttafiq Only', status: 'Active' },
+    ],
+    registrations: [],
+    publicRequests: [],
+  })
+  const ruknA = viewA.summary.ruknWise.find((r) => r.ruknId === 'r-auth')
+  assert(Boolean(ruknA), 'A: rukn present in admin tracking')
+  assert(ruknA!.related === 1, 'A: Muttafiq with no campaign connection is related')
+  assert(ruknA!.relatedPeople.some((p) => p.karkunId === 'm-only' && p.organisationalCategory === 'muttafiq'), 'A: Muttafiq present in relatedPeople with category muttafiq')
+  assert(ruknA!.registered === 0, 'A: registered is 0')
+  assert(ruknA!.remaining === 1, 'A: remaining is 1')
+
+  // B. A Rukn with an Active campaign connection to a person who is currently Muttafiq elsewhere:
+  // that historical connection does NOT make the person a current Muttafiq under that Rukn.
+  const viewB = buildTrainingRegistrationAdminView({
+    karkuns: [
+      { id: 'm-elsewhere', name: 'Muttafiq Elsewhere', mobile: '9444444442', gender: 'Male', category: 'Muttafiq' },
+    ],
+    rukns: [
+      { id: 'r-old', name: 'Old Rukn', status: 'active', gender: 'Male', mobile: '9444444488' },
+      { id: 'r-new', name: 'New Rukn', status: 'active', gender: 'Male', mobile: '9444444477' },
+    ],
+    connections: [
+      { ruknId: 'r-old', karkunId: 'm-elsewhere', status: 'Active' },
+    ],
+    muttafiqRelationships: [
+      { ruknId: 'r-new', personId: 'm-elsewhere', personName: 'Muttafiq Elsewhere', status: 'Active' },
+    ],
+    registrations: [],
+    publicRequests: [],
+  })
+  const ruknOld = viewB.summary.ruknWise.find((r) => r.ruknId === 'r-old')
+  const ruknNew = viewB.summary.ruknWise.find((r) => r.ruknId === 'r-new')
+  assert(ruknOld!.related === 0, 'B: historical campaign connection does NOT make Muttafiq related to old Rukn')
+  assert(!ruknOld!.relatedPeople.some((p) => p.karkunId === 'm-elsewhere'), 'B: person not in old Rukn relatedPeople')
+  assert(ruknNew!.related === 1, 'B: person IS current Muttafiq under new Rukn')
+  assert(ruknNew!.relatedPeople.some((p) => p.karkunId === 'm-elsewhere' && p.organisationalCategory === 'muttafiq'), 'B: person in new Rukn relatedPeople')
+
+  // C. Riyaz-style scenario:
+  // authoritative: R027 -> kr-056, kr-174
+  // campaign: R027 -> kr-145 (where kr-145 is currently Muttafiq)
+  // Expected Admin Tracking: Muttafiqs = kr-056, kr-174; NOT kr-145
+  const viewC = buildTrainingRegistrationAdminView({
+    karkuns: [
+      { id: 'kr-056', name: 'Shaik Abdul Mohsin', mobile: '8123310584', gender: 'Male', category: 'Muttafiq' },
+      { id: 'kr-174', name: 'Ayazoddin Shaikh', mobile: '9164656788', gender: 'Male', category: 'Muttafiq' },
+      { id: 'kr-145', name: 'AFROZ WAISER', mobile: '7760175601', gender: 'Male', category: 'Muttafiq' },
+    ],
+    rukns: [
+      { id: 'R027', name: 'Riyaz Patel', status: 'active', gender: 'Male', mobile: '9108296672' },
+    ],
+    connections: [
+      { ruknId: 'R027', karkunId: 'kr-145', status: 'Active' },
+    ],
+    muttafiqRelationships: [
+      { ruknId: 'R027', personId: 'kr-056', personName: 'Shaik Abdul Mohsin', status: 'Active' },
+      { ruknId: 'R027', personId: 'kr-174', personName: 'Ayazoddin Shaikh', status: 'Active' },
+    ],
+    registrations: [],
+    publicRequests: [],
+  })
+  const r027 = viewC.summary.ruknWise.find((r) => r.ruknId === 'R027')
+  assert(Boolean(r027), 'C: R027 present in tracking')
+  assert(r027!.related === 2, 'C: R027 related count is exactly 2')
+  const r027PersonIds = r027!.relatedPeople.map((p) => p.karkunId).sort()
+  assert(r027PersonIds.length === 2 && r027PersonIds[0] === 'kr-056' && r027PersonIds[1] === 'kr-174', 'C: R027 has kr-056 and kr-174')
+  assert(!r027!.relatedPeople.some((p) => p.karkunId === 'kr-145'), 'C: kr-145 excluded from R027')
+
+  // D. A Rukn with both legitimate current Karkuns and current Muttafiqs:
+  // both populations represented correctly, no double counting
+  const viewD = buildTrainingRegistrationAdminView({
+    karkuns: [
+      { id: 'k-legit', name: 'Legit Karkun', mobile: '9555555551', gender: 'Male', category: 'Karkun' },
+      { id: 'm-legit', name: 'Legit Muttafiq', mobile: '9555555552', gender: 'Female', category: 'Muttafiq' },
+    ],
+    rukns: [
+      { id: 'r-mixed', name: 'Mixed Rukn', status: 'active', gender: 'Male', mobile: '9555555599' },
+    ],
+    connections: [
+      { ruknId: 'r-mixed', karkunId: 'k-legit', status: 'Active' },
+      // Edge case: accident active connection for same person who has active muttafiqRelationship
+      { ruknId: 'r-mixed', karkunId: 'm-legit', status: 'Active' },
+    ],
+    muttafiqRelationships: [
+      { ruknId: 'r-mixed', personId: 'm-legit', personName: 'Legit Muttafiq', status: 'Active' },
+    ],
+    registrations: [
+      sampleRegistration({
+        id: formatRegistrationId('9555555551'),
+        personId: 'k-legit',
+        verifiedMobile: '9555555551',
+        fullName: 'Legit Karkun',
+        paymentStatus: 'paid_cash',
+      }),
+    ],
+    publicRequests: [],
+  })
+  const rMixed = viewD.summary.ruknWise.find((r) => r.ruknId === 'r-mixed')
+  assert(Boolean(rMixed), 'D: mixed rukn present')
+  assert(rMixed!.related === 2, 'D: related count is 2 (1 karkun + 1 muttafiq, no double counting)')
+  assert(rMixed!.registered === 1, 'D: registered count is 1')
+  assert(rMixed!.remaining === 1, 'D: remaining count is 1')
+  assert(rMixed!.relatedPeople.some((p) => p.karkunId === 'k-legit' && p.organisationalCategory === 'karkun'), 'D: karkun present as karkun')
+  assert(rMixed!.relatedPeople.some((p) => p.karkunId === 'm-legit' && p.organisationalCategory === 'muttafiq'), 'D: muttafiq present as muttafiq')
+}
+
 function testProductionTrainingRegistrationBundle(): void {
   const esbuildJs = resolve(root, 'node_modules/esbuild/bin/esbuild')
   assert(existsSync(esbuildJs), 'local esbuild binary exists')
@@ -1886,6 +2003,7 @@ const cases = [
   run('legacy submit mapping without generic cash paid', testLegacySubmitMapping),
   run('public host service worker escape', testPublicHostServiceWorkerEscape),
   run('final three-choice payment semantics', testFinalPaymentSemantics),
+  run('admin muttafiq registration tracking population and semantics', testAdminMuttafiqRegistrationTracking),
   run('production-style Node bundle of training-registration API', testProductionTrainingRegistrationBundle),
 ]
 
