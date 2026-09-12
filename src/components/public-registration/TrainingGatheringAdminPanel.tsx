@@ -3,6 +3,7 @@ import { getFirebaseAuth } from '@/lib/firebase/firebase'
 import {
   confirmTrainingRegistrationUpiPaid,
   fetchTrainingRegistrationAdmin,
+  markTrainingRegistrationCashPaid,
   setTrainingOnlinePaymentEnabled,
 } from '@/lib/publicRegistration/client'
 import { TRAINING_GATHERING_EVENT } from '@/lib/publicRegistration/event'
@@ -111,6 +112,13 @@ export function TrainingGatheringAdminPanel() {
       registrationId,
       (token) => confirmTrainingRegistrationUpiPaid({ token, registrationId }),
       'Unable to confirm UPI payment.',
+    )
+
+  const markCashPaid = (registrationId: string) =>
+    withAdminToken(
+      registrationId,
+      (token) => markTrainingRegistrationCashPaid({ token, registrationId }),
+      'Unable to mark cash payment as paid.',
     )
 
   const setOnlinePayment = async (onlinePaymentEnabled: boolean) => {
@@ -434,7 +442,14 @@ export function TrainingGatheringAdminPanel() {
             open={openQueue === 'cash_pending'}
             onToggle={() => toggleQueue('cash_pending')}
           >
-            <PaymentQueue title="Cash Pending" rows={cashPending} showCashCollector />
+            <PaymentQueue
+              title="Cash Pending"
+              rows={cashPending}
+              actionLabel="Mark Paid"
+              busyId={busyId}
+              onAction={(id) => void markCashPaid(id)}
+              showCashCollector
+            />
           </InboxAccordionSection>
           <InboxAccordionSection
             title="Cash Paid"
@@ -688,10 +703,25 @@ function RelatedPersonDetail({ person }: { person: TrainingRuknRelatedPersonView
       />
       <Detail label="Gender" value={person.gender || '—'} />
       {registered ? (
-        <Detail
-          label="Payment status"
-          value={person.paymentStatus ? trainingPaymentStatusLabel(person.paymentStatus) : '—'}
-        />
+        <>
+          <Detail
+            label="Payment Method"
+            value={person.paymentMethod ? trainingPaymentMethodLabel(person.paymentMethod) : '—'}
+          />
+          <Detail
+            label="Payment Status"
+            value={
+              person.paymentStatus === 'paid_cash' || person.paymentStatus === 'paid_upi' || person.paymentStatus === 'paid_online'
+                ? 'Paid'
+                : person.paymentStatus
+                  ? trainingPaymentStatusLabel(person.paymentStatus)
+                  : '—'
+            }
+          />
+          {person.paymentMethod === 'cash' && (person.paymentStatus === 'paid_cash' || person.cashPaidToName) ? (
+            <Detail label="Cash Paid To" value={person.cashPaidToName || '—'} />
+          ) : null}
+        </>
       ) : null}
     </dl>
   )
@@ -802,7 +832,14 @@ function PersonDetail({ row }: { row: TrainingRegistrationAdminRow }) {
         value={trainingRegistrationStatusLabel(row.registrationStatus)}
       />
       <Detail label="Payment Method" value={trainingPaymentMethodLabel(row.paymentMethod)} />
-      <Detail label="Payment Status" value={trainingPaymentStatusLabel(row.paymentStatus)} />
+      <Detail
+        label="Payment Status"
+        value={
+          row.paymentStatus === 'paid_cash' || row.paymentStatus === 'paid_upi' || row.paymentStatus === 'paid_online'
+            ? 'Paid'
+            : trainingPaymentStatusLabel(row.paymentStatus)
+        }
+      />
       <Detail label="Cash Paid To" value={row.cashPaidToName || '—'} />
       <Detail label="UTR / Transaction Reference" value={row.utr || '—'} />
       <Detail label="Payment Submitted At" value={row.paymentSubmittedAt || '—'} />

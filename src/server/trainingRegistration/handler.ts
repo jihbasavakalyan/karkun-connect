@@ -2,6 +2,7 @@ import { FieldValue, type DocumentReference, type DocumentSnapshot, type Firesto
 import { getRuknClaimsAdmin } from '../ruknClaims/firebaseAdmin.js'
 import {
   applyConfirmUpiPaid,
+  applyMarkCashPaid,
   buildTrainingRegistrationAdminView,
   buildTrainingRegistrationCsv,
   buildTrainingRegistrationRuknProgress,
@@ -819,10 +820,10 @@ async function handleSubmit(
     return json(400, { ok: false, error: 'Select gender.' })
   }
 
-  let personId: string | null = person?.id ?? null
-  let ruknId: string | null = !person && rukn ? rukn.id : null
+  const personId: string | null = person?.id ?? null
+  const ruknId: string | null = !person && rukn ? rukn.id : null
   let candidateRequestId: string | null = null
-  let organisationalCategory: TrainingOrganisationalCategory = 'other'
+  let organisationalCategory: TrainingOrganisationalCategory
   if (person) {
     await updatePersonAllowedFields(person.id, profile)
     organisationalCategory = organisationalCategoryFromPerson(person.data)
@@ -985,6 +986,54 @@ async function handleSetOnlinePayment(
   return json(200, { ok: true, onlinePaymentEnabled })
 }
 
+async function handleMarkCashPaid(
+  registrationId: string,
+  verifiedBy: string,
+  cashPaidToIdRaw?: unknown,
+): Promise<TrainingRegistrationApiResponse> {
+  const id = registrationId.trim()
+  if (!id) return json(400, { ok: false, error: 'Registration ID is required.' })
+  const admin = getRuknClaimsAdmin()
+  const ref = admin.db.collection(COLLECTION).doc(id)
+  const snap = await ref.get()
+  if (!snap.exists) return json(404, { ok: false, error: 'Registration not found.' })
+  const current = asRegistration((snap.data() ?? {}) as Record<string, unknown>, snap.id)
+  if (current.paymentMethod !== 'cash') {
+    return json(409, { ok: false, error: 'Only cash registrations can be marked paid here.' })
+  }
+
+  let collector: { id: string; name: string } | null = null
+  if (typeof cashPaidToIdRaw === 'string' && cashPaidToIdRaw.trim()) {
+    const rukns = await loadRuknCollectorSource(admin.db)
+    const resolved = resolveCashCollector(rukns, cashPaidToIdRaw)
+    if (!resolved.ok) {
+      return json(400, { ok: false, error: resolved.error })
+    }
+    collector = { id: resolved.id, name: resolved.name }
+  }
+
+  const timestamp = nowIso()
+  const next: TrainingRegistrationRecord = {
+    ...applyMarkCashPaid(current, collector),
+    paymentVerifiedAt: current.paymentVerifiedAt ?? timestamp,
+    paymentVerifiedBy: current.paymentVerifiedBy ?? verifiedBy,
+    updatedAt: timestamp,
+  }
+  await ref.set(
+    {
+      paymentMethod: next.paymentMethod,
+      paymentStatus: next.paymentStatus,
+      cashPaidToId: next.cashPaidToId,
+      cashPaidToName: next.cashPaidToName,
+      paymentVerifiedAt: next.paymentVerifiedAt,
+      paymentVerifiedBy: next.paymentVerifiedBy,
+      updatedAt: timestamp,
+    },
+    { merge: true },
+  )
+  return json(200, { ok: true, registration: next })
+}
+
 async function handleConfirmUpiPaid(
   registrationId: string,
   verifiedBy: string,
@@ -1023,6 +1072,7 @@ async function handleConfirmUpiPaid(
 
 const ADMIN_ACTIONS = new Set([
   'admin_summary',
+  'admin_mark_cash_paid',
   'admin_confirm_upi_paid',
   'admin_export_csv',
   'admin_set_online_payment',
@@ -1068,6 +1118,13 @@ export async function handleTrainingRegistration(
       if (action === 'admin_export_csv') return handleAdminExportCsv()
       if (action === 'admin_set_online_payment') {
         return handleSetOnlinePayment(body.onlinePaymentEnabled, identity.uid)
+      }
+      if (action === 'admin_mark_cash_paid') {
+        return handleMarkCashPaid(
+          String(body.registrationId || ''),
+          identity.uid,
+          body.cashPaidToId,
+        )
       }
       return handleConfirmUpiPaid(String(body.registrationId || ''), identity.uid)
     }

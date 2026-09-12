@@ -7,6 +7,7 @@ import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import {
   applyConfirmUpiPaid,
+  applyMarkCashPaid,
   buildTrainingRegistrationAdminView,
   buildTrainingRegistrationCsv,
   buildTrainingRegistrationRuknProgress,
@@ -53,7 +54,6 @@ import {
   TARBIYATI_IJTEMA_POSTER_SRC,
   TARBIYATI_IJTEMA_UPI_APP_OPTIONS,
   TARBIYATI_IJTEMA_UPI_CURRENCY,
-  TARBIYATI_IJTEMA_UPI_DESKTOP_MESSAGE,
   TARBIYATI_IJTEMA_UPI_NO_APP_MESSAGE,
   TARBIYATI_IJTEMA_UPI_PAYEE_NAME,
   TARBIYATI_IJTEMA_UPI_QR_FALLBACK_INTRO,
@@ -152,8 +152,8 @@ function testSecurityPath(): void {
   assert(handler.includes("case: 'existing_rukn'"), 'active rukn may register')
   assert(!handler.includes('RUKN_MOBILE'), 'rukn mobile is not blocked from event registration')
   assert(handler.includes('buildTrainingRegistrationAdminView'), 'admin summary reuses tracking builder')
-  assert(!handler.includes('applyMarkCashPaid'), 'old cash mark-paid helper is removed')
-  assert(!handler.includes('admin_mark_cash_paid'), 'old cash mark-paid admin action is removed')
+  assert(handler.includes('applyMarkCashPaid'), 'cash mark-paid helper is available')
+  assert(handler.includes('admin_mark_cash_paid'), 'cash mark-paid admin action is available')
   assert(handler.includes('applyConfirmUpiPaid'), 'upi confirm reuses payment-only update')
   assert(handler.includes('fullName: profile.name'), 'persists registered name')
   assert(handler.includes("paymentChoice === 'online'"), 'online payment choice is accepted')
@@ -270,7 +270,7 @@ function testPublicCopyAndPayment(): void {
   assert(!admin.includes('Export CSV'), 'admin button no longer says CSV')
   assert(!admin.includes('exportTrainingRegistrationCsv'), 'people export no longer uses registration CSV API')
   assert(admin.includes('Confirm UPI Paid'), 'admin UPI confirm action')
-  assert(!admin.includes('Mark Paid'), 'old admin cash mark-paid action is removed')
+  assert(admin.includes('Mark Paid'), 'admin cash mark-paid action exists')
   assert(admin.includes('Cash Pending'), 'cash pending queue')
   assert(admin.includes('Cash Paid'), 'cash paid queue')
   assert(admin.includes('UPI Pending'), 'upi pending queue')
@@ -330,7 +330,7 @@ function testPublicCopyAndPayment(): void {
   assert(client.includes("'admin_set_online_payment'"), 'online activation is not public')
   assert(client.includes('paymentChoice'), 'public submit sends paymentChoice')
   assert(client.includes('cashPaidToId'), 'public submit sends cash collector id')
-  assert(!client.includes('markTrainingRegistrationCashPaid'), 'client has no cash mark-paid helper')
+  assert(client.includes('markTrainingRegistrationCashPaid'), 'client has cash mark-paid helper')
   assert(!client.includes('razorpay'), 'client has no razorpay')
 }
 
@@ -434,6 +434,30 @@ function testRegistrationPaymentSeparation(): void {
     trainingAcknowledgementPaymentLabel('cash_pending') === 'Cash — Pay at Ijtema Gah',
     'cash at ijtema gah acknowledgement',
   )
+
+  // Verify Rukn drill-down mapping contains cashPaidTo
+  const ruknOne = view.summary.ruknWise.find((r) => r.ruknId === 'r-1')
+  assert(Boolean(ruknOne), 'ruknOne present in drill-down')
+  const personBRelated = ruknOne?.relatedPeople.find((p) => p.karkunId === 'k-b')
+  assert(personBRelated?.cashPaidToId === 'r-1', 'rukn drill-down relatedPeople preserves cashPaidToId')
+  assert(personBRelated?.cashPaidToName === 'Rukn One', 'rukn drill-down relatedPeople preserves cashPaidToName')
+  const personBRegistered = ruknOne?.registeredPeople.find((p) => p.registrationId === paidToCollector.id)
+  assert(personBRegistered?.cashPaidToId === 'r-1', 'rukn drill-down registeredPeople preserves cashPaidToId')
+  assert(personBRegistered?.cashPaidToName === 'Rukn One', 'rukn drill-down registeredPeople preserves cashPaidToName')
+  const personHistRelated = ruknOne?.relatedPeople.find((p) => p.karkunId === 'k-hist')
+  assert(!personHistRelated?.cashPaidToName, 'historical record in drill-down does not invent cashPaidTo')
+
+  // Verify applyMarkCashPaid transitions cash_pending to paid_cash and records collector
+  const markedPaid = applyMarkCashPaid(pending, { id: 'r-1', name: 'Rukn One' })
+  assert(markedPaid.paymentStatus === 'paid_cash', 'markedPaid status is paid_cash')
+  assert(markedPaid.paymentMethod === 'cash', 'markedPaid method is cash')
+  assert(markedPaid.cashPaidToId === 'r-1', 'markedPaid records collector id')
+  assert(markedPaid.cashPaidToName === 'Rukn One', 'markedPaid records collector name')
+
+  // Marking paid without a specific collector preserves existing payee or leaves null
+  const markedPaidNoCollector = applyMarkCashPaid(pending)
+  assert(markedPaidNoCollector.paymentStatus === 'paid_cash', 'markedPaid without collector status is paid_cash')
+  assert(markedPaidNoCollector.cashPaidToName === null, 'markedPaid without collector leaves cashPaidToName null without fabricating')
 }
 
 function testGenderTracking(): void {
@@ -826,6 +850,11 @@ function testRegisteredPeopleCompactList(): void {
   assert(detail.includes('Payment Verified At'), 'expanded keeps payment verified at')
   assert(detail.includes('Payment Verified By'), 'expanded keeps payment verified by')
 
+  const ruknDetail = admin.slice(admin.indexOf('function RelatedPersonDetail'), admin.indexOf('function DirectoryPersonRow'))
+  assert(ruknDetail.includes('Payment Method'), 'rukn drill-down displays Payment Method')
+  assert(ruknDetail.includes('Payment Status'), 'rukn drill-down displays Payment Status')
+  assert(ruknDetail.includes('Cash Paid To'), 'rukn drill-down displays Cash Paid To')
+
   assert(admin.includes('Registered People (Total: {summary.registered})'), 'registered count stays summary.registered')
   assert(admin.includes('matchesAdminPeopleDirectorySearch'), 'directory search remains')
   assert(admin.includes('matchesAdminPeopleDirectoryFilters'), 'directory filters remain')
@@ -1053,11 +1082,18 @@ function testAdminPeopleDirectoryExcelExport(): void {
   const registeredOnly = many.filter((row) =>
     matchesAdminPeopleDirectoryFilters(row, { registration: 'registered' }),
   )
+  registeredOnly[0] = {
+    ...registeredOnly[0]!,
+    paymentMethod: 'cash',
+    paymentStatus: 'paid_cash',
+    cashPaidToName: 'Rukn One',
+  }
   const registeredRows = buildTrainingAdminPeopleExcelRows(registeredOnly)
   assert(registeredRows.every((row) => row['Registration Status'] === 'Registered'), 'registered status exported')
   assert(registeredRows.every((row) => row['Registration ID'].startsWith('TG260913-')), 'registered keeps registration id')
   assert(registeredRows.every((row) => row['Payment Method'] !== ''), 'registered keeps payment method')
   assert(registeredRows.every((row) => row['Payment Status'] !== ''), 'registered keeps payment status')
+  assert(registeredRows[0]?.['Cash Paid To'] === 'Rukn One', 'registered row exports Cash Paid To payee')
 
   const karkunOnly = many.filter((row) =>
     matchesAdminPeopleDirectoryFilters(row, { category: 'karkun' }),
@@ -1259,7 +1295,7 @@ function testFinalPaymentSemantics(): void {
   assert(page.includes('registration.cashPaidToName'), '10 collector appears in acknowledgement')
   assert(admin.includes('row.cashPaidToName'), '11 collector appears in admin')
   assert(tracking.includes('isRegisteredForEvent'), '12/13 payment change does not define membership')
-  assert(!handler.includes('applyMarkCashPaid'), 'no cash mark-paid mutation')
+  assert(handler.includes('applyMarkCashPaid'), 'admin cash mark-paid mutation supported')
   assert(page.includes('useState<TrainingPublicPaymentChoice | null>'), 'exactly three public choices typed')
   assert(!page.includes("setPaymentChoice('razorpay')"), '20 no public razorpay choice')
   assert(handler.includes("identity.role !== 'administrator'"), '16/17 admin-only activation and UPI confirm')
@@ -1785,7 +1821,7 @@ const cases = [
   run('public copy, cash states, admin drill-down', testPublicCopyAndPayment),
   run('same application entry, no second app', testNoSecondApp),
   run('Person schema education/profession', testPersonSchemaDelta),
-  run('registration vs payment separation without cash mark-paid', testRegistrationPaymentSeparation),
+  run('registration vs payment separation with cash mark-paid', testRegistrationPaymentSeparation),
   run('male female overall tracking', testGenderTracking),
   run('open registration categories', testOpenCategoryRegistration),
   run('rukn connected scope and registered vs remaining', testRuknScopeAndRegistration),

@@ -114,6 +114,17 @@ export async function fetchTrainingRegistrationAdmin(token: string): Promise<{
   }
 }
 
+export async function markTrainingRegistrationCashPaid(input: {
+  token: string
+  registrationId: string
+  cashPaidToId?: string | null
+}): Promise<{ ok: true; registration: TrainingRegistrationRecord }> {
+  return (await adminJson(input.token, 'admin_mark_cash_paid', {
+    registrationId: input.registrationId,
+    cashPaidToId: input.cashPaidToId ?? null,
+  })) as unknown as { ok: true; registration: TrainingRegistrationRecord }
+}
+
 export async function confirmTrainingRegistrationUpiPaid(input: {
   token: string
   registrationId: string

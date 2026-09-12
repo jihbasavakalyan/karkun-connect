@@ -251,6 +251,19 @@ export function resolveCashCollector(
   return { ok: true, id: match.id, name: match.name }
 }
 
+export function applyMarkCashPaid(
+  current: TrainingRegistrationRecord,
+  collector?: { id: string; name: string } | null,
+): TrainingRegistrationRecord {
+  return {
+    ...current,
+    paymentMethod: 'cash',
+    paymentStatus: 'paid_cash',
+    cashPaidToId: collector?.id ?? current.cashPaidToId ?? null,
+    cashPaidToName: collector?.name ?? current.cashPaidToName ?? null,
+  }
+}
+
 const UTR_MAX_LENGTH = 80
 
 export function sanitizeUtr(raw: unknown): { ok: true; utr: string } | { ok: false; error: string } {
@@ -603,7 +616,7 @@ export function buildTrainingRegistrationAdminView(input: AdminTrackingInput): {
         .filter(Boolean)
       const uniqueRelated = [...new Set(relatedIds)]
       const relatedPeople: TrainingRuknRelatedPersonView[] = uniqueRelated
-        .map((karkunId) => {
+        .map((karkunId): TrainingRuknRelatedPersonView | null => {
           const person = karkunById.get(karkunId)
           if (!person) return null
           const mobile = normalizeTrainingMobile(String(person.mobile || ''))
@@ -623,6 +636,8 @@ export function buildTrainingRegistrationAdminView(input: AdminTrackingInput): {
             registrationStatus: registered && registration ? registration.registrationStatus : null,
             paymentMethod: registered && registration ? registration.paymentMethod : null,
             paymentStatus: registered && registration ? registration.paymentStatus : null,
+            cashPaidToId: registered && registration ? (registration.cashPaidToId ?? null) : null,
+            cashPaidToName: registered && registration ? (registration.cashPaidToName ?? null) : null,
           }
         })
         .filter((row): row is TrainingRuknRelatedPersonView => row !== null)
@@ -643,6 +658,8 @@ export function buildTrainingRegistrationAdminView(input: AdminTrackingInput): {
             registrationStatus: person.registrationStatus as TrainingRegistrationStatus,
             paymentMethod: person.paymentMethod as TrainingPaymentMethod,
             paymentStatus: person.paymentStatus as TrainingPaymentStatus,
+            cashPaidToId: person.cashPaidToId ?? null,
+            cashPaidToName: person.cashPaidToName ?? null,
           }
         })
       const registered = relatedPeople.filter((person) => person.listStatus === 'registered').length

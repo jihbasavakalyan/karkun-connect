@@ -20,6 +20,7 @@ export const TRAINING_ADMIN_PEOPLE_EXCEL_HEADERS = [
   'Registration ID',
   'Payment Method',
   'Payment Status',
+  'Cash Paid To',
 ] as const
 
 export type TrainingAdminPeopleExcelRow = {
@@ -32,6 +33,7 @@ export type TrainingAdminPeopleExcelRow = {
   'Registration ID': string
   'Payment Method': string
   'Payment Status': string
+  'Cash Paid To': string
 }
 
 export function buildTrainingAdminPeopleExcelRows(
@@ -53,6 +55,7 @@ export function buildTrainingAdminPeopleExcelRows(
       person.registered && person.paymentStatus
         ? trainingPaymentStatusLabel(person.paymentStatus)
         : '',
+    'Cash Paid To': person.registered ? person.cashPaidToName ?? '' : '',
   }))
 }
 
@@ -87,6 +90,7 @@ export function buildTrainingAdminPeopleWorkbook(
     { wch: 22 },
     { wch: 14 },
     { wch: 14 },
+    { wch: 24 },
   ]
 
   // Keep mobile values as text so Excel does not coerce them to numbers.

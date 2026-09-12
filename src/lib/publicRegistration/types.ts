@@ -96,6 +96,8 @@ export type TrainingRegisteredPersonView = {
   registrationStatus: TrainingRegistrationStatus
   paymentMethod: TrainingPaymentMethod
   paymentStatus: TrainingPaymentStatus
+  cashPaidToId: string | null
+  cashPaidToName: string | null
 }
 
 export type TrainingRuknRelatedPersonView = {
@@ -109,6 +111,8 @@ export type TrainingRuknRelatedPersonView = {
   registrationStatus: TrainingRegistrationStatus | null
   paymentMethod: TrainingPaymentMethod | null
   paymentStatus: TrainingPaymentStatus | null
+  cashPaidToId: string | null
+  cashPaidToName: string | null
 }
 
 /** Rukn-scoped registration progress. Payment fields are intentionally absent. */
