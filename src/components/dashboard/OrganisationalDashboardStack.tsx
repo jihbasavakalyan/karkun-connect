@@ -22,6 +22,8 @@ import {
   type ShobahDrillActivity,
   type ShobahStatusRow,
 } from '@/lib/dashboard/organisationalSituation'
+import { Icon } from '@/components/ui/Icon'
+import { shobahVisualByCode } from '@/pages/admin/meqati/meqatiPlanningPresentation'
 
 type OrganisationalDashboardStackProps = {
   situation: OrganisationalSituation
@@ -170,11 +172,11 @@ export function MeqatiYearSummary({
 }) {
   const { year, counts, empty, mansooba } = situation.meqati
   return (
-    <section className="orgdash-status-strip" aria-label="میقاتی منصوبہ — موجودہ سال" dir="rtl" lang="ur">
-      <div className="orgdash-status-strip-head">
+    <section className="orgdash-meqati-panel" aria-label="میقاتی منصوبہ — موجودہ سال" dir="rtl" lang="ur">
+      <div className="orgdash-meqati-panel-head">
         <div className="min-w-0">
-          <h2 className="orgdash-section-title">میقاتی منصوبہ — موجودہ سال</h2>
-          <p className="orgdash-section-sub">
+          <h2 className="orgdash-meqati-panel-title">میقاتی منصوبہ — موجودہ سال</h2>
+          <p className="orgdash-meqati-panel-sub">
             {mansooba ? (
               <>
                 {mansooba.name} · {mansoobaStatusLabel(mansooba)} ·{' '}
@@ -183,7 +185,7 @@ export function MeqatiYearSummary({
             {year.label} · {meqatiYearUrduRange(year)}
           </p>
         </div>
-        <Link to={planHref} className="orgdash-card-link">
+        <Link to={planHref} className="orgdash-meqati-panel-link">
           میقاتی منصوبہ دیکھیں
         </Link>
       </div>
@@ -191,7 +193,7 @@ export function MeqatiYearSummary({
         <label className="orgdash-year-field orgdash-year-field-inline">
           <span className="sr-only">میقاتی سال منتخب کریں</span>
           <select
-            className="orgdash-year-select"
+            className="orgdash-year-select orgdash-meqati-year-select"
             value={yearSelection.year.key}
             onChange={(event) => yearSelection.setYearKey(event.target.value)}
             aria-label="میقاتی سال منتخب کریں"
@@ -207,7 +209,7 @@ export function MeqatiYearSummary({
       {!mansooba || empty ? (
         <EmptyMeqatiNote planHref={planHref} />
       ) : (
-        <dl className="orgdash-stat-row orgdash-stat-row-5 orgdash-stat-row-quiet">
+        <dl className="orgdash-stat-row orgdash-stat-row-5 orgdash-meqati-stats">
           <div>
             <dt>سرگرمیاں</dt>
             <dd>{counts.activities}</dd>
@@ -256,23 +258,40 @@ export function ShobahStatusSection({
       {empty || rows.length === 0 ? (
         <EmptyMeqatiNote planHref={planHref} />
       ) : (
-        <ul className="orgdash-dept-list">
+        <ul className="orgdash-dept-cards">
           {rows.map((row) => {
             const open = openId === row.shobahId
+            const visual = shobahVisualByCode(row.shobahId)
             return (
-              <li key={row.shobahId} className="orgdash-dept-row">
+              <li key={row.shobahId} className="orgdash-dept-card-wrap">
                 <button
                   type="button"
-                  className="orgdash-dept-row-btn"
+                  className="orgdash-dept-card"
                   aria-expanded={open}
+                  style={{
+                    backgroundColor: visual.wash,
+                    color: visual.ink,
+                    borderColor: `color-mix(in srgb, ${visual.accent} 22%, var(--color-border))`,
+                  }}
                   onClick={() =>
                     setOpenId((current) => (current === row.shobahId ? null : row.shobahId))
                   }
                 >
-                  <span className="orgdash-dept-name">{row.name}</span>
-                  <span className="orgdash-dept-meta">
-                    {row.completed}/{row.activities} مکمل · {progressDisplay(row)} ·{' '}
-                    {open ? 'تفصیل بند کریں' : 'تفصیل کھولیں'}
+                  <span className="orgdash-dept-card-top">
+                    <span className="min-w-0">
+                      <span className="orgdash-dept-name">{row.name}</span>
+                      <span className="orgdash-dept-meta">
+                        {row.completed}/{row.activities} مکمل · {progressDisplay(row)} ·{' '}
+                        {open ? 'تفصیل بند کریں' : 'تفصیل کھولیں'}
+                      </span>
+                    </span>
+                    <span
+                      className="orgdash-dept-card-icon"
+                      style={{ color: visual.accent }}
+                      aria-hidden
+                    >
+                      <Icon name={visual.icon} size="md" />
+                    </span>
                   </span>
                 </button>
                 {open ? (

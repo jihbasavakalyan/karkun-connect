@@ -5212,7 +5212,7 @@ html[data-theme='dark'] {
   --orgdash-blue: var(--color-kc-shell);
   --orgdash-blue-soft: #eef2f7;
   --orgdash-amber: var(--color-kc-shell-attention);
-  --orgdash-amber-soft: color-mix(in srgb, var(--color-accent-soft) 72%, #ffffff);
+  --orgdash-amber-soft: #fff8e8;
   --orgdash-saffron: var(--color-kc-shell-current);
   --orgdash-muted: #64748b;
   background: var(--color-kc-canvas);
@@ -5403,6 +5403,105 @@ html[data-theme='dark'] {
   padding: 0;
 }
 
+/* Meeqati Mansooba panel — slate, subordinate to navy hero */
+.orgdash-meqati-panel {
+  border: 0;
+  border-radius: 1rem;
+  background: #1e293b;
+  color: #e2e8f0;
+  padding: 1.25rem 1.25rem 1.35rem;
+  box-shadow: 0 1px 2px 0 rgb(15 23 42 / 0.05);
+}
+
+.orgdash-meqati-panel-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.orgdash-meqati-panel-title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 650;
+  line-height: 1.55;
+  color: #f8fafc;
+}
+
+.orgdash-meqati-panel-sub {
+  margin: 0.25rem 0 0;
+  font-size: 0.875rem;
+  line-height: 1.65;
+  color: #94a3b8;
+}
+
+.orgdash-meqati-panel-link {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #5eead4;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.orgdash-meqati-panel-link:hover {
+  text-decoration: underline;
+}
+
+.orgdash-meqati-panel .orgdash-empty-copy,
+.orgdash-meqati-panel .orgdash-muted,
+.orgdash-meqati-panel .orgdash-hint {
+  color: #94a3b8;
+}
+
+.orgdash-meqati-panel .orgdash-card-link {
+  color: #5eead4;
+}
+
+.orgdash-meqati-year-select {
+  border: 1px solid color-mix(in srgb, white 16%, transparent) !important;
+  background: color-mix(in srgb, white 8%, transparent) !important;
+  color: #f8fafc !important;
+}
+
+.orgdash-meqati-stats {
+  margin-top: 0.75rem;
+  border-top: 1px solid color-mix(in srgb, white 12%, transparent);
+  padding-top: 0.75rem;
+  gap: 0.75rem 0;
+}
+
+.orgdash-meqati-stats > div {
+  border-inline-end: 1px solid color-mix(in srgb, white 10%, transparent);
+  padding-inline: 0.75rem;
+  min-width: 0;
+}
+
+.orgdash-meqati-stats > div:first-child {
+  padding-inline-start: 0;
+}
+
+.orgdash-meqati-stats > div:last-child {
+  border-inline-end: 0;
+  padding-inline-end: 0;
+}
+
+.orgdash-meqati-stats dt {
+  color: #94a3b8;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.orgdash-meqati-stats dd {
+  margin: 0.15rem 0 0;
+  color: #f8fafc;
+  font-size: 1.25rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.3;
+}
+
 .orgdash-status-strip-head {
   display: flex;
   flex-wrap: wrap;
@@ -5472,6 +5571,66 @@ html[data-theme='dark'] {
   min-width: 0;
 }
 
+.orgdash-dept-cards {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 640px) {
+  .orgdash-dept-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.orgdash-dept-card-wrap {
+  min-width: 0;
+}
+
+.orgdash-dept-card {
+  display: flex;
+  width: 100%;
+  min-height: 6.5rem;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: 1rem;
+  box-shadow: none;
+  padding: 1rem;
+  text-align: start;
+  cursor: pointer;
+}
+
+.orgdash-dept-card:hover,
+.orgdash-dept-card:focus-visible {
+  box-shadow: 0 1px 2px 0 rgb(15 23 42 / 0.05);
+  outline: none;
+}
+
+.orgdash-dept-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.orgdash-dept-card-icon {
+  display: inline-flex;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.85);
+  box-shadow: inset 0 0 0 1px rgb(15 23 42 / 0.04);
+}
+
 .orgdash-dept-list {
   margin: 0;
   padding: 0;
@@ -5507,28 +5666,34 @@ html[data-theme='dark'] {
 }
 
 .orgdash-dept-name {
+  display: block;
   font-size: 1rem;
   font-weight: 650;
-  line-height: 1.6;
-  color: var(--color-kc-shell-ink);
+  line-height: 1.55;
+  color: inherit;
 }
 
 .orgdash-dept-meta {
+  display: block;
+  margin-top: 0.35rem;
   font-size: 0.8125rem;
   line-height: 1.5;
-  color: var(--orgdash-muted);
+  opacity: 0.8;
+  color: inherit;
 }
 
 .orgdash-dept-drill {
-  padding: 0 0 1rem;
+  margin-top: 0.5rem;
+  padding: 0.75rem 0.15rem 0.25rem;
+  border-top: 1px solid color-mix(in srgb, var(--color-kc-shell) 8%, var(--color-border));
 }
 
-/* Attention = intentional contained surface (soft amber, thin border) */
+/* Attention = warm cream / pale amber (not strong orange) */
 .orgdash-attention-panel {
-  border: 1px solid color-mix(in srgb, var(--orgdash-amber) 22%, var(--color-border));
-  border-radius: 1rem; /* 16px */
-  background: var(--orgdash-amber-soft);
-  padding: 1rem 1rem 1rem; /* 16px */
+  border: 1px solid color-mix(in srgb, var(--orgdash-amber) 18%, #e8e0d0);
+  border-radius: 1rem;
+  background: #fff8e8;
+  padding: 1rem;
   box-shadow: none;
 }
 

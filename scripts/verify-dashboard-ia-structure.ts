@@ -88,6 +88,9 @@ assert(quick.includes('بیت المال'), 'quick action: baitul maal')
 assert(!quick.includes("label: 'Record Visit'"), 'Visit is not a global Quick Action')
 assert(picture.includes('Open work'), 'Open work remains in internal picture helper (not deleted)')
 assert(css.includes('.orgdash-hero'), 'organisational hero styles present')
+assert(css.includes('.orgdash-meqati-panel'), 'Meqati slate panel present')
+assert(css.includes('.orgdash-dept-cards'), 'department card grid present')
+assert(css.includes('background: #fff8e8'), 'attention warm cream surface present')
 assert(
   css.includes('background: var(--color-surface') || css.includes('background: #ffffff'),
   'organisational cards use surface/white, not campaign-green',

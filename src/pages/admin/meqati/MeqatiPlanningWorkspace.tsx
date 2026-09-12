@@ -207,7 +207,7 @@ export function MeqatiPlanningWorkspace(props: MeqatiPlanningWorkspaceProps) {
         ) : (
           <section className="space-y-3">
             <SectionLabel>شعبہ</SectionLabel>
-            <ul className="meqati-head-grid grid grid-cols-1 gap-0">
+            <ul className="meqati-head-grid grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {shobahItems.map((item) => (
                 <li key={item.shobah.id}>
                   <ShobahHeadCard
@@ -328,7 +328,17 @@ export function MeqatiPlanningWorkspace(props: MeqatiPlanningWorkspaceProps) {
             }
             onClick={() => onViewChange({ level: 'shobah', shobahId: view.shobahId })}
           />
-          <div className="meqati-objective-band">
+          <div
+            className="meqati-objective-band"
+            style={
+              visual
+                ? {
+                    backgroundColor: visual.wash,
+                    borderColor: `color-mix(in srgb, ${visual.accent} 20%, #e2e5ea)`,
+                  }
+                : undefined
+            }
+          >
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-xs font-semibold text-secondary">

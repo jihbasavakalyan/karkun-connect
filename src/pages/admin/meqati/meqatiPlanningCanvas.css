@@ -1,6 +1,7 @@
 /**
- * Meqati planning canvas — Claude composition polish:
- * light working surface · navy department hero · open rows · quiet status strip.
+ * Meqati planning canvas — approved visual pattern:
+ * light working surface · navy department hero · coloured shobah cards ·
+ * tonal objective bands · open activity rows.
  */
 .meqati-planning-canvas {
   font-synthesis: none;
@@ -25,7 +26,7 @@
 /* Quiet status strip — typography only, hairline separators */
 .meqati-planning-canvas .meqati-stat-grid {
   border-block: 1px solid color-mix(in srgb, #0f172a 10%, #e2e5ea);
-  padding-block: 0.75rem; /* 12px */
+  padding-block: 0.75rem;
 }
 
 .meqati-planning-canvas .meqati-stat-card {
@@ -48,22 +49,22 @@
   padding-inline-end: 0;
 }
 
+/* Approved department cards — muted wash + thin border + icon circle */
 .meqati-planning-canvas .meqati-head-card {
-  border-width: 0;
+  border: 1px solid #e2e5ea;
+  border-radius: 1rem;
   box-shadow: none;
-  background: transparent;
-  border-radius: 0;
-  padding-block: 0.75rem; /* 12px open-row rhythm */
+  transition: box-shadow 150ms ease, transform 150ms ease;
 }
 
 .meqati-planning-canvas .meqati-head-card:hover,
 .meqati-planning-canvas .meqati-head-card:focus-visible {
-  background: color-mix(in srgb, #0f172a 3%, transparent);
+  box-shadow: 0 1px 2px 0 rgb(15 23 42 / 0.05);
   outline: none;
 }
 
-.meqati-planning-canvas .meqati-head-grid {
-  border-top: 1px solid color-mix(in srgb, #0f172a 10%, #e2e5ea);
+.meqati-planning-canvas .meqati-head-icon {
+  box-shadow: inset 0 0 0 1px rgb(15 23 42 / 0.04);
 }
 
 /* Navy department / shobah hero */
@@ -76,7 +77,7 @@
   border-radius: 1rem;
   background: #0f172a;
   color: #e2e8f0;
-  padding: 1.25rem 1.5rem; /* 20/24 */
+  padding: 1.25rem 1.5rem;
   box-shadow: 0 4px 6px -1px rgb(15 23 42 / 0.08), 0 2px 4px -2px rgb(15 23 42 / 0.06);
 }
 
@@ -89,13 +90,13 @@
   color: #94a3b8;
 }
 
-/* Tonal objective header band — light contained, not a heavy card */
+/* Tonal objective header band */
 .meqati-planning-canvas .meqati-objective-band {
-  border-radius: 0.5rem; /* 8px */
+  border-radius: 0.5rem;
   background: #f4f5f7;
   border: 1px solid color-mix(in srgb, #0f172a 8%, #e2e5ea);
   box-shadow: none;
-  padding: 1rem; /* 16px */
+  padding: 1rem;
 }
 
 @media (min-width: 1024px) {
@@ -103,8 +104,7 @@
     grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
   }
 
-  /* Open department list — single column hairline rows */
   .meqati-head-grid {
-    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
   }
 }

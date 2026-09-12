@@ -13,6 +13,7 @@ import {
   resolveActivityYearStatus,
 } from '@/lib/planning/activityYearStatus'
 import { resolveMeqatiYear } from '@/lib/dashboard/meqatiYear'
+import { Icon } from '@/components/ui/Icon'
 import type { IconName } from '@/design-system/iconNames'
 
 const PROGRAMME_STATUS_URDU: Record<LocalProgrammeStatus, string> = {
@@ -84,28 +85,51 @@ export type ShobahVisual = {
   icon: IconName
 }
 
-/** Claude-restrained shobah accents — navy / teal / slate / soft amber only. */
+/**
+ * Presentational, deterministic H01–H09 palette.
+ * Approved muted variety — not persisted; contrast-safe ink on wash.
+ */
 const HEAD_VISUAL_BY_CODE: Record<string, ShobahVisual> = {
-  H01: { accent: '#0f766e', wash: '#ccfbf1', ink: '#0f172a', icon: 'clipboard' },
-  H02: { accent: '#1e293b', wash: '#e2e8f0', ink: '#0f172a', icon: 'users' },
-  H03: { accent: '#0f766e', wash: '#e6fffa', ink: '#134e4a', icon: 'handshake' },
-  H04: { accent: '#334155', wash: '#f1f5f9', ink: '#0f172a', icon: 'flag' },
-  H05: { accent: '#0d9488', wash: '#f0fdfa', ink: '#0f172a', icon: 'megaphone' },
-  H06: { accent: '#475569', wash: '#f8fafc', ink: '#0f172a', icon: 'file-text' },
-  H07: { accent: '#b45309', wash: '#fffbeb', ink: '#0f172a', icon: 'sprout' },
-  H08: { accent: '#1e293b', wash: '#eef2f7', ink: '#0f172a', icon: 'chart' },
-  H09: { accent: '#0f766e', wash: '#f5f3ef', ink: '#0f172a', icon: 'home' },
+  /* muted teal */
+  H01: { accent: '#0f766e', wash: '#e7f2f0', ink: '#0f172a', icon: 'clipboard' },
+  /* muted blue */
+  H02: { accent: '#1d4ed8', wash: '#e8eef8', ink: '#0f172a', icon: 'users' },
+  /* muted aqua */
+  H03: { accent: '#0e7490', wash: '#e6f3f5', ink: '#0f172a', icon: 'handshake' },
+  /* muted violet */
+  H04: { accent: '#6d28d9', wash: '#eee8f7', ink: '#0f172a', icon: 'flag' },
+  /* muted green */
+  H05: { accent: '#047857', wash: '#e8f3ee', ink: '#0f172a', icon: 'megaphone' },
+  /* muted slate */
+  H06: { accent: '#475569', wash: '#eef1f4', ink: '#0f172a', icon: 'file-text' },
+  /* muted amber/gold */
+  H07: { accent: '#b45309', wash: '#f6f0e4', ink: '#0f172a', icon: 'sprout' },
+  /* muted rose */
+  H08: { accent: '#9f1239', wash: '#f5e9ec', ink: '#0f172a', icon: 'chart' },
+  /* muted terracotta */
+  H09: { accent: '#9a3412', wash: '#f4ebe6', ink: '#0f172a', icon: 'home' },
 }
 
 const FALLBACK_VISUAL: ShobahVisual = {
   accent: '#0f766e',
-  wash: '#f4f5f7',
+  wash: '#eef1f4',
   ink: '#0f172a',
   icon: 'clipboard',
 }
 
+export function shobahVisualByCode(code: string): ShobahVisual {
+  const key = code.trim().toUpperCase()
+  if (/^H\d{2}$/.test(key)) return HEAD_VISUAL_BY_CODE[key] ?? FALLBACK_VISUAL
+  const match = key.match(/H(\d{1,2})/)
+  if (match) {
+    const padded = `H${match[1].padStart(2, '0')}`
+    return HEAD_VISUAL_BY_CODE[padded] ?? FALLBACK_VISUAL
+  }
+  return FALLBACK_VISUAL
+}
+
 export function shobahVisual(shobah: Pick<Shobah, 'id' | 'sortOrder'>): ShobahVisual {
-  return HEAD_VISUAL_BY_CODE[shobahHeadCode(shobah)] ?? FALLBACK_VISUAL
+  return shobahVisualByCode(shobahHeadCode(shobah))
 }
 
 export function Chevron({ className = '' }: { className?: string }) {
@@ -247,22 +271,34 @@ export function ShobahHeadCard({ item, onOpen }: ShobahHeadCardProps) {
     <button
       type="button"
       onClick={() => onOpen(item.shobah.id)}
-      className="meqati-head-card flex min-h-14 w-full items-center justify-between gap-3 border-b border-border px-0 py-3 text-start"
-      style={{ color: visual.ink }}
+      className="meqati-head-card flex min-h-[7.5rem] w-full flex-col items-stretch justify-between gap-3 px-4 py-4 text-start"
+      style={{
+        backgroundColor: visual.wash,
+        color: visual.ink,
+        borderColor: `color-mix(in srgb, ${visual.accent} 22%, #e2e5ea)`,
+      }}
     >
-      <span className="min-w-0">
-        <span className="block text-xs font-medium text-secondary">{code}</span>
-        <span className="mt-1 block text-lg font-semibold whitespace-normal break-words">
-          {item.shobah.name}
+      <span className="flex items-start justify-between gap-3">
+        <span className="min-w-0">
+          <span className="block text-xs font-medium opacity-70">{code}</span>
+          <span className="mt-1 block text-lg font-semibold whitespace-normal break-words">
+            {item.shobah.name}
+          </span>
         </span>
-        <span className="mt-2 block text-sm text-secondary">
-          {item.objectiveCount} اہداف · {item.activityCount} سرگرمیاں
+        <span
+          className="meqati-head-icon inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/85"
+          style={{ color: visual.accent }}
+          aria-hidden
+        >
+          <Icon name={visual.icon} size="md" />
         </span>
-        <span className="mt-1 block text-xs text-secondary">
+      </span>
+      <span className="block text-sm opacity-80">
+        {item.objectiveCount} اہداف · {item.activityCount} سرگرمیاں
+        <span className="mt-1 block text-xs">
           {item.mappedCount} مربوط · {item.unmappedCount} بغیر ہدف
         </span>
       </span>
-      <Chevron />
     </button>
   )
 }
