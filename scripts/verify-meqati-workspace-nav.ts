@@ -31,7 +31,7 @@ const canvasCss = readFileSync('src/pages/admin/meqati/meqatiPlanningCanvas.css'
 assert.match(canvasCss, /repeat\(5, minmax\(0, 1fr\)\)/)
 assert.match(canvasCss, /minmax\(0, 1fr\)/)
 assert.match(canvasCss, /meqati-dept-hero/)
-assert.match(canvasCss, /#f7f8fa/)
+assert.match(canvasCss, /background: transparent/)
 assert.doesNotMatch(workspace, /md:grid-cols-2/)
 assert.doesNotMatch(workspace, /xl:grid-cols-3/)
 assert.match(workspace, /CompactActivityList/)

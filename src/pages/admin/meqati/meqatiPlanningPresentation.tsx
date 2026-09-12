@@ -247,7 +247,7 @@ export function ShobahHeadCard({ item, onOpen }: ShobahHeadCardProps) {
     <button
       type="button"
       onClick={() => onOpen(item.shobah.id)}
-      className="meqati-head-card flex min-h-20 w-full items-center justify-between gap-3 border-b border-border px-1 py-4 text-start"
+      className="meqati-head-card flex min-h-14 w-full items-center justify-between gap-3 border-b border-border px-0 py-3 text-start"
       style={{ color: visual.ink }}
     >
       <span className="min-w-0">
@@ -297,7 +297,7 @@ export function ObjectiveNavBox({
       >
         <button
           type="button"
-          className="min-h-14 min-w-0 flex-1 px-1 py-4 text-start"
+          className="min-h-14 min-w-0 flex-1 px-0 py-3 text-start"
           onClick={onOpen}
         >
           <span className="block text-xs text-secondary">

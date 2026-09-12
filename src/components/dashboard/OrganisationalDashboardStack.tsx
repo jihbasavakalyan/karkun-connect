@@ -315,7 +315,9 @@ function AttentionCompact({ situation }: { situation: OrganisationalSituation })
   )
   return (
     <aside className="orgdash-attention-panel" aria-label="توجہ طلب" dir="rtl" lang="ur">
-      <h2 className="orgdash-section-title">توجہ طلب</h2>
+      <div className="orgdash-status-strip-head">
+        <h2 className="orgdash-section-title">توجہ طلب</h2>
+      </div>
       {visible.length === 0 ? (
         <p className="orgdash-muted">اس وقت کوئی توجہ طلب معاملہ نہیں۔</p>
       ) : (

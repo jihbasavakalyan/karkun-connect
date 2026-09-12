@@ -187,7 +187,7 @@ export function MeqatiPlanningWorkspace(props: MeqatiPlanningWorkspaceProps) {
         </header>
 
         {mansooba ? (
-          <ul className="meqati-stat-grid grid grid-cols-2 gap-0 border-y border-border py-2">
+          <ul className="meqati-stat-grid grid grid-cols-2 gap-0">
             {STAT_CARDS.map((card) => (
               <li key={card.key}>
                 <StatCard value={totals[card.key]} label={card.label} />

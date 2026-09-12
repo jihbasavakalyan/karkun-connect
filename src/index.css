@@ -5212,7 +5212,7 @@ html[data-theme='dark'] {
   --orgdash-blue: var(--color-kc-shell);
   --orgdash-blue-soft: #eef2f7;
   --orgdash-amber: var(--color-kc-shell-attention);
-  --orgdash-amber-soft: var(--color-accent-soft);
+  --orgdash-amber-soft: color-mix(in srgb, var(--color-accent-soft) 72%, #ffffff);
   --orgdash-saffron: var(--color-kc-shell-current);
   --orgdash-muted: #64748b;
   background: var(--color-kc-canvas);
@@ -5224,10 +5224,23 @@ html[data-theme='dark'] {
   -moz-osx-font-smoothing: auto;
 }
 
+/* Defeat legacy mc/exdash spacing + slate canvas on the organisational home */
+.orgdash-page.exdash-page,
+.orgdash-page.mc-page,
+.orgdash-page.mc-page-admin-compact {
+  background: var(--color-kc-canvas);
+}
+
+.orgdash-page.exdash-page > :not([hidden]) ~ :not([hidden]),
+.orgdash-page.mc-page > :not([hidden]) ~ :not([hidden]),
+.orgdash-page.mc-page-admin-compact > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 1.5rem; /* 24px ? hero ? stack */
+}
+
 .orgdash-stack {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1.5rem; /* 24px rhythm: status ? work ? sections */
 }
 
 /* Navy hero only ? light working surface below */
@@ -5236,13 +5249,13 @@ html[data-theme='dark'] {
   border-radius: 1rem;
   background: var(--color-kc-shell);
   color: var(--color-kc-shell-text);
-  padding: 1.25rem 1.25rem 1.5rem;
+  padding: 1.25rem 1.25rem 1.25rem; /* 20?24 scale: keep 20px mobile */
   box-shadow: var(--shadow-card-hover);
 }
 
 @media (min-width: 640px) {
   .orgdash-hero {
-    padding: 1.5rem 1.75rem;
+    padding: 1.5rem; /* 24px even */
   }
 }
 
@@ -5287,7 +5300,7 @@ html[data-theme='dark'] {
   min-width: 12.5rem;
   flex-direction: column;
   align-items: flex-start;
-  gap: 0.2rem;
+  gap: 0.25rem;
 }
 
 .orgdash-year-kicker {
@@ -5307,7 +5320,7 @@ html[data-theme='dark'] {
 }
 
 .orgdash-year-range {
-  margin: 0 0 0.35rem;
+  margin: 0 0 0.25rem;
   font-size: 0.8rem;
   color: var(--color-kc-shell-text-muted);
 }
@@ -5316,7 +5329,7 @@ html[data-theme='dark'] {
   display: flex;
   min-width: 12rem;
   flex-direction: column;
-  gap: 0.3rem;
+  gap: 0.25rem;
 }
 
 .orgdash-year-select {
@@ -5327,7 +5340,7 @@ html[data-theme='dark'] {
 }
 
 .orgdash-hero-body {
-  margin-top: 1.25rem;
+  margin-top: 1.5rem; /* 24px below head */
 }
 
 .orgdash-quiet-metrics {
@@ -5350,8 +5363,13 @@ html[data-theme='dark'] {
   flex-direction: column;
   gap: 0.15rem;
   min-width: 0;
-  border-inline-start: 1px solid color-mix(in srgb, white 16%, transparent);
+  border-inline-start: 1px solid color-mix(in srgb, white 14%, transparent);
   padding-inline-start: 0.75rem;
+}
+
+.orgdash-quiet-metrics > .orgdash-quiet-metric:first-child {
+  border-inline-start: 0;
+  padding-inline-start: 0;
 }
 
 .orgdash-quiet-metric-label {
@@ -5382,34 +5400,55 @@ html[data-theme='dark'] {
 }
 
 .orgdash-status-strip {
-  padding: 0.25rem 0 0;
+  padding: 0;
 }
 
 .orgdash-status-strip-head {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-start;
+  align-items: baseline;
   justify-content: space-between;
   gap: 0.75rem;
-  margin-bottom: 0.85rem;
+  margin-bottom: 0.75rem; /* 12px ? first content */
+  min-height: 1.75rem;
 }
 
 .orgdash-stat-row-quiet {
-  gap: 0.5rem 1rem;
+  gap: 0.75rem 0;
   border-top: 1px solid color-mix(in srgb, var(--color-kc-shell) 8%, var(--color-border));
-  padding-top: 0.85rem;
+  padding-top: 0.75rem;
+  margin-top: 0;
+}
+
+.orgdash-stat-row-quiet > div {
+  border-inline-end: 1px solid color-mix(in srgb, var(--color-kc-shell) 8%, var(--color-border));
+  padding-inline: 0.75rem;
+  min-width: 0;
+}
+
+.orgdash-stat-row-quiet > div:first-child {
+  padding-inline-start: 0;
+}
+
+.orgdash-stat-row-quiet > div:last-child {
+  border-inline-end: 0;
+  padding-inline-end: 0;
 }
 
 .orgdash-stat-row-quiet dt {
   color: var(--orgdash-muted);
   font-weight: 500;
+  font-size: 0.75rem;
 }
 
 .orgdash-stat-row-quiet dd {
-  font-size: 1.15rem;
-  font-weight: 650;
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.3;
+  margin-top: 0.15rem;
 }
 
+/* 2-column working area: departments ~2/3 ? attention ~1/3 */
 .orgdash-work-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -5420,11 +5459,16 @@ html[data-theme='dark'] {
 @media (min-width: 1024px) {
   .orgdash-work-grid {
     grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
-    gap: 1.75rem;
+    column-gap: 1.5rem; /* 24px */
+    row-gap: 0;
   }
 }
 
 .orgdash-dept-panel {
+  min-width: 0;
+}
+
+.orgdash-work-grid > * {
   min-width: 0;
 }
 
@@ -5437,6 +5481,7 @@ html[data-theme='dark'] {
 
 .orgdash-dept-row {
   border-bottom: 1px solid color-mix(in srgb, var(--color-kc-shell) 10%, var(--color-border));
+  background: transparent;
 }
 
 .orgdash-dept-row-btn {
@@ -5445,10 +5490,12 @@ html[data-theme='dark'] {
   min-height: 2.75rem;
   flex-direction: column;
   align-items: flex-start;
-  gap: 0.15rem;
+  gap: 0.25rem;
   border: 0;
+  border-radius: 0;
   background: transparent;
-  padding: 0.85rem 0.15rem;
+  box-shadow: none;
+  padding: 0.75rem 0; /* 12px vertical ? open row, not card */
   text-align: start;
   cursor: pointer;
 }
@@ -5468,35 +5515,45 @@ html[data-theme='dark'] {
 
 .orgdash-dept-meta {
   font-size: 0.8125rem;
+  line-height: 1.5;
   color: var(--orgdash-muted);
 }
 
 .orgdash-dept-drill {
-  padding: 0 0.15rem 1rem;
+  padding: 0 0 1rem;
 }
 
+/* Attention = intentional contained surface (soft amber, thin border) */
 .orgdash-attention-panel {
-  border: 1px solid color-mix(in srgb, var(--orgdash-amber) 28%, var(--color-border));
-  border-radius: 1rem;
+  border: 1px solid color-mix(in srgb, var(--orgdash-amber) 22%, var(--color-border));
+  border-radius: 1rem; /* 16px */
   background: var(--orgdash-amber-soft);
-  padding: 1rem 1.1rem 1.15rem;
+  padding: 1rem 1rem 1rem; /* 16px */
   box-shadow: none;
 }
 
+.orgdash-attention-panel > .orgdash-status-strip-head {
+  margin-bottom: 0.5rem;
+}
+
 .orgdash-attention-list {
-  margin: 0.75rem 0 0;
+  margin: 0.25rem 0 0;
   padding: 0;
   list-style: none;
 }
 
 .orgdash-attention-row {
   display: flex;
-  min-height: 2.75rem;
-  align-items: center;
+  min-height: 2.5rem;
+  align-items: baseline;
   justify-content: space-between;
   gap: 0.75rem;
-  border-bottom: 1px solid color-mix(in srgb, var(--orgdash-amber) 18%, transparent);
-  padding: 0.55rem 0;
+  border: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--orgdash-amber) 14%, transparent);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0.5rem 0;
   color: inherit;
   text-decoration: none;
 }
@@ -5505,13 +5562,23 @@ html[data-theme='dark'] {
   border-bottom: 0;
 }
 
-.orgdash-attention-label {
+.orgdash-attention-row:hover .orgdash-attention-label,
+.orgdash-attention-row:focus-visible .orgdash-attention-label {
+  text-decoration: underline;
+}
+
+.orgdash-attention-row:focus-visible {
+  outline: 2px solid var(--color-primary, #0f766e);
+  outline-offset: 2px;
+}
+
+.orgdash-attention-panel .orgdash-attention-label {
   font-size: 0.9rem;
   font-weight: 600;
   color: var(--color-kc-shell-ink);
 }
 
-.orgdash-attention-count {
+.orgdash-attention-panel .orgdash-attention-count {
   font-size: 1rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
@@ -5531,7 +5598,8 @@ html[data-theme='dark'] {
 
 .orgdash-activity-row {
   border-bottom: 1px solid color-mix(in srgb, var(--color-kc-shell) 8%, var(--color-border));
-  padding: 0.75rem 0.1rem;
+  padding: 0.75rem 0;
+  background: transparent;
 }
 
 .orgdash-activity-row:last-child {
@@ -5551,6 +5619,7 @@ html[data-theme='dark'] {
   font-weight: 600;
   color: var(--orgdash-teal);
   text-decoration: none;
+  white-space: nowrap;
 }
 
 .orgdash-card-link:hover {
@@ -5965,14 +6034,15 @@ html[data-theme='dark'] {
   outline-offset: 2px;
 }
 
-.orgdash-attention-count {
+/* Legacy chip grid only ? do not override attention panel rows */
+.orgdash-attention-grid .orgdash-attention-count {
   font-size: 1.25rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: var(--orgdash-amber);
 }
 
-.orgdash-attention-label {
+.orgdash-attention-grid .orgdash-attention-label {
   font-size: 0.8rem;
   color: #334155;
 }
