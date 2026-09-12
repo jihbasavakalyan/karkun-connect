@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react'
+import { useId, useMemo, useState } from 'react'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { useAuth } from '@/hooks/useAuth'
+import { useRepositoryHydrationStatus } from '@/hooks/useRepositoryHydration'
 import {
   blueprintSectionsFor,
   buildReportPreview,
@@ -71,11 +72,16 @@ const OUTPUTS: Array<{ id: ReportOutputType; label: string; enabled: boolean }> 
   { id: 'json', label: 'JSON', enabled: true },
 ]
 
-function FieldLabel({ children }: { children: string }) {
-  return <label className="mb-1 block text-sm font-medium text-secondary">{children}</label>
+function FieldLabel({ htmlFor, children }: { htmlFor: string; children: string }) {
+  return (
+    <label htmlFor={htmlFor} className="mb-1 block text-sm font-medium text-secondary">
+      {children}
+    </label>
+  )
 }
 
 function SelectField<T extends string>(props: {
+  id: string
   label: string
   value: T
   options: Array<{ id: T; label: string; disabled?: boolean }>
@@ -83,9 +89,10 @@ function SelectField<T extends string>(props: {
 }) {
   return (
     <div>
-      <FieldLabel>{props.label}</FieldLabel>
+      <FieldLabel htmlFor={props.id}>{props.label}</FieldLabel>
       <select
-        className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-primary"
+        id={props.id}
+        className="min-h-11 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         value={props.value}
         onChange={(e) => props.onChange(e.target.value as T)}
       >
@@ -111,6 +118,8 @@ export function ReportCenterPanel({
   initialReportType?: ReportTypeId
 } = {}) {
   const { user } = useAuth()
+  const hydration = useRepositoryHydrationStatus()
+  const fieldId = useId()
   const [config, setConfig] = useState<ReportConfig>(() => {
     if (!initialReportType) return defaultKc034Config()
     const next = getReportType(initialReportType)
@@ -139,7 +148,9 @@ export function ReportCenterPanel({
   const preview = useMemo(() => buildReportPreview(config), [config])
   const typeDef = getReportType(config.reportType)
   const canGenerate =
-    Boolean(typeDef?.available && typeDef.featureFlag) && preview.diagnostics.ok
+    Boolean(typeDef?.available && typeDef.featureFlag) &&
+    preview.diagnostics.ok &&
+    (hydration.ready || hydration.failed)
 
   const activeRukns = useMemo(
     () => ruknMaster.filter((r) => r.status === 'active' && !r.isArchived),
@@ -234,15 +245,18 @@ export function ReportCenterPanel({
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
-      <div className="space-y-6">
-        <section className="rounded-lg border border-border bg-surface p-4">
-          <h2 className="mb-3 text-base font-semibold text-primary">Presets</h2>
-          <div className="flex flex-wrap gap-2">
+      <div className="min-w-0 space-y-6">
+        <section className="rounded-lg border border-border bg-surface p-4" aria-labelledby={`${fieldId}-presets`}>
+          <h2 id={`${fieldId}-presets`} className="mb-3 text-base font-semibold text-primary">
+            Presets
+          </h2>
+          <div className="flex flex-wrap gap-2" role="group" aria-label="Report presets">
             {presets.map((p) => (
               <button
                 key={p.id}
                 type="button"
-                className={`rounded-full border px-3 py-1 text-sm ${
+                aria-pressed={config.presetId === p.id}
+                className={`min-h-11 rounded-lg border px-3 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
                   config.presetId === p.id
                     ? 'border-primary bg-primary/10 text-primary'
                     : 'border-border text-secondary hover:border-primary/40'
@@ -255,9 +269,10 @@ export function ReportCenterPanel({
           </div>
           <div className="mt-3 flex flex-wrap items-end gap-2">
             <div className="min-w-[12rem] flex-1">
-              <FieldLabel>Save current as template</FieldLabel>
+              <FieldLabel htmlFor={`${fieldId}-template`}>Save current as template</FieldLabel>
               <input
-                className="w-full rounded-md border border-border px-3 py-2 text-sm"
+                id={`${fieldId}-template`}
+                className="min-h-11 w-full rounded-md border border-border px-3 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                 value={customTitle}
                 onChange={(e) => setCustomTitle(e.target.value)}
                 placeholder="Template name"
@@ -268,12 +283,12 @@ export function ReportCenterPanel({
             </PrimaryButton>
           </div>
           {customTemplates.length > 0 ? (
-            <div className="mt-2 flex flex-wrap gap-2">
+            <div className="mt-2 flex flex-wrap gap-2" role="group" aria-label="Saved templates">
               {customTemplates.map((t) => (
                 <button
                   key={t.id}
                   type="button"
-                  className="rounded-full border border-dashed border-border px-3 py-1 text-xs text-secondary"
+                  className="min-h-11 rounded-lg border border-dashed border-border px-3 py-2 text-xs text-secondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                   onClick={() => patch({ ...t.config, presetId: t.id })}
                 >
                   {t.title}
@@ -283,9 +298,15 @@ export function ReportCenterPanel({
           ) : null}
         </section>
 
-        <section className="rounded-lg border border-border bg-surface p-4 space-y-4">
-          <h2 className="text-base font-semibold text-primary">Configuration</h2>
+        <section
+          className="space-y-4 rounded-lg border border-border bg-surface p-4"
+          aria-labelledby={`${fieldId}-config`}
+        >
+          <h2 id={`${fieldId}-config`} className="text-base font-semibold text-primary">
+            Configuration
+          </h2>
           <SelectField
+            id={`${fieldId}-report-type`}
             label="Report type"
             value={config.reportType}
             onChange={onReportTypeChange}
@@ -296,6 +317,7 @@ export function ReportCenterPanel({
             }))}
           />
           <SelectField
+            id={`${fieldId}-scope`}
             label="Scope"
             value={config.scope}
             onChange={(scope) => patch({ scope })}
@@ -305,9 +327,10 @@ export function ReportCenterPanel({
           config.scope === 'selected_rukn' ||
           config.reportType === 'individual_rukn' ? (
             <div>
-              <FieldLabel>Rukn</FieldLabel>
+              <FieldLabel htmlFor={`${fieldId}-rukn`}>Rukn</FieldLabel>
               <select
-                className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm"
+                id={`${fieldId}-rukn`}
+                className="min-h-11 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                 value={config.scopeTarget?.ruknId ?? ''}
                 onChange={(e) =>
                   patch({
@@ -326,9 +349,10 @@ export function ReportCenterPanel({
           ) : null}
           {config.scope === 'individual_karkun' || config.reportType === 'individual_karkun' ? (
             <div>
-              <FieldLabel>Karkun</FieldLabel>
+              <FieldLabel htmlFor={`${fieldId}-karkun`}>Karkun</FieldLabel>
               <select
-                className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm"
+                id={`${fieldId}-karkun`}
+                className="min-h-11 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                 value={config.scopeTarget?.personId ?? ''}
                 onChange={(e) =>
                   patch({
@@ -347,13 +371,14 @@ export function ReportCenterPanel({
                 ))}
               </select>
               {connectedKarkunOptions.length === 0 ? (
-                <p className="mt-1 text-xs text-secondary">
+                <p className="mt-1 text-xs text-secondary" role="status">
                   No connected Karkuns available in the current session.
                 </p>
               ) : null}
             </div>
           ) : null}
           <SelectField
+            id={`${fieldId}-date-range`}
             label="Date range"
             value={config.dateRange.kind}
             onChange={(kind) =>
@@ -373,10 +398,11 @@ export function ReportCenterPanel({
           {config.dateRange.kind === 'custom_range' ? (
             <div className="grid gap-3 sm:grid-cols-2">
               <div>
-                <FieldLabel>Start date</FieldLabel>
+                <FieldLabel htmlFor={`${fieldId}-start`}>Start date</FieldLabel>
                 <input
+                  id={`${fieldId}-start`}
                   type="date"
-                  className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm"
+                  className="min-h-11 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                   value={config.dateRange.startIso ?? ''}
                   onChange={(e) =>
                     patch({
@@ -390,10 +416,11 @@ export function ReportCenterPanel({
                 />
               </div>
               <div>
-                <FieldLabel>End date</FieldLabel>
+                <FieldLabel htmlFor={`${fieldId}-end`}>End date</FieldLabel>
                 <input
+                  id={`${fieldId}-end`}
                   type="date"
-                  className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm"
+                  className="min-h-11 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                   value={config.dateRange.endIso ?? ''}
                   onChange={(e) =>
                     patch({
@@ -409,13 +436,13 @@ export function ReportCenterPanel({
             </div>
           ) : null}
 
-          <div>
-            <FieldLabel>Detail level</FieldLabel>
+          <fieldset className="min-w-0">
+            <legend className="mb-1 text-sm font-medium text-secondary">Detail level</legend>
             <div className="grid gap-2 sm:grid-cols-2">
               {DETAIL_LEVELS.map((d) => (
                 <label
                   key={d.id}
-                  className={`flex cursor-pointer flex-col rounded-md border px-3 py-2 text-sm ${
+                  className={`flex min-h-11 cursor-pointer flex-col rounded-md border px-3 py-2 text-sm ${
                     config.detailLevel === d.id
                       ? 'border-primary bg-primary/5'
                       : 'border-border'
@@ -424,7 +451,7 @@ export function ReportCenterPanel({
                   <span className="flex items-center gap-2 font-medium text-primary">
                     <input
                       type="radio"
-                      name="detailLevel"
+                      name={`${fieldId}-detailLevel`}
                       checked={config.detailLevel === d.id}
                       onChange={() => patch({ detailLevel: d.id })}
                     />
@@ -434,16 +461,19 @@ export function ReportCenterPanel({
                 </label>
               ))}
             </div>
-          </div>
+          </fieldset>
 
-          <div>
-            <FieldLabel>Output format</FieldLabel>
+          <fieldset className="min-w-0">
+            <legend className="mb-1 text-sm font-medium text-secondary">Output format</legend>
             <div className="flex flex-wrap gap-3">
               {OUTPUTS.map((o) => (
-                <label key={o.id} className="flex items-center gap-2 text-sm text-primary">
+                <label
+                  key={o.id}
+                  className="flex min-h-11 items-center gap-2 text-sm text-primary"
+                >
                   <input
                     type="radio"
-                    name="output"
+                    name={`${fieldId}-output`}
                     disabled={!o.enabled}
                     checked={config.outputType === o.id}
                     onChange={() => patch({ outputType: o.id })}
@@ -453,10 +483,11 @@ export function ReportCenterPanel({
                 </label>
               ))}
             </div>
-          </div>
+          </fieldset>
 
           <div className="grid gap-3 sm:grid-cols-2">
             <SelectField
+              id={`${fieldId}-language`}
               label="Language"
               value={config.language}
               onChange={(language: ReportLanguage) => patch({ language })}
@@ -467,6 +498,7 @@ export function ReportCenterPanel({
               ]}
             />
             <SelectField
+              id={`${fieldId}-theme`}
               label="Theme"
               value={config.theme}
               onChange={(theme: ReportTheme) => patch({ theme })}
@@ -479,8 +511,8 @@ export function ReportCenterPanel({
             />
           </div>
 
-          <div>
-            <FieldLabel>Options</FieldLabel>
+          <fieldset className="min-w-0">
+            <legend className="mb-1 text-sm font-medium text-secondary">Options</legend>
             <div className="grid gap-2 sm:grid-cols-2">
               {(
                 [
@@ -490,7 +522,7 @@ export function ReportCenterPanel({
                   ['showAppendix', 'Show appendix'],
                 ] as const
               ).map(([key, label]) => (
-                <label key={key} className="flex items-center gap-2 text-sm text-primary">
+                <label key={key} className="flex min-h-11 items-center gap-2 text-sm text-primary">
                   <input
                     type="checkbox"
                     checked={config.options[key]}
@@ -503,10 +535,10 @@ export function ReportCenterPanel({
                   {label}
                 </label>
               ))}
-              <label className="flex items-center gap-2 text-sm text-primary">
+              <label className="flex min-h-11 items-center gap-2 text-sm text-primary">
                 <input
                   type="radio"
-                  name="orientation"
+                  name={`${fieldId}-orientation`}
                   checked={config.options.orientation === 'portrait'}
                   onChange={() =>
                     patch({ options: { ...config.options, orientation: 'portrait' } })
@@ -514,10 +546,10 @@ export function ReportCenterPanel({
                 />
                 Portrait
               </label>
-              <label className="flex items-center gap-2 text-sm text-primary">
+              <label className="flex min-h-11 items-center gap-2 text-sm text-primary">
                 <input
                   type="radio"
-                  name="orientation"
+                  name={`${fieldId}-orientation`}
                   checked={config.options.orientation === 'landscape'}
                   onChange={() =>
                     patch({ options: { ...config.options, orientation: 'landscape' } })
@@ -526,11 +558,13 @@ export function ReportCenterPanel({
                 Landscape
               </label>
             </div>
-          </div>
+          </fieldset>
         </section>
 
-        <section className="rounded-lg border border-border bg-surface p-4">
-          <h2 className="mb-2 text-base font-semibold text-primary">Sections</h2>
+        <section className="rounded-lg border border-border bg-surface p-4" aria-labelledby={`${fieldId}-sections`}>
+          <h2 id={`${fieldId}-sections`} className="mb-2 text-base font-semibold text-primary">
+            Sections
+          </h2>
           <p className="mb-3 text-xs text-secondary">
             Driven by the Section Registry for the selected report type. Planned sections are
             visible but not selectable until implemented.
@@ -543,7 +577,7 @@ export function ReportCenterPanel({
               return (
                 <li key={section.id}>
                   <label
-                    className={`flex items-start gap-2 rounded-md border px-3 py-2 text-sm ${
+                    className={`flex min-h-11 items-start gap-2 rounded-md border px-3 py-2 text-sm ${
                       selectable ? 'border-border' : 'border-dashed border-border/70 opacity-70'
                     }`}
                   >
@@ -571,9 +605,11 @@ export function ReportCenterPanel({
         </section>
       </div>
 
-      <aside className="space-y-4 lg:sticky lg:top-4 lg:self-start">
-        <section className="rounded-lg border border-border bg-surface p-4">
-          <h2 className="mb-3 text-base font-semibold text-primary">Preview</h2>
+      <aside className="min-w-0 space-y-4 lg:sticky lg:top-4 lg:self-start">
+        <section className="rounded-lg border border-border bg-surface p-4" aria-labelledby={`${fieldId}-preview`}>
+          <h2 id={`${fieldId}-preview`} className="mb-3 text-base font-semibold text-primary">
+            Preview
+          </h2>
           <dl className="space-y-2 text-sm">
             <div>
               <dt className="text-secondary">Report title</dt>
@@ -615,14 +651,14 @@ export function ReportCenterPanel({
             {preview.connectionVsVisitNote}
           </p>
           {preview.diagnostics.errors.length > 0 ? (
-            <ul className="mt-3 space-y-1 text-xs text-danger">
+            <ul className="mt-3 space-y-1 text-xs text-danger" role="alert">
               {preview.diagnostics.errors.map((e) => (
                 <li key={`${e.code}-${e.message}`}>{e.message}</li>
               ))}
             </ul>
           ) : null}
           {preview.diagnostics.warnings.length > 0 ? (
-            <ul className="mt-3 space-y-1 text-xs text-secondary">
+            <ul className="mt-3 space-y-1 text-xs text-secondary" role="status">
               {preview.diagnostics.warnings.map((w) => (
                 <li key={`${w.code}-${w.message}`}>{w.message}</li>
               ))}
@@ -637,13 +673,26 @@ export function ReportCenterPanel({
             >
               {config.outputType === 'dashboard' ? 'Open Dashboard' : 'Generate / Export'}
             </PrimaryButton>
+            {!hydration.ready && !hydration.failed ? (
+              <p className="mt-2 text-xs text-secondary" role="status">
+                Waiting for operational data — Generate is unavailable until hydration finishes.
+              </p>
+            ) : null}
             {!typeDef?.available ? (
-              <p className="mt-2 text-xs text-secondary">
+              <p className="mt-2 text-xs text-secondary" role="status">
                 This report type is registered but not available yet.
               </p>
             ) : null}
-            {error ? <p className="mt-2 text-sm text-danger">{error}</p> : null}
-            {success ? <p className="mt-2 text-sm text-success">{success}</p> : null}
+            {error ? (
+              <p className="mt-2 text-sm text-danger" role="alert">
+                {error}
+              </p>
+            ) : null}
+            {success ? (
+              <p className="mt-2 text-sm text-success" role="status">
+                {success}
+              </p>
+            ) : null}
           </div>
         </section>
         {dashboardDoc ? (

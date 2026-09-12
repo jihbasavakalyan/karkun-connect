@@ -61,7 +61,12 @@ const MODULE_ALIASES: Array<{
   {
     target: 'reports',
     entityType: 'report',
-    names: ['reports', 'report', 'رپورٹ', 'رپورٹس', 'activities'],
+    names: ['reports', 'report', 'رپورٹ', 'رپورٹس'],
+  },
+  {
+    target: 'activities',
+    entityType: 'module',
+    names: ['activities', 'activity', 'سرگرمیاں'],
   },
   {
     target: 'settings',

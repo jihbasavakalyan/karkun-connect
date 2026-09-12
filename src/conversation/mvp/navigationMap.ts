@@ -51,10 +51,10 @@ export function resolveNavigationTarget(
         entityType: 'attendance',
       }
     case 'reports':
-      // KC-037 V1 — Admin Activities (legacy voice target); Rukns → Campaign Record (no Report Center).
+      // Increment 13 — Admin رپورٹس → Report Center; Rukns → Campaign Record (no Report Center).
       return {
         target,
-        route: admin ? ROUTES.ADMIN_ACTIVITIES : ROUTES.RUKN_CAMPAIGN_RECORD,
+        route: admin ? ROUTES.ADMIN_REPORTS : ROUTES.RUKN_CAMPAIGN_RECORD,
         label: admin ? 'رپورٹس' : 'مہم ریکارڈ',
         entityType: 'report',
       }

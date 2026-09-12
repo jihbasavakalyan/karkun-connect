@@ -25,6 +25,25 @@ export type ReportsLandingSection = {
   reports: ReportTypeDefinition[]
 }
 
+/**
+ * Presentation-only kind labels derived from existing catalog fields / known IDs.
+ * Does not invent catalog maturity metadata or change availability.
+ */
+export type ReportPresentationKind =
+  | 'executive'
+  | 'operational'
+  | 'individual'
+  | 'audit'
+  | 'advanced'
+
+/** Report types with purpose-built PDF layouts in the existing exporter (not JSON dump). */
+const PURPOSE_BUILT_PDF_IDS = new Set<ReportTypeId>([
+  'executive_campaign',
+  'individual_rukn',
+  'individual_karkun',
+  'weekly_ijtema',
+])
+
 /** Preferred featured order — omit gracefully when a type is unavailable. */
 const FEATURED_IDS: ReportTypeId[] = [
   'executive_campaign',
@@ -60,6 +79,55 @@ const MORE_IDS: ReportTypeId[] = [
   'integrity',
   'historical_comparison',
 ]
+
+export function hasPurposeBuiltPdf(reportType: ReportTypeId): boolean {
+  return PURPOSE_BUILT_PDF_IDS.has(reportType)
+}
+
+export function getReportPresentationKind(
+  report: ReportTypeDefinition,
+): ReportPresentationKind {
+  if (report.id === 'individual_rukn' || report.id === 'individual_karkun') {
+    return 'individual'
+  }
+  if (
+    report.id === 'mathematical_audit' ||
+    report.id === 'integrity' ||
+    report.defaultDetailLevel === 'audit'
+  ) {
+    return 'audit'
+  }
+  if (
+    report.id === 'historical_comparison' ||
+    report.id === 'snapshot_summary' ||
+    report.id === 'communication'
+  ) {
+    return 'advanced'
+  }
+  if (
+    report.defaultDetailLevel === 'executive' ||
+    report.id === 'executive_campaign' ||
+    report.id === 'weekly_ijtema'
+  ) {
+    return 'executive'
+  }
+  return 'operational'
+}
+
+export function reportPresentationKindLabel(kind: ReportPresentationKind): string {
+  switch (kind) {
+    case 'executive':
+      return 'Executive'
+    case 'individual':
+      return 'Individual'
+    case 'audit':
+      return 'Audit'
+    case 'advanced':
+      return 'Advanced'
+    default:
+      return 'Operational'
+  }
+}
 
 function pickAvailable(ids: ReportTypeId[]): ReportTypeDefinition[] {
   const out: ReportTypeDefinition[] = []
@@ -102,31 +170,34 @@ export function buildReportsLandingSections(): ReportsLandingSection[] {
   const draft: ReportsLandingSection[] = [
     {
       id: 'featured' as const,
-      title: 'Featured',
+      title: 'Featured / Primary',
       description: 'Primary reports for day-to-day management review.',
       reports: featured,
     },
     {
       id: 'campaigns' as const,
-      title: 'Campaigns / مہمات',
-      description: 'Campaign progress, wing performance, follow-up, and visit progress.',
+      title: 'Campaign Reports / مہمات',
+      description:
+        'Campaign progress, wing performance, follow-up, and visit progress. Opens the Composer — does not download a PDF by itself.',
       reports: campaigns,
     },
     {
       id: 'weekly_ijtema' as const,
       title: 'Weekly Ijtema / ہفتہ وار اجتماع',
-      description: 'Executive Weekly Ijtema review via the existing Composer.',
+      description:
+        'Executive Weekly Ijtema report via Composer. Per-event attendance summaries remain on Weekly Ijtema management.',
       reports: weekly,
     },
     {
       id: 'baitul_maal' as const,
       title: 'Bait-ul-Maal / بیت المال',
-      description: 'Monthly Baitul Maal compliance reporting.',
+      description:
+        'Composer Bait-ul-Maal report. Per-cycle summaries remain on Bait-ul-Maal management.',
       reports: baitul,
     },
     {
       id: 'organisational' as const,
-      title: 'Organisational / Performance',
+      title: 'Organisational / Other',
       description: 'Rukn, Karkun, registration, and organisational status reports.',
       reports: organisational,
     },

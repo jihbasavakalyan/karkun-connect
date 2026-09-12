@@ -12,13 +12,17 @@ export function ReportDashboardView({ document, onClose }: ReportDashboardViewPr
   if (!document) return null
 
   return (
-    <section className="rounded-lg border border-border bg-surface p-4">
-      <div className="mb-3 flex items-center justify-between gap-2">
-        <h2 className="text-base font-semibold text-primary">
+    <section className="min-w-0 rounded-lg border border-border bg-surface p-4" aria-labelledby="report-dashboard-title">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <h2 id="report-dashboard-title" className="text-base font-semibold text-primary">
           Dashboard · {document.config.reportType}
         </h2>
         {onClose ? (
-          <button type="button" className="text-sm text-secondary hover:text-primary" onClick={onClose}>
+          <button
+            type="button"
+            className="min-h-11 rounded-lg border border-border px-3 text-sm text-secondary hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            onClick={onClose}
+          >
             Close
           </button>
         ) : null}
@@ -57,7 +61,7 @@ export function ReportDashboardView({ document, onClose }: ReportDashboardViewPr
             : null
 
           return (
-            <article key={section.definition.id} className="rounded-md border border-border/80 p-3">
+            <article key={section.definition.id} className="min-w-0 rounded-md border border-border/80 p-3">
               <h3 className="text-sm font-semibold text-primary">{title}</h3>
               <p className="text-xs text-secondary">{section.definition.description}</p>
               {wiExec ? (
@@ -117,7 +121,7 @@ export function ReportDashboardView({ document, onClose }: ReportDashboardViewPr
                 </ul>
               ) : null}
               {!wiExec && !cards && !narrative && !insights ? (
-                <pre className="mt-2 max-h-48 overflow-auto rounded bg-muted/20 p-2 text-[11px] leading-snug text-secondary">
+                <pre className="mt-2 max-h-48 overflow-x-auto overflow-y-auto rounded bg-muted/20 p-2 text-[11px] leading-snug text-secondary">
                   {JSON.stringify(data, null, 2)}
                 </pre>
               ) : null}
