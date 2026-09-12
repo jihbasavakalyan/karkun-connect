@@ -960,6 +960,7 @@ async function handleAdminSummary(): Promise<TrainingRegistrationApiResponse> {
     ok: true,
     summary: { ...view.summary, onlinePaymentEnabled },
     registrations: view.registrations,
+    peopleDirectory: view.peopleDirectory,
   })
 }
 

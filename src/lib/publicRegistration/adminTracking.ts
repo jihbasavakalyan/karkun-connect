@@ -13,6 +13,8 @@ import {
 } from './labels.js'
 import type {
   PublicPersonGender,
+  TrainingAdminRegistrationFilter,
+  TrainingAdminSearchPerson,
   TrainingOrganisationalCategory,
   TrainingCategoryCounts,
   TrainingPaymentMethod,
@@ -315,6 +317,62 @@ export function matchesRegisteredPeopleFilters(
   return true
 }
 
+export function matchesAdminPeopleDirectorySearch(
+  row: TrainingAdminSearchPerson,
+  query: string,
+): boolean {
+  const needle = query.trim().toLowerCase()
+  if (!needle) return true
+  const haystacks = [
+    row.name,
+    row.mobile,
+    row.personId,
+    row.registrationId ?? '',
+    row.utr ?? '',
+    row.cashPaidToName ?? '',
+    row.cashPaidToId ?? '',
+  ]
+  return haystacks.some((value) => value.toLowerCase().includes(needle))
+}
+
+export type AdminPeopleDirectoryFilters = {
+  category?: Extract<TrainingOrganisationalCategory, 'karkun' | 'muttafiq'> | ''
+  gender?: PublicPersonGender
+  registration?: TrainingAdminRegistrationFilter | ''
+  paymentMethod?: TrainingPaymentMethod | ''
+  paymentStatus?: TrainingPaymentStatus | ''
+}
+
+export function matchesAdminPeopleDirectoryFilters(
+  row: TrainingAdminSearchPerson,
+  filters: AdminPeopleDirectoryFilters,
+): boolean {
+  if (filters.category && row.organisationalCategory !== filters.category) return false
+  if (filters.gender && row.gender !== filters.gender) return false
+  if (filters.registration === 'registered' && !row.registered) return false
+  if (filters.registration === 'not_registered' && row.registered) return false
+  if (filters.paymentMethod) {
+    if (!row.registered || row.paymentMethod !== filters.paymentMethod) return false
+  }
+  if (filters.paymentStatus) {
+    if (!row.registered || row.paymentStatus !== filters.paymentStatus) return false
+  }
+  return true
+}
+
+/**
+ * Prefer personId, then normalized mobile. One registration per person for directory rows.
+ * Duplicate event registration docs for the same person do not create duplicate directory rows.
+ */
+export function lookupRegistrationForPersonDirectory(
+  personId: string,
+  mobile: string,
+  registeredByPersonId: Map<string, TrainingRegistrationRecord>,
+  registeredByMobile: Map<string, TrainingRegistrationRecord>,
+): TrainingRegistrationRecord | undefined {
+  return registeredByPersonId.get(personId) ?? (mobile ? registeredByMobile.get(mobile) : undefined)
+}
+
 function csvEscape(value: string): string {
   if (/[",\n\r]/.test(value)) return `"${value.replace(/"/g, '""')}"`
   return value
@@ -360,6 +418,7 @@ export function paymentQueueTitle(status: TrainingPaymentStatus, fullName: strin
 export function buildTrainingRegistrationAdminView(input: AdminTrackingInput): {
   summary: TrainingRegistrationSummary
   registrations: TrainingRegistrationAdminRow[]
+  peopleDirectory: TrainingAdminSearchPerson[]
 } {
   const publicRequests = input.publicRequests.filter(
     (row) => row.source === 'public_training_registration',
@@ -454,11 +513,25 @@ export function buildTrainingRegistrationAdminView(input: AdminTrackingInput): {
     return [...ids].map((id) => ruknNameById.get(id) ?? id)
   }
 
+  const resolvePersonRuknNames = (personId: string): string[] => {
+    const ids = ruknIdsByKarkunId.get(personId) ?? []
+    return ids.map((id) => ruknNameById.get(id) ?? id)
+  }
+
   const registrations = input.registrations
     .filter(isEventRegistration)
     .map((row) => ({ ...row, fullName: resolveFullName(row) }))
 
   const registrationByMobile = new Map(registrations.map((row) => [row.verifiedMobile, row]))
+
+  const registeredByPersonId = new Map<string, TrainingRegistrationRecord>()
+  const registeredByMobile = new Map<string, TrainingRegistrationRecord>()
+  for (const row of registrations) {
+    if (!isRegisteredForEvent(row)) continue
+    const mobile = normalizeTrainingMobile(row.verifiedMobile)
+    if (mobile) registeredByMobile.set(mobile, row)
+    if (row.personId) registeredByPersonId.set(row.personId, row)
+  }
 
   const adminRows: TrainingRegistrationAdminRow[] = registrations.map((row) => {
     const person = row.personId ? karkunById.get(row.personId) : karkunByMobile.get(row.verifiedMobile)
@@ -469,6 +542,44 @@ export function buildTrainingRegistrationAdminView(input: AdminTrackingInput): {
       ruknNames: resolveRuknNames(row),
     }
   })
+
+  const peopleDirectory: TrainingAdminSearchPerson[] = []
+  for (const person of karkunById.values()) {
+    const organisationalCategory = organisationalCategoryFromPerson(person)
+    if (organisationalCategory !== 'karkun' && organisationalCategory !== 'muttafiq') continue
+    const mobile = normalizeTrainingMobile(String(person.mobile || ''))
+    const registration = lookupRegistrationForPersonDirectory(
+      person.id,
+      mobile,
+      registeredByPersonId,
+      registeredByMobile,
+    )
+    const registered = isRegisteredForEvent(registration)
+    peopleDirectory.push({
+      personId: person.id,
+      name: String(person.name || '').trim() || (registered ? registration?.fullName ?? '' : ''),
+      mobile,
+      gender: authoritativeGender(person.gender),
+      organisationalCategory,
+      registered,
+      registrationId: registered && registration ? registration.id : null,
+      registrationStatus: registered && registration ? registration.registrationStatus : null,
+      paymentMethod: registered && registration ? registration.paymentMethod : null,
+      paymentStatus: registered && registration ? registration.paymentStatus : null,
+      utr: registered && registration ? registration.utr : null,
+      cashPaidToId: registered && registration ? registration.cashPaidToId : null,
+      cashPaidToName: registered && registration ? registration.cashPaidToName : null,
+      ruknNames: registered && registration
+        ? resolveRuknNames(registration)
+        : resolvePersonRuknNames(person.id),
+    })
+  }
+  peopleDirectory.sort(
+    (a, b) =>
+      a.name.localeCompare(b.name) ||
+      a.personId.localeCompare(b.personId) ||
+      a.mobile.localeCompare(b.mobile),
+  )
 
   const byCategory: TrainingRegistrationSummary['byCategory'] = {
     rukn: emptyCategoryCounts(),
@@ -564,7 +675,7 @@ export function buildTrainingRegistrationAdminView(input: AdminTrackingInput): {
     ruknWise,
   }
 
-  return { summary, registrations: adminRows }
+  return { summary, registrations: adminRows, peopleDirectory }
 }
 
 export type RuknProgressInput = {

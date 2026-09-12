@@ -16,6 +16,9 @@ import {
   listReferringRukns,
   matchesRegisteredPeopleFilters,
   matchesRegisteredPeopleSearch,
+  matchesAdminPeopleDirectoryFilters,
+  matchesAdminPeopleDirectorySearch,
+  lookupRegistrationForPersonDirectory,
   normalizeTrainingMobile,
   paymentQueueTitle,
   PUBLIC_TRAINING_REGISTRATION_URL,
@@ -267,11 +270,11 @@ function testPublicCopyAndPayment(): void {
   assert(admin.includes('Disable Online Payment'), 'admin can deactivate online payment')
   assert(admin.includes('setTrainingOnlinePaymentEnabled'), 'online toggle uses admin API')
   assert(admin.includes('paymentQueueTitle'), 'payment queues identify people by name')
-  assert(admin.includes('matchesRegisteredPeopleSearch'), 'registered people search')
-  assert(admin.includes('matchesRegisteredPeopleFilters'), 'registered people filters')
-  assert(admin.includes('RegisteredPersonRow'), 'registered people uses compact expandable rows')
-  assert(admin.includes('Connected Rukn'), 'compact list shows connected Rukn')
-  assert(admin.includes('expandedRegistrationId'), 'only one person expands at a time')
+  assert(admin.includes('matchesAdminPeopleDirectorySearch'), 'people directory search')
+  assert(admin.includes('matchesAdminPeopleDirectoryFilters'), 'people directory filters')
+  assert(admin.includes('DirectoryPersonRow'), 'people directory uses compact expandable rows')
+  assert(admin.includes('Person ID'), 'directory shows person ID')
+  assert(admin.includes('expandedPersonId'), 'only one person expands at a time')
   assert(admin.includes('aria-expanded'), 'person rows are keyboard accessible')
   assert(admin.includes('InboxAccordionSection'), 'training queues are collapsible sections')
   assert(admin.includes("title=\"Cash Paid\""), 'cash paid remains an existing queue section')
@@ -286,7 +289,12 @@ function testPublicCopyAndPayment(): void {
   assert(!admin.includes('Eligible'), 'no eligible event-capacity metric')
   assert(!page.includes('rukn_blocked'), 'public UI does not block rukn')
   assert(page.includes('existing_rukn'), 'public UI handles existing rukn')
-  assert(admin.includes('Not Registered'), 'rukn drill-down distinguishes not registered')
+  assert(admin.includes('Not Registered'), 'directory distinguishes not registered')
+  assert(admin.includes("title=\"People\""), 'people directory accordion')
+  assert(admin.includes('not_registered'), 'registration status filter')
+  assert(!admin.includes('slice(0, 10)'), 'no arbitrary 10-result slice in admin panel')
+  assert(!admin.includes('pageSize: 10'), 'no pageSize 10 in admin panel')
+  assert(!admin.includes('maxResults: 10'), 'no maxResults 10 in admin panel')
   const hero = read('src/components/home/TarbiyatiIjtemaRuknHero.tsx')
   assert(hero.includes('JihLogoMark'), 'rukn hero reuses official logo component')
   assert(hero.includes('Register for Tarbiyati Ijtema'), 'rukn hero CTA')
@@ -757,29 +765,32 @@ function testRegisteredPeopleCompactList(): void {
   const rules = read('firestore.rules')
   const collections = read('src/repositories/firestore/collections.ts')
 
-  assert(admin.includes('function RegisteredPersonRow'), 'compact row component exists')
-  assert(admin.includes('function connectedRuknLabel'), 'connected Rukn uses existing names helper')
-  assert(admin.includes('row.ruknNames'), 'connected Rukn comes from existing ruknNames')
+  assert(admin.includes('function DirectoryPersonRow'), 'directory row component exists')
   assert(tracking.includes('resolveRuknNames'), 'Rukn names still resolved from connections / ruknId')
   assert(tracking.includes('ruknIdsByKarkunId'), 'active connections still populate connected Rukn')
   assert(admin.includes('>Name</span>'), 'compact column Name')
   assert(admin.includes('>Mobile</span>'), 'compact column Mobile')
-  assert(admin.includes('>Connected Rukn</span>'), 'compact column Connected Rukn')
+  assert(admin.includes('>Person ID</span>'), 'compact column Person ID')
   assert(admin.includes("useState('')"), 'rows start collapsed')
-  assert(admin.includes('expandedRegistrationId === row.id'), 'details open only for selected person')
-  assert(admin.includes("current === row.id ? '' : row.id"), 'opening another person closes the previous row')
+  assert(admin.includes('expandedPersonId === row.personId'), 'details open only for selected person')
+  assert(
+    admin.includes("current === row.personId ? '' : row.personId"),
+    'opening another person closes the previous row',
+  )
   assert(admin.includes('aria-expanded={expanded}'), 'expanded state is exposed to assistive tech')
   assert(admin.includes('type="button"'), 'rows use buttons not clickable divs')
   assert(admin.includes('sm:hidden'), 'mobile stacked compact row exists')
   assert(admin.includes('sm:grid'), 'desktop compact columns exist')
+  assert(admin.includes('min-h-11'), 'search targets meet touch size')
 
   const compact = admin.slice(
-    admin.indexOf('function RegisteredPersonRow'),
+    admin.indexOf('function DirectoryPersonRow'),
     admin.indexOf('function PersonDetail'),
   )
-  assert(compact.includes('connectedRuknLabel(row)'), 'compact row shows connected Rukn')
-  assert(compact.includes('row.fullName'), 'compact row shows name')
-  assert(compact.includes('row.verifiedMobile'), 'compact row shows mobile')
+  assert(compact.includes('row.name'), 'compact row shows name')
+  assert(compact.includes('row.mobile'), 'compact row shows mobile')
+  assert(compact.includes('row.personId'), 'compact row shows person id')
+  assert(compact.includes('Not Registered'), 'compact row shows registration status')
   assert(!compact.includes('trainingPaymentStatusLabel'), 'compact row hides payment status')
   assert(!compact.includes('trainingPaymentMethodLabel'), 'compact row hides payment method')
   assert(!compact.includes('row.utr'), 'compact row hides UTR')
@@ -806,15 +817,188 @@ function testRegisteredPeopleCompactList(): void {
   assert(detail.includes('Payment Verified By'), 'expanded keeps payment verified by')
 
   assert(admin.includes('Registered People (Total: {summary.registered})'), 'registered count stays summary.registered')
-  assert(admin.includes('matchesRegisteredPeopleSearch'), 'search remains')
-  assert(admin.includes('matchesRegisteredPeopleFilters'), 'filters remain')
+  assert(admin.includes('matchesAdminPeopleDirectorySearch'), 'directory search remains')
+  assert(admin.includes('matchesAdminPeopleDirectoryFilters'), 'directory filters remain')
   assert(admin.includes('exportTrainingRegistrationCsv'), 'CSV export remains')
   assert(admin.includes('displayedPeople'), 'filters still change only the displayed list')
   assert(types.includes('ruknNames: string[]'), 'admin row Rukn names type unchanged')
+  assert(types.includes('TrainingAdminSearchPerson'), 'people directory type exists')
   assert(handler.includes("const COLLECTION = 'trainingRegistrations'"), 'no new collection in handler')
+  assert(handler.includes('peopleDirectory: view.peopleDirectory'), 'admin summary returns people directory')
   assert(!collections.includes('registeredPeople'), 'no new registered-people collection')
+  assert(!collections.includes('peopleDirectory'), 'no new people-directory collection')
   assert(rules.includes('allow create, update, delete: if false'), 'registration write rules unchanged')
   assert(rules.includes('allow read: if isAdministrator()'), 'admin read remains gated')
+}
+
+function testAdminPeopleDirectorySearch(): void {
+  const registrationA = sampleRegistration({
+    id: formatRegistrationId('9000000101'),
+    personId: 'k-reg-a',
+    verifiedMobile: '9000000101',
+    fullName: 'Muhammad Ali',
+    paymentStatus: 'cash_pending',
+    organisationalCategory: 'karkun',
+  })
+  const registrationMu = sampleRegistration({
+    id: formatRegistrationId('9000000102'),
+    personId: 'm-reg',
+    verifiedMobile: '9000000102',
+    fullName: 'Registered Muttafiq',
+    paymentStatus: 'paid_cash',
+    organisationalCategory: 'muttafiq',
+  })
+  const duplicateMobileReg = sampleRegistration({
+    id: 'TG260913-ORPHAN-9000000101',
+    personId: 'k-reg-a',
+    verifiedMobile: '9000000101',
+    fullName: 'Muhammad Ali Duplicate Doc',
+    paymentStatus: 'cash_pending',
+    organisationalCategory: 'karkun',
+  })
+
+  const view = buildTrainingRegistrationAdminView({
+    karkuns: [
+      { id: 'k-reg-a', name: 'Muhammad Ali', mobile: '9000000101', gender: 'Male', category: 'Karkun' },
+      { id: 'k-open', name: 'Muhammad Ali', mobile: '9000000199', gender: 'Male', category: 'Karkun' },
+      { id: 'm-reg', name: 'Registered Muttafiq', mobile: '9000000102', gender: 'Female', category: 'Muttafiq' },
+      { id: 'm-open', name: 'Open Muttafiq', mobile: '9000000188', gender: 'Female', category: 'Muttafiq' },
+      {
+        id: 'k-soft',
+        name: 'Soft Removed',
+        mobile: '9000000177',
+        gender: 'Male',
+        category: 'Karkun',
+        isArchived: true,
+        archiveKind: 'admin_delete',
+      },
+      {
+        id: 'k-mobile-only',
+        name: 'Mobile Join Karkun',
+        mobile: '9000000166',
+        gender: 'Male',
+        category: 'Karkun',
+      },
+    ],
+    rukns: [{ id: 'r-1', name: 'Rukn One', status: 'active', gender: 'Male', mobile: '9000000000' }],
+    connections: [],
+    registrations: [
+      registrationA,
+      registrationMu,
+      duplicateMobileReg,
+      sampleRegistration({
+        id: formatRegistrationId('9000000166'),
+        personId: null,
+        verifiedMobile: '9000000166',
+        fullName: 'Mobile Join Karkun',
+        paymentStatus: 'upi_pending',
+        paymentMethod: 'upi',
+        organisationalCategory: 'karkun',
+      }),
+    ],
+    publicRequests: [],
+  })
+
+  assert(view.summary.registered === 4, 'aggregate still counts registration documents')
+  assert(view.summary.cashPending === 2, 'cash pending count unchanged by directory')
+  assert(view.summary.cashPaid === 1, 'cash paid count unchanged by directory')
+  assert(view.summary.upiPending === 1, 'upi pending count unchanged by directory')
+
+  const byId = new Map(view.peopleDirectory.map((row) => [row.personId, row]))
+  assert(byId.has('k-open'), 'unregistered Karkun appears in directory')
+  assert(byId.get('k-open')?.registered === false, 'unregistered Karkun marked not registered')
+  assert(byId.has('m-open'), 'unregistered Muttafiq appears in directory')
+  assert(byId.get('m-open')?.registered === false, 'unregistered Muttafiq marked not registered')
+  assert(byId.get('k-reg-a')?.registered === true, 'registered Karkun identified')
+  assert(byId.get('m-reg')?.registered === true, 'registered Muttafiq identified')
+  assert(byId.get('k-mobile-only')?.registered === true, 'mobile fallback joins registration without personId')
+  assert(!byId.has('k-soft'), 'soft-removed people remain excluded')
+
+  const sameName = view.peopleDirectory.filter((row) => row.name === 'Muhammad Ali')
+  assert(sameName.length === 2, 'same-name people are not collapsed')
+  assert(
+    new Set(sameName.map((row) => row.personId)).size === 2,
+    'same-name people keep distinct person IDs',
+  )
+  assert(
+    view.peopleDirectory.filter((row) => row.personId === 'k-reg-a').length === 1,
+    'duplicate registration docs do not duplicate directory person rows',
+  )
+
+  const byPersonId = new Map<string, typeof registrationA>()
+  const byMobile = new Map<string, typeof registrationA>()
+  byPersonId.set('prefer-person', sampleRegistration({
+    id: 'by-person',
+    personId: 'prefer-person',
+    verifiedMobile: '9111111111',
+    fullName: 'By Person',
+  }))
+  byMobile.set('9000000999', sampleRegistration({
+    id: 'by-mobile',
+    personId: null,
+    verifiedMobile: '9000000999',
+    fullName: 'By Mobile',
+  }))
+  const preferred = lookupRegistrationForPersonDirectory(
+    'prefer-person',
+    '9000000999',
+    byPersonId,
+    byMobile,
+  )
+  assert(preferred?.id === 'by-person', 'personId is preferred for registration join')
+  const mobileFallback = lookupRegistrationForPersonDirectory(
+    'unknown-person',
+    '9000000999',
+    byPersonId,
+    byMobile,
+  )
+  assert(mobileFallback?.id === 'by-mobile', 'normalized mobile is the fallback')
+
+  const registeredOnly = view.peopleDirectory.filter((row) =>
+    matchesAdminPeopleDirectoryFilters(row, { registration: 'registered' }),
+  )
+  const notRegisteredOnly = view.peopleDirectory.filter((row) =>
+    matchesAdminPeopleDirectoryFilters(row, { registration: 'not_registered' }),
+  )
+  assert(registeredOnly.every((row) => row.registered), 'registered filter')
+  assert(notRegisteredOnly.every((row) => !row.registered), 'not registered filter')
+  assert(
+    matchesAdminPeopleDirectorySearch(byId.get('k-open')!, 'muhammad'),
+    'partial name search works',
+  )
+  assert(
+    matchesAdminPeopleDirectorySearch(byId.get('k-open')!, 'k-open'),
+    'person ID search works',
+  )
+  assert(
+    matchesAdminPeopleDirectorySearch(byId.get('m-reg')!, '9000000102'),
+    'mobile search works',
+  )
+  assert(
+    view.peopleDirectory.length > 10 || view.peopleDirectory.length >= 5,
+    'directory is not capped to 10 rows at build time',
+  )
+  assert(
+    !read('src/components/public-registration/TrainingGatheringAdminPanel.tsx').includes('slice(0, 10)'),
+    'admin search path has no slice(0, 10)',
+  )
+
+  const ruknProgress = buildTrainingRegistrationRuknProgress({
+    ruknId: 'r-scope',
+    rukn: { id: 'r-scope', name: 'Scoped', status: 'active', mobile: '9000000000', gender: 'Male' },
+    karkuns: [
+      { id: 'k-reg-a', name: 'Muhammad Ali', mobile: '9000000101', gender: 'Male', category: 'Karkun' },
+      { id: 'k-open', name: 'Open', mobile: '9000000199', gender: 'Male', category: 'Karkun' },
+    ],
+    connections: [
+      { ruknId: 'r-scope', karkunId: 'k-reg-a', status: 'Active' },
+      { ruknId: 'r-scope', karkunId: 'k-open', status: 'Active' },
+    ],
+    registrations: [registrationA],
+  })
+  assert(ruknProgress.connectedCount === 2, 'rukn progress behaviour remains intact')
+  assert(ruknProgress.registeredCount === 1, 'rukn progress registered count intact')
+  assert(ruknProgress.notRegisteredCount === 1, 'rukn progress not-registered count intact')
 }
 
 function testNoNewInfrastructure(): void {
@@ -1505,6 +1689,7 @@ const cases = [
   run('UTR trim empty and preserve', testUtrValidation),
   run('search filters and full CSV export', testSearchFiltersAndCsv),
   run('registered people compact expandable list', testRegisteredPeopleCompactList),
+  run('admin people directory search registered and unregistered', testAdminPeopleDirectorySearch),
   run('no new collection or screenshot infrastructure', testNoNewInfrastructure),
   run('cash collectors from existing rukn master', testCashCollectorsFromRuknMaster),
   run('referring Rukns from existing rukn master', testReferringRuknsFromRuknMaster),

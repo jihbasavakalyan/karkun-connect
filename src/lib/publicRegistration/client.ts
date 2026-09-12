@@ -1,6 +1,7 @@
 import type {
   PublicLookupResult,
   PublicPersonProfile,
+  TrainingAdminSearchPerson,
   TrainingRegistrationAdminRow,
   TrainingRegistrationRecord,
   TrainingRegistrationSummary,
@@ -100,11 +101,16 @@ export async function fetchTrainingRegistrationAdmin(token: string): Promise<{
   ok: true
   summary: TrainingRegistrationSummary
   registrations: TrainingRegistrationAdminRow[]
+  peopleDirectory: TrainingAdminSearchPerson[]
 }> {
-  return (await adminJson(token, 'admin_summary')) as unknown as {
-    ok: true
-    summary: TrainingRegistrationSummary
-    registrations: TrainingRegistrationAdminRow[]
+  const json = await adminJson(token, 'admin_summary')
+  return {
+    ok: true,
+    summary: json.summary as TrainingRegistrationSummary,
+    registrations: (json.registrations ?? []) as TrainingRegistrationAdminRow[],
+    peopleDirectory: Array.isArray(json.peopleDirectory)
+      ? (json.peopleDirectory as TrainingAdminSearchPerson[])
+      : [],
   }
 }
 

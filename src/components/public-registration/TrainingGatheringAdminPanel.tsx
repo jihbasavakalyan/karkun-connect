@@ -8,8 +8,8 @@ import {
 } from '@/lib/publicRegistration/client'
 import { TRAINING_GATHERING_EVENT } from '@/lib/publicRegistration/event'
 import {
-  matchesRegisteredPeopleFilters,
-  matchesRegisteredPeopleSearch,
+  matchesAdminPeopleDirectoryFilters,
+  matchesAdminPeopleDirectorySearch,
   paymentQueueTitle,
 } from '@/lib/publicRegistration/adminTracking'
 import {
@@ -20,6 +20,8 @@ import {
 } from '@/lib/publicRegistration/labels'
 import type {
   PublicPersonGender,
+  TrainingAdminRegistrationFilter,
+  TrainingAdminSearchPerson,
   TrainingOrganisationalCategory,
   TrainingPaymentMethod,
   TrainingPaymentStatus,
@@ -30,10 +32,12 @@ import type {
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import { InboxAccordionSection } from '@/components/inbox/InboxAccordionSection'
+import { StatusBadge } from '@/components/ui'
 
 type PeopleFilters = {
-  category: TrainingOrganisationalCategory | ''
+  category: Extract<TrainingOrganisationalCategory, 'karkun' | 'muttafiq'> | ''
   gender: PublicPersonGender
+  registration: TrainingAdminRegistrationFilter | ''
   paymentMethod: Exclude<TrainingPaymentMethod, 'online'> | ''
   paymentStatus: Extract<
     TrainingPaymentStatus,
@@ -44,6 +48,7 @@ type PeopleFilters = {
 const EMPTY_FILTERS: PeopleFilters = {
   category: '',
   gender: '',
+  registration: '',
   paymentMethod: '',
   paymentStatus: '',
 }
@@ -51,13 +56,14 @@ const EMPTY_FILTERS: PeopleFilters = {
 export function TrainingGatheringAdminPanel() {
   const [summary, setSummary] = useState<TrainingRegistrationSummary | null>(null)
   const [registrations, setRegistrations] = useState<TrainingRegistrationAdminRow[]>([])
+  const [peopleDirectory, setPeopleDirectory] = useState<TrainingAdminSearchPerson[] | null>(null)
   const [error, setError] = useState('')
   const [busyId, setBusyId] = useState('')
   const [exporting, setExporting] = useState(false)
   const [search, setSearch] = useState('')
   const [filters, setFilters] = useState<PeopleFilters>(EMPTY_FILTERS)
   const [expandedRuknId, setExpandedRuknId] = useState('')
-  const [expandedRegistrationId, setExpandedRegistrationId] = useState('')
+  const [expandedPersonId, setExpandedPersonId] = useState('')
   const [onlineBusy, setOnlineBusy] = useState(false)
   const [openQueue, setOpenQueue] = useState('')
 
@@ -71,6 +77,7 @@ export function TrainingGatheringAdminPanel() {
       const result = await fetchTrainingRegistrationAdmin(token)
       setSummary(result.summary)
       setRegistrations(result.registrations)
+      setPeopleDirectory(result.peopleDirectory)
       setError('')
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Unable to load registrations.')
@@ -143,26 +150,31 @@ export function TrainingGatheringAdminPanel() {
     }
   }
 
+  const registrationById = useMemo(() => {
+    const map = new Map<string, TrainingRegistrationAdminRow>()
+    for (const row of registrations) map.set(row.id, row)
+    return map
+  }, [registrations])
+
   const registeredPeople = useMemo(
     () => [...registrations].sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
     [registrations],
   )
-  const displayedPeople = useMemo(
-    () =>
-      registeredPeople.filter(
-        (row) =>
-          matchesRegisteredPeopleSearch(row, search) &&
-          matchesRegisteredPeopleFilters(row, filters),
-      ),
-    [registeredPeople, search, filters],
-  )
+  const displayedPeople = useMemo(() => {
+    if (!peopleDirectory) return []
+    return peopleDirectory.filter(
+      (row) =>
+        matchesAdminPeopleDirectorySearch(row, search) &&
+        matchesAdminPeopleDirectoryFilters(row, filters),
+    )
+  }, [peopleDirectory, search, filters])
 
   useEffect(() => {
-    setExpandedRegistrationId('')
+    setExpandedPersonId('')
   }, [search, filters])
 
   useEffect(() => {
-    if (search.trim()) setOpenQueue('registered')
+    if (search.trim()) setOpenQueue('people')
   }, [search])
 
   const cashPending = useMemo(
@@ -280,33 +292,50 @@ export function TrainingGatheringAdminPanel() {
             </PrimaryButton>
           </div>
           <p className="text-xs text-secondary">
-            This list contains every completed registration. Search and filters change only what is
-            displayed. CSV export always includes all registrations.
+            Search eligible Karkun and Muttafiq by name, mobile, or person ID. Registration status
+            shows who is already registered. CSV export always includes all registration documents.
           </p>
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
               <label className="block sm:col-span-2 lg:col-span-3">
                 <span className="mb-1 block text-xs font-medium text-secondary">
-                  Search name, mobile, registration ID, UTR, or cash collector
+                  Search name, mobile, person ID, registration ID, UTR, or cash collector
                 </span>
                 <input
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
-                  className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm"
-                  placeholder="Search registered people"
+                  className="min-h-11 w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm"
+                  placeholder="Search Karkun and Muttafiq"
+                  aria-label="Search Karkun and Muttafiq"
                 />
               </label>
               <FilterSelect
                 label="Category"
                 value={filters.category}
                 onChange={(value) =>
-                  setFilters((current) => ({ ...current, category: value as PeopleFilters['category'] }))
+                  setFilters((current) => ({
+                    ...current,
+                    category: value as PeopleFilters['category'],
+                  }))
                 }
                 options={[
                   { value: '', label: 'All categories' },
-                  { value: 'rukn', label: 'Rukn' },
                   { value: 'karkun', label: 'Karkun' },
                   { value: 'muttafiq', label: 'Muttafiq' },
-                  { value: 'other', label: 'Other' },
+                ]}
+              />
+              <FilterSelect
+                label="Registration"
+                value={filters.registration}
+                onChange={(value) =>
+                  setFilters((current) => ({
+                    ...current,
+                    registration: value as PeopleFilters['registration'],
+                  }))
+                }
+                options={[
+                  { value: '', label: 'All' },
+                  { value: 'registered', label: 'Registered' },
+                  { value: 'not_registered', label: 'Not Registered' },
                 ]}
               />
               <FilterSelect
@@ -360,29 +389,37 @@ export function TrainingGatheringAdminPanel() {
               </div>
           </div>
           <InboxAccordionSection
-            title="Registered People"
-            count={displayedPeople.length}
-            open={openQueue === 'registered'}
-            onToggle={() => toggleQueue('registered')}
+            title="People"
+            count={peopleDirectory ? displayedPeople.length : 0}
+            open={openQueue === 'people'}
+            onToggle={() => toggleQueue('people')}
           >
-            {displayedPeople.length === 0 ? (
-              <p className="mt-3 text-sm text-secondary">No registrations match the current view.</p>
+            {!peopleDirectory ? (
+              <p className="mt-3 text-sm text-secondary">Loading people directory…</p>
+            ) : displayedPeople.length === 0 ? (
+              <p className="mt-3 text-sm text-secondary">No people match the current view.</p>
             ) : (
               <div className="mt-3">
-                <div className="mb-1 hidden grid-cols-[1.25rem_minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1.4fr)] gap-3 px-3 text-xs font-medium text-secondary sm:grid">
+                <div className="mb-1 hidden grid-cols-[1.25rem_minmax(0,1.2fr)_minmax(0,0.9fr)_minmax(0,0.7fr)_auto] gap-3 px-3 text-xs font-medium text-secondary sm:grid">
                   <span className="sr-only">Details</span>
                   <span>Name</span>
                   <span>Mobile</span>
-                  <span>Connected Rukn</span>
+                  <span>Person ID</span>
+                  <span>Status</span>
                 </div>
-                <ul className="space-y-2">
+                <ul className="max-h-[min(70vh,40rem)] space-y-2 overflow-y-auto">
                   {displayedPeople.map((row) => (
-                    <RegisteredPersonRow
-                      key={row.id}
+                    <DirectoryPersonRow
+                      key={row.personId}
                       row={row}
-                      expanded={expandedRegistrationId === row.id}
+                      registration={
+                        row.registrationId ? registrationById.get(row.registrationId) : undefined
+                      }
+                      expanded={expandedPersonId === row.personId}
                       onToggle={() =>
-                        setExpandedRegistrationId((current) => (current === row.id ? '' : row.id))
+                        setExpandedPersonId((current) =>
+                          current === row.personId ? '' : row.personId,
+                        )
                       }
                     />
                   ))}
@@ -663,23 +700,20 @@ function RelatedPersonDetail({ person }: { person: TrainingRuknRelatedPersonView
   )
 }
 
-function connectedRuknLabel(row: TrainingRegistrationAdminRow): string {
-  return row.ruknNames.length > 0 ? row.ruknNames.join(', ') : '—'
-}
-
-function RegisteredPersonRow({
+function DirectoryPersonRow({
   row,
+  registration,
   expanded,
   onToggle,
 }: {
-  row: TrainingRegistrationAdminRow
+  row: TrainingAdminSearchPerson
+  registration?: TrainingRegistrationAdminRow
   expanded: boolean
   onToggle: () => void
 }) {
-  const name = row.fullName || 'Name is not on this registration record'
-  const mobile = row.verifiedMobile || '—'
-  const connectedRukn = connectedRuknLabel(row)
-  const detailId = `registered-person-detail-${row.id}`
+  const name = row.name || 'Name is not on this person record'
+  const mobile = row.mobile || '—'
+  const detailId = `directory-person-detail-${row.personId}`
   return (
     <li
       className={[
@@ -689,18 +723,21 @@ function RegisteredPersonRow({
     >
       <button
         type="button"
-        className="w-full min-w-0 px-3 py-2.5 text-left"
+        className="min-h-11 w-full min-w-0 px-3 py-2.5 text-left"
         onClick={onToggle}
         aria-expanded={expanded}
         aria-controls={detailId}
       >
-        <span className="hidden min-w-0 sm:grid sm:grid-cols-[1.25rem_minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1.4fr)] sm:items-center sm:gap-3">
+        <span className="hidden min-w-0 sm:grid sm:grid-cols-[1.25rem_minmax(0,1.2fr)_minmax(0,0.9fr)_minmax(0,0.7fr)_auto] sm:items-center sm:gap-3">
           <span className="text-secondary" aria-hidden="true">
             {expanded ? '▾' : '▸'}
           </span>
           <span className="truncate font-medium text-text-heading">{name}</span>
           <span className="truncate tabular-nums text-text-heading">{mobile}</span>
-          <span className="truncate text-text-heading">{connectedRukn}</span>
+          <span className="truncate text-text-heading">{row.personId}</span>
+          <StatusBadge variant={row.registered ? 'success' : 'warning'}>
+            {row.registered ? 'Registered' : 'Not Registered'}
+          </StatusBadge>
         </span>
         <span className="flex min-w-0 items-start gap-2 sm:hidden">
           <span className="mt-0.5 w-5 shrink-0 text-secondary" aria-hidden="true">
@@ -708,16 +745,40 @@ function RegisteredPersonRow({
           </span>
           <span className="min-w-0 flex-1">
             <span className="block break-words font-medium text-text-heading">{name}</span>
-            <span className="mt-0.5 block break-all text-sm tabular-nums text-text-heading">{mobile}</span>
-            <span className="mt-1 block text-xs text-secondary">Connected Rukn</span>
-            <span className="block break-words text-sm text-text-heading">{connectedRukn}</span>
+            <span className="mt-0.5 block break-all text-sm tabular-nums text-text-heading">
+              {mobile}
+            </span>
+            <span className="mt-1 block break-all text-xs text-secondary">{row.personId}</span>
+            <span className="mt-2 inline-block">
+              <StatusBadge variant={row.registered ? 'success' : 'warning'}>
+                {row.registered ? 'Registered' : 'Not Registered'}
+              </StatusBadge>
+            </span>
           </span>
         </span>
         <span className="sr-only">{expanded ? 'Hide details' : 'Show details'}</span>
       </button>
       {expanded ? (
         <div id={detailId} className="border-t border-border px-3 py-3">
-          <PersonDetail row={row} />
+          {registration ? (
+            <PersonDetail row={registration} />
+          ) : (
+            <dl className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2 lg:grid-cols-3">
+              <Detail label="Full Name" value={name} />
+              <Detail label="Person ID" value={row.personId} />
+              <Detail label="Mobile" value={mobile} />
+              <Detail label="Gender" value={row.gender || '—'} />
+              <Detail
+                label="Category"
+                value={trainingOrganisationalCategoryLabel(row.organisationalCategory)}
+              />
+              <Detail label="Registration Status" value="Not Registered" />
+              <Detail
+                label="Connected Rukn"
+                value={row.ruknNames.length > 0 ? row.ruknNames.join(', ') : '—'}
+              />
+            </dl>
+          )}
         </div>
       ) : null}
     </li>
@@ -771,7 +832,7 @@ function FilterSelect({
       <select
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm"
+        className="min-h-11 w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm"
       >
         {options.map((option) => (
           <option key={option.value || option.label} value={option.value}>

@@ -140,6 +140,26 @@ export type TrainingRegistrationAdminRow = TrainingRegistrationRecord & {
   ruknNames: string[]
 }
 
+/** Admin searchable row: one eligible Karkun/Muttafiq person joined to event registration. */
+export type TrainingAdminSearchPerson = {
+  personId: string
+  name: string
+  mobile: string
+  gender: PublicPersonGender
+  organisationalCategory: Extract<TrainingOrganisationalCategory, 'karkun' | 'muttafiq'>
+  registered: boolean
+  registrationId: string | null
+  registrationStatus: TrainingRegistrationStatus | null
+  paymentMethod: TrainingPaymentMethod | null
+  paymentStatus: TrainingPaymentStatus | null
+  utr: string | null
+  cashPaidToId: string | null
+  cashPaidToName: string | null
+  ruknNames: string[]
+}
+
+export type TrainingAdminRegistrationFilter = 'all' | 'registered' | 'not_registered'
+
 export type TrainingRegistrationSummary = {
   registered: number
   registeredMale: number
