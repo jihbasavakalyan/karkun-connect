@@ -323,7 +323,10 @@ assert.match(orgdashBlock, /\.orgdash-drill-title \{[\s\S]*line-height:\s*2\.6/)
 assert.match(orgdashBlock, /\.orgdash-drill-activity \{[\s\S]*line-height:\s*2\.6/)
 assert.match(orgdashBlock, /\.orgdash-table-wrap \{[\s\S]*display:\s*none/)
 assert.match(orgdashBlock, /\.orgdash-dept-cards \{/)
-assert.match(orgdashBlock, /\.orgdash-meqati-panel \{/)
+assert.match(orgdashBlock, /\.orgdash-meqati-panel/)
+assert.match(orgdashBlock, /\.orgdash-meqati-compose/)
+assert.match(orgdashBlock, /background:\s*#e8eef5/)
+assert.match(orgdashBlock, /\.orgdash-meqati-gold-divider/)
 assert.match(orgdashBlock, /\.orgdash-activity-cards \{[\s\S]*display:\s*none/)
 
 const meqatiCanvas = readFileSync(

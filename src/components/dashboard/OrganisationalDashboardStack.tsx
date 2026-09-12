@@ -3,7 +3,7 @@
  * Status / attention / quick actions — not a campaign command centre.
  */
 
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { CampaignExtensionNotice } from '@/components/campaign/CampaignExtensionNotice'
 import { AdminQuickActionsPanel } from '@/components/mission-control/AdminQuickActionsPanel'
@@ -165,73 +165,90 @@ export function MeqatiYearSummary({
   situation,
   yearSelection,
   planHref = ROUTES.ADMIN_PLANNING,
+  attention = null,
 }: {
   situation: OrganisationalSituation
   yearSelection?: MeqatiYearSelection
   planHref?: string
+  /** When set, توجہ طلب is composed into the Meeqati panel (Admin Home). */
+  attention?: ReactNode
 }) {
   const { year, counts, empty, mansooba } = situation.meqati
+  const composed = Boolean(attention)
   return (
-    <section className="orgdash-meqati-panel" aria-label="میقاتی منصوبہ — موجودہ سال" dir="rtl" lang="ur">
-      <div className="orgdash-meqati-panel-head">
-        <div className="min-w-0">
-          <h2 className="orgdash-meqati-panel-title">میقاتی منصوبہ — موجودہ سال</h2>
-          <p className="orgdash-meqati-panel-sub">
-            {mansooba ? (
-              <>
-                {mansooba.name} · {mansoobaStatusLabel(mansooba)} ·{' '}
-              </>
-            ) : null}
-            {year.label} · {meqatiYearUrduRange(year)}
-          </p>
+    <section
+      className={composed ? 'orgdash-meqati-compose' : 'orgdash-meqati-panel'}
+      aria-label="میقاتی منصوبہ — موجودہ سال"
+      dir="rtl"
+      lang="ur"
+    >
+      <div className="orgdash-meqati-main">
+        <div className="orgdash-meqati-panel-head">
+          <div className="min-w-0">
+            <h2 className="orgdash-meqati-panel-title">میقاتی منصوبہ — موجودہ سال</h2>
+            <p className="orgdash-meqati-panel-sub">
+              {mansooba ? (
+                <>
+                  {mansooba.name} · {mansoobaStatusLabel(mansooba)} ·{' '}
+                </>
+              ) : null}
+              {year.label} · {meqatiYearUrduRange(year)}
+            </p>
+          </div>
+          <Link to={planHref} className="orgdash-meqati-panel-link">
+            میقاتی منصوبہ دیکھیں
+          </Link>
         </div>
-        <Link to={planHref} className="orgdash-meqati-panel-link">
-          میقاتی منصوبہ دیکھیں
-        </Link>
+        {yearSelection ? (
+          <label className="orgdash-year-field orgdash-year-field-inline">
+            <span className="sr-only">میقاتی سال منتخب کریں</span>
+            <select
+              className="orgdash-year-select orgdash-meqati-year-select"
+              value={yearSelection.year.key}
+              onChange={(event) => yearSelection.setYearKey(event.target.value)}
+              aria-label="میقاتی سال منتخب کریں"
+            >
+              {yearSelection.years.map((row) => (
+                <option key={row.key} value={row.key}>
+                  {row.label} · {meqatiYearUrduRange(row)}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
+        {!mansooba || empty ? (
+          <EmptyMeqatiNote planHref={planHref} />
+        ) : (
+          <dl className="orgdash-stat-row orgdash-stat-row-5 orgdash-meqati-stats">
+            <div>
+              <dt>سرگرمیاں</dt>
+              <dd>{counts.activities}</dd>
+            </div>
+            <div>
+              <dt>مکمل</dt>
+              <dd>{counts.completed}</dd>
+            </div>
+            <div>
+              <dt>جاری</dt>
+              <dd>{counts.inProgress}</dd>
+            </div>
+            <div>
+              <dt>باقی</dt>
+              <dd>{counts.remaining}</dd>
+            </div>
+            <div>
+              <dt>پیش رفت</dt>
+              <dd>{progressDisplay(counts)}</dd>
+            </div>
+          </dl>
+        )}
       </div>
-      {yearSelection ? (
-        <label className="orgdash-year-field orgdash-year-field-inline">
-          <span className="sr-only">میقاتی سال منتخب کریں</span>
-          <select
-            className="orgdash-year-select orgdash-meqati-year-select"
-            value={yearSelection.year.key}
-            onChange={(event) => yearSelection.setYearKey(event.target.value)}
-            aria-label="میقاتی سال منتخب کریں"
-          >
-            {yearSelection.years.map((row) => (
-              <option key={row.key} value={row.key}>
-                {row.label} · {meqatiYearUrduRange(row)}
-              </option>
-            ))}
-          </select>
-        </label>
+      {composed ? (
+        <>
+          <div className="orgdash-meqati-gold-divider" aria-hidden />
+          <div className="orgdash-meqati-attention-slot">{attention}</div>
+        </>
       ) : null}
-      {!mansooba || empty ? (
-        <EmptyMeqatiNote planHref={planHref} />
-      ) : (
-        <dl className="orgdash-stat-row orgdash-stat-row-5 orgdash-meqati-stats">
-          <div>
-            <dt>سرگرمیاں</dt>
-            <dd>{counts.activities}</dd>
-          </div>
-          <div>
-            <dt>مکمل</dt>
-            <dd>{counts.completed}</dd>
-          </div>
-          <div>
-            <dt>جاری</dt>
-            <dd>{counts.inProgress}</dd>
-          </div>
-          <div>
-            <dt>باقی</dt>
-            <dd>{counts.remaining}</dd>
-          </div>
-          <div>
-            <dt>پیش رفت</dt>
-            <dd>{progressDisplay(counts)}</dd>
-          </div>
-        </dl>
-      )}
     </section>
   )
 }
@@ -281,16 +298,20 @@ export function ShobahStatusSection({
                     <span className="min-w-0">
                       <span className="orgdash-dept-name">{row.name}</span>
                       <span className="orgdash-dept-meta">
-                        {row.completed}/{row.activities} مکمل · {progressDisplay(row)} ·{' '}
-                        {open ? 'تفصیل بند کریں' : 'تفصیل کھولیں'}
+                        {row.completed}/{row.activities} مکمل · {progressDisplay(row)}
                       </span>
                     </span>
-                    <span
-                      className="orgdash-dept-card-icon"
-                      style={{ color: visual.accent }}
-                      aria-hidden
-                    >
-                      <Icon name={visual.icon} size="md" />
+                    <span className="orgdash-dept-card-actions">
+                      <span
+                        className="orgdash-dept-card-icon"
+                        style={{ color: visual.accent }}
+                        aria-hidden
+                      >
+                        <Icon name={visual.icon} size="md" />
+                      </span>
+                      <span className="orgdash-dept-card-chevron" aria-hidden>
+                        {open ? '›' : '‹'}
+                      </span>
                     </span>
                   </span>
                 </button>
@@ -334,9 +355,7 @@ function AttentionCompact({ situation }: { situation: OrganisationalSituation })
   )
   return (
     <aside className="orgdash-attention-panel" aria-label="توجہ طلب" dir="rtl" lang="ur">
-      <div className="orgdash-status-strip-head">
-        <h2 className="orgdash-section-title">توجہ طلب</h2>
-      </div>
+      <h2 className="orgdash-attention-title">توجہ طلب</h2>
       {visible.length === 0 ? (
         <p className="orgdash-muted">اس وقت کوئی توجہ طلب معاملہ نہیں۔</p>
       ) : (
@@ -429,25 +448,22 @@ export function OrganisationalDashboardStack({
     <div className="orgdash-stack">
       <WidgetErrorBoundary title="میقاتی منصوبہ">
         {backgroundReady ? (
-          <MeqatiYearSummary situation={situation} />
+          <MeqatiYearSummary
+            situation={situation}
+            attention={<AttentionCompact situation={situation} />}
+          />
         ) : (
           <CardSkeleton count={1} />
         )}
       </WidgetErrorBoundary>
 
-      <div className="orgdash-work-grid">
-        <WidgetErrorBoundary title="شعبہ وار صورتحال">
-          {backgroundReady ? (
-            <ShobahStatusSection rows={situation.meqati.shobahs} empty={situation.meqati.empty} />
-          ) : (
-            <CardSkeleton count={1} />
-          )}
-        </WidgetErrorBoundary>
-
-        <WidgetErrorBoundary title="توجہ طلب">
-          {backgroundReady ? <AttentionCompact situation={situation} /> : <CardSkeleton count={1} />}
-        </WidgetErrorBoundary>
-      </div>
+      <WidgetErrorBoundary title="شعبہ وار صورتحال">
+        {backgroundReady ? (
+          <ShobahStatusSection rows={situation.meqati.shobahs} empty={situation.meqati.empty} />
+        ) : (
+          <CardSkeleton count={1} />
+        )}
+      </WidgetErrorBoundary>
 
       <WidgetErrorBoundary title="ہفتہ وار اجتماع">
         {backgroundReady ? <IjtemaSnapshot situation={situation} /> : <CardSkeleton count={1} />}

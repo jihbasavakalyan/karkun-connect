@@ -79,7 +79,7 @@ assert.doesNotMatch(situationSrc, /getPendingKarkunRequests/)
 const dash = read('src/components/dashboard/OrganisationalDashboardStack.tsx')
 assert.match(dash, /orgdash-attention-row/)
 assert.match(dash, /orgdash-attention-panel/)
-assert.match(dash, /orgdash-work-grid/)
+assert.match(dash, /orgdash-meqati-compose|attention=\{<AttentionCompact/)
 assert.match(dash, /row\.route/)
 assert.match(dash, /ان باکس|inbox/)
 
