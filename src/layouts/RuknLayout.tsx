@@ -27,12 +27,18 @@ import { HomePageSkeleton } from '@/components/ui'
 import { traceKc0100ConnectionConsistency } from '@/lib/debug/kc0100ConnectionConsistencyTrace'
 import { isRuknCampaignConnectionPath } from '@/lib/ruknCampaignConnectionPath'
 
-/** KC-0093 — Communication is primary workspace; Record remains route-only (workflow, not destination). */
+/**
+ * Frozen Rukn primary navigation (product decision).
+ * Weekly Ijtema + Bait-ul-Maal are primary destinations — not Home-only sections.
+ * Communication remains the final primary destination; Record stays route-only.
+ */
 const navItems: { label: string; icon: IconName; to: string; end: boolean }[] = [
   { label: 'Home', icon: 'home', to: ROUTES.RUKN, end: true },
   { label: 'Karkun', icon: 'users', to: ROUTES.RUKN_KARKUN, end: false },
   { label: 'Meeqati Mansooba', icon: 'flag', to: ROUTES.RUKN_MEQATI_MANSOOBA, end: false },
   { label: 'Responsibilities', icon: 'clipboard', to: ROUTES.RUKN_RESPONSIBILITIES, end: false },
+  { label: 'Weekly Ijtema', icon: 'calendar', to: ROUTES.RUKN_WEEKLY_IJTEMA, end: false },
+  { label: 'Bait-ul-Maal', icon: 'handshake', to: ROUTES.RUKN_MONTHLY_BAITUL_MAAL, end: false },
   { label: 'Communication', icon: 'message', to: ROUTES.RUKN_COMMUNICATION, end: false },
 ]
 

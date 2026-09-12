@@ -110,11 +110,52 @@ assert.match(rukn, /label: 'Home'/)
 assert.match(rukn, /label: 'Karkun'/)
 assert.match(rukn, /label: 'Meeqati Mansooba'/)
 assert.match(rukn, /label: 'Responsibilities'/)
+assert.match(rukn, /label: 'Weekly Ijtema'/)
+assert.match(rukn, /label: 'Bait-ul-Maal'/)
 assert.match(rukn, /label: 'Communication'/)
+assert.match(rukn, /ROUTES\.RUKN_WEEKLY_IJTEMA/)
+assert.match(rukn, /ROUTES\.RUKN_MONTHLY_BAITUL_MAAL/)
 assert.doesNotMatch(rukn, /label: 'Connect'/)
 assert.doesNotMatch(rukn, /label: 'Connected'/)
 assert.doesNotMatch(rukn, /label: 'Ijtema'/)
 assert.doesNotMatch(rukn, /label: 'Baitul Maal'/)
+{
+  const order = [
+    "label: 'Home'",
+    "label: 'Karkun'",
+    "label: 'Meeqati Mansooba'",
+    "label: 'Responsibilities'",
+    "label: 'Weekly Ijtema'",
+    "label: 'Bait-ul-Maal'",
+    "label: 'Communication'",
+  ]
+  let cursor = -1
+  for (const marker of order) {
+    const next = rukn.indexOf(marker)
+    assert.ok(next > cursor, `Rukn primary nav order must include ${marker} after prior items`)
+    cursor = next
+  }
+  assert.equal(
+    (rukn.match(/label: 'Home'/g) ?? []).length,
+    1,
+    'Home must appear once in Rukn primary nav',
+  )
+  assert.equal(
+    (rukn.match(/label: 'Weekly Ijtema'/g) ?? []).length,
+    1,
+    'Weekly Ijtema must appear once in Rukn primary nav',
+  )
+  assert.equal(
+    (rukn.match(/label: 'Bait-ul-Maal'/g) ?? []).length,
+    1,
+    'Bait-ul-Maal must appear once in Rukn primary nav',
+  )
+  assert.equal(
+    (rukn.match(/label: 'Communication'/g) ?? []).length,
+    1,
+    'Communication must appear once in Rukn primary nav',
+  )
+}
 assert.match(rukn, /kc-shell-rail/)
 assert.match(rukn, /hydration.failed && connectionScoped/)
 assert.match(rukn, /PortalAuthActions/)
