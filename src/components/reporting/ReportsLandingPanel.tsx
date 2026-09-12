@@ -46,7 +46,7 @@ function ReportRow({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="text-xs font-semibold uppercase tracking-wide text-secondary">{domain}</p>
+            <p className="text-xs font-medium text-secondary">{domain}</p>
             <span className="rounded border border-border px-1.5 py-0.5 text-[11px] font-medium text-secondary">
               {kindLabel}
             </span>

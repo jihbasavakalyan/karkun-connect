@@ -25,7 +25,7 @@ export function EmptyState({
   return (
     <div className="ds-empty native-empty" role="status">
       <div className="ds-empty-icon" aria-hidden="true">
-        <Icon name={icon} size="xl" className="text-primary" />
+        <Icon name={icon} size="xl" className="text-kc-shell-teal" />
       </div>
       <h3 className="ds-empty-title">{title}</h3>
       <p className="ds-empty-description">{description}</p>

@@ -8,8 +8,8 @@
   --color-secondary: #64748b;
   --color-secondary-light: #94a3b8;
   --color-surface: #ffffff;
-  --color-surface-muted: #f7f7f2;
-  --color-border: #e5e7de;
+  --color-surface-muted: #f4f5f7;
+  --color-border: #e2e5ea;
   --color-text: #334155;
   --color-text-heading: #0f172a;
   --color-error: #b91c1c;
@@ -17,10 +17,8 @@
   --color-error-border: #fecaca;
   --font-sans: system-ui, 'Segoe UI', Roboto, sans-serif;
   --font-urdu: 'Noto Nastaliq Urdu', 'Segoe UI', Tahoma, sans-serif;
-  --shadow-card:
-    0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.06);
-  --shadow-card-hover:
-    0 4px 6px -1px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.06);
+  --shadow-card: 0 1px 2px 0 rgb(15 23 42 / 0.04);
+  --shadow-card-hover: 0 2px 8px -2px rgb(15 23 42 / 0.08);
   --radius-card: 0.75rem;
   --color-sidebar: #0f172a;
   --color-sidebar-hover: #1e293b;
@@ -28,30 +26,37 @@
   --color-sidebar-text: #cbd5e1;
   --color-sidebar-text-muted: #94a3b8;
   --color-sidebar-active: #14532d;
-  /* Increment 01 — authenticated shell only. Do not remap --color-primary. */
-  --color-kc-shell: #0b3942;
-  --color-kc-shell-hover: #114954;
-  --color-kc-shell-border: #1d5c68;
-  --color-kc-shell-text: #e7f3f1;
-  --color-kc-shell-text-muted: #a8c5c4;
+  /*
+   * Authenticated shell — Claude institutional language.
+   * Deep navy / slate rail; restrained teal accent; warm-neutral canvas.
+   * Do not remap --color-primary (product action green remains).
+   */
+  --color-kc-shell: #0f172a;
+  --color-kc-shell-hover: #1e293b;
+  --color-kc-shell-border: #334155;
+  --color-kc-shell-text: #e2e8f0;
+  --color-kc-shell-text-muted: #94a3b8;
+  --color-kc-shell-teal: #0f766e;
+  --color-kc-shell-teal-soft: #ccfbf1;
   --color-kc-shell-current: #c99700;
   --color-kc-shell-current-fg: #1a1408;
-  --color-kc-canvas: #f3eee4;
-  --color-kc-shell-ink: #102830;
+  --color-kc-canvas: #f5f3ef;
+  --color-kc-shell-ink: #0f172a;
   --color-kc-shell-attention: #b4533a;
-  --color-accent-glow: #40916c;
+  --color-accent-glow: #0f766e;
   --color-accent: #c99700;
   --color-accent-soft: #fbf3d5;
   --color-info: #1d4ed8;
   --color-info-soft: #eff6ff;
   --color-warning: #b45309;
   --color-warning-soft: #fffbeb;
-  --gradient-hero: linear-gradient(135deg, #14532d 0%, #1b4332 40%, #2d6a4f 100%);
-  --gradient-card: linear-gradient(180deg, rgb(255 255 255 / 0.98) 0%, rgb(248 250 252 / 0.98) 100%);
-  --gradient-warm-bg: linear-gradient(180deg, #fbfaf6 0%, #f6f8f5 100%);
-  --shadow-enterprise: 0 10px 40px -12px rgb(15 23 42 / 0.18);
-  --shadow-enterprise-lg: 0 20px 50px -20px rgb(15 23 42 / 0.25);
-  --shadow-glass: 0 8px 32px -12px rgb(20 83 45 / 0.22);
+  /* Institutional hero: navy slate, not decorative green glass. */
+  --gradient-hero: linear-gradient(160deg, #0f172a 0%, #1e293b 55%, #0f766e 140%);
+  --gradient-card: #ffffff;
+  --gradient-warm-bg: #f5f3ef;
+  --shadow-enterprise: 0 8px 24px -12px rgb(15 23 42 / 0.12);
+  --shadow-enterprise-lg: 0 12px 32px -16px rgb(15 23 42 / 0.14);
+  --shadow-glass: 0 1px 2px 0 rgb(15 23 42 / 0.04);
 }
 
 /* KC-026 — Appearance themes (calm dark support) */
@@ -74,13 +79,14 @@ html[data-theme='dark'] {
   --color-accent-soft: #3f3a1f;
   --color-info-soft: #1e3a5f;
   --color-warning-soft: #3f2e12;
-  --gradient-warm-bg: linear-gradient(180deg, #0f172a 0%, #111827 100%);
-  --gradient-card: linear-gradient(180deg, rgb(15 23 42 / 0.98) 0%, rgb(17 24 39 / 0.98) 100%);
-  /* Deepen hero gradient so Mission Control stays premium in dark appearance */
-  --gradient-hero: linear-gradient(135deg, #0f3d24 0%, #14532d 38%, #1b4332 100%);
-  --shadow-glass: 0 8px 32px -12px rgb(0 0 0 / 0.45);
+  --gradient-warm-bg: #111827;
+  --gradient-card: #0f172a;
+  --gradient-hero: linear-gradient(160deg, #020617 0%, #0f172a 60%, #134e4a 140%);
+  --shadow-glass: 0 1px 2px 0 rgb(0 0 0 / 0.35);
   --color-kc-canvas: #111827;
   --color-kc-shell-ink: #f8fafc;
+  --color-kc-shell-teal: #2dd4bf;
+  --color-kc-shell-teal-soft: #134e4a;
 }
 
 @layer utilities {
@@ -96,8 +102,8 @@ html[data-theme='dark'] {
   }
 
   .kc-shell-topbar {
-    background-color: color-mix(in srgb, var(--color-kc-canvas) 92%, white);
-    border-color: color-mix(in srgb, var(--color-kc-shell) 12%, var(--color-border));
+    background-color: color-mix(in srgb, var(--color-kc-canvas) 96%, white);
+    border-color: color-mix(in srgb, var(--color-kc-shell) 10%, var(--color-border));
     color: var(--color-kc-shell-ink);
   }
 
@@ -166,19 +172,22 @@ html[data-theme='dark'] {
   }
 
   .enterprise-card {
-    @apply rounded-xl border border-border/80 bg-surface shadow-card transition-all duration-200;
+    @apply rounded-xl border border-border bg-surface transition-colors duration-200;
+    box-shadow: none;
   }
 
   .enterprise-card-interactive {
-    @apply rounded-xl border border-border/80 bg-surface shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-card-hover;
+    @apply rounded-xl border border-border bg-surface transition-colors duration-200 hover:border-kc-shell/25;
+    box-shadow: none;
   }
 
   .enterprise-gradient-hero {
     background: var(--gradient-hero);
   }
 
+  /* Legacy name — solid institutional panel, not glassmorphism. */
   .enterprise-glass {
-    @apply rounded-lg border border-white/20 bg-white/10;
+    @apply rounded-xl border border-border bg-surface;
   }
 
   .enterprise-section-title {
@@ -186,23 +195,67 @@ html[data-theme='dark'] {
   }
 
   .enterprise-section-subtitle {
-    @apply mt-0 text-[11px] text-secondary;
+    @apply mt-0 text-xs leading-relaxed text-secondary;
   }
 
   .campaign-glass-card {
-    @apply rounded-xl border border-border/80 bg-surface shadow-card transition-all duration-200;
+    @apply rounded-xl border border-border bg-surface transition-colors duration-200;
+    box-shadow: none;
   }
 
   .campaign-glass-card-interactive {
-    @apply rounded-xl border border-border/80 bg-surface shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-card-hover;
+    @apply rounded-xl border border-border bg-surface transition-colors duration-200 hover:border-kc-shell/25;
+    box-shadow: none;
+  }
+
+  /* Claude institutional surfaces — open grouping without card chrome */
+  .kc-panel {
+    @apply rounded-xl border border-border bg-surface;
+    box-shadow: none;
+  }
+
+  .kc-panel-muted {
+    @apply rounded-xl border border-border/70 bg-surface-muted;
+    box-shadow: none;
+  }
+
+  .kc-section-open {
+    @apply space-y-3 border-0 bg-transparent p-0 shadow-none;
+  }
+
+  .kc-divider {
+    border-color: color-mix(in srgb, var(--color-kc-shell) 10%, var(--color-border));
+  }
+
+  .kc-label-value {
+    @apply grid gap-0.5;
+  }
+
+  .kc-label-value dt {
+    @apply text-xs font-medium text-secondary;
+  }
+
+  .kc-label-value dd {
+    @apply text-sm font-medium text-text-heading;
+  }
+
+  .kc-accent-teal {
+    color: var(--color-kc-shell-teal);
+  }
+
+  .kc-accent-teal-bg {
+    background-color: color-mix(in srgb, var(--color-kc-shell-teal) 12%, white);
+    color: var(--color-kc-shell-teal);
   }
 
   .cc-card-sm {
-    @apply rounded-xl border border-border/80 bg-surface p-4 shadow-card;
+    @apply rounded-xl border border-border bg-surface p-4;
+    box-shadow: none;
   }
 
   .cc-card-md {
-    @apply rounded-xl border border-border/80 bg-surface p-5 shadow-card;
+    @apply rounded-xl border border-border bg-surface p-5;
+    box-shadow: none;
   }
 
   .cc-stack {
@@ -260,10 +313,11 @@ html[data-theme='dark'] {
 
   .ds-page-title {
     @apply text-xl font-semibold tracking-tight text-text-heading sm:text-2xl;
+    letter-spacing: -0.02em;
   }
 
   .ds-page-description {
-    @apply mt-1 text-sm leading-snug text-secondary sm:mt-2 sm:text-[15px] sm:leading-relaxed;
+    @apply mt-1.5 max-w-2xl text-sm leading-relaxed text-secondary sm:mt-2 sm:text-[15px];
   }
 
   .ds-page-header-actions {
@@ -279,11 +333,13 @@ html[data-theme='dark'] {
   }
 
   .ds-section {
-    @apply rounded-xl border border-border/80 bg-surface p-3 shadow-card sm:p-5 sm:shadow-card;
+    @apply rounded-xl border border-border bg-surface p-3 sm:p-5;
+    box-shadow: none;
   }
 
   .ds-section-dense {
-    @apply mt-3 rounded-xl border border-border/70 bg-surface p-3 shadow-sm sm:p-3.5;
+    @apply mt-3 rounded-xl border border-border/70 bg-surface p-3 sm:p-3.5;
+    box-shadow: none;
   }
 
   .ds-section-title-sm {
@@ -303,7 +359,8 @@ html[data-theme='dark'] {
   }
 
   .record-summary-strip {
-    @apply space-y-2 rounded-xl border border-border/70 bg-surface p-3 shadow-sm;
+    @apply space-y-2 rounded-xl border border-border/70 bg-surface p-3;
+    box-shadow: none;
   }
 
   .record-primary-actions {
@@ -326,11 +383,13 @@ html[data-theme='dark'] {
   }
 
   .app-screen-title {
-    @apply text-xl font-semibold tracking-tight text-text-heading;
+    @apply text-xl font-semibold tracking-tight text-text-heading sm:text-2xl;
   }
 
   .app-screen-subtitle {
-    @apply text-sm text-secondary;
+    @apply mt-1 text-sm leading-relaxed text-secondary;
+    font-family: var(--font-urdu), var(--font-sans);
+    line-height: 1.75;
   }
 
   .app-screen-block {
@@ -765,11 +824,11 @@ html[data-theme='dark'] {
   }
 
   .ds-empty {
-    @apply rounded-xl border border-dashed border-border/80 bg-surface-muted/50 px-6 py-10 text-center;
+    @apply rounded-xl border border-dashed border-border bg-transparent px-6 py-10 text-center;
   }
 
   .ds-empty-icon {
-    @apply mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary-muted text-2xl;
+    @apply mx-auto flex h-14 w-14 items-center justify-center rounded-xl border border-border bg-surface text-2xl text-kc-shell-teal;
   }
 
   .ds-empty-title {
@@ -857,7 +916,7 @@ html[data-theme='dark'] {
   /* ── Concept D: Campaign Home design system ── */
   .cd-page {
     @apply mx-auto max-w-[1200px] pb-8;
-    background: var(--gradient-warm-bg);
+    background: var(--color-kc-canvas);
   }
 
   .cd-page-admin {
@@ -871,7 +930,7 @@ html[data-theme='dark'] {
   .cd-hero {
     @apply relative overflow-hidden rounded-none sm:rounded-xl;
     background: var(--gradient-hero);
-    box-shadow: var(--shadow-glass);
+    box-shadow: none;
   }
 
   .cd-hero-admin {
@@ -4723,7 +4782,8 @@ html[data-theme='dark'] {
 }
 
 .comm-pending-panel {
-  @apply rounded-xl border border-border/80 bg-surface-muted/60 px-3.5 py-3;
+  @apply rounded-xl border border-border bg-surface-muted/80 px-3.5 py-3;
+  box-shadow: none;
 }
 
 .people-filters-bar {
@@ -4731,11 +4791,11 @@ html[data-theme='dark'] {
 }
 
 .person-360-card {
-  @apply transition-shadow duration-200;
+  @apply transition-colors duration-200;
 }
 
 .person-360-card:hover {
-  @apply shadow-card-hover;
+  border-color: color-mix(in srgb, var(--color-kc-shell) 18%, var(--color-border));
 }
 
 .person-360-timeline {
@@ -4765,7 +4825,7 @@ html[data-theme='dark'] {
 }
 
 .kc-person-detail-fact dt {
-  @apply text-xs font-medium uppercase tracking-wide text-secondary;
+  @apply text-xs font-medium text-secondary;
 }
 
 .kc-person-detail-fact dd {
@@ -4777,7 +4837,7 @@ html[data-theme='dark'] {
 }
 
 .kc-person-detail-section-title {
-  @apply text-sm font-semibold tracking-wide text-kc-shell;
+  @apply text-sm font-semibold text-kc-shell;
 }
 
 .kc-person-detail-related {
@@ -5067,16 +5127,16 @@ html[data-theme='dark'] {
 
 /* Organisational Admin Dashboard (post-campaign situation view) */
 .orgdash-page {
-  --orgdash-teal: var(--color-kc-shell);
-  --orgdash-teal-soft: color-mix(in srgb, var(--color-kc-shell) 12%, var(--color-kc-canvas));
+  --orgdash-teal: var(--color-kc-shell-teal);
+  --orgdash-teal-soft: color-mix(in srgb, var(--color-kc-shell-teal) 12%, var(--color-kc-canvas));
   --orgdash-blue: var(--color-kc-shell);
-  --orgdash-blue-soft: color-mix(in srgb, var(--color-kc-shell) 10%, white);
+  --orgdash-blue-soft: color-mix(in srgb, var(--color-kc-shell) 8%, white);
   --orgdash-purple: var(--color-kc-shell);
-  --orgdash-purple-soft: color-mix(in srgb, var(--color-kc-shell) 8%, var(--color-kc-canvas));
+  --orgdash-purple-soft: color-mix(in srgb, var(--color-kc-shell) 6%, var(--color-kc-canvas));
   --orgdash-amber: var(--color-kc-shell-attention);
   --orgdash-amber-soft: color-mix(in srgb, var(--color-kc-shell-attention) 12%, white);
   --orgdash-saffron: var(--color-kc-shell-current);
-  --orgdash-muted: color-mix(in srgb, var(--color-kc-shell-ink) 72%, var(--color-kc-canvas));
+  --orgdash-muted: color-mix(in srgb, var(--color-kc-shell-ink) 68%, var(--color-kc-canvas));
   background: var(--color-kc-canvas);
   overflow-x: clip;
   color: var(--color-kc-shell-ink);
@@ -5907,35 +5967,36 @@ html[data-theme='dark'] {
 .rukn-home-page {
   display: flex;
   flex-direction: column;
-  gap: 0.65rem;
+  gap: 0.85rem;
 }
 
 .rukn-home-greeting {
   margin: 0;
   font-family: var(--font-urdu);
-  font-size: 1.02rem;
-  line-height: 1.45;
+  font-size: 1.125rem;
+  line-height: 1.7;
   color: var(--color-kc-shell-ink);
 }
 
 .rukn-home-greeting-name {
   display: inline;
   margin-inline-start: 0.4rem;
-  font-size: 0.88rem;
+  font-size: 0.95rem;
+  line-height: 1.6;
   color: color-mix(in srgb, var(--color-kc-shell-ink) 72%, var(--color-kc-canvas));
 }
 
 .rukn-home-stack {
   display: flex;
   flex-direction: column;
-  gap: 0.65rem;
+  gap: 0.85rem;
 }
 
 .rukn-home-card {
-  border: 1px solid color-mix(in srgb, var(--color-kc-shell) 14%, var(--color-border));
+  border: 1px solid color-mix(in srgb, var(--color-kc-shell) 10%, var(--color-border));
   border-radius: var(--radius-card);
   background: var(--color-surface);
-  padding: 0.7rem 0.8rem 0.75rem;
+  padding: 0.85rem 0.95rem 0.9rem;
   box-shadow: none;
 }
 

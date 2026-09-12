@@ -20,24 +20,30 @@ export const colors = {
   info: '#1d4ed8',
   infoSoft: '#eff6ff',
   surface: '#ffffff',
-  surfaceMuted: '#f7f7f2',
-  background: '#f6f8f5',
-  border: '#e5e7de',
+  surfaceMuted: '#f4f5f7',
+  background: '#f5f3ef',
+  border: '#e2e5ea',
   textPrimary: '#0f172a',
   textSecondary: '#64748b',
 } as const
 
-/** Authenticated chrome only — Increment 01. Feature pages keep `colors.primary`. */
+/**
+ * Authenticated chrome only — Claude institutional language.
+ * Deep navy / slate rail + restrained teal accent; feature CTAs keep `colors.primary`.
+ */
 export const shell = {
-  rail: '#0b3942',
-  railHover: '#114954',
-  railBorder: '#1d5c68',
-  railText: '#e7f3f1',
-  railTextMuted: '#a8c5c4',
+  rail: '#0f172a',
+  railHover: '#1e293b',
+  railBorder: '#334155',
+  railText: '#e2e8f0',
+  railTextMuted: '#94a3b8',
+  /** Restrained teal — secondary emphasis on shell surfaces (not nav current). */
+  accentTeal: '#0f766e',
+  accentTealSoft: '#ccfbf1',
   current: '#c99700',
   currentFg: '#1a1408',
-  canvas: '#f3eee4',
-  ink: '#102830',
+  canvas: '#f5f3ef',
+  ink: '#0f172a',
   attention: '#b4533a',
 } as const
 
@@ -63,11 +69,11 @@ export const radius = {
 } as const
 
 export const shadow = {
-  card: '0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.06)',
-  cardHover:
-    '0 4px 6px -1px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.06)',
-  enterprise: '0 10px 40px -12px rgb(15 23 42 / 0.18)',
-  glass: '0 8px 32px -12px rgb(20 83 45 / 0.22)',
+  card: '0 1px 2px 0 rgb(15 23 42 / 0.04)',
+  cardHover: '0 2px 8px -2px rgb(15 23 42 / 0.08)',
+  enterprise: '0 8px 24px -12px rgb(15 23 42 / 0.12)',
+  /** Kept for legacy class names; prefer border surfaces over glass. */
+  glass: '0 1px 2px 0 rgb(15 23 42 / 0.04)',
 } as const
 
 export const transition = {

@@ -147,7 +147,7 @@ export function AdminHomePage() {
     return (
       <div className={PAGE_CLASS}>
         <section
-          className="enterprise-glass rounded-xl p-6"
+          className="kc-panel rounded-xl p-6"
           role="alert"
           aria-live="assertive"
         >

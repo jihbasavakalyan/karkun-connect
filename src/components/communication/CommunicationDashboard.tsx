@@ -20,10 +20,7 @@ export function CommunicationDashboard({ ready = true }: { ready?: boolean }) {
     <div className="space-y-6">
       <CommunicationSummaryCards />
 
-      <section
-        className="rounded-(--radius-card) border border-border bg-surface p-4 shadow-card sm:p-5"
-        aria-labelledby="comm-inbox-heading"
-      >
+      <section className="kc-panel p-4 sm:p-5" aria-labelledby="comm-inbox-heading">
         <h2
           id="comm-inbox-heading"
           className="text-lg font-semibold text-text-heading"
@@ -32,7 +29,7 @@ export function CommunicationDashboard({ ready = true }: { ready?: boolean }) {
         >
           {COMMUNICATION_INBOX_NAV.label}
         </h2>
-        <p className="mt-2 text-sm text-secondary">
+        <p className="mt-2 text-sm leading-relaxed text-secondary">
           Administrative intake and one-way Rukn messages. Opens the existing Inbox workflow — not
           communication history.
         </p>
@@ -54,7 +51,7 @@ export function CommunicationDashboard({ ready = true }: { ready?: boolean }) {
       </section>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <section className="rounded-(--radius-card) border border-border bg-surface p-4 shadow-card sm:p-5">
+        <section className="kc-panel p-4 sm:p-5">
           <h2 className="text-lg font-semibold text-text-heading">Top Official Communications</h2>
           {metrics.topTemplates.length === 0 ? (
             <p className="mt-3 text-sm text-secondary">No messages sent yet.</p>
@@ -73,13 +70,13 @@ export function CommunicationDashboard({ ready = true }: { ready?: boolean }) {
           )}
           <Link
             to={adminCommunicationPath('templates')}
-            className="mt-3 inline-block text-sm font-medium text-primary hover:underline"
+            className="mt-3 inline-flex min-h-11 items-center text-sm font-medium text-primary hover:underline"
           >
             Custom Communications →
           </Link>
         </section>
 
-        <section className="rounded-(--radius-card) border border-border bg-surface p-4 shadow-card sm:p-5">
+        <section className="kc-panel p-4 sm:p-5">
           <h2 className="text-lg font-semibold text-text-heading">Recent Activity</h2>
           {recentActivity.length === 0 ? (
             <p className="mt-3 text-sm text-secondary">No communication activity yet.</p>
@@ -102,20 +99,20 @@ export function CommunicationDashboard({ ready = true }: { ready?: boolean }) {
           )}
           <Link
             to={adminCommunicationPath('history')}
-            className="mt-3 inline-block text-sm font-medium text-primary hover:underline"
+            className="mt-3 inline-flex min-h-11 items-center text-sm font-medium text-primary hover:underline"
           >
             View history →
           </Link>
         </section>
 
-        <section className="rounded-(--radius-card) border border-border bg-surface p-4 shadow-card sm:p-5 lg:col-span-2">
+        <section className="kc-panel p-4 sm:p-5 lg:col-span-2">
           <h2 className="text-lg font-semibold text-text-heading">Daily Reports</h2>
-          <p className="mt-2 text-sm text-secondary">
+          <p className="mt-2 text-sm leading-relaxed text-secondary">
             Generate Urdu progress messages for Arkaan from live campaign metrics.
           </p>
           <Link
             to={adminCommunicationPath('daily-reports')}
-            className="mt-3 inline-block text-sm font-medium text-primary hover:underline"
+            className="mt-3 inline-flex min-h-11 items-center text-sm font-medium text-primary hover:underline"
           >
             Open Daily Reports →
           </Link>

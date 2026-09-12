@@ -92,7 +92,7 @@ function AdminLayoutShell() {
           mobileNavOpen={mobileNavOpen}
           onMenuToggle={() => setMobileNavOpen((value) => !value)}
         />
-        <main className="native-admin-main min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-3 py-3 lg:p-6">
+        <main className="native-admin-main min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-3 py-3 lg:px-6 lg:py-5">
           <Outlet />
         </main>
       </div>

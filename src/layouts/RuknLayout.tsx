@@ -95,7 +95,7 @@ export function RuknLayout() {
 
       <main className="native-main mx-auto w-full max-w-5xl flex-1 px-3 py-2 lg:px-6 lg:py-3">
         {hydration.failed && connectionScoped ? (
-          <section className="rounded-xl border border-border bg-surface p-6 shadow-card" role="alert">
+          <section className="kc-panel rounded-xl p-6" role="alert">
             <h1 className="text-lg font-semibold text-text-heading">Unable to load your connections</h1>
             <p className="mt-2 text-sm text-secondary">
               Your Rukn workspace cannot load connection data until authorization and Firestore reads
@@ -131,7 +131,7 @@ export function RuknLayout() {
                 end={item.end}
                 className={({ isActive }) =>
                   [
-                    'native-nav-item flex min-h-11 flex-col items-center justify-center gap-0.5 rounded-xl px-0.5 py-1 text-center text-[9px] font-semibold leading-tight transition-colors duration-200 sm:text-[11px]',
+                    'native-nav-item flex min-h-11 flex-col items-center justify-center gap-0.5 rounded-lg px-0.5 py-1 text-center text-[10px] font-semibold leading-snug transition-colors duration-200 sm:text-[11px]',
                     isActive
                       ? 'kc-rukn-nav-current native-nav-item-active'
                       : 'text-secondary hover:bg-kc-canvas hover:text-kc-shell-ink',
@@ -139,7 +139,7 @@ export function RuknLayout() {
                 }
               >
                 <Icon name={item.icon} size="lg" className="text-current" />
-                <span>{item.label}</span>
+                <span className="max-w-full truncate px-0.5">{item.label}</span>
                 <span className="kc-rukn-nav-indicator h-0.5 w-5 rounded-full bg-transparent" aria-hidden="true" />
               </NavLink>
             </li>
