@@ -1,10 +1,8 @@
 /**
- * Organisational situation hero — information, not an action panel.
- * Live people metrics. Meqati progress lives in the year summary, not a duplicate ring.
+ * Organisational situation hero — Claude navy hero on light canvas.
+ * Information only; no action panel. Quiet metrics (typography, not colour boxes).
  */
 
-import { Icon } from '@/components/ui/Icon'
-import type { IconName } from '@/design-system/iconNames'
 import {
   meqatiYearUrduRange,
   type MeqatiYearSelection,
@@ -17,28 +15,17 @@ type OrganisationalSituationHeroProps = {
   metricsReady: boolean
 }
 
-function MetricChip({
-  icon,
-  tone,
+function QuietMetric({
   label,
   value,
-  weight = 'people',
 }: {
-  icon: IconName
-  tone: 'teal' | 'blue' | 'purple'
   label: string
   value: string | number
-  weight?: 'people' | 'relation'
 }) {
   return (
-    <li className={`orgdash-metric orgdash-metric-${tone} orgdash-metric-${weight}`}>
-      <span className={`orgdash-metric-icon orgdash-metric-icon-${tone}`} aria-hidden="true">
-        <Icon name={icon} size="sm" />
-      </span>
-      <div className="min-w-0">
-        <p className="orgdash-metric-label">{label}</p>
-        <p className="orgdash-metric-value">{value}</p>
-      </div>
+    <li className="orgdash-quiet-metric">
+      <span className="orgdash-quiet-metric-label">{label}</span>
+      <span className="orgdash-quiet-metric-value">{value}</span>
     </li>
   )
 }
@@ -80,41 +67,16 @@ export function OrganisationalSituationHero({
       </div>
 
       <div className="orgdash-hero-body">
-        <section aria-label="افراد">
-          <ul className="orgdash-metric-grid orgdash-metric-grid-people">
-            <MetricChip
-              icon="user"
-              tone="purple"
-              label="ارکان"
-              value={metricsReady ? situation.people.rukns : '—'}
-            />
-            <MetricChip
-              icon="sparkles"
-              tone="purple"
-              label="عازمِ رکن"
-              value={metricsReady ? situation.people.aRukns : '—'}
-            />
-            <MetricChip
-              icon="users"
-              tone="purple"
-              label="کارکنان"
-              value={metricsReady ? situation.people.karkuns : '—'}
-            />
-            <MetricChip
-              icon="heart"
-              tone="purple"
-              label="متفقین"
-              value={metricsReady ? situation.people.muttafiqeen : '—'}
-            />
-            <MetricChip
-              icon="link"
-              tone="blue"
-              label="باہمی ربط"
-              value={metricsReady ? situation.people.connections : '—'}
-              weight="relation"
-            />
-          </ul>
-        </section>
+        <ul className="orgdash-quiet-metrics" aria-label="افراد">
+          <QuietMetric label="ارکان" value={metricsReady ? situation.people.rukns : '—'} />
+          <QuietMetric label="عازمِ رکن" value={metricsReady ? situation.people.aRukns : '—'} />
+          <QuietMetric label="کارکنان" value={metricsReady ? situation.people.karkuns : '—'} />
+          <QuietMetric label="متفقین" value={metricsReady ? situation.people.muttafiqeen : '—'} />
+          <QuietMetric
+            label="باہمی ربط"
+            value={metricsReady ? situation.people.connections : '—'}
+          />
+        </ul>
       </div>
     </header>
   )

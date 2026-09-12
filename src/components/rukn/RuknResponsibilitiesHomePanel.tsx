@@ -1,8 +1,10 @@
 /**
- * Rukn Home — read-only responsibilities from Meeqati ذمہ دار assignment.
+ * Rukn Responsibilities — Claude open Urdu-first operational list.
  * Same localProgrammes.responsibleRuknId path as Meeqati Mansooba. Not Phase 4.
  */
 
+import { Link } from 'react-router-dom'
+import { ROUTES } from '@/constants/routes'
 import { buildRuknMeqatiActivities } from '@/lib/rukn/ruknMeqatiActivities'
 
 type RuknResponsibilitiesHomePanelProps = {
@@ -14,31 +16,60 @@ export function RuknResponsibilitiesHomePanel({ ruknId }: RuknResponsibilitiesHo
 
   return (
     <section
-      className="rukn-home-card"
-      aria-labelledby="rukn-home-responsibilities-title"
+      className="rukn-resp"
+      aria-label="میری ذمہ داریاں"
       dir="rtl"
       lang="ur"
     >
-      <header className="rukn-home-card-head">
-        <h2 id="rukn-home-responsibilities-title" className="rukn-home-card-title">
-          رکن کی ذمہ داریاں
-        </h2>
-        <p className="rukn-home-card-sub">Rukn Responsibilities</p>
+      <header className="rukn-resp-head">
+        <p className="rukn-resp-sub">میقاتی منصوبہ سے منسوب سرگرمیاں</p>
       </header>
       {items.length === 0 ? (
-        <p className="rukn-home-empty">
+        <p className="rukn-resp-empty">
           میقاتی ذمہ داری برقرار ہے۔ سرگرمی کی تفصیل ابھی ظاہر نہیں ہو رہی۔
         </p>
       ) : (
-        <ul className="rukn-home-list">
+        <ul className="rukn-resp-list">
           {items.map((item) => (
-            <li key={item.id}>
-              <p className="rukn-home-list-title">{item.name}</p>
-              <p className="rukn-home-hint">
-                {item.shobahName ? `شعبہ: ${item.shobahName}` : null}
-                {item.shobahName && item.yearStatusLabel ? ' · ' : null}
-                {item.yearStatusLabel ? item.yearStatusLabel : null}
-              </p>
+            <li key={item.id} className="rukn-resp-row">
+              <p className="rukn-resp-name">{item.name}</p>
+              <dl className="rukn-resp-meta">
+                {item.shobahName ? (
+                  <div>
+                    <dt>شعبہ</dt>
+                    <dd>{item.shobahName}</dd>
+                  </div>
+                ) : null}
+                {item.objectiveTitle ? (
+                  <div>
+                    <dt>ہدف</dt>
+                    <dd>{item.objectiveTitle}</dd>
+                  </div>
+                ) : null}
+                {item.scheduleLabel ? (
+                  <div>
+                    <dt>نظام الاوقات</dt>
+                    <dd>{item.scheduleLabel}</dd>
+                  </div>
+                ) : null}
+                {item.yearStatusLabel ? (
+                  <div>
+                    <dt>صورتحال</dt>
+                    <dd>
+                      <span className="rukn-resp-status">{item.yearStatusLabel}</span>
+                    </dd>
+                  </div>
+                ) : null}
+              </dl>
+              {item.action ? (
+                <Link to={item.action.href} className="rukn-resp-link">
+                  {item.action.label}
+                </Link>
+              ) : (
+                <Link to={ROUTES.RUKN_MEQATI_MANSOOBA} className="rukn-resp-link">
+                  میقاتی منصوبہ میں دیکھیں
+                </Link>
+              )}
             </li>
           ))}
         </ul>

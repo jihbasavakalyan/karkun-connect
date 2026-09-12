@@ -9,8 +9,6 @@ import type { MeqatiMansooba, PlanningObjective, Shobah } from '@/types/planning
 import { MEQATI_PLAN_END_START_YEAR, MEQATI_PLAN_START_YEAR } from '@/lib/dashboard/meqatiYear'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
-import { Icon } from '@/components/ui/Icon'
-import type { IconName } from '@/design-system/iconNames'
 import '@/pages/admin/meqati/meqatiPlanningCanvas.css'
 import {
   Chevron,
@@ -77,36 +75,20 @@ function SectionLabel({ children }: { children: string }) {
   return <h3 className="text-sm font-semibold text-text-heading">{children}</h3>
 }
 
-const STAT_CARDS: { key: keyof Totals; label: string; icon: IconName; tint: string; ink: string }[] = [
-  { key: 'shobahs', label: 'شعبہ', icon: 'users', tint: '#ccfbf1', ink: '#0f766e' },
-  { key: 'objectives', label: 'اہداف', icon: 'flag', tint: '#e2e8f0', ink: '#0f172a' },
-  { key: 'activities', label: 'سرگرمیاں', icon: 'clipboard', tint: '#f5f3ef', ink: '#0f172a' },
-  { key: 'mapped', label: 'مربوط', icon: 'link', tint: '#f0fdfa', ink: '#0f766e' },
-  { key: 'unmapped', label: 'بغیر ہدف', icon: 'warning', tint: '#fffbeb', ink: '#b45309' },
+const STAT_CARDS: { key: keyof Totals; label: string }[] = [
+  { key: 'shobahs', label: 'شعبہ' },
+  { key: 'objectives', label: 'اہداف' },
+  { key: 'activities', label: 'سرگرمیاں' },
+  { key: 'mapped', label: 'مربوط' },
+  { key: 'unmapped', label: 'بغیر ہدف' },
 ]
 
-function StatCard({ value, label, icon, tint, ink }: {
-  value: number
-  label: string
-  icon: IconName
-  tint: string
-  ink: string
-}) {
+/** Quiet status cell — Claude: typography hierarchy, no colour-filled icon boxes. */
+function StatCard({ value, label }: { value: number; label: string }) {
   return (
-    <div
-      className="meqati-stat-card flex min-h-[5.5rem] items-center gap-3 px-4 py-3"
-      style={{ backgroundColor: tint }}
-    >
-      <span
-        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/80"
-        style={{ color: ink }}
-      >
-        <Icon name={icon} size="md" />
-      </span>
+    <div className="meqati-stat-card flex items-center gap-3 px-3 py-2">
       <span className="min-w-0">
-        <span className="block text-2xl font-semibold tabular-nums" style={{ color: ink }}>
-          {value}
-        </span>
+        <span className="block text-2xl font-semibold tabular-nums text-text-heading">{value}</span>
         <span className="block text-sm text-secondary">{label}</span>
       </span>
     </div>
@@ -205,16 +187,10 @@ export function MeqatiPlanningWorkspace(props: MeqatiPlanningWorkspaceProps) {
         </header>
 
         {mansooba ? (
-          <ul className="meqati-stat-grid grid grid-cols-2 gap-3">
+          <ul className="meqati-stat-grid grid grid-cols-2 gap-0 border-y border-border py-2">
             {STAT_CARDS.map((card) => (
               <li key={card.key}>
-                <StatCard
-                  value={totals[card.key]}
-                  label={card.label}
-                  icon={card.icon}
-                  tint={card.tint}
-                  ink={card.ink}
-                />
+                <StatCard value={totals[card.key]} label={card.label} />
               </li>
             ))}
           </ul>
@@ -231,7 +207,7 @@ export function MeqatiPlanningWorkspace(props: MeqatiPlanningWorkspaceProps) {
         ) : (
           <section className="space-y-3">
             <SectionLabel>شعبہ</SectionLabel>
-            <ul className="meqati-head-grid grid grid-cols-1 gap-3">
+            <ul className="meqati-head-grid grid grid-cols-1 gap-0">
               {shobahItems.map((item) => (
                 <li key={item.shobah.id}>
                   <ShobahHeadCard
@@ -248,31 +224,26 @@ export function MeqatiPlanningWorkspace(props: MeqatiPlanningWorkspaceProps) {
     )
   }
 
-  if (view.level === 'shobah' && selectedShobah && visual && headCode) {
+  if (view.level === 'shobah' && selectedShobah && headCode) {
     return (
       <Canvas>
       <div className="space-y-8">
         <header>
           <BackBar label="تمام شعبہ" onClick={() => onViewChange({ level: 'overview' })} />
-          <div
-            className="flex flex-wrap items-start justify-between gap-3 rounded-2xl px-5 py-4"
-            style={{ backgroundColor: visual.wash }}
-          >
+          <div className="meqati-dept-hero">
             <div className="min-w-0">
-              <h2 className="flex items-center gap-2 text-2xl font-semibold text-text-heading">
-                <span
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-surface"
-                  style={{ color: visual.accent }}
-                >
-                  <Icon name={visual.icon} size="md" />
-                </span>
+              <h2 className="text-2xl font-semibold">
                 {selectedShobah.shobah.name} ({headCode})
               </h2>
-              <p className="mt-2 text-sm text-secondary">
-                {selectedShobah.objectiveCount} اہداف · {selectedShobah.activityCount} سرگرمیاں
+              <p className="meqati-dept-hero-meta mt-2 text-sm">
+                {PLAN_PERIOD_LABEL} · {selectedShobah.objectiveCount} اہداف ·{' '}
+                {selectedShobah.activityCount} سرگرمیاں
               </p>
-              <p className="mt-1 text-sm text-secondary">
+              <p className="meqati-dept-hero-meta mt-1 text-sm">
                 {selectedShobah.mappedCount} مربوط | {selectedShobah.unmappedCount} بغیر ہدف
+                {selectedShobah.unmappedCount > 0
+                  ? ` · توجہ: ${selectedShobah.unmappedCount}`
+                  : null}
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -306,7 +277,7 @@ export function MeqatiPlanningWorkspace(props: MeqatiPlanningWorkspaceProps) {
                   activityCount={count}
                   mappedCount={count}
                   unmappedCount={0}
-                  accent={visual.accent}
+                  accent={visual?.accent ?? '#0f766e'}
                   onOpen={() =>
                     onViewChange({
                       level: 'objective',
@@ -328,11 +299,10 @@ export function MeqatiPlanningWorkspace(props: MeqatiPlanningWorkspaceProps) {
 
         <button
           type="button"
-          className="flex min-h-14 w-full items-center justify-between gap-4 overflow-hidden rounded-2xl bg-white px-5 py-4 text-start shadow-card"
+          className="flex min-h-14 w-full items-center justify-between gap-4 overflow-hidden border-b border-border bg-transparent px-1 py-4 text-start"
           onClick={() => onViewChange({ level: 'unmapped', shobahId: view.shobahId })}
         >
           <span className="flex min-w-0 items-stretch gap-3">
-            <span className="w-1 shrink-0 rounded-full" style={{ backgroundColor: visual.accent }} />
             <span className="block text-lg font-semibold text-text-heading">
               بغیر ہدف ({unmappedActivities.length} سرگرمیاں)
             </span>
@@ -358,10 +328,7 @@ export function MeqatiPlanningWorkspace(props: MeqatiPlanningWorkspaceProps) {
             }
             onClick={() => onViewChange({ level: 'shobah', shobahId: view.shobahId })}
           />
-          <div
-            className="rounded-2xl px-5 py-4"
-            style={visual ? { backgroundColor: visual.wash } : undefined}
-          >
+          <div className="meqati-objective-band">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-xs font-semibold text-secondary">
@@ -387,7 +354,7 @@ export function MeqatiPlanningWorkspace(props: MeqatiPlanningWorkspaceProps) {
         <section className="space-y-3">
           <SectionLabel>سرگرمیاں</SectionLabel>
         {objectiveActivities.length === 0 ? (
-          <p className="rounded-2xl bg-surface px-5 py-6 text-center text-sm text-secondary shadow-card">
+          <p className="border-b border-border px-1 py-6 text-center text-sm text-secondary">
             اس ہدف کے لیے ابھی کوئی سرگرمی درج نہیں
           </p>
         ) : (
@@ -411,10 +378,7 @@ export function MeqatiPlanningWorkspace(props: MeqatiPlanningWorkspaceProps) {
           label={selectedShobah ? selectedShobah.shobah.name : 'شعبہ'}
           onClick={() => onViewChange({ level: 'shobah', shobahId: view.shobahId })}
         />
-        <div
-          className="rounded-2xl px-5 py-5"
-          style={visual ? { backgroundColor: visual.wash } : undefined}
-        >
+        <div className="meqati-objective-band">
           <h2 className="text-2xl font-semibold text-text-heading">
             بغیر ہدف ({unmappedActivities.length} سرگرمیاں)
           </h2>

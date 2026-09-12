@@ -5,7 +5,7 @@
   --color-primary: #0f766e;
   --color-primary-hover: #0d9488;
   --color-primary-light: #14b8a6;
-  --color-primary-muted: #ccfbf1;
+  --color-primary-muted: #e8f3f1;
   --color-secondary: #64748b;
   --color-secondary-light: #94a3b8;
   --color-surface: #ffffff;
@@ -36,8 +36,8 @@
   --color-sidebar-text-muted: #94a3b8;
   --color-sidebar-active: #0f766e;
   /*
-   * Authenticated shell — Claude institutional language.
-   * Navy chrome · teal interactive · soft amber attention · neutral canvas.
+   * Authenticated shell ? Claude institutional language.
+   * Navy chrome ? teal interactive ? soft amber attention ? neutral canvas.
    */
   --color-kc-shell: #0f172a;
   --color-kc-shell-hover: #1e293b;
@@ -45,20 +45,20 @@
   --color-kc-shell-text: #e2e8f0;
   --color-kc-shell-text-muted: #94a3b8;
   --color-kc-shell-teal: #0f766e;
-  --color-kc-shell-teal-soft: #ccfbf1;
+  --color-kc-shell-teal-soft: #e8f3f1;
   --color-kc-shell-current: #c99700;
   --color-kc-shell-current-fg: #1a1408;
-  --color-kc-canvas: #f5f3ef;
+  --color-kc-canvas: #f7f8fa;
   --color-kc-shell-ink: #0f172a;
   --color-kc-shell-attention: #b45309;
   --color-accent-glow: #0f766e;
   --color-accent: #c99700;
-  --color-accent-soft: #fbf3d5;
+  --color-accent-soft: #fff8e8;
   --color-info: #1d4ed8;
   --color-info-soft: #eff6ff;
   --color-warning: #b45309;
   --color-warning-soft: #fffbeb;
-  /* Claude: navy hero — no decorative multi-stop gradient */
+  /* Claude: navy hero ? no decorative multi-stop gradient */
   --gradient-hero: #0f172a;
   --gradient-card: #ffffff;
   --gradient-warm-bg: #f5f3ef;
@@ -69,35 +69,38 @@
   --shadow-glass: 0 1px 2px 0 rgb(15 23 42 / 0.05);
 }
 
-/* KC-026 — Appearance themes (calm dark support) */
+/* KC-026 ? Appearance themes.
+ * Claude institutional language: dark chrome may stay dark, but the
+ * authenticated WORKING SURFACE stays light (not dark canvas + dark cards).
+ */
 html[data-theme='dark'] {
-  color-scheme: dark;
-  --color-primary: #2dd4bf;
-  --color-primary-hover: #5eead4;
-  --color-primary-light: #99f6e4;
-  --color-primary-muted: #134e4a;
-  --color-secondary: #94a3b8;
-  --color-secondary-light: #64748b;
-  --color-surface: #0f172a;
-  --color-surface-muted: #111827;
-  --color-border: #334155;
-  --color-text: #e2e8f0;
-  --color-text-heading: #f8fafc;
-  --color-error: #fca5a5;
-  --color-error-bg: #450a0a;
-  --color-error-border: #7f1d1d;
-  --color-accent-soft: #3f3a1f;
-  --color-info-soft: #1e3a5f;
-  --color-warning-soft: #3f2e12;
-  --gradient-warm-bg: #111827;
-  --gradient-card: #0f172a;
-  --gradient-hero: #020617;
-  --shadow-glass: 0 1px 2px 0 rgb(0 0 0 / 0.35);
-  --color-kc-canvas: #111827;
-  --color-kc-shell-ink: #f8fafc;
-  --color-kc-shell-teal: #2dd4bf;
-  --color-kc-shell-teal-soft: #134e4a;
-  --color-kc-shell-attention: #fbbf24;
+  color-scheme: light;
+  --color-primary: #0f766e;
+  --color-primary-hover: #0d9488;
+  --color-primary-light: #14b8a6;
+  --color-primary-muted: #e8f3f1;
+  --color-secondary: #64748b;
+  --color-secondary-light: #94a3b8;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f4f5f7;
+  --color-border: #e2e5ea;
+  --color-text: #334155;
+  --color-text-heading: #0f172a;
+  --color-error: #b91c1c;
+  --color-error-bg: #fef2f2;
+  --color-error-border: #fecaca;
+  --color-accent-soft: #fffbeb;
+  --color-info-soft: #eff6ff;
+  --color-warning-soft: #fffbeb;
+  --gradient-warm-bg: #f5f3ef;
+  --gradient-card: #ffffff;
+  --gradient-hero: #0f172a;
+  --shadow-glass: 0 1px 2px 0 rgb(15 23 42 / 0.05);
+  --color-kc-canvas: #f7f8fa;
+  --color-kc-shell-ink: #0f172a;
+  --color-kc-shell-teal: #0f766e;
+  --color-kc-shell-teal-soft: #e8f3f1;
+  --color-kc-shell-attention: #b45309;
 }
 
 @layer utilities {
@@ -207,7 +210,7 @@ html[data-theme='dark'] {
     color: var(--color-kc-shell-text);
   }
 
-  /* Legacy name — solid institutional panel, not glassmorphism. */
+  /* Legacy name ? solid institutional panel, not glassmorphism. */
   .enterprise-glass {
     border-radius: var(--radius-card);
     border: 1px solid color-mix(in srgb, var(--color-kc-shell) 10%, var(--color-border));
@@ -346,7 +349,7 @@ html[data-theme='dark'] {
     animation: campaign-fade-in 0.4s ease-out both;
   }
 
-  /* ── M6 Phase 3: Application-wide design system (ds-*) ── */
+  /* ?? M6 Phase 3: Application-wide design system (ds-*) ?? */
   .ds-page {
     @apply mx-auto w-full max-w-6xl space-y-4 overflow-x-hidden sm:space-y-6;
     max-width: min(72rem, 100%);
@@ -441,7 +444,7 @@ html[data-theme='dark'] {
     @apply flex flex-wrap gap-2;
   }
 
-  /* ── KC-012.3 one-screen app layouts ── */
+  /* ?? KC-012.3 one-screen app layouts ?? */
   .app-screen.ds-page,
   .ds-page.app-screen {
     @apply space-y-3 overflow-x-hidden;
@@ -718,7 +721,7 @@ html[data-theme='dark'] {
     @apply shrink-0 text-sm font-semibold text-primary hover:underline;
   }
 
-  /* KC-0091.1 — durable save confirmation toast */
+  /* KC-0091.1 ? durable save confirmation toast */
   .execution-save-toast {
     @apply fixed left-1/2 z-50 flex max-w-[min(92vw,24rem)] -translate-x-1/2 items-center gap-2 rounded-xl border border-green-200 bg-green-50 px-3.5 py-2.5 text-sm font-medium text-green-900 shadow-card;
     top: calc(4.5rem + env(safe-area-inset-top, 0px));
@@ -935,7 +938,7 @@ html[data-theme='dark'] {
     @apply rounded-xl border border-error-border bg-error-bg px-4 py-3 text-sm text-error;
   }
 
-  /* ── M6.5: Iconography ── */
+  /* ?? M6.5: Iconography ?? */
   .ds-icon {
     @apply inline-block shrink-0;
   }
@@ -968,7 +971,7 @@ html[data-theme='dark'] {
     @apply inline-block rounded-full bg-red-400;
   }
 
-  /* ── M6.5: Typography scale ── */
+  /* ?? M6.5: Typography scale ?? */
   .ds-text-hero {
     @apply text-2xl font-bold leading-tight tracking-tight text-text-heading sm:text-3xl;
   }
@@ -989,7 +992,7 @@ html[data-theme='dark'] {
     @apply text-sm font-medium text-text-heading;
   }
 
-  /* ── Concept D: Campaign Home design system ── */
+  /* ?? Concept D: Campaign Home design system ?? */
   .cd-page {
     @apply mx-auto max-w-[1200px] pb-8;
     background: var(--color-kc-canvas);
@@ -1153,7 +1156,7 @@ html[data-theme='dark'] {
   }
 
   .cd-pulse-trends li:not(:last-child)::after {
-    content: '·';
+    content: '?';
     @apply ml-2 text-white/40;
   }
 
@@ -1520,7 +1523,7 @@ html[data-theme='dark'] {
 
   .rukn-fab-root {
     @apply fixed z-40 flex flex-col items-end gap-3;
-    /* KC-0091.1 — stack above Digital Rafeeq so expanded menu never covers it */
+    /* KC-0091.1 ? stack above Digital Rafeeq so expanded menu never covers it */
     right: calc(1rem + env(safe-area-inset-right, 0px));
     bottom: calc(
       5.25rem + var(--fab-size) + 0.85rem + env(safe-area-inset-bottom, 0px)
@@ -1542,7 +1545,7 @@ html[data-theme='dark'] {
     bottom: calc(var(--fab-gap) + env(safe-area-inset-bottom, 0px));
   }
 
-  /* KC-0091.1 — Rafeeq sits below the Quick Actions (+) stack on the same corner */
+  /* KC-0091.1 ? Rafeeq sits below the Quick Actions (+) stack on the same corner */
   .digital-rafeeq-fab-offset-rukn {
     right: calc(1rem + env(safe-area-inset-right, 0px));
     bottom: calc(5.25rem + env(safe-area-inset-bottom, 0px));
@@ -1981,7 +1984,7 @@ html[data-theme='dark'] {
     @apply space-y-2.5 sm:space-y-3;
   }
 
-  /* ========== KC-0071 — Executive Dashboard (presentation only) ========== */
+  /* ========== KC-0071 ? Executive Dashboard (presentation only) ========== */
   .exdash-page .mc-panel {
     @apply rounded-2xl border border-slate-200 bg-white shadow-sm;
   }
@@ -2102,7 +2105,7 @@ html[data-theme='dark'] {
     @apply space-y-6;
   }
 
-  /* Operational command center — layout only (responsive columns). */
+  /* Operational command center ? layout only (responsive columns). */
   .exdash-ops-command {
     @apply grid grid-cols-1 items-stretch gap-6 md:grid-cols-2 xl:grid-cols-3;
   }
@@ -2116,7 +2119,7 @@ html[data-theme='dark'] {
     max-height: 22rem;
   }
 
-  /* Action Center / Today's Mission — unified urgency queue (presentation only). */
+  /* Action Center / Today's Mission ? unified urgency queue (presentation only). */
   .exdash-action-center-head {
     @apply min-w-0 flex-1;
   }
@@ -2641,7 +2644,7 @@ html[data-theme='dark'] {
     @apply border-slate-200 bg-white;
   }
 
-  /* KC-028A — dark: neutral card chrome; value color carries tone */
+  /* KC-028A ? dark: neutral card chrome; value color carries tone */
   html[data-theme='dark'] .acc-health-card.mc-kpi-tone-green,
   html[data-theme='dark'] .acc-health-card.mc-kpi-tone-amber,
   html[data-theme='dark'] .acc-health-card.mc-kpi-tone-red,
@@ -2825,7 +2828,7 @@ html[data-theme='dark'] {
   }
 
   /*
-   * KC-0051A — Mission Control hero: premium dark gradient + glass.
+   * KC-0051A ? Mission Control hero: premium dark gradient + glass.
    * Reuses --gradient-hero / --shadow-glass (same tokens as .enterprise-gradient-hero).
    * Typography/glass overrides are scoped under .mc-hero so panels keep surface contrast.
    */
@@ -3048,7 +3051,7 @@ html[data-theme='dark'] {
   }
 
   /*
-   * KC-0051A polish — hero action chips on dark gradient.
+   * KC-0051A polish ? hero action chips on dark gradient.
    * Force readable contrast in light + dark appearance (theme text tokens are light in dark mode).
    */
   .mc-hero .mc-quick-action {
@@ -3552,7 +3555,7 @@ html[data-theme='dark'] {
     background-image: linear-gradient(160deg, #f8fafc 0%, #ffffff 60%);
   }
 
-  /* KC-028A — dark mission-control KPI gradients use theme tokens */
+  /* KC-028A ? dark mission-control KPI gradients use theme tokens */
   html[data-theme='dark'] .mc-kpi-card.mc-kpi-tone-green {
     background-image: linear-gradient(
       160deg,
@@ -4561,7 +4564,7 @@ html[data-theme='dark'] {
   :root {
     --keyboard-inset: 0px;
     --native-nav-height: 4.75rem;
-    /* KC-0052 — Digital Rafeeq FAB clearance (global, not page-specific) */
+    /* KC-0052 ? Digital Rafeeq FAB clearance (global, not page-specific) */
     --fab-size: 3.5rem;
     --fab-gap: 1.5rem;
     --fab-gap-sm: 1.5rem;
@@ -4601,7 +4604,7 @@ html[data-theme='dark'] {
   }
 }
 
-/* ── KC-016 Native mobile experience & product polish ── */
+/* ?? KC-016 Native mobile experience & product polish ?? */
 @layer utilities {
   .native-shell {
     padding-left: env(safe-area-inset-left, 0px);
@@ -4609,7 +4612,7 @@ html[data-theme='dark'] {
   }
 
   .native-main {
-    /* KC-0091.1 — clear stacked Quick Actions (+) above Digital Rafeeq */
+    /* KC-0091.1 ? clear stacked Quick Actions (+) above Digital Rafeeq */
     padding-bottom: calc(
       5.25rem + (var(--fab-size) * 2) + 1.5rem + env(safe-area-inset-bottom, 0px)
     );
@@ -4635,7 +4638,7 @@ html[data-theme='dark'] {
     );
   }
 
-  /* KC-EVO-002 — shared modal viewport: keep fields + actions inside the usable screen */
+  /* KC-EVO-002 ? shared modal viewport: keep fields + actions inside the usable screen */
   .kc-modal-overlay {
     @apply fixed inset-0 z-50 flex items-end justify-center sm:items-center;
     box-sizing: border-box;
@@ -4825,7 +4828,7 @@ html[data-theme='dark'] {
   }
 }
 
-/* ========== KC-0126 — Product experience polish (presentation only) ========== */
+/* ========== KC-0126 ? Product experience polish (presentation only) ========== */
 
 .wa-preview {
   @apply rounded-xl border border-border/80 bg-[#e5ddd5] p-3 sm:p-4;
@@ -4951,7 +4954,7 @@ html[data-theme='dark'] {
   }
 }
 
-/* KC-0127 — Admin Command Center workflow panels */
+/* KC-0127 ? Admin Command Center workflow panels */
 .cc-quick-actions {
   position: sticky;
   top: 0.5rem;
@@ -5202,28 +5205,20 @@ html[data-theme='dark'] {
   }
 }
 
-/* Organisational Admin Dashboard (post-campaign situation view) */
+/* Organisational Admin Dashboard ? Claude Programme Overview composition */
 .orgdash-page {
   --orgdash-teal: var(--color-kc-shell-teal);
-  --orgdash-teal-soft: color-mix(in srgb, var(--color-kc-shell-teal) 12%, var(--color-kc-canvas));
+  --orgdash-teal-soft: var(--color-kc-shell-teal-soft);
   --orgdash-blue: var(--color-kc-shell);
-  --orgdash-blue-soft: color-mix(in srgb, var(--color-kc-shell) 8%, white);
-  --orgdash-purple: var(--color-kc-shell);
-  --orgdash-purple-soft: color-mix(in srgb, var(--color-kc-shell) 6%, var(--color-kc-canvas));
+  --orgdash-blue-soft: #eef2f7;
   --orgdash-amber: var(--color-kc-shell-attention);
-  --orgdash-amber-soft: color-mix(in srgb, var(--color-kc-shell-attention) 12%, white);
+  --orgdash-amber-soft: var(--color-accent-soft);
   --orgdash-saffron: var(--color-kc-shell-current);
-  --orgdash-muted: color-mix(in srgb, var(--color-kc-shell-ink) 68%, var(--color-kc-canvas));
+  --orgdash-muted: #64748b;
   background: var(--color-kc-canvas);
   overflow-x: clip;
   color: var(--color-kc-shell-ink);
   font-family: var(--font-urdu), var(--font-sans);
-  /*
-   * Noto Nastaliq (and Windows fallbacks) only ship 400–700. html sets
-   * -webkit-font-smoothing: antialiased, and several orgdash titles use 800.
-   * Chromium then synthesizes extra weight by painting a second offset copy —
-   * the pale “ghost” line on activity/objective Urdu, not a second DOM node.
-   */
   font-synthesis: none;
   -webkit-font-smoothing: auto;
   -moz-osx-font-smoothing: auto;
@@ -5232,19 +5227,17 @@ html[data-theme='dark'] {
 .orgdash-stack {
   display: flex;
   flex-direction: column;
-  gap: 1.15rem;
+  gap: 1.5rem;
 }
 
-.orgdash-hero,
-.orgdash-card {
-  border: 1px solid color-mix(in srgb, var(--color-kc-shell) 10%, var(--color-border));
-  border-radius: 1rem;
-  background: var(--color-surface, #ffffff);
-  box-shadow: none;
-}
-
+/* Navy hero only ? light working surface below */
 .orgdash-hero {
-  padding: 1.15rem 1.2rem 1.25rem;
+  border: 0;
+  border-radius: 1rem;
+  background: var(--color-kc-shell);
+  color: var(--color-kc-shell-text);
+  padding: 1.25rem 1.25rem 1.5rem;
+  box-shadow: var(--shadow-card-hover);
 }
 
 @media (min-width: 640px) {
@@ -5256,7 +5249,7 @@ html[data-theme='dark'] {
 .orgdash-hero-head {
   display: flex;
   flex-direction: column;
-  gap: 0.85rem;
+  gap: 1rem;
 }
 
 @media (min-width: 768px) {
@@ -5264,7 +5257,7 @@ html[data-theme='dark'] {
     flex-direction: row;
     align-items: flex-start;
     justify-content: space-between;
-    gap: 1.25rem;
+    gap: 1.5rem;
   }
 }
 
@@ -5273,7 +5266,7 @@ html[data-theme='dark'] {
   font-size: 1.55rem;
   font-weight: 700;
   line-height: 1.65;
-  color: var(--color-kc-shell-ink);
+  color: #f8fafc;
 }
 
 @media (min-width: 640px) {
@@ -5283,9 +5276,10 @@ html[data-theme='dark'] {
 }
 
 .orgdash-hero-sub {
-  margin: 0.25rem 0 0;
+  margin: 0.35rem 0 0;
   font-size: 0.95rem;
-  color: var(--orgdash-muted);
+  line-height: 1.7;
+  color: var(--color-kc-shell-text-muted);
 }
 
 .orgdash-year-block {
@@ -5293,14 +5287,14 @@ html[data-theme='dark'] {
   min-width: 12.5rem;
   flex-direction: column;
   align-items: flex-start;
-  gap: 0.15rem;
+  gap: 0.2rem;
 }
 
 .orgdash-year-kicker {
   margin: 0;
   font-size: 0.75rem;
-  font-weight: 700;
-  color: var(--orgdash-teal);
+  font-weight: 600;
+  color: var(--color-kc-shell-current);
 }
 
 .orgdash-year-value {
@@ -5309,13 +5303,13 @@ html[data-theme='dark'] {
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   line-height: 1.3;
-  color: var(--color-kc-shell-ink);
+  color: #f8fafc;
 }
 
 .orgdash-year-range {
   margin: 0 0 0.35rem;
   font-size: 0.8rem;
-  color: var(--orgdash-muted);
+  color: var(--color-kc-shell-text-muted);
 }
 
 .orgdash-year-field {
@@ -5325,140 +5319,266 @@ html[data-theme='dark'] {
   gap: 0.3rem;
 }
 
-.orgdash-year-label {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--orgdash-muted);
-}
-
 .orgdash-year-select {
   min-height: 2.75rem;
-  border: 1px solid color-mix(in srgb, var(--color-kc-shell) 12%, var(--color-border));
   border-radius: 0.5rem;
-  background: var(--color-kc-canvas);
   padding: 0.5rem 0.75rem;
   font-size: 0.875rem;
-  color: var(--color-kc-shell-ink);
 }
 
 .orgdash-hero-body {
-  display: block;
-  margin-top: 1.1rem;
+  margin-top: 1.25rem;
 }
 
-.orgdash-hero-ring {
-  display: flex;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.orgdash-hero-groups {
-  display: flex;
-  min-width: 0;
-  flex: 1;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.orgdash-group-title {
-  margin: 0 0 0.5rem;
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: #334155;
-}
-
-.orgdash-metric-grid {
+.orgdash-quiet-metrics {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.65rem;
+  gap: 0.75rem 1rem;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
 @media (min-width: 768px) {
-  .orgdash-metric-grid-people {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-@media (min-width: 1024px) {
-  .orgdash-metric-grid-people {
+  .orgdash-quiet-metrics {
     grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 }
 
-.orgdash-metric {
+.orgdash-quiet-metric {
   display: flex;
-  align-items: center;
-  gap: 0.55rem;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  padding: 0.35rem 0.15rem;
-}
-
-.orgdash-metric-people .orgdash-metric-value {
-  font-size: 1.4rem;
-}
-
-.orgdash-metric-relation {
-  background: transparent;
-  border: 0;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+  border-inline-start: 1px solid color-mix(in srgb, white 16%, transparent);
   padding-inline-start: 0.75rem;
-  border-inline-start: 3px solid var(--orgdash-saffron);
 }
 
-.orgdash-metric-icon {
+.orgdash-quiet-metric-label {
+  font-size: 0.75rem;
+  color: var(--color-kc-shell-text-muted);
+}
+
+.orgdash-quiet-metric-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: #f8fafc;
+}
+
+.orgdash-section-title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 650;
+  line-height: 1.55;
+  color: var(--color-kc-shell-ink);
+}
+
+.orgdash-section-sub {
+  margin: 0.25rem 0 0;
+  font-size: 0.875rem;
+  line-height: 1.65;
+  color: var(--orgdash-muted);
+}
+
+.orgdash-status-strip {
+  padding: 0.25rem 0 0;
+}
+
+.orgdash-status-strip-head {
   display: flex;
-  height: 2rem;
-  width: 2rem;
-  flex-shrink: 0;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+}
+
+.orgdash-stat-row-quiet {
+  gap: 0.5rem 1rem;
+  border-top: 1px solid color-mix(in srgb, var(--color-kc-shell) 8%, var(--color-border));
+  padding-top: 0.85rem;
+}
+
+.orgdash-stat-row-quiet dt {
+  color: var(--orgdash-muted);
+  font-weight: 500;
+}
+
+.orgdash-stat-row-quiet dd {
+  font-size: 1.15rem;
+  font-weight: 650;
+}
+
+.orgdash-work-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (min-width: 1024px) {
+  .orgdash-work-grid {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    gap: 1.75rem;
+  }
+}
+
+.orgdash-dept-panel {
+  min-width: 0;
+}
+
+.orgdash-dept-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid color-mix(in srgb, var(--color-kc-shell) 10%, var(--color-border));
+}
+
+.orgdash-dept-row {
+  border-bottom: 1px solid color-mix(in srgb, var(--color-kc-shell) 10%, var(--color-border));
+}
+
+.orgdash-dept-row-btn {
+  display: flex;
+  width: 100%;
+  min-height: 2.75rem;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+  border: 0;
+  background: transparent;
+  padding: 0.85rem 0.15rem;
+  text-align: start;
+  cursor: pointer;
+}
+
+.orgdash-dept-row-btn:hover,
+.orgdash-dept-row-btn:focus-visible {
+  background: color-mix(in srgb, var(--color-kc-shell) 3%, transparent);
+  outline: none;
+}
+
+.orgdash-dept-name {
+  font-size: 1rem;
+  font-weight: 650;
+  line-height: 1.6;
+  color: var(--color-kc-shell-ink);
+}
+
+.orgdash-dept-meta {
+  font-size: 0.8125rem;
+  color: var(--orgdash-muted);
+}
+
+.orgdash-dept-drill {
+  padding: 0 0.15rem 1rem;
+}
+
+.orgdash-attention-panel {
+  border: 1px solid color-mix(in srgb, var(--orgdash-amber) 28%, var(--color-border));
+  border-radius: 1rem;
+  background: var(--orgdash-amber-soft);
+  padding: 1rem 1.1rem 1.15rem;
+  box-shadow: none;
+}
+
+.orgdash-attention-list {
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.orgdash-attention-row {
+  display: flex;
+  min-height: 2.75rem;
   align-items: center;
-  justify-content: center;
-  border-radius: 0.65rem;
-  color: #ffffff;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--orgdash-amber) 18%, transparent);
+  padding: 0.55rem 0;
+  color: inherit;
+  text-decoration: none;
 }
 
-.orgdash-metric-icon-teal {
-  background: var(--orgdash-teal);
+.orgdash-attention-row:last-child {
+  border-bottom: 0;
 }
 
-.orgdash-metric-icon-blue {
-  background: var(--orgdash-teal);
+.orgdash-attention-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-kc-shell-ink);
 }
 
-.orgdash-metric-icon-purple {
-  background: var(--orgdash-teal);
+.orgdash-attention-count {
+  font-size: 1rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--orgdash-amber);
 }
 
-.orgdash-metric-icon-amber {
-  background: var(--orgdash-amber);
+.orgdash-open-section {
+  padding-top: 0.25rem;
+  border-top: 1px solid color-mix(in srgb, var(--color-kc-shell) 8%, var(--color-border));
 }
 
-.orgdash-metric-label,
+.orgdash-activity-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.orgdash-activity-row {
+  border-bottom: 1px solid color-mix(in srgb, var(--color-kc-shell) 8%, var(--color-border));
+  padding: 0.75rem 0.1rem;
+}
+
+.orgdash-activity-row:last-child {
+  border-bottom: 0;
+}
+
+.orgdash-card {
+  border: 1px solid color-mix(in srgb, var(--color-kc-shell) 10%, var(--color-border));
+  border-radius: 1rem;
+  background: var(--color-surface, #ffffff);
+  box-shadow: none;
+  padding: 1rem 1.1rem;
+}
+
+.orgdash-card-link {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--orgdash-teal);
+  text-decoration: none;
+}
+
+.orgdash-card-link:hover {
+  text-decoration: underline;
+}
+
+.orgdash-hero .orgdash-year-select {
+  border: 1px solid color-mix(in srgb, white 18%, transparent);
+  background: color-mix(in srgb, white 8%, transparent);
+  color: #f8fafc;
+}
+
+.orgdash-status-strip .orgdash-year-select,
+.orgdash-year-field-inline .orgdash-year-select {
+  border: 1px solid color-mix(in srgb, var(--color-kc-shell) 12%, var(--color-border));
+  background: var(--color-surface);
+  color: var(--color-kc-shell-ink);
+}
+
 .orgdash-kicker {
   margin: 0;
   font-size: 0.75rem;
   color: var(--orgdash-muted);
 }
 
-.orgdash-metric-value {
-  margin: 0.1rem 0 0;
-  font-size: 1.15rem;
-  font-weight: 700;
+.orgdash-metric-value,
+.orgdash-ijtema-number {
   font-variant-numeric: tabular-nums;
-  color: var(--color-kc-shell-ink);
-}
-
-.orgdash-card {
-  padding: 1rem 1.1rem;
-}
-
-@media (min-width: 640px) {
-  .orgdash-card {
-    padding: 1.2rem 1.4rem;
-  }
 }
 
 .orgdash-card-quiet {
@@ -5482,36 +5602,6 @@ html[data-theme='dark'] {
   font-size: 1.08rem;
   font-weight: 700;
   color: var(--color-kc-shell-ink);
-}
-
-.orgdash-card-icon {
-  display: inline-flex;
-  height: 1.75rem;
-  width: 1.75rem;
-  align-items: center;
-  justify-content: center;
-  border-radius: 0.5rem;
-  border: 1px solid color-mix(in srgb, var(--orgdash-teal) 22%, var(--color-border));
-  background: var(--orgdash-teal-soft);
-  color: var(--orgdash-teal);
-}
-
-.orgdash-card-icon-teal {
-  background: var(--orgdash-teal-soft);
-  color: var(--orgdash-teal);
-  border-color: color-mix(in srgb, var(--orgdash-teal) 22%, var(--color-border));
-}
-
-.orgdash-card-icon-blue {
-  background: var(--orgdash-blue-soft);
-  color: var(--orgdash-blue);
-  border-color: color-mix(in srgb, var(--orgdash-blue) 18%, var(--color-border));
-}
-
-.orgdash-card-icon-amber {
-  background: var(--orgdash-amber-soft);
-  color: var(--orgdash-amber);
-  border-color: color-mix(in srgb, var(--orgdash-amber) 22%, var(--color-border));
 }
 
 .orgdash-card-link {
@@ -6048,7 +6138,7 @@ html[data-theme='dark'] {
   min-height: 2.75rem;
 }
 
-/* Increment 03 — Rukn Home composition (shell tokens; not a new design system) */
+/* Increment 03 ? Rukn Home composition (shell tokens; not a new design system) */
 .rukn-home-page {
   display: flex;
   flex-direction: column;
@@ -6479,4 +6569,181 @@ html[data-theme='dark'] {
   .rukn-org-activities {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
+}
+
+/* Claude ? Rukn Responsibilities (open Urdu-first list) */
+.rukn-resp {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.rukn-resp-head {
+  padding-bottom: 0.25rem;
+}
+
+.rukn-resp-title {
+  margin: 0;
+  font-family: var(--font-urdu);
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1.75;
+  color: var(--color-kc-shell-ink);
+}
+
+.rukn-resp-sub {
+  margin: 0.35rem 0 0;
+  font-size: 0.875rem;
+  line-height: 1.7;
+  color: var(--color-secondary);
+}
+
+.rukn-resp-empty {
+  margin: 0;
+  font-family: var(--font-urdu);
+  font-size: 0.95rem;
+  line-height: 1.85;
+  color: var(--color-secondary);
+}
+
+.rukn-resp-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid color-mix(in srgb, var(--color-kc-shell) 10%, var(--color-border));
+}
+
+.rukn-resp-row {
+  border-bottom: 1px solid color-mix(in srgb, var(--color-kc-shell) 10%, var(--color-border));
+  padding: 1rem 0.1rem;
+}
+
+.rukn-resp-name {
+  margin: 0;
+  font-family: var(--font-urdu);
+  font-size: 1.05rem;
+  font-weight: 650;
+  line-height: 1.75;
+  color: var(--color-kc-shell-ink);
+}
+
+.rukn-resp-meta {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0.65rem 0 0;
+}
+
+.rukn-resp-meta > div {
+  display: grid;
+  grid-template-columns: minmax(5.5rem, 30%) minmax(0, 1fr);
+  gap: 0.5rem;
+  align-items: baseline;
+}
+
+.rukn-resp-meta dt {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--color-secondary);
+}
+
+.rukn-resp-meta dd {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.65;
+  color: var(--color-text-heading);
+}
+
+.rukn-resp-status {
+  display: inline;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-kc-shell-ink);
+}
+
+.rukn-resp-link {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  margin-top: 0.55rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.rukn-resp-link:hover,
+.rukn-resp-link:focus-visible {
+  text-decoration: underline;
+}
+
+/* Claude ? Rukn Activity Detail (open label/value, no context card) */
+.rukn-activity-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.rukn-activity-detail-facts {
+  display: grid;
+  gap: 0.85rem;
+  margin: 0;
+}
+
+.rukn-activity-detail-fact {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.rukn-activity-detail-fact dt {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--color-secondary);
+}
+
+.rukn-activity-detail-fact dd {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.75;
+  color: var(--color-text-heading);
+}
+
+.rukn-activity-detail-years {
+  border-top: 1px solid color-mix(in srgb, var(--color-kc-shell) 10%, var(--color-border));
+  padding-top: 0.85rem;
+}
+
+.rukn-activity-detail-years-label {
+  margin: 0 0 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-secondary);
+}
+
+.rukn-activity-detail-years ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rukn-activity-detail-years li {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-kc-shell) 8%, var(--color-border));
+  padding: 0.45rem 0;
+  font-size: 0.875rem;
+}
+
+.rukn-activity-detail-years li:last-child {
+  border-bottom: 0;
+}
+
+.rukn-activity-detail-note {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.7;
+  color: var(--color-secondary);
 }

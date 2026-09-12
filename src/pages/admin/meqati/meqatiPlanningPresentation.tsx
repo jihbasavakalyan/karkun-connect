@@ -14,7 +14,6 @@ import {
 } from '@/lib/planning/activityYearStatus'
 import { resolveMeqatiYear } from '@/lib/dashboard/meqatiYear'
 import type { IconName } from '@/design-system/iconNames'
-import { Icon } from '@/components/ui/Icon'
 
 const PROGRAMME_STATUS_URDU: Record<LocalProgrammeStatus, string> = {
   draft: 'مسودہ',
@@ -155,10 +154,10 @@ export function CompactActivityList({
 
   return (
     <>
-      <div className="hidden overflow-x-hidden rounded-2xl bg-surface px-4 py-3 shadow-card lg:block">
+      <div className="hidden overflow-x-hidden lg:block">
         <table className="w-full table-fixed text-start text-sm">
           <thead>
-            <tr className="text-xs text-secondary">
+            <tr className="border-b border-border text-xs text-secondary">
               <th className="w-[32%] pb-2 ps-0 font-medium">سرگرمی</th>
               <th className="w-[16%] pb-2 font-medium">ذمہ دار</th>
               <th className="w-[16%] pb-2 font-medium">نظام الاوقات</th>
@@ -171,8 +170,8 @@ export function CompactActivityList({
             {rows.map((row) => {
               const meta = activityMeta(row, ruknNameById, resolvedYearKey)
               return (
-                <tr key={row.id} className="align-top">
-                  <td className="py-2.5 pe-3">
+                <tr key={row.id} className="align-top border-b border-border/60 last:border-b-0">
+                  <td className="py-3 pe-3">
                     <p className={activityNameClass}>{row.name}</p>
                     {showUnmappedState ? (
                       <p className="mt-1 text-xs text-secondary">ہدف: غیر متعین</p>
@@ -205,11 +204,11 @@ export function CompactActivityList({
         </table>
       </div>
 
-      <ul className="overflow-x-hidden rounded-2xl bg-surface px-4 shadow-card lg:hidden">
+      <ul className="overflow-x-hidden lg:hidden">
         {rows.map((row) => {
           const meta = activityMeta(row, ruknNameById, resolvedYearKey)
           return (
-            <li key={row.id} className="border-b border-border/50 py-3 last:border-b-0">
+            <li key={row.id} className="border-b border-border/60 py-3 last:border-b-0">
               <p className={activityNameClass}>{row.name}</p>
               {showUnmappedState ? (
                 <p className="mt-1 text-xs text-secondary">ہدف: غیر متعین</p>
@@ -248,36 +247,22 @@ export function ShobahHeadCard({ item, onOpen }: ShobahHeadCardProps) {
     <button
       type="button"
       onClick={() => onOpen(item.shobah.id)}
-      className="meqati-head-card flex min-h-28 w-full items-center justify-between gap-3 rounded-2xl border px-4 py-4 text-start"
-      style={{
-        backgroundColor: visual.wash,
-        borderColor: visual.accent,
-        color: visual.ink,
-      }}
+      className="meqati-head-card flex min-h-20 w-full items-center justify-between gap-3 border-b border-border px-1 py-4 text-start"
+      style={{ color: visual.ink }}
     >
       <span className="min-w-0">
-        <span className="block text-xs font-semibold tracking-wide" style={{ color: visual.accent }}>
-          {code}
-        </span>
-        <span className="mt-1 block text-lg font-semibold" style={{ color: visual.ink }}>
+        <span className="block text-xs font-medium text-secondary">{code}</span>
+        <span className="mt-1 block text-lg font-semibold whitespace-normal break-words">
           {item.shobah.name}
         </span>
-        <span className="mt-2 block text-sm opacity-80">
+        <span className="mt-2 block text-sm text-secondary">
           {item.objectiveCount} اہداف · {item.activityCount} سرگرمیاں
         </span>
-        <span className="mt-1 block text-xs opacity-70">
+        <span className="mt-1 block text-xs text-secondary">
           {item.mappedCount} مربوط · {item.unmappedCount} بغیر ہدف
         </span>
       </span>
-      <span className="flex shrink-0 flex-col items-center gap-3">
-        <span
-          className="flex h-12 w-12 items-center justify-center rounded-full bg-white/80"
-          style={{ color: visual.accent }}
-        >
-          <Icon name={visual.icon} size="md" />
-        </span>
-        <Chevron />
-      </span>
+      <Chevron />
     </button>
   )
 }
@@ -299,19 +284,20 @@ export function ObjectiveNavBox({
   activityCount,
   mappedCount,
   unmappedCount,
-  accent,
+  accent: _accent,
   onOpen,
   onEdit,
 }: ObjectiveNavBoxProps) {
+  void _accent
   return (
     <li>
       <div
-        className="flex w-full items-stretch overflow-hidden rounded-2xl border bg-white shadow-card"
-        style={{ borderColor: accent }}
+        className="flex w-full items-stretch overflow-hidden border-b border-border bg-transparent"
+        style={{ borderColor: 'color-mix(in srgb, var(--color-border) 100%, transparent)' }}
       >
         <button
           type="button"
-          className="min-h-14 min-w-0 flex-1 px-4 py-4 text-start"
+          className="min-h-14 min-w-0 flex-1 px-1 py-4 text-start"
           onClick={onOpen}
         >
           <span className="block text-xs text-secondary">

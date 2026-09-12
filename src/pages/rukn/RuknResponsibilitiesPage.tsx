@@ -25,11 +25,9 @@ export function RuknResponsibilitiesPage() {
 
   return (
     <PageShell variant="narrow" className="app-screen">
-      <header className="app-screen-header">
-        <h1 className="app-screen-title">Responsibilities</h1>
-        <p className="app-screen-subtitle" dir="rtl" lang="ur">
-          رکن کی ذمہ داریاں · میقاتی ذمہ داری
-        </p>
+      <header className="app-screen-header" dir="rtl" lang="ur">
+        <h1 className="app-screen-title">میری ذمہ داریاں</h1>
+        <p className="app-screen-subtitle">Responsibilities · میقاتی ذمہ داری</p>
       </header>
       {backgroundReady ? (
         <RuknResponsibilitiesHomePanel ruknId={ruknId} />

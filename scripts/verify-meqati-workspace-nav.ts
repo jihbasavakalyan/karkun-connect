@@ -29,10 +29,15 @@ assert.match(workspace, /meqati-planning-canvas/)
 assert.match(workspace, /StatCard/)
 const canvasCss = readFileSync('src/pages/admin/meqati/meqatiPlanningCanvas.css', 'utf8')
 assert.match(canvasCss, /repeat\(5, minmax\(0, 1fr\)\)/)
-assert.match(canvasCss, /repeat\(3, minmax\(0, 1fr\)\)/)
+assert.match(canvasCss, /minmax\(0, 1fr\)/)
+assert.match(canvasCss, /meqati-dept-hero/)
+assert.match(canvasCss, /#f7f8fa/)
 assert.doesNotMatch(workspace, /md:grid-cols-2/)
 assert.doesNotMatch(workspace, /xl:grid-cols-3/)
 assert.match(workspace, /CompactActivityList/)
+assert.match(workspace, /meqati-dept-hero/)
+assert.doesNotMatch(workspace, /rounded-full bg-white\/80/)
+assert.doesNotMatch(workspace, /visual\.wash/)
 
 const presentation = readFileSync(
   'src/pages/admin/meqati/meqatiPlanningPresentation.tsx',
