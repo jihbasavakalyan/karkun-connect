@@ -48,6 +48,8 @@ export type OrganisationalStatusCounts = {
   completed: number
   inProgress: number
   remaining: number
+  /** Honest unset — yearStatuses[yearKey] omitted. Never inferred as remaining. */
+  unset: number
   progressPct: number
 }
 
@@ -171,7 +173,7 @@ export function formatProgrammeSchedule(
 }
 
 function emptyCounts(): OrganisationalStatusCounts {
-  return { activities: 0, completed: 0, inProgress: 0, remaining: 0, progressPct: 0 }
+  return { activities: 0, completed: 0, inProgress: 0, remaining: 0, unset: 0, progressPct: 0 }
 }
 
 function countsFromStatuses(
@@ -181,12 +183,16 @@ function countsFromStatuses(
   const completed = statuses.filter((row) => row === 'completed').length
   const inProgress = statuses.filter((row) => row === 'in_progress').length
   const remaining = statuses.filter((row) => row === 'remaining').length
+  const unset = statuses.filter((row) => row == null).length
+  const recorded = completed + inProgress + remaining
   return {
     activities,
     completed,
     inProgress,
     remaining,
-    progressPct: activities === 0 ? 0 : Math.round((completed / activities) * 100),
+    unset,
+    // Progress only among recorded implementation statuses — unset stays honest.
+    progressPct: recorded === 0 ? 0 : Math.round((completed / recorded) * 100),
   }
 }
 

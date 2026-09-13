@@ -60,7 +60,7 @@ export function buildRuknOrganisationalInformation(
   for (const item of items) {
     if (item.yearStatusLabel === 'مکمل') completed += 1
     else if (item.yearStatusLabel === 'جاری') inProgress += 1
-    else if (item.yearStatusLabel === 'باقی') remaining += 1
+    else if (item.yearStatusLabel === 'شروع نہیں') remaining += 1
   }
   const activities = items.length
   const statusKnown = completed + inProgress + remaining

@@ -147,6 +147,10 @@ type CompactActivityListProps = {
   showUnmappedState?: boolean
   /** Meqati year key for عمل درآمد. Defaults to the current Karachi Meqati year (same as Home). */
   yearKey?: string
+  /** Optional شعبہ names for cross-head data-quality filter lists. */
+  shobahNameById?: ReadonlyMap<string, string>
+  /** Action button label — default تفصیل; use ہدف منتخب کریں for unresolved filter. */
+  actionLabel?: string
 }
 
 function activityMeta(
@@ -172,9 +176,12 @@ export function CompactActivityList({
   onOpen,
   showUnmappedState = false,
   yearKey,
+  shobahNameById,
+  actionLabel = 'تفصیل',
 }: CompactActivityListProps) {
   if (rows.length === 0) return null
   const resolvedYearKey = yearKey ?? resolveMeqatiYear().key
+  const showShobah = Boolean(shobahNameById)
 
   return (
     <>
@@ -182,18 +189,20 @@ export function CompactActivityList({
         <table className="w-full table-fixed text-start text-sm">
           <thead>
             <tr className="border-b border-border text-xs text-secondary">
-              <th className="w-[32%] pb-2 ps-0 font-medium">سرگرمی</th>
-              <th className="w-[16%] pb-2 font-medium">ذمہ دار</th>
-              <th className="w-[16%] pb-2 font-medium">نظام الاوقات</th>
+              <th className={`${showShobah ? 'w-[28%]' : 'w-[32%]'} pb-2 ps-0 font-medium`}>سرگرمی</th>
+              {showShobah ? <th className="w-[14%] pb-2 font-medium">شعبہ</th> : null}
+              <th className="w-[14%] pb-2 font-medium">ذمہ دار</th>
+              <th className="w-[14%] pb-2 font-medium">نظام الاوقات</th>
               <th className="w-[12%] pb-2 font-medium">عمل درآمد</th>
-              <th className="w-[12%] pb-2 font-medium">حالت</th>
-              <th className="w-[12%] pb-2 pe-0 font-medium">تفصیل</th>
+              <th className="w-[10%] pb-2 font-medium">حالت</th>
+              <th className="w-[14%] pb-2 pe-0 font-medium">{actionLabel}</th>
             </tr>
           </thead>
           <tbody>
             {rows.map((row) => {
               const meta = activityMeta(row, ruknNameById, resolvedYearKey)
               const unmapped = showUnmappedState || !isMappedActivity(row)
+              const shobahName = shobahNameById?.get(row.shobahId ?? '') ?? '—'
               return (
                 <tr
                   key={row.id}
@@ -214,7 +223,7 @@ export function CompactActivityList({
                     {unmapped ? (
                       <p className="mt-1 text-xs text-amber-700">
                         <span className="inline-flex items-center gap-1 rounded bg-amber-500/10 px-1.5 py-0.5 text-xs font-medium text-amber-800 border border-amber-300/60">
-                          بغیر ہدف
+                          حالیہ ہدف: بغیر ہدف
                         </span>
                       </p>
                     ) : null}
@@ -222,6 +231,11 @@ export function CompactActivityList({
                       <p className="mt-1 text-xs text-secondary">خلاصہ: {meta.summary}</p>
                     ) : null}
                   </td>
+                  {showShobah ? (
+                    <td className="py-2.5 pe-3 text-secondary whitespace-normal break-words">
+                      {shobahName}
+                    </td>
+                  ) : null}
                   <td className="py-2.5 pe-3 text-secondary whitespace-normal break-words">
                     {meta.responsible}
                   </td>
@@ -239,7 +253,7 @@ export function CompactActivityList({
                         onOpen(row)
                       }}
                     >
-                      تفصیل
+                      {actionLabel}
                     </button>
                   </td>
                 </tr>
@@ -253,6 +267,7 @@ export function CompactActivityList({
         {rows.map((row) => {
           const meta = activityMeta(row, ruknNameById, resolvedYearKey)
           const unmapped = showUnmappedState || !isMappedActivity(row)
+          const shobahName = shobahNameById?.get(row.shobahId ?? '') ?? '—'
           return (
             <li
               key={row.id}
@@ -269,10 +284,13 @@ export function CompactActivityList({
               }}
             >
               <p className={activityNameClass}>{row.name}</p>
+              {showShobah ? (
+                <p className="mt-1 text-xs text-secondary">شعبہ: {shobahName}</p>
+              ) : null}
               {unmapped ? (
                 <p className="mt-1 text-xs text-amber-700">
                   <span className="inline-flex items-center gap-1 rounded bg-amber-500/10 px-1.5 py-0.5 text-xs font-medium text-amber-800 border border-amber-300/60">
-                    بغیر ہدف
+                    حالیہ ہدف: بغیر ہدف
                   </span>
                 </p>
               ) : null}
@@ -291,7 +309,7 @@ export function CompactActivityList({
                   onOpen(row)
                 }}
               >
-                تفصیل
+                {actionLabel}
               </button>
             </li>
           )

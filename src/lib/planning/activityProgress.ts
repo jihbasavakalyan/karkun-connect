@@ -1,29 +1,32 @@
 /**
  * Meqati Activity progress calculation — pure, non-destructive, derived.
- * Complies with Part 6 of Meqati Mansoba governance:
- * - CASE A: Numeric target (e.g. 32 / 50 -> 64%, no manual % typing)
- * - CASE B: Recurring activity (derived from scheduled occurrences)
- * - CASE C: Qualitative activity (uses status: شروع نہیں / جاری / مکمل / توجہ درکار; no fake %)
- * - CASE D: Operational tracks (derived from authoritative system data where available)
+ *
+ * SOURCE OF TRUTH (general Meqati activities):
+ *   LocalProgramme.yearStatuses[yearKey]
+ * Occurrences are planned/scheduled calendar projections and are NOT
+ * implementation evidence. Do not infer completion from occurrence existence,
+ * schedule, calendar rows, or report text.
+ *
+ * Progress rules:
+ * - CASE A: Numeric target (e.g. 32 / 50 -> 64%) when achieved/target is present
+ * - CASE B (recurring): percentage ONLY when authoritative execution data exists
+ *   (not supported via planned Occurrence rows alone — fall through to qualitative)
+ * - CASE C: Qualitative — status only (شروع نہیں / جاری / مکمل / حالت متعین نہیں)
+ * - Attention (توجہ درکار) is a DERIVED management condition, never a stored status
  */
 
 import type { LocalProgramme } from '@/types/localProgramme.types'
-import type { Occurrence } from '@/types/occurrence.types'
 import type { ActivityYearStatus } from '@/lib/planning/activityYearStatus'
+import {
+  formatActivityYearStatusLabel,
+  resolveActivityYearStatus,
+} from '@/lib/planning/activityYearStatus'
 
 export type ActivityProgressResult =
   | {
       kind: 'numeric'
       current: number
       target: number
-      percentage: number
-      label: string
-      displayUrdu: string
-    }
-  | {
-      kind: 'recurring'
-      completed: number
-      due: number
       percentage: number
       label: string
       displayUrdu: string
@@ -53,12 +56,34 @@ export function parseNumericTargetRatio(
   return { current, target }
 }
 
+/**
+ * Derived attention condition — does NOT mutate or replace implementation status.
+ * Supported by actual configuration gaps only (no invented overdue thresholds).
+ */
+export function deriveActivityRequiresAttention(
+  activity: Pick<LocalProgramme, 'objectiveId' | 'responsibleRuknId' | 'frequency'>,
+): boolean {
+  return (
+    !activity.objectiveId?.trim() ||
+    !activity.responsibleRuknId?.trim() ||
+    !activity.frequency
+  )
+}
+
 export function computeActivityProgress(params: {
-  activity: Pick<LocalProgramme, 'id' | 'name' | 'summary' | 'yearStatuses' | 'objectiveId' | 'responsibleRuknId' | 'frequency'>
+  activity: Pick<
+    LocalProgramme,
+    | 'id'
+    | 'name'
+    | 'summary'
+    | 'yearStatuses'
+    | 'objectiveId'
+    | 'responsibleRuknId'
+    | 'frequency'
+  >
   yearKey: string
-  occurrences?: readonly Occurrence[]
 }): ActivityProgressResult {
-  const { activity, yearKey, occurrences = [] } = params
+  const { activity, yearKey } = params
 
   // CASE A: Numeric target in summary or name (e.g. "32 / 50")
   const numericFromSummary = parseNumericTargetRatio(activity.summary)
@@ -78,45 +103,18 @@ export function computeActivityProgress(params: {
     }
   }
 
-  // CASE B: Recurring activity with occurrences
-  const activityOccurrences = occurrences.filter(
-    (row) => row.programmeId === activity.id && row.status !== 'archived',
-  )
-  if (activityOccurrences.length > 0) {
-    const completed = activityOccurrences.filter((row) => row.status === 'closed').length
-    const due = activityOccurrences.length
-    const percentage = Math.min(100, Math.max(0, Math.round((completed / due) * 100)))
-    return {
-      kind: 'recurring',
-      completed,
-      due,
-      percentage,
-      label: `${completed} / ${due} (${percentage}%)`,
-      displayUrdu: `${completed} مکمل / ${due} شیڈول (${percentage}%)`,
-    }
-  }
-
-  // CASE C: Qualitative activity
-  const rawStatus = activity.yearStatuses?.[yearKey] ?? null
-  const statusUrdu =
-    rawStatus === 'completed'
-      ? 'مکمل'
-      : rawStatus === 'in_progress'
-        ? 'جاری'
-        : rawStatus === 'remaining'
-          ? 'شروع نہیں'
-          : 'غیر متعین'
-
-  const requiresAttention =
-    !activity.objectiveId?.trim() ||
-    !activity.responsibleRuknId?.trim() ||
-    !activity.frequency
+  // CASE B / C: Recurring without authoritative execution instances, and qualitative
+  // activities — show yearStatuses only. Planned occurrences must not invent %.
+  const rawStatus = resolveActivityYearStatus(activity.yearStatuses, yearKey)
+  const statusUrdu = formatActivityYearStatusLabel(rawStatus)
+  const requiresAttention = deriveActivityRequiresAttention(activity)
 
   return {
     kind: 'qualitative',
     status: rawStatus,
     statusUrdu,
     requiresAttention,
-    displayUrdu: requiresAttention && rawStatus !== 'completed' ? `${statusUrdu} · توجہ درکار` : statusUrdu,
+    // Status and attention are adjacent display facts — attention never replaces status.
+    displayUrdu: statusUrdu,
   }
 }

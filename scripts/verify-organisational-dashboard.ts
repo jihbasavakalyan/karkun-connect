@@ -78,10 +78,10 @@ assert.equal(
   resolveActivityYearStatus({ '2026-27': 'remaining' }, '2026-27'),
   'remaining',
 )
-assert.equal(formatActivityYearStatusLabel(null), 'غیر متعین')
+assert.equal(formatActivityYearStatusLabel(null), 'حالت متعین نہیں')
 assert.equal(formatActivityYearStatusLabel('completed'), 'مکمل')
 assert.equal(formatActivityYearStatusLabel('in_progress'), 'جاری')
-assert.equal(formatActivityYearStatusLabel('remaining'), 'باقی')
+assert.equal(formatActivityYearStatusLabel('remaining'), 'شروع نہیں')
 
 const isolated = normalizeActivityYearStatuses({
   '2024-25': 'completed',
@@ -192,6 +192,7 @@ assert.equal(formatProgrammeSchedule(undefined), 'غیر متعین')
   assert.equal(row.completed, 1)
   assert.equal(row.inProgress, 1)
   assert.equal(row.remaining, 0)
+  assert.equal(row.unset, 1)
   assert.equal(row.objectives.length, 1)
   assert.equal(row.objectives[0]?.id, 'H01-O01')
   assert.deepEqual(
@@ -303,6 +304,9 @@ assert.match(stack, /مسودہ/)
 assert.match(stack, /progressDisplay/)
 assert.match(stack, /yearStatusLabel/)
 assert.match(stack, /completed: 'مکمل'/)
+assert.match(stack, /remaining: 'شروع نہیں'/)
+assert.match(stack, /حالت متعین نہیں/)
+assert.match(stack, /counts\.unset/)
 assert.match(stack, /خلاصہ:/)
 assert.match(stack, /activity\.summary \? /)
 

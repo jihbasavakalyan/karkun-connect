@@ -51,7 +51,8 @@ export function RuknMeqatiMansoobaPage() {
       return row.mansoobaId === mansooba.id
     })
     const shobahItems = buildShobahOverviewItems(shobahs, objectives, programmes)
-    const selectedShobahId = navView.level === 'overview' ? null : navView.shobahId
+    const selectedShobahId =
+      navView.level === 'overview' || navView.level === 'unmapped-all' ? null : navView.shobahId
     const visibleObjectives = selectedShobahId
       ? objectives
           .filter((row) => row.shobahId === selectedShobahId)
@@ -61,7 +62,10 @@ export function RuknMeqatiMansoobaPage() {
     const shobahActivities = selectedShobahId
       ? programmes.filter((row) => row.shobahId === selectedShobahId)
       : []
-    const unmappedActivities = shobahActivities.filter((row) => !isMappedActivity(row))
+    const unmappedActivities =
+      navView.level === 'unmapped-all'
+        ? programmes.filter((row) => !isMappedActivity(row)).slice().sort((a, b) => a.name.localeCompare(b.name))
+        : shobahActivities.filter((row) => !isMappedActivity(row))
     const totals = {
       shobahs: shobahItems.length,
       objectives: objectives.length,

@@ -79,10 +79,10 @@ const ACTIVITY_KIND_OPTIONS: { value: ProgrammeKind; label: string }[] = [
 ]
 
 const ACTIVITY_YEAR_STATUS_OPTIONS: { value: '' | ActivityYearStatus; label: string }[] = [
-  { value: '', label: 'غیر متعین' },
+  { value: '', label: 'حالت متعین نہیں' },
   { value: 'completed', label: 'مکمل' },
   { value: 'in_progress', label: 'جاری' },
-  { value: 'remaining', label: 'باقی' },
+  { value: 'remaining', label: 'شروع نہیں' },
 ]
 
 const MEQATI_PLAN_YEARS = listMeqatiPlanYears()
@@ -405,7 +405,7 @@ export function AdminPlanningPage() {
   }, [shobahs, selectedMansoobaId])
 
   const selectedShobahIdResolved =
-    navView.level === 'overview'
+    navView.level === 'overview' || navView.level === 'unmapped-all'
       ? null
       : visibleShobahs.some((row) => row.id === navView.shobahId)
         ? navView.shobahId
@@ -980,7 +980,6 @@ export function AdminPlanningPage() {
         frequency: buildActivityFrequency(activityForm),
       },
       yearKey: currentYearKey,
-      occurrences,
     })
   }, [
     editingActivityId,
@@ -996,7 +995,6 @@ export function AdminPlanningPage() {
     activityForm.frequencyNote,
     activityObjectiveId,
     currentYearKey,
-    occurrences,
   ])
 
   return (
@@ -1718,7 +1716,7 @@ export function AdminPlanningPage() {
                   }))
                 }
               >
-                غیر متعین
+                حالت متعین نہیں
               </button>
             </div>
           </div>
@@ -1731,7 +1729,7 @@ export function AdminPlanningPage() {
                 {calculatedProgress.displayUrdu}
               </span>
             </div>
-            {calculatedProgress.kind === 'numeric' || calculatedProgress.kind === 'recurring' ? (
+            {calculatedProgress.kind === 'numeric' ? (
               <div className="h-2 w-full overflow-hidden rounded-full bg-border/60">
                 <div
                   className="h-full bg-primary transition-all duration-300"
@@ -1740,7 +1738,10 @@ export function AdminPlanningPage() {
               </div>
             ) : (
               <p className="text-xs text-secondary">
-                معیاری سرگرمی: صورتحال کے مطابق ٹریک ہو رہی ہے۔ کوئی مصنوعی فیصد فرض نہیں کیا گیا۔
+                معیاری سرگرمی: صورتحال سال کی عمل درآمد حالت سے ٹریک ہوتی ہے۔ مصنوعی فیصد یا شیڈول وقوعات سے استنباط نہیں کیا گیا۔
+                {calculatedProgress.kind === 'qualitative' && calculatedProgress.requiresAttention
+                  ? ' · توجہ درکار (مشتق حالت — عمل درآمد کو تبدیل نہیں کرتی)'
+                  : null}
               </p>
             )}
           </div>

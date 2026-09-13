@@ -27,6 +27,7 @@ export type MeqatiNavView =
   | { level: 'shobah'; shobahId: string }
   | { level: 'objective'; shobahId: string; objectiveId: string }
   | { level: 'unmapped'; shobahId: string }
+  | { level: 'unmapped-all' }
 
 type Totals = {
   shobahs: number
@@ -139,7 +140,7 @@ export function MeqatiPlanningWorkspace(props: MeqatiPlanningWorkspaceProps) {
   const onEditObjective = readOnly ? undefined : props.onEditObjective
   const onCreateActivity = readOnly ? undefined : props.onCreateActivity
   const selectedShobah =
-    view.level === 'overview'
+    view.level === 'overview' || view.level === 'unmapped-all'
       ? null
       : (shobahItems.find((item) => item.shobah.id === view.shobahId) ?? null)
   const selectedObjective =
@@ -187,13 +188,37 @@ export function MeqatiPlanningWorkspace(props: MeqatiPlanningWorkspaceProps) {
         </header>
 
         {mansooba ? (
-          <ul className="meqati-stat-grid grid grid-cols-2 gap-0">
-            {STAT_CARDS.map((card) => (
-              <li key={card.key}>
-                <StatCard value={totals[card.key]} label={card.label} />
-              </li>
-            ))}
-          </ul>
+          <>
+            <ul className="meqati-stat-grid grid grid-cols-2 gap-0">
+              {STAT_CARDS.map((card) => (
+                <li key={card.key}>
+                  {card.key === 'unmapped' && totals.unmapped > 0 ? (
+                    <button
+                      type="button"
+                      className="w-full text-start"
+                      onClick={() => onViewChange({ level: 'unmapped-all' })}
+                      aria-label="بغیر ہدف فلٹر"
+                    >
+                      <StatCard value={totals[card.key]} label={`${card.label} فلٹر`} />
+                    </button>
+                  ) : (
+                    <StatCard value={totals[card.key]} label={card.label} />
+                  )}
+                </li>
+              ))}
+            </ul>
+            {totals.unmapped > 0 ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  className="inline-flex min-h-11 items-center rounded-full border border-amber-300 bg-amber-50 px-4 text-sm font-semibold text-amber-900"
+                  onClick={() => onViewChange({ level: 'unmapped-all' })}
+                >
+                  بغیر ہدف فلٹر · {totals.unmapped} سرگرمیاں
+                </button>
+              </div>
+            ) : null}
+          </>
         ) : (
           <p className="text-sm text-secondary">تنظیمی جڑ۔ صرف ایک منصوبہ۔</p>
         )}
@@ -380,6 +405,44 @@ export function MeqatiPlanningWorkspace(props: MeqatiPlanningWorkspaceProps) {
     )
   }
 
+  if (view.level === 'unmapped-all') {
+    const shobahNameById = new Map(
+      shobahItems.map((item) => [item.shobah.id, item.shobah.name] as const),
+    )
+    return (
+      <Canvas>
+        <div className="space-y-8">
+          <header>
+            <BackBar label="میقاتی منصوبہ" onClick={() => onViewChange({ level: 'overview' })} />
+            <div className="meqati-objective-band">
+              <h2 className="text-2xl font-semibold text-text-heading">
+                بغیر ہدف فلٹر ({unmappedActivities.length} سرگرمیاں)
+              </h2>
+              <p className="mt-3 max-w-xl text-sm text-secondary">
+                H01–H09 میں وہ سرگرمیاں جن کا objectiveId خالی ہے۔ نظام خود سے ہدف کا اندازہ نہیں لگاتا —
+                تصدیق شدہ ہدف منتخب کریں۔
+              </p>
+            </div>
+          </header>
+          {unmappedActivities.length === 0 ? (
+            <p className="border-b border-border px-1 py-6 text-center text-sm text-secondary">
+              تمام سرگرمیاں ہدف سے مربوط ہیں۔
+            </p>
+          ) : (
+            <CompactActivityList
+              rows={unmappedActivities}
+              ruknNameById={ruknNameById}
+              onOpen={onOpenActivity}
+              showUnmappedState
+              shobahNameById={shobahNameById}
+              actionLabel="ہدف منتخب کریں"
+            />
+          )}
+        </div>
+      </Canvas>
+    )
+  }
+
   return (
     <Canvas>
     <div className="space-y-8">
@@ -409,6 +472,7 @@ export function MeqatiPlanningWorkspace(props: MeqatiPlanningWorkspaceProps) {
         ruknNameById={ruknNameById}
         onOpen={onOpenActivity}
         showUnmappedState
+        actionLabel="ہدف منتخب کریں"
       />
     </div>
     </Canvas>

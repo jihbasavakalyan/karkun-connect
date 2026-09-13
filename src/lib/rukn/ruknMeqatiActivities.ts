@@ -36,7 +36,7 @@ export type RuknMeqatiActivityItem = {
 const YEAR_STATUS_LABEL: Record<ActivityYearStatus, string> = {
   completed: 'مکمل',
   in_progress: 'جاری',
-  remaining: 'باقی',
+  remaining: 'شروع نہیں',
 }
 
 function formatOneRuknCadence(frequency: ProgrammeFrequency): string {

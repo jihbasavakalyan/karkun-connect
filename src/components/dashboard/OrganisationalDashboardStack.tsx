@@ -50,11 +50,11 @@ function EmptyMeqatiNote({ planHref = ROUTES.ADMIN_PLANNING }: MeqatiPlanLinkPro
 const STATUS_LABEL: Record<MeqatiYearActivityStatus, string> = {
   completed: 'مکمل',
   in_progress: 'جاری',
-  remaining: 'باقی',
+  remaining: 'شروع نہیں',
 }
 
 function yearStatusLabel(status: MeqatiYearActivityStatus | null): string {
-  return status ? STATUS_LABEL[status] : 'غیر متعین'
+  return status ? STATUS_LABEL[status] : 'حالت متعین نہیں'
 }
 
 function DrillActivityList({ activities }: { activities: readonly ShobahDrillActivity[] }) {
@@ -90,7 +90,7 @@ function recordedYearStatuses(counts: OrganisationalSituation['meqati']['counts'
 }
 
 function progressDisplay(counts: OrganisationalSituation['meqati']['counts']): string {
-  if (recordedYearStatuses(counts) === 0) return 'غیر متعین'
+  if (recordedYearStatuses(counts) === 0) return 'حالت متعین نہیں'
   return `${counts.progressPct}%`
 }
 
@@ -233,12 +233,12 @@ export function MeqatiYearSummary({
               <dd>{counts.inProgress}</dd>
             </div>
             <div>
-              <dt>باقی</dt>
+              <dt>شروع نہیں</dt>
               <dd>{counts.remaining}</dd>
             </div>
             <div>
-              <dt>پیش رفت</dt>
-              <dd>{progressDisplay(counts)}</dd>
+              <dt>حالت متعین نہیں</dt>
+              <dd>{counts.unset}</dd>
             </div>
           </dl>
         )}

@@ -71,10 +71,14 @@ export function resolveActivityYearStatus(
 const YEAR_STATUS_LABEL: Record<ActivityYearStatus, string> = {
   completed: 'مکمل',
   in_progress: 'جاری',
-  remaining: 'باقی',
+  remaining: 'شروع نہیں',
 }
 
-/** Home / Planning inspectability labels. Unset = غیر متعین — never inferred. */
+/**
+ * Home / Planning inspectability labels.
+ * Unset = حالت متعین نہیں — never inferred from occurrences/schedule/reports.
+ * remaining maps to شروع نہیں (not silently treated as unset).
+ */
 export function formatActivityYearStatusLabel(status: ActivityYearStatus | null): string {
-  return status ? YEAR_STATUS_LABEL[status] : 'غیر متعین'
+  return status ? YEAR_STATUS_LABEL[status] : 'حالت متعین نہیں'
 }
