@@ -12,6 +12,7 @@ import {
   formatActivityYearStatusLabel,
   resolveActivityYearStatus,
 } from '@/lib/planning/activityYearStatus'
+import { isMeqatiHumanObjectiveReviewActivity } from '@/lib/planning/meqatiHumanObjectiveReview'
 import { resolveMeqatiYear } from '@/lib/dashboard/meqatiYear'
 import { Icon } from '@/components/ui/Icon'
 import type { IconName } from '@/design-system/iconNames'
@@ -202,6 +203,7 @@ export function CompactActivityList({
             {rows.map((row) => {
               const meta = activityMeta(row, ruknNameById, resolvedYearKey)
               const unmapped = showUnmappedState || !isMappedActivity(row)
+              const needsHumanReview = unmapped && isMeqatiHumanObjectiveReviewActivity(row.id)
               const shobahName = shobahNameById?.get(row.shobahId ?? '') ?? '—'
               return (
                 <tr
@@ -223,8 +225,13 @@ export function CompactActivityList({
                     {unmapped ? (
                       <p className="mt-1 text-xs text-amber-700">
                         <span className="inline-flex items-center gap-1 rounded bg-amber-500/10 px-1.5 py-0.5 text-xs font-medium text-amber-800 border border-amber-300/60">
-                          حالیہ ہدف: بغیر ہدف
+                          ہدف: ابھی منتخب نہیں
                         </span>
+                      </p>
+                    ) : null}
+                    {needsHumanReview ? (
+                      <p className="mt-1 text-xs text-secondary">
+                        ان سرگرمیوں کی ہدف سے نسبت انسانی جائزے کی محتاج ہے
                       </p>
                     ) : null}
                     {meta.summary ? (
@@ -267,6 +274,7 @@ export function CompactActivityList({
         {rows.map((row) => {
           const meta = activityMeta(row, ruknNameById, resolvedYearKey)
           const unmapped = showUnmappedState || !isMappedActivity(row)
+          const needsHumanReview = unmapped && isMeqatiHumanObjectiveReviewActivity(row.id)
           const shobahName = shobahNameById?.get(row.shobahId ?? '') ?? '—'
           return (
             <li
@@ -290,8 +298,13 @@ export function CompactActivityList({
               {unmapped ? (
                 <p className="mt-1 text-xs text-amber-700">
                   <span className="inline-flex items-center gap-1 rounded bg-amber-500/10 px-1.5 py-0.5 text-xs font-medium text-amber-800 border border-amber-300/60">
-                    حالیہ ہدف: بغیر ہدف
+                    ہدف: ابھی منتخب نہیں
                   </span>
+                </p>
+              ) : null}
+              {needsHumanReview ? (
+                <p className="mt-1 text-xs text-secondary">
+                  ان سرگرمیوں کی ہدف سے نسبت انسانی جائزے کی محتاج ہے
                 </p>
               ) : null}
               {meta.summary ? (

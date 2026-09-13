@@ -21,6 +21,10 @@ import {
 import { computeActivityProgress } from '@/lib/planning/activityProgress'
 import { selectCanonicalMeqatiMansooba } from '@/lib/planning/canonicalMeqatiMansooba'
 import {
+  isMeqatiHumanObjectiveReviewActivity,
+  listMeqatiHumanObjectiveReviewCandidateHints,
+} from '@/lib/planning/meqatiHumanObjectiveReview'
+import {
   formatProgrammeScheduleLabel,
   listProgrammeFrequencies,
   normalizeProgrammeSchedule,
@@ -892,6 +896,60 @@ export function AdminPlanningPage() {
     )
   }
 
+  /** Explicit human objective link — writes objectiveId (+ audit) only; preserves all other fields. */
+  const saveActivityObjectiveMapping = (nextObjectiveId: string | null) => {
+    void run(
+      async () => {
+        const existing = editingActivityId
+          ? programmes.find((row) => row.id === editingActivityId)
+          : undefined
+        if (!existing) {
+          setFormError('سرگرمی دستیاب نہیں۔')
+          return
+        }
+        const trimmed = nextObjectiveId?.trim() || null
+        if (trimmed) {
+          const parent = objectives.find((row) => row.id === trimmed)
+          if (!parent || parent.status === 'archived') {
+            setFormError('منتخب اہداف دستیاب نہیں۔')
+            return
+          }
+        }
+        const now = new Date().toISOString()
+        const record: LocalProgramme = {
+          ...existing,
+          objectiveId: trimmed,
+          updatedAt: now,
+          updatedBy: actor,
+        }
+        const result = await getRepositories().localProgramme.saveDurable(record)
+        if (!result.ok) {
+          setFormError(formatRepoError(result.error))
+          return
+        }
+        closeActivityModal()
+        refresh()
+        setMessage(
+          trimmed ? 'ہدف محفوظ ہو گیا۔' : 'سرگرمی ہدف کے بغیر برقرار رکھی گئی۔',
+        )
+      },
+      { key: 'planning.activity.objective-mapping' },
+    )
+  }
+
+  const keepActivityUnmapped = () => {
+    const existing = editingActivityId
+      ? programmes.find((row) => row.id === editingActivityId)
+      : undefined
+    const persisted = existing?.objectiveId?.trim() || null
+    if (persisted) {
+      saveActivityObjectiveMapping(null)
+      return
+    }
+    closeActivityModal()
+    setMessage('سرگرمی ہدف کے بغیر برقرار رکھی گئی۔')
+  }
+
   const saveCampaignFocus = (next: {
     objectiveIds?: string[]
     activityIds?: string[]
@@ -958,6 +1016,54 @@ export function AdminPlanningPage() {
       return activityTargetShobahId ? row.shobahId === activityTargetShobahId : true
     })
   }, [objectives, selectedMansoobaId, activityTargetShobahId])
+
+  /** All current mansooba objectives grouped by شعبہ — for explicit human mapping (never auto). */
+  const objectivesGroupedByShobah = useMemo(() => {
+    const rows = objectives
+      .filter((row) => {
+        if (row.status === 'archived') return false
+        if (selectedMansoobaId && row.mansoobaId !== selectedMansoobaId) return false
+        return true
+      })
+      .slice()
+      .sort(
+        (a, b) =>
+          (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.title.localeCompare(b.title),
+      )
+    const byShobah = new Map<string, PlanningObjective[]>()
+    for (const row of rows) {
+      const list = byShobah.get(row.shobahId) ?? []
+      list.push(row)
+      byShobah.set(row.shobahId, list)
+    }
+    return shobahs
+      .filter((row) => row.status !== 'archived' && byShobah.has(row.id))
+      .slice()
+      .sort(
+        (a, b) =>
+          (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.name.localeCompare(b.name),
+      )
+      .map((shobah) => ({
+        shobah,
+        objectives: byShobah.get(shobah.id) ?? [],
+      }))
+  }, [objectives, selectedMansoobaId, shobahs])
+
+  const persistedActivityObjectiveId = editingActivity?.objectiveId?.trim() || null
+  const isPersistedUnmapped =
+    activityModal === 'edit' && editingActivity != null && !persistedActivityObjectiveId
+  const pendingObjectiveId = activityObjectiveId?.trim() || null
+  const pendingObjective = pendingObjectiveId
+    ? (objectives.find((row) => row.id === pendingObjectiveId) ?? null)
+    : null
+  const pendingObjectiveShobahName = pendingObjective
+    ? (shobahs.find((row) => row.id === pendingObjective.shobahId)?.name ?? '—')
+    : null
+  const needsHumanObjectiveReview =
+    isPersistedUnmapped && isMeqatiHumanObjectiveReviewActivity(editingActivity?.id)
+  const candidateHintIds = needsHumanObjectiveReview
+    ? listMeqatiHumanObjectiveReviewCandidateHints(editingActivity?.id)
+    : []
 
   const currentMeqatiYear = useMemo(() => resolveMeqatiYear(), [])
   const currentYearKey = currentMeqatiYear.key
@@ -1562,40 +1668,131 @@ export function AdminPlanningPage() {
           </div>
 
           {/* Objective Mapping & Data-Quality Section */}
-          {!activityObjectiveId ? (
-            <div className="rounded-xl border border-amber-300 bg-amber-50/90 p-4 text-amber-900">
+          {isPersistedUnmapped || (activityModal === 'create' && !pendingObjectiveId) ? (
+            <div className="rounded-xl border border-amber-300 bg-amber-50/90 p-4 text-amber-900 space-y-3">
               <div className="flex items-center justify-between gap-2">
-                <span className="font-semibold text-sm flex items-center gap-1.5">
-                  <span aria-hidden>⚠️</span>
-                  سرگرمی بغیر ہدف ہے (ہدف: غیر متعین)
-                </span>
+                <span className="font-semibold text-sm">ہدف: ابھی منتخب نہیں</span>
                 <span className="rounded bg-amber-200/90 px-2 py-0.5 text-xs font-semibold text-amber-900">
                   توجہ درکار
                 </span>
               </div>
-              <p className="mt-1 text-xs text-amber-800">
-                اس سرگرمی کو تصدیق شدہ ہدف سے جوڑیں۔ نظام خود سے ہدف کا اندازہ نہیں لگاتا۔
-              </p>
-              <div className="mt-3">
-                <label htmlFor="activity-link-objective" className="block text-xs font-medium text-amber-900 mb-1">
-                  شعبہ کے تصدیق شدہ اہداف سے انتخاب کریں:
+              {needsHumanObjectiveReview ? (
+                <p className="text-xs text-amber-900/90">
+                  ان سرگرمیوں کی ہدف سے نسبت انسانی جائزے کی محتاج ہے
+                </p>
+              ) : (
+                <p className="text-xs text-amber-800">
+                  اس سرگرمی کو تصدیق شدہ ہدف سے جوڑیں۔ نظام خود سے ہدف کا اندازہ نہیں لگاتا۔
+                </p>
+              )}
+
+              {candidateHintIds.length > 0 ? (
+                <div className="rounded-lg border border-dashed border-amber-400/80 bg-white/60 p-3 space-y-2">
+                  <p className="text-xs font-semibold text-amber-900">
+                    ممکنہ نسبت — منظوری درکار
+                  </p>
+                  <p className="text-[11px] text-amber-800">
+                    یہ تجاویز پہلے سے منتخب نہیں ہیں۔ صرف انسانی انتخاب کے بعد محفوظ ہوں گی۔
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {candidateHintIds.map((hintId) => {
+                      const hint = objectives.find((row) => row.id === hintId)
+                      if (!hint || hint.status === 'archived') return null
+                      return (
+                        <button
+                          key={hintId}
+                          type="button"
+                          className="rounded-lg border border-amber-300 bg-white px-2.5 py-1.5 text-xs text-amber-950 hover:bg-amber-100"
+                          onClick={() => setActivityObjectiveId(hintId)}
+                        >
+                          {hint.title}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              ) : null}
+
+              <div>
+                <label
+                  htmlFor="activity-link-objective"
+                  className="block text-xs font-medium text-amber-900 mb-1"
+                >
+                  ہدف منتخب کریں — شعبہ کے تصدیق شدہ اہداف:
                 </label>
                 <select
                   id="activity-link-objective"
                   className="w-full rounded-lg border border-amber-300 bg-white px-3 py-2 text-sm text-text-heading focus:border-primary focus:outline-none"
-                  value=""
+                  value={pendingObjectiveId ?? ''}
                   onChange={(event) =>
                     setActivityObjectiveId(event.target.value.trim() || null)
                   }
                 >
                   <option value="">— تصدیق شدہ ہدف منتخب کریں —</option>
-                  {shobahObjectives.map((row) => (
-                    <option key={row.id} value={row.id}>
-                      {row.title}
-                    </option>
+                  {objectivesGroupedByShobah.map(({ shobah, objectives: group }) => (
+                    <optgroup key={shobah.id} label={shobah.name}>
+                      {group.map((row) => (
+                        <option key={row.id} value={row.id}>
+                          {row.title}
+                        </option>
+                      ))}
+                    </optgroup>
                   ))}
                 </select>
               </div>
+
+              {pendingObjectiveId && pendingObjective ? (
+                <div className="rounded-lg border border-primary/30 bg-white/80 p-3 space-y-2">
+                  <p className="text-xs font-semibold text-text-heading">تصدیق قبل از محفوظ</p>
+                  <ol className="space-y-1 text-sm text-text-heading list-none">
+                    <li>
+                      <span className="text-secondary text-xs">سرگرمی</span>
+                      <span className="block font-medium">
+                        {activityForm.name.trim() || editingActivity?.name || '—'}
+                      </span>
+                    </li>
+                    <li>
+                      <span className="text-secondary text-xs">→ منتخب شعبہ</span>
+                      <span className="block font-medium">
+                        {pendingObjectiveShobahName ?? '—'}
+                      </span>
+                    </li>
+                    <li>
+                      <span className="text-secondary text-xs">→ منتخب ہدف</span>
+                      <span className="block font-medium">{pendingObjective.title}</span>
+                    </li>
+                  </ol>
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    <button
+                      type="button"
+                      className="rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                      disabled={busy || activityModal !== 'edit'}
+                      onClick={() => saveActivityObjectiveMapping(pendingObjectiveId)}
+                    >
+                      ہدف محفوظ کریں
+                    </button>
+                    <button
+                      type="button"
+                      className="rounded-lg border border-border bg-surface px-3 py-2 text-sm font-medium text-text-heading disabled:opacity-60"
+                      disabled={busy}
+                      onClick={keepActivityUnmapped}
+                    >
+                      ہدف کے بغیر برقرار رکھیں
+                    </button>
+                  </div>
+                </div>
+              ) : activityModal === 'edit' ? (
+                <div className="pt-1">
+                  <button
+                    type="button"
+                    className="rounded-lg border border-border bg-surface px-3 py-2 text-sm font-medium text-text-heading disabled:opacity-60"
+                    disabled={busy}
+                    onClick={keepActivityUnmapped}
+                  >
+                    ہدف کے بغیر برقرار رکھیں
+                  </button>
+                </div>
+              ) : null}
             </div>
           ) : (
             <div className="rounded-xl border border-border bg-surface-muted/50 p-3.5 flex flex-wrap items-center justify-between gap-2">
@@ -1608,7 +1805,7 @@ export function AdminPlanningPage() {
               <select
                 id="activity-change-objective"
                 className="rounded-lg border border-border bg-surface px-2.5 py-1.5 text-xs text-text-heading focus:border-primary focus:outline-none"
-                value={activityObjectiveId}
+                value={activityObjectiveId ?? ''}
                 onChange={(event) =>
                   setActivityObjectiveId(event.target.value.trim() || null)
                 }

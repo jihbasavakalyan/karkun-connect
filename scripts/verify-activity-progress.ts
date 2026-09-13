@@ -16,6 +16,11 @@ import {
   normalizeActivityYearStatuses,
   resolveActivityYearStatus,
 } from '../src/lib/planning/activityYearStatus'
+import {
+  countMeqatiUnmappedReviewBuckets,
+  filterMeqatiUnmappedByReviewMode,
+  isMeqatiHumanObjectiveReviewActivity,
+} from '../src/lib/planning/meqatiHumanObjectiveReview'
 import { CompactActivityList } from '../src/pages/admin/meqati/meqatiPlanningPresentation'
 import { MeqatiPlanningWorkspace } from '../src/pages/admin/meqati/MeqatiPlanningWorkspace'
 import type { LocalProgramme } from '../src/types/localProgramme.types'
@@ -143,13 +148,32 @@ assert.match(workspaceSrc, /بغیر ہدف فلٹر/)
 assert.match(workspaceSrc, /level: 'unmapped-all'/)
 assert.match(workspaceSrc, /ہدف منتخب کریں/)
 assert.match(workspaceSrc, /H01–H09/)
+assert.match(workspaceSrc, /انسانی جائزہ درکار/)
+assert.match(workspaceSrc, /دیگر بغیر ہدف/)
+assert.match(workspaceSrc, /تمام بغیر ہدف سرگرمیاں/)
+assert.match(workspaceSrc, /meqatiHumanObjectiveReview/)
+
+const reviewSrc = readFileSync('src/lib/planning/meqatiHumanObjectiveReview.ts', 'utf8')
+assert.match(reviewSrc, /H02-A07/)
+assert.match(reviewSrc, /H02-A13/)
+assert.match(reviewSrc, /H05-A03/)
+assert.match(reviewSrc, /H06-A06/)
+assert.match(reviewSrc, /H06-A09/)
+assert.match(reviewSrc, /MEQATI_HUMAN_OBJECTIVE_REVIEW_ACTIVITY_IDS/)
+assert.doesNotMatch(reviewSrc, /autoMap\(|batchAssign|fuzzyMatch|semanticSimilarity/)
 
 const pageSrc = readFileSync('src/pages/admin/AdminPlanningPage.tsx', 'utf8')
 assert.match(pageSrc, /حالت متعین نہیں/)
 assert.match(pageSrc, /شروع نہیں/)
 assert.match(pageSrc, /تصدیق شدہ ہدف منتخب کریں/)
+assert.match(pageSrc, /ہدف: ابھی منتخب نہیں/)
+assert.match(pageSrc, /ہدف محفوظ کریں/)
+assert.match(pageSrc, /ہدف کے بغیر برقرار رکھیں/)
+assert.match(pageSrc, /ممکنہ نسبت — منظوری درکار/)
+assert.match(pageSrc, /saveActivityObjectiveMapping/)
 assert.match(pageSrc, /normalizeActivityYearStatuses/)
 assert.doesNotMatch(pageSrc, /value: '', label: 'غیر متعین'/)
+assert.doesNotMatch(pageSrc, /fuzzyMatch|semanticSimilarity|LLM classify/i)
 
 const mansooba: MeqatiMansooba = {
   id: 'MEQATI-2023-27',
@@ -252,13 +276,32 @@ const filterHtml = renderToStaticMarkup(
   }),
 )
 assert.match(filterHtml, /بغیر ہدف فلٹر/)
+assert.match(filterHtml, /تمام بغیر ہدف سرگرمیاں/)
+assert.match(filterHtml, /انسانی جائزہ درکار/)
+assert.match(filterHtml, /دیگر بغیر ہدف/)
 assert.match(filterHtml, /قرآن پر وچن/)
 assert.match(filterHtml, /تنظیمی جائزہ/)
-assert.match(filterHtml, /حالیہ ہدف: بغیر ہدف/)
+assert.match(filterHtml, /ہدف: ابھی منتخب نہیں/)
 assert.match(filterHtml, /ہدف منتخب کریں/)
 assert.match(filterHtml, /دعوت و تبلیغ/)
 assert.match(filterHtml, /تنظیم/)
+assert.doesNotMatch(filterHtml, /حالیہ ہدف: بغیر ہدف/)
 assert.doesNotMatch(filterHtml, /مربوط سرگرمی/)
+
+assert.equal(isMeqatiHumanObjectiveReviewActivity('H02-A07'), true)
+assert.equal(isMeqatiHumanObjectiveReviewActivity('H01-A-UNMAPPED'), false)
+const reviewFixture = [
+  { id: 'H02-A07' },
+  { id: 'H01-A-UNMAPPED' },
+  { id: 'H06-A09' },
+  { id: 'X-OTHER' },
+]
+const buckets = countMeqatiUnmappedReviewBuckets(reviewFixture)
+assert.equal(buckets.all, 4)
+assert.equal(buckets.humanReview, 2)
+assert.equal(buckets.other, 2)
+assert.equal(filterMeqatiUnmappedByReviewMode(reviewFixture, 'human-review').length, 2)
+assert.equal(filterMeqatiUnmappedByReviewMode(reviewFixture, 'other').length, 2)
 
 const listHtml = renderToStaticMarkup(
   createElement(CompactActivityList, {

@@ -3,10 +3,15 @@
  * OVERVIEW → SHOBAH → OBJECTIVE | UNMAPPED → Activity detail (parent modal).
  */
 
-import type { ReactNode } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import type { LocalProgramme } from '@/types/localProgramme.types'
 import type { MeqatiMansooba, PlanningObjective, Shobah } from '@/types/planning.types'
 import { MEQATI_PLAN_END_START_YEAR, MEQATI_PLAN_START_YEAR } from '@/lib/dashboard/meqatiYear'
+import {
+  countMeqatiUnmappedReviewBuckets,
+  filterMeqatiUnmappedByReviewMode,
+  type MeqatiUnmappedFilterMode,
+} from '@/lib/planning/meqatiHumanObjectiveReview'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import { SecondaryButton } from '@/components/ui/SecondaryButton'
 import '@/pages/admin/meqati/meqatiPlanningCanvas.css'
@@ -156,6 +161,23 @@ export function MeqatiPlanningWorkspace(props: MeqatiPlanningWorkspaceProps) {
       : []
   const visual = selectedShobah ? shobahVisual(selectedShobah.shobah) : null
   const headCode = selectedShobah ? shobahHeadCode(selectedShobah.shobah) : null
+  const [unmappedFilterMode, setUnmappedFilterMode] =
+    useState<MeqatiUnmappedFilterMode>('all')
+
+  useEffect(() => {
+    if (view.level !== 'unmapped-all') {
+      setUnmappedFilterMode('all')
+    }
+  }, [view.level])
+
+  const unmappedReviewBuckets = useMemo(
+    () => countMeqatiUnmappedReviewBuckets(unmappedActivities),
+    [unmappedActivities],
+  )
+  const filteredUnmappedActivities = useMemo(
+    () => filterMeqatiUnmappedByReviewMode(unmappedActivities, unmappedFilterMode),
+    [unmappedActivities, unmappedFilterMode],
+  )
 
   if (view.level === 'overview') {
     return (
@@ -409,6 +431,27 @@ export function MeqatiPlanningWorkspace(props: MeqatiPlanningWorkspaceProps) {
     const shobahNameById = new Map(
       shobahItems.map((item) => [item.shobah.id, item.shobah.name] as const),
     )
+    const filterModes: {
+      mode: MeqatiUnmappedFilterMode
+      label: string
+      count: number
+    }[] = [
+      {
+        mode: 'all',
+        label: 'تمام بغیر ہدف سرگرمیاں',
+        count: unmappedReviewBuckets.all,
+      },
+      {
+        mode: 'human-review',
+        label: 'انسانی جائزہ درکار',
+        count: unmappedReviewBuckets.humanReview,
+      },
+      {
+        mode: 'other',
+        label: 'دیگر بغیر ہدف',
+        count: unmappedReviewBuckets.other,
+      },
+    ]
     return (
       <Canvas>
         <div className="space-y-8">
@@ -416,21 +459,45 @@ export function MeqatiPlanningWorkspace(props: MeqatiPlanningWorkspaceProps) {
             <BackBar label="میقاتی منصوبہ" onClick={() => onViewChange({ level: 'overview' })} />
             <div className="meqati-objective-band">
               <h2 className="text-2xl font-semibold text-text-heading">
-                بغیر ہدف فلٹر ({unmappedActivities.length} سرگرمیاں)
+                بغیر ہدف فلٹر ({unmappedReviewBuckets.all} سرگرمیاں)
               </h2>
               <p className="mt-3 max-w-xl text-sm text-secondary">
                 H01–H09 میں وہ سرگرمیاں جن کا objectiveId خالی ہے۔ نظام خود سے ہدف کا اندازہ نہیں لگاتا —
                 تصدیق شدہ ہدف منتخب کریں۔
               </p>
+              <div className="mt-4 flex flex-wrap gap-2" role="group" aria-label="بغیر ہدف ذیلی فلٹر">
+                {filterModes.map((item) => {
+                  const active = unmappedFilterMode === item.mode
+                  return (
+                    <button
+                      key={item.mode}
+                      type="button"
+                      className={`rounded-lg border px-3 py-2 text-sm transition-colors ${
+                        active
+                          ? 'border-primary bg-primary/10 font-semibold text-primary'
+                          : 'border-border bg-surface text-text-heading hover:bg-surface-muted'
+                      }`}
+                      aria-pressed={active}
+                      onClick={() => setUnmappedFilterMode(item.mode)}
+                    >
+                      {item.label} · {item.count}
+                    </button>
+                  )
+                })}
+              </div>
             </div>
           </header>
-          {unmappedActivities.length === 0 ? (
+          {unmappedReviewBuckets.all === 0 ? (
             <p className="border-b border-border px-1 py-6 text-center text-sm text-secondary">
               تمام سرگرمیاں ہدف سے مربوط ہیں۔
             </p>
+          ) : filteredUnmappedActivities.length === 0 ? (
+            <p className="border-b border-border px-1 py-6 text-center text-sm text-secondary">
+              اس فلٹر میں کوئی سرگرمی نہیں۔
+            </p>
           ) : (
             <CompactActivityList
-              rows={unmappedActivities}
+              rows={filteredUnmappedActivities}
               ruknNameById={ruknNameById}
               onOpen={onOpenActivity}
               showUnmappedState
